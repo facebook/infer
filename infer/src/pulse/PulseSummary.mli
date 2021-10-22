@@ -8,9 +8,10 @@
 open! IStd
 open PulseDomainInterface
 
-type t = ExecutionDomain.summary list [@@deriving yojson_of]
+type t = ExecutionDomain.summary list * NonDisjDomain.t [@@deriving yojson_of]
 
-val of_posts : Tenv.t -> Procdesc.t -> Errlog.t -> Location.t -> ExecutionDomain.t list -> t
+val of_posts :
+  Tenv.t -> Procdesc.t -> Errlog.t -> Location.t -> ExecutionDomain.t list -> NonDisjDomain.t -> t
 
 val force_exit_program :
      Tenv.t

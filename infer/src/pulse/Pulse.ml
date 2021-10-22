@@ -13,7 +13,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
-let report_topl_errors proc_desc err_log summary =
+let report_topl_errors proc_desc err_log (summary, _) =
   let f = function
     | ContinueProgram astate ->
         PulseTopl.report_errors proc_desc err_log (AbductiveDomain.Topl.get astate)
@@ -25,7 +25,8 @@ let report_topl_errors proc_desc err_log summary =
 
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
-  module Domain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
+  module DisjDomain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
+  module NonDisjDomain = NonDisjDomain
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
@@ -282,174 +283,181 @@ module PulseTransferFunctions = struct
     (astates, ret_vars)
 
 
-  let exec_instr_aux path (astate : ExecutionDomain.t)
+  let exec_instr_aux path (astate : ExecutionDomain.t) (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
-      (instr : Sil.instr) : ExecutionDomain.t list =
-    match astate with
-    | AbortProgram _ | ISLLatentMemoryError _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
-        [astate]
-    | ExitProgram _ ->
-        (* program already exited, simply propagate the exited state upwards  *)
-        [astate]
-    | ContinueProgram astate -> (
-      match instr with
-      | Load {id= lhs_id; e= rhs_exp; loc} ->
-          (* [lhs_id := *rhs_exp] *)
-          let deref_rhs astate =
-            let results =
-              if Config.pulse_isl then
-                PulseOperations.eval_deref_isl path loc rhs_exp astate
-                |> List.map ~f:(fun result ->
-                       let+ astate, rhs_addr_hist = result in
-                       PulseOperations.write_id lhs_id rhs_addr_hist astate )
-              else
-                [ (let+ astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
-                   PulseOperations.write_id lhs_id rhs_addr_hist astate ) ]
+      (instr : Sil.instr) : ExecutionDomain.t list * NonDisjDomain.t =
+    let astates =
+      match astate with
+      | AbortProgram _ | ISLLatentMemoryError _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+          [astate]
+      | ExitProgram _ ->
+          (* program already exited, simply propagate the exited state upwards  *)
+          [astate]
+      | ContinueProgram astate -> (
+        match instr with
+        | Load {id= lhs_id; e= rhs_exp; loc} ->
+            (* [lhs_id := *rhs_exp] *)
+            let deref_rhs astate =
+              let results =
+                if Config.pulse_isl then
+                  PulseOperations.eval_deref_isl path loc rhs_exp astate
+                  |> List.map ~f:(fun result ->
+                         let+ astate, rhs_addr_hist = result in
+                         PulseOperations.write_id lhs_id rhs_addr_hist astate )
+                else
+                  [ (let+ astate, rhs_addr_hist =
+                       PulseOperations.eval_deref path loc rhs_exp astate
+                     in
+                     PulseOperations.write_id lhs_id rhs_addr_hist astate ) ]
+              in
+              PulseReport.report_results tenv proc_desc err_log loc results
             in
-            PulseReport.report_results tenv proc_desc err_log loc results
-          in
-          let set_global_astates =
-            match rhs_exp with
-            | Lvar pvar when Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
-              -> (
-              (* Inline initializers of global constants when they are being used.
-                 This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
-                 where global_constant_value is the value of global_var *)
-              (* TODO: Initial global constants only once *)
-              match Pvar.get_initializer_pname pvar with
-              | Some proc_name ->
-                  L.d_printfln_escaped "Found initializer for %a" (Pvar.pp Pp.text) pvar ;
-                  let call_flags = CallFlags.default in
-                  let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
-                  let no_error_states =
-                    dispatch_call analysis_data path ret_id_void (Const (Cfun proc_name)) [] loc
-                      call_flags astate
-                    |> List.filter_map ~f:(function
-                         | Ok (ContinueProgram astate) ->
-                             Some astate
-                         | _ ->
-                             (* ignore errors in global initializers *)
-                             None )
-                  in
-                  if List.is_empty no_error_states then [astate] else no_error_states
-              | None ->
-                  [astate] )
-            | _ ->
-                [astate]
-          in
-          List.concat_map set_global_astates ~f:deref_rhs
-      | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
-          (* [*lhs_exp := rhs_exp] *)
-          let event =
-            match lhs_exp with
-            | Lvar v when Pvar.is_return v ->
-                ValueHistory.Returned loc
-            | _ ->
-                ValueHistory.Assignment loc
-          in
-          let result =
-            let<*> astate, (rhs_addr, rhs_history) =
-              PulseOperations.eval path NoAccess loc rhs_exp astate
+            let set_global_astates =
+              match rhs_exp with
+              | Lvar pvar when Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
+                -> (
+                (* Inline initializers of global constants when they are being used.
+                   This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
+                   where global_constant_value is the value of global_var *)
+                (* TODO: Initial global constants only once *)
+                match Pvar.get_initializer_pname pvar with
+                | Some proc_name ->
+                    L.d_printfln_escaped "Found initializer for %a" (Pvar.pp Pp.text) pvar ;
+                    let call_flags = CallFlags.default in
+                    let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
+                    let no_error_states =
+                      dispatch_call analysis_data path ret_id_void (Const (Cfun proc_name)) [] loc
+                        call_flags astate
+                      |> List.filter_map ~f:(function
+                           | Ok (ContinueProgram astate) ->
+                               Some astate
+                           | _ ->
+                               (* ignore errors in global initializers *)
+                               None )
+                    in
+                    if List.is_empty no_error_states then [astate] else no_error_states
+                | None ->
+                    [astate] )
+              | _ ->
+                  [astate]
             in
-            let<*> is_structured, ls_astate_lhs_addr_hist =
-              if Config.pulse_isl then
-                PulseOperations.eval_structure_isl path Write loc lhs_exp astate
-              else
-                let+ astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
-                (false, [Ok (astate, lhs_addr_hist)])
+            List.concat_map set_global_astates ~f:deref_rhs
+        | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
+            (* [*lhs_exp := rhs_exp] *)
+            let event =
+              match lhs_exp with
+              | Lvar v when Pvar.is_return v ->
+                  ValueHistory.Returned loc
+              | _ ->
+                  ValueHistory.Assignment loc
             in
-            let write_function lhs_addr_hist astate =
-              if is_structured then
-                PulseOperations.write_deref_biad_isl path loc ~ref:lhs_addr_hist Dereference
-                  ~obj:(rhs_addr, event :: rhs_history)
-                  astate
-              else
-                [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist
+            let result =
+              let<*> astate, (rhs_addr, rhs_history) =
+                PulseOperations.eval path NoAccess loc rhs_exp astate
+              in
+              let<*> is_structured, ls_astate_lhs_addr_hist =
+                if Config.pulse_isl then
+                  PulseOperations.eval_structure_isl path Write loc lhs_exp astate
+                else
+                  let+ astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
+                  (false, [Ok (astate, lhs_addr_hist)])
+              in
+              let write_function lhs_addr_hist astate =
+                if is_structured then
+                  PulseOperations.write_deref_biad_isl path loc ~ref:lhs_addr_hist Dereference
                     ~obj:(rhs_addr, event :: rhs_history)
-                    astate ]
+                    astate
+                else
+                  [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist
+                      ~obj:(rhs_addr, event :: rhs_history)
+                      astate ]
+              in
+              let astates =
+                List.concat_map ls_astate_lhs_addr_hist ~f:(fun result ->
+                    let<*> astate, lhs_addr_hist = result in
+                    write_function lhs_addr_hist astate )
+              in
+              let astates =
+                if Topl.is_active () then
+                  List.map astates ~f:(fun result ->
+                      let+ astate = result in
+                      topl_store_step path loc ~lhs:lhs_exp ~rhs:rhs_exp astate )
+                else astates
+              in
+              match lhs_exp with
+              | Lvar pvar when Pvar.is_return pvar ->
+                  List.map astates ~f:(fun result ->
+                      let* astate = result in
+                      PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate )
+              | _ ->
+                  astates
             in
-            let astates =
-              List.concat_map ls_astate_lhs_addr_hist ~f:(fun result ->
-                  let<*> astate, lhs_addr_hist = result in
-                  write_function lhs_addr_hist astate )
+            PulseReport.report_results tenv proc_desc err_log loc result
+        | Prune (condition, loc, _is_then_branch, _if_kind) ->
+            (let<*> astate = PulseOperations.prune path loc ~condition astate in
+             if PulseArithmetic.is_unsat_cheap astate then
+               (* [condition] is known to be unsatisfiable: prune path *)
+               []
+             else
+               (* [condition] is true or unknown value: go into the branch *)
+               [Ok (ContinueProgram astate)] )
+            |> PulseReport.report_exec_results tenv proc_desc err_log loc
+        | Call (ret, call_exp, actuals, loc, call_flags) ->
+            dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
+            |> PulseReport.report_exec_results tenv proc_desc err_log loc
+        | Metadata (ExitScope (vars, location)) ->
+            let remove_vars vars astates =
+              List.map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
+                  match exec_state with
+                  | ISLLatentMemoryError _
+                  | AbortProgram _
+                  | ExitProgram _
+                  | LatentAbortProgram _
+                  | LatentInvalidAccess _ ->
+                      exec_state
+                  | ContinueProgram astate ->
+                      ContinueProgram (PulseOperations.remove_vars vars location astate) )
             in
-            let astates =
-              if Topl.is_active () then
-                List.map astates ~f:(fun result ->
-                    let+ astate = result in
-                    topl_store_step path loc ~lhs:lhs_exp ~rhs:rhs_exp astate )
-              else astates
-            in
-            match lhs_exp with
-            | Lvar pvar when Pvar.is_return pvar ->
-                List.map astates ~f:(fun result ->
-                    let* astate = result in
-                    PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate )
-            | _ ->
-                astates
-          in
-          PulseReport.report_results tenv proc_desc err_log loc result
-      | Prune (condition, loc, _is_then_branch, _if_kind) ->
-          (let<*> astate = PulseOperations.prune path loc ~condition astate in
-           if PulseArithmetic.is_unsat_cheap astate then
-             (* [condition] is known to be unsatisfiable: prune path *)
-             []
-           else
-             (* [condition] is true or unknown value: go into the branch *)
-             [Ok (ContinueProgram astate)] )
-          |> PulseReport.report_exec_results tenv proc_desc err_log loc
-      | Call (ret, call_exp, actuals, loc, call_flags) ->
-          dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
-          |> PulseReport.report_exec_results tenv proc_desc err_log loc
-      | Metadata (ExitScope (vars, location)) ->
-          let remove_vars vars astates =
-            List.map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
-                match exec_state with
-                | ISLLatentMemoryError _
-                | AbortProgram _
-                | ExitProgram _
-                | LatentAbortProgram _
-                | LatentInvalidAccess _ ->
-                    exec_state
-                | ContinueProgram astate ->
-                    ContinueProgram (PulseOperations.remove_vars vars location astate) )
-          in
-          if Procname.is_java (Procdesc.get_proc_name proc_desc) then
-            remove_vars vars [ContinueProgram astate]
-          else
-            (* Here we add and execute calls to dealloc for Objective-C objects
-               before removing the variables *)
-            let astates, ret_vars =
-              execute_injected_dealloc_calls analysis_data path vars astate location
-            in
-            (* OPTIM: avoid re-allocating [vars] when [ret_vars] is empty
-               (in particular if no ObjC objects are involved), but otherwise
-               assume [ret_vars] is potentially larger than [vars] and so
-               append [vars] to [ret_vars]. *)
-            let vars_to_remove =
-              if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
-            in
-            remove_vars vars_to_remove astates
-      | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
-          [PulseOperations.realloc_pvar tenv pvar typ location astate |> ExecutionDomain.continue]
-      | Metadata
-          ( Abstract _
-          | CatchEntry _
-          | Nullify _
-          | Skip
-          | TryEntry _
-          | TryExit _
-          | VariableLifetimeBegins _ ) ->
-          [ContinueProgram astate] )
+            if Procname.is_java (Procdesc.get_proc_name proc_desc) then
+              remove_vars vars [ContinueProgram astate]
+            else
+              (* Here we add and execute calls to dealloc for Objective-C objects
+                 before removing the variables *)
+              let astates, ret_vars =
+                execute_injected_dealloc_calls analysis_data path vars astate location
+              in
+              (* OPTIM: avoid re-allocating [vars] when [ret_vars] is empty
+                 (in particular if no ObjC objects are involved), but otherwise
+                 assume [ret_vars] is potentially larger than [vars] and so
+                 append [vars] to [ret_vars]. *)
+              let vars_to_remove =
+                if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
+              in
+              remove_vars vars_to_remove astates
+        | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
+            [PulseOperations.realloc_pvar tenv pvar typ location astate |> ExecutionDomain.continue]
+        | Metadata
+            ( Abstract _
+            | CatchEntry _
+            | Nullify _
+            | Skip
+            | TryEntry _
+            | TryExit _
+            | VariableLifetimeBegins _ ) ->
+            [ContinueProgram astate] )
+    in
+    (astates, astate_n)
 
 
-  let exec_instr (astate, path) analysis_data cfg_node instr : Domain.t list =
+  let exec_instr ((astate, path), astate_n) analysis_data cfg_node instr :
+      DisjDomain.t list * NonDisjDomain.t =
     (* Sometimes instead of stopping on contradictions a false path condition is recorded
        instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
-    exec_instr_aux path astate analysis_data cfg_node instr
-    |> List.filter_map ~f:(fun exec_state ->
-           if ExecutionDomain.is_unsat_cheap exec_state then None
-           else Some (exec_state, PathContext.post_exec_instr path) )
+    let astates, astate_n = exec_instr_aux path astate astate_n analysis_data cfg_node instr in
+    ( List.filter_map astates ~f:(fun exec_state ->
+          if ExecutionDomain.is_unsat_cheap exec_state then None
+          else Some (exec_state, PathContext.post_exec_instr path) )
+    , astate_n )
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
@@ -479,9 +487,11 @@ let initial tenv proc_desc =
 let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   match
-    DisjunctiveAnalyzer.compute_post analysis_data ~initial:(initial tenv proc_desc) proc_desc
+    DisjunctiveAnalyzer.compute_post analysis_data
+      ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
+      proc_desc
   with
-  | Some posts ->
+  | Some (posts, non_disj_astate) ->
       (* forget path contexts, we don't propagate them across functions *)
       let posts = List.map ~f:fst posts in
       with_debug_exit_node proc_desc ~f:(fun () ->
@@ -490,6 +500,7 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             PulseSummary.of_posts tenv proc_desc err_log
               (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
               (Option.to_list objc_nil_summary @ posts)
+              non_disj_astate
           in
           report_topl_errors proc_desc err_log summary ;
           Some summary )
