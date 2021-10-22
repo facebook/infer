@@ -127,7 +127,12 @@ module LineageGraph = struct
 
       type edge = {edge: _edge} [@@deriving yojson_of]
 
-      type entity_type = Edge | Node | State | Location [@@deriving compare, hash, sexp]
+      type _function = {name: string; has_unsupported_features: bool} [@@deriving yojson_of]
+
+      type function_ = {function_: _function [@key "function"]} [@@deriving yojson_of]
+
+      type entity_type = Edge | Function | Location | Node | State
+      [@@deriving compare, hash, sexp]
     end
 
     let channel_ref = ref None
@@ -348,9 +353,14 @@ module LineageGraph = struct
       edge_id
 
 
-    let report_summary summary proc_desc =
+    let report_summary flows has_unsupported_features proc_desc =
+      let procname = Procdesc.get_proc_name proc_desc in
+      let fun_id = Id.of_procname procname in
+      write_json Function fun_id
+        (Json.yojson_of_function_
+           {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
       let record_flow flow = ignore (save_edge proc_desc flow) in
-      List.iter ~f:record_flow summary ;
+      List.iter ~f:record_flow flows ;
       Out_channel.flush (channel ()) ;
       Hash_set.clear write_json_cache
   end
@@ -371,9 +381,7 @@ module Summary = struct
       if there is a path from [Argument i] to [Return] not going through [ArgumentOf _] nodes. *)
   type tito_arguments = IntSet.t
 
-  type t = {graph: LineageGraph.t; tito_arguments: tito_arguments}
-
-  let graph {graph} = graph
+  type t = {graph: LineageGraph.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
 
   let pp_tito_arguments fmt arguments =
     let pp_sep fmt () = Format.fprintf fmt ",@;" in
@@ -486,12 +494,16 @@ module Summary = struct
 
 
   (** Given a graph, computes tito_arguments, and makes a summary. *)
-  let of_graph proc_desc graph =
+  let make has_unsupported_features proc_desc graph =
     let graph =
       if Config.simple_lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
     in
     let tito_arguments = tito_arguments_of_graph graph in
-    {graph; tito_arguments}
+    {graph; tito_arguments; has_unsupported_features}
+
+
+  let report {graph; has_unsupported_features} proc_desc =
+    LineageGraph.report graph has_unsupported_features proc_desc
 end
 
 (** A summary is computed by taking the union of all partial summaries present in the final
@@ -513,7 +525,12 @@ module PartialSummary = struct
 end
 
 module Domain = struct
-  module Real = AbstractDomain.FiniteMultiMap (Var) (PPNode)
+  module Real = struct
+    module LastWrites = AbstractDomain.FiniteMultiMap (Var) (PPNode)
+    module UnsupportedFeatures = AbstractDomain.BooleanOr
+    include AbstractDomain.Pair (LastWrites) (UnsupportedFeatures)
+  end
+
   module Unit = PartialSummary
   include AbstractDomain.Pair (Real) (Unit)
 end
@@ -571,10 +588,10 @@ module TransferFunctions = struct
 
   let add_arg_flows (callee_pname : Procname.t) (argument_list : Exp.t list) (astate : Domain.t) :
       Domain.t =
-    let add_flows_all_to_arg index (last_writes, local_edges) arg =
+    let add_flows_all_to_arg index ((last_writes, has_unsupported_features), local_edges) arg =
       let read_set = Var.get_all_vars_in_exp arg in
       let add_flows_var_to_arg local_edges variable =
-        let source_nodes = Domain.Real.get_all variable last_writes in
+        let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
         let add_one_flow local_edges node =
           LineageGraph.flow
             ~source:(Local (variable, node))
@@ -585,7 +602,7 @@ module TransferFunctions = struct
         List.fold source_nodes ~f:add_one_flow ~init:local_edges
       in
       let local_edges = Sequence.fold read_set ~init:local_edges ~f:add_flows_var_to_arg in
-      (last_writes, local_edges)
+      ((last_writes, has_unsupported_features), local_edges)
     in
     List.foldi argument_list ~init:astate ~f:add_flows_all_to_arg
 
@@ -601,10 +618,11 @@ module TransferFunctions = struct
 
 
   let update_write (kind : LineageGraph.flow_kind) ((write_var, write_node) : Var.t * PPNode.t)
-      (read_set : Var.Set.t) ((last_writes, local_edges) : Domain.t) : Domain.t =
+      (read_set : Var.Set.t) (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
+      Domain.t =
     let target = LineageGraph.Local (write_var, write_node) in
     let add_read read_var local_edges =
-      let source_nodes = Domain.Real.get_all read_var last_writes in
+      let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
       let add_edge local_edges read_node =
         LineageGraph.flow ~kind ~source:(Local (read_var, read_node)) ~target () :: local_edges
       in
@@ -612,9 +630,9 @@ module TransferFunctions = struct
       local_edges
     in
     let local_edges = Var.Set.fold add_read read_set local_edges in
-    let last_writes = Domain.Real.remove_all write_var last_writes in
-    let last_writes = Domain.Real.add write_var write_node last_writes in
-    (last_writes, local_edges)
+    let last_writes = Domain.Real.LastWrites.remove_all write_var last_writes in
+    let last_writes = Domain.Real.LastWrites.add write_var write_node last_writes in
+    ((last_writes, has_unsupported_features), local_edges)
 
 
   let add_tito tito_arguments (argument_list : Exp.t list) (ret_id : Ident.t) node
@@ -645,6 +663,14 @@ module TransferFunctions = struct
         add_tito tito_arguments argument_list ret_id node astate
 
 
+  let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
+      Domain.t =
+    let has_unsupported_features =
+      has_unsupported_features || Procname.equal BuiltinDecl.__erlang_missing_translation name
+    in
+    ((last_writes, has_unsupported_features), local_edges)
+
+
   let exec_call (astate : Domain.t) node analyze_dependency ret_id fun_name args : Domain.t =
     let callee_pname = procname_of_exp fun_name in
     let args = List.map ~f:fst args in
@@ -653,7 +679,7 @@ module TransferFunctions = struct
         add_tito_all args ret_id node astate
     | Some name ->
         (* TODO: Mechanism to match [name] against custom tito models. *)
-        astate |> add_arg_flows name args |> add_ret_flows name ret_id node
+        astate |> record_supported name |> add_arg_flows name args |> add_ret_flows name ret_id node
         |> add_summary_flows (analyze_dependency name) args ret_id node
 
 
@@ -700,36 +726,37 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
     let initial =
       let formals = get_formals proc_desc in
       let start_node = CFG.start_node cfg in
-      let add_arg last_writes arg = Domain.Real.add arg start_node last_writes in
-      let last_writes = List.fold ~init:Domain.Real.bottom ~f:add_arg formals in
+      let add_arg last_writes arg = Domain.Real.LastWrites.add arg start_node last_writes in
+      let last_writes = List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg formals in
       let local_edges =
         List.mapi
           ~f:(fun i var ->
             LineageGraph.flow ~source:(Argument i) ~target:(Local (var, start_node)) () )
           formals
       in
-      (last_writes, local_edges)
+      let has_unsupported_features = false in
+      ((last_writes, has_unsupported_features), local_edges)
     in
     let invmap = Analyzer.exec_pdesc analysis_data ~initial proc_desc in
+    let (exit_last_writes, exit_has_unsupported_features), _ =
+      match Analyzer.InvariantMap.find_opt (PPNode.id (CFG.exit_node cfg)) invmap with
+      | None ->
+          L.die InternalError "no post for exit_node?"
+      | Some {AbstractInterpreter.State.post} ->
+          post
+    in
     let graph =
       let collect _nodeid {AbstractInterpreter.State.post} edges =
         let _last_writes, post_edges = post in
         post_edges :: edges
       in
-      let last_writes =
-        match Analyzer.InvariantMap.find_opt (PPNode.id (CFG.exit_node cfg)) invmap with
-        | None ->
-            L.die InternalError "no post for exit_node?"
-        | Some {AbstractInterpreter.State.post= last_writes, _} ->
-            last_writes
-      in
       let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
       let mk_ret_edge ret_node =
         LineageGraph.flow ~source:(Local (ret_var, ret_node)) ~target:Return ()
       in
-      List.map ~f:mk_ret_edge (Domain.Real.get_all ret_var last_writes)
+      List.map ~f:mk_ret_edge (Domain.Real.LastWrites.get_all ret_var exit_last_writes)
       @ (Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat)
     in
-    let summary = Summary.of_graph proc_desc graph in
-    if Config.simple_lineage_json_report then LineageGraph.report summary.Summary.graph proc_desc ;
+    let summary = Summary.make exit_has_unsupported_features proc_desc graph in
+    if Config.simple_lineage_json_report then Summary.report summary proc_desc ;
     Some summary
