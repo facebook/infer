@@ -1958,6 +1958,11 @@ module Call = struct
         $ capt_exp_of_typ (-"std" &:: "__wrap_iter")
         $+ capt_exp $--> StdVector.iterator_ne
       ; -"std" &:: "__wrap_iter" &:: "operator++" $ capt_exp $--> StdVector.iterator_incr
+      ; -"__gnu_cxx" &:: "operator!="
+        $ capt_exp_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
+        $+ capt_exp $--> StdVector.iterator_ne
+      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator++" $ capt_exp
+        $--> StdVector.iterator_incr
       ; -"google" &:: "StrLen" <>$ capt_exp $--> strlen
       ; (* Java models *)
         -"java.lang.Object" &:: "clone" <>$ capt_exp $--> id
