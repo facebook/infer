@@ -149,6 +149,8 @@ let is_must_be_valid_or_allocated_isl address attrs =
 
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
 
+let get_written_to = get_attribute Attributes.get_written_to
+
 let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
 
 let get_dynamic_type attrs v = get_attribute Attributes.get_dynamic_type v attrs

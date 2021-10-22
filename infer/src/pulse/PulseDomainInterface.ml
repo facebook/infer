@@ -12,12 +12,7 @@ module ExecutionDomain = PulseExecutionDomain
 (** if you do any mutations of the state in pulse you probably want this module *)
 module AbductiveDomain = PulseAbductiveDomain
 
-module NonDisjDomain = struct
-  include AbstractDomain.BottomLifted (AbstractDomain.Empty)
-
-  let yojson_of_t = [%yojson_of: _]
-end
-
+module NonDisjDomain = PulseNonDisjunctiveDomain
 module Stack = AbductiveDomain.Stack
 module Memory = AbductiveDomain.Memory
 module AddressAttributes = AbductiveDomain.AddressAttributes
