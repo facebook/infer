@@ -1397,32 +1397,78 @@ module AliasRet = struct
     pp fmt x
 end
 
-module Alias = struct
-  type t = {map: AliasMap.t; ret: AliasRet.t}
+module CppIteratorCmpValue = struct
+  type t = V of {iter: Pvar.t; iter_end: Pvar.t} | Top
+
+  let pp f = function
+    | V {iter; iter_end} ->
+        F.fprintf f "{iter:%a, end:%a}" (Pvar.pp Pp.text) iter (Pvar.pp Pp.text) iter_end
+    | Top ->
+        F.pp_print_string f "top"
+
 
   let leq ~lhs ~rhs =
-    if phys_equal lhs rhs then true
-    else AliasMap.leq ~lhs:lhs.map ~rhs:rhs.map && AliasRet.leq ~lhs:lhs.ret ~rhs:rhs.ret
+    match (lhs, rhs) with
+    | V lhs, V rhs ->
+        Pvar.equal lhs.iter rhs.iter && Pvar.equal lhs.iter_end rhs.iter_end
+    | Top, V _ ->
+        false
+    | (V _ | Top), Top ->
+        true
 
 
   let join x y =
-    if phys_equal x y then x else {map= AliasMap.join x.map y.map; ret= AliasRet.join x.ret y.ret}
+    match (x, y) with
+    | V x, V y ->
+        if Pvar.equal x.iter y.iter && Pvar.equal x.iter_end y.iter_end then V x else Top
+    | _, Top | Top, _ ->
+        Top
+
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+end
+
+module CppIteratorCmp = struct
+  include AbstractDomain.InvertedMap (Ident) (CppIteratorCmpValue)
+
+  let pp : F.formatter -> t -> unit = fun fmt x -> F.fprintf fmt "cpp_iter=%a" pp x
+end
+
+module Alias = struct
+  type t = {map: AliasMap.t; ret: AliasRet.t; cpp_iterator_cmp: CppIteratorCmp.t}
+
+  let leq ~lhs ~rhs =
+    if phys_equal lhs rhs then true
+    else
+      AliasMap.leq ~lhs:lhs.map ~rhs:rhs.map
+      && AliasRet.leq ~lhs:lhs.ret ~rhs:rhs.ret
+      && CppIteratorCmp.leq ~lhs:lhs.cpp_iterator_cmp ~rhs:rhs.cpp_iterator_cmp
+
+
+  let join x y =
+    if phys_equal x y then x
+    else
+      { map= AliasMap.join x.map y.map
+      ; ret= AliasRet.join x.ret y.ret
+      ; cpp_iterator_cmp= CppIteratorCmp.join x.cpp_iterator_cmp y.cpp_iterator_cmp }
 
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
       { map= AliasMap.widen ~prev:prev.map ~next:next.map ~num_iters
-      ; ret= AliasRet.widen ~prev:prev.ret ~next:next.ret ~num_iters }
+      ; ret= AliasRet.widen ~prev:prev.ret ~next:next.ret ~num_iters
+      ; cpp_iterator_cmp=
+          CppIteratorCmp.widen ~prev:prev.cpp_iterator_cmp ~next:next.cpp_iterator_cmp ~num_iters }
 
 
   let pp fmt x =
-    F.fprintf fmt "@[<hov 2>{ %a%s%a }@]" AliasMap.pp x.map
+    F.fprintf fmt "@[<hov 2>{ %a%s%a, %a }@]" AliasMap.pp x.map
       (if AliasMap.is_empty x.map then "" else ", ")
-      AliasRet.pp x.ret
+      AliasRet.pp x.ret CppIteratorCmp.pp x.cpp_iterator_cmp
 
 
-  let init : t = {map= AliasMap.empty; ret= AliasRet.empty}
+  let init : t = {map= AliasMap.empty; ret= AliasRet.empty; cpp_iterator_cmp= CppIteratorCmp.empty}
 
   let lift_map : (AliasMap.t -> AliasMap.t) -> t -> t = fun f a -> {a with map= f a.map}
 
@@ -1520,6 +1566,20 @@ module Alias = struct
 
   let incr_iterator_simple_alias_on_call eval_sym_trace ~callee_locs =
     lift_map (AliasMap.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_locs)
+
+
+  let add_cpp_iterator_cmp_alias id iter iter_end alias =
+    { alias with
+      cpp_iterator_cmp=
+        CppIteratorCmp.add id (CppIteratorCmpValue.V {iter; iter_end}) alias.cpp_iterator_cmp }
+
+
+  let find_cpp_iterator_alias id {cpp_iterator_cmp} =
+    match CppIteratorCmp.find_opt id cpp_iterator_cmp with
+    | Some (V {iter; iter_end}) ->
+        Some (iter, iter_end)
+    | Some Top | None ->
+        None
 end
 
 module CoreVal = struct
@@ -2320,6 +2380,13 @@ module MemReach = struct
     else
       let new_c_strlen = Val.of_itv ~traces:(Val.get_traces idx) (Itv.incr idx_itv) in
       set_first_idx_of_null loc new_c_strlen m
+
+
+  let add_cpp_iterator_cmp_alias id iter iter_end m =
+    {m with alias= Alias.add_cpp_iterator_cmp_alias id iter iter_end m.alias}
+
+
+  let find_cpp_iterator_alias id m = Alias.find_cpp_iterator_alias id m.alias
 end
 
 module Mem = struct
@@ -2602,4 +2669,12 @@ module Mem = struct
         F.pp_print_string f (SpecialChars.up_tack ^ " by exception")
     | Reachable m ->
         MemReach.pp f m
+
+
+  let add_cpp_iterator_cmp_alias id iter iter_end m =
+    map m ~f:(MemReach.add_cpp_iterator_cmp_alias id iter iter_end)
+
+
+  let find_cpp_iterator_alias id m =
+    f_lift_default ~default:None (MemReach.find_cpp_iterator_alias id) m
 end

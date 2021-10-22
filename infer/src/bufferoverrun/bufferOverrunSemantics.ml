@@ -863,6 +863,17 @@ module Prune = struct
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Eq as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ne as c), e1, e2), _) ->
         prune_helper location integer_type_widths (Exp.BinOp (comp_not c, e1, e2)) astate
+    | Exp.Var ident -> (
+      match Mem.find_cpp_iterator_alias ident astate.mem with
+      | None ->
+          astate
+      | Some (iter, iter_end) ->
+          let iter_loc = Loc.of_pvar iter in
+          let iter_end_loc = Loc.of_pvar iter_end in
+          let iter_v = Mem.find iter_loc astate.mem in
+          let size_v = Mem.find iter_end_loc astate.mem in
+          let iter_v' = Val.prune_binop Lt iter_v size_v in
+          update_mem_in_prune iter_loc iter_v' astate )
     | _ ->
         astate
 

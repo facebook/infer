@@ -689,6 +689,31 @@ module StdVector = struct
       set_size model_env arr_locs new_size mem
     in
     {exec; check= no_check}
+
+
+  let iterator_ne lhs_exp rhs_exp =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let v = Sem.eval integer_type_widths (Exp.BinOp (Binop.Ne, lhs_exp, rhs_exp)) mem in
+      let mem =
+        match (lhs_exp, rhs_exp) with
+        | Exp.Lvar iter, Exp.Lvar iter_end ->
+            (* NOTE: We heuristically select LHS as an iterator and RHS as the end of vector. *)
+            Dom.Mem.add_cpp_iterator_cmp_alias ret_id iter iter_end mem
+        | _, _ ->
+            mem
+      in
+      model_by_value v ret_id mem
+    in
+    {exec; check= no_check}
+
+
+  let iterator_incr iterator_exp =
+    let exec _ ~ret:_ mem =
+      let locs = Sem.eval_locs iterator_exp mem in
+      let v = Dom.Mem.find_set locs mem |> Dom.Val.get_itv |> Itv.incr |> Dom.Val.of_itv in
+      Dom.Mem.update_mem locs v mem
+    in
+    {exec; check= no_check}
 end
 
 module Split = struct
@@ -1916,6 +1941,8 @@ module Call = struct
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
       ; -"std" &:: "vector" &:: "begin" $ any_arg $+ capt_exp $--> StdVector.begin_
       ; -"std" &:: "vector" < capt_typ &+...>:: "end" $ capt_arg $+ capt_exp $--> StdVector.end_
+      ; -"std" &:: "vector" &:: "cbegin" $ any_arg $+ capt_exp $--> StdVector.begin_
+      ; -"std" &:: "vector" < capt_typ &+...>:: "cend" $ capt_arg $+ capt_exp $--> StdVector.end_
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
@@ -1927,6 +1954,10 @@ module Call = struct
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $--> StdVector.constructor_empty
+      ; -"std" &:: "operator!="
+        $ capt_exp_of_typ (-"std" &:: "__wrap_iter")
+        $+ capt_exp $--> StdVector.iterator_ne
+      ; -"std" &:: "__wrap_iter" &:: "operator++" $ capt_exp $--> StdVector.iterator_incr
       ; -"google" &:: "StrLen" <>$ capt_exp $--> strlen
       ; (* Java models *)
         -"java.lang.Object" &:: "clone" <>$ capt_exp $--> id

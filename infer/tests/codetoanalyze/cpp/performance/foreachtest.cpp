@@ -19,7 +19,7 @@ int loop_linear_list_FN(int x, const std::list<int>& list) {
   return sum;
 }
 
-int loop_linear_vec_FN(int x, const std::vector<int>& vec) {
+int loop_linear_vec(int x, const std::vector<int>& vec) {
   int sum = 0;
   for (auto&& el : vec) {
     sum = +el + x;
@@ -42,6 +42,5 @@ void list_quadratic_FN(std::list<int>& mylist) {
 }
 
 void vector_quadratic_FN(std::vector<int>& vec) {
-  for_each(
-      vec.begin(), vec.end(), [vec](int el) { loop_linear_vec_FN(el, vec); });
+  for_each(vec.begin(), vec.end(), [vec](int el) { loop_linear_vec(el, vec); });
 }
