@@ -998,6 +998,11 @@ let uninitialized_value_pulse =
       "See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
 
 
+let unnecessary_copy_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY" Error Pulse ~hum:"Unnecessary Copy"
+    ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
+
+
 let unreachable_code_after =
   register ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
     ~user_documentation:"A program point is unreachable."

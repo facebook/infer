@@ -45,3 +45,10 @@ let mark_copy_as_modified ~is_modified var astate =
       add var Modified astate
   | _ ->
       astate
+
+
+let get_copied astate =
+  fold
+    (fun var (copy_spec : CopySpec.t) acc ->
+      match copy_spec with Modified -> acc | Copied {location} -> (var, location) :: acc )
+    astate []

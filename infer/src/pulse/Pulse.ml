@@ -23,6 +23,13 @@ let report_topl_errors proc_desc err_log (summary, _) =
   List.iter ~f summary
 
 
+let report_unnecessary_copies proc_desc err_log non_disj_astate =
+  PulseNonDisjunctiveDomain.get_copied non_disj_astate
+  |> List.iter ~f:(fun (var, location) ->
+         let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; location} in
+         PulseReport.report_non_disj_error proc_desc err_log diagnostic )
+
+
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
   module DisjDomain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
@@ -506,6 +513,7 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
               non_disj_astate
           in
           report_topl_errors proc_desc err_log summary ;
+          report_unnecessary_copies proc_desc err_log non_disj_astate ;
           Some summary )
   | None ->
       None

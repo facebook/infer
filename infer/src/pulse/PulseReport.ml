@@ -47,7 +47,11 @@ let is_nullsafe_error tenv diagnostic jn =
    being equal to the value being dereferenced *)
 let is_constant_deref_without_invalidation (diagnostic : Diagnostic.t) =
   match diagnostic with
-  | MemoryLeak _ | ErlangError _ | ReadUninitializedValue _ | StackVariableAddressEscape _ ->
+  | MemoryLeak _
+  | ErlangError _
+  | ReadUninitializedValue _
+  | StackVariableAddressEscape _
+  | UnnecessaryCopy _ ->
       false
   | AccessToInvalidAddress {invalidation; access_trace} -> (
     match invalidation with
@@ -145,6 +149,8 @@ let report_error tenv proc_desc err_log location
   summary_error_of_error tenv proc_desc location access_error
   >>| report_summary_error tenv proc_desc err_log
 
+
+let report_non_disj_error proc_desc err_log diagnostic = report proc_desc err_log diagnostic
 
 let report_exec_results tenv proc_desc err_log location results =
   List.filter_map results ~f:(fun exec_result ->
