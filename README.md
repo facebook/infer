@@ -20,5 +20,5 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 Infer is MIT-licensed.
 
-Note: Enabling Java support may require you to download and install 
+#Note: Enabling Java support may require you to download and install 
 components licensed under the GPL.
