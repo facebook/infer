@@ -387,7 +387,7 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
         (subst, post_edges) )
 
 
-let record_post_cell {PathContext.timestamp} callee_proc_name call_loc ~edges_pre_opt
+let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc ~edges_pre_opt
     ~cell_callee_post:(edges_callee_post, attrs_callee_post) (addr_caller, hist_caller) call_state =
   let call_state =
     let attrs_post_caller =
@@ -410,9 +410,11 @@ let record_post_cell {PathContext.timestamp} callee_proc_name call_loc ~edges_pr
         let translated_edges =
           BaseMemory.Edges.add access
             ( addr_curr
-            , ValueHistory.Sequence
-                ( Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp}
-                , hist_curr ) )
+            , PathContext.with_context path
+                (Sequence
+                   ( Call
+                       {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp}
+                   , hist_curr ) ) )
             translated_edges
         in
         (subst, translated_edges) )
@@ -521,13 +523,14 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
         in
         (* need to add the call to the returned history too *)
         let return_caller_hist =
-          ValueHistory.Sequence
-            ( Call
-                { f= Call callee_proc_name
-                ; location= call_loc
-                ; in_call= return_callee_hist
-                ; timestamp }
-            , return_caller_hist )
+          PathContext.with_context path
+            (Sequence
+               ( Call
+                   { f= Call callee_proc_name
+                   ; location= call_loc
+                   ; in_call= return_callee_hist
+                   ; timestamp }
+               , return_caller_hist ) )
         in
         (call_state, Some (return_caller, return_caller_hist)) )
 

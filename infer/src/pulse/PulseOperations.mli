@@ -257,7 +257,7 @@ val invalidate_biad_isl :
 (** record that the address is invalid. If the address has not been allocated, abduce ISL specs for
     both invalid (null, free, unint) and allocated heap. *)
 
-val allocate : Attribute.allocator -> Location.t -> AbstractValue.t * ValueHistory.t -> t -> t
+val allocate : Attribute.allocator -> Location.t -> AbstractValue.t -> t -> t
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 

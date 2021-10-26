@@ -426,8 +426,8 @@ let havoc_deref_field path location addr_trace field trace_obj astate =
     astate
 
 
-let allocate allocator location addr_trace astate =
-  AddressAttributes.allocate allocator addr_trace location astate
+let allocate allocator location addr astate =
+  AddressAttributes.allocate allocator addr location astate
 
 
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate

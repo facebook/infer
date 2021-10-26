@@ -74,8 +74,8 @@ let invalidate (address, history) invalidation location memory =
   add_one address (Attribute.Invalid (invalidation, Immediate {location; history})) memory
 
 
-let allocate allocator (address, history) location memory =
-  add_one address (Attribute.Allocated (allocator, Immediate {location; history})) memory
+let allocate allocator address location memory =
+  add_one address (Attribute.Allocated (allocator, Immediate {location; history= Epoch})) memory
 
 
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory

@@ -132,7 +132,7 @@ module AddressAttributes : sig
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-  val allocate : Attribute.allocator -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
+  val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
 
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 

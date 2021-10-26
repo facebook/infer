@@ -33,15 +33,50 @@ let map_continue astate_result =
 
 let ok_continue post = [Ok (ContinueProgram post)]
 
+module Hist = struct
+  let mk_desc ?more desc =
+    Option.value_map ~default:desc more ~f:(fun extra_info ->
+        Printf.sprintf "%s %s" desc extra_info )
+
+
+  let alloc_event {PathContext.timestamp} location ?more model_desc =
+    let desc = mk_desc ?more model_desc in
+    ValueHistory.Allocation {f= Model desc; location; timestamp}
+
+
+  let call_event {PathContext.timestamp} location ?more model_desc =
+    let desc = mk_desc ?more model_desc in
+    ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp}
+
+
+  let add_event path event hist = PathContext.with_context path (Sequence (event, hist))
+
+  let single_event path event = add_event path event Epoch
+
+  let add_call path location model_desc ?more hist =
+    add_event path (call_event path location ?more model_desc) hist
+
+
+  let single_call path location ?more model_desc = add_call path location model_desc ?more Epoch
+
+  let single_alloc path location ?more model_desc =
+    alloc_event path location ?more model_desc |> single_event path
+
+
+  let branching path hists = PathContext.with_context path (Branching hists)
+
+  let hist path hist = PathContext.with_context path hist
+end
+
 module Misc = struct
   let shallow_copy_value path location event ret_id dest_pointer_hist src_value_hist astate =
     let<*> astate, obj_copy = PulseOperations.shallow_copy path location src_value_hist astate in
     let<+> astate =
       PulseOperations.write_deref path location ~ref:dest_pointer_hist
-        ~obj:(fst obj_copy, ValueHistory.Sequence (event, snd obj_copy))
+        ~obj:(fst obj_copy, Hist.add_event path event (snd obj_copy))
         astate
     in
-    PulseOperations.havoc_id ret_id (ValueHistory.singleton event) astate
+    PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
 
 
   let shallow_copy path location event ret_id dest_pointer_hist src_pointer_hist astate =
@@ -52,8 +87,8 @@ module Misc = struct
 
 
   let shallow_copy_model model_desc dest_pointer_hist src_pointer_hist : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model model_desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location model_desc in
     shallow_copy path location event ret_id dest_pointer_hist src_pointer_hist astate
 
 
@@ -73,28 +108,27 @@ module Misc = struct
         [error]
 
 
-  let return_int : Int64.t -> model =
-   fun i64 {ret= ret_id, _} astate ->
+  let return_int ~desc : Int64.t -> model =
+   fun i64 {path; location; ret= ret_id, _} astate ->
     let i = IntLit.of_int64 i64 in
     let ret_addr = AbstractValue.Constants.get_int i in
     let<+> astate = PulseArithmetic.and_eq_int ret_addr i astate in
-    PulseOperations.write_id ret_id (ret_addr, Epoch) astate
+    PulseOperations.write_id ret_id (ret_addr, Hist.single_call path location desc) astate
 
 
   let return_positive ~desc : model =
-   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value = (ret_addr, ValueHistory.singleton event) in
+    let ret_value = (ret_addr, Hist.single_call path location desc) in
     let<+> astate = PulseArithmetic.and_positive ret_addr astate in
     PulseOperations.write_id ret_id ret_value astate
 
 
-  let return_unknown_size : model =
-   fun {ret= ret_id, _} astate ->
+  let return_unknown_size ~desc : model =
+   fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let<+> astate = PulseArithmetic.and_nonnegative ret_addr astate in
-    PulseOperations.write_id ret_id (ret_addr, Epoch) astate
+    PulseOperations.write_id ret_id (ret_addr, Hist.single_call path location desc) astate
 
 
   (** Pretend the function call is a call to an "unknown" function, i.e. a function for which we
@@ -114,16 +148,14 @@ module Misc = struct
     astate
 
 
-  let nondet ~fn_name : model =
-   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model fn_name; location; in_call= Epoch; timestamp} in
-    PulseOperations.havoc_id ret_id (ValueHistory.singleton event) astate |> ok_continue
+  let nondet ~desc : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    PulseOperations.havoc_id ret_id (Hist.single_call path location desc) astate |> ok_continue
 
 
   let id_first_arg ~desc (arg_value, arg_history) : model =
-   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
-    let ret_value = (arg_value, ValueHistory.Sequence (event, arg_history)) in
+   fun {path; location; ret= ret_id, _} astate ->
+    let ret_value = (arg_value, Hist.add_call path location desc arg_history) in
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
 
@@ -196,11 +228,10 @@ module Misc = struct
 
 
   let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
-      {analysis_data= {tenv}; path= {timestamp} as path; location; callee_procname; ret= ret_id, _}
-      astate =
+      {analysis_data= {tenv}; location; path; callee_procname; ret= ret_id, _} astate =
     let ret_addr = AbstractValue.mk_fresh () in
     let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
-    let ret_alloc_hist = ValueHistory.singleton (Allocation {f= Model desc; location; timestamp}) in
+    let ret_alloc_hist = Hist.single_alloc path location desc in
     let astate =
       match size_exp_opt with
       | Some (Exp.Sizeof {typ}) ->
@@ -216,7 +247,7 @@ module Misc = struct
       | None ->
           astate
       | Some allocator ->
-          PulseOperations.allocate allocator location (ret_addr, Epoch) astate
+          PulseOperations.allocate allocator location ret_addr astate
     in
     let astate =
       if initialize then astate
@@ -239,15 +270,14 @@ module C = struct
   let free deleted_access : model = Misc.free_or_delete `Free CFree deleted_access
 
   let alloc_common allocator ~size_exp_opt : model =
-   fun ({path= {timestamp} as path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
+   fun ({path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate_alloc =
       Misc.alloc_not_null allocator ~initialize:false size_exp_opt model_data astate >>| continue
     in
     let result_null =
       let ret_null_hist =
-        ValueHistory.singleton
-          (Call {f= Model (Procname.to_string callee_procname); location; in_call= Epoch; timestamp})
+        Hist.single_call path location (Procname.to_string callee_procname) ~more:"(null case)"
       in
       let ret_null_value = (ret_addr, ret_null_hist) in
       let+ astate_null =
@@ -333,26 +363,25 @@ module ObjC = struct
 
 
   let insertion_into_collection_key_and_value (value, value_hist) (key, key_hist) ~desc : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
     let<*> astate, _ =
       PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionValue Read
         location
-        (value, Sequence (event, value_hist))
+        (value, Hist.add_event path event value_hist)
         Dereference astate
     in
     let<+> astate, _ =
       PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionKey Read
         location
-        (key, Sequence (event, key_hist))
+        (key, Hist.add_event path event key_hist)
         Dereference astate
     in
     astate
 
 
   let insertion_into_collection_key_or_value (value, value_hist) ~value_kind ~desc : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location} astate ->
     let must_be_valid_reason =
       match value_kind with
       | `Key ->
@@ -362,36 +391,37 @@ module ObjC = struct
     in
     let<+> astate, _ =
       PulseOperations.eval_access path ~must_be_valid_reason Read location
-        (value, Sequence (event, value_hist))
+        (value, Hist.add_call path location desc value_hist)
         Dereference astate
     in
     astate
 
 
   let read_from_collection (key, key_hist) ~desc : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
     let astate_nil =
       let ret_val = AbstractValue.mk_fresh () in
       let<*> astate = PulseArithmetic.prune_eq_zero key astate in
       let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
-      PulseOperations.write_id ret_id (ret_val, Sequence (event, key_hist)) astate
+      PulseOperations.write_id ret_id (ret_val, Hist.add_event path event key_hist) astate
     in
     let astate_not_nil =
       let<*> astate = PulseArithmetic.prune_positive key astate in
       let<+> astate, (ret_val, hist) =
         PulseOperations.eval_access path Read location (key, key_hist) Dereference astate
       in
-      PulseOperations.write_id ret_id (ret_val, Sequence (event, hist)) astate
+      PulseOperations.write_id ret_id (ret_val, Hist.add_event path event hist) astate
     in
     List.rev_append astate_nil astate_not_nil
 
 
   (* NOTE: assume that this is always called with [freeWhenDone] being [YES] *)
   let init_with_bytes_free_when_done bytes : model =
-   fun {ret= ret_id, _; callee_procname; location; path= {timestamp}} astate ->
-    let event = ValueHistory.Call {f= Call callee_procname; location; in_call= Epoch; timestamp} in
-    PulseOperations.havoc_id ret_id (ValueHistory.singleton event) astate
+   fun {path; location; ret= ret_id, _; callee_procname} astate ->
+    PulseOperations.havoc_id ret_id
+      (Hist.single_call path location (Procname.to_string callee_procname))
+      astate
     |> PulseOperations.remove_allocation_attr (fst bytes)
     |> ok_continue
 
@@ -407,11 +437,8 @@ module ObjC = struct
 
 
   let construct_string char_array : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let hist =
-      ValueHistory.singleton
-        (Call {f= Model "NSString.stringWithUTF8String:"; location; in_call= Epoch; timestamp})
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let hist = Hist.single_call path location "NSString.stringWithUTF8String:" in
     let string = AbstractValue.mk_fresh () in
     let<+> astate =
       PulseOperations.write_field path location ~ref:(string, hist)
@@ -434,10 +461,9 @@ module Optional = struct
     PulseOperations.eval_access path mode location pointer Dereference astate
 
 
-  let write_value ({PathContext.timestamp} as path) location this ~value ~desc astate =
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+  let write_value path location this ~value ~desc astate =
     let* astate, value_field = to_internal_value path Read location this astate in
-    let value_hist = (fst value, ValueHistory.Sequence (event, snd value)) in
+    let value_hist = (fst value, Hist.add_call path location desc (snd value)) in
     let+ astate =
       PulseOperations.write_deref path location ~ref:value_field ~obj:value_hist astate
     in
@@ -482,48 +508,51 @@ module Optional = struct
 
 
   let value optional ~desc : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
     let<*> astate, ((value_addr, value_hist) as value) =
       to_internal_value_deref path Write location optional astate
     in
     (* Check dereference to show an error at the callsite of `value()` *)
     let<*> astate, _ = PulseOperations.eval_access path Write location value Dereference astate in
-    PulseOperations.write_id ret_id (value_addr, Sequence (event, value_hist)) astate |> ok_continue
+    PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
+    |> ok_continue
 
 
   let has_value optional ~desc : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+   fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value =
-      (ret_addr, ValueHistory.singleton (Call {f= Model desc; location; in_call= Epoch; timestamp}))
-    in
     let<*> astate, (value_addr, _) = to_internal_value_deref path Read location optional astate in
-    let astate = PulseOperations.write_id ret_id ret_value astate in
     let result_non_empty =
       PulseArithmetic.prune_positive value_addr astate
       >>= PulseArithmetic.prune_positive ret_addr
+      >>| PulseOperations.write_id ret_id
+            (ret_addr, Hist.single_call path location ~more:"non-empty case" desc)
       |> map_continue
     in
     let result_empty =
       PulseArithmetic.prune_eq_zero value_addr astate
       >>= PulseArithmetic.prune_eq_zero ret_addr
+      >>| PulseOperations.write_id ret_id
+            (ret_addr, Hist.single_call path location ~more:"empty case" desc)
       |> map_continue
     in
     [result_non_empty; result_empty]
 
 
   let get_pointer optional ~desc : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
     let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
-    let value_update_hist = (fst value_addr, ValueHistory.Sequence (event, snd value_addr)) in
+    let value_update_hist =
+      (fst value_addr, Hist.add_call path location desc ~more:"non-empty case" (snd value_addr))
+    in
     let astate_value_addr =
       PulseOperations.write_id ret_id value_update_hist astate
       |> PulseArithmetic.prune_positive (fst value_addr)
       |> map_continue
     in
-    let nullptr = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
+    let nullptr =
+      (AbstractValue.mk_fresh (), Hist.single_call path location desc ~more:"empty case")
+    in
     let astate_null =
       PulseOperations.write_id ret_id nullptr astate
       |> PulseArithmetic.prune_eq_zero (fst value_addr)
@@ -537,22 +566,25 @@ module Optional = struct
 
 
   let value_or optional default ~desc : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
     let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
     let astate_non_empty =
       let+ astate_non_empty, value =
         PulseArithmetic.prune_positive (fst value_addr) astate
         >>= PulseOperations.eval_access path Read location value_addr Dereference
       in
-      let value_update_hist = (fst value, ValueHistory.Sequence (event, snd value)) in
+      let value_update_hist =
+        (fst value, Hist.add_call path location desc ~more:"non-empty case" (snd value))
+      in
       PulseOperations.write_id ret_id value_update_hist astate_non_empty |> continue
     in
     let astate_default =
       let* astate, (default_val, default_hist) =
         PulseOperations.eval_access path Read location default Dereference astate
       in
-      let default_value_hist = (default_val, ValueHistory.Sequence (event, default_hist)) in
+      let default_value_hist =
+        (default_val, Hist.add_call path location desc ~more:"empty case" default_hist)
+      in
       PulseArithmetic.prune_eq_zero (fst value_addr) astate
       >>| PulseOperations.write_id ret_id default_value_hist
       |> map_continue
@@ -602,15 +634,13 @@ module Cplusplus = struct
 
 
   let placement_new actuals : model =
-   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "<placement new>()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "<placement new>()" in
     ( match List.rev actuals with
     | ProcnameDispatcher.Call.FuncArg.{arg_payload= address, hist} :: _ ->
-        PulseOperations.write_id ret_id (address, Sequence (event, hist)) astate
+        PulseOperations.write_id ret_id (address, Hist.add_event path event hist) astate
     | _ ->
-        PulseOperations.havoc_id ret_id (ValueHistory.singleton event) astate )
+        PulseOperations.havoc_id ret_id (Hist.single_event path event) astate )
     |> ok_continue
 end
 
@@ -633,11 +663,10 @@ module StdAtomicInteger = struct
 
 
   let constructor this_address init_value : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::atomic::atomic()"; location; in_call= Epoch; timestamp}
+   fun {path; location} astate ->
+    let this =
+      (AbstractValue.mk_fresh (), Hist.single_call path location "std::atomic::atomic()")
     in
-    let this = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
     let<*> astate, int_field =
       PulseOperations.eval_access path Write location this (FieldAccess internal_int) astate
     in
@@ -649,25 +678,22 @@ module StdAtomicInteger = struct
 
 
   let arith_bop path prepost location event ret_id bop this operand astate =
-    let* astate, int_addr, (old_int, hist) = load_backing_int path location this astate in
+    let* astate, int_addr, (old_int, old_hist) = load_backing_int path location this astate in
+    let hist = Hist.add_event path event old_hist in
     let bop_addr = AbstractValue.mk_fresh () in
     let* astate, bop_addr =
       PulseArithmetic.eval_binop bop_addr bop (AbstractValueOperand old_int) operand astate
     in
     let+ astate =
-      PulseOperations.write_deref path location ~ref:int_addr
-        ~obj:(bop_addr, Sequence (event, hist))
-        astate
+      PulseOperations.write_deref path location ~ref:int_addr ~obj:(bop_addr, hist) astate
     in
     let ret_int = match prepost with `Pre -> bop_addr | `Post -> old_int in
-    PulseOperations.write_id ret_id (ret_int, Sequence (event, hist)) astate
+    PulseOperations.write_id ret_id (ret_int, hist) astate
 
 
   let fetch_add this (increment, _) _memory_ordering : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::atomic::fetch_add()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::atomic::fetch_add()" in
     let<+> astate =
       arith_bop path `Post location event ret_id (PlusA None) this (AbstractValueOperand increment)
         astate
@@ -676,10 +702,8 @@ module StdAtomicInteger = struct
 
 
   let fetch_sub this (increment, _) _memory_ordering : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::atomic::fetch_sub()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::atomic::fetch_sub()" in
     let<+> astate =
       arith_bop path `Post location event ret_id (MinusA None) this (AbstractValueOperand increment)
         astate
@@ -688,10 +712,8 @@ module StdAtomicInteger = struct
 
 
   let operator_plus_plus_pre this : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::atomic::operator++()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::atomic::operator++()" in
     let<+> astate =
       arith_bop path `Pre location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
     in
@@ -699,11 +721,8 @@ module StdAtomicInteger = struct
 
 
   let operator_plus_plus_post this _int : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call
-        {f= Model "std::atomic<T>::operator++(T)"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::atomic<T>::operator++(T)" in
     let<+> astate =
       arith_bop path `Post location event ret_id (PlusA None) this (LiteralOperand IntLit.one)
         astate
@@ -712,10 +731,8 @@ module StdAtomicInteger = struct
 
 
   let operator_minus_minus_pre this : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::atomic::operator--()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::atomic::operator--()" in
     let<+> astate =
       arith_bop path `Pre location event ret_id (MinusA None) this (LiteralOperand IntLit.one)
         astate
@@ -724,11 +741,8 @@ module StdAtomicInteger = struct
 
 
   let operator_minus_minus_post this _int : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call
-        {f= Model "std::atomic<T>::operator--(T)"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::atomic<T>::operator--(T)" in
     let<+> astate =
       arith_bop path `Post location event ret_id (MinusA None) this (LiteralOperand IntLit.one)
         astate
@@ -737,10 +751,9 @@ module StdAtomicInteger = struct
 
 
   let load_instr model_desc this _memory_ordering_opt : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model model_desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
     let<+> astate, _int_addr, (int, hist) = load_backing_int path location this astate in
-    PulseOperations.write_id ret_id (int, Sequence (event, hist)) astate
+    PulseOperations.write_id ret_id (int, Hist.add_call path location model_desc hist) astate
 
 
   let load = load_instr "std::atomic<T>::load()"
@@ -763,40 +776,39 @@ module StdAtomicInteger = struct
 
 
   let store this_address (new_value, new_hist) _memory_ordering : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::atomic::store()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location} astate ->
     let<+> astate =
-      store_backing_int path location this_address (new_value, Sequence (event, new_hist)) astate
+      store_backing_int path location this_address
+        (new_value, Hist.add_call path location "std::atomic::store()" new_hist)
+        astate
     in
     astate
 
 
   let exchange this_address (new_value, new_hist) _memory_ordering : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::atomic::exchange()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::atomic::exchange()" in
     let<*> astate, _int_addr, (old_int, old_hist) =
       load_backing_int path location this_address astate
     in
     let<+> astate =
-      store_backing_int path location this_address (new_value, Sequence (event, new_hist)) astate
+      store_backing_int path location this_address
+        (new_value, Hist.add_event path event new_hist)
+        astate
     in
-    PulseOperations.write_id ret_id (old_int, Sequence (event, old_hist)) astate
+    PulseOperations.write_id ret_id (old_int, Hist.add_event path event old_hist) astate
 end
 
 module JavaObject = struct
   (* naively modeled as shallow copy. *)
   let clone src_pointer_hist : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "Object.clone"; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "Object.clone" in
     let<*> astate, obj =
       PulseOperations.eval_access path Read location src_pointer_hist Dereference astate
     in
     let<+> astate, obj_copy = PulseOperations.shallow_copy path location obj astate in
-    PulseOperations.write_id ret_id (fst obj_copy, Sequence (event, snd obj_copy)) astate
+    PulseOperations.write_id ret_id (fst obj_copy, Hist.add_event path event (snd obj_copy)) astate
 end
 
 let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
@@ -812,40 +824,34 @@ module StdBasicString = struct
 
   (* constructor from constant string *)
   let constructor this_hist init_hist : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event =
-      ValueHistory.Call
-        {f= Model "std::basic_string::basic_string()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location "std::basic_string::basic_string()" in
     let<*> astate, (addr, hist) =
       PulseOperations.eval_access path Write location this_hist Dereference astate
     in
     let<+> astate =
       PulseOperations.write_field path location
-        ~ref:(addr, Sequence (event, hist))
+        ~ref:(addr, Hist.add_event path event hist)
         PulseOperations.ModeledField.internal_string ~obj:init_hist astate
     in
     astate
 
 
   let data this_hist : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::basic_string::data()" in
     let<*> astate, string_addr_hist = to_internal_string path location this_hist astate in
     let<+> astate, (string, hist) =
       PulseOperations.eval_access path Read location string_addr_hist Dereference astate
     in
-    PulseOperations.write_id ret_id (string, Sequence (event, hist)) astate
+    PulseOperations.write_id ret_id (string, Hist.add_event path event hist) astate
 
 
   let destructor this_hist : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let model = CallEvent.Model "std::basic_string::~basic_string()" in
-    let call_event = ValueHistory.Call {f= model; location; in_call= Epoch; timestamp} in
+   fun {path; location} astate ->
+    let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
     let<*> astate, (string_addr, string_hist) = to_internal_string path location this_hist astate in
-    let string_addr_hist = (string_addr, ValueHistory.Sequence (call_event, string_hist)) in
+    let string_addr_hist = (string_addr, Hist.add_event path call_event string_hist) in
     let<*> astate =
       PulseOperations.invalidate_access path location CppDelete string_addr_hist Dereference astate
     in
@@ -861,17 +867,13 @@ module StdBasicString = struct
 
 
   let empty this_hist : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::basic_string::empty()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::basic_string::empty()" in
     let<*> astate, internal_string = to_internal_string path location this_hist astate in
     let<*> astate, (len_addr, hist) =
       PulseOperations.eval_access path Read location internal_string string_length_access astate
     in
-    let ((ret_addr, _) as ret_hist) =
-      (AbstractValue.mk_fresh (), ValueHistory.Sequence (event, hist))
-    in
+    let ((ret_addr, _) as ret_hist) = (AbstractValue.mk_fresh (), Hist.add_event path event hist) in
     let astate_empty =
       let* astate = PulseArithmetic.prune_eq_zero len_addr astate in
       let+ astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
@@ -886,29 +888,22 @@ module StdBasicString = struct
 
 
   let length this_hist : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::basic_string::length()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "std::basic_string::length()" in
     let<*> astate, internal_string = to_internal_string path location this_hist astate in
     let<+> astate, (length, hist) =
       PulseOperations.eval_access path Read location internal_string string_length_access astate
     in
-    PulseOperations.write_id ret_id (length, Sequence (event, hist)) astate
+    PulseOperations.write_id ret_id (length, Hist.add_event path event hist) astate
 end
 
 module StdFunction = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun { path= {timestamp} as path
-       ; analysis_data= {analyze_dependency; tenv; proc_desc}
-       ; location
-       ; ret } astate ->
+   fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate ->
     let havoc_ret (ret_id, _) astate =
-      let event =
-        ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= Epoch; timestamp}
-      in
-      [PulseOperations.havoc_id ret_id (ValueHistory.singleton event) astate]
+      let event = Hist.call_event path location "std::function::operator()" in
+      [PulseOperations.havoc_id ret_id (Hist.single_event path event) astate]
     in
     let<*> astate, (lambda, _) =
       PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
@@ -930,16 +925,16 @@ module StdFunction = struct
 
 
   let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
     if PulseArithmetic.is_known_zero astate (fst src) then
       let empty_target = AbstractValue.mk_fresh () in
       let<+> astate =
         PulseOperations.write_deref path location ~ref:dest
-          ~obj:(empty_target, ValueHistory.singleton event)
+          ~obj:(empty_target, Hist.single_event path event)
           astate
       in
-      PulseOperations.havoc_id ret_id (ValueHistory.singleton event) astate
+      PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
     else
       match src_typ.Typ.desc with
       | Tptr (_, Pk_reference) ->
@@ -1039,25 +1034,25 @@ module GenericArrayBackedCollectionIterator = struct
     in
     let* astate =
       PulseOperations.write_deref_field path location ~ref GenericArrayBackedCollection.field
-        ~obj:(arr_addr, Sequence (event, arr_hist))
+        ~obj:(arr_addr, Hist.add_event path event arr_hist)
         astate
     in
     let* astate, (p_addr, p_hist) = to_internal_pointer path Read location init astate in
     PulseOperations.write_field path location ~ref internal_pointer
-      ~obj:(p_addr, Sequence (event, p_hist))
+      ~obj:(p_addr, Hist.add_event path event p_hist)
       astate
 
 
   let constructor ~desc this init : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
     let<+> astate = construct path location event ~init ~ref:this astate in
     astate
 
 
   let operator_compare comparison ~desc iter_lhs iter_rhs : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
     let<*> astate, _, (index_lhs, _) =
       to_internal_pointer_deref path Read location iter_lhs astate
     in
@@ -1065,7 +1060,7 @@ module GenericArrayBackedCollectionIterator = struct
       to_internal_pointer_deref path Read location iter_rhs astate
     in
     let ret_val = AbstractValue.mk_fresh () in
-    let astate = PulseOperations.write_id ret_id (ret_val, ValueHistory.singleton event) astate in
+    let astate = PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate in
     let ret_val_equal, ret_val_notequal =
       match comparison with
       | `Equal ->
@@ -1089,24 +1084,24 @@ module GenericArrayBackedCollectionIterator = struct
 
 
   let operator_star ~desc iter : model =
-   fun {path= {timestamp} as path; location; ret} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret} astate ->
+    let event = Hist.call_event path location desc in
     let<+> astate, pointer, (elem, _) =
       to_elem_pointed_by_iterator path Read location iter astate
     in
-    PulseOperations.write_id (fst ret) (elem, Sequence (event, snd pointer)) astate
+    PulseOperations.write_id (fst ret) (elem, Hist.add_event path event (snd pointer)) astate
 
 
   let operator_step step ~desc iter : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
     let index_new = AbstractValue.mk_fresh () in
     let<*> astate, pointer, _ =
       to_elem_pointed_by_iterator path Read ~step:(Some step) location iter astate
     in
     let<+> astate =
       PulseOperations.write_deref path location ~ref:pointer
-        ~obj:(index_new, Sequence (event, snd pointer))
+        ~obj:(index_new, Hist.add_event path event (snd pointer))
         astate
     in
     astate
@@ -1114,9 +1109,9 @@ end
 
 module JavaIterator = struct
   let constructor ~desc init : model =
-   fun {path= {timestamp} as path; location; ret} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
-    let ref = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
+   fun {path; location; ret} astate ->
+    let event = Hist.call_event path location desc in
+    let ref = (AbstractValue.mk_fresh (), Hist.single_event path event) in
     let<+> astate =
       GenericArrayBackedCollectionIterator.construct path location event ~init ~ref astate
     in
@@ -1125,8 +1120,8 @@ module JavaIterator = struct
 
   (* {curr -> v_c} is modified to {curr -> v_fresh} and returns array[v_c] *)
   let next ~desc iter : model =
-   fun {path= {timestamp} as path; location; ret} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret} astate ->
+    let event = Hist.call_event path location desc in
     let new_index = AbstractValue.mk_fresh () in
     let<*> astate, (curr_index, curr_index_hist) =
       GenericArrayBackedCollectionIterator.to_internal_pointer path Read location iter astate
@@ -1137,16 +1132,18 @@ module JavaIterator = struct
     let<+> astate =
       PulseOperations.write_field path location ~ref:iter
         GenericArrayBackedCollectionIterator.internal_pointer
-        ~obj:(new_index, Sequence (event, curr_index_hist))
+        ~obj:(new_index, Hist.add_event path event curr_index_hist)
         astate
     in
-    PulseOperations.write_id (fst ret) (curr_elem_val, Sequence (event, curr_elem_hist)) astate
+    PulseOperations.write_id (fst ret)
+      (curr_elem_val, Hist.add_event path event curr_elem_hist)
+      astate
 
 
   (* {curr -> v_c } is modified to {curr -> v_fresh} and writes to array[v_c] *)
   let remove ~desc iter : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
     let new_index = AbstractValue.mk_fresh () in
     let<*> astate, (curr_index, curr_index_hist) =
       GenericArrayBackedCollectionIterator.to_internal_pointer path Read location iter astate
@@ -1154,14 +1151,14 @@ module JavaIterator = struct
     let<*> astate =
       PulseOperations.write_field path location ~ref:iter
         GenericArrayBackedCollectionIterator.internal_pointer
-        ~obj:(new_index, Sequence (event, curr_index_hist))
+        ~obj:(new_index, Hist.add_event path event curr_index_hist)
         astate
     in
     let new_elem = AbstractValue.mk_fresh () in
     let<*> astate, arr = GenericArrayBackedCollection.eval path Read location iter astate in
     let<+> astate =
       PulseOperations.write_arr_index path location ~ref:arr ~index:curr_index
-        ~obj:(new_elem, Sequence (event, curr_index_hist))
+        ~obj:(new_elem, Hist.add_event path event curr_index_hist)
         astate
     in
     astate
@@ -1181,49 +1178,42 @@ module StdVector = struct
 
 
   let init_list_constructor this init_list : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::vector::vector()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location "std::vector::vector()" in
     let<*> astate, init_copy = PulseOperations.shallow_copy path location init_list astate in
     let<+> astate =
       PulseOperations.write_deref_field path location ~ref:this GenericArrayBackedCollection.field
-        ~obj:(fst init_copy, Sequence (event, snd init_copy))
+        ~obj:(fst init_copy, Hist.add_event path event (snd init_copy))
         astate
     in
     astate
 
 
   let invalidate_references vector_f vector : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let crumb =
-      ValueHistory.Call
-        { f= Model (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
-        ; location
-        ; in_call= Epoch
-        ; timestamp }
+   fun {path; location} astate ->
+    let event =
+      Hist.call_event path location
+        (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
     in
     let<+> astate =
-      reallocate_internal_array path (ValueHistory.singleton crumb) vector vector_f location astate
+      reallocate_internal_array path (Hist.single_event path event) vector vector_f location astate
     in
     astate
 
 
   let at ~desc vector index : model =
-   fun {path= {timestamp} as path; location; ret} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret} astate ->
+    let event = Hist.call_event path location desc in
     let<+> astate, (addr, hist) =
       GenericArrayBackedCollection.element path location vector (fst index) astate
     in
-    PulseOperations.write_id (fst ret) (addr, Sequence (event, hist)) astate
+    PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
 
 
   let vector_begin vector iter : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::vector::begin()"; location; in_call= Epoch; timestamp}
-    in
-    let pointer_hist = ValueHistory.Sequence (event, snd iter) in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location "std::vector::begin()" in
+    let pointer_hist = Hist.add_event path event (snd iter) in
     let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
     let index_zero = AbstractValue.mk_fresh () in
     let<*> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
@@ -1244,17 +1234,15 @@ module StdVector = struct
 
 
   let vector_end vector iter : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event =
-      ValueHistory.Call {f= Model "std::vector::end()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location "std::vector::end()" in
     let<*> astate, (arr_addr, _) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
     let<*> astate, (pointer_addr, _) =
       GenericArrayBackedCollection.eval_pointer_to_last_element path location vector astate
     in
-    let pointer_hist = ValueHistory.Sequence (event, snd iter) in
+    let pointer_hist = Hist.add_event path event (snd iter) in
     let pointer_val = (pointer_addr, pointer_hist) in
     let<*> astate =
       PulseOperations.write_deref_field path location ~ref:iter GenericArrayBackedCollection.field
@@ -1268,44 +1256,35 @@ module StdVector = struct
 
 
   let reserve vector : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let crumb =
-      ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location} astate ->
+    let hist = Hist.single_call path location "std::vector::reserve()" in
     let<+> astate =
-      reallocate_internal_array path (ValueHistory.singleton crumb) vector Reserve location astate
+      reallocate_internal_array path hist vector Reserve location astate
       >>| AddressAttributes.std_vector_reserve (fst vector)
     in
     astate
 
 
   let push_back vector : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let crumb =
-      ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location} astate ->
+    let hist = Hist.single_call path location "std::vector::push_back()" in
     if AddressAttributes.is_std_vector_reserved (fst vector) astate then
       (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
          (a perfect analysis would also make sure we don't exceed the reserved size) *)
       ok_continue astate
     else
       (* simulate a re-allocation of the underlying array every time an element is added *)
-      let<+> astate =
-        reallocate_internal_array path (ValueHistory.singleton crumb) vector PushBack location
-          astate
-      in
+      let<+> astate = reallocate_internal_array path hist vector PushBack location astate in
       astate
 
 
   let empty vector : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let crumb =
-      ValueHistory.Call {f= Model "std::vector::empty()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let crumb = Hist.call_event path location "std::vector::empty()" in
     let<+> astate, (value_addr, value_hist) =
       GenericArrayBackedCollection.eval_is_empty path location vector astate
     in
-    PulseOperations.write_id ret_id (value_addr, Sequence (crumb, value_hist)) astate
+    PulseOperations.write_id ret_id (value_addr, Hist.add_event path crumb value_hist) astate
 end
 
 module Java = struct
@@ -1331,15 +1310,13 @@ module Java = struct
 
 
   let instance_of (argv, hist) typeexpr : model =
-   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "Java.instanceof"; location; in_call= Epoch; timestamp}
-    in
+   fun {location; path; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "Java.instanceof" in
     let res_addr = AbstractValue.mk_fresh () in
     match typeexpr with
     | Exp.Sizeof {typ} ->
         let<+> astate = PulseArithmetic.and_equal_instanceof res_addr argv typ astate in
-        PulseOperations.write_id ret_id (res_addr, Sequence (event, hist)) astate
+        PulseOperations.write_id ret_id (res_addr, Hist.add_event path event hist) astate
     (* The type expr is sometimes a Var expr but this is not expected.
        This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
     | _ ->
@@ -1360,26 +1337,26 @@ module JavaCollection = struct
 
 
   let init ~desc this : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
-    let fresh_val = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
+    let fresh_val = (AbstractValue.mk_fresh (), Hist.single_event path event) in
     let is_empty_value = AbstractValue.mk_fresh () in
     let init_value = AbstractValue.mk_fresh () in
     (* The two internal fields are initially set to null *)
     let<*> astate =
       Java.write_field path fst_field
-        (init_value, ValueHistory.singleton event)
+        (init_value, Hist.single_event path event)
         location fresh_val astate
     in
     let<*> astate =
       Java.write_field path snd_field
-        (init_value, ValueHistory.singleton event)
+        (init_value, Hist.single_event path event)
         location fresh_val astate
     in
     (* The empty field is initially set to true *)
     let<*> astate =
       Java.write_field path is_empty_field
-        (is_empty_value, ValueHistory.singleton event)
+        (is_empty_value, Hist.single_event path event)
         location fresh_val astate
     in
     let<*> astate =
@@ -1391,8 +1368,8 @@ module JavaCollection = struct
 
 
   let add ~desc coll new_elem : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
     let ret_value = AbstractValue.mk_fresh () in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
@@ -1406,7 +1383,7 @@ module JavaCollection = struct
     (* Collection.add returns a boolean, in this case the return always has value one *)
     let<*> astate =
       PulseArithmetic.and_eq_int ret_value IntLit.one astate
-      >>| PulseOperations.write_id ret_id (ret_value, ValueHistory.singleton event)
+      >>| PulseOperations.write_id ret_id (ret_value, Hist.single_event path event)
     in
     (* empty field set to false if the collection was empty *)
     let<*> astate, _, (is_empty_val, hist) =
@@ -1417,7 +1394,7 @@ module JavaCollection = struct
       let is_empty_new_val = AbstractValue.mk_fresh () in
       let<*> astate =
         Java.write_field path is_empty_field
-          (is_empty_new_val, Sequence (event, hist))
+          (is_empty_new_val, Hist.add_event path event hist)
           location coll_val astate
         >>= PulseArithmetic.and_eq_int is_empty_new_val IntLit.zero
       in
@@ -1434,13 +1411,13 @@ module JavaCollection = struct
     let is_empty_val = AbstractValue.mk_fresh () in
     let<*> astate' =
       Java.write_field path is_empty_field
-        (is_empty_val, ValueHistory.singleton event)
+        (is_empty_val, Hist.single_event path event)
         location coll_val astate
     in
     (* case1: fst_field is updated *)
     let astate1 =
       Java.write_field path fst_field
-        (new_val, Sequence (event, new_val_hist))
+        (new_val, Hist.add_event path event new_val_hist)
         location coll astate'
       >>| PulseOperations.write_id ret_id fst_val
       |> map_continue
@@ -1448,7 +1425,7 @@ module JavaCollection = struct
     (* case2: snd_field is updated *)
     let astate2 =
       Java.write_field path snd_field
-        (new_val, Sequence (event, new_val_hist))
+        (new_val, Hist.add_event path event new_val_hist)
         location coll astate'
       >>| PulseOperations.write_id ret_id snd_val
       |> map_continue
@@ -1457,15 +1434,13 @@ module JavaCollection = struct
 
 
   let set coll (new_val, new_val_hist) : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "Collection.set()"; location; in_call= Epoch; timestamp}
-    in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "Collection.set()" in
     update path coll new_val new_val_hist event location ret_id astate
 
 
-  let remove_at ({PathContext.timestamp} as path) ~desc coll location ret_id astate =
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+  let remove_at path ~desc coll location ret_id astate =
+    let event = Hist.call_event path location desc in
     let new_val = AbstractValue.mk_fresh () in
     let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
     update path coll new_val Epoch event location ret_id astate
@@ -1481,7 +1456,7 @@ module JavaCollection = struct
     let is_empty_val = AbstractValue.mk_fresh () in
     let* astate =
       Java.write_field path is_empty_field
-        (is_empty_val, ValueHistory.singleton event)
+        (is_empty_val, Hist.single_event path event)
         location coll_val astate
     in
     let* astate =
@@ -1494,14 +1469,14 @@ module JavaCollection = struct
     in
     let+ astate =
       PulseOperations.write_deref path location ~ref:field_addr
-        ~obj:(null_val, ValueHistory.singleton event)
+        ~obj:(null_val, Hist.single_event path event)
         astate
     in
-    PulseOperations.write_id ret_id (ret_val, ValueHistory.singleton event) astate
+    PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate
 
 
-  let remove_obj ({PathContext.timestamp} as path) ~desc coll (elem, _) location ret_id astate =
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+  let remove_obj path ~desc coll (elem, _) location ret_id astate =
+    let event = Hist.call_event path location desc in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
@@ -1549,21 +1524,21 @@ module JavaCollection = struct
 
 
   let is_empty ~desc coll : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
     let<*> astate, _, (is_empty_val, hist) =
       Java.load_field path is_empty_field location coll_val astate
     in
-    PulseOperations.write_id ret_id (is_empty_val, Sequence (event, hist)) astate |> ok_continue
+    PulseOperations.write_id ret_id (is_empty_val, Hist.add_event path event hist) astate
+    |> ok_continue
 
 
   let clear ~desc coll : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
-    let hist = ValueHistory.singleton event in
+   fun {path; location} astate ->
+    let hist = Hist.single_call path location desc in
     let null_val = AbstractValue.mk_fresh () in
     let is_empty_val = AbstractValue.mk_fresh () in
     let<*> astate, coll_val =
@@ -1571,12 +1546,8 @@ module JavaCollection = struct
     in
     let<*> astate = Java.write_field path fst_field (null_val, hist) location coll_val astate in
     let<*> astate = Java.write_field path snd_field (null_val, hist) location coll_val astate in
-    let<*> astate = Java.write_field path fst_field (null_val, hist) location coll_val astate in
-    let<*> astate = Java.write_field path snd_field (null_val, hist) location coll_val astate in
     let<*> astate =
-      Java.write_field path is_empty_field
-        (is_empty_val, ValueHistory.singleton event)
-        location coll_val astate
+      Java.write_field path is_empty_field (is_empty_val, hist) location coll_val astate
     in
     let<+> astate =
       PulseArithmetic.and_eq_int null_val IntLit.zero astate
@@ -1596,12 +1567,12 @@ module JavaCollection = struct
       >>= PulseArithmetic.and_eq_int not_found_val IntLit.zero
       >>= PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
     in
-    let hist = ValueHistory.singleton event in
+    let hist = Hist.single_event path event in
     let astate = PulseOperations.write_id ret_id (not_found_val, hist) astate in
     PulseOperations.invalidate path
       (StackAddress (Var.of_id ret_id, hist))
       location (ConstantDereference IntLit.zero)
-      (not_found_val, ValueHistory.singleton event)
+      (not_found_val, Hist.single_event path event)
       astate
 
 
@@ -1634,8 +1605,8 @@ module JavaCollection = struct
 
 
   let get ~desc coll (elem, _) : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
@@ -1656,7 +1627,7 @@ module JavaCollection = struct
         PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
           (AbstractValueOperand true_val) astate2
         >>= PulseArithmetic.and_eq_int true_val IntLit.one
-        >>| PulseOperations.write_id ret_id (found_val, ValueHistory.singleton event)
+        >>| PulseOperations.write_id ret_id (found_val, Hist.single_event path event)
       in
       get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2
     in
@@ -1672,7 +1643,7 @@ module JavaInteger = struct
 
 
   let construct path this_address init_value event location astate =
-    let this = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
+    let this = (AbstractValue.mk_fresh (), Hist.single_event path event) in
     let* astate, int_field =
       PulseOperations.eval_access path Write location this (FieldAccess internal_int) astate
     in
@@ -1681,48 +1652,44 @@ module JavaInteger = struct
 
 
   let init this_address init_value : model =
-   fun {path= {timestamp} as path; location} astate ->
-    let event = ValueHistory.Call {f= Model "Integer.init"; location; in_call= Epoch; timestamp} in
+   fun {path; location} astate ->
+    let event = Hist.call_event path location "Integer.init" in
     let<+> astate = construct path this_address init_value event location astate in
     astate
 
 
   let equals this arg : model =
    fun {path; location; ret= ret_id, _} astate ->
-    let<*> astate, _int_addr1, (int1, hist) = load_backing_int path location this astate in
-    let<*> astate, _int_addr2, (int2, _) = load_backing_int path location arg astate in
+    let<*> astate, _int_addr1, (int1, hist1) = load_backing_int path location this astate in
+    let<*> astate, _int_addr2, (int2, hist2) = load_backing_int path location arg astate in
     let binop_addr = AbstractValue.mk_fresh () in
     let<+> astate, binop_addr =
-      PulseArithmetic.eval_binop binop_addr Binop.Eq (AbstractValueOperand int1)
+      PulseArithmetic.eval_binop binop_addr Eq (AbstractValueOperand int1)
         (AbstractValueOperand int2) astate
     in
-    PulseOperations.write_id ret_id (binop_addr, hist) astate
+    PulseOperations.write_id ret_id (binop_addr, Hist.branching path [hist1; hist2]) astate
 
 
   let int_val this : model =
    fun {path; location; ret= ret_id, _} astate ->
-    let<*> astate, _int_addr1, int_value_hist = load_backing_int path location this astate in
-    PulseOperations.write_id ret_id int_value_hist astate |> ok_continue
+    let<*> astate, _int_addr1, (int_value, hist) = load_backing_int path location this astate in
+    PulseOperations.write_id ret_id (int_value, Hist.hist path hist) astate |> ok_continue
 
 
   let value_of init_value : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "Integer.valueOf"; location; in_call= Epoch; timestamp}
-    in
-    let new_alloc = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "Integer.valueOf" in
+    let new_alloc = (AbstractValue.mk_fresh (), Hist.single_event path event) in
     let<+> astate = construct path new_alloc init_value event location astate in
     PulseOperations.write_id ret_id new_alloc astate
 end
 
 module JavaPreconditions = struct
   let check_not_null (address, hist) : model =
-   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
-    let event =
-      ValueHistory.Call {f= Model "Preconditions.checkNotNull"; location; in_call= Epoch; timestamp}
-    in
+   fun {location; path; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "Preconditions.checkNotNull" in
     let<+> astate = PulseArithmetic.prune_positive address astate in
-    PulseOperations.write_id ret_id (address, Sequence (event, hist)) astate
+    PulseOperations.write_id ret_id (address, Hist.add_event path event hist) astate
 
 
   let check_state_argument (address, _) : model =
@@ -1733,13 +1700,13 @@ end
 
 module Android = struct
   let text_utils_is_empty ~desc ((addr, hist) as addr_hist) : model =
-   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp} in
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
     let ret_val = AbstractValue.mk_fresh () in
     let astate_null =
       PulseArithmetic.prune_eq_zero addr astate
       >>= PulseArithmetic.and_eq_int ret_val IntLit.one
-      >>| PulseOperations.write_id ret_id (ret_val, Sequence (event, hist))
+      >>| PulseOperations.write_id ret_id (ret_val, Hist.add_event path event hist)
       |> map_continue
     in
     let astate_not_null =
@@ -1747,7 +1714,9 @@ module Android = struct
       let<*> astate, (len_addr, hist) =
         PulseOperations.eval_access path Read location addr_hist string_length_access astate
       in
-      let astate = PulseOperations.write_id ret_id (ret_val, Sequence (event, hist)) astate in
+      let astate =
+        PulseOperations.write_id ret_id (ret_val, Hist.add_event path event hist) astate
+      in
       let astate_empty =
         PulseArithmetic.prune_eq_zero len_addr astate
         >>= PulseArithmetic.and_eq_int ret_val IntLit.one
@@ -1852,10 +1821,10 @@ module Erlang = struct
   let cons_tail_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_tail
 
   (** Helper function to create a Nil structure without assigning it to return value *)
-  let make_nil_no_return {PathContext.timestamp} location astate =
-    let event = ValueHistory.Allocation {f= Model "[]"; location; timestamp} in
+  let make_nil_no_return location path astate =
+    let event = Hist.alloc_event path location "[]" in
     let addr_nil_val = AbstractValue.mk_fresh () in
-    let addr_nil = (addr_nil_val, ValueHistory.singleton event) in
+    let addr_nil = (addr_nil_val, Hist.single_event path event) in
     let astate =
       PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Nil)) addr_nil_val astate
     in
@@ -1864,24 +1833,24 @@ module Erlang = struct
 
   (** Create a Nil structure and assign it to return value *)
   let make_nil : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let addr_nil, astate = make_nil_no_return path location astate in
+   fun {location; path; ret= ret_id, _} astate ->
+    let addr_nil, astate = make_nil_no_return location path astate in
     PulseOperations.write_id ret_id addr_nil astate |> ok_continue
 
 
   (** Helper function to create a Cons structure without assigning it to return value *)
-  let make_cons_no_return astate ({PathContext.timestamp} as path) location hd tl =
-    let event = ValueHistory.Allocation {f= Model "[X|Xs]"; location; timestamp} in
+  let make_cons_no_return astate path location hd tl =
+    let hist = Hist.single_alloc path location "[X|Xs]" in
     let addr_cons_val = AbstractValue.mk_fresh () in
-    let addr_cons = (addr_cons_val, ValueHistory.singleton event) in
+    let addr_cons = (addr_cons_val, hist) in
     let* astate =
       write_field_and_deref path location ~struct_addr:addr_cons
-        ~field_addr:(AbstractValue.mk_fresh (), ValueHistory.singleton event)
+        ~field_addr:(AbstractValue.mk_fresh (), hist)
         ~field_val:hd cons_head_field astate
     in
     let+ astate =
       write_field_and_deref path location ~struct_addr:addr_cons
-        ~field_addr:(AbstractValue.mk_fresh (), ValueHistory.singleton event)
+        ~field_addr:(AbstractValue.mk_fresh (), hist)
         ~field_val:tl cons_tail_field astate
     in
     let astate =
@@ -1936,20 +1905,18 @@ module Erlang = struct
 
   let lists_reverse list : model =
    fun ({location; path; _} as data) astate ->
-    let nil, astate = make_nil_no_return path location astate in
+    let nil, astate = make_nil_no_return location path astate in
     lists_append2 ~reverse:true list nil data astate
 
 
   let erlang_is_list (list_val, _list_hist) : model =
-   fun {location; path= {timestamp}; ret= ret_id, _} astate ->
+   fun {location; path; ret= ret_id, _} astate ->
     let cons_typ = Typ.mk_struct (ErlangType Cons) in
     let nil_typ = Typ.mk_struct (ErlangType Nil) in
     let is_cons = AbstractValue.mk_fresh () in
     let is_nil = AbstractValue.mk_fresh () in
     let is_list = AbstractValue.mk_fresh () in
-    let hist =
-      ValueHistory.singleton (Call {f= Model "erlang:is_list"; location; in_call= Epoch; timestamp})
-    in
+    let hist = Hist.single_call path location "erlang:is_list" in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
     let<*> astate, is_list =
@@ -1961,14 +1928,12 @@ module Erlang = struct
 
 
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
-   fun {location; path= {timestamp} as path; ret= ret_id, _} astate ->
+   fun {location; path; ret= ret_id, _} astate ->
     let tuple_size = List.length args in
     let tuple_typ_name : Typ.name = ErlangType (Tuple tuple_size) in
-    let event = ValueHistory.Allocation {f= Model "{}"; location; timestamp} in
-    let addr_tuple = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
-    let addr_elems =
-      List.map ~f:(function _ -> (AbstractValue.mk_fresh (), ValueHistory.singleton event)) args
-    in
+    let hist = Hist.single_alloc path location "{}" in
+    let addr_tuple = (AbstractValue.mk_fresh (), hist) in
+    let addr_elems = List.map ~f:(function _ -> (AbstractValue.mk_fresh (), hist)) args in
     let mk_field = Fieldname.make tuple_typ_name in
     let field_names = ErlangTypeName.tuple_field_names tuple_size in
     let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
@@ -1994,20 +1959,20 @@ module Erlang = struct
   let map_is_empty_field = mk_map_field "__infer_model_backing_map_is_empty"
 
   let make_map (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
-   fun {location; path= {timestamp} as path; ret= ret_id, _} astate ->
-    let event = ValueHistory.Allocation {f= Model "#{}"; location; timestamp} in
-    let addr_map = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
-    let addr_is_empty = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
+   fun {location; path; ret= ret_id, _} astate ->
+    let hist = Hist.single_alloc path location "#{}" in
+    let addr_map = (AbstractValue.mk_fresh (), hist) in
+    let addr_is_empty = (AbstractValue.mk_fresh (), hist) in
     let is_empty_value = AbstractValue.mk_fresh () in
-    let fresh_val = (is_empty_value, ValueHistory.singleton event) in
+    let fresh_val = (is_empty_value, hist) in
     let is_empty_lit = match args with [] -> IntLit.one | _ -> IntLit.zero in
     (* Reverse the list so we can get last key/value *)
     let<*> astate =
       match List.rev args with
       (* Non-empty map: we just consider the last key/value, rest is ignored (approximation) *)
       | value_arg :: key_arg :: _ ->
-          let addr_key = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
-          let addr_value = (AbstractValue.mk_fresh (), ValueHistory.singleton event) in
+          let addr_key = (AbstractValue.mk_fresh (), hist) in
+          let addr_value = (AbstractValue.mk_fresh (), hist) in
           write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_key
             ~field_val:key_arg.arg_payload map_key_field astate
           >>= write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_value
@@ -2039,19 +2004,17 @@ module Erlang = struct
   let make_astate_goodmap path location map astate = prune_type path location map Map astate
 
   let erlang_is_map (map_val, _map_hist) : model =
-   fun {location; path= {timestamp}; ret= ret_id, _} astate ->
+   fun {location; path; ret= ret_id, _} astate ->
     let typ = Typ.mk_struct (ErlangType Map) in
     let instanceof_val = AbstractValue.mk_fresh () in
-    let hist =
-      ValueHistory.singleton (Call {f= Model "is_map"; location; in_call= Epoch; timestamp})
-    in
+    let hist = Hist.single_call path location "is_map" in
     let<*> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
     PulseOperations.write_id ret_id (instanceof_val, hist) astate |> ok_continue
 
 
   let maps_is_key (key, _key_history) map : model =
-   fun ({location; path= {timestamp} as path; ret= ret_id, _} as data) astate ->
-    let event = ValueHistory.Call {f= Model "maps_is_key"; location; in_call= Epoch; timestamp} in
+   fun ({location; path; ret= ret_id, _} as data) astate ->
+    let hist = Hist.single_call path location "map_is_key" in
     (* Return 3 cases:
      * - Error & assume not map
      * - Ok & assume map & assume empty & return false
@@ -2066,7 +2029,7 @@ module Erlang = struct
       in
       let> astate = [PulseArithmetic.prune_positive is_empty astate] in
       let> astate = [PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate] in
-      [Ok (PulseOperations.write_id ret_id (ret_val_false, ValueHistory.singleton event) astate)]
+      [Ok (PulseOperations.write_id ret_id (ret_val_false, hist) astate)]
     in
     let astate_haskey =
       let ret_val_true = AbstractValue.mk_fresh () in
@@ -2083,7 +2046,7 @@ module Erlang = struct
             (AbstractValueOperand tracked_key) astate ]
       in
       let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
-      [Ok (PulseOperations.write_id ret_id (ret_val_true, ValueHistory.singleton event) astate)]
+      [Ok (PulseOperations.write_id ret_id (ret_val_true, hist) astate)]
     in
     List.map ~f:map_continue (astate_empty @ astate_haskey) @ astate_badmap
 
@@ -2126,13 +2089,13 @@ module Erlang = struct
 
 
   let maps_put key value map : model =
-   fun ({location; path= {timestamp} as path; ret= ret_id, _} as data) astate ->
+   fun ({location; path; ret= ret_id, _} as data) astate ->
     (* Ignore old map. We only store one key/value so we can simply create a new map. *)
     (* Return 2 cases:
      * - Error & assume not map
      * - Ok & assume map & return new map
      *)
-    let hist = ValueHistory.singleton (Allocation {f= Model "maps_put"; location; timestamp}) in
+    let hist = Hist.single_alloc path location "maps_put" in
     let astate_badmap = make_astate_badmap map data astate in
     let astate_ok =
       let addr_map = (AbstractValue.mk_fresh (), hist) in
@@ -2223,7 +2186,7 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> Cplusplus.new_
         ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_array
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
-        ; -"random" <>$$--> Misc.nondet ~fn_name:"random"
+        ; -"random" <>$$--> Misc.nondet ~desc:"random"
         ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin __cast)
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
@@ -2259,10 +2222,11 @@ module ProcNameDispatcher = struct
           $+...$--> Misc.id_first_arg ~desc:"infer_init_list"
         ; +map_context_tenv (PatternMatch.Java.implements_lang "System")
           &:: "exit" <>--> Misc.early_exit
-        ; +BuiltinDecl.(match_builtin __get_array_length) <>--> Misc.return_unknown_size
+        ; +BuiltinDecl.(match_builtin __get_array_length) <>--> Misc.return_unknown_size ~desc:""
         ; (* consider that all fbstrings are small strings to avoid false positives due to manual
              ref-counting *)
-          -"folly" &:: "fbstring_core" &:: "category" &--> Misc.return_int Int64.zero
+          -"folly" &:: "fbstring_core" &:: "category"
+          &--> Misc.return_int Int64.zero ~desc:"folly::fbstring_core::category"
         ; -"folly" &:: "DelayedDestruction" &:: "destroy"
           &++> Misc.unknown_call "folly::DelayedDestruction::destroy is modelled as skip"
         ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
@@ -2352,11 +2316,10 @@ module ProcNameDispatcher = struct
         ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> StdBasicString.data
         ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> StdBasicString.empty
         ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> StdBasicString.length
-        ; -"std" &:: "basic_string" &:: "substr"
-          &--> Misc.nondet ~fn_name:"std::basic_string::substr"
-        ; -"std" &:: "basic_string" &:: "size" &--> Misc.nondet ~fn_name:"std::basic_string::size"
+        ; -"std" &:: "basic_string" &:: "substr" &--> Misc.nondet ~desc:"std::basic_string::substr"
+        ; -"std" &:: "basic_string" &:: "size" &--> Misc.nondet ~desc:"std::basic_string::size"
         ; -"std" &:: "basic_string" &:: "operator[]"
-          &--> Misc.nondet ~fn_name:"std::basic_string::operator[]"
+          &--> Misc.nondet ~desc:"std::basic_string::operator[]"
         ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload
           $--> StdBasicString.destructor
         ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
@@ -2394,7 +2357,7 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $+? capt_arg_payload $--> StdAtomicInteger.operator_t
         ; -"std" &:: "integral_constant" < any_typ &+ capt_int
           >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-          <>--> Misc.return_int
+          <>--> Misc.return_int ~desc:"std::integral_constant"
         ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
           $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
           $+...$--> StdVector.init_list_constructor
@@ -2547,7 +2510,7 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv PatternMatch.Java.implements_map
           &:: "putAll" <>$ capt_arg_payload $+...$--> StdVector.push_back
         ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> StdVector.reserve
-        ; -"std" &:: "vector" &:: "size" &--> Misc.nondet ~fn_name:"std::vector::size"
+        ; -"std" &:: "vector" &:: "size" &--> Misc.nondet ~desc:"std::vector::size"
         ; +map_context_tenv PatternMatch.Java.implements_collection
           &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
           $--> StdVector.at ~desc:"Collection.get()"
@@ -2555,13 +2518,12 @@ module ProcNameDispatcher = struct
           &:: "set" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $--> JavaCollection.set
         ; +map_context_tenv PatternMatch.Java.implements_iterator
           &:: "hasNext"
-          &--> Misc.nondet ~fn_name:"Iterator.hasNext()"
+          &--> Misc.nondet ~desc:"Iterator.hasNext()"
         ; +map_context_tenv PatternMatch.Java.implements_enumeration
           &:: "hasMoreElements"
-          &--> Misc.nondet ~fn_name:"Enumeration.hasMoreElements()"
+          &--> Misc.nondet ~desc:"Enumeration.hasMoreElements()"
         ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
-          &:: "equals"
-          &--> Misc.nondet ~fn_name:"Object.equals"
+          &:: "equals" &--> Misc.nondet ~desc:"Object.equals"
         ; +map_context_tenv (PatternMatch.Java.implements_lang "Iterable")
           &:: "iterator" <>$ capt_arg_payload
           $+...$--> JavaIterator.constructor ~desc:"Iterable.iterator"
