@@ -199,9 +199,9 @@ let excise_seg_same ({com; min; sub} as goal) msg ssg =
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_ (Formula.eq a a') (Sh.rem_seg ssg sub)) )
+    Sh.andN
+      [Formula.eq b b'; Formula.eq m m'; Formula.eq a a']
+      (Sh.rem_seg ssg sub)
   in
   goal |> with_ ~com ~min ~sub
 
@@ -238,9 +238,9 @@ let excise_seg_sub_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg o_n
          (Sh.rem_seg msg min) )
   in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_ (Formula.eq a0 a') (Sh.rem_seg ssg sub)) )
+    Sh.andN
+      [Formula.eq b b'; Formula.eq m m'; Formula.eq a0 a']
+      (Sh.rem_seg ssg sub)
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -270,14 +270,13 @@ let excise_seg_min_prefix ({us; com; min; xs; sub; zs} as goal) msg ssg n_o
   let min = Sh.rem_seg msg min in
   let a1', xs, zs, _ = fresh_var "a1" xs zs ~wrt:(Var.Set.union us xs) in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_
-            (eq_concat (n, a') [|(o, a); (n_o, a1')|])
-            (Sh.star
-               (Sh.seg
-                  {loc= Term.add l o; bas= b'; len= m'; siz= n_o; cnt= a1'} )
-               (Sh.rem_seg ssg sub) ) ) )
+    Sh.andN
+      [ Formula.eq b b'
+      ; Formula.eq m m'
+      ; eq_concat (n, a') [|(o, a); (n_o, a1')|] ]
+      (Sh.star
+         (Sh.seg {loc= Term.add l o; bas= b'; len= m'; siz= n_o; cnt= a1'})
+         (Sh.rem_seg ssg sub) )
   in
   goal |> with_ ~com ~min ~xs ~sub ~zs
 
@@ -316,9 +315,9 @@ let excise_seg_sub_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
          (Sh.rem_seg msg min) )
   in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_ (Formula.eq a1 a') (Sh.rem_seg ssg sub)) )
+    Sh.andN
+      [Formula.eq b b'; Formula.eq m m'; Formula.eq a1 a']
+      (Sh.rem_seg ssg sub)
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -363,9 +362,9 @@ let excise_seg_sub_infix ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
             (Sh.rem_seg msg min) ) )
   in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_ (Formula.eq a1 a') (Sh.rem_seg ssg sub)) )
+    Sh.andN
+      [Formula.eq b b'; Formula.eq m m'; Formula.eq a1 a']
+      (Sh.rem_seg ssg sub)
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -409,13 +408,13 @@ let excise_seg_min_skew ({us; com; min; xs; sub; zs} as goal) msg ssg l_k
          (Sh.rem_seg msg min) )
   in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_
-            (eq_concat (n, a') [|(ko_l, a1); (ln_ko, a2')|])
-            (Sh.star
-               (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; cnt= a2'})
-               (Sh.rem_seg ssg sub) ) ) )
+    Sh.andN
+      [ Formula.eq b b'
+      ; Formula.eq m m'
+      ; eq_concat (n, a') [|(ko_l, a1); (ln_ko, a2')|] ]
+      (Sh.star
+         (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; cnt= a2'})
+         (Sh.rem_seg ssg sub) )
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -445,13 +444,13 @@ let excise_seg_min_suffix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_
-            (eq_concat (n, a') [|(k_l, a0'); (o, a)|])
-            (Sh.star
-               (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
-               (Sh.rem_seg ssg sub) ) ) )
+    Sh.andN
+      [ Formula.eq b b'
+      ; Formula.eq m m'
+      ; eq_concat (n, a') [|(k_l, a0'); (o, a)|] ]
+      (Sh.star
+         (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
+         (Sh.rem_seg ssg sub) )
   in
   goal |> with_ ~com ~min ~xs ~sub ~zs
 
@@ -485,15 +484,15 @@ let excise_seg_min_infix ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
   let com = Sh.star (Sh.seg msg) com in
   let min = Sh.rem_seg msg min in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_
-            (eq_concat (n, a') [|(k_l, a0'); (o, a); (ln_ko, a2')|])
-            (Sh.star
-               (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
-               (Sh.star
-                  (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; cnt= a2'})
-                  (Sh.rem_seg ssg sub) ) ) ) )
+    Sh.andN
+      [ Formula.eq b b'
+      ; Formula.eq m m'
+      ; eq_concat (n, a') [|(k_l, a0'); (o, a); (ln_ko, a2')|] ]
+      (Sh.star
+         (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
+         (Sh.star
+            (Sh.seg {loc= ko; bas= b'; len= m'; siz= ln_ko; cnt= a2'})
+            (Sh.rem_seg ssg sub) ) )
   in
   goal |> with_ ~com ~min ~xs ~sub ~zs
 
@@ -536,13 +535,13 @@ let excise_seg_sub_skew ({us; com; min; xs; sub; zs} as goal) msg ssg k_l
          (Sh.rem_seg msg min) )
   in
   let sub =
-    Sh.and_ (Formula.eq b b')
-      (Sh.and_ (Formula.eq m m')
-         (Sh.and_
-            (eq_concat (n, a') [|(k_l, a0'); (ln_k, a1)|])
-            (Sh.star
-               (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
-               (Sh.rem_seg ssg sub) ) ) )
+    Sh.andN
+      [ Formula.eq b b'
+      ; Formula.eq m m'
+      ; eq_concat (n, a') [|(k_l, a0'); (ln_k, a1)|] ]
+      (Sh.star
+         (Sh.seg {loc= l; bas= b'; len= m'; siz= k_l; cnt= a0'})
+         (Sh.rem_seg ssg sub) )
   in
   goal |> with_ ~us ~com ~min ~xs ~sub ~zs
 
@@ -560,10 +559,7 @@ let excise_seg ({sub} as goal) msg ssg =
   then
     Some
       ( goal
-      |> with_
-           ~sub:
-             (Sh.and_ (Formula.eq b b')
-                (Sh.and_ (Formula.eq m m') goal.sub) ) )
+      |> with_ ~sub:(Sh.andN [Formula.eq b b'; Formula.eq m m'] goal.sub) )
   else
     match Int.sign (Z.sign k_l) with
     (* k-l < 0 so k < l *)

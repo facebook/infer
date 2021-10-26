@@ -648,6 +648,8 @@ let and_ b q =
     let xs, q = bind_exists q ~wrt:(Formula.fv b) in
     exists xs (star p q)
 
+let andN bs q = and_ (Formula.andN bs) q
+
 let and_subst subst q =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" Context.Subst.pp subst pp q]
   ;

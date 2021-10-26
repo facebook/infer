@@ -110,8 +110,10 @@ let move_spec reg_exps =
   in
   let+ sub, ms = Fresh.assign ~ws ~rs in
   let post =
-    IArray.fold reg_exps Sh.emp ~f:(fun (reg, exp) post ->
-        Sh.and_ (Formula.eq (Term.var reg) (Term.rename sub exp)) post )
+    Sh.pure
+      (Formula.andN
+         (IArray.fold reg_exps [] ~f:(fun (reg, exp) eqs ->
+              Formula.eq (Term.var reg) (Term.rename sub exp) :: eqs ) ) )
   in
   {foot; sub; ms; post}
 
@@ -173,14 +175,16 @@ let atomic_cmpxchg_spec reg ptr cmp exp len len1 =
   let a_eq_c = Formula.rename sub (Formula.eq cmp a) in
   let a_dq_c = Formula.not_ a_eq_c in
   let post_succ =
-    Sh.and_
-      (Formula.eq (Term.var reg) (Term.concat [|l_a; bit Formula.tt|]))
-      (Sh.and_ a_eq_c (Sh.rename sub (Sh.seg {foot_seg with cnt= exp})))
+    Sh.andN
+      [ Formula.eq (Term.var reg) (Term.concat [|l_a; bit Formula.tt|])
+      ; a_eq_c ]
+      (Sh.rename sub (Sh.seg {foot_seg with cnt= exp}))
   in
   let post_fail =
-    Sh.and_
-      (Formula.eq (Term.var reg) (Term.concat [|l_a; bit Formula.ff|]))
-      (Sh.and_ a_dq_c (Sh.rename sub foot))
+    Sh.andN
+      [ Formula.eq (Term.var reg) (Term.concat [|l_a; bit Formula.ff|])
+      ; a_dq_c ]
+      (Sh.rename sub foot)
   in
   let post = Sh.or_ post_succ post_fail in
   {foot; sub; ms; post}
@@ -202,9 +206,7 @@ let memset_spec dst byt len =
 let memcpy_eq_spec dst src len =
   let+ seg = Fresh.seg dst ~len in
   let dst_heap = Sh.seg seg in
-  let foot =
-    Sh.and_ (Formula.eq dst src) (Sh.and_ (Formula.eq0 len) dst_heap)
-  in
+  let foot = Sh.andN [Formula.eq dst src; Formula.eq0 len] dst_heap in
   let post = dst_heap in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -259,8 +261,7 @@ let memmov_foot dst src len =
   let seg_siz = Term.add len (Term.sub src dst) in
   let seg = Sh.seg {loc= dst; bas; len= siz; siz= seg_siz; cnt} in
   let foot =
-    Sh.and_ (Formula.lt dst src)
-      (Sh.and_ (Formula.lt src (Term.add dst len)) seg)
+    Sh.andN [Formula.lt dst src; Formula.lt src (Term.add dst len)] seg
   in
   (bas, siz, mem_dst, mem_mid, mem_src, seg_siz, foot)
 
@@ -483,13 +484,12 @@ let xallocx_spec reg ptr siz ext =
   let a1 = seg'.cnt in
   let+ a2 = Fresh.var "a" in
   let post =
-    Sh.and_
-      (Formula.and_
-         (Formula.cond ~cnd:(Formula.le len siz)
-            ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]) )
-         (Formula.and_ (Formula.le siz reg)
-            (Formula.le reg (Term.add siz ext)) ) )
+    Sh.andN
+      [ Formula.cond ~cnd:(Formula.le len siz)
+          ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
+          ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|])
+      ; Formula.le siz reg
+      ; Formula.le reg (Term.add siz ext) ]
       (Sh.seg seg')
   in
   {foot; sub; ms; post}
@@ -542,8 +542,9 @@ let mallctl_read_spec r i w n =
   let* rseg = Fresh.seg r ~siz:iseg.cnt in
   let+ a = Fresh.var "a" in
   let foot =
-    Sh.and_ (Formula.eq0 w)
-      (Sh.and_ (Formula.eq0 n) (Sh.star (Sh.seg iseg) (Sh.seg rseg)))
+    Sh.andN
+      [Formula.eq0 w; Formula.eq0 n]
+      (Sh.star (Sh.seg iseg) (Sh.seg rseg))
   in
   let rseg' = {rseg with cnt= a} in
   let post = Sh.star (Sh.seg rseg') (Sh.seg iseg) in
@@ -563,8 +564,7 @@ let mallctlbymib_read_spec p l r i w n =
   let const = Sh.star (Sh.seg pseg) (Sh.seg iseg) in
   let+ a = Fresh.var "a" in
   let foot =
-    Sh.and_ (Formula.eq0 w)
-      (Sh.and_ (Formula.eq0 n) (Sh.star const (Sh.seg rseg)))
+    Sh.andN [Formula.eq0 w; Formula.eq0 n] (Sh.star const (Sh.seg rseg))
   in
   let rseg' = {rseg with cnt= a} in
   let post = Sh.star (Sh.seg rseg') const in
@@ -577,7 +577,7 @@ let mallctlbymib_read_spec p l r i w n =
 let mallctl_write_spec r i w n =
   let+ seg = Fresh.seg w ~siz:n in
   let post = Sh.seg seg in
-  let foot = Sh.and_ (Formula.eq0 r) (Sh.and_ (Formula.eq0 i) post) in
+  let foot = Sh.andN [Formula.eq0 r; Formula.eq0 i] post in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { p-[_;_)->⟨W×l,_⟩ * r=0 * i=0 * w-[_;_)->⟨n,_⟩ }
@@ -590,7 +590,7 @@ let mallctlbymib_write_spec p l r i w n =
   let* pseg = Fresh.seg p ~siz:wl in
   let+ wseg = Fresh.seg w ~siz:n in
   let post = Sh.star (Sh.seg pseg) (Sh.seg wseg) in
-  let foot = Sh.and_ (Formula.eq0 r) (Sh.and_ (Formula.eq0 i) post) in
+  let foot = Sh.andN [Formula.eq0 r; Formula.eq0 i] post in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 let mallctl_specs r i w n =
