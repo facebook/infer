@@ -74,7 +74,7 @@ module Attribute = struct
 
   let to_rank = Variants.to_rank
 
-  let dummy_trace = Trace.Immediate {location= Location.dummy; history= []}
+  let dummy_trace = Trace.Immediate {location= Location.dummy; history= Epoch}
 
   let closure_rank = Variants.to_rank (Closure (Procname.from_string_c_fun ""))
 
@@ -84,7 +84,7 @@ module Attribute = struct
     let pname = Procname.from_string_c_fun "" in
     let var = Var.of_pvar (Pvar.mk (Mangled.from_string "") pname) in
     let location = Location.dummy in
-    Variants.to_rank (AddressOfStackVariable (var, location, []))
+    Variants.to_rank (AddressOfStackVariable (var, location, Epoch))
 
 
   let invalid_rank =
@@ -124,7 +124,7 @@ module Attribute = struct
 
   let uninitialized_rank = Variants.to_rank Uninitialized
 
-  let unknown_effect_rank = Variants.to_rank (UnknownEffect (Model "", []))
+  let unknown_effect_rank = Variants.to_rank (UnknownEffect (Model "", Epoch))
 
   let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
 
@@ -230,7 +230,9 @@ module Attribute = struct
         MustBeInitialized (timestamp, add_call_to_trace trace)
     | UnknownEffect (call, hist) ->
         UnknownEffect
-          (call, [Call {f= Call proc_name; location= call_location; in_call= hist; timestamp}])
+          ( call
+          , ValueHistory.singleton
+              (Call {f= Call proc_name; location= call_location; in_call= hist; timestamp}) )
     | WrittenTo trace ->
         WrittenTo (add_call_to_trace trace)
     | ( AddressOfCppTemporary _

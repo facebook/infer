@@ -160,12 +160,12 @@ module Closures = struct
     let captured_addresses =
       List.filter_map captured ~f:(fun (captured_as, (address_captured, trace_captured), mode) ->
           let new_trace =
-            ValueHistory.Capture {captured_as; mode; location; timestamp} :: trace_captured
+            ValueHistory.Sequence (Capture {captured_as; mode; location; timestamp}, trace_captured)
           in
           Some (mode, address_captured, new_trace) )
     in
     let closure_addr_hist =
-      (AbstractValue.mk_fresh (), [ValueHistory.Assignment (location, timestamp)])
+      (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
     in
     let fake_capture_edges = mk_capture_edges captured_addresses in
     let astate =
@@ -209,11 +209,12 @@ let eval path mode location exp0 astate =
     match (exp : Exp.t) with
     | Var id ->
         Ok
-          (Stack.eval path location (* error in case of missing history? *) [] (Var.of_id id) astate)
+          (Stack.eval path location (* error in case of missing history? *) Epoch (Var.of_id id)
+             astate )
     | Lvar pvar ->
         Ok
           (Stack.eval path location
-             [ValueHistory.VariableAccessed (pvar, location, timestamp)]
+             (ValueHistory.singleton (VariableAccessed (pvar, location, timestamp)))
              (Var.of_pvar pvar) astate )
     | Lfield (exp', field, _) ->
         let* astate, addr_hist = eval path Read exp' astate in
@@ -243,15 +244,15 @@ let eval path mode location exp0 astate =
         let+ astate =
           PulseArithmetic.and_eq_int v i astate
           >>| AddressAttributes.invalidate
-                (v, [ValueHistory.Assignment (location, timestamp)])
+                (v, ValueHistory.singleton (Assignment (location, timestamp)))
                 invalidation location
         in
-        (astate, (v, [ValueHistory.Invalidated (invalidation, location, timestamp)]))
+        (astate, (v, ValueHistory.singleton (Invalidated (invalidation, location, timestamp))))
     | Const (Cstr s) ->
         let v = AbstractValue.mk_fresh () in
         let* astate, (len_addr, hist) =
           eval_access path Write location
-            (v, [Assignment (location, timestamp)])
+            (v, ValueHistory.singleton (Assignment (location, timestamp)))
             (FieldAccess ModeledField.string_length) astate
         in
         let len_int = IntLit.of_int (String.length s) in
@@ -273,7 +274,7 @@ let eval path mode location exp0 astate =
         in
         (astate, (binop_addr, hist_lhs))
     | Const _ | Sizeof _ | Exn _ ->
-        Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) []))
+        Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.Epoch))
   in
   eval path mode exp0 astate
 
@@ -281,7 +282,7 @@ let eval path mode location exp0 astate =
 let eval_to_operand path location exp astate =
   match (exp : Exp.t) with
   | Const (Cint i) ->
-      Ok (astate, PulseArithmetic.LiteralOperand i, [])
+      Ok (astate, PulseArithmetic.LiteralOperand i, ValueHistory.Epoch)
   | exp ->
       let+ astate, (value, hist) = eval path Read location exp astate in
       (astate, PulseArithmetic.AbstractValueOperand value, hist)
@@ -296,7 +297,7 @@ let prune path location ~condition astate =
         let+ astate = PulseArithmetic.prune_binop ~negated bop lhs_op rhs_op astate in
         let hist =
           match (lhs_hist, rhs_hist) with
-          | [], hist | hist, [] ->
+          | ValueHistory.Epoch, hist | hist, ValueHistory.Epoch ->
               (* if one history is empty then just propagate the other one (which could also be
                  empty) *)
               hist
@@ -370,7 +371,7 @@ let realloc_pvar tenv ({PathContext.timestamp} as path) pvar typ location astate
   let addr = AbstractValue.mk_fresh () in
   let astate =
     Stack.add (Var.of_pvar pvar)
-      (addr, [ValueHistory.VariableDeclared (pvar, location, timestamp)])
+      (addr, ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)))
       astate
   in
   AbductiveDomain.set_uninitialized tenv path (`LocalDecl (pvar, Some addr)) typ location astate
@@ -447,7 +448,7 @@ let record_invalidation ({PathContext.timestamp} as path) access_path location c
   match access_path with
   | StackAddress (x, hist0) ->
       let astate, (addr, hist) = Stack.eval path location hist0 x astate in
-      Stack.add x (addr, Invalidated (cause, location, timestamp) :: hist) astate
+      Stack.add x (addr, Sequence (Invalidated (cause, location, timestamp), hist)) astate
   | MemoryAccess {pointer; access; hist_obj_default} ->
       let addr_obj, hist_obj =
         match Memory.find_edge_opt (fst pointer) access astate with
@@ -457,7 +458,7 @@ let record_invalidation ({PathContext.timestamp} as path) access_path location c
             (AbstractValue.mk_fresh (), hist_obj_default)
       in
       Memory.add_edge pointer access
-        (addr_obj, Invalidated (cause, location, timestamp) :: hist_obj)
+        (addr_obj, Sequence (Invalidated (cause, location, timestamp), hist_obj))
         location astate
   | UntraceableAccess ->
       astate
@@ -522,7 +523,9 @@ let shallow_copy ({PathContext.timestamp} as path) location addr_hist astate =
     | Some cell ->
         cell
   in
-  let copy = (AbstractValue.mk_fresh (), [ValueHistory.Assignment (location, timestamp)]) in
+  let copy =
+    (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
+  in
   (AbductiveDomain.set_post_cell copy cell location astate, copy)
 
 

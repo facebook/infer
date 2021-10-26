@@ -90,7 +90,7 @@ let fold_globals_of_stack ({PathContext.timestamp} as path) call_loc stack call_
           let call_state, addr_hist_caller =
             let astate, var_value =
               Stack.eval path call_loc
-                [ValueHistory.VariableAccessed (pvar, call_loc, timestamp)]
+                (ValueHistory.singleton (VariableAccessed (pvar, call_loc, timestamp)))
                 var call_state.astate
             in
             if phys_equal astate call_state.astate then (call_state, var_value)
@@ -164,7 +164,9 @@ let translate_access_to_caller subst (access_callee : BaseMemory.Access.t) : _ *
     =
   match access_callee with
   | ArrayAccess (typ, val_callee) ->
-      let subst, (val_caller, _) = subst_find_or_new subst val_callee ~default_hist_caller:[] in
+      let subst, (val_caller, _) =
+        subst_find_or_new subst val_callee ~default_hist_caller:ValueHistory.Epoch
+      in
       (subst, ArrayAccess (typ, val_caller))
   | FieldAccess _ | TakeAddress | Dereference ->
       (subst, access_callee)
@@ -408,9 +410,9 @@ let record_post_cell {PathContext.timestamp} callee_proc_name call_loc ~edges_pr
         let translated_edges =
           BaseMemory.Edges.add access
             ( addr_curr
-            , ValueHistory.Call
-                {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp}
-              :: hist_curr )
+            , ValueHistory.Sequence
+                ( Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp}
+                , hist_curr ) )
             translated_edges
         in
         (subst, translated_edges) )
@@ -509,7 +511,7 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
           | Some return_caller_hist ->
               return_caller_hist
           | None ->
-              (AbstractValue.mk_fresh (), [])
+              (AbstractValue.mk_fresh (), ValueHistory.Epoch)
         in
         L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp return_caller ;
         let call_state =
@@ -519,9 +521,13 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
         in
         (* need to add the call to the returned history too *)
         let return_caller_hist =
-          ValueHistory.Call
-            {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist; timestamp}
-          :: return_caller_hist
+          ValueHistory.Sequence
+            ( Call
+                { f= Call callee_proc_name
+                ; location= call_loc
+                ; in_call= return_callee_hist
+                ; timestamp }
+            , return_caller_hist )
         in
         (call_state, Some (return_caller, return_caller_hist)) )
 
@@ -587,7 +593,8 @@ let record_skipped_calls callee_proc_name call_loc pre_post call_state =
   let callee_skipped_map =
     pre_post.AbductiveDomain.skipped_calls
     |> SkippedCalls.map (fun trace ->
-           Trace.ViaCall {f= Call callee_proc_name; location= call_loc; history= []; in_call= trace} )
+           Trace.ViaCall
+             {f= Call callee_proc_name; location= call_loc; history= Epoch; in_call= trace} )
   in
   let astate = AbductiveDomain.add_skipped_calls callee_skipped_map call_state.astate in
   {call_state with astate}

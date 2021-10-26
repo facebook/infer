@@ -90,7 +90,7 @@ module PulseTransferFunctions = struct
         in
         (* invalidate [&x] *)
         PulseOperations.invalidate path
-          (StackAddress (Var.of_pvar pvar, []))
+          (StackAddress (Var.of_pvar pvar, Epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
     | ISLLatentMemoryError _
@@ -370,11 +370,11 @@ module PulseTransferFunctions = struct
             let write_function lhs_addr_hist astate =
               if is_structured then
                 PulseOperations.write_deref_biad_isl path loc ~ref:lhs_addr_hist Dereference
-                  ~obj:(rhs_addr, event :: rhs_history)
+                  ~obj:(rhs_addr, Sequence (event, rhs_history))
                   astate
               else
                 [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist
-                    ~obj:(rhs_addr, event :: rhs_history)
+                    ~obj:(rhs_addr, Sequence (event, rhs_history))
                     astate ]
             in
             let astates =
@@ -414,9 +414,8 @@ module PulseTransferFunctions = struct
                 let path =
                   if Sil.is_terminated_if_kind if_kind then
                     let hist =
-                      ValueHistory.ConditionPassed
-                        {if_kind; is_then_branch; location= loc; timestamp}
-                      :: hist
+                      ValueHistory.Sequence
+                        (ConditionPassed {if_kind; is_then_branch; location= loc; timestamp}, hist)
                     in
                     {path with conditions= hist :: path.conditions}
                   else path

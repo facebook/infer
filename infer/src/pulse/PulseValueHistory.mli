@@ -29,15 +29,24 @@ type event =
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
-and t = event list [@@deriving compare, equal, yojson_of]
+and t = Epoch | Sequence of event * t [@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
 
 val pp_fields : F.formatter -> Fieldname.t RevList.t -> unit
 
-val iter : t -> f:(event -> unit) -> unit
+val singleton : event -> t
+
+type iter_event =
+  | EnterCall of CallEvent.t * Location.t
+  | ReturnFromCall of CallEvent.t * Location.t
+  | Event of event
+
+val iter : t -> f:(iter_event -> unit) -> unit
 (** iterate on all events, recursing into the histories inside call events *)
 
 val location_of_event : event -> Location.t
 
 val add_to_errlog : nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
+
+val get_first_event : t -> event option

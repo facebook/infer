@@ -31,7 +31,9 @@ type event =
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
-and t = event list [@@deriving compare, equal]
+and t = Epoch | Sequence of event * t [@@deriving compare, equal]
+
+let singleton event = Sequence (event, Epoch)
 
 let location_of_event = function
   | Allocation {location}
@@ -50,27 +52,31 @@ let location_of_event = function
       location
 
 
+type iter_event =
+  | EnterCall of CallEvent.t * Location.t
+  | ReturnFromCall of CallEvent.t * Location.t
+  | Event of event
+
 let rec iter_event event ~f =
-  f event ;
-  match event with
-  | Call {in_call} ->
-      iter in_call ~f
-  | Allocation _
-  | Assignment _
-  | Capture _
-  | ConditionPassed _
-  | CppTemporaryCreated _
-  | FormalDeclared _
-  | Invalidated _
-  | NilMessaging _
-  | Returned _
-  | StructFieldAddressCreated _
-  | VariableAccessed _
-  | VariableDeclared _ ->
+  ( match event with
+  | Call {f= callee; location; in_call= Sequence _ as in_call} ->
+      f (ReturnFromCall (callee, location)) ;
+      iter in_call ~f ;
+      f (EnterCall (callee, location)) ;
       ()
+  | _ ->
+      () ) ;
+  f (Event event)
 
 
-and iter history ~f = List.iter history ~f:(fun event -> iter_event ~f event)
+and iter (history : t) ~f =
+  match history with
+  | Epoch ->
+      ()
+  | Sequence (event, rest) ->
+      iter_event event ~f ;
+      iter rest ~f
+
 
 let yojson_of_event = [%yojson_of: _]
 
@@ -97,8 +103,29 @@ let pp_event_no_location fmt event =
       F.fprintf fmt "value captured %s as `%a`"
         (CapturedVar.string_of_capture_mode mode)
         Pvar.pp_value_non_verbose captured_as
-  | ConditionPassed {is_then_branch; if_kind} ->
-      F.fprintf fmt "expression in %a condition is %b" Sil.pp_if_kind if_kind is_then_branch
+  | ConditionPassed {if_kind; is_then_branch} ->
+      ( match (is_then_branch, if_kind) with
+      | true, Ik_if _ ->
+          "taking \"then\" branch"
+      | false, Ik_if _ ->
+          "taking \"else\" branch"
+      | true, (Ik_for | Ik_while | Ik_dowhile) ->
+          "loop condition is true; entering loop body"
+      | false, (Ik_for | Ik_while | Ik_dowhile) ->
+          "loop condition is false; leaving loop"
+      | true, Ik_switch ->
+          "switch condition is true, entering switch case"
+      | false, Ik_switch ->
+          "switch condition is false, skipping switch case"
+      | true, Ik_compexch ->
+          "pointer contains expected value; writing desired to pointer"
+      | false, Ik_compexch ->
+          "pointer does not contain expected value; writing to expected"
+      | true, (Ik_bexp _ | Ik_land_lor) ->
+          "condition is true"
+      | false, (Ik_bexp _ | Ik_land_lor) ->
+          "condition is false" )
+      |> F.pp_print_string fmt
   | CppTemporaryCreated _ ->
       F.pp_print_string fmt "C++ temporary created"
   | FormalDeclared (pvar, _, _) ->
@@ -127,18 +154,17 @@ let pp_event fmt event =
 
 let pp fmt history =
   let rec pp_aux fmt = function
-    | [] ->
+    | Epoch ->
         ()
-    | (Call {f; in_call} as event) :: tail ->
+    | Sequence ((Call {in_call} as event), tail) ->
         F.fprintf fmt "%a@;" pp_event event ;
-        F.fprintf fmt "[%a]@;" pp_aux (List.rev in_call) ;
-        if not (List.is_empty in_call) then F.fprintf fmt "return from call to %a@;" CallEvent.pp f ;
+        F.fprintf fmt "[%a]@;" pp_aux in_call ;
         pp_aux fmt tail
-    | event :: tail ->
+    | Sequence (event, tail) ->
         F.fprintf fmt "%a@;" pp_event event ;
         pp_aux fmt tail
   in
-  F.fprintf fmt "@[%a@]" pp_aux (List.rev history)
+  F.fprintf fmt "@[%a@]" pp_aux history
 
 
 let add_event_to_errlog ~nesting event errlog =
@@ -155,18 +181,21 @@ let add_returned_from_call_to_errlog ~nesting f location errlog =
 
 
 let add_to_errlog ~nesting history errlog =
-  let rec add_to_errlog_aux ~nesting history errlog =
-    match history with
-    | [] ->
-        errlog
-    | (Call {f; location; in_call} as event) :: tail ->
-        add_to_errlog_aux ~nesting tail
-        @@ add_event_to_errlog ~nesting event
-        @@ add_to_errlog_aux ~nesting:(nesting + 1) in_call
-        @@ ( if List.is_empty in_call then Fn.id
-           else add_returned_from_call_to_errlog ~nesting f location )
-        @@ errlog
-    | event :: tail ->
-        add_to_errlog_aux ~nesting tail @@ add_event_to_errlog ~nesting event @@ errlog
+  let nesting = ref nesting in
+  let errlog = ref errlog in
+  let one_iter_event = function
+    | Event event ->
+        errlog := add_event_to_errlog ~nesting:!nesting event !errlog
+    | EnterCall _ ->
+        decr nesting
+    | ReturnFromCall (call, location) ->
+        errlog := add_returned_from_call_to_errlog ~nesting:!nesting call location !errlog ;
+        incr nesting
   in
-  add_to_errlog_aux ~nesting history errlog
+  iter history ~f:one_iter_event ;
+  !errlog
+
+
+let get_first_event hist =
+  Iter.head (Iter.rev (fun f -> iter hist ~f))
+  |> Option.bind ~f:(function Event event -> Some event | _ -> None)

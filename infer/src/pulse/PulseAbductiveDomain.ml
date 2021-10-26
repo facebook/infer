@@ -159,7 +159,7 @@ module Stack = struct
         in
         let post_attrs =
           if Config.pulse_isl then
-            let access_trace = Trace.Immediate {location; history= []} in
+            let access_trace = Trace.Immediate {location; history= Epoch} in
             BaseAddressAttributes.add_one addr
               (MustBeValid (path.PathContext.timestamp, access_trace, None))
               (astate.post :> base_domain).attrs
@@ -170,7 +170,7 @@ module Stack = struct
           if (not (BaseStack.mem var (astate.pre :> base_domain).stack)) && is_abducible astate var
           then
             (* HACK: do not record the history of values in the pre as they are unused *)
-            let foot_stack = BaseStack.add var (addr, []) (astate.pre :> base_domain).stack in
+            let foot_stack = BaseStack.add var (addr, Epoch) (astate.pre :> base_domain).stack in
             let foot_heap = BaseMemory.register_address addr (astate.pre :> base_domain).heap in
             PreDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
           else astate.pre
@@ -434,7 +434,7 @@ module Memory = struct
         let foot_heap =
           if BaseMemory.mem addr_src (astate.pre :> base_domain).heap then
             (* HACK: do not record the history of values in the pre as they are unused *)
-            BaseMemory.add_edge addr_src access (addr_dst, []) (astate.pre :> base_domain).heap
+            BaseMemory.add_edge addr_src access (addr_dst, Epoch) (astate.pre :> base_domain).heap
             |> BaseMemory.register_address addr_dst
           else (astate.pre :> base_domain).heap
         in
@@ -455,7 +455,7 @@ let add_edge_on_src timestamp src location stack =
     match addr_opt with
     | None ->
         let addr = AbstractValue.mk_fresh () in
-        let history = [ValueHistory.VariableDeclared (pvar, location, timestamp)] in
+        let history = ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)) in
         (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
     | Some addr ->
         (stack, addr) )
@@ -472,7 +472,7 @@ let rec set_uninitialized_post tenv timestamp src typ location ?(fields_prefix =
       let attrs =
         if Config.pulse_isl then
           BaseAddressAttributes.add_one addr
-            (MustBeValid (Timestamp.t0, Immediate {location; history= []}, None))
+            (MustBeValid (Timestamp.t0, Immediate {location; history= Epoch}, None))
             attrs
         else attrs
       in
@@ -497,7 +497,7 @@ let rec set_uninitialized_post tenv timestamp src typ location ?(fields_prefix =
               let field_addr = AbstractValue.mk_fresh () in
               let fields = RevList.cons field fields_prefix in
               let history =
-                [ValueHistory.StructFieldAddressCreated (fields, location, timestamp)]
+                ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
               in
               let heap =
                 BaseMemory.add_edge addr (HilExp.Access.FieldAccess field) (field_addr, history)
@@ -525,7 +525,8 @@ let mk_initial tenv proc_desc =
       let pvar = Pvar.mk mangled proc_name in
       ( Var.of_pvar pvar
       , typ
-      , (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location, Timestamp.t0)]) )
+      , ( AbstractValue.mk_fresh ()
+        , ValueHistory.singleton (FormalDeclared (pvar, location, Timestamp.t0)) ) )
     in
     let formals =
       Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, typ) -> init_var mangled typ)
@@ -547,7 +548,7 @@ let mk_initial tenv proc_desc =
       match typ.Typ.desc with
       | Typ.Tptr _ ->
           let addr_dst = AbstractValue.mk_fresh () in
-          BaseMemory.add_edge addr Dereference (addr_dst, []) heap
+          BaseMemory.add_edge addr Dereference (addr_dst, Epoch) heap
           |> BaseMemory.register_address addr_dst
       | _ ->
           heap
@@ -560,7 +561,7 @@ let mk_initial tenv proc_desc =
       List.fold formals_and_captured ~init:(PreDomain.empty :> base_domain).attrs
         ~f:(fun attrs (_, _, (addr, _)) ->
           BaseAddressAttributes.add_one addr
-            (MustBeValid (Timestamp.t0, Immediate {location; history= []}, None))
+            (MustBeValid (Timestamp.t0, Immediate {location; history= Epoch}, None))
             attrs )
     else BaseDomain.empty.attrs
   in

@@ -20,9 +20,11 @@ let is_ptr_to_const formal_typ_opt =
 
 let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) ~ret ~actuals
     ~formals_opt astate =
-  let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []; timestamp} in
+  let hist =
+    ValueHistory.singleton (Call {f= reason; location= call_loc; in_call= Epoch; timestamp})
+  in
   let ret_val = AbstractValue.mk_fresh () in
-  let astate = PulseOperations.write_id (fst ret) (ret_val, [event]) astate in
+  let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
   (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the
      same value for the same inputs *)
   let is_functional = ref true in
@@ -31,7 +33,6 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
     match actual_typ.Typ.desc with
     | Tptr _ when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
         is_functional := false ;
-        let hist = [event] in
         (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
            by [actual] *)
         AbductiveDomain.apply_unknown_effect hist actual astate
@@ -65,7 +66,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
     match reason with
     | SkippedKnownCall proc_name ->
         AbductiveDomain.add_skipped_call proc_name
-          (Trace.Immediate {location= call_loc; history= []})
+          (Trace.Immediate {location= call_loc; history= Epoch})
           astate
     | _ ->
         astate
@@ -108,8 +109,8 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               PulseOperations.write_id (fst ret) return_val_hist post
           | None ->
               PulseOperations.havoc_id (fst ret)
-                [ ValueHistory.Call
-                    {f= Call callee_pname; location= call_loc; in_call= []; timestamp} ]
+                (ValueHistory.singleton
+                   (Call {f= Call callee_pname; location= call_loc; in_call= Epoch; timestamp}) )
                 post
         in
         f subst post
