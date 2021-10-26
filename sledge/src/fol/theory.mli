@@ -18,5 +18,5 @@ type t =
 
 val pp : t pp
 val prefer : Trm.t -> Trm.t -> int
-val solve_concat : Trm.t array -> Trm.t -> Trm.t -> t -> t
+val solve_concat : Trm.sized array -> Trm.t -> Trm.t -> t -> t
 val solve : Trm.t -> Trm.t -> t -> t

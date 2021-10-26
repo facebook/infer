@@ -14,6 +14,8 @@ module Trm1 = struct
 
   type arith = (t, compare) Arithmetic.t
 
+  and sized = {seq: t; siz: t}
+
   and t =
     (* variables *)
     | Var of {id: int; name: string [@ignore]}
@@ -23,9 +25,8 @@ module Trm1 = struct
     | Arith of arith
     (* sequences (of flexible size) *)
     | Splat of t
-    | Sized of {seq: t; siz: t}
-    | Extract of {seq: t; off: t; len: t}
-    | Concat of t array
+    | Extract of {seq: t; siz: t; off: t; len: t}
+    | Concat of sized array
     (* uninterpreted *)
     | Apply of Funsym.t * t array
   [@@deriving compare, equal, sexp]
@@ -57,14 +58,12 @@ module Trm3 = struct
     try
       let len_1 = Array.length xs - 1 in
       ( match xs.(len_1) with
-      | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o && Z.equal Z.zero c
-        ->
-          ()
+      | {siz= Z o; seq= Z c} when Z.equal Z.one o && Z.equal Z.zero c -> ()
       | _ -> raise_notrace Not_a_string ) ;
       Some
         (String.init len_1 ~f:(fun i ->
              match xs.(i) with
-             | Sized {siz= Z o; seq= Z c} when Z.equal Z.one o ->
+             | {siz= Z o; seq= Z c} when Z.equal Z.one o ->
                  Char.of_int_exn (Z.to_int c)
              | _ -> raise_notrace Not_a_string ) )
     with _ -> None
@@ -91,13 +90,13 @@ module Trm3 = struct
       | Q q -> Trace.pp_styled `Magenta "%a" fs Q.pp q
       | Arith a -> Arith0.ppx (ppx strength) fs a
       | Splat x -> pf "%a^" pp x
-      | Sized {seq; siz} -> pf "@<1>⟨%a,%a@<1>⟩" pp siz pp seq
-      | Extract {seq; off; len} -> pf "%a[%a,%a)" pp seq pp off pp len
+      | Extract {seq; siz; off; len} ->
+          pf "%a[%a,%a)" pp_sized {seq; siz} pp off pp len
       | Concat [||] -> pf "@<2>⟨⟩"
       | Concat xs -> (
         match string_of_concat xs with
         | Some s -> pf "%S" s
-        | None -> pf "(%a)" (Array.pp "@,^" pp) xs )
+        | None -> pf "(%a)" (Array.pp "@,^" pp_sized) xs )
       | Apply (f, [||]) -> pf "%a" Funsym.pp f
       | Apply
           ( ( (Rem | BitAnd | BitOr | BitXor | BitShl | BitLshr | BitAshr)
@@ -106,6 +105,8 @@ module Trm3 = struct
           pf "(%a@ %a@ %a)" pp x Funsym.pp f pp y
       | Apply (f, es) ->
           pf "%a(%a)" Funsym.pp f (Array.pp ",@ " (ppx strength)) es
+    and pp_sized fs {seq; siz} =
+      Format.fprintf fs "@[<2>@<1>⟨%a,%a@<1>⟩@]" pp siz pp seq
     in
     pp fs trm
 
@@ -205,16 +206,20 @@ module Trm = struct
     match e with
     | Var _ as v -> f (Var.of_ v)
     | Z _ | Q _ -> ()
-    | Splat x -> iter_vars ~f x
-    | Sized {seq= x; siz= y} ->
-        iter_vars ~f x ;
-        iter_vars ~f y
-    | Extract {seq= x; off= y; len= z} ->
-        iter_vars ~f x ;
-        iter_vars ~f y ;
-        iter_vars ~f z
-    | Concat xs | Apply (_, xs) -> Array.iter ~f:(iter_vars ~f) xs
     | Arith a -> Iter.iter ~f:(iter_vars ~f) (Arith0.trms a)
+    | Splat x -> iter_vars ~f x
+    | Extract {seq; siz; off; len} ->
+        iter_vars ~f seq ;
+        iter_vars ~f siz ;
+        iter_vars ~f off ;
+        iter_vars ~f len
+    | Concat xs ->
+        Array.iter
+          ~f:(fun {seq; siz} ->
+            iter_vars ~f seq ;
+            iter_vars ~f siz )
+          xs
+    | Apply (_, xs) -> Array.iter ~f:(iter_vars ~f) xs
 
   let vars e = Iter.from_labelled_iter (iter_vars e)
 
@@ -259,6 +264,29 @@ module Arith =
 
 (* Full Trm definition, using full arithmetic interface *)
 
+(** Invariant *)
+
+let seq_size_exn =
+  let invalid = Invalid_argument "seq_size_exn" in
+  let add x y = _Arith Arith.(add (trm x) (trm y)) in
+  function
+  | Extract {len} -> len
+  | Concat a0U -> Array.fold ~f:(fun aJ a0I -> add a0I aJ.siz) a0U zero
+  | _ -> raise invalid
+
+let seq_size e = try Some (seq_size_exn e) with Invalid_argument _ -> None
+
+let rec invariant e =
+  let@ () = Invariant.invariant [%here] e [%sexp_of: t] in
+  match e with
+  | Extract {seq; siz; off= _; len= _} ->
+      assert (Option.for_all ~f:(equal siz) (seq_size seq))
+  | Concat na1N ->
+      Array.iter na1N ~f:(fun {seq; siz} ->
+          invariant seq ;
+          assert (Option.for_all ~f:(equal siz) (seq_size seq)) )
+  | _ -> Trm.invariant e
+
 (** Destruct *)
 
 let get_z = function Z z -> Some z | _ -> None
@@ -270,15 +298,18 @@ let trms = function
   | Var _ | Z _ | Q _ -> Iter.empty
   | Arith a -> Arith.trms a
   | Splat x -> Iter.(cons x empty)
-  | Sized {seq; siz} -> Iter.(cons seq (cons siz empty))
-  | Extract {seq; off; len} -> Iter.(cons seq (cons off (cons len empty)))
-  | Concat xs | Apply (_, xs) -> Iter.of_array xs
+  | Extract {seq; siz; off; len} ->
+      Iter.(cons seq (cons siz (cons off (cons len empty))))
+  | Concat xs ->
+      Array.fold_right xs Iter.empty ~f:(fun {seq; siz} i ->
+          Iter.cons seq (Iter.cons siz i) )
+  | Apply (_, xs) -> Iter.of_array xs
 
 (** Classification *)
 
 let is_atomic = function
   | Var _ | Z _ | Q _ | Concat [||] | Apply (_, [||]) -> true
-  | Arith _ | Splat _ | Sized _ | Extract _ | Concat _ | Apply _ -> false
+  | Arith _ | Splat _ | Extract _ | Concat _ | Apply _ -> false
 
 let rec atoms e =
   if is_atomic e then Iter.return e else Iter.flat_map ~f:atoms (trms e)
@@ -304,7 +335,7 @@ let classify e =
           | Uninterpreted -> false ) ;
         InterpApp )
   | Concat [||] -> InterpAtom
-  | Splat _ | Sized _ | Extract _ | Concat _ -> InterpApp
+  | Splat _ | Extract _ | Concat _ -> InterpApp
   | Apply (_, [||]) -> NonInterpAtom
   | Apply _ -> UninterpApp
 
@@ -379,26 +410,6 @@ let splat x =
   |> check (solvables_contained_in [|x|])
   |> check invariant
 
-let seq_size_exn =
-  let invalid = Invalid_argument "seq_size_exn" in
-  let rec seq_size_exn = function
-    | Sized {siz= n} | Extract {len= n} -> n
-    | Concat a0U ->
-        Array.fold ~f:(fun aJ a0I -> add a0I (seq_size_exn aJ)) a0U zero
-    | _ -> raise invalid
-  in
-  seq_size_exn
-
-let seq_size e = try Some (seq_size_exn e) with Invalid_argument _ -> None
-
-let sized ~seq ~siz =
-  ( match seq_size seq with
-  (* ⟨n,α⟩ ==> α when n ≡ |α| *)
-  | Some n when equal siz n -> seq
-  | _ -> Sized {seq; siz} )
-  |> check (solvables_contained_in [|seq; siz|])
-  |> check invariant
-
 let partial_compare x y =
   match sub x y with
   | Z z -> Some (Int.sign (Z.sign z))
@@ -410,9 +421,11 @@ let partial_ge x y =
 
 let empty_seq = Concat [||]
 
-let rec extract ~seq ~off ~len =
+let rec extract ~seq ~siz ~off ~len =
   [%trace]
-    ~call:(fun {pf} -> pf "@ %a" pp (Extract {seq; off; len}))
+    ~call:(fun {pf} ->
+      pf "@ %a" pp (Extract {seq; siz; off; len}) ;
+      assert (Option.for_all ~f:(equal siz) (seq_size seq)) )
     ~retn:(fun {pf} e ->
       pf "%a" pp e ;
       solvables_contained_in [|seq; off; len|] e ;
@@ -421,25 +434,21 @@ let rec extract ~seq ~off ~len =
   if
     (* _[_,0) ==> ⟨⟩ *)
     equal len zero
-    (* α[o,l) ==> ⟨⟩ when o ≥ |α| *)
-    || match seq_size seq with Some n -> partial_ge off n | None -> false
+    (* ⟨n,_⟩[o,_) ==> ⟨⟩ when o ≥ n *)
+    || partial_ge off siz
   then empty_seq
+  else if (* ⟨n,a⟩[0,n) ==> a *)
+          off == zero && equal siz len then seq
   else
     let o_l = add off len in
     match seq with
-    (* 0[o,l) ==> ⟨l,0⟩ *)
-    | Z _ when seq == Trm.zero -> sized ~seq ~siz:len
-    (* α[m,k)[o,l) ==> α[m+o,l) when k ≥ o+l *)
-    | Extract {seq= a; off= m; len= k} when partial_ge k o_l ->
-        extract ~seq:a ~off:(add m off) ~len
-    (* ⟨n,0⟩[o,l) ==> ⟨l,0⟩ when n ≥ o+l *)
-    | Sized {siz= n; seq} when seq == zero && partial_ge n o_l ->
-        sized ~seq ~siz:len
-    (* ⟨n,E^⟩[o,l) ==> ⟨l,E^⟩ when n ≥ o+l *)
-    | Sized {siz= n; seq= Splat _ as e} when partial_ge n o_l ->
-        sized ~seq:e ~siz:len
-    (* ⟨n,a⟩[0,n) ==> ⟨n,a⟩ *)
-    | Sized {siz= n} when equal off zero && equal n len -> seq
+    (* ⟨_,0⟩[_,_) ==> 0 *)
+    | Z _ when seq == Trm.zero -> seq
+    (* ⟨n,E^⟩[_,_) ==> E^ *)
+    | Splat _ -> seq
+    (* ⟨n,a⟩[m,k)[o,l) ==> ⟨n,a⟩[m+o,l) when k ≥ o+l *)
+    | Extract {seq= a; siz= n; off= m; len= k} when partial_ge k o_l ->
+        extract ~seq:a ~siz:n ~off:(add m off) ~len
     (* For (α₀^α₁)[o,l) there are 3 cases:
      *
      * ⟨...⟩^⟨...⟩
@@ -463,11 +472,11 @@ let rec extract ~seq ~off ~len =
     | Concat na1N ->
         let n = Array.length na1N - 1 in
         let rec loop i oI lIN =
-          let naI = na1N.(i) in
+          let {siz= nI; seq= aI} = na1N.(i) in
           let j = i + 1 in
-          if i = n then [extract ~seq:naI ~off:oI ~len:lIN]
+          if i = n then
+            [{seq= extract ~seq:aI ~siz:nI ~off:oI ~len:lIN; siz= lIN}]
           else
-            let nI = seq_size_exn naI in
             let oI_nI = sub oI nI in
             match (oI_nI, lIN) with
             | Z z, _ when Z.sign z >= 0 (* oᵢ ≥ |αᵢ| *) ->
@@ -478,51 +487,58 @@ let rec extract ~seq ~off ~len =
                 let lI = Z.(max zero (min lIN (neg z))) in
                 let oJ = zero in
                 let lJN = Z.(lIN - lI) in
-                extract ~seq:naI ~off:oI ~len:(_Z lI) :: loop j oJ (_Z lJN)
+                let len = _Z lI in
+                {seq= extract ~seq:aI ~siz:nI ~off:oI ~len; siz= len}
+                :: loop j oJ (_Z lJN)
             | _ ->
                 let naIN = Array.sub ~pos:i na1N in
                 let seq = concat naIN in
-                [Extract {seq; off= oI; len= lIN}]
+                let siz = add oI lIN in
+                [{seq= Extract {seq; siz; off= oI; len= lIN}; siz= lIN}]
         in
         concat (Array.of_list (loop 0 off len))
-    (* α[o,l) *)
-    | _ -> Extract {seq; off; len}
+    (* ⟨n,a⟩[o,l) *)
+    | _ -> Extract {seq; siz; off; len}
 
 and concat xs =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a" pp (Concat xs))
     ~retn:(fun {pf} c ->
       pf "%a" pp c ;
-      solvables_contained_in xs c ;
+      solvables_contained_in_ (trms (Concat xs)) c ;
       invariant c )
   @@ fun () ->
   (* (α^(β^γ)^δ) ==> (α^β^γ^δ) *)
   let flatten xs =
-    if Array.exists ~f:(function Concat _ -> true | _ -> false) xs then
-      Array.flat_map ~f:(function Concat s -> s | e -> [|e|]) xs
-    else xs
+    if Array.for_all ~f:(function {seq= Concat _} -> false | _ -> true) xs
+    then xs
+    else
+      Array.flat_map ~f:(function {seq= Concat s} -> s | na -> [|na|]) xs
   in
-  let simp_adjacent e f =
-    match (e, f) with
+  let simp_adjacent {siz= m; seq= a} {siz= n; seq= b} =
+    match (a, b) with
     (* ⟨n,a⟩[o,k)^⟨n,a⟩[o+k,l) ==> ⟨n,a⟩[o,k+l) when n ≥ o+k+l *)
-    | ( Extract {seq= Sized {siz= n} as na; off= o; len= k}
-      , Extract {seq= na'; off= o_k; len= l} )
-      when equal na na' && equal o_k (add o k) && partial_ge n (add o_k l)
-      ->
-        Some (extract ~seq:na ~off:o ~len:(add k l))
+    | ( Extract {seq= a; siz= n; off= o; len= k}
+      , Extract {seq= a'; siz= n'; off= o_k; len= l} )
+      when equal a a'
+           && equal n n'
+           && equal o_k (add o k)
+           && partial_ge n (add o_k l) ->
+        let kl = add k l in
+        Some {seq= extract ~seq:a ~siz:n ~off:o ~len:kl; siz= kl}
     (* ⟨m,0⟩^⟨n,0⟩ ==> ⟨m+n,0⟩ *)
-    | Sized {siz= m; seq= a}, Sized {siz= n; seq= a'}
-      when a == zero && a' == zero ->
-        Some (sized ~seq:a ~siz:(add m n))
+    | _ when a == zero && b == zero -> Some {siz= add m n; seq= a}
     (* ⟨m,E^⟩^⟨n,E^⟩ ==> ⟨m+n,E^⟩ *)
-    | Sized {siz= m; seq= Splat _ as a}, Sized {siz= n; seq= a'}
-      when equal a a' ->
-        Some (sized ~seq:a ~siz:(add m n))
+    | Splat _, _ when equal a b -> Some {seq= a; siz= add m n}
     | _ -> None
   in
   let xs = flatten xs in
   let xs = Array.reduce_adjacent ~f:simp_adjacent xs in
-  if Array.length xs = 1 then xs.(0) else Concat xs
+  match xs with
+  (* ⟨_,a⟩ ==> a *)
+  | [|{seq= a}|] -> a
+  | [||] -> empty_seq
+  | _ -> Concat xs
 
 (* uninterpreted *)
 
@@ -540,19 +556,20 @@ let rec height e = 1 + Iter.fold ~f:(fun x -> max (height x)) (trms e) 0
 
 (** Transform *)
 
+let map_sized ({seq; siz} as na) ~f =
+  map2 f na (fun seq siz -> {seq; siz}) seq siz
+
 let rec map_vars e ~f =
   match e with
   | Var _ as v -> (f (Var.of_ v) : Var.t :> t)
   | Z _ | Q _ -> e
   | Arith a -> map1 (Arith.map ~f:(map_vars ~f)) e _Arith a
   | Splat x -> map1 (map_vars ~f) e splat x
-  | Sized {seq; siz} ->
-      map2 (map_vars ~f) e (fun seq siz -> sized ~seq ~siz) seq siz
-  | Extract {seq; off; len} ->
-      map3 (map_vars ~f) e
-        (fun seq off len -> extract ~seq ~off ~len)
-        seq off len
-  | Concat xs -> mapN (map_vars ~f) e concat xs
+  | Extract {seq; siz; off; len} ->
+      map4 (map_vars ~f) e
+        (fun seq siz off len -> extract ~seq ~siz ~off ~len)
+        seq siz off len
+  | Concat xs -> mapN (map_sized ~f:(map_vars ~f)) e concat xs
   | Apply (g, xs) -> mapN (map_vars ~f) e (apply g) xs
 
 let map e ~f =
@@ -560,10 +577,11 @@ let map e ~f =
   | Var _ | Z _ | Q _ -> e
   | Arith a -> map1 (Arith.map ~f) e _Arith a
   | Splat x -> map1 f e splat x
-  | Sized {seq; siz} -> map2 f e (fun seq siz -> sized ~seq ~siz) seq siz
-  | Extract {seq; off; len} ->
-      map3 f e (fun seq off len -> extract ~seq ~off ~len) seq off len
-  | Concat xs -> mapN f e concat xs
+  | Extract {seq; siz; off; len} ->
+      map4 f e
+        (fun seq siz off len -> extract ~seq ~siz ~off ~len)
+        seq siz off len
+  | Concat xs -> mapN (map_sized ~f) e concat xs
   | Apply (g, xs) -> mapN f e (apply g) xs
 
 let fold_map e = fold_map_from_map map e

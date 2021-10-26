@@ -76,14 +76,10 @@ let ff = _Not tt
 let bool b = if b then tt else ff
 
 let _Eq0 x =
-  let rec aux x =
-    match (x : Trm.t) with
-    | Z z -> bool (Z.equal Z.zero z)
-    | Q q -> bool (Q.equal Q.zero q)
-    | Sized {seq} -> aux seq
-    | x -> _Eq0 x
-  in
-  aux x
+  match (x : Trm.t) with
+  | Z z -> bool (Z.equal Z.zero z)
+  | Q q -> bool (Q.equal Q.zero q)
+  | x -> _Eq0 x
 
 let _Pos x =
   match (x : Trm.t) with
@@ -112,7 +108,8 @@ let _Eq x y =
         let min_length = min length_a length_b in
         let length_common_prefix =
           let rec find_lcp i =
-            if i < min_length && Trm.equal a.(i) b.(i) then find_lcp (i + 1)
+            if i < min_length && Trm.equal_sized a.(i) b.(i) then
+              find_lcp (i + 1)
             else i
           in
           find_lcp 0
@@ -124,7 +121,7 @@ let _Eq x y =
           let rec find_lcs i =
             if
               i < min_length_without_common_prefix
-              && Trm.equal a.(length_a - 1 - i) b.(length_b - 1 - i)
+              && Trm.equal_sized a.(length_a - 1 - i) b.(length_b - 1 - i)
             then find_lcs (i + 1)
             else i
           in
@@ -141,12 +138,6 @@ let _Eq x y =
             let a = Array.sub ~pos ~len:len_a a in
             let b = Array.sub ~pos ~len:len_b b in
             _Eq (Trm.concat a) (Trm.concat b)
-    | (Sized _ | Extract _ | Concat _), (Sized _ | Extract _ | Concat _) ->
-        sort_eq x y
-    (* x = α ==> ⟨x,|α|⟩ = α *)
-    | x, ((Sized _ | Extract _ | Concat _) as a)
-     |((Sized _ | Extract _ | Concat _) as a), x ->
-        _Eq (Trm.sized ~siz:(Trm.seq_size_exn a) ~seq:x) a
     | _ -> sort_eq x y
 
 let _Distinct xs =

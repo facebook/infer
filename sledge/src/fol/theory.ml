@@ -32,16 +32,15 @@ let pp ppf = function
 (* Solving equations =====================================================*)
 
 (** prefer representative terms that are minimal in the order s.t. Var <
-    Sized < Extract < Concat < others, then using height of sequence
-    nesting, and then using Trm.compare *)
+    Extract < Concat < others, then using height of sequence nesting, and
+    then using Trm.compare *)
 let prefer e f =
   let rank e =
     match (e : Trm.t) with
     | Var _ -> 0
-    | Sized _ -> 1
-    | Extract _ -> 2
-    | Concat _ -> 3
-    | _ -> 4
+    | Extract _ -> 1
+    | Concat _ -> 2
+    | _ -> 3
   in
   let o = compare (rank e) (rank f) in
   if o <> 0 then o
@@ -84,27 +83,27 @@ let solve_poly p q s =
         add_solved ~var:(Trm.arith var) ~rep:(Trm.arith rep) s
     | None -> add_solved ~var:p_q ~rep:Trm.zero s )
 
-(* α[o,l) = β ==> l = |β| ∧ α = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l)) where n
-   = |α| and c fresh *)
-let solve_extract a o l b s =
+(* ⟨n,a⟩[o,l) = β ==> l = |β| ∧ a = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l))
+   where c fresh *)
+let solve_extract a n o l b s =
   [%trace]
     ~call:(fun {pf} ->
-      pf "@ %a = %a" Trm.pp (Trm.extract ~seq:a ~off:o ~len:l) Trm.pp b )
+      pf "@ %a = %a" Trm.pp
+        (Trm.extract ~seq:a ~siz:n ~off:o ~len:l)
+        Trm.pp b )
     ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" pp))
   @@ fun () ->
-  let* c, s = fresh "c" s in
-  let+ n, s =
-    match Trm.seq_size a with Some n -> Some (n, s) | None -> fresh "n" s
-  in
-  let n_c = Trm.sized ~siz:n ~seq:c in
+  let+ c, s = fresh "c" s in
   let o_l = Trm.add o l in
   let n_o_l = Trm.sub n o_l in
-  let c0 = Trm.extract ~seq:n_c ~off:Trm.zero ~len:o in
-  let c1 = Trm.extract ~seq:n_c ~off:o_l ~len:n_o_l in
+  let x0 = Trm.extract ~seq:c ~siz:n ~off:Trm.zero ~len:o in
+  let c0 = {Trm.seq= x0; siz= o} in
+  let x1 = Trm.extract ~seq:c ~siz:n ~off:o_l ~len:n_o_l in
+  let c1 = {Trm.seq= x1; siz= n_o_l} in
   let b, s =
     match Trm.seq_size b with
-    | None -> (Trm.sized ~siz:l ~seq:b, s)
-    | Some m -> (b, add_pending l m s)
+    | None -> ({Trm.seq= b; siz= l}, s)
+    | Some m -> ({Trm.seq= b; siz= m}, add_pending l m s)
   in
   add_pending a (Trm.concat [|c0; b; c1|]) s
 
@@ -116,13 +115,20 @@ let solve_concat a0V b m s =
     ~retn:(fun {pf} -> pf "%a" pp)
   @@ fun () ->
   let s, n0V =
-    Iter.fold (Array.to_iter a0V) (s, Trm.zero) ~f:(fun aJ (s, oI) ->
-        let nJ = Trm.seq_size_exn aJ in
+    Array.fold a0V (s, Trm.zero) ~f:(fun {Trm.seq= aJ; siz= nJ} (s, oI) ->
         let oJ = Trm.add oI nJ in
-        let s = add_pending aJ (Trm.extract ~seq:b ~off:oI ~len:nJ) s in
+        let xJ = Trm.extract ~seq:b ~siz:m ~off:oI ~len:nJ in
+        let s = add_pending aJ xJ s in
         (s, oJ) )
   in
   add_pending n0V m s
+
+(* α₀^…^αᵢ^αⱼ^…^αᵥ = e^ ==> … ∧ αⱼ = e^ ∧ … *)
+let solve_concat_splat a0V b s =
+  [%trace]
+    ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp (Trm.concat a0V) Trm.pp b)
+    ~retn:(fun {pf} -> pf "%a" pp)
+  @@ fun () -> Array.fold a0V s ~f:(fun {Trm.seq} s -> add_pending seq b s)
 
 let solve d e s =
   [%trace]
@@ -137,63 +143,36 @@ let solve d e s =
   (*
    * Concat
    *)
-  (* ⟨0,a⟩ = β ==> a = β = ⟨⟩ *)
-  | Some (Sized {siz= n; seq= a}, b) when n == Trm.zero ->
-      s
-      |> add_pending a (Trm.concat [||])
-      |> add_pending b (Trm.concat [||])
-  | Some (b, Sized {siz= n; seq= a}) when n == Trm.zero ->
-      s
-      |> add_pending a (Trm.concat [||])
-      |> add_pending b (Trm.concat [||])
-  (* 0 = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨nⱼ,0⟩ ∧ … *)
-  | Some ((Concat a0V as c), z) when z == Trm.zero ->
-      solve_concat a0V z (Trm.seq_size_exn c) s
-  (* ⟨n,0⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,0⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
-  | Some ((Sized {siz= n; seq} as b), Concat a0V) when seq == Trm.zero ->
-      solve_concat a0V b n s
-  (* ⟨n,e^⟩ = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,e^⟩[n₀+…+nᵢ,nⱼ) ∧ … *)
-  | Some ((Sized {siz= n; seq= Splat _} as b), Concat a0V) ->
-      solve_concat a0V b n s
+  (* 0 = α₀^…^αᵥ ==> … ∧ αⱼ = 0 ∧ … *)
+  | Some (Concat a0V, z) when z == Trm.zero -> solve_concat_splat a0V z s
+  (* e^ = α₀^…^αᵥ ==> … ∧ αⱼ = e^ ∧ … *)
+  | Some (Concat a0V, (Splat _ as b)) -> solve_concat_splat a0V b s
   | Some ((Var _ as v), (Concat a0V as c)) ->
       if not (Trm.Set.mem v (Trm.fv c :> Trm.Set.t)) then
         (* v = α₀^…^αᵥ ==> v ↦ α₀^…^αᵥ when v ∉ fv(α₀^…^αᵥ) *)
         add_solved ~var:v ~rep:c s
       else
-        (* v = α₀^…^αᵥ ==> ⟨|α₀^…^αᵥ|,v⟩ = α₀^…^αᵥ when v ∈ fv(α₀^…^αᵥ) *)
-        let m = Trm.seq_size_exn c in
-        solve_concat a0V (Trm.sized ~siz:m ~seq:v) m s
+        (* v = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨|αⱼ|,v⟩[n₀+…+nᵢ,nⱼ) ∧ … when v ∈
+           fv(α₀^…^αᵥ) *)
+        solve_concat a0V v (Trm.seq_size_exn c) s
   (* α₀^…^αᵥ = β₀^…^βᵤ ==> … ∧ αⱼ = (β₀^…^βᵤ)[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some (Concat a0V, (Concat _ as c)) ->
       solve_concat a0V c (Trm.seq_size_exn c) s
-  (* α[o,l) = α₀^…^αᵥ ==> … ∧ αⱼ = α[o,l)[n₀+…+nᵢ,nⱼ) ∧ … *)
+  (* ⟨n,a⟩[o,l) = α₀^…^αᵥ ==> … ∧ αⱼ = ⟨n,a⟩[o,l)[n₀+…+nᵢ,nⱼ) ∧ … *)
   | Some ((Extract {len= l} as e), Concat a0V) -> solve_concat a0V e l s
   (*
    * Extract
    *)
-  | Some ((Var _ as v), (Extract {len= l} as e)) ->
+  | Some ((Var _ as v), (Extract _ as e)) ->
       if not (Trm.Set.mem v (Trm.fv e :> Trm.Set.t)) then
-        (* v = α[o,l) ==> v ↦ α[o,l) when v ∉ fv(α[o,l)) *)
+        (* v = ⟨n,a⟩[o,l) ==> v ↦ ⟨n,a⟩[o,l) when v ∉ fv(⟨n,a⟩[o,l)) *)
         add_solved ~var:v ~rep:e s
       else
-        (* v = α[o,l) ==> α[o,l) ↦ ⟨l,v⟩ when v ∈ fv(α[o,l)) *)
-        add_solved ~var:e ~rep:(Trm.sized ~siz:l ~seq:v) s
-  (* α[o,l) = β ==> … ∧ α = _^β^_ *)
-  | Some (Extract {seq= a; off= o; len= l}, e) ->
-      Option.value (solve_extract a o l e s) ~default:s
-  (*
-   * Sized
-   *)
-  (* v = ⟨n,a⟩ ==> v = a *)
-  | Some ((Var _ as v), Sized {seq= a}) -> s |> add_pending v a
-  (* ⟨n,a⟩ = ⟨m,b⟩ ==> n = m ∧ a = β *)
-  | Some (Sized {siz= n; seq= a}, Sized {siz= m; seq= b}) ->
-      s |> add_pending n m |> add_pending a b
-  (* ⟨n,a⟩ = β ==> n = |β| ∧ a = β *)
-  | Some (Sized {siz= n; seq= a}, b) ->
-      s
-      |> Option.fold ~f:(add_pending n) (Trm.seq_size b)
-      |> add_pending a b
+        (* v = ⟨n,a⟩[o,l) ==> ⟨n,a⟩[o,l) ↦ v when v ∈ fv(⟨n,a⟩[o,l)) *)
+        add_solved ~var:e ~rep:v s
+  (* ⟨n,a⟩[o,l) = β ==> … ∧ ⟨n,a⟩ = _^β^_ *)
+  | Some (Extract {seq= a; siz= n; off= o; len= l}, e) ->
+      Option.value (solve_extract a n o l e s) ~default:s
   (*
    * Splat
    *)

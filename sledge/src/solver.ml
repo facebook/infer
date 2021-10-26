@@ -131,9 +131,12 @@ end
 
 open Goal
 
-let eq_concat (siz, seq) ms =
-  Formula.eq (Term.sized ~siz ~seq)
-    (Term.concat (Array.map ~f:(fun (siz, seq) -> Term.sized ~siz ~seq) ms))
+let eq_concat (siz, seq) xs =
+  let ys, len =
+    Array.fold_map xs Term.zero ~f:(fun (siz, seq) len ->
+        ({Term.siz; seq}, Term.add siz len) )
+  in
+  Formula.and_ (Formula.eq siz len) (Formula.eq seq (Term.concat ys))
 
 let fresh_var name vs zs ~wrt =
   let v, wrt = Var.fresh name ~wrt in

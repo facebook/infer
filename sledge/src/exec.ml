@@ -89,12 +89,6 @@ let gen_spec us specm =
 
 let null_eq ptr = Sh.pure (Formula.eq0 ptr)
 
-let concat ms =
-  Term.concat (Array.map ~f:(fun (siz, cnt) -> Term.sized ~siz ~seq:cnt) ms)
-
-let eq_concat (siz, cnt) ms =
-  Formula.eq (Term.sized ~siz ~seq:cnt) (concat ms)
-
 open Fresh.Import
 
 (* { emp }
@@ -169,9 +163,9 @@ let atomic_cmpxchg_spec reg ptr cmp exp len len1 =
   let foot = Sh.seg foot_seg in
   let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
   let a = foot_seg.cnt in
-  let l_a = Term.sized ~siz:(Term.rename sub len) ~seq:a in
+  let l_a = {Term.siz= Term.rename sub len; seq= a} in
   let len1' = Term.rename sub len1 in
-  let bit b = Term.sized ~siz:len1' ~seq:(Formula.inject b) in
+  let bit b = {Term.siz= len1'; seq= Formula.inject b} in
   let a_eq_c = Formula.rename sub (Formula.eq cmp a) in
   let a_dq_c = Formula.not_ a_eq_c in
   let post_succ =
@@ -253,11 +247,11 @@ let memmov_foot dst src len =
   let* cnt_mid = Fresh.var "a" in
   let+ cnt_src = Fresh.var "a" in
   let src_dst = Term.sub src dst in
-  let mem_dst = (src_dst, cnt_dst) in
+  let mem_dst = {Term.siz= src_dst; seq= cnt_dst} in
   let siz_mid = Term.sub len src_dst in
-  let mem_mid = (siz_mid, cnt_mid) in
-  let mem_src = (src_dst, cnt_src) in
-  let cnt = concat [|mem_dst; mem_mid; mem_src|] in
+  let mem_mid = {Term.siz= siz_mid; seq= cnt_mid} in
+  let mem_src = {Term.siz= src_dst; seq= cnt_src} in
+  let cnt = Term.concat [|mem_dst; mem_mid; mem_src|] in
   let seg_siz = Term.add len (Term.sub src dst) in
   let seg = Sh.seg {loc= dst; bas; len= siz; siz= seg_siz; cnt} in
   let foot =
@@ -271,7 +265,7 @@ let memmov_foot dst src len =
  *)
 let memmov_dn_spec dst src len =
   let+ bas, len, _, mem_mid, mem_src, siz, foot = memmov_foot dst src len in
-  let cnt = concat [|mem_mid; mem_src; mem_src|] in
+  let cnt = Term.concat [|mem_mid; mem_src; mem_src|] in
   let post = Sh.seg {loc= dst; bas; len; siz; cnt} in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -281,7 +275,7 @@ let memmov_dn_spec dst src len =
  *)
 let memmov_up_spec dst src len =
   let+ bas, len, mem_src, mem_mid, _, siz, foot = memmov_foot src dst len in
-  let cnt = concat [|mem_src; mem_src; mem_mid|] in
+  let cnt = Term.concat [|mem_src; mem_src; mem_mid|] in
   let post = Sh.seg {loc= src; bas; len; siz; cnt} in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
@@ -405,14 +399,18 @@ let posix_memalign_spec reg ptr siz =
 (* (cnd ? α'=⟨m,α⟩^⟨n-m,α''⟩ : α=⟨n,α'⟩^⟨m-n,α''⟩) *)
 let realloc_seq cnd a0 m a1 n a2 =
   Formula.cond ~cnd
-    ~pos:(eq_concat (n, a1) [|(m, a0); (Term.sub n m, a2)|])
-    ~neg:(eq_concat (m, a0) [|(n, a1); (Term.sub m n, a2)|])
+    ~pos:
+      (Formula.eq a1
+         (Term.concat [|{siz= m; seq= a0}; {siz= Term.sub n m; seq= a2}|]) )
+    ~neg:
+      (Formula.eq a0
+         (Term.concat [|{siz= n; seq= a1}; {siz= Term.sub m n; seq= a2}|]) )
 
 (* { p=0 ∨ p-[p;m)->⟨m,α⟩ }
  *   realloc r p s
  * {   (r=0 * (pΘ=0 ∨ pΘ-[pΘ;m)->⟨m,α⟩))
  *   ∨ ∃α',α'' . r-[r;sΘ)->⟨sΘ,α'⟩
- *     * (m≤sΘ ? ⟨sΘ,α'⟩=⟨m,α⟩^⟨sΘ-m,α''⟩ : ⟨m,α⟩=⟨sΘ,α'⟩^⟨m-sΘ,α''⟩) }
+ *     * (m≤sΘ ? α'=⟨m,α⟩^⟨sΘ-m,α''⟩ : α=⟨sΘ,α'⟩^⟨m-sΘ,α''⟩) }
  *)
 let realloc_spec reg ptr siz =
   let* len = Fresh.var "m" in
@@ -441,7 +439,7 @@ let realloc_spec reg ptr siz =
  *   rallocx r p s
  * {   (r=0 * pΘ-[pΘ;m)->⟨m,α⟩)
  *   ∨ ∃α',α'' . r-[r;sΘ)->⟨sΘ,α'⟩
- *     * (m≤sΘ ? ⟨sΘ,α'⟩=⟨m,α⟩^⟨sΘ-m,α''⟩ : ⟨m,α⟩=⟨sΘ,α'⟩^⟨m-sΘ,α''⟩) }
+ *     * (m≤sΘ ? α'=⟨m,α⟩^⟨sΘ-m,α''⟩ : α=⟨sΘ,α'⟩^⟨m-sΘ,α''⟩) }
  *)
 let rallocx_spec reg ptr siz =
   let* len = Fresh.var "m" in
@@ -467,7 +465,7 @@ let rallocx_spec reg ptr siz =
 (* { s≠0 * p-[p;m)->⟨m,α⟩ }
  *   xallocx r p s e
  * { ∃α',α'' . sΘ≤r≤(s+e)Θ * pΘ-[pΘ;r)->⟨r,α'⟩
- *   * (m≤r ? ⟨r,α'⟩=⟨m,α⟩^⟨r-m,α''⟩ : ⟨m,α⟩=⟨r,α'⟩^⟨m-r,α''⟩) }
+ *   * (m≤r ? α'=⟨m,α⟩^⟨r-m,α''⟩ : α=⟨r,α'⟩^⟨m-r,α''⟩) }
  *)
 let xallocx_spec reg ptr siz ext =
   let* len = Fresh.var "m" in

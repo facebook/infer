@@ -131,28 +131,22 @@ let ap2t : (trm -> trm -> trm) -> exp -> exp -> exp =
 let ap2f : (trm -> trm -> fml) -> exp -> exp -> fml =
  fun f x y -> map2_cnd cond f (embed_into_cnd x) (embed_into_cnd y)
 
-(** Map a ternary function on terms over conditional terms. *)
-let map3_cnd :
-       (fml -> 'a -> 'a -> 'a)
-    -> (trm -> trm -> trm -> 'a)
-    -> cnd
-    -> cnd
-    -> cnd
-    -> 'a =
- fun f_ite f_trm x y z ->
+let map4_cnd f_ite f_trm w x y z =
   map_cnd f_ite
-    (fun x' ->
-      map_cnd f_ite (fun y' -> map_cnd f_ite (fun z' -> f_trm x' y' z') z) y
-      )
-    x
+    (fun w' ->
+      map_cnd f_ite
+        (fun x' ->
+          map_cnd f_ite
+            (fun y' -> map_cnd f_ite (fun z' -> f_trm w' x' y' z') z)
+            y )
+        x )
+    w
 
-(** Map a ternary function on terms over expressions. *)
-let ap3 : (trm -> trm -> trm -> exp) -> exp -> exp -> exp -> exp =
- fun f x y z ->
-  map3_cnd ite f (embed_into_cnd x) (embed_into_cnd y) (embed_into_cnd z)
+let ap4 f w x y z =
+  map4_cnd ite f (embed_into_cnd w) (embed_into_cnd x) (embed_into_cnd y)
+    (embed_into_cnd z)
 
-let ap3t : (trm -> trm -> trm -> trm) -> exp -> exp -> exp -> exp =
- fun f -> ap3 (fun x y z -> `Trm (f x y z))
+let ap4t f = ap4 (fun w x y z -> `Trm (f w x y z))
 
 (** Reverse-map an nary function on terms over conditional terms. *)
 let rev_mapN_cnd :
@@ -177,6 +171,31 @@ let apNf : (trm array -> fml) -> exp array -> fml =
     (fun xs -> f (Array.of_list xs))
     (Array.to_list_rev_map ~f:embed_into_cnd xs)
 
+(** Size-tagged sequence *)
+module Sized = struct
+  type sized = {seq: exp; siz: exp}
+
+  let map_sized : (Trm.sized -> 'a) -> sized -> 'a =
+   fun f {seq; siz} ->
+    map2_cnd ite
+      (fun seq siz -> f {Trm.seq; siz})
+      (embed_into_cnd seq) (embed_into_cnd siz)
+
+  let rev_mapN_sized : (Trm.sized list -> 'a) -> sized list -> 'a =
+   fun f_trms rev_xs ->
+    let rec loop xs' = function
+      | x :: xs -> map_sized (fun x' -> loop (x' :: xs') xs) x
+      | [] -> f_trms xs'
+    in
+    loop [] rev_xs
+
+  let apN_sized : (Trm.sized array -> trm) -> sized array -> exp =
+   fun f xs ->
+    rev_mapN_sized
+      (fun xs -> `Trm (f (Array.of_list xs)))
+      (Array.to_list_rev xs)
+end
+
 (*
  * Terms: exposed interface
  *)
@@ -199,6 +218,7 @@ module Term = struct
   end
 
   include T
+  include Sized
   module Set = Set.Make (T)
   module Map = Map.Make (T)
 
@@ -223,12 +243,13 @@ module Term = struct
   (* sequences *)
 
   let splat = ap1t Trm.splat
-  let sized ~seq ~siz = ap2t (fun seq siz -> Trm.sized ~seq ~siz) seq siz
 
-  let extract ~seq ~off ~len =
-    ap3t (fun seq off len -> Trm.extract ~seq ~off ~len) seq off len
+  let extract ~seq ~siz ~off ~len =
+    ap4t
+      (fun seq siz off len -> Trm.extract ~seq ~siz ~off ~len)
+      seq siz off len
 
-  let concat elts = apNt Trm.concat elts
+  let concat elts = apN_sized Trm.concat elts
 
   (* uninterpreted *)
 
