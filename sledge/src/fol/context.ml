@@ -1063,10 +1063,6 @@ let subst_invariant us s0 s =
   assert (s0 == s || not (Subst.equal s0 s)) ;
   assert (
     Trm.Map.iteri s ~f:(fun ~key ~data ->
-        (* dom of new entries not ito us *)
-        assert (
-          Option.for_all ~f:(Trm.equal data) (Trm.Map.find key s0)
-          || not (Var.Set.subset (Trm.fv key) ~of_:us) ) ;
         (* rep not ito us implies trm not ito us *)
         assert (
           Var.Set.subset (Trm.fv data) ~of_:us
