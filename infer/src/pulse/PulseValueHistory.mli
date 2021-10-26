@@ -18,8 +18,8 @@ type event =
       ; mode: CapturedVar.capture_mode
       ; location: Location.t
       ; timestamp: Timestamp.t }
-  | Conditional of
-      {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t; timestamp: Timestamp.t}
+  | ConditionPassed of
+      {if_kind: Sil.if_kind; is_then_branch: bool; location: Location.t; timestamp: Timestamp.t}
   | CppTemporaryCreated of Location.t * Timestamp.t
   | FormalDeclared of Pvar.t * Location.t * Timestamp.t
   | Invalidated of PulseInvalidation.t * Location.t * Timestamp.t

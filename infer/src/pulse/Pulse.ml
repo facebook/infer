@@ -398,18 +398,6 @@ module PulseTransferFunctions = struct
                 astates
           in
           (PulseReport.report_results tenv proc_desc err_log loc result, path, astate_n)
-      | Prune (condition, loc, _is_then_branch, _if_kind) ->
-          let results =
-            (let<*> astate = PulseOperations.prune path loc ~condition astate in
-             if PulseArithmetic.is_unsat_cheap astate then
-               (* [condition] is known to be unsatisfiable: prune path *)
-               []
-             else
-               (* [condition] is true or unknown value: go into the branch *)
-               [Ok (ContinueProgram astate)] )
-            |> PulseReport.report_exec_results tenv proc_desc err_log loc
-          in
-          (results, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           let astates =
             dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
@@ -419,6 +407,40 @@ module PulseTransferFunctions = struct
           , path
           , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals call_flags astates
               astate_n )
+      | Prune (condition, loc, is_then_branch, if_kind) ->
+          let result, path =
+            match PulseOperations.prune path loc ~condition astate with
+            | Ok (astate, hist) ->
+                let path =
+                  if Sil.is_terminated_if_kind if_kind then
+                    let hist =
+                      ValueHistory.ConditionPassed
+                        {if_kind; is_then_branch; location= loc; timestamp}
+                      :: hist
+                    in
+                    {path with conditions= hist :: path.conditions}
+                  else path
+                in
+                (Ok astate, path)
+            | Error _ as err ->
+                (err, path)
+          in
+          let results =
+            let<*> astate = result in
+            if PulseArithmetic.is_unsat_cheap astate then
+              (* [condition] is known to be unsatisfiable: prune path *)
+              []
+            else
+              (* [condition] is true or unknown value: go into the branch *)
+              [Ok (ContinueProgram astate)]
+          in
+          (PulseReport.report_exec_results tenv proc_desc err_log loc results, path, astate_n)
+      | Metadata EndBranches ->
+          (* We assume that terminated conditions are well-parenthesised, hence an [EndBranches]
+             instruction terminates the most recently seen terminated conditional. The empty case
+             shouldn't happen but let's not crash by the fault of possible errors in frontends. *)
+          let path = {path with conditions= List.tl path.conditions |> Option.value ~default:[]} in
+          ([ContinueProgram astate], path, astate_n)
       | Metadata (ExitScope (vars, location)) ->
           let remove_vars vars astates =
             List.map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
@@ -458,7 +480,6 @@ module PulseTransferFunctions = struct
       | Metadata
           ( Abstract _
           | CatchEntry _
-          | EndBranches
           | Nullify _
           | Skip
           | TryEntry _

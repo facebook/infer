@@ -20,8 +20,8 @@ type event =
       ; mode: CapturedVar.capture_mode
       ; location: Location.t
       ; timestamp: Timestamp.t }
-  | Conditional of
-      {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t; timestamp: Timestamp.t}
+  | ConditionPassed of
+      {if_kind: Sil.if_kind; is_then_branch: bool; location: Location.t; timestamp: Timestamp.t}
   | CppTemporaryCreated of Location.t * Timestamp.t
   | FormalDeclared of Pvar.t * Location.t * Timestamp.t
   | Invalidated of PulseInvalidation.t * Location.t * Timestamp.t
@@ -38,7 +38,7 @@ let location_of_event = function
   | Assignment (location, _)
   | Call {location}
   | Capture {location}
-  | Conditional {location}
+  | ConditionPassed {location}
   | CppTemporaryCreated (location, _)
   | FormalDeclared (_, location, _)
   | Invalidated (_, location, _)
@@ -58,7 +58,7 @@ let rec iter_event event ~f =
   | Allocation _
   | Assignment _
   | Capture _
-  | Conditional _
+  | ConditionPassed _
   | CppTemporaryCreated _
   | FormalDeclared _
   | Invalidated _
@@ -93,11 +93,11 @@ let pp_event_no_location fmt event =
       F.pp_print_string fmt "assigned"
   | Call {f} ->
       F.fprintf fmt "in call to %a" CallEvent.pp f
-  | Capture {captured_as; mode; location= _} ->
+  | Capture {captured_as; mode} ->
       F.fprintf fmt "value captured %s as `%a`"
         (CapturedVar.string_of_capture_mode mode)
         Pvar.pp_value_non_verbose captured_as
-  | Conditional {is_then_branch; if_kind; location= _} ->
+  | ConditionPassed {is_then_branch; if_kind} ->
       F.fprintf fmt "expression in %a condition is %b" Sil.pp_if_kind if_kind is_then_branch
   | CppTemporaryCreated _ ->
       F.pp_print_string fmt "C++ temporary created"

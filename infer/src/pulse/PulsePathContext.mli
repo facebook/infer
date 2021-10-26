@@ -9,7 +9,13 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type t = {timestamp: Timestamp.t  (** step number in an intra-procedural analysis *)}
+type t =
+  { conditions: ValueHistory.t list
+        (** Each history represents a conditional that is affecting the path currently, with the
+            most recent conditional first. The idea is to add these histories to the histories of
+            all variables and memory locations modified while under the influence of these
+            conditionals. *)
+  ; timestamp: Timestamp.t  (** step number in an intra-procedural analysis *) }
 [@@deriving compare, equal]
 
 val leq : lhs:t -> rhs:t -> bool

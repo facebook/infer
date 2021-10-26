@@ -278,22 +278,33 @@ let eval path mode location exp0 astate =
   eval path mode exp0 astate
 
 
-let eval_to_operand path mode location exp astate =
+let eval_to_operand path location exp astate =
   match (exp : Exp.t) with
   | Const (Cint i) ->
-      Ok (astate, PulseArithmetic.LiteralOperand i)
+      Ok (astate, PulseArithmetic.LiteralOperand i, [])
   | exp ->
-      let+ astate, (value, _) = eval path mode location exp astate in
-      (astate, PulseArithmetic.AbstractValueOperand value)
+      let+ astate, (value, hist) = eval path Read location exp astate in
+      (astate, PulseArithmetic.AbstractValueOperand value, hist)
 
 
 let prune path location ~condition astate =
   let rec prune_aux ~negated exp astate =
     match (exp : Exp.t) with
     | BinOp (bop, exp_lhs, exp_rhs) ->
-        let* astate, lhs_op = eval_to_operand path Read location exp_lhs astate in
-        let* astate, rhs_op = eval_to_operand path Read location exp_rhs astate in
-        PulseArithmetic.prune_binop ~negated bop lhs_op rhs_op astate
+        let* astate, lhs_op, lhs_hist = eval_to_operand path location exp_lhs astate in
+        let* astate, rhs_op, rhs_hist = eval_to_operand path location exp_rhs astate in
+        let+ astate = PulseArithmetic.prune_binop ~negated bop lhs_op rhs_op astate in
+        let hist =
+          match (lhs_hist, rhs_hist) with
+          | [], hist | hist, [] ->
+              (* if one history is empty then just propagate the other one (which could also be
+                 empty) *)
+              hist
+          | _ ->
+              (* TODO: merge histories *)
+              lhs_hist
+        in
+        (astate, hist)
     | UnOp (LNot, exp', _) ->
         prune_aux ~negated:(not negated) exp' astate
     | exp ->

@@ -117,7 +117,8 @@ val eval_structure_isl :
 (** Similar to eval but apply to data structures and ISL abduction. Return a list of abduced states
     (ISLOk and ISLErs); The boolean indicates whether it is data structures or not. *)
 
-val prune : PathContext.t -> Location.t -> condition:Exp.t -> t -> t AccessResult.t
+val prune :
+  PathContext.t -> Location.t -> condition:Exp.t -> t -> (t * ValueHistory.t) AccessResult.t
 
 val eval_deref :
      PathContext.t
