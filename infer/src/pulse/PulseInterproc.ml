@@ -504,26 +504,26 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
     | None ->
         (call_state, None)
     | Some (return_callee, return_callee_hist) ->
-        let return_caller_addr_hist =
-          let return_caller, return_caller_hist =
-            match AddressMap.find_opt return_callee call_state.subst with
-            | Some return_caller_hist ->
-                return_caller_hist
-            | None ->
-                (AbstractValue.mk_fresh (), [])
-          in
-          ( return_caller
-          , ValueHistory.Call
-              {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist; timestamp}
-            :: return_caller_hist )
+        let return_caller, return_caller_hist =
+          match AddressMap.find_opt return_callee call_state.subst with
+          | Some return_caller_hist ->
+              return_caller_hist
+          | None ->
+              (AbstractValue.mk_fresh (), [])
         in
-        L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp
-          (fst return_caller_addr_hist) ;
+        L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp return_caller ;
         let call_state =
           record_post_for_address path callee_proc_name call_loc pre_post ~addr_callee:return_callee
-            ~addr_hist_caller:return_caller_addr_hist call_state
+            ~addr_hist_caller:(return_caller, return_caller_hist)
+            call_state
         in
-        (call_state, Some return_caller_addr_hist) )
+        (* need to add the call to the returned history too *)
+        let return_caller_hist =
+          ValueHistory.Call
+            {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist; timestamp}
+          :: return_caller_hist
+        in
+        (call_state, Some (return_caller, return_caller_hist)) )
 
 
 let apply_post_for_parameters path callee_proc_name call_location pre_post ~formals ~actuals

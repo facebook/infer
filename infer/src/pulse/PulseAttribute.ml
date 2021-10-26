@@ -218,18 +218,8 @@ module Attribute = struct
       Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
     in
     match attr with
-    | Allocated (proc_name, trace) -> (
-      match
-        Trace.trace_up_to_key_event caller_history ~is_key_event:(function
-          | Allocation _ ->
-              true
-          | _ ->
-              false )
-      with
-      | Some alloc_trace ->
-          Allocated (proc_name, alloc_trace)
-      | None ->
-          Allocated (proc_name, add_call_to_trace trace) )
+    | Allocated (proc_name, trace) ->
+        Allocated (proc_name, add_call_to_trace trace)
     | Invalid (invalidation, trace) ->
         Invalid (invalidation, add_call_to_trace trace)
     | ISLAbduced trace ->

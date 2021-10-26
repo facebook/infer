@@ -44,6 +44,3 @@ val get_invalidation : t -> Invalidation.t option
 
 val has_invalidation : t -> bool
 (** whether the trace contains an invalidation event *)
-
-val trace_up_to_key_event : is_key_event:(ValueHistory.event -> bool) -> ValueHistory.t -> t option
-(** turns a history containing a "key event" into a trace leading to the most recent such event *)

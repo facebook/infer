@@ -15,20 +15,6 @@ type t =
   | ViaCall of {f: CallEvent.t; location: Location.t; history: ValueHistory.t; in_call: t}
 [@@deriving compare, equal]
 
-let rec trace_up_to_key_event ~is_key_event history =
-  match (history : ValueHistory.t) with
-  | [] ->
-      None
-  | event :: past when is_key_event event ->
-      Some (Immediate {location= ValueHistory.location_of_event event; history= past})
-  | Call {f; location; in_call} :: past ->
-      Option.map (trace_up_to_key_event ~is_key_event in_call) ~f:(fun in_call_trace ->
-          ViaCall {f; location; in_call= in_call_trace; history= past} )
-  | _event :: past ->
-      (* [_event ≠ key_event]: we are past the key event if it exists *)
-      trace_up_to_key_event ~is_key_event past
-
-
 let get_outer_location = function Immediate {location; _} | ViaCall {location; _} -> location
 
 let get_outer_history = function Immediate {history; _} | ViaCall {history; _} -> history
