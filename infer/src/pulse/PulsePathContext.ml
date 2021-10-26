@@ -27,4 +27,8 @@ let pp fmt ({conditions; timestamp} [@warning "+9"]) =
 
 let initial = {conditions= []; timestamp= Timestamp.t0}
 
+let with_context path hist =
+  if List.is_empty path.conditions then hist else ValueHistory.Branching (hist :: path.conditions)
+
+
 let post_exec_instr {conditions; timestamp} = {conditions; timestamp= Timestamp.incr timestamp}

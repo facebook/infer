@@ -367,14 +367,13 @@ module PulseTransferFunctions = struct
                 let+ astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
                 (false, [Ok (astate, lhs_addr_hist)])
             in
+            let hist = PathContext.with_context path (Sequence (event, rhs_history)) in
             let write_function lhs_addr_hist astate =
               if is_structured then
                 PulseOperations.write_deref_biad_isl path loc ~ref:lhs_addr_hist Dereference
-                  ~obj:(rhs_addr, Sequence (event, rhs_history))
-                  astate
+                  ~obj:(rhs_addr, hist) astate
               else
-                [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist
-                    ~obj:(rhs_addr, Sequence (event, rhs_history))
+                [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist)
                     astate ]
             in
             let astates =
