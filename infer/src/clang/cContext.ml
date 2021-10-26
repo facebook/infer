@@ -11,7 +11,7 @@ module Hashtbl = Caml.Hashtbl
 module StmtMap = ClangPointers.Map
 
 type cxx_temporary =
-  {pvar: Pvar.t; typ: Typ.t; qual_type: Clang_ast_t.qual_type; marker: Pvar.t option}
+  {pvar: Pvar.t; typ: Typ.t; qual_type: Clang_ast_t.qual_type; marker: (Pvar.t * Sil.if_kind) option}
 
 type var_to_destroy =
   | VarDecl of

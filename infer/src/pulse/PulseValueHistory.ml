@@ -98,8 +98,7 @@ let pp_event_no_location fmt event =
         (CapturedVar.string_of_capture_mode mode)
         Pvar.pp_value_non_verbose captured_as
   | Conditional {is_then_branch; if_kind; location= _} ->
-      F.fprintf fmt "expression in %s condition is %b" (Sil.if_kind_to_string if_kind)
-        is_then_branch
+      F.fprintf fmt "expression in %a condition is %b" Sil.pp_if_kind if_kind is_then_branch
   | CppTemporaryCreated _ ->
       F.pp_print_string fmt "C++ temporary created"
   | FormalDeclared (pvar, _, _) ->

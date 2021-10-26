@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_4" [label="4: + \n  " ]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_4" [label="4: + \n   END_BRANCHES\n " ]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_4" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_5" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_6" ;
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_5" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_7" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_6" [label="6: Prune (true branch, if) \n   PRUNE(n$1, true); [line 9, column 8]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(n$1, true); [line 9, column 8]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_6" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_8" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$1, false); [line 9, column 8]\n " shape="invhouse"]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!n$1, false); [line 9, column 8]\n " shape="invhouse"]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_7" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_4" ;

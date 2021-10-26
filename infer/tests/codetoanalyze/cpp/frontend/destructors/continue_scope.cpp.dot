@@ -28,15 +28,15 @@ digraph cfg {
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_7" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_5" ;
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_7" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_6" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_8" [label="8: + \n  " ]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_8" [label="8: + \n   END_BRANCHES\n " ]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_8" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_7" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_9" [label="9: Prune (true branch, if) \n   n$7=*&b:_Bool [line 82, column 9]\n  PRUNE(n$7, true); [line 82, column 9]\n " shape="invhouse"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_9" [label="9: Prune (true branch, if (terminated)) \n   n$7=*&b:_Bool [line 82, column 9]\n  PRUNE(n$7, true); [line 82, column 9]\n " shape="invhouse"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_9" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_12" ;
-"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_10" [label="10: Prune (false branch, if) \n   n$7=*&b:_Bool [line 82, column 9]\n  PRUNE(!n$7, false); [line 82, column 9]\n " shape="invhouse"]
+"test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_10" [label="10: Prune (false branch, if (terminated)) \n   n$7=*&b:_Bool [line 82, column 9]\n  PRUNE(!n$7, false); [line 82, column 9]\n " shape="invhouse"]
 	
 
 	 "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_10" -> "test_do_while#continue_scope#8999676231552324448.9fe455097ef7e757730530e9e7c09864_14" ;
@@ -119,15 +119,15 @@ digraph cfg {
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_13" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_4" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_14" [label="14: + \n  " ]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_14" [label="14: + \n   END_BRANCHES\n " ]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_14" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_9" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_15" [label="15: Prune (true branch, if) \n   n$21=*&b:_Bool [line 58, column 9]\n  PRUNE(n$21, true); [line 58, column 9]\n " shape="invhouse"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_15" [label="15: Prune (true branch, if (terminated)) \n   n$21=*&b:_Bool [line 58, column 9]\n  PRUNE(n$21, true); [line 58, column 9]\n " shape="invhouse"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_15" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_18" ;
-"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_16" [label="16: Prune (false branch, if) \n   n$21=*&b:_Bool [line 58, column 9]\n  PRUNE(!n$21, false); [line 58, column 9]\n " shape="invhouse"]
+"test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_16" [label="16: Prune (false branch, if (terminated)) \n   n$21=*&b:_Bool [line 58, column 9]\n  PRUNE(!n$21, false); [line 58, column 9]\n " shape="invhouse"]
 	
 
 	 "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_16" -> "test_for#continue_scope#10203739842900202560.4cb2db668430574619fdf529fdd4af8c_14" ;
@@ -199,15 +199,15 @@ digraph cfg {
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_14" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_3" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" [label="15: + \n  " ]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" [label="15: + \n   END_BRANCHES\n " ]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_11" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_16" [label="16: Prune (true branch, if) \n   n$23=*&b:_Bool [line 48, column 9]\n  PRUNE(n$23, true); [line 48, column 9]\n " shape="invhouse"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_16" [label="16: Prune (true branch, if (terminated)) \n   n$23=*&b:_Bool [line 48, column 9]\n  PRUNE(n$23, true); [line 48, column 9]\n " shape="invhouse"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_16" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_19" ;
-"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" [label="17: Prune (false branch, if) \n   n$23=*&b:_Bool [line 48, column 9]\n  PRUNE(!n$23, false); [line 48, column 9]\n " shape="invhouse"]
+"test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" [label="17: Prune (false branch, if (terminated)) \n   n$23=*&b:_Bool [line 48, column 9]\n  PRUNE(!n$23, false); [line 48, column 9]\n " shape="invhouse"]
 	
 
 	 "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_17" -> "test_for_range#continue_scope#9937708960633325401.fa75d7368d8f711ae7e040a8b2ae1442_15" ;
@@ -269,15 +269,15 @@ digraph cfg {
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_6" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_3" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_7" [label="7: + \n  " ]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_7" [label="7: + \n   END_BRANCHES\n " ]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_7" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_4" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_8" [label="8: Prune (true branch, if) \n   n$4=*&b:_Bool [line 69, column 9]\n  PRUNE(n$4, true); [line 69, column 9]\n " shape="invhouse"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_8" [label="8: Prune (true branch, if (terminated)) \n   n$4=*&b:_Bool [line 69, column 9]\n  PRUNE(n$4, true); [line 69, column 9]\n " shape="invhouse"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_8" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_11" ;
-"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_9" [label="9: Prune (false branch, if) \n   n$4=*&b:_Bool [line 69, column 9]\n  PRUNE(!n$4, false); [line 69, column 9]\n " shape="invhouse"]
+"test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_9" [label="9: Prune (false branch, if (terminated)) \n   n$4=*&b:_Bool [line 69, column 9]\n  PRUNE(!n$4, false); [line 69, column 9]\n " shape="invhouse"]
 	
 
 	 "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_9" -> "test_while1#continue_scope#7540876780991944911.b81085ce953e1cd4f035dc0322ac5331_13" ;
@@ -473,7 +473,7 @@ digraph cfg {
 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_2" [label="2: Exit continue_scope::iterator::operator!= \n  " color=yellow style=filled]
 	
 
-"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_3" [label="3: + \n  " ]
+"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_3" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_9" ;
@@ -482,11 +482,11 @@ digraph cfg {
 
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_4" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_5" ;
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_4" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_6" ;
-"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_5" [label="5: Prune (true branch, boolean exp) \n   PRUNE((n$1 != n$3), true); [line 27, column 48]\n " shape="invhouse"]
+"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_5" [label="5: Prune (true branch, boolean exp (terminated)) \n   PRUNE((n$1 != n$3), true); [line 27, column 48]\n " shape="invhouse"]
 	
 
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_5" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_7" ;
-"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_6" [label="6: Prune (false branch, boolean exp) \n   PRUNE(!(n$1 != n$3), false); [line 27, column 48]\n " shape="invhouse"]
+"operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_6" [label="6: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!(n$1 != n$3), false); [line 27, column 48]\n " shape="invhouse"]
 	
 
 	 "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_6" -> "operator!=#iterator#continue_scope#(11025097396656630732).d1947b35520a12f51156c7fee5f5e4a1_8" ;

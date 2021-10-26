@@ -49,7 +49,7 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
     | Join_node ->
         Format.pp_print_char fmt '+'
     | Prune_node (is_true_branch, if_kind, _) ->
-        Format.fprintf fmt "Prune (%b branch, %s)" is_true_branch (Sil.if_kind_to_string if_kind)
+        Format.fprintf fmt "Prune (%b branch, %a)" is_true_branch Sil.pp_if_kind if_kind
     | Stmt_node s ->
         Format.fprintf fmt " %a" Procdesc.Node.pp_stmt s
     | Skip_node s ->

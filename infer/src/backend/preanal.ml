@@ -349,7 +349,9 @@ module Liveness = struct
             (VarDomain.add (Var.of_pvar pvar) active_defs, to_nullify)
         | Store _
         | Prune _
-        | Metadata (Abstract _ | CatchEntry _ | ExitScope _ | Skip | TryEntry _ | TryExit _) ->
+        | Metadata
+            (Abstract _ | CatchEntry _ | EndBranches | ExitScope _ | Skip | TryEntry _ | TryExit _)
+          ->
             astate
         | Metadata (Nullify _) ->
             L.(die InternalError)

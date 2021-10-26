@@ -39,8 +39,8 @@ let make_if (env : (_, _) Env.t) branch expr =
     if branch then PruneNodeKind_TrueBranch else PruneNodeKind_FalseBranch
   in
   let condition : Exp.t = if branch then expr else UnOp (LNot, expr, Some (Typ.mk (Tint IBool))) in
-  let kind : Procdesc.Node.nodekind = Prune_node (branch, Ik_if, prune_kind) in
-  let prune : Sil.instr = Prune (condition, env.location, branch, Ik_if) in
+  let kind : Procdesc.Node.nodekind = Prune_node (branch, Ik_if {terminated= false}, prune_kind) in
+  let prune : Sil.instr = Prune (condition, env.location, branch, Ik_if {terminated= false}) in
   make env kind [prune]
 
 
