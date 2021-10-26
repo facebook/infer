@@ -89,11 +89,11 @@ let gen_spec us specm =
 
 let null_eq ptr = Sh.pure (Formula.eq0 ptr)
 
+let concat ms =
+  Term.concat (Array.map ~f:(fun (siz, cnt) -> Term.sized ~siz ~seq:cnt) ms)
+
 let eq_concat (siz, cnt) ms =
-  Formula.eq
-    (Term.sized ~siz ~seq:cnt)
-    (Term.concat
-       (Array.map ~f:(fun (siz, cnt) -> Term.sized ~siz ~seq:cnt) ms) )
+  Formula.eq (Term.sized ~siz ~seq:cnt) (concat ms)
 
 open Fresh.Import
 
@@ -249,50 +249,29 @@ let memmov_foot dst src len =
   let* siz = Fresh.var "m" in
   let* cnt_dst = Fresh.var "a" in
   let* cnt_mid = Fresh.var "a" in
-  let* cnt_src = Fresh.var "a" in
+  let+ cnt_src = Fresh.var "a" in
   let src_dst = Term.sub src dst in
   let mem_dst = (src_dst, cnt_dst) in
   let siz_mid = Term.sub len src_dst in
   let mem_mid = (siz_mid, cnt_mid) in
   let mem_src = (src_dst, cnt_src) in
-  let mem_dst_mid_src = [|mem_dst; mem_mid; mem_src|] in
-  let* siz_dst_mid_src = Fresh.var "m" in
-  let+ cnt_dst_mid_src = Fresh.var "a" in
-  let eq_mem_dst_mid_src =
-    eq_concat (siz_dst_mid_src, cnt_dst_mid_src) mem_dst_mid_src
-  in
-  let seg =
-    Sh.seg
-      {loc= dst; bas; len= siz; siz= siz_dst_mid_src; cnt= cnt_dst_mid_src}
-  in
+  let cnt = concat [|mem_dst; mem_mid; mem_src|] in
+  let seg_siz = Term.add len (Term.sub src dst) in
+  let seg = Sh.seg {loc= dst; bas; len= siz; siz= seg_siz; cnt} in
   let foot =
-    Sh.and_ eq_mem_dst_mid_src
-      (Sh.and_ (Formula.lt dst src)
-         (Sh.and_ (Formula.lt src (Term.add dst len)) seg) )
+    Sh.and_ (Formula.lt dst src)
+      (Sh.and_ (Formula.lt src (Term.add dst len)) seg)
   in
-  (bas, siz, mem_dst, mem_mid, mem_src, foot)
+  (bas, siz, mem_dst, mem_mid, mem_src, seg_siz, foot)
 
 (* { d<s * s<d+l * d-[b;m)->⟨s-d,α⟩^⟨l-(s-d),β⟩^⟨s-d,γ⟩ }
  *   memmov l d s
  * { d-[b;m)->⟨l-(s-d),β⟩^⟨s-d,γ⟩^⟨s-d,γ⟩ }
  *)
 let memmov_dn_spec dst src len =
-  let* bas, siz, _, mem_mid, mem_src, foot = memmov_foot dst src len in
-  let mem_mid_src_src = [|mem_mid; mem_src; mem_src|] in
-  let* siz_mid_src_src = Fresh.var "m" in
-  let+ cnt_mid_src_src = Fresh.var "a" in
-  let eq_mem_mid_src_src =
-    eq_concat (siz_mid_src_src, cnt_mid_src_src) mem_mid_src_src
-  in
-  let post =
-    Sh.and_ eq_mem_mid_src_src
-      (Sh.seg
-         { loc= dst
-         ; bas
-         ; len= siz
-         ; siz= siz_mid_src_src
-         ; cnt= cnt_mid_src_src } )
-  in
+  let+ bas, len, _, mem_mid, mem_src, siz, foot = memmov_foot dst src len in
+  let cnt = concat [|mem_mid; mem_src; mem_src|] in
+  let post = Sh.seg {loc= dst; bas; len; siz; cnt} in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 (* { s<d * d<s+l * s-[b;m)->⟨d-s,α⟩^⟨l-(d-s),β⟩^⟨d-s,γ⟩ }
@@ -300,22 +279,9 @@ let memmov_dn_spec dst src len =
  * { s-[b;m)->⟨d-s,α⟩^⟨d-s,α⟩^⟨l-(d-s),β⟩ }
  *)
 let memmov_up_spec dst src len =
-  let* bas, siz, mem_src, mem_mid, _, foot = memmov_foot src dst len in
-  let mem_src_src_mid = [|mem_src; mem_src; mem_mid|] in
-  let* siz_src_src_mid = Fresh.var "m" in
-  let+ cnt_src_src_mid = Fresh.var "a" in
-  let eq_mem_src_src_mid =
-    eq_concat (siz_src_src_mid, cnt_src_src_mid) mem_src_src_mid
-  in
-  let post =
-    Sh.and_ eq_mem_src_src_mid
-      (Sh.seg
-         { loc= src
-         ; bas
-         ; len= siz
-         ; siz= siz_src_src_mid
-         ; cnt= cnt_src_src_mid } )
-  in
+  let+ bas, len, mem_src, mem_mid, _, siz, foot = memmov_foot src dst len in
+  let cnt = concat [|mem_src; mem_src; mem_mid|] in
+  let post = Sh.seg {loc= src; bas; len; siz; cnt} in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
 let memmov_specs dst src len =
