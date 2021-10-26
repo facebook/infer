@@ -80,7 +80,10 @@ let solve_poly p q s =
   | p_q -> (
     match Trm.Arith.solve_zero_eq p_q with
     | Some (var, rep) ->
-        add_solved ~var:(Trm.arith var) ~rep:(Trm.arith rep) s
+        let var = Trm.arith var in
+        let rep = Trm.arith rep in
+        if Trm.non_interpreted var then add_solved ~var ~rep s
+        else add_pending var rep s
     | None -> add_solved ~var:p_q ~rep:Trm.zero s )
 
 (* ⟨n,a⟩[o,l) = β ==> l = |β| ∧ a = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l))
