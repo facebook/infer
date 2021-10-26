@@ -396,10 +396,7 @@ let get_trace = function
 
 
 let get_issue_type = function
-  | AccessToInvalidAddress {invalidation; must_be_valid_reason; access_trace} ->
-      let invalidation =
-        Trace.get_invalidation access_trace |> Option.value ~default:invalidation
-      in
+  | AccessToInvalidAddress {invalidation; must_be_valid_reason} ->
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
