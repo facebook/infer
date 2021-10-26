@@ -31,7 +31,7 @@ type event =
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
-and t = Epoch | Sequence of event * t [@@deriving compare, equal]
+and t = Epoch | Sequence of event * t | Branching of t list [@@deriving compare, equal]
 
 let singleton event = Sequence (event, Epoch)
 
@@ -52,21 +52,89 @@ let location_of_event = function
       location
 
 
+let timestamp_of_event = function
+  | Allocation {timestamp}
+  | Assignment (_, timestamp)
+  | Call {timestamp}
+  | Capture {timestamp}
+  | ConditionPassed {timestamp}
+  | CppTemporaryCreated (_, timestamp)
+  | FormalDeclared (_, _, timestamp)
+  | Invalidated (_, _, timestamp)
+  | NilMessaging (_, timestamp)
+  | Returned (_, timestamp)
+  | StructFieldAddressCreated (_, _, timestamp)
+  | VariableAccessed (_, _, timestamp)
+  | VariableDeclared (_, _, timestamp) ->
+      timestamp
+
+
+let pop_least_timestamp hists0 =
+  let rec aux orig_hists_prefix curr_ts_hists_prefix latest_events (highest_t : Timestamp.t option)
+      hists =
+    match (highest_t, hists) with
+    | _, [] ->
+        (latest_events, curr_ts_hists_prefix)
+    | _, Epoch :: hists ->
+        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t hists
+    | _, Branching branches_hist :: hists ->
+        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t
+          (List.rev_append branches_hist hists)
+    | None, (Sequence (event, hist') as hist) :: hists ->
+        aux (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
+          (Some (timestamp_of_event event))
+          hists
+    | Some highest_ts, (Sequence (event, hist') as hist) :: hists
+      when (timestamp_of_event event :> int) > (highest_ts :> int) ->
+        aux (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
+          (Some (timestamp_of_event event))
+          hists
+    | Some highest_ts, (Sequence (event, _) as hist) :: hists
+      when (timestamp_of_event event :> int) < (highest_ts :> int) ->
+        aux (hist :: orig_hists_prefix) (hist :: curr_ts_hists_prefix) latest_events highest_t hists
+    | Some _, (Sequence (event, hist') as hist) :: hists
+    (* when  timestamp_of_event _event = highest_ts *) ->
+        aux (hist :: orig_hists_prefix) (hist' :: curr_ts_hists_prefix) (event :: latest_events)
+          highest_t hists
+  in
+  aux [] [] [] None hists0
+
+
 type iter_event =
   | EnterCall of CallEvent.t * Location.t
   | ReturnFromCall of CallEvent.t * Location.t
   | Event of event
 
-let rec iter_event event ~f =
-  ( match event with
-  | Call {f= callee; location; in_call= Sequence _ as in_call} ->
-      f (ReturnFromCall (callee, location)) ;
-      iter in_call ~f ;
-      f (EnterCall (callee, location)) ;
+let rec iter_branches hists ~f =
+  if List.is_empty hists then ()
+  else
+    let latest_events, hists = pop_least_timestamp hists in
+    iter_simultaneous_events latest_events ~f ;
+    iter_branches hists ~f
+
+
+and iter_simultaneous_events events ~f =
+  let in_call = function
+    | Call {in_call= (Sequence _ | Branching _) as in_call} ->
+        Some in_call
+    | _ ->
+        None
+  in
+  match events with
+  | [] ->
       ()
-  | _ ->
-      () ) ;
-  f (Event event)
+  | event :: _ ->
+      (* operate on just one representative, they should all be the same given they have the same
+         timestamp inside the same path of the same procedure call *)
+      ( match event with
+      | Call {f= callee; location; in_call= Sequence _ | Branching _} ->
+          f (ReturnFromCall (callee, location)) ;
+          iter_branches (List.filter_map events ~f:in_call) ~f ;
+          f (EnterCall (callee, location)) ;
+          ()
+      | _ ->
+          () ) ;
+      f (Event event)
 
 
 and iter (history : t) ~f =
@@ -74,8 +142,10 @@ and iter (history : t) ~f =
   | Epoch ->
       ()
   | Sequence (event, rest) ->
-      iter_event event ~f ;
+      iter_simultaneous_events [event] ~f ;
       iter rest ~f
+  | Branching hists ->
+      iter_branches hists ~f
 
 
 let yojson_of_event = [%yojson_of: _]
@@ -163,6 +233,8 @@ let pp fmt history =
     | Sequence (event, tail) ->
         F.fprintf fmt "%a@;" pp_event event ;
         pp_aux fmt tail
+    | Branching hists ->
+        F.fprintf fmt "[@[%a@]]" (Pp.seq ~sep:"; " pp_aux) hists
   in
   F.fprintf fmt "@[%a@]" pp_aux history
 

@@ -29,7 +29,14 @@ type event =
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
-and t = Epoch | Sequence of event * t [@@deriving compare, equal, yojson_of]
+and t =
+  | Epoch  (** start of time *)
+  | Sequence of event * t
+      (** [Sequence \[event, hist\]] represents an event [event] occurring *after* [hist].
+          Invariant: the timestamp of [event] is greater than all the (local, i.e. not inside
+          function calls) timestamps in [hist]. *)
+  | Branching of t list  (** several parallel histories *)
+[@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
 
@@ -43,7 +50,24 @@ type iter_event =
   | Event of event
 
 val iter : t -> f:(iter_event -> unit) -> unit
-(** iterate on all events, recursing into the histories inside call events *)
+(** iterate on all events in reverse timestamp order, recursing into the histories inside call
+    events. Timestamp order is the lexicographic order induced by projecting events onto their
+    timestamps and appending timestamps within calls, e.g. the timestamp of the inner assignement in
+
+    {[
+      Call {timestamp=10;
+            in_call=[...,
+                     Call{timestamp=4;
+                          in_call=[...,
+                                   Assignement (...,timestamp=3)
+                                  ]
+                         }
+                    ]
+           }
+    ]}
+
+    can be written [10.4.3] and the order is such that, e.g., [10.4.3 < 10.5], [10.5] being the
+    timestamp of the event following the inner [Call] event in the example above. *)
 
 val location_of_event : event -> Location.t
 
