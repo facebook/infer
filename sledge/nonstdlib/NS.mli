@@ -98,6 +98,16 @@ val map2 : ('a -> 'a) -> 'b -> ('a -> 'a -> 'b) -> 'a -> 'a -> 'b
 val map3 :
   ('a -> 'a) -> 'b -> ('a -> 'a -> 'a -> 'b) -> 'a -> 'a -> 'a -> 'b
 
+val map4 :
+     ('a -> 'a)
+  -> 'b
+  -> ('a -> 'a -> 'a -> 'a -> 'b)
+  -> 'a
+  -> 'a
+  -> 'a
+  -> 'a
+  -> 'b
+
 val mapN : ('a -> 'a) -> 'b -> ('a array -> 'b) -> 'a array -> 'b
 
 val fold_map_from_map :
