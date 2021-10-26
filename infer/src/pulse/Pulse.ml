@@ -293,13 +293,13 @@ module PulseTransferFunctions = struct
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
-      (instr : Sil.instr) : ExecutionDomain.t list * NonDisjDomain.t =
+      (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
     | AbortProgram _ | ISLLatentMemoryError _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
-        ([astate], astate_n)
+        ([astate], path, astate_n)
     | ExitProgram _ ->
         (* program already exited, simply propagate the exited state upwards  *)
-        ([astate], astate_n)
+        ([astate], path, astate_n)
     | ContinueProgram astate -> (
       match instr with
       | Load {id= lhs_id; e= rhs_exp; loc} ->
@@ -346,7 +346,7 @@ module PulseTransferFunctions = struct
             | _ ->
                 [astate]
           in
-          (List.concat_map set_global_astates ~f:deref_rhs, astate_n)
+          (List.concat_map set_global_astates ~f:deref_rhs, path, astate_n)
       | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
           (* [*lhs_exp := rhs_exp] *)
           let event =
@@ -397,9 +397,10 @@ module PulseTransferFunctions = struct
             | _ ->
                 astates
           in
-          (PulseReport.report_results tenv proc_desc err_log loc result, astate_n)
+          (PulseReport.report_results tenv proc_desc err_log loc result, path, astate_n)
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
-          ( (let<*> astate = PulseOperations.prune path loc ~condition astate in
+          let results =
+            (let<*> astate = PulseOperations.prune path loc ~condition astate in
              if PulseArithmetic.is_unsat_cheap astate then
                (* [condition] is known to be unsatisfiable: prune path *)
                []
@@ -407,13 +408,15 @@ module PulseTransferFunctions = struct
                (* [condition] is true or unknown value: go into the branch *)
                [Ok (ContinueProgram astate)] )
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
-          , astate_n )
+          in
+          (results, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           let astates =
             dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
           in
           ( astates
+          , path
           , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals call_flags astates
               astate_n )
       | Metadata (ExitScope (vars, location)) ->
@@ -430,7 +433,7 @@ module PulseTransferFunctions = struct
                     ContinueProgram (PulseOperations.remove_vars vars location astate) )
           in
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
-            (remove_vars vars [ContinueProgram astate], astate_n)
+            (remove_vars vars [ContinueProgram astate], path, astate_n)
           else
             (* Here we add and execute calls to dealloc for Objective-C objects
                before removing the variables *)
@@ -445,10 +448,12 @@ module PulseTransferFunctions = struct
               if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
             in
             ( remove_vars vars_to_remove astates
+            , path
             , PulseNonDisjunctiveOperations.mark_modified_copies vars astates astate_n )
       | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
           ( [ PulseOperations.realloc_pvar tenv path pvar typ location astate
               |> ExecutionDomain.continue ]
+          , path
           , astate_n )
       | Metadata
           ( Abstract _
@@ -459,14 +464,16 @@ module PulseTransferFunctions = struct
           | TryEntry _
           | TryExit _
           | VariableLifetimeBegins _ ) ->
-          ([ContinueProgram astate], astate_n) )
+          ([ContinueProgram astate], path, astate_n) )
 
 
   let exec_instr ((astate, path), astate_n) analysis_data cfg_node instr :
       DisjDomain.t list * NonDisjDomain.t =
     (* Sometimes instead of stopping on contradictions a false path condition is recorded
        instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
-    let astates, astate_n = exec_instr_aux path astate astate_n analysis_data cfg_node instr in
+    let astates, path, astate_n =
+      exec_instr_aux path astate astate_n analysis_data cfg_node instr
+    in
     ( List.filter_map astates ~f:(fun exec_state ->
           if ExecutionDomain.is_unsat_cheap exec_state then None
           else Some (exec_state, PathContext.post_exec_instr path) )
