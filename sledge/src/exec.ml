@@ -402,6 +402,12 @@ let posix_memalign_spec reg ptr siz =
   in
   {foot; sub; ms; post}
 
+(* (cnd ? α'=⟨m,α⟩^⟨n-m,α''⟩ : α=⟨n,α'⟩^⟨m-n,α''⟩) *)
+let realloc_seq cnd a0 m a1 n a2 =
+  Formula.cond ~cnd
+    ~pos:(eq_concat (n, a1) [|(m, a0); (Term.sub n m, a2)|])
+    ~neg:(eq_concat (m, a0) [|(n, a1); (Term.sub m n, a2)|])
+
 (* { p=0 ∨ p-[p;m)->⟨m,α⟩ }
  *   realloc r p s
  * {   (r=0 * (pΘ=0 ∨ pΘ-[pΘ;m)->⟨m,α⟩))
@@ -426,9 +432,7 @@ let realloc_spec reg ptr siz =
     Sh.or_
       (Sh.and_ (Formula.eq0 loc) (Sh.rename sub foot))
       (Sh.and_
-         (Formula.cond ~cnd:(Formula.le len siz)
-            ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]) )
+         (realloc_seq (Formula.le len siz) a0 len a1 siz a2)
          (Sh.seg rseg) )
   in
   {foot; sub; ms; post}
@@ -455,9 +459,7 @@ let rallocx_spec reg ptr siz =
     Sh.or_
       (Sh.and_ (Formula.eq0 loc) (Sh.rename sub pheap))
       (Sh.and_
-         (Formula.cond ~cnd:(Formula.le len siz)
-            ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-            ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|]) )
+         (realloc_seq (Formula.le len siz) a0 len a1 siz a2)
          (Sh.seg rseg) )
   in
   {foot; sub; ms; post}
@@ -485,9 +487,7 @@ let xallocx_spec reg ptr siz ext =
   let+ a2 = Fresh.var "a" in
   let post =
     Sh.andN
-      [ Formula.cond ~cnd:(Formula.le len siz)
-          ~pos:(eq_concat (siz, a1) [|(len, a0); (Term.sub siz len, a2)|])
-          ~neg:(eq_concat (len, a0) [|(siz, a1); (Term.sub len siz, a2)|])
+      [ realloc_seq (Formula.le len siz) a0 len a1 siz a2
       ; Formula.le siz reg
       ; Formula.le reg (Term.add siz ext) ]
       (Sh.seg seg')
