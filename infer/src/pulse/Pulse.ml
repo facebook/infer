@@ -290,7 +290,8 @@ module PulseTransferFunctions = struct
     (astates, ret_vars)
 
 
-  let exec_instr_aux path (astate : ExecutionDomain.t) (astate_n : NonDisjDomain.t)
+  let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
+      (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * NonDisjDomain.t =
     match astate with
@@ -351,9 +352,9 @@ module PulseTransferFunctions = struct
           let event =
             match lhs_exp with
             | Lvar v when Pvar.is_return v ->
-                ValueHistory.Returned loc
+                ValueHistory.Returned (loc, timestamp)
             | _ ->
-                ValueHistory.Assignment loc
+                ValueHistory.Assignment (loc, timestamp)
           in
           let result =
             let<*> astate, (rhs_addr, rhs_history) =
@@ -446,7 +447,8 @@ module PulseTransferFunctions = struct
             ( remove_vars vars_to_remove astates
             , PulseNonDisjunctiveOperations.mark_modified_copies vars astates astate_n )
       | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
-          ( [PulseOperations.realloc_pvar tenv pvar typ location astate |> ExecutionDomain.continue]
+          ( [ PulseOperations.realloc_pvar tenv path pvar typ location astate
+              |> ExecutionDomain.continue ]
           , astate_n )
       | Metadata
           ( Abstract _

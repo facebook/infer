@@ -7,12 +7,10 @@
 
 open! IStd
 module F = Format
+open PulseBasicInterface
 
-type timestamp = private int [@@deriving compare]
-
-val t0 : timestamp
-
-type t = {timestamp: timestamp  (** step number *)}
+type t = {timestamp: Timestamp.t  (** step number in an intra-procedural analysis *)}
+[@@deriving compare, equal]
 
 val leq : lhs:t -> rhs:t -> bool
 

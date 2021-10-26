@@ -86,7 +86,7 @@ let exists trace ~f = Container.exists ~iter trace ~f
 
 let get_invalidation trace =
   find_map trace ~f:(function
-    | ValueHistory.Invalidated (invalidation, _) ->
+    | ValueHistory.Invalidated (invalidation, _, _) ->
         Some invalidation
     | _ ->
         None )

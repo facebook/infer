@@ -7,21 +7,27 @@
 open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
+module Timestamp = PulseTimestamp
 
 type event =
-  | Allocation of {f: CallEvent.t; location: Location.t}
-  | Assignment of Location.t
-  | Call of {f: CallEvent.t; location: Location.t; in_call: t}
-  | Capture of {captured_as: Pvar.t; mode: CapturedVar.capture_mode; location: Location.t}
-  | Conditional of {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t}
-  | CppTemporaryCreated of Location.t
-  | FormalDeclared of Pvar.t * Location.t
-  | Invalidated of PulseInvalidation.t * Location.t
-  | NilMessaging of Location.t
-  | Returned of Location.t
-  | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t
-  | VariableAccessed of Pvar.t * Location.t
-  | VariableDeclared of Pvar.t * Location.t
+  | Allocation of {f: CallEvent.t; location: Location.t; timestamp: Timestamp.t}
+  | Assignment of Location.t * Timestamp.t
+  | Call of {f: CallEvent.t; location: Location.t; in_call: t; timestamp: Timestamp.t}
+  | Capture of
+      { captured_as: Pvar.t
+      ; mode: CapturedVar.capture_mode
+      ; location: Location.t
+      ; timestamp: Timestamp.t }
+  | Conditional of
+      {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t; timestamp: Timestamp.t}
+  | CppTemporaryCreated of Location.t * Timestamp.t
+  | FormalDeclared of Pvar.t * Location.t * Timestamp.t
+  | Invalidated of PulseInvalidation.t * Location.t * Timestamp.t
+  | NilMessaging of Location.t * Timestamp.t
+  | Returned of Location.t * Timestamp.t
+  | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t * Timestamp.t
+  | VariableAccessed of Pvar.t * Location.t * Timestamp.t
+  | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
 and t = event list [@@deriving compare, equal, yojson_of]
 

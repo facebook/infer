@@ -16,9 +16,9 @@ module CallEvent = PulseCallEvent
 module Diagnostic = PulseDiagnostic
 module Invalidation = PulseInvalidation
 module PathCondition = PulsePathCondition
-module PathContext = PulsePathContext
 module SatUnsat = PulseSatUnsat
 module SkippedCalls = PulseSkippedCalls
+module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 include SatUnsat.Types
@@ -37,7 +37,7 @@ include struct
   [@@deprecated "use the short form Invalidation instead"]
   module PulsePathCondition = PulsePathCondition
   [@@deprecated "use the short form PathCondition instead"]
-  module PulsePathContext = PulsePathContext [@@deprecated "use the short form PathContext instead"]
+  module PulseTimestamp = PulseTimestamp [@@deprecated "use the short form Timestamp instead"]
   module PulseSkippedCalls = PulseSkippedCalls
   [@@deprecated "use the short form SkippedCalls instead"]
   module PulseTrace = PulseTrace [@@deprecated "use the short form Trace instead"]

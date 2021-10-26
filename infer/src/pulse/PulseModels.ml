@@ -52,8 +52,8 @@ module Misc = struct
 
 
   let shallow_copy_model model_desc dest_pointer_hist src_pointer_hist : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model model_desc; location; in_call= []; timestamp} in
     shallow_copy path location event ret_id dest_pointer_hist src_pointer_hist astate
 
 
@@ -82,8 +82,8 @@ module Misc = struct
 
 
   let return_positive ~desc : model =
-   fun {location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value = (ret_addr, [event]) in
     let<+> astate = PulseArithmetic.and_positive ret_addr astate in
@@ -115,14 +115,14 @@ module Misc = struct
 
 
   let nondet ~fn_name : model =
-   fun {location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model fn_name; location; in_call= []} in
+   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model fn_name; location; in_call= []; timestamp} in
     PulseOperations.havoc_id ret_id [event] astate |> ok_continue
 
 
   let id_first_arg ~desc (arg_value, arg_history) : model =
-   fun {location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let ret_value = (arg_value, event :: arg_history) in
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
@@ -187,18 +187,20 @@ module Misc = struct
     astate_zero :: astates_alloc
 
 
-  let set_uninitialized tenv size_exp_opt location ret_value astate =
+  let set_uninitialized tenv path size_exp_opt location ret_value astate =
     Option.value_map size_exp_opt ~default:astate ~f:(fun size_exp ->
         BufferOverrunModels.get_malloc_info_opt size_exp
         |> Option.value_map ~default:astate ~f:(fun (obj_typ, _, _, _) ->
-               AbductiveDomain.set_uninitialized tenv (`Malloc ret_value) obj_typ location astate ) )
+               AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location
+                 astate ) )
 
 
   let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
-      {analysis_data= {tenv}; location; callee_procname; ret= ret_id, _} astate =
+      {analysis_data= {tenv}; path= {timestamp} as path; location; callee_procname; ret= ret_id, _}
+      astate =
     let ret_addr = AbstractValue.mk_fresh () in
     let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
-    let ret_alloc_hist = [ValueHistory.Allocation {f= Model desc; location}] in
+    let ret_alloc_hist = [ValueHistory.Allocation {f= Model desc; location; timestamp}] in
     let astate =
       match size_exp_opt with
       | Some (Exp.Sizeof {typ}) ->
@@ -217,7 +219,8 @@ module Misc = struct
           PulseOperations.allocate allocator location (ret_addr, []) astate
     in
     let astate =
-      if initialize then astate else set_uninitialized tenv size_exp_opt location ret_addr astate
+      if initialize then astate
+      else set_uninitialized tenv path size_exp_opt location ret_addr astate
     in
     PulseArithmetic.and_positive ret_addr astate
 
@@ -236,14 +239,15 @@ module C = struct
   let free deleted_access : model = Misc.free_or_delete `Free CFree deleted_access
 
   let alloc_common allocator ~size_exp_opt : model =
-   fun ({path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
+   fun ({path= {timestamp} as path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let astate_alloc =
       Misc.alloc_not_null allocator ~initialize:false size_exp_opt model_data astate >>| continue
     in
     let result_null =
       let ret_null_hist =
-        [ValueHistory.Call {f= Model (Procname.to_string callee_procname); location; in_call= []}]
+        [ ValueHistory.Call
+            {f= Model (Procname.to_string callee_procname); location; in_call= []; timestamp} ]
       in
       let ret_null_value = (ret_addr, ret_null_hist) in
       let+ astate_null =
@@ -329,8 +333,8 @@ module ObjC = struct
 
 
   let insertion_into_collection_key_and_value (value, value_hist) (key, key_hist) ~desc : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<*> astate, _ =
       PulseOperations.eval_access path ~must_be_valid_reason:InsertionIntoCollectionValue Read
         location
@@ -347,8 +351,8 @@ module ObjC = struct
 
 
   let insertion_into_collection_key_or_value (value, value_hist) ~value_kind ~desc : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let must_be_valid_reason =
       match value_kind with
       | `Key ->
@@ -365,8 +369,8 @@ module ObjC = struct
 
 
   let read_from_collection (key, key_hist) ~desc : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let astate_nil =
       let ret_val = AbstractValue.mk_fresh () in
       let<*> astate = PulseArithmetic.prune_eq_zero key astate in
@@ -385,8 +389,8 @@ module ObjC = struct
 
   (* NOTE: assume that this is always called with [freeWhenDone] being [YES] *)
   let init_with_bytes_free_when_done bytes : model =
-   fun {ret= ret_id, _; callee_procname; location} astate ->
-    let event = ValueHistory.Call {f= Call callee_procname; location; in_call= []} in
+   fun {ret= ret_id, _; callee_procname; location; path= {timestamp}} astate ->
+    let event = ValueHistory.Call {f= Call callee_procname; location; in_call= []; timestamp} in
     PulseOperations.havoc_id ret_id [event] astate
     |> PulseOperations.remove_allocation_attr (fst bytes)
     |> ok_continue
@@ -403,9 +407,9 @@ module ObjC = struct
 
 
   let construct_string char_array : model =
-   fun {path; location; ret= ret_id, _} astate ->
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
     let event =
-      ValueHistory.Call {f= Model "NSString.stringWithUTF8String:"; location; in_call= []}
+      ValueHistory.Call {f= Model "NSString.stringWithUTF8String:"; location; in_call= []; timestamp}
     in
     let string = AbstractValue.mk_fresh () in
     let<+> astate =
@@ -430,8 +434,8 @@ module Optional = struct
     PulseOperations.eval_access path mode location pointer Dereference astate
 
 
-  let write_value path location this ~value ~desc astate =
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+  let write_value ({PathContext.timestamp} as path) location this ~value ~desc astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let* astate, value_field = to_internal_value path Read location this astate in
     let value_hist = (fst value, event :: snd value) in
     let+ astate =
@@ -478,8 +482,8 @@ module Optional = struct
 
 
   let value optional ~desc : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<*> astate, ((value_addr, value_hist) as value) =
       to_internal_value_deref path Write location optional astate
     in
@@ -489,9 +493,11 @@ module Optional = struct
 
 
   let has_value optional ~desc : model =
-   fun {path; location; ret= ret_id, _} astate ->
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let ret_value = (ret_addr, [ValueHistory.Call {f= Model desc; location; in_call= []}]) in
+    let ret_value =
+      (ret_addr, [ValueHistory.Call {f= Model desc; location; in_call= []; timestamp}])
+    in
     let<*> astate, (value_addr, _) = to_internal_value_deref path Read location optional astate in
     let astate = PulseOperations.write_id ret_id ret_value astate in
     let result_non_empty =
@@ -508,8 +514,8 @@ module Optional = struct
 
 
   let get_pointer optional ~desc : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
     let value_update_hist = (fst value_addr, event :: snd value_addr) in
     let astate_value_addr =
@@ -531,8 +537,8 @@ module Optional = struct
 
 
   let value_or optional default ~desc : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
     let astate_non_empty =
       let+ astate_non_empty, value =
@@ -596,8 +602,10 @@ module Cplusplus = struct
 
 
   let placement_new actuals : model =
-   fun {location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []} in
+   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "<placement new>()"; location; in_call= []; timestamp}
+    in
     ( match List.rev actuals with
     | ProcnameDispatcher.Call.FuncArg.{arg_payload= address, hist} :: _ ->
         PulseOperations.write_id ret_id (address, event :: hist) astate
@@ -625,8 +633,10 @@ module StdAtomicInteger = struct
 
 
   let constructor this_address init_value : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model "std::atomic::atomic()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic::atomic()"; location; in_call= []; timestamp}
+    in
     let this = (AbstractValue.mk_fresh (), [event]) in
     let<*> astate, int_field =
       PulseOperations.eval_access path Write location this (FieldAccess internal_int) astate
@@ -652,8 +662,10 @@ module StdAtomicInteger = struct
 
 
   let fetch_add this (increment, _) _memory_ordering : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "std::atomic::fetch_add()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic::fetch_add()"; location; in_call= []; timestamp}
+    in
     let<+> astate =
       arith_bop path `Post location event ret_id (PlusA None) this (AbstractValueOperand increment)
         astate
@@ -662,8 +674,10 @@ module StdAtomicInteger = struct
 
 
   let fetch_sub this (increment, _) _memory_ordering : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "std::atomic::fetch_sub()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic::fetch_sub()"; location; in_call= []; timestamp}
+    in
     let<+> astate =
       arith_bop path `Post location event ret_id (MinusA None) this (AbstractValueOperand increment)
         astate
@@ -672,8 +686,10 @@ module StdAtomicInteger = struct
 
 
   let operator_plus_plus_pre this : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "std::atomic::operator++()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic::operator++()"; location; in_call= []; timestamp}
+    in
     let<+> astate =
       arith_bop path `Pre location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
     in
@@ -681,9 +697,9 @@ module StdAtomicInteger = struct
 
 
   let operator_plus_plus_post this _int : model =
-   fun {path; location; ret= ret_id, _} astate ->
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
     let event =
-      ValueHistory.Call {f= Model "std::atomic<T>::operator++(T)"; location; in_call= []}
+      ValueHistory.Call {f= Model "std::atomic<T>::operator++(T)"; location; in_call= []; timestamp}
     in
     let<+> astate =
       arith_bop path `Post location event ret_id (PlusA None) this (LiteralOperand IntLit.one)
@@ -693,8 +709,10 @@ module StdAtomicInteger = struct
 
 
   let operator_minus_minus_pre this : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "std::atomic::operator--()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic::operator--()"; location; in_call= []; timestamp}
+    in
     let<+> astate =
       arith_bop path `Pre location event ret_id (MinusA None) this (LiteralOperand IntLit.one)
         astate
@@ -703,9 +721,9 @@ module StdAtomicInteger = struct
 
 
   let operator_minus_minus_post this _int : model =
-   fun {path; location; ret= ret_id, _} astate ->
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
     let event =
-      ValueHistory.Call {f= Model "std::atomic<T>::operator--(T)"; location; in_call= []}
+      ValueHistory.Call {f= Model "std::atomic<T>::operator--(T)"; location; in_call= []; timestamp}
     in
     let<+> astate =
       arith_bop path `Post location event ret_id (MinusA None) this (LiteralOperand IntLit.one)
@@ -715,8 +733,8 @@ module StdAtomicInteger = struct
 
 
   let load_instr model_desc this _memory_ordering_opt : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model model_desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model model_desc; location; in_call= []; timestamp} in
     let<+> astate, _int_addr, (int, hist) = load_backing_int path location this astate in
     PulseOperations.write_id ret_id (int, event :: hist) astate
 
@@ -741,8 +759,10 @@ module StdAtomicInteger = struct
 
 
   let store this_address (new_value, new_hist) _memory_ordering : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model "std::atomic::store()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic::store()"; location; in_call= []; timestamp}
+    in
     let<+> astate =
       store_backing_int path location this_address (new_value, event :: new_hist) astate
     in
@@ -750,8 +770,10 @@ module StdAtomicInteger = struct
 
 
   let exchange this_address (new_value, new_hist) _memory_ordering : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "std::atomic::exchange()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::atomic::exchange()"; location; in_call= []; timestamp}
+    in
     let<*> astate, _int_addr, (old_int, old_hist) =
       load_backing_int path location this_address astate
     in
@@ -764,8 +786,8 @@ end
 module JavaObject = struct
   (* naively modeled as shallow copy. *)
   let clone src_pointer_hist : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "Object.clone"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model "Object.clone"; location; in_call= []; timestamp} in
     let<*> astate, obj =
       PulseOperations.eval_access path Read location src_pointer_hist Dereference astate
     in
@@ -786,9 +808,10 @@ module StdBasicString = struct
 
   (* constructor from constant string *)
   let constructor this_hist init_hist : model =
-   fun {path; location} astate ->
+   fun {path= {timestamp} as path; location} astate ->
     let event =
-      ValueHistory.Call {f= Model "std::basic_string::basic_string()"; location; in_call= []}
+      ValueHistory.Call
+        {f= Model "std::basic_string::basic_string()"; location; in_call= []; timestamp}
     in
     let<*> astate, (addr, hist) =
       PulseOperations.eval_access path Write location this_hist Dereference astate
@@ -802,8 +825,10 @@ module StdBasicString = struct
 
 
   let data this_hist : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::basic_string::data()"; location; in_call= []; timestamp}
+    in
     let<*> astate, string_addr_hist = to_internal_string path location this_hist astate in
     let<+> astate, (string, hist) =
       PulseOperations.eval_access path Read location string_addr_hist Dereference astate
@@ -812,9 +837,9 @@ module StdBasicString = struct
 
 
   let destructor this_hist : model =
-   fun {path; location} astate ->
+   fun {path= {timestamp} as path; location} astate ->
     let model = CallEvent.Model "std::basic_string::~basic_string()" in
-    let call_event = ValueHistory.Call {f= model; location; in_call= []} in
+    let call_event = ValueHistory.Call {f= model; location; in_call= []; timestamp} in
     let<*> astate, (string_addr, string_hist) = to_internal_string path location this_hist astate in
     let string_addr_hist = (string_addr, call_event :: string_hist) in
     let<*> astate =
@@ -832,8 +857,10 @@ module StdBasicString = struct
 
 
   let empty this_hist : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "std::basic_string::empty()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::basic_string::empty()"; location; in_call= []; timestamp}
+    in
     let<*> astate, internal_string = to_internal_string path location this_hist astate in
     let<*> astate, (len_addr, hist) =
       PulseOperations.eval_access path Read location internal_string string_length_access astate
@@ -853,8 +880,10 @@ module StdBasicString = struct
 
 
   let length this_hist : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "std::basic_string::length()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::basic_string::length()"; location; in_call= []; timestamp}
+    in
     let<*> astate, internal_string = to_internal_string path location this_hist astate in
     let<+> astate, (length, hist) =
       PulseOperations.eval_access path Read location internal_string string_length_access astate
@@ -865,9 +894,14 @@ end
 module StdFunction = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate ->
+   fun { path= {timestamp} as path
+       ; analysis_data= {analyze_dependency; tenv; proc_desc}
+       ; location
+       ; ret } astate ->
     let havoc_ret (ret_id, _) astate =
-      let event = ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []} in
+      let event =
+        ValueHistory.Call {f= Model "std::function::operator()"; location; in_call= []; timestamp}
+      in
       [PulseOperations.havoc_id ret_id [event] astate]
     in
     let<*> astate, (lambda, _) =
@@ -890,8 +924,8 @@ module StdFunction = struct
 
 
   let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     if PulseArithmetic.is_known_zero astate (fst src) then
       let empty_target = AbstractValue.mk_fresh () in
       let<+> astate =
@@ -1007,15 +1041,15 @@ module GenericArrayBackedCollectionIterator = struct
 
 
   let constructor ~desc this init : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<+> astate = construct path location event ~init ~ref:this astate in
     astate
 
 
   let operator_compare comparison ~desc iter_lhs iter_rhs : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<*> astate, _, (index_lhs, _) =
       to_internal_pointer_deref path Read location iter_lhs astate
     in
@@ -1047,8 +1081,8 @@ module GenericArrayBackedCollectionIterator = struct
 
 
   let operator_star ~desc iter : model =
-   fun {path; location; ret} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<+> astate, pointer, (elem, _) =
       to_elem_pointed_by_iterator path Read location iter astate
     in
@@ -1056,8 +1090,8 @@ module GenericArrayBackedCollectionIterator = struct
 
 
   let operator_step step ~desc iter : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let index_new = AbstractValue.mk_fresh () in
     let<*> astate, pointer, _ =
       to_elem_pointed_by_iterator path Read ~step:(Some step) location iter astate
@@ -1072,8 +1106,8 @@ end
 
 module JavaIterator = struct
   let constructor ~desc init : model =
-   fun {path; location; ret} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let ref = (AbstractValue.mk_fresh (), [event]) in
     let<+> astate =
       GenericArrayBackedCollectionIterator.construct path location event ~init ~ref astate
@@ -1083,8 +1117,8 @@ module JavaIterator = struct
 
   (* {curr -> v_c} is modified to {curr -> v_fresh} and returns array[v_c] *)
   let next ~desc iter : model =
-   fun {path; location; ret} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let new_index = AbstractValue.mk_fresh () in
     let<*> astate, (curr_index, curr_index_hist) =
       GenericArrayBackedCollectionIterator.to_internal_pointer path Read location iter astate
@@ -1103,8 +1137,8 @@ module JavaIterator = struct
 
   (* {curr -> v_c } is modified to {curr -> v_fresh} and writes to array[v_c] *)
   let remove ~desc iter : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let new_index = AbstractValue.mk_fresh () in
     let<*> astate, (curr_index, curr_index_hist) =
       GenericArrayBackedCollectionIterator.to_internal_pointer path Read location iter astate
@@ -1139,8 +1173,10 @@ module StdVector = struct
 
 
   let init_list_constructor this init_list : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model "std::vector::vector()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::vector::vector()"; location; in_call= []; timestamp}
+    in
     let<*> astate, init_copy = PulseOperations.shallow_copy path location init_list astate in
     let<+> astate =
       PulseOperations.write_deref_field path location ~ref:this GenericArrayBackedCollection.field
@@ -1151,20 +1187,21 @@ module StdVector = struct
 
 
   let invalidate_references vector_f vector : model =
-   fun {path; location} astate ->
+   fun {path= {timestamp} as path; location} astate ->
     let crumb =
       ValueHistory.Call
         { f= Model (Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f)
         ; location
-        ; in_call= [] }
+        ; in_call= []
+        ; timestamp }
     in
     let<+> astate = reallocate_internal_array path [crumb] vector vector_f location astate in
     astate
 
 
   let at ~desc vector index : model =
-   fun {path; location; ret} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<+> astate, (addr, hist) =
       GenericArrayBackedCollection.element path location vector (fst index) astate
     in
@@ -1172,8 +1209,10 @@ module StdVector = struct
 
 
   let vector_begin vector iter : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model "std::vector::begin()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::vector::begin()"; location; in_call= []; timestamp}
+    in
     let pointer_hist = event :: snd iter in
     let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
     let index_zero = AbstractValue.mk_fresh () in
@@ -1195,8 +1234,10 @@ module StdVector = struct
 
 
   let vector_end vector iter : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model "std::vector::end()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event =
+      ValueHistory.Call {f= Model "std::vector::end()"; location; in_call= []; timestamp}
+    in
     let<*> astate, (arr_addr, _) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
@@ -1217,8 +1258,10 @@ module StdVector = struct
 
 
   let reserve vector : model =
-   fun {path; location} astate ->
-    let crumb = ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let crumb =
+      ValueHistory.Call {f= Model "std::vector::reserve()"; location; in_call= []; timestamp}
+    in
     let<+> astate =
       reallocate_internal_array path [crumb] vector Reserve location astate
       >>| AddressAttributes.std_vector_reserve (fst vector)
@@ -1227,8 +1270,10 @@ module StdVector = struct
 
 
   let push_back vector : model =
-   fun {path; location} astate ->
-    let crumb = ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let crumb =
+      ValueHistory.Call {f= Model "std::vector::push_back()"; location; in_call= []; timestamp}
+    in
     if AddressAttributes.is_std_vector_reserved (fst vector) astate then
       (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
          (a perfect analysis would also make sure we don't exceed the reserved size) *)
@@ -1240,8 +1285,10 @@ module StdVector = struct
 
 
   let empty vector : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let crumb = ValueHistory.Call {f= Model "std::vector::empty()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let crumb =
+      ValueHistory.Call {f= Model "std::vector::empty()"; location; in_call= []; timestamp}
+    in
     let<+> astate, (value_addr, value_hist) =
       GenericArrayBackedCollection.eval_is_empty path location vector astate
     in
@@ -1271,8 +1318,8 @@ module Java = struct
 
 
   let instance_of (argv, hist) typeexpr : model =
-   fun {location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "Java.instanceof"; location; in_call= []} in
+   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model "Java.instanceof"; location; in_call= []; timestamp} in
     let res_addr = AbstractValue.mk_fresh () in
     match typeexpr with
     | Exp.Sizeof {typ} ->
@@ -1298,8 +1345,8 @@ module JavaCollection = struct
 
 
   let init ~desc this : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let fresh_val = (AbstractValue.mk_fresh (), [event]) in
     let is_empty_value = AbstractValue.mk_fresh () in
     let init_value = AbstractValue.mk_fresh () in
@@ -1323,8 +1370,8 @@ module JavaCollection = struct
 
 
   let add ~desc coll new_elem : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let ret_value = AbstractValue.mk_fresh () in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
@@ -1383,13 +1430,13 @@ module JavaCollection = struct
 
 
   let set coll (new_val, new_val_hist) : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "Collection.set()"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model "Collection.set()"; location; in_call= []; timestamp} in
     update path coll new_val new_val_hist event location ret_id astate
 
 
-  let remove_at path ~desc coll location ret_id astate =
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+  let remove_at ({PathContext.timestamp} as path) ~desc coll location ret_id astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let new_val = AbstractValue.mk_fresh () in
     let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
     update path coll new_val [] event location ret_id astate
@@ -1420,8 +1467,8 @@ module JavaCollection = struct
     PulseOperations.write_id ret_id (ret_val, [event]) astate
 
 
-  let remove_obj path ~desc coll (elem, _) location ret_id astate =
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+  let remove_obj ({PathContext.timestamp} as path) ~desc coll (elem, _) location ret_id astate =
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
@@ -1469,8 +1516,8 @@ module JavaCollection = struct
 
 
   let is_empty ~desc coll : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
@@ -1481,8 +1528,8 @@ module JavaCollection = struct
 
 
   let clear ~desc coll : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let null_val = AbstractValue.mk_fresh () in
     let is_empty_val = AbstractValue.mk_fresh () in
     let<*> astate, coll_val =
@@ -1549,8 +1596,8 @@ module JavaCollection = struct
 
 
   let get ~desc coll (elem, _) : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
     in
@@ -1596,8 +1643,8 @@ module JavaInteger = struct
 
 
   let init this_address init_value : model =
-   fun {path; location} astate ->
-    let event = ValueHistory.Call {f= Model "Integer.init"; location; in_call= []} in
+   fun {path= {timestamp} as path; location} astate ->
+    let event = ValueHistory.Call {f= Model "Integer.init"; location; in_call= []; timestamp} in
     let<+> astate = construct path this_address init_value event location astate in
     astate
 
@@ -1621,8 +1668,8 @@ module JavaInteger = struct
 
 
   let value_of init_value : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "Integer.valueOf"; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model "Integer.valueOf"; location; in_call= []; timestamp} in
     let new_alloc = (AbstractValue.mk_fresh (), [event]) in
     let<+> astate = construct path new_alloc init_value event location astate in
     PulseOperations.write_id ret_id new_alloc astate
@@ -1630,8 +1677,10 @@ end
 
 module JavaPreconditions = struct
   let check_not_null (address, hist) : model =
-   fun {location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model "Preconditions.checkNotNull"; location; in_call= []} in
+   fun {path= {timestamp}; location; ret= ret_id, _} astate ->
+    let event =
+      ValueHistory.Call {f= Model "Preconditions.checkNotNull"; location; in_call= []; timestamp}
+    in
     let<+> astate = PulseArithmetic.prune_positive address astate in
     PulseOperations.write_id ret_id (address, event :: hist) astate
 
@@ -1644,8 +1693,8 @@ end
 
 module Android = struct
   let text_utils_is_empty ~desc ((addr, hist) as addr_hist) : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = ValueHistory.Call {f= Model desc; location; in_call= []} in
+   fun {path= {timestamp} as path; location; ret= ret_id, _} astate ->
+    let event = ValueHistory.Call {f= Model desc; location; in_call= []; timestamp} in
     let ret_val = AbstractValue.mk_fresh () in
     let astate_null =
       PulseArithmetic.prune_eq_zero addr astate
@@ -1763,8 +1812,8 @@ module Erlang = struct
   let cons_tail_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_tail
 
   (** Helper function to create a Nil structure without assigning it to return value *)
-  let make_nil_no_return astate location =
-    let event = ValueHistory.Allocation {f= Model "[]"; location} in
+  let make_nil_no_return {PathContext.timestamp} location astate =
+    let event = ValueHistory.Allocation {f= Model "[]"; location; timestamp} in
     let addr_nil_val = AbstractValue.mk_fresh () in
     let addr_nil = (addr_nil_val, [event]) in
     let astate =
@@ -1775,14 +1824,14 @@ module Erlang = struct
 
   (** Create a Nil structure and assign it to return value *)
   let make_nil : model =
-   fun {location; ret= ret_id, _} astate ->
-    let addr_nil, astate = make_nil_no_return astate location in
+   fun {path; location; ret= ret_id, _} astate ->
+    let addr_nil, astate = make_nil_no_return path location astate in
     PulseOperations.write_id ret_id addr_nil astate |> ok_continue
 
 
   (** Helper function to create a Cons structure without assigning it to return value *)
-  let make_cons_no_return astate path location hd tl =
-    let event = ValueHistory.Allocation {f= Model "[X|Xs]"; location} in
+  let make_cons_no_return astate ({PathContext.timestamp} as path) location hd tl =
+    let event = ValueHistory.Allocation {f= Model "[X|Xs]"; location; timestamp} in
     let addr_cons_val = AbstractValue.mk_fresh () in
     let addr_cons = (addr_cons_val, [event]) in
     let* astate =
@@ -1846,19 +1895,19 @@ module Erlang = struct
 
 
   let lists_reverse list : model =
-   fun ({location; _} as data) astate ->
-    let nil, astate = make_nil_no_return astate location in
+   fun ({location; path; _} as data) astate ->
+    let nil, astate = make_nil_no_return path location astate in
     lists_append2 ~reverse:true list nil data astate
 
 
   let erlang_is_list (list_val, _list_hist) : model =
-   fun {location; ret= ret_id, _} astate ->
+   fun {location; path= {timestamp}; ret= ret_id, _} astate ->
     let cons_typ = Typ.mk_struct (ErlangType Cons) in
     let nil_typ = Typ.mk_struct (ErlangType Nil) in
     let is_cons = AbstractValue.mk_fresh () in
     let is_nil = AbstractValue.mk_fresh () in
     let is_list = AbstractValue.mk_fresh () in
-    let event = ValueHistory.Call {f= Model "erlang:is_list"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model "erlang:is_list"; location; in_call= []; timestamp} in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
     let<*> astate, is_list =
@@ -1870,10 +1919,10 @@ module Erlang = struct
 
 
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
-   fun {location; path; ret= ret_id, _} astate ->
+   fun {location; path= {timestamp} as path; ret= ret_id, _} astate ->
     let tuple_size = List.length args in
     let tuple_typ_name : Typ.name = ErlangType (Tuple tuple_size) in
-    let event = ValueHistory.Allocation {f= Model "{}"; location} in
+    let event = ValueHistory.Allocation {f= Model "{}"; location; timestamp} in
     let addr_tuple = (AbstractValue.mk_fresh (), [event]) in
     let addr_elems = List.map ~f:(function _ -> (AbstractValue.mk_fresh (), [event])) args in
     let mk_field = Fieldname.make tuple_typ_name in
@@ -1901,8 +1950,8 @@ module Erlang = struct
   let map_is_empty_field = mk_map_field "__infer_model_backing_map_is_empty"
 
   let make_map (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
-   fun {location; path; ret= ret_id, _} astate ->
-    let event = ValueHistory.Allocation {f= Model "#{}"; location} in
+   fun {location; path= {timestamp} as path; ret= ret_id, _} astate ->
+    let event = ValueHistory.Allocation {f= Model "#{}"; location; timestamp} in
     let addr_map = (AbstractValue.mk_fresh (), [event]) in
     let addr_is_empty = (AbstractValue.mk_fresh (), [event]) in
     let is_empty_value = AbstractValue.mk_fresh () in
@@ -1946,17 +1995,17 @@ module Erlang = struct
   let make_astate_goodmap path location map astate = prune_type path location map Map astate
 
   let erlang_is_map (map_val, _map_hist) : model =
-   fun {location; ret= ret_id, _} astate ->
+   fun {location; path= {timestamp}; ret= ret_id, _} astate ->
     let typ = Typ.mk_struct (ErlangType Map) in
     let instanceof_val = AbstractValue.mk_fresh () in
-    let event = ValueHistory.Call {f= Model "is_map"; location; in_call= []} in
+    let event = ValueHistory.Call {f= Model "is_map"; location; in_call= []; timestamp} in
     let<*> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
     PulseOperations.write_id ret_id (instanceof_val, [event]) astate |> ok_continue
 
 
   let maps_is_key (key, _key_history) map : model =
-   fun ({location; path; ret= ret_id, _} as data) astate ->
-    let event = ValueHistory.Call {f= Model "maps_is_key"; location; in_call= []} in
+   fun ({location; path= {timestamp} as path; ret= ret_id, _} as data) astate ->
+    let event = ValueHistory.Call {f= Model "maps_is_key"; location; in_call= []; timestamp} in
     (* Return 3 cases:
      * - Error & assume not map
      * - Ok & assume map & assume empty & return false
@@ -2031,13 +2080,13 @@ module Erlang = struct
 
 
   let maps_put key value map : model =
-   fun ({location; path; ret= ret_id, _} as data) astate ->
+   fun ({location; path= {timestamp} as path; ret= ret_id, _} as data) astate ->
     (* Ignore old map. We only store one key/value so we can simply create a new map. *)
     (* Return 2 cases:
      * - Error & assume not map
      * - Ok & assume map & return new map
      *)
-    let event = ValueHistory.Allocation {f= Model "maps_put"; location} in
+    let event = ValueHistory.Allocation {f= Model "maps_put"; location; timestamp} in
     let astate_badmap = make_astate_badmap map data astate in
     let astate_ok =
       let addr_map = (AbstractValue.mk_fresh (), [event]) in

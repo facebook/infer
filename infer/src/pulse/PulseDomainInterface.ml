@@ -24,6 +24,7 @@ module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module LatentIssue = PulseLatentIssue
+module PathContext = PulsePathContext
 
 (** {2 Enforce short form usage} *)
 
@@ -42,4 +43,5 @@ include struct
   module PulseExecutionDomain = PulseExecutionDomain
   [@@deprecated "use the short form ExecutionDomain instead"]
   module PulseLatentIssue = PulseLatentIssue [@@deprecated "use the short form LatentIssue instead"]
+  module PulsePathContext = PulsePathContext [@@deprecated "use the short form PathContext instead"]
 end

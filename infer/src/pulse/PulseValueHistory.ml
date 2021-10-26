@@ -9,23 +9,46 @@ open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
+module Timestamp = PulseTimestamp
 
 type event =
-  | Allocation of {f: CallEvent.t; location: Location.t}
-  | Assignment of Location.t
-  | Call of {f: CallEvent.t; location: Location.t; in_call: t}
-  | Capture of {captured_as: Pvar.t; mode: CapturedVar.capture_mode; location: Location.t}
-  | Conditional of {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t}
-  | CppTemporaryCreated of Location.t
-  | FormalDeclared of Pvar.t * Location.t
-  | Invalidated of PulseInvalidation.t * Location.t
-  | NilMessaging of Location.t
-  | Returned of Location.t
-  | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t
-  | VariableAccessed of Pvar.t * Location.t
-  | VariableDeclared of Pvar.t * Location.t
+  | Allocation of {f: CallEvent.t; location: Location.t; timestamp: Timestamp.t}
+  | Assignment of Location.t * Timestamp.t
+  | Call of {f: CallEvent.t; location: Location.t; in_call: t; timestamp: Timestamp.t}
+  | Capture of
+      { captured_as: Pvar.t
+      ; mode: CapturedVar.capture_mode
+      ; location: Location.t
+      ; timestamp: Timestamp.t }
+  | Conditional of
+      {is_then_branch: bool; if_kind: Sil.if_kind; location: Location.t; timestamp: Timestamp.t}
+  | CppTemporaryCreated of Location.t * Timestamp.t
+  | FormalDeclared of Pvar.t * Location.t * Timestamp.t
+  | Invalidated of PulseInvalidation.t * Location.t * Timestamp.t
+  | NilMessaging of Location.t * Timestamp.t
+  | Returned of Location.t * Timestamp.t
+  | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t * Timestamp.t
+  | VariableAccessed of Pvar.t * Location.t * Timestamp.t
+  | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
 and t = event list [@@deriving compare, equal]
+
+let location_of_event = function
+  | Allocation {location}
+  | Assignment (location, _)
+  | Call {location}
+  | Capture {location}
+  | Conditional {location}
+  | CppTemporaryCreated (location, _)
+  | FormalDeclared (_, location, _)
+  | Invalidated (_, location, _)
+  | NilMessaging (location, _)
+  | Returned (location, _)
+  | StructFieldAddressCreated (_, location, _)
+  | VariableAccessed (_, location, _)
+  | VariableDeclared (_, location, _) ->
+      location
+
 
 let rec iter_event event ~f =
   f event ;
@@ -68,7 +91,7 @@ let pp_event_no_location fmt event =
       F.fprintf fmt "allocated by call to %a" CallEvent.pp f
   | Assignment _ ->
       F.pp_print_string fmt "assigned"
-  | Call {f; location= _} ->
+  | Call {f} ->
       F.fprintf fmt "in call to %a" CallEvent.pp f
   | Capture {captured_as; mode; location= _} ->
       F.fprintf fmt "value captured %s as `%a`"
@@ -79,41 +102,24 @@ let pp_event_no_location fmt event =
         is_then_branch
   | CppTemporaryCreated _ ->
       F.pp_print_string fmt "C++ temporary created"
-  | FormalDeclared (pvar, _) ->
+  | FormalDeclared (pvar, _, _) ->
       let pp_proc fmt pvar =
         Pvar.get_declaring_function pvar
         |> Option.iter ~f:(fun proc_name -> F.fprintf fmt " of %a" Procname.pp proc_name)
       in
       F.fprintf fmt "parameter `%a`%a" Pvar.pp_value_non_verbose pvar pp_proc pvar
-  | Invalidated (invalidation, _) ->
+  | Invalidated (invalidation, _, _) ->
       Invalidation.describe fmt invalidation
   | NilMessaging _ ->
       F.pp_print_string fmt "a message sent to nil returns nil"
   | Returned _ ->
       F.pp_print_string fmt "returned"
-  | StructFieldAddressCreated (field_names, _) ->
+  | StructFieldAddressCreated (field_names, _, _) ->
       F.fprintf fmt "struct field address `%a` created" pp_fields field_names
-  | VariableAccessed (pvar, _) ->
+  | VariableAccessed (pvar, _, _) ->
       F.fprintf fmt "%a accessed here" pp_pvar pvar
-  | VariableDeclared (pvar, _) ->
+  | VariableDeclared (pvar, _, _) ->
       F.fprintf fmt "%a declared here" pp_pvar pvar
-
-
-let location_of_event = function
-  | Allocation {location}
-  | Assignment location
-  | Call {location}
-  | Capture {location}
-  | Conditional {location}
-  | CppTemporaryCreated location
-  | FormalDeclared (_, location)
-  | Invalidated (_, location)
-  | NilMessaging location
-  | Returned location
-  | StructFieldAddressCreated (_, location)
-  | VariableAccessed (_, location)
-  | VariableDeclared (_, location) ->
-      location
 
 
 let pp_event fmt event =

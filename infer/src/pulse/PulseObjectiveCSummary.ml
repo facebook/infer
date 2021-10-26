@@ -40,6 +40,7 @@ let init_fields_zero tenv path location ~zero addr typ astate =
     us to connect invalidation with invalid access in the trace *)
 let mk_nil_messaging_summary_aux tenv proc_desc =
   let path = PathContext.initial in
+  let t0 = path.PathContext.timestamp in
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
   let astate = AbductiveDomain.mk_initial tenv proc_desc in
@@ -51,7 +52,7 @@ let mk_nil_messaging_summary_aux tenv proc_desc =
     PulseOperations.eval_deref path location (Lvar self) astate |> assert_ok
   in
   let astate = PulseArithmetic.prune_eq_zero self_value astate |> assert_ok in
-  let event = ValueHistory.NilMessaging location in
+  let event = ValueHistory.NilMessaging (location, t0) in
   let updated_self_value_hist = (self_value, event :: self_history) in
   match List.last (Procdesc.get_formals proc_desc) with
   | Some (last_formal, {desc= Tptr (typ, _)}) when Mangled.is_return_param last_formal ->

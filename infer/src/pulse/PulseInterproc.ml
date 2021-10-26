@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-[@@@warning "+9"]
-
 open! IStd
 module F = Format
 module L = Logging
@@ -84,7 +82,7 @@ let pp_contradiction fmt = function
 
 exception Contradiction of contradiction
 
-let fold_globals_of_stack path call_loc stack call_state ~f =
+let fold_globals_of_stack ({PathContext.timestamp} as path) call_loc stack call_state ~f =
   Container.fold_result ~fold:(IContainer.fold_of_pervasives_map_fold BaseStack.fold)
     stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
       match var with
@@ -92,7 +90,7 @@ let fold_globals_of_stack path call_loc stack call_state ~f =
           let call_state, addr_hist_caller =
             let astate, var_value =
               Stack.eval path call_loc
-                [ValueHistory.VariableAccessed (pvar, call_loc)]
+                [ValueHistory.VariableAccessed (pvar, call_loc, timestamp)]
                 var call_state.astate
             in
             if phys_equal astate call_state.astate then (call_state, var_value)
@@ -281,11 +279,12 @@ let conjoin_callee_arith pre_post call_state =
     else {call_state with astate; subst}
 
 
-let apply_arithmetic_constraints path callee_proc_name call_location pre_post call_state =
+let apply_arithmetic_constraints {PathContext.timestamp} callee_proc_name call_location pre_post
+    call_state =
   let open IResult.Let_syntax in
   let one_address_sat callee_attrs (addr_caller, caller_history) call_state =
     let attrs_caller =
-      Attributes.add_call path callee_proc_name call_location caller_history callee_attrs
+      Attributes.add_call timestamp callee_proc_name call_location caller_history callee_attrs
     in
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_caller call_state.astate in
     if phys_equal astate call_state.astate then call_state else {call_state with astate}
@@ -386,11 +385,11 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
         (subst, post_edges) )
 
 
-let record_post_cell path callee_proc_name call_loc ~edges_pre_opt
+let record_post_cell {PathContext.timestamp} callee_proc_name call_loc ~edges_pre_opt
     ~cell_callee_post:(edges_callee_post, attrs_callee_post) (addr_caller, hist_caller) call_state =
   let call_state =
     let attrs_post_caller =
-      Attributes.add_call path callee_proc_name call_loc hist_caller attrs_callee_post
+      Attributes.add_call timestamp callee_proc_name call_loc hist_caller attrs_callee_post
     in
     let astate =
       if Config.pulse_isl then
@@ -409,7 +408,8 @@ let record_post_cell path callee_proc_name call_loc ~edges_pre_opt
         let translated_edges =
           BaseMemory.Edges.add access
             ( addr_curr
-            , ValueHistory.Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post}
+            , ValueHistory.Call
+                {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp}
               :: hist_curr )
             translated_edges
         in
@@ -490,7 +490,8 @@ let record_post_for_actual path callee_proc_name call_loc pre_post ~formal ~actu
       call_state
 
 
-let record_post_for_return path callee_proc_name call_loc pre_post call_state =
+let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name call_loc pre_post
+    call_state =
   let return_var = Var.of_pvar (Pvar.get_ret_pvar callee_proc_name) in
   match BaseStack.find_opt return_var (pre_post.AbductiveDomain.post :> BaseDomain.t).stack with
   | None ->
@@ -513,7 +514,7 @@ let record_post_for_return path callee_proc_name call_loc pre_post call_state =
           in
           ( return_caller
           , ValueHistory.Call
-              {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist}
+              {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist; timestamp}
             :: return_caller_hist )
         in
         L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp
@@ -564,7 +565,8 @@ let apply_post_for_globals path callee_proc_name call_location pre_post call_sta
       call_state
 
 
-let record_post_remaining_attributes path callee_proc_name call_loc pre_post call_state =
+let record_post_remaining_attributes {PathContext.timestamp} callee_proc_name call_loc pre_post
+    call_state =
   BaseAddressAttributes.fold
     (fun addr_callee attrs call_state ->
       if AddressSet.mem addr_callee call_state.visited then
@@ -575,7 +577,7 @@ let record_post_remaining_attributes path callee_proc_name call_loc pre_post cal
         | None ->
             (* callee address has no meaning for the caller *) call_state
         | Some (addr_caller, history) ->
-            let attrs' = Attributes.add_call path callee_proc_name call_loc history attrs in
+            let attrs' = Attributes.add_call timestamp callee_proc_name call_loc history attrs in
             let astate = AddressAttributes.abduce_and_add addr_caller attrs' call_state.astate in
             {call_state with astate} )
     (pre_post.AbductiveDomain.post :> BaseDomain.t).attrs call_state
@@ -687,7 +689,7 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
   in
   List.sort addresses_to_check ~compare:(fun (_, check1) (_, check2) ->
       (* smaller timestamp first *)
-      PathContext.compare_timestamp (timestamp_of_check check1) (timestamp_of_check check2) )
+      Timestamp.compare (timestamp_of_check check1) (timestamp_of_check check2) )
   |> List.fold_result ~init:call_state.astate ~f:(fun astate ((addr_caller, hist_caller), check) ->
          let mk_access_trace callee_access_trace =
            Trace.ViaCall

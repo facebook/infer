@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
-module PathContext = PulsePathContext
+module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -59,8 +59,8 @@ module Attribute = struct
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
     | ISLAbduced of Trace.t
-    | MustBeInitialized of PathContext.timestamp * Trace.t
-    | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
+    | MustBeInitialized of Timestamp.t * Trace.t
+    | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -91,7 +91,7 @@ module Attribute = struct
     Variants.to_rank (Invalid (Invalidation.ConstantDereference IntLit.zero, dummy_trace))
 
 
-  let must_be_valid_rank = Variants.to_rank (MustBeValid (PathContext.t0, dummy_trace, None))
+  let must_be_valid_rank = Variants.to_rank (MustBeValid (Timestamp.t0, dummy_trace, None))
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
@@ -128,7 +128,7 @@ module Attribute = struct
 
   let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
 
-  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized (PathContext.t0, dummy_trace))
+  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized (Timestamp.t0, dummy_trace))
 
   let pp f attribute =
     let pp_string_if_debug string fmt =
@@ -213,7 +213,7 @@ module Attribute = struct
         true
 
 
-  let add_call path proc_name call_location caller_history attr =
+  let add_call timestamp proc_name call_location caller_history attr =
     let add_call_to_trace in_call =
       Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
     in
@@ -235,11 +235,12 @@ module Attribute = struct
     | ISLAbduced trace ->
         ISLAbduced (add_call_to_trace trace)
     | MustBeValid (_timestamp, trace, reason) ->
-        MustBeValid (path.PathContext.timestamp, add_call_to_trace trace, reason)
+        MustBeValid (timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized (_timestamp, trace) ->
-        MustBeInitialized (path.PathContext.timestamp, add_call_to_trace trace)
+        MustBeInitialized (timestamp, add_call_to_trace trace)
     | UnknownEffect (call, hist) ->
-        UnknownEffect (call, [Call {f= Call proc_name; location= call_location; in_call= hist}])
+        UnknownEffect
+          (call, [Call {f= Call proc_name; location= call_location; in_call= hist; timestamp}])
     | WrittenTo trace ->
         WrittenTo (add_call_to_trace trace)
     | ( AddressOfCppTemporary _
@@ -394,9 +395,9 @@ module Attributes = struct
         Set.add acc attr1 )
 
 
-  let add_call path proc_name call_location caller_history attrs =
+  let add_call timestamp proc_name call_location caller_history attrs =
     Set.map attrs ~f:(fun attr ->
-        Attribute.add_call path proc_name call_location caller_history attr )
+        Attribute.add_call timestamp proc_name call_location caller_history attr )
 
 
   let get_allocated_not_freed attributes =

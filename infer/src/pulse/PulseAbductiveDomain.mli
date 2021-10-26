@@ -10,6 +10,7 @@ open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
+module PathContext = PulsePathContext
 
 (** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
     when necessary
@@ -234,6 +235,7 @@ val initialize : AbstractValue.t -> t -> t
 
 val set_uninitialized :
      Tenv.t
+  -> PathContext.t
   -> [ `LocalDecl of Pvar.t * AbstractValue.t option
        (** the second optional parameter is for the address of the variable *)
      | `Malloc of AbstractValue.t  (** the address parameter is a newly allocated address *) ]

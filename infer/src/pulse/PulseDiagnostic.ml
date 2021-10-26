@@ -212,10 +212,14 @@ let get_message diagnostic =
       F.asprintf "%s no matching branch in try at %a" pulse_start_msg Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
-        PulseTrace.find_map trace ~f:(function VariableDeclared (pvar, _) -> Some pvar | _ -> None)
+        PulseTrace.find_map trace ~f:(function
+          | VariableDeclared (pvar, _, _) ->
+              Some pvar
+          | _ ->
+              None )
         |> IOption.if_none_evalopt ~f:(fun () ->
                PulseTrace.find_map trace ~f:(function
-                 | FormalDeclared (pvar, _) ->
+                 | FormalDeclared (pvar, _, _) ->
                      Some pvar
                  | _ ->
                      None ) )
@@ -223,7 +227,7 @@ let get_message diagnostic =
       in
       let declared_fields =
         PulseTrace.find_map trace ~f:(function
-          | StructFieldAddressCreated (fields, _) ->
+          | StructFieldAddressCreated (fields, _, _) ->
               Some fields
           | _ ->
               None )
