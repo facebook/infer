@@ -878,7 +878,7 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
         let djn, dj_ctxs =
           Set.fold_map djn [] ~f:(fun dj dj_ctxs ->
               let dj = propagate_context_ q.us q.ctx dj in
-              (dj, dj.ctx :: dj_ctxs) )
+              (dj, (dj.xs, dj.ctx) :: dj_ctxs) )
         in
         let new_xs, djn_ctx = Context.interN q.us dj_ctxs in
         (* hoist xs appearing in disjunction's context *)

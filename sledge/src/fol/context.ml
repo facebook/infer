@@ -947,38 +947,47 @@ let union wrt r s =
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
-let inter wrt r s =
-  [%Trace.call fun {pf} -> pf "@ @[<hv 1>   %a@ @<2>∨ %a@]" pp r pp s]
+let inter wrt (xs, r) (ys, s) =
+  [%Trace.call fun {pf} ->
+    pf "@ @[  @[<hv 2>{ %a }@]@ @<2>∨ @[<hv 2>{ %a }@]@]" pp r pp s]
   ;
   ( if not s.sat then r
   else if not r.sat then s
   else
-    let merge_mems rs r s =
-      Trm.Map.fold s.cls rs ~f:(fun ~key:rep ~data:cls rs ->
-          Cls.fold cls
-            ([rep], rs)
-            ~f:(fun exp (reps, rs) ->
-              match
-                List.find ~f:(fun rep -> implies r (Fml.eq exp rep)) reps
-              with
-              | Some rep -> (reps, and_eq ~wrt exp rep rs)
-              | None -> (exp :: reps, rs) )
+    let merge_mems wrt (xs, r) (ys, s) i =
+      let unbound vs = Var.Set.disjoint xs vs && Var.Set.disjoint ys vs in
+      Trm.Map.fold s.cls i ~f:(fun ~key:rep ~data:cls i ->
+          let reps = if unbound (Trm.fv rep) then [rep] else [] in
+          Cls.fold cls (reps, i) ~f:(fun exp (reps, i) ->
+              if not (unbound (Trm.fv exp)) then (reps, i)
+              else
+                match
+                  List.find ~f:(fun rep -> implies r (Fml.eq exp rep)) reps
+                with
+                | Some rep -> (reps, and_eq ~wrt exp rep i)
+                | None -> (exp :: reps, i) )
           |> snd )
     in
-    let rs = empty in
-    let rs = merge_mems rs r s in
-    let rs = merge_mems rs s r in
-    rs )
-  |> extract_xs
+    let i = empty in
+    let i = merge_mems wrt (xs, r) (ys, s) i in
+    let i = merge_mems wrt (ys, s) (xs, r) i in
+    i )
   |>
-  [%Trace.retn fun {pf} (_, r') ->
+  [%Trace.retn fun {pf} r' ->
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
-let interN us rs =
-  match rs with
-  | [] -> (us, unsat)
-  | r :: rs -> List.fold ~f:(fun r (us, s) -> inter us s r) rs (us, r)
+let interN us xrIN =
+  ( match xrIN with
+  | [] -> unsat
+  | (xs0, r0) :: xr1N ->
+      List.fold xr1N (Var.Set.empty, xs0, r0)
+        ~f:(fun (xsK, rK) (xs0I, xsJ, i0J) ->
+          let xs0J = Var.Set.union xs0I xsJ in
+          let i0K = inter us (xsK, rK) (xs0J, i0J) in
+          (xs0J, xsK, i0K) )
+      |> trd3 )
+  |> extract_xs
 
 let rec add_ wrt b r =
   match (b : Fml.t) with
@@ -1419,8 +1428,7 @@ let solve_for_vars vss r =
 type call =
   | Add of Var.Set.t * Formula.t * t
   | Union of Var.Set.t * t * t
-  | Inter of Var.Set.t * t * t
-  | InterN of Var.Set.t * t list
+  | InterN of Var.Set.t * (Var.Set.t * t) list
   | Dnf of Formula.t
   | Rename of t * Var.Subst.t
   | Is_unsat of t
@@ -1436,8 +1444,7 @@ let replay c =
   match call_of_sexp (Sexp.of_string c) with
   | Add (us, e, r) -> add us e r |> ignore
   | Union (us, r, s) -> union us r s |> ignore
-  | Inter (us, r, s) -> inter us r s |> ignore
-  | InterN (us, rs) -> interN us rs |> ignore
+  | InterN (us, xrs) -> interN us xrs |> ignore
   | Dnf f -> dnf f |> Iter.iter ~f:ignore
   | Rename (r, s) -> rename r s |> ignore
   | Is_unsat r -> is_unsat r |> ignore
@@ -1478,7 +1485,6 @@ let[@warning "-32"] wrap tmr f call =
 let wrap _ f _ = f ()
 let add_tmr = Timer.create "add" ~at_exit:report
 let union_tmr = Timer.create "union" ~at_exit:report
-let inter_tmr = Timer.create "inter" ~at_exit:report
 let interN_tmr = Timer.create "interN" ~at_exit:report
 let dnf_tmr = Timer.create "dnf" ~at_exit:report
 let rename_tmr = Timer.create "rename" ~at_exit:report
@@ -1495,9 +1501,6 @@ let add us e r =
 
 let union us r s =
   wrap union_tmr (fun () -> union us r s) (fun () -> Union (us, r, s))
-
-let inter us r s =
-  wrap inter_tmr (fun () -> inter us r s) (fun () -> Inter (us, r, s))
 
 let interN us rs =
   wrap interN_tmr (fun () -> interN us rs) (fun () -> InterN (us, rs))
