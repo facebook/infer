@@ -830,9 +830,19 @@ let norm s q =
 let rec freshen_nested_xs us q =
   [%Trace.call fun {pf} -> pf "@ %a" pp q]
   ;
-  (* trim xs to those that appear in the stem and sink the rest *)
-  let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
-  let xs_sink, xs = Var.Set.diff_inter q.xs fv_stem in
+  (* trim xs to those that appear in stem or >1 disjunction and sink rest *)
+  let xs_sink, _ =
+    let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
+    let xs_sink, xs_djns = (Var.Set.diff q.xs fv_stem, Var.Set.empty) in
+    List.fold q.djns (xs_sink, xs_djns) ~f:(fun djn (xs_sink, xs_djns) ->
+        Set.fold djn (xs_sink, xs_djns) ~f:(fun djt (xs_sink, xs_djns) ->
+            let fv_djt = fv djt in
+            let dont_sink = Var.Set.inter xs_djns fv_djt in
+            let xs_sink = Var.Set.diff xs_sink dont_sink in
+            let xs_djns = Var.Set.union xs_djns fv_djt in
+            (xs_sink, xs_djns) ) )
+  in
+  let xs = Var.Set.diff q.xs xs_sink in
   let us = Var.Set.union us q.us in
   let djns, hoisted, xs_below =
     List.fold_partition_map q.djns Var.Set.empty ~f:(fun djn xs_below ->
