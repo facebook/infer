@@ -2647,8 +2647,7 @@ and profiler_samples =
 
 
 and output_sarif =
-  CLOpt.mk_bool ~long:"output-sarif" ~default:false
-    "Run infer to generate SARIF format output."
+  CLOpt.mk_bool ~long:"output-sarif" ~default:false "Run infer to generate SARIF format output."
 
 
 and starvation_strict_mode =
