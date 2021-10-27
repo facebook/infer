@@ -419,8 +419,8 @@ module Server = struct
 end
 
 let use_daemon =
-  Config.(dbwriter && (not (buck || genrule_mode)) && jobs > 1)
-  && match Version.build_platform with Linux | Darwin -> true | Windows -> false
+  let is_windows = match Version.build_platform with Windows -> true | Linux | Darwin -> false in
+  Config.((not is_windows) && dbwriter && (not (buck || genrule_mode)) && jobs > 1)
 
 
 let perform cmd = if use_daemon then Server.send cmd else Command.execute cmd

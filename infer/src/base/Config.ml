@@ -2586,9 +2586,7 @@ and sqlite_vacuum =
 
 
 and sqlite_vfs =
-  (* daemon is now supported by wsl *)
-  let default = None in
-  CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
+  CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
 
 
 and (_ : bool ref) =
