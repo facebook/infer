@@ -168,6 +168,7 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
 let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} formal_map post =
   if ResourceLeakCSDomain.has_leak formal_map post then (
     let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc) in
+    let proc_name = Procdesc.get_proc_name proc_desc in
     let message =
       let concat_types =
         Hashtbl.iter
@@ -178,7 +179,7 @@ let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} formal_map po
       in
       concat_types ;
       let concat_leak_list = String.concat ~sep:", " !leak_list in
-      F.asprintf "Leaked %a resource(s) at type(s) %s" ResourceLeakCSDomain.pp post concat_leak_list
+      F.asprintf "Leaked %a resource(s) in method \"%a\" at type(s) %s" ResourceLeakCSDomain.pp post Procname.pp proc_name concat_leak_list
     in
     ResourceLeakCSDomain.reset_type_map ;
     ResourceLeakCSDomain.Summary.reset_interface_type_map ;
