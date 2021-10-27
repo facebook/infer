@@ -82,6 +82,7 @@ The following issue types are reported by this checker:
 - [NIL_BLOCK_CALL](/docs/next/all-issue-types#nil_block_call)
 - [NIL_INSERTION_INTO_COLLECTION](/docs/next/all-issue-types#nil_insertion_into_collection)
 - [NIL_MESSAGING_TO_NON_POD](/docs/next/all-issue-types#nil_messaging_to_non_pod)
+- [NO_MATCHING_BRANCH_IN_TRY](/docs/next/all-issue-types#no_matching_branch_in_try)
 - [NO_MATCHING_CASE_CLAUSE](/docs/next/all-issue-types#no_matching_case_clause)
 - [NO_MATCHING_FUNCTION_CLAUSE](/docs/next/all-issue-types#no_matching_function_clause)
 - [NO_MATCH_OF_RHS](/docs/next/all-issue-types#no_match_of_rhs)

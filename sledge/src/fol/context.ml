@@ -687,11 +687,13 @@ let canon_extend x a =
 
 (* Propagation ===========================================================*)
 
-let propagate_use t u x =
+let propagate_use x0 t u x =
   [%trace]
     ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp u pp_raw x)
     ~retn:(fun {pf} x' -> pf "%a" pp_diff (x, x'))
   @@ fun () ->
+  (* Normalize interpreted uses without the just-added v ↦ t *)
+  let u = if Trm.is_interpreted u then (norm x0) u else u in
   (* Apply congruence once, using the just-added v ↦ t *)
   let w = Trm.map_solvable_trms ~f:(apply x) u in
   if w == u then x
@@ -788,8 +790,8 @@ let propagate1 {Theory.var= v; rep= t} x =
   in
   let v_use, use = Trm.Map.find_and_remove v x.use in
   let use = if Trm.is_interp_app t then add_uses_of t use else use in
-  let x = {x with rep; cls; use} in
-  Iter.fold ~f:(propagate_use t) (Use.iter_of_opt v_use) x
+  Iter.fold ~f:(propagate_use x t) (Use.iter_of_opt v_use)
+    {x with rep; cls; use}
 
 let solve ~wrt ~xs d e pending =
   [%trace]

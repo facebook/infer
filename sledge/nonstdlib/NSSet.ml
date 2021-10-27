@@ -103,8 +103,11 @@ struct
     let pp = pp_full Elt.pp
 
     let pp_diff fs (xs, ys) =
-      let lose = diff xs ys and gain = diff ys xs in
-      if not (is_empty lose) then Format.fprintf fs "-- %a" pp lose ;
+      let lose = diff xs ys in
+      let gain = diff ys xs in
+      if not (is_empty lose) then (
+        Format.fprintf fs "-- %a" pp lose ;
+        if not (is_empty gain) then Format.fprintf fs "@ " ) ;
       if not (is_empty gain) then Format.fprintf fs "++ %a" pp gain
   end
 end

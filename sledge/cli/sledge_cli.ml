@@ -144,6 +144,9 @@ let analyze =
   and dump_query =
     flag "dump-query" (optional int)
       ~doc:"<int> dump solver query <int> and halt"
+  and dump_simplify =
+    flag "dump-simplify" (optional int)
+      ~doc:"<int> dump simplify query <int> and halt"
   in
   fun program () ->
     Timer.enabled := stats ;
@@ -178,6 +181,7 @@ let analyze =
     Sh.do_normalize := normalize_states ;
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
+    Option.iter dump_simplify ~f:(fun n -> Sh.dump_simplify := n) ;
     at_exit (fun () -> Report.coverage pgm) ;
     Analysis.exec_pgm pgm ;
     Report.safe_or_unsafe ()
@@ -222,9 +226,25 @@ let disassemble_cmd =
   command ~summary ~readme param
 
 let translate =
-  let%map_open output =
+  let%map_open dump_bitcode =
+    flag "dump-bitcode" (optional string)
+      ~doc:"<file> write transformed LLVM bitcode to <file>"
+  and output =
     flag "output" (optional string)
       ~doc:"<file> write generated binary LLAIR to <file>"
+  and opt_level, size_level =
+    choose_one
+      [ flag "O0" (no_arg_some (0, 0)) ~doc:" optimization level 0"
+      ; flag "O1" (no_arg_some (1, 0)) ~doc:" optimization level 1"
+      ; flag "O2" (no_arg_some (2, 0)) ~doc:" optimization level 2"
+      ; flag "O3" (no_arg_some (3, 0)) ~doc:" optimization level 3"
+      ; flag "Os"
+          (no_arg_some (2, 1))
+          ~doc:" like -O2 with extra optimizations for size"
+      ; flag "Oz"
+          (no_arg_some (2, 2))
+          ~doc:" like -Os but reduces code size further (default)" ]
+      ~if_nothing_chosen:(Default_to (2, 2))
   and no_internalize =
     flag "no-internalize" no_arg
       ~doc:
@@ -233,7 +253,8 @@ let translate =
   in
   fun bitcode_input () ->
     let program =
-      Frontend.translate ~internalize:(not no_internalize) bitcode_input
+      Frontend.translate ~internalize:(not no_internalize) ~opt_level
+        ~size_level bitcode_input ?dump_bitcode
     in
     Option.iter ~f:(marshal program) output ;
     program

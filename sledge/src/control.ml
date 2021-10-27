@@ -468,7 +468,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let join tid threads =
       match M.find tid threads with
       | Some (Thread.Terminated _) -> Some (M.remove tid threads)
-      | _ -> None
+      | _ ->
+          [%Trace.info " prune join of non-terminated thread: %i" tid] ;
+          None
   end
 
   (** A control-flow transition of a single thread. In the common case an
@@ -576,6 +578,8 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
           (** pre-computed summary of inactive thread scheduling states, for
               use by e.g. [Elt.compare] *) }
 
+  let pp_state ppf state = [%Trace.fprintf ppf "@[%a@]@\n" D.pp state]
+
   module Work : sig
     type t
 
@@ -640,15 +644,30 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         type t = D.t * Depths.t [@@deriving compare, equal, sexp_of]
       end
 
-      include T
-      module Set = Set.Make (T)
+      module M = Map.Make (T)
 
-      let join s =
-        let states, depths =
-          Set.fold s (D.Set.empty, Depths.empty) ~f:(fun (q, d) (qs, ds) ->
-              (D.Set.add q qs, Depths.join d ds) )
+      type t = Edge.t list M.t
+
+      let empty = M.empty
+      let is_empty = M.is_empty
+
+      let diff =
+        M.merge ~f:(fun _ -> function
+          | `Left v -> Some v | `Right _ | `Both _ -> None )
+
+      let union = M.union ~f:(fun _ v1 v2 -> Some (List.append v1 v2))
+
+      let of_list l =
+        List.fold l M.empty ~f:(fun (key, data) m ->
+            M.add_multi ~key ~data m )
+
+      let join m =
+        let states, depths, edges =
+          M.fold m (D.Set.empty, Depths.empty, [])
+            ~f:(fun ~key:(q, d) ~data:e (qs, ds, es) ->
+              (D.Set.add q qs, Depths.join d ds, List.append e es) )
         in
-        (D.joinN states, depths)
+        (D.joinN states, depths, edges)
     end
 
     (** Sequential states indexed by concurrent states. When sequential
@@ -664,7 +683,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         progress of this enumeration is a set of sequential states that is
         indexed by concurrent states. *)
     module Cursor = struct
-      type t = SeqSH.Set.t ConcSH.Map.t
+      type t = SeqSH.t ConcSH.Map.t
 
       let empty = ConcSH.Map.empty
       let add = ConcSH.Map.add
@@ -679,10 +698,11 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
 
     let pp_queue ppf queue = [%Trace.fprintf ppf "@ | %a" Queue.pp queue]
 
-    let enqueue depth ({ctrl= {dst} as edge; threads; depths} as elt)
+    let enqueue depth ({ctrl= {dst} as edge; state; threads; depths} as elt)
         (queue, cursor) =
       [%Trace.info
-        " %i,%i: %a%a" elt.switches depth Edge.pp edge pp_queue queue] ;
+        " %i,%i: %a%a@\n@[%a@]" elt.switches depth Edge.pp edge pp_queue
+          queue pp_state state] ;
       let depths = Depths.add ~key:edge ~data:depth depths in
       let threads, inactive = Threads.after_step dst threads in
       let queue =
@@ -744,9 +764,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     let rec dequeue (queue, cursor) =
       let* ({threads} as top), elts, queue = Queue.top queue in
       let succs =
-        Iter.fold (Iter.cons top elts) Succs.empty ~f:(fun incoming succs ->
-            let {ctrl= {edge= {dst}}; state; switches; depths} = incoming in
-            let incoming_tid = Thread.id dst in
+        Iter.fold elts Succs.empty ~f:(fun incoming succs ->
+            let {ctrl= {edge}; state; switches; depths} = incoming in
+            let incoming_tid = Thread.id edge.dst in
             Threads.fold threads succs ~f:(fun active succs ->
                 match active with
                 | Terminated _ -> succs
@@ -755,24 +775,25 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
                       if tid = incoming_tid then switches else switches + 1
                     in
                     Succs.add ~key:(switches, ip, threads)
-                      ~data:(state, depths) succs ) )
+                      ~data:((state, depths), edge)
+                      succs ) )
       in
       let found, hit_end =
         Succs.find_first succs
           ~f:(fun ~key:(switches, ip, threads) ~data:incoming ->
             let next = (switches, ip, threads) in
-            let curr = SeqSH.Set.of_list incoming in
+            let curr = SeqSH.of_list incoming in
             let+ done_states, next_states =
               match Cursor.find next cursor with
               | Some done_states ->
-                  let next_states = SeqSH.Set.diff curr done_states in
-                  if SeqSH.Set.is_empty next_states then None
+                  let next_states = SeqSH.diff curr done_states in
+                  if SeqSH.is_empty next_states then None
                   else Some (done_states, next_states)
-              | None -> Some (SeqSH.Set.empty, curr)
+              | None -> Some (SeqSH.empty, curr)
             in
             let cursor =
               Cursor.add ~key:next
-                ~data:(SeqSH.Set.union done_states next_states)
+                ~data:(SeqSH.union done_states next_states)
                 cursor
             in
             (next, next_states, cursor) )
@@ -785,10 +806,12 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
           Report.hit_switch_bound Config.switch_bound ;
           dequeue (queue, cursor)
       | Some ((switches, ip, threads), next_states, cursor) ->
+          let state, depths, edges = SeqSH.join next_states in
           [%Trace.info
-            " %i,%i: %a%a" switches top.ctrl.depth Edge.pp top.ctrl.edge
-              pp_queue queue] ;
-          let state, depths = SeqSH.join next_states in
+            " %i,%i: %a <-t%i- {@[%a@]}%a" switches top.ctrl.depth IP.pp ip
+              ip.tid
+              (List.pp " ∨@ " Edge.pp)
+              edges pp_queue queue] ;
           Some
             ({ctrl= ip; state; threads; switches; depths}, (queue, cursor))
       | None -> dequeue (queue, cursor)
@@ -961,10 +984,8 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
   let exec_term pgm ({ctrl= {ip; tid}; state} as ams) wl =
     let block = Llair.IP.block ip in
     let term = block.term in
-    [%Trace.info
-      " t%i@\n@[%a@]@\n%a" tid D.pp state Llair.Term.pp block.term] ;
     Report.step_term block ;
-    match (term : Llair.term) with
+    match term with
     | Switch {key; tbl; els} ->
         let wl =
           exec_assume
@@ -1005,12 +1026,12 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     | Throw {exc} -> exec_throw exc ams wl
     | Unreachable -> wl
 
-  let pp_state ppf state = [%Trace.fprintf ppf "@[%a@]@\n" D.pp state]
-
   let rec exec_ip pgm ({ctrl= {ip; stk; tid}; state} as ams) wl =
     match Llair.IP.inst ip with
     | Some inst -> (
-        [%Trace.info " t%i@ %a%a" tid pp_state state Llair.Inst.pp inst] ;
+        [%Trace.info
+          " t%i %a@\n@[%a@]%a" tid Llair.IP.pp ip pp_state state
+            Llair.Inst.pp inst] ;
         Report.step_inst ip ;
         match D.exec_inst tid inst state with
         | Ok state ->
@@ -1023,7 +1044,11 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         | Error alarm ->
             Report.alarm alarm ;
             wl )
-    | None -> exec_term pgm ams wl
+    | None ->
+        [%Trace.info
+          " t%i %a@\n@[%a@]%a" tid Llair.IP.pp ip pp_state state
+            Llair.Term.pp (Llair.IP.block ip).term] ;
+        exec_term pgm ams wl
 
   let call_entry_point pgm =
     let+ {name; formals; freturn; locals; entry} =

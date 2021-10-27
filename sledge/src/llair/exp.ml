@@ -136,10 +136,8 @@ module T = struct
     | Ap1 (Select idx, _, rcd) -> pf "%a[%i]" pp rcd idx
     | Ap2 (Update idx, _, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
-    | Ap2 (Xor, Integer {bits= 1}, Integer {data}, x) when Z.is_true data ->
-        pf "¬%a" pp x
-    | Ap2 (Xor, Integer {bits= 1}, x, Integer {data}) when Z.is_true data ->
-        pf "¬%a" pp x
+    | Ap2 (Xor, _, Integer {data}, x) when Z.is_true data -> pf "¬%a" pp x
+    | Ap2 (Xor, _, x, Integer {data}) when Z.is_true data -> pf "¬%a" pp x
     | Ap2 (op, _, x, y) -> pf "(%a@ %a %a)" pp x pp_op2 op pp y
     | Ap3 (Conditional, _, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els

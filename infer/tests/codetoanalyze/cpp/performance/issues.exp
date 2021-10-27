@@ -3,7 +3,6 @@ codetoanalyze/cpp/performance/list.cpp, list_add_in_nested_loop_constant_FP, 0, 
 codetoanalyze/cpp/performance/list.cpp, list_get_constant_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/cpp/performance/list.cpp, list_push_back_then_loop_constant_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/cpp/performance/loops.cpp, loop_with_complicated_bound_constant_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
-codetoanalyze/cpp/performance/map.cpp, loop_over_map_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/cpp/performance/set.cpp, loop_over_set_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/cpp/performance/unordered_map.cpp, for_loop_over_map_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/cpp/performance/unordered_set.cpp, for_loop_over_uset_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]

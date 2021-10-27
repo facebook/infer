@@ -176,6 +176,8 @@ let pulse_model_type = Typ.CStruct (QualifiedCppName.of_list ["__infer_pulse_mod
 
 module ModeledField = struct
   let string_length = Fieldname.make pulse_model_type "__infer_model_string_length"
+
+  let internal_string = Fieldname.make pulse_model_type "__infer_model_backing_string"
 end
 
 let eval_access path ?must_be_valid_reason mode location addr_hist access astate =

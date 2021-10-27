@@ -352,7 +352,7 @@ let write_html ranges rows chan =
           ; status_deltas } =
         row
       in
-      let max_name_length = 50 in
+      let max_name_length = 100 in
       let name =
         if String.length name <= max_name_length then name
         else
@@ -404,7 +404,7 @@ let write_html ranges rows chan =
       let peakd = delta_mem ranges.max_peak ranges.pct_peak in
       let pf_status ppf s =
         let status_to_string = Format.asprintf "%a" Report.pp_status in
-        Printf.fprintf ppf "%s" (String.take 50 (status_to_string s))
+        Printf.fprintf ppf "%s" (String.take 100 (status_to_string s))
       in
       let steps attr ppf = function
         | [] -> Printf.fprintf ppf "<td %s></td>\n" attr

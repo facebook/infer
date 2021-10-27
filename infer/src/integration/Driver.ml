@@ -27,6 +27,7 @@ type mode =
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Rebar3 of {args: string list}
+  | Erlc of {args: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -62,6 +63,8 @@ let pp_mode fmt = function
       F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | Rebar3 {args} ->
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
+  | Erlc {args} ->
+      F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -144,7 +147,10 @@ let capture ~changed_files mode =
       NdkBuild.capture ~build_cmd
   | Rebar3 {args} ->
       L.progress "Capturing in rebar3 mode...@." ;
-      Rebar3.capture ~args
+      Rebar3.capture ~command:"rebar3" ~args
+  | Erlc {args} ->
+      L.progress "Capturing in erlc mode...@." ;
+      Rebar3.capture ~command:"erlc" ~args
   | XcodeBuild {prog; args} ->
       L.progress "Capturing in xcodebuild mode...@." ;
       XcodeBuild.capture ~prog ~args
@@ -341,6 +347,8 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Clang
   | BRebar3 ->
       Config.string_of_build_system build_system |> assert_supported_mode `Erlang
+  | BErlc ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Erlang
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck ->
@@ -406,6 +414,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           NdkBuild {build_cmd}
       | BRebar3, _ ->
           Rebar3 {args}
+      | BErlc, _ ->
+          Erlc {args}
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty {prog; args}
       | BXcode, _ ->
