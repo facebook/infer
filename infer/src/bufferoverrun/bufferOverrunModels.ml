@@ -1709,7 +1709,7 @@ module InferAnnotation = struct
         no_model
 end
 
-let std_container _ str = List.exists ~f:(String.equal str) ["list"; "map"; "vector"]
+let std_container _ str = List.exists ~f:(String.equal str) ["list"; "map"; "set"; "vector"]
 
 (* libcpp - native library for mac *)
 let std_iterator_libcpp _ str =
@@ -1718,6 +1718,7 @@ let std_iterator_libcpp _ str =
     ; "__list_iterator"
     ; "__map_const_iterator"
     ; "__map_iterator"
+    ; "__tree_const_iterator"
     ; "__wrap_iter" ]
 
 
