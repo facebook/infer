@@ -8,13 +8,23 @@
 #include <list>
 #include <string>
 
-void iterate_over_list_linear_FN(std::list<int> mlist) {
+void iterate_over_list_local_it_linear_FN(std::list<int> mlist) {
   std::list<int>::iterator it;
   for (it = mlist.begin(); it != mlist.end(); it++) {
   }
 }
 
-void iterate_over_list_for_linear_FN(std::list<int> mlist) {
+void iterate_over_list_linear(std::list<int> mlist) {
+  for (auto it = mlist.begin(); it != mlist.end(); it++) {
+  }
+}
+
+void iteratec_over_list_linear(std::list<int> mlist) {
+  for (auto it = mlist.cbegin(); it != mlist.cend(); it++) {
+  }
+}
+
+void iterate_over_list_for_linear(std::list<int> mlist) {
   for (const int& el : mlist) {
   }
 }
@@ -136,7 +146,7 @@ void sort_list_string_no_case_nlogn_FN(std::list<std::string> list2) {
   mylist.sort(compare_nocase_linear);
 }
 
-std::list<int> remove_duplicates_quadratic_FN(std::list<int>& list1) {
+std::list<int> remove_duplicates_quadratic(std::list<int>& list1) {
   std::list<int> list2;
 
   for (int x : list1) {

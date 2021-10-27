@@ -11,7 +11,7 @@
 
 int add(int x, int y) { return x + y; }
 
-int loop_linear_list_FN(int x, const std::list<int>& list) {
+int loop_linear_list(int x, const std::list<int>& list) {
   int sum = 0;
   for (auto&& el : list) {
     sum = +el + x;
@@ -37,7 +37,7 @@ void map_linear_FN(std::map<int, int>& map) {
 // yet.
 void list_quadratic_FN(std::list<int>& mylist) {
   for_each(mylist.begin(), mylist.end(), [mylist](int el) {
-    loop_linear_list_FN(el, mylist);
+    loop_linear_list(el, mylist);
   });
 }
 
