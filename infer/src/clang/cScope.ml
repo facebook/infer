@@ -65,8 +65,8 @@ module CXXTemporaries = struct
   (** This function has basically two modes depending on whether [bound_to_decl] is set or not. If
       set, we look for temporaries bound to the decl passed as argument. If not set, we look for
       temporaries not bound to any decls. *)
-  let rec visit_stmt_aux ~bound_to_decl (context : CContext.t) (stmt : Clang_ast_t.stmt)
-      ~needs_marker temporaries =
+  let rec visit_stmt_aux ~bound_to_decl (context : CContext.t) (stmt : Clang_ast_t.stmt) ~marker
+      temporaries =
     match stmt with
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _)
     | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
@@ -100,30 +100,29 @@ module CXXTemporaries = struct
             let pvar, typ = CVar_decl.materialize_cpp_temporary context stmt_info expr_info in
             L.debug Capture Verbose "+%a:%a@," (Pvar.pp Pp.text) pvar (Typ.pp Pp.text) typ ;
             let marker =
-              if needs_marker then (
-                let marker_pvar =
-                  Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.procdesc)
-                in
-                L.debug Capture Verbose "Attaching marker %a to %a@," (Pvar.pp Pp.text) marker_pvar
-                  (Pvar.pp Pp.text) pvar ;
-                Some marker_pvar )
-              else None
+              Option.map marker ~f:(fun if_kind ->
+                  let marker_pvar =
+                    Pvar.mk_tmp "_temp_marker_" (Procdesc.get_proc_name context.procdesc)
+                  in
+                  L.debug Capture Verbose "Attaching marker %a to %a@," (Pvar.pp Pp.text)
+                    marker_pvar (Pvar.pp Pp.text) pvar ;
+                  (marker_pvar, if_kind) )
             in
             {CContext.pvar; typ; qual_type= expr_info.ei_qual_type; marker} :: temporaries )
           else temporaries
         in
-        visit_stmt_list ~bound_to_decl context stmt_list ~needs_marker temporaries
+        visit_stmt_list ~bound_to_decl context stmt_list ~marker temporaries
     | ConditionalOperator (_, [cond; then_; else_], _) ->
         (* temporaries created in branches need instrumentation markers to remember if they have
            been created or not during the evaluation of the expression *)
-        visit_stmt ~bound_to_decl context cond ~needs_marker temporaries
-        |> visit_stmt ~bound_to_decl context then_ ~needs_marker:true
-        |> visit_stmt ~bound_to_decl context else_ ~needs_marker:true
+        visit_stmt ~bound_to_decl context cond ~marker temporaries
+        |> visit_stmt ~bound_to_decl context then_ ~marker:(Some (Sil.Ik_bexp {terminated= true}))
+        |> visit_stmt ~bound_to_decl context else_ ~marker:(Some (Sil.Ik_bexp {terminated= true}))
     | BinaryOperator (_, [lhs; rhs], _, {boi_kind= `LAnd | `LOr}) ->
         (* similarly to above, due to possible short-circuiting we are not sure that the RHS of [a
            && b] and [a || b] will be executed *)
-        visit_stmt ~bound_to_decl context lhs ~needs_marker temporaries
-        |> visit_stmt ~bound_to_decl context rhs ~needs_marker:true
+        visit_stmt ~bound_to_decl context lhs ~marker temporaries
+        |> visit_stmt ~bound_to_decl context rhs ~marker:(Some Sil.Ik_land_lor)
     | LambdaExpr _ ->
         (* do not analyze the code of another function *) temporaries
     | ExprWithCleanups _ when Option.is_none bound_to_decl ->
@@ -135,26 +134,26 @@ module CXXTemporaries = struct
         temporaries
     | _ ->
         let _, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
-        visit_stmt_list ~bound_to_decl context stmt_list ~needs_marker temporaries
+        visit_stmt_list ~bound_to_decl context stmt_list ~marker temporaries
 
 
-  and visit_stmt ~bound_to_decl context stmt ~needs_marker temporaries =
+  and visit_stmt ~bound_to_decl context stmt ~marker temporaries =
     L.debug Capture Verbose "<@[<hv2>%a|@,"
       (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
       stmt ;
-    let r = visit_stmt_aux ~bound_to_decl context stmt ~needs_marker temporaries in
+    let r = visit_stmt_aux ~bound_to_decl context stmt ~marker temporaries in
     L.debug Capture Verbose "@]@;/%a>" (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string) stmt ;
     r
 
 
-  and visit_stmt_list ~bound_to_decl context stmt_list ~needs_marker temporaries =
+  and visit_stmt_list ~bound_to_decl context stmt_list ~marker temporaries =
     List.fold stmt_list ~init:temporaries ~f:(fun temporaries stmt ->
         L.debug Capture Verbose "@;" ;
-        visit_stmt ~bound_to_decl context stmt ~needs_marker temporaries )
+        visit_stmt ~bound_to_decl context stmt ~marker temporaries )
 
 
   let get_temporaries ~bound_to_decl context stmt_list =
-    let temporaries = visit_stmt_list ~bound_to_decl context stmt_list ~needs_marker:false [] in
+    let temporaries = visit_stmt_list ~bound_to_decl context stmt_list ~marker:None [] in
     L.debug Capture Verbose "@\n" ;
     temporaries
 

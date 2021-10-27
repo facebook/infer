@@ -15,26 +15,12 @@ type t =
   | ViaCall of {f: CallEvent.t; location: Location.t; history: ValueHistory.t; in_call: t}
 [@@deriving compare, equal]
 
-let rec trace_up_to_key_event ~is_key_event history =
-  match (history : ValueHistory.t) with
-  | [] ->
-      None
-  | event :: past when is_key_event event ->
-      Some (Immediate {location= ValueHistory.location_of_event event; history= past})
-  | Call {f; location; in_call} :: past ->
-      Option.map (trace_up_to_key_event ~is_key_event in_call) ~f:(fun in_call_trace ->
-          ViaCall {f; location; in_call= in_call_trace; history= past} )
-  | _event :: past ->
-      (* [_event ≠ key_event]: we are past the key event if it exists *)
-      trace_up_to_key_event ~is_key_event past
-
-
 let get_outer_location = function Immediate {location; _} | ViaCall {location; _} -> location
 
 let get_outer_history = function Immediate {history; _} | ViaCall {history; _} -> history
 
 let get_start_location trace =
-  match get_outer_history trace |> List.last with
+  match ValueHistory.get_first_event (get_outer_history trace) with
   | Some event ->
       ValueHistory.location_of_event event
   | None ->
@@ -72,11 +58,12 @@ let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate tra
 
 
 let rec iter trace ~f =
+  let f_event = function ValueHistory.Event event -> f event | _ -> () in
   match trace with
   | Immediate {history} ->
-      ValueHistory.iter history ~f
+      ValueHistory.iter history ~f:f_event
   | ViaCall {history; in_call} ->
-      ValueHistory.iter history ~f ;
+      ValueHistory.iter history ~f:f_event ;
       iter in_call ~f
 
 
@@ -86,7 +73,7 @@ let exists trace ~f = Container.exists ~iter trace ~f
 
 let get_invalidation trace =
   find_map trace ~f:(function
-    | ValueHistory.Invalidated (invalidation, _) ->
+    | ValueHistory.Invalidated (invalidation, _, _) ->
         Some invalidation
     | _ ->
         None )

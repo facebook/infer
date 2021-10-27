@@ -120,10 +120,10 @@ let parse_ptr_kind (json : Safe.t) =
 
 let parse_if_kind (json : Safe.t) =
   let ifkind_map =
-    [ ("Ik_bexp", Sil.Ik_bexp)
+    [ ("Ik_bexp", Sil.Ik_bexp {terminated= false})
     ; ("Ik_dowhile", Sil.Ik_dowhile)
     ; ("Ik_for", Sil.Ik_for)
-    ; ("Ik_if", Sil.Ik_if)
+    ; ("Ik_if", Sil.Ik_if {terminated= false})
     ; ("Ik_land_lor", Sil.Ik_land_lor)
     ; ("Ik_while", Sil.Ik_while)
     ; ("Ik_switch", Sil.Ik_switch) ]

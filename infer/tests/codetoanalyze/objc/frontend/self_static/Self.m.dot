@@ -11,15 +11,15 @@ digraph cfg {
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_3" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_2" ;
-"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_4" [label="4: + \n  " ]
+"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_4" [label="4: + \n   END_BRANCHES\n " ]
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_4" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_3" ;
-"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_5" [label="5: Prune (true branch, if) \n   PRUNE(sizeof(t=objc_class), true); [line 104, column 7]\n " shape="invhouse"]
+"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE(sizeof(t=objc_class), true); [line 104, column 7]\n " shape="invhouse"]
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_5" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_7" ;
-"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_6" [label="6: Prune (false branch, if) \n   PRUNE(!sizeof(t=objc_class), false); [line 104, column 7]\n " shape="invhouse"]
+"class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE(!sizeof(t=objc_class), false); [line 104, column 7]\n " shape="invhouse"]
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_6" -> "class_method_in_conditional.2a19b0bd8eafdb3235f52585a49ef84a_4" ;
@@ -80,15 +80,15 @@ digraph cfg {
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_4" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_2" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" [label="5: + \n  " ]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_5" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_10" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE(n$26, true); [line 119, column 12]\n " shape="invhouse"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" [label="6: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$26, true); [line 119, column 12]\n " shape="invhouse"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_6" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_8" ;
-"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!n$26, false); [line 119, column 12]\n " shape="invhouse"]
+"class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" [label="7: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!n$26, false); [line 119, column 12]\n " shape="invhouse"]
 	
 
 	 "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_7" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#class.7bda69c598fb7e024d776cec3122e2a6_9" ;
@@ -123,11 +123,11 @@ digraph cfg {
 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_2" [label="2: Exit A.used_in_binary_op: \n  " color=yellow style=filled]
 	
 
-"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_3" [label="3: + \n  " ]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_3" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_4" ;
-"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_4" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_2" ;
@@ -136,11 +136,11 @@ digraph cfg {
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" ;
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_5" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" ;
-"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" [label="6: Prune (true branch, if) \n   PRUNE((n$20 != n$21), true); [line 94, column 7]\n " shape="invhouse"]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$20 != n$21), true); [line 94, column 7]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_6" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_8" ;
-"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$20 != n$21), false); [line 94, column 7]\n " shape="invhouse"]
+"used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$20 != n$21), false); [line 94, column 7]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_7" -> "used_in_binary_op:#A(struct objc_class)#class.da9fc6494d494952f5246c6cf4478263_9" ;

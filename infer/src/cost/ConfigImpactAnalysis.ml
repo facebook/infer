@@ -688,7 +688,8 @@ module TransferFunctions = struct
     let open ProcnameDispatcher.ProcName in
     let dispatch : (Tenv.t, unit, unit) dispatcher =
       make_dispatcher
-        [ +PatternMatch.Java.implements_lang "Boolean" &:: "booleanValue" &--> ()
+        [ +PatternMatch.Java.implements_android "text.TextUtils" &:: "isEmpty" &--> ()
+        ; +PatternMatch.Java.implements_lang "Boolean" &:: "booleanValue" &--> ()
         ; +PatternMatch.Java.implements_lang "Boolean" &:: "valueOf" &--> ()
         ; +PatternMatch.Java.implements_lang "Double" &:: "doubleValue" &--> ()
         ; +PatternMatch.Java.implements_lang "Double" &:: "valueOf" &--> ()

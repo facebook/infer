@@ -149,11 +149,11 @@ let garbage_collect (q : Sh.t) ~wrt =
   [%Trace.retn fun {pf} -> pf "%a" pp]
 
 let and_eqs sub formals actuals q =
-  let and_eq formal actual q =
+  let and_eq formal actual eqs =
     let actual' = Term.rename sub actual in
-    Sh.and_ (Formula.eq (Term.var formal) actual') q
+    Formula.eq (Term.var formal) actual' :: eqs
   in
-  IArray.fold2_exn ~f:and_eq formals actuals q
+  Sh.andN (IArray.fold2_exn ~f:and_eq formals actuals []) q
 
 let localize_entry tid globals actuals formals freturn locals shadow pre
     entry =

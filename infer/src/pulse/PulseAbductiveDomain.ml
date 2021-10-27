@@ -13,6 +13,7 @@ module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
+module PathContext = PulsePathContext
 module UninitBlocklist = PulseUninitBlocklist
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
@@ -158,7 +159,7 @@ module Stack = struct
         in
         let post_attrs =
           if Config.pulse_isl then
-            let access_trace = Trace.Immediate {location; history= []} in
+            let access_trace = Trace.Immediate {location; history= Epoch} in
             BaseAddressAttributes.add_one addr
               (MustBeValid (path.PathContext.timestamp, access_trace, None))
               (astate.post :> base_domain).attrs
@@ -169,7 +170,7 @@ module Stack = struct
           if (not (BaseStack.mem var (astate.pre :> base_domain).stack)) && is_abducible astate var
           then
             (* HACK: do not record the history of values in the pre as they are unused *)
-            let foot_stack = BaseStack.add var (addr, []) (astate.pre :> base_domain).stack in
+            let foot_stack = BaseStack.add var (addr, Epoch) (astate.pre :> base_domain).stack in
             let foot_heap = BaseMemory.register_address addr (astate.pre :> base_domain).heap in
             PreDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
           else astate.pre
@@ -433,7 +434,7 @@ module Memory = struct
         let foot_heap =
           if BaseMemory.mem addr_src (astate.pre :> base_domain).heap then
             (* HACK: do not record the history of values in the pre as they are unused *)
-            BaseMemory.add_edge addr_src access (addr_dst, []) (astate.pre :> base_domain).heap
+            BaseMemory.add_edge addr_src access (addr_dst, Epoch) (astate.pre :> base_domain).heap
             |> BaseMemory.register_address addr_dst
           else (astate.pre :> base_domain).heap
         in
@@ -448,13 +449,13 @@ module Memory = struct
   let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
 end
 
-let add_edge_on_src src location stack =
+let add_edge_on_src timestamp src location stack =
   match src with
   | `LocalDecl (pvar, addr_opt) -> (
     match addr_opt with
     | None ->
         let addr = AbstractValue.mk_fresh () in
-        let history = [ValueHistory.VariableDeclared (pvar, location)] in
+        let history = ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)) in
         (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
     | Some addr ->
         (stack, addr) )
@@ -462,16 +463,16 @@ let add_edge_on_src src location stack =
       (stack, addr)
 
 
-let rec set_uninitialized_post tenv src typ location ?(fields_prefix = RevList.empty)
+let rec set_uninitialized_post tenv timestamp src typ location ?(fields_prefix = RevList.empty)
     (post : PostDomain.t) =
   match typ.Typ.desc with
   | Tint _ | Tfloat _ | Tptr _ ->
       let {stack; attrs} = (post :> base_domain) in
-      let stack, addr = add_edge_on_src src location stack in
+      let stack, addr = add_edge_on_src timestamp src location stack in
       let attrs =
         if Config.pulse_isl then
           BaseAddressAttributes.add_one addr
-            (MustBeValid (PathContext.t0, Immediate {location; history= []}, None))
+            (MustBeValid (Timestamp.t0, Immediate {location; history= Epoch}, None))
             attrs
         else attrs
       in
@@ -488,28 +489,30 @@ let rec set_uninitialized_post tenv src typ location ?(fields_prefix = RevList.e
         (* Ignore single field structs: see D26146578 *)
         post
     | Some {fields} ->
-        let stack, addr = add_edge_on_src src location (post :> base_domain).stack in
+        let stack, addr = add_edge_on_src timestamp src location (post :> base_domain).stack in
         let init = PostDomain.update ~stack post in
         List.fold fields ~init ~f:(fun (acc : PostDomain.t) (field, field_typ, _) ->
             if Fieldname.is_internal field then acc
             else
               let field_addr = AbstractValue.mk_fresh () in
               let fields = RevList.cons field fields_prefix in
-              let history = [ValueHistory.StructFieldAddressCreated (fields, location)] in
+              let history =
+                ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
+              in
               let heap =
                 BaseMemory.add_edge addr (HilExp.Access.FieldAccess field) (field_addr, history)
                   (acc :> base_domain).heap
               in
               PostDomain.update ~heap acc
-              |> set_uninitialized_post tenv (`Malloc field_addr) field_typ location
+              |> set_uninitialized_post tenv timestamp (`Malloc field_addr) field_typ location
                    ~fields_prefix:fields ) )
   | Tarray _ | Tvoid | Tfun | TVar _ ->
       (* We ignore tricky types to mark uninitialized addresses. *)
       post
 
 
-let set_uninitialized tenv src typ location x =
-  {x with post= set_uninitialized_post tenv src typ location x.post}
+let set_uninitialized tenv {PathContext.timestamp} src typ location x =
+  {x with post= set_uninitialized_post tenv timestamp src typ location x.post}
 
 
 let mk_initial tenv proc_desc =
@@ -522,7 +525,8 @@ let mk_initial tenv proc_desc =
       let pvar = Pvar.mk mangled proc_name in
       ( Var.of_pvar pvar
       , typ
-      , (AbstractValue.mk_fresh (), [ValueHistory.FormalDeclared (pvar, location)]) )
+      , ( AbstractValue.mk_fresh ()
+        , ValueHistory.singleton (FormalDeclared (pvar, location, Timestamp.t0)) ) )
     in
     let formals =
       Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, typ) -> init_var mangled typ)
@@ -544,7 +548,7 @@ let mk_initial tenv proc_desc =
       match typ.Typ.desc with
       | Typ.Tptr _ ->
           let addr_dst = AbstractValue.mk_fresh () in
-          BaseMemory.add_edge addr Dereference (addr_dst, []) heap
+          BaseMemory.add_edge addr Dereference (addr_dst, Epoch) heap
           |> BaseMemory.register_address addr_dst
       | _ ->
           heap
@@ -557,7 +561,7 @@ let mk_initial tenv proc_desc =
       List.fold formals_and_captured ~init:(PreDomain.empty :> base_domain).attrs
         ~f:(fun attrs (_, _, (addr, _)) ->
           BaseAddressAttributes.add_one addr
-            (MustBeValid (PathContext.t0, Immediate {location; history= []}, None))
+            (MustBeValid (Timestamp.t0, Immediate {location; history= Epoch}, None))
             attrs )
     else BaseDomain.empty.attrs
   in
@@ -577,7 +581,9 @@ let mk_initial tenv proc_desc =
       ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr} ->
         if modify_in_block || is_constexpr then acc
         else
-          set_uninitialized_post tenv (`LocalDecl (Pvar.mk name proc_name, None)) typ location acc )
+          set_uninitialized_post tenv Timestamp.t0
+            (`LocalDecl (Pvar.mk name proc_name, None))
+            typ location acc )
   in
   { pre
   ; post

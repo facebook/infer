@@ -8,19 +8,19 @@ digraph cfg {
 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_2" [label="2: Exit objc_blockMy_manager.blockReleaseNoLeak_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" [label="3: + \n  " ]
+"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_4" ;
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_4" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_2" ;
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_5" [label="5: Prune (true branch, if) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(n$10, true); [line 24, column 9]\n " shape="invhouse"]
+"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_5" [label="5: Prune (true branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(n$10, true); [line 24, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_5" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_7" ;
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_6" [label="6: Prune (false branch, if) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(!n$10, false); [line 24, column 9]\n " shape="invhouse"]
+"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_6" [label="6: Prune (false branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(!n$10, false); [line 24, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_6" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" ;
@@ -43,15 +43,15 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_2" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" [label="5: + \n  " ]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" [label="6: Prune (true branch, if) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(n$1, true); [line 28, column 7]\n " shape="invhouse"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" [label="6: Prune (true branch, if (terminated)) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(n$1, true); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" [label="7: Prune (false branch, if) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(!n$1, false); [line 28, column 7]\n " shape="invhouse"]
+"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" [label="7: Prune (false branch, if (terminated)) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(!n$1, false); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" ;

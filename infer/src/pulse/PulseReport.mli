@@ -7,8 +7,11 @@
 
 open! IStd
 open PulseDomainInterface
+open PulseBasicInterface
 
 [@@@warning "-32"]
+
+val report_non_disj_error : Procdesc.t -> Errlog.t -> Diagnostic.t -> unit
 
 val report_summary_error :
      Tenv.t

@@ -38,10 +38,7 @@ val add : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
 val union : Var.Set.t -> t -> t -> Var.Set.t * t
 (** Union (that is, conjoin) two contexts of assumptions. *)
 
-val inter : Var.Set.t -> t -> t -> Var.Set.t * t
-(** Intersect (that is, disjoin) contexts of assumptions. *)
-
-val interN : Var.Set.t -> t list -> Var.Set.t * t
+val interN : Var.Set.t -> (Var.Set.t * t) list -> Var.Set.t * t
 (** Intersect contexts of assumptions. Possibly weaker than logical
     disjunction. *)
 

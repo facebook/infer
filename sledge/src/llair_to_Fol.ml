@@ -148,7 +148,9 @@ and term : ThreadID.t -> Llair.Exp.t -> T.t =
       let off, len = Llair.Typ.offset_length_of_elt typ idx in
       let off = T.integer (Z.of_int off) in
       let len = T.integer (Z.of_int len) in
-      T.extract ~seq:(term tid rcd) ~off ~len
+      let seq = term tid rcd in
+      let siz = T.integer (Z.of_int (Llair.Typ.size_of typ)) in
+      T.extract ~seq ~siz ~off ~len
   | Ap2 (Update idx, typ, rcd, elt) ->
       let oI, lI = Llair.Typ.offset_length_of_elt typ idx in
       let oJ = oI + lI in
@@ -158,17 +160,18 @@ and term : ThreadID.t -> Llair.Exp.t -> T.t =
       let off2 = T.integer (Z.of_int oJ) in
       let len2 = T.integer (Z.of_int (Llair.Typ.size_of typ - oI - lI)) in
       let seq = term tid rcd in
+      let siz = T.integer (Z.of_int (Llair.Typ.size_of typ)) in
       T.concat
-        [| T.extract ~seq ~off:off0 ~len:len0
-         ; T.sized ~seq:(term tid elt) ~siz:len1
-         ; T.extract ~seq ~off:off2 ~len:len2 |]
+        [| {seq= T.extract ~seq ~siz ~off:off0 ~len:len0; siz= len0}
+         ; {seq= term tid elt; siz= len1}
+         ; {seq= T.extract ~seq ~siz ~off:off2 ~len:len2; siz= len2} |]
   | ApN (Record, typ, elts) ->
       let elt_siz i =
         T.integer (Z.of_int (snd (Llair.Typ.offset_length_of_elt typ i)))
       in
       T.concat
         (Array.mapi (IArray.to_array elts) ~f:(fun i elt ->
-             T.sized ~seq:(term tid elt) ~siz:(elt_siz i) ) )
+             {T.seq= term tid elt; siz= elt_siz i} ) )
   | Ap1 (Splat, _, byt) -> T.splat (term tid byt)
 
 and formula tid e = F.dq0 (term tid e)

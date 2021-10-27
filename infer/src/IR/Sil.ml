@@ -16,20 +16,49 @@ module L = Logging
 
 (** Kind of prune instruction *)
 type if_kind =
-  | Ik_bexp  (** boolean expressions, and exp ? exp : exp *)
-  | Ik_compexch  (** used in atomic compare exchange expressions *)
+  | Ik_bexp of {terminated: bool}
+  | Ik_compexch
   | Ik_dowhile
   | Ik_for
-  | Ik_if
-  | Ik_land_lor  (** obtained from translation of && or || *)
+  | Ik_if of {terminated: bool}
+  | Ik_land_lor
   | Ik_while
   | Ik_switch
 [@@deriving compare, equal]
+
+let pp_if_kind fmt = function
+  | Ik_bexp {terminated} ->
+      F.pp_print_string fmt "boolean exp" ;
+      if terminated then F.pp_print_string fmt " (terminated)"
+  | Ik_compexch ->
+      F.pp_print_string fmt "atomic compare exchange"
+  | Ik_dowhile ->
+      F.pp_print_string fmt "do while"
+  | Ik_for ->
+      F.pp_print_string fmt "for loop"
+  | Ik_if {terminated} ->
+      F.pp_print_string fmt "if" ;
+      if terminated then F.pp_print_string fmt " (terminated)"
+  | Ik_land_lor ->
+      F.pp_print_string fmt "obtained from && or ||"
+  | Ik_while ->
+      F.pp_print_string fmt "while"
+  | Ik_switch ->
+      F.pp_print_string fmt "switch"
+
+
+let is_terminated_if_kind = function
+  | Ik_bexp {terminated} | Ik_if {terminated} ->
+      terminated
+  | Ik_compexch | Ik_dowhile | Ik_for | Ik_land_lor | Ik_while | Ik_switch ->
+      false
+
 
 type instr_metadata =
   | Abstract of Location.t
       (** a good place to apply abstraction, mostly used in the biabduction analysis *)
   | CatchEntry of {try_id: int; loc: Location.t}  (** entry of C++ catch blocks *)
+  | EndBranches
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Skip  (** no-op *)
@@ -103,7 +132,7 @@ let location_of_instr_metadata = function
   | TryExit {loc}
   | VariableLifetimeBegins (_, _, loc) ->
       loc
-  | Skip ->
+  | EndBranches | Skip ->
       Location.dummy
 
 
@@ -116,7 +145,7 @@ let location_of_instr = function
 
 
 let exps_of_instr_metadata = function
-  | Abstract _ | CatchEntry _ ->
+  | Abstract _ | CatchEntry _ | EndBranches ->
       []
   | ExitScope (vars, _) ->
       List.map ~f:Var.to_exp vars
@@ -143,31 +172,13 @@ let exps_of_instr = function
       exps_of_instr_metadata metadata
 
 
-(** Convert an if_kind to string *)
-let if_kind_to_string = function
-  | Ik_bexp ->
-      "boolean exp"
-  | Ik_compexch ->
-      "atomic compare exchange"
-  | Ik_dowhile ->
-      "do while"
-  | Ik_for ->
-      "for loop"
-  | Ik_if ->
-      "if"
-  | Ik_land_lor ->
-      "obtained from && or ||"
-  | Ik_while ->
-      "while"
-  | Ik_switch ->
-      "switch"
-
-
 let pp_instr_metadata pe f = function
   | Abstract loc ->
       F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
   | CatchEntry {loc} ->
       F.fprintf f "CATCH_ENTRY; [%a]" Location.pp loc
+  | EndBranches ->
+      F.fprintf f "END_BRANCHES"
   | ExitScope (vars, loc) ->
       F.fprintf f "EXIT_SCOPE(%a); [%a]" (Pp.seq ~sep:"," Var.pp) vars Location.pp loc
   | Nullify (pvar, loc) ->

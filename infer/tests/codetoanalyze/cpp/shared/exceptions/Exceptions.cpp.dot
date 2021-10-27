@@ -99,15 +99,15 @@ digraph cfg {
 	
 
 	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_3" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_2" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" [label="4: + \n  " ]
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" [label="4: + \n   END_BRANCHES\n " ]
 	
 
 	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_4" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_16" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" [label="5: Prune (true branch, if) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(n$0, true); [line 59, column 9]\n " shape="invhouse"]
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" [label="5: Prune (true branch, if (terminated)) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(n$0, true); [line 59, column 9]\n " shape="invhouse"]
 	
 
 	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_5" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_7" ;
-"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_6" [label="6: Prune (false branch, if) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(!n$0, false); [line 59, column 9]\n " shape="invhouse"]
+"FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_6" [label="6: Prune (false branch, if (terminated)) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(!n$0, false); [line 59, column 9]\n " shape="invhouse"]
 	
 
 	 "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_6" -> "FN_multiple_catches_bad#4595182522053295670.680a793e449c2d7439ff6441ca69fa98_9" ;
@@ -234,7 +234,7 @@ digraph cfg {
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_4" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_2" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" [label="5: + \n  " ]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_3" ;
@@ -243,11 +243,11 @@ digraph cfg {
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" ;
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_6" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" [label="7: Prune (true branch, if) \n   PRUNE((n$2 == null), true); [line 12, column 7]\n " shape="invhouse"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" [label="7: Prune (true branch, if (terminated)) \n   PRUNE((n$2 == null), true); [line 12, column 7]\n " shape="invhouse"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_7" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_9" ;
-"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" [label="8: Prune (false branch, if) \n   PRUNE(!(n$2 == null), false); [line 12, column 7]\n " shape="invhouse"]
+"deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" [label="8: Prune (false branch, if (terminated)) \n   PRUNE(!(n$2 == null), false); [line 12, column 7]\n " shape="invhouse"]
 	
 
 	 "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_8" -> "deref#13506892413034678690.824465c4193ad2288eb512b1083edab3_5" ;

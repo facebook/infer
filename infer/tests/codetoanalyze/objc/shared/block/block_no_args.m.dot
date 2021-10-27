@@ -29,11 +29,11 @@ digraph cfg {
 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" [label="2: Exit Block_no_args.m \n  " color=yellow style=filled]
 	
 
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_3" [label="3: + \n  " ]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_3" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_4" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_4" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_2" ;
@@ -42,11 +42,11 @@ digraph cfg {
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_5" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_6" ;
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_5" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n " shape="invhouse"]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$0 == 6), true); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_6" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_8" ;
-"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n " shape="invhouse"]
+"m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$0 == 6), false); [line 28, column 7]\n " shape="invhouse"]
 	
 
 	 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_7" -> "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_10" ;

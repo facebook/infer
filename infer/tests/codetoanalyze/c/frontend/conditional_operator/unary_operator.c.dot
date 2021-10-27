@@ -8,15 +8,15 @@ digraph cfg {
 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_2" [label="2: Exit dereference_ifthenelse \n  " color=yellow style=filled]
 	
 
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_3" [label="3: + \n  " ]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_3" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_8" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" [label="4: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 14, column 5]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   PRUNE(1, true); [line 14, column 5]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_6" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" [label="5: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 14, column 5]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!1, false); [line 14, column 5]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_7" ;
@@ -36,15 +36,15 @@ digraph cfg {
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_9" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_2" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" [label="10: + \n  " ]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" [label="10: + \n   END_BRANCHES\n " ]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_10" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" [label="11: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 12, column 13]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" [label="11: Prune (true branch, boolean exp (terminated)) \n   PRUNE(1, true); [line 12, column 13]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_11" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_13" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" [label="12: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 12, column 13]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" [label="12: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!1, false); [line 12, column 13]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_12" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_14" ;
@@ -66,15 +66,15 @@ digraph cfg {
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_4" ;
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_16" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_5" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" [label="17: + \n  " ]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" [label="17: + \n   END_BRANCHES\n " ]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_17" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_22" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" [label="18: Prune (true branch, boolean exp) \n   PRUNE(1, true); [line 10, column 9]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" [label="18: Prune (true branch, boolean exp (terminated)) \n   PRUNE(1, true); [line 10, column 9]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_18" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_20" ;
-"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" [label="19: Prune (false branch, boolean exp) \n   PRUNE(!1, false); [line 10, column 9]\n " shape="invhouse"]
+"dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" [label="19: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!1, false); [line 10, column 9]\n " shape="invhouse"]
 	
 
 	 "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_19" -> "dereference_ifthenelse.aa3447116ff03cffc729c06c91821cdc_21" ;

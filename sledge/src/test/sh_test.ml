@@ -54,10 +54,12 @@ let%test_module _ =
     let y = Term.var y_
     let z = Term.var z_
 
-    let eq_concat (siz, seq) ms =
-      Formula.eq (Term.sized ~siz ~seq)
-        (Term.concat
-           (Array.map ~f:(fun (siz, seq) -> Term.sized ~siz ~seq) ms) )
+    let eq_concat (siz, seq) xs =
+      let ys, len =
+        Array.fold_map xs Term.zero ~f:(fun (siz, seq) len ->
+            ({Term.siz; seq}, Term.add siz len) )
+      in
+      Formula.and_ (Formula.eq siz len) (Formula.eq seq (Term.concat ys))
 
     let of_eqs l =
       List.fold ~f:(fun (a, b) q -> and_ (Formula.eq a b) q) l emp
@@ -183,11 +185,10 @@ let%test_module _ =
       [%expect
         {|
         ∃ %a_1, %c_3, %d_4, %e_5 .
-          (⟨8,%a_1⟩^⟨8,%d_4⟩) = %e_5 ∧ (⟨16,%e_5⟩ = (⟨8,%a_1⟩^⟨8,%d_4⟩))
+          (⟨8,%a_1⟩^⟨8,%d_4⟩) = %e_5 ∧ (%e_5 = (⟨8,%a_1⟩^⟨8,%d_4⟩))
         ∧ emp
         * ( (∃ %b_2 .
-               (⟨4,%c_3⟩^⟨4,%b_2⟩) = %a_1
-             ∧ (⟨8,%a_1⟩ = (⟨4,%c_3⟩^⟨4,%b_2⟩))
+               (⟨4,%c_3⟩^⟨4,%b_2⟩) = %a_1 ∧ (%a_1 = (⟨4,%c_3⟩^⟨4,%b_2⟩))
              ∧ emp)
           ∨ (  tt ∧ (0 ≠ %x_7) ∧ emp)
           )

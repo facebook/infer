@@ -56,6 +56,7 @@ type t =
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
+  | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]
 
 val get_message : t -> string

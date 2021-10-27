@@ -18,10 +18,13 @@ let is_ptr_to_const formal_typ_opt =
       match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
 
 
-let unknown_call path call_loc (reason : CallEvent.t) ~ret ~actuals ~formals_opt astate =
-  let event = ValueHistory.Call {f= reason; location= call_loc; in_call= []} in
+let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) ~ret ~actuals
+    ~formals_opt astate =
+  let hist =
+    ValueHistory.singleton (Call {f= reason; location= call_loc; in_call= Epoch; timestamp})
+  in
   let ret_val = AbstractValue.mk_fresh () in
-  let astate = PulseOperations.write_id (fst ret) (ret_val, [event]) astate in
+  let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
   (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the
      same value for the same inputs *)
   let is_functional = ref true in
@@ -30,7 +33,6 @@ let unknown_call path call_loc (reason : CallEvent.t) ~ret ~actuals ~formals_opt
     match actual_typ.Typ.desc with
     | Tptr _ when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
         is_functional := false ;
-        let hist = [event] in
         (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
            by [actual] *)
         AbductiveDomain.apply_unknown_effect hist actual astate
@@ -64,7 +66,7 @@ let unknown_call path call_loc (reason : CallEvent.t) ~ret ~actuals ~formals_opt
     match reason with
     | SkippedKnownCall proc_name ->
         AbductiveDomain.add_skipped_call proc_name
-          (Trace.Immediate {location= call_loc; history= []})
+          (Trace.Immediate {location= call_loc; history= Epoch})
           astate
     | _ ->
         astate
@@ -91,8 +93,8 @@ let unknown_call path call_loc (reason : CallEvent.t) ~ret ~actuals ~formals_opt
   |> add_skipped_proc
 
 
-let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state ~ret
-    ~captured_vars_with_actuals ~formals ~actuals astate =
+let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
+    callee_exec_state ~ret ~captured_vars_with_actuals ~formals ~actuals astate =
   let map_call_result ~is_isl_error_prepost callee_prepost ~f =
     match
       PulseInterproc.apply_prepost path ~is_isl_error_prepost callee_pname call_loc ~callee_prepost
@@ -107,7 +109,8 @@ let apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_s
               PulseOperations.write_id (fst ret) return_val_hist post
           | None ->
               PulseOperations.havoc_id (fst ret)
-                [ValueHistory.Call {f= Call callee_pname; location= call_loc; in_call= []}]
+                (ValueHistory.singleton
+                   (Call {f= Call callee_pname; location= call_loc; in_call= Epoch; timestamp}) )
                 post
         in
         f subst post
@@ -279,7 +282,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
     result_unknown @ result_unknown_nil
   in
   match callee_data with
-  | Some (callee_proc_desc, exec_states) ->
+  | Some (callee_proc_desc, (exec_states, _)) ->
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
         (exec_states :> ExecutionDomain.t list)
         astate

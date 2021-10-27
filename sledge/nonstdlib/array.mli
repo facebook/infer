@@ -51,5 +51,6 @@ val fold_map_until :
   -> 'c
 
 val fold2_exn : 'a t -> 'b t -> 's -> f:('a -> 'b -> 's -> 's) -> 's
+val to_list_rev : 'a array -> 'a list
 val to_list_rev_map : 'a array -> f:('a -> 'b) -> 'b list
 val pp : (unit, unit) fmt -> 'a pp -> 'a array pp

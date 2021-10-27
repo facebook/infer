@@ -8,8 +8,23 @@
 #include <iterator>
 
 // Expected: O(s); got top
-void loop_over_set_linear_FP(std::set<int> s) {
+void loop_over_set_size_linear_FP(std::set<int> s) {
   for (int i = 0; i < s.size(); i++) {
+  }
+}
+
+void loop_over_set_linear(std::set<int> s) {
+  for (auto i : s) {
+  }
+}
+
+void iterate_over_set_linear(std::set<int> s) {
+  for (auto it = s.begin(); it != s.end(); it++) {
+  }
+}
+
+void iteratec_over_set_linear(std::set<int> s) {
+  for (auto it = s.cbegin(); it != s.cend(); it++) {
   }
 }
 
@@ -37,7 +52,8 @@ void iterate_over_set_linear(int n) {
   }
 }
 
-void binary_search_over_set_constant() {
+// Expected: constant; got O(log(s))
+void binary_search_over_set_constant_FP() {
   std::set<int> s;
 
   s.insert(40);
@@ -47,8 +63,7 @@ void binary_search_over_set_constant() {
   binary_search(s.begin(), s.end(), 10);
 }
 
-// Expected: O(log(s)); got constant
-void binary_search_over_set_logs_FN(std::set<int> s) {
+void binary_search_over_set_logs(std::set<int> s) {
   binary_search(s.begin(), s.end(), 10);
 }
 

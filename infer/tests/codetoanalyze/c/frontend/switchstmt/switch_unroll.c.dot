@@ -41,15 +41,15 @@ digraph cfg {
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_10" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_7" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_11" [label="11: + \n  " ]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_11" [label="11: + \n   END_BRANCHES\n " ]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_11" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_10" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_12" [label="12: Prune (true branch, if) \n   PRUNE(1, true); [line 16, column 15]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_12" [label="12: Prune (true branch, if (terminated)) \n   PRUNE(1, true); [line 16, column 15]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_12" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_14" ;
-"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_13" [label="13: Prune (false branch, if) \n   PRUNE(!1, false); [line 16, column 15]\n " shape="invhouse"]
+"unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_13" [label="13: Prune (false branch, if (terminated)) \n   PRUNE(!1, false); [line 16, column 15]\n " shape="invhouse"]
 	
 
 	 "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_13" -> "unroll_loop.7d9e50ecf5e5106a8dd5deee005639d6_11" ;

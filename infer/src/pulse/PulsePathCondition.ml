@@ -133,7 +133,7 @@ let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
 let subst_find_or_new subst addr_callee =
   match AbstractValue.Map.find_opt addr_callee subst with
   | None ->
-      let addr_hist_fresh = (AbstractValue.mk_fresh (), []) in
+      let addr_hist_fresh = (AbstractValue.mk_fresh (), ValueHistory.Epoch) in
       (AbstractValue.Map.add addr_callee addr_hist_fresh subst, fst addr_hist_fresh)
   | Some addr_hist_caller ->
       (subst, fst addr_hist_caller)
@@ -146,7 +146,7 @@ let eval_sym_of_subst bo_itvs subst s bound_end =
       Itv.ItvPure.get_bound (BoItvs.find_or_default v' bo_itvs) bound_end
   | None ->
       let v' = AbstractValue.mk_fresh () in
-      subst := AbstractValue.Map.add v (v', []) !subst ;
+      subst := AbstractValue.Map.add v (v', ValueHistory.Epoch) !subst ;
       Bounds.Bound.of_foreign_id (v' :> int)
 
 

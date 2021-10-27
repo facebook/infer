@@ -49,15 +49,15 @@ digraph cfg {
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_4" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" [label="5: + \n  " ]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" [label="6: Prune (true branch, if) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(n$2, true); [line 30, column 7]\n " shape="invhouse"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" [label="6: Prune (true branch, if (terminated)) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(n$2, true); [line 30, column 7]\n " shape="invhouse"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" [label="7: Prune (false branch, if) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(!n$2, false); [line 30, column 7]\n " shape="invhouse"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" [label="7: Prune (false branch, if (terminated)) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(!n$2, false); [line 30, column 7]\n " shape="invhouse"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" ;

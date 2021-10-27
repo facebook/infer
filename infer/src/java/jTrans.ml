@@ -1070,12 +1070,11 @@ let instruction (context : JContext.t) pc instr : translation =
         let sil_op = get_test_operator op in
         let sil_test_false = Exp.BinOp (sil_op, sil_ex1, sil_ex2) in
         let sil_test_true = Exp.UnOp (Unop.LNot, sil_test_false, None) in
-        let sil_instrs_true = Sil.Prune (sil_test_true, loc, true, Sil.Ik_if) in
-        let sil_instrs_false = Sil.Prune (sil_test_false, loc, false, Sil.Ik_if) in
-        let node_kind_true = Procdesc.Node.Prune_node (true, Sil.Ik_if, PruneNodeKind_MethodBody) in
-        let node_kind_false =
-          Procdesc.Node.Prune_node (false, Sil.Ik_if, PruneNodeKind_MethodBody)
-        in
+        let if_kind = Sil.Ik_if {terminated= false} in
+        let sil_instrs_true = Sil.Prune (sil_test_true, loc, true, if_kind) in
+        let sil_instrs_false = Sil.Prune (sil_test_false, loc, false, if_kind) in
+        let node_kind_true = Procdesc.Node.Prune_node (true, if_kind, PruneNodeKind_MethodBody) in
+        let node_kind_false = Procdesc.Node.Prune_node (false, if_kind, PruneNodeKind_MethodBody) in
         let prune_node_true = create_node node_kind_true (instrs1 @ instrs2 @ [sil_instrs_true])
         and prune_node_false =
           create_node node_kind_false (instrs1 @ instrs2 @ [sil_instrs_false])

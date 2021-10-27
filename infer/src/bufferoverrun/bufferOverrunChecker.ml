@@ -100,7 +100,7 @@ end
 
 let add_unreachable_code (cfg : CFG.t) (node : CFG.Node.t) instr rem_instrs (checks : Checks.t) =
   match instr with
-  | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
+  | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp _)) ->
       checks
   | Sil.Prune (condition, location, true_branch, _) ->
       let unused_branch = UnusedBranch.{node; location; condition; true_branch} in
