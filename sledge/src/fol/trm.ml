@@ -419,6 +419,12 @@ let partial_compare x y =
 let partial_ge x y =
   match partial_compare x y with Some (Pos | Zero) -> true | _ -> false
 
+let partial_min x y =
+  match partial_compare x y with
+  | Some Neg -> Some x
+  | Some (Pos | Zero) -> Some y
+  | None -> None
+
 let empty_seq = Concat [||]
 
 let rec extract ~seq ~siz ~off ~len =
@@ -437,31 +443,52 @@ let rec extract ~seq ~siz ~off ~len =
     (* ⟨n,_⟩[o,_) ==> ⟨⟩ when o ≥ n *)
     || partial_ge off siz
   then empty_seq
-  else if (* ⟨n,a⟩[0,n) ==> a *)
-          off == zero && equal siz len then seq
-  else
-    let o_l = add off len in
-    match seq with
+  else if
     (* ⟨_,0⟩[_,_) ==> 0 *)
-    | Z _ when seq == Trm.zero -> seq
+    seq == Trm.zero
+    (* ⟨n,a⟩[0,n) ==> a *)
+    || (off == zero && equal siz len)
+  then seq
+  else
+    match seq with
     (* ⟨n,E^⟩[_,_) ==> E^ *)
     | Splat _ -> seq
-    (* ⟨n,a⟩[m,k)[o,l) ==> ⟨n,a⟩[m+o,l) when k ≥ o+l *)
-    | Extract {seq= a; siz= n; off= m; len= k} when partial_ge k o_l ->
-        extract ~seq:a ~siz:n ~off:(add m off) ~len
-    (* For (α₀^α₁)[o,l) there are 3 cases:
+    (*
+     * For ⟨n,a⟩[m,k)[o,l) there are 3 cases:
+     * 
+     * ⟨.......⟩
+     *  [  ,  )  ie: m ≤ m+o ≤ m+o+l ≤ m+k  in particular l ≤ k-o
+     *   [ , )   so: ⟨n,a⟩[m,k)[o,l) ==> ⟨n,a⟩[m+o,l)
+     * 
+     *  [ , )    ie: m ≤ m+o ≤ m+k ≤ m+o+l  in particular k-o ≤ l
+     *   [ , )   so: ⟨n,a⟩[m,k)[o,l) ==> ⟨n,a⟩[m+o,k-o)
+     * 
+     *  [,)      ie: m ≤ m+k ≤ m+o ≤ m+o+l  in particular k ≤ o
+     *      [,)  so: ⟨n,a⟩[m,k)[o,l) ==> ⟨⟩
      *
-     * ⟨...⟩^⟨...⟩
-     *  [,)
-     * o < o+l ≤ |α₀| : (α₀^α₁)[o,l) ==> α₀[o,l) ^ α₁[0,0)
+     * So in general:
      *
-     * ⟨...⟩^⟨...⟩
-     *   [  ,  )
-     * o ≤ |α₀| < o+l : (α₀^α₁)[o,l) ==> α₀[o,|α₀|-o) ^ α₁[0,l-(|α₀|-o))
+     * ⟨n,a⟩[m,k)[o,l) ==> ⟨n,a⟩[m+o, max 0 (min k-o l))
+     *)
+    | Extract {seq= a; siz= n; off= m; len= k} -> (
+      (* Note that:
+       *     if partial_ge off k (* k ≤ o *) then empty_seq else
+       * is covered above by the [partial_ge off siz] case since
+       * [siz = seq_size (Extract {len= k; _}) = k]. *)
+      match partial_min (sub k off) len with
+      | Some min -> extract ~seq:a ~siz:n ~off:(add m off) ~len:min
+      | None -> Extract {seq; siz; off; len} )
+    (*
+     * For (α₀^α₁)[o,l) there are 3 cases:
      *
-     * ⟨...⟩^⟨...⟩
-     *        [,)
-     * |α₀| ≤ o : (α₀^α₁)[o,l) ==> α₀[o,0) ^ α₁[o-|α₀|,l)
+     * ⟨...⟩^⟨...⟩  ie: o < o+l ≤ |α₀|
+     *  [,)         so: (α₀^α₁)[o,l) ==> α₀[o,l) ^ α₁[0,0)
+     *
+     * ⟨...⟩^⟨...⟩  ie: o ≤ |α₀| < o+l
+     *   [  ,  )    so: (α₀^α₁)[o,l) ==> α₀[o,|α₀|-o) ^ α₁[0,l-(|α₀|-o))
+     *
+     * ⟨...⟩^⟨...⟩  ie: |α₀| ≤ o
+     *        [,)   so: (α₀^α₁)[o,l) ==> α₀[o,0) ^ α₁[o-|α₀|,l)
      *
      * So in general:
      *
@@ -478,12 +505,12 @@ let rec extract ~seq ~siz ~off ~len =
             [{seq= extract ~seq:aI ~siz:nI ~off:oI ~len:lIN; siz= lIN}]
           else
             let oI_nI = sub oI nI in
-            match (oI_nI, lIN) with
-            | Z z, _ when Z.sign z >= 0 (* oᵢ ≥ |αᵢ| *) ->
+            match (get_z oI_nI, get_z lIN) with
+            | Some z, _ when Z.sign z >= 0 (* oᵢ ≥ |αᵢ| *) ->
                 let oJ = oI_nI in
                 let lJN = lIN in
                 loop j oJ lJN
-            | Z z, Z lIN ->
+            | Some z, Some lIN ->
                 let lI = Z.(max zero (min lIN (neg z))) in
                 let oJ = zero in
                 let lJN = Z.(lIN - lI) in
