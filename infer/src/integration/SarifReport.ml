@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 module F = Format
 module IssueHash = Caml.Hashtbl.Make (String)
@@ -21,16 +22,11 @@ module ReportSummary = struct
       let rule = {Sarifbug_j.id= issue_type; shortDescription} in
       Sarifbug_j.string_of_rule rule
     in
-    let issue_counts =
-      IssueHash.to_seq issue_type_counts
-      |> Seq.fold_left (fun issue_counts ((_, (_, _)) as binding) -> binding :: issue_counts) []
-    in
-    List.iter
-      ~f:(fun (issue_type, (_, issue_type_hum)) ->
-        if !is_first_rule_item then is_first_rule_item := false else F.pp_print_char fmt ',' ;
-        let issue_string = string_of_issue ~issue_type ~issue_type_hum in
-        F.fprintf fmt "%s" issue_string )
-      issue_counts
+    IssueHash.to_seq issue_type_counts
+    |> Seq.iter (fun (issue_type, (_, issue_type_hum)) ->
+           if !is_first_rule_item then is_first_rule_item := false else F.pp_print_char fmt ',' ;
+           let issue_string = string_of_issue ~issue_type ~issue_type_hum in
+           F.pp_print_string fmt issue_string )
 
 
   let add_issue summary (jsonbug : Jsonbug_t.jsonbug) =
@@ -47,28 +43,27 @@ end
 
 let is_first_item = ref true
 
-let pp_open fmt () =
+let pp_open fmt =
   is_first_item := true ;
   F.fprintf fmt "{"
 
 
-let pp_close fmt () = F.fprintf fmt "]}]}@\n@?"
+let pp_close fmt = F.fprintf fmt "]}]}@\n@?"
 
-let pp_schema_version fmt () =
-  F.fprintf fmt "%s:%s,%s:%s," "\"$schema\"" "\"http://json.schemastore.org/sarif-2.1.0-rtm.5\""
-    "\"version\"" "\"2.1.0\""
-
-
-let pp_runs fmt () =
-  F.fprintf fmt "%s:[{%s:{%s:{%s:%s,%s:%s," "\"runs\"" "\"tool\"" "\"driver\"" "\"name\""
-    "\"Infer\"" "\"informationUri\"" "\"https://github.com/facebook/infer\"" ;
-  F.fprintf fmt "%s:\"%d.%d.%d\",%s:[" "\"version\"" Version.major Version.minor Version.patch
-    "\"rules\""
+let pp_schema_version fmt =
+  F.fprintf fmt {|"$schema":"%s","version":"%s",|} "http://json.schemastore.org/sarif-2.1.0-rtm.5"
+    "2.1.0"
 
 
-let pp_results_header fmt () =
+let pp_runs fmt =
+  F.fprintf fmt {|"runs":[{"tool":{"driver":{"name":"%s","informationUri":"%s",|} "Infer"
+    "https://github.com/facebook/infer" ;
+  F.fprintf fmt {|"version":"%d.%d.%d","rules":[|} Version.major Version.minor Version.patch
+
+
+let pp_results_header fmt =
   is_first_item := true ;
-  F.fprintf fmt "]}},%s:[" "\"results\""
+  F.fprintf fmt {|]}},"results":[|}
 
 
 let loc_trace_to_sarifbug_record trace_list =
@@ -88,15 +83,14 @@ let loc_trace_to_sarifbug_record trace_list =
     {Sarifbug_j.artifactLocation= file_loc filename; region= region line_number column_number}
   in
   let file_location_to_record filename line_number column_number description =
-    { message= message description
-    ; Sarifbug_j.physicalLocation= physical_location filename line_number column_number }
+    { Sarifbug_j.message= message description
+    ; physicalLocation= physical_location filename line_number column_number }
   in
   let trace_item_to_record {Jsonbug_t.level; filename; line_number; column_number; description} =
     { Sarifbug_j.nestingLevel= level
     ; location= file_location_to_record filename line_number column_number description }
   in
-  let record_list = List.rev (List.rev_map ~f:trace_item_to_record trace_list) in
-  record_list
+  List.map ~f:trace_item_to_record trace_list
 
 
 let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column; bug_trace} =
@@ -104,7 +98,7 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
   let level = String.lowercase severity in
   let ruleId = bug_type in
   let absolute_source_name = Config.project_root ^/ file in
-  let file_loc = {Sarifbug_j.uri= file; Sarifbug_j.uriBaseId= absolute_source_name} in
+  let file_loc = {Sarifbug_j.uri= file; uriBaseId= absolute_source_name} in
   let region =
     match column with
     | -1 ->
@@ -122,7 +116,7 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
   let result =
     {Sarifbug_j.message; level; ruleId; codeFlows= thread_flow; locations= file_location_to_record}
   in
-  F.fprintf fmt "%s@?" (Sarifbug_j.string_of_sarifbug result)
+  F.pp_print_string fmt (Sarifbug_j.string_of_sarifbug result)
 
 
 let create_from_json ~report_sarif ~report_json =
@@ -133,18 +127,18 @@ let create_from_json ~report_sarif ~report_json =
   in
   Utils.with_file_out report_sarif ~f:(fun report_sarif_out ->
       let report_sarif_fmt = F.formatter_of_out_channel report_sarif_out in
-      pp_open report_sarif_fmt () ;
-      pp_schema_version report_sarif_fmt () ;
-      pp_runs report_sarif_fmt () ;
+      pp_open report_sarif_fmt ;
+      pp_schema_version report_sarif_fmt ;
+      pp_runs report_sarif_fmt ;
       let summary =
         List.fold report ~init:(ReportSummary.mk_empty ()) ~f:(fun summary jsonbug ->
             let summary' = ReportSummary.add_issue summary jsonbug in
             summary' )
       in
       F.fprintf report_sarif_fmt "%a" ReportSummary.pp summary ;
-      pp_results_header report_sarif_fmt () ;
+      pp_results_header report_sarif_fmt ;
       let output_issues =
         List.iter ~f:(fun jsonbug -> one_issue_to_report_sarif report_sarif_fmt jsonbug) report
       in
       output_issues ;
-      pp_close report_sarif_fmt () )
+      pp_close report_sarif_fmt )

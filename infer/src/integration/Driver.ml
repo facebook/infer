@@ -210,12 +210,13 @@ let report ?(suppress_console = false) () =
       ~console_limit:Config.report_console_limit ~report_txt:(ResultsDir.get_path ReportText)
       ~report_json:issues_json ;
     if Config.pmd_xml then
-      XMLReport.write ~xml_path:(ResultsDir.get_path ReportXML) ~json_path:issues_json ) ;
+      XMLReport.write ~xml_path:(ResultsDir.get_path ReportXML) ~json_path:issues_json ;
+    if Config.sarif then
+      SarifReport.create_from_json ~report_sarif:(ResultsDir.get_path ReportSarif)
+        ~report_json:issues_json ;
+    () ) ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
-  if Config.output_sarif then
-    SarifReport.create_from_json ~report_sarif:(ResultsDir.get_path ReportSarif)
-      ~report_json:issues_json ;
   ()
 
 
