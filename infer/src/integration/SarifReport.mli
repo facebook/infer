@@ -7,6 +7,5 @@
 open! IStd
 module F = Format
 
-val create_from_json :
-  report_sarif:string -> report_json:string -> unit
+val create_from_json : report_sarif:string -> report_json:string -> unit
 (** Read [report_json] and produce a textual output in [report_sarif]. *)

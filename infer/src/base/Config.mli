@@ -501,8 +501,6 @@ val process_clang_ast : bool
 
 val profiler_samples : string option
 
-val output_sarif : bool
-
 val progress_bar : [`MultiLine | `Plain | `Quiet]
 
 val project_root : string
@@ -602,6 +600,8 @@ val reports_include_ml_loc : bool
 val rest : string list
 
 val results_dir : string
+
+val sarif : bool
 
 val scheduler : scheduler
 

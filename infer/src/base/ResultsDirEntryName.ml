@@ -167,7 +167,7 @@ let of_id = function
       ; kind= File
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
-  | ReportSarif->
+  | ReportSarif ->
       { rel_path= "report.sarif"
       ; kind= File
       ; before_incremental_analysis= Delete

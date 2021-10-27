@@ -133,6 +133,11 @@ OPTIONS
        --results-dir,-o dir
            Write results and internal files in the specified directory
 
+       --sarif
+           Activates: Output issues in SARIF (Static Analysis Results
+           Interchange Format) in infer-out/report.sarif (Conversely:
+           --no-sarif)
+
        --skip-analysis-in-path +path_prefix_OCaml_regex
            Ignore files whose path matches the given prefix (can be specified
            multiple times)
