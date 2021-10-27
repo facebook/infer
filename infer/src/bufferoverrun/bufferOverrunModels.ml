@@ -1709,16 +1709,22 @@ module InferAnnotation = struct
         no_model
 end
 
-let std_container _ str = List.exists ~f:(String.equal str) ["list"; "vector"]
+let std_container _ str = List.exists ~f:(String.equal str) ["list"; "map"; "vector"]
 
 (* libcpp - native library for mac *)
 let std_iterator_libcpp _ str =
-  List.exists ~f:(String.equal str) ["__list_const_iterator"; "__list_iterator"; "__wrap_iter"]
+  List.exists ~f:(String.equal str)
+    [ "__list_const_iterator"
+    ; "__list_iterator"
+    ; "__map_const_iterator"
+    ; "__map_iterator"
+    ; "__wrap_iter" ]
 
 
 (* libstdcpp - native library for gnu/linux *)
 let std_iterator_libstdcpp _ str =
-  List.exists ~f:(String.equal str) ["_List_const_iterator"; "_List_iterator"]
+  List.exists ~f:(String.equal str)
+    ["_List_const_iterator"; "_List_iterator"; "_Rb_tree_const_iterator"; "_Rb_tree_iterator"]
 
 
 module Call = struct
@@ -1938,7 +1944,6 @@ module Call = struct
         $ any_arg_of_typ (-"std" &:: "basic_string")
         $+ any_arg_of_typ (-"std" &:: "basic_string")
         $--> by_value Dom.Val.Itv.unknown_bool
-      ; -"std" &:: "map" &:: "size" $ capt_exp $--> Container.size
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
         (*             Models for c++ iterators <begin>           *)
       ; -"std" &::+ std_container &:: "begin" $ any_arg $+ capt_exp $--> Container.Iterator.begin_
@@ -1965,6 +1970,9 @@ module Call = struct
       ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator++" $ capt_exp
         $--> Container.Iterator.iterator_incr
         (*             Models for c++ operators <end>             *)
+        (*             Models for std::map <begin>                *)
+      ; -"std" &:: "map" &:: "size" $ capt_exp $--> Container.size
+        (*             Models for std::map <end>                  *)
         (*             Models for std::vector <begin>             *)
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "emplace_back" $ capt_arg $+ capt_exp
@@ -1990,7 +1998,7 @@ module Call = struct
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $--> StdVector.constructor_empty
-        (*             Models for std::vector <end>            *)
+        (*             Models for std::vector <end>               *)
       ; -"google" &:: "StrLen" <>$ capt_exp $--> strlen
       ; (* Java models *)
         -"java.lang.Object" &:: "clone" <>$ capt_exp $--> id
