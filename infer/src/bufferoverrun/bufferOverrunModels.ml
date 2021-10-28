@@ -1710,7 +1710,8 @@ module InferAnnotation = struct
 end
 
 let std_container _ str =
-  List.exists ~f:(String.equal str) ["deque"; "list"; "map"; "set"; "unordered_set"; "vector"]
+  List.exists ~f:(String.equal str)
+    ["deque"; "list"; "map"; "set"; "unordered_map"; "unordered_set"; "vector"]
 
 
 (* libcpp - native library for mac *)
@@ -1718,6 +1719,8 @@ let std_iterator_libcpp _ str =
   List.exists ~f:(String.equal str)
     [ "__deque_iterator"
     ; "__hash_const_iterator"
+    ; "__hash_map_const_iterator"
+    ; "__hash_map_iterator"
     ; "__list_const_iterator"
     ; "__list_iterator"
     ; "__map_const_iterator"
