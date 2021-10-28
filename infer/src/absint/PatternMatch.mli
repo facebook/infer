@@ -110,6 +110,9 @@ module Java : sig
   val implements_queue : Tenv.t -> string -> bool
   (** Check whether class implements a Java's Queue *)
 
+  val implements_regex : string -> Tenv.t -> string -> bool
+  (** Check whether class implements a class of [java.util.regex] *)
+
   val implements_set : Tenv.t -> string -> bool
   (** Check whether class implements a Java's Set *)
 
