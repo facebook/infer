@@ -2389,14 +2389,19 @@ and select =
     "Select option number $(i,N) or $(i,all) of them. If omitted, prompt for input."
 
 
-and scuba_logging, cost_scuba_logging =
+and scuba_logging, cost_scuba_logging, pulse_scuba_logging =
   let scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "(direct) logging to scuba" in
   let cost_scuba_logging =
     CLOpt.mk_bool_group ~long:"cost-scuba-logging"
       "Log unknown functions to scuba in cost/inferbo checkers; also sets $(b,--scuba-logging)."
       [scuba_logging] []
   in
-  (scuba_logging, cost_scuba_logging)
+  let pulse_scuba_logging =
+    CLOpt.mk_bool_group ~long:"pulse-scuba-logging"
+      "Log unknown functions to scuba in pulse checkers; also sets $(b,--scuba-logging)."
+      [scuba_logging] []
+  in
+  (scuba_logging, cost_scuba_logging, pulse_scuba_logging)
 
 
 and scuba_normals =
@@ -3483,6 +3488,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
+
+and pulse_scuba_logging = !pulse_scuba_logging
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

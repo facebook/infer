@@ -545,6 +545,8 @@ val pulse_report_latent_issues : bool
 
 val pulse_recency_limit : int
 
+val pulse_scuba_logging : bool
+
 val pulse_widen_threshold : int
 
 val pulse_nullsafe_report_npe : bool

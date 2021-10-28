@@ -2114,6 +2114,10 @@ INTERNAL OPTIONS
            waiting for them to become concrete. (Conversely:
            --no-pulse-report-latent-issues)
 
+       --pulse-scuba-logging
+           Activates: Log unknown functions to scuba in pulse checkers; also
+           sets --scuba-logging. (Conversely: --no-pulse-scuba-logging)
+
        --pulse-widen-threshold int
            Under-approximate after int loop iterations
 

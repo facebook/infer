@@ -24,6 +24,9 @@ val log_message : label:string -> message:string -> unit
 val cost_log_message : label:string -> message:string -> unit
 (** Similar to [log_message], but log only when [--cost-scuba-logging] option is given. *)
 
+val pulse_log_message : label:string -> message:string -> unit
+(** Similar to [log_message], but log only when [--pulse-scuba-logging] option is given. *)
+
 val execute_with_time_logging : string -> (unit -> 'a) -> 'a
 (** A helper to log execution time of a particular function. Use this to measure a performance of a
     given function. Example:

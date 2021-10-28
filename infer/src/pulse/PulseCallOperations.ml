@@ -294,6 +294,10 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
         conservatively_initialize_args arg_values astate
         |> unknown_call path call_loc (SkippedKnownCall callee_pname) ~ret ~actuals ~formals_opt
       in
+      ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"
+        ~message:
+          (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates
+             callee_pname ) ;
       let callee_procdesc_opt = Procdesc.load callee_pname in
       Option.value_map callee_procdesc_opt
         ~default:[Ok (ContinueProgram astate_unknown)]
