@@ -28,21 +28,22 @@ void copy_uset_linear_FN(std::unordered_set<std::string> us1,
   us2 = us1;
 }
 
-// Expected: O(uset); got constant
-void iterate_over_uset_linear_FN(std::unordered_set<std::string> uset) {
+void iterate_over_uset_linear(std::unordered_set<std::string> uset) {
   for (auto it = uset.begin(); it != uset.end(); ++it) {
   }
 }
 
-// Expected: O(uset); got top
+void iteratec_over_uset_linear(std::unordered_set<std::string> uset) {
+  for (auto it = uset.cbegin(); it != uset.cend(); ++it) {
+  }
+}
+
 void for_loop_over_uset_linear_FP(std::unordered_set<std::string> uset) {
   for (int i = 0; i < uset.size(); i++) {
   }
 }
 
-// Expected: O(uset); got constant
-void range_based_loop_over_uset_linear_FN(
-    std::unordered_set<std::string> uset) {
+void range_based_loop_over_uset_linear(std::unordered_set<std::string> uset) {
   for (auto i : uset) {
   }
 }

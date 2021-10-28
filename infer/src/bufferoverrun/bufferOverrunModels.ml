@@ -1709,12 +1709,15 @@ module InferAnnotation = struct
         no_model
 end
 
-let std_container _ str = List.exists ~f:(String.equal str) ["list"; "map"; "set"; "vector"]
+let std_container _ str =
+  List.exists ~f:(String.equal str) ["list"; "map"; "set"; "unordered_set"; "vector"]
+
 
 (* libcpp - native library for mac *)
 let std_iterator_libcpp _ str =
   List.exists ~f:(String.equal str)
-    [ "__list_const_iterator"
+    [ "__hash_const_iterator"
+    ; "__list_const_iterator"
     ; "__list_iterator"
     ; "__map_const_iterator"
     ; "__map_iterator"
@@ -1726,6 +1729,11 @@ let std_iterator_libcpp _ str =
 let std_iterator_libstdcpp _ str =
   List.exists ~f:(String.equal str)
     ["_List_const_iterator"; "_List_iterator"; "_Rb_tree_const_iterator"; "_Rb_tree_iterator"]
+
+
+(* libstdcpp - std::__detail:: cases *)
+let std_iterator_libstdcpp_detail _ str =
+  List.exists ~f:(String.equal str) ["_Node_const_iterator"; "_Node_iterator"]
 
 
 module Call = struct
@@ -1970,6 +1978,12 @@ module Call = struct
         $+ capt_exp $--> Container.Iterator.iterator_ne
       ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator++" $ capt_exp
         $--> Container.Iterator.iterator_incr
+        (*    unordered sets representation includes __detail     *)
+      ; -"std" &:: "operator!="
+        $ capt_exp_of_typ (-"std" &:: "__detail" &::+ std_iterator_libstdcpp_detail)
+        $+ capt_exp $--> Container.Iterator.iterator_ne
+      ; -"std" &:: "__detail" &::+ std_iterator_libstdcpp_detail &:: "operator++" $ capt_exp
+        $+...$--> Container.Iterator.iterator_incr
         (*             Models for c++ operators <end>             *)
         (*             Models for std::map <begin>                *)
       ; -"std" &:: "map" &:: "size" $ capt_exp $--> Container.size
