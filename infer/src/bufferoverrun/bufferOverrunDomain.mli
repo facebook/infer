@@ -619,8 +619,8 @@ module Mem : sig
 
   val add_cpp_iterator_cmp_alias : Ident.t -> Pvar.t -> Pvar.t -> t -> t
   (** Add a compare alias from ret_id to [iter: Pvar.t] and [iter_end: Pvar.t] comparison, i.e.,
-      ret_id -> {iter != iter_end} *)
+      [ret_id -> {iter != iter_end}] *)
 
   val find_cpp_iterator_alias : Ident.t -> t -> (Pvar.t * Pvar.t) option
-  (** Find the cpp iterator alias ret_id -> {iter != iter_end}  *)
+  (** Find the cpp iterator alias [ret_id -> {iter != iter_end}] *)
 end
