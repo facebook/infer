@@ -127,15 +127,6 @@ let fail_on_issue_exit_code = 2
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
 
-let is_WSL =
-  match Utils.read_file "/proc/version" with
-  | Ok [line] ->
-      let re = Str.regexp "Linux.+-Microsoft" in
-      Str.string_match re line 0
-  | _ ->
-      false
-
-
 let ivar_attributes = "ivar_attributes"
 
 let java_lambda_marker_infix = "$Lambda$"
@@ -2601,13 +2592,7 @@ and sqlite_vacuum =
     "$(b,VACUUM) the SQLite DB after performing capture."
 
 
-and sqlite_vfs =
-  let default =
-    (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
-    if is_WSL then Some "unix-excl" else None
-  in
-  CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
-
+and sqlite_vfs = CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
 
 and (_ : bool ref) =
   CLOpt.mk_bool ~default:false "[DEPRECATED][DOES NOTHING] option does not exist any more"
