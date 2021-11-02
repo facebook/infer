@@ -22,6 +22,16 @@ void iteratec_over_vec_linear(std::vector<std::string>& vec) {
   }
 }
 
+void iterate_rev_over_vec_linear(std::vector<std::string>& vec) {
+  for (auto it = vec.rbegin(); it != vec.rend(); ++it) {
+  }
+}
+
+void iteratec_rev_over_vec_linear(std::vector<std::string>& vec) {
+  for (auto it = vec.crbegin(); it != vec.crend(); ++it) {
+  }
+}
+
 void loop_over_vec_linear(std::vector<std::string>& vec) {
   for (auto i : vec) {
   }

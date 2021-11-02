@@ -1709,6 +1709,10 @@ module InferAnnotation = struct
         no_model
 end
 
+let iter_begin _ str = List.exists ~f:(String.equal str) ["begin"; "cbegin"; "rbegin"; "crbegin"]
+
+let iter_end _ str = List.exists ~f:(String.equal str) ["end"; "cend"; "rend"; "crend"]
+
 let std_container _ str =
   List.exists ~f:(String.equal str)
     ["deque"; "list"; "map"; "set"; "unordered_map"; "unordered_set"; "vector"]
@@ -1726,7 +1730,8 @@ let std_iterator_libcpp _ str =
     ; "__map_const_iterator"
     ; "__map_iterator"
     ; "__tree_const_iterator"
-    ; "__wrap_iter" ]
+    ; "__wrap_iter"
+    ; "reverse_iterator" ]
 
 
 (* libstdcpp - native library for gnu/linux *)
@@ -1736,7 +1741,8 @@ let std_iterator_libstdcpp _ str =
     ; "_List_const_iterator"
     ; "_List_iterator"
     ; "_Rb_tree_const_iterator"
-    ; "_Rb_tree_iterator" ]
+    ; "_Rb_tree_iterator"
+    ; "reverse_iterator" ]
 
 
 (* libstdcpp - std::__detail:: cases *)
@@ -1963,10 +1969,9 @@ module Call = struct
         $--> by_value Dom.Val.Itv.unknown_bool
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
         (*             Models for c++ iterators <begin>           *)
-      ; -"std" &::+ std_container &:: "begin" $ any_arg $+ capt_exp $--> Container.Iterator.begin_
-      ; -"std" &::+ std_container &:: "end" $ capt_arg $+ capt_exp $--> Container.Iterator.end_
-      ; -"std" &::+ std_container &:: "cbegin" $ any_arg $+ capt_exp $--> Container.Iterator.begin_
-      ; -"std" &::+ std_container &:: "cend" $ capt_arg $+ capt_exp $--> Container.Iterator.end_
+      ; -"std" &::+ std_container &::+ iter_begin $ any_arg $+ capt_exp
+        $--> Container.Iterator.begin_
+      ; -"std" &::+ std_container &::+ iter_end $ capt_arg $+ capt_exp $--> Container.Iterator.end_
         (*             Models for c++ iterators <end>             *)
         (*     Models for c++ operators <begin> -- libcpp/mac     *)
       ; -"std" &:: "operator!="

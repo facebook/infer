@@ -24,6 +24,16 @@ void iteratec_over_list_linear(std::list<int> mlist) {
   }
 }
 
+void iterate_rev_over_list_linear(std::list<int> mlist) {
+  for (auto it = mlist.rbegin(); it != mlist.rend(); ++it) {
+  }
+}
+
+void iteratec_rev_over_list_linear(std::list<int> mlist) {
+  for (auto it = mlist.crbegin(); it != mlist.crend(); ++it) {
+  }
+}
+
 void iterate_over_list_for_linear(std::list<int> mlist) {
   for (const int& el : mlist) {
   }
