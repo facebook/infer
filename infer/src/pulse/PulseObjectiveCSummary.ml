@@ -99,21 +99,19 @@ let mk_latent_non_POD_nil_messaging tenv proc_desc =
 
 let mk_nil_messaging_summary tenv proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  match proc_name with
-  | Procname.ObjC_Cpp {kind= ObjCInstanceMethod} ->
-      if Procdesc.is_ret_type_pod proc_desc then
-        (* In ObjC, when a method is called on nil, there is no NPE,
-           the method is actually not called and the return value is 0/false/nil.
-           We create a nil summary to avoid reporting NPE in this case.
-           However, there is an exception in the case where the return type is non-POD.
-           In that case it's UB and we want to report an error. *)
-        let astate = mk_nil_messaging_summary_aux tenv proc_desc in
-        Some (ContinueProgram astate)
-      else
-        let summary = mk_latent_non_POD_nil_messaging tenv proc_desc in
-        Some summary
-  | _ ->
-      None
+  if Procname.is_objc_instance_method proc_name then
+    if Procdesc.is_ret_type_pod proc_desc then
+      (* In ObjC, when a method is called on nil, there is no NPE,
+         the method is actually not called and the return value is 0/false/nil.
+         We create a nil summary to avoid reporting NPE in this case.
+         However, there is an exception in the case where the return type is non-POD.
+         In that case it's UB and we want to report an error. *)
+      let astate = mk_nil_messaging_summary_aux tenv proc_desc in
+      Some (ContinueProgram astate)
+    else
+      let summary = mk_latent_non_POD_nil_messaging tenv proc_desc in
+      Some summary
+  else None
 
 
 let mk_initial_with_positive_self tenv proc_desc =
@@ -123,22 +121,18 @@ let mk_initial_with_positive_self tenv proc_desc =
   let initial_astate = AbductiveDomain.mk_initial tenv proc_desc in
   (* same HACK as above *)
   let assert_ok = function Ok x -> x | Error _ -> assert false in
-  match proc_name with
-  | Procname.ObjC_Cpp {kind= ObjCInstanceMethod} ->
-      let astate, value =
-        PulseOperations.eval_deref PathContext.initial location (Lvar self) initial_astate
-        |> assert_ok
-      in
-      PulseArithmetic.and_positive (fst value) astate |> assert_ok
-  | _ ->
-      initial_astate
+  if Procname.is_objc_instance_method proc_name then
+    let astate, value =
+      PulseOperations.eval_deref PathContext.initial location (Lvar self) initial_astate
+      |> assert_ok
+    in
+    PulseArithmetic.and_positive (fst value) astate |> assert_ok
+  else initial_astate
 
 
 let append_objc_actual_self_positive procdesc self_actual astate =
-  let procname = Procdesc.get_proc_name procdesc in
-  match procname with
-  | Procname.ObjC_Cpp {kind= ObjCInstanceMethod} ->
-      Option.value_map self_actual ~default:(Ok astate) ~f:(fun ((self, _), _) ->
-          PulseArithmetic.prune_positive self astate )
-  | _ ->
-      Ok astate
+  let proc_name = Procdesc.get_proc_name procdesc in
+  if Procname.is_objc_instance_method proc_name then
+    Option.value_map self_actual ~default:(Ok astate) ~f:(fun ((self, _), _) ->
+        PulseArithmetic.prune_positive self astate )
+  else Ok astate
