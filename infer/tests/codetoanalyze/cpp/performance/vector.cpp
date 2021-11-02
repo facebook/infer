@@ -151,7 +151,9 @@ void insert_new_vector_loop_constant(std::vector<int>& vec) {
   }
 }
 
-std::vector<int> remove_duplicates_quadratic(std::vector<int>& vec1) {
+// Expected: O(vec1 x vec2); got vec1
+// more details here: T104735254
+std::vector<int> remove_duplicates_quadratic_FN(std::vector<int>& vec1) {
   std::vector<int> vec2;
 
   for (int x : vec1) {

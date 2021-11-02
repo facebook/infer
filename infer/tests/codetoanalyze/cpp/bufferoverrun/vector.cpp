@@ -39,7 +39,7 @@ void push_back_Good() {
   v[0] = 2;
 }
 
-void push_back_Bad() {
+void push_back_Bad_FN() {
   std::vector<int> v;
   v.push_back(1);
   v[1] = 2;
@@ -51,7 +51,7 @@ void emplace_back_Good() {
   v[0] = 2;
 }
 
-void emplace_back_Bad() {
+void emplace_back_Bad_FN() {
   std::vector<int> v;
   v.emplace_back(1);
   v[1] = 2;
@@ -64,7 +64,7 @@ void reserve_Good() {
   v[0] = 2;
 }
 
-void reserve_Bad() {
+void reserve_Bad_FN() {
   std::vector<int> v;
   v.reserve(42);
   v[0] = 2;
@@ -97,7 +97,7 @@ void call_safe_access2_Good() {
   safe_access2(v);
 }
 
-void safe_access3_Good() {
+void safe_access3_Good_FP() {
   std::vector<int> v;
   if (!v.empty()) {
     v[0] = 1;
@@ -150,7 +150,7 @@ void data_Bad() {
   p[v[4]] = 1;
 }
 
-void assert_Good_FP() {
+void assert_Good() {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
@@ -159,7 +159,7 @@ void assert_Good_FP() {
   v[4] = 1;
 }
 
-void assert_Good_2_FP(int x) {
+void assert_Good_2(int x) {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
@@ -168,7 +168,7 @@ void assert_Good_2_FP(int x) {
   v[4] = 1;
 }
 
-void assert_Bad() {
+void assert_Bad_FN() {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
@@ -222,7 +222,7 @@ void resize_Good() {
   v[0] = 0;
 }
 
-void resize_Bad() {
+void resize_Bad_FN() {
   std::vector<int> v;
   v.resize(1);
   v[1] = 0;

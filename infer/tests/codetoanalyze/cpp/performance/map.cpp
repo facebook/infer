@@ -44,7 +44,7 @@ void loop_over_map_iterator_linear_FN(std::map<std::string, int> m) {
   }
 }
 
-void loop_over_map_constant_FP() {
+void loop_over_map_constant() {
   std::map<char, int> m;
 
   m['a'] = 101;

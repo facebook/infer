@@ -583,9 +583,6 @@ module StdVector = struct
     {exec; check}
 
 
-  (* The (1) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
-  let constructor_empty elt_typ vec = constructor_size elt_typ vec Exp.zero
-
   (* The (5) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_copy elt_typ {exp= vec_exp; typ= vec_typ} src_exp =
     let exec ({integer_type_widths} as model_env) ~ret:_ mem =
@@ -1074,6 +1071,32 @@ module Container = struct
     in
     {exec; check= no_check}
 
+
+  let constructor_size {exp= vec_exp} size_exp =
+    let exec ({pname; node_hash; integer_type_widths; location} as model_env) ~ret:((id, _) as ret)
+        mem =
+      let mem = (malloc ~can_be_zero:true size_exp).exec model_env ~ret mem in
+      let vec_locs = Sem.eval_locs vec_exp mem in
+      let deref_of_vec =
+        Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:None
+          ~represents_multiple_values:false
+        |> Loc.of_allocsite
+      in
+      let array_v =
+        Sem.eval integer_type_widths (Exp.Var id) mem
+        |> Dom.Val.add_assign_trace_elem location vec_locs
+      in
+      let internal_array_loc =
+        PowLoc.append_field vec_locs ~fn:BufferOverrunField.cpp_collection_internal_array
+      in
+      mem
+      |> Dom.Mem.update_mem vec_locs (Dom.Val.of_loc deref_of_vec)
+      |> Dom.Mem.add_heap_set internal_array_loc array_v
+    in
+    {exec; check= no_check}
+
+
+  let constructor_empty vec = constructor_size vec Exp.zero
 
   module Iterator = struct
     let begin_ exp =
@@ -2000,6 +2023,9 @@ module Call = struct
         (*             Models for c++ operators <end>             *)
         (*      Models for c++ containers operations <begin>      *)
       ; -"std" &::+ std_container &:: "size" $ capt_exp $--> Container.size
+      ; -"std" &::+ std_container &::+ std_container
+        $ capt_arg_of_typ (-"std" &::+ std_container)
+        $--> Container.constructor_empty
         (*       Models for c++ containers operations <end>       *)
         (*             Models for std::vector <begin>             *)
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
@@ -2022,9 +2048,6 @@ module Call = struct
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_typ (-"std" &:: "vector")
         $+? any_arg $--> StdVector.constructor_copy
-      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
-        $ capt_arg_of_typ (-"std" &:: "vector")
-        $--> StdVector.constructor_empty
         (*             Models for std::vector <end>               *)
       ; -"google" &:: "StrLen" <>$ capt_exp $--> strlen
       ; (* Java models *)

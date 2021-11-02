@@ -51,8 +51,7 @@ void iterate_over_set_linear(int n) {
   }
 }
 
-// Expected: constant; got O(log(s))
-void binary_search_over_set_constant_FP() {
+void binary_search_over_set_constant() {
   std::set<int> s;
 
   s.insert(40);
