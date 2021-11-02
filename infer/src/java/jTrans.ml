@@ -337,8 +337,10 @@ let get_jbir_representation cm bytecode =
       bytecode.JCode.c_local_variable_table
   in
   let fixed_bytecode = {bytecode with JCode.c_local_variable_table} in
-  JBir.transform ~bcv:false ~ch_link:false ~formula:false ~formula_cmd:[] ~almost_ssa:true cm
-    fixed_bytecode
+  try JBir.transform ~bcv:false ~ch_link:false ~almost_ssa:true cm fixed_bytecode
+  with Sawja_pack.Bir.Uninit_is_not_expr ->
+    JBir.transform ~bcv:false ~ch_link:false ~almost_ssa:true ~folding:JBir.DoNotFold cm
+      fixed_bytecode
 
 
 let pp_jbir fmt jbir =
@@ -1180,10 +1182,6 @@ let instruction (context : JContext.t) pc instr : translation =
         trans_monitor_enter_exit context expr pc loc BuiltinDecl.__delete_locked_attribute
           MonitorExit
     | Nop ->
-        Skip
-    | Formula _ ->
-        (* Sawja formulas are not generated with the current used
-           flags '~formula:false' *)
         Skip
     | Check _ ->
         Skip
