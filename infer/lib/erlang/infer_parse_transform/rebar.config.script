@@ -1,0 +1,9 @@
+Deps = proplists:get_value(deps, CONFIG),
+Deps1 =
+    case code:ensure_loaded(jsone) of
+        {module, jsone} ->
+            proplists:delete(jsone, Deps);
+        {error, _} ->
+            Deps
+    end.
+proplists:delete(deps, CONFIG) ++ [{deps, Deps1}].
