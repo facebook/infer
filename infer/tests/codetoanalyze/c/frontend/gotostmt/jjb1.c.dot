@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_4" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_3" ;
-"jjb1.9d6085e324f8fe61c38e804980fa5cf1_5" [label="5: + \n  " ]
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_5" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_4" ;
@@ -24,11 +24,11 @@ digraph cfg {
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_6" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_7" ;
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_6" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_8" ;
-"jjb1.9d6085e324f8fe61c38e804980fa5cf1_7" [label="7: Prune (true branch, if) \n   PRUNE((n$1 / 2), true); [line 14, column 7]\n " shape="invhouse"]
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_7" [label="7: Prune (true branch, if (terminated)) \n   PRUNE((n$1 / 2), true); [line 14, column 7]\n " shape="invhouse"]
 	
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_7" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_16" ;
-"jjb1.9d6085e324f8fe61c38e804980fa5cf1_8" [label="8: Prune (false branch, if) \n   PRUNE(!(n$1 / 2), false); [line 14, column 7]\n " shape="invhouse"]
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_8" [label="8: Prune (false branch, if (terminated)) \n   PRUNE(!(n$1 / 2), false); [line 14, column 7]\n " shape="invhouse"]
 	
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_8" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_9" ;
@@ -44,7 +44,7 @@ digraph cfg {
 	
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_11" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_10" ;
-"jjb1.9d6085e324f8fe61c38e804980fa5cf1_12" [label="12: + \n  " ]
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_12" [label="12: + \n   END_BRANCHES\n " ]
 	
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_12" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_11" ;
@@ -53,11 +53,11 @@ digraph cfg {
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_13" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_14" ;
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_13" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_15" ;
-"jjb1.9d6085e324f8fe61c38e804980fa5cf1_14" [label="14: Prune (true branch, if) \n   PRUNE((n$6 <= 0), true); [line 16, column 9]\n " shape="invhouse"]
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_14" [label="14: Prune (true branch, if (terminated)) \n   PRUNE((n$6 <= 0), true); [line 16, column 9]\n " shape="invhouse"]
 	
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_14" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_4" ;
-"jjb1.9d6085e324f8fe61c38e804980fa5cf1_15" [label="15: Prune (false branch, if) \n   PRUNE(!(n$6 <= 0), false); [line 16, column 9]\n " shape="invhouse"]
+"jjb1.9d6085e324f8fe61c38e804980fa5cf1_15" [label="15: Prune (false branch, if (terminated)) \n   PRUNE(!(n$6 <= 0), false); [line 16, column 9]\n " shape="invhouse"]
 	
 
 	 "jjb1.9d6085e324f8fe61c38e804980fa5cf1_15" -> "jjb1.9d6085e324f8fe61c38e804980fa5cf1_12" ;

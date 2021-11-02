@@ -81,4 +81,4 @@ module MakeDisjunctive
   S
     with type TransferFunctions.analysis_data = T.analysis_data
      and module TransferFunctions.CFG = T.CFG
-     and type TransferFunctions.Domain.t = T.Domain.t list
+     and type TransferFunctions.Domain.t = T.DisjDomain.t list * T.NonDisjDomain.t

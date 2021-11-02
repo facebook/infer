@@ -13,7 +13,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
-let report_topl_errors proc_desc err_log summary =
+let report_topl_errors proc_desc err_log (summary, _) =
   let f = function
     | ContinueProgram astate ->
         PulseTopl.report_errors proc_desc err_log (AbductiveDomain.Topl.get astate)
@@ -23,9 +23,17 @@ let report_topl_errors proc_desc err_log summary =
   List.iter ~f summary
 
 
+let report_unnecessary_copies proc_desc err_log non_disj_astate =
+  PulseNonDisjunctiveDomain.get_copied non_disj_astate
+  |> List.iter ~f:(fun (var, location) ->
+         let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; location} in
+         PulseReport.report_non_disj_error proc_desc err_log diagnostic )
+
+
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Normal
-  module Domain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
+  module DisjDomain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
+  module NonDisjDomain = NonDisjDomain
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
@@ -82,7 +90,7 @@ module PulseTransferFunctions = struct
         in
         (* invalidate [&x] *)
         PulseOperations.invalidate path
-          (StackAddress (Var.of_pvar pvar, []))
+          (StackAddress (Var.of_pvar pvar, Epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
     | ISLLatentMemoryError _
@@ -282,15 +290,16 @@ module PulseTransferFunctions = struct
     (astates, ret_vars)
 
 
-  let exec_instr_aux path (astate : ExecutionDomain.t)
+  let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
+      (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
-      (instr : Sil.instr) : ExecutionDomain.t list =
+      (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
     | AbortProgram _ | ISLLatentMemoryError _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
-        [astate]
+        ([astate], path, astate_n)
     | ExitProgram _ ->
         (* program already exited, simply propagate the exited state upwards  *)
-        [astate]
+        ([astate], path, astate_n)
     | ContinueProgram astate -> (
       match instr with
       | Load {id= lhs_id; e= rhs_exp; loc} ->
@@ -337,15 +346,15 @@ module PulseTransferFunctions = struct
             | _ ->
                 [astate]
           in
-          List.concat_map set_global_astates ~f:deref_rhs
+          (List.concat_map set_global_astates ~f:deref_rhs, path, astate_n)
       | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
           (* [*lhs_exp := rhs_exp] *)
           let event =
             match lhs_exp with
             | Lvar v when Pvar.is_return v ->
-                ValueHistory.Returned loc
+                ValueHistory.Returned (loc, timestamp)
             | _ ->
-                ValueHistory.Assignment loc
+                ValueHistory.Assignment (loc, timestamp)
           in
           let result =
             let<*> astate, (rhs_addr, rhs_history) =
@@ -358,14 +367,13 @@ module PulseTransferFunctions = struct
                 let+ astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
                 (false, [Ok (astate, lhs_addr_hist)])
             in
+            let hist = PathContext.with_context path (Sequence (event, rhs_history)) in
             let write_function lhs_addr_hist astate =
               if is_structured then
                 PulseOperations.write_deref_biad_isl path loc ~ref:lhs_addr_hist Dereference
-                  ~obj:(rhs_addr, event :: rhs_history)
-                  astate
+                  ~obj:(rhs_addr, hist) astate
               else
-                [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist
-                    ~obj:(rhs_addr, event :: rhs_history)
+                [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist)
                     astate ]
             in
             let astates =
@@ -388,19 +396,49 @@ module PulseTransferFunctions = struct
             | _ ->
                 astates
           in
-          PulseReport.report_results tenv proc_desc err_log loc result
-      | Prune (condition, loc, _is_then_branch, _if_kind) ->
-          (let<*> astate = PulseOperations.prune path loc ~condition astate in
-           if PulseArithmetic.is_unsat_cheap astate then
-             (* [condition] is known to be unsatisfiable: prune path *)
-             []
-           else
-             (* [condition] is true or unknown value: go into the branch *)
-             [Ok (ContinueProgram astate)] )
-          |> PulseReport.report_exec_results tenv proc_desc err_log loc
+          (PulseReport.report_results tenv proc_desc err_log loc result, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
-          dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
-          |> PulseReport.report_exec_results tenv proc_desc err_log loc
+          let astates =
+            dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
+            |> PulseReport.report_exec_results tenv proc_desc err_log loc
+          in
+          ( astates
+          , path
+          , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals call_flags astates
+              astate_n )
+      | Prune (condition, loc, is_then_branch, if_kind) ->
+          let result, path =
+            match PulseOperations.prune path loc ~condition astate with
+            | Ok (astate, hist) ->
+                let path =
+                  if Sil.is_terminated_if_kind if_kind then
+                    let hist =
+                      ValueHistory.Sequence
+                        (ConditionPassed {if_kind; is_then_branch; location= loc; timestamp}, hist)
+                    in
+                    {path with conditions= hist :: path.conditions}
+                  else path
+                in
+                (Ok astate, path)
+            | Error _ as err ->
+                (err, path)
+          in
+          let results =
+            let<*> astate = result in
+            if PulseArithmetic.is_unsat_cheap astate then
+              (* [condition] is known to be unsatisfiable: prune path *)
+              []
+            else
+              (* [condition] is true or unknown value: go into the branch *)
+              [Ok (ContinueProgram astate)]
+          in
+          (PulseReport.report_exec_results tenv proc_desc err_log loc results, path, astate_n)
+      | Metadata EndBranches ->
+          (* We assume that terminated conditions are well-parenthesised, hence an [EndBranches]
+             instruction terminates the most recently seen terminated conditional. The empty case
+             shouldn't happen but let's not crash by the fault of possible errors in frontends. *)
+          let path = {path with conditions= List.tl path.conditions |> Option.value ~default:[]} in
+          ([ContinueProgram astate], path, astate_n)
       | Metadata (ExitScope (vars, location)) ->
           let remove_vars vars astates =
             List.map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
@@ -415,7 +453,7 @@ module PulseTransferFunctions = struct
                     ContinueProgram (PulseOperations.remove_vars vars location astate) )
           in
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
-            remove_vars vars [ContinueProgram astate]
+            (remove_vars vars [ContinueProgram astate], path, astate_n)
           else
             (* Here we add and execute calls to dealloc for Objective-C objects
                before removing the variables *)
@@ -429,9 +467,14 @@ module PulseTransferFunctions = struct
             let vars_to_remove =
               if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
             in
-            remove_vars vars_to_remove astates
+            ( remove_vars vars_to_remove astates
+            , path
+            , PulseNonDisjunctiveOperations.mark_modified_copies vars astates astate_n )
       | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
-          [PulseOperations.realloc_pvar tenv pvar typ location astate |> ExecutionDomain.continue]
+          ( [ PulseOperations.realloc_pvar tenv path pvar typ location astate
+              |> ExecutionDomain.continue ]
+          , path
+          , astate_n )
       | Metadata
           ( Abstract _
           | CatchEntry _
@@ -440,16 +483,20 @@ module PulseTransferFunctions = struct
           | TryEntry _
           | TryExit _
           | VariableLifetimeBegins _ ) ->
-          [ContinueProgram astate] )
+          ([ContinueProgram astate], path, astate_n) )
 
 
-  let exec_instr (astate, path) analysis_data cfg_node instr : Domain.t list =
+  let exec_instr ((astate, path), astate_n) analysis_data cfg_node instr :
+      DisjDomain.t list * NonDisjDomain.t =
     (* Sometimes instead of stopping on contradictions a false path condition is recorded
        instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
-    exec_instr_aux path astate analysis_data cfg_node instr
-    |> List.filter_map ~f:(fun exec_state ->
-           if ExecutionDomain.is_unsat_cheap exec_state then None
-           else Some (exec_state, PathContext.post_exec_instr path) )
+    let astates, path, astate_n =
+      exec_instr_aux path astate astate_n analysis_data cfg_node instr
+    in
+    ( List.filter_map astates ~f:(fun exec_state ->
+          if ExecutionDomain.is_unsat_cheap exec_state then None
+          else Some (exec_state, PathContext.post_exec_instr path) )
+    , astate_n )
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
@@ -479,9 +526,11 @@ let initial tenv proc_desc =
 let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   AbstractValue.State.reset () ;
   match
-    DisjunctiveAnalyzer.compute_post analysis_data ~initial:(initial tenv proc_desc) proc_desc
+    DisjunctiveAnalyzer.compute_post analysis_data
+      ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
+      proc_desc
   with
-  | Some posts ->
+  | Some (posts, non_disj_astate) ->
       (* forget path contexts, we don't propagate them across functions *)
       let posts = List.map ~f:fst posts in
       with_debug_exit_node proc_desc ~f:(fun () ->
@@ -490,8 +539,10 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             PulseSummary.of_posts tenv proc_desc err_log
               (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
               (Option.to_list objc_nil_summary @ posts)
+              non_disj_astate
           in
           report_topl_errors proc_desc err_log summary ;
+          report_unnecessary_copies proc_desc err_log non_disj_astate ;
           Some summary )
   | None ->
       None

@@ -17,13 +17,22 @@ void create_map_from_nlogn_linear_FN(int (&arr)[]) {
     m[arr[i]]++;
 }
 
-// Expected: O(m); got constant
-void loop_over_map_linear_FN(std::map<int, int> m) {
+void loop_over_map_linear(std::map<int, int> m) {
   for (auto i : m) {
   }
 }
 
-void loop_over_map_linear(std::map<int, int> m) {
+void iterate_over_map_linear(std::map<std::string, int> m) {
+  for (auto it = m.begin(); it != m.end(); it++) {
+  }
+}
+
+void iteratec_over_map_linear(std::map<std::string, int> m) {
+  for (auto it = m.cbegin(); it != m.cend(); it++) {
+  }
+}
+
+void loop_over_map_size_linear(std::map<int, int> m) {
   for (int i = 0; i < m.size(); i++) {
   }
 }
@@ -52,9 +61,13 @@ void insert_to_map_at_logm_FN(std::map<char, int> m, char c, int n) {
   m.at(c) = n;
 }
 
-// Expected: O(m); got constant
-void loop_over_map_backwards_linear_FN(std::map<int, int> m) {
+void iteratec_over_map_rev_linear(std::map<int, int> m) {
   for (auto it = m.crbegin(); it != m.crend(); ++it) {
+  }
+}
+
+void iterate_over_map_rev_linear(std::map<int, int> m) {
+  for (auto it = m.rbegin(); it != m.rend(); ++it) {
   }
 }
 

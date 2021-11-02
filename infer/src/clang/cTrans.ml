@@ -1423,7 +1423,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ; Sil.Load {id= expected_id; e= expected_exp; root_typ= typ; typ; loc= sil_loc} ]
           @ desired_instrs
         in
-        let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
+        let join_node =
+          Procdesc.create_node context.procdesc sil_loc Join_node [Sil.Metadata EndBranches]
+        in
         Procdesc.node_set_succs context.procdesc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
         let var_exp_typ =
           match trans_state.var_exp_typ with
@@ -2103,7 +2105,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let var_typ = add_reference_if_glvalue typ expr_info in
     let join_node =
-      Procdesc.create_node trans_state.context.CContext.procdesc sil_loc Join_node []
+      Procdesc.create_node trans_state.context.CContext.procdesc sil_loc Join_node
+        [Sil.Metadata EndBranches]
     in
     Procdesc.node_set_succs context.procdesc join_node ~normal:succ_nodes ~exn:[] ;
     let var_exp_typ =
@@ -2129,7 +2132,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         {trans_state with continuation= continuation'; succ_nodes= []; var_exp_typ= None}
       in
       exec_with_priority_exception trans_state' cond
-        (cond_trans ~if_kind:Sil.Ik_bexp ~negate_cond:false)
+        (cond_trans ~if_kind:(Sil.Ik_bexp {terminated= true}) ~negate_cond:false)
     in
     let trans_state = {trans_state with succ_nodes= [join_node]} in
     (* Note: by contruction prune nodes are leafs_nodes_cond *)
@@ -2357,11 +2360,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
-      List.iter
-        ~f:(fun n -> Procdesc.node_set_succs context.procdesc n ~normal:nodes_branch ~exn:[])
-        prune_nodes'
+      List.iter prune_nodes' ~f:(fun n ->
+          Procdesc.node_set_succs context.procdesc n ~normal:nodes_branch ~exn:[] )
     in
-    let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
+    let join_node =
+      Procdesc.create_node context.procdesc sil_loc Join_node [Sil.Metadata EndBranches]
+    in
     Procdesc.node_set_succs context.procdesc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
     let trans_state_join_succ = {trans_state with succ_nodes= [join_node]} in
     (* translate the condition expression *)
@@ -2370,7 +2374,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let continuation' = mk_cond_continuation trans_state.continuation in
       let trans_state'' = {trans_state with continuation= continuation'; succ_nodes= []} in
       let cond_stmt = CAst_utils.get_stmt_exn if_stmt_info.isi_cond source_range in
-      cond_trans ~if_kind:Sil.Ik_if ~negate_cond:false trans_state'' cond_stmt
+      cond_trans ~if_kind:(Sil.Ik_if {terminated= true}) ~negate_cond:false trans_state'' cond_stmt
     in
     (* translate the variable declaration inside the condition if present *)
     let res_trans_cond_var =
@@ -4451,7 +4455,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (* simple case: no marker instrumentation: unconditionally destroy the temporary variable
              now *)
           (false, dtor_call stmt_info trans_state dtor_decl_ref temporary)
-      | Some marker_var ->
+      | Some (marker_var, if_kind) ->
           (* generate [if marker_var then destroy_temporary() ;], i.e.:
 
              - a prune node [prune_true] for the case where [marker_var] is true
@@ -4464,7 +4468,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
              - [join_node] to join [dtor_trans_result] and [prune_false] and continue with the
              successor node(s) of the translation [trans_state.succ_nodes] *)
           let proc_desc = trans_state.context.procdesc in
-          let join_node = Procdesc.create_node proc_desc sil_loc Join_node [] in
+          let join_node =
+            Procdesc.create_node proc_desc sil_loc Join_node
+            @@ if Sil.is_terminated_if_kind if_kind then [Sil.Metadata EndBranches] else []
+          in
           Procdesc.node_set_succs proc_desc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
           (* create dtor call as a new node connected to the join node, force new node creation by
              creating a fresh pointer and calling [force_claim_priority_node] *)
@@ -4492,11 +4499,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           in
           let prune_true =
             create_prune_node proc_desc ~branch:true ~negate_cond:false (Var marker_id)
-              deref_marker_var sil_loc Ik_if
+              deref_marker_var sil_loc if_kind
           in
           let prune_false =
             create_prune_node proc_desc ~branch:false ~negate_cond:true (Var marker_id)
-              deref_marker_var sil_loc Ik_if
+              deref_marker_var sil_loc if_kind
           in
           Procdesc.node_set_succs proc_desc prune_false ~normal:[join_node] ~exn:[] ;
           Procdesc.node_set_succs proc_desc prune_true ~normal:dtor_trans_result.control.root_nodes
@@ -4532,7 +4539,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     L.debug Capture Verbose "Destroying [%a] in state %a@\n"
       (Pp.seq ~sep:";" (fun fmt (temporary : CContext.cxx_temporary) ->
            Format.fprintf fmt "(%a,%a)" (Pvar.pp Pp.text_break) temporary.pvar
-             (Pp.option (Pvar.pp Pp.text_break))
+             (Pp.option (Pp.pair ~fst:(Pvar.pp Pp.text_break) ~snd:Sil.pp_if_kind))
              temporary.marker ) )
       temporaries pp_trans_state trans_state ;
     match destroy_all stmt_info [] trans_state (List.rev temporaries) with
@@ -4568,7 +4575,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           match marker with
           | None ->
               markers
-          | Some marker_pvar ->
+          | Some (marker_pvar, _if_kind) ->
               Pvar.Map.add pvar (marker_pvar, typ) markers )
     in
     (* translate the sub-expression in its own node(s) so we can inject code for managing
@@ -4591,7 +4598,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           match marker with
           | None ->
               instrs
-          | Some marker_pvar ->
+          | Some (marker_pvar, _if_kind) ->
               Sil.Metadata (VariableLifetimeBegins (marker_pvar, StdTyp.boolean, loc))
               :: Sil.Store
                    { e1= Lvar marker_pvar
@@ -4606,7 +4613,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           match marker with
           | None ->
               vds
-          | Some marker_pvar ->
+          | Some (marker_pvar, _if_kind) ->
               { ProcAttributes.name= Pvar.get_name marker_pvar
               ; typ= StdTyp.boolean
               ; modify_in_block= false

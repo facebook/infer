@@ -29,7 +29,7 @@ cd docker/1.1.0/
 docker build -t infer .
 # mount the local examples directory inside the image
 # you can mount your project directory here instead
-docker run -it infer -v $PWD/../../examples:/infer-examples /bin/bash
+docker run -it -v $PWD/../../examples:/infer-examples infer /bin/bash
 # you should now be inside the docker container with a shell prompt, e.g.
 # "root@5c3b9af90d59:/# "
 cd /infer-examples/

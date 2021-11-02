@@ -86,11 +86,11 @@ digraph cfg {
 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" [label="2: Exit BlockVar.navigateToURLInBackground \n  " color=yellow style=filled]
 	
 
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_3" [label="3: + \n  " ]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_3" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_4" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_2" ;
@@ -99,11 +99,11 @@ digraph cfg {
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" ;
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_5" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 8), true); [line 23, column 7]\n " shape="invhouse"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$0 == 8), true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_6" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_8" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 8), false); [line 23, column 7]\n " shape="invhouse"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$0 == 8), false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_7" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" ;

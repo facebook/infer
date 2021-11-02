@@ -38,13 +38,13 @@ module rec Term : sig
   val splat : t -> t
   (** Iterated concatenation of a single byte *)
 
-  val sized : seq:t -> siz:t -> t
-  (** Size-tagged sequence *)
-
-  val extract : seq:t -> off:t -> len:t -> t
+  val extract : seq:t -> siz:t -> off:t -> len:t -> t
   (** Extract a slice of a sequence *)
 
-  val concat : t array -> t
+  (** Size-tagged sequence *)
+  type sized = {seq: t; siz: t}
+
+  val concat : sized array -> t
   (** Concatenation of sequences *)
 
   (* uninterpreted *)

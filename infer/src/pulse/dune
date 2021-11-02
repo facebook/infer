@@ -9,6 +9,7 @@
  (flags
   (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
     -open IBase -open Absint -open BO -open Topllib -open Nullsafe))
- (libraries core IStdlib ATDGenerated IBase IR Absint BO Topllib Nullsafe)
+ (libraries core iter IStdlib ATDGenerated IBase IR Absint BO Topllib
+   Nullsafe)
  (preprocess
   (pps ppx_yojson_conv ppx_compare ppx_variants_conv)))

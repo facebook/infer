@@ -133,7 +133,7 @@ depends: [
   "re" {= "1.9.0"}
   "react" {= "1.2.1" & with-test}
   "result" {= "1.5"}
-  "sawja" {= "1.5.10"}
+  "sawja" {= "1.5.11"}
   "seq" {= "base"}
   "sexplib" {= "v0.14.0"}
   "sexplib0" {= "v0.14.0"}

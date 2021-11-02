@@ -42,11 +42,11 @@ digraph cfg {
 "other_enum_test.100f3583adf0259001be6c944828c44a_2" [label="2: Exit other_enum_test \n  " color=yellow style=filled]
 	
 
-"other_enum_test.100f3583adf0259001be6c944828c44a_3" [label="3: + \n  " ]
+"other_enum_test.100f3583adf0259001be6c944828c44a_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_3" -> "other_enum_test.100f3583adf0259001be6c944828c44a_4" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_4" -> "other_enum_test.100f3583adf0259001be6c944828c44a_2" ;
@@ -55,11 +55,11 @@ digraph cfg {
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_5" -> "other_enum_test.100f3583adf0259001be6c944828c44a_6" ;
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_5" -> "other_enum_test.100f3583adf0259001be6c944828c44a_7" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_6" [label="6: Prune (true branch, if) \n   PRUNE(((unsigned int)n$0 == (unsigned int)12), true); [line 23, column 7]\n " shape="invhouse"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(((unsigned int)n$0 == (unsigned int)12), true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_6" -> "other_enum_test.100f3583adf0259001be6c944828c44a_8" ;
-"other_enum_test.100f3583adf0259001be6c944828c44a_7" [label="7: Prune (false branch, if) \n   PRUNE(!((unsigned int)n$0 == (unsigned int)12), false); [line 23, column 7]\n " shape="invhouse"]
+"other_enum_test.100f3583adf0259001be6c944828c44a_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!((unsigned int)n$0 == (unsigned int)12), false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "other_enum_test.100f3583adf0259001be6c944828c44a_7" -> "other_enum_test.100f3583adf0259001be6c944828c44a_10" ;

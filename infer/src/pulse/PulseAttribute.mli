@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
-module PathContext = PulsePathContext
+module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -32,8 +32,8 @@ type t =
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
-  | MustBeInitialized of PathContext.timestamp * Trace.t
-  | MustBeValid of PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option
+  | MustBeInitialized of Timestamp.t * Trace.t
+  | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
   | StdVectorReserve
   | Uninitialized
   | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -72,7 +72,7 @@ module Attributes : sig
   val get_isl_abduced : t -> Trace.t option
 
   val get_must_be_valid :
-    t -> (PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option) option
+    t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
   val get_written_to : t -> Trace.t option
 
@@ -82,7 +82,7 @@ module Attributes : sig
 
   val is_uninitialized : t -> bool
 
-  val get_must_be_initialized : t -> (PathContext.timestamp * Trace.t) option
+  val get_must_be_initialized : t -> (Timestamp.t * Trace.t) option
 
   val get_unreachable_at : t -> Location.t option
 
@@ -94,7 +94,7 @@ module Attributes : sig
   (** While applying a spec, replacing ISLAbduced by Allocated and Invalidation.Cfree by
       Invalidation.delete, if applicable *)
 
-  val add_call : PathContext.t -> Procname.t -> Location.t -> ValueHistory.t -> t -> t
+  val add_call : Timestamp.t -> Procname.t -> Location.t -> ValueHistory.t -> t -> t
 
   val get_allocated_not_freed : t -> (allocator * Trace.t) option
 end

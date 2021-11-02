@@ -13,7 +13,7 @@ module L = Logging
     and which call in a branch we are analyzing *)
 let node_id = ref (-1)
 
-module Domain = struct
+module DisjDomain = struct
   (** ["4";"goo2";"1";"foo1"], printed as "foo1.1.goo2.4", means we explored the first branch of foo
       followed by the 4th branch of goo *)
   type t = string list [@@deriving compare, equal]
@@ -25,28 +25,35 @@ module Domain = struct
   let equal_fast l1 l2 = equal l1 l2
 end
 
+module NonDisjDomain = AbstractDomain.BottomLifted (AbstractDomain.Empty)
+
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal
-  module Domain = Domain
+  module DisjDomain = DisjDomain
+  module NonDisjDomain = NonDisjDomain
 
-  type analysis_data = Domain.t list InterproceduralAnalysis.t
+  type analysis_data = (DisjDomain.t list * NonDisjDomain.t) InterproceduralAnalysis.t
 
-  let exec_instr astate analysis_data _cfg_node (instr : Sil.instr) =
-    match instr with
-    | Store _ ->
-        (* only store instructions (and calls) are used as markers, to avoid cluttering tests *)
-        incr node_id ;
-        [string_of_int !node_id :: astate]
-    | Call (_, Const (Cfun proc_name), _, _, _) -> (
-      match analysis_data.InterproceduralAnalysis.analyze_dependency proc_name with
-      | None ->
-          [astate]
-      | Some (_, callee_summary) ->
+  let exec_instr (astate, astate_non_disj) analysis_data _cfg_node (instr : Sil.instr) :
+      DisjDomain.t list * NonDisjDomain.t =
+    let astate' =
+      match instr with
+      | Store _ ->
+          (* only store instructions (and calls) are used as markers, to avoid cluttering tests *)
           incr node_id ;
-          List.map callee_summary ~f:(fun xs ->
-              xs @ (F.asprintf "%a%d" Procname.pp proc_name !node_id :: astate) ) )
-    | Call _ | Load _ | Prune _ | Metadata _ ->
-        [astate]
+          [string_of_int !node_id :: astate]
+      | Call (_, Const (Cfun proc_name), _, _, _) -> (
+        match analysis_data.InterproceduralAnalysis.analyze_dependency proc_name with
+        | None ->
+            [astate]
+        | Some (_, (callee_summary, _)) ->
+            incr node_id ;
+            List.map callee_summary ~f:(fun xs ->
+                xs @ (F.asprintf "%a%d" Procname.pp proc_name !node_id :: astate) ) )
+      | Call _ | Load _ | Prune _ | Metadata _ ->
+          [astate]
+    in
+    (astate', astate_non_disj)
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Disjunctive Domain demo"
@@ -69,7 +76,9 @@ let pp_domain = DisjunctiveAnalyzer.TransferFunctions.Domain.pp
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   node_id := -1 ;
-  let result = DisjunctiveAnalyzer.compute_post analysis_data ~initial:[[]] proc_desc in
+  let result =
+    DisjunctiveAnalyzer.compute_post analysis_data ~initial:([[]], NonDisjDomain.bottom) proc_desc
+  in
   Option.iter result ~f:(fun post ->
       L.result "%a:@\n  @[<2>%a@]@\n" Procname.pp (Procdesc.get_proc_name proc_desc) pp_domain post ) ;
   result

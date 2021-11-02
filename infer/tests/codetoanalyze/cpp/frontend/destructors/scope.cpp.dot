@@ -88,15 +88,15 @@ digraph cfg {
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_7" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_9" [label="9: + \n  " ]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_9" [label="9: + \n   END_BRANCHES\n " ]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_9" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_8" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" [label="10: Prune (true branch, if) \n   n$20=*&b:_Bool [line 48, column 11]\n  PRUNE(n$20, true); [line 48, column 11]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" [label="10: Prune (true branch, if (terminated)) \n   n$20=*&b:_Bool [line 48, column 11]\n  PRUNE(n$20, true); [line 48, column 11]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_12" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" [label="11: Prune (false branch, if) \n   n$20=*&b:_Bool [line 48, column 11]\n  PRUNE(!n$20, false); [line 48, column 11]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" [label="11: Prune (false branch, if (terminated)) \n   n$20=*&b:_Bool [line 48, column 11]\n  PRUNE(!n$20, false); [line 48, column 11]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_9" ;
@@ -109,15 +109,15 @@ digraph cfg {
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_13" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_10" ;
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_13" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_11" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_14" [label="14: + \n  " ]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_14" [label="14: + \n   END_BRANCHES\n " ]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_14" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_13" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" [label="15: Prune (true branch, if) \n   n$36=*&a:_Bool [line 43, column 9]\n  PRUNE(n$36, true); [line 43, column 9]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" [label="15: Prune (true branch, if (terminated)) \n   n$36=*&a:_Bool [line 43, column 9]\n  PRUNE(n$36, true); [line 43, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_15" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_17" ;
-"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" [label="16: Prune (false branch, if) \n   n$36=*&a:_Bool [line 43, column 9]\n  PRUNE(!n$36, false); [line 43, column 9]\n " shape="invhouse"]
+"test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" [label="16: Prune (false branch, if (terminated)) \n   n$36=*&a:_Bool [line 43, column 9]\n  PRUNE(!n$36, false); [line 43, column 9]\n " shape="invhouse"]
 	
 
 	 "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_16" -> "test1#destructor_scope#3167061604758065234.d3af82d2ddb9b80d2c9930cb62bbbffa_14" ;
@@ -153,15 +153,15 @@ digraph cfg {
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_2" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_4" [label="4: + \n  " ]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_4" [label="4: + \n   END_BRANCHES\n " ]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_4" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_3" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" [label="5: Prune (true branch, if) \n   n$3=*&a:_Bool [line 59, column 7]\n  PRUNE(n$3, true); [line 59, column 7]\n " shape="invhouse"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" [label="5: Prune (true branch, if (terminated)) \n   n$3=*&a:_Bool [line 59, column 7]\n  PRUNE(n$3, true); [line 59, column 7]\n " shape="invhouse"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_5" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_8" ;
-"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" [label="6: Prune (false branch, if) \n   n$3=*&a:_Bool [line 59, column 7]\n  PRUNE(!n$3, false); [line 59, column 7]\n " shape="invhouse"]
+"test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" [label="6: Prune (false branch, if (terminated)) \n   n$3=*&a:_Bool [line 59, column 7]\n  PRUNE(!n$3, false); [line 59, column 7]\n " shape="invhouse"]
 	
 
 	 "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_6" -> "test2#destructor_scope#2993434300384255445.24bf3f4c27c1719ee94d608a0df996b1_10" ;
@@ -242,15 +242,15 @@ digraph cfg {
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_5" -> "__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_4" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_6" [label="6: + \n  " ]
+"__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_6" [label="6: + \n   END_BRANCHES\n " ]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_6" -> "__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_5" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_7" [label="7: Prune (true branch, if) \n   n$14=*&this:destructor_scope::W* [line 31, column 9]\n  n$15=*n$14.b:_Bool [line 31, column 9]\n  PRUNE(n$15, true); [line 31, column 9]\n " shape="invhouse"]
+"__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_7" [label="7: Prune (true branch, if (terminated)) \n   n$14=*&this:destructor_scope::W* [line 31, column 9]\n  n$15=*n$14.b:_Bool [line 31, column 9]\n  PRUNE(n$15, true); [line 31, column 9]\n " shape="invhouse"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_7" -> "__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_9" ;
-"__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_8" [label="8: Prune (false branch, if) \n   n$14=*&this:destructor_scope::W* [line 31, column 9]\n  n$15=*n$14.b:_Bool [line 31, column 9]\n  PRUNE(!n$15, false); [line 31, column 9]\n " shape="invhouse"]
+"__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_8" [label="8: Prune (false branch, if (terminated)) \n   n$14=*&this:destructor_scope::W* [line 31, column 9]\n  n$15=*n$14.b:_Bool [line 31, column 9]\n  PRUNE(!n$15, false); [line 31, column 9]\n " shape="invhouse"]
 	
 
 	 "__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_8" -> "__infer_inner_destructor_~W#W#destructor_scope#(5959723935642545200).551edf40f479ed65174b3698f6834184_6" ;

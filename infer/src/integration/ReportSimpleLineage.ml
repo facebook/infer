@@ -14,8 +14,7 @@ let report {Summary.payloads= {simple_lineage}; proc_desc} =
       let procname = Procdesc.get_proc_name proc_desc in
       L.user_warning "No summary for %a@\n" Procname.pp procname
   | Some summary ->
-      let graph = SimpleLineage.Summary.graph summary in
-      SimpleLineage.LineageGraph.report graph proc_desc
+      SimpleLineage.Summary.report summary proc_desc
 
 
 let worker source_file =

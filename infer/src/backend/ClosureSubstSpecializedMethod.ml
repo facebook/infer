@@ -124,7 +124,7 @@ let rec exec_exp pname e =
 let exec_metadata pname metadata =
   let open Sil in
   match metadata with
-  | Abstract _ | CatchEntry _ | Skip | TryEntry _ | TryExit _ ->
+  | Abstract _ | CatchEntry _ | EndBranches | Skip | TryEntry _ | TryExit _ ->
       metadata
   | ExitScope (vars, loc) ->
       let updated = ref false in

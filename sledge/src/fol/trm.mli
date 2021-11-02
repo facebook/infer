@@ -20,12 +20,14 @@ type t = private
   | Arith of arith
   (* sequences (of flexible size) *)
   | Splat of t
-  | Sized of {seq: t; siz: t}
-  | Extract of {seq: t; off: t; len: t}
-  | Concat of t array
+  | Extract of {seq: t; siz: t; off: t; len: t}
+  | Concat of sized array
   (* uninterpreted *)
   | Apply of Funsym.t * t array
 [@@deriving compare, equal, sexp]
+
+(** Size-tagged sequence *)
+and sized = {seq: t; siz: t}
 
 (** Arithmetic terms *)
 module Arith : Arithmetic.S with type trm := t with type t = arith
@@ -122,9 +124,8 @@ val arith : Arith.t -> t
 
 (* sequences (of flexible size) *)
 val splat : t -> t
-val sized : seq:t -> siz:t -> t
-val extract : seq:t -> off:t -> len:t -> t
-val concat : t array -> t
+val extract : seq:t -> siz:t -> off:t -> len:t -> t
+val concat : sized array -> t
 
 (* uninterpreted *)
 val apply : Funsym.t -> t array -> t

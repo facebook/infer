@@ -8,19 +8,19 @@ digraph cfg {
 "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_2" [label="2: Exit objc_blockMyBlock.array_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_3" [label="3: + \n  " ]
+"objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_3" -> "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_4" ;
-"objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_4" -> "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_2" ;
-"objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_5" [label="5: Prune (true branch, if) \n   n$1=*&ShouldStop:int [line 24, column 9]\n  PRUNE(n$1, true); [line 24, column 9]\n " shape="invhouse"]
+"objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_5" [label="5: Prune (true branch, if (terminated)) \n   n$1=*&ShouldStop:int [line 24, column 9]\n  PRUNE(n$1, true); [line 24, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_5" -> "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_7" ;
-"objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_6" [label="6: Prune (false branch, if) \n   n$1=*&ShouldStop:int [line 24, column 9]\n  PRUNE(!n$1, false); [line 24, column 9]\n " shape="invhouse"]
+"objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_6" [label="6: Prune (false branch, if (terminated)) \n   n$1=*&ShouldStop:int [line 24, column 9]\n  PRUNE(!n$1, false); [line 24, column 9]\n " shape="invhouse"]
 	
 
 	 "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_6" -> "objc_blockMyBlock.array_1(struct objc_object).9201a75f2c4d4a550effc590be108f97_3" ;
@@ -36,19 +36,19 @@ digraph cfg {
 "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_2" [label="2: Exit objc_blockMyBlock.array_trans_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_3" [label="3: + \n  " ]
+"objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_3" -> "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_4" ;
-"objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_4" -> "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_2" ;
-"objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_5" [label="5: Prune (true branch, if) \n   n$32=*&ShouldStop:int [line 41, column 13]\n  PRUNE(n$32, true); [line 41, column 13]\n " shape="invhouse"]
+"objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_5" [label="5: Prune (true branch, if (terminated)) \n   n$32=*&ShouldStop:int [line 41, column 13]\n  PRUNE(n$32, true); [line 41, column 13]\n " shape="invhouse"]
 	
 
 	 "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_5" -> "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_7" ;
-"objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_6" [label="6: Prune (false branch, if) \n   n$32=*&ShouldStop:int [line 41, column 13]\n  PRUNE(!n$32, false); [line 41, column 13]\n " shape="invhouse"]
+"objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_6" [label="6: Prune (false branch, if (terminated)) \n   n$32=*&ShouldStop:int [line 41, column 13]\n  PRUNE(!n$32, false); [line 41, column 13]\n " shape="invhouse"]
 	
 
 	 "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_6" -> "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_3" ;
@@ -107,7 +107,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_9" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_3" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" [label="10: + \n  " ]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" [label="10: + \n   END_BRANCHES\n " ]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_6" ;
@@ -116,11 +116,11 @@ digraph cfg {
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" ;
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" [label="12: Prune (true branch, if) \n   PRUNE((n$16 == 1), true); [line 52, column 9]\n " shape="invhouse"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" [label="12: Prune (true branch, if (terminated)) \n   PRUNE((n$16 == 1), true); [line 52, column 9]\n " shape="invhouse"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_3" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" [label="13: Prune (false branch, if) \n   PRUNE(!(n$16 == 1), false); [line 52, column 9]\n " shape="invhouse"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" [label="13: Prune (false branch, if (terminated)) \n   PRUNE(!(n$16 == 1), false); [line 52, column 9]\n " shape="invhouse"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" ;

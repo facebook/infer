@@ -572,6 +572,7 @@ OPTIONS
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
              PULSE_UNINITIALIZED_VALUE (enabled by default),
+             PULSE_UNNECESSARY_COPY (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              RESOURCE_LEAK (enabled by default),
@@ -2112,6 +2113,10 @@ INTERNAL OPTIONS
            this on for regular code analysis. Report latent issues instead of
            waiting for them to become concrete. (Conversely:
            --no-pulse-report-latent-issues)
+
+       --pulse-scuba-logging
+           Activates: Log unknown functions to scuba in pulse checkers; also
+           sets --scuba-logging. (Conversely: --no-pulse-scuba-logging)
 
        --pulse-widen-threshold int
            Under-approximate after int loop iterations

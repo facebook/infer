@@ -18,11 +18,11 @@ digraph cfg {
 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" [label="2: Exit Bla.fooMethod \n  " color=yellow style=filled]
 	
 
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" [label="3: + \n  " ]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;
@@ -31,11 +31,11 @@ digraph cfg {
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" ;
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch, if) \n   PRUNE(n$1, true); [line 23, column 7]\n " shape="invhouse"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(n$1, true); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch, if) \n   PRUNE(!n$1, false); [line 23, column 7]\n " shape="invhouse"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!n$1, false); [line 23, column 7]\n " shape="invhouse"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" ;

@@ -654,6 +654,15 @@ let is_objc_init procname =
   match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_prefix_init method_name | _ -> false
 
 
+let rec is_objc_instance_method = function
+  | ObjC_Cpp {kind= ObjCInstanceMethod} ->
+      true
+  | WithBlockParameters (base, _) ->
+      is_objc_instance_method base
+  | ObjC_Cpp _ | C _ | CSharp _ | Block _ | Erlang _ | Linters_dummy_method | Java _ ->
+      false
+
+
 let block_of_procname procname =
   match procname with
   | Block block ->
