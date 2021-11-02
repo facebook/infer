@@ -7,8 +7,7 @@
 #include <set>
 #include <iterator>
 
-// Expected: O(s); got top
-void loop_over_set_size_linear_FP(std::set<int> s) {
+void loop_over_set_size_linear(std::set<int> s) {
   for (int i = 0; i < s.size(); i++) {
   }
 }

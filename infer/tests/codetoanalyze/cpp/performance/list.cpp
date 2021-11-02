@@ -58,6 +58,8 @@ void list_insert_constant() {
   list.insert(it, 42);
 }
 
+// expected: constant; got linear
+// similar to T104167367
 void list_add_in_loop_constant_FP() {
   std::list<int> list;
   for (int i = 0; i < 10; ++i) {
@@ -67,12 +69,14 @@ void list_add_in_loop_constant_FP() {
   }
 }
 
-void list_add_in_nested_loop_constant_FP() {
+void list_add_in_nested_loop_constant() {
   for (int j = 0; j < 10; j++) {
     list_add_in_loop_constant_FP();
   }
 }
 
+// expected: constant; got linear
+// similar to T104167367
 void list_push_back_then_loop_constant_FP() {
   std::list<int> list;
   list.push_back(0);
@@ -99,6 +103,8 @@ void list_get_overrun_constant() {
   std::advance(l_front, 2);
 }
 
+// expected: constant; got linear
+// similar to T104167367
 void list_get_constant_FP() {
   std::list<int> list;
   list.push_back(0);

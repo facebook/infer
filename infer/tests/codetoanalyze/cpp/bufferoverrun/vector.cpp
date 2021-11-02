@@ -8,7 +8,7 @@
 #include <list>
 #include <assert.h>
 
-void out_of_bound_Bad(std::vector<int> v) {
+void out_of_bound_Bad_FN(std::vector<int> v) {
   unsigned int n = v.size();
   v[n] = 1;
 }
@@ -18,7 +18,7 @@ void simple_size_Good() {
   v[v.size() - 1] = 2;
 }
 
-void simple_size_Bad() {
+void simple_size_Bad_FN() {
   std::vector<int> v(3);
   v[v.size()] = 2;
 }
@@ -76,7 +76,7 @@ void safe_access(std::vector<int> v) {
   }
 }
 
-void call_safe_access_Good() {
+void call_safe_access_Good_FP() {
   std::vector<int> v(5, 0);
   safe_access(v);
 }
@@ -150,7 +150,7 @@ void data_Bad() {
   p[v[4]] = 1;
 }
 
-void assert_Good() {
+void assert_Good_FP() {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
@@ -159,7 +159,7 @@ void assert_Good() {
   v[4] = 1;
 }
 
-void assert_Good_2(int x) {
+void assert_Good_2_FP(int x) {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);

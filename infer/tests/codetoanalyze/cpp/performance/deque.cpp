@@ -20,3 +20,8 @@ void range_based_loop_over_deque_linear(std::deque<int> d) {
   for (auto i : d) {
   }
 }
+
+void for_loop_over_deque_linear(std::deque<int> d) {
+  for (int i = 0; i < d.size(); i++) {
+  }
+}

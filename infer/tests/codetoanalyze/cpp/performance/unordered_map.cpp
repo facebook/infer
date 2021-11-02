@@ -18,9 +18,7 @@ void iteratec_over_map_linear(std::unordered_map<std::string, std::string> m) {
   }
 }
 
-// Expected: O(m); got top
-void for_loop_over_map_linear_FP(
-    std::unordered_map<std::string, std::string> m) {
+void for_loop_over_map_linear(std::unordered_map<std::string, std::string> m) {
   for (int i = 0; i < m.size(); i++) {
   }
 }

@@ -38,7 +38,7 @@ void iteratec_over_uset_linear(std::unordered_set<std::string> uset) {
   }
 }
 
-void for_loop_over_uset_linear_FP(std::unordered_set<std::string> uset) {
+void for_loop_over_uset_linear(std::unordered_set<std::string> uset) {
   for (int i = 0; i < uset.size(); i++) {
   }
 }

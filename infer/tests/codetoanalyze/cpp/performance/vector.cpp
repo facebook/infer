@@ -37,9 +37,9 @@ void loop_over_vec_linear(std::vector<std::string>& vec) {
   }
 }
 
-void copy_iterative_method_linear_FN(std::vector<std::string>& vec1) {
+void copy_iterative_method_linear(std::vector<std::string>& vec1) {
   std::vector<std::string> vec2;
-  for (int i = 0; i < vec2.size(); i++)
+  for (int i = 0; i < vec1.size(); i++)
     vec2.push_back(vec1[i]);
 }
 

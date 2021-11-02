@@ -1998,9 +1998,9 @@ module Call = struct
       ; -"std" &:: "__detail" &::+ std_iterator_libstdcpp_detail &:: "operator++" $ capt_exp
         $+...$--> Container.Iterator.iterator_incr
         (*             Models for c++ operators <end>             *)
-        (*             Models for std::map <begin>                *)
-      ; -"std" &:: "map" &:: "size" $ capt_exp $--> Container.size
-        (*             Models for std::map <end>                  *)
+        (*      Models for c++ containers operations <begin>      *)
+      ; -"std" &::+ std_container &:: "size" $ capt_exp $--> Container.size
+        (*       Models for c++ containers operations <end>       *)
         (*             Models for std::vector <begin>             *)
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "data" $ capt_arg $--> StdVector.data
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "emplace_back" $ capt_arg $+ capt_exp
@@ -2014,7 +2014,6 @@ module Call = struct
       ; -"std" &:: "vector" < any_typ &+ any_typ >:: "reserve" $ any_arg $+ any_arg $--> no_model
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "resize" $ capt_arg $+ capt_exp
         $--> StdVector.resize
-      ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "size" $ capt_arg $--> StdVector.size
       ; -"std" &:: "vector" < capt_typ &+ any_typ >:: "vector"
         $ capt_arg_of_typ (-"std" &:: "vector")
         $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tint Typ.size_t))
