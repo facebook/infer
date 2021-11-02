@@ -55,13 +55,13 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
     in
     let+ astate =
       match f with
-      | None ->
-          Ok astate
-      | Some f ->
+      | Some f when !is_functional ->
           PulseArithmetic.and_equal (AbstractValueOperand ret_val)
             (FunctionApplicationOperand
                {f; actuals= List.map ~f:(fun ((actual_val, _hist), _typ) -> actual_val) actuals} )
             astate
+      | _ ->
+          Ok astate
     in
     match reason with
     | SkippedKnownCall proc_name ->
