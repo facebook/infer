@@ -216,3 +216,27 @@ void testCallNullptrBad() {
   void (*f)() = nullptr;
   f();
 }
+
+typedef void (^MutatorBlock)();
+
+@interface Mutator : NSObject
+
+- (NSObject*)setCallback:(MutatorBlock)block;
+
+@end
+
+@implementation Mutator {
+  NSObject* _internalField;
+}
+
+- (NSObject*)setCallback:(MutatorBlock)block {
+  return _internalField;
+}
+
+@end
+
+void nilMessagingToFunctionWithBlockParamOk() {
+  Mutator* const mutator = nil;
+  NSObject* const initial = [mutator setCallback:^(){
+  }];
+}

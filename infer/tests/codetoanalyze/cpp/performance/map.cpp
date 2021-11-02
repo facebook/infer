@@ -44,7 +44,7 @@ void loop_over_map_iterator_linear_FN(std::map<std::string, int> m) {
   }
 }
 
-void loop_over_map_constant_FP() {
+void loop_over_map_constant() {
   std::map<char, int> m;
 
   m['a'] = 101;
@@ -61,9 +61,13 @@ void insert_to_map_at_logm_FN(std::map<char, int> m, char c, int n) {
   m.at(c) = n;
 }
 
-// Expected: O(m); got constant
-void loop_over_map_backwards_linear_FN(std::map<int, int> m) {
+void iteratec_over_map_rev_linear(std::map<int, int> m) {
   for (auto it = m.crbegin(); it != m.crend(); ++it) {
+  }
+}
+
+void iterate_over_map_rev_linear(std::map<int, int> m) {
+  for (auto it = m.rbegin(); it != m.rend(); ++it) {
   }
 }
 

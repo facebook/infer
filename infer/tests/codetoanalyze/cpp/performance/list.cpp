@@ -24,6 +24,16 @@ void iteratec_over_list_linear(std::list<int> mlist) {
   }
 }
 
+void iterate_rev_over_list_linear(std::list<int> mlist) {
+  for (auto it = mlist.rbegin(); it != mlist.rend(); ++it) {
+  }
+}
+
+void iteratec_rev_over_list_linear(std::list<int> mlist) {
+  for (auto it = mlist.crbegin(); it != mlist.crend(); ++it) {
+  }
+}
+
 void iterate_over_list_for_linear(std::list<int> mlist) {
   for (const int& el : mlist) {
   }
@@ -48,7 +58,7 @@ void list_insert_constant() {
   list.insert(it, 42);
 }
 
-void list_add_in_loop_constant_FP() {
+void list_add_in_loop_constant() {
   std::list<int> list;
   for (int i = 0; i < 10; ++i) {
     list.push_back(i);
@@ -57,13 +67,13 @@ void list_add_in_loop_constant_FP() {
   }
 }
 
-void list_add_in_nested_loop_constant_FP() {
+void list_add_in_nested_loop_constant() {
   for (int j = 0; j < 10; j++) {
-    list_add_in_loop_constant_FP();
+    list_add_in_loop_constant();
   }
 }
 
-void list_push_back_then_loop_constant_FP() {
+void list_push_back_then_loop_constant() {
   std::list<int> list;
   list.push_back(0);
   list.push_back(1);
@@ -89,7 +99,7 @@ void list_get_overrun_constant() {
   std::advance(l_front, 2);
 }
 
-void list_get_constant_FP() {
+void list_get_constant() {
   std::list<int> list;
   list.push_back(0);
   list.push_back(1);
@@ -146,7 +156,9 @@ void sort_list_string_no_case_nlogn_FN(std::list<std::string> list2) {
   mylist.sort(compare_nocase_linear);
 }
 
-std::list<int> remove_duplicates_quadratic(std::list<int>& list1) {
+// Expected: O(list1 x list2); got list1
+// more details here: T104735254
+std::list<int> remove_duplicates_quadratic_FN(std::list<int>& list1) {
   std::list<int> list2;
 
   for (int x : list1) {

@@ -73,9 +73,6 @@ val idempotent_getters : bool
 
 val initial_analysis_time : float
 
-val is_WSL : bool
-(** Windows Subsystem for Linux *)
-
 val ivar_attributes : string
 
 val java_lambda_marker_infix : string
@@ -544,6 +541,8 @@ val pulse_model_transfer_ownership : string list
 val pulse_report_latent_issues : bool
 
 val pulse_recency_limit : int
+
+val pulse_scuba_logging : bool
 
 val pulse_widen_threshold : int
 

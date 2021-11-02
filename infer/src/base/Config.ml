@@ -127,15 +127,6 @@ let fail_on_issue_exit_code = 2
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = true
 
-let is_WSL =
-  match Utils.read_file "/proc/version" with
-  | Ok [line] ->
-      let re = Str.regexp "Linux.+-Microsoft" in
-      Str.string_match re line 0
-  | _ ->
-      false
-
-
 let ivar_attributes = "ivar_attributes"
 
 let java_lambda_marker_infix = "$Lambda$"
@@ -2395,14 +2386,19 @@ and select =
     "Select option number $(i,N) or $(i,all) of them. If omitted, prompt for input."
 
 
-and scuba_logging, cost_scuba_logging =
+and scuba_logging, cost_scuba_logging, pulse_scuba_logging =
   let scuba_logging = CLOpt.mk_bool ~long:"scuba-logging" "(direct) logging to scuba" in
   let cost_scuba_logging =
     CLOpt.mk_bool_group ~long:"cost-scuba-logging"
       "Log unknown functions to scuba in cost/inferbo checkers; also sets $(b,--scuba-logging)."
       [scuba_logging] []
   in
-  (scuba_logging, cost_scuba_logging)
+  let pulse_scuba_logging =
+    CLOpt.mk_bool_group ~long:"pulse-scuba-logging"
+      "Log unknown functions to scuba in pulse checkers; also sets $(b,--scuba-logging)."
+      [scuba_logging] []
+  in
+  (scuba_logging, cost_scuba_logging, pulse_scuba_logging)
 
 
 and scuba_normals =
@@ -2602,13 +2598,7 @@ and sqlite_vacuum =
     "$(b,VACUUM) the SQLite DB after performing capture."
 
 
-and sqlite_vfs =
-  let default =
-    (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
-    if is_WSL then Some "unix-excl" else None
-  in
-  CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
-
+and sqlite_vfs = CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
 
 and (_ : bool ref) =
   CLOpt.mk_bool ~default:false "[DEPRECATED][DOES NOTHING] option does not exist any more"
@@ -3489,6 +3479,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
+
+and pulse_scuba_logging = !pulse_scuba_logging
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

@@ -555,7 +555,9 @@ module Dom = struct
         ; +PatternMatch.Java.implements_google "common.base.Preconditions"
           &:: "checkState" $ any_arg $+ any_arg $+...$--> KnownExpensive
         ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive ]
+        ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive
+        ; +PatternMatch.Java.implements_regex "Pattern" &:: "compile" &--> KnownExpensive
+        ; +PatternMatch.Java.implements_regex "Pattern" &:: "matcher" &--> KnownExpensive ]
     in
     fun tenv pname args ->
       let args =

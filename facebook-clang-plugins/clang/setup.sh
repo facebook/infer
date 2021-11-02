@@ -217,7 +217,7 @@ fi
 # apply prebuild patch
 pushd "${SCRIPT_DIR}/src/download"
 for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
-    "$PATCH" --batch -p 1 < "$PATCH_FILE"
+    "$PATCH" --force -p 1 < "$PATCH_FILE"
 done
 popd
 

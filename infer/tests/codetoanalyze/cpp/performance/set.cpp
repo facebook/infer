@@ -7,8 +7,7 @@
 #include <set>
 #include <iterator>
 
-// Expected: O(s); got top
-void loop_over_set_size_linear_FP(std::set<int> s) {
+void loop_over_set_size_linear(std::set<int> s) {
   for (int i = 0; i < s.size(); i++) {
   }
 }
@@ -52,8 +51,7 @@ void iterate_over_set_linear(int n) {
   }
 }
 
-// Expected: constant; got O(log(s))
-void binary_search_over_set_constant_FP() {
+void binary_search_over_set_constant() {
   std::set<int> s;
 
   s.insert(40);
