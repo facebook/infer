@@ -259,7 +259,7 @@ val is_java_anonymous_inner_class_method : t -> bool
 val is_java_autogen_method : t -> bool
 
 val is_objc_method : t -> bool
-(** Note: this does not include specialized objective-c methods*)
+(** Includes specialized objective-c methods*)
 
 val is_objc_instance_method : t -> bool
 (** Includes specialized objective-c instance methods*)

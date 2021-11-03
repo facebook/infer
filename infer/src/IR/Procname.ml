@@ -638,29 +638,29 @@ let is_java_anonymous_inner_class_method = is_java_lift Java.is_anonymous_inner_
 
 let is_java_autogen_method = is_java_lift Java.is_autogen_method
 
-let is_objc_method procname =
-  match procname with ObjC_Cpp name -> ObjC_Cpp.is_objc_method name | _ -> false
-
-
-let is_objc_dealloc procname =
-  is_objc_method procname
-  &&
-  match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_objc_dealloc method_name | _ -> false
-
-
-let is_objc_init procname =
-  is_objc_method procname
-  &&
-  match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_prefix_init method_name | _ -> false
-
-
-let rec is_objc_instance_method = function
-  | ObjC_Cpp {kind= ObjCInstanceMethod} ->
-      true
+let rec is_objc_helper ~f = function
+  | ObjC_Cpp objc_cpp_pname ->
+      f objc_cpp_pname
   | WithBlockParameters (base, _) ->
-      is_objc_instance_method base
-  | ObjC_Cpp _ | C _ | CSharp _ | Block _ | Erlang _ | Linters_dummy_method | Java _ ->
+      is_objc_helper ~f base
+  | Block _ | C _ | CSharp _ | Erlang _ | Java _ | Linters_dummy_method ->
       false
+
+
+let is_objc_method = is_objc_helper ~f:ObjC_Cpp.is_objc_method
+
+let is_objc_dealloc =
+  is_objc_helper ~f:(fun objc_cpp_pname ->
+      ObjC_Cpp.is_objc_method objc_cpp_pname && ObjC_Cpp.is_objc_dealloc objc_cpp_pname.method_name )
+
+
+let is_objc_init =
+  is_objc_helper ~f:(fun objc_cpp_pname ->
+      ObjC_Cpp.is_objc_method objc_cpp_pname && ObjC_Cpp.is_prefix_init objc_cpp_pname.method_name )
+
+
+let is_objc_instance_method =
+  is_objc_helper ~f:(function {kind= ObjCInstanceMethod} -> true | _ -> false)
 
 
 let block_of_procname procname =
