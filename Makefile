@@ -752,6 +752,8 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
 	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/rebar.config \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/
+	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/rebar.config.script \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/
 	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.app.src \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/src/
 	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.erl \
