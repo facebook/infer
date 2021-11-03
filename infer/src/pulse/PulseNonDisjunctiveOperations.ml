@@ -95,8 +95,14 @@ let mark_modified_copy_at ~address var astate (astate_n : NonDisjDomain.t) : Non
       in
       let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
       let current_attrs = (astate.AbductiveDomain.post :> BaseDomain.t).attrs in
-      L.d_printfln_escaped "Current heap  %a" BaseMemory.pp current_heap ;
-      L.d_printfln_escaped "Copy heap %a" BaseMemory.pp copy_heap ;
+      let reachable_from heap =
+        BaseMemory.filter
+          (fun address _ -> AbstractValue.Set.mem address reachable_addresses_from_copy)
+          heap
+      in
+      if Config.debug_mode then (
+        L.d_printfln_escaped "Current reachable heap %a" BaseMemory.pp (reachable_from current_heap) ;
+        L.d_printfln_escaped "Copy reachable heap %a" BaseMemory.pp (reachable_from copy_heap) ) ;
       is_modified_since_copy address ~current_heap ~copy_heap ~current_attrs
         ~reachable_addresses_from_copy )
 
