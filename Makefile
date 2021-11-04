@@ -116,6 +116,7 @@ DIRECT_TESTS += \
   objc_linters-def-folder \
   objc_linters-for-test-only \
   objc_liveness \
+  objc_parameter-not-null-checked \
   objc_performance \
   objc_pulse \
   objc_quandary \

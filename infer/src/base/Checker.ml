@@ -27,6 +27,7 @@ type t =
   | Liveness
   | LoopHoisting
   | NullsafeDeprecated
+  | ParameterNotNullChecked
   | PrintfArgs
   | Pulse
   | PurityAnalysis
@@ -323,6 +324,19 @@ let config_unsafe checker =
           "[RESERVED] Reserved for nullsafe typechecker, use `--eradicate` for now."
       ; cli_flags= Some {deprecated= ["-check-nullable"; "-suggest-nullable"]; show_in_help= false}
       ; enabled_by_default= false
+      ; activates= [] }
+  | ParameterNotNullChecked ->
+      { id= "parameter-not-null-checked"
+      ; kind=
+          UserFacing
+            { title= "Parameter Not Null Checked"
+            ; markdown_body= [%blob "../../documentation/checkers/ParameterNotNullChecked.md"] }
+      ; support= supports_clang
+      ; short_documentation=
+          "An Objective-C-specific analysis to detect when a block parameter is used before being \
+           checked for null first."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= true
       ; activates= [] }
   | PrintfArgs ->
       { id= "printf-args"

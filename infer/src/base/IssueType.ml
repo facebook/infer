@@ -318,6 +318,11 @@ let bad_record =
     ~user_documentation:[%blob "../../documentation/issues/BAD_RECORD.md"]
 
 
+let block_parameter_not_null_checked =
+  register ~id:"BLOCK_PARAMETER_NOT_NULL_CHECKED" Warning ParameterNotNullChecked
+    ~user_documentation:[%blob "../../documentation/issues/BLOCK_PARAMETER_NOT_NULL_CHECKED.md"]
+
+
 let biabduction_analysis_stops =
   register_hidden ~enabled:false ~id:"BIABDUCTION_ANALYSIS_STOPS" Warning Biabduction
 

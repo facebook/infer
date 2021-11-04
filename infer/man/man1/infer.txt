@@ -403,9 +403,9 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --racerd, --dotnet-resource-leak, --siof,
-           --self-in-block, --starvation (Conversely: --default-checkers)       
-    See also infer-analyze(1).
+           --liveness, --parameter-not-null-checked, --racerd,
+           --dotnet-resource-leak, --siof, --self-in-block, --starvation
+           (Conversely: --default-checkers)           See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -447,6 +447,7 @@ OPTIONS
              BAD_RECORD (enabled by default),
              BIABDUCTION_ANALYSIS_STOPS (disabled by default),
              BIABDUCTION_MEMORY_LEAK (disabled by default),
+             BLOCK_PARAMETER_NOT_NULL_CHECKED (enabled by default),
              BUFFER_OVERRUN_L1 (enabled by default),
              BUFFER_OVERRUN_L2 (enabled by default),
              BUFFER_OVERRUN_L3 (enabled by default),
@@ -943,6 +944,17 @@ OPTIONS
            files in all specified results directories will be merged together
            and deduplicated before being stored in the main results
            directory.           See also infer-report(1).
+
+       --no-parameter-not-null-checked
+           Deactivates: checker parameter-not-null-checked: An
+           Objective-C-specific analysis to detect when a block parameter is
+           used before being checked for null first. (Conversely:
+           --parameter-not-null-checked)           See also infer-analyze(1).
+
+       --parameter-not-null-checked-only
+           Activates: Enable parameter-not-null-checked and disable all other
+           checkers (Conversely: --no-parameter-not-null-checked-only)       
+    See also infer-analyze(1).
 
        --pmd-xml
            Activates: Output issues in (PMD) XML format in
