@@ -200,7 +200,6 @@ let report ?(suppress_console = false) () =
   let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
   JsonReports.write_reports ~issues_json ~costs_json ~config_impact_json ;
   (* Post-process the report according to the user config.
-
      Do not bother calling the report hook when called from within Buck. *)
   if not Config.buck_cache_mode then (
     (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
@@ -211,7 +210,11 @@ let report ?(suppress_console = false) () =
       ~console_limit:Config.report_console_limit ~report_txt:(ResultsDir.get_path ReportText)
       ~report_json:issues_json ;
     if Config.pmd_xml then
-      XMLReport.write ~xml_path:(ResultsDir.get_path ReportXML) ~json_path:issues_json ) ;
+      XMLReport.write ~xml_path:(ResultsDir.get_path ReportXML) ~json_path:issues_json ;
+    if Config.sarif then
+      SarifReport.create_from_json ~report_sarif:(ResultsDir.get_path ReportSarif)
+        ~report_json:issues_json ;
+    () ) ;
   if Config.(test_determinator && process_clang_ast) then
     TestDeterminator.merge_test_determinator_results () ;
   ()

@@ -1,0 +1,59 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+type message = {
+  text : string;
+}
+
+type fileloc = {
+  uri : string;
+  uriBaseId : string;
+}
+
+type region = {
+  startLine : int;
+  startColumn : int;
+}
+
+type physicalloc = {
+  artifactLocation : fileloc;
+  region : region;
+}
+
+type loc = {
+  physicalLocation : physicalloc;
+}
+
+type trace_loc = {
+  physicalLocation : physicalloc;
+  message : message;
+}
+
+type trace = {
+  nestingLevel  : int;
+  location : trace_loc;
+}
+
+type threadflow = {
+  locations : trace list;
+}
+
+type codeflow = {
+  threadFlows : threadflow list;
+}
+
+type sarifbug = {
+  message : message;
+  level : string;
+  ruleId : string;
+  ?codeFlows : codeflow list option;
+  locations : loc list;
+}
+
+type rule = {
+  id : string;
+  shortDescription : message;
+}

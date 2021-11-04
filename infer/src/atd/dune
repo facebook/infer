@@ -61,6 +61,20 @@
  (action
   (run atdgen -open !AtdDeps -deriving-conv equal -t %{deps})))
 
+; ATD for sarif
+
+(rule
+ (targets sarifbug_j.ml sarifbug_j.mli)
+ (deps sarifbug.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets sarifbug_t.ml sarifbug_t.mli)
+ (deps sarifbug.atd)
+ (action
+  (run atdgen -t %{deps})))
+
 ; ATD for runstate
 
 (rule

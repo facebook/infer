@@ -600,6 +600,8 @@ val rest : string list
 
 val results_dir : string
 
+val sarif : bool
+
 val scheduler : scheduler
 
 val scuba_logging : bool

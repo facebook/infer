@@ -2362,6 +2362,12 @@ and results_dir =
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 
+and sarif =
+  CLOpt.mk_bool ~long:"sarif" ~default:false
+    ~in_help:InferCommand.[(Run, manual_generic)]
+    "Output issues in SARIF (Static Analysis Results Interchange Format) in infer-out/report.sarif"
+
+
 and scheduler =
   CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3529,6 +3535,8 @@ and report_suppress_errors = RevList.to_list !report_suppress_errors
 and reports_include_ml_loc = !reports_include_ml_loc
 
 and results_dir = !results_dir
+
+and sarif = !sarif
 
 and scheduler = !scheduler
 
