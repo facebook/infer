@@ -118,6 +118,23 @@ end
 
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
+let init_block_params attributes initBlockParams =
+  let add_non_nullable_block blockParams annotation (formal, _) =
+    if is_block_param attributes formal && Annotations.ia_is_nonnull annotation then
+      BlockParams.add formal blockParams
+    else blockParams
+  in
+  let annotations = attributes.ProcAttributes.method_annotation.params in
+  let formals = attributes.ProcAttributes.formals in
+  match List.fold2 annotations formals ~init:initBlockParams ~f:add_non_nullable_block with
+  | List.Or_unequal_lengths.Ok blockParams ->
+      blockParams
+  | List.Or_unequal_lengths.Unequal_lengths ->
+      initBlockParams
+
+
 let checker ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
-  let initial = Domain.singleton {Mem.vars= Vars.empty; blockParams= BlockParams.empty} in
+  let attributes = Procdesc.get_attributes proc_desc in
+  let initial_blockParams = init_block_params attributes BlockParams.empty in
+  let initial = Domain.singleton {Mem.vars= Vars.empty; blockParams= initial_blockParams} in
   ignore (Analyzer.compute_post analysis_data ~initial proc_desc)

@@ -52,4 +52,15 @@ typedef void (^MyBlock)();
   }
 }
 
++ (void)nonnullBlockOk:(int)z and:(_Nonnull MyBlock)block {
+  block();
+}
+
+- (void)nonnullBlockTwoBlocksBad:(int)z
+                             and:(_Nonnull MyBlock)block1
+                             and:(MyBlock)block2 {
+  block1();
+  block2();
+}
+
 @end
