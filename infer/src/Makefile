@@ -77,17 +77,17 @@ endif
 .PHONY: src_build_common
 src_build_common: $(SRC_BUILD_COMMON)
 
-# NOTE: the complexity below is because @runtest and @fmt interact poorly: we want dune to format
-# test files *after* having promoted them when the test outputs change
 .PHONY: runtest
 runtest: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)exit_code=0; \
-	$(DUNE_BUILD) @runtest --auto-promote || exit_code=$$?; \
-	$(DUNE_BUILD) @fmt --auto-promote || exit_code=$$?; \
-	exit $$exit_code
+	$(DUNE_BUILD) @runtest --auto-promote
+
+# we want dune to format test files *after* having promoted them
+.PHONY: runtest_formatted
+runtest_formatted: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest
+	$(DUNE_BUILD) @fmt --auto-promote
 
 .PHONY: test
-test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest
+test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest_formatted
 	$(DUNE_BUILD) \
 	  $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS)) \
 	  scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe
