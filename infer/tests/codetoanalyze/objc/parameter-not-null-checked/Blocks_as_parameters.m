@@ -63,4 +63,18 @@ typedef void (^MyBlock)();
   block2();
 }
 
++ (void)blockCheckedAssignNULLBad:(int)z and:(MyBlock)block {
+  if (block) {
+    block = NULL;
+    block();
+  }
+}
+
++ (void)blockAssignNonnullBlockOk:(int)z
+                              and:(MyBlock)block
+                              and:(_Nonnull MyBlock)block2 {
+  block = block2;
+  block();
+}
+
 @end

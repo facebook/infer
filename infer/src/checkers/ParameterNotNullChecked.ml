@@ -68,6 +68,24 @@ module Mem = struct
       if is_block_param attributes name then Vars.add id {arg= name} astate.vars else astate.vars
     in
     {astate with vars}
+
+
+  let store pvar e astate =
+    let name = Pvar.get_name pvar in
+    let blockParams = BlockParams.remove name astate.blockParams in
+    let blockParams =
+      match e with
+      | Exp.Var id -> (
+        match find_block_param id astate with
+        | Some {DomainData.arg} ->
+            if BlockParams.mem arg blockParams then BlockParams.add name blockParams
+            else blockParams
+        | None ->
+            blockParams )
+      | _ ->
+          blockParams
+    in
+    {astate with blockParams}
 end
 
 module Domain = struct
@@ -80,6 +98,8 @@ module Domain = struct
 
 
   let load attributes id pvar astate = map (Mem.load attributes id pvar) astate
+
+  let store pvar e astate = map (Mem.store pvar e) astate
 end
 
 module TransferFunctions = struct
@@ -96,6 +116,8 @@ module TransferFunctions = struct
     match instr with
     | Load {id; e= Lvar pvar} ->
         Domain.load attributes id pvar astate
+    | Store {e1= Lvar pvar; e2} ->
+        Domain.store pvar e2 astate
     | Prune (Var id, _, _, _) ->
         Domain.exec_null_check_id id astate
     (* If (block != nil) or equivalent else branch *)
