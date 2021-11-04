@@ -33,7 +33,6 @@ depends: [
   "iter"
   "javalib" {>="3.2.1"}
   "memtrace" {>="0.1.2"}
-  "mlgmpidl" {>="1.2.12"}
   "mtime"
   "ocaml" {>="4.12.0"}
   "ocamlfind" {build}
