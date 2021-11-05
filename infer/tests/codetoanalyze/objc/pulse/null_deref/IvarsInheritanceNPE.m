@@ -62,7 +62,6 @@
   if (self = [super initWithName:name andAge:age]) {
     employeeEducation = education;
   }
-  int x = 1 / 0;
   return self;
 }
 
@@ -80,4 +79,20 @@ int testFields() {
   return [employee getAge];
 }
 
-int subtyping_test() { return 1 / (testFields() - 29); }
+int fields_set_up_correctly_npe_bad() {
+  int* p = nil;
+  if (testFields() == 29) {
+    return *p;
+  } else {
+    return 0;
+  }
+}
+
+int fields_set_up_correctly_no_npe_good() {
+  int* p = nil;
+  if (testFields() == 1) {
+    return *p;
+  } else {
+    return 0;
+  }
+}

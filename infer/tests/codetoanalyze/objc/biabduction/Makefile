@@ -79,7 +79,6 @@ SOURCES_BUCKET_ALL = \
   warnings/ParameterNotNullableExample.m \
 
 SOURCES_ARC = \
-  field_superclass/SubtypingExample.m \
   retain_cycles/BlockInHeap.m \
   initialization/struct_initlistexpr.c \
   memory_leaks_benchmark/CADisplayLinkRetainCycle.m \

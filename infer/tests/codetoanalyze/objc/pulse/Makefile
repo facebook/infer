@@ -11,7 +11,7 @@ INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
 
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard *.m)
+SOURCES = $(wildcard *.m) $(wildcard */*.m)
 
 include $(TESTS_DIR)/clang.make
 include $(TESTS_DIR)/objc.make
