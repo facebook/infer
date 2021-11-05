@@ -249,6 +249,7 @@ module Term = struct
     | BitShiftRight of t * t
     | BitXor of t * t
     | IsInstanceOf of Var.t * Typ.t
+    | IsInt of t
   [@@deriving compare, equal, yojson_of]
 
   let equal_syntax = [%compare.equal: t]
@@ -285,7 +286,8 @@ module Term = struct
     | LessEqual _
     | Equal _
     | NotEqual _
-    | IsInstanceOf _ ->
+    | IsInstanceOf _
+    | IsInt _ ->
         true
 
 
@@ -348,6 +350,8 @@ module Term = struct
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | IsInstanceOf (v, t) ->
         F.fprintf fmt "(%a instanceof %a)" pp_var v (Typ.pp Pp.text) t
+    | IsInt t ->
+        F.fprintf fmt "is_int(%a)" (pp_no_paren pp_var) t
 
 
   let of_q q = Const q
@@ -437,18 +441,20 @@ module Term = struct
         let t' = if !changed then FunctionApplication {f= t_f'; actuals= actuals'} else t in
         (acc, t')
     (* one sub-term *)
-    | Minus t_not | BitNot t_not | Not t_not ->
-        let acc, t_not' = f init t_not in
+    | Minus sub_t | BitNot sub_t | Not sub_t | IsInt sub_t ->
+        let acc, sub_t' = f init sub_t in
         let t' =
-          if phys_equal t_not t_not' then t
+          if phys_equal sub_t sub_t' then t
           else
             match[@warning "-8"] t with
             | Minus _ ->
-                Minus t_not'
+                Minus sub_t'
             | BitNot _ ->
-                BitNot t_not'
+                BitNot sub_t'
             | Not _ ->
-                Not t_not'
+                Not sub_t'
+            | IsInt _ ->
+                IsInt sub_t'
         in
         (acc, t')
     (* two sub-terms *)
@@ -564,7 +570,8 @@ module Term = struct
     | BitNot _
     | BitShiftLeft _
     | BitShiftRight _
-    | BitXor _ ->
+    | BitXor _
+    | IsInt _ ->
         fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_subst_variables t' ~init:acc ~f)
 
 
@@ -605,6 +612,13 @@ module Term = struct
         t0
     | Linear l ->
         LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
+    | IsInt t' ->
+        q_map t' (fun q ->
+            if Z.(equal one) (Q.den q) then (* an integer *) Q.one
+            else (
+              (* a non-integer rational *)
+              L.d_printfln ~color:Orange "CONTRADICTION: is_int(%a)" Q.pp_print q ;
+              Q.zero ) )
     | Minus t' ->
         q_map t' Q.(mul minus_one)
     | Add (t1, t2) ->
@@ -812,7 +826,8 @@ module Term = struct
       | LessEqual _
       | Equal _
       | NotEqual _
-      | IsInstanceOf _ ->
+      | IsInstanceOf _
+      | IsInt _ ->
           None
     in
     match aux_linearize t with
@@ -1633,6 +1648,11 @@ let and_equal = and_mk_atom Atom.equal
 
 let and_equal_instanceof v1 v2 t phi =
   let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in
+  and_known_atom atom phi
+
+
+let and_is_int v phi =
+  let atom = Atom.equal (IsInt (Var v)) Term.one in
   and_known_atom atom phi
 
 

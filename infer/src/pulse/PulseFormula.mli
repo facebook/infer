@@ -56,6 +56,8 @@ val and_equal_unop : Var.t -> Unop.t -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 val and_equal_binop : Var.t -> Binop.t -> operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
+val and_is_int : Var.t -> t -> (t * new_eqs) SatUnsat.t
+
 val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 (** {3 Operations} *)

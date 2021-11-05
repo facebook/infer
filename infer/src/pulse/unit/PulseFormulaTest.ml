@@ -49,6 +49,11 @@ let instanceof typ x_var y_var phi =
   phi
 
 
+let is_int x phi =
+  let+ phi, _new_eqs = and_is_int x phi in
+  phi
+
+
 let ( + ) f1 f2 phi = of_binop (PlusA None) f1 f2 phi
 
 let ( - ) f1 f2 phi = of_binop (MinusA None) f1 f2 phi
@@ -272,6 +277,32 @@ let%test_module "normalization" =
              -1=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
              &&
              true (no atoms)|}]
+
+    (* expected: [is_int(x)] and [is_int(y)] get simplified away, [is_int(z)] is kept around *)
+    let%expect_test _ =
+      normalize
+        (is_int x_var && x + x = i 4 && is_int y_var && y = i (-42) && is_int z_var && z = x + w) ;
+      [%expect
+        {|
+        known=z=v7
+              &&
+              x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
+              &&
+              -42=y∧2=x∧4=v6∧[w +2]=z
+              &&
+              {is_int([z]) = 1},
+        pruned=true (no atoms),
+        both=z=v7
+             &&
+             x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
+             &&
+             -42=y∧2=x∧4=v6∧[w +2]=z
+             &&
+             {is_int([z]) = 1}|}]
+
+    let%expect_test _ =
+      normalize (is_int x_var && x + x = i 5) ;
+      [%expect {|unsat|}]
   end )
 
 let%test_module "variable elimination" =

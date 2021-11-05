@@ -78,5 +78,7 @@ let has_no_assumptions astate =
   PathCondition.has_no_assumptions astate.AbductiveDomain.path_condition
 
 
+let and_is_int v astate = map_path_condition astate ~f:(fun phi -> PathCondition.and_is_int v phi)
+
 let and_equal_instanceof v1 v2 t astate =
   map_path_condition astate ~f:(fun phi -> PathCondition.and_eq_instanceof v1 v2 t phi)

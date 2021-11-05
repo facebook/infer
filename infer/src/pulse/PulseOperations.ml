@@ -272,7 +272,7 @@ let eval path mode location exp0 astate =
             (AbstractValueOperand addr_rhs) astate
         in
         (astate, (binop_addr, ValueHistory.Branching [hist_lhs; hist_rhs]))
-    | Const _ | Sizeof _ | Exn _ ->
+    | Const (Cfloat _ | Cclass _) | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.Epoch))
   in
   eval path mode exp0 astate

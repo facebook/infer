@@ -417,6 +417,12 @@ let prune_binop ~negated bop lhs_op rhs_op ({is_unsat; bo_itvs= _; citvs; formul
             ({phi with is_unsat; formula}, new_eqs) )
 
 
+let and_is_int v phi =
+  let+ {is_unsat; bo_itvs; citvs; formula} = phi in
+  let+| formula, new_eqs = Formula.and_is_int v formula in
+  ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
+
+
 let and_eq_instanceof v1 v2 t phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
   let+| formula, new_eqs = Formula.and_equal_instanceof v1 v2 t formula in

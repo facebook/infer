@@ -290,6 +290,10 @@ module PulseTransferFunctions = struct
     (astates, ret_vars)
 
 
+  let and_is_int_if_integer_type typ v astate =
+    if Typ.is_int typ then PulseArithmetic.and_is_int v astate else Ok astate
+
+
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
@@ -302,18 +306,20 @@ module PulseTransferFunctions = struct
         ([astate], path, astate_n)
     | ContinueProgram astate -> (
       match instr with
-      | Load {id= lhs_id; e= rhs_exp; loc} ->
+      | Load {id= lhs_id; e= rhs_exp; loc; typ} ->
           (* [lhs_id := *rhs_exp] *)
           let deref_rhs astate =
             let results =
               if Config.pulse_isl then
                 PulseOperations.eval_deref_isl path loc rhs_exp astate
                 |> List.map ~f:(fun result ->
-                       let+ astate, rhs_addr_hist = result in
-                       PulseOperations.write_id lhs_id rhs_addr_hist astate )
+                       let* astate, rhs_addr_hist = result in
+                       and_is_int_if_integer_type typ (fst rhs_addr_hist) astate
+                       >>| PulseOperations.write_id lhs_id rhs_addr_hist )
               else
-                [ (let+ astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
-                   PulseOperations.write_id lhs_id rhs_addr_hist astate ) ]
+                [ (let* astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
+                   and_is_int_if_integer_type typ (fst rhs_addr_hist) astate
+                   >>| PulseOperations.write_id lhs_id rhs_addr_hist ) ]
             in
             PulseReport.report_results tenv proc_desc err_log loc results
           in
@@ -347,7 +353,7 @@ module PulseTransferFunctions = struct
                 [astate]
           in
           (List.concat_map set_global_astates ~f:deref_rhs, path, astate_n)
-      | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
+      | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
           (* [*lhs_exp := rhs_exp] *)
           let event =
             match lhs_exp with
@@ -379,6 +385,7 @@ module PulseTransferFunctions = struct
             let astates =
               List.concat_map ls_astate_lhs_addr_hist ~f:(fun result ->
                   let<*> astate, lhs_addr_hist = result in
+                  let<*> astate = and_is_int_if_integer_type typ rhs_addr astate in
                   write_function lhs_addr_hist astate )
             in
             let astates =
