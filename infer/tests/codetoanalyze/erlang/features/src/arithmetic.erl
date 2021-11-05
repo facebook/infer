@@ -23,7 +23,7 @@
     test_idiv1_Ok/0,
     test_idiv1_Bad/0,
     test_idiv2_Ok/0,
-    fn_test_idiv2_Bad/0,
+    test_idiv2_Bad/0,
     test_rem_Ok/0,
     test_rem_Bad/0,
     test_multiple_Ok/0,
@@ -164,8 +164,8 @@ test_idiv2_Ok() ->
         7 -> ok;
         _ -> warn(1)
     end.
-% FN (T94972453)
-fn_test_idiv2_Bad() ->
+
+test_idiv2_Bad() ->
     X = 22,
     Y = 3,
     case X div Y of

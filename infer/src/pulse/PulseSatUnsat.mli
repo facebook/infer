@@ -6,10 +6,13 @@
  *)
 
 open! IStd
+module F = Format
 
 [@@@warning "-32-60"]
 
 type 'a t = Unsat | Sat of 'a
+
+val pp : (F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 
 (** for [open]ing to get [Sat] and [Unsat] in the namespace *)
 module Types : sig

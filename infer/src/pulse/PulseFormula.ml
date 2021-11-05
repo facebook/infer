@@ -14,6 +14,17 @@ module Q = QSafeCapped
 module Z = ZSafe
 open SatUnsat
 
+(** a humble debug mechanism: set [debug] to [true] and run [make -C infer/src test] to see the
+    arithmetic engine at work in more details *)
+module Debug = struct
+  (** change this to [true] for more debug information *)
+  let debug = false
+
+  let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
+
+  let p fmt = if debug then F.printf fmt else F.ifprintf dummy_formatter fmt
+end
+
 type function_symbol = Unknown of Var.t | Procname of Procname.t
 [@@deriving compare, equal, yojson_of]
 
@@ -605,7 +616,13 @@ module Term = struct
     | Mult (t1, t2) ->
         q_map2 t1 t2 Q.mul
     | Div (t1, t2) ->
-        q_map2 t1 t2 (fun c1 c2 -> if Q.is_zero c2 then Q.undef else Q.div c1 c2)
+        q_map2 t1 t2 (fun c1 c2 ->
+            let open Option.Monad_infix in
+            if Q.is_zero c2 then Q.undef
+            else
+              (* OPTIM: do the division in [Z] and not [Q] to avoid [Q] normalizing the intermediate
+                 result for nothing *)
+              Z.(Q.num c1 * Q.den c2 / (Q.den c1 * Q.num c2)) >>| Q.of_bigint |> or_undef )
     | Mod (t1, t2) ->
         q_map2 t1 t2 (fun c1 c2 ->
             if Q.is_zero c2 then Q.undef else map_z_z_opt c1 c2 Z.( mod ) |> or_undef )
@@ -642,8 +659,13 @@ module Term = struct
                 map_i64_i64 c1 c2 Int64.bit_xor |> or_undef )
 
 
-  (* defend in depth against exceptions *)
-  let eval_const_shallow t = Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef)
+  (* defend in depth against exceptions and debug *)
+  let eval_const_shallow t =
+    let t' = Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef) in
+    if not (phys_equal t t') then
+      Debug.p "eval_const_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
+    t'
+
 
   let rec simplify_shallow_ t =
     match t with
@@ -676,12 +698,15 @@ module Term = struct
     | Div (Const c, _) when Q.is_zero c ->
         (* [0 / t = 0] *)
         zero
+    | Div (t, Const c) when Q.is_one c ->
+        (* [t / 1 = t] *)
+        t
+    | Div (t, Const c) when Q.is_minus_one c ->
+        (* [t / (-1) = -t] *)
+        simplify_shallow_ (Minus t)
     | Div (_, Const c) when Q.is_zero c ->
         (* [t / 0 = undefined] *)
         Const Q.undef
-    | Div (t, Const c) ->
-        (* [t / c = (1/c)·t], [c≠0] *)
-        simplify_shallow_ (Mult (Const (Q.inv c), t))
     | Div (Minus t1, Minus t2) ->
         (* [(-t1) / (-t2) = t1 / t2] *)
         simplify_shallow_ (Div (t1, t2))
@@ -739,8 +764,13 @@ module Term = struct
         t
 
 
-  (* defend in depth against exceptions *)
-  let simplify_shallow t = Z.protect simplify_shallow_ t |> Option.value ~default:(Const Q.undef)
+  (* defend in depth against exceptions and debug *)
+  let simplify_shallow t =
+    let t' = Z.protect simplify_shallow_ t |> Option.value ~default:(Const Q.undef) in
+    if not (phys_equal t t') then
+      Debug.p "simplify_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
+    t'
+
 
   (** more or less syntactic attempt at detecting when an arbitrary term is a linear formula; call
       {!Atom.eval_term} first for best results *)
@@ -764,9 +794,6 @@ module Term = struct
       | Mult (Const c, t) | Mult (t, Const c) ->
           let+ l = aux_linearize t in
           LinArith.mult c l
-      | Div (t, Const c) when Q.is_not_zero c ->
-          let+ l = aux_linearize t in
-          LinArith.mult (Q.inv c) l
       | Procname _
       | FunctionApplication _
       | Mult _
@@ -788,7 +815,12 @@ module Term = struct
       | IsInstanceOf _ ->
           None
     in
-    match aux_linearize t with None -> t | Some l -> Linear l
+    match aux_linearize t with
+    | None ->
+        t
+    | Some l ->
+        Debug.p "linearized: %a -> %a@\n" (pp_no_paren Var.pp) t (LinArith.pp Var.pp) l ;
+        Linear l
 
 
   let simplify_linear = function
@@ -1264,6 +1296,7 @@ module Formula = struct
 
         [l1] and [l2] should have already been through {!normalize_linear} (w.r.t. [phi]) *)
     let rec solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi =
+      Debug.p "solve_normalized_lin_eq: %a=%a@\n" (LinArith.pp Var.pp) l1 (LinArith.pp Var.pp) l2 ;
       LinArith.solve_eq l1 l2
       >>= function
       | None ->
@@ -1339,10 +1372,12 @@ module Formula = struct
 
     (** same as {!solve_normalized_eq_no_lin} but also adds linear to [phi.linear_eqs] *)
     and solve_normalized_term_eq ~fuel new_eqs (t : Term.t) v phi =
+      Debug.p "solve_normalized_term_eq: %a=%a in %a@\n" (Term.pp_no_paren Var.pp) t Var.pp v
+        (pp_with_pp_var Var.pp) phi ;
       match t with
       | Linear l when LinArith.get_as_var l |> Option.is_some ->
-          (* [v1=v2] is already taken care of by [var_eqs] *)
-          Sat (phi, new_eqs)
+          let v' = Option.value_exn (LinArith.get_as_var l) in
+          merge_vars ~fuel new_eqs v v' phi
       | Linear l -> (
           (* [l = v]: need to first solve it to get [l' = v'] such that [v' < vars(l')], and [l'] is
              normalized wrt [phi.linear_eqs] (to get a canonical form), add this to [term_eqs], then
@@ -1371,6 +1406,7 @@ module Formula = struct
 
 
     and merge_vars ~fuel new_eqs v1 v2 phi =
+      Debug.p "merge_vars: %a=%a@\n" Var.pp v1 Var.pp v2 ;
       let var_eqs, subst_opt = VarUF.union phi.var_eqs v1 v2 in
       let phi = {phi with var_eqs} in
       match subst_opt with
@@ -1452,6 +1488,8 @@ module Formula = struct
 
 
     let and_var_term ~fuel v t (phi, new_eqs) =
+      Debug.p "and_var_term: %a=%a in %a@\n" Var.pp v (Term.pp_no_paren Var.pp) t
+        (pp_with_pp_var Var.pp) phi ;
       let t' : Term.t = normalize_var_const phi t |> Atom.eval_term in
       let v' = (get_repr phi v :> Var.t) in
       (* check if unsat given what we know of [v'] and [t'], in other words be at least as
@@ -1535,7 +1573,13 @@ module Formula = struct
 
     let normalize phi_new_eqs = normalize_with_fuel ~fuel:base_fuel phi_new_eqs
 
-    let and_atom atom phi_new_eqs = and_atom atom phi_new_eqs >>| snd
+    let and_atom atom phi_new_eqs =
+      let phi_new_eqs' = and_atom atom phi_new_eqs >>| snd in
+      Debug.p "and_atom %a -> %a@\n" (Atom.pp_with_pp_var Var.pp) atom
+        (SatUnsat.pp (pp_with_pp_var Var.pp))
+        (SatUnsat.map fst phi_new_eqs') ;
+      phi_new_eqs'
+
 
     let and_var_term v t phi_new_eqs = and_var_term ~fuel:base_fuel v t phi_new_eqs
 

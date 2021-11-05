@@ -115,16 +115,9 @@ let pp_var fmt v =
       AbstractValue.pp fmt v
 
 
-let normalized_pp fmt = function
-  | Unsat ->
-      F.pp_print_string fmt "unsat"
-  | Sat phi ->
-      pp_with_pp_var pp_var fmt phi
-
-
 let test ~f phi =
   AbstractValue.State.set init_vars_state ;
-  phi ttrue >>= f |> F.printf "%a" normalized_pp
+  phi ttrue >>= f |> F.printf "%a" (SatUnsat.pp (pp_with_pp_var pp_var))
 
 
 let dummy_tenv = Tenv.create ()
@@ -240,7 +233,7 @@ let%test_module "normalization" =
 
     (* check that this becomes all linear equalities *)
     let%expect_test _ =
-      normalize (i 12 * (x + (i 3 * y) + i 1) / i 7 = i 0) ;
+      normalize (i 12 * (x + (i 3 * y) + i 1) / i 1 = i 0) ;
       [%expect
         {|
         known=v8=v9=v10
@@ -261,22 +254,22 @@ let%test_module "normalization" =
 
     (* check that this becomes all linear equalities thanks to constant propagation *)
     let%expect_test _ =
-      normalize (z * (x + (v * y) + i 1) / w = i 0 && z = i 12 && v = i 3 && w = i 7) ;
+      normalize (z * (x + (v * y) + i 1) / w = i 0 && z = i 12 && v = i 3 && w = i 1) ;
       [%expect
         {|
         known=v8=v9=v10
               &&
-              x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
+              x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
               &&
-              -1=v7∧0=v8∧3=v∧7=w∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
+              -1=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
               &&
               true (no atoms),
         pruned=true (no atoms),
         both=v8=v9=v10
              &&
-             x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 7 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
+             x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
              &&
-             -1=v7∧0=v8∧3=v∧7=w∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
+             -1=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
              &&
              true (no atoms)|}]
   end )
