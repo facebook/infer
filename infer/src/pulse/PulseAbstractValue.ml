@@ -19,9 +19,31 @@ let mk_fresh () =
   l
 
 
-let pp f l = F.fprintf f "v%d" l
+let initial_next_fresh_restricted = -1
+
+let next_fresh_restricted = ref initial_next_fresh_restricted
+
+let mk_fresh_restricted () =
+  let v = !next_fresh_restricted in
+  decr next_fresh_restricted ;
+  v
+
+
+let is_restricted v = v < 0
+
+let is_unrestricted v = v > 0
+
+let pp f v = if is_restricted v then F.fprintf f "a%d" (-v) else F.fprintf f "v%d" v
 
 let yojson_of_t l = `String (F.asprintf "%a" pp l)
+
+let compare_unrestricted_first v1 v2 =
+  if is_restricted v1 then
+    if is_restricted v2 then (* compare absolute values *) compare v2 v1
+    else (* unrestricted [v2] first *) 1
+  else if is_restricted v2 then (* unrestricted [v1] first *) -1
+  else compare v1 v2
+
 
 let of_id v = v
 
@@ -60,16 +82,18 @@ module Constants = struct
 end
 
 module State = struct
-  type t = int * Constants.t
+  type t = int * int * Constants.t
 
-  let get () = (!next_fresh, !Constants.cache)
+  let get () = (!next_fresh, !next_fresh_restricted, !Constants.cache)
 
-  let set (counter, cache) =
-    next_fresh := counter ;
+  let set (counter_unrestricted, counter_restricted, cache) =
+    next_fresh := counter_unrestricted ;
+    next_fresh_restricted := counter_restricted ;
     Constants.cache := cache
 
 
   let reset () =
     next_fresh := initial_next_fresh ;
+    next_fresh_restricted := initial_next_fresh_restricted ;
     Constants.cache := Constants.initial_cache
 end

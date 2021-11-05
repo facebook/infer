@@ -33,7 +33,6 @@ codetoanalyze/c/pulse/memory_leak.c, return_malloc_deref_bad, 4, MEMORY_LEAK, no
 codetoanalyze/c/pulse/memory_leak.c, test_config_options_no_free_bad, 2, MEMORY_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `my_realloc (custom realloc)` here,memory becomes unreachable here]
 codetoanalyze/c/pulse/memory_leak.c, user_malloc_leak_bad, 0, MEMORY_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `a_malloc (custom malloc)` here,memory becomes unreachable here]
 codetoanalyze/c/pulse/nullptr.c, FNlatent_random_modelled_bad, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [*** LATENT ***,parameter `y` of FNlatent_random_modelled_bad,assigned,taking "then" branch,is the null pointer,assigned,invalid access occurs here]
-codetoanalyze/c/pulse/nullptr.c, FP_arithmetic_weakness_ok, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [assigned,assigned,taking "then" branch,taking "then" branch,is the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/nullptr.c, bug_after_abduction_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/nullptr.c, bug_after_malloc_result_test_bad, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [allocated by call to `malloc` (modelled),assigned,taking "then" branch,is the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/nullptr.c, bug_with_allocation_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is the null pointer,assigned,invalid access occurs here]

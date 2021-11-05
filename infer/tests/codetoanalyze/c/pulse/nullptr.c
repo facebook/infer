@@ -182,7 +182,7 @@ void FNlatent_random_modelled_bad(int y) {
   }
 }
 
-void FP_arithmetic_weakness_ok() {
+void arithmetic_weakness_ok() {
   int x = random();
   int y = random();
   if (x < y && x > y) {
