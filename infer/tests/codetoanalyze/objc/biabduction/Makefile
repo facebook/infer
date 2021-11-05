@@ -80,7 +80,7 @@ SOURCES_BUCKET_ALL = \
 
 SOURCES_ARC = \
   field_superclass/SubtypingExample.m \
-  blocks_in_heap/BlockInHeap.m \
+  retain_cycles/BlockInHeap.m \
   initialization/struct_initlistexpr.c \
   memory_leaks_benchmark/CADisplayLinkRetainCycle.m \
   memory_leaks_benchmark/RetainCycleExampleWeak.m \
