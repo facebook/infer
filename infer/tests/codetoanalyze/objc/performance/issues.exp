@@ -1,4 +1,5 @@
 codetoanalyze/objc/performance/NSString.m, replace_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
+codetoanalyze/objc/performance/block.m, call_wrapper_runBlockA_linear_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded value a,Call to wrapper_runBlockA[specialized with blocks],Call to loop_linear,Loop]
 codetoanalyze/objc/performance/compound_loop_guard.m, while_and_or, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/objc/performance/control.m, wrong_cvar_FP, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/objc/performance/cost_test.m, call_infinite, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Call to infinite,Unbounded loop,Loop]

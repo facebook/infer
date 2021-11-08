@@ -344,22 +344,40 @@ module ObjCCoreFoundation = struct
 end
 
 module ObjC = struct
-  let dispatch_sync args : model =
+  let call args : model =
+   (* [call \[args...; Closure _\]] models a call to the closure. It is similar to a
+      dispatch function. *)
    fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate ->
     match List.last args with
-    | None ->
-        ok_continue astate
-    | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= lambda_ptr_hist} -> (
-        let<*> astate, (lambda, _) =
-          PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
+    | Some {ProcnameDispatcher.Call.FuncArg.exp= Closure c} when Procname.is_objc_block c.name ->
+        (* TODO(T101946461): This code is very similar to [Pulse.dispatch_call] after the special
+           case for objc dispatch models with a bit of [Pulse.interprocedural_call]. Maybe refactor
+           it? *)
+        let actuals = List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars in
+        let<*> astate, rev_actuals =
+          List.fold_result actuals ~init:(astate, [])
+            ~f:(fun (astate, rev_actuals) (actual_exp, actual_typ) ->
+              let+ astate, actual_evaled =
+                PulseOperations.eval path Read location actual_exp astate
+              in
+              (astate, (actual_evaled, actual_typ) :: rev_actuals) )
         in
-        match AddressAttributes.get_closure_proc_name lambda astate with
-        | None ->
-            ok_continue astate
-        | Some callee_proc_name ->
-            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
-              ~callee_data:(analyze_dependency callee_proc_name)
-              location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
+        let actuals = List.rev rev_actuals in
+        PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
+        let r =
+          let get_pvar_formals pname =
+            IRAttributes.load pname |> Option.map ~f:Pvar.get_pvar_formals
+          in
+          let formals_opt = get_pvar_formals c.name in
+          let callee_data = analyze_dependency c.name in
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location
+            c.name ~ret ~actuals ~formals_opt astate
+        in
+        PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+        r
+    | _ ->
+        (* Nothing to call *)
+        ok_continue astate
 
 
   let insertion_into_collection_key_and_value (value, value_hist) (key, key_hist) ~desc : model =
@@ -2539,7 +2557,7 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.Java.implements_android "text.TextUtils")
           &:: "isEmpty" <>$ capt_arg_payload
           $--> Android.text_utils_is_empty ~desc:"TextUtils.isEmpty"
-        ; -"dispatch_sync" &++> ObjC.dispatch_sync
+        ; -"dispatch_sync" <>$ any_arg $++$--> ObjC.call
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
           &--> C.custom_alloc_not_null
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy

@@ -67,3 +67,42 @@ int captured_npe_ok(int* y) {
   my_block();
   return *x;
 }
+
+void dispatch_sync_specializable(dispatch_queue_t queue,
+                                 void(NS_NOESCAPE ^ f)(void)) {
+  if (!f) {
+    return;
+  }
+  if (queue) {
+    dispatch_sync(queue, f);
+  } else {
+    f();
+  }
+}
+
+int dispatch_sync_specialized_ok(dispatch_queue_t queue) {
+  __block int x = 0;
+  __block int* ptr = NULL;
+  dispatch_sync_specializable(queue, ^{
+    ptr = &x;
+  });
+  return *ptr;
+}
+
+int dispatch_sync_specialized_latent(dispatch_queue_t queue) {
+  __block int x = 0;
+  __block int* ptr = NULL;
+  dispatch_sync_specializable(queue, ^{
+    ptr = NULL;
+  });
+  return *ptr;
+}
+
+void call_block(MyBlock block) { dispatch(block); }
+
+void FN_deep_npe_bad(int a) {
+  __block int* ptr = NULL;
+  call_block(^{
+    *ptr = 0;
+  });
+}

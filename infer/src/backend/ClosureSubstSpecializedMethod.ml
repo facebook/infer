@@ -143,15 +143,14 @@ let exec_metadata pname metadata =
           VariableLifetimeBegins (pvar', typ, loc) )
 
 
-let exec_args proc_name args =
+let exec_args proc_name ?(f = Fn.id) args =
   let updated = ref false in
   let args' =
-    List.map
-      ~f:(fun ((exp, typ) as exp_typ) ->
-        try_keep_original ~default:exp_typ exp (exec_exp proc_name exp) ~f:(fun exp' ->
+    List.map args ~f:(fun ((exp, typ) as exp_typ) ->
+        let exp' = f exp in
+        try_keep_original ~default:exp_typ exp (exec_exp proc_name exp') ~f:(fun exp' ->
             updated := true ;
             (exp', typ) ) )
-      args
   in
   if !updated then args' else args
 
@@ -166,39 +165,95 @@ let exec_instr proc_name (id_to_pvar_map, pvars_to_blocks_map) instr =
     | Store {e1; root_typ; typ; e2; loc} ->
         [ try_keep_original2 ~default:instr e1 (exec_exp proc_name e1) e2 (exec_exp proc_name e2)
             ~f:(fun e1' e2' -> Store {e1= e1'; root_typ; typ; e2= e2'; loc}) ]
-    | Call (ret_id_typ, Var id, origin_args, loc, call_flags) -> (
-        let converted_args = exec_args proc_name origin_args in
-        match Option.bind ~f:VDom.get (BlockIdMap.find_opt id id_to_pvar_map) with
+    | Call (ret_id_typ, origin_call_exp, origin_args, loc, call_flags) -> (
+        (* Call instr specialization. We want to:
+           - When the function called is a known block:
+            1. Replace the function call with the corresponding block call
+            2. Propagate the block arguments to the new call
+
+           - When the function called is not a block but has a block as argument:
+            Replace the argument with a closure encapsulating the block's pname and captured arguments
+        *)
+        let get_block exp : BlockSpec.t option =
+          (* Find the block corresponding to the current expression if it exists *)
+          let open IOption.Let_syntax in
+          let* pvar =
+            match exp with
+            | Exp.Var id ->
+                BlockIdMap.find_opt id id_to_pvar_map >>= VDom.get
+            | Exp.Lvar pv ->
+                Some pv
+            | _ ->
+                None
+          in
+          BlockPvarSpecMap.find_opt (Pvar.get_name pvar) pvars_to_blocks_map >>= SpecDom.get
+        in
+        match get_block origin_call_exp with
+        | Some (blk_pname, blk_formals) ->
+            (* Found a block call:
+                [f(arg1, arg2)] with [f = block] becomes
+                [block(block_arg1, block_arg2, arg1, arg2)]
+
+               Note: blocks need their captured arguments (block args) before the regular ones
+                because the clang frontend adds them in that order
+            *)
+            let converted_args = exec_args proc_name origin_args in
+            let blk_args, load_instrs =
+              List.map blk_formals ~f:(fun (name, typ) ->
+                  let e = Exp.Lvar (Pvar.mk name proc_name) in
+                  let id = Ident.create_fresh Ident.knormal in
+                  let load_instr = Load {id; e; root_typ= typ; typ; loc} in
+                  ((Exp.Var id, typ), load_instr) )
+              |> List.unzip
+            in
+            L.debug Capture Verbose "substituting specialized method@\n" ;
+            load_instrs
+            @ [Call (ret_id_typ, Const (Cfun blk_pname), blk_args @ converted_args, loc, call_flags)]
         | None ->
-            [instr]
-        | Some pvar -> (
-          match
-            BlockPvarSpecMap.find_opt (Pvar.get_name pvar) pvars_to_blocks_map
-            |> Option.bind ~f:SpecDom.get
-          with
-          | Some (procname, extra_formals) ->
-              let extra_args, load_instrs =
-                List.map
-                  ~f:(fun (name, typ) ->
-                    let e = Exp.Lvar (Pvar.mk name proc_name) in
-                    let id = Ident.create_fresh Ident.knormal in
-                    let load_instr = Load {id; e; root_typ= typ; typ; loc} in
-                    ((Exp.Var id, typ), load_instr) )
-                  extra_formals
-                |> List.unzip
+            (* Current call is not a known block:
+                [foo(f1, arg, f2)] with [f1 = blk1] and [f2= blk2] is specialized into
+                [foo(Closure(blk1, \[blk_arg1\]), arg, Closure(blk2, \[blk2_arg1; blk2_arg2\]))]
+            *)
+            let load_instrs, args =
+              let load_instrs = ref [] in
+              let f exp =
+                (* Replace [exp] with the corresponding block as a closure if the block exist:
+                    [f] with [f = block] is transformed into
+                    [Closure(block, \[block_arg1; block_arg2\])]
+
+                   Note: all block args are considered passed by reference in the closure. Passing
+                    them by value does not change anything for the current analysis because the
+                    block's summary is used and does not depend on this created information but on
+                    the block's definition + if a captured argument was supposed to be passed by
+                    value then it would not be written to so passing it by reference would not have
+                    any effect on its value. Passing [ByReference] has a wider semantic than
+                    [ByValue] in objc: [ByValue] is read, [ByReference] is read-write. Therefore,
+                    using [ByReference] for now fits the needs and better represent the
+                    interactions with the captured arguments (they may be read and written to).
+                    However, if an analysis became dependent to the passing mode information at
+                    call time (what we are creating), then there might be some issues.
+                *)
+                let closure_of_block (blk_name, blk_formals) =
+                  let captured_vars =
+                    List.map blk_formals ~f:(fun (name, typ) ->
+                        let pvar = Pvar.mk name proc_name in
+                        let e = Exp.Lvar pvar in
+                        let id = Ident.create_fresh Ident.knormal in
+                        load_instrs := Load {id; e; root_typ= typ; typ; loc} :: !load_instrs ;
+                        (Exp.Var id, pvar, typ, CapturedVar.ByReference) )
+                  in
+                  Exp.Closure {name= blk_name; captured_vars}
+                in
+                Option.value_map (get_block exp) ~default:exp ~f:closure_of_block
               in
-              L.debug Capture Verbose "substituting specialized method@\n" ;
-              load_instrs
-              @ [ Call
-                    (ret_id_typ, Const (Cfun procname), extra_args @ converted_args, loc, call_flags)
-                ]
-          | None ->
-              [instr] ) )
-    | Call (return_ids, origin_call_exp, origin_args, loc, call_flags) ->
-        [ try_keep_original2 ~default:instr origin_call_exp (exec_exp proc_name origin_call_exp)
-            origin_args (exec_args proc_name origin_args)
-            ~f:(fun converted_call_exp converted_args ->
-              Call (return_ids, converted_call_exp, converted_args, loc, call_flags) ) ]
+              let args = exec_args ~f proc_name origin_args in
+              (!load_instrs, args)
+            in
+            load_instrs
+            @ [ try_keep_original2 ~default:instr origin_call_exp
+                  (exec_exp proc_name origin_call_exp) origin_args args
+                  ~f:(fun converted_call_exp converted_args ->
+                    Call (ret_id_typ, converted_call_exp, converted_args, loc, call_flags) ) ] )
     | Prune (origin_exp, loc, is_true_branch, if_kind) ->
         [ try_keep_original ~default:instr origin_exp (exec_exp proc_name origin_exp)
             ~f:(fun converted_exp -> Prune (converted_exp, loc, is_true_branch, if_kind)) ]
