@@ -49,7 +49,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let get_access_expr_list actuals = List.map actuals ~f:get_access_expr
 
-  let do_assume assume_exp (astate : Domain.t) =
+  let do_assume formals assume_exp (astate : Domain.t) =
     let open Domain in
     let add_thread_choice (acc : Domain.t) bool_value =
       let thread = if bool_value then ThreadDomain.UIThread else ThreadDomain.BGThread in
@@ -64,15 +64,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              in
              {acc with attributes} )
     in
-    match HilExp.get_access_exprs assume_exp with
-    | [access_expr] ->
-        if AttributeDomain.is_thread_guard access_expr astate.attributes then
+    let astate =
+      match HilExp.get_access_exprs assume_exp with
+      | [access_expr] when AttributeDomain.is_thread_guard access_expr astate.attributes ->
           HilExp.eval_boolean_exp access_expr assume_exp
           |> Option.fold ~init:astate ~f:add_thread_choice
-        else if AttributeDomain.is_future_done_guard access_expr astate.attributes then
+      | [access_expr] when AttributeDomain.is_future_done_guard access_expr astate.attributes ->
           HilExp.eval_boolean_exp access_expr assume_exp
           |> Option.fold ~init:astate ~f:(add_future_done_choice access_expr)
-        else astate
+      | _ ->
+          astate
+    in
+    match (assume_exp : HilExp.t) with
+    | (BinaryOperator (Eq, exp, null) | UnaryOperator (LNot, BinaryOperator (Ne, exp, null), _))
+      when HilExp.is_null_literal null ->
+        StarvationDomain.null_check formals exp astate
+    | (BinaryOperator (Eq, null, exp) | UnaryOperator (LNot, BinaryOperator (Ne, null, exp), _))
+      when HilExp.is_null_literal null ->
+        StarvationDomain.null_check formals exp astate
     | _ ->
         astate
 
@@ -119,12 +128,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Option.value_map work_opt ~default:astate ~f:schedule_work
 
 
-  let do_assignment tenv lhs_access_exp rhs_exp (astate : Domain.t) =
-    get_access_expr rhs_exp
-    |> Option.bind ~f:(fun exp -> get_exp_attributes tenv exp astate)
-    |> Option.value_map ~default:astate ~f:(fun attribute ->
-           let attributes = Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes in
-           {astate with attributes} )
+  let do_assignment tenv formals lhs_access_exp rhs_exp (astate : Domain.t) =
+    let astate =
+      get_access_expr rhs_exp
+      |> Option.bind ~f:(fun exp -> get_exp_attributes tenv exp astate)
+      |> Option.value_map ~default:astate ~f:(fun attribute ->
+             let attributes =
+               Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes
+             in
+             {astate with attributes} )
+    in
+    if HilExp.is_null_literal rhs_exp then astate
+    else Domain.set_non_null formals lhs_access_exp astate
 
 
   let do_call {interproc= {tenv; analyze_dependency}; formals} lhs callee actuals loc
@@ -203,7 +218,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let treat_assume () =
       if StarvationModels.is_assume_true tenv callee actuals then
-        List.hd actuals |> Option.map ~f:(fun exp -> do_assume exp astate)
+        List.hd actuals |> Option.map ~f:(fun exp -> do_assume formals exp astate)
       else None
     in
     let treat_arbitrary_code_exec () =
@@ -223,7 +238,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.map ~f:(fun summary ->
              let subst = Lock.make_subst formals actuals in
              let callsite = CallSite.make callee loc in
-             Domain.integrate_summary ~tenv ~lhs ~subst callsite astate summary )
+             Domain.integrate_summary ~tenv ~lhs ~subst formals callsite astate summary )
     in
     IList.eval_until_first_some
       [ treat_handler_constructor
@@ -238,7 +253,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match metadata with ExitScope (vars, _) -> Domain.remove_dead_vars astate vars | _ -> astate
 
 
-  let do_load tenv ~lhs rhs_exp rhs_typ (astate : Domain.t) =
+  let do_load tenv formals ~lhs rhs_exp rhs_typ (astate : Domain.t) =
     let lhs_var = fst lhs in
     let add_deref = match (lhs_var : Var.t) with LogicalVar _ -> true | ProgramVar _ -> false in
     let rhs_hil_exp = hilexp_of_sil ~add_deref astate rhs_exp rhs_typ in
@@ -248,13 +263,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              {astate with var_state= Domain.VarDomain.set lhs_var acc_exp astate.var_state} )
     in
     let lhs_hil_acc_exp = HilExp.AccessExpression.base lhs in
-    do_assignment tenv lhs_hil_acc_exp rhs_hil_exp astate
+    do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate
 
 
-  let do_cast tenv id base_typ actuals astate =
+  let do_cast tenv formals id base_typ actuals astate =
     match actuals with
     | [(e, typ); _sizeof] ->
-        do_load tenv ~lhs:(Var.of_id id, base_typ) e typ astate
+        do_load tenv formals ~lhs:(Var.of_id id, base_typ) e typ astate
     | _ ->
         astate
 
@@ -275,25 +290,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         do_metadata metadata astate
     | Prune (exp, _loc, _then_branch, _if_kind) ->
         let hil_exp = hilexp_of_sil ~add_deref:false astate exp StdTyp.boolean in
-        do_assume hil_exp astate
+        do_assume formals hil_exp astate
     | Load {id} when Ident.is_none id ->
         astate
     | Load {id; e; typ} ->
-        do_load tenv ~lhs:(Var.of_id id, typ) e typ astate
+        do_load tenv formals ~lhs:(Var.of_id id, typ) e typ astate
     | Store {e1= Lvar lhs_pvar; typ; e2} when Pvar.is_ssa_frontend_tmp lhs_pvar ->
-        do_load tenv ~lhs:(Var.of_pvar lhs_pvar, typ) e2 typ astate
+        do_load tenv formals ~lhs:(Var.of_pvar lhs_pvar, typ) e2 typ astate
     | Store {e1; typ; e2} ->
         let rhs_hil_exp = hilexp_of_sil ~add_deref:false astate e2 typ in
         hilexp_of_sil ~add_deref:true astate e1 (Typ.mk_ptr typ)
         |> get_access_expr
         |> Option.value_map ~default:astate ~f:(fun lhs_hil_acc_exp ->
-               do_assignment tenv lhs_hil_acc_exp rhs_hil_exp astate )
+               do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate )
     | Call (_, Const (Cfun callee), actuals, _, _)
       when should_skip_analysis tenv callee (hilexp_of_sils ~add_deref:false astate actuals) ->
         astate
     | Call ((id, base_typ), Const (Cfun callee), actuals, _, _)
       when Procname.equal callee BuiltinDecl.__cast ->
-        do_cast tenv id base_typ actuals astate
+        do_cast tenv formals id base_typ actuals astate
     | Call ((id, typ), Const (Cfun callee), sil_actuals, loc, _) -> (
         let ret_base = (Var.of_id id, typ) in
         let actuals = hilexp_of_sils ~add_deref:false astate sil_actuals in

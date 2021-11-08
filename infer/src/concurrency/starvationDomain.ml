@@ -625,19 +625,49 @@ module CriticalPair = struct
   let can_run_in_parallel t1 t2 = ThreadDomain.can_run_in_parallel (get_thread t1) (get_thread t2)
 end
 
-module CriticalPairs = struct
-  include CriticalPair.FiniteSet
+module CriticalPairs = CriticalPair.FiniteSet
+module NullLocs = AbstractDomain.InvertedSet (HilExp.AccessExpression)
+module LazilyInitialized = AbstractDomain.FiniteSet (HilExp.AccessExpression)
 
-  let with_callsite astate ~tenv ~subst ~ignore_blocking_calls lock_state call_site thread =
+(** A critical pair qualified by the set of locations known to be [null] at pair creation time. A
+    blocking call pair will be dropped from the summary if any of these locations are lazily
+    initialised. *)
+module NullLocsCriticalPair = struct
+  type t = {null_locs: NullLocs.t; pair: CriticalPair.t} [@@deriving compare]
+
+  let pp fmt {null_locs; pair} =
+    F.fprintf fmt "@[null_checks= %a; pair= %a@]" NullLocs.pp null_locs CriticalPair.pp pair
+end
+
+module NullLocsCriticalPairs = struct
+  include AbstractDomain.FiniteSet (NullLocsCriticalPair)
+
+  let with_callsite astate ~tenv ~subst ~ignore_blocking_calls lock_state null_locs call_site thread
+      =
     let existing_acquisitions = LockState.get_acquisitions lock_state in
-    fold
-      (fun critical_pair acc ->
+    CriticalPairs.fold
+      (fun pair acc ->
         CriticalPair.integrate_summary_opt ~subst ~tenv ~ignore_blocking_calls existing_acquisitions
-          call_site thread critical_pair
+          call_site thread pair
         |> Option.bind
              ~f:(CriticalPair.filter_out_reentrant_relocks (Some tenv) existing_acquisitions)
-        |> Option.value_map ~default:acc ~f:(fun new_pair -> add new_pair acc) )
+        |> Option.value_map ~default:acc ~f:(fun pair -> add {null_locs; pair} acc) )
       astate empty
+
+
+  let to_critical_pairs lazily_initialized set =
+    fold
+      (fun {null_locs; pair} acc ->
+        if
+          CriticalPair.is_blocking_call pair
+          && (* drop a blocking call if it's qualified by a [null] location that was lazily
+                initialised at some point in this function *)
+          NullLocs.exists
+            (fun acc_exp -> LazilyInitialized.mem acc_exp lazily_initialized)
+            null_locs
+        then acc
+        else CriticalPairs.add pair acc )
+      set CriticalPairs.empty
 end
 
 module FlatLock = AbstractDomain.Flat (Lock)
@@ -731,21 +761,25 @@ type t =
   { ignore_blocking_calls: IgnoreBlockingCalls.t
   ; guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
-  ; critical_pairs: CriticalPairs.t
+  ; critical_pairs: NullLocsCriticalPairs.t
   ; attributes: AttributeDomain.t
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t
-  ; var_state: VarDomain.t }
+  ; var_state: VarDomain.t
+  ; null_locs: NullLocs.t
+  ; lazily_initalized: LazilyInitialized.t }
 
 let initial =
   { ignore_blocking_calls= false
   ; guard_map= GuardToLockMap.empty
   ; lock_state= LockState.top
-  ; critical_pairs= CriticalPairs.empty
+  ; critical_pairs= NullLocsCriticalPairs.empty
   ; attributes= AttributeDomain.empty
   ; thread= ThreadDomain.bottom
   ; scheduled_work= ScheduledWorkDomain.bottom
-  ; var_state= VarDomain.top }
+  ; var_state= VarDomain.top
+  ; null_locs= NullLocs.empty
+  ; lazily_initalized= LazilyInitialized.empty }
 
 
 let pp fmt astate =
@@ -756,9 +790,13 @@ let pp fmt astate =
      attributes= %a;@;\
      thread= %a;@;\
      scheduled_work= %a;@;\
-     var_state= %a@]}" GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state
-    CriticalPairs.pp astate.critical_pairs AttributeDomain.pp astate.attributes ThreadDomain.pp
-    astate.thread ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp astate.var_state
+     var_state= %a;@;\
+     null_locs= %a\n\
+     lazily_initialized= %a\n\
+    \     @]}" GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state
+    NullLocsCriticalPairs.pp astate.critical_pairs AttributeDomain.pp astate.attributes
+    ThreadDomain.pp astate.thread ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp
+    astate.var_state NullLocs.pp astate.null_locs LazilyInitialized.pp astate.lazily_initalized
 
 
 let join lhs rhs =
@@ -766,11 +804,13 @@ let join lhs rhs =
       IgnoreBlockingCalls.join lhs.ignore_blocking_calls rhs.ignore_blocking_calls
   ; guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
   ; lock_state= LockState.join lhs.lock_state rhs.lock_state
-  ; critical_pairs= CriticalPairs.join lhs.critical_pairs rhs.critical_pairs
+  ; critical_pairs= NullLocsCriticalPairs.join lhs.critical_pairs rhs.critical_pairs
   ; attributes= AttributeDomain.join lhs.attributes rhs.attributes
   ; thread= ThreadDomain.join lhs.thread rhs.thread
   ; scheduled_work= ScheduledWorkDomain.join lhs.scheduled_work rhs.scheduled_work
-  ; var_state= VarDomain.join lhs.var_state rhs.var_state }
+  ; var_state= VarDomain.join lhs.var_state rhs.var_state
+  ; null_locs= NullLocs.join lhs.null_locs rhs.null_locs
+  ; lazily_initalized= LazilyInitialized.join lhs.lazily_initalized rhs.lazily_initalized }
 
 
 let widen ~prev ~next ~num_iters:_ = join prev next
@@ -779,25 +819,27 @@ let leq ~lhs ~rhs =
   IgnoreBlockingCalls.leq ~lhs:lhs.ignore_blocking_calls ~rhs:rhs.ignore_blocking_calls
   && GuardToLockMap.leq ~lhs:lhs.guard_map ~rhs:rhs.guard_map
   && LockState.leq ~lhs:lhs.lock_state ~rhs:rhs.lock_state
-  && CriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
+  && NullLocsCriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
   && AttributeDomain.leq ~lhs:lhs.attributes ~rhs:rhs.attributes
   && ThreadDomain.leq ~lhs:lhs.thread ~rhs:rhs.thread
   && ScheduledWorkDomain.leq ~lhs:lhs.scheduled_work ~rhs:rhs.scheduled_work
   && VarDomain.leq ~lhs:lhs.var_state ~rhs:rhs.var_state
+  && NullLocs.leq ~lhs:lhs.null_locs ~rhs:rhs.null_locs
+  && LazilyInitialized.leq ~lhs:lhs.lazily_initalized ~rhs:rhs.lazily_initalized
 
 
-let add_critical_pair ~tenv_opt lock_state event ~loc acc =
+let add_critical_pair ~tenv_opt lock_state null_locs event ~loc acc =
   let acquisitions = LockState.get_acquisitions lock_state in
   let critical_pair = CriticalPair.make ~loc acquisitions event in
   CriticalPair.filter_out_reentrant_relocks tenv_opt acquisitions critical_pair
-  |> Option.value_map ~default:acc ~f:(fun pair -> CriticalPairs.add pair acc)
+  |> Option.value_map ~default:acc ~f:(fun pair -> NullLocsCriticalPairs.add {null_locs; pair} acc)
 
 
-let acquire ~tenv ({lock_state; critical_pairs} as astate) ~procname ~loc locks =
+let acquire ~tenv ({lock_state; critical_pairs; null_locs} as astate) ~procname ~loc locks =
   { astate with
     critical_pairs=
       (let event = Event.make_acquire locks astate.thread in
-       add_critical_pair ~tenv_opt:(Some tenv) lock_state event ~loc critical_pairs )
+       add_critical_pair ~tenv_opt:(Some tenv) lock_state null_locs event ~loc critical_pairs )
   ; lock_state=
       List.fold locks ~init:lock_state ~f:(fun acc lock ->
           LockState.acquire ~procname ~loc lock acc ) }
@@ -808,7 +850,8 @@ let make_call_with_event new_event ~loc astate =
   else
     { astate with
       critical_pairs=
-        add_critical_pair ~tenv_opt:None astate.lock_state new_event ~loc astate.critical_pairs }
+        add_critical_pair ~tenv_opt:None astate.lock_state astate.null_locs new_event ~loc
+          astate.critical_pairs }
 
 
 let blocking_call ~callee ~loc astate =
@@ -924,15 +967,35 @@ let pp_summary fmt (summary : summary) =
     AttributeDomain.pp summary.attributes
 
 
-let integrate_summary ~tenv ~lhs ~subst callsite (astate : t) (summary : summary) =
+let is_heap_loc formals acc_exp =
+  match HilExp.AccessExpression.get_base acc_exp with
+  | (ProgramVar pvar, _) as base when Pvar.is_global pvar || FormalMap.is_formal base formals ->
+      true
+  | _ ->
+      false
+
+
+let set_non_null formals acc_exp astate =
+  if is_heap_loc formals acc_exp && NullLocs.mem acc_exp astate.null_locs then
+    { astate with
+      null_locs= NullLocs.remove acc_exp astate.null_locs
+    ; lazily_initalized= LazilyInitialized.add acc_exp astate.lazily_initalized }
+  else astate
+
+
+let integrate_summary ~tenv ~lhs ~subst formals callsite (astate : t) (summary : summary) =
   let critical_pairs' =
-    CriticalPairs.with_callsite summary.critical_pairs ~tenv ~subst astate.lock_state callsite
-      astate.thread ~ignore_blocking_calls:astate.ignore_blocking_calls
+    NullLocsCriticalPairs.with_callsite summary.critical_pairs ~tenv ~subst astate.lock_state
+      astate.null_locs callsite astate.thread ~ignore_blocking_calls:astate.ignore_blocking_calls
   in
-  { astate with
-    critical_pairs= CriticalPairs.join astate.critical_pairs critical_pairs'
-  ; thread= ThreadDomain.integrate_summary ~caller:astate.thread ~callee:summary.thread
-  ; attributes= AttributeDomain.add lhs summary.return_attribute astate.attributes }
+  let astate =
+    { astate with
+      critical_pairs= NullLocsCriticalPairs.join astate.critical_pairs critical_pairs'
+    ; thread= ThreadDomain.integrate_summary ~caller:astate.thread ~callee:summary.thread
+    ; attributes= AttributeDomain.add lhs summary.return_attribute astate.attributes }
+  in
+  (* optimistically assume non-null return values, for lazy-init detection purposes *)
+  set_non_null formals lhs astate
 
 
 let summary_of_astate : Procdesc.t -> t -> summary =
@@ -963,7 +1026,8 @@ let summary_of_astate : Procdesc.t -> t -> summary =
     AttributeDomain.find_opt return_var_exp astate.attributes
     |> Option.value ~default:Attribute.Nothing
   in
-  { critical_pairs= astate.critical_pairs
+  { critical_pairs=
+      NullLocsCriticalPairs.to_critical_pairs astate.lazily_initalized astate.critical_pairs
   ; thread= astate.thread
   ; scheduled_work= astate.scheduled_work
   ; attributes
@@ -987,3 +1051,11 @@ let set_ignore_blocking_calls_flag astate = {astate with ignore_blocking_calls= 
 
 let fold_critical_pairs_of_summary f (summary : summary) acc =
   CriticalPairs.fold f summary.critical_pairs acc
+
+
+let null_check formals exp astate =
+  match HilExp.get_access_exprs exp with
+  | [acc_exp] when is_heap_loc formals acc_exp ->
+      {astate with null_locs= NullLocs.add acc_exp astate.null_locs}
+  | _ ->
+      astate
