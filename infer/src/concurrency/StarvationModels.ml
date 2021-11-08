@@ -160,6 +160,13 @@ let may_do_ipc =
       ; {default with classname= "android.view.Display"; methods= ["getRealSize"]} ])
 
 
+let is_regex_op =
+  MethodMatcher.(
+    of_records
+      [ (* Potentially costly regex operations, after https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html *)
+        {default with classname= "java.util.regex.Pattern"; methods= ["compile"; "matches"]} ])
+
+
 let is_monitor_wait =
   MethodMatcher.(
     of_record

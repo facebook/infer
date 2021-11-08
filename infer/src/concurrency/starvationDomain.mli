@@ -62,6 +62,7 @@ module Event : sig
     | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
     | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
+    | RegexOp of {callee: Procname.t; thread: ThreadDomain.t}
     | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
   [@@deriving compare]
 
@@ -207,6 +208,8 @@ val ipc : callee:Procname.t -> loc:Location.t -> t -> t
 val wait_on_monitor : loc:Location.t -> FormalMap.t -> HilExp.t list -> t -> t
 
 val future_get : callee:Procname.t -> loc:Location.t -> HilExp.t list -> t -> t
+
+val regex_op : callee:Procname.t -> loc:Location.t -> t -> t
 
 val strict_mode_call : callee:Procname.t -> loc:Location.t -> t -> t
 

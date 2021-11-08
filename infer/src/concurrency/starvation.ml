@@ -347,6 +347,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let astate = do_work_scheduling tenv callee actuals loc astate in
             if may_block tenv callee actuals then Domain.blocking_call ~callee ~loc astate
             else if may_do_ipc tenv callee actuals then Domain.ipc ~callee ~loc astate
+            else if is_regex_op tenv callee actuals then Domain.regex_op ~callee ~loc astate
             else do_call analysis_data ret_exp callee actuals loc astate
         | NoEffect ->
             (* in C++/Obj C we only care about deadlocks, not starvation errors *)
@@ -472,17 +473,19 @@ module ReportMap : sig
   type report_add_t =
     Tenv.t -> ProcAttributes.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
 
+  val add_arbitrary_code_execution_under_lock : report_add_t
+
   val add_deadlock : report_add_t
 
   val add_ipc : report_add_t
 
+  val add_lockless_violation : report_add_t
+
+  val add_regex_op : report_add_t
+
   val add_starvation : report_add_t
 
   val add_strict_mode_violation : report_add_t
-
-  val add_lockless_violation : report_add_t
-
-  val add_arbitrary_code_execution_under_lock : report_add_t
 
   val issue_log_of : t -> IssueLog.t
 
@@ -525,6 +528,10 @@ end = struct
     add tenv pattrs loc ltr message IssueType.ipc_on_ui_thread map
 
 
+  let add_regex_op tenv pattrs loc ltr message map =
+    add tenv pattrs loc ltr message IssueType.regex_op_on_ui_thread map
+
+
   let add_starvation tenv pattrs loc ltr message map =
     add tenv pattrs loc ltr message IssueType.starvation map
 
@@ -546,6 +553,7 @@ end = struct
       [ deadlock
       ; lockless_violation
       ; ipc_on_ui_thread
+      ; regex_op_on_ui_thread
       ; starvation
       ; strict_mode_violation
       ; arbitrary_code_execution_under_lock ]
@@ -608,8 +616,9 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
   (not Config.deduplicate)
   ||
   match (endpoint_elem.CriticalPair.elem.event, current_elem.CriticalPair.elem.event) with
-  | _, (StrictModeCall _ | Ipc _ | MayBlock _ | MonitorWait _ | MustNotOccurUnderLock _)
-  | (StrictModeCall _ | Ipc _ | MayBlock _ | MonitorWait _ | MustNotOccurUnderLock _), _ ->
+  | _, (Ipc _ | MayBlock _ | MonitorWait _ | MustNotOccurUnderLock _ | RegexOp _ | StrictModeCall _)
+  | (Ipc _ | MayBlock _ | MonitorWait _ | MustNotOccurUnderLock _ | RegexOp _ | StrictModeCall _), _
+    ->
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" CriticalPair.pp
         current_elem
@@ -681,7 +690,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
     if CriticalPair.can_run_in_parallel pair other_pair then
       let acquisitions = other_pair.CriticalPair.elem.acquisitions in
       match other_pair.CriticalPair.elem.event with
-      | (Ipc _ | MayBlock _) as event
+      | (Ipc _ | MayBlock _ | RegexOp _) as event
         when should_report_starvation
              && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
           let error_message =
@@ -762,6 +771,15 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       in
       let ltr, loc = make_trace_and_loc () in
       ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
+  | RegexOp _ when is_not_private && should_report_starvation ->
+      let error_message =
+        Format.asprintf
+          "%a runs on UI thread and may perform costly regular expression operations, potentially \
+           regressing scroll performance; %a."
+          pname_pp pname Event.describe event
+      in
+      let ltr, loc = make_trace_and_loc () in
+      ReportMap.add_regex_op tenv pattrs loc ltr error_message report_map
   | StrictModeCall _ when is_not_private && should_report_starvation ->
       let error_message =
         Format.asprintf "%a runs on UI thread and may violate Strict Mode; %a." pname_pp pname

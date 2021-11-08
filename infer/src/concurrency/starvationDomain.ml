@@ -199,6 +199,7 @@ module Event = struct
     | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
     | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
+    | RegexOp of {callee: Procname.t; thread: ThreadDomain.t}
     | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
   [@@deriving compare]
 
@@ -215,6 +216,8 @@ module Event = struct
         F.fprintf fmt "MonitorWait(%a, %a)" Lock.pp lock ThreadDomain.pp thread
     | MustNotOccurUnderLock {callee; thread} ->
         F.fprintf fmt "MustNotOccurUnderLock(%a, %a)" Procname.pp callee ThreadDomain.pp thread
+    | RegexOp {callee; thread} ->
+        F.fprintf fmt "RegexOp(%a, %a)" Procname.pp callee ThreadDomain.pp thread
     | StrictModeCall {callee; thread} ->
         F.fprintf fmt "StrictModeCall(%a, %a)" Procname.pp callee ThreadDomain.pp thread
 
@@ -223,7 +226,11 @@ module Event = struct
     match elem with
     | LockAcquire {locks} ->
         Pp.comma_seq Lock.pp_locks fmt locks
-    | Ipc {callee} | MayBlock {callee} | MustNotOccurUnderLock {callee} | StrictModeCall {callee} ->
+    | Ipc {callee}
+    | MayBlock {callee}
+    | MustNotOccurUnderLock {callee}
+    | RegexOp {callee}
+    | StrictModeCall {callee} ->
         F.fprintf fmt "calls %a" describe_pname callee
     | MonitorWait {lock} ->
         F.fprintf fmt "calls `wait` on %a" Lock.describe lock
@@ -235,6 +242,7 @@ module Event = struct
     | MayBlock {thread}
     | MonitorWait {thread}
     | MustNotOccurUnderLock {thread}
+    | RegexOp {thread}
     | StrictModeCall {thread} ->
         thread
 
@@ -253,6 +261,8 @@ module Event = struct
           MonitorWait {monitor_wait with thread}
       | MustNotOccurUnderLock not_under_lock ->
           MustNotOccurUnderLock {not_under_lock with thread}
+      | RegexOp regex_op ->
+          RegexOp {regex_op with thread}
       | StrictModeCall strict_mode_call ->
           StrictModeCall {strict_mode_call with thread}
 
@@ -267,21 +277,23 @@ module Event = struct
 
   let make_acquire locks thread = LockAcquire {locks; thread}
 
+  let make_arbitrary_code_exec callee thread = MustNotOccurUnderLock {callee; thread}
+
   let make_blocking_call callee thread = MayBlock {callee; thread}
 
-  let make_strict_mode_call callee thread = StrictModeCall {callee; thread}
+  let make_ipc callee thread = Ipc {callee; thread}
 
   let make_object_wait lock thread = MonitorWait {lock; thread}
 
-  let make_arbitrary_code_exec callee thread = MustNotOccurUnderLock {callee; thread}
+  let make_regex_op callee thread = RegexOp {callee; thread}
 
-  let make_ipc callee thread = Ipc {callee; thread}
+  let make_strict_mode_call callee thread = StrictModeCall {callee; thread}
 
   let get_acquired_locks = function LockAcquire {locks} -> locks | _ -> []
 
   let apply_subst subst event =
     match event with
-    | Ipc _ | MayBlock _ | StrictModeCall _ | MustNotOccurUnderLock _ ->
+    | Ipc _ | MayBlock _ | MustNotOccurUnderLock _ | RegexOp _ | StrictModeCall _ ->
         Some event
     | MonitorWait {lock; thread} -> (
       match Lock.apply_subst subst lock with
@@ -309,7 +321,7 @@ module Event = struct
     | LockAcquire _ | MustNotOccurUnderLock _ ->
         (* lock taking is not a method call (though it may block) and [MustNotOccurUnderLock] calls not necessarily blocking *)
         false
-    | Ipc _ | MayBlock _ | MonitorWait _ | StrictModeCall _ ->
+    | Ipc _ | MayBlock _ | MonitorWait _ | RegexOp _ | StrictModeCall _ ->
         true
 end
 
@@ -886,6 +898,11 @@ let future_get ~callee ~loc actuals astate =
       make_call_with_event new_event ~loc astate
   | _ ->
       astate
+
+
+let regex_op ~callee ~loc astate =
+  let new_event = Event.make_regex_op callee astate.thread in
+  make_call_with_event new_event ~loc astate
 
 
 let strict_mode_call ~callee ~loc astate =

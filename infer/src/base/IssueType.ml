@@ -904,6 +904,12 @@ let quandary_taint_error =
     ~user_documentation:"Generic taint error when nothing else fits."
 
 
+let regex_op_on_ui_thread =
+  register Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
+    ~user_documentation:
+      "A potentially costly operation on a regular expression occurs on the UI thread."
+
+
 let resource_leak =
   register ~id:"RESOURCE_LEAK" Error Biabduction
     ~user_documentation:[%blob "../../documentation/issues/RESOURCE_LEAK.md"]

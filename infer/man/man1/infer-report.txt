@@ -247,6 +247,7 @@ OPTIONS
              PULSE_UNNECESSARY_COPY (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
+             REGEX_OP_ON_UI_THREAD (enabled by default),
              RESOURCE_LEAK (enabled by default),
              RETAIN_CYCLE (enabled by default),
              SHELL_INJECTION (enabled by default),
