@@ -2558,6 +2558,8 @@ module ProcNameDispatcher = struct
           &:: "isEmpty" <>$ capt_arg_payload
           $--> Android.text_utils_is_empty ~desc:"TextUtils.isEmpty"
         ; -"dispatch_sync" <>$ any_arg $++$--> ObjC.call
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UITraitCollection")
+          &:: "performAsCurrentTraitCollection:" <>$ any_arg $++$--> ObjC.call
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
           &--> C.custom_alloc_not_null
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy

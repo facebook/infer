@@ -6,6 +6,7 @@
  */
 
 #include <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @interface Singleton : NSObject
 
@@ -93,6 +94,38 @@ int dispatch_sync_specialized_latent(dispatch_queue_t queue) {
   __block int x = 0;
   __block int* ptr = NULL;
   dispatch_sync_specializable(queue, ^{
+    ptr = NULL;
+  });
+  return *ptr;
+}
+
+void performAsCurrentTraitCollection_specializable(
+    UITraitCollection* traitCollection, void(NS_NOESCAPE ^ f)(void)) {
+  if (!f) {
+    return;
+  }
+  if (traitCollection) {
+    [traitCollection performAsCurrentTraitCollection:f];
+  } else {
+    f();
+  }
+}
+
+int performAsCurrentTraitCollection_specialized_ok(
+    UITraitCollection* traitCollection) {
+  __block int x = 0;
+  __block int* ptr = NULL;
+  performAsCurrentTraitCollection_specializable(traitCollection, ^{
+    ptr = &x;
+  });
+  return *ptr;
+}
+
+int performAsCurrentTraitCollection_specialized_latent(
+    UITraitCollection* traitCollection) {
+  __block int x = 0;
+  __block int* ptr = NULL;
+  performAsCurrentTraitCollection_specializable(traitCollection, ^{
     ptr = NULL;
   });
   return *ptr;
