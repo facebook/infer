@@ -133,7 +133,7 @@ int performAsCurrentTraitCollection_specialized_latent(
 
 void call_block(MyBlock block) { dispatch(block); }
 
-void FN_deep_npe_bad(int a) {
+void deep_npe_bad(int a) {
   __block int* ptr = NULL;
   call_block(^{
     *ptr = 0;

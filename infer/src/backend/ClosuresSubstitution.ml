@@ -107,9 +107,8 @@ let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.inst
 
 
 (** [replace_closure_param] propagates closures to function parameters, so that more functions are
-    specialized by [CCallSpecializedWithClosures.process]. Note that unlike [replace_closure_call]
-    running at the analysis phase, [replace_closure_param] should run before
-    [CCallSpecializedWithClosures.process] at the capture phase. *)
+    specialized by [CCallSpecializedWithClosures.process]. Note that [replace_closure_param] should
+    run before [CCallSpecializedWithClosures.process] in the capture phase. *)
 let replace_closure_param node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
   let kind = `ExecNode in
   let pp_name fmt = Format.pp_print_string fmt "Closure Param Substitution" in
@@ -149,9 +148,6 @@ let process_common replace_instr pdesc =
   ()
 
 
-let process_closure_call summary =
-  let pdesc = Summary.get_proc_desc summary in
-  process_common replace_closure_call pdesc
-
+let process_closure_call pdesc = process_common replace_closure_call pdesc
 
 let process_closure_param pdesc = process_common replace_closure_param pdesc

@@ -24,4 +24,4 @@
 
 open! IStd
 
-val process : Cfg.t -> unit
+val process : Procdesc.t -> unit

@@ -272,16 +272,15 @@ let analyze_at_node (map : Analyzer.invariant_map) node : Domain.t =
       (BlockIdMap.top, BlockPvarSpecMap.top)
 
 
-let process summary =
-  let pdesc = Summary.get_proc_desc summary in
+let process pdesc =
   let proc_name = Procdesc.get_proc_name pdesc in
   let proc_attributes = Procdesc.get_attributes pdesc in
   match proc_attributes.ProcAttributes.specialized_with_blocks_info with
   | Some spec_with_blocks_info -> (
-    match Procdesc.load spec_with_blocks_info.orig_proc with
-    | Some orig_proc_desc ->
+    match Procdesc.load spec_with_blocks_info.ProcAttributes.orig_proc with
+    | Some orig_pdesc ->
+        Procdesc.deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc:pdesc ;
         let formals_to_blocks_map = spec_with_blocks_info.formals_to_procs_and_new_formals in
-        Procdesc.shallow_copy_code_from_pdesc ~orig_pdesc:orig_proc_desc ~dest_pdesc:pdesc ;
         let pvars_to_blocks_map =
           Mangled.Map.map SpecDom.v formals_to_blocks_map
           |> Mangled.Map.to_seq |> BlockPvarSpecMap.of_seq
@@ -301,7 +300,7 @@ let process summary =
             ~context_at_node
         in
         ()
-    | _ ->
+    | None ->
         () )
   | _ ->
       ()

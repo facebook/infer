@@ -130,11 +130,11 @@ let is_dispatch_model proc_desc =
   ObjCDispatchModels.is_model proc_name
 
 
-let replace_with_specialize_methods cfg _node instr =
+let replace_with_specialize_methods instr =
   match instr with
   | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), actual_params, loc, flags)
     when should_specialize actual_params flags -> (
-    match Procname.Hash.find_opt cfg callee_pname with
+    match Procdesc.load callee_pname with
     (*TODO(T74127433): This specialization works well only when the we specialize methods that take a block
       parameter and then run the block. It doesn't work well when the block is instead stored in
       a field. This case will be left as future work, and we won't specialize common cases where this
@@ -148,7 +148,7 @@ let replace_with_specialize_methods cfg _node instr =
           formals_actuals_map callee_attributes.formals callee_attributes.method_annotation.params
             actual_params
         with
-        | Some map ->
+        | Some map -> (
             let set = formals_actuals_new_set map in
             let new_formals, new_annots, new_actuals = formals_annots_actuals_lists set in
             let annot = callee_attributes.method_annotation in
@@ -169,11 +169,22 @@ let replace_with_specialize_methods cfg _node instr =
                same closure parameters.  For the following additions, we can simply ignore them,
                because the function bodies of the same procname must be the same.
 
-               Here, it adds an empty procdesc temporarily.  The function body will be filled later
-               by [ClosureSubstSpecializedMethod]. *)
-            if not (Cfg.mem cfg specialized_pname) then
-              Cfg.create_proc_desc cfg new_attributes |> ignore ;
-            Sil.Call (ret, Exp.Const (Const.Cfun specialized_pname), new_actuals, loc, flags)
+               Here, it creates an empty procdesc temporarily.  The function body will be filled
+               later by [ClosureSubstSpecializedMethod]. *)
+            let specialized_instr =
+              Sil.Call (ret, Exp.Const (Const.Cfun specialized_pname), new_actuals, loc, flags)
+            in
+            match Procdesc.load specialized_pname with
+            | Some _ ->
+                specialized_instr (* already exists*)
+            | None -> (
+              match Procdesc.load callee_pname with
+              | Some orig_pdesc when (Procdesc.get_attributes orig_pdesc).is_defined ->
+                  let specialized_pdesc = Procdesc.from_proc_attributes new_attributes in
+                  Attributes.store ~proc_desc:(Some specialized_pdesc) new_attributes ;
+                  specialized_instr
+              | _ ->
+                  instr (* No procdesc to specialize: either non-existant or not defined *) ) )
         | None ->
             instr )
     | _ ->
@@ -182,9 +193,40 @@ let replace_with_specialize_methods cfg _node instr =
       instr
 
 
-let process cfg =
-  let process_pdesc _proc_name proc_desc =
-    ClosuresSubstitution.process_closure_param proc_desc ;
-    Procdesc.replace_instrs proc_desc ~f:(replace_with_specialize_methods cfg) |> ignore
-  in
-  Procname.Hash.iter process_pdesc cfg
+let process proc_desc =
+  (* For each procdesc:
+     1. If we are a specialized pdesc:
+      1.1. Copy original procdesc
+      1.2. Update blocks' uses (at instruction level)
+     2. Update calls' closure arguments (at expression level)
+     3. Update calls with closures as arguments to specialized calls
+     4. Create procdescs for specialized callees if they don't already exist
+     5. Update closure calls (at expression level)
+  *)
+  (* Create a specialized copy of proc_desc's orig_pdesc (if it exists).
+     Specialize at instruction level: [foo(f)] when [f = block] replaces every
+     use of [f] (calls and as argument) with the corresponding [block] and its
+     captured arguments. *)
+  ClosureSubstSpecializedMethod.process proc_desc ;
+  (* Replace each indirect use of closure (as argument) with a direct use of closure.
+     e.g. [foo(a, b, c)] when b = Closure(closure_b, ...) becomes
+          [foo(a, Closure(closure_b, ...), c)] *)
+  ClosuresSubstitution.process_closure_param proc_desc ;
+  (* Replace every function call taking a known closure as argument with specialized calls
+     and create the corresponding (empty for now) specialized pdescs.
+     e.g. [foo(a, Closure(closure_b, captured_args...), c)] becomes
+      [foo\[closure_b\](a, captured_args..., Closure(closure_b, captured_args...), c)]
+      and the pdesc for [foo\[closure_b\]\ is created.
+     Note:
+      Captured args placement in the list of args depends on the set ordering).
+      The newly created pdescs (stored in [need_specalization]) will be filled out by
+      [ClosureSubstSpecializedMethod.process] above when it will be their turn to be
+      (pre)processed.
+  *)
+  Procdesc.replace_instrs proc_desc ~f:(fun _node instr -> replace_with_specialize_methods instr)
+  |> ignore ;
+  (* Replace [ident] calls by [closure] calls with added [closure]'s arguments
+     if [ident = closure].
+     e.g. [foo(a, b, c)] when [foo = Closure(closure_foo, captured_args...)] becomes
+          [closure_foo(captured_args..., a, b, c)] *)
+  ClosuresSubstitution.process_closure_call proc_desc

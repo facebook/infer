@@ -702,13 +702,42 @@ let create_node pdesc loc kind instrs =
   create_node_from_not_reversed pdesc loc kind (Instrs.of_list instrs)
 
 
-let shallow_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc =
-  dest_pdesc.nodes <- orig_pdesc.nodes ;
-  dest_pdesc.nodes_num <- orig_pdesc.nodes_num ;
-  dest_pdesc.start_node <- orig_pdesc.start_node ;
-  dest_pdesc.exit_node <- orig_pdesc.exit_node ;
-  dest_pdesc.loop_heads <- orig_pdesc.loop_heads ;
-  dest_pdesc.wto <- orig_pdesc.wto
+let deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc =
+  let pname = dest_pdesc.start_node.pname in
+  let memoized = Hashtbl.create (List.length orig_pdesc.nodes) in
+  let rec copy_node node =
+    let node' =
+      match Hashtbl.find_opt memoized node with
+      | Some node' ->
+          node'
+      | None ->
+          let node' =
+            {node with Node.pname; preds= []; succs= []; instrs= Instrs.copy node.Node.instrs}
+          in
+          Hashtbl.add memoized node node' ;
+          node'.Node.succs <- List.map node.Node.succs ~f:copy_node ;
+          node'.Node.preds <- List.map node.Node.preds ~f:copy_node ;
+          node'
+    in
+    node'
+  in
+  dest_pdesc.nodes <- List.map orig_pdesc.nodes ~f:copy_node ;
+  let find_or_die node =
+    match Hashtbl.find_opt memoized node with
+    | None ->
+        L.die InternalError
+          "Trying to deep copy pdesc from %a to %a. Node %a is not part of origin pdesc's nodes. \
+           Origin pdesc might be empty or misconstructed"
+          Node.pp node Procname.pp node.Node.pname Procname.pp pname
+    | Some node' ->
+        node'
+  in
+  dest_pdesc.exit_node <- find_or_die orig_pdesc.exit_node ;
+  dest_pdesc.start_node <- find_or_die orig_pdesc.start_node ;
+  dest_pdesc.loop_heads <-
+    Option.map orig_pdesc.loop_heads ~f:(fun loop_heads ->
+        NodeSet.map (fun loop_head -> find_or_die loop_head) loop_heads ) ;
+  dest_pdesc.nodes_num <- orig_pdesc.nodes_num
 
 
 (** Set the successor and exception nodes. If this is a join node right before the exit node, add an
