@@ -21,6 +21,7 @@ CLANG_PREFIX = @CLANG_PREFIX@
 CMAKE = @CMAKE@
 CPATH = @CPATH@
 CPP = @CPP@
+CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@
 # this is useless but autoconf is picky...
@@ -75,6 +76,7 @@ OPAMSWITCH = @OPAMSWITCH@
 OTOOL = @OTOOL@
 PATCHELF = @PATCHELF@
 PATH = @PATH@
+PLATFORM_ENV = @PLATFORM_ENV@
 prefix = @prefix@
 REBAR3 = @REBAR3@
 SDKROOT = @SDKROOT@
@@ -95,10 +97,13 @@ LN_S = @LN_S@ -v
 endif
 
 # Export parts of the config relevant to running other programs
-export PATH := $(PATH)
-export CPATH := $(CPATH)
-export LIBRARY_PATH := $(LIBRARY_PATH)
 export CAML_LD_LIBRARY_PATH := $(CAML_LD_LIBRARY_PATH)
-export OPAMROOT := $(OPAMROOT)
-export SDKROOT := $(SDKROOT)
+export CFLAGS := $(CFLAGS)
+export CPATH := $(CPATH)
+export CPPFLAGS := $(CPPFLAGS)
 export KOTLIN_HOME := $(KOTLIN_HOME)
+export LIBRARY_PATH := $(LIBRARY_PATH)
+export OPAMROOT := $(OPAMROOT)
+export PATH := $(PATH)
+export PLATFORM_ENV := $(PLATFORM_ENV)
+export SDKROOT := $(SDKROOT)

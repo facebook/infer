@@ -11,7 +11,7 @@ include $(TESTS_DIR)/base.make
 toplevel.exp.test: $(INFERTOP_BIN) $(SCRIPT_DIR)/infer_repl \
                    $(SCRIPT_DIR)/toplevel_init $(INFER_DIR)/tests/repl/infer_batch_script.mltop
 	$(QUIET)$(call silent_on_success,Testing infer OCaml REPL,\
-	$(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.mltop | \
+	LD_LIBRARY_PATH=$(LIBRARY_PATH) $(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.mltop | \
 	sed -e 's#^The files .*/extLib.cma$$#The files [...]/extLib.cma#' \
 	    -e 's#^and .*/infertop.bc.exe$$#and [...]/infertop.bc.exe#'	\
 	 > $@)

@@ -796,7 +796,15 @@ install-with-libs: install
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/infer/libso
 ifneq ($(LDD),no)
 ifneq ($(PATCHELF),no)
-#	this sort of assumes Linux
+ifdef PLATFORM_ENV
+	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
+ifeq ($(BUILD_C_ANALYZERS),yes)
+	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib
+endif   # BUILD_C_ANALYZERS
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
+endif 	# IS_FACEBOOK_TREE
+else	# PLATFORM_ENV
 #	figure out where libgmp, libmpfr, and libsqlite3 are using ldd
 	set -x; \
 	for lib in $$($(LDD) $(INFER_BIN) \
@@ -811,11 +819,12 @@ ifneq ($(PATCHELF),no)
 	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif
-else # ldd found but not patchelf
+endif	# IS_FACEBOOK_TREE
+endif 	# PLATFORM_ENV
+else 	# PATCHELF
 	echo "ERROR: ldd (Linux?) found but not patchelf, please install patchelf" >&2; exit 1
-endif
-else # ldd not found
+endif	# PATCHELF
+else    # LDD
 ifneq ($(OTOOL),no)
 ifneq ($(INSTALL_NAME_TOOL),no)
 #	this sort of assumes osx
@@ -837,14 +846,14 @@ ifneq ($(INSTALL_NAME_TOOL),no)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
 	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif
-else # install_name_tool not found
+endif	# IS_FACEBOOK_TREE
+else 	# INSTALL_NAME_TOOL
 	echo "ERROR: otool (OSX?) found but not install_name_tool, please install install_name_tool" >&2; exit 1
-endif
-else # otool not found
+endif	# INSTALL_NAME_TOOL
+else 	# OTOOL
 	echo "ERROR: need ldd + patchelf (Linux) or otool + install_name_tool (OSX) available" >&2; exit 1
-endif
-endif # ldd
+endif	# OTOOL
+endif 	# LDD
 
 # Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
 .PHONY: ocaml_clean

@@ -5,41 +5,11 @@
 
 (library
  (name NullsafeUnitTests)
- (modules
-  (:standard \ inline_test_runner_NullsafeUnitTests))
+ (public_name infer.NullsafeUnitTests)
  (flags
   (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
     -open IBase -open Nullsafe))
  (libraries oUnit core IStdlib ATDGenerated IBase IR Nullsafe)
  (preprocess
-  (pps ppx_compare ppx_expect ppx_inline_test -- -inline-test-lib
-    NullsafeUnitTests))
- ;; Normally we would just add the line below but since we want to be able to give custom link flags
- ;; we need to build the test runner ourselves (see the following stanzas). When dune supports adding
- ;; link flags to the inline_tests stanza we can start using it again (see
- ;; https://github.com/ocaml/dune/issues/1530).
- ; (inline_tests)
- )
-
-;; Note: duplicated code with pulse/unit/dune
-
-(executable
- (name inline_test_runner_NullsafeUnitTests)
- (public_name inline_test_runner_NullsafeUnitTests)
- (modules inline_test_runner_NullsafeUnitTests)
- (libraries ppx_inline_test.runner.lib ppx_expect.evaluator IStdlib
-   NullsafeUnitTests)
- (flags
-  (:standard -open IStdlib -open IStd))
- (link_flags -linkall))
-
-;; Note: duplicated code with pulse/unit/dune
-
-(rule
- (alias runtest)
- (deps %{bin:inline_test_runner_NullsafeUnitTests})
- ;; run the tests and show a diff between expected and actual if they fail; in that case, rerun the
- ;; case to update the source file in place.
- (action
-  (system
-    "./inline_test_runner_NullsafeUnitTests.exe inline-test-runner NullsafeUnitTests -source-tree-root %{project_root}/../.. -strict -diff-cmd 'diff -u --label expected --label actual' || { printf '\n\n!!! Pulse unit tests changed\n' ; ./inline_test_runner_NullsafeUnitTests.exe inline-test-runner NullsafeUnitTests -source-tree-root %{project_root}/../.. -strict -in-place && exit 1 ; }")))
+  (pps ppx_compare ppx_expect ppx_inline_test))
+ (inline_tests))

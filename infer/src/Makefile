@@ -79,27 +79,27 @@ src_build_common: $(SRC_BUILD_COMMON)
 
 .PHONY: runtest
 runtest: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(DUNE_BUILD) @runtest --auto-promote
+	BYTE_MODE=true LD_LIBRARY_PATH=$(LIBRARY_PATH) $(DUNE_BUILD) @runtest --auto-promote
 
 # we want dune to format test files *after* having promoted them
 .PHONY: runtest_formatted
 runtest_formatted: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest
-	$(DUNE_BUILD) @fmt --auto-promote
+	BYTE_MODE=true $(DUNE_BUILD) @fmt --auto-promote
 
 .PHONY: test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest_formatted
-	$(DUNE_BUILD) \
+	BYTE_MODE=true $(DUNE_BUILD) \
 	  $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS)) \
 	  scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe
 
 .PHONY: unit
 unit: runtest test
 	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
-	$(QUIET)INFER_ARGS=--results-dir^infer-out-unit-tests $(INFERUNIT_BIN)
+	$(QUIET)LD_LIBRARY_PATH=$(LIBRARY_PATH) INFER_ARGS=--results-dir^infer-out-unit-tests $(INFERUNIT_BIN)
 
 .PHONY: build_all
 build_all: $(SRC_BUILD_COMMON)
-	$(DUNE_BUILD) @all
+	BYTE_MODE=true $(DUNE_BUILD) @all
 
 .PHONY: doc
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
@@ -118,16 +118,16 @@ check: src_build_common
 # trigger a rebuild since it has only partial view on the dependencies.
 
 .PHONY: $(INFER_BIN).exe
-$(INFER_BIN).exe:  $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+$(INFER_BIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(QUIET)$(DUNE_BUILD) $(INFER_CONFIG_TARGETS)
 
 .PHONY: $(INFER_BIN).bc.exe
-$(INFER_BIN).bc.exe:  $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)$(DUNE_BUILD) $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS))
+$(INFER_BIN).bc.exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+	$(QUIET)BYTE_MODE=true $(DUNE_BUILD) $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS))
 
 .PHONY: $(INFERTOP_BIN) toplevel
 $(INFERTOP_BIN): $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(DUNE_BUILD) $(INFERTOP_MAIN).bc.exe
+	BYTE_MODE=true $(DUNE_BUILD) $(INFERTOP_MAIN).bc.exe
 toplevel: $(INFERTOP_BIN)
 
 .PHONY: $(CHECKCOPYRIGHT_BIN) checkCopyright

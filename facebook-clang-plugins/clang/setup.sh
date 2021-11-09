@@ -21,6 +21,8 @@ CLANG_PREBUILD_PATCHES=(
 CLANG_PREFIX="$SCRIPT_DIR/install"
 CLANG_INSTALLED_VERSION_FILE="$SCRIPT_DIR/installed.version"
 PATCH=${PATCH:-patch}
+PATCHELF=${PATCHELF:-patchelf}
+PLATFORM_ENV=${PLATFORM_ENV:-}
 STRIP=${STRIP:-strip}
 CMAKE=${CMAKE:-cmake}
 
@@ -157,11 +159,15 @@ fi
 
 platform=`uname`
 
+if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
+    CXXFLAGS="$CXXFLAGS -D _GLIBCXX_INCLUDE_NEXT_C_HEADERS -Wl,-rpath-link,${PLATFORM_ENV}/lib"
+fi
+
 CMAKE_ARGS=(
   -DCMAKE_INSTALL_PREFIX="$CLANG_PREFIX"
   -DCMAKE_BUILD_TYPE=Release
   -DCMAKE_C_FLAGS="$CFLAGS $CMAKE_C_FLAGS"
-  -DCMAKE_CXX_FLAGS="$CXXFLAGS $CMAKE_CXX_FLAGS"
+  -DCMAKE_CXX_FLAGS="$CXXFLAGS $CPPFLAGS $CMAKE_CXX_FLAGS"
   -DLLVM_ENABLE_ASSERTIONS=Off
   -DLLVM_ENABLE_EH=On
   -DLLVM_ENABLE_RTTI=On
@@ -252,6 +258,11 @@ popd # $TMP
 # brutally strip everything, ignore errors
 set +e
 find "$CLANG_PREFIX"/{bin,lib} -type f -exec "$STRIP" -x \{\} \;
+
+if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]]; then
+    # patch binaries to use platform_env rpath, ignore errors
+    find "$CLANG_PREFIX"/{bin,lib} -type f -exec "$PATCHELF" --set-rpath "${PLATFORM_ENV}/lib" \{\} \;
+fi
 set -e
 
 echo "testing installed clang"
