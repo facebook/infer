@@ -13,7 +13,6 @@ INFER_OPTIONS = --biabduction-only --dump-duplicate-symbols --debug-exceptions -
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \
-  field_superclass/B.m \
   memory_leaks_benchmark/MemoryLeakRaii.m \
   memory_leaks_benchmark/NSString_models_tests.m \
   memory_leaks_benchmark/NSData_models_tests.m \
@@ -55,7 +54,6 @@ SOURCES_DEFAULT = \
   taint/viewController.m \
 
 SOURCES_BUCKET_ALL = \
-  field_superclass/field.c \
   global_const/global_const.m \
   initialization/compound_literal.c \
   memory_leaks_benchmark/RetainCycleStaticVar.m \
@@ -79,7 +77,7 @@ SOURCES_BUCKET_ALL = \
   warnings/ParameterNotNullableExample.m \
 
 SOURCES_ARC = \
-  retain_cycles/BlockInHeap.m \
+  retain_cycles/*.m \
   initialization/struct_initlistexpr.c \
   memory_leaks_benchmark/CADisplayLinkRetainCycle.m \
   memory_leaks_benchmark/RetainCycleExampleWeak.m \
