@@ -61,7 +61,7 @@ let extlib_if_java = if java then "extlib" else ""
 
 let if_platform_env_and_not_byte_mode s =
   match (Sys.getenv_opt "PLATFORM_ENV", Sys.getenv_opt "BYTE_MODE") with
-  | Some _, None ->
+  | Some pe, None when String.length pe > 0 ->
       s
   | _ ->
       ""
