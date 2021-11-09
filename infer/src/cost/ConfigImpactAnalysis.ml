@@ -672,6 +672,12 @@ module Dom = struct
               (* Otherwise, add callee's name. *)
               add_callee_name ~is_known_expensive:false )
     else astate
+
+
+  let throw_exception astate =
+    { astate with
+      unchecked_callees= UncheckedCallees.empty
+    ; unchecked_callees_cond= UncheckedCalleesCond.empty }
 end
 
 type analysis_data =
@@ -769,6 +775,8 @@ module TransferFunctions = struct
         Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:true config_checks) astate
     | Store {e1= Lvar pvar; e2= Var id} ->
         Dom.store_config pvar id astate
+    | Store {e1= Lvar pvar; e2= Exn _} when Pvar.is_return pvar ->
+        Dom.throw_exception astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
     | Call (_, Const (Cfun callee), _, _, _)
