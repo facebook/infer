@@ -85,7 +85,7 @@ module UncheckedCallee = struct
 
   let compare_callee_name = Procname.compare_name
 
-  type callee = Callee of callee_name | InstanceOf of Typ.t [@@deriving compare] [@@warning "-37"]
+  type callee = Callee of callee_name | InstanceOf of Typ.t [@@deriving compare]
 
   type t =
     { callee: callee
@@ -612,7 +612,13 @@ module Dom = struct
         (UncheckedCalleesCond.replace_location_by_call location ~via:callee callee_summary_cond)
     in
     let add_callee_name ~is_known_expensive =
-      let callee = UncheckedCallee.Callee callee in
+      let callee =
+        match args with
+        | _ :: (Exp.Sizeof {typ}, _) :: _ when Procname.equal callee BuiltinDecl.__instanceof ->
+            UncheckedCallee.InstanceOf typ
+        | _ ->
+            UncheckedCallee.Callee callee
+      in
       join_unchecked_callees
         (UncheckedCallees.singleton (UncheckedCallee.make ~is_known_expensive ~callee location))
         UncheckedCalleesCond.empty
