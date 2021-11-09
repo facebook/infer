@@ -85,14 +85,25 @@ module UncheckedCallee = struct
 
   let compare_callee_name = Procname.compare_name
 
+  type callee = Callee of callee_name | InstanceOf of Typ.t [@@deriving compare] [@@warning "-37"]
+
   type t =
-    { callee: callee_name
+    { callee: callee
     ; is_known_expensive: bool
     ; location: Location.t [@compare.ignore]
     ; call_type: call_type [@compare.ignore] }
   [@@deriving compare]
 
   and call_type = Direct | Indirect of {unchecked: t; via: Procname.t}
+
+  let pp_callee f = function
+    | Callee pname ->
+        Procname.pp f pname
+    | InstanceOf {desc= Tstruct (JavaClass java_class_name)} ->
+        F.fprintf f "instanceof(%s)" (JavaClassName.classname java_class_name)
+    | InstanceOf {desc} ->
+        F.fprintf f "instanceof(%a)" (Typ.pp_desc Pp.text) desc
+
 
   let pp_common ~with_location f {callee; location; call_type} =
     let pp_call_type f () =
@@ -102,7 +113,7 @@ module UncheckedCallee = struct
       | Indirect {via} ->
           F.fprintf f " indirectly via %a" Procname.pp via
     in
-    F.fprintf f "%a is called%a" Procname.pp callee pp_call_type () ;
+    F.fprintf f "%a is called%a" pp_callee callee pp_call_type () ;
     if with_location then F.fprintf f " at %a" Location.pp location
 
 
@@ -113,7 +124,7 @@ module UncheckedCallee = struct
   let pp_without_location_list f unchecked_callees =
     IList.pp_print_list ~max:Config.config_impact_max_callees_to_print
       ~pp_sep:(fun f () -> Format.pp_print_string f ", ")
-      (fun f {callee} -> Format.fprintf f "`%a`" Procname.pp callee)
+      (fun f {callee} -> Format.fprintf f "`%a`" pp_callee callee)
       f unchecked_callees
 
 
@@ -601,6 +612,7 @@ module Dom = struct
         (UncheckedCalleesCond.replace_location_by_call location ~via:callee callee_summary_cond)
     in
     let add_callee_name ~is_known_expensive =
+      let callee = UncheckedCallee.Callee callee in
       join_unchecked_callees
         (UncheckedCallees.singleton (UncheckedCallee.make ~is_known_expensive ~callee location))
         UncheckedCalleesCond.empty
