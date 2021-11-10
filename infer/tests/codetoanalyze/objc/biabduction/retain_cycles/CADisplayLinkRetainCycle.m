@@ -24,7 +24,7 @@
   return self;
 }
 
-- (void)cycle_weak_good {
+- (void)retain_cycle_weak_good {
   __weak __typeof__(self) weakSelf = self;
   _displayLink =
       [CADisplayLink displayLinkWithTarget:weakSelf
@@ -41,13 +41,13 @@
 
 @end
 
-void testCycle() {
+void test_retain_cycle_bad_FN() {
 
   CADisplay* a = [[CADisplay alloc] init];
   CADisplay* b = a;
 }
 
-void testNoCycle() {
+void test_retain_cycle_good() {
 
   CADisplay* a = [[CADisplay alloc] init];
   [a invalidate]; // break the cycle
