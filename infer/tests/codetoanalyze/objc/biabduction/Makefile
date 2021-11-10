@@ -55,7 +55,6 @@ SOURCES_DEFAULT = \
 
 SOURCES_BUCKET_ALL = \
   global_const/global_const.m \
-  initialization/compound_literal.c \
   memory_leaks_benchmark/RetainCycleStaticVar.m \
   npe/blockenum.m \
   npe/nil_param.m \
