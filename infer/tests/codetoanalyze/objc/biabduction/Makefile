@@ -77,7 +77,6 @@ SOURCES_BUCKET_ALL = \
 
 SOURCES_ARC = \
   retain_cycles/*.m \
-  initialization/struct_initlistexpr.c \
   memory_leaks_benchmark/RetainCycleExampleWeak.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
   memory_leaks_benchmark/retain_cycle.m \
