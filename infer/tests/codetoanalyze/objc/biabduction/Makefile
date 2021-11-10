@@ -13,7 +13,6 @@ INFER_OPTIONS = --biabduction-only --dump-duplicate-symbols --debug-exceptions -
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \
-  memory_leaks_benchmark/MemoryLeakRaii.m \
   memory_leaks_benchmark/NSString_models_tests.m \
   memory_leaks_benchmark/NSData_models_tests.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketing.m \
