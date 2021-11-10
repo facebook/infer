@@ -97,6 +97,7 @@ codetoanalyze/cpp/performance/std_array.cpp, loop_over_arr_max_size_constant, 60
 codetoanalyze/cpp/performance/std_array.cpp, loop_over_arr_size_constant, 35,  OnUIThread:false, []
 codetoanalyze/cpp/performance/string_test.cpp, call_google_strlen_linear, 2 + str->strlen.ub,  OnUIThread:false, [{str->strlen.ub},Modeled call to google::StrLen]
 codetoanalyze/cpp/performance/string_test.cpp, call_google_strlen_with_loop_linear, 4 + 3 ⋅ str->strlen.ub + str->strlen.ub + 2 ⋅ (str->strlen.ub + 1),  OnUIThread:false, [{str->strlen.ub + 1},Loop,{str->strlen.ub},Modeled call to google::StrLen,{str->strlen.ub},Loop]
+codetoanalyze/cpp/performance/string_test.cpp, iterate_over_string, 7 + 10 ⋅ str->elements.length.ub + 18 ⋅ (str->elements.length.ub + 1),  OnUIThread:false, [{str->elements.length.ub + 1},Loop,{str->elements.length.ub},Loop]
 codetoanalyze/cpp/performance/string_test.cpp, string_compare_linear, 43 + 12 ⋅ a->cpp.vector_elem.length.ub + (a->cpp.vector_elem.length.ub + 1),  OnUIThread:false, [{a->cpp.vector_elem.length.ub + 1},Call to std::operator!=<b7ca98c5140c72c>,Call to std::operator==<std::allocator<char>_>,Loop,{a->cpp.vector_elem.length.ub},Call to std::operator!=<b7ca98c5140c72c>,Call to std::operator==<std::allocator<char>_>,Loop]
 codetoanalyze/cpp/performance/unordered_map.cpp, add_element_to_map_at_linear_FN, 5,  OnUIThread:false, []
 codetoanalyze/cpp/performance/unordered_map.cpp, add_element_to_map_insert_linear_FN, 3,  OnUIThread:false, []

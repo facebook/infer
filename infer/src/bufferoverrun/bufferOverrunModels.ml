@@ -1738,7 +1738,7 @@ let iter_end _ str = List.exists ~f:(String.equal str) ["end"; "cend"; "rend"; "
 
 let std_container _ str =
   List.exists ~f:(String.equal str)
-    ["deque"; "list"; "map"; "set"; "unordered_map"; "unordered_set"; "vector"]
+    ["basic_string"; "deque"; "list"; "map"; "set"; "unordered_map"; "unordered_set"; "vector"]
 
 
 (* libcpp - native library for mac *)
@@ -1969,27 +1969,6 @@ module Call = struct
       ; -"std" &:: "basic_string" < capt_typ &+...>:: "empty" $ capt_arg $--> StdBasicString.empty
       ; -"std" &:: "basic_string" < capt_typ &+...>:: "length" $ capt_arg $--> StdBasicString.length
       ; -"std" &:: "basic_string" < capt_typ &+...>:: "size" $ capt_arg $--> StdBasicString.length
-      ; -"std" &:: "basic_string" &::.*--> no_model
-      ; -"std" &:: "operator!=" $ any_arg_of_prim_typ char_ptr
-        $+ any_arg_of_typ (-"std" &:: "basic_string")
-        $--> by_value Dom.Val.Itv.unknown_bool
-      ; -"std" &:: "operator!="
-        $ any_arg_of_typ (-"std" &:: "basic_string")
-        $+ any_arg_of_prim_typ char_ptr $--> by_value Dom.Val.Itv.unknown_bool
-      ; -"std" &:: "operator!="
-        $ any_arg_of_typ (-"std" &:: "basic_string")
-        $+ any_arg_of_typ (-"std" &:: "basic_string")
-        $--> by_value Dom.Val.Itv.unknown_bool
-      ; -"std" &:: "operator==" $ any_arg_of_prim_typ char_ptr
-        $+ any_arg_of_typ (-"std" &:: "basic_string")
-        $--> by_value Dom.Val.Itv.unknown_bool
-      ; -"std" &:: "operator=="
-        $ any_arg_of_typ (-"std" &:: "basic_string")
-        $+ any_arg_of_prim_typ char_ptr $--> by_value Dom.Val.Itv.unknown_bool
-      ; -"std" &:: "operator=="
-        $ any_arg_of_typ (-"std" &:: "basic_string")
-        $+ any_arg_of_typ (-"std" &:: "basic_string")
-        $--> by_value Dom.Val.Itv.unknown_bool
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
         (*             Models for c++ iterators <begin>           *)
       ; -"std" &::+ std_container &::+ iter_begin $ any_arg $+ capt_exp

@@ -25,3 +25,8 @@ int string_compare_linear(const std::string& a, const std::string& b) {
   }
   return 1;
 }
+
+void iterate_over_string(const std::string& str) {
+  for (char const& c : str) {
+  }
+}
