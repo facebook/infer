@@ -16,12 +16,14 @@ CVPixelBufferRef MyCVPixelBufferCreate();
 
 @implementation CoreVideoExample
 
-- (void)cvpixelbuffer_released_no_leak {
+- (void)cvpixelbuffer_released_no_leak_good {
   CVPixelBufferRef pxbuffer = MyCVPixelBufferCreate();
   CVPixelBufferRelease(pxbuffer);
 }
 
-- (void)cvpixelbuffer_not_released_leak {
+// We have not modelled CVPixelBufferRef, so we don't get the leak.
+// This test documents this, in case we want to add it in the future.
+- (void)cvpixelbuffer_not_released_leak_bad_FN {
   CVPixelBufferRef pxbuffer = MyCVPixelBufferCreate();
 }
 @end
