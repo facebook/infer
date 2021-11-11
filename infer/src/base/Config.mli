@@ -544,6 +544,8 @@ val pulse_recency_limit : int
 
 val pulse_scuba_logging : bool
 
+val pulse_skip_procedures : Str.regexp option
+
 val pulse_widen_threshold : int
 
 val pulse_nullsafe_report_npe : bool

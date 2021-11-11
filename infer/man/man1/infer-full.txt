@@ -1120,6 +1120,10 @@ OPTIONS
            issues will be reported regardless the presence of unknown code       
     See also infer-analyze(1).
 
+       --pulse-skip-procedures regex
+           Regex of procedures that should not be analyzed by Pulse.       
+    See also infer-analyze(1).
+
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
            functions. A different implementation of "impurity". (Conversely:
@@ -2135,6 +2139,9 @@ INTERNAL OPTIONS
        --pulse-scuba-logging
            Activates: Log unknown functions to scuba in pulse checkers; also
            sets --scuba-logging. (Conversely: --no-pulse-scuba-logging)
+
+       --pulse-skip-procedures-reset
+           Cancel the effect of --pulse-skip-procedures.
 
        --pulse-widen-threshold int
            Under-approximate after int loop iterations

@@ -530,26 +530,34 @@ let initial tenv proc_desc =
     , PathContext.initial ) ]
 
 
+let should_analyze proc_desc =
+  let proc_name = Procname.to_unique_id (Procdesc.get_proc_name proc_desc) in
+  let f regex = not (Str.string_match regex proc_name 0) in
+  Option.value_map Config.pulse_skip_procedures ~f ~default:true
+
+
 let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
-  AbstractValue.State.reset () ;
-  match
-    DisjunctiveAnalyzer.compute_post analysis_data
-      ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
-      proc_desc
-  with
-  | Some (posts, non_disj_astate) ->
-      (* forget path contexts, we don't propagate them across functions *)
-      let posts = List.map ~f:fst posts in
-      with_debug_exit_node proc_desc ~f:(fun () ->
-          let objc_nil_summary = PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_desc in
-          let summary =
-            PulseSummary.of_posts tenv proc_desc err_log
-              (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
-              (Option.to_list objc_nil_summary @ posts)
-              non_disj_astate
-          in
-          report_topl_errors proc_desc err_log summary ;
-          report_unnecessary_copies proc_desc err_log non_disj_astate ;
-          Some summary )
-  | None ->
-      None
+  if should_analyze proc_desc then (
+    AbstractValue.State.reset () ;
+    match
+      DisjunctiveAnalyzer.compute_post analysis_data
+        ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
+        proc_desc
+    with
+    | Some (posts, non_disj_astate) ->
+        (* forget path contexts, we don't propagate them across functions *)
+        let posts = List.map ~f:fst posts in
+        with_debug_exit_node proc_desc ~f:(fun () ->
+            let objc_nil_summary = PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_desc in
+            let summary =
+              PulseSummary.of_posts tenv proc_desc err_log
+                (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
+                (Option.to_list objc_nil_summary @ posts)
+                non_disj_astate
+            in
+            report_topl_errors proc_desc err_log summary ;
+            report_unnecessary_copies proc_desc err_log non_disj_astate ;
+            Some summary )
+    | None ->
+        None )
+  else None

@@ -2177,6 +2177,12 @@ and pulse_report_latent_issues =
      Report latent issues instead of waiting for them to become concrete."
 
 
+and pulse_skip_procedures =
+  CLOpt.mk_string_opt ~long:"pulse-skip-procedures"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
+
+
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
@@ -3479,6 +3485,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
+
+and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 
 and pulse_scuba_logging = !pulse_scuba_logging
 

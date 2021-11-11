@@ -353,6 +353,9 @@ OPTIONS
            --pulse-report-ignore-unknown-java-methods-patterns-reset, all
            issues will be reported regardless the presence of unknown code
 
+       --pulse-skip-procedures regex
+           Regex of procedures that should not be analyzed by Pulse.
+
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
            functions. A different implementation of "impurity". (Conversely:
