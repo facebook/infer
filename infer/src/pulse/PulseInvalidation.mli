@@ -51,4 +51,4 @@ type must_be_valid_reason =
 
 val pp_must_be_valid_reason : F.formatter -> must_be_valid_reason option -> unit
 
-val issue_type_of_cause : t -> must_be_valid_reason option -> IssueType.t
+val issue_type_of_cause : latent:bool -> t -> must_be_valid_reason option -> IssueType.t

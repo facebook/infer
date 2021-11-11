@@ -63,6 +63,6 @@ val get_message : t -> string
 
 val get_location : t -> Location.t
 
-val get_issue_type : t -> IssueType.t
+val get_issue_type : latent:bool -> t -> IssueType.t
 
 val get_trace : t -> Errlog.loc_trace

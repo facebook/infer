@@ -86,6 +86,16 @@ module Unsafe : sig
     -> (string -> string, F.formatter, unit, string) format4
     -> t
 
+  val register_with_latent :
+       ?enabled:bool
+    -> ?hum:string
+    -> id:string
+    -> user_documentation:string
+    -> severity
+    -> Checker.t
+    -> latent:bool
+    -> t
+
   val all_issues : unit -> t list
 
   val set_enabled : t -> bool -> unit
@@ -256,6 +266,15 @@ end = struct
       ~id:issue_type ~visibility:User Error Cost ~user_documentation:(Some user_documentation)
 
 
+  let register_with_latent ?enabled ?hum ~id ~user_documentation default_severity checker =
+    let issue = register ?enabled ?hum ~id ~user_documentation default_severity checker in
+    let user_documentation = "See [" ^ id ^ "](#" ^ String.lowercase id ^ ")." in
+    let latent_issue =
+      register ~enabled:false ?hum ~id:(id ^ "_LATENT") ~user_documentation default_severity checker
+    in
+    fun ~latent -> if latent then latent_issue else issue
+
+
   let all_issues () = IssueSet.elements !all_issues
 end
 
@@ -304,17 +323,17 @@ let _bad_pointer_comparison =
 
 
 let bad_key =
-  register ~id:"BAD_KEY" Error Pulse
+  register_with_latent ~id:"BAD_KEY" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_KEY.md"]
 
 
 let bad_map =
-  register ~id:"BAD_MAP" Error Pulse
+  register_with_latent ~id:"BAD_MAP" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_MAP.md"]
 
 
 let bad_record =
-  register ~id:"BAD_RECORD" Error Pulse
+  register_with_latent ~id:"BAD_RECORD" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_RECORD.md"]
 
 
@@ -446,7 +465,7 @@ let config_impact_analysis_strict =
 
 
 let constant_address_dereference =
-  register ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
+  register_with_latent ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
 
@@ -816,42 +835,42 @@ let mutable_local_variable_in_component_file =
 
 
 let nil_block_call =
-  register ~id:"NIL_BLOCK_CALL" Error Pulse
+  register_with_latent ~id:"NIL_BLOCK_CALL" Error Pulse
     ~user_documentation:"Calling a nil block is an error in Objective-C."
 
 
 let nil_insertion_into_collection =
-  register ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+  register_with_latent ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
     ~user_documentation:"Inserting nil into a collection is an error in Objective-C."
 
 
 let nil_messaging_to_non_pod =
-  register ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
+  register_with_latent ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
 
 
 let no_match_of_rhs =
-  register ~id:"NO_MATCH_OF_RHS" Error Pulse
+  register_with_latent ~id:"NO_MATCH_OF_RHS" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCH_OF_RHS.md"]
 
 
 let no_matching_case_clause =
-  register ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
+  register_with_latent ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_CASE_CLAUSE.md"]
 
 
 let no_matching_function_clause =
-  register ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
+  register_with_latent ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_FUNCTION_CLAUSE.md"]
 
 
 let no_true_branch_in_if =
-  register ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
+  register_with_latent ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_TRUE_BRANCH_IN_IF.md"]
 
 
 let no_matching_branch_in_try =
-  register ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
+  register_with_latent ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
 
 
@@ -861,12 +880,12 @@ let null_dereference =
 
 
 let nullptr_dereference =
-  register ~id:"NULLPTR_DEREFERENCE" ~hum:"Null Dereference" Error Pulse
+  register_with_latent ~id:"NULLPTR_DEREFERENCE" ~hum:"Null Dereference" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let optional_empty_access =
-  register ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
+  register_with_latent ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
@@ -890,7 +909,7 @@ let premature_nil_termination =
 
 
 let pulse_memory_leak =
-  register ~id:"MEMORY_LEAK" Error Pulse
+  register_with_latent ~id:"MEMORY_LEAK" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
 
 
@@ -943,7 +962,7 @@ let sql_injection_risk =
 
 
 let stack_variable_address_escape =
-  register ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
+  register_with_latent ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
 
 
@@ -1004,13 +1023,14 @@ let uninitialized_value =
 
 
 let uninitialized_value_pulse =
-  register ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
+  register_with_latent ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
     ~user_documentation:
       "See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
 
 
 let unnecessary_copy_pulse =
-  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY" Error Pulse ~hum:"Unnecessary Copy"
+  register_with_latent ~enabled:false ~id:"PULSE_UNNECESSARY_COPY" Error Pulse
+    ~hum:"Unnecessary Copy"
     ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
 
 
@@ -1020,17 +1040,17 @@ let unreachable_code_after =
 
 
 let use_after_delete =
-  register ~id:"USE_AFTER_DELETE" Error Pulse
+  register_with_latent ~id:"USE_AFTER_DELETE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_DELETE.md"]
 
 
 let use_after_free =
-  register ~id:"USE_AFTER_FREE" Error Pulse
+  register_with_latent ~id:"USE_AFTER_FREE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_FREE.md"]
 
 
 let use_after_lifetime =
-  register ~id:"USE_AFTER_LIFETIME" Error Pulse
+  register_with_latent ~id:"USE_AFTER_LIFETIME" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_LIFETIME.md"]
 
 
@@ -1095,7 +1115,7 @@ let untrusted_variable_length_array =
 
 
 let vector_invalidation =
-  register ~id:"VECTOR_INVALIDATION" Error Pulse
+  register_with_latent ~id:"VECTOR_INVALIDATION" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/VECTOR_INVALIDATION.md"]
 
 

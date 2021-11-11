@@ -395,30 +395,30 @@ let get_trace = function
       [Errlog.make_trace_element nesting location "copied here" []]
 
 
-let get_issue_type = function
+let get_issue_type ~latent = function
   | AccessToInvalidAddress {invalidation; must_be_valid_reason} ->
-      Invalidation.issue_type_of_cause invalidation must_be_valid_reason
+      Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
   | MemoryLeak _ ->
-      IssueType.pulse_memory_leak
+      IssueType.pulse_memory_leak ~latent
   | ErlangError (Badkey _) ->
-      IssueType.bad_key
+      IssueType.bad_key ~latent
   | ErlangError (Badmap _) ->
-      IssueType.bad_map
+      IssueType.bad_map ~latent
   | ErlangError (Badmatch _) ->
-      IssueType.no_match_of_rhs
+      IssueType.no_match_of_rhs ~latent
   | ErlangError (Badrecord _) ->
-      IssueType.bad_record
+      IssueType.bad_record ~latent
   | ErlangError (Case_clause _) ->
-      IssueType.no_matching_case_clause
+      IssueType.no_matching_case_clause ~latent
   | ErlangError (Function_clause _) ->
-      IssueType.no_matching_function_clause
+      IssueType.no_matching_function_clause ~latent
   | ErlangError (If_clause _) ->
-      IssueType.no_true_branch_in_if
+      IssueType.no_true_branch_in_if ~latent
   | ErlangError (Try_clause _) ->
-      IssueType.no_matching_branch_in_try
+      IssueType.no_matching_branch_in_try ~latent
   | ReadUninitializedValue _ ->
-      IssueType.uninitialized_value_pulse
+      IssueType.uninitialized_value_pulse ~latent
   | StackVariableAddressEscape _ ->
-      IssueType.stack_variable_address_escape
+      IssueType.stack_variable_address_escape ~latent
   | UnnecessaryCopy _ ->
-      IssueType.unnecessary_copy_pulse
+      IssueType.unnecessary_copy_pulse ~latent

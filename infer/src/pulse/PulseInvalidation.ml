@@ -74,32 +74,32 @@ let pp_must_be_valid_reason f = function
       F.fprintf f "SelfOfNonPODReturnMethod"
 
 
-let issue_type_of_cause invalidation must_be_valid_reason =
+let issue_type_of_cause ~latent invalidation must_be_valid_reason =
   match invalidation with
   | CFree | CustomFree _ ->
-      IssueType.use_after_free
+      IssueType.use_after_free ~latent
   | ConstantDereference i when IntLit.iszero i -> (
     match must_be_valid_reason with
     | None ->
-        IssueType.nullptr_dereference
+        IssueType.nullptr_dereference ~latent
     | Some BlockCall ->
-        IssueType.nil_block_call
+        IssueType.nil_block_call ~latent
     | Some InsertionIntoCollectionKey | Some InsertionIntoCollectionValue ->
-        IssueType.nil_insertion_into_collection
+        IssueType.nil_insertion_into_collection ~latent
     | Some (SelfOfNonPODReturnMethod _) ->
-        IssueType.nil_messaging_to_non_pod )
+        IssueType.nil_messaging_to_non_pod ~latent )
   | ConstantDereference _ ->
-      IssueType.constant_address_dereference
+      IssueType.constant_address_dereference ~latent
   | CppDelete | CppDeleteArray ->
-      IssueType.use_after_delete
+      IssueType.use_after_delete ~latent
   | EndIterator ->
-      IssueType.vector_invalidation
+      IssueType.vector_invalidation ~latent
   | GoneOutOfScope _ ->
-      IssueType.use_after_lifetime
+      IssueType.use_after_lifetime ~latent
   | OptionalEmpty ->
-      IssueType.optional_empty_access
+      IssueType.optional_empty_access ~latent
   | JavaIterator _ | StdVector _ ->
-      IssueType.vector_invalidation
+      IssueType.vector_invalidation ~latent
 
 
 let isl_equiv v1 v2 =
