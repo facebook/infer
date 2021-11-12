@@ -134,21 +134,21 @@
 
 @end
 
-void strongcycle2() {
+void strongcycle2_bad() {
   Parent* parent = [[Parent alloc] init];
   Child* child = [[Child alloc] init];
   [parent setChild:child];
   [child setParent:parent];
 }
 
-void weakcycle2() {
+void weakcycle2_good() {
   ParentW* parent = [[ParentW alloc] init];
   ChildW* child = [[ChildW alloc] init];
   [parent setChild:child];
   [child setParent:parent];
 }
 
-void unsafeunretainedcycle2() {
+void unsafeunretainedcycle2_good() {
   ParentUU* parent = [[ParentUU alloc] init];
   ChildUU* child = [[ChildUU alloc] init];
   [parent setChild:child];
