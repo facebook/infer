@@ -7,7 +7,10 @@
 
 #import <Foundation/Foundation.h>
 
-void allocAndReleaseInBlock() {
+// We don't treat properly the fact that the observer is released in a callback,
+// however we don't report a leak here anyway because observer is passed to
+// CFRunLoopAddObserver.
+void allocAndReleaseInBlockNoLeakOk() {
   void (^callback)(CFRunLoopObserverRef obs, CFRunLoopActivity activity) =
       ^(CFRunLoopObserverRef obs, CFRunLoopActivity activity) {
         // We should check if the object is released properly, see

@@ -16,7 +16,6 @@ SOURCES_DEFAULT = \
   memory_leaks_benchmark/NSString_models_tests.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketing.m \
   memory_leaks_benchmark/RetainCycleLength3.m \
-  memory_leaks_benchmark/ReleasedInBlock.m \
   npe/dynamic_dispatch.m \
   npe/Fraction.m \
   npe/NPD_core_foundation.m \
