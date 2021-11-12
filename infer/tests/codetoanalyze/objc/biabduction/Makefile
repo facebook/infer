@@ -14,7 +14,6 @@ INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \
   memory_leaks_benchmark/NSString_models_tests.m \
-  memory_leaks_benchmark/RetainReleaseExampleBucketing.m \
   npe/dynamic_dispatch.m \
   npe/Fraction.m \
   npe/NPD_core_foundation.m \
@@ -71,7 +70,6 @@ SOURCES_BUCKET_ALL = \
 
 SOURCES_ARC = \
   retain_cycles/*.m \
-  memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
   npe/BoxedNumberExample.m \
   npe/ObjCMethodCallInCondition.m \
   npe/UpdateDict.m \
