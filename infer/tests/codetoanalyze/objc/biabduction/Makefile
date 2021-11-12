@@ -50,7 +50,6 @@ SOURCES_DEFAULT = \
 
 SOURCES_BUCKET_ALL = \
   global_const/global_const.m \
-  memory_leaks_benchmark/RetainCycleStaticVar.m \
   npe/blockenum.m \
   npe/nil_param.m \
   npe/null_returned_by_method.m \
