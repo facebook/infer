@@ -146,8 +146,6 @@ let __new = create_procname "__new"
 
 let __new_array = create_procname "__new_array"
 
-let __objc_alloc = create_procname "__objc_alloc"
-
 let __objc_alloc_no_fail = create_procname "__objc_alloc_no_fail"
 
 let __objc_cast = create_procname "__objc_cast"

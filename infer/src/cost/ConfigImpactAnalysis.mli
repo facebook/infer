@@ -33,12 +33,23 @@ module UncheckedCallees : sig
   val pp_without_location : Format.formatter -> t -> unit
 end
 
+module ClassGateConditions : sig
+  include AbstractDomain.S
+
+  val is_gated : Fields.t -> t -> bool
+end
+
+module GatedClasses :
+  AbstractDomain.MapS with type key = Typ.Name.t and type value = ClassGateConditions.t
+
 module Summary : sig
   type t
 
   val pp : Format.formatter -> t -> unit
 
   val get_config_fields : t -> Fields.t
+
+  val get_gated_classes : t -> GatedClasses.t
 
   val get_unchecked_callees : t -> UncheckedCallees.t
 

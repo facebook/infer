@@ -377,34 +377,21 @@ let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
     JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
 
 
-let get_all_config_fields () =
-  lazy
-    (let all_config_fields = ref ConfigImpactAnalysis.Fields.empty in
-     Summary.OnDisk.iter_specs ~f:(fun summary ->
-         Payloads.config_impact_analysis summary.payloads
-         |> Option.iter ~f:(fun summary ->
-                all_config_fields :=
-                  ConfigImpactAnalysis.Fields.union !all_config_fields
-                    (ConfigImpactAnalysis.Summary.get_config_fields summary) ) ) ;
-     !all_config_fields )
-
-
-let write_config_impact all_config_fields proc_name loc config_impact_opt (outfile : Utils.outfile)
-    =
+let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile) =
   if
     ( ExternalConfigImpactData.is_in_config_data_file proc_name
     || (Config.config_impact_strict_mode && List.is_empty Config.config_impact_strict_mode_paths)
     || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file )
     && is_in_changed_files loc
   then
-    let config_impact_opt =
-      Option.map config_impact_opt
-        ~f:
-          (ConfigImpactAnalysis.Summary.instantiate_unchecked_callees_cond
-             ~all_config_fields:(Lazy.force all_config_fields) )
-    in
-    JsonConfigImpactPrinter.pp outfile.fmt
-      {loc; proc_name; config_impact_opt; is_strict= ConfigImpactAnalysis.strict_mode}
+    if ConfigImpactPostProcess.is_in_gated_classes proc_name then ()
+      (* Ignore reporting methods of gated classes *)
+    else
+      let config_impact_opt =
+        Option.map config_impact_opt ~f:ConfigImpactPostProcess.instantiate_unchecked_callees_cond
+      in
+      JsonConfigImpactPrinter.pp outfile.fmt
+        {loc; proc_name; config_impact_opt; is_strict= ConfigImpactAnalysis.strict_mode}
 
 
 (** Process lint issues of a procedure *)
@@ -414,9 +401,9 @@ let write_lint_issues filters (issues_outf : Utils.outfile) linereader procname 
 
 
 let process_summary proc_name loc ~cost:(cost_opt, costs_outf)
-    ~config_impact:(config_impact_opt, config_impact_outf, all_config_fields) err_log issues_acc =
+    ~config_impact:(config_impact_opt, config_impact_outf) err_log issues_acc =
   write_costs proc_name loc cost_opt costs_outf ;
-  write_config_impact all_config_fields proc_name loc config_impact_opt config_impact_outf ;
+  write_config_impact proc_name loc config_impact_opt config_impact_outf ;
   collect_issues proc_name loc err_log issues_acc
 
 
@@ -424,12 +411,11 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf ~config_impact_out
   let linereader = LineReader.create () in
   let filters = Inferconfig.create_filters () in
   let all_issues = ref [] in
-  let all_config_fields = get_all_config_fields () in
   Summary.OnDisk.iter_report_summaries_from_config
     ~f:(fun proc_name loc cost_opt config_impact_opt err_log ->
       all_issues :=
         process_summary proc_name loc ~cost:(cost_opt, costs_outf)
-          ~config_impact:(config_impact_opt, config_impact_outf, all_config_fields)
+          ~config_impact:(config_impact_opt, config_impact_outf)
           err_log !all_issues ) ;
   all_issues := Issue.sort_filter_issues !all_issues ;
   List.iter
