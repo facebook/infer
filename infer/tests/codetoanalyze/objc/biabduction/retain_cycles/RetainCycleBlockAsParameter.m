@@ -41,7 +41,7 @@ typedef void (^MyHandler)(NSData* newData);
   _data = data;
 }
 
-- (void)fetchNewData {
+- (void)fetchNewData_bad {
   // We retain fetcher
   _fetcher = [[Fetcher alloc] initWithCompletionBlock:^(NSData* newData) {
     // fetcher retains us
