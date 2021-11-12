@@ -24,7 +24,8 @@
 
 @implementation CViewController
 
-- (void)setCaptureInteractionController:(CaptureController*)captureController {
+- (void)setCaptureInteractionController_bad:
+    (CaptureController*)captureController {
   if (_captureController != captureController) {
     _captureController.delegate = nil;
     _captureController = captureController;

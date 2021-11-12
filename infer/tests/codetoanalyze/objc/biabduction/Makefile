@@ -76,7 +76,6 @@ SOURCES_ARC = \
   memory_leaks_benchmark/RetainCycleExampleWeak.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
   memory_leaks_benchmark/RetainCyclePropertyInProtocol.m \
-  memory_leaks_benchmark/RetainCycleDeduplication.m \
   npe/BoxedNumberExample.m \
   npe/ObjCMethodCallInCondition.m \
   npe/UpdateDict.m \
