@@ -73,7 +73,6 @@ SOURCES_BUCKET_ALL = \
 
 SOURCES_ARC = \
   retain_cycles/*.m \
-  memory_leaks_benchmark/RetainCycleExampleWeak.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
   memory_leaks_benchmark/RetainCyclePropertyInProtocol.m \
   npe/BoxedNumberExample.m \

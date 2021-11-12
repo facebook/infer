@@ -22,6 +22,8 @@
 
 @property(nonatomic, weak) Adapter* adapter;
 
+@property(nonatomic, strong) Adapter* strong_adapter;
+
 @end
 
 @implementation AFeed
@@ -36,13 +38,12 @@
 
 @implementation RetainCycleExampleWeak
 
-- (void)test {
+- (void)test_weak_adapter_no_cycle_good {
   _feed.adapter.feed = _feed;
 }
 
-- (void)main1 {
-  RetainCycleExampleWeak* b = [RetainCycleExampleWeak new];
-  [b test];
+- (void)test_strong_adapter_cycle_bad {
+  _feed.strong_adapter.feed = _feed;
 }
 
 @end
