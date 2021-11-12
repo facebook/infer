@@ -77,9 +77,14 @@ endif
 .PHONY: src_build_common
 src_build_common: $(SRC_BUILD_COMMON)
 
+LDPATH=$(LD_LIBRARY_PATH)
+ifneq ($(PLATFORM_ENV),)
+LDPATH=$(LIBRARY_PATH)
+endif
+
 .PHONY: runtest
 runtest: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	BYTE_MODE=true LD_LIBRARY_PATH=$(LIBRARY_PATH) $(DUNE_BUILD) @runtest --auto-promote
+	BYTE_MODE=true LD_LIBRARY_PATH=$(LDPATH) $(DUNE_BUILD) @runtest --auto-promote
 
 # we want dune to format test files *after* having promoted them
 .PHONY: runtest_formatted
@@ -95,7 +100,7 @@ test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest_formatted
 .PHONY: unit
 unit: runtest test
 	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
-	$(QUIET)LD_LIBRARY_PATH=$(LIBRARY_PATH) INFER_ARGS=--results-dir^infer-out-unit-tests $(INFERUNIT_BIN)
+	$(QUIET)LD_LIBRARY_PATH=$(LDPATH) INFER_ARGS=--results-dir^infer-out-unit-tests $(INFERUNIT_BIN)
 
 .PHONY: build_all
 build_all: $(SRC_BUILD_COMMON)

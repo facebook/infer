@@ -796,7 +796,7 @@ install-with-libs: install
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/infer/libso
 ifneq ($(LDD),no)
 ifneq ($(PATCHELF),no)
-ifdef PLATFORM_ENV
+ifneq ($(PLATFORM_ENV),)
 	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib
