@@ -50,7 +50,7 @@
 @implementation BBAssign
 @end
 
-int strongcycle() {
+int strongcycle_bad() {
 
   AA* a_obj = [AA alloc];
   BBStrong* b_obj = [BBStrong alloc];
@@ -61,7 +61,7 @@ int strongcycle() {
   return 0;
 }
 
-int unsafeunreainedcycle() {
+int unsafeunreainedcycle_good() {
 
   AA* a_obj = [AA alloc];
   BBUnsafeUnretained* b_obj = [BBUnsafeUnretained alloc];
@@ -72,7 +72,7 @@ int unsafeunreainedcycle() {
   return 0;
 }
 
-int weakcycle() {
+int weakcycle_good() {
 
   AA* a_obj = [AA alloc];
   BBWeak* b_obj = [BBWeak alloc];
@@ -83,7 +83,7 @@ int weakcycle() {
   return 0;
 }
 
-int assigncycle() {
+int assigncycle_good() {
 
   AA* a_obj = [AA alloc];
   BBAssign* b_obj = [BBAssign alloc];
