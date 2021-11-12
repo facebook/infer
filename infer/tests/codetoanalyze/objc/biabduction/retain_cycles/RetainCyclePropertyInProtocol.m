@@ -13,6 +13,7 @@
 
 @interface MyCustomView : NSObject<Delegate>
 - (instancetype)initWithDelegate:(id)delegate;
+- (instancetype)initWithStrongDelegate:(id)delegate;
 @end
 
 @implementation MyCustomView
@@ -24,6 +25,11 @@
   return self;
 }
 
+- (instancetype)initWithStrongDelegate:(id)strong_delegate {
+  _strong_delegate = strong_delegate;
+  return self;
+}
+
 @end
 
 @interface MyCustomViewController : NSObject
@@ -32,27 +38,14 @@
 
 @implementation MyCustomViewController
 
-- (void)loadViewGood {
+- (void)loadViewNoRetainCycleGood {
   MyCustomView* _myView = [[MyCustomView alloc] initWithDelegate:self];
   self.view = _myView;
 }
 
-- (void)loadViewBad {
-  MyCustomView* _myView = [[MyCustomView alloc] init];
+- (void)loadViewRetainCycleBad {
+  MyCustomView* _myView = [[MyCustomView alloc] initWithStrongDelegate:self];
   self.view = _myView;
-  _myView.strong_delegate = self;
 }
 
 @end
-
-int main_good() {
-  MyCustomViewController* controller = [MyCustomViewController new];
-  [controller loadViewGood];
-  return 0;
-}
-
-int main_bad() {
-  MyCustomViewController* controller = [MyCustomViewController new];
-  [controller loadViewBad];
-  return 0;
-}
