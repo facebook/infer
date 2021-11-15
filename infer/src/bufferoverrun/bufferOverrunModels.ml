@@ -1099,6 +1099,16 @@ module Container = struct
   let constructor_empty vec = constructor_size vec Exp.zero
 
   module Iterator = struct
+    let new_ beg_exp temp_exp =
+      let exec _ ~ret:_ mem =
+        let locs_b = Sem.eval_locs beg_exp mem in
+        let locs_t = Sem.eval_locs temp_exp mem in
+        let v = Dom.Mem.find_set locs_t mem |> Dom.Val.get_itv |> Dom.Val.of_itv in
+        Dom.Mem.update_mem locs_b v mem
+      in
+      {exec; check= no_check}
+
+
     let begin_ exp =
       let exec _ ~ret:_ mem =
         let locs = Sem.eval_locs exp mem in
@@ -1979,6 +1989,17 @@ module Call = struct
       ; -"std" &:: "basic_string" < capt_typ &+...>:: "size" $ capt_arg $--> StdBasicString.length
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
         (*             Models for c++ iterators <begin>           *)
+        (* C++11 -- macosx *)
+      ; -"std" &::+ std_iterator_libcpp &::+ std_iterator_libcpp $ capt_exp $+ capt_exp
+        $--> Container.Iterator.new_
+        (* C++11 -- gnu/linux *)
+      ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" $ capt_exp $+ capt_exp
+        $--> Container.Iterator.new_
+      ; -"std" &:: "__detail" &::+ std_iterator_libstdcpp_detail &::+ std_iterator_libstdcpp_detail
+        $ capt_exp $+ capt_exp $--> Container.Iterator.new_
+      ; -"std" &::+ std_iterator_libstdcpp &::+ std_iterator_libstdcpp $ capt_exp $+ capt_exp
+        $--> Container.Iterator.new_
+        (* begin and end models *)
       ; -"std" &::+ std_container &::+ iter_begin $ any_arg $+ capt_exp
         $--> Container.Iterator.begin_
       ; -"std" &::+ std_container &::+ iter_end $ capt_arg $+ capt_exp $--> Container.Iterator.end_
@@ -1993,6 +2014,10 @@ module Call = struct
       ; -"std" &:: "operator!="
         $ capt_exp_of_typ (-"std" &::+ std_iterator_libstdcpp)
         $+ capt_exp $--> Container.Iterator.iterator_ne
+        (* C++11 representation of operator!= *)
+      ; -"std" &::+ std_iterator_libstdcpp &:: "operator!="
+        $ capt_exp_of_typ (-"std" &::+ std_iterator_libstdcpp)
+        $+ capt_exp $--> Container.Iterator.iterator_ne
       ; -"std" &::+ std_iterator_libstdcpp &:: "operator++" $ capt_exp
         $+...$--> Container.Iterator.iterator_incr
         (*    vectors have a different namespace in gnu/linux     *)
@@ -2003,6 +2028,10 @@ module Call = struct
         $--> Container.Iterator.iterator_incr
         (*    unordered sets representation includes __detail     *)
       ; -"std" &:: "operator!="
+        $ capt_exp_of_typ (-"std" &:: "__detail" &::+ std_iterator_libstdcpp_detail)
+        $+ capt_exp $--> Container.Iterator.iterator_ne
+        (* C++11 representation of operator!= *)
+      ; -"std" &:: "__detail" &:: "operator!="
         $ capt_exp_of_typ (-"std" &:: "__detail" &::+ std_iterator_libstdcpp_detail)
         $+ capt_exp $--> Container.Iterator.iterator_ne
       ; -"std" &:: "__detail" &::+ std_iterator_libstdcpp_detail &:: "operator++" $ capt_exp
