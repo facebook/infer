@@ -590,10 +590,6 @@ module TransferFunctions = struct
           get_markers_from_load analysis_data e mem |> Option.value ~default:Markers.bottom
         in
         Dom.load_constant (Loc.of_id id) config markers astate
-    | Call (_, Const (Cfun callee), (Lvar pvar, _) :: (e, _) :: _, _, _)
-      when FbGKInteraction.is_config_load callee ->
-        Option.value_map (FbGKInteraction.get_config e) ~default:astate ~f:(fun config ->
-            Dom.load_constant_config (Loc.of_pvar pvar) config astate )
     | Store {e1= Lvar pvar; e2= Exp.Var id} ->
         Dom.store_config pvar id astate
     | Store {e1; e2= Const (Const.Cint marker)} ->
@@ -619,6 +615,8 @@ module TransferFunctions = struct
           Dom.call_config_check analysis_data config location astate
       | Some (`Exp e) ->
           Dom.call_config_check_exp analysis_data e location astate
+      | Some (`ConfigToPvar (config, pvar)) ->
+          Dom.load_constant_config (Loc.of_pvar pvar) config astate
       | None ->
           Option.value_map (analyze_dependency callee) ~default:astate
             ~f:(fun (_, callee_summary) ->

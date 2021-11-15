@@ -939,9 +939,13 @@ module TransferFunctions = struct
           Dom.call_config_check ret_id config astate
       | Some (`Exp (Exp.Var id)) ->
           Dom.copy_value ret_id id astate
+      | Some (`Exp (Exp.Lvar pvar)) ->
+          Dom.copy_mem ~tgt:(Loc.of_id ret_id) ~src:(Loc.of_pvar pvar) astate
       | Some (`Exp _) ->
           (* NOTE: We need a more proper evaluation function for handling the case. *)
           add_ret analyze_dependency ret_id callee astate
+      | Some (`ConfigToPvar (config, pvar)) ->
+          Dom.add_mem (Loc.of_pvar pvar) (Val.of_config config) astate
       | None ->
           (* normal function calls *)
           let call =
