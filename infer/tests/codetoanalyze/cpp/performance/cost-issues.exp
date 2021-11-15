@@ -77,6 +77,7 @@ codetoanalyze/cpp/performance/map.cpp, loop_over_map_linear, 7 + 11 ⋅ m->eleme
 codetoanalyze/cpp/performance/map.cpp, loop_over_map_size_linear, 2 + 3 ⋅ m->elements.length.ub + 3 ⋅ (m->elements.length.ub + 1),  OnUIThread:false, [{m->elements.length.ub + 1},Loop,{m->elements.length.ub},Loop]
 codetoanalyze/cpp/performance/map.cpp, map_count_logm_FN, 7,  OnUIThread:false, []
 codetoanalyze/cpp/performance/map.cpp, move_assignment_map_linear_FN, 5,  OnUIThread:false, []
+codetoanalyze/cpp/performance/queue.cpp, loop_over_set_size_linear, 2 + 3 ⋅ q->elements.length.ub + 3 ⋅ (q->elements.length.ub + 1),  OnUIThread:false, [{q->elements.length.ub + 1},Loop,{q->elements.length.ub},Loop]
 codetoanalyze/cpp/performance/set.cpp, binary_search_over_set_constant, 11,  OnUIThread:false, []
 codetoanalyze/cpp/performance/set.cpp, binary_search_over_set_logs, 5 + log(s->elements.length.ub),  OnUIThread:false, [{s->elements.length.ub},Modeled call to Container.binary_search]
 codetoanalyze/cpp/performance/set.cpp, copy_assignment_set_linear_FN, 3,  OnUIThread:false, []

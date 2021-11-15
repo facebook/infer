@@ -1738,7 +1738,15 @@ let iter_end _ str = List.exists ~f:(String.equal str) ["end"; "cend"; "rend"; "
 
 let std_container _ str =
   List.exists ~f:(String.equal str)
-    ["basic_string"; "deque"; "list"; "map"; "set"; "unordered_map"; "unordered_set"; "vector"]
+    [ "basic_string"
+    ; "deque"
+    ; "list"
+    ; "map"
+    ; "queue"
+    ; "set"
+    ; "unordered_map"
+    ; "unordered_set"
+    ; "vector" ]
 
 
 (* libcpp - native library for mac *)
