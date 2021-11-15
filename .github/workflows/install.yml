@@ -99,7 +99,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.opam
-          key: opam-${{ runner.os }}-${{ hashFiles('opam/infer.opam.locked') }}
+          key: opam-${{ runner.os }}-${{ hashFiles('opam/infer.opam.locked', 'opam/ocamlformat') }}
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
@@ -110,6 +110,9 @@ jobs:
 
       - run: make install BUILD_MODE=opt
         if: runner.os == 'macOS'
+
+      - name: Install ocamlformat
+        run: opam pin `cat opam/ocamlformat`
 
       - run: |
           sudo make install BUILD_MODE=opt
