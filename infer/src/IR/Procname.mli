@@ -204,11 +204,13 @@ module Block : sig
   type block_type =
     | InOuterScope of {outer_scope: block_type; block_index: int}
         (** a block nested in the scope of an outer one *)
-    | SurroundingProc of {name: string}  (** tracks the name of the surrounding proc *)
+    | SurroundingProc of {class_name: Typ.name option; name: string}
+        (** tracks the name of the surrounding proc and an optional class name where the procedure
+            is defined *)
 
   type t = {block_type: block_type; parameters: Parameter.clang_parameter list} [@@deriving compare]
 
-  val make_surrounding : string -> Parameter.clang_parameter list -> t
+  val make_surrounding : Typ.name option -> string -> Parameter.clang_parameter list -> t
 
   val make_in_outer_scope : block_type -> int -> Parameter.clang_parameter list -> t
 end

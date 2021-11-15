@@ -646,7 +646,7 @@ and objc_method_procname ?tenv decl_info method_name mdi =
 and objc_block_procname outer_proc_opt parameters =
   let block_type =
     Option.value_map ~f:Procname.get_block_type outer_proc_opt
-      ~default:(Procname.Block.SurroundingProc {name= ""})
+      ~default:(Procname.Block.SurroundingProc {class_name= None; name= ""})
   in
   let block_index = CFrontend_config.get_fresh_block_index () in
   let block = Procname.Block.make_in_outer_scope block_type block_index parameters in
@@ -789,7 +789,7 @@ module CProcname = struct
         in
         objc_method_procname decl_info method_name mdi []
     | BlockDecl _ ->
-        Procname.Block (Procname.Block.make_surrounding Config.anonymous_block_prefix [])
+        Procname.Block (Procname.Block.make_surrounding None Config.anonymous_block_prefix [])
     | _ ->
         from_decl method_decl
 end

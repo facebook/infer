@@ -500,13 +500,15 @@ module Block = struct
   (** Type of Objective C block names. *)
   type block_type =
     | InOuterScope of {outer_scope: block_type; block_index: int}
-    | SurroundingProc of {name: string}
+    | SurroundingProc of {class_name: Typ.name option; name: string}
   [@@deriving compare, yojson_of]
 
   type t = {block_type: block_type; parameters: Parameter.clang_parameter list}
   [@@deriving compare, yojson_of]
 
-  let make_surrounding name parameters = {block_type= SurroundingProc {name}; parameters}
+  let make_surrounding class_name name parameters =
+    {block_type= SurroundingProc {class_name; name}; parameters}
+
 
   let make_in_outer_scope outer_scope block_index parameters =
     {block_type= InOuterScope {outer_scope; block_index}; parameters}
@@ -541,6 +543,18 @@ module Block = struct
   let get_parameters block = block.parameters
 
   let replace_parameters new_parameters block = {block with parameters= new_parameters}
+
+  let get_class_type_name {block_type} =
+    let rec get_class_type_name_aux = function
+      | InOuterScope {outer_scope} ->
+          get_class_type_name_aux outer_scope
+      | SurroundingProc {class_name} ->
+          class_name
+    in
+    get_class_type_name_aux block_type
+
+
+  let get_class_name block = get_class_type_name block |> Option.map ~f:Typ.Name.name
 end
 
 (** Type of procedure names. *)
@@ -671,7 +685,7 @@ let block_of_procname procname =
       Logging.die InternalError "Only to be called with Objective-C block names"
 
 
-let empty_block = Block (Block.make_surrounding "" [])
+let empty_block = Block (Block.make_surrounding None "" [])
 
 (** Replace the class name component of a procedure name. In case of Java, replace package and class
     name. *)
@@ -696,6 +710,8 @@ let get_class_type_name = function
       Some (CSharp.get_class_type_name cs_pname)
   | ObjC_Cpp objc_pname ->
       Some (ObjC_Cpp.get_class_type_name objc_pname)
+  | Block block ->
+      Block.get_class_type_name block
   | _ ->
       None
 
@@ -707,6 +723,8 @@ let get_class_name = function
       Some (CSharp.get_class_name cs_pname)
   | ObjC_Cpp objc_pname ->
       Some (ObjC_Cpp.get_class_name objc_pname)
+  | Block block ->
+      Block.get_class_name block
   | _ ->
       None
 
@@ -885,7 +903,7 @@ let get_block_type proc =
   | Block {block_type} ->
       block_type
   | _ ->
-      Block.SurroundingProc {name= to_string proc}
+      Block.SurroundingProc {class_name= get_class_type_name proc; name= to_string proc}
 
 
 (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
