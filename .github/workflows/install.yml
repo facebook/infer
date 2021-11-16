@@ -117,65 +117,14 @@ jobs:
       - name: Install ocamlformat
         run: opam pin `cat opam/ocamlformat`
 
+      - name: Test infer
+        run: make test -k NDKBUILD=no
+
       - run: |
           sudo make install BUILD_MODE=opt
           # restore permissions after root build
           sudo chown $USER: -R .
         if: runner.os == 'Linux'
-
-      - name: Test infer
-        run: |
-          eval $(opam env)
-
-          {
-            echo 'class FailingTest {'
-            echo '  String mayReturnNull(int i) {'
-            echo '    if (i > 0) {'
-            echo '      return "Hello, Infer!";'
-            echo '    }'
-            echo '    return null;'
-            echo '  }'
-            echo '  int mayCauseNPE() {'
-            echo '    String s = mayReturnNull(0);'
-            echo '    return s.length();'
-            echo '  }'
-            echo '}'
-          } > FailingTest.java
-
-          {
-            echo "  class PassingTest {"
-            echo "    String mayReturnNull(int i) {"
-            echo "      if (i > 0) {"
-            echo '        return "Hello, Infer!";'
-            echo "      }"
-            echo "      return null;"
-            echo "    }"
-            echo "    int mayCauseNPE() {"
-            echo "      String s = mayReturnNull(0);"
-            echo "      return s == null ? 0 : s.length();"
-            echo "    }"
-            echo "  }"
-          } > PassingTest.java
-
-          # first command should exit with status 2
-          infer --fail-on-issue -P -- javac FailingTest.java || if [[ $? -ne 2 ]]; then exit 1; fi
-          infer --fail-on-issue -P -- javac PassingTest.java
-
-          {
-            echo "#include <stdio.h>"
-            echo "int main()"
-            echo "{ int *s = NULL; *s = 42; return 0; } "
-          } > FailingTest.c
-
-          {
-            echo "#include <stdio.h>"
-            echo "int main()"
-            echo "{ int *s = NULL; if (s != NULL) { *s = 42; } return 0; }"
-          } > PassingTest.c
-
-          # first command should exit with status 2
-          infer --fail-on-issue -P -- clang -c FailingTest.c || if [[ $? -ne 2 ]]; then exit 1; fi
-          infer --fail-on-issue -P -- clang -c PassingTest.c
 
       - name: Build release tarball
         id: build-release
