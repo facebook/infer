@@ -81,9 +81,7 @@ bool map_count_logm_FN(std::map<std::string, int> m, std::string str) {
 // Expected: O(log(m)); got constant
 void emplace_logm_FN(std::map<char, int> m, char c, int i) { m.emplace(c, i); }
 
-// find is logarithmic
-// Expected: O(log(m)); got constant
-void find_logm_FN(std::map<char, int> m, char c) { m.find(c); }
+void find_logm(std::map<char, int> m, char c) { m.find(c); }
 
 // erase(val) is logarithmic
 // Expected: m * log(m); got constant

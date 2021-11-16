@@ -83,6 +83,10 @@ void iterate_vector_linear(std::vector<std::string>& vec) {
   }
 }
 
+std::vector<int>::iterator find_in_vector(std::vector<int>& vec) {
+  return std::find(vec.begin(), vec.end(), 30);
+}
+
 void iterate_two_vectors_linear(std::vector<std::string>& vec1,
                                 std::vector<std::string>& vec2) {
   for (int i = 0; i < vec1.size(); i++) {

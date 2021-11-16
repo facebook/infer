@@ -87,10 +87,7 @@ void erase_from_uset_linear_FN(std::unordered_set<std::string> uset,
   uset.erase(str);
 }
 
-// find is linear
-// https://www.cplusplus.com/reference/unordered_set/unordered_set/find/
-// Expected: O(uset); got constant
-void find_in_uset_linear_FN(std::unordered_set<std::string> uset,
-                            std::string str) {
+void find_in_uset_linear(std::unordered_set<std::string> uset,
+                         std::string str) {
   uset.find(str);
 }

@@ -65,9 +65,7 @@ void binary_search_over_set_logs(std::set<int> s) {
   binary_search(s.begin(), s.end(), 10);
 }
 
-// find is logarithmic
-// Expected: O(log(s)); got constant
-void loop_and_find_logs_FN(std::set<int> s, int n) {
+void loop_and_find_logs(std::set<int> s, int n) {
   int i = 0;
   while (i < 10) {
     s.find(n);
