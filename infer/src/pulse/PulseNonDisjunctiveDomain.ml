@@ -8,8 +8,11 @@
 open! IStd
 module BaseMemory = PulseBaseMemory
 
+type copy_spec_t = Copied of {location: Location.t; heap: BaseMemory.t} | Modified
+[@@deriving equal]
+
 module CopySpec = struct
-  type t = Copied of {location: Location.t; heap: BaseMemory.t} | Modified [@@deriving equal]
+  type t = copy_spec_t [@@deriving equal]
 
   let leq ~lhs ~rhs =
     match (lhs, rhs) with
