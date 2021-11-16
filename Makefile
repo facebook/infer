@@ -70,6 +70,8 @@ DIRECT_TESTS += \
   cpp_performance \
   cpp_performance-11 \
   cpp_pulse \
+  cpp_pulse-11 \
+  cpp_pulse-17 \
   cpp_pulse-isl \
   cpp_quandary \
   cpp_racerd \

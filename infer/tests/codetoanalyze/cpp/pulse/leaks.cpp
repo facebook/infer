@@ -83,7 +83,7 @@ void FP_call_static_local_alloc_twice_ok() {
 
 static UniquePtr<X>* global_pointer;
 
-void global_alloc_ok() { global_pointer = new UniquePtr(new X); }
+void global_alloc_ok() { global_pointer = new UniquePtr<X>(new X); }
 
 void unknown(void* x);
 
@@ -131,9 +131,9 @@ void capture_alloc_unknown_ok() {
   store_closure_unknown([&] { delete x; });
 }
 
-auto capture_alloc_return_ok() {
+std::function<void(void)> capture_alloc_return_ok() {
   X* x = new X;
-  return [=] { delete x; };
+  return [=]() { delete x; };
 }
 
 } // namespace leaks

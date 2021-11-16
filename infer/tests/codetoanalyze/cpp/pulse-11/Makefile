@@ -6,9 +6,10 @@
 ROOT_DIR = ../../../../..
 include $(ROOT_DIR)/Makefile.config
 
+
+
 default: compile
 
 .PHONY: print replace test clean
 print replace test clean:
-	$(QUIET)INFER_ARGS=--pulse-isl^--pulse-max-disjuncts^50 $(MAKE) -C ../pulse TEST_SUFFIX=-isl TEST_RESULT_SUFFIX=-isl $@
-	$(QUIET)INFER_ARGS=--pulse-isl^--pulse-max-disjuncts^50 $(MAKE) -C ../pulse-17 TEST_SUFFIX=-isl-17 TEST_RESULT_SUFFIX=-isl-17 $@
+	$(QUIET)INFER_ARGS=--Xclang^-std=c++11 $(MAKE) -C ../pulse TEST_SUFFIX=-11 TEST_RESULT_SUFFIX=-11  $@
