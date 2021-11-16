@@ -282,7 +282,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
     result_unknown @ result_unknown_nil
   in
   match callee_data with
-  | Some (callee_proc_desc, (exec_states, _)) ->
+  | Some (callee_proc_desc, exec_states) ->
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
         (exec_states :> ExecutionDomain.t list)
         astate

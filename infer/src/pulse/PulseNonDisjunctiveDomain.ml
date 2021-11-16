@@ -39,8 +39,6 @@ include AbstractDomain.Map (Var) (CopySpec)
 
 let bottom = empty
 
-let yojson_of_t = [%yojson_of: _]
-
 let mark_copy_as_modified ~is_modified var astate =
   match find_opt var astate with
   | Some (Copied {heap= copy_heap}) when is_modified copy_heap ->

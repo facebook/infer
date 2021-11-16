@@ -12,8 +12,6 @@ type copy_spec_t = Copied of {location: Location.t; heap: BaseMemory.t} | Modifi
 
 include AbstractDomain.WithBottom
 
-val yojson_of_t : [%yojson_of: t]
-
 val add : Var.t -> copy_spec_t -> t -> t
 
 val mark_copy_as_modified : is_modified:(BaseMemory.t -> bool) -> Var.t -> t -> t

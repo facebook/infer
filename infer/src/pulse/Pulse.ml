@@ -13,7 +13,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
-let report_topl_errors proc_desc err_log (summary, _) =
+let report_topl_errors proc_desc err_log summary =
   let f = function
     | ContinueProgram astate ->
         PulseTopl.report_errors proc_desc err_log (AbductiveDomain.Topl.get astate)
@@ -27,7 +27,7 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
   PulseNonDisjunctiveDomain.get_copied non_disj_astate
   |> List.iter ~f:(fun (var, location) ->
          let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; location} in
-         PulseReport.report_non_disj_error proc_desc err_log diagnostic )
+         PulseReport.report ~latent:false proc_desc err_log diagnostic )
 
 
 module PulseTransferFunctions = struct
@@ -553,7 +553,6 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
               PulseSummary.of_posts tenv proc_desc err_log
                 (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
                 (Option.to_list objc_nil_summary @ posts)
-                non_disj_astate
             in
             report_topl_errors proc_desc err_log summary ;
             report_unnecessary_copies proc_desc err_log non_disj_astate ;

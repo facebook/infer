@@ -141,10 +141,6 @@ let report_error tenv proc_desc err_log location
   >>| report_summary_error tenv proc_desc err_log
 
 
-let report_non_disj_error proc_desc err_log diagnostic =
-  report ~latent:false proc_desc err_log diagnostic
-
-
 let report_exec_results tenv proc_desc err_log location results =
   List.filter_map results ~f:(fun exec_result ->
       match exec_result with
