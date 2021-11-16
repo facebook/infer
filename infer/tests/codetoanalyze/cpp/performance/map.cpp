@@ -71,9 +71,7 @@ void iterate_over_map_rev_linear(std::map<int, int> m) {
   }
 }
 
-// m.count(e) is logarithmic
-// Expected: O(log(m)); got constant
-bool map_count_logm_FN(std::map<std::string, int> m, std::string str) {
+bool map_count_logm(std::map<std::string, int> m, std::string str) {
   return m.count(str) > 0;
 }
 

@@ -117,9 +117,7 @@ void init_set_from_list_nlogn_FN(int arr[], int n) {
   std::set<int> s1(arr, arr + n);
 }
 
-// s.count(i) is logarithmic
-// Expected: n * log(s); got linear
-void count_set_nlogs_FN(std::set<int> s, int n) {
+void count_set_nlogs(std::set<int> s, int n) {
   for (int i = 0; i < n; ++i) {
     if (s.count(i) != 0) {
     }

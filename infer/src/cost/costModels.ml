@@ -385,6 +385,10 @@ module Call = struct
           $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.find"
         ; -"std" &::+ std_container_unord &:: "find" $ capt_exp
           $+...$--> BoundsOfContainer.linear_length ~of_function:"Container.find"
+        ; -"std" &::+ std_container_ord &:: "count" $ capt_exp
+          $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.count"
+        ; -"std" &::+ std_container_unord &:: "count" $ capt_exp
+          $+...$--> BoundsOfContainer.linear_length ~of_function:"Container.count"
           (* Java Cost Models *)
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp
