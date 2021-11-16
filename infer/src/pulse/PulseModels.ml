@@ -264,6 +264,15 @@ module Misc = struct
       cannot generate leaks (eg it is handled by the language's garbage collector, or we don't want
       to report leaks for some reason) *)
   let alloc_no_leak_not_null ?desc size = alloc_not_null_common ?desc ~allocator:None size
+
+  (* NOTE: starts from the [exp] representing the argument as there's some logic in
+     {PulseOperations.prune} that works better if we know the SIL expression. This just means we're
+     discarding some abstract values that were potentially created to evaluate [exp] when the model
+     was called. *)
+  let assert_ {ProcnameDispatcher.Call.FuncArg.exp= condition} : model =
+   fun {path; location} astate ->
+    let<+> astate, _ = PulseOperations.prune path location ~condition astate in
+    astate
 end
 
 module C = struct
@@ -2205,6 +2214,7 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_array
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
         ; -"random" <>$$--> Misc.nondet ~desc:"random"
+        ; -"assert" <>$ capt_arg $--> Misc.assert_
         ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin __cast)
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"

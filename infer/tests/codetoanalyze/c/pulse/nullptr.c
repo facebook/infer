@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
 
@@ -12,6 +13,13 @@ int* malloc_no_check_bad() {
   int* p = (int*)malloc(sizeof(int));
   *p = 42;
   return p;
+}
+
+void malloc_assert_ok() {
+  int* p = (int*)malloc(sizeof(int));
+  assert(p);
+  *p = 42;
+  free(p);
 }
 
 void create_null_path_ok(int* p) {
