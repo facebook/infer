@@ -7,16 +7,21 @@
 open! IStd
 module F = Format
 
-(** An abstract value, eg an address in memory. *)
+(** An abstract value (or "symbolic variable"), eg an address in memory. *)
 type t = private int [@@deriving compare, yojson_of]
 
 val equal : t -> t -> bool
 
 val mk_fresh : unit -> t
+(** create an abstract value guaranteed not to appear in the current state *)
 
 val mk_fresh_restricted : unit -> t
 (** a special class of variables that represent non-negative ("restricted") values; variables
     returned by [mk_fresh] are called "unrestricted" by opposition *)
+
+val mk_fresh_same_kind : t -> t
+(** creates a fresh restricted or unrestricted abstract value based on the kind of abstract value
+    given *)
 
 val is_restricted : t -> bool
 (** was the variable created with [mk_fresh_restricted], i.e. it represents non-negative values

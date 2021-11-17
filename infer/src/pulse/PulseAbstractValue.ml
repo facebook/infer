@@ -33,6 +33,8 @@ let is_restricted v = v < 0
 
 let is_unrestricted v = v > 0
 
+let mk_fresh_same_kind v = if is_restricted v then mk_fresh_restricted () else mk_fresh ()
+
 let pp f v = if is_restricted v then F.fprintf f "a%d" (-v) else F.fprintf f "v%d" v
 
 let yojson_of_t l = `String (F.asprintf "%a" pp l)
