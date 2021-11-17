@@ -44,8 +44,6 @@ SOURCES_DEFAULT = \
   shared/annotations/nullable_annotations.m \
   shared/annotations/nullable_annotations_fields.m \
   shared/annotations/nonnull_annotations.m \
-  taint/sources.m \
-  taint/viewController.m \
 
 SOURCES_BUCKET_ALL = \
   global_const/global_const.m \
