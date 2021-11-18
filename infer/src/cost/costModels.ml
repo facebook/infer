@@ -287,11 +287,6 @@ let std_container_ord _ str =
   List.exists ~f:(String.equal str) ["map"; "multimap"; "multiset"; "set"]
 
 
-let std_container_unord _ str =
-  List.exists ~f:(String.equal str)
-    ["unordered_map"; "unordered_multimap"; "unordered_multiset"; "unordered_set"]
-
-
 module Call = struct
   let dispatch : (Tenv.t, CostUtils.model, unit) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -383,12 +378,12 @@ module Call = struct
           $+...$--> Algorithm.find ~of_function:"Container.find"
         ; -"std" &::+ std_container_ord &:: "find" $ capt_exp
           $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.find"
-        ; -"std" &::+ std_container_unord &:: "find" $ capt_exp
-          $+...$--> BoundsOfContainer.linear_length ~of_function:"Container.find"
         ; -"std" &::+ std_container_ord &:: "count" $ capt_exp
           $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.count"
-        ; -"std" &::+ std_container_unord &:: "count" $ capt_exp
-          $+...$--> BoundsOfContainer.linear_length ~of_function:"Container.count"
+        ; -"std" &::+ std_container_ord &:: "emplace" $ capt_exp
+          $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.emplace"
+        ; -"std" &::+ std_container_ord &:: "emplace_hint" $ capt_exp
+          $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.emplace_hint"
           (* Java Cost Models *)
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp

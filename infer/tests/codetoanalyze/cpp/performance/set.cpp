@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 #include <set>
+#include <string>
 #include <iterator>
 
 void loop_over_set_size_linear(std::set<int> s) {
@@ -122,4 +123,9 @@ void count_set_nlogs(std::set<int> s, int n) {
     if (s.count(i) != 0) {
     }
   }
+}
+
+void emplace_hint_set_logs(std::set<std::string> s) {
+  auto it = s.cbegin();
+  s.emplace_hint(it, "test");
 }
