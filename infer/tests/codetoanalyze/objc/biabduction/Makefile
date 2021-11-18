@@ -46,7 +46,6 @@ SOURCES_DEFAULT = \
 
 SOURCES_BUCKET_ALL = \
   global_const/global_const.m \
-  npe/nil_param.m \
   npe/null_returned_by_method.m \
   procdescs/main.c \
   property/main.c \
