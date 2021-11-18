@@ -46,8 +46,6 @@ codetoanalyze/objc/biabduction/npe/npe_self.m, CSelf.test, 3, NULL_DEREFERENCE, 
 codetoanalyze/objc/biabduction/npe/nullable.m, derefNullableParamDirect, 0, NULL_DEREFERENCE, B1, ERROR, [start of procedure derefNullableParamDirect()]
 codetoanalyze/objc/biabduction/npe/nullable.m, derefNullableParamIndirect, 2, NULL_DEREFERENCE, B1, ERROR, [start of procedure derefNullableParamIndirect()]
 codetoanalyze/objc/biabduction/npe/nullable.m, parameter_nullable_bug, 5, NULL_DEREFERENCE, B1, ERROR, [start of procedure parameter_nullable_bug()]
-codetoanalyze/objc/biabduction/property/ExplicitIvarName.m, ExplicitIvarNameA.testDefaultName, 7, NULL_DEREFERENCE, B1, ERROR, [start of procedure testDefaultName,Skipping setY:: method has no implementation,Taking true branch]
-codetoanalyze/objc/biabduction/property/ExplicitIvarName.m, ExplicitIvarNameA.testExplicit, 6, NULL_DEREFERENCE, B1, ERROR, [start of procedure testExplicit,start of procedure x,return from a call to ExplicitIvarNameA.x,Taking true branch]
 codetoanalyze/objc/biabduction/retain_cycles/BlockInHeap.m, BlockInHeap.assign_strong_handler_to_ivar, 1, BIABDUCTION_ANALYSIS_STOPS, no_bucket, WARNING, [start of procedure assign_strong_handler_to_ivar,start of procedure setStrongHandler:,return from a call to BlockInHeap.setStrongHandler:]
 codetoanalyze/objc/biabduction/retain_cycles/BlockInHeap.m, BlockInHeap.assign_strong_handler_to_ivar, 1, RETAIN_CYCLE, no_bucket, ERROR, [start of procedure assign_strong_handler_to_ivar,start of procedure setStrongHandler:,return from a call to BlockInHeap.setStrongHandler:]
 codetoanalyze/objc/biabduction/retain_cycles/IvarInheritanceRetainCycle.m, field_superclass_main, 3, BIABDUCTION_ANALYSIS_STOPS, no_bucket, WARNING, [start of procedure field_superclass_main()]

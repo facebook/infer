@@ -71,7 +71,6 @@ SOURCES_ARC = \
   npe/npe_conditional.m \
   npe/npe_self.m \
   npe/nullable.m \
-  property/ExplicitIvarName.m \
   shared/block/dispatch_examples.m \
   specialized_methods_with_blocks/BlockAsReceiver.m \
   subtyping/KindOfClassExample.m \
