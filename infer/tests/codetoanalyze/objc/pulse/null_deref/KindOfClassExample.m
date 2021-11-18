@@ -41,29 +41,21 @@
 
 @end
 
-int returnsZero2(Base* b) {
+int isKindOfClassUnknown(Base* b) {
   if ([b isKindOfClass:[Derived class]]) {
-    return 1;
+    int* p = NULL;
+    return *p;
   } else {
     return 0;
   }
 }
 
-int shouldThrowDivideByZero1() {
+int isKindOfClassBaseNoNPEGood() {
   Base* base = [[Base alloc] init];
-  return 1 / [Base returnsZero1:base];
+  return isKindOfClassUnknown(base);
 }
 
-int shouldThrowDivideByZero2() {
-  Base* base = [[Base alloc] init];
-  return 1 / returnsZero2(base);
-}
-
-int shouldThrowDivideByZero3() {
-  Base* b = [[Derived alloc] init];
-  if ([b isKindOfClass:[Derived class]]) {
-    return 1 / 0;
-  } else {
-    return 0;
-  }
+int isKindOfClassBaseNPEBad() {
+  Base* derived = [[Derived alloc] init];
+  return isKindOfClassUnknown(derived);
 }

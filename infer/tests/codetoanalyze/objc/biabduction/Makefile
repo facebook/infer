@@ -72,7 +72,6 @@ SOURCES_ARC = \
   npe/nullable.m \
   shared/block/dispatch_examples.m \
   specialized_methods_with_blocks/BlockAsReceiver.m \
-  subtyping/KindOfClassExample.m \
   variadic_methods/premature_nil_termination.m \
 
 include $(TESTS_DIR)/clang.make
