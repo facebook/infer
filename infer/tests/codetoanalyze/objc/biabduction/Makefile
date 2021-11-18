@@ -15,7 +15,6 @@ INFERPRINT_OPTIONS = --issues-tests
 SOURCES_DEFAULT = \
   memory_leaks_benchmark/NSString_models_tests.m \
   npe/dynamic_dispatch.m \
-  npe/NPD_core_foundation.m \
   npe/Npe_with_equal_names.m \
   npe/block.m \
   npe/ivar_blocks.m \
