@@ -72,7 +72,6 @@ SOURCES_ARC = \
   npe/nil_in_dictionary_literal.m \
   npe/npe_conditional.m \
   npe/npe_self.m \
-  npe/Npe_self_annotation.m \
   npe/nullable.m \
   property/ExplicitIvarName.m \
   shared/block/dispatch_examples.m \
