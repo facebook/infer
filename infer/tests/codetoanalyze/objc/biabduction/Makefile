@@ -66,7 +66,6 @@ SOURCES_ARC = \
   npe/BoxedNumberExample.m \
   npe/ObjCMethodCallInCondition.m \
   npe/UpdateDict.m \
-  npe/WeakCapturedVarsNPE.m \
   npe/nil_in_array_literal.m \
   npe/nil_in_dictionary_literal.m \
   npe/npe_conditional.m \
