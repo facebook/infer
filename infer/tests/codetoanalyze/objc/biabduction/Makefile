@@ -47,7 +47,6 @@ SOURCES_BUCKET_ALL = \
   npe/null_returned_by_method.m \
   procdescs/main.c \
   property/main.c \
-  returnstmt/return_npe_test.m \
   shared/assertions/NSAssert_example.m \
   shared/block/BlockVar.m \
   shared/block/AnonymousBlock.m \
