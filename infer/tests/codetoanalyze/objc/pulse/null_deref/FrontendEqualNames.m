@@ -30,13 +30,13 @@
 
 @end
 
-int EqualNamesTest() {
+int EqualNamesInstanceNPEBad() {
   EqualNamesA* para = [EqualNamesA new];
   EqualNamesA* a = [para meth];
   return a->x;
 }
 
-int EqualNamesTest2(EqualNamesA* para) {
+int EqualNamesClassNoNPEGood(EqualNamesA* para) {
   EqualNamesA* a = [EqualNamesA meth];
   return a->x;
 }
