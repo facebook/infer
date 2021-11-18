@@ -102,7 +102,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.opam
-          key: opam-${{ runner.os }}-${{ hashFiles('opam/infer.opam.locked', 'opam/ocamlformat') }}
+          key: opam-${{ runner.os }}-${{ hashFiles('opam/infer.opam.locked', 'opam/ocamlformat') }}-cache
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
