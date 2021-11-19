@@ -960,14 +960,19 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         [%Trace.info " infeasible %a@\n@[%a@]" Llair.Exp.pp cond D.pp state] ;
         wl
 
-  let exec_thread_create reg {Llair.entry; locals} return
-      ({ctrl= {tid}; state; threads} as ams) wl =
-    let child_tid, threads = Threads.create entry threads in
-    let child =
-      Llair.Exp.integer (Llair.Reg.typ reg) (Z.of_int child_tid)
+  let exec_thread_create reg {Llair.name; formals; freturn; entry; locals}
+      actual return ({ctrl= {tid}; state; threads} as ams) wl =
+    let child, threads = Threads.create entry threads in
+    let state =
+      let child = Llair.Exp.integer (Llair.Reg.typ reg) (Z.of_int child) in
+      D.exec_move tid (IArray.of_ (reg, child)) state
     in
-    let state = D.exec_move tid (IArray.of_ (reg, child)) state in
-    let state = D.enter_scope child_tid locals state in
+    let state, _ =
+      let globals = Domain_used_globals.by_function Config.globals name in
+      let actuals = IArray.of_ actual in
+      D.call ~summaries:false tid ~child ~globals ~actuals ~areturn:None
+        ~formals ~freturn ~locals state
+    in
     exec_jump return {ams with state; threads} wl
 
   let exec_thread_join thread return ({ctrl= {tid}; state; threads} as ams)
@@ -1007,12 +1012,12 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       match
         (Llair.Function.name callee.name, IArray.to_array actuals, areturn)
       with
-      | "sledge_thread_create", [|callee|], Some reg -> (
+      | "sledge_thread_create", [|callee; arg|], Some reg -> (
         match resolve_callee pgm tid callee state with
         | [] -> exec_skip_func areturn return ams wl
         | callees ->
             List.fold callees wl ~f:(fun callee wl ->
-                exec_thread_create reg callee return ams wl ) )
+                exec_thread_create reg callee arg return ams wl ) )
       | "sledge_thread_join", [|thread|], None ->
           exec_thread_join thread return ams wl
       | _ -> exec_call call ams wl )

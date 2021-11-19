@@ -189,8 +189,8 @@ type from_call = {areturn: Var.t option; unshadow: Var.Subst.t; frame: Sh.t}
 (** Express formula in terms of formals instead of actuals, and enter scope
     of locals: rename formals to fresh vars in formula and actuals, add
     equations between each formal and actual, and quantify fresh vars. *)
-let call ~summaries tid ~globals ~actuals ~areturn ~formals ~freturn ~locals
-    q =
+let call ~summaries tid ?(child = tid) ~globals ~actuals ~areturn ~formals
+    ~freturn ~locals q =
   [%Trace.call fun {pf} ->
     pf "@ @[<hv>locals: {@[%a@]}@ globals: {@[%a@]}@ q: %a@]"
       Llair.Reg.Set.pp locals Llair.Global.Set.pp globals pp q ;
@@ -208,9 +208,9 @@ let call ~summaries tid ~globals ~actuals ~areturn ~formals ~freturn ~locals
   ;
   let actuals = IArray.map ~f:(X.term tid) actuals in
   let areturn = Option.map ~f:(X.reg tid) areturn in
-  let formals = IArray.map ~f:(X.reg tid) formals in
+  let formals = IArray.map ~f:(X.reg child) formals in
   let freturn_locals =
-    X.regs tid (Llair.Reg.Set.add_option freturn locals)
+    X.regs child (Llair.Reg.Set.add_option freturn locals)
   in
   let modifs = Var.Set.of_option areturn in
   (* quantify modifs, their current values will be overwritten and so should
@@ -232,7 +232,7 @@ let call ~summaries tid ~globals ~actuals ~areturn ~formals ~freturn ~locals
   ( if not summaries then (entry, {areturn; unshadow; frame= Sh.emp})
   else
     let q, frame =
-      localize_entry tid globals actuals formals freturn locals shadow q
+      localize_entry child globals actuals formals freturn locals shadow q
         entry
     in
     (q, {areturn; unshadow; frame}) )

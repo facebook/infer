@@ -98,21 +98,28 @@ treiber_stack_pop(data_t* r, treiber_stack_t* s)
   return OK;
 }
 
-/* thread routine args not yet supported, so use a global */
-treiber_stack_t* test_stack;
-
 static void
-push_thread_run()
+push_thread_run(void* const arg)
 {
+  if (arg == NULL) {
+    return;
+  }
+
+  treiber_stack_t* s = (treiber_stack_t*)arg;
   data_t val = __llair_choice();
-  treiber_stack_push(test_stack, val);
+  treiber_stack_push(s, val);
 }
 
 static void
-pop_thread_run()
+pop_thread_run(void* const arg)
 {
+  if (arg == NULL) {
+    return;
+  }
+
+  treiber_stack_t* s = (treiber_stack_t*)arg;
   data_t val;
-  error_t status = treiber_stack_pop(&val, test_stack);
+  error_t status = treiber_stack_pop(&val, s);
   assert(OK == status && "Pop only from non-empty stacks");
 }
 
@@ -123,11 +130,11 @@ main(void)
 {
   error_t status;
 
-  test_stack = treiber_stack_create();
+  treiber_stack_t* test_stack = treiber_stack_create();
 
   thread_t* push_threads[NUM_PUSH_THREADS];
   for (int i = 0; i < NUM_PUSH_THREADS; i++) {
-    status = thread_create(&push_threads[i], &push_thread_run);
+    status = thread_create(&push_threads[i], &push_thread_run, test_stack);
     assert(OK == status && "Thread created successfully");
   }
   for (int i = 0; i < NUM_PUSH_THREADS; i++) {
@@ -137,7 +144,7 @@ main(void)
 
   thread_t* pop_threads[NUM_POP_THREADS];
   for (int i = 0; i < NUM_POP_THREADS; i++) {
-    status = thread_create(&pop_threads[i], &pop_thread_run);
+    status = thread_create(&pop_threads[i], &pop_thread_run, test_stack);
     assert(OK == status && "Thread created successfully");
   }
   for (int i = 0; i < NUM_POP_THREADS; i++) {

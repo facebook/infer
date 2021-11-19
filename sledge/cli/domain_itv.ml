@@ -266,8 +266,8 @@ let retn tid _ freturn {areturn; caller_q} callee_q =
     caller-local variables. Note that this exploits the non-relational-ness
     of Box to ignore all variables other than the formal/actual params/
     returns; this will not be possible if extended to a relational domain *)
-let call ~summaries _ ~globals:_ ~actuals ~areturn ~formals ~freturn:_
-    ~locals:_ q =
+let call ~summaries _ ?child:_ ~globals:_ ~actuals ~areturn ~formals
+    ~freturn:_ ~locals:_ q =
   if summaries then
     todo "Summaries not yet implemented for interval analysis" ()
   else

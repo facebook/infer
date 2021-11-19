@@ -54,8 +54,8 @@ let exec_inst _ inst st =
 type from_call = t [@@deriving sexp]
 
 (* Set abstract state to bottom (i.e. empty set) at function entry *)
-let call ~summaries:_ _ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
-    ~locals:_ st =
+let call ~summaries:_ _ ?child:_ ~globals:_ ~actuals ~areturn:_ ~formals:_
+    ~freturn:_ ~locals:_ st =
   (empty, IArray.fold ~f:used_globals actuals st)
 
 let resolve_callee _ _ _ _ = []

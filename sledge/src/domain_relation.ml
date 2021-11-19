@@ -80,8 +80,8 @@ module Make (State_domain : State_domain_sig) = struct
 
   let recursion_beyond_bound = State_domain.recursion_beyond_bound
 
-  let call ~summaries tid ~globals ~actuals ~areturn ~formals ~freturn
-      ~locals (entry, current) =
+  let call ~summaries tid ?child ~globals ~actuals ~areturn ~formals
+      ~freturn ~locals (entry, current) =
     [%Trace.call fun {pf} ->
       pf
         "@ @[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: \
@@ -93,8 +93,8 @@ module Make (State_domain : State_domain_sig) = struct
         State_domain.pp current]
     ;
     let caller_current, state_from_call =
-      State_domain.call tid ~summaries ~globals ~actuals ~areturn ~formals
-        ~freturn ~locals current
+      State_domain.call tid ?child ~summaries ~globals ~actuals ~areturn
+        ~formals ~freturn ~locals current
     in
     ( (caller_current, caller_current)
     , {state_from_call; caller_entry= entry} )

@@ -8,7 +8,7 @@
 int count = 0;
 
 void
-child_routine()
+child_routine(void* arg)
 {
   count++;
 }
@@ -17,7 +17,7 @@ int
 main()
 {
   thread_t* child;
-  error_t err = thread_create(&child, &child_routine);
+  error_t err = thread_create(&child, &child_routine, NULL);
   count++;
   err = thread_join(child);
   return count;

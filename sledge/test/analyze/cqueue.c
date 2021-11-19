@@ -125,12 +125,9 @@ mark_free(queue_t* const q, const uint32_t k)
   atomic_store(&q->own[k], PROD);
 }
 
-queue_t* test_queue;
-
 static void
-produce_thread_run()
+produce_thread_run(void* const arg)
 {
-  void* const arg = test_queue;
   if (arg == NULL) {
     return;
   }
@@ -143,9 +140,8 @@ produce_thread_run()
 }
 
 static void
-consume_thread_run()
+consume_thread_run(void* const arg)
 {
-  void* const arg = test_queue;
   if (arg == NULL) {
     return;
   }
@@ -168,13 +164,14 @@ int
 main(void)
 {
   void* test_mem_ptr = __llair_alloc(num_bytes_to_allocate());
-  test_queue = queue_init(test_mem_ptr);
+  queue_t* test_queue = queue_init(test_mem_ptr);
   thread_t* produce_threads[NUM_PRODUCE_THREADS];
   thread_t* consume_threads[NUM_CONSUME_THREADS];
   error_t status;
 
   for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
-    status = thread_create(&produce_threads[i], &produce_thread_run);
+    status =
+        thread_create(&produce_threads[i], &produce_thread_run, test_queue);
     assert(OK == status && "Failed to create thread");
   }
   for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
@@ -183,7 +180,8 @@ main(void)
   }
 
   for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {
-    status = thread_create(&consume_threads[i], &consume_thread_run);
+    status =
+        thread_create(&consume_threads[i], &consume_thread_run, test_queue);
     assert(OK == status && "Failed to create thread");
   }
   for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {

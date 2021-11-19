@@ -27,7 +27,7 @@ let enter_scope _ _ () = ()
 
 type from_call = unit [@@deriving compare, equal, sexp]
 
-let call ~summaries:_ _ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_
+let call ~summaries:_ _ ?child:_ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_
     ~freturn:_ ~locals:_ _ =
   ((), ())
 

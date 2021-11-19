@@ -28,6 +28,7 @@ module type Domain = sig
   val call :
        summaries:bool
     -> ThreadID.t
+    -> ?child:ThreadID.t
     -> globals:Llair.Global.Set.t
     -> actuals:Llair.Exp.t iarray
     -> areturn:Llair.Reg.t option
