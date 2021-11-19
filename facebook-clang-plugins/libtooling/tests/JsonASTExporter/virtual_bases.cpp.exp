@@ -335,6 +335,7 @@
             ]
           },
           {
+            "is_copy_constructor" : true
           }
         ]],
         ["CXXMethodDecl" , [
@@ -691,6 +692,7 @@
             ]
           },
           {
+            "is_copy_constructor" : true
           }
         ]],
         ["CXXMethodDecl" , [
@@ -1004,6 +1006,7 @@
             ]
           },
           {
+            "is_copy_constructor" : true
           }
         ]],
         ["CXXMethodDecl" , [
@@ -1451,6 +1454,7 @@
             ]
           },
           {
+            "is_copy_constructor" : true
           }
         ]],
         ["CXXMethodDecl" , [

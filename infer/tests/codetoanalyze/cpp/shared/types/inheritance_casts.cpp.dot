@@ -145,56 +145,56 @@ digraph cfg {
 	
 
 	 "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_7" -> "getB#inheritance_casts(class inheritance_casts::B)#7572693428029732371.903fb8dc56797768f6ca6ebdf511cdaf_6" ;
-"A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_1" [label="1: Start inheritance_casts::A::A\nFormals:  this:inheritance_casts::A* __param_0:inheritance_casts::A&\nLocals:  \n  " color=yellow style=filled]
+"A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_1" [label="1: Start inheritance_casts::A::A\nFormals:  this:inheritance_casts::A* __param_0:inheritance_casts::A&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_1" -> "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_3" ;
-"A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_2" [label="2: Exit inheritance_casts::A::A \n  " color=yellow style=filled]
+	 "A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_1" -> "A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_3" ;
+"A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_2" [label="2: Exit inheritance_casts::A::A \n  " color=yellow style=filled]
 	
 
-"A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_3" [label="3:  Constructor Init \n   n$1=*&this:inheritance_casts::A* [line 8, column 8]\n " shape="box"]
+"A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_3" [label="3:  Constructor Init \n   n$1=*&this:inheritance_casts::A* [line 8, column 8]\n " shape="box"]
 	
 
-	 "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_3" -> "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_4" ;
-"A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_4" [label="4:  Constructor Init \n   n$2=*&__param_0:inheritance_casts::A& [line 8, column 8]\n  n$3=*n$2.f:int [line 8, column 8]\n  *n$1.f:int=n$3 [line 8, column 8]\n " shape="box"]
+	 "A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_3" -> "A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_4" ;
+"A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_4" [label="4:  Constructor Init \n   n$2=*&__param_0:inheritance_casts::A& [line 8, column 8]\n  n$3=*n$2.f:int [line 8, column 8]\n  *n$1.f:int=n$3 [line 8, column 8]\n " shape="box"]
 	
 
-	 "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_4" -> "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_2" ;
-"A#A#inheritance_casts#{7370816057993186369}.2a0cd11dc2c8bdbd1cce3b7e630e356b_1" [label="1: Start inheritance_casts::A::A\nFormals:  this:inheritance_casts::A*\nLocals:  \n  " color=yellow style=filled]
+	 "A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_4" -> "A#A#inheritance_casts#{}5177723221953429334.5e713dc56c770ec232501f7edbdf777b_2" ;
+"A#A#inheritance_casts#{}7370816057993186369.f265a851a97276027db63bd18c1b8818_1" [label="1: Start inheritance_casts::A::A\nFormals:  this:inheritance_casts::A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "A#A#inheritance_casts#{7370816057993186369}.2a0cd11dc2c8bdbd1cce3b7e630e356b_1" -> "A#A#inheritance_casts#{7370816057993186369}.2a0cd11dc2c8bdbd1cce3b7e630e356b_2" ;
-"A#A#inheritance_casts#{7370816057993186369}.2a0cd11dc2c8bdbd1cce3b7e630e356b_2" [label="2: Exit inheritance_casts::A::A \n  " color=yellow style=filled]
+	 "A#A#inheritance_casts#{}7370816057993186369.f265a851a97276027db63bd18c1b8818_1" -> "A#A#inheritance_casts#{}7370816057993186369.f265a851a97276027db63bd18c1b8818_2" ;
+"A#A#inheritance_casts#{}7370816057993186369.f265a851a97276027db63bd18c1b8818_2" [label="2: Exit inheritance_casts::A::A \n  " color=yellow style=filled]
 	
 
-"B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_1" [label="1: Start inheritance_casts::B::B\nFormals:  this:inheritance_casts::B* __param_0:inheritance_casts::B&\nLocals:  \n  " color=yellow style=filled]
+"B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_1" [label="1: Start inheritance_casts::B::B\nFormals:  this:inheritance_casts::B* __param_0:inheritance_casts::B&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_1" -> "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_3" ;
-"B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_2" [label="2: Exit inheritance_casts::B::B \n  " color=yellow style=filled]
+	 "B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_1" -> "B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_3" ;
+"B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_2" [label="2: Exit inheritance_casts::B::B \n  " color=yellow style=filled]
 	
 
-"B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_3" [label="3:  Constructor Init \n   n$1=*&this:inheritance_casts::B* [line 11, column 8]\n " shape="box"]
+"B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_3" [label="3:  Constructor Init \n   n$1=*&this:inheritance_casts::B* [line 11, column 8]\n " shape="box"]
 	
 
-	 "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_3" -> "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_4" ;
-"B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_4" [label="4:  Constructor Init \n   n$2=*&__param_0:inheritance_casts::B& [line 11, column 8]\n  n$3=_fun_inheritance_casts::A::A(n$1:inheritance_casts::B*,n$2:inheritance_casts::B&) [line 11, column 8]\n " shape="box"]
+	 "B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_3" -> "B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_4" ;
+"B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_4" [label="4:  Constructor Init \n   n$2=*&__param_0:inheritance_casts::B& [line 11, column 8]\n  n$3=_fun_inheritance_casts::A::A(n$1:inheritance_casts::B*,n$2:inheritance_casts::B&) [line 11, column 8]\n " shape="box"]
 	
 
-	 "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_4" -> "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_2" ;
-"B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_1" [label="1: Start inheritance_casts::B::B\nFormals:  this:inheritance_casts::B*\nLocals:  \n  " color=yellow style=filled]
+	 "B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_4" -> "B#B#inheritance_casts#{}1524938702708619033.64a982376735207e794957874278c476_2" ;
+"B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_1" [label="1: Start inheritance_casts::B::B\nFormals:  this:inheritance_casts::B*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_1" -> "B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_3" ;
-"B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_2" [label="2: Exit inheritance_casts::B::B \n  " color=yellow style=filled]
+	 "B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_1" -> "B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_3" ;
+"B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_2" [label="2: Exit inheritance_casts::B::B \n  " color=yellow style=filled]
 	
 
-"B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_3" [label="3:  Constructor Init \n   n$1=*&this:inheritance_casts::B* [line 11, column 8]\n " shape="box"]
+"B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_3" [label="3:  Constructor Init \n   n$1=*&this:inheritance_casts::B* [line 11, column 8]\n " shape="box"]
 	
 
-	 "B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_3" -> "B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_4" ;
-"B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_4" [label="4:  Constructor Init \n   n$2=_fun_inheritance_casts::A::A(n$1:inheritance_casts::B*) [line 11, column 8]\n " shape="box"]
+	 "B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_3" -> "B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_4" ;
+"B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_4" [label="4:  Constructor Init \n   n$2=_fun_inheritance_casts::A::A(n$1:inheritance_casts::B*) [line 11, column 8]\n " shape="box"]
 	
 
-	 "B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_4" -> "B#B#inheritance_casts#{9060408154611102004}.9c71feed9e0690adf90538a551cad576_2" ;
+	 "B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_4" -> "B#B#inheritance_casts#{}9060408154611102004.424509d85a4193e90d2592d1aa901cd3_2" ;
 }

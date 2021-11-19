@@ -631,6 +631,7 @@
                                         ]
                                       },
                                       {
+                                        "is_copy_constructor" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -1215,6 +1216,7 @@
                                             ]
                                           },
                                           {
+                                            "is_copy_constructor" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (
@@ -1982,6 +1984,7 @@
                                         ]
                                       },
                                       {
+                                        "is_copy_constructor" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -3113,6 +3116,7 @@
                                             ]
                                           },
                                           {
+                                            "is_copy_constructor" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (
@@ -4110,6 +4114,7 @@
                                         ]
                                       },
                                       {
+                                        "is_copy_constructor" : true
                                       }
                                     )>,
                                     <"CXXConstructorDecl" : (
@@ -5002,6 +5007,7 @@
                                             ]
                                           },
                                           {
+                                            "is_copy_constructor" : true
                                           }
                                         )>,
                                         <"CXXConstructorDecl" : (

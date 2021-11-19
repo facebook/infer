@@ -34,15 +34,15 @@ digraph cfg {
 	
 
 	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_4" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" ;
-"X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_1" [label="1: Start X::X\nFormals:  this:X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
+"X#X#{}14428669737419226111.d51dda6819b79d795a1dfd98f6bdeca0_1" [label="1: Start X::X\nFormals:  this:X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_1" -> "X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_3" ;
-"X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_2" [label="2: Exit X::X \n  " color=yellow style=filled]
+	 "X#X#{}14428669737419226111.d51dda6819b79d795a1dfd98f6bdeca0_1" -> "X#X#{}14428669737419226111.d51dda6819b79d795a1dfd98f6bdeca0_3" ;
+"X#X#{}14428669737419226111.d51dda6819b79d795a1dfd98f6bdeca0_2" [label="2: Exit X::X \n  " color=yellow style=filled]
 	
 
-"X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 16, column 22]\n  n$1=*&a:int [line 16, column 26]\n  n$2=*&b:int [line 16, column 30]\n  *n$0.f:int=(n$1 + n$2) [line 16, column 22]\n " shape="box"]
+"X#X#{}14428669737419226111.d51dda6819b79d795a1dfd98f6bdeca0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 16, column 22]\n  n$1=*&a:int [line 16, column 26]\n  n$2=*&b:int [line 16, column 30]\n  *n$0.f:int=(n$1 + n$2) [line 16, column 22]\n " shape="box"]
 	
 
-	 "X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_3" -> "X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_2" ;
+	 "X#X#{}14428669737419226111.d51dda6819b79d795a1dfd98f6bdeca0_3" -> "X#X#{}14428669737419226111.d51dda6819b79d795a1dfd98f6bdeca0_2" ;
 }

@@ -142,7 +142,7 @@ end
 module ObjC_Cpp : sig
   type kind =
     | CPPMethod of {mangled: string option}
-    | CPPConstructor of {mangled: string option}
+    | CPPConstructor of {mangled: string option; is_copy_ctor: bool}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -251,6 +251,8 @@ val get_parameters : t -> Parameter.t list
 val replace_parameters : Parameter.t list -> t -> t
 
 val parameter_of_name : t -> Typ.Name.t -> Parameter.t
+
+val is_copy_ctor : t -> bool
 
 val is_java_access_method : t -> bool
 

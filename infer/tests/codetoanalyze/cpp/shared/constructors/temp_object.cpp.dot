@@ -23,7 +23,7 @@ digraph cfg {
 	
 
 	 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_6" -> "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_5" ;
-"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_7" [label="7:  DeclStmt \n   n$4=_fun_temp_object::X::X(&x:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$2:temp_object::X const &) copy ctor [line 27, column 9]\n " shape="box"]
+"assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_7" [label="7:  DeclStmt \n   n$4=_fun_temp_object::X::X(&x:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$2:temp_object::X const &) [line 27, column 9]\n " shape="box"]
 	
 
 	 "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_7" -> "assign_temp_div0#temp_object#6618523570396537240.fa2055065ca23850cee50c855993cd3a_3" ;
@@ -57,7 +57,7 @@ digraph cfg {
 	
 
 	 "getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_4" -> "getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_3" ;
-"getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_5" [label="5:  Return Stmt \n   n$5=_fun_temp_object::X::X(n$0:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const &) copy ctor [line 24, column 31]\n " shape="box"]
+"getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_5" [label="5:  Return Stmt \n   n$5=_fun_temp_object::X::X(n$0:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const &) [line 24, column 31]\n " shape="box"]
 	
 
 	 "getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_5" -> "getX#temp_object(class temp_object::X)#4720444219866178245.c6d7bacbd2aa751dffef569ff17890e7_6" ;
@@ -213,37 +213,37 @@ digraph cfg {
 	
 
 	 "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_4" -> "div#X#temp_object#(12460299690567563818).008eb806654973dcd60bef3460e7ab63_2" ;
-"X#X#temp_object#{12231838181691886121}.38f720bcfdd216037b161fc1f84ba92b_1" [label="1: Start temp_object::X::X\nFormals:  this:temp_object::X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
+"X#X#temp_object#{}12231838181691886121.4059bee8cb36b4415452fd0413b22130_1" [label="1: Start temp_object::X::X\nFormals:  this:temp_object::X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#temp_object#{12231838181691886121}.38f720bcfdd216037b161fc1f84ba92b_1" -> "X#X#temp_object#{12231838181691886121}.38f720bcfdd216037b161fc1f84ba92b_3" ;
-"X#X#temp_object#{12231838181691886121}.38f720bcfdd216037b161fc1f84ba92b_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
+	 "X#X#temp_object#{}12231838181691886121.4059bee8cb36b4415452fd0413b22130_1" -> "X#X#temp_object#{}12231838181691886121.4059bee8cb36b4415452fd0413b22130_3" ;
+"X#X#temp_object#{}12231838181691886121.4059bee8cb36b4415452fd0413b22130_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{12231838181691886121}.38f720bcfdd216037b161fc1f84ba92b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 12, column 21]\n  n$1=*&a:int [line 12, column 25]\n  *n$0.f:int=n$1 [line 12, column 21]\n " shape="box"]
+"X#X#temp_object#{}12231838181691886121.4059bee8cb36b4415452fd0413b22130_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 12, column 21]\n  n$1=*&a:int [line 12, column 25]\n  *n$0.f:int=n$1 [line 12, column 21]\n " shape="box"]
 	
 
-	 "X#X#temp_object#{12231838181691886121}.38f720bcfdd216037b161fc1f84ba92b_3" -> "X#X#temp_object#{12231838181691886121}.38f720bcfdd216037b161fc1f84ba92b_2" ;
-"X#X#temp_object#{14498489846246706072}.92449f6f4b90b4f036ed6bcf9c78f797_1" [label="1: Start temp_object::X::X\nFormals:  this:temp_object::X* x:temp_object::X const &\nLocals:  \n  " color=yellow style=filled]
+	 "X#X#temp_object#{}12231838181691886121.4059bee8cb36b4415452fd0413b22130_3" -> "X#X#temp_object#{}12231838181691886121.4059bee8cb36b4415452fd0413b22130_2" ;
+"X#X#temp_object#{[copy_ctor]}14498489846246706072.2e4246adaaf642a84505d54d9c34b21d_1" [label="1: Start temp_object::X::X\nFormals:  this:temp_object::X* x:temp_object::X const &\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#temp_object#{14498489846246706072}.92449f6f4b90b4f036ed6bcf9c78f797_1" -> "X#X#temp_object#{14498489846246706072}.92449f6f4b90b4f036ed6bcf9c78f797_3" ;
-"X#X#temp_object#{14498489846246706072}.92449f6f4b90b4f036ed6bcf9c78f797_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
+	 "X#X#temp_object#{[copy_ctor]}14498489846246706072.2e4246adaaf642a84505d54d9c34b21d_1" -> "X#X#temp_object#{[copy_ctor]}14498489846246706072.2e4246adaaf642a84505d54d9c34b21d_3" ;
+"X#X#temp_object#{[copy_ctor]}14498489846246706072.2e4246adaaf642a84505d54d9c34b21d_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{14498489846246706072}.92449f6f4b90b4f036ed6bcf9c78f797_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 14, column 19]\n  n$1=*&x:temp_object::X const & [line 14, column 23]\n  n$2=*n$1.f:int [line 14, column 23]\n  *n$0.f:int=n$2 [line 14, column 19]\n " shape="box"]
+"X#X#temp_object#{[copy_ctor]}14498489846246706072.2e4246adaaf642a84505d54d9c34b21d_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 14, column 19]\n  n$1=*&x:temp_object::X const & [line 14, column 23]\n  n$2=*n$1.f:int [line 14, column 23]\n  *n$0.f:int=n$2 [line 14, column 19]\n " shape="box"]
 	
 
-	 "X#X#temp_object#{14498489846246706072}.92449f6f4b90b4f036ed6bcf9c78f797_3" -> "X#X#temp_object#{14498489846246706072}.92449f6f4b90b4f036ed6bcf9c78f797_2" ;
-"X#X#temp_object#{7690616887655186138}.f2d203761081921c7fa2fe0f9e19da98_1" [label="1: Start temp_object::X::X\nFormals:  this:temp_object::X* a:int\nLocals:  \n  " color=yellow style=filled]
+	 "X#X#temp_object#{[copy_ctor]}14498489846246706072.2e4246adaaf642a84505d54d9c34b21d_3" -> "X#X#temp_object#{[copy_ctor]}14498489846246706072.2e4246adaaf642a84505d54d9c34b21d_2" ;
+"X#X#temp_object#{}7690616887655186138.75ecc656f525a36d46138187af7cae84_1" [label="1: Start temp_object::X::X\nFormals:  this:temp_object::X* a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#temp_object#{7690616887655186138}.f2d203761081921c7fa2fe0f9e19da98_1" -> "X#X#temp_object#{7690616887655186138}.f2d203761081921c7fa2fe0f9e19da98_3" ;
-"X#X#temp_object#{7690616887655186138}.f2d203761081921c7fa2fe0f9e19da98_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
+	 "X#X#temp_object#{}7690616887655186138.75ecc656f525a36d46138187af7cae84_1" -> "X#X#temp_object#{}7690616887655186138.75ecc656f525a36d46138187af7cae84_3" ;
+"X#X#temp_object#{}7690616887655186138.75ecc656f525a36d46138187af7cae84_2" [label="2: Exit temp_object::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#temp_object#{7690616887655186138}.f2d203761081921c7fa2fe0f9e19da98_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 11, column 14]\n  n$1=*&a:int [line 11, column 18]\n  *n$0.f:int=n$1 [line 11, column 14]\n " shape="box"]
+"X#X#temp_object#{}7690616887655186138.75ecc656f525a36d46138187af7cae84_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:temp_object::X* [line 11, column 14]\n  n$1=*&a:int [line 11, column 18]\n  *n$0.f:int=n$1 [line 11, column 14]\n " shape="box"]
 	
 
-	 "X#X#temp_object#{7690616887655186138}.f2d203761081921c7fa2fe0f9e19da98_3" -> "X#X#temp_object#{7690616887655186138}.f2d203761081921c7fa2fe0f9e19da98_2" ;
+	 "X#X#temp_object#{}7690616887655186138.75ecc656f525a36d46138187af7cae84_3" -> "X#X#temp_object#{}7690616887655186138.75ecc656f525a36d46138187af7cae84_2" ;
 }

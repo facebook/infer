@@ -411,8 +411,7 @@ module PulseTransferFunctions = struct
           in
           ( astates
           , path
-          , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals call_flags astates
-              astate_n )
+          , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals astates astate_n )
       | Prune (condition, loc, is_then_branch, if_kind) ->
           let result, path =
             match PulseOperations.prune path loc ~condition astate with

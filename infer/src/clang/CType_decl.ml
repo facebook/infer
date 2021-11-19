@@ -604,8 +604,9 @@ and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
-    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, _)) ->
-        Procname.ObjC_Cpp.CPPConstructor {mangled}
+    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_copy_constructor= is_copy_ctor}))
+      ->
+        Procname.ObjC_Cpp.CPPConstructor {mangled; is_copy_ctor}
     | Some (Clang_ast_t.CXXDestructorDecl _) ->
         Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->

@@ -324,7 +324,7 @@ end
 module ObjC_Cpp = struct
   type kind =
     | CPPMethod of {mangled: string option}
-    | CPPConstructor of {mangled: string option}
+    | CPPConstructor of {mangled: string option; is_copy_ctor: bool}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -361,6 +361,10 @@ module ObjC_Cpp = struct
     if is_instance then ObjCInstanceMethod else ObjCClassMethod
 
 
+  let is_copy_ctor {kind} =
+    match kind with CPPConstructor {is_copy_ctor} -> is_copy_ctor | _ -> false
+
+
   let is_prefix_init s = String.is_prefix ~prefix:"init" s
 
   let is_objc_constructor method_name = String.equal method_name "new" || is_prefix_init method_name
@@ -392,8 +396,10 @@ module ObjC_Cpp = struct
   let pp_verbose_kind fmt = function
     | CPPMethod {mangled} | CPPDestructor {mangled} ->
         F.fprintf fmt "(%s)" (Option.value ~default:"" mangled)
-    | CPPConstructor {mangled} ->
-        F.fprintf fmt "{%s}" (Option.value ~default:"" mangled)
+    | CPPConstructor {mangled; is_copy_ctor} ->
+        F.fprintf fmt "{%s}%s"
+          (if is_copy_ctor then "[copy_ctor]" else "")
+          (Option.value ~default:"" mangled)
     | ObjCClassMethod ->
         F.pp_print_string fmt "class"
     | ObjCInstanceMethod ->
@@ -626,6 +632,13 @@ let rec compare_name x y =
 let hash = Hashtbl.hash
 
 let with_block_parameters base blocks = WithBlockParameters (base, blocks)
+
+let is_copy_ctor = function
+  | ObjC_Cpp objc_cpp_pname ->
+      ObjC_Cpp.is_copy_ctor objc_cpp_pname
+  | _ ->
+      false
+
 
 let is_java = function Java _ -> true | _ -> false
 

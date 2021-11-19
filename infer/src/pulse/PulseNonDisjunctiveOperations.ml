@@ -22,14 +22,14 @@ let get_var_opt args =
       None
 
 
-let add_copies location call_exp actuals (flags : CallFlags.t) astates astate_non_disj =
+let add_copies location call_exp actuals astates astate_non_disj =
   List.fold astates ~init:astate_non_disj
     ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
       match (exec_state, (call_exp : Exp.t), actuals) with
       | ( ContinueProgram disjunct
         , (Const (Cfun procname) | Closure {name= procname})
         , (Exp.Lvar copy_pvar, _) :: rest_args )
-        when is_constructor procname && flags.cf_is_copy_ctor ->
+        when is_constructor procname && Procname.is_copy_ctor procname ->
           let copied_var = Var.of_pvar copy_pvar in
           if Var.appears_in_source_code copied_var then
             let heap = (disjunct.post :> BaseDomain.t).heap in

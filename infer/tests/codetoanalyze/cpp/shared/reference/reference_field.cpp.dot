@@ -402,29 +402,29 @@ digraph cfg {
 	
 
 	 "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_4" -> "getI#Ptr#reference_field#(9990830118718700597).db587e508ad6680b9c85197fd72992d4_2" ;
-"Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_1" [label="1: Start reference_field::Ptr::Ptr\nFormals:  this:reference_field::Ptr* r_:reference_field::X&\nLocals:  \n  " color=yellow style=filled]
+"Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_1" [label="1: Start reference_field::Ptr::Ptr\nFormals:  this:reference_field::Ptr* r_:reference_field::X&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_1" -> "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_5" ;
-"Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_2" [label="2: Exit reference_field::Ptr::Ptr \n  " color=yellow style=filled]
+	 "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_1" -> "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_5" ;
+"Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_2" [label="2: Exit reference_field::Ptr::Ptr \n  " color=yellow style=filled]
 	
 
-"Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_3" [label="3:  Constructor Init \n   n$1=*&this:reference_field::Ptr* [line 32, column 24]\n " shape="box"]
+"Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_3" [label="3:  Constructor Init \n   n$1=*&this:reference_field::Ptr* [line 32, column 24]\n " shape="box"]
 	
 
-	 "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_3" -> "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_4" ;
-"Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_4" [label="4:  Constructor Init \n   n$2=*&this:reference_field::Ptr* [line 32, column 27]\n  n$3=*n$2.x:reference_field::X* [line 32, column 27]\n  *n$1.i:int*=n$3.f [line 32, column 24]\n " shape="box"]
+	 "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_3" -> "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_4" ;
+"Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_4" [label="4:  Constructor Init \n   n$2=*&this:reference_field::Ptr* [line 32, column 27]\n  n$3=*n$2.x:reference_field::X* [line 32, column 27]\n  *n$1.i:int*=n$3.f [line 32, column 24]\n " shape="box"]
 	
 
-	 "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_4" -> "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_2" ;
-"Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_5" [label="5:  Constructor Init \n   n$4=*&this:reference_field::Ptr* [line 32, column 16]\n " shape="box"]
+	 "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_4" -> "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_2" ;
+"Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_5" [label="5:  Constructor Init \n   n$4=*&this:reference_field::Ptr* [line 32, column 16]\n " shape="box"]
 	
 
-	 "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_5" -> "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_6" ;
-"Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_6" [label="6:  Constructor Init \n   n$5=*&r_:reference_field::X& [line 32, column 19]\n  *n$4.x:reference_field::X*=n$5 [line 32, column 16]\n " shape="box"]
+	 "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_5" -> "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_6" ;
+"Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_6" [label="6:  Constructor Init \n   n$5=*&r_:reference_field::X& [line 32, column 19]\n  *n$4.x:reference_field::X*=n$5 [line 32, column 16]\n " shape="box"]
 	
 
-	 "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_6" -> "Ptr#Ptr#reference_field#{5303596330455874677}.6286ccfb3e7bb6a38414e8d313496188_3" ;
+	 "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_6" -> "Ptr#Ptr#reference_field#{}5303596330455874677.dbdc009492472b95f466aeca82ffe204_3" ;
 "getI#Ref#reference_field#(11319674367674692208).ab98b8b3de535d47d4b70092fc16ce37_1" [label="1: Start reference_field::Ref::getI\nFormals:  this:reference_field::Ref*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -455,29 +455,29 @@ digraph cfg {
 	
 
 	 "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_4" -> "getF#Ref#reference_field#(4333270831228787341).d47ae80c78316dac2e24a22fc076cf41_2" ;
-"Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_1" [label="1: Start reference_field::Ref::Ref\nFormals:  this:reference_field::Ref* r_:reference_field::X&\nLocals:  \n  " color=yellow style=filled]
+"Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_1" [label="1: Start reference_field::Ref::Ref\nFormals:  this:reference_field::Ref* r_:reference_field::X&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_1" -> "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_5" ;
-"Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_2" [label="2: Exit reference_field::Ref::Ref \n  " color=yellow style=filled]
+	 "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_1" -> "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_5" ;
+"Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_2" [label="2: Exit reference_field::Ref::Ref \n  " color=yellow style=filled]
 	
 
-"Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_3" [label="3:  Constructor Init \n   n$1=*&this:reference_field::Ref* [line 24, column 23]\n " shape="box"]
+"Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_3" [label="3:  Constructor Init \n   n$1=*&this:reference_field::Ref* [line 24, column 23]\n " shape="box"]
 	
 
-	 "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_3" -> "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_4" ;
-"Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_4" [label="4:  Constructor Init \n   n$2=*&this:reference_field::Ref* [line 24, column 25]\n  n$3=*n$2.x:reference_field::X& [line 24, column 25]\n  *n$1.i:int&=n$3.f [line 24, column 23]\n " shape="box"]
+	 "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_3" -> "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_4" ;
+"Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_4" [label="4:  Constructor Init \n   n$2=*&this:reference_field::Ref* [line 24, column 25]\n  n$3=*n$2.x:reference_field::X& [line 24, column 25]\n  *n$1.i:int&=n$3.f [line 24, column 23]\n " shape="box"]
 	
 
-	 "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_4" -> "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_2" ;
-"Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_5" [label="5:  Constructor Init \n   n$4=*&this:reference_field::Ref* [line 24, column 16]\n " shape="box"]
+	 "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_4" -> "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_2" ;
+"Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_5" [label="5:  Constructor Init \n   n$4=*&this:reference_field::Ref* [line 24, column 16]\n " shape="box"]
 	
 
-	 "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_5" -> "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_6" ;
-"Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_6" [label="6:  Constructor Init \n   n$5=*&r_:reference_field::X& [line 24, column 18]\n  *n$4.x:reference_field::X&=n$5 [line 24, column 16]\n " shape="box"]
+	 "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_5" -> "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_6" ;
+"Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_6" [label="6:  Constructor Init \n   n$5=*&r_:reference_field::X& [line 24, column 18]\n  *n$4.x:reference_field::X&=n$5 [line 24, column 16]\n " shape="box"]
 	
 
-	 "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_6" -> "Ref#Ref#reference_field#{697437612503217650}.9df85b3faaec5d8e4c0cd91a43436f31_3" ;
+	 "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_6" -> "Ref#Ref#reference_field#{}697437612503217650.26c75506d2ec158220297cbfcdbee5b7_3" ;
 "getI#Val#reference_field#(5092177944978041506).c3db07b6697824cd689cc81f71b31e2a_1" [label="1: Start reference_field::Val::getI\nFormals:  this:reference_field::Val*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -508,49 +508,49 @@ digraph cfg {
 	
 
 	 "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_4" -> "getF#Val#reference_field#(5603383781744538435).f0720826d9b8abc0c6259038f1412318_2" ;
-"Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_1" [label="1: Start reference_field::Val::Val\nFormals:  this:reference_field::Val* r_:reference_field::X&\nLocals:  \n  " color=yellow style=filled]
+"Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_1" [label="1: Start reference_field::Val::Val\nFormals:  this:reference_field::Val* r_:reference_field::X&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_1" -> "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_5" ;
-"Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_2" [label="2: Exit reference_field::Val::Val \n  " color=yellow style=filled]
+	 "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_1" -> "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_5" ;
+"Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_2" [label="2: Exit reference_field::Val::Val \n  " color=yellow style=filled]
 	
 
-"Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_3" [label="3:  Constructor Init \n   n$1=*&this:reference_field::Val* [line 40, column 23]\n " shape="box"]
+"Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_3" [label="3:  Constructor Init \n   n$1=*&this:reference_field::Val* [line 40, column 23]\n " shape="box"]
 	
 
-	 "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_3" -> "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_4" ;
-"Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_4" [label="4:  Constructor Init \n   n$2=*&this:reference_field::Val* [line 40, column 25]\n  n$3=*n$2.x.f:int [line 40, column 25]\n  *n$1.i:int=n$3 [line 40, column 23]\n " shape="box"]
+	 "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_3" -> "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_4" ;
+"Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_4" [label="4:  Constructor Init \n   n$2=*&this:reference_field::Val* [line 40, column 25]\n  n$3=*n$2.x.f:int [line 40, column 25]\n  *n$1.i:int=n$3 [line 40, column 23]\n " shape="box"]
 	
 
-	 "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_4" -> "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_2" ;
-"Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_5" [label="5:  Constructor Init \n   n$4=*&this:reference_field::Val* [line 40, column 16]\n " shape="box"]
+	 "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_4" -> "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_2" ;
+"Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_5" [label="5:  Constructor Init \n   n$4=*&this:reference_field::Val* [line 40, column 16]\n " shape="box"]
 	
 
-	 "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_5" -> "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_6" ;
-"Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_6" [label="6:  Constructor Init \n   n$5=*&r_:reference_field::X& [line 40, column 18]\n  n$6=_fun_reference_field::X::X(n$4.x:reference_field::X*,n$5:reference_field::X&) copy ctor [line 40, column 16]\n " shape="box"]
+	 "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_5" -> "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_6" ;
+"Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_6" [label="6:  Constructor Init \n   n$5=*&r_:reference_field::X& [line 40, column 18]\n  n$6=_fun_reference_field::X::X(n$4.x:reference_field::X*,n$5:reference_field::X&) [line 40, column 16]\n " shape="box"]
 	
 
-	 "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_6" -> "Val#Val#reference_field#{4788856549917862568}.b7d1ec35256cbe6a05257dc23f16dca0_3" ;
-"X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_1" [label="1: Start reference_field::X::X\nFormals:  this:reference_field::X* __param_0:reference_field::X const &\nLocals:  \n  " color=yellow style=filled]
+	 "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_6" -> "Val#Val#reference_field#{}4788856549917862568.311f7b4217d005e49801a08dced43d5f_3" ;
+"X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_1" [label="1: Start reference_field::X::X\nFormals:  this:reference_field::X* __param_0:reference_field::X const &\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_1" -> "X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_3" ;
-"X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_2" [label="2: Exit reference_field::X::X \n  " color=yellow style=filled]
+	 "X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_1" -> "X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_3" ;
+"X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_2" [label="2: Exit reference_field::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_3" [label="3:  Constructor Init \n   n$1=*&this:reference_field::X* [line 10, column 8]\n " shape="box"]
+"X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_3" [label="3:  Constructor Init \n   n$1=*&this:reference_field::X* [line 10, column 8]\n " shape="box"]
 	
 
-	 "X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_3" -> "X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_4" ;
-"X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_4" [label="4:  Constructor Init \n   n$2=*&__param_0:reference_field::X const & [line 10, column 8]\n  n$3=*n$2.f:int [line 10, column 8]\n  *n$1.f:int=n$3 [line 10, column 8]\n " shape="box"]
+	 "X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_3" -> "X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_4" ;
+"X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_4" [label="4:  Constructor Init \n   n$2=*&__param_0:reference_field::X const & [line 10, column 8]\n  n$3=*n$2.f:int [line 10, column 8]\n  *n$1.f:int=n$3 [line 10, column 8]\n " shape="box"]
 	
 
-	 "X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_4" -> "X#X#reference_field#{14378536680571594526}.5931bc923643f498cd8fbe886d381d15_2" ;
-"X#X#reference_field#{3492669295766283357}.5726e095a607366ecb73dddc4f6c2504_1" [label="1: Start reference_field::X::X\nFormals:  this:reference_field::X*\nLocals:  \n  " color=yellow style=filled]
+	 "X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_4" -> "X#X#reference_field#{[copy_ctor]}14378536680571594526.8131c50ae02fbeca7fc2a9a75d32d234_2" ;
+"X#X#reference_field#{}3492669295766283357.7401ad5a837bcb65a52f8c25b6d77192_1" [label="1: Start reference_field::X::X\nFormals:  this:reference_field::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#reference_field#{3492669295766283357}.5726e095a607366ecb73dddc4f6c2504_1" -> "X#X#reference_field#{3492669295766283357}.5726e095a607366ecb73dddc4f6c2504_2" ;
-"X#X#reference_field#{3492669295766283357}.5726e095a607366ecb73dddc4f6c2504_2" [label="2: Exit reference_field::X::X \n  " color=yellow style=filled]
+	 "X#X#reference_field#{}3492669295766283357.7401ad5a837bcb65a52f8c25b6d77192_1" -> "X#X#reference_field#{}3492669295766283357.7401ad5a837bcb65a52f8c25b6d77192_2" ;
+"X#X#reference_field#{}3492669295766283357.7401ad5a837bcb65a52f8c25b6d77192_2" [label="2: Exit reference_field::X::X \n  " color=yellow style=filled]
 	
 
 }
