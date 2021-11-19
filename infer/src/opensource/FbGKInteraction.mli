@@ -28,3 +28,9 @@ val is_marker_start_objc : 'pname -> bool
 val is_marker_end_objc : 'pname -> bool
 
 val is_lazy_instance : 'pname -> bool
+
+type known_expensiveness = KnownCheap | KnownExpensive
+
+module ExpensivenessModel : sig
+  val dispatcher : 'tenv -> 'pname -> 'args -> 'known_expensivene option
+end

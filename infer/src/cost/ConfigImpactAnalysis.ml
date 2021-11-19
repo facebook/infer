@@ -642,32 +642,36 @@ module Dom = struct
              } )
 
 
-  type known_expensiveness = KnownCheap | KnownExpensive
+  type known_expensiveness = FbGKInteraction.known_expensiveness = KnownCheap | KnownExpensive
 
   let get_expensiveness_model =
     let dispatch : (Tenv.t, known_expensiveness, unit) ProcnameDispatcher.Call.dispatcher =
       let open ProcnameDispatcher.Call in
-      make_dispatcher
-        [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
-        ; +PatternMatch.Java.implements_android "content.SharedPreferences"
-          &:: "edit" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_android "content.SharedPreferences"
-          &::+ (fun _ method_name -> String.is_prefix method_name ~prefix:"get")
-          &--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkArgument" $ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkElementIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkNotNull" $ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkPositionIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkState" $ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_regex "Pattern" &:: "compile" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_regex "Pattern" &:: "matcher" &--> KnownExpensive ]
+      let dispatcher =
+        make_dispatcher
+          [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
+          ; +PatternMatch.Java.implements_android "content.SharedPreferences"
+            &:: "edit" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_android "content.SharedPreferences"
+            &::+ (fun _ method_name -> String.is_prefix method_name ~prefix:"get")
+            &--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkArgument" $ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkElementIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkNotNull" $ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkPositionIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkState" $ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_regex "Pattern" &:: "compile" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_regex "Pattern" &:: "matcher" &--> KnownExpensive
+          ; -"UICKeyChainStore" &::+ startsWith "dataForKey:" &--> KnownExpensive ]
+      in
+      merge_dispatchers dispatcher FbGKInteraction.ExpensivenessModel.dispatcher
     in
     fun tenv pname args ->
       let args =
