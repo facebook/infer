@@ -8,9 +8,11 @@
 #include <assert.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "thread.h"
 
+#define THREAD_NAME_SIZE 100
 #define NUM_PUSH_THREADS 2
 #define NUM_POP_THREADS 2
 static_assert(
@@ -135,6 +137,7 @@ main(void)
   error_t status;
 
   treiber_stack_t* test_stack = treiber_stack_create();
+  char tmp_name[THREAD_NAME_SIZE];
   int thread_ret;
   int32_t total_push = 0;
   int32_t num_pushed = 0;
@@ -143,7 +146,9 @@ main(void)
 
   thread_t* push_threads[NUM_PUSH_THREADS];
   for (int i = 0; i < NUM_PUSH_THREADS; i++) {
-    status = thread_create(&push_threads[i], &push_thread_run, test_stack);
+    snprintf(tmp_name, THREAD_NAME_SIZE * sizeof(char), "push-%d", i);
+    status =
+        thread_create(&push_threads[i], tmp_name, &push_thread_run, test_stack);
     assert(OK == status && "Thread created successfully");
   }
   for (int i = 0; i < NUM_PUSH_THREADS; i++) {
@@ -160,7 +165,9 @@ main(void)
 
   thread_t* pop_threads[NUM_POP_THREADS];
   for (int i = 0; i < NUM_POP_THREADS; i++) {
-    status = thread_create(&pop_threads[i], &pop_thread_run, test_stack);
+    snprintf(tmp_name, THREAD_NAME_SIZE * sizeof(char), "pop-%d", i);
+    status =
+        thread_create(&pop_threads[i], tmp_name, &pop_thread_run, test_stack);
     assert(OK == status && "Thread created successfully");
   }
   for (int i = 0; i < NUM_POP_THREADS; i++) {

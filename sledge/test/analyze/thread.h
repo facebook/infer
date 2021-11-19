@@ -13,7 +13,8 @@ typedef int error_t;
 #define OK 0
 
 error_t
-thread_create(thread_t** t, thread_create_routine entry, void* arg)
+thread_create(
+    thread_t** t, const char* name, thread_create_routine entry, void* arg)
 {
   thread_t* child = __llair_alloc(sizeof(thread_t));
   *child = sledge_thread_create(entry, arg);

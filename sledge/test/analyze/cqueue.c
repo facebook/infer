@@ -9,6 +9,7 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "thread.h"
 
@@ -154,6 +155,7 @@ consume_thread_run(void* const arg)
   return d;
 }
 
+#define THREAD_NAME_SIZE 100
 #define NUM_PRODUCE_THREADS 2
 #define NUM_CONSUME_THREADS 2
 static_assert(NUM_PRODUCE_THREADS >= NUM_CONSUME_THREADS,
@@ -165,9 +167,10 @@ static_assert(NUM_PRODUCE_THREADS >= NUM_CONSUME_THREADS,
 int
 main(void)
 {
+  error_t status;
   void* test_mem_ptr = __llair_alloc(num_bytes_to_allocate());
   queue_t* test_queue = queue_init(test_mem_ptr);
-  error_t status;
+  char tmp_name[THREAD_NAME_SIZE];
   int thread_ret;
   int32_t total_produce = 0;
   int32_t num_produced = 0;
@@ -177,8 +180,9 @@ main(void)
   thread_t* consume_threads[NUM_CONSUME_THREADS];
 
   for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
-    status =
-        thread_create(&produce_threads[i], &produce_thread_run, test_queue);
+    snprintf(tmp_name, THREAD_NAME_SIZE * sizeof(char), "produce-%d", i);
+    status = thread_create(
+        &produce_threads[i], tmp_name, &produce_thread_run, test_queue);
     assert(OK == status && "Failed to create thread");
   }
   for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
@@ -194,8 +198,9 @@ main(void)
   }
 
   for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {
-    status =
-        thread_create(&consume_threads[i], &consume_thread_run, test_queue);
+    snprintf(tmp_name, THREAD_NAME_SIZE * sizeof(char), "consume-%d", i);
+    status = thread_create(
+        &consume_threads[i], tmp_name, &consume_thread_run, test_queue);
     assert(OK == status && "Failed to create thread");
   }
   for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {
