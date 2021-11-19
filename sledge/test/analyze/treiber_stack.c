@@ -9,6 +9,8 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 
+#include "thread.h"
+
 #define NUM_PUSH_THREADS 2
 #define NUM_POP_THREADS 2
 static_assert(

@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "thread.h"
+
 uint32_t
 cct_random_between(const uint32_t from, const uint32_t to)
 {
