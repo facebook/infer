@@ -73,7 +73,7 @@ watch: setup
 
 .PHONY: watch
 watch-test: setup
-	dune build --watch @_build/debug/runtest --auto-promote $(DEBUG_TARGETS)
+	dune build --watch @_build/debug/runtest @_build/debug/fmt --auto-promote $(DEBUG_TARGETS)
 
 .PHONY: test
 test:
