@@ -34,7 +34,7 @@ module Make (Var : VAR) = struct
   let is_empty = Map.is_empty
 
   let freshen vs ~wrt =
-    let dom = Set.inter wrt vs in
+    let dom = Set.inter vs wrt in
     ( if Set.is_empty dom then
       ({sub= empty; dom= Set.empty; rng= Set.empty}, wrt)
     else

@@ -83,6 +83,10 @@ end
 
 include T
 
+(** Replay debugging *)
+
+type call = Freshen_xs of t * Var.Set.t | Simplify of t [@@deriving sexp]
+
 (** Basic values *)
 
 let emp =
@@ -482,23 +486,32 @@ and rename sub q =
 
 (** freshen existentials, preserving vocabulary *)
 and freshen_xs q ~wrt =
-  [%Trace.call fun {pf} ->
-    pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q ;
-    assert (Var.Set.subset q.us ~of_:wrt)]
-  ;
-  let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen q.xs ~wrt in
-  ( if Var.Subst.is_empty sub then q
-  else
-    let xs = Var.Set.union (Var.Set.diff q.xs dom) rng in
-    let q' = apply_subst sub q in
-    if xs == q.xs && q' == q then q else {q' with xs} )
-  |>
-  [%Trace.retn fun {pf} q' ->
-    pf "%a@ %a" Var.Subst.pp sub pp q' ;
-    assert (Var.Set.equal q'.us q.us) ;
-    assert (Var.Set.disjoint q'.xs (Var.Subst.domain sub)) ;
-    assert (Var.Set.disjoint q'.xs (Var.Set.inter q.xs wrt)) ;
-    invariant q']
+  try
+    [%Trace.call fun {pf} ->
+      pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q ;
+      assert (Var.Set.subset q.us ~of_:wrt)]
+    ;
+    let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen q.xs ~wrt in
+    ( if Var.Subst.is_empty sub then q
+    else
+      let q' = apply_subst sub q in
+      let xs = Var.Set.union (Var.Set.diff q'.xs dom) rng in
+      if q' == q && xs == q.xs then q
+      else
+        let us = Var.Set.diff q'.us xs in
+        {q' with us; xs} )
+    |>
+    [%Trace.retn fun {pf} q' ->
+      pf "%a@ %a" Var.Subst.pp sub pp q' ;
+      assert (Var.Set.equal q'.us q.us) ;
+      assert (Var.Set.disjoint q'.xs (Var.Subst.domain sub)) ;
+      assert (Var.Set.disjoint q'.xs (Var.Set.inter q.xs wrt)) ;
+      invariant q']
+  with exc ->
+    let bt = Printexc.get_raw_backtrace () in
+    Format.eprintf "@\n%a@." Sexp.pp_hum
+      (sexp_of_call (Freshen_xs (q, wrt))) ;
+    Printexc.raise_with_backtrace exc bt
 
 and extend_us us q =
   let us = Var.Set.union us q.us in
@@ -518,8 +531,8 @@ and star q1 q2 =
   else if is_emp q2 then extend_us q2.us q1
   else
     let us = Var.Set.union q1.us q2.us in
-    let q1 = freshen_xs {q1 with us} ~wrt:(Var.Set.union us q2.xs) in
-    let q2 = freshen_xs {q2 with us} ~wrt:(Var.Set.union us q1.xs) in
+    let q1 = freshen_xs q1 ~wrt:(Var.Set.union us q2.xs) in
+    let q2 = freshen_xs q2 ~wrt:(Var.Set.union us q1.xs) in
     let {us= us1; xs= xs1; ctx= c1; pure= p1; heap= h1; djns= d1} = q1 in
     let {us= us2; xs= xs2; ctx= c2; pure= p2; heap= h2; djns= d2} = q2 in
     assert (Var.Set.equal us (Var.Set.union us1 us2)) ;
@@ -879,29 +892,31 @@ let rec propagate_context_ ancestor_vs ancestor_ctx q =
   let q = {q with us= Var.Set.union ancestor_vs q.us} in
   (* strengthen context with that from above *)
   let q = and_ctx_ ancestor_ctx q in
-  (* decompose formula *)
-  let xs, q = bind_exists q ~wrt:Var.Set.empty in
-  let stem, djns = ({q with djns= emp.djns}, q.djns) in
-  (* propagate over disjunctions *)
-  let q' =
-    List.fold djns stem ~f:(fun djn q' ->
-        let djn, dj_ctxs =
-          Set.fold_map djn [] ~f:(fun dj dj_ctxs ->
-              let dj = propagate_context_ q.us q.ctx dj in
-              (dj, (dj.xs, dj.ctx) :: dj_ctxs) )
-        in
-        let new_xs, djn_ctx = Context.interN q.us dj_ctxs in
-        (* hoist xs appearing in disjunction's context *)
-        let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
-        let djn = Set.map ~f:(elim_exists djn_xs) djn in
-        let ctx_djn = and_ctx_ djn_ctx (orN djn) in
-        assert (is_false ctx_djn || Var.Set.subset new_xs ~of_:djn_xs) ;
-        star (exists djn_xs ctx_djn) q' )
-  in
-  (* requantify existentials *)
-  let q' = exists xs q' in
-  (* strengthening contexts can reveal inconsistency *)
-  (if is_false q' then false_ q'.us else q')
+  ( if is_false q then false_ q.us
+  else
+    (* decompose formula *)
+    let xs, q = bind_exists q ~wrt:Var.Set.empty in
+    let stem, djns = ({q with djns= emp.djns}, q.djns) in
+    (* propagate over disjunctions *)
+    let q' =
+      List.fold djns stem ~f:(fun djn q' ->
+          let djn, dj_ctxs =
+            Set.fold_map djn [] ~f:(fun dj dj_ctxs ->
+                let dj = propagate_context_ q.us q.ctx dj in
+                (dj, (dj.xs, dj.ctx) :: dj_ctxs) )
+          in
+          let new_xs, djn_ctx = Context.interN q.us dj_ctxs in
+          (* hoist xs appearing in disjunction's context *)
+          let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
+          let djn = Set.map ~f:(elim_exists djn_xs) djn in
+          let ctx_djn = and_ctx_ djn_ctx (orN djn) in
+          assert (is_false ctx_djn || Var.Set.subset new_xs ~of_:djn_xs) ;
+          star (exists djn_xs ctx_djn) q' )
+    in
+    (* requantify existentials *)
+    let q' = exists xs q' in
+    (* strengthening contexts can reveal inconsistency *)
+    if is_false q' then false_ q'.us else q' )
   |>
   [%Trace.retn fun {pf} q' ->
     pf "%a" pp q' ;
@@ -1036,10 +1051,9 @@ let simplify q =
  * Replay debugging
  *)
 
-type call = Simplify of t [@@deriving sexp]
-
 let replay c =
   match call_of_sexp (Sexp.of_string c) with
+  | Freshen_xs (q, wrt) -> freshen_xs q ~wrt |> ignore
   | Simplify q -> simplify q |> ignore
 
 let dump_simplify = ref (-1)
