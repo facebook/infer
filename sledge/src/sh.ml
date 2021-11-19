@@ -1062,4 +1062,9 @@ let simplify q =
   Int.incr count_simplify ;
   if !count_simplify = !dump_simplify then
     fail "%a" Sexp.pp_hum (sexp_of_call (Simplify q)) ()
-  else simplify q
+  else
+    try simplify q
+    with exc ->
+      let bt = Printexc.get_raw_backtrace () in
+      Format.eprintf "@\n%a@." Sexp.pp_hum (sexp_of_call (Simplify q)) ;
+      Printexc.raise_with_backtrace exc bt
