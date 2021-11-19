@@ -180,6 +180,9 @@ main(void)
     assert(OK == status && "Failed to create thread");
   }
   for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
+    thread_resume(produce_threads[i]);
+  }
+  for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
     status = thread_join(produce_threads[i], &thread_ret);
     assert(OK == status && "Failed to join thread");
     total_produce += thread_ret;
@@ -192,6 +195,9 @@ main(void)
     status =
         thread_create(&consume_threads[i], &consume_thread_run, test_queue);
     assert(OK == status && "Failed to create thread");
+  }
+  for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {
+    thread_resume(consume_threads[i]);
   }
   for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {
     status = thread_join(consume_threads[i], &thread_ret);

@@ -145,6 +145,9 @@ main(void)
     assert(OK == status && "Thread created successfully");
   }
   for (int i = 0; i < NUM_PUSH_THREADS; i++) {
+    thread_resume(push_threads[i]);
+  }
+  for (int i = 0; i < NUM_PUSH_THREADS; i++) {
     status = thread_join(push_threads[i], &thread_ret);
     assert(OK == status && "Thread joined successfully");
     total_push += thread_ret;
@@ -157,6 +160,9 @@ main(void)
   for (int i = 0; i < NUM_POP_THREADS; i++) {
     status = thread_create(&pop_threads[i], &pop_thread_run, test_stack);
     assert(OK == status && "Thread created successfully");
+  }
+  for (int i = 0; i < NUM_POP_THREADS; i++) {
+    thread_resume(pop_threads[i]);
   }
   for (int i = 0; i < NUM_POP_THREADS; i++) {
     status = thread_join(pop_threads[i], &thread_ret);

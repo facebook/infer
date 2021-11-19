@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
@@ -39,6 +40,8 @@ typedef int (*thread_create_routine)(void*);
 
 thread_t sledge_thread_create(thread_create_routine entry, void* arg);
 
+void sledge_thread_resume(thread_t thread);
+
 int sledge_thread_join(thread_t thread);
 
 typedef int error_t;
@@ -51,6 +54,13 @@ thread_create(thread_t** t, thread_create_routine entry, void* arg)
   *child = sledge_thread_create(entry, arg);
   *t = child;
   return OK;
+}
+
+bool
+thread_resume(thread_t* thread)
+{
+  sledge_thread_resume(*thread);
+  return true;
 }
 
 error_t

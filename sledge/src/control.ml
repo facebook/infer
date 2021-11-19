@@ -369,7 +369,10 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
   (** Representation of a single thread, including identity and scheduling
       state *)
   module Thread : sig
-    type t = Runnable of IP.t | Terminated of ThreadID.t * D.term_code
+    type t =
+      | Runnable of IP.t
+      | Suspended of IP.t
+      | Terminated of ThreadID.t * D.term_code
     [@@deriving equal, sexp_of]
 
     val compare : t Ord.t
@@ -380,15 +383,21 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     (** Because [ip] needs to include [tid], this is represented as a sum of
         products, but it may be more natural to think in terms of the
         isomorphic representation using a product of a sum such as
-        [(Runnable of ... | Terminated of ...) * ThreadID.t]. *)
-    type t = Runnable of IP.t | Terminated of ThreadID.t * D.term_code
+        [(Runnable of ... | ...) * ThreadID.t]. *)
+    type t =
+      | Runnable of IP.t
+      | Suspended of IP.t
+      | Terminated of ThreadID.t * D.term_code
     [@@deriving sexp_of]
 
     let pp ppf = function
       | Runnable ip -> IP.pp ppf ip
+      | Suspended ip -> Format.fprintf ppf "S%a" IP.pp ip
       | Terminated (tid, _) -> Format.fprintf ppf "T%i" tid
 
-    let id = function Runnable {tid} -> tid | Terminated (tid, _) -> tid
+    let id = function
+      | Runnable {tid} | Suspended {tid} -> tid
+      | Terminated (tid, _) -> tid
 
     (* Note: Threads.inactive relies on comparing tid last *)
     let compare_aux compare_tid x y =
@@ -396,12 +405,14 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       if x == y then 0
       else
         match (x, y) with
-        | Runnable x, Runnable y ->
+        | Runnable x, Runnable y | Suspended x, Suspended y ->
             Llair.IP.compare x.ip y.ip
             <?> (Stack.compare_as_inlined_location, x.stk, y.stk)
             <?> (compare_tid, x.tid, y.tid)
         | Runnable _, _ -> -1
         | _, Runnable _ -> 1
+        | Suspended _, _ -> -1
+        | _, Suspended _ -> 1
         | Terminated (x_tid, x_tc), Terminated (y_tid, y_tc) ->
             D.compare_term_code x_tc y_tc <?> (compare_tid, x_tid, y_tid)
 
@@ -423,6 +434,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     val init : t
     val create : Llair.block -> t -> ThreadID.t * t
     val after_step : Thread.t -> t -> t * inactive
+    val resume : ThreadID.t -> t -> t option
     val join : ThreadID.t -> t -> (D.term_code * t) option
     val fold : t -> 's -> f:(Thread.t -> 's -> 's) -> 's
   end = struct
@@ -457,7 +469,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         | None -> ThreadID.init
       in
       let tid = max_tid + 1 in
-      let thread = Thread.Runnable {ip; stk= Stack.empty; tid} in
+      let thread = Thread.Suspended {ip; stk= Stack.empty; tid} in
       (tid, M.add ~key:tid ~data:thread threads)
 
     let after_step active threads =
@@ -465,6 +477,14 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       let inactive = inactive tid threads in
       let threads = M.add ~key:tid ~data:active threads in
       (threads, inactive)
+
+    let resume tid threads =
+      match M.find tid threads with
+      | Some (Thread.Suspended ip) ->
+          Some (M.add ~key:tid ~data:(Thread.Runnable ip) threads)
+      | _ ->
+          [%Trace.info " prune resume of non-suspended thread: %i" tid] ;
+          None
 
     let join tid threads =
       match M.find tid threads with
@@ -501,7 +521,8 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       if x == y then 0
       else
         match (x, y) with
-        | {dst= Runnable x_t}, {dst= Runnable y_t} ->
+        | {dst= Runnable x_t}, {dst= Runnable y_t}
+         |{dst= Suspended x_t}, {dst= Suspended y_t} ->
             let is_rec_call = function
               | {Llair.term= Call {recursive= true}} -> true
               | _ -> false
@@ -516,6 +537,8 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
             <?> (compare_tid, x_t.tid, y_t.tid)
         | {dst= Runnable _}, _ -> -1
         | _, {dst= Runnable _} -> 1
+        | {dst= Suspended _}, _ -> -1
+        | _, {dst= Suspended _} -> 1
         | {dst= Terminated (x_tid, x_tc)}, {dst= Terminated (y_tid, y_tc)}
           ->
             Llair.Block.compare x.src y.src
@@ -773,7 +796,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
             let incoming_tid = Thread.id edge.dst in
             Threads.fold threads succs ~f:(fun active succs ->
                 match active with
-                | Terminated _ -> succs
+                | Terminated _ | Suspended _ -> succs
                 | Runnable ({tid} as ip) ->
                     let switches =
                       if tid = incoming_tid then switches else switches + 1
@@ -986,18 +1009,25 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     in
     exec_jump return {ams with state; threads} wl
 
+  let exec_thread_resume thread return
+      ({ctrl= {tid}; state; threads} as ams) wl =
+    List.fold (D.resolve_int tid state thread) wl ~f:(fun resume_tid wl ->
+        match Threads.resume resume_tid threads with
+        | None -> wl
+        | Some threads -> exec_jump return {ams with threads} wl )
+
   let exec_thread_join thread areturn return
       ({ctrl= {tid}; state; threads} as ams) wl =
     List.fold (D.resolve_int tid state thread) wl ~f:(fun join_tid wl ->
         match Threads.join join_tid threads with
+        | None -> wl
         | Some (term_code, threads) ->
             let state =
               match areturn with
               | None -> state
               | Some reg -> D.move_term_code tid reg term_code state
             in
-            exec_jump return {ams with state; threads} wl
-        | None -> wl )
+            exec_jump return {ams with state; threads} wl )
 
   let resolve_callee (pgm : Llair.program) tid callee state =
     let lookup name = Llair.Func.find name pgm.functions in
@@ -1033,6 +1063,8 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         | callees ->
             List.fold callees wl ~f:(fun callee wl ->
                 exec_thread_create areturn callee arg return ams wl ) )
+      | "sledge_thread_resume", [|thread|] ->
+          exec_thread_resume thread return ams wl
       | "sledge_thread_join", [|thread|] ->
           exec_thread_join thread areturn return ams wl
       | _ -> exec_call call ams wl )

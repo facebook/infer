@@ -18,6 +18,7 @@ main()
 {
   thread_t* child;
   error_t err = thread_create(&child, &child_routine, NULL);
+  thread_resume(child);
   int ret_code;
   err = thread_join(child, &ret_code);
   count += ret_code;
