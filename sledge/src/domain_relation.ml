@@ -117,6 +117,14 @@ module Make (State_domain : State_domain_sig) = struct
     |>
     [%Trace.retn fun {pf} -> pf "%a" pp]
 
+  type term_code = State_domain.term_code [@@deriving compare, sexp_of]
+
+  let term tid formals freturn (_, current) =
+    State_domain.term tid formals freturn current
+
+  let move_term_code tid reg code (entry, current) =
+    (entry, State_domain.move_term_code tid reg code current)
+
   let dnf (entry, current) =
     State_domain.Set.fold (State_domain.dnf current) Set.empty
       ~f:(fun c rs -> Set.add (entry, c) rs)

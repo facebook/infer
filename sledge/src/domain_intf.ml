@@ -48,6 +48,13 @@ module type Domain = sig
     -> t
     -> t
 
+  type term_code [@@deriving compare, sexp_of]
+
+  val term :
+    ThreadID.t -> Llair.Reg.t iarray -> Llair.Reg.t option -> t -> term_code
+
+  val move_term_code : ThreadID.t -> Llair.Reg.t -> term_code -> t -> t
+
   val resolve_callee :
        (string -> Llair.func option)
     -> ThreadID.t

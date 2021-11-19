@@ -35,11 +35,11 @@ __attribute__((noreturn)) void __llair_unreachable();
 
 typedef int thread_t;
 
-typedef void (*thread_create_routine)(void*);
+typedef int (*thread_create_routine)(void*);
 
 thread_t sledge_thread_create(thread_create_routine entry, void* arg);
 
-void sledge_thread_join(thread_t thread);
+int sledge_thread_join(thread_t thread);
 
 typedef int error_t;
 #define OK 0
@@ -54,9 +54,9 @@ thread_create(thread_t** t, thread_create_routine entry, void* arg)
 }
 
 error_t
-thread_join(thread_t* t)
+thread_join(thread_t* thread, int* ret_code)
 {
-  sledge_thread_join(*t);
+  *ret_code = sledge_thread_join(*thread);
   return OK;
 }
 

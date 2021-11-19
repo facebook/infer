@@ -98,29 +98,31 @@ treiber_stack_pop(data_t* r, treiber_stack_t* s)
   return OK;
 }
 
-static void
+static int
 push_thread_run(void* const arg)
 {
   if (arg == NULL) {
-    return;
+    return 0;
   }
 
   treiber_stack_t* s = (treiber_stack_t*)arg;
   data_t val = __llair_choice();
   treiber_stack_push(s, val);
+  return val;
 }
 
-static void
+static int
 pop_thread_run(void* const arg)
 {
   if (arg == NULL) {
-    return;
+    return 0;
   }
 
   treiber_stack_t* s = (treiber_stack_t*)arg;
   data_t val;
   error_t status = treiber_stack_pop(&val, s);
   assert(OK == status && "Pop only from non-empty stacks");
+  return val;
 }
 
 /* First runs all push threads to finish, then runs all pop threads to finish.
@@ -131,6 +133,11 @@ main(void)
   error_t status;
 
   treiber_stack_t* test_stack = treiber_stack_create();
+  int thread_ret;
+  int32_t total_push = 0;
+  int32_t num_pushed = 0;
+  int32_t total_pop = 0;
+  int32_t num_popped = 0;
 
   thread_t* push_threads[NUM_PUSH_THREADS];
   for (int i = 0; i < NUM_PUSH_THREADS; i++) {
@@ -138,8 +145,12 @@ main(void)
     assert(OK == status && "Thread created successfully");
   }
   for (int i = 0; i < NUM_PUSH_THREADS; i++) {
-    status = thread_join(push_threads[i]);
+    status = thread_join(push_threads[i], &thread_ret);
     assert(OK == status && "Thread joined successfully");
+    total_push += thread_ret;
+    if (thread_ret != 0) {
+      ++num_pushed;
+    }
   }
 
   thread_t* pop_threads[NUM_POP_THREADS];
@@ -148,9 +159,18 @@ main(void)
     assert(OK == status && "Thread created successfully");
   }
   for (int i = 0; i < NUM_POP_THREADS; i++) {
-    status = thread_join(pop_threads[i]);
+    status = thread_join(pop_threads[i], &thread_ret);
     assert(OK == status && "Thread joined successfully");
+    total_pop += thread_ret;
+    if (thread_ret != 0) {
+      ++num_popped;
+    }
   }
+
+  assert(num_pushed - num_popped == NUM_PUSH_THREADS - NUM_POP_THREADS &&
+      "Number of remaining elements = #push threads - #pop threads");
+  assert(total_push >= total_pop &&
+      "sum of pushed elements >= sum of popped elements");
 
   /* check stack has length NUM_PUSH_THREADS - NUM_POP_THREADS */
   for (int i = 0; i < NUM_PUSH_THREADS - NUM_POP_THREADS; i++) {

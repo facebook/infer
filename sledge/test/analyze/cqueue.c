@@ -125,31 +125,31 @@ mark_free(queue_t* const q, const uint32_t k)
   atomic_store(&q->own[k], PROD);
 }
 
-static void
+static int
 produce_thread_run(void* const arg)
 {
   if (arg == NULL) {
-    return;
+    return 0;
   }
   queue_t* const q = (queue_t*)arg;
   const uint32_t d = cct_random_between(1, 100);
   const uint32_t idx = start_enqueue(q);
   q->dat[idx] = d;
   mark_ready(q, idx);
-  return;
+  return d;
 }
 
-static void
+static int
 consume_thread_run(void* const arg)
 {
   if (arg == NULL) {
-    return;
+    return 0;
   }
   queue_t* const q = (queue_t*)arg;
   const uint32_t idx = start_dequeue(q);
   const uint32_t d = q->dat[idx];
   mark_free(q, idx);
-  return;
+  return d;
 }
 
 #define NUM_PRODUCE_THREADS 2
@@ -165,9 +165,14 @@ main(void)
 {
   void* test_mem_ptr = __llair_alloc(num_bytes_to_allocate());
   queue_t* test_queue = queue_init(test_mem_ptr);
+  error_t status;
+  int thread_ret;
+  int32_t total_produce = 0;
+  int32_t num_produced = 0;
+  int32_t total_consume = 0;
+  int32_t num_consumed = 0;
   thread_t* produce_threads[NUM_PRODUCE_THREADS];
   thread_t* consume_threads[NUM_CONSUME_THREADS];
-  error_t status;
 
   for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
     status =
@@ -175,8 +180,12 @@ main(void)
     assert(OK == status && "Failed to create thread");
   }
   for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
-    status = thread_join(produce_threads[i]);
+    status = thread_join(produce_threads[i], &thread_ret);
     assert(OK == status && "Failed to join thread");
+    total_produce += thread_ret;
+    if (thread_ret != 0) {
+      ++num_produced;
+    }
   }
 
   for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {
@@ -185,10 +194,19 @@ main(void)
     assert(OK == status && "Failed to create thread");
   }
   for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {
-    status = thread_join(consume_threads[i]);
+    status = thread_join(consume_threads[i], &thread_ret);
     assert(OK == status && "Failed to join thread");
+    total_consume += thread_ret;
+    if (thread_ret != 0) {
+      ++num_consumed;
+    }
   }
 
+  assert(num_produced - num_consumed ==
+          NUM_PRODUCE_THREADS - NUM_CONSUME_THREADS &&
+      "Number of remaining elements = #produce threads - #consume threads");
+  assert(total_produce >= total_consume &&
+      "sum of produced elements >= sum of consumed elements");
   if (NUM_PRODUCE_THREADS == NUM_CONSUME_THREADS) {
     assert(queue_is_empty(test_queue) && "Non-empty queue");
   }
