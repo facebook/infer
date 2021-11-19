@@ -29,8 +29,10 @@ thread_resume(thread_t* thread)
   return true;
 }
 
+#define TIME_INFINITE UINT64_MAX
+
 error_t
-thread_join(thread_t* thread, int* ret_code)
+thread_join(thread_t* thread, int* ret_code, uint64_t timeout)
 {
   *ret_code = sledge_thread_join(*thread);
   return OK;

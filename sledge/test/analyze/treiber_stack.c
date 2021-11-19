@@ -155,7 +155,7 @@ main(void)
     thread_resume(push_threads[i]);
   }
   for (int i = 0; i < NUM_PUSH_THREADS; i++) {
-    status = thread_join(push_threads[i], &thread_ret);
+    status = thread_join(push_threads[i], &thread_ret, TIME_INFINITE);
     assert(OK == status && "Thread joined successfully");
     total_push += thread_ret;
     if (thread_ret != 0) {
@@ -174,7 +174,7 @@ main(void)
     thread_resume(pop_threads[i]);
   }
   for (int i = 0; i < NUM_POP_THREADS; i++) {
-    status = thread_join(pop_threads[i], &thread_ret);
+    status = thread_join(pop_threads[i], &thread_ret, TIME_INFINITE);
     assert(OK == status && "Thread joined successfully");
     total_pop += thread_ret;
     if (thread_ret != 0) {

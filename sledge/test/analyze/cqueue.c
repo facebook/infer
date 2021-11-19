@@ -189,7 +189,7 @@ main(void)
     thread_resume(produce_threads[i]);
   }
   for (uint32_t i = 0; i < NUM_PRODUCE_THREADS; i++) {
-    status = thread_join(produce_threads[i], &thread_ret);
+    status = thread_join(produce_threads[i], &thread_ret, TIME_INFINITE);
     assert(OK == status && "Failed to join thread");
     total_produce += thread_ret;
     if (thread_ret != 0) {
@@ -207,7 +207,7 @@ main(void)
     thread_resume(consume_threads[i]);
   }
   for (uint32_t i = 0; i < NUM_CONSUME_THREADS; i++) {
-    status = thread_join(consume_threads[i], &thread_ret);
+    status = thread_join(consume_threads[i], &thread_ret, TIME_INFINITE);
     assert(OK == status && "Failed to join thread");
     total_consume += thread_ret;
     if (thread_ret != 0) {
