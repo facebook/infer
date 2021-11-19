@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-int main() {
+int
+main()
+{
   int c = __llair_choice() % 5;
   int* p;
 

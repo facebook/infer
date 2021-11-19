@@ -15,11 +15,21 @@ typedef struct _ {
 
 typedef int* (*F)(S*);
 
-int* g(S* x) { return &(x->b); }
+int*
+g(S* x)
+{
+  return &(x->b);
+}
 
-int* h(S* x) { return &(x->c); }
+int*
+h(S* x)
+{
+  return &(x->c);
+}
 
-void main() {
+void
+main()
+{
   S t;
   void* x;
   int* y;

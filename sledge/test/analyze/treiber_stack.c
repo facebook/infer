@@ -11,8 +11,8 @@
 
 #define NUM_PUSH_THREADS 2
 #define NUM_POP_THREADS 2
-static_assert(NUM_PUSH_THREADS >= NUM_POP_THREADS,
-              "#push threads >= #pop threads");
+static_assert(
+    NUM_PUSH_THREADS >= NUM_POP_THREADS, "#push threads >= #pop threads");
 
 /**
  * An implementation of Treiber's linearizable list-based stack.
@@ -35,19 +35,25 @@ typedef struct {
   _Atomic(node_t*) top;
 } treiber_stack_t;
 
-static treiber_stack_t* treiber_stack_create(void) {
+static treiber_stack_t*
+treiber_stack_create(void)
+{
   treiber_stack_t* result = __llair_alloc(sizeof(treiber_stack_t));
   atomic_store(&result->top, NULL);
   return result;
 }
 
-bool treiber_stack_is_empty(treiber_stack_t* s) {
+bool
+treiber_stack_is_empty(treiber_stack_t* s)
+{
   cct_point();
   node_t* top_snapshot = atomic_load(&s->top);
   return top_snapshot == NULL;
 }
 
-void treiber_stack_push(treiber_stack_t* s, data_t d) {
+void
+treiber_stack_push(treiber_stack_t* s, data_t d)
+{
   node_t* new_node = __llair_alloc(sizeof(node_t));
   node_t* top_snapshot = NULL;
   bool redirected_top;
@@ -67,7 +73,9 @@ void treiber_stack_push(treiber_stack_t* s, data_t d) {
   } while (!redirected_top);
 }
 
-error_t treiber_stack_pop(data_t* r, treiber_stack_t* s) {
+error_t
+treiber_stack_pop(data_t* r, treiber_stack_t* s)
+{
   node_t* top_snapshot = NULL;
   node_t* tn = NULL;
   bool redirected_top;
@@ -93,12 +101,16 @@ error_t treiber_stack_pop(data_t* r, treiber_stack_t* s) {
 /* thread routine args not yet supported, so use a global */
 treiber_stack_t* test_stack;
 
-static void push_thread_run() {
+static void
+push_thread_run()
+{
   data_t val = __llair_choice();
   treiber_stack_push(test_stack, val);
 }
 
-static void pop_thread_run() {
+static void
+pop_thread_run()
+{
   data_t val;
   error_t status = treiber_stack_pop(&val, test_stack);
   assert(OK == status && "Pop only from non-empty stacks");
@@ -106,7 +118,9 @@ static void pop_thread_run() {
 
 /* First runs all push threads to finish, then runs all pop threads to finish.
  */
-int main(void) {
+int
+main(void)
+{
   error_t status;
 
   test_stack = treiber_stack_create();

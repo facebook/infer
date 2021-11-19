@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-int main() {
+int
+main()
+{
   int i;
   free(&i);
 }

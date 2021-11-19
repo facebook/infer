@@ -7,9 +7,15 @@
 
 int count = 0;
 
-void child_routine() { count++; }
+void
+child_routine()
+{
+  count++;
+}
 
-int main() {
+int
+main()
+{
   thread_t* child;
   error_t err = thread_create(&child, &child_routine);
   count++;

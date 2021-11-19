@@ -44,14 +44,18 @@ void sledge_thread_join(thread_t thread);
 typedef int error_t;
 #define OK 0
 
-error_t thread_create(thread_t** t, thread_create_routine entry) {
+error_t
+thread_create(thread_t** t, thread_create_routine entry)
+{
   thread_t* child = __llair_alloc(sizeof(thread_t));
   *child = sledge_thread_create(entry);
   *t = child;
   return OK;
 }
 
-error_t thread_join(thread_t* t) {
+error_t
+thread_join(thread_t* t)
+{
   sledge_thread_join(*t);
   return OK;
 }

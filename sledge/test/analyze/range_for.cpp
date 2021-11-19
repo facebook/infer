@@ -8,12 +8,16 @@
 #include <memory>
 #include <vector>
 
-std::shared_ptr<std::vector<int>> get() {
+std::shared_ptr<std::vector<int>>
+get()
+{
   std::vector<int> v = {1, 2, 3};
   return std::make_shared<std::vector<int>>(v);
 }
 
-int main() {
+int
+main()
+{
   int n;
   for (auto& t : *get()) {
     n += t;

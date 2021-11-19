@@ -8,18 +8,24 @@
 int f(int x);
 int g(int x);
 
-int f(int x) { // x= 0, 1, 2, ...
+int
+f(int x)
+{  // x= 0, 1, 2, ...
   return g(x + 2);
 }
 
-int g(int y) { // y= 2, 3, 4, ...
+int
+g(int y)
+{  // y= 2, 3, 4, ...
   if (y > 5) {
     return y;
   }
-  return f(y - 1); // Back edge!
+  return f(y - 1);  // Back edge!
 }
 
-int main() {
+int
+main()
+{
   f(0);
   return 0;
 }

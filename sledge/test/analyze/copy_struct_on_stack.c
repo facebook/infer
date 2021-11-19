@@ -11,7 +11,9 @@ typedef struct _ {
   char c;
 } S;
 
-void main() {
+void
+main()
+{
   S x = {1, 2, '3'};
   S y = {4, 5, '6'};
 

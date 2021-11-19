@@ -9,14 +9,16 @@
 #include <cstdint>
 
 extern "C" int mallctl(const char* name, void* oldp, size_t* oldlenp,
-                       void* newp, size_t newlen) __attribute__((__weak__));
+    void* newp, size_t newlen) __attribute__((__weak__));
 
-int main() {
+int
+main()
+{
   volatile uint64_t* counter;
   size_t counterLen = sizeof(uint64_t*);
 
   if (mallctl("thread.allocatedp", static_cast<void*>(&counter), &counterLen,
-              nullptr, 0) != 0) {
+          nullptr, 0) != 0) {
     return 1;
   }
 
