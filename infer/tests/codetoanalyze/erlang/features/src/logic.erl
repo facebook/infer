@@ -5,11 +5,12 @@
 
 -module(logic).
 
-% Workaround until we support true/false atoms
--define(T, (1 == 1)).
--define(F, (1 == 0)).
-
 -export([
+
+    test_true_Ok/0,
+    test_true_Bad/0,
+    test_false_Ok/0,
+    test_false_Bad/0,
     test_and00_Bad/0,
     test_and01_Bad/0,
     test_and10_Bad/0,
@@ -34,112 +35,138 @@
     test_xor11_Bad/0
 ]).
 
+test_true_Ok() ->
+    case 1 == 1 of
+        true -> ok
+    end.
+
+test_true_Bad() ->
+    case 1 == 1 of
+        false -> ok
+    end.
+
+test_true2_Ok() ->
+    if true -> ok end.
+
+test_false_Ok() ->
+    case 1 == 0 of
+        false -> ok
+    end.
+
+test_false_Bad() ->
+    case 1 == 0 of
+        true -> ok
+    end.
+
+test_false2_Bad() ->
+    if false -> ok end.
+
 test_and00_Bad() ->
     if
-        ?F and ?F -> ok
+        false and false -> ok
     end.
 
 test_and01_Bad() ->
     if
-        ?F and ?T -> ok
+        false and true -> ok
     end.
 
 test_and10_Bad() ->
     if
-        ?T and ?F -> ok
+        true and false -> ok
     end.
 
 test_and11_Ok() ->
     if
-        ?T and ?T -> ok
+        true and true -> ok
     end.
 
 test_andalso00_Bad() ->
     if
-        ?F andalso ?F -> ok
+        false andalso false -> ok
     end.
 
 test_andalso01_Bad() ->
     if
-        ?F andalso ?T -> ok
+        false andalso true -> ok
     end.
 
 test_andalso10_Bad() ->
     if
-        ?T andalso ?F -> ok
+        true andalso false -> ok
     end.
 
 test_andalso11_Ok() ->
     if
-        ?T andalso ?T -> ok
+        true andalso true -> ok
     end.
 
 test_or00_Bad() ->
     if
-        ?F or ?F -> ok
+        false or false -> ok
     end.
 
 test_or01_Ok() ->
     if
-        ?F or ?T -> ok
+        false or true -> ok
     end.
 
 test_or10_Ok() ->
     if
-        ?T or ?F -> ok
+        true or false -> ok
     end.
 
 test_or11_Ok() ->
     if
-        ?T or ?T -> ok
+        true or true -> ok
     end.
 
 test_orelse00_Bad() ->
     if
-        ?F orelse ?F -> ok
+        false orelse false -> ok
     end.
 
 test_orelse01_Ok() ->
     if
-        ?F orelse ?T -> ok
+        false orelse true -> ok
     end.
 
 test_orelse10_Ok() ->
     if
-        ?T orelse ?F -> ok
+        true orelse false -> ok
     end.
 
 test_orelse11_Ok() ->
     if
-        ?T orelse ?T -> ok
+        true orelse true -> ok
     end.
 
 test_unot_Ok() ->
     if
-        not ?F -> ok
+        not false -> ok
     end.
 
 test_unot_Bad() ->
     if
-        not ?T -> ok
+        not true -> ok
     end.
 
 test_xor00_Bad() ->
     if
-        ?F xor ?F -> ok
+        false xor false -> ok
     end.
 
 test_xor01_Ok() ->
     if
-        ?F xor ?T -> ok
+        false xor true -> ok
     end.
 
 test_xor10_Ok() ->
     if
-        ?T xor ?F -> ok
+        true xor false -> ok
     end.
 
 test_xor11_Bad() ->
     if
-        ?T xor ?T -> ok
+        true xor true -> ok
     end.

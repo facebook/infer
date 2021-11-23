@@ -34,8 +34,7 @@ accepts_all_tricky(X) when X > 0; not (X > 0) -> ok.
 accepts_all_tricky2(X) when X > 0 -> ok;
 accepts_all_tricky2(X) when not (X > 0) -> ok.
 
-% FP (T95259136)
-fp_accepts_all_tricky3(X) when X > 0; X =< 0 -> ok.
+accepts_all_tricky3(X) when X > 0; X =< 0 -> ok.
 
 possible_exception(X) when 1 div X =:= 1 -> ok.
 
@@ -68,8 +67,8 @@ test_accepts_all_tricky2_Ok() ->
     accepts_all_tricky2(1).
 
 test_accepts_all_tricky3_Ok() ->
-    fp_accepts_all_tricky3(0),
-    fp_accepts_all_tricky3(1).
+    accepts_all_tricky3(0),
+    accepts_all_tricky3(1).
 
 test_possible_exception_Ok() ->
     possible_exception(1).

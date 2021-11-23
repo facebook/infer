@@ -28,7 +28,7 @@ let update_location line (env : (_, _) Env.t) =
 let has_type (env : (_, _) Env.t) ~result ~value (name : ErlangTypeName.t) : Sil.instr =
   let fun_exp : Exp.t = Const (Cfun BuiltinDecl.__instanceof) in
   let args : (Exp.t * Typ.t) list =
-    [ (Var value, any_typ)
+    [ (value, any_typ)
     ; ( Sizeof
           { typ= Env.typ_of_name name
           ; nbytes= None
@@ -41,22 +41,75 @@ let has_type (env : (_, _) Env.t) ~result ~value (name : ErlangTypeName.t) : Sil
 
 let check_type env value typ : Block.t =
   let is_right_type_id = mk_fresh_id () in
-  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value typ] in
+  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value:(Var value) typ] in
   let exit_success = Node.make_if env true (Var is_right_type_id) in
   let exit_failure = Node.make_if env false (Var is_right_type_id) in
   start |~~> [exit_success; exit_failure] ;
   {start; exit_success; exit_failure}
 
 
-(** into_id=value_id.field_name *)
-let load_field (env : (_, _) Env.t) into_id value_id field_name typ : Sil.instr =
+(** into_id=expr.field_name *)
+let load_field_from_expr (env : (_, _) Env.t) into_id expr field_name typ : Sil.instr =
   let field = Fieldname.make (ErlangType typ) field_name in
   Load
     { id= into_id
-    ; e= Lfield (Var value_id, field, Env.typ_of_name typ)
+    ; e= Lfield (expr, field, Env.typ_of_name typ)
     ; root_typ= any_typ
     ; typ= any_typ
     ; loc= env.location }
+
+
+(** into_id=value_id.field_name *)
+let load_field_from_id (env : (_, _) Env.t) into_id value_id field_name typ : Sil.instr =
+  load_field_from_expr env into_id (Var value_id) field_name typ
+
+
+let mk_atom_call (env : (_, _) Env.t) ret_var atom =
+  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_atom) in
+  let args =
+    let value_exp = Exp.Const (Cstr atom) in
+    let hash = ErlangTypeName.calculate_hash atom in
+    let hash_exp = Exp.Const (Cint (IntLit.of_int hash)) in
+    [(value_exp, any_typ); (hash_exp, any_typ)]
+  in
+  Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
+
+
+(** Boxes a SIL integer expression (interpreted as a Boolean) into an Erlang atom (true/false). *)
+let box_bool env into_id expr : Block.t =
+  let start = Node.make_nop env in
+  let exit_success = Node.make_nop env in
+  let true_branch = Node.make_if env true expr in
+  let false_branch = Node.make_if env false expr in
+  let mk_true_atom = Node.make_stmt env [mk_atom_call env into_id ErlangTypeName.atom_true] in
+  let mk_false_atom = Node.make_stmt env [mk_atom_call env into_id ErlangTypeName.atom_false] in
+  start |~~> [true_branch; false_branch] ;
+  true_branch |~~> [mk_true_atom] ;
+  false_branch |~~> [mk_false_atom] ;
+  mk_true_atom |~~> [exit_success] ;
+  mk_false_atom |~~> [exit_success] ;
+  {start; exit_success; exit_failure= Node.make_nop env}
+
+
+(** Unboxes an Erlang atom (true/false) into a SIL integer expression (1/0). Currently we do not
+    check for type errors: we assume that we get an atom and we treat anything besides "true" as if
+    it was "false". But if we do plan to check for such errors, this is the place to do so. *)
+let unbox_bool env expr : Exp.t * Block.t =
+  let is_atom = mk_fresh_id () in
+  let start = Node.make_stmt env [has_type env ~result:is_atom ~value:expr Atom] in
+  let prune_node = Node.make_if env true (Var is_atom) in
+  let hash_id = mk_fresh_id () in
+  let load =
+    Node.make_stmt env [load_field_from_expr env hash_id expr ErlangTypeName.atom_hash Atom]
+  in
+  let check_hash_expr =
+    let hash = ErlangTypeName.calculate_hash ErlangTypeName.atom_true in
+    let hash_expr = Exp.Const (Cint (IntLit.of_int hash)) in
+    Exp.BinOp (Eq, Var hash_id, hash_expr)
+  in
+  start |~~> [prune_node] ;
+  prune_node |~~> [load] ;
+  (check_hash_expr, {start; exit_success= load; exit_failure= Node.make_nop env})
 
 
 (** If the pattern-match succeeds, then the [exit_success] node is reached and the pattern variables
@@ -97,8 +150,8 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
 and translate_pattern_cons env value head tail : Block.t =
   let head_value = mk_fresh_id () in
   let tail_value = mk_fresh_id () in
-  let head_load = load_field env head_value value ErlangTypeName.cons_head Cons in
-  let tail_load = load_field env tail_value value ErlangTypeName.cons_tail Cons in
+  let head_load = load_field_from_id env head_value value ErlangTypeName.cons_head Cons in
+  let tail_load = load_field_from_id env tail_value value ErlangTypeName.cons_tail Cons in
   let unpack_node = Node.make_stmt env [head_load; tail_load] in
   let head_matcher = translate_pattern env head_value head in
   let tail_matcher = translate_pattern env tail_value tail in
@@ -119,9 +172,11 @@ and translate_pattern_literal_atom (env : (_, _) Env.t) value atom : Block.t =
   let expected_id = mk_fresh_id () in
   let expected_block : Block.t = translate_expression_literal_atom env expected_id atom in
   let actual_hash = mk_fresh_id () in
-  let load_actual = load_field env actual_hash value ErlangTypeName.atom_hash Atom in
+  let load_actual = load_field_from_id env actual_hash value ErlangTypeName.atom_hash Atom in
   let expected_hash = mk_fresh_id () in
-  let load_expected = load_field env expected_hash expected_id ErlangTypeName.atom_hash Atom in
+  let load_expected =
+    load_field_from_id env expected_hash expected_id ErlangTypeName.atom_hash Atom
+  in
   let load_node = Node.make_stmt env [load_actual; load_expected] in
   let hash_checker = Block.make_branch env (Exp.BinOp (Eq, Var actual_hash, Var expected_hash)) in
   let type_checker = check_type env value Atom in
@@ -195,7 +250,7 @@ and match_record_name env value name (record_info : Env.record_info) : Block.t =
   let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
   let type_checker = check_type env value tuple_typ in
   let name_id = mk_fresh_id () in
-  let name_load = load_field env name_id value (ErlangTypeName.tuple_elem 1) tuple_typ in
+  let name_load = load_field_from_id env name_id value (ErlangTypeName.tuple_elem 1) tuple_typ in
   let unpack_node = Node.make_stmt env [name_load] in
   let name_checker = translate_pattern_literal_atom env name_id name in
   let exit_failure = Node.make_nop env in
@@ -219,7 +274,7 @@ and translate_pattern_record_update (env : (_, _) Env.t) value name updates : Bl
         let field_info = String.Map.find_exn record_info.field_info name in
         let value_id = mk_fresh_id () in
         let tuple_elem = ErlangTypeName.tuple_elem field_info.index in
-        let load_instr = load_field env value_id value tuple_elem tuple_typ in
+        let load_instr = load_field_from_id env value_id value tuple_elem tuple_typ in
         let unpack_node = Node.make_stmt env [load_instr] in
         let submatcher = translate_pattern env value_id one_update.expression in
         unpack_node |~~> [submatcher.start] ;
@@ -240,7 +295,8 @@ and translate_pattern_tuple env value exprs : Block.t =
   let field_names = ErlangTypeName.tuple_field_names (List.length exprs) in
   let load_instructions =
     List.map
-      ~f:(function one_value, one_field -> load_field env one_value value one_field tuple_typ)
+      ~f:(function
+        | one_value, one_field -> load_field_from_id env one_value value one_field tuple_typ )
       (List.zip_exn value_ids field_names)
   in
   let unpack_node = Node.make_stmt env load_instructions in
@@ -282,11 +338,12 @@ and translate_pattern_variable (env : (_, _) Env.t) value vname : Block.t =
       {start= exit_success; exit_success; exit_failure}
 
 
-and translate_guard_expression (env : (_, _) Env.t) (expression : Ast.expression) :
-    Ident.t * Block.t =
+and translate_guard_expression (env : (_, _) Env.t) (expression : Ast.expression) : Exp.t * Block.t
+    =
   let id, block = translate_expression_to_fresh_id env expression in
   (* If we'd like to catch "silent" errors later, we might do it here *)
-  (id, block)
+  let unboxed, unbox_block = unbox_bool env (Exp.Var id) in
+  (unboxed, Block.all env [block; unbox_block])
 
 
 and translate_guard env (expressions : Ast.expression list) : Block.t =
@@ -294,16 +351,15 @@ and translate_guard env (expressions : Ast.expression list) : Block.t =
   | [] ->
       Block.make_success env
   | _ ->
-      let ids_blocks = List.map ~f:(translate_guard_expression env) expressions in
-      let ids, expr_blocks = List.unzip ids_blocks in
+      let exprs_blocks = List.map ~f:(translate_guard_expression env) expressions in
+      let exprs, blocks = List.unzip exprs_blocks in
       let make_and (e1 : Exp.t) (e2 : Exp.t) = Exp.BinOp (LAnd, e1, e2) in
-      let make_var (id : Ident.t) : Exp.t = Var id in
-      let cond = List.reduce_exn (List.map ids ~f:make_var) ~f:make_and in
+      let cond = List.reduce_exn exprs ~f:make_and in
       let start = Node.make_nop env in
       let exit_success = Node.make_if env true cond in
       let exit_failure = Node.make_if env false cond in
       start |~~> [exit_success; exit_failure] ;
-      Block.all env (expr_blocks @ [{Block.start; exit_success; exit_failure}])
+      Block.all env (blocks @ [{Block.start; exit_success; exit_failure}])
 
 
 and translate_guard_sequence env (guards : Ast.expression list list) : Block.t =
@@ -413,10 +469,21 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
     let op_block = Block.make_load env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) any_typ in
     Block.all env [block1; block2; op_block]
   in
+  let make_simple_eager_bool_unbox sil_op =
+    let unbox1, unbox_block1 = unbox_bool env (Exp.Var id1) in
+    let unbox2, unbox_block2 = unbox_bool env (Exp.Var id2) in
+    let op_block = box_bool env ret_var (Exp.BinOp (sil_op, unbox1, unbox2)) in
+    Block.all env [block1; unbox_block1; block2; unbox_block2; op_block]
+  in
+  let make_simple_eager_bool sil_op =
+    let op_block = box_bool env ret_var (Exp.BinOp (sil_op, Var id1, Var id2)) in
+    Block.all env [block1; block2; op_block]
+  in
   let make_short_circuit_logic ~short_circuit_when_lhs_is =
+    let unbox1, unbox_block1 = unbox_bool env (Exp.Var id1) in
     let start = Node.make_nop env in
-    let id1_cond = Node.make_if env short_circuit_when_lhs_is (Var id1) in
-    let id2_cond = Node.make_if env (not short_circuit_when_lhs_is) (Var id1) in
+    let id1_cond = Node.make_if env short_circuit_when_lhs_is unbox1 in
+    let id2_cond = Node.make_if env (not short_circuit_when_lhs_is) unbox1 in
     let store_id1 = Node.make_load env ret_var (Var id1) any_typ in
     let store_id2 = Node.make_load env ret_var (Var id2) any_typ in
     let exit_success = Node.make_nop env in
@@ -428,19 +495,19 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
     block2.exit_success |~~> [store_id2] ;
     block2.exit_failure |~~> [exit_failure] ;
     store_id2 |~~> [exit_success] ;
-    Block.all env [block1; {start; exit_success; exit_failure}]
+    Block.all env [block1; unbox_block1; {start; exit_success; exit_failure}]
   in
   match op with
   | Add ->
       make_simple_eager (PlusA None)
   | And ->
-      make_simple_eager LAnd
+      make_simple_eager_bool_unbox LAnd
   | AndAlso ->
       make_short_circuit_logic ~short_circuit_when_lhs_is:false
   | AtLeast ->
-      make_simple_eager Ge
+      make_simple_eager_bool Ge
   | AtMost ->
-      make_simple_eager Le
+      make_simple_eager_bool Le
   | BAnd ->
       make_simple_eager BAnd
   | BOr ->
@@ -453,16 +520,16 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       make_simple_eager BXor
   (* TODO: proper modeling of equal vs exactly equal T95767672 *)
   | Equal | ExactlyEqual ->
-      make_simple_eager Eq
+      make_simple_eager_bool Eq
   (* TODO: proper modeling of not equal vs exactly not equal T95767672 *)
   | ExactlyNotEqual | NotEqual ->
-      make_simple_eager Ne
+      make_simple_eager_bool Ne
   | Greater ->
-      make_simple_eager Gt
+      make_simple_eager_bool Gt
   | IDiv ->
       make_simple_eager Div
   | Less ->
-      make_simple_eager Lt
+      make_simple_eager_bool Lt
   | ListAdd ->
       let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_lists_append2) in
       let args : (Exp.t * Typ.t) list = [(Var id1, any_typ); (Var id2, any_typ)] in
@@ -473,7 +540,7 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | Mul ->
       make_simple_eager (Mult None)
   | Or ->
-      make_simple_eager LOr
+      make_simple_eager_bool_unbox LOr
   | OrElse ->
       make_short_circuit_logic ~short_circuit_when_lhs_is:true
   | Rem ->
@@ -481,14 +548,16 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | Sub ->
       make_simple_eager (MinusA None)
   | Xor ->
+      let unbox1, unbox_block1 = unbox_bool env (Exp.Var id1) in
+      let unbox2, unbox_block2 = unbox_bool env (Exp.Var id2) in
       let expr =
         Exp.BinOp
           ( LOr
-          , Exp.BinOp (LAnd, Var id1, Exp.UnOp (LNot, Var id2, None))
-          , Exp.BinOp (LAnd, Exp.UnOp (LNot, Var id1, None), Var id2) )
+          , Exp.BinOp (LAnd, unbox1, Exp.UnOp (LNot, unbox2, None))
+          , Exp.BinOp (LAnd, Exp.UnOp (LNot, unbox1, None), unbox2) )
       in
-      let op_block = Block.make_load env ret_var expr any_typ in
-      Block.all env [block1; block2; op_block]
+      let op_block = box_bool env ret_var expr in
+      Block.all env [block1; unbox_block1; block2; unbox_block2; op_block]
   | todo ->
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression_binary_operator %s@."
         (Sexp.to_string (Ast.sexp_of_binary_operator todo)) ;
@@ -591,10 +660,12 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
   let apply_one_filter expr (acc : Block.t) : Block.t =
     (* Check expression, execute inner block (accumulator) only if true *)
     let result_id, filter_expr_block = translate_expression_to_fresh_id env expr in
-    let true_node = Node.make_if env true (Var result_id) in
-    let false_node = Node.make_if env false (Var result_id) in
+    let unboxed, unbox_block = unbox_bool env (Exp.Var result_id) in
+    let true_node = Node.make_if env true unboxed in
+    let false_node = Node.make_if env false unboxed in
     let fail_node = Node.make_nop env in
     let succ_node = Node.make_nop env in
+    let filter_expr_block = Block.all env [filter_expr_block; unbox_block] in
     filter_expr_block.exit_success |~~> [true_node; false_node] ;
     filter_expr_block.exit_failure |~~> [fail_node] ;
     true_node |~~> [acc.start] ;
@@ -617,14 +688,14 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
     let join_node = Node.make_join env in
     let is_cons_id = mk_fresh_id () in
     let check_cons_node =
-      Node.make_stmt env [has_type env ~result:is_cons_id ~value:gen_var Cons]
+      Node.make_stmt env [has_type env ~result:is_cons_id ~value:(Var gen_var) Cons]
     in
     let is_cons_node = Node.make_if env true (Var is_cons_id) in
     let no_cons_node = Node.make_if env false (Var is_cons_id) in
     (* Load head, overwrite list with tail for next iteration *)
     let head_var = mk_fresh_id () in
-    let head_load = load_field env head_var gen_var ErlangTypeName.cons_head Cons in
-    let tail_load = load_field env gen_var gen_var ErlangTypeName.cons_tail Cons in
+    let head_load = load_field_from_id env head_var gen_var ErlangTypeName.cons_head Cons in
+    let tail_load = load_field_from_id env gen_var gen_var ErlangTypeName.cons_tail Cons in
     let unpack_node = Node.make_stmt env [head_load; tail_load] in
     (* Match head and evaluate expression *)
     let head_matcher = translate_pattern env head_var pat in
@@ -655,16 +726,7 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
 
 
 and translate_expression_literal_atom (env : (_, _) Env.t) ret_var atom =
-  let value_exp = Exp.Const (Cstr atom) in
-  let hash_exp =
-    let hash = String.hash atom lsl 16 in
-    Exp.Const (Cint (IntLit.of_int hash))
-  in
-  let call_instruction =
-    let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_atom) in
-    let args : (Exp.t * Typ.t) list = [(value_exp, any_typ); (hash_exp, any_typ)] in
-    Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
-  in
+  let call_instruction = mk_atom_call env ret_var atom in
   Block.make_instruction env [call_instruction]
 
 
@@ -770,7 +832,7 @@ and translate_expression_record_access (env : (_, _) Env.t) ret_var record name 
   let field_no = field_info.index in
   let tuple_typ : ErlangTypeName.t = Tuple (1 + List.length record_info.field_names) in
   let field_load =
-    load_field env ret_var record_id (ErlangTypeName.tuple_elem field_no) tuple_typ
+    load_field_from_id env ret_var record_id (ErlangTypeName.tuple_elem field_no) tuple_typ
   in
   let load_block = Block.make_instruction env [field_load] in
   Block.all env [record_block; load_block]
@@ -829,7 +891,7 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
           match record with
           | Some _ ->
               let field_load =
-                load_field env one_id record_id
+                load_field_from_id env one_id record_id
                   (ErlangTypeName.tuple_elem field_info.index)
                   tuple_typ
               in
@@ -907,6 +969,11 @@ and translate_expression_unary_operator (env : (_, _) Env.t) ret_var (op : Ast.u
   let make_simple_op_block sil_op =
     Block.make_load env ret_var (Exp.UnOp (sil_op, Var id, None)) any_typ
   in
+  let make_simple_bool_unbox sil_op =
+    let unbox, unbox_block = unbox_bool env (Exp.Var id) in
+    let op_block = box_bool env ret_var (Exp.UnOp (sil_op, unbox, None)) in
+    Block.all env [unbox_block; op_block]
+  in
   let op_block =
     match op with
     | UBNot ->
@@ -914,7 +981,7 @@ and translate_expression_unary_operator (env : (_, _) Env.t) ret_var (op : Ast.u
     | UMinus ->
         make_simple_op_block Neg
     | UNot ->
-        make_simple_op_block LNot
+        make_simple_bool_unbox LNot
   in
   Block.all env [block; op_block]
 

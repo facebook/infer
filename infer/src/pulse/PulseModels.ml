@@ -1843,9 +1843,12 @@ module Erlang = struct
         result
 
 
-  let make_atom value hash {location; path; ret= ret_id, _} astate =
-    let atom_value_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_value in
-    let atom_hash_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash in
+  let atom_value_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_value
+
+  let atom_hash_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash
+
+  let make_atom value hash : model =
+   fun {location; path; ret= ret_id, _} astate ->
     let hist = Hist.single_alloc path location "atom" in
     let addr_atom = (AbstractValue.mk_fresh (), hist) in
     let<*> astate =
@@ -1954,6 +1957,40 @@ module Erlang = struct
     lists_append2 ~reverse:true list nil data astate
 
 
+  let convert_bool_to_atom_return path location hist bool_value ret_id astate =
+    let addr_atom = (AbstractValue.mk_fresh (), hist) in
+    let atom_value = AbstractValue.mk_fresh () in
+    let atom_hash = AbstractValue.mk_fresh () in
+    let mk_astate atom_str astate =
+      let<*> astate =
+        PulseArithmetic.and_eq_int atom_hash
+          (IntLit.of_int (ErlangTypeName.calculate_hash atom_str))
+          astate
+      in
+      (* TODO: write string to value *)
+      let<*> astate =
+        write_field_and_deref path location ~struct_addr:addr_atom
+          ~field_addr:(AbstractValue.mk_fresh (), hist)
+          ~field_val:(atom_value, hist) atom_value_field astate
+      in
+      let<+> astate =
+        write_field_and_deref path location ~struct_addr:addr_atom
+          ~field_addr:(AbstractValue.mk_fresh (), hist)
+          ~field_val:(atom_hash, hist) atom_hash_field astate
+      in
+      write_dynamic_type_and_return addr_atom Atom ret_id astate
+    in
+    let astate_true =
+      let<*> astate = PulseArithmetic.prune_positive bool_value astate in
+      mk_astate ErlangTypeName.atom_true astate
+    in
+    let astate_false =
+      let<*> astate = PulseArithmetic.prune_eq_zero bool_value astate in
+      mk_astate ErlangTypeName.atom_false astate
+    in
+    astate_true @ astate_false
+
+
   let erlang_is_list (list_val, _list_hist) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let cons_typ = Typ.mk_struct (ErlangType Cons) in
@@ -1968,8 +2005,7 @@ module Erlang = struct
       PulseArithmetic.eval_binop is_list Binop.LOr (AbstractValueOperand is_cons)
         (AbstractValueOperand is_nil) astate
     in
-    let astate = PulseOperations.write_id ret_id (is_list, hist) astate in
-    [Ok (ContinueProgram astate)]
+    convert_bool_to_atom_return path location hist is_list ret_id astate
 
 
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
@@ -2051,10 +2087,10 @@ module Erlang = struct
   let erlang_is_map (map_val, _map_hist) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let typ = Typ.mk_struct (ErlangType Map) in
-    let instanceof_val = AbstractValue.mk_fresh () in
+    let is_map = AbstractValue.mk_fresh () in
     let hist = Hist.single_call path location "is_map" in
-    let<*> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
-    PulseOperations.write_id ret_id (instanceof_val, hist) astate |> ok_continue
+    let<*> astate = PulseArithmetic.and_equal_instanceof is_map map_val typ astate in
+    convert_bool_to_atom_return path location hist is_map ret_id astate
 
 
   let maps_is_key (key, _key_history) map : model =

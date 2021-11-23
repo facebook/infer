@@ -31,6 +31,12 @@ let atom_value = "value"
 
 let atom_hash = "hash"
 
+let atom_true = "true"
+
+let atom_false = "false"
+
+let calculate_hash atom = String.hash atom lsl 16
+
 let cons_head = "head"
 
 let cons_tail = "tail"
