@@ -108,6 +108,8 @@ let __erlang_maps_put = create_procname "__erlang_map_put"
 
 let __erlang_make_nil = create_procname "__erlang_make_nil"
 
+let __erlang_make_atom = create_procname "__erlang_make_atom"
+
 let __erlang_make_tuple = create_procname "__erlang_make_tuple"
 
 let __erlang_missing_translation = create_procname "__erlang_missing_translation"

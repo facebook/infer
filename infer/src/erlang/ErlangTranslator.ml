@@ -48,13 +48,6 @@ let check_type env value typ : Block.t =
   {start; exit_success; exit_failure}
 
 
-let translate_atom_literal (atom : string) : Exp.t =
-  (* With this hack, an atom may accidentaly be considered equal to an unrelated integer.
-      The [lsl] below makes this less likely. Proper fix is TODO (T93513105). *)
-  let hash = String.hash atom lsl 16 in
-  Exp.Const (Cint (IntLit.of_int hash))
-
-
 (** into_id=value_id.field_name *)
 let load_field (env : (_, _) Env.t) into_id value_id field_name typ : Sil.instr =
   let field = Fieldname.make (ErlangType typ) field_name in
@@ -66,24 +59,6 @@ let load_field (env : (_, _) Env.t) into_id value_id field_name typ : Sil.instr 
     ; loc= env.location }
 
 
-let match_record_name env value name (record_info : Env.record_info) : Block.t =
-  let tuple_size = 1 + List.length record_info.field_names in
-  let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
-  let type_checker = check_type env value tuple_typ in
-  let name_id = mk_fresh_id () in
-  let name_load = load_field env name_id value (ErlangTypeName.tuple_elem 1) tuple_typ in
-  let unpack_node = Node.make_stmt env [name_load] in
-  let name_cond = Exp.BinOp (Eq, Var name_id, translate_atom_literal name) in
-  let right_name_node = Node.make_if env true name_cond in
-  let wrong_name_node = Node.make_if env false name_cond in
-  let exit_failure = Node.make_nop env in
-  type_checker.exit_success |~~> [unpack_node] ;
-  unpack_node |~~> [right_name_node; wrong_name_node] ;
-  type_checker.exit_failure |~~> [exit_failure] ;
-  wrong_name_node |~~> [exit_failure] ;
-  {start= type_checker.start; exit_success= right_name_node; exit_failure}
-
-
 (** If the pattern-match succeeds, then the [exit_success] node is reached and the pattern variables
     are storing the corresponding values; otherwise, the [exit_failure] node is reached. *)
 let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : Block.t =
@@ -92,8 +67,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
   | Cons {head; tail} ->
       translate_pattern_cons env value head tail
   | Literal (Atom atom) ->
-      let e = translate_atom_literal atom in
-      Block.make_branch env (Exp.BinOp (Eq, Var value, e))
+      translate_pattern_literal_atom env value atom
   | Literal (Int i) ->
       let e = Exp.Const (Cint (IntLit.of_string i)) in
       Block.make_branch env (Exp.BinOp (Eq, Var value, e))
@@ -136,6 +110,29 @@ and translate_pattern_cons env value head tail : Block.t =
   type_checker.exit_failure |~~> [exit_failure] ;
   submatcher.exit_failure |~~> [exit_failure] ;
   {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure}
+
+
+and translate_pattern_literal_atom (env : (_, _) Env.t) value atom : Block.t =
+  (* We create a temporary atom and read back its hash. We could just directly compute
+     the hash, but this way we have better readability for the CFG and pulse results,
+     because it is not just a hash appearing there, but also the atom as a string. *)
+  let expected_id = mk_fresh_id () in
+  let expected_block : Block.t = translate_expression_literal_atom env expected_id atom in
+  let actual_hash = mk_fresh_id () in
+  let load_actual = load_field env actual_hash value ErlangTypeName.atom_hash Atom in
+  let expected_hash = mk_fresh_id () in
+  let load_expected = load_field env expected_hash expected_id ErlangTypeName.atom_hash Atom in
+  let load_node = Node.make_stmt env [load_actual; load_expected] in
+  let hash_checker = Block.make_branch env (Exp.BinOp (Eq, Var actual_hash, Var expected_hash)) in
+  let type_checker = check_type env value Atom in
+  let exit_failure = Node.make_nop env in
+  type_checker.exit_success |~~> [expected_block.start] ;
+  expected_block.exit_failure |~~> [exit_failure] ;
+  expected_block.exit_success |~~> [load_node] ;
+  load_node |~~> [hash_checker.start] ;
+  type_checker.exit_failure |~~> [exit_failure] ;
+  hash_checker.exit_failure |~~> [exit_failure] ;
+  {start= type_checker.start; exit_success= hash_checker.exit_success; exit_failure}
 
 
 and translate_pattern_nil env value : Block.t = check_type env value Nil
@@ -191,6 +188,22 @@ and translate_pattern_record_index (env : (_, _) Env.t) value name field : Block
   let field_info = String.Map.find_exn record_info.field_info field in
   let index_expr = Exp.Const (Cint (IntLit.of_int field_info.index)) in
   Block.make_branch env (Exp.BinOp (Eq, Var value, index_expr))
+
+
+and match_record_name env value name (record_info : Env.record_info) : Block.t =
+  let tuple_size = 1 + List.length record_info.field_names in
+  let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
+  let type_checker = check_type env value tuple_typ in
+  let name_id = mk_fresh_id () in
+  let name_load = load_field env name_id value (ErlangTypeName.tuple_elem 1) tuple_typ in
+  let unpack_node = Node.make_stmt env [name_load] in
+  let name_checker = translate_pattern_literal_atom env name_id name in
+  let exit_failure = Node.make_nop env in
+  type_checker.exit_success |~~> [unpack_node] ;
+  unpack_node |~~> [name_checker.start] ;
+  type_checker.exit_failure |~~> [exit_failure] ;
+  name_checker.exit_failure |~~> [exit_failure] ;
+  {start= type_checker.start; exit_success= name_checker.exit_success; exit_failure}
 
 
 and translate_pattern_record_update (env : (_, _) Env.t) value name updates : Block.t =
@@ -334,8 +347,7 @@ and translate_expression env {Ast.line; simple_expression} =
     | ListComprehension {expression; qualifiers} ->
         translate_expression_listcomprehension env ret_var expression qualifiers
     | Literal (Atom atom) ->
-        let e = translate_atom_literal atom in
-        Block.make_load env ret_var e any_typ
+        translate_expression_literal_atom env ret_var atom
     | Literal (Int i) ->
         let e = Exp.Const (Cint (IntLit.of_string i)) in
         Block.make_load env ret_var e any_typ
@@ -642,6 +654,20 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
   Block.all env [init_block; loop_block; store_return_block]
 
 
+and translate_expression_literal_atom (env : (_, _) Env.t) ret_var atom =
+  let value_exp = Exp.Const (Cstr atom) in
+  let hash_exp =
+    let hash = String.hash atom lsl 16 in
+    Exp.Const (Cint (IntLit.of_int hash))
+  in
+  let call_instruction =
+    let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_atom) in
+    let args : (Exp.t * Typ.t) list = [(value_exp, any_typ); (hash_exp, any_typ)] in
+    Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
+  in
+  Block.make_instruction env [call_instruction]
+
+
 and translate_expression_map_create (env : (_, _) Env.t) ret_var updates : Block.t =
   (* Get keys and values as an alternating list of expressions: [K1; V1; K2; V2; ...] *)
   let exprs = List.concat_map ~f:(fun (a : Ast.association) -> [a.key; a.value]) updates in
@@ -815,19 +841,24 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
                 translate_expression_to_id env one_id expr
             | None ->
                 (* (5) Finally, it's undefined *)
-                Block.make_load env one_id (translate_atom_literal "undefined") any_typ ) ) )
+                let undef_atom = mk_fresh_id () in
+                let mk_undef_block = translate_expression_literal_atom env undef_atom "undefined" in
+                let load_undef_block = Block.make_load env one_id (Exp.Var undef_atom) any_typ in
+                Block.all env [mk_undef_block; load_undef_block] ) ) )
   in
   let field_names = record_info.field_names in
   let field_ids = List.map ~f:(function _ -> mk_fresh_id ()) field_names in
   let field_blocks = List.map ~f:translate_one_field (List.zip_exn field_names field_ids) in
   let field_ids_and_types = List.map ~f:(fun id -> (Exp.Var id, any_typ)) field_ids in
-  let args_and_types = (translate_atom_literal name, any_typ) :: field_ids_and_types in
+  let name_atom = mk_fresh_id () in
+  let mk_name_block = translate_expression_literal_atom env name_atom name in
+  let args_and_types = (Exp.Var name_atom, any_typ) :: field_ids_and_types in
   let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_tuple) in
   let call_instruction =
     Sil.Call ((ret_var, any_typ), fun_exp, args_and_types, env.location, CallFlags.default)
   in
   let call_block = Block.make_instruction env [call_instruction] in
-  Block.all env (record_block @ field_blocks @ [call_block])
+  Block.all env (record_block @ field_blocks @ [mk_name_block; call_block])
 
 
 and translate_expression_trycatch (env : (_, _) Env.t) ret_var body ok_cases _catch_cases after :

@@ -1843,6 +1843,24 @@ module Erlang = struct
         result
 
 
+  let make_atom value hash {location; path; ret= ret_id, _} astate =
+    let atom_value_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_value in
+    let atom_hash_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash in
+    let hist = Hist.single_alloc path location "atom" in
+    let addr_atom = (AbstractValue.mk_fresh (), hist) in
+    let<*> astate =
+      write_field_and_deref path location ~struct_addr:addr_atom
+        ~field_addr:(AbstractValue.mk_fresh (), hist)
+        ~field_val:value atom_value_field astate
+    in
+    let<+> astate =
+      write_field_and_deref path location ~struct_addr:addr_atom
+        ~field_addr:(AbstractValue.mk_fresh (), hist)
+        ~field_val:hash atom_hash_field astate
+    in
+    write_dynamic_type_and_return addr_atom Atom ret_id astate
+
+
   let cons_head_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_head
 
   let cons_tail_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_tail
@@ -2225,6 +2243,8 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __erlang_lists_append2)
           <>$ capt_arg_payload $+ capt_arg_payload
           $--> Erlang.lists_append2 ~reverse:false
+        ; +BuiltinDecl.(match_builtin __erlang_make_atom)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_atom
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple

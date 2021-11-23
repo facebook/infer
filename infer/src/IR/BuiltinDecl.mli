@@ -33,6 +33,8 @@ val __erlang_lists_append2 : Procname.t
 
 val __erlang_lists_reverse : Procname.t
 
+val __erlang_make_atom : Procname.t
+
 val __erlang_make_cons : Procname.t
 
 val __erlang_make_nil : Procname.t
