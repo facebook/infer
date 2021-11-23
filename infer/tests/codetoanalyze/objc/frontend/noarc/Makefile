@@ -38,8 +38,6 @@ SOURCES = \
   ../shared/block/dispatch.m \
   ../shared/block/dispatch_examples.m \
   ../shared/block/dispatch_in_macro.m \
-  ../shared/category_procdesc/EOCPerson.m \
-  ../shared/category_procdesc/main.c \
   ../shared/field_superclass/SuperExample.m \
   ../shared/memory_leaks_benchmark/AutoreleaseExample.m \
   ../shared/memory_leaks_benchmark/RetainReleaseExample.m \
