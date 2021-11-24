@@ -20,8 +20,13 @@ module PPNode = struct
 end
 
 module LineageGraph = struct
+  (** INV: Constants occur only as sources of flow. NOTE: Constants are "local" because type [data]
+      associates them with a location, in a proc. *)
+  type local = Constant of (Const.t[@sexp.opaque]) | Variable of (Var.t[@sexp.opaque])
+  [@@deriving compare, sexp]
+
   type data =
-    | Local of ((Var.t * PPNode.t)[@sexp.opaque])
+    | Local of ((local * PPNode.t)[@sexp.opaque])
     | Argument of int
     | Return
     | ArgumentOf of int * (Procname.t[@sexp.opaque])
@@ -41,10 +46,18 @@ module LineageGraph = struct
 
   type t = flow list
 
+  let pp_local fmt local =
+    match local with
+    | Constant constant ->
+        Format.fprintf fmt "C(%a)" (Const.pp Pp.text) constant
+    | Variable variable ->
+        Format.fprintf fmt "V(%a)" Var.pp variable
+
+
   let pp_data fmt data =
     match data with
-    | Local (variable, node) ->
-        Format.fprintf fmt "%a@@%a" Var.pp variable PPNode.pp node
+    | Local (local, node) ->
+        Format.fprintf fmt "%a@@%a" pp_local local PPNode.pp node
     | Argument index ->
         Format.fprintf fmt "arg%d" index
     | Return ->
@@ -94,26 +107,47 @@ module LineageGraph = struct
 
       type state = {state: _state} [@@deriving yojson_of]
 
-      type variable_type = UserVariable | Temporary | Argument | Return
+      module TermType = struct
+        type t =
+          | UserVariable
+          | TemporaryVariable
+          | ConstantInt
+          | ConstantString
+          | ConstantUnsupported
+          | Argument
+          | Return
+        [@@deriving variants]
+      end
 
-      let yojson_of_variable_type typ =
+      type term_type = TermType.t
+
+      let rank_of_term_type = TermType.Variants.to_rank
+
+      let yojson_of_term_type (typ : term_type) =
         match typ with
         | UserVariable ->
             `String "UserVariable"
-        | Temporary ->
-            `String "Temporary"
+        | TemporaryVariable ->
+            `String "Temporary" (* T106560112 *)
+        | ConstantInt ->
+            `String "ConstantInt"
+        | ConstantString ->
+            `String "ConstantString"
+        | ConstantUnsupported ->
+            `String "ConstantUnsupported"
         | Argument ->
             `String "Argument"
         | Return ->
             `String "Return"
 
 
-      type variable =
-        { name: string (* "$ret" if type is Return; "$argN" for N=0,1,... if type is Argument *)
-        ; variable_type: variable_type }
+      type term =
+        { term_data: string [@key "name" (* T106560112 *)]
+        ; term_type: term_type [@key "variable_type" (* T106560112 *)] }
       [@@deriving yojson_of]
 
-      type _node = {id: node_id; state: state_id; variable: variable} [@@deriving yojson_of]
+      type _node = {id: node_id; state: state_id; term: term [@key "variable" (* T106560112 *)]}
+      [@@deriving yojson_of]
 
       type node = {node: _node} [@@deriving yojson_of]
 
@@ -157,7 +191,9 @@ module LineageGraph = struct
 
     type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
 
-    type var = Argument of int | Return | Normal of Var.t
+    (** Like [LineageGraph.data], but without the ability to refer to other procedures, which makes
+        it "local". *)
+    type data_local = Argument of int | Return | Normal of local
 
     module Id = struct
       (** Internal representation of an Id. *)
@@ -173,8 +209,6 @@ module LineageGraph = struct
       let one : t = Z.one
 
       let two : t = Z.of_int 2
-
-      let three : t = Z.of_int 3
 
       let coefficients =
         let open Sequence.Generator in
@@ -214,20 +248,10 @@ module LineageGraph = struct
 
       let of_procname procname : t = of_string (Procname.hashable_name procname)
 
-      let of_variable_type (variable_type : Json.variable_type) =
-        match variable_type with
-        | UserVariable ->
-            zero
-        | Temporary ->
-            one
-        | Argument ->
-            two
-        | Return ->
-            three
+      let of_term_type (term_type : Json.term_type) = Z.of_int (Json.rank_of_term_type term_type)
 
-
-      let of_variable {Json.name; variable_type} : t =
-        of_list [of_string name; of_variable_type variable_type]
+      let of_term {Json.term_data; term_type} : t =
+        of_list [of_string term_data; of_term_type term_type]
 
 
       let of_kind (kind : flow_kind) : t = match kind with Direct -> zero | Summary -> one
@@ -237,26 +261,38 @@ module LineageGraph = struct
         try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
     end
 
-    let variable_of_var (var : var) : Json.variable =
-      let name =
-        match var with
+    let term_of_data (data : data_local) : Json.term =
+      let term_data =
+        match data with
         | Argument index ->
             Printf.sprintf "$arg%d" index
         | Return ->
             "$ret"
-        | Normal x ->
+        | Normal (Variable x) ->
             Format.asprintf "%a" Var.pp x
+        | Normal (Constant (Cint x)) ->
+            Format.asprintf "%a" IntLit.pp x
+        | Normal (Constant (Cstr x)) ->
+            x
+        | Normal (Constant _) ->
+            "UNSUPPORTED-CONSTANT-TYPE"
       in
-      let variable_type : Json.variable_type =
-        match var with
+      let term_type : Json.term_type =
+        match data with
         | Argument _ ->
             Argument
         | Return ->
             Return
-        | Normal x ->
-            if Var.appears_in_source_code x then UserVariable else Temporary
+        | Normal (Variable x) ->
+            if Var.appears_in_source_code x then UserVariable else TemporaryVariable
+        | Normal (Constant (Cint _)) ->
+            ConstantInt
+        | Normal (Constant (Cstr _)) ->
+            ConstantString
+        | Normal (Constant _) ->
+            ConstantUnsupported
       in
-      {Json.name; variable_type}
+      {Json.term_data; term_type}
 
 
     module JsonCacheKey = struct
@@ -314,13 +350,13 @@ module LineageGraph = struct
 
 
     let save_node proc_desc (data : data) =
-      let save ?(write = true) procname state_local variable =
+      let save ?(write = true) procname state_local data_local =
         let state_id = save_state ~write procname state_local in
-        let variable = variable_of_var variable in
-        let node_id = Id.of_list [state_id; Id.of_variable variable] in
+        let term = term_of_data data_local in
+        let node_id = Id.of_list [state_id; Id.of_term term] in
         if write then
           write_json Node node_id
-            (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; variable}}) ;
+            (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; term}}) ;
         node_id
       in
       match data with
@@ -467,10 +503,14 @@ module Summary = struct
     in
     let is_interesting (data : LineageGraph.data) =
       match data with
-      | Local (var, _node) ->
+      | Local (Variable var, _node) ->
           Var.appears_in_source_code var && not (Var.Set.mem var special_variables)
       | Argument _ | Return | ArgumentOf _ | ReturnOf _ ->
           true
+      | Local (Constant (Cint _), _node) | Local (Constant (Cstr _), _node) ->
+          true
+      | Local (Constant _, _node) ->
+          false
     in
     (* Do a DFS and produce edges. *)
     let rec dfs (seen, result_graph) ({LineageGraph.source; target; kind} as state) =
@@ -559,49 +599,66 @@ module TransferFunctions = struct
         None
 
 
-  let vars_of_exp (e : Exp.t) : Var.Set.t =
-    Var.get_all_vars_in_exp e |> Sequence.to_seq |> Var.Set.of_seq
+  (** Make [LineageGraph.local] usable in Maps/Sets. *)
+  module Local = struct
+    module T = struct
+      type t = LineageGraph.local [@@deriving compare, sexp]
+    end
+
+    include T
+    include Comparable.Make (T)
+  end
+
+  let locals_of_exp (e : Exp.t) : Local.Set.t =
+    let variables =
+      Var.get_all_vars_in_exp e |> Sequence.map ~f:(fun v -> LineageGraph.Variable v)
+    in
+    let constants = Exp.constants e |> Sequence.map ~f:(fun c -> LineageGraph.Constant c) in
+    let locals = Sequence.append variables constants in
+    locals |> Sequence.to_list |> Local.Set.of_list
 
 
-  let vars_of_exp_list (expressions : Exp.t list) : Var.Set.t =
-    List.map ~f:Var.get_all_vars_in_exp expressions
-    |> Sequence.of_list |> Sequence.concat |> Sequence.to_seq |> Var.Set.of_seq
+  let locals_of_exp_list (es : Exp.t list) : Local.Set.t =
+    Local.Set.union_list (List.rev_map ~f:locals_of_exp es)
 
 
-  let get_read_set (instr : Sil.instr) : Var.Set.t =
+  let get_read_set (instr : Sil.instr) : Local.Set.t =
     match instr with
     | Load {e} ->
-        vars_of_exp e
+        locals_of_exp e
     | Store {e2} ->
-        vars_of_exp e2
+        locals_of_exp e2
     | Prune (e, _location, _true, _kind) ->
-        vars_of_exp e
+        locals_of_exp e
     | Call _ ->
         L.die InternalError "exec_instr should special-case this"
     | Metadata _ ->
-        Var.Set.empty
+        Local.Set.empty
 
 
   let procname_of_exp (e : Exp.t) : Procname.t option =
     match e with Closure {name} | Const (Cfun name) -> Some name | _ -> None
 
 
-  let add_arg_flows (callee_pname : Procname.t) (argument_list : Exp.t list) (astate : Domain.t) :
-      Domain.t =
+  let add_arg_flows (call_node : PPNode.t) (callee_pname : Procname.t) (argument_list : Exp.t list)
+      (astate : Domain.t) : Domain.t =
     let add_flows_all_to_arg index ((last_writes, has_unsupported_features), local_edges) arg =
-      let read_set = Var.get_all_vars_in_exp arg in
-      let add_flows_var_to_arg local_edges variable =
-        let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
-        let add_one_flow local_edges node =
-          LineageGraph.flow
-            ~source:(Local (variable, node))
-            ~target:(ArgumentOf (index, callee_pname))
-            ()
-          :: local_edges
+      let read_set = locals_of_exp arg in
+      let add_flows_local_to_arg local_edges (local : Local.t) =
+        let sources =
+          match local with
+          | Constant _ ->
+              [LineageGraph.Local (local, call_node)]
+          | Variable variable ->
+              let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
+              List.map ~f:(fun node -> LineageGraph.Local (local, node)) source_nodes
         in
-        List.fold source_nodes ~f:add_one_flow ~init:local_edges
+        let add_one_flow local_edges source =
+          LineageGraph.flow ~source ~target:(ArgumentOf (index, callee_pname)) () :: local_edges
+        in
+        List.fold sources ~f:add_one_flow ~init:local_edges
       in
-      let local_edges = Sequence.fold read_set ~init:local_edges ~f:add_flows_var_to_arg in
+      let local_edges = Set.fold read_set ~init:local_edges ~f:add_flows_local_to_arg in
       ((last_writes, has_unsupported_features), local_edges)
     in
     List.foldi argument_list ~init:astate ~f:add_flows_all_to_arg
@@ -611,25 +668,32 @@ module TransferFunctions = struct
       Domain.t =
     let last_writes, local_edges = astate in
     let local_edges =
-      LineageGraph.flow ~source:(ReturnOf callee_pname) ~target:(Local (Var.of_id ret_id, node)) ()
+      LineageGraph.flow ~source:(ReturnOf callee_pname)
+        ~target:(Local (Variable (Var.of_id ret_id), node))
+        ()
       :: local_edges
     in
     (last_writes, local_edges)
 
 
   let update_write (kind : LineageGraph.flow_kind) ((write_var, write_node) : Var.t * PPNode.t)
-      (read_set : Var.Set.t) (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
+      (read_set : Local.Set.t) (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
       Domain.t =
-    let target = LineageGraph.Local (write_var, write_node) in
-    let add_read read_var local_edges =
-      let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
-      let add_edge local_edges read_node =
-        LineageGraph.flow ~kind ~source:(Local (read_var, read_node)) ~target () :: local_edges
+    let target = LineageGraph.Local (Variable write_var, write_node) in
+    let add_read local_edges (read_local : Local.t) =
+      let sources =
+        match read_local with
+        | Constant _ ->
+            [LineageGraph.Local (read_local, write_node)]
+        | Variable read_var ->
+            let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
+            List.map ~f:(fun node -> LineageGraph.Local (read_local, node)) source_nodes
       in
-      let local_edges = List.fold ~init:local_edges ~f:add_edge source_nodes in
+      let add_edge local_edges source = LineageGraph.flow ~kind ~source ~target () :: local_edges in
+      let local_edges = List.fold ~init:local_edges ~f:add_edge sources in
       local_edges
     in
-    let local_edges = Var.Set.fold add_read read_set local_edges in
+    let local_edges = Set.fold read_set ~init:local_edges ~f:add_read in
     let last_writes = Domain.Real.LastWrites.remove_all write_var last_writes in
     let last_writes = Domain.Real.LastWrites.add write_var write_node last_writes in
     ((last_writes, has_unsupported_features), local_edges)
@@ -637,15 +701,15 @@ module TransferFunctions = struct
 
   let add_tito tito_arguments (argument_list : Exp.t list) (ret_id : Ident.t) node
       (astate : Domain.t) : Domain.t =
-    let tito_vars =
+    let tito_locals =
       let tito_exps =
         List.filter_mapi
           ~f:(fun index arg -> if IntSet.mem index tito_arguments then Some arg else None)
           argument_list
       in
-      vars_of_exp_list tito_exps
+      locals_of_exp_list tito_exps
     in
-    update_write LineageGraph.Summary (Var.of_id ret_id, node) tito_vars astate
+    update_write LineageGraph.Summary (Var.of_id ret_id, node) tito_locals astate
 
 
   let add_tito_all (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) :
@@ -679,7 +743,8 @@ module TransferFunctions = struct
         add_tito_all args ret_id node astate
     | Some name ->
         (* TODO: Mechanism to match [name] against custom tito models. *)
-        astate |> record_supported name |> add_arg_flows name args |> add_ret_flows name ret_id node
+        astate |> record_supported name |> add_arg_flows node name args
+        |> add_ret_flows name ret_id node
         |> add_summary_flows (analyze_dependency name) args ret_id node
 
 
@@ -731,7 +796,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       let local_edges =
         List.mapi
           ~f:(fun i var ->
-            LineageGraph.flow ~source:(Argument i) ~target:(Local (var, start_node)) () )
+            LineageGraph.flow ~source:(Argument i) ~target:(Local (Variable var, start_node)) () )
           formals
       in
       let has_unsupported_features = false in
@@ -752,7 +817,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       in
       let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
       let mk_ret_edge ret_node =
-        LineageGraph.flow ~source:(Local (ret_var, ret_node)) ~target:Return ()
+        LineageGraph.flow ~source:(Local (Variable ret_var, ret_node)) ~target:Return ()
       in
       List.map ~f:mk_ret_edge (Domain.Real.LastWrites.get_all ret_var exit_last_writes)
       @ (Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat)

@@ -354,6 +354,23 @@ let rec gen_program_vars =
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)
 
+let rec gen_constants =
+  let open Sequence.Generator in
+  function
+  | Const constant ->
+      yield constant
+  | Var _ | Lvar _ | Sizeof {dynamic_length= None} ->
+      return ()
+  | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
+      gen_constants e
+  | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+      gen_constants e1 >>= fun () -> gen_constants e2
+  | Closure {captured_vars} ->
+      ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _, _) -> gen_constants e)
+
+
+let constants e = Sequence.Generator.run (gen_constants e)
+
 let zero_of_type typ =
   match typ.Typ.desc with
   | Typ.Tint _ ->
