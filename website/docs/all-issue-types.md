@@ -86,6 +86,11 @@ f() ->
     M#{2 := 3}.
 ```
 
+## BAD_KEY_LATENT
+
+Reported as "Bad Key Latent" by [pulse](/docs/next/checker-pulse).
+
+See [BAD_KEY](#bad_key).
 ## BAD_MAP
 
 Reported as "Bad Map" by [pulse](/docs/next/checker-pulse).
@@ -99,6 +104,11 @@ f() ->
     L#{1 => 2}.
 ```
 
+## BAD_MAP_LATENT
+
+Reported as "Bad Map Latent" by [pulse](/docs/next/checker-pulse).
+
+See [BAD_MAP](#bad_map).
 ## BAD_POINTER_COMPARISON
 
 Reported as "Bad Pointer Comparison" by [linters](/docs/next/checker-linters).
@@ -134,11 +144,33 @@ f() ->
     R#person.name
 ```
 
+## BAD_RECORD_LATENT
+
+Reported as "Bad Record Latent" by [pulse](/docs/next/checker-pulse).
+
+See [BAD_RECORD](#bad_record).
 ## BIABDUCTION_MEMORY_LEAK
 
 Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
 
 See [MEMORY_LEAK](#memory_leak).
+## BLOCK_PARAMETER_NOT_NULL_CHECKED
+
+Reported as "Block Parameter Not Null Checked" by [parameter-not-null-checked](/docs/next/checker-parameter-not-null-checked).
+
+This error type is reported only in Objective-C/Objective-C++. It happens when the parameter is a block:
+
+```objectivec
+   -(void) foo:(void (^)(BOOL))block {
+      block(YES); // calling a nil block will cause a crash.
+   }
+```
+
+Possible solutions are adding a check for `nil`, or making sure that the method
+is not called with `nil`. When an argument will never be `nil`, you can add the
+annotation `nonnull` to the argument's type, to tell Infer (and the type
+system), that the argument won't be `nil`. This will silence the warning.
+
 ## BUFFER_OVERRUN_L1
 
 Reported as "Buffer Overrun L1" by [bufferoverrun](/docs/next/checker-bufferoverrun).
@@ -400,6 +432,11 @@ dereferenced. If the address is zero then
 For example, `int *p = (int *) 123; *p = 42;` generates this issue
 type.
 
+## CONSTANT_ADDRESS_DEREFERENCE_LATENT
+
+Reported as "Constant Address Dereference Latent" by [pulse](/docs/next/checker-pulse).
+
+See [CONSTANT_ADDRESS_DEREFERENCE](#constant_address_dereference).
 ## CREATE_INTENT_FROM_URI
 
 Reported as "Create Intent From Uri" by [quandary](/docs/next/checker-quandary).
@@ -1340,6 +1377,11 @@ objects from Core Foundation or Core Graphics don't get released.
 }
 ```
 
+## MEMORY_LEAK_LATENT
+
+Reported as "Memory Leak Latent" by [pulse](/docs/next/checker-pulse).
+
+See [MEMORY_LEAK](#memory_leak).
 ## MISSING_REQUIRED_PROP
 
 Reported as "Missing Required Prop" by [litho-required-props](/docs/next/checker-litho-required-props).
@@ -1393,11 +1435,21 @@ Reported as "Mutable Local Variable In Component File" by [linters](/docs/next/c
 Reported as "Nil Block Call" by [pulse](/docs/next/checker-pulse).
 
 Calling a nil block is an error in Objective-C.
+## NIL_BLOCK_CALL_LATENT
+
+Reported as "Nil Block Call Latent" by [pulse](/docs/next/checker-pulse).
+
+See [NIL_BLOCK_CALL](#nil_block_call).
 ## NIL_INSERTION_INTO_COLLECTION
 
 Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
 
 Inserting nil into a collection is an error in Objective-C.
+## NIL_INSERTION_INTO_COLLECTION_LATENT
+
+Reported as "Nil Insertion Into Collection Latent" by [pulse](/docs/next/checker-pulse).
+
+See [NIL_INSERTION_INTO_COLLECTION](#nil_insertion_into_collection).
 ## NIL_MESSAGING_TO_NON_POD
 
 Reported as "Nil Messaging To Non Pod" by [pulse](/docs/next/checker-pulse).
@@ -1427,6 +1479,11 @@ std::shared_ptr<int> callMethodReturnsnonPOD(bool b) {
 }
 ```
 
+## NIL_MESSAGING_TO_NON_POD_LATENT
+
+Reported as "Nil Messaging To Non Pod Latent" by [pulse](/docs/next/checker-pulse).
+
+See [NIL_MESSAGING_TO_NON_POD](#nil_messaging_to_non_pod).
 ## NO_MATCHING_BRANCH_IN_TRY
 
 Reported as "No Matching Branch In Try" by [pulse](/docs/next/checker-pulse).
@@ -1443,6 +1500,11 @@ tail(X) ->
     end.
 ```
 
+## NO_MATCHING_BRANCH_IN_TRY_LATENT
+
+Reported as "No Matching Branch In Try Latent" by [pulse](/docs/next/checker-pulse).
+
+See [NO_MATCHING_BRANCH_IN_TRY](#no_matching_branch_in_try).
 ## NO_MATCHING_CASE_CLAUSE
 
 Reported as "No Matching Case Clause" by [pulse](/docs/next/checker-pulse).
@@ -1459,6 +1521,11 @@ tail(X) ->
 
 This error is reported if either the pattern(s) or the guard(s) prevent matching any of the clauses.
 
+## NO_MATCHING_CASE_CLAUSE_LATENT
+
+Reported as "No Matching Case Clause Latent" by [pulse](/docs/next/checker-pulse).
+
+See [NO_MATCHING_CASE_CLAUSE](#no_matching_case_clause).
 ## NO_MATCHING_FUNCTION_CLAUSE
 
 Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).
@@ -1472,6 +1539,11 @@ tail([_|Xs]) -> Xs.
 
 This error is reported if either the pattern(s) or the guard(s) prevent matching any of the clauses.
 
+## NO_MATCHING_FUNCTION_CLAUSE_LATENT
+
+Reported as "No Matching Function Clause Latent" by [pulse](/docs/next/checker-pulse).
+
+See [NO_MATCHING_FUNCTION_CLAUSE](#no_matching_function_clause).
 ## NO_MATCH_OF_RHS
 
 Reported as "No Match Of Rhs" by [pulse](/docs/next/checker-pulse).
@@ -1480,6 +1552,11 @@ No match of right hand side value in Erlang: Reports an error when the right han
 
 For example, `[H|T] = []` gives the error because the left hand side pattern requires at least one element in the list on the right hand side.
 
+## NO_MATCH_OF_RHS_LATENT
+
+Reported as "No Match Of Rhs Latent" by [pulse](/docs/next/checker-pulse).
+
+See [NO_MATCH_OF_RHS](#no_match_of_rhs).
 ## NO_TRUE_BRANCH_IN_IF
 
 Reported as "No True Branch In If" by [pulse](/docs/next/checker-pulse).
@@ -1495,6 +1572,11 @@ sign(X) ->
     end.
 ```
 
+## NO_TRUE_BRANCH_IN_IF_LATENT
+
+Reported as "No True Branch In If Latent" by [pulse](/docs/next/checker-pulse).
+
+See [NO_TRUE_BRANCH_IN_IF](#no_true_branch_in_if).
 ## NULLPTR_DEREFERENCE
 
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
@@ -1598,6 +1680,11 @@ passed as argument. Here are some examples:
 }
 ```
 
+## NULLPTR_DEREFERENCE_LATENT
+
+Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+
+See [NULLPTR_DEREFERENCE](#nullptr_dereference).
 ## NULL_DEREFERENCE
 
 Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).
@@ -1659,6 +1746,11 @@ int value_no_check() {
 }
 ```
 
+## OPTIONAL_EMPTY_ACCESS_LATENT
+
+Reported as "Optional Empty Access Latent" by [pulse](/docs/next/checker-pulse).
+
+See [OPTIONAL_EMPTY_ACCESS](#optional_empty_access).
 ## PARAMETER_NOT_NULL_CHECKED
 
 Reported as "Parameter Not Null Checked" by [biabduction](/docs/next/checker-biabduction).
@@ -1722,6 +1814,40 @@ created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
 
 See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse.
+## PULSE_UNINITIALIZED_VALUE_LATENT
+
+Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNINITIALIZED_VALUE](#pulse_uninitialized_value).
+## PULSE_UNNECESSARY_COPY
+
+Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).
+
+Unnecessary copy of an object via copy constructor. This issue is raised in C when the copied object is not modified before the variable goes out of scope.
+
+```cpp
+struct A {
+  int a;
+};
+
+ A& get_optional_ref() {
+  static A a;
+  return a;
+}
+
+
+Int foo(){
+  B x;
+  auto y = x; // calls copy constructor
+  return y.a; // y is not modified after copy, hence we could avoid the copy by adding &
+}
+
+```
+## PULSE_UNNECESSARY_COPY_LATENT
+
+Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 ## PURE_FUNCTION
 
 Reported as "Pure Function" by [purity](/docs/next/checker-purity).
@@ -1765,6 +1891,11 @@ void set_impure(int x, int y) {
 Reported as "Taint Error" by [quandary](/docs/next/checker-quandary).
 
 Generic taint error when nothing else fits.
+## REGEX_OP_ON_UI_THREAD
+
+Reported as "Regex Op On Ui Thread" by [starvation](/docs/next/checker-starvation).
+
+A potentially costly operation on a regular expression occurs on the UI thread.
 ## RESOURCE_LEAK
 
 Reported as "Resource Leak" by [biabduction](/docs/next/checker-biabduction).
@@ -2116,6 +2247,11 @@ int* foo() {
 }
 ```
 
+## STACK_VARIABLE_ADDRESS_ESCAPE_LATENT
+
+Reported as "Stack Variable Address Escape Latent" by [pulse](/docs/next/checker-pulse).
+
+See [STACK_VARIABLE_ADDRESS_ESCAPE](#stack_variable_address_escape).
 ## STARVATION
 
 Reported as "UI Thread Starvation" by [starvation](/docs/next/checker-starvation).
@@ -2423,12 +2559,22 @@ Reported as "Use After Delete" by [pulse](/docs/next/checker-pulse).
 
 An address that was invalidated by a call to `delete` in C++ is dereferenced.
 
+## USE_AFTER_DELETE_LATENT
+
+Reported as "Use After Delete Latent" by [pulse](/docs/next/checker-pulse).
+
+See [USE_AFTER_DELETE](#use_after_delete).
 ## USE_AFTER_FREE
 
 Reported as "Use After Free" by [pulse](/docs/next/checker-pulse).
 
 An address that was invalidated by a call to `free` in C is dereferenced.
 
+## USE_AFTER_FREE_LATENT
+
+Reported as "Use After Free Latent" by [pulse](/docs/next/checker-pulse).
+
+See [USE_AFTER_FREE](#use_after_free).
 ## USE_AFTER_LIFETIME
 
 Reported as "Use After Lifetime" by [pulse](/docs/next/checker-pulse).
@@ -2448,6 +2594,11 @@ void foo() {
 }
 ```
 
+## USE_AFTER_LIFETIME_LATENT
+
+Reported as "Use After Lifetime Latent" by [pulse](/docs/next/checker-pulse).
+
+See [USE_AFTER_LIFETIME](#use_after_lifetime).
 ## VECTOR_INVALIDATION
 
 Reported as "Vector Invalidation" by [pulse](/docs/next/checker-pulse).
@@ -2471,6 +2622,11 @@ void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
 }
 ```
 
+## VECTOR_INVALIDATION_LATENT
+
+Reported as "Vector Invalidation Latent" by [pulse](/docs/next/checker-pulse).
+
+See [VECTOR_INVALIDATION](#vector_invalidation).
 ## WEAK_SELF_IN_NO_ESCAPE_BLOCK
 
 Reported as "Weak Self In No Escape Block" by [self-in-block](/docs/next/checker-self-in-block).
