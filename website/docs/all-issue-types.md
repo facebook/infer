@@ -158,17 +158,25 @@ See [MEMORY_LEAK](#memory_leak).
 
 Reported as "Block Parameter Not Null Checked" by [parameter-not-null-checked](/docs/next/checker-parameter-not-null-checked).
 
-This error type is reported only in Objective-C/Objective-C++. It happens when the parameter is a block:
+This error type is reported only in Objective-C/Objective-C++. It happens when a method has a block as a parameter,
+and the block is executed in the method's body without checking it for `nil` first. If a `nil` block is passed to
+the method, then this will cause a crash. For example:
 
 ```objectivec
-   -(void) foo:(void (^)(BOOL))block {
-      block(YES); // calling a nil block will cause a crash.
-   }
+- (void)uploadTaskWithRequest:(NSURLRequest*)urlRequest
+                       fromFile:(NSURL*)fileURL
+                       delegate:(id)delegate
+                  delegateQueue:(NSOperationQueue*)delegateQueue
+                     completion:(void (^)())completion {
+     ...
+    completion();
+}
 ```
 
+**Action**:
 Possible solutions are adding a check for `nil`, or making sure that the method
-is not called with `nil`. When an argument will never be `nil`, you can add the
-annotation `nonnull` to the argument's type, to tell Infer (and the type
+is not ever called with `nil`. When an argument will never be `nil`, you can add
+the annotation `nonnull` to the argument's type, to tell Infer (and the type
 system), that the argument won't be `nil`. This will silence the warning.
 
 ## BUFFER_OVERRUN_L1
