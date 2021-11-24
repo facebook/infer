@@ -83,7 +83,11 @@ and simple_expression =
   | Cons of {head: expression; tail: expression}
   | Fun of function_
   | If of case_clause list
-  | Lambda of {name: string option; cases: case_clause list}
+  | Lambda of
+      { name: string option
+      ; cases: case_clause list
+      ; mutable procname: (Procname.t option[@sexp.opaque])
+      ; mutable captured: (Pvar.Set.t option[@sexp.opaque]) }
   | ListComprehension of {expression: expression; qualifiers: qualifier list}
   | Literal of literal
   | Map of {map: expression option; updates: association list}
@@ -96,7 +100,7 @@ and simple_expression =
   | TryCatch of {body: body; ok_cases: case_clause list; catch_cases: catch_clause list; after: body}
   | Tuple of expression list
   | UnaryOperator of unary_operator * expression
-  | Variable of string
+  | Variable of {vname: string; mutable scope: (Procname.t option[@sexp.opaque])}
 [@@deriving sexp_of]
 
 and expression = {line: line; simple_expression: simple_expression} [@@deriving sexp_of]

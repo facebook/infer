@@ -24,8 +24,6 @@ module UnqualifiedFunction : sig
   end
 
   include module type of Comparable.Make (T)
-
-  val of_ast : Ast.function_ -> t
 end
 
 type record_field_info = {index: int; initializer_: Ast.expression option} [@@deriving sexp_of]
@@ -34,7 +32,8 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
 [@@deriving sexp_of]
 
 type ('procdesc, 'result) t =
-  { current_module: module_name  (** used to qualify function names *)
+  { cfg: (Cfg.t[@sexp.opaque])
+  ; current_module: module_name  (** used to qualify function names *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
@@ -49,3 +48,5 @@ val get_environment : Ast.form list -> (absent, absent) t
 val typ_of_name : ErlangTypeName.t -> Typ.t
 
 val ptr_typ_of_name : ErlangTypeName.t -> Typ.t
+
+val func_procname : (_, _) t -> Ast.function_ -> UnqualifiedFunction.t * Procname.t

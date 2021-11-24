@@ -257,7 +257,7 @@ let rec to_expression json : Ast.expression option =
   | `List [`String "fun"; anno; `List [`String "clauses"; cases]] ->
       let* line = to_line anno in
       let* cases = to_list ~f:to_case_clause cases in
-      expr line (Lambda {name= None; cases})
+      expr line (Lambda {name= None; cases; procname= None; captured= None})
   | `List [`String "fun"; anno; `List [`String "function"; function_; arity]] ->
       let* line = to_line anno in
       let* function_ = to_function_reference function_ in
@@ -299,7 +299,7 @@ let rec to_expression json : Ast.expression option =
   | `List [`String "named_fun"; anno; `String name; cases] ->
       let* line = to_line anno in
       let* cases = to_list ~f:to_case_clause cases in
-      expr line (Lambda {name= Some name; cases})
+      expr line (Lambda {name= Some name; cases; procname= None; captured= None})
   | `List [`String "nil"; anno] ->
       let* line = to_line anno in
       expr line Nil
@@ -370,7 +370,7 @@ let rec to_expression json : Ast.expression option =
       expr line (Tuple xs)
   | `List [`String "var"; anno; `String variable] ->
       let* line = to_line anno in
-      expr line (Variable variable)
+      expr line (Variable {vname= variable; scope= None})
   | _ ->
       unknown "expression" json
 

@@ -37,7 +37,8 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
 [@@deriving sexp_of]
 
 type ('procdesc, 'result) t =
-  { current_module: module_name  (** used to qualify function names *)
+  { cfg: (Cfg.t[@sexp.opaque])
+  ; current_module: module_name  (** used to qualify function names *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
@@ -49,7 +50,8 @@ type ('procdesc, 'result) t =
 
 let get_environment module_ =
   let init =
-    { current_module= Printf.sprintf "%s:unknown_module" __FILE__
+    { cfg= Cfg.create ()
+    ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
     ; functions= UnqualifiedFunction.Set.empty
     ; exports= UnqualifiedFunction.Set.empty
     ; imports= UnqualifiedFunction.Map.empty (* TODO: auto-import from module "erlang" *)
@@ -111,3 +113,10 @@ let get_environment module_ =
 let typ_of_name (name : ErlangTypeName.t) : Typ.t = Typ.mk (Tstruct (ErlangType name))
 
 let ptr_typ_of_name (name : ErlangTypeName.t) : Typ.t = Typ.mk (Tptr (typ_of_name name, Pk_pointer))
+
+let func_procname env function_ =
+  let uf_name = UnqualifiedFunction.of_ast function_ in
+  let {UnqualifiedFunction.name= function_name; arity} = uf_name in
+  let module_name = env.current_module in
+  let procname = Procname.make_erlang ~module_name ~function_name ~arity in
+  (uf_name, procname)

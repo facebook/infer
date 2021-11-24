@@ -138,8 +138,8 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
       translate_pattern_tuple env value exprs
   | UnaryOperator _ ->
       translate_pattern_unary_expression env value line simple_expression
-  | Variable vname ->
-      translate_pattern_variable env value vname
+  | Variable {vname; scope} ->
+      translate_pattern_variable env value vname scope
   | e ->
       (* TODO: Cover all cases. *)
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
@@ -321,13 +321,18 @@ and translate_pattern_unary_expression (env : (_, _) Env.t) value line simple_ex
   Block.all env [expr_block; branch_block]
 
 
-and translate_pattern_variable (env : (_, _) Env.t) value vname : Block.t =
+and translate_pattern_variable (env : (_, _) Env.t) value vname scope : Block.t =
   match vname with
   | "_" ->
       Block.make_success env
   | _ ->
-      let (Env.Present procdesc) = env.procdesc in
-      let procname = Procdesc.get_proc_name procdesc in
+      let procname =
+        match scope with
+        | Some name ->
+            name
+        | None ->
+            L.die InternalError "Scope not found for variable, probably missing annotation."
+      in
       let store : Sil.instr =
         let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
         let e2 : Exp.t = Var value in
@@ -385,12 +390,14 @@ and translate_expression env {Ast.line; simple_expression} =
         { module_= None
         ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
         ; args } ->
-        translate_expression_call env ret_var None function_name args
+        translate_expression_call_static env ret_var None function_name args
     | Call
         { module_= Some {Ast.line= _; simple_expression= Literal (Atom module_name)}
         ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
         ; args } ->
-        translate_expression_call env ret_var (Some module_name) function_name args
+        translate_expression_call_static env ret_var (Some module_name) function_name args
+    | Call {module_= None; function_; args} ->
+        translate_expression_call_dynamic env ret_var function_ args
     | Case {expression; cases} ->
         translate_expression_case env expression cases
     | Catch expression ->
@@ -400,6 +407,14 @@ and translate_expression env {Ast.line; simple_expression} =
         translate_expression_cons env ret_var head tail
     | If clauses ->
         translate_expression_if env clauses
+    | Lambda {name= None; cases; procname; captured} -> (
+      match captured with
+      | Some captured ->
+          translate_expression_lambda env ret_var cases procname captured
+      | None ->
+          L.die InternalError
+            "Captured variables are missing for lambda. The scoping preprocessing step might be \
+             missing." )
     | ListComprehension {expression; qualifiers} ->
         translate_expression_listcomprehension env ret_var expression qualifiers
     | Literal (Atom atom) ->
@@ -430,8 +445,8 @@ and translate_expression env {Ast.line; simple_expression} =
         translate_expression_tuple env ret_var exprs
     | UnaryOperator (op, e) ->
         translate_expression_unary_operator env ret_var op e
-    | Variable vname ->
-        translate_expression_variable env ret_var vname
+    | Variable {vname; scope} ->
+        translate_expression_variable env ret_var vname scope
     | todo ->
         L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression %s@."
           (Sexp.to_string (Ast.sexp_of_simple_expression todo)) ;
@@ -577,8 +592,30 @@ and lookup_module_for_unqualified (env : (_, _) Env.t) function_name arity =
       else ErlangTypeName.erlang_namespace
 
 
-and translate_expression_call (env : (_, _) Env.t) ret_var module_name_opt function_name args :
-    Block.t =
+and translate_expression_call (env : (_, _) Env.t) ret_var fun_exp args : Block.t =
+  let args_with_ids = List.map ~f:(fun a -> (a, mk_fresh_id ())) args in
+  let args_blocks =
+    let f (one_arg_expression, one_arg_ret_var) =
+      translate_expression_to_id env one_arg_ret_var one_arg_expression
+    in
+    List.map ~f args_with_ids
+  in
+  let args_ids_and_types = List.map ~f:(function _, id -> (Exp.Var id, any_typ)) args_with_ids in
+  let call_instruction =
+    Sil.Call ((ret_var, any_typ), fun_exp, args_ids_and_types, env.location, CallFlags.default)
+  in
+  let call_block = Block.make_instruction env [call_instruction] in
+  Block.all env (args_blocks @ [call_block])
+
+
+and translate_expression_call_dynamic (env : (_, _) Env.t) ret_var expression args : Block.t =
+  let fun_expr_id, fun_expr_block = translate_expression_to_fresh_id env expression in
+  let call_block = translate_expression_call env ret_var (Exp.Var fun_expr_id) args in
+  Block.all env [fun_expr_block; call_block]
+
+
+and translate_expression_call_static (env : (_, _) Env.t) ret_var module_name_opt function_name args
+    : Block.t =
   let arity = List.length args in
   let callee_procname =
     let module_name =
@@ -592,20 +629,8 @@ and translate_expression_call (env : (_, _) Env.t) ret_var module_name_opt funct
     in
     Procname.make_erlang ~module_name ~function_name ~arity
   in
-  let args_with_ids = List.map ~f:(fun a -> (a, mk_fresh_id ())) args in
-  let args_blocks =
-    let f (one_arg_expression, one_arg_ret_var) =
-      translate_expression_to_id env one_arg_ret_var one_arg_expression
-    in
-    List.map ~f args_with_ids
-  in
   let fun_exp = Exp.Const (Cfun callee_procname) in
-  let args_ids_and_types = List.map ~f:(function _, id -> (Exp.Var id, any_typ)) args_with_ids in
-  let call_instruction =
-    Sil.Call ((ret_var, any_typ), fun_exp, args_ids_and_types, env.location, CallFlags.default)
-  in
-  let call_block = Block.make_instruction env [call_instruction] in
-  Block.all env (args_blocks @ [call_block])
+  translate_expression_call env ret_var fun_exp args
 
 
 and translate_expression_case (env : (_, _) Env.t) expression cases : Block.t =
@@ -633,6 +658,54 @@ and translate_expression_if env clauses : Block.t =
   let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_if_clause in
   blocks.exit_failure |~~> [crash_node] ;
   {blocks with exit_failure= crash_node}
+
+
+and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt captured : Block.t =
+  let arity =
+    match cases with
+    | c :: _ ->
+        List.length c.Ast.patterns
+    | _ ->
+        L.die InternalError "Lambda has no clauses, cannot determine arity"
+  in
+  let name =
+    match procname_opt with
+    | Some name ->
+        name
+    | None ->
+        L.die InternalError "Procname not found for lambda, probably missing annotation."
+  in
+  let captured_vars = Pvar.Set.elements captured in
+  let attributes =
+    let default = ProcAttributes.default env.location.file name in
+    let access : ProcAttributes.access = Private in
+    let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ)) arity in
+    let mk_capt_var (var : Pvar.t) =
+      {CapturedVar.name= Pvar.get_name var; typ= any_typ; capture_mode= CapturedVar.ByReference}
+    in
+    let captured = List.map ~f:mk_capt_var captured_vars in
+    {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ; captured}
+  in
+  let procdesc =
+    let procdesc = Cfg.create_proc_desc env.cfg attributes in
+    let start_node = Procdesc.create_node procdesc env.location Start_node [] in
+    let exit_node = Procdesc.create_node procdesc env.location Exit_node [] in
+    Procdesc.set_start_node procdesc start_node ;
+    Procdesc.set_exit_node procdesc exit_node ;
+    procdesc
+  in
+  let sub_env =
+    { env with
+      procdesc= Env.Present procdesc
+    ; result= Env.Present (Exp.Lvar (Pvar.get_ret_pvar name)) }
+  in
+  let () = translate_function_clauses sub_env procdesc attributes name cases in
+  let closure =
+    let mk_capt_var (var : Pvar.t) = (Exp.Lvar var, var, any_typ, CapturedVar.ByReference) in
+    let captured_vars = List.map ~f:mk_capt_var captured_vars in
+    Exp.Closure {name; captured_vars}
+  in
+  Block.make_load env ret_var closure any_typ
 
 
 and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :
@@ -986,9 +1059,14 @@ and translate_expression_unary_operator (env : (_, _) Env.t) ret_var (op : Ast.u
   Block.all env [block; op_block]
 
 
-and translate_expression_variable (env : (_, _) Env.t) ret_var vname : Block.t =
-  let (Env.Present procdesc) = env.procdesc in
-  let procname = Procdesc.get_proc_name procdesc in
+and translate_expression_variable (env : (_, _) Env.t) ret_var vname scope : Block.t =
+  let procname =
+    match scope with
+    | Some name ->
+        name
+    | None ->
+        L.die InternalError "Scope not found for variable, probably missing annotation."
+  in
   let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
   let load_instr = Sil.Load {id= ret_var; e; root_typ= any_typ; typ= any_typ; loc= env.location} in
   Block.make_instruction env [load_instr]
@@ -1026,36 +1104,12 @@ and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
   ; exit_success= body_block.exit_success }
 
 
-let translate_one_function (env : (_, _) Env.t) cfg function_ clauses =
-  let uf_name = Env.UnqualifiedFunction.of_ast function_ in
-  let {Env.UnqualifiedFunction.name= function_name; arity} = uf_name in
-  let name =
-    let module_name = env.current_module in
-    Procname.make_erlang ~module_name ~function_name ~arity
-  in
-  let attributes =
-    let default = ProcAttributes.default env.location.file name in
-    let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
-    let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ)) arity in
-    {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
-  in
-  let procdesc =
-    let procdesc = Cfg.create_proc_desc cfg attributes in
-    let start_node = Procdesc.create_node procdesc env.location Start_node [] in
-    let exit_node = Procdesc.create_node procdesc env.location Exit_node [] in
-    Procdesc.set_start_node procdesc start_node ;
-    Procdesc.set_exit_node procdesc exit_node ;
-    procdesc
-  in
-  let env =
-    { env with
-      procdesc= Env.Present procdesc
-    ; result= Env.Present (Exp.Lvar (Pvar.get_ret_pvar name)) }
-  in
+and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcAttributes.t)
+    procname clauses =
   let idents, loads =
     let load (formal, typ) =
       let id = mk_fresh_id () in
-      let pvar = Pvar.mk formal name in
+      let pvar = Pvar.mk formal procname in
       let load = Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; typ; loc= attributes.loc} in
       (id, load)
     in
@@ -1080,21 +1134,45 @@ let translate_one_function (env : (_, _) Env.t) cfg function_ clauses =
   exit_success |~~> [Procdesc.get_exit_node procdesc]
 
 
-let translate_functions (env : (_, _) Env.t) cfg module_ =
+and translate_one_function (env : (_, _) Env.t) function_ clauses =
+  let uf_name, procname = Env.func_procname env function_ in
+  let attributes =
+    let default = ProcAttributes.default env.location.file procname in
+    let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
+    let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ)) uf_name.arity in
+    {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
+  in
+  let procdesc =
+    let procdesc = Cfg.create_proc_desc env.cfg attributes in
+    let start_node = Procdesc.create_node procdesc env.location Start_node [] in
+    let exit_node = Procdesc.create_node procdesc env.location Exit_node [] in
+    Procdesc.set_start_node procdesc start_node ;
+    Procdesc.set_exit_node procdesc exit_node ;
+    procdesc
+  in
+  let env =
+    { env with
+      procdesc= Env.Present procdesc
+    ; result= Env.Present (Exp.Lvar (Pvar.get_ret_pvar procname)) }
+  in
+  translate_function_clauses env procdesc attributes procname clauses
+
+
+let translate_functions (env : (_, _) Env.t) module_ =
   let f {Ast.line; simple_form} =
     let env = update_location line env in
     match simple_form with
     | Function {function_; clauses} ->
-        translate_one_function env cfg function_ clauses
+        translate_one_function env function_ clauses
     | _ ->
         ()
   in
   List.iter module_ ~f ;
   DB.Results_dir.init env.location.file ;
   let tenv = Tenv.FileLocal (Tenv.create ()) in
-  SourceFiles.add env.location.file cfg tenv None
+  SourceFiles.add env.location.file env.cfg tenv None
 
 
-let translate_module env module_ =
-  let cfg = Cfg.create () in
-  translate_functions env cfg module_
+let translate_module (env : (_, _) Env.t) module_ =
+  ErlangScopes.annotate_scopes env module_ ;
+  translate_functions env module_
