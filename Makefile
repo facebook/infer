@@ -1002,7 +1002,7 @@ endif
 	$(MAKE) IS_FACEBOOK_TREE=no $(INFER_GROFF_MANUALS))
 	$(QUIET)$(MKDIR_P) "$(WEBSITE_DIR)"/static/man/next "$(WEBSITE_DIR)"/static/odoc/next
 	$(QUIET)$(call silent_on_success,Copying man pages,\
-	$(REMOVE) "$(WEBSITE_DIR)"/static/man/*; \
+	$(REMOVE) "$(WEBSITE_DIR)"/static/man/next/*; \
 	for man in $(INFER_GROFF_MANUALS); do \
 	  groff -Thtml "$$man" \
 	  | grep -v '^<!-- CreationDate: .*>$$' \
