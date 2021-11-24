@@ -987,10 +987,14 @@ ifneq ($(NO_BROWSE_DOC),yes)
 	$(QUIET)echo "  odig doc"
 endif
 
+# if you are calling "make doc-publish" several times in a row then rebuilding infer from scratch
+# each time is annoying
+NOCLEAN=no
+
 .PHONY: doc-publish
 doc-publish:
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(call silent_on_success,Cleaning up FB-only files,\
+ifeq ($(IS_FACEBOOK_TREE)+$(NOCLEAN),yes+no)
+	$(QUIET)$(call silent_on_success,Cleaning up FB-only files (run with NOCLEAN=yes to skip this step if called several times in a row),\
 	$(MAKE) -C $(SRC_DIR) clean; \
 	$(MAKE) -C facebook clean)
 endif
