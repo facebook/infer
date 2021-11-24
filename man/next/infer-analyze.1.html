@@ -250,10 +250,10 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <p style="margin-left:17%;">Deactivates: Default checkers:
 <b>--biabduction</b>, <b>--fragment-retains-view</b>,
 <b>--inefficient-keyset-iterator</b>, <b>--linters</b>,
-<b>--liveness</b>, <b>--racerd</b>,
-<b>--dotnet-resource-leak</b>, <b>--siof</b>,
-<b>--self-in-block</b>, <b>--starvation</b> (Conversely:
-<b>--default-checkers</b>)</p>
+<b>--liveness</b>, <b>--parameter-not-null-checked</b>,
+<b>--racerd</b>, <b>--dotnet-resource-leak</b>,
+<b>--siof</b>, <b>--self-in-block</b>, <b>--starvation</b>
+(Conversely: <b>--default-checkers</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate</b></p>
 
@@ -448,6 +448,23 @@ analysis allocation traces in
 allocation profiling. Default is 1e-6.</p>
 
 
+<p style="margin-left:11%;"><b>--no-parameter-not-null-checked</b></p>
+
+<p style="margin-left:17%;">Deactivates: checker
+parameter-not-null-checked: An Objective-C-specific analysis
+to detect when a block parameter is used before being
+checked for null first. (Conversely:
+<b>--parameter-not-null-checked</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--parameter-not-null-checked-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+parameter-not-null-checked and disable all other checkers
+(Conversely:
+<b>--no-parameter-not-null-checked-only</b>)</p>
+
+
 <p style="margin-left:11%;"><b>--print-active-checkers</b></p>
 
 <p style="margin-left:17%;">Activates: Print the active
@@ -616,6 +633,12 @@ list is provided with
 <b>--pulse-report-ignore-unknown-java-methods-patterns-reset</b>,
 all issues will be reported regardless the presence of
 unknown code</p>
+
+<p style="margin-left:11%;"><b>--pulse-skip-procedures</b>
+<i>regex</i></p>
+
+<p style="margin-left:17%;">Regex of procedures that should
+not be analyzed by Pulse.</p>
 
 <p style="margin-left:11%;"><b>--purity</b></p>
 
