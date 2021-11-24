@@ -2418,7 +2418,7 @@ FILES
        - for switches options, the value is a JSON boolean (true or false,
        without quotes)
        - for non-switches options with no arguments (for instance the
-       undefined option associated with a list option), the value is null
+       ...-reset option associated with a list option), the value is null
        - for integers, the value is a JSON integer (without quotes)
        - string options have string values
        - path options have string values, and are interpreted relative to the
