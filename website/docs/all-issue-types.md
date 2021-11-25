@@ -1070,27 +1070,6 @@ class C {
 
 Action: Protect the offending access by acquiring the lock indicated by the `@GuardedBy(...)`.
 
-## GUARDEDBY_VIOLATION_NULLSAFE
-
-Reported as "GuardedBy Violation in `@Nullsafe` Class" by [racerd](/docs/next/checker-racerd).
-
-A field annotated with `@GuardedBy` is being accessed by a call-chain that starts at a non-private method without synchronization.
-
-Example:
-
-```java
-class C {
-  @GuardedBy("this")
-  String f;
-
-  void foo(String s) {
-    f = s; // unprotected access here
-  }
-}
-```
-
-Action: Protect the offending access by acquiring the lock indicated by the `@GuardedBy(...)`.
-
 ## IMPURE_FUNCTION
 
 Reported as "Impure Function" by [impurity](/docs/next/checker-impurity).
@@ -2473,11 +2452,6 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
   other threads. The main utility of this annotation is in interfaces, where
   Infer cannot look up the implementation and decide for itself.
 
-## THREAD_SAFETY_VIOLATION_NULLSAFE
-
-Reported as "Thread Safety Violation in `@Nullsafe` Class" by [racerd](/docs/next/checker-racerd).
-
-A [Thread Safety Violation](#thread_safety_violation) in a `@Nullsafe` class.
 ## TOPL_ERROR
 
 Reported as "Topl Error" by [topl](/docs/next/checker-topl).

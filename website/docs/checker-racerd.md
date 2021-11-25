@@ -503,8 +503,6 @@ resource.
 
 The following issue types are reported by this checker:
 - [GUARDEDBY_VIOLATION](/docs/next/all-issue-types#guardedby_violation)
-- [GUARDEDBY_VIOLATION_NULLSAFE](/docs/next/all-issue-types#guardedby_violation_nullsafe)
 - [INTERFACE_NOT_THREAD_SAFE](/docs/next/all-issue-types#interface_not_thread_safe)
 - [LOCK_CONSISTENCY_VIOLATION](/docs/next/all-issue-types#lock_consistency_violation)
 - [THREAD_SAFETY_VIOLATION](/docs/next/all-issue-types#thread_safety_violation)
-- [THREAD_SAFETY_VIOLATION_NULLSAFE](/docs/next/all-issue-types#thread_safety_violation_nullsafe)
