@@ -1856,7 +1856,28 @@ module LatestPrune = struct
         Top
 
 
-  let widen ~prev ~next ~num_iters:_ = join prev next
+  let widen ~prev ~next ~num_iters =
+    match (prev, next) with
+    | Latest prev, Latest next ->
+        Latest (PrunePairs.widen ~prev ~next ~num_iters)
+    | TrueBranch (pvar, prev), TrueBranch (pvar', next) when Pvar.equal pvar pvar' ->
+        TrueBranch (pvar, PrunePairs.widen ~prev ~next ~num_iters)
+    | FalseBranch (pvar, prev), FalseBranch (pvar', next) when Pvar.equal pvar pvar' ->
+        FalseBranch (pvar, PrunePairs.widen ~prev ~next ~num_iters)
+    | V (pvar, prev_true, prev_false), V (pvar', next_true, next_false) when Pvar.equal pvar pvar'
+      ->
+        V
+          ( pvar
+          , PrunePairs.widen ~prev:prev_true ~next:next_true ~num_iters
+          , PrunePairs.widen ~prev:prev_false ~next:next_false ~num_iters )
+    | VRet (id, prev_true, prev_false), VRet (id', next_true, next_false) when Ident.equal id id' ->
+        VRet
+          ( id
+          , PrunePairs.widen ~prev:prev_true ~next:next_true ~num_iters
+          , PrunePairs.widen ~prev:prev_false ~next:next_false ~num_iters )
+    | _, _ ->
+        Top
+
 
   let top = Top
 
