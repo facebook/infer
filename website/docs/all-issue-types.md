@@ -370,16 +370,6 @@ Action: fix the mismatch between format string and argument types.
 Reported as "Component With Multiple Factory Methods" by [linters](/docs/next/checker-linters).
 
 
-## CONDITION_ALWAYS_FALSE
-
-Reported as "Condition Always False" by [bufferoverrun](/docs/next/checker-bufferoverrun).
-
-A condition expression is **always** evaluated to false.
-## CONDITION_ALWAYS_TRUE
-
-Reported as "Condition Always True" by [bufferoverrun](/docs/next/checker-bufferoverrun).
-
-A condition expression is **always** evaluated to true.
 ## CONFIG_CHECKS_BETWEEN_MARKERS
 
 Reported as "Config Checks Between Markers" by [config-checks-between-markers](/docs/next/checker-config-checks-between-markers).

@@ -440,13 +440,11 @@ let component_with_multiple_factory_methods =
 
 
 let condition_always_false =
-  register ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
-    ~user_documentation:"A condition expression is **always** evaluated to false."
+  register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
 
 
 let condition_always_true =
-  register ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" Warning BufferOverrunChecker
-    ~user_documentation:"A condition expression is **always** evaluated to true."
+  register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" Warning BufferOverrunChecker
 
 
 let config_checks_between_markers =
