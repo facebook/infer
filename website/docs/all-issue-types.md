@@ -1151,27 +1151,37 @@ void efficient_loop_ok(HashMap<String, Integer> testMap) {
 
 Reported as "Inferbo Alloc Is Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
-`malloc` is passed a large constant value.
+`malloc` is passed a large constant value (>=10^6). For example, `int n = 1000000; malloc(n);` generates `INFERBO_ALLOC_IS_BIG` on `malloc(n)`.
+
+Action: Fix the size argument or make sure it is really needed.
 ## INFERBO_ALLOC_IS_NEGATIVE
 
 Reported as "Inferbo Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
-`malloc` is called with a negative size.
+`malloc` is called with a negative size. For example, `int n = 3 - 5; malloc(n);` generates `INFERBO_ALLOC_IS_NEGATIVE` on `malloc(n)`.
+
+Action: Fix the size argument.
 ## INFERBO_ALLOC_IS_ZERO
 
 Reported as "Inferbo Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
-`malloc` is called with a zero size.
+`malloc` is called with a zero size. For example, `int n = 3 - 3; malloc(n);` generates `INFERBO_ALLOC_IS_ZERO` on `malloc(n)`.
+
+Action: Fix the size argument.
 ## INFERBO_ALLOC_MAY_BE_BIG
 
 Reported as "Inferbo Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
-`malloc` *may* be called with a large value.
+`malloc` *may* be called with a large value. For example, `int n = b ? 3 : 1000000; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_BIG` on `malloc(n)`.
+
+Action: Fix the size argument or add a bound checking, e.g. `if (n < A_SMALL_NUMBER) { malloc(n); }`.
 ## INFERBO_ALLOC_MAY_BE_NEGATIVE
 
 Reported as "Inferbo Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
-`malloc` *may* be called with a negative value.
+`malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.
+
+Action: Fix the size argument or add a bound checking, e.g. `if (n > 0) { malloc(n); }`.
 ## INFINITE_AUTORELEASEPOOL_SIZE
 
 Reported as "Infinite Autoreleasepool Size" by [cost](/docs/next/checker-cost).

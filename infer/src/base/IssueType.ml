@@ -684,27 +684,43 @@ let inefficient_keyset_iterator =
 
 let inferbo_alloc_is_big =
   register ~id:"INFERBO_ALLOC_IS_BIG" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` is passed a large constant value."
+    ~user_documentation:
+      "`malloc` is passed a large constant value (>=10^6). For example, `int n = 1000000; \
+       malloc(n);` generates `INFERBO_ALLOC_IS_BIG` on `malloc(n)`.\n\n\
+       Action: Fix the size argument or make sure it is really needed."
 
 
 let inferbo_alloc_is_negative =
   register ~id:"INFERBO_ALLOC_IS_NEGATIVE" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` is called with a negative size."
+    ~user_documentation:
+      "`malloc` is called with a negative size. For example, `int n = 3 - 5; malloc(n);` generates \
+       `INFERBO_ALLOC_IS_NEGATIVE` on `malloc(n)`.\n\n\
+       Action: Fix the size argument."
 
 
 let inferbo_alloc_is_zero =
   register ~id:"INFERBO_ALLOC_IS_ZERO" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` is called with a zero size."
+    ~user_documentation:
+      "`malloc` is called with a zero size. For example, `int n = 3 - 3; malloc(n);` generates \
+       `INFERBO_ALLOC_IS_ZERO` on `malloc(n)`.\n\n\
+       Action: Fix the size argument."
 
 
 let inferbo_alloc_may_be_big =
   register ~id:"INFERBO_ALLOC_MAY_BE_BIG" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` *may* be called with a large value."
+    ~user_documentation:
+      "`malloc` *may* be called with a large value. For example, `int n = b ? 3 : 1000000; \
+       malloc(n);` generates `INFERBO_ALLOC_MAY_BE_BIG` on `malloc(n)`.\n\n\
+       Action: Fix the size argument or add a bound checking, e.g. `if (n < A_SMALL_NUMBER) { \
+       malloc(n); }`."
 
 
 let inferbo_alloc_may_be_negative =
   register ~id:"INFERBO_ALLOC_MAY_BE_NEGATIVE" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` *may* be called with a negative value."
+    ~user_documentation:
+      "`malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; \
+       malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.\n\n\
+       Action: Fix the size argument or add a bound checking, e.g. `if (n > 0) { malloc(n); }`."
 
 
 let infinite_cost_call ~kind = register_cost ~enabled:false "INFINITE_%s" ~kind
