@@ -79,8 +79,7 @@ void emplace_logm(std::map<char, int> m, char c, int i) { m.emplace(c, i); }
 
 void find_logm(std::map<char, int> m, char c) { m.find(c); }
 
-// erase(val) is logarithmic
-// Expected: m * log(m); got constant
+// Expected: m * log(m); got log(m)
 void loop_and_erase_mlogm_FN(std::map<std::string, int> m) {
   std::map<std::string, int>::iterator it = m.begin();
 

@@ -191,6 +191,11 @@ module Algorithm = struct
     BoundsOfContainer.linear_length_itv itv cost_model_env ~ret ~of_function
 
 
+  let erase begin_arg end_arg cost_model_env ~ret inferbo_mem ~of_function =
+    let itv = Iterator.get_iter_itv begin_arg end_arg inferbo_mem in
+    BoundsOfContainer.linear_length_itv itv cost_model_env ~ret ~of_function
+
+
   let sort begin_arg end_arg cost_model_env ~ret inferbo_mem ~of_function =
     let itv = Iterator.get_iter_itv begin_arg end_arg inferbo_mem in
     BoundsOfContainer.n_log_n_length_itv itv cost_model_env ~ret ~of_function
@@ -384,6 +389,10 @@ module Call = struct
           $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.emplace"
         ; -"std" &::+ std_container_ord &:: "emplace_hint" $ capt_exp
           $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.emplace_hint"
+        ; -"std" &::+ std_container_ord &:: "erase" $ capt_exp $+ any_arg
+          $--> BoundsOfContainer.logarithmic_length ~of_function:"Container.erase"
+        ; -"std" &::+ std_container_ord &:: "erase" $ any_arg $+ capt_exp $+ capt_exp
+          $+...$--> Algorithm.erase ~of_function:"Container.erase"
           (* Java Cost Models *)
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp

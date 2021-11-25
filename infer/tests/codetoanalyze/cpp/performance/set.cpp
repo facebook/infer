@@ -74,6 +74,16 @@ void loop_and_find_logs(std::set<int> s, int n) {
   }
 }
 
+void erase_val_set_log(std::set<int> s, int n) { s.erase(n); }
+
+void erase_range_set_linear(std::set<int> s) { s.erase(s.begin(), s.end()); }
+
+// add inferbo model for find: T105975115
+// expected: O(s); got log(s)
+void erase_find_set_linear_FN(std::set<int> s, int n) {
+  s.erase(s.find(n), s.end());
+}
+
 void loop_over_set_size_constant(std::set<int> myset) {
   std::set<int> s1;
 
@@ -93,8 +103,7 @@ void equal_range_logs_FN(std::set<int> s, int n) {
   ret = s.equal_range(n);
 }
 
-// s.erase(val) is logarithmic
-// Expected: s * log s; got constant
+// Expected: s * log(s); got log(s)
 void while_not_empty_erase_val_slogs_FN(std::set<int> s) {
   while (!s.empty()) {
     s.erase(*s.begin());
