@@ -8,7 +8,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
-INFER_OPTIONS = -F --project-root $(TESTS_DIR) --bufferoverrun-only \
+INFER_OPTIONS = --project-root $(TESTS_DIR) --bufferoverrun-only --debug-exceptions \
                 --function-pointer-specialization --bo-field-depth-limit 6
 INFERPRINT_OPTIONS = --issues-tests
 
