@@ -479,12 +479,18 @@ module StdArray = struct
 end
 
 module Iterator = struct
+  (* This is used in C++11 where there is an intermediate step for linking iterator to a temp *)
   let new_ beg_exp temp_exp =
     let exec _ ~ret:_ mem =
       let locs_b = Sem.eval_locs beg_exp mem in
       let locs_t = Sem.eval_locs temp_exp mem in
       let v = Dom.Mem.find_set locs_t mem |> Dom.Val.get_itv |> Dom.Val.of_itv in
-      Dom.Mem.update_mem locs_b v mem
+      let mem = Dom.Mem.update_mem locs_b v mem in
+      match (beg_exp, temp_exp) with
+      | Exp.Lvar new_pvar, Exp.Lvar existing_pvar ->
+          Dom.Mem.propagate_cpp_iter_begin_or_end_alias ~new_pvar ~existing_pvar mem
+      | _ ->
+          mem
     in
     {exec; check= no_check}
 
@@ -492,7 +498,8 @@ module Iterator = struct
   let begin_ exp =
     let exec _ ~ret:_ mem =
       let locs = Sem.eval_locs exp mem in
-      Dom.Mem.update_mem locs Dom.Val.Itv.zero mem
+      let mem = Dom.Mem.update_mem locs Dom.Val.Itv.zero mem in
+      match exp with Exp.Lvar pvar -> Dom.Mem.add_cpp_iter_begin_alias pvar mem | _ -> mem
     in
     {exec; check= no_check}
 
@@ -502,7 +509,8 @@ module Iterator = struct
       let mem = size_exec model_env ~ret mem in
       let locs = Sem.eval_locs temp_exp mem in
       let v = Dom.Mem.find (Loc.of_id ret_id) mem in
-      Dom.Mem.update_mem locs v mem
+      let mem = Dom.Mem.update_mem locs v mem in
+      match temp_exp with Exp.Lvar pvar -> Dom.Mem.add_cpp_iter_end_alias pvar mem | _ -> mem
     in
     {exec; check= no_check}
 
@@ -512,9 +520,8 @@ module Iterator = struct
       let v = Sem.eval integer_type_widths (Exp.BinOp (Binop.Ne, lhs_exp, rhs_exp)) mem in
       let mem =
         match (lhs_exp, rhs_exp) with
-        | Exp.Lvar iter, Exp.Lvar iter_end ->
-            (* NOTE: We heuristically select LHS as an iterator and RHS as the end of vector. *)
-            Dom.Mem.add_cpp_iterator_cmp_alias ret_id iter iter_end mem
+        | Exp.Lvar iter_lhs, Exp.Lvar iter_rhs ->
+            Dom.Mem.add_cpp_iterator_cmp_alias ret_id ~iter_lhs ~iter_rhs mem
         | _, _ ->
             mem
       in

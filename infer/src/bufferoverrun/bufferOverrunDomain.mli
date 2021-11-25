@@ -617,10 +617,20 @@ module Mem : sig
   val transform_mem : f:(Val.t -> Val.t) -> AbsLoc.PowLoc.t -> t -> t
   (** Apply [f] to values bound to given [locs] *)
 
-  val add_cpp_iterator_cmp_alias : Ident.t -> Pvar.t -> Pvar.t -> t -> t
-  (** Add a compare alias from ret_id to [iter: Pvar.t] and [iter_end: Pvar.t] comparison, i.e.,
-      [ret_id -> {iter != iter_end}] *)
+  val add_cpp_iterator_cmp_alias : Ident.t -> iter_lhs:Pvar.t -> iter_rhs:Pvar.t -> t -> t
+  (** Add a compare alias from ret_id to [iter_lhs: Pvar.t] and [iter_rhs: Pvar.t] comparison, i.e.,
+      [ret_id -> {iter_lhs != iter_rhs}] where the meaning of != is determined by whether iter_rhs
+      is coming from begin or end *)
 
-  val find_cpp_iterator_alias : Ident.t -> t -> (Pvar.t * Pvar.t) option
-  (** Find the cpp iterator alias [ret_id -> {iter != iter_end}] *)
+  val add_cpp_iter_begin_alias : Pvar.t -> t -> t
+  (** Add a begin alias for pvar *)
+
+  val add_cpp_iter_end_alias : Pvar.t -> t -> t
+  (** Add a end alias for pvar *)
+
+  val find_cpp_iterator_alias : Ident.t -> t -> (Pvar.t * Pvar.t * Binop.t) option
+  (** Find the cpp iterator alias [ret_id -> {iter_lhs (binop) iter_rhs}] *)
+
+  val propagate_cpp_iter_begin_or_end_alias : new_pvar:Pvar.t -> existing_pvar:Pvar.t -> t -> t
+  (** Propagate the being/end alias information from existing to new *)
 end

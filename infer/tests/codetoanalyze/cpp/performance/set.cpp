@@ -129,3 +129,14 @@ void emplace_hint_set_logs(std::set<std::string> s) {
   auto it = s.cbegin();
   s.emplace_hint(it, "test");
 }
+
+void search_in_rest_nlogn_FN(std::set<int> set, int elem, int key) {
+
+  auto it = set.lower_bound(
+      elem); // Returns an iter pointing to the first element in the container
+             // which is not considered to go before elem
+
+  if (it != set.begin()) {
+    binary_search(set.begin(), it, key);
+  }
+}

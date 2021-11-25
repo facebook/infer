@@ -94,6 +94,7 @@ codetoanalyze/cpp/performance/set.cpp, loop_over_set_linear, 7 + 5 ⋅ s->elemen
 codetoanalyze/cpp/performance/set.cpp, loop_over_set_size_constant, 12,  OnUIThread:false, []
 codetoanalyze/cpp/performance/set.cpp, loop_over_set_size_linear, 2 + 3 ⋅ s->elements.length.ub + 3 ⋅ (s->elements.length.ub + 1),  OnUIThread:false, [{s->elements.length.ub + 1},Loop,{s->elements.length.ub},Loop]
 codetoanalyze/cpp/performance/set.cpp, move_assignment_set_linear_FN, 5,  OnUIThread:false, []
+codetoanalyze/cpp/performance/set.cpp, search_in_rest_nlogn_FN, 24,  OnUIThread:false, []
 codetoanalyze/cpp/performance/set.cpp, while_not_empty_erase_val_slogs_FN, 9,  OnUIThread:false, []
 codetoanalyze/cpp/performance/std_array.cpp, loop_over_arr_max_size_constant, 60,  OnUIThread:false, []
 codetoanalyze/cpp/performance/std_array.cpp, loop_over_arr_size_constant, 35,  OnUIThread:false, []
