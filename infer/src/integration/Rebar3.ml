@@ -11,7 +11,7 @@ let run_compile command result_dir args =
   let args = [result_dir; "--"; command] @ args in
   let prog = Config.lib_dir ^/ "erlang" ^/ "erlang.sh" in
   L.debug Capture Verbose "executing %s@." prog ;
-  Process.create_process_and_wait ~prog ~args
+  ignore (Process.create_process_and_wait_with_output ~prog ~args ReadStdout)
 
 
 let parse_and_store result_dir =
