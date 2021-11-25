@@ -106,14 +106,6 @@ let get_proc_tenv =
     ~column_name:"tenv"
 
 
-let get_sourcefile_tenv exe_env sourcefile =
-  match file_data_of_source exe_env sourcefile |> file_data_to_tenv with
-  | Some tenv ->
-      tenv
-  | None ->
-      L.die InternalError "get_sourcefile_tenv: tenv not found for %a" SourceFile.pp sourcefile
-
-
 (** return the integer type widths associated to the procedure *)
 let get_integer_type_widths =
   get_column_value

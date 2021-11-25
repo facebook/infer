@@ -214,8 +214,6 @@ val field_not_null_checked : t
 
 val guardedby_violation : t
 
-val guardedby_violation_nullsafe : t
-
 val impure_function : t
 
 val inefficient_keyset_iterator : t
@@ -351,8 +349,6 @@ val strong_self_not_checked : t
 val symexec_memory_error : t
 
 val thread_safety_violation : t
-
-val thread_safety_violation_nullsafe : t
 
 val topl_error : t
 

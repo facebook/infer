@@ -672,12 +672,6 @@ let guardedby_violation =
     ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
 
 
-let guardedby_violation_nullsafe =
-  register Warning ~id:"GUARDEDBY_VIOLATION_NULLSAFE"
-    ~hum:"GuardedBy Violation in `@Nullsafe` Class" RacerD
-    ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
-
-
 let impure_function =
   register ~id:"IMPURE_FUNCTION" Error Impurity
     ~user_documentation:[%blob "../../documentation/issues/IMPURE_FUNCTION.md"]
@@ -999,13 +993,6 @@ let symexec_memory_error =
 let thread_safety_violation =
   register Warning ~id:"THREAD_SAFETY_VIOLATION" RacerD
     ~user_documentation:[%blob "../../documentation/issues/THREAD_SAFETY_VIOLATION.md"]
-
-
-let thread_safety_violation_nullsafe =
-  register Warning ~id:"THREAD_SAFETY_VIOLATION_NULLSAFE" RacerD
-    ~hum:"Thread Safety Violation in `@Nullsafe` Class"
-    ~user_documentation:
-      "A [Thread Safety Violation](#thread_safety_violation) in a `@Nullsafe` class."
 
 
 let complexity_increase ~kind ~is_on_ui_thread =

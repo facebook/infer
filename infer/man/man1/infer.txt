@@ -524,7 +524,6 @@ OPTIONS
              GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
            (disabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
-             GUARDEDBY_VIOLATION_NULLSAFE (enabled by default),
              IMPURE_FUNCTION (enabled by default),
              INEFFICIENT_KEYSET_ITERATOR (enabled by default),
              INFERBO_ALLOC_IS_BIG (enabled by default),
@@ -610,7 +609,6 @@ OPTIONS
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
-             THREAD_SAFETY_VIOLATION_NULLSAFE (enabled by default),
              TOPL_ERROR (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),

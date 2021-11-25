@@ -336,9 +336,6 @@ val is_char : t -> bool
 val is_csharp_type : t -> bool
 (** is [t] a type produced by the Java frontend? *)
 
-val is_java_primitive_type : t -> bool
-(** is [t] a primitive type produced by the Java frontend? *)
-
 val is_java_type : t -> bool
 (** is [t] a type produced by the Java frontend? *)
 
