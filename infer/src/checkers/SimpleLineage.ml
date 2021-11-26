@@ -22,7 +22,11 @@ end
 module LineageGraph = struct
   (** INV: Constants occur only as sources of flow. NOTE: Constants are "local" because type [data]
       associates them with a location, in a proc. *)
-  type local = Constant of (Const.t[@sexp.opaque]) | Variable of (Var.t[@sexp.opaque])
+  type local =
+    | ConstantAtom of string
+    | ConstantInt of string
+    | ConstantString of string
+    | Variable of (Var.t[@sexp.opaque])
   [@@deriving compare, sexp]
 
   type data =
@@ -48,8 +52,12 @@ module LineageGraph = struct
 
   let pp_local fmt local =
     match local with
-    | Constant constant ->
-        Format.fprintf fmt "C(%a)" (Const.pp Pp.text) constant
+    | ConstantAtom atom_name ->
+        Format.fprintf fmt "A(%s)" atom_name
+    | ConstantInt digits ->
+        Format.fprintf fmt "I(%s)" digits
+    | ConstantString s ->
+        Format.fprintf fmt "S(%s)" s
     | Variable variable ->
         Format.fprintf fmt "V(%a)" Var.pp variable
 
@@ -111,9 +119,9 @@ module LineageGraph = struct
         type t =
           | UserVariable
           | TemporaryVariable
+          | ConstantAtom
           | ConstantInt
           | ConstantString
-          | ConstantUnsupported
           | Argument
           | Return
         [@@deriving variants]
@@ -129,12 +137,12 @@ module LineageGraph = struct
             `String "UserVariable"
         | TemporaryVariable ->
             `String "Temporary" (* T106560112 *)
+        | ConstantAtom ->
+            `String "ConstantAtom"
         | ConstantInt ->
             `String "ConstantInt"
         | ConstantString ->
             `String "ConstantString"
-        | ConstantUnsupported ->
-            `String "ConstantUnsupported"
         | Argument ->
             `String "Argument"
         | Return ->
@@ -270,12 +278,8 @@ module LineageGraph = struct
             "$ret"
         | Normal (Variable x) ->
             Format.asprintf "%a" Var.pp x
-        | Normal (Constant (Cint x)) ->
-            Format.asprintf "%a" IntLit.pp x
-        | Normal (Constant (Cstr x)) ->
+        | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
             x
-        | Normal (Constant _) ->
-            "UNSUPPORTED-CONSTANT-TYPE"
       in
       let term_type : Json.term_type =
         match data with
@@ -285,12 +289,12 @@ module LineageGraph = struct
             Return
         | Normal (Variable x) ->
             if Var.appears_in_source_code x then UserVariable else TemporaryVariable
-        | Normal (Constant (Cint _)) ->
+        | Normal (ConstantAtom _) ->
+            ConstantAtom
+        | Normal (ConstantInt _) ->
             ConstantInt
-        | Normal (Constant (Cstr _)) ->
+        | Normal (ConstantString _) ->
             ConstantString
-        | Normal (Constant _) ->
-            ConstantUnsupported
       in
       {Json.term_data; term_type}
 
@@ -507,10 +511,8 @@ module Summary = struct
           Var.appears_in_source_code var && not (Var.Set.mem var special_variables)
       | Argument _ | Return | ArgumentOf _ | ReturnOf _ ->
           true
-      | Local (Constant (Cint _), _node) | Local (Constant (Cstr _), _node) ->
+      | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
           true
-      | Local (Constant _, _node) ->
-          false
     in
     (* Do a DFS and produce edges. *)
     let rec dfs (seen, result_graph) ({LineageGraph.source; target; kind} as state) =
@@ -613,7 +615,16 @@ module TransferFunctions = struct
     let variables =
       Var.get_all_vars_in_exp e |> Sequence.map ~f:(fun v -> LineageGraph.Variable v)
     in
-    let constants = Exp.constants e |> Sequence.map ~f:(fun c -> LineageGraph.Constant c) in
+    let local_of_constant (const : Const.t) : LineageGraph.local option =
+      match const with
+      | Cint x ->
+          Some (ConstantInt (IntLit.to_string x))
+      | Cstr x ->
+          Some (ConstantString x)
+      | Cfun _ | Cfloat _ | Cclass _ ->
+          (* T106652349 *) None
+    in
+    let constants = Exp.constants e |> Sequence.filter_map ~f:local_of_constant in
     let locals = Sequence.append variables constants in
     locals |> Sequence.to_list |> Local.Set.of_list
 
@@ -647,7 +658,7 @@ module TransferFunctions = struct
       let add_flows_local_to_arg local_edges (local : Local.t) =
         let sources =
           match local with
-          | Constant _ ->
+          | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
               [LineageGraph.Local (local, call_node)]
           | Variable variable ->
               let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
@@ -683,7 +694,7 @@ module TransferFunctions = struct
     let add_read local_edges (read_local : Local.t) =
       let sources =
         match read_local with
-        | Constant _ ->
+        | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
             [LineageGraph.Local (read_local, write_node)]
         | Variable read_var ->
             let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
@@ -735,6 +746,28 @@ module TransferFunctions = struct
     ((last_writes, has_unsupported_features), local_edges)
 
 
+  let custom_call_models =
+    let make_atom astate node _analyze_dependency ret_id _procname (args : Exp.t list) =
+      let atom_name =
+        match args with
+        | Const (Cstr atom_name) :: _ ->
+            atom_name
+        | _ ->
+            L.die InternalError "Expecting first argument of 'make_atom' to be its name"
+      in
+      let sources = Local.Set.singleton (LineageGraph.ConstantAtom atom_name) in
+      update_write LineageGraph.Direct (Var.of_id ret_id, node) sources astate
+    in
+    let pairs = [(BuiltinDecl.__erlang_make_atom, make_atom)] in
+    Stdlib.List.to_seq pairs |> Procname.Map.of_seq
+
+
+  let generic_call_model astate node analyze_dependency ret_id procname args =
+    astate |> record_supported procname |> add_arg_flows node procname args
+    |> add_ret_flows procname ret_id node
+    |> add_summary_flows (analyze_dependency procname) args ret_id node
+
+
   let exec_call (astate : Domain.t) node analyze_dependency ret_id fun_name args : Domain.t =
     let callee_pname = procname_of_exp fun_name in
     let args = List.map ~f:fst args in
@@ -742,10 +775,10 @@ module TransferFunctions = struct
     | None ->
         add_tito_all args ret_id node astate
     | Some name ->
-        (* TODO: Mechanism to match [name] against custom tito models. *)
-        astate |> record_supported name |> add_arg_flows node name args
-        |> add_ret_flows name ret_id node
-        |> add_summary_flows (analyze_dependency name) args ret_id node
+        let model =
+          Procname.Map.find_opt name custom_call_models |> Option.value ~default:generic_call_model
+        in
+        model astate node analyze_dependency ret_id name args
 
 
   let exec_noncall astate node instr =
