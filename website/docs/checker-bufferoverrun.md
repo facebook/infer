@@ -34,4 +34,3 @@ The following issue types are reported by this checker:
 - [INTEGER_OVERFLOW_L2](/docs/next/all-issue-types#integer_overflow_l2)
 - [INTEGER_OVERFLOW_L5](/docs/next/all-issue-types#integer_overflow_l5)
 - [INTEGER_OVERFLOW_U5](/docs/next/all-issue-types#integer_overflow_u5)
-- [UNREACHABLE_CODE](/docs/next/all-issue-types#unreachable_code)

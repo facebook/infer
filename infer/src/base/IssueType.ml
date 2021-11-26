@@ -1035,10 +1035,7 @@ let unnecessary_copy_pulse =
     ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
 
 
-let unreachable_code_after =
-  register ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
-    ~user_documentation:"A program point is unreachable."
-
+let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
 
 let use_after_delete =
   register_with_latent ~id:"USE_AFTER_DELETE" Error Pulse

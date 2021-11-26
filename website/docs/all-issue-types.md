@@ -2627,11 +2627,6 @@ void foo() {
 }
 ```
 
-## UNREACHABLE_CODE
-
-Reported as "Unreachable Code" by [bufferoverrun](/docs/next/checker-bufferoverrun).
-
-A program point is unreachable.
 ## UNTRUSTED_BUFFER_ACCESS
 
 Reported as "Untrusted Buffer Access" by [quandary](/docs/next/checker-quandary).
