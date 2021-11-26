@@ -1533,9 +1533,10 @@ use it in the block.
     ...
   };
 ```
+
 *Limitations:* To keep this check simple and intra-procedural, we rely on names to find `weakSelf`:
 we assume that any captured weak pointer whose name contains "self" is a weak reference to `self`.
-In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to a
+In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to
 a local strong pointer that has been assigned `weakSelf`.
 
 ## MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
@@ -2494,7 +2495,7 @@ __weak __typeof(self) weakSelf = self;
 
 *Limitations:* To keep this check simple and intra-procedural, we rely on names to find `weakSelf`:
 we assume that any captured weak pointer whose name contains "self" is a weak reference to `self`.
-In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to a
+In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to
 a local strong pointer that has been assigned `weakSelf`.
 
 ## THREAD_SAFETY_VIOLATION
