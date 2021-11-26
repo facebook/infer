@@ -5,10 +5,11 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --topl --topl-properties taint.topl --project-root $(TESTS_DIR)
+INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
+  --pulse-report-latent-issues --print-types
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard src/*.erl)
+SOURCES = $(wildcard */*.erl)
 
 include $(TESTS_DIR)/erlc.make
 

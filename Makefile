@@ -156,9 +156,8 @@ endif # BUILD_C_ANALYZERS
 ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
-  erlang_nonmatch \
+  erlang_pulse \
   erlang_topl \
-  erlang_features \
 
 BUILD_SYSTEMS_TESTS += rebar3
 endif
