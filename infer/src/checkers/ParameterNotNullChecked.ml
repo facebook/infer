@@ -7,10 +7,10 @@
 open! IStd
 module F = Format
 
-let is_block_param attributes name =
+let is_block_param formals_not_captured name =
   List.exists
     ~f:(fun (formal, typ) -> Mangled.equal formal name && Typ.is_pointer_to_function typ)
-    attributes.ProcAttributes.formals
+    formals_not_captured
 
 
 module DomainData = struct
@@ -78,10 +78,10 @@ module Mem = struct
         astate
 
 
-  let load attributes id pvar _ astate =
+  let load formals_not_captured id pvar _ astate =
     let name = Pvar.get_name pvar in
     let vars =
-      if is_block_param attributes name then Vars.add id {arg= name} astate.vars else astate.vars
+      if is_block_param formals_not_captured name then Vars.add id {arg= name} astate.vars else astate.vars
     in
     {astate with vars}
 
@@ -142,7 +142,7 @@ module Domain = struct
 
   let exec_null_check_id id loc astate = map (Mem.exec_null_check_id id loc) astate
 
-  let load attributes id pvar loc astate = map (Mem.load attributes id pvar loc) astate
+  let load formals_not_captured id pvar loc astate = map (Mem.load formals_not_captured id pvar loc) astate
 
   let store pvar e loc astate = map (Mem.store pvar e loc) astate
 
@@ -154,16 +154,16 @@ module TransferFunctions = struct
   module Domain = Domain
   module CFG = ProcCfg.Normal
 
-  type analysis_data = IntraproceduralAnalysis.t
+  type analysis_data = IntraproceduralAnalysis.t * (Mangled.t * Typ.t) list
 
   let pp_session_name _node fmt = F.pp_print_string fmt "ParameterNotNullChecked"
 
-  let exec_instr (astate : Domain.t) {IntraproceduralAnalysis.proc_desc; err_log} _cfg_node _
+  let exec_instr (astate : Domain.t)
+      ({IntraproceduralAnalysis.proc_desc; err_log}, formals_not_captured) _cfg_node _
       (instr : Sil.instr) =
-    let attributes = Procdesc.get_attributes proc_desc in
     match instr with
     | Load {id; e= Lvar pvar; loc} ->
-        Domain.load attributes id pvar loc astate
+        Domain.load formals_not_captured id pvar loc astate
     | Store {e1= Lvar pvar; e2; loc} ->
         Domain.store pvar e2 loc astate
     | Prune (Var id, loc, _, _) ->
@@ -188,38 +188,50 @@ end
 
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
-let init_block_params attributes initBlockParams =
+let formals_not_captured attributes =
+  let is_not_captured (formal, _) =
+    not
+      (List.exists
+         ~f:(fun ({name} : CapturedVar.t) -> Mangled.equal formal name)
+         attributes.ProcAttributes.captured )
+  in
+  List.filter ~f:is_not_captured attributes.ProcAttributes.formals
+
+
+let init_block_params attributes formals_not_captured initBlockParams =
   let add_non_nullable_block blockParams annotation (formal, _) =
-    if is_block_param attributes formal && Annotations.ia_is_nonnull annotation then
+    if is_block_param formals_not_captured formal && Annotations.ia_is_nonnull annotation then
       BlockParams.add formal blockParams
     else blockParams
   in
   let annotations = attributes.ProcAttributes.method_annotation.params in
-  let formals = attributes.ProcAttributes.formals in
-  match List.fold2 annotations formals ~init:initBlockParams ~f:add_non_nullable_block with
+  match
+    List.fold2 annotations formals_not_captured ~init:initBlockParams ~f:add_non_nullable_block
+  with
   | List.Or_unequal_lengths.Ok blockParams ->
       blockParams
   | List.Or_unequal_lengths.Unequal_lengths ->
       initBlockParams
 
 
-let init_block_param_trace_info attributes traceInfo =
-  let formals = attributes.ProcAttributes.formals in
+let init_block_param_trace_info attributes formals_not_captured traceInfo =
   let add_trace_info_block traceInfo (formal, _) =
-    if is_block_param attributes formal then
+    if is_block_param formals_not_captured formal then
       let usage = TraceData.Parameter attributes.ProcAttributes.proc_name in
       {TraceData.arg= formal; loc= attributes.ProcAttributes.loc; usage} :: traceInfo
     else traceInfo
   in
-  List.fold formals ~init:traceInfo ~f:add_trace_info_block
+  List.fold formals_not_captured ~init:traceInfo ~f:add_trace_info_block
 
 
-let checker ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
+let checker ({IntraproceduralAnalysis.proc_desc} as analysis_data') =
   let attributes = Procdesc.get_attributes proc_desc in
-  let initial_blockParams = init_block_params attributes BlockParams.empty in
-  let initTraceInfo = init_block_param_trace_info attributes [] in
+  let formals_not_captured = formals_not_captured attributes in
+  let initial_blockParams = init_block_params attributes formals_not_captured BlockParams.empty in
+  let initTraceInfo = init_block_param_trace_info attributes formals_not_captured [] in
   let initial =
     Domain.singleton
       {Mem.vars= Vars.empty; blockParams= initial_blockParams; traceInfo= initTraceInfo}
   in
+  let analysis_data = (analysis_data', formals_not_captured) in
   ignore (Analyzer.compute_post analysis_data ~initial proc_desc)

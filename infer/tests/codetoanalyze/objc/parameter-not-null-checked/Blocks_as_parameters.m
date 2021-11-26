@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 typedef void (^MyBlock)();
 
@@ -75,6 +75,23 @@ typedef void (^MyBlock)();
                               and:(_Nonnull MyBlock)block2 {
   block = block2;
   block();
+}
+
++ (void)addOperationWithBlock:(void (^)())completion {
+}
+
+- (void)uploadTaskWithRequestOk:(NSURLRequest*)urlRequest
+                       fromFile:(NSURL*)fileURL
+                       delegate:(id)delegate
+                  delegateQueue:(NSOperationQueue*)delegateQueue
+                     completion:(void (^)())completion {
+  if (!completion) {
+    return;
+  }
+
+  [Blocks_as_parameters addOperationWithBlock:^{
+    completion();
+  }];
 }
 
 @end
