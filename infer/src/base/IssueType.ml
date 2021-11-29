@@ -849,7 +849,7 @@ let nil_block_call =
 
 let nil_insertion_into_collection =
   register_with_latent ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
-    ~user_documentation:"Inserting nil into a collection is an error in Objective-C."
+    ~user_documentation:[%blob "../../documentation/issues/NIL_INSERTION_INTO_COLLECTION.md"]
 
 
 let nil_messaging_to_non_pod =
