@@ -71,7 +71,7 @@ release: setup
 watch: setup
 	dune build --watch --terminal-persistence=clear-on-rebuild $(TARGETS)
 
-.PHONY: watch
+.PHONY: watch-test
 watch-test: setup
 	dune build --watch @_build/debug/runtest @_build/debug/fmt --auto-promote $(DEBUG_TARGETS)
 
