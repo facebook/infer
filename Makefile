@@ -216,6 +216,7 @@ endif
 
 # javac has trouble running in parallel on the same files
 direct_java_pulse-isl_test: direct_java_pulse_test
+direct_java_pulse-isl_replace: direct_java_pulse_replace
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 BUILD_SYSTEMS_TESTS += \
