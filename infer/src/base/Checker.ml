@@ -13,7 +13,6 @@ type t =
   | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
-  | ConfigChecksBetweenMarkers
   | ConfigImpactAnalysis
   | Cost
   | DisjunctiveDemo
@@ -153,23 +152,6 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis] }
-  | ConfigChecksBetweenMarkers ->
-      { id= "config-checks-between-markers"
-      ; kind=
-          UserFacing
-            { title= "Config Checks between Markers"
-            ; markdown_body=
-                "This checker collects config checkings in some program regions determined by \
-                 pairs of marker-starts and marker-ends. The set of config checking functions, \
-                 marker-start functions, and marker-end functions is hardcoded and empty by \
-                 default for now, so to use this checker, please modify the code directly in \
-                 [FbGKInteraction.ml](https://github.com/facebook/infer/tree/main/infer/src/opensource)."
-            }
-      ; support= supports_clang_and_java_experimental
-      ; short_documentation= "[EXPERIMENTAL] Collects config checks between marker start and end."
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= false
-      ; activates= [] }
   | ConfigImpactAnalysis ->
       { id= "config-impact-analysis"
       ; kind=

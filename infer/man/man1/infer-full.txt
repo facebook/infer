@@ -267,16 +267,6 @@ OPTIONS
            escaped for the shell, eg coming from Xcode (can be specified
            multiple times)           See also infer-capture(1).
 
-       --config-checks-between-markers
-           Activates: checker config-checks-between-markers: [EXPERIMENTAL]
-           Collects config checks between marker start and end. (Conversely:
-           --no-config-checks-between-markers)           See also infer-analyze(1).
-
-       --config-checks-between-markers-only
-           Activates: Enable config-checks-between-markers and disable all
-           other checkers (Conversely:
-           --no-config-checks-between-markers-only)           See also infer-analyze(1).
-
        --config-impact-analysis
            Activates: checker config-impact-analysis: [EXPERIMENTAL] Collects
            function that are called without config checks. (Conversely:
@@ -472,7 +462,6 @@ OPTIONS
              COMPONENT_WITH_MULTIPLE_FACTORY_METHODS (enabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
-             CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default),
              CONFIG_IMPACT (disabled by default),
              CONFIG_IMPACT_STRICT (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),

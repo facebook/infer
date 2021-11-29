@@ -4,7 +4,6 @@
   "doc_entries": [
     "all-issue-types", "checker-annotation-reachability",
     "checker-biabduction", "checker-bufferoverrun",
-    "checker-config-checks-between-markers",
     "checker-config-impact-analysis", "checker-cost", "checker-eradicate",
     "checker-fragment-retains-view", "checker-immutable-cast",
     "checker-impurity", "checker-inefficient-keyset-iterator",

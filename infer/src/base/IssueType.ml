@@ -447,11 +447,6 @@ let condition_always_true =
   register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" Warning BufferOverrunChecker
 
 
-let config_checks_between_markers =
-  register ~enabled:false ~id:"CONFIG_CHECKS_BETWEEN_MARKERS" Advice ConfigChecksBetweenMarkers
-    ~user_documentation:"A config checking is done between a marker's start and end"
-
-
 let config_impact_analysis =
   register ~enabled:false ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
     ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT.md"]

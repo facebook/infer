@@ -19,14 +19,6 @@ val get_config : 'exp -> 'config_name option
 
 val get_config_check : 'tenv -> 'pname -> 'args -> 'a option
 
-val is_marker_start_java : 'tenv -> 'pname -> bool
-
-val is_marker_end_java : 'tenv -> 'pname -> bool
-
-val is_marker_start_objc : 'pname -> bool
-
-val is_marker_end_objc : 'pname -> bool
-
 val is_lazy_instance : 'pname -> bool
 
 type known_expensiveness = KnownCheap | KnownExpensive

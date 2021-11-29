@@ -13,7 +13,6 @@ type t =
   ; biabduction: BiabductionSummary.t option
   ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
   ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
-  ; config_checks_between_markers: ConfigChecksBetweenMarkers.Summary.t option
   ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option
   ; cost: CostDomain.summary option
   ; disjunctive_demo: DisjunctiveDemo.domain option
@@ -47,8 +46,6 @@ let fields =
     ~biabduction:(fun f -> mk_pe f "Biabduction" BiabductionSummary.pp)
     ~buffer_overrun_analysis:(fun f -> mk f "BufferOverrunAnalysis" BufferOverrunAnalysisSummary.pp)
     ~buffer_overrun_checker:(fun f -> mk f "BufferOverrunChecker" BufferOverrunCheckerSummary.pp)
-    ~config_checks_between_markers:(fun f ->
-      mk f "ConfigChecksBetweenMarkers" ConfigChecksBetweenMarkers.Summary.pp )
     ~config_impact_analysis:(fun f -> mk f "ConfigImpactAnalysis" ConfigImpactAnalysis.Summary.pp)
     ~cost:(fun f -> mk f "Cost" CostDomain.pp_summary)
     ~disjunctive_demo:(fun f -> mk f "Disjunctive Demo" DisjunctiveDemo.pp_domain)
@@ -76,7 +73,6 @@ let empty =
   ; biabduction= None
   ; buffer_overrun_analysis= None
   ; buffer_overrun_checker= None
-  ; config_checks_between_markers= None
   ; config_impact_analysis= None
   ; cost= None
   ; disjunctive_demo= None

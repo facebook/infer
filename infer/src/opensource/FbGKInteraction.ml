@@ -21,14 +21,6 @@ let get_config _ = None
 
 let get_config_check _ _ _ = None
 
-let is_marker_start_java _ _ = false
-
-let is_marker_end_java _ _ = false
-
-let is_marker_start_objc _ = false
-
-let is_marker_end_objc _ = false
-
 let is_lazy_instance _ = false
 
 type known_expensiveness = KnownCheap | KnownExpensive

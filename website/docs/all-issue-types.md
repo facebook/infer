@@ -444,11 +444,6 @@ Action: fix the mismatch between format string and argument types.
 Reported as "Component With Multiple Factory Methods" by [linters](/docs/next/checker-linters).
 
 
-## CONFIG_CHECKS_BETWEEN_MARKERS
-
-Reported as "Config Checks Between Markers" by [config-checks-between-markers](/docs/next/checker-config-checks-between-markers).
-
-A config checking is done between a marker's start and end
 ## CONFIG_IMPACT
 
 Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).

@@ -12,7 +12,6 @@ type t =
   | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
-  | ConfigChecksBetweenMarkers
   | ConfigImpactAnalysis
   | Cost
   | DisjunctiveDemo
