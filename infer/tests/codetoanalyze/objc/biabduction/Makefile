@@ -8,7 +8,7 @@ TESTS_DIR = ../../..
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 
 CLEAN_EXTRA = infer-out-arc infer-out-all infer-out-all infer-out-arc \
-              issues.exp.test.all issues.exp.test.arc issues.exp.test.default
+              issues.exp.test.all issues.exp.test.arc issues.exp.test.default $(wildcard *.o)
 INFER_OPTIONS = --biabduction-only --dump-duplicate-symbols --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 

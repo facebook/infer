@@ -8,7 +8,7 @@ ROOT_DIR = $(TESTS_DIR)/../..
 CODETOANALYZE_DIR = ../codetoanalyze/objc_retain_cycles_weak
 
 SOURCES = $(CODETOANALYZE_DIR)/TimeSpent.m $(CODETOANALYZE_DIR)/AnalyticsTimeSpent.m $(CODETOANALYZE_DIR)/ListAdapter.m
-OBJECTS = $(CODETOANALYZE_DIR)/TimeSpent.o $(CODETOANALYZE_DIR)/AnalyticsTimeSpent.o $(CODETOANALYZE_DIR)/ListAdapter.o
+OBJECTS = $(SOURCES:$(CODETOANALYZE_DIR)/%.m=%.o)
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
 INFER_OPTIONS = --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests

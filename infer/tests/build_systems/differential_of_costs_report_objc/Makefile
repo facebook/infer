@@ -8,7 +8,7 @@
 TESTS_DIR = ../..
 SOURCES = src/DiffBlock.current.m src/DiffBlock.previous.m
 COPIED = src/DiffBlock.m
-CLEAN_EXTRA = $(COPIED)
+CLEAN_EXTRA = $(COPIED) $(COPIED:src/%.m=%.o)
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 include $(TESTS_DIR)/differential.make
 include $(TESTS_DIR)/objc.make
