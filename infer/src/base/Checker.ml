@@ -191,12 +191,13 @@ let config_unsafe checker =
       { id= "cost"
       ; kind=
           UserFacing
-            { title= "Cost: Runtime Complexity Analysis"
+            { title= "Cost: Complexity Analysis"
             ; markdown_body= [%blob "../../documentation/checkers/Cost.md"] }
       ; support= supports_clang_and_java
       ; short_documentation=
-          "Computes the time complexity of functions and methods. Can be used to detect changes in \
-           runtime complexity with `infer reportdiff`."
+          "Computes the asymptotic complexity of functions with respect to execution cost or other \
+           user defined resources. Can be used to detect changes in the complexity with `infer \
+           reportdiff`."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis; PurityAnalysis] }

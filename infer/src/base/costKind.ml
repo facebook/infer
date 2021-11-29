@@ -31,11 +31,11 @@ let pp f k =
   let k_str =
     match k with
     | OperationCost ->
-        "Execution Cost"
+        "Execution cost"
     | AllocationCost ->
-        "Allocation Cost"
+        "Allocation cost"
     | AutoreleasepoolSize ->
-        "Autoreleasepool Size"
+        "Autoreleasepool size"
   in
   F.pp_print_string f k_str
 

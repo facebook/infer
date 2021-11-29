@@ -77,9 +77,10 @@ OPTIONS
            --incremental-analysis. (Conversely: --no-continue-analysis)
 
        --cost
-           Activates: checker cost: Computes the time complexity of functions
-           and methods. Can be used to detect changes in runtime complexity
-           with `infer reportdiff`. (Conversely: --no-cost)
+           Activates: checker cost: Computes the asymptotic complexity of
+           functions with respect to execution cost or other user defined
+           resources. Can be used to detect changes in the complexity with
+           `infer reportdiff`. (Conversely: --no-cost)
 
        --cost-only
            Activates: Enable cost and disable all other checkers (Conversely:
