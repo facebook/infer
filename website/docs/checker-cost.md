@@ -9,8 +9,8 @@ Activate with `--cost`.
 
 Supported languages:
 - C/C++/ObjC: Yes
-- C#/.Net: Yes
-- Erlang: Yes
+- C#/.Net: No
+- Erlang: No
 - Java: Yes
 
 Cost analysis statically estimates an upper bound on the worst-case execution cost of a program (WCET). This page gives an overview of how the analysis works for *Java* code. The analyser also has limited support for C/C++ and Objective-C.

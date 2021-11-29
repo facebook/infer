@@ -67,40 +67,29 @@ type config =
    callbacks registered. Or maybe with the issues reported in link
    with each analysis. Some runtime check probably needed. *)
 let config_unsafe checker =
-  let supports_clang_and_java _ = Support in
-  let supports_clang_and_java_experimental _ = ExperimentalSupport in
+  let supports_clang_and_java_experimental (language : Language.t) =
+    match language with Clang | Java -> ExperimentalSupport | CIL | Erlang -> NoSupport
+  in
+  let supports_clang_and_java (language : Language.t) =
+    match language with Clang | Java -> Support | CIL | Erlang -> NoSupport
+  in
+  let supports_clang_csharp_and_java (language : Language.t) =
+    match language with CIL | Clang | Java -> Support | Erlang -> NoSupport
+  in
+  let supports_clang_erlang_and_java (language : Language.t) =
+    match language with Clang | Erlang | Java -> Support | CIL -> NoSupport
+  in
   let supports_clang (language : Language.t) =
-    match language with
-    | Clang ->
-        Support
-    | Java ->
-        NoSupport
-    | CIL ->
-        NoSupport
-    | Erlang ->
-        NoSupport
+    match language with Clang -> Support | CIL | Erlang | Java -> NoSupport
+  in
+  let supports_csharp (language : Language.t) =
+    match language with CIL -> Support | Clang | Erlang | Java -> NoSupport
   in
   let supports_erlang (language : Language.t) =
-    match language with
-    | Clang ->
-        NoSupport
-    | Java ->
-        NoSupport
-    | CIL ->
-        NoSupport
-    | Erlang ->
-        Support
+    match language with Erlang -> Support | CIL | Clang | Java -> NoSupport
   in
   let supports_java (language : Language.t) =
-    match language with
-    | Clang ->
-        NoSupport
-    | Java ->
-        Support
-    | CIL ->
-        Support
-    | Erlang ->
-        NoSupport
+    match language with Java -> Support | CIL | Clang | Erlang -> NoSupport
   in
   match checker with
   | AnnotationReachability ->
@@ -123,7 +112,7 @@ let config_unsafe checker =
             ; markdown_body=
                 "Read more about its foundations in the [Separation Logic and Biabduction \
                  page](separation-logic-and-bi-abduction)." }
-      ; support= supports_clang_and_java
+      ; support= supports_clang_csharp_and_java
       ; short_documentation=
           "This analysis deals with a range of issues, many linked to memory safety."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
@@ -340,7 +329,7 @@ let config_unsafe checker =
       { id= "pulse"
       ; kind=
           UserFacing {title= "Pulse"; markdown_body= [%blob "../../documentation/checkers/Pulse.md"]}
-      ; support= (function Clang | Java -> Support | CIL -> NoSupport | Erlang -> Support)
+      ; support= supports_clang_erlang_and_java
       ; short_documentation= "Memory and lifetime analysis."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
       ; enabled_by_default= false
@@ -382,8 +371,7 @@ let config_unsafe checker =
       ; kind=
           UserFacing
             {title= "RacerD"; markdown_body= [%blob "../../documentation/checkers/RacerD.md"]}
-      ; support=
-          (function Clang -> Support | Java -> Support | CIL -> Support | Erlang -> NoSupport)
+      ; support= supports_clang_csharp_and_java
       ; short_documentation= "Thread safety analysis."
       ; cli_flags= Some {deprecated= ["-threadsafety"]; show_in_help= true}
       ; enabled_by_default= true
@@ -408,8 +396,7 @@ let config_unsafe checker =
   | DOTNETResourceLeaks ->
       { id= "dotnet-resource-leak"
       ; kind= UserFacing {title= "Resource Leak checker for .NET"; markdown_body= ""}
-      ; support=
-          (function Clang -> NoSupport | Java -> NoSupport | CIL -> Support | Erlang -> NoSupport)
+      ; support= supports_csharp
       ; short_documentation= "\"resource leak\" checker for .NET."
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= true

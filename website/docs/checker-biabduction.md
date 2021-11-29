@@ -10,7 +10,7 @@ Activate with `--biabduction`.
 Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: Yes
-- Erlang: Yes
+- Erlang: No
 - Java: Yes
 
 Read more about its foundations in the [Separation Logic and Biabduction page](separation-logic-and-bi-abduction).

@@ -9,8 +9,8 @@ Activate with `--topl`.
 
 Supported languages:
 - C/C++/ObjC: Experimental
-- C#/.Net: Experimental
-- Erlang: Experimental
+- C#/.Net: No
+- Erlang: No
 - Java: Experimental
 
 # Topl
