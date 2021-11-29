@@ -62,6 +62,8 @@ let clang_bin xx =
 
 let class_method = "class"
 
+let cxx_constructor = "__cxx_constructor"
+
 let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
 
 let google_LogMessageFatal = "google::LogMessageFatal_LogMessageFatal"
