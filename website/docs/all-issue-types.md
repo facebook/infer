@@ -1771,33 +1771,31 @@ int null_pointer_interproc() {
 In Objective-C, null dereferences are less common than in Java, but they still
 happen and their cause can be hidden. In general, passing a message to nil does
 not cause a crash and returns `nil`, but dereferencing a pointer directly does
-cause a crash as well as calling a `nil` block.
+cause a crash.
+
+Example:
 
 ```objectivec
--(void) foo:(void (^)())callback {
-    callback();
+(int) foo:(C*) param {  // passing nil
+  D* d = [param bar];   // nil message passing
+  return d->fld;        // crash
 }
-
--(void) bar {
-    [self foo:nil]; //crash
+(void) callFoo {
+  C* c = [self bar];    // returns nil
+  [foo:c];              // crash reported here
 }
 ```
 
-Moreover, there are functions from the libraries that do not allow `nil` to be
-passed as argument. Here are some examples:
+**Action**:
+Adding a `nil` check either for `param` above or for `d`, or making sure that `foo:` will never
+be called with `nil`.
 
-```objectivec
--(void) foo {
-    NSString *str = nil;
-    NSArray *animals = @[@"horse", str, @"dolphin"]; //crash
-}
+Calling a `nil` block will also cause a crash.
+We have a dedicated issue type for this case: [Nil Block Call](/docs/next/all-issue-types#nil_block_call).
 
--(void) bar {
-  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB(); //can return NULL
-  ...
-  CFRelease(colorSpace); //crashes if called with NULL
-}
-```
+Moreover, inserting `nil` into a collection will cause a crash as well. We
+also have a dedicated issue type for this case:
+[Nil Insertion Into Collection](/docs/next/all-issue-types#nil_insertion_into_collection).
 
 ## NULLPTR_DEREFERENCE_LATENT
 
