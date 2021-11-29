@@ -570,10 +570,10 @@ given the same before. Not compatible with
 --cost</b></p>
 
 <p style="margin-left:17%;">Activates: checker cost:
-Computes the time complexity of functions and methods. Can
-be used to detect changes in runtime complexity with
-&lsquo;infer reportdiff&lsquo;. (Conversely:
-<b>--no-cost</b>)</p>
+Computes the asymptotic complexity of functions with respect
+to execution cost or other user defined resources. Can be
+used to detect changes in the complexity with &lsquo;infer
+reportdiff&lsquo;. (Conversely: <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -885,7 +885,6 @@ GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
 <br>
 (disabled by default), <br>
 GUARDEDBY_VIOLATION (enabled by default), <br>
-GUARDEDBY_VIOLATION_NULLSAFE (enabled by default), <br>
 IMPURE_FUNCTION (enabled by default), <br>
 INEFFICIENT_KEYSET_ITERATOR (enabled by default), <br>
 INFERBO_ALLOC_IS_BIG (enabled by default), <br>
@@ -977,7 +976,6 @@ STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
-THREAD_SAFETY_VIOLATION_NULLSAFE (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
