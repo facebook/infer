@@ -1187,8 +1187,7 @@ This issue is raised when
 - iterating over a HashMap with `ketSet()` iterator
 - looking up the key each time
 
-Instead, it is more efficient to iterate over the loop with `entrySet` which returns key-vaue pairs and gets rid of the hashMap lookup.
- For instance, we would raise an issue for the following program:
+Example:
 
 ```java
 void inefficient_loop_bad(HashMap<String, Integer> testMap) {
@@ -1199,7 +1198,10 @@ void inefficient_loop_bad(HashMap<String, Integer> testMap) {
 }
 ```
 
-Instead, it is more efficient to have:
+**Action**:
+
+Instead, it is more efficient to iterate over the loop with `entrySet` which returns key-vaue pairs and gets rid of the hashMap lookup.
+ 
 ```java
 void efficient_loop_ok(HashMap<String, Integer> testMap) {
   for (Map.Entry<String, Integer> entry : testMap.entrySet()) {
