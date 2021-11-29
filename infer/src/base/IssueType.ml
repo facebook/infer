@@ -844,7 +844,7 @@ let mutable_local_variable_in_component_file =
 
 let nil_block_call =
   register_with_latent ~id:"NIL_BLOCK_CALL" Error Pulse
-    ~user_documentation:"Calling a nil block is an error in Objective-C."
+    ~user_documentation:[%blob "../../documentation/issues/NIL_BLOCK_CALL.md"]
 
 
 let nil_insertion_into_collection =

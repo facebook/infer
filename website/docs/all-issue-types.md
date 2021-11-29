@@ -1553,7 +1553,25 @@ Reported as "Mutable Local Variable In Component File" by [linters](/docs/next/c
 
 Reported as "Nil Block Call" by [pulse](/docs/next/checker-pulse).
 
-Calling a nil block is an error in Objective-C.
+This check reports when one tries to call an Objective-C block that is `nil`.
+This causes a crash.
+
+Example:
+
+```objectivec
+-(void) foo:(void (^)())callback {
+    callback();
+}
+
+-(void) bar {
+    [self foo:nil]; //crash
+}
+```
+
+**Action**:
+
+Adding a check for `nil` before calling the block, or making sure never to call the method `foo:` with `nil`.
+
 ## NIL_BLOCK_CALL_LATENT
 
 Reported as "Nil Block Call Latent" by [pulse](/docs/next/checker-pulse).
