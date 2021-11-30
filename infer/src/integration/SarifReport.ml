@@ -19,7 +19,18 @@ module ReportSummary = struct
   let pp fmt {n_issues= _; issue_type_counts} =
     let string_of_issue ~issue_type ~issue_type_hum =
       let shortDescription = {Sarifbug_j.text= issue_type_hum} in
-      let rule = {Sarifbug_j.id= issue_type; shortDescription} in
+      let help_uri = 
+        match issue_type with
+        | "DOTNET_RESOURCE_LEAK" ->
+          "https://fbinfer.com/docs/all-issue-types#resource_leak"
+        | "NULL_DEREFERENCE" ->
+          "https://fbinfer.com/docs/all-issue-types#nullptr_dereference"
+        | "THREAD_SAFETY_VIOLATION" ->
+          "https://fbinfer.com/docs/all-issue-types#thread_safety_violation"
+        | _ ->
+          "https://fbinfer.com/docs/all-issue-types"
+      in
+      let rule = {Sarifbug_j.id= issue_type; shortDescription; helpUri= help_uri} in
       Sarifbug_j.string_of_rule rule
     in
     IssueHash.to_seq issue_type_counts
