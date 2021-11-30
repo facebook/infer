@@ -26,3 +26,5 @@ type known_expensiveness = KnownCheap | KnownExpensive
 module ExpensivenessModel : sig
   val dispatcher : 'tenv -> 'pname -> 'args -> 'known_expensivene option
 end
+
+val action_message : string

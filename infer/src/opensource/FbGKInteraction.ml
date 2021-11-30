@@ -28,3 +28,5 @@ type known_expensiveness = KnownCheap | KnownExpensive
 module ExpensivenessModel = struct
   let dispatcher _ _ _ = None
 end
+
+let action_message = "Please either gate it or make sure that the function call is harmless."
