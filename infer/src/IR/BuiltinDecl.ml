@@ -190,6 +190,8 @@ let __unwrap_exception = create_procname "__unwrap_exception"
 
 let abort = create_procname "abort"
 
+let dispatch_sync = create_procname "dispatch_sync"
+
 let exit = create_procname "exit"
 
 let free = create_procname "free"

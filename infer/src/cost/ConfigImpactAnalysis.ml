@@ -901,8 +901,33 @@ module TransferFunctions = struct
         astate
 
 
+  let call {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
+      ((ret_id, _) as ret) callee args location astate =
+    match FbGKInteraction.get_config_check tenv callee args with
+    | Some (`Config config) ->
+        Dom.call_config_check ret_id config astate
+    | Some (`Exp (Exp.Var id)) ->
+        Dom.copy_value ret_id id astate
+    | Some (`Exp (Exp.Lvar pvar)) ->
+        Dom.copy_mem ~tgt:(Loc.of_id ret_id) ~src:(Loc.of_pvar pvar) astate
+    | Some (`Exp _) ->
+        (* NOTE: We need a more proper evaluation function for handling the case. *)
+        add_ret analyze_dependency ret_id callee astate
+    | Some (`ConfigToPvar (config, pvar)) ->
+        Dom.add_mem (Loc.of_pvar pvar) (Val.of_config config) astate
+    | None ->
+        (* normal function calls *)
+        let call =
+          CostInstantiate.Call.
+            {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
+        in
+        let instantiated_cost = get_instantiated_cost call in
+        Dom.call tenv analyze_dependency ~instantiated_cost ~callee args location astate
+        |> add_ret analyze_dependency ret_id callee
+
+
   let exec_instr ({Dom.config_checks} as astate)
-      {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx instr =
+      ({interproc= {tenv; analyze_dependency}} as analysis_data) node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e} -> (
       match FbGKInteraction.get_config e with
@@ -937,28 +962,17 @@ module TransferFunctions = struct
     | Call ((ret_id, _), Const (Cfun callee), _, _, _)
       when (not strict_mode) && is_known_cheap_method tenv callee ->
         add_ret analyze_dependency ret_id callee astate
-    | Call (((ret_id, _) as ret), Const (Cfun callee), args, location, _) -> (
-      match FbGKInteraction.get_config_check tenv callee args with
-      | Some (`Config config) ->
-          Dom.call_config_check ret_id config astate
-      | Some (`Exp (Exp.Var id)) ->
-          Dom.copy_value ret_id id astate
-      | Some (`Exp (Exp.Lvar pvar)) ->
-          Dom.copy_mem ~tgt:(Loc.of_id ret_id) ~src:(Loc.of_pvar pvar) astate
-      | Some (`Exp _) ->
-          (* NOTE: We need a more proper evaluation function for handling the case. *)
-          add_ret analyze_dependency ret_id callee astate
-      | Some (`ConfigToPvar (config, pvar)) ->
-          Dom.add_mem (Loc.of_pvar pvar) (Val.of_config config) astate
-      | None ->
-          (* normal function calls *)
-          let call =
-            CostInstantiate.Call.
-              {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
-          in
-          let instantiated_cost = get_instantiated_cost call in
-          Dom.call tenv analyze_dependency ~instantiated_cost ~callee args location astate
-          |> add_ret analyze_dependency ret_id callee )
+    | Call
+        ( ret
+        , Const (Cfun dispatch_sync)
+        , [_; (Closure {name= callee; captured_vars}, _)]
+        , location
+        , _ )
+      when Procname.equal dispatch_sync BuiltinDecl.dispatch_sync ->
+        let args = List.map captured_vars ~f:(fun (exp, _, typ, _) -> (exp, typ)) in
+        call analysis_data node idx ret callee args location astate
+    | Call (ret, Const (Cfun callee), args, location, _) ->
+        call analysis_data node idx ret callee args location astate
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
