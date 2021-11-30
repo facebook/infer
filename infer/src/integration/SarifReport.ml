@@ -69,7 +69,8 @@ let pp_results_header fmt =
 let loc_trace_to_sarifbug_record trace_list =
   let file_loc filename =
     let absolute_source_name = Config.project_root ^/ filename in
-    {Sarifbug_j.uri= filename; Sarifbug_j.uriBaseId= absolute_source_name}
+    let file_path = "file:" ^ filename in
+    {Sarifbug_j.uri= file_path; Sarifbug_j.uriBaseId= absolute_source_name}
   in
   let message description = {Sarifbug_j.text= description} in
   let region line_number column_number =
@@ -98,7 +99,8 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
   let level = String.lowercase severity in
   let ruleId = bug_type in
   let absolute_source_name = Config.project_root ^/ file in
-  let file_loc = {Sarifbug_j.uri= file; uriBaseId= absolute_source_name} in
+  let file_path = "file:" ^ file in
+  let file_loc = {Sarifbug_j.uri= file_path; uriBaseId= absolute_source_name} in
   let region =
     match column with
     | -1 ->
