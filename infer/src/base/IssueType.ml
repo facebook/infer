@@ -813,7 +813,7 @@ let missing_fld = register_hidden ~id:"Missing_fld" ~hum:"Missing Field" Error B
 
 let missing_required_prop =
   register ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop" Error LithoRequiredProps
-    ~user_documentation:"As explained by the analysis."
+    ~user_documentation:[%blob "../../documentation/issues/MISSING_REQUIRED_PROP.md"]
 
 
 let mixed_self_weakself =

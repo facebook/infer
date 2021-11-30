@@ -64,13 +64,13 @@ let report_missing_required_prop proc_desc err_log prop parent_typename ~create_
     let prop_string =
       match prop with
       | Prop prop ->
-          F.asprintf "@Prop %s" prop
+          F.asprintf "`@Prop %s`" prop
       | VarProp {var_prop; prop} ->
-          F.asprintf "Either @Prop %s or @Prop(varArg = %s)" prop var_prop
+          F.asprintf "Either `@Prop %s` or `@Prop(varArg = %s)`" prop var_prop
     in
     F.asprintf
-      "%a is required for component %s, but is not set before the call to build(). Either set the \
-       missing @Prop or make @Prop(optional = true)."
+      "%a is required for component `%s`, but is not set before the call to `build()`. Either set \
+       the missing `@Prop` or make `@Prop(optional = true)`."
       MarkupFormatter.pp_bold prop_string (Typ.Name.name parent_typename)
   in
   let make_single_trace loc message = Errlog.make_trace_element 0 loc message [] in
