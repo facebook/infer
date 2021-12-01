@@ -366,4 +366,5 @@ public class NullMethodCall {
     }
     return object1 == null ? object2.toString() : "null";
   }
+
 }

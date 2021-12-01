@@ -42,18 +42,60 @@ public final class Preconditions {
     assume(expression);
   }
 
+  public static void checkState(
+      boolean expression,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object errorMessageArg1) {
+    assume(expression);
+  }
+
+  public static void checkState(
+      boolean expression,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object errorMessageArg1,
+      @Nullable Object errorMessageArg2) {
+    assume(expression);
+  }
+
+  public static void checkState(
+      boolean expression,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object errorMessageArg1,
+      @Nullable Object errorMessageArg2,
+      @Nullable Object errorMessageArg3) {
+    assume(expression);
+  }
+
   public static void checkArgument(boolean expression) {
     assume(expression);
   }
 
-  public static void checkArgument(boolean expression, @Nullable Object errorMessage) {
+  public static void checkArgument(boolean expression,
+      @Nullable Object errorMessage) {
     assume(expression);
   }
 
   public static void checkArgument(
       boolean expression,
       @Nullable String errorMessageTemplate,
-      @Nullable Object... errorMessageArgs) {
+      @Nullable Object errorMessageArg1) {
+    assume(expression);
+  }
+
+  public static void checkArgument(
+      boolean expression,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object errorMessageArg1,
+      @Nullable Object errorMessageArg2) {
+    assume(expression);
+  }
+
+  public static void checkArgument(
+      boolean expression,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object errorMessageArg1,
+      @Nullable Object errorMessageArg2,
+      @Nullable Object errorMessageArg3) {
     assume(expression);
   }
 }

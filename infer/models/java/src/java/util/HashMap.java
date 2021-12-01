@@ -60,6 +60,19 @@ public abstract class HashMap<K, V> {
     return null;
   }
 
+  public V putIfAbsent(K key, V value) {
+    if (value instanceof Closeable) {
+      // assume the resource will be handled correctly in this case
+      InferBuiltins.__set_mem_attribute(value);
+    }
+    pushKey(key);
+
+    if (InferUndefined.boolean_undefined()) {
+      return (V) InferUndefined.object_undefined();
+    }
+    return null;
+  }
+
   public V remove(K key) {
     V value = get(key);
     removeKey(key);

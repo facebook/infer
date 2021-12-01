@@ -8,6 +8,7 @@
 package junit.framework;
 
 import com.facebook.infer.builtins.InferBuiltins;
+import javax.annotation.Nullable;
 
 public class Assert {
 
@@ -26,4 +27,21 @@ public class Assert {
   public static void assertFalse(String message, boolean condition) {
     InferBuiltins.assume(!condition);
   }
+
+  public static void assertNotNull(@Nullable Object object) {
+    InferBuiltins.assume(object != null);
+  }
+
+  public static void assertNotNull(String message, @Nullable Object object) {
+    InferBuiltins.assume(object != null);
+  }
+
+  public static void assertNull(@Nullable Object object) {
+    InferBuiltins.assume(object == null);
+  }
+
+  public static void assertNull(String message, @Nullable Object object) {
+    InferBuiltins.assume(object == null);
+  }
+
 }

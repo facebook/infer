@@ -13,6 +13,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.facebook.infer.annotation.Assertions;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -27,6 +28,16 @@ import java.util.HashMap;
 import java.util.concurrent.locks.Lock;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
+import java.util.Map;
+import java.util.List;
+import junit.framework.TestCase;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.Validate;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.testng.Assert;
+import org.testng.AssertJUnit;
 
 public class NullPointerExceptions {
 
@@ -178,6 +189,11 @@ public class NullPointerExceptions {
       return (h.get(o).toString());
     }
     return "aa";
+  }
+
+  String NPEhashmapProtectedByPut(HashMap h, Object o) {
+    h.put(o, o);
+    return (h.get(o).toString());
   }
 
   int NPEvalueOfFromHashmapBad(HashMap<Integer, Integer> h, int position) {
@@ -633,5 +649,194 @@ public class NullPointerExceptions {
   void addNullToImmutableListBuilderBad() {
     ImmutableList.Builder<Object> listBuilder = ImmutableList.builder();
     listBuilder.add(getObject());
+  }
+
+  String requireNonNullOk(@Nullable Object object) {
+    return Objects.requireNonNull(object).toString();
+  }
+
+  String objectsNonNullOk(@Nullable Object object) {
+    if (!Objects.isNull(object)) {
+      return object.toString();
+    }
+    return null;
+  }
+
+  String assertNotNullOK(@Nullable Object object) {
+    Assert.assertNotNull(object);
+    return object.toString();
+  }
+
+  String assertJUnitNotNullOK(@Nullable Object object) {
+    AssertJUnit.assertNotNull(object);
+    return object.toString();
+  }
+
+  String junitAssertNotNullOK(@Nullable Object object) {
+    org.junit.Assert.assertNotNull(object);
+    return object.toString();
+  }
+
+  String junitTestCaseNotNullOK(@Nullable Object object) {
+    TestCase.assertNotNull(object);
+    return object.toString();
+  }
+
+  String jupiterAssertionsNotNullOK(@Nullable Object object) {
+    org.junit.jupiter.api.Assertions.assertNotNull(object);
+    return object.toString();
+  }
+
+  String uriOK(@Nullable String str) throws java.net.URISyntaxException {
+    java.net.URI uri = new java.net.URI(str);
+    return str.toLowerCase();
+  }
+
+  String stringUtilsIsNotEmptyOk(@Nullable String str) {
+    if (StringUtils.isNotEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringUtilsIsNotBlankOk(@Nullable String str) {
+    if (StringUtils.isNotBlank(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringsIsNotEmptyOk(@Nullable String str) {
+    if (org.apache.logging.log4j.util.Strings.isNotEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringsIsNotBlankOk(@Nullable String str) {
+    if (org.apache.logging.log4j.util.Strings.isNotBlank(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringUtils3IsNotBlankOk(@Nullable String str) {
+    if (org.apache.commons.lang3.StringUtils.isNotBlank(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String stringUtils3IsNotEmptyOk(@Nullable String str) {
+    if (org.apache.commons.lang3.StringUtils.isNotEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String collectionUtilsIsNotEmptyOk(@Nullable List list) {
+    if (CollectionUtils.isNotEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String collectionUtilsIsEmptyOk(@Nullable List list) {
+    if (!CollectionUtils.isEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String springFrameworkCollectionUtilsIsEmptyOk(@Nullable List list) {
+    if (!org.springframework.util.CollectionUtils.isEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String collectionUtils4IsNotEmptyOk(@Nullable List list) {
+    if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String mapUtilsIsNotEmptyOk(@Nullable Map map) {
+    if (MapUtils.isNotEmpty(map)) {
+       return map.toString();
+    }
+    return null;
+  }
+
+  String mapUtils4IsNotEmptyOk(@Nullable Map map) {
+    if (org.apache.commons.collections4.MapUtils.isNotEmpty(map)) {
+       return map.toString();
+    }
+    return null;
+  }
+
+  String validateNotNullOK(@Nullable Object obj) {
+    return Validate.notNull(obj).toString();
+  }
+
+  String validateNotNullOK(@Nullable String str) {
+    return Validate.notEmpty(str).toLowerCase();
+  }
+
+  String validateNotEmptyOK(@Nullable List list) {
+    return Validate.notEmpty(list).toString();
+  }
+
+  String validateNotEmptyOK(@Nullable Map map) {
+    return Validate.notEmpty(map).toString();
+  }
+
+  String validateIsTrue(@Nullable Object obj) {
+    Validate.isTrue(obj != null);
+    return obj.toString();
+  }
+
+  String stringUtilsIsNullOrEmptyOK(@Nullable String str) {
+    if (!com.amazonaws.util.StringUtils.isNullOrEmpty(str)) {
+       return str.toLowerCase();
+    }
+    return null;
+  }
+
+  String collectionUtilsIsNullOrEmptyOK(@Nullable List list) {
+    if (!com.amazonaws.util.CollectionUtils.isNullOrEmpty(list)) {
+       return list.toString();
+    }
+    return null;
+  }
+
+  String dynamodbMapperWarning2() {
+    DynamoDBMapper mapper = new DynamoDBMapper();
+    Float object2 = 1.0f;
+    Object object = mapper.load(Object.class, object2);
+    return object.toString();
+  }
+
+  void dynamodbMapperWarning3() {
+    DynamoDBMapper mapper = new DynamoDBMapper();
+    String object2 = "foo";
+    NullPointerExceptions object = mapper.load(NullPointerExceptions.class, object2);
+    object.toString();
+  }
+
+  String preconditionCheckArgumentTest(@Nullable Object obj) {
+    Preconditions.checkArgument(Objects.nonNull(obj));
+    return obj.toString();
+  }
+
+  String preconditionCheckArgumentDescriptionTest(@Nullable Object obj) {
+    Preconditions.checkArgument(Objects.nonNull(obj), "obj is null");
+    return obj.toString();
+  }
+
+  String preconditionCheckArgumentDescriptionParameterTest(@Nullable Object obj) {
+    Preconditions.checkArgument(Objects.nonNull(obj), "obj is null %s ", new String("foo"));
+    return obj.toString();
   }
 }

@@ -26,7 +26,7 @@ endef
 
 define check_no_diff
   git --no-pager diff --color=auto --no-ext-diff --no-index --word-diff --unified=1 --minimal \
-	$$(realpath $(1)) $$(realpath $(2)) >&2 || \
+	$$(/Users/cottet/infer/infer/bin/realpath $(1)) $$(/Users/cottet/infer/infer/bin/realpath $(2)) >&2 || \
   (printf '\n' >&2; \
    printf '$(TERM_ERROR)Test output ($(2)) differs from expected test output $(1)$(TERM_RESET)\n' >&2; \
    printf '$(TERM_ERROR)Run the following command to replace the expected test output with the new output:$(TERM_RESET)\n' >&2; \

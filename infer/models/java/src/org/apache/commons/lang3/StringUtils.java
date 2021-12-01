@@ -29,6 +29,10 @@ public final class StringUtils {
     return !isEmpty(cs);
   }
 
+  public static boolean isNotBlank(final CharSequence cs) {
+    return !isBlank(cs);
+  }
+
   public static boolean isEmpty(final CharSequence cs) {
     return cs == null || cs.length() == 0;
   }
