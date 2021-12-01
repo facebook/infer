@@ -169,7 +169,8 @@ module Implementation = struct
 
 
   let canonicalize () =
-    ResultsDatabase.get_database () |> SqliteUtils.exec ~log:"running VACUUM" ~stmt:"VACUUM"
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
 
 
   let reset_capture_tables () =
@@ -242,6 +243,7 @@ module Command = struct
         ; tenv: Sqlite3.Data.t
         ; integer_type_widths: Sqlite3.Data.t
         ; proc_names: Sqlite3.Data.t }
+    | Checkpoint
     | DeleteAllSpecs
     | DeleteSpec of {proc_uid: string}
     | Handshake
@@ -262,11 +264,12 @@ module Command = struct
         ; callees: Sqlite3.Data.t }
     | ResetCaptureTables
     | Terminate
-    | Vacuum
 
   let to_string = function
     | AddSourceFile _ ->
         "AddSourceFile"
+    | Checkpoint ->
+        "Checkpoint"
     | DeleteAllSpecs ->
         "DeleteAllSpecs"
     | DeleteSpec _ ->
@@ -285,8 +288,6 @@ module Command = struct
         "StoreSpec"
     | Terminate ->
         "Terminate"
-    | Vacuum ->
-        "Vacuum"
 
 
   let pp fmt cmd = F.pp_print_string fmt (to_string cmd)
@@ -294,6 +295,8 @@ module Command = struct
   let execute = function
     | AddSourceFile {source_file; tenv; integer_type_widths; proc_names} ->
         Implementation.add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names
+    | Checkpoint ->
+        Implementation.canonicalize ()
     | DeleteAllSpecs ->
         Implementation.delete_all_specs ()
     | DeleteSpec {proc_uid} ->
@@ -314,8 +317,6 @@ module Command = struct
         Implementation.reset_capture_tables ()
     | Terminate ->
         Implementation.log_specs_overwrite_counts ()
-    | Vacuum ->
-        Implementation.canonicalize ()
 end
 
 type response = Ack | Error of (string * Caml.Printexc.raw_backtrace)
@@ -442,7 +443,7 @@ let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
 
 let merge ~infer_deps_file = perform (Merge {infer_deps_file})
 
-let canonicalize () = perform Vacuum
+let canonicalize () = perform Checkpoint
 
 let reset_capture_tables () = perform ResetCaptureTables
 
