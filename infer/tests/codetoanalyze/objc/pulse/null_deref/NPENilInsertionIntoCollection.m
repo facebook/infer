@@ -84,6 +84,23 @@ void dictionaryRemoveObjectForKeyIfKeyExistsNotNilOK(
   dictionaryRemoveObjectForKeyIfKeyExists(mDict, @"somestring");
 }
 
+void dictionaryRemoveObjectForKeyIfSubscriptExists(NSMutableDictionary* mDict,
+                                                   id key) {
+  id value = mDict[key];
+  if (value) {
+    [mDict removeObjectForKey:key];
+  }
+}
+
+void dictionaryRemoveObjectForKeyIfSubscriptExistsNilOK(
+    NSMutableDictionary* mDict) {
+  dictionaryRemoveObjectForKeyIfSubscriptExists(mDict, nil);
+}
+
+void dictionaryRemoveObjectForKeyIfSubscriptExistsNotNilOK(
+    NSMutableDictionary* mDict) {
+  dictionaryRemoveObjectForKeyIfSubscriptExists(mDict, @"somestring");
+}
 void testNilMessagingForModelNilNilOK_FP() { addObjectInDict(nil, nil); }
 
 void testNilMessagingForModelNilStringOK() {
@@ -257,6 +274,21 @@ void dictionaryWithObjectsForKeysIfKeyExistsNilOK(NSDictionary* dict) {
 
 void dictionaryWithObjectsForKeysIfKeyExistsNotNilOK(NSDictionary* dict) {
   dictionaryWithObjectsForKeysIfKeyExists(dict, @"somestring");
+}
+
+void dictionaryWithObjectsForKeysIfSubcriptExists(NSDictionary* dict, id key) {
+  id value = dict[key];
+  if (value) {
+    dict = [NSDictionary dictionaryWithObjects:@[ value ] forKeys:@[ key ]];
+  }
+}
+
+void dictionaryWithObjectsForKeysIfSubscriptExistsNilOK(NSDictionary* dict) {
+  dictionaryWithObjectsForKeysIfSubscriptExists(dict, nil);
+}
+
+void dictionaryWithObjectsForKeysIfSubscriptExistsNotNilOK(NSDictionary* dict) {
+  dictionaryWithObjectsForKeysIfSubscriptExists(dict, @"somestring");
 }
 
 void setWithObject(id object) { NSSet* set = [NSSet setWithObject:object]; }

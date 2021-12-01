@@ -2679,9 +2679,6 @@ module ProcNameDispatcher = struct
           &:: "dictionaryWithSharedKeySet:" <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableDictionary.dictionaryWithSharedKeySet"
-        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
-          &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.read_from_collection ~desc:"NSMutableDictionary.objectForKey"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
@@ -2723,6 +2720,9 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
           &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
           $--> ObjC.read_from_collection ~desc:"NSDictionary.objectForKey"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
+          &:: "objectForKeyedSubscript:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.read_from_collection ~desc:"NSDictionary.objectForKeyedSubscript"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
           &:: "setWithObject:" <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
