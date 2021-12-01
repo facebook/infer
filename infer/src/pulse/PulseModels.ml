@@ -463,15 +463,35 @@ module ObjC = struct
     astate
 
 
-  let construct_string char_array : model =
+  let construct_string ((value, value_hist) as char_array) : model =
    fun {path; location; ret= ret_id, _} astate ->
-    let hist = Hist.single_call path location "NSString.stringWithUTF8String:" in
+    let desc = "NSString.stringWithUTF8String:" in
+    let event = Hist.call_event path location desc in
+    let<*> astate, _ =
+      PulseOperations.eval_access path Read location
+        (value, Hist.add_event path event value_hist)
+        Dereference astate
+    in
     let string = AbstractValue.mk_fresh () in
+    let string_hist = Hist.single_call path location desc in
     let<+> astate =
-      PulseOperations.write_field path location ~ref:(string, hist)
+      PulseOperations.write_field path location ~ref:(string, string_hist)
         PulseOperations.ModeledField.internal_string ~obj:char_array astate
     in
-    PulseOperations.write_id ret_id (string, hist) astate
+    PulseOperations.write_id ret_id (string, string_hist) astate
+
+
+  let check_arg_not_nil (value, value_hist) ~desc : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
+    let<*> astate, _ =
+      PulseOperations.eval_access path Read location
+        (value, Hist.add_event path event value_hist)
+        Dereference astate
+    in
+    let ret_val = AbstractValue.mk_fresh () in
+    let<+> astate = PulseArithmetic.prune_positive ret_val astate in
+    PulseOperations.write_id ret_id (ret_val, Hist.single_call path location desc) astate
 end
 
 module Optional = struct
@@ -2654,7 +2674,20 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> ObjC.alloc_no_fail
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
-        ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_arg_payload $--> ObjC.construct_string
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "stringWithUTF8String:" <>$ capt_arg_payload $--> ObjC.construct_string
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "initWithFormat:" <>$ any_arg $+ capt_arg_payload
+          $+...$--> ObjC.check_arg_not_nil ~desc:"NSString.initWithFormat:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "stringWithFormat:" <>$ capt_arg_payload
+          $+...$--> ObjC.check_arg_not_nil ~desc:"NSString.stringWithFormat:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "stringWithString:" <>$ capt_arg_payload
+          $--> ObjC.check_arg_not_nil ~desc:"NSString.stringWithString:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "stringByAppendingString:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.check_arg_not_nil ~desc:"NSString.stringByAppendingString:"
         ; +BuiltinDecl.(match_builtin objc_insert_key)
           <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
