@@ -250,6 +250,7 @@ nonmatch/nonmatch_records.erl, test_match_tuple_as_record5_Bad/0, 2, BAD_RECORD,
 nonmatch/nonmatch_records.erl, test_nested4_Bad/0, 3, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 nonmatch/nonmatch_records.erl, test_nested5_Bad/0, 3, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 nonmatch/nonmatch_records.erl, test_type_Bad/0, -5, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `accepts_rabbits/1`,no matching function clause here]
+nonmatch/nonmatch_strings.erl, fp_matches_rabbit/1, 0, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [no matching function clause here]
 nonmatch/nonmatch_trycatch.erl, tail_with_try/1, 1, NO_MATCHING_BRANCH_IN_TRY_LATENT, no_bucket, ERROR, [no matching branch in try here]
 nonmatch/nonmatch_trycatch.erl, try_simple/1, 1, NO_MATCHING_BRANCH_IN_TRY_LATENT, no_bucket, ERROR, [no matching branch in try here]
 nonmatch/nonmatch_trycatch.erl, try_test_simple3_Bad/0, -18, NO_MATCHING_BRANCH_IN_TRY, no_bucket, ERROR, [calling context starts here,in call to `try_simple/1`,no matching branch in try here]

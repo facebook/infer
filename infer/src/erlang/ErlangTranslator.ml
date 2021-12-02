@@ -124,6 +124,8 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
   | Literal (Int i) ->
       let e = Exp.Const (Cint (IntLit.of_string i)) in
       Block.make_branch env (Exp.BinOp (Eq, Var value, e))
+  | Literal (String s) ->
+      translate_pattern_literal_string env value s
   | Map {updates; _} ->
       translate_pattern_map env value updates
   | Match {pattern; body} ->
@@ -188,6 +190,21 @@ and translate_pattern_literal_atom (env : (_, _) Env.t) value atom : Block.t =
   type_checker.exit_failure |~~> [exit_failure] ;
   hash_checker.exit_failure |~~> [exit_failure] ;
   {start= type_checker.start; exit_success= hash_checker.exit_success; exit_failure}
+
+
+and translate_pattern_literal_string (env : (_, _) Env.t) value s : Block.t =
+  let expected_id = mk_fresh_id () in
+  let expected_block : Block.t = translate_expression_literal_string env expected_id s in
+  let equals_id = mk_fresh_id () in
+  (* TODO: add Pulse model for this function T93361792 *)
+  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_str_equal) in
+  let call_block =
+    let args = [(Exp.Var value, any_typ); (Exp.Var expected_id, any_typ)] in
+    let instr = Sil.Call ((equals_id, any_typ), fun_exp, args, env.location, CallFlags.default) in
+    Block.make_instruction env [instr]
+  in
+  let checker_block = Block.make_branch env (Var equals_id) in
+  Block.all env [expected_block; call_block; checker_block]
 
 
 and translate_pattern_nil env value : Block.t = check_type env value Nil
@@ -423,8 +440,7 @@ and translate_expression env {Ast.line; simple_expression} =
         let e = Exp.Const (Cint (IntLit.of_string i)) in
         Block.make_load env ret_var e any_typ
     | Literal (String s) ->
-        let e = Exp.Const (Cstr s) in
-        Block.make_load env ret_var e any_typ
+        translate_expression_literal_string env ret_var s
     | Map {map= None; updates} ->
         translate_expression_map_create env ret_var updates
     | Map {map= Some map; updates} ->
@@ -801,6 +817,17 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
 and translate_expression_literal_atom (env : (_, _) Env.t) ret_var atom =
   let call_instruction = mk_atom_call env ret_var atom in
   Block.make_instruction env [call_instruction]
+
+
+and translate_expression_literal_string (env : (_, _) Env.t) ret_var s =
+  (* TODO: add Pulse model for this function T93361792 *)
+  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_str_const) in
+  let args =
+    let value = Exp.Const (Cstr s) in
+    [(value, any_typ)]
+  in
+  let instr = Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default) in
+  Block.make_instruction env [instr]
 
 
 and translate_expression_map_create (env : (_, _) Env.t) ret_var updates : Block.t =

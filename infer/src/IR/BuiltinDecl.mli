@@ -43,6 +43,8 @@ val __erlang_make_tuple : Procname.t
 
 val __erlang_make_map : Procname.t
 
+val __erlang_make_str_const : Procname.t
+
 val __erlang_maps_is_key : Procname.t
 
 val __erlang_maps_get : Procname.t
@@ -50,6 +52,8 @@ val __erlang_maps_get : Procname.t
 val __erlang_maps_put : Procname.t
 
 val __erlang_missing_translation : Procname.t
+
+val __erlang_str_equal : Procname.t
 
 val __infer_initializer_list : Procname.t
 
