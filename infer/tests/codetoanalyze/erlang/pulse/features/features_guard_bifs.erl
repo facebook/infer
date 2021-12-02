@@ -16,7 +16,15 @@
     test_accepts_atom_Ok/0,
     test_accepts_atom_Bad/0,
     test_accepts_atom_nomodule_Ok/0,
-    test_accepts_atom_nomodule_Bad/0
+    test_accepts_atom_nomodule_Bad/0,
+    test_accepts_bool1_Ok/0,
+    test_accepts_bool2_Ok/0,
+    test_accepts_bool3_Bad/0,
+    test_accepts_bool4_Bad/0,
+    test_accepts_bool_nomodule1_Ok/0,
+    test_accepts_bool_nomodule2_Ok/0,
+    test_accepts_bool_nomodule3_Bad/0,
+    test_accepts_bool_nomodule4_Bad/0
 ]).
 
 accepts_map(M) when erlang:is_map(M) -> ok.
@@ -58,3 +66,23 @@ accepts_atom_nomodule(A) when is_atom(A) -> ok.
 test_accepts_atom_nomodule_Ok() -> accepts_atom_nomodule(some_atom).
 
 test_accepts_atom_nomodule_Bad() -> accepts_atom_nomodule([not_an, atom]).
+
+accepts_bool(B) when erlang:is_boolean(B) -> ok.
+
+test_accepts_bool1_Ok() -> accepts_bool(true).
+
+test_accepts_bool2_Ok() -> accepts_bool(false).
+
+test_accepts_bool3_Bad() -> accepts_bool(not_a_bool).
+
+test_accepts_bool4_Bad() -> accepts_bool([not_an, atom]).
+
+accepts_bool_nomodule(B) when is_boolean(B) -> ok.
+
+test_accepts_bool_nomodule1_Ok() -> accepts_bool_nomodule(true).
+
+test_accepts_bool_nomodule2_Ok() -> accepts_bool_nomodule(false).
+
+test_accepts_bool_nomodule3_Bad() -> accepts_bool_nomodule(not_a_bool).
+
+test_accepts_bool_nomodule4_Bad() -> accepts_bool_nomodule([not_an, atom]).

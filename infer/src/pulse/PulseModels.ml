@@ -1927,6 +1927,47 @@ module Erlang = struct
     convert_bool_to_atom_return path location hist is_atom ret_id astate
 
 
+  let erlang_is_boolean ((atom_val, _atom_hist) as atom) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let hist = Hist.single_call path location "is_boolean" in
+    let astate_not_atom =
+      (* Assume not atom: just return false *)
+      let typ = Typ.mk_struct (ErlangType Atom) in
+      let is_atom = AbstractValue.mk_fresh () in
+      let<*> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
+      let<*> astate = PulseArithmetic.prune_eq_zero is_atom astate in
+      convert_bool_to_atom_return path location hist is_atom ret_id astate
+    in
+    let astate_is_atom =
+      (* Assume atom: return hash==hashof(true) or hash==hashof(false) *)
+      let> astate = prune_type path location atom Atom astate in
+      let astate, _hash_addr, (hash, _hash_hist) =
+        load_field path
+          (Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash)
+          location atom astate
+      in
+      let is_true = AbstractValue.mk_fresh () in
+      let is_false = AbstractValue.mk_fresh () in
+      let is_bool = AbstractValue.mk_fresh () in
+      let<*> astate, is_true =
+        PulseArithmetic.eval_binop is_true Binop.Eq (AbstractValueOperand hash)
+          (LiteralOperand (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_true)))
+          astate
+      in
+      let<*> astate, is_false =
+        PulseArithmetic.eval_binop is_false Binop.Eq (AbstractValueOperand hash)
+          (LiteralOperand (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_false)))
+          astate
+      in
+      let<*> astate, is_bool =
+        PulseArithmetic.eval_binop is_bool Binop.LOr (AbstractValueOperand is_true)
+          (AbstractValueOperand is_false) astate
+      in
+      convert_bool_to_atom_return path location hist is_bool ret_id astate
+    in
+    astate_not_atom @ astate_is_atom
+
+
   let cons_head_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_head
 
   let cons_tail_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_tail
@@ -2543,6 +2584,8 @@ module ProcNameDispatcher = struct
           $--> Erlang.erlang_is_list
         ; -ErlangTypeName.erlang_namespace &:: "is_atom" <>$ capt_arg_payload
           $--> Erlang.erlang_is_atom
+        ; -ErlangTypeName.erlang_namespace &:: "is_boolean" <>$ capt_arg_payload
+          $--> Erlang.erlang_is_boolean
         ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload
           $--> Erlang.lists_append2 ~reverse:false
         ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.lists_reverse
