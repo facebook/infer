@@ -1016,6 +1016,7 @@ let instr_sub_ids ~sub_id_binders f (instr : Sil.instr) : Sil.instr =
   | Metadata
       ( Abstract _
       | CatchEntry _
+      | EndBranches
       | Nullify _
       | Skip
       | TryEntry _

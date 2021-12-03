@@ -12,6 +12,7 @@ module ExecutionDomain = PulseExecutionDomain
 (** if you do any mutations of the state in pulse you probably want this module *)
 module AbductiveDomain = PulseAbductiveDomain
 
+module NonDisjDomain = PulseNonDisjunctiveDomain
 module Stack = AbductiveDomain.Stack
 module Memory = AbductiveDomain.Memory
 module AddressAttributes = AbductiveDomain.AddressAttributes
@@ -23,6 +24,7 @@ module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module LatentIssue = PulseLatentIssue
+module PathContext = PulsePathContext
 
 (** {2 Enforce short form usage} *)
 
@@ -41,4 +43,5 @@ include struct
   module PulseExecutionDomain = PulseExecutionDomain
   [@@deprecated "use the short form ExecutionDomain instead"]
   module PulseLatentIssue = PulseLatentIssue [@@deprecated "use the short form LatentIssue instead"]
+  module PulsePathContext = PulsePathContext [@@deprecated "use the short form PathContext instead"]
 end

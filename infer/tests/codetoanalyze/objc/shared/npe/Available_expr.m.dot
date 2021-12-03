@@ -22,15 +22,15 @@ digraph cfg {
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" [label="4: + \n  " ]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" [label="4: + \n   END_BRANCHES\n " ]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" [label="5: Prune (true branch, if) \n   PRUNE(n$0, true); [line 17, column 7]\n " shape="invhouse"]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE(n$0, true); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" [label="6: Prune (false branch, if) \n   PRUNE(!n$0, false); [line 17, column 7]\n " shape="invhouse"]
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE(!n$0, false); [line 17, column 7]\n " shape="invhouse"]
 	
 
 	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" ;

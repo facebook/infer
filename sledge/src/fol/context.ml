@@ -215,7 +215,6 @@ module Use : sig
   val exists : t -> f:(Trm.t -> bool) -> bool
   val fold : t -> 's -> f:(Trm.t -> 's -> 's) -> 's
   val map : t -> f:(Trm.t -> Trm.t) -> t
-  val flat_map : t -> f:(Trm.t -> t) -> t
   val filter : t -> f:(Trm.t -> bool) -> t
   val iter_of_opt : t option -> Trm.t iter
 end = struct
@@ -947,38 +946,47 @@ let union wrt r s =
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
-let inter wrt r s =
-  [%Trace.call fun {pf} -> pf "@ @[<hv 1>   %a@ @<2>∨ %a@]" pp r pp s]
+let inter wrt (xs, r) (ys, s) =
+  [%Trace.call fun {pf} ->
+    pf "@ @[  @[<hv 2>{ %a }@]@ @<2>∨ @[<hv 2>{ %a }@]@]" pp r pp s]
   ;
   ( if not s.sat then r
   else if not r.sat then s
   else
-    let merge_mems rs r s =
-      Trm.Map.fold s.cls rs ~f:(fun ~key:rep ~data:cls rs ->
-          Cls.fold cls
-            ([rep], rs)
-            ~f:(fun exp (reps, rs) ->
-              match
-                List.find ~f:(fun rep -> implies r (Fml.eq exp rep)) reps
-              with
-              | Some rep -> (reps, and_eq ~wrt exp rep rs)
-              | None -> (exp :: reps, rs) )
+    let merge_mems wrt (xs, r) (ys, s) i =
+      let unbound vs = Var.Set.disjoint xs vs && Var.Set.disjoint ys vs in
+      Trm.Map.fold s.cls i ~f:(fun ~key:rep ~data:cls i ->
+          let reps = if unbound (Trm.fv rep) then [rep] else [] in
+          Cls.fold cls (reps, i) ~f:(fun exp (reps, i) ->
+              if not (unbound (Trm.fv exp)) then (reps, i)
+              else
+                match
+                  List.find ~f:(fun rep -> implies r (Fml.eq exp rep)) reps
+                with
+                | Some rep -> (reps, and_eq ~wrt exp rep i)
+                | None -> (exp :: reps, i) )
           |> snd )
     in
-    let rs = empty in
-    let rs = merge_mems rs r s in
-    let rs = merge_mems rs s r in
-    rs )
-  |> extract_xs
+    let i = empty in
+    let i = merge_mems wrt (xs, r) (ys, s) i in
+    let i = merge_mems wrt (ys, s) (xs, r) i in
+    i )
   |>
-  [%Trace.retn fun {pf} (_, r') ->
+  [%Trace.retn fun {pf} r' ->
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
-let interN us rs =
-  match rs with
-  | [] -> (us, unsat)
-  | r :: rs -> List.fold ~f:(fun r (us, s) -> inter us s r) rs (us, r)
+let interN us xrIN =
+  ( match xrIN with
+  | [] -> unsat
+  | (xs0, r0) :: xr1N ->
+      List.fold xr1N (Var.Set.empty, xs0, r0)
+        ~f:(fun (xsK, rK) (xs0I, xsJ, i0J) ->
+          let xs0J = Var.Set.union xs0I xsJ in
+          let i0K = inter us (xsK, rK) (xs0J, i0J) in
+          (xs0J, xsK, i0K) )
+      |> trd3 )
+  |> extract_xs
 
 let rec add_ wrt b r =
   match (b : Fml.t) with
@@ -1055,10 +1063,6 @@ let subst_invariant us s0 s =
   assert (s0 == s || not (Subst.equal s0 s)) ;
   assert (
     Trm.Map.iteri s ~f:(fun ~key ~data ->
-        (* dom of new entries not ito us *)
-        assert (
-          Option.for_all ~f:(Trm.equal data) (Trm.Map.find key s0)
-          || not (Var.Set.subset (Trm.fv key) ~of_:us) ) ;
         (* rep not ito us implies trm not ito us *)
         assert (
           Var.Set.subset (Trm.fv data) ~of_:us
@@ -1108,11 +1112,9 @@ let solve_seq_eq us e' f' subst =
     (not (Var.Set.subset (Trm.fv x) ~of_:us))
     && Var.Set.subset (Trm.fv u) ~of_:us
   in
-  let solve_concat ms n a =
-    let a, n =
-      match Trm.seq_size a with
-      | Some n -> (a, n)
-      | None -> (Trm.sized ~siz:n ~seq:a, n)
+  let solve_concat c ms a =
+    let n =
+      match Trm.seq_size a with Some n -> n | None -> Trm.seq_size_exn c
     in
     solve_pending
       (Theory.solve_concat ms a n
@@ -1124,13 +1126,11 @@ let solve_seq_eq us e' f' subst =
       subst
   in
   ( match ((e' : Trm.t), (f' : Trm.t)) with
-  | (Concat ms as c), a when x_ito_us c a ->
-      solve_concat ms (Trm.seq_size_exn c) a
-  | a, (Concat ms as c) when x_ito_us c a ->
-      solve_concat ms (Trm.seq_size_exn c) a
-  | (Sized {seq= Var _ as v} as m), u when x_ito_us m u ->
+  | (Concat ms as c), a when x_ito_us c a -> solve_concat c ms a
+  | a, (Concat ms as c) when x_ito_us c a -> solve_concat c ms a
+  | (Var _ as v), u when x_ito_us v u ->
       Some (Subst.compose1 ~key:v ~data:u subst)
-  | u, (Sized {seq= Var _ as v} as m) when x_ito_us m u ->
+  | u, (Var _ as v) when x_ito_us v u ->
       Some (Subst.compose1 ~key:v ~data:u subst)
   | _ -> None )
   |>
@@ -1184,12 +1184,6 @@ type cls_solve_state =
   ; rep_xs: Trm.t option  (** rep, that is *not* ito us, for class *)
   ; cls_xs: Cls.t  (** cls that is *not* ito us *) }
 
-let dom_trm e =
-  match (e : Trm.t) with
-  | Sized {seq= Var _ as v} -> Some v
-  | _ when Trm.non_interpreted e -> Some e
-  | _ -> None
-
 (** move equations from [cls] (which is assumed to be normalized by [subst])
     to [subst] which can be expressed as [x ↦ u] where [x] is noninterpreted
     [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs] *)
@@ -1212,17 +1206,14 @@ let solve_uninterp_eqs us (cls, subst) =
           | None -> {s with rep_us= Some trm}
         else
           match rep_xs with
-          | Some rep -> (
+          | Some rep ->
               if compare rep trm <= 0 then
-                match dom_trm trm with
-                | Some trm -> {s with cls_xs= Cls.add trm cls_xs}
-                | None -> {s with cls_us= Cls.add trm cls_us}
-              else
-                match dom_trm rep with
-                | Some rep ->
-                    {s with rep_xs= Some trm; cls_xs= Cls.add rep cls_xs}
-                | None ->
-                    {s with rep_xs= Some trm; cls_us= Cls.add rep cls_us} )
+                if Trm.non_interpreted trm then
+                  {s with cls_xs= Cls.add trm cls_xs}
+                else {s with cls_us= Cls.add trm cls_us}
+              else if Trm.non_interpreted rep then
+                {s with rep_xs= Some trm; cls_xs= Cls.add rep cls_xs}
+              else {s with rep_xs= Some trm; cls_us= Cls.add rep cls_us}
           | None -> {s with rep_xs= Some trm} )
   in
   ( match rep_us with
@@ -1230,10 +1221,9 @@ let solve_uninterp_eqs us (cls, subst) =
       let cls = Cls.add rep_us cls_us in
       let cls, cls_xs =
         match rep_xs with
-        | Some rep -> (
-          match dom_trm rep with
-          | Some rep -> (cls, Cls.add rep cls_xs)
-          | None -> (Cls.add rep cls, cls_xs) )
+        | Some rep ->
+            if Trm.non_interpreted rep then (cls, Cls.add rep cls_xs)
+            else (Cls.add rep cls, cls_xs)
         | None -> (cls, cls_xs)
       in
       let subst =
@@ -1293,14 +1283,9 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
 let solve_concat_extracts_eq r x =
   [%Trace.call fun {pf} -> pf "@ %a@ %a" Trm.pp x pp r]
   ;
-  (* find terms of form [Extract {_=Sized {_=x}}] *)
+  (* find terms of form [Extract {_=x}] *)
   let extract_uses =
-    Use.flat_map (use_of x r) ~f:(function
-      | Sized _ as m ->
-          Use.filter (use_of m r) ~f:(function
-            | Extract _ -> true
-            | _ -> false )
-      | _ -> Use.empty )
+    Use.filter (use_of x r) ~f:(function Extract _ -> true | _ -> false)
   in
   let find_extracts_at_off off =
     Use.filter extract_uses ~f:(function
@@ -1311,7 +1296,7 @@ let solve_concat_extracts_eq r x =
     Use.fold (find_extracts_at_off off) full_rev_extracts
       ~f:(fun e full_rev_extracts ->
         match e with
-        | Extract {seq= Sized {siz= n}; off= o; len= l} ->
+        | Extract {siz= n; off= o; len= l} ->
             let o_l = Trm.add o l in
             if implies r (Fml.eq n o_l) then
               (e :: rev_prefix) :: full_rev_extracts
@@ -1335,9 +1320,9 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
                   | _ when Var.Set.subset (Trm.fv trm) ~of_:us -> Some trm
                   | _ -> rep_ito_us )
             in
-            Trm.sized ~siz:(Trm.seq_size_exn e) ~seq:rep_ito_us :: suffix ) )
+            Trm.{seq= rep_ito_us; siz= Trm.seq_size_exn e} :: suffix ) )
     |> Iter.of_list
-    |> Iter.min ~lt:(fun xs ys -> [%compare: Trm.t list] xs ys < 0)
+    |> Iter.min ~lt:(fun xs ys -> [%compare: Trm.sized list] xs ys < 0)
   with
   | Some extracts ->
       let concat = Trm.concat (Array.of_list extracts) in
@@ -1419,8 +1404,7 @@ let solve_for_vars vss r =
 type call =
   | Add of Var.Set.t * Formula.t * t
   | Union of Var.Set.t * t * t
-  | Inter of Var.Set.t * t * t
-  | InterN of Var.Set.t * t list
+  | InterN of Var.Set.t * (Var.Set.t * t) list
   | Dnf of Formula.t
   | Rename of t * Var.Subst.t
   | Is_unsat of t
@@ -1436,8 +1420,7 @@ let replay c =
   match call_of_sexp (Sexp.of_string c) with
   | Add (us, e, r) -> add us e r |> ignore
   | Union (us, r, s) -> union us r s |> ignore
-  | Inter (us, r, s) -> inter us r s |> ignore
-  | InterN (us, rs) -> interN us rs |> ignore
+  | InterN (us, xrs) -> interN us xrs |> ignore
   | Dnf f -> dnf f |> Iter.iter ~f:ignore
   | Rename (r, s) -> rename r s |> ignore
   | Is_unsat r -> is_unsat r |> ignore
@@ -1478,7 +1461,6 @@ let[@warning "-32"] wrap tmr f call =
 let wrap _ f _ = f ()
 let add_tmr = Timer.create "add" ~at_exit:report
 let union_tmr = Timer.create "union" ~at_exit:report
-let inter_tmr = Timer.create "inter" ~at_exit:report
 let interN_tmr = Timer.create "interN" ~at_exit:report
 let dnf_tmr = Timer.create "dnf" ~at_exit:report
 let rename_tmr = Timer.create "rename" ~at_exit:report
@@ -1495,9 +1477,6 @@ let add us e r =
 
 let union us r s =
   wrap union_tmr (fun () -> union us r s) (fun () -> Union (us, r, s))
-
-let inter us r s =
-  wrap inter_tmr (fun () -> inter us r s) (fun () -> Inter (us, r, s))
 
 let interN us rs =
   wrap interN_tmr (fun () -> interN us rs) (fun () -> InterN (us, rs))

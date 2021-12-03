@@ -119,7 +119,7 @@ struct
 
   module Domain = struct
     (** a list [\[x1; x2; ...; xN\]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
-    type t = T.Domain.t list
+    type t = T.DisjDomain.t list * T.NonDisjDomain.t
 
     let append_no_duplicates_up_to leq ~limit from ~into ~into_length =
       let rec aux acc n_acc from =
@@ -154,10 +154,13 @@ struct
 
 
     let join_up_to ~limit ~into:lhs rhs =
-      join_up_to_with_leq ~limit (fun ~lhs ~rhs -> T.Domain.equal_fast lhs rhs) ~into:lhs rhs
+      join_up_to_with_leq ~limit (fun ~lhs ~rhs -> T.DisjDomain.equal_fast lhs rhs) ~into:lhs rhs
 
 
-    let join lhs rhs = join_up_to ~limit:disjunct_limit ~into:lhs rhs |> fst
+    let join (lhs_disj, lhs_non_disj) (rhs_disj, rhs_non_disj) =
+      ( join_up_to ~limit:disjunct_limit ~into:lhs_disj rhs_disj |> fst
+      , T.NonDisjDomain.join lhs_non_disj rhs_non_disj )
+
 
     (** check if elements of [disj] appear in [of_] in the same order, using pointer equality on
         abstract states to compare elements quickly *)
@@ -165,7 +168,7 @@ struct
       match (disj, of_) with
       | [], _ ->
           true
-      | x :: disj', y :: of' when T.Domain.equal_fast x y ->
+      | x :: disj', y :: of' when T.DisjDomain.equal_fast x y ->
           is_trivial_subset disj' ~of_:of'
       | _, _ :: of' ->
           is_trivial_subset disj ~of_:of'
@@ -173,7 +176,11 @@ struct
           false
 
 
-    let leq ~lhs ~rhs = phys_equal lhs rhs || is_trivial_subset lhs ~of_:rhs
+    let leq ~lhs ~rhs =
+      phys_equal lhs rhs
+      || is_trivial_subset (fst lhs) ~of_:(fst rhs)
+         && T.NonDisjDomain.leq ~lhs:(snd lhs) ~rhs:(snd rhs)
+
 
     let widen ~prev ~next ~num_iters =
       let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
@@ -182,67 +189,89 @@ struct
         L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
         prev )
       else
-        let post, _ = join_up_to_with_leq ~limit:disjunct_limit T.Domain.leq ~into:prev next in
+        let post_disj, _ =
+          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:(fst prev) (fst next)
+        in
+        let post =
+          (post_disj, T.NonDisjDomain.widen ~prev:(snd prev) ~next:(snd next) ~num_iters)
+        in
         if leq ~lhs:post ~rhs:prev then prev else post
 
 
-    let pp f disjuncts =
+    let pp f (disjuncts, non_disj) =
       let pp_disjuncts f disjuncts =
         List.iteri (List.rev disjuncts) ~f:(fun i disjunct ->
-            F.fprintf f "#%d: @[%a@]@;" i T.Domain.pp disjunct )
+            F.fprintf f "#%d: @[%a@]@;" i T.DisjDomain.pp disjunct )
       in
-      F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts
+      F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts ;
+      F.fprintf f "\n Non-disj state:@[%a@]@;" T.NonDisjDomain.pp non_disj
   end
 
   (** the number of remaining disjuncts taking into account disjuncts already recorded in the post
       of a node (and therefore that will stay there) *)
   let remaining_disjuncts = ref None
 
-  let exec_instr pre_disjuncts analysis_data node _ instr =
+  let exec_instr (pre_disjuncts, non_disj) analysis_data node _ instr =
     (* always called from [exec_node_instrs] so [remaining_disjuncts] should always be [Some _] *)
     let limit = Option.value_exn !remaining_disjuncts in
-    List.foldi (List.rev pre_disjuncts) ~init:([], 0)
-      ~f:(fun i (post_disjuncts, n_disjuncts) pre_disjunct ->
-        if n_disjuncts >= limit then (
-          L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
-          (post_disjuncts, n_disjuncts) )
-        else (
-          L.d_printfln "@[<v2>Executing instruction from disjunct #%d@;" i ;
-          let disjuncts' = T.exec_instr pre_disjunct analysis_data node instr in
-          ( if Config.write_html then
-            let n = List.length disjuncts' in
-            L.d_printfln "@]@\n@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
-          Domain.join_up_to ~limit ~into:post_disjuncts disjuncts' ) )
-    |> fst
+    let (disjuncts, non_disj_astates), _ =
+      List.foldi (List.rev pre_disjuncts)
+        ~init:(([], []), 0)
+        ~f:(fun i (((post, non_disj_astates) as post_astate), n_disjuncts) pre_disjunct ->
+          if n_disjuncts >= limit then (
+            L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
+            (post_astate, n_disjuncts) )
+          else (
+            L.d_printfln "@[<v2>Executing instruction from disjunct #%d@;" i ;
+            let disjuncts', non_disj' =
+              T.exec_instr (pre_disjunct, non_disj) analysis_data node instr
+            in
+            ( if Config.write_html then
+              let n = List.length disjuncts' in
+              L.d_printfln "@]@\n@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s")
+            ) ;
+            let post_disj', n = Domain.join_up_to ~limit ~into:post disjuncts' in
+            ((post_disj', non_disj' :: non_disj_astates), n) ) )
+    in
+    (disjuncts, List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates)
 
 
-  let exec_node_instrs old_state_opt ~exec_instr pre instrs =
+  let exec_node_instrs old_state_opt ~exec_instr (pre, pre_non_disj) instrs =
     let is_new_pre disjunct =
       match old_state_opt with
       | None ->
           true
-      | Some {State.pre= previous_pre; _} ->
-          not (List.mem ~equal:T.Domain.equal_fast previous_pre disjunct)
+      | Some {State.pre= previous_pre, _; _} ->
+          not (List.mem ~equal:T.DisjDomain.equal_fast previous_pre disjunct)
     in
     let current_post_n =
-      match old_state_opt with None -> ([], 0) | Some {State.post; _} -> (post, List.length post)
+      match old_state_opt with
+      | None ->
+          (([], []), 0)
+      | Some {State.post= post_disjuncts, _; _} ->
+          ((post_disjuncts, []), List.length post_disjuncts)
     in
-    List.foldi (List.rev pre) ~init:current_post_n
-      ~f:(fun i (post_disjuncts, n_disjuncts) pre_disjunct ->
-        let limit = disjunct_limit - n_disjuncts in
-        remaining_disjuncts := Some limit ;
-        if limit <= 0 then (
-          L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" limit ;
-          (post_disjuncts, n_disjuncts) )
-        else if is_new_pre pre_disjunct then (
-          L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
-          let disjuncts' = Instrs.foldi ~init:[pre_disjunct] instrs ~f:exec_instr in
-          L.d_printfln "@]@\n" ;
-          Domain.join_up_to ~limit:disjunct_limit ~into:post_disjuncts disjuncts' )
-        else (
-          L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
-          (post_disjuncts, n_disjuncts) ) )
-    |> fst
+    let (disjuncts, non_disj_astates), _ =
+      List.foldi (List.rev pre) ~init:current_post_n
+        ~f:(fun i (((post, non_disj_astates) as post_astate), n_disjuncts) pre_disjunct ->
+          let limit = disjunct_limit - n_disjuncts in
+          remaining_disjuncts := Some limit ;
+          if limit <= 0 then (
+            L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" limit ;
+            (post_astate, n_disjuncts) )
+          else if is_new_pre pre_disjunct then (
+            L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
+            let disjuncts', non_disj' =
+              Instrs.foldi ~init:([pre_disjunct], pre_non_disj) instrs ~f:exec_instr
+            in
+            L.d_printfln "@]@\n" ;
+            let disj', n = Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts' in
+            ((disj', non_disj' :: non_disj_astates), n) )
+          else (
+            L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
+            (post_astate, n_disjuncts) ) )
+    in
+    (disjuncts, List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates)
 
 
   let pp_session_name node f = T.pp_session_name node f

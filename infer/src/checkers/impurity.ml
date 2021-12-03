@@ -242,9 +242,9 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
   match pulse_summary_opt with
   | None ->
       report_impure_pulse proc_desc err_log ~desc:"no"
-  | Some [] ->
+  | Some ([], _) ->
       report_impure_pulse proc_desc err_log ~desc:"empty"
-  | Some pre_posts ->
+  | Some (pre_posts, _) ->
       let formals = Procdesc.get_formals proc_desc in
       let proc_name = Procdesc.get_proc_name proc_desc in
       let impurity_astate =

@@ -8,29 +8,29 @@
 #include <iostream>
 #include <string>
 
-// Expected: O(m); got constant
-void iterate_over_map_linear_FN(
-    std::unordered_map<std::string, std::string> m) {
+void iterate_over_map_linear(std::unordered_map<std::string, std::string> m) {
   for (auto it = m.begin(); it != m.end(); ++it) {
   }
 }
 
-// Expected: O(m); got top
-void for_loop_over_map_linear_FP(
-    std::unordered_map<std::string, std::string> m) {
+void iteratec_over_map_linear(std::unordered_map<std::string, std::string> m) {
+  for (auto it = m.cbegin(); it != m.cend(); ++it) {
+  }
+}
+
+void for_loop_over_map_linear(std::unordered_map<std::string, std::string> m) {
   for (int i = 0; i < m.size(); i++) {
   }
 }
 
-// Expected: O(m); got constant
-void range_based_loop_over_map_linear_FN(
+void range_based_loop_over_map_linear(
     std::unordered_map<std::string, std::string> m) {
   for (auto i : m) {
   }
 }
 
-// Expected: O(bucket(i).size); got constant
-void iterate_over_bucket_linear_FN(
+// Expected: O(bucket(i).size); got top
+void iterate_over_bucket_linear_FP(
     std::unordered_map<std::string, std::string> m, unsigned i) {
   for (auto it = m.begin(i); it != m.end(i); ++it) {
   }

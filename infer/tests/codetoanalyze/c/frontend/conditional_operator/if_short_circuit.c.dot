@@ -11,15 +11,15 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4: + \n  " ]
+"main.fad58de7366495db4650cfefac2fcd61_4" [label="4: + \n   END_BRANCHES\n " ]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5: Prune (true branch, if) \n   n$0=*&spec:char* [line 47, column 8]\n  PRUNE(!n$0, true); [line 47, column 8]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_5" [label="5: Prune (true branch, if (terminated)) \n   n$0=*&spec:char* [line 47, column 8]\n  PRUNE(!n$0, true); [line 47, column 8]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6: Prune (false branch, if) \n   n$0=*&spec:char* [line 47, column 8]\n  PRUNE(n$0, false); [line 47, column 8]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_6" [label="6: Prune (false branch, if (terminated)) \n   n$0=*&spec:char* [line 47, column 8]\n  PRUNE(n$0, false); [line 47, column 8]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_15" ;
@@ -28,11 +28,11 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_8" [label="8: Prune (true branch, if) \n   PRUNE(!n$2, true); [line 47, column 18]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_8" [label="8: Prune (true branch, if (terminated)) \n   PRUNE(!n$2, true); [line 47, column 18]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (false branch, if) \n   PRUNE(n$2, false); [line 47, column 18]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9: Prune (false branch, if (terminated)) \n   PRUNE(n$2, false); [line 47, column 18]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_15" ;
@@ -41,11 +41,11 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11: Prune (true branch, if) \n   PRUNE(!n$4, true); [line 47, column 52]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11: Prune (true branch, if (terminated)) \n   PRUNE(!n$4, true); [line 47, column 52]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_13" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12: Prune (false branch, if) \n   PRUNE(n$4, false); [line 47, column 52]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12: Prune (false branch, if (terminated)) \n   PRUNE(n$4, false); [line 47, column 52]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_15" ;
@@ -53,7 +53,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_14" [label="14: + \n  " ]
+"main.fad58de7366495db4650cfefac2fcd61_14" [label="14: + \n   END_BRANCHES\n " ]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
@@ -62,11 +62,11 @@ digraph cfg {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_15" -> "main.fad58de7366495db4650cfefac2fcd61_16" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_15" -> "main.fad58de7366495db4650cfefac2fcd61_17" ;
-"main.fad58de7366495db4650cfefac2fcd61_16" [label="16: Prune (true branch, if) \n   PRUNE((n$6 == 39), true); [line 50, column 9]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_16" [label="16: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 39), true); [line 50, column 9]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_16" -> "main.fad58de7366495db4650cfefac2fcd61_18" ;
-"main.fad58de7366495db4650cfefac2fcd61_17" [label="17: Prune (false branch, if) \n   PRUNE(!(n$6 == 39), false); [line 50, column 9]\n " shape="invhouse"]
+"main.fad58de7366495db4650cfefac2fcd61_17" [label="17: Prune (false branch, if (terminated)) \n   PRUNE(!(n$6 == 39), false); [line 50, column 9]\n " shape="invhouse"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_17" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
@@ -87,19 +87,19 @@ digraph cfg {
 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_2" [label="2: Exit shortcircuit_and \n  " color=yellow style=filled]
 	
 
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_3" [label="3: + \n  " ]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_3" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_4" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_4" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_2" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_5" [label="5: Prune (true branch, if) \n   n$1=*&x:int* [line 20, column 8]\n  PRUNE(!n$1, true); [line 20, column 8]\n " shape="invhouse"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_5" [label="5: Prune (true branch, if (terminated)) \n   n$1=*&x:int* [line 20, column 8]\n  PRUNE(!n$1, true); [line 20, column 8]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_5" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_7" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_6" [label="6: Prune (false branch, if) \n   n$1=*&x:int* [line 20, column 8]\n  PRUNE(n$1, false); [line 20, column 8]\n " shape="invhouse"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_6" [label="6: Prune (false branch, if (terminated)) \n   n$1=*&x:int* [line 20, column 8]\n  PRUNE(n$1, false); [line 20, column 8]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_6" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_11" ;
@@ -108,11 +108,11 @@ digraph cfg {
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_7" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_8" ;
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_7" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_9" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_8" [label="8: Prune (true branch, if) \n   PRUNE(!n$3, true); [line 20, column 15]\n " shape="invhouse"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_8" [label="8: Prune (true branch, if (terminated)) \n   PRUNE(!n$3, true); [line 20, column 15]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_8" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_10" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_9" [label="9: Prune (false branch, if) \n   PRUNE(n$3, false); [line 20, column 15]\n " shape="invhouse"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_9" [label="9: Prune (false branch, if (terminated)) \n   PRUNE(n$3, false); [line 20, column 15]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_9" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_11" ;
@@ -131,11 +131,11 @@ digraph cfg {
 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_2" [label="2: Exit shortcircuit_or \n  " color=yellow style=filled]
 	
 
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_3" [label="3: + \n  " ]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_3" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_4" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_4" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_2" ;
@@ -144,11 +144,11 @@ digraph cfg {
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_5" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_6" ;
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_5" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_7" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_6" [label="6: Prune (true branch, if) \n   PRUNE((n$1 == null), true); [line 12, column 7]\n " shape="invhouse"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$1 == null), true); [line 12, column 7]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_6" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_11" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$1 == null), false); [line 12, column 7]\n " shape="invhouse"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$1 == null), false); [line 12, column 7]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_7" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_8" ;
@@ -157,11 +157,11 @@ digraph cfg {
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_8" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_9" ;
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_8" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_10" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_9" [label="9: Prune (true branch, if) \n   PRUNE((n$3 == 2), true); [line 12, column 17]\n " shape="invhouse"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_9" [label="9: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 2), true); [line 12, column 17]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_9" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_11" ;
-"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_10" [label="10: Prune (false branch, if) \n   PRUNE(!(n$3 == 2), false); [line 12, column 17]\n " shape="invhouse"]
+"shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_10" [label="10: Prune (false branch, if (terminated)) \n   PRUNE(!(n$3 == 2), false); [line 12, column 17]\n " shape="invhouse"]
 	
 
 	 "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_10" -> "shortcircuit_or.5845fe75b89f8af7ec1944cd207962af_12" ;

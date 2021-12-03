@@ -49,6 +49,7 @@ type t =
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
+  | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]
 
 let get_location = function
@@ -67,7 +68,8 @@ let get_location = function
   | ErlangError (Function_clause {location})
   | ErlangError (If_clause {location})
   | ErlangError (Try_clause {location})
-  | StackVariableAddressEscape {location} ->
+  | StackVariableAddressEscape {location}
+  | UnnecessaryCopy {location} ->
       location
 
 
@@ -210,10 +212,14 @@ let get_message diagnostic =
       F.asprintf "%s no matching branch in try at %a" pulse_start_msg Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
-        PulseTrace.find_map trace ~f:(function VariableDeclared (pvar, _) -> Some pvar | _ -> None)
+        PulseTrace.find_map trace ~f:(function
+          | VariableDeclared (pvar, _, _) ->
+              Some pvar
+          | _ ->
+              None )
         |> IOption.if_none_evalopt ~f:(fun () ->
                PulseTrace.find_map trace ~f:(function
-                 | FormalDeclared (pvar, _) ->
+                 | FormalDeclared (pvar, _, _) ->
                      Some pvar
                  | _ ->
                      None ) )
@@ -221,7 +227,7 @@ let get_message diagnostic =
       in
       let declared_fields =
         PulseTrace.find_map trace ~f:(function
-          | StructFieldAddressCreated (fields, _) ->
+          | StructFieldAddressCreated (fields, _, _) ->
               Some fields
           | _ ->
               None )
@@ -256,6 +262,11 @@ let get_message diagnostic =
       in
       F.asprintf "%s stack variable address escape. Address of %a is returned by the function"
         pulse_start_msg pp_var variable
+  | UnnecessaryCopy {variable; location} ->
+      F.asprintf
+        "%s unnecessary copy: copied variable %a is not modified since it is copied in %a. \
+         Consider using a reference to it in order to avoid unnecessary copy"
+        pulse_start_msg Var.pp variable Location.pp location
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -379,13 +390,13 @@ let get_trace = function
       @@
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]
+  | UnnecessaryCopy {location; _} ->
+      let nesting = 0 in
+      [Errlog.make_trace_element nesting location "copied here" []]
 
 
 let get_issue_type = function
-  | AccessToInvalidAddress {invalidation; must_be_valid_reason; access_trace} ->
-      let invalidation =
-        Trace.get_invalidation access_trace |> Option.value ~default:invalidation
-      in
+  | AccessToInvalidAddress {invalidation; must_be_valid_reason} ->
       Invalidation.issue_type_of_cause invalidation must_be_valid_reason
   | MemoryLeak _ ->
       IssueType.pulse_memory_leak
@@ -409,3 +420,5 @@ let get_issue_type = function
       IssueType.uninitialized_value_pulse
   | StackVariableAddressEscape _ ->
       IssueType.stack_variable_address_escape
+  | UnnecessaryCopy _ ->
+      IssueType.unnecessary_copy_pulse

@@ -74,8 +74,8 @@ let invalidate (address, history) invalidation location memory =
   add_one address (Attribute.Invalid (invalidation, Immediate {location; history})) memory
 
 
-let allocate allocator (address, history) location memory =
-  add_one address (Attribute.Allocated (allocator, Immediate {location; history})) memory
+let allocate allocator address location memory =
+  add_one address (Attribute.Allocated (allocator, Immediate {location; history= Epoch})) memory
 
 
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
@@ -148,6 +148,8 @@ let is_must_be_valid_or_allocated_isl address attrs =
 
 
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
+
+let get_written_to = get_attribute Attributes.get_written_to
 
 let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
 

@@ -15,15 +15,15 @@ digraph cfg {
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_4" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_2" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" [label="5: + \n  " ]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_3" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" [label="6: Prune (true branch, if) \n   n$2=*&x.y:struct_forward_declare::Y* [line 49, column 7]\n  PRUNE(n$2, true); [line 49, column 7]\n " shape="invhouse"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" [label="6: Prune (true branch, if (terminated)) \n   n$2=*&x.y:struct_forward_declare::Y* [line 49, column 7]\n  PRUNE(n$2, true); [line 49, column 7]\n " shape="invhouse"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_6" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_8" ;
-"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" [label="7: Prune (false branch, if) \n   n$2=*&x.y:struct_forward_declare::Y* [line 49, column 7]\n  PRUNE(!n$2, false); [line 49, column 7]\n " shape="invhouse"]
+"X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" [label="7: Prune (false branch, if (terminated)) \n   n$2=*&x.y:struct_forward_declare::Y* [line 49, column 7]\n  PRUNE(!n$2, false); [line 49, column 7]\n " shape="invhouse"]
 	
 
 	 "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_7" -> "X_Y_div0#struct_forward_declare#18042232259689408087.5a34dbeba09cf8550874dbfc508af917_5" ;

@@ -25,13 +25,18 @@
     test_match_field_multiple1_Ok/0,
     test_match_field_multiple2_Bad/0,
     test_match_field_multiple3_Bad/0,
-    test_match_as_tuple1_Ok/0,
-    test_match_as_tuple2_Bad/0,
-    test_match_as_tuple3_Bad/0,
-    test_match_as_tuple4_Bad/0,
-    test_match_as_tuple5_Bad/0,
-    test_match_as_tuple6_Bad/0,
-    test_match_as_tuple7_Bad/0,
+    test_match_record_as_tuple1_Ok/0,
+    test_match_record_as_tuple2_Bad/0,
+    test_match_record_as_tuple3_Bad/0,
+    test_match_record_as_tuple4_Bad/0,
+    test_match_record_as_tuple5_Bad/0,
+    test_match_record_as_tuple6_Bad/0,
+    test_match_record_as_tuple7_Bad/0,
+    test_match_tuple_as_record1_Ok/0,
+    test_match_tuple_as_record2_Ok/0,
+    test_match_tuple_as_record3_Bad/0,
+    test_match_tuple_as_record4_Bad/0,
+    test_match_tuple_as_record5_Bad/0,
     test_bad_record_access_Bad/0,
     test_bad_record_update_Bad/0,
     test_nested1_Ok/0,
@@ -119,46 +124,76 @@ test_match_field_multiple3_Bad() ->
         #person{address = 6789, name = 99999} -> ok
     end.
 
-test_match_as_tuple1_Ok() ->
+test_match_record_as_tuple1_Ok() ->
     P = #person{name = 123, phone = 45, address = 6789},
     case P of
         {person, 123, 45, 6789} -> ok
     end.
 
-test_match_as_tuple2_Bad() ->
+test_match_record_as_tuple2_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     case P of
         {rabbit, 123, 45, 6789} -> ok
     end.
 
-test_match_as_tuple3_Bad() ->
+test_match_record_as_tuple3_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     case P of
         {person, 999999, 45, 6789} -> ok
     end.
 
-test_match_as_tuple4_Bad() ->
+test_match_record_as_tuple4_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     case P of
         {person, 123, 999999, 6789} -> ok
     end.
 
-test_match_as_tuple5_Bad() ->
+test_match_record_as_tuple5_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     case P of
         {person, 123, 45, 999999} -> ok
     end.
 
-test_match_as_tuple6_Bad() ->
+test_match_record_as_tuple6_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     case P of
         {person, _, _} -> ok
     end.
 
-test_match_as_tuple7_Bad() ->
+test_match_record_as_tuple7_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     case P of
         {person, _, _, _, _} -> ok
+    end.
+
+test_match_tuple_as_record1_Ok() ->
+    P = {person, 123, 45, 6789},
+    case P of
+        #person{name = 123, phone = 45, address = 6789} -> ok
+    end.
+
+test_match_tuple_as_record2_Ok() ->
+    P = {person, 123, 45, 6789},
+    case P#person.name of
+        123 -> ok
+    end.
+
+test_match_tuple_as_record3_Bad() ->
+    P = {person, 123, 45, 6789},
+    case P of
+        #person{name = 123, phone = 45, address = 99999} -> ok
+    end.
+
+test_match_tuple_as_record4_Bad() ->
+    P = {person, 123, 45, 6789},
+    case P#person.name of
+        999999 -> ok
+    end.
+
+test_match_tuple_as_record5_Bad() ->
+    P = {person, 123, 45, 6789},
+    case P#car.plate of
+        123 -> ok
     end.
 
 test_bad_record_access_Bad() ->

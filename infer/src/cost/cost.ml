@@ -216,6 +216,7 @@ module InstrBasicCostWithReason = struct
     | Sil.Metadata
         ( Abstract _
         | CatchEntry _
+        | EndBranches
         | ExitScope _
         | Nullify _
         | Skip

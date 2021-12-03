@@ -66,15 +66,6 @@ let%test_module _ =
     let%test _ = implies_eq r15 (Term.neg b) (Term.apply (Signed 1) [|!1|])
     let%test _ = implies_eq r15 (Term.apply (Unsigned 1) [|b|]) !1
 
-    let%expect_test _ =
-      replay
-        {|(Dnf
-            (Eq (Sized (seq (Var (id 1) (name a))) (siz (Z 8)))
-              (Concat
-                ((Sized (seq (Var (id 3) (name c))) (siz (Z 4)))
-                  (Sized (seq (Var (id 2) (name b))) (siz (Z 4)))))))|} ;
-      [%expect {| |}]
-
     (* let%expect_test _ =
      *   replay
      *     {||} ;

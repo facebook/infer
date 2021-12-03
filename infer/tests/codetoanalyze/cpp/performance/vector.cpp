@@ -12,24 +12,34 @@ bool binary_search_log(std::vector<std::string>& vec) {
   return std::binary_search(vec.begin(), vec.end(), "x");
 }
 
-void iterate_over_vec_linear_FN(std::vector<std::string>& vec) {
+void iterate_over_vec_linear(std::vector<std::string>& vec) {
   for (auto it = vec.begin(); it != vec.end(); ++it) {
   }
 }
 
-void iteratec_over_vec_linear_FN(std::vector<std::string>& vec) {
+void iteratec_over_vec_linear(std::vector<std::string>& vec) {
   for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
   }
 }
 
-void loop_over_vec_linear_FN(std::vector<std::string>& vec) {
+void iterate_rev_over_vec_linear(std::vector<std::string>& vec) {
+  for (auto it = vec.rbegin(); it != vec.rend(); ++it) {
+  }
+}
+
+void iteratec_rev_over_vec_linear(std::vector<std::string>& vec) {
+  for (auto it = vec.crbegin(); it != vec.crend(); ++it) {
+  }
+}
+
+void loop_over_vec_linear(std::vector<std::string>& vec) {
   for (auto i : vec) {
   }
 }
 
-void copy_iterative_method_linear_FN(std::vector<std::string>& vec1) {
+void copy_iterative_method_linear(std::vector<std::string>& vec1) {
   std::vector<std::string> vec2;
-  for (int i = 0; i < vec2.size(); i++)
+  for (int i = 0; i < vec1.size(); i++)
     vec2.push_back(vec1[i]);
 }
 
@@ -94,7 +104,7 @@ void iterate_vector_constant_times_linear(std::vector<std::string>& vec) {
   }
 }
 
-void iterate_vector_auto_linear_FN(std::vector<int>& vec) {
+void iterate_vector_auto_linear(std::vector<int>& vec) {
   for (auto& v : vec)
     v *= v;
 }
@@ -141,6 +151,8 @@ void insert_new_vector_loop_constant(std::vector<int>& vec) {
   }
 }
 
+// Expected: O(vec1 x vec2); got vec1
+// more details here: T104735254
 std::vector<int> remove_duplicates_quadratic_FN(std::vector<int>& vec1) {
   std::vector<int> vec2;
 

@@ -26,6 +26,13 @@ let map3 f e cons x y z =
   let z' = f z in
   if x == x' && y == y' && z == z' then e else cons x' y' z'
 
+let map4 f e cons w x y z =
+  let w' = f w in
+  let x' = f x in
+  let y' = f y in
+  let z' = f z in
+  if w == w' && x == x' && y == y' && z == z' then e else cons w' x' y' z'
+
 let mapN f e cons xs =
   let xs' = Array.map_endo ~f xs in
   if xs' == xs then e else cons xs'

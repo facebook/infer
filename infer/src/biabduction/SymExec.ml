@@ -1350,7 +1350,8 @@ let rec sym_exec
   | Sil.Metadata (ExitScope (dead_vars, _)) ->
       let dead_ids = List.filter_map dead_vars ~f:Var.get_ident in
       ret_old_path [Prop.exist_quantify tenv dead_ids prop_]
-  | Sil.Metadata (CatchEntry _ | Skip | TryEntry _ | TryExit _ | VariableLifetimeBegins _) ->
+  | Sil.Metadata
+      (CatchEntry _ | EndBranches | Skip | TryEntry _ | TryExit _ | VariableLifetimeBegins _) ->
       ret_old_path [prop_]
 
 

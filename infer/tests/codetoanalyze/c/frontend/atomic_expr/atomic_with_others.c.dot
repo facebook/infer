@@ -19,15 +19,15 @@ digraph cfg {
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_5" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_4" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_6" [label="6: + \n  " ]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_6" [label="6: + \n   END_BRANCHES\n " ]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_6" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_11" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_7" [label="7: Prune (true branch, boolean exp) \n   n$10=*&a:void [line 23, column 34]\n  PRUNE(n$10, true); [line 23, column 34]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_7" [label="7: Prune (true branch, boolean exp (terminated)) \n   n$10=*&a:void [line 23, column 34]\n  PRUNE(n$10, true); [line 23, column 34]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_7" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_9" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_8" [label="8: Prune (false branch, boolean exp) \n   n$10=*&a:void [line 23, column 34]\n  PRUNE(!n$10, false); [line 23, column 34]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_8" [label="8: Prune (false branch, boolean exp (terminated)) \n   n$10=*&a:void [line 23, column 34]\n  PRUNE(!n$10, false); [line 23, column 34]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_8" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_10" ;
@@ -43,15 +43,15 @@ digraph cfg {
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_11" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_5" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_12" [label="12: + \n  " ]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_12" [label="12: + \n   END_BRANCHES\n " ]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_12" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_17" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_13" [label="13: Prune (true branch, boolean exp) \n   n$17=*&a:void [line 20, column 8]\n  PRUNE(n$17, true); [line 20, column 8]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_13" [label="13: Prune (true branch, boolean exp (terminated)) \n   n$17=*&a:void [line 20, column 8]\n  PRUNE(n$17, true); [line 20, column 8]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_13" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_15" ;
-"arithmetic.26e816805c2eb54063da29d3d21a3641_14" [label="14: Prune (false branch, boolean exp) \n   n$17=*&a:void [line 20, column 8]\n  PRUNE(!n$17, false); [line 20, column 8]\n " shape="invhouse"]
+"arithmetic.26e816805c2eb54063da29d3d21a3641_14" [label="14: Prune (false branch, boolean exp (terminated)) \n   n$17=*&a:void [line 20, column 8]\n  PRUNE(!n$17, false); [line 20, column 8]\n " shape="invhouse"]
 	
 
 	 "arithmetic.26e816805c2eb54063da29d3d21a3641_14" -> "arithmetic.26e816805c2eb54063da29d3d21a3641_16" ;
@@ -88,11 +88,11 @@ digraph cfg {
 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_2" [label="2: Exit load_store_exchange \n  " color=yellow style=filled]
 	
 
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_3" [label="3: + \n  " ]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_3" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_10" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_4" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_2" ;
@@ -121,7 +121,7 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_10" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_2" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_11" [label="11: + \n  " ]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_11" [label="11: + \n   END_BRANCHES\n " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_11" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_17" ;
@@ -158,15 +158,15 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_19" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_18" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_20" [label="20: + \n  " ]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_20" [label="20: + \n   END_BRANCHES\n " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_20" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_25" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_21" [label="21: Prune (true branch, boolean exp) \n   n$31=*&b:_Bool [line 44, column 7]\n  PRUNE(n$31, true); [line 44, column 7]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_21" [label="21: Prune (true branch, boolean exp (terminated)) \n   n$31=*&b:_Bool [line 44, column 7]\n  PRUNE(n$31, true); [line 44, column 7]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_21" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_23" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_22" [label="22: Prune (false branch, boolean exp) \n   n$31=*&b:_Bool [line 44, column 7]\n  PRUNE(!n$31, false); [line 44, column 7]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_22" [label="22: Prune (false branch, boolean exp (terminated)) \n   n$31=*&b:_Bool [line 44, column 7]\n  PRUNE(!n$31, false); [line 44, column 7]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_22" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_24" ;
@@ -182,15 +182,15 @@ digraph cfg {
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_25" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_19" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_26" [label="26: + \n  " ]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_26" [label="26: + \n   END_BRANCHES\n " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_26" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_31" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_27" [label="27: Prune (true branch, boolean exp) \n   n$35=*&b:_Bool [line 42, column 8]\n  PRUNE(n$35, true); [line 42, column 8]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_27" [label="27: Prune (true branch, boolean exp (terminated)) \n   n$35=*&b:_Bool [line 42, column 8]\n  PRUNE(n$35, true); [line 42, column 8]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_27" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_29" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_28" [label="28: Prune (false branch, boolean exp) \n   n$35=*&b:_Bool [line 42, column 8]\n  PRUNE(!n$35, false); [line 42, column 8]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_28" [label="28: Prune (false branch, boolean exp (terminated)) \n   n$35=*&b:_Bool [line 42, column 8]\n  PRUNE(!n$35, false); [line 42, column 8]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_28" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_30" ;
@@ -207,7 +207,7 @@ digraph cfg {
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_31" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_21" ;
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_31" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_22" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_32" [label="32: + \n  " ]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_32" [label="32: + \n   END_BRANCHES\n " ]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_32" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_27" ;
@@ -217,11 +217,11 @@ digraph cfg {
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_33" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_34" ;
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_33" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_35" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_34" [label="34: Prune (true branch, boolean exp) \n   PRUNE(n$38, true); [line 41, column 9]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_34" [label="34: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$38, true); [line 41, column 9]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_34" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_36" ;
-"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_35" [label="35: Prune (false branch, boolean exp) \n   PRUNE(!n$38, false); [line 41, column 9]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b276e1502becee6b78_35" [label="35: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!n$38, false); [line 41, column 9]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_35" -> "load_store_exchange.3da178fb2a20c1b276e1502becee6b78_37" ;

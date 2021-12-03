@@ -34,15 +34,15 @@ digraph cfg {
 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_2" [label="2: Exit A.test5: \n  " color=yellow style=filled]
 	
 
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_3" [label="3: + \n  " ]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_3" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_8" ;
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_4" [label="4: Prune (true branch, boolean exp) \n   n$2=*&b:_Bool [line 22, column 23]\n  PRUNE(n$2, true); [line 22, column 23]\n " shape="invhouse"]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   n$2=*&b:_Bool [line 22, column 23]\n  PRUNE(n$2, true); [line 22, column 23]\n " shape="invhouse"]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_4" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_6" ;
-"test5:#A#instance.4d6ac42705853160b533ab46b444624a_5" [label="5: Prune (false branch, boolean exp) \n   n$2=*&b:_Bool [line 22, column 23]\n  PRUNE(!n$2, false); [line 22, column 23]\n " shape="invhouse"]
+"test5:#A#instance.4d6ac42705853160b533ab46b444624a_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   n$2=*&b:_Bool [line 22, column 23]\n  PRUNE(!n$2, false); [line 22, column 23]\n " shape="invhouse"]
 	
 
 	 "test5:#A#instance.4d6ac42705853160b533ab46b444624a_5" -> "test5:#A#instance.4d6ac42705853160b533ab46b444624a_7" ;

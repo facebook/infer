@@ -7,11 +7,11 @@ digraph cfg {
 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" [label="2: Exit DispatchMain \n  " color=yellow style=filled]
 	
 
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_3" [label="3: + \n  " ]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_3" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" [label="4:  between_join_and_exit \n  " shape="box"]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
@@ -20,11 +20,11 @@ digraph cfg {
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" ;
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == null), true); [line 85, column 7]\n " shape="invhouse"]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$0 == null), true); [line 85, column 7]\n " shape="invhouse"]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == null), false); [line 85, column 7]\n " shape="invhouse"]
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$0 == null), false); [line 85, column 7]\n " shape="invhouse"]
 	
 
 	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" ;

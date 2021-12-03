@@ -168,6 +168,8 @@ module Java = struct
 
   let implements_queue = implements "java.util.Queue"
 
+  let implements_regex class_name = implements ("java.util.regex." ^ class_name)
+
   let implements_google class_name = implements ("com.google." ^ class_name)
 
   let implements_android class_name = implements ("android." ^ class_name)

@@ -43,11 +43,18 @@ end
 module type DisjReady = sig
   module CFG : ProcCfg.S
 
-  module Domain : AbstractDomain.Disjunct
+  module DisjDomain : AbstractDomain.Disjunct
+
+  module NonDisjDomain : AbstractDomain.WithBottom
 
   type analysis_data
 
-  val exec_instr : Domain.t -> analysis_data -> CFG.Node.t -> Sil.instr -> Domain.t list
+  val exec_instr :
+       DisjDomain.t * NonDisjDomain.t
+    -> analysis_data
+    -> CFG.Node.t
+    -> Sil.instr
+    -> DisjDomain.t list * NonDisjDomain.t
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 end

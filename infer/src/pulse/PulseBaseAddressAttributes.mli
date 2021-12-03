@@ -25,7 +25,7 @@ val add_one : AbstractValue.t -> Attribute.t -> t -> t
 
 val add : AbstractValue.t -> Attributes.t -> t -> t
 
-val allocate : Attribute.allocator -> AbstractValue.t * ValueHistory.t -> Location.t -> t -> t
+val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
 
 val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
@@ -42,17 +42,17 @@ val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 val get_invalid : AbstractValue.t -> t -> (Invalidation.t * Trace.t) option
 
 val get_must_be_valid :
-     AbstractValue.t
-  -> t
-  -> (PathContext.timestamp * Trace.t * Invalidation.must_be_valid_reason option) option
+  AbstractValue.t -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
 val is_must_be_valid_or_allocated_isl : AbstractValue.t -> t -> bool
 
-val get_must_be_initialized : AbstractValue.t -> t -> (PathContext.timestamp * Trace.t) option
+val get_must_be_initialized : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
 val get_dynamic_type : t -> AbstractValue.t -> Typ.t option
+
+val get_written_to : AbstractValue.t -> t -> Trace.t option
 
 val std_vector_reserve : AbstractValue.t -> t -> t
 
