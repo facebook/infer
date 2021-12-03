@@ -513,11 +513,11 @@ ocaml_unit_test: src_build_common infer_models
 	$(MAKE_SOURCE) unit)
 
 define silence_make
-  TEMP="$$(mktemp)" && \
-  $(1) 2> "$$TEMP" && \
-  { grep -v 'warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target' "$$TEMP" || \
-    true; } && \
-  $(RM) "$$TEMP"
+( TEMP="$$(mktemp)" && trap "$(RM) $$TEMP" EXIT; \
+  $(1) 2> "$$TEMP" || { \
+    grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target" "$$TEMP"; \
+    false; \
+  }; )
 endef
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
