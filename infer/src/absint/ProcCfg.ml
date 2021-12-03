@@ -201,8 +201,8 @@ module Normal = struct
   let wto = Procdesc.get_wto
 end
 
-(** Forward .NET CFG with exceptional control-flow *)
-module DOTNETExceptional = struct
+(** Forward CFG with exceptional control-flow for throw exception instruction only*)
+module ExceptionalThrowOnly = struct
   module Node = DefaultNode
 
   type id_node_map = Node.t list Procdesc.IdMap.t
@@ -226,6 +226,8 @@ module DOTNETExceptional = struct
     | exception Caml.Not_found ->
         init
 
+  (** we fold the exception flow only when the throw instruction is encountered and exn is returned. 
+  Under this circumstances, resources could be disposed in finaly black through exception sink node *)
   let fold_normal_or_exn_succs fold_normal_alpha fold_exceptional t n ~init ~f =
     let choose_normal_or_exn_succs node = 
       let instrs = Procdesc.Node.get_instrs node in
