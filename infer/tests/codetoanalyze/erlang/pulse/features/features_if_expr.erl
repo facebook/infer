@@ -17,7 +17,8 @@ warn(0) -> ok.
 
 test_if_Ok() ->
     Y = 3,
-    X = if
+    X =
+        if
             Y == 3 -> 1;
             not (Y == 3) -> 0
         end,
@@ -28,10 +29,11 @@ test_if_Ok() ->
 
 test_if_Bad() ->
     Y = 3,
-    X = if
-        Y == 3 -> 1;
-        not (Y == 3) -> 0
-    end,
+    X =
+        if
+            Y == 3 -> 1;
+            not (Y == 3) -> 0
+        end,
     case X of
         1 -> warn(1);
         _ -> ok

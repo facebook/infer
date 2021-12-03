@@ -6,7 +6,6 @@
 -module(features_logic).
 
 -export([
-
     test_true_Ok/0,
     test_true_Bad/0,
     test_false_Ok/0,
@@ -46,7 +45,9 @@ test_true_Bad() ->
     end.
 
 test_true2_Ok() ->
-    if true -> ok end.
+    if
+        true -> ok
+    end.
 
 test_false_Ok() ->
     case 1 == 0 of
@@ -59,7 +60,9 @@ test_false_Bad() ->
     end.
 
 test_false2_Bad() ->
-    if false -> ok end.
+    if
+        false -> ok
+    end.
 
 test_and00_Bad() ->
     if

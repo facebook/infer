@@ -5,9 +5,6 @@
 
 -module(features_lambdas).
 
-% Workaround until we support true/false atoms
--define(True, (1 == 1)).
-
 -export([
     test_lambda_within_function_Ok/0,
     test_lambda_within_function_Bad/0,
