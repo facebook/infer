@@ -51,6 +51,8 @@ features/features_comparison.erl, test_less_Bad/0, 3, NO_TRUE_BRANCH_IN_IF, no_b
 features/features_comparison.erl, test_less_Bad2/0, 3, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
 features/features_comparison.erl, test_not_equal_Bad/0, 3, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
 features/features_comparison.erl, test_not_equal_Bad2/0, 3, NO_TRUE_BRANCH_IN_IF, no_bucket, ERROR, [no true branch in if expression here]
+features/features_fun.erl, test_fun_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+features/features_fun.erl, test_fun_nomodule_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 features/features_functions.erl, test_call1_Bad/0, -20, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]
 features/features_functions.erl, test_call2_Bad/0, -34, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]
 features/features_functions.erl, test_call3_Bad/0, -47, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]

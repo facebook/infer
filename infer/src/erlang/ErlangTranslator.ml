@@ -422,6 +422,12 @@ and translate_expression env {Ast.line; simple_expression} =
         Block.all env [Block.make_unsupported env; translate_expression env expression]
     | Cons {head; tail} ->
         translate_expression_cons env ret_var head tail
+    | Fun {module_= ModuleName module_name; function_= FunctionName function_name; arity} ->
+        let name = Procname.make_erlang ~module_name ~function_name ~arity in
+        Block.make_load env ret_var (Exp.Closure {name; captured_vars= []}) any_typ
+    | Fun {module_= ModuleMissing; function_= FunctionName function_name; arity} ->
+        let name = Procname.make_erlang ~module_name:env.current_module ~function_name ~arity in
+        Block.make_load env ret_var (Exp.Closure {name; captured_vars= []}) any_typ
     | If clauses ->
         translate_expression_if env clauses
     | Lambda {name= None; cases; procname; captured} -> (
