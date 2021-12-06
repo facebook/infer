@@ -2627,22 +2627,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
     let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
-    let continuation = Some {break= succ_nodes; continue= [join_node]; return_temp= false} in
+    let continuation = {break= succ_nodes; continue= [join_node]; return_temp= false} in
     (* set the flag to inform that we are translating a condition of a if *)
     let continuation_cond = mk_cond_continuation outer_continuation in
-    let init_incr_nodes =
+    let init_nodes, incr_nodes =
       match loop_kind with
       | Loops.For {init; increment} ->
-          let trans_state' = {trans_state with succ_nodes= [join_node]; continuation} in
+          let trans_state' =
+            {trans_state with succ_nodes= [join_node]; continuation= Some continuation}
+          in
           let res_trans_init =
             exec_with_node_creation LoopIterInit ~f:instruction trans_state' init
           in
           let res_trans_incr =
             exec_with_node_creation LoopIterIncr ~f:instruction trans_state' increment
           in
-          Some (res_trans_init.control.root_nodes, res_trans_incr.control.root_nodes)
+          (Some res_trans_init.control.root_nodes, Some res_trans_incr.control.root_nodes)
       | _ ->
-          None
+          (None, None)
     in
     let cond_stmt = Loops.get_cond loop_kind in
     let trans_state_cond = {trans_state with continuation= continuation_cond; succ_nodes= []} in
@@ -2665,25 +2667,25 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let body_succ_nodes =
       match loop_kind with
-      | Loops.For _ -> (
-        match init_incr_nodes with Some (_, nodes_incr) -> nodes_incr | None -> assert false )
+      | Loops.For _ ->
+          Option.value_exn incr_nodes
       | Loops.While _ ->
           [join_node]
       | Loops.DoWhile _ ->
           res_trans_cond.control.root_nodes
     in
     let body_continuation =
-      match (loop_kind, continuation, init_incr_nodes) with
-      | Loops.DoWhile _, Some c, _ ->
-          Some {c with continue= res_trans_cond.control.root_nodes}
-      | _, Some c, Some (_, nodes_incr) ->
-          Some {c with continue= nodes_incr}
+      match loop_kind with
+      | Loops.DoWhile _ ->
+          {continuation with continue= res_trans_cond.control.root_nodes}
+      | Loops.For _ ->
+          {continuation with continue= Option.value_exn incr_nodes}
       | _ ->
           continuation
     in
     let res_trans_body =
       let trans_state_body =
-        {trans_state with succ_nodes= body_succ_nodes; continuation= body_continuation}
+        {trans_state with succ_nodes= body_succ_nodes; continuation= Some body_continuation}
       in
       exec_with_node_creation LoopBody ~f:instruction trans_state_body (Loops.get_body loop_kind)
     in
@@ -2714,12 +2716,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       prune_nodes_f ;
     let root_nodes =
       match loop_kind with
-      | Loops.For _ -> (
-        match init_incr_nodes with
-        | Some (nodes_init, _) ->
-            if List.is_empty nodes_init then [join_node] else nodes_init
-        | None ->
-            assert false )
+      | Loops.For _ ->
+          let init_nodes = Option.value_exn init_nodes in
+          if List.is_empty init_nodes then [join_node] else init_nodes
       | Loops.While _ | Loops.DoWhile _ ->
           [join_node]
     in
