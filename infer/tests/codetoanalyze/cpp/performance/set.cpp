@@ -28,7 +28,7 @@ void iteratec_over_set_linear(std::set<int> s) {
   }
 }
 
-void iterate_over_set_constant() {
+void iterate_over_set_constant_FP() {
   std::set<int> s;
   std::set<int>::iterator it;
 
@@ -40,7 +40,7 @@ void iterate_over_set_constant() {
   }
 }
 
-void iterate_over_set_linear(int n) {
+void iterate_over_set_linear_FP(int n) {
   std::set<int> s;
   std::set<int>::iterator it;
 

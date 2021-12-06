@@ -8,7 +8,7 @@
 #include <list>
 #include <string>
 
-void iterate_over_list_local_it_linear_FN(std::list<int> mlist) {
+void iterate_over_list_local_it_linear_FP(std::list<int> mlist) {
   std::list<int>::iterator it;
   for (it = mlist.begin(); it != mlist.end(); it++) {
   }
@@ -39,7 +39,7 @@ void iterate_over_list_for_linear(std::list<int> mlist) {
   }
 }
 
-void iterate_over_local_list_linear_FN(std::list<int> mlist) {
+void iterate_over_local_list_linear_FP(std::list<int> mlist) {
   std::list<int> local_list = mlist;
   std::list<int>::iterator it;
   for (it = local_list.begin(); it != local_list.end(); it++) {

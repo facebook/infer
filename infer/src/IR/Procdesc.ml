@@ -91,6 +91,8 @@ module Node = struct
     | InitializeDynamicArrayLength
     | InitListExp
     | LoopBody
+    | LoopIterIncr
+    | LoopIterInit
     | MessageCall of string
     | MethodBody
     | MonitorEnter
@@ -357,6 +359,10 @@ module Node = struct
         F.pp_print_string fmt "InitListExp"
     | LoopBody ->
         F.pp_print_string fmt "LoopBody"
+    | LoopIterIncr ->
+        F.pp_print_string fmt "LoopIterIncr"
+    | LoopIterInit ->
+        F.pp_print_string fmt "LoopIterInit"
     | MessageCall selector ->
         F.fprintf fmt "Message Call: %s" selector
     | MethodBody ->

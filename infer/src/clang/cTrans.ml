@@ -2634,8 +2634,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match loop_kind with
       | Loops.For {init; increment} ->
           let trans_state' = {trans_state with succ_nodes= [join_node]; continuation} in
-          let res_trans_init = instruction trans_state' init in
-          let res_trans_incr = instruction trans_state' increment in
+          let res_trans_init =
+            exec_with_node_creation LoopIterInit ~f:instruction trans_state' init
+          in
+          let res_trans_incr =
+            exec_with_node_creation LoopIterIncr ~f:instruction trans_state' increment
+          in
           Some (res_trans_init.control.root_nodes, res_trans_incr.control.root_nodes)
       | _ ->
           None

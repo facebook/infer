@@ -72,6 +72,8 @@ module Node : sig
     | InitializeDynamicArrayLength
     | InitListExp
     | LoopBody
+    | LoopIterIncr
+    | LoopIterInit
     | MessageCall of string
     | MethodBody
     | MonitorEnter
