@@ -973,6 +973,10 @@ devsetup: Makefile.autoconf
 	  echo "$(TERM_INFO)  eval \$$($(OPAM) env)$(TERM_RESET)" >&2; \
 	fi
 
+.PHONY: lock
+lock:
+	make -C opam
+
 GHPAGES ?= no
 
 .PHONY: doc
