@@ -3,8 +3,6 @@
 %
 % This source code is licensed under the MIT license found in the
 % LICENSE file in the root directory of this source tree.
-%
-%
 
 usage() ->
     Usage =
@@ -30,13 +28,21 @@ main(Args) ->
     ScriptDir = filename:dirname(escript:script_name()),
     ParseTransformDir = filename:join(ScriptDir, "infer_parse_transform"),
     case run("rebar3 compile", ParseTransformDir) of
-        0 ->
+        {0, _} ->
             ok;
-        ExitStatus ->
-            io:format("error: `rebar3 compile` in `~s` returned exit code ~p~n", [
-                ParseTransformDir,
-                ExitStatus
-            ]),
+        {ExitStatus, Output} ->
+            io:format(
+                standard_error,
+                "error: `rebar3 compile` in `~s` returned exit code ~p.~n Output was~n",
+                [
+                    ParseTransformDir,
+                    ExitStatus
+                ]
+            ),
+            lists:foreach(
+                fun(Line) -> io:format(standard_error, "~s", [Line]) end,
+                Output
+            ),
             halt(1)
     end,
     CompiledListPath = mktemp(".list"),
@@ -93,10 +99,14 @@ split_args_rec([H | T], Args) -> split_args_rec(T, Args ++ [H]).
 run(Command, Dir) ->
     Port = erlang:open_port(
         {spawn, Command},
-        [exit_status, {cd, Dir}]
+        [exit_status, {cd, Dir}, use_stdio, stream, stderr_to_stdout]
     ),
+    run_manager(Port, []).
+
+run_manager(Port, Output) ->
     receive
-        {Port, {exit_status, Status}} -> Status
+        {Port, {data, Line}} -> run_manager(Port, [Line | Output]);
+        {Port, {exit_status, Status}} -> {Status, lists:reverse(Output)}
     end.
 
 mktemp(Suffix) ->
