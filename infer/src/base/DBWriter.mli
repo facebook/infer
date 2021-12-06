@@ -8,7 +8,7 @@
 
 open! IStd
 
-val use_daemon : bool
+val use_daemon : bool Lazy.t
 (** indicates that there should be a daemon running *)
 
 val replace_attributes :
