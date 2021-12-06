@@ -2481,8 +2481,9 @@ and siof_safe_methods =
 and skip_analysis_in_path =
   CLOpt.mk_string_list ~deprecated:["-skip-clang-analysis-in-path"] ~long:"skip-analysis-in-path"
     ~in_help:InferCommand.[(Capture, manual_generic); (Run, manual_generic)]
-    ~meta:"path_prefix_OCaml_regex"
-    "Ignore files whose path matches the given prefix (can be specified multiple times)"
+    ~meta:"regex"
+    "Ignore files whose path matches a given regex (can be specified multiple times, but you must \
+     make sure each regex is properly bracketed)"
 
 
 and skip_analysis_in_path_skips_compilation =
@@ -3592,7 +3593,13 @@ and siof_check_iostreams = !siof_check_iostreams
 
 and siof_safe_methods = RevList.to_list !siof_safe_methods
 
-and skip_analysis_in_path = RevList.to_list !skip_analysis_in_path
+and skip_analysis_in_path =
+  match RevList.to_list !skip_analysis_in_path with
+  | [] ->
+      None
+  | regexps ->
+      Some (Str.regexp (String.concat ~sep:"\\|" regexps))
+
 
 and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compilation
 

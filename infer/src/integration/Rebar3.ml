@@ -14,6 +14,20 @@ let run_compile command result_dir args =
   ignore (Process.create_process_and_wait_with_output ~prog ~args ReadStdout)
 
 
+let should_process filename =
+  (* NOTE: [run_compile] makes the usual Erlang assumption that (a) modules have unique names, and
+     (b) module X is in file X.erl. In particular, [run_compile] drops relative paths. So, here, we
+     match [Config.skip_analysis_in_path] only against the filename, not all relative path. *)
+  Filename.check_suffix filename ".json"
+  &&
+  match Config.skip_analysis_in_path with
+  | None ->
+      true
+  | Some re ->
+      let original_filename = Filename.chop_extension (Filename.basename filename) ^ ".erl" in
+      not (Str.string_match re original_filename 0)
+
+
 let parse_and_store result_dir =
   let process json =
     match ErlangJsonParser.to_module json with
@@ -31,7 +45,7 @@ let parse_and_store result_dir =
   in
   let log error = L.progress "E: %s@." error in
   let read_one_ast json_file =
-    if Filename.check_suffix json_file ".json" then (
+    if should_process json_file then (
       L.progress "P: parsing %s@." json_file ;
       match Utils.read_safe_json_file json_file with
       | Ok json ->

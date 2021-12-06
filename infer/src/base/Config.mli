@@ -632,7 +632,7 @@ val siof_check_iostreams : bool
 
 val siof_safe_methods : string list
 
-val skip_analysis_in_path : string list
+val skip_analysis_in_path : Str.regexp option
 
 val skip_analysis_in_path_skips_compilation : bool
 

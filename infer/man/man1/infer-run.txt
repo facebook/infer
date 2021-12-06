@@ -138,9 +138,10 @@ OPTIONS
            Interchange Format) in infer-out/report.sarif (Conversely:
            --no-sarif)
 
-       --skip-analysis-in-path +path_prefix_OCaml_regex
-           Ignore files whose path matches the given prefix (can be specified
-           multiple times)
+       --skip-analysis-in-path +regex
+           Ignore files whose path matches a given regex (can be specified
+           multiple times, but you must make sure each regex is properly
+           bracketed)
 
        --sqlite-cache-size int
            SQLite cache size in pages (if positive) or kB (if negative),

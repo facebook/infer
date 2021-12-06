@@ -86,11 +86,9 @@ let should_translate_lib translation_unit source_range decl_trans_context ~trans
 
 
 let is_file_block_listed file =
-  let paths = Config.skip_analysis_in_path in
-  let is_file_block_listed =
-    List.exists ~f:(fun path -> Str.string_match (Str.regexp ("^.*/" ^ path)) file 0) paths
-  in
-  is_file_block_listed
+  Option.value_map
+    ~f:(fun re -> Str.string_match re file 0)
+    ~default:false Config.skip_analysis_in_path
 
 
 let location_of_source_range ?(pick_location = `Start) default_source_file source_range =

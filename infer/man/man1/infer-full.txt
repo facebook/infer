@@ -1327,9 +1327,10 @@ OPTIONS
            "foo<int>::bar()", etc. (can be specified multiple times)       
     See also infer-analyze(1).
 
-       --skip-analysis-in-path +path_prefix_OCaml_regex
-           Ignore files whose path matches the given prefix (can be specified
-           multiple times)           See also infer-capture(1) and infer-run(1).
+       --skip-analysis-in-path +regex
+           Ignore files whose path matches a given regex (can be specified
+           multiple times, but you must make sure each regex is properly
+           bracketed)           See also infer-capture(1) and infer-run(1).
 
        --skip-analysis-in-path-skips-compilation
            Activates: Whether paths in --skip-analysis-in-path should be
