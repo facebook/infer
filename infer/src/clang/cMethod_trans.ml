@@ -222,11 +222,6 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
   let create_new_procdesc () =
     let all_params = Option.to_list ms.CMethodSignature.class_param @ ms.CMethodSignature.params in
     let has_added_return_param = ms.CMethodSignature.has_added_return_param in
-    let method_annotation =
-      let return = snd ms.CMethodSignature.ret_type in
-      let params = List.map ~f:(fun ({annot} : CMethodSignature.param_type) -> annot) all_params in
-      Annot.Method.{return; params}
-    in
     let formals =
       List.map ~f:(fun ({name; typ} : CMethodSignature.param_type) -> (name, typ)) all_params
     in
@@ -235,7 +230,16 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
       if is_cpp_lambda_call_operator then []
       else List.map ~f:(fun {CapturedVar.name; typ} -> (name, typ)) captured_mangled
     in
+    let captured_annotations =
+      List.init (List.length captured_as_formals) ~f:(fun _ -> Annot.Item.empty)
+    in
     let formals = captured_as_formals @ formals in
+    let method_annotation =
+      let return = snd ms.CMethodSignature.ret_type in
+      let params = List.map ~f:(fun ({annot} : CMethodSignature.param_type) -> annot) all_params in
+      let all_params = captured_annotations @ params in
+      Annot.Method.{return; params= all_params}
+    in
     let const_formals =
       get_const_params_indices ~shift:(List.length captured_as_formals) all_params
     in

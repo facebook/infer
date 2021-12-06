@@ -94,4 +94,21 @@ typedef void (^MyBlock)();
   }];
 }
 
+typedef void (^AnnotateBlock)(const char* key, id value);
+typedef void (^AnnotateSyncBlock)(AnnotateBlock annotate);
+
+void AnnotateSync(id flowId, NS_NOESCAPE AnnotateSyncBlock block) {}
+
++ (void)startWithSessionOk:(id)session video:(id)video {
+  NSString* const videoID = @"";
+  NSString* const flowId = @"";
+
+  NSString* const entryPointType = @"";
+
+  AnnotateSync(flowId, ^(AnnotateBlock _Nonnull annotate) {
+    annotate("entry_point_type", entryPointType);
+    annotate("media_id", videoID);
+  });
+}
+
 @end

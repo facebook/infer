@@ -191,25 +191,37 @@ end
 
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
-let formals_not_captured attributes =
-  let is_not_captured (formal, _) =
-    not
-      (List.exists
-         ~f:(fun ({name} : CapturedVar.t) -> Mangled.equal formal name)
-         attributes.ProcAttributes.captured )
+let formals_annotations_not_captured attributes =
+  let formals = attributes.ProcAttributes.formals in
+  let param_annotations = attributes.ProcAttributes.method_annotation.params in
+  let formals_annotations_not_captured not_captured (formal, typ) annotation =
+    if
+      not
+        (List.exists
+           ~f:(fun ({name} : CapturedVar.t) -> Mangled.equal formal name)
+           attributes.ProcAttributes.captured )
+    then ((formal, typ), annotation) :: not_captured
+    else not_captured
   in
-  List.filter ~f:is_not_captured attributes.ProcAttributes.formals
+  let annotations_not_captured_opt =
+    List.fold2 ~f:formals_annotations_not_captured ~init:[] formals param_annotations
+  in
+  match annotations_not_captured_opt with
+  | List.Or_unequal_lengths.Ok not_captured ->
+      not_captured |> List.rev |> List.unzip
+  | List.Or_unequal_lengths.Unequal_lengths ->
+      (formals, param_annotations)
 
 
-let init_block_params attributes formals_not_captured initBlockParams =
-  let add_non_nullable_block blockParams annotation (formal, _) =
+let init_block_params formals_not_captured annotations_not_captured initBlockParams =
+  let add_non_nullable_block blockParams (formal, _) annotation =
     if is_block_param formals_not_captured formal && Annotations.ia_is_nonnull annotation then
       BlockParams.add formal blockParams
     else blockParams
   in
-  let annotations = attributes.ProcAttributes.method_annotation.params in
   match
-    List.fold2 annotations formals_not_captured ~init:initBlockParams ~f:add_non_nullable_block
+    List.fold2 formals_not_captured annotations_not_captured ~init:initBlockParams
+      ~f:add_non_nullable_block
   with
   | List.Or_unequal_lengths.Ok blockParams ->
       blockParams
@@ -229,8 +241,12 @@ let init_block_param_trace_info attributes formals_not_captured traceInfo =
 
 let checker ({IntraproceduralAnalysis.proc_desc} as analysis_data') =
   let attributes = Procdesc.get_attributes proc_desc in
-  let formals_not_captured = formals_not_captured attributes in
-  let initial_blockParams = init_block_params attributes formals_not_captured BlockParams.empty in
+  let formals_not_captured, annotations_not_captured =
+    formals_annotations_not_captured attributes
+  in
+  let initial_blockParams =
+    init_block_params formals_not_captured annotations_not_captured BlockParams.empty
+  in
   let initTraceInfo = init_block_param_trace_info attributes formals_not_captured [] in
   let initial =
     Domain.singleton
