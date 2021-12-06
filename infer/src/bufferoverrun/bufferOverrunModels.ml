@@ -495,6 +495,15 @@ module Iterator = struct
     {exec; check= no_check}
 
 
+  let copy dest src =
+    let exec _ ~ret:_ mem =
+      let dest_loc = Sem.eval_locs dest mem in
+      let v = Dom.Mem.find_set (Sem.eval_locs src mem) mem in
+      Dom.Mem.update_mem dest_loc v mem
+    in
+    {exec; check= no_check}
+
+
   let begin_ exp =
     let exec _ ~ret:_ mem =
       let locs = Sem.eval_locs exp mem in
@@ -2003,9 +2012,11 @@ module Call = struct
         (* C++11 -- macosx *)
       ; -"std" &::+ std_iterator_libcpp &::+ std_iterator_libcpp $ capt_exp $+ capt_exp
         $--> Iterator.new_
+      ; -"std" &::+ std_iterator_libcpp &:: "operator=" $ capt_exp $+ capt_exp $--> Iterator.copy
         (* C++11 -- gnu/linux *)
       ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" $ capt_exp $+ capt_exp
         $--> Iterator.new_
+      ; -"std" &::+ std_iterator_libstdcpp &:: "operator=" $ capt_exp $+ capt_exp $--> Iterator.copy
       ; -"std" &:: "__detail" &::+ std_iterator_libstdcpp_detail &::+ std_iterator_libstdcpp_detail
         $ capt_exp $+ capt_exp $--> Iterator.new_
       ; -"std" &::+ std_iterator_libstdcpp &::+ std_iterator_libstdcpp $ capt_exp $+ capt_exp

@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include <algorithm>
 #include <set>
 #include <string>
 #include <iterator>
@@ -28,7 +29,7 @@ void iteratec_over_set_linear(std::set<int> s) {
   }
 }
 
-void iterate_over_set_constant_FP() {
+void iterate_over_set_constant() {
   std::set<int> s;
   std::set<int>::iterator it;
 
@@ -40,7 +41,7 @@ void iterate_over_set_constant_FP() {
   }
 }
 
-void iterate_over_set_linear_FP(int n) {
+void iterate_over_set_insert_linear(int n) {
   std::set<int> s;
   std::set<int>::iterator it;
 

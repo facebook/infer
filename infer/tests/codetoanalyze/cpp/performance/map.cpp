@@ -38,7 +38,7 @@ void loop_over_map_size_linear(std::map<int, int> m) {
 }
 
 // Expected: O(m); got constant
-void loop_over_map_iterator_linear_FP(std::map<std::string, int> m) {
+void loop_over_map_iterator_linear(std::map<std::string, int> m) {
   std::map<std::string, int>::iterator it;
   for (it = m.begin(); it != m.end(); it++) {
   }
