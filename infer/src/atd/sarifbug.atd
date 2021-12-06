@@ -56,4 +56,5 @@ type sarifbug = {
 type rule = {
   id : string;
   shortDescription : message;
+  helpUri : string;
 }

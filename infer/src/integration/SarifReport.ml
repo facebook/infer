@@ -19,7 +19,8 @@ module ReportSummary = struct
   let pp fmt {n_issues= _; issue_type_counts} =
     let string_of_issue ~issue_type ~issue_type_hum =
       let shortDescription = {Sarifbug_j.text= issue_type_hum} in
-      let rule = {Sarifbug_j.id= issue_type; shortDescription} in
+      let help_uri = "https://fbinfer.com" ^ Help.abs_url_of_issue_type issue_type in
+      let rule = {Sarifbug_j.id= issue_type; shortDescription; helpUri= help_uri} in
       Sarifbug_j.string_of_rule rule
     in
     IssueHash.to_seq issue_type_counts
@@ -69,7 +70,8 @@ let pp_results_header fmt =
 let loc_trace_to_sarifbug_record trace_list =
   let file_loc filename =
     let absolute_source_name = Config.project_root ^/ filename in
-    {Sarifbug_j.uri= filename; Sarifbug_j.uriBaseId= absolute_source_name}
+    let file_path = "file:" ^ filename in
+    {Sarifbug_j.uri= file_path; Sarifbug_j.uriBaseId= absolute_source_name}
   in
   let message description = {Sarifbug_j.text= description} in
   let region line_number column_number =
@@ -98,7 +100,8 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
   let level = String.lowercase severity in
   let ruleId = bug_type in
   let absolute_source_name = Config.project_root ^/ file in
-  let file_loc = {Sarifbug_j.uri= file; uriBaseId= absolute_source_name} in
+  let file_path = "file:" ^ file in
+  let file_loc = {Sarifbug_j.uri= file_path; uriBaseId= absolute_source_name} in
   let region =
     match column with
     | -1 ->
