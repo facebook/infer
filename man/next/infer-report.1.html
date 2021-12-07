@@ -85,18 +85,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
+&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &lsquo;!&lsquo; character prefix. If a
-regex has a &lsquo;!&lsquo; prefix, the polarity is
+with an optional &rsquo;!&rsquo; character prefix. If a
+regex has a &rsquo;!&rsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;block list&quot;
 instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &lsquo;issue_type_regex&lsquo; or if it does
-match the &lsquo;filename_regex&lsquo;. The filenames that
+not match the &rsquo;issue_type_regex&rsquo; or if it does
+match the &rsquo;filename_regex&rsquo;. The filenames that
 are tested by the regex are relative to the
-&lsquo;--project-root&lsquo; directory. The
-&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
+&rsquo;--project-root&rsquo; directory. The
+&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 
@@ -346,7 +346,6 @@ Leak_after_array_abstraction (enabled by default), <br>
 Leak_in_footprint (enabled by default), <br>
 Leak_unknown_origin (disabled by default), <br>
 MEMORY_LEAK (enabled by default), <br>
-MEMORY_LEAK_LATENT (disabled by default), <br>
 MISSING_REQUIRED_PROP (enabled by default), <br>
 MIXED_SELF_WEAKSELF (enabled by default), <br>
 MODIFIES_IMMUTABLE (enabled by default), <br>
@@ -386,7 +385,6 @@ PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
 PULSE_UNNECESSARY_COPY (disabled by default), <br>
-PULSE_UNNECESSARY_COPY_LATENT (disabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
@@ -398,8 +396,6 @@ SKIP_FUNCTION (disabled by default), <br>
 SQL_INJECTION (enabled by default), <br>
 SQL_INJECTION_RISK (enabled by default), <br>
 STACK_VARIABLE_ADDRESS_ESCAPE (enabled by default), <br>
-STACK_VARIABLE_ADDRESS_ESCAPE_LATENT (disabled by default),
-<br>
 STARVATION (enabled by default), <br>
 STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
 <br>
