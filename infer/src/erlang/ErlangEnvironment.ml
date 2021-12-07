@@ -48,13 +48,13 @@ type ('procdesc, 'result) t =
   ; result: ('result[@sexp.opaque]) }
 [@@deriving sexp_of]
 
-let get_environment module_ =
+let initialize_environment module_ =
   let init =
     { cfg= Cfg.create ()
     ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
     ; functions= UnqualifiedFunction.Set.empty
     ; exports= UnqualifiedFunction.Set.empty
-    ; imports= UnqualifiedFunction.Map.empty (* TODO: auto-import from module "erlang" *)
+    ; imports= UnqualifiedFunction.Map.empty
     ; records= String.Map.empty
     ; location= Location.dummy
     ; procdesc= Absent

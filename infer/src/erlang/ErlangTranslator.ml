@@ -112,8 +112,9 @@ let unbox_bool env expr : Exp.t * Block.t =
   (check_hash_expr, {start; exit_success= load; exit_failure= Node.make_nop env})
 
 
-(** If the pattern-match succeeds, then the [exit_success] node is reached and the pattern variables
-    are storing the corresponding values; otherwise, the [exit_failure] node is reached. *)
+(** Main entry point for patterns. Result is a block where if the pattern-match succeeds, the
+    [exit_success] node is reached and the pattern variables are storing the corresponding values;
+    otherwise, the [exit_failure] node is reached. *)
 let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : Block.t =
   let env = update_location line env in
   match simple_expression with
@@ -362,10 +363,10 @@ and translate_pattern_variable (env : (_, _) Env.t) value vname scope : Block.t 
 
 and translate_guard_expression (env : (_, _) Env.t) (expression : Ast.expression) : Exp.t * Block.t
     =
-  let id, block = translate_expression_to_fresh_id env expression in
+  let id, guard_block = translate_expression_to_fresh_id env expression in
   (* If we'd like to catch "silent" errors later, we might do it here *)
   let unboxed, unbox_block = unbox_bool env (Exp.Var id) in
-  (unboxed, Block.all env [block; unbox_block])
+  (unboxed, Block.all env [guard_block; unbox_block])
 
 
 and translate_guard env (expressions : Ast.expression list) : Block.t =
@@ -375,15 +376,13 @@ and translate_guard env (expressions : Ast.expression list) : Block.t =
   | _ ->
       let exprs_blocks = List.map ~f:(translate_guard_expression env) expressions in
       let exprs, blocks = List.unzip exprs_blocks in
-      let make_and (e1 : Exp.t) (e2 : Exp.t) = Exp.BinOp (LAnd, e1, e2) in
-      let cond = List.reduce_exn exprs ~f:make_and in
-      let start = Node.make_nop env in
-      let exit_success = Node.make_if env true cond in
-      let exit_failure = Node.make_if env false cond in
-      start |~~> [exit_success; exit_failure] ;
-      Block.all env (blocks @ [{Block.start; exit_success; exit_failure}])
+      let make_and e1 e2 = Exp.BinOp (LAnd, e1, e2) in
+      let condition = List.reduce_exn exprs ~f:make_and in
+      let branch_block = Block.make_branch env condition in
+      Block.all env (blocks @ [branch_block])
 
 
+(** Main entry point for translating guards. *)
 and translate_guard_sequence env (guards : Ast.expression list list) : Block.t =
   match guards with
   | [] ->
@@ -392,7 +391,10 @@ and translate_guard_sequence env (guards : Ast.expression list list) : Block.t =
       Block.any env (List.map ~f:(translate_guard env) guards)
 
 
-and translate_expression env {Ast.line; simple_expression} =
+(** Main entry point for translating an expression. The result is a block, which has the expression
+    translated. The result is put into the variable as specified by the environment (or a fresh
+    value). *)
+and translate_expression env {Ast.line; simple_expression} : Block.t =
   let env = update_location line env in
   let (Env.Present result) = env.result in
   let ret_var = match result with Exp.Var ret_var -> ret_var | _ -> mk_fresh_id () in
@@ -486,12 +488,12 @@ and translate_expression env {Ast.line; simple_expression} =
       Block.all env [expression_block; store_block]
 
 
-(** Translate an expression assinging the result into the given identifier. *)
+(** Helper function for translating an expression assinging the result into the given identifier. *)
 and translate_expression_to_id (env : (_, _) Env.t) id expression : Block.t =
   translate_expression {env with result= Env.Present (Exp.Var id)} expression
 
 
-(** Translate an expression while creating a fresh identifier to store the result. *)
+(** Helper function for translating an expression while creating a fresh identifier for the result. *)
 and translate_expression_to_fresh_id (env : (_, _) Env.t) expression : Ident.t * Block.t =
   let id = mk_fresh_id () in
   let block = translate_expression_to_id env id expression in
@@ -1107,19 +1109,21 @@ and translate_expression_variable (env : (_, _) Env.t) ret_var vname scope : Blo
 
 and translate_body (env : (_, _) Env.t) body : Block.t =
   let blocks =
-    let f rev_blocks one_expression =
-      let id = mk_fresh_id () in
-      translate_expression_to_id env id one_expression :: rev_blocks
+    let f rev_blocks one_expr =
+      (* We ignore the return value of intermediate expressions *)
+      let _id, block = translate_expression_to_fresh_id env one_expr in
+      block :: rev_blocks
     in
-    (* Last needs separate treatment to use its result as the overall result *)
-    let f_last rev_blocks one_expression = translate_expression env one_expression :: rev_blocks in
+    (* Last expression needs separate treatment to use its result as the overall result *)
+    let f_last rev_blocks one_expr = translate_expression env one_expr :: rev_blocks in
     List.rev (IList.fold_last body ~init:[] ~f ~f_last)
   in
   Block.all env blocks
 
 
-(** Assumes that the values on which patterns should be matched have been loaded into the
-    identifiers listed in [values]. *)
+(** Translate one clause (can come from functions, lambdas, case expressions, ...). Assumes that the
+    values on which patterns should be matched have been loaded into the identifiers listed in
+    [values]. *)
 and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
     {Ast.line= _; patterns; guards; body} : Block.t =
   let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
@@ -1137,8 +1141,10 @@ and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
   ; exit_success= body_block.exit_success }
 
 
+(** Translate all clauses of a function (top-level or lambda). *)
 and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcAttributes.t)
     procname clauses =
+  (* Load formals into fresh identifiers. *)
   let idents, loads =
     let load (formal, typ) =
       let id = mk_fresh_id () in
@@ -1148,18 +1154,19 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
     in
     List.unzip (List.map ~f:load attributes.formals)
   in
+  (* Translate each clause using the idents we load into. *)
   let ({start; exit_success; exit_failure} : Block.t) =
     let blocks = List.map ~f:(translate_case_clause env idents) clauses in
     Block.any env blocks
   in
   let () =
-    (* Add a node that loads all values on which we pattern-match into idents. *)
+    (* Put the loading node before the translated clauses. *)
     let loads_node = Node.make_stmt env ~kind:ErlangCaseClause loads in
     Procdesc.get_start_node procdesc |~~> [loads_node] ;
     loads_node |~~> [start]
   in
   let () =
-    (* If all patterns fail, call special method *)
+    (* Finally, if all patterns fail, report error. *)
     let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_function_clause in
     exit_failure |~~> [crash_node] ;
     crash_node |~~> [Procdesc.get_exit_node procdesc]
@@ -1167,7 +1174,8 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
   exit_success |~~> [Procdesc.get_exit_node procdesc]
 
 
-and translate_one_function (env : (_, _) Env.t) function_ clauses =
+(** Translate one top-level function. *)
+let translate_one_function (env : (_, _) Env.t) function_ clauses =
   let uf_name, procname = Env.func_procname env function_ in
   let attributes =
     let default = ProcAttributes.default env.location.file procname in
@@ -1191,6 +1199,7 @@ and translate_one_function (env : (_, _) Env.t) function_ clauses =
   translate_function_clauses env procdesc attributes procname clauses
 
 
+(** Translate and store each function of a module. *)
 let translate_functions (env : (_, _) Env.t) module_ =
   let f {Ast.line; simple_form} =
     let env = update_location line env in
@@ -1206,6 +1215,4 @@ let translate_functions (env : (_, _) Env.t) module_ =
   SourceFiles.add env.location.file env.cfg tenv None
 
 
-let translate_module (env : (_, _) Env.t) module_ =
-  ErlangScopes.annotate_scopes env module_ ;
-  translate_functions env module_
+let translate_module = translate_functions
