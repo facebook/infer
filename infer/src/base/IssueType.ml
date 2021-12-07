@@ -912,7 +912,7 @@ let premature_nil_termination =
 
 
 let pulse_memory_leak =
-  register_with_latent ~id:"MEMORY_LEAK" Error Pulse
+  register ~id:"MEMORY_LEAK" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
 
 
@@ -965,7 +965,7 @@ let sql_injection_risk =
 
 
 let stack_variable_address_escape =
-  register_with_latent ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
+  register ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
 
 
@@ -1025,8 +1025,7 @@ let uninitialized_value_pulse =
 
 
 let unnecessary_copy_pulse =
-  register_with_latent ~enabled:false ~id:"PULSE_UNNECESSARY_COPY" Error Pulse
-    ~hum:"Unnecessary Copy"
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY" Error Pulse ~hum:"Unnecessary Copy"
     ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
 
 

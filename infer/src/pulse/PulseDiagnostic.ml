@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
@@ -395,30 +396,33 @@ let get_trace = function
       [Errlog.make_trace_element nesting location "copied here" []]
 
 
-let get_issue_type ~latent = function
-  | AccessToInvalidAddress {invalidation; must_be_valid_reason} ->
+let get_issue_type ~latent issue_type =
+  match (issue_type, latent) with
+  | MemoryLeak _, false ->
+      IssueType.pulse_memory_leak
+  | StackVariableAddressEscape _, false ->
+      IssueType.stack_variable_address_escape
+  | UnnecessaryCopy _, false ->
+      IssueType.unnecessary_copy_pulse
+  | (MemoryLeak _ | StackVariableAddressEscape _ | UnnecessaryCopy _), true ->
+      L.die InternalError "Issue type cannot be latent"
+  | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
       Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
-  | MemoryLeak _ ->
-      IssueType.pulse_memory_leak ~latent
-  | ErlangError (Badkey _) ->
+  | ErlangError (Badkey _), _ ->
       IssueType.bad_key ~latent
-  | ErlangError (Badmap _) ->
+  | ErlangError (Badmap _), _ ->
       IssueType.bad_map ~latent
-  | ErlangError (Badmatch _) ->
+  | ErlangError (Badmatch _), _ ->
       IssueType.no_match_of_rhs ~latent
-  | ErlangError (Badrecord _) ->
+  | ErlangError (Badrecord _), _ ->
       IssueType.bad_record ~latent
-  | ErlangError (Case_clause _) ->
+  | ErlangError (Case_clause _), _ ->
       IssueType.no_matching_case_clause ~latent
-  | ErlangError (Function_clause _) ->
+  | ErlangError (Function_clause _), _ ->
       IssueType.no_matching_function_clause ~latent
-  | ErlangError (If_clause _) ->
+  | ErlangError (If_clause _), _ ->
       IssueType.no_true_branch_in_if ~latent
-  | ErlangError (Try_clause _) ->
+  | ErlangError (Try_clause _), _ ->
       IssueType.no_matching_branch_in_try ~latent
-  | ReadUninitializedValue _ ->
+  | ReadUninitializedValue _, _ ->
       IssueType.uninitialized_value_pulse ~latent
-  | StackVariableAddressEscape _ ->
-      IssueType.stack_variable_address_escape ~latent
-  | UnnecessaryCopy _ ->
-      IssueType.unnecessary_copy_pulse ~latent

@@ -1496,11 +1496,6 @@ objects from Core Foundation or Core Graphics don't get released.
 }
 ```
 
-## MEMORY_LEAK_LATENT
-
-Reported as "Memory Leak Latent" by [pulse](/docs/next/checker-pulse).
-
-See [MEMORY_LEAK](#memory_leak).
 ## MISSING_REQUIRED_PROP
 
 Reported as "Missing Required Prop" by [litho-required-props](/docs/next/checker-litho-required-props).
@@ -2125,11 +2120,6 @@ int use_reference_instead(A& x){
   return y.a;
 }
 ```
-## PULSE_UNNECESSARY_COPY_LATENT
-
-Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).
-
-See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 ## PURE_FUNCTION
 
 Reported as "Pure Function" by [purity](/docs/next/checker-purity).
@@ -2529,11 +2519,6 @@ int* foo() {
 }
 ```
 
-## STACK_VARIABLE_ADDRESS_ESCAPE_LATENT
-
-Reported as "Stack Variable Address Escape Latent" by [pulse](/docs/next/checker-pulse).
-
-See [STACK_VARIABLE_ADDRESS_ESCAPE](#stack_variable_address_escape).
 ## STARVATION
 
 Reported as "UI Thread Starvation" by [starvation](/docs/next/checker-starvation).

@@ -312,7 +312,7 @@ val precondition_not_met : t
 
 val premature_nil_termination : t
 
-val pulse_memory_leak : latent:bool -> t
+val pulse_memory_leak : t
 
 val pure_function : t
 
@@ -334,7 +334,7 @@ val sql_injection : t
 
 val sql_injection_risk : t
 
-val stack_variable_address_escape : latent:bool -> t
+val stack_variable_address_escape : t
 
 val starvation : t
 
@@ -354,7 +354,7 @@ val uninitialized_value : t
 
 val uninitialized_value_pulse : latent:bool -> t
 
-val unnecessary_copy_pulse : latent:bool -> t
+val unnecessary_copy_pulse : t
 
 val unreachable_code_after : t
 
