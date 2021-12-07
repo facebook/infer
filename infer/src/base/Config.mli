@@ -568,6 +568,8 @@ val quiet : bool
 
 val racerd_guardedby : bool
 
+val racerd_ignore_classes : String.Set.t
+
 val reactive_mode : bool
 
 val reanalyze : bool

@@ -2248,11 +2248,10 @@ and racerd_guardedby =
     "Check @GuardedBy annotations with RacerD"
 
 
-and _racerd_unknown_returns_owned =
-  CLOpt.mk_bool ~deprecated:["racerd-unknown-returns-owned"] ~long:"racerd-unknown-returns-owned"
-    ~default:true
+and racerd_ignore_classes =
+  CLOpt.mk_string_list ~long:"racerd-ignore-classes"
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
-    "DEPRECATED, does nothing."
+    "Any method in a class specified here will be ignored by RacerD."
 
 
 and reactive =
@@ -3520,6 +3519,8 @@ and quandary_sinks = !quandary_sinks
 and quiet = !quiet
 
 and racerd_guardedby = !racerd_guardedby
+
+and racerd_ignore_classes = RevList.to_list !racerd_ignore_classes |> String.Set.of_list
 
 and reactive_mode = !reactive
 

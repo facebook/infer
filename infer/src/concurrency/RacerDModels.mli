@@ -63,3 +63,9 @@ val is_converter_to_synchronized_container : Tenv.t -> Procname.t -> HilExp.t li
 
 val get_litho_explanation : Tenv.t -> Procname.t -> string option
 (** Get report explanation specific to Litho class methods, if applicable *)
+
+val class_is_ignored_by_racerd : Typ.Name.t -> bool
+(** Is RacerD configured to ignore the given class? *)
+
+val proc_is_ignored_by_racerd : Procname.t -> bool
+(** Is RacerD configured to ignore the callee's class? *)

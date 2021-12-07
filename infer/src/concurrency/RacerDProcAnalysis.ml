@@ -100,6 +100,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         {astate with attribute_map; threads= ThreadsDomain.update_for_lock_use astate.threads}
     | GuardConstruct {acquire_now= false} ->
         astate
+    | NoEffect when RacerDModels.proc_is_ignored_by_racerd callee_pname ->
+        astate
     | NoEffect ->
         process_call_summary analyze_dependency tenv formals ret_access_exp callee_pname actuals loc
           astate

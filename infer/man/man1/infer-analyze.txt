@@ -576,9 +576,8 @@ RACERD CHECKER OPTIONS
            Activates: Check @GuardedBy annotations with RacerD (Conversely:
            --no-racerd-guardedby)
 
-       --no-racerd-unknown-returns-owned
-           Deactivates: DEPRECATED, does nothing. (Conversely:
-           --racerd-unknown-returns-owned)
+       --racerd-ignore-classes +string
+           Any method in a class specified here will be ignored by RacerD.
 
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of

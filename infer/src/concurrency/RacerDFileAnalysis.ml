@@ -618,6 +618,8 @@ let class_has_concurrent_method class_summaries =
 
 
 let should_report_on_class (classname : Typ.Name.t) class_summaries =
+  (not (RacerDModels.class_is_ignored_by_racerd classname))
+  &&
   match classname with
   | JavaClass _ | CSharpClass _ | ErlangType _ ->
       true

@@ -1181,13 +1181,13 @@ OPTIONS
            Activates: Check @GuardedBy annotations with RacerD (Conversely:
            --no-racerd-guardedby)           See also infer-analyze(1).
 
+       --racerd-ignore-classes +string
+           Any method in a class specified here will be ignored by RacerD.       
+    See also infer-analyze(1).
+
        --racerd-only
            Activates: Enable racerd and disable all other checkers
            (Conversely: --no-racerd-only)           See also infer-analyze(1).
-
-       --no-racerd-unknown-returns-owned
-           Deactivates: DEPRECATED, does nothing. (Conversely:
-           --racerd-unknown-returns-owned)           See also infer-analyze(1).
 
        --reactive,-r
            Activates: Reactive mode: the analysis starts from the files
