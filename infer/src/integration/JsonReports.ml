@@ -152,7 +152,7 @@ end
 type json_issue_printer_typ =
   { error_filter: SourceFile.t -> IssueType.t -> bool
   ; proc_name: Procname.t
-  ; proc_loc_opt: Location.t option
+  ; proc_location_opt: Location.t option
   ; err_key: Errlog.err_key
   ; err_data: Errlog.err_data }
 
@@ -173,9 +173,9 @@ let is_in_clang_header source_file =
 module JsonIssuePrinter = MakeJsonListPrinter (struct
   type elt = json_issue_printer_typ
 
-  let to_string ({error_filter; proc_name; proc_loc_opt; err_key; err_data} : elt) =
+  let to_string ({error_filter; proc_name; proc_location_opt; err_key; err_data} : elt) =
     let source_file, procedure_start_line =
-      match proc_loc_opt with
+      match proc_location_opt with
       | Some proc_loc ->
           (proc_loc.Location.file, proc_loc.Location.line)
       | None ->
@@ -246,16 +246,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       Some (Jsonbug_j.string_of_jsonbug bug)
     else None
 end)
-
-module IssuesJson = struct
-  include JsonIssuePrinter
-
-  (** Write bug report in JSON format *)
-  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt proc_name err_log =
-    Errlog.iter
-      (fun err_key err_data -> pp fmt {error_filter; proc_name; proc_loc_opt; err_key; err_data})
-      err_log
-end
 
 module NoQualifierHashProcInfo = struct
   type t = {hash: string; loc: Jsonbug_t.loc; procedure_name: string; procedure_id: string}
@@ -366,9 +356,9 @@ let mk_error_filter filters proc_name file error_name =
   && filters.Inferconfig.proc_filter proc_name
 
 
-let collect_issues proc_name proc_location err_log issues_acc =
+let collect_issues proc_name proc_location_opt err_log issues_acc =
   Errlog.fold
-    (fun err_key err_data acc -> {Issue.proc_name; proc_location; err_key; err_data} :: acc)
+    (fun err_key err_data acc -> {Issue.proc_name; proc_location_opt; err_key; err_data} :: acc)
     err_log issues_acc
 
 
@@ -394,21 +384,14 @@ let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile
         {loc; proc_name; config_impact_opt; is_strict= ConfigImpactAnalysis.strict_mode}
 
 
-(** Process lint issues of a procedure *)
-let write_lint_issues filters (issues_outf : Utils.outfile) linereader procname error_log =
-  let error_filter = mk_error_filter filters procname in
-  IssuesJson.pp_issues_of_error_log issues_outf.fmt error_filter linereader None procname error_log
-
-
 let process_summary proc_name loc ~cost:(cost_opt, costs_outf)
     ~config_impact:(config_impact_opt, config_impact_outf) err_log issues_acc =
   write_costs proc_name loc cost_opt costs_outf ;
   write_config_impact proc_name loc config_impact_opt config_impact_outf ;
-  collect_issues proc_name loc err_log issues_acc
+  collect_issues proc_name (Some loc) err_log issues_acc
 
 
 let process_all_summaries_and_issues ~issues_outf ~costs_outf ~config_impact_outf =
-  let linereader = LineReader.create () in
   let filters = Inferconfig.create_filters () in
   let all_issues = ref [] in
   Summary.OnDisk.iter_report_summaries_from_config
@@ -417,16 +400,16 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf ~config_impact_out
         process_summary proc_name loc ~cost:(cost_opt, costs_outf)
           ~config_impact:(config_impact_opt, config_impact_outf)
           err_log !all_issues ) ;
-  all_issues := Issue.sort_filter_issues !all_issues ;
-  List.iter
-    ~f:(fun {Issue.proc_name; proc_location; err_key; err_data} ->
-      let error_filter = mk_error_filter filters proc_name in
-      IssuesJson.pp issues_outf.Utils.fmt
-        {error_filter; proc_name; proc_loc_opt= Some proc_location; err_key; err_data} )
-    !all_issues ;
   (* Issues that are generated and stored outside of summaries by linter and checkers *)
   List.iter (ResultsDirEntryName.get_issues_directories ()) ~f:(fun dir_name ->
-      IssueLog.load dir_name |> IssueLog.iter ~f:(write_lint_issues filters issues_outf linereader) ) ;
+      IssueLog.load dir_name
+      |> IssueLog.iter ~f:(fun proc_name errlog ->
+             all_issues := collect_issues proc_name None errlog !all_issues ) ) ;
+  let all_issues = Issue.sort_filter_issues !all_issues in
+  List.iter all_issues ~f:(fun {Issue.proc_name; proc_location_opt; err_key; err_data} ->
+      let error_filter = mk_error_filter filters proc_name in
+      JsonIssuePrinter.pp issues_outf.Utils.fmt
+        {error_filter; proc_name; proc_location_opt; err_key; err_data} ) ;
   ()
 
 
@@ -440,11 +423,11 @@ let write_reports ~issues_json ~costs_json ~config_impact_json =
   in
   let open_outfile_and_fmt json =
     let outf = mk_outfile json in
-    IssuesJson.pp_open outf.fmt () ;
+    JsonIssuePrinter.pp_open outf.fmt () ;
     outf
   in
   let close_fmt_and_outfile outf =
-    IssuesJson.pp_close outf.Utils.fmt () ;
+    JsonIssuePrinter.pp_close outf.Utils.fmt () ;
     Utils.close_outf outf
   in
   let issues_outf = open_outfile_and_fmt issues_json in

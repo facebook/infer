@@ -9,7 +9,7 @@ open! IStd
 
 type t =
   { proc_name: Procname.t
-  ; proc_location: Location.t
+  ; proc_location_opt: Location.t option
   ; err_key: Errlog.err_key
   ; err_data: Errlog.err_data }
 

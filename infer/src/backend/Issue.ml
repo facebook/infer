@@ -10,7 +10,7 @@ module L = Logging
 
 type t =
   { proc_name: Procname.t
-  ; proc_location: Location.t
+  ; proc_location_opt: Location.t option
   ; err_key: Errlog.err_key
   ; err_data: Errlog.err_data }
 [@@deriving compare]
@@ -23,13 +23,11 @@ let compare_err_data_ (err_data1 : Errlog.err_data) (err_data2 : Errlog.err_data
   Location.compare err_data1.loc err_data2.loc
 
 
-type proc_name_ = Procname.t
-
-(* ignore proc name *)
-let compare_proc_name_ _ _ = 0
-
 type t_ignore_duplicates = t =
-  {proc_name: proc_name_; proc_location: Location.t; err_key: Errlog.err_key; err_data: err_data_}
+  { proc_name: Procname.t [@compare.ignore]
+  ; proc_location_opt: Location.t option
+  ; err_key: Errlog.err_key
+  ; err_data: err_data_ }
 [@@deriving compare]
 
 (* If two issues are identical except for their procnames, they are probably duplicate reports on
