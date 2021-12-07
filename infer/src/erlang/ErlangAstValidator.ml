@@ -12,6 +12,14 @@ module Env = ErlangEnvironment
 (** Enforce additional invariants and constraints on the AST based on
     https://erlang.org/doc/apps/erts/absform.html *)
 
+let pp_location (loc : Ast.location) =
+  match loc.col with
+  | -1 ->
+      Printf.sprintf "line %d" loc.line
+  | _ ->
+      Printf.sprintf "line %d column %d" loc.line loc.col
+
+
 let validate_record_name (env : (_, _) Env.t) name =
   match String.Map.find env.records name with
   | None ->
@@ -81,7 +89,7 @@ let rec validate_pattern env (p : Ast.expression) =
       true
   | _ ->
       (* Everything else is invalid in a pattern *)
-      Logging.debug Capture Verbose "Invalid pattern at line %d@." p.line ;
+      Logging.debug Capture Verbose "Invalid pattern at %s@." (pp_location p.location) ;
       false
 
 
@@ -165,7 +173,7 @@ let rec validate_guard_test env (gt : Ast.expression) =
       true
   | _ ->
       (* Everything else is invalid in a guard test *)
-      Logging.debug Capture Verbose "Invalid guard test at line %d@." gt.line ;
+      Logging.debug Capture Verbose "Invalid guard test at %s@." (pp_location gt.location) ;
       false
 
 

@@ -20,8 +20,8 @@ let mk_fresh_id () = Ident.create_fresh Ident.knormal
 
 let ( |~~> ) = ErlangBlock.( |~~> )
 
-let update_location line (env : (_, _) Env.t) =
-  let location = {env.location with line; col= -1} in
+let update_location (loc : Ast.location) (env : (_, _) Env.t) =
+  let location = {env.location with line= loc.line; col= loc.col} in
   {env with location}
 
 
@@ -115,8 +115,8 @@ let unbox_bool env expr : Exp.t * Block.t =
 (** Main entry point for patterns. Result is a block where if the pattern-match succeeds, the
     [exit_success] node is reached and the pattern variables are storing the corresponding values;
     otherwise, the [exit_failure] node is reached. *)
-let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : Block.t =
-  let env = update_location line env in
+let rec translate_pattern env (value : Ident.t) {Ast.location; simple_expression} : Block.t =
+  let env = update_location location env in
   match simple_expression with
   | Cons {head; tail} ->
       translate_pattern_cons env value head tail
@@ -140,7 +140,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.line; simple_expression} : 
   | Tuple exprs ->
       translate_pattern_tuple env value exprs
   | UnaryOperator _ ->
-      translate_pattern_unary_expression env value line simple_expression
+      translate_pattern_unary_expression env value location simple_expression
   | Variable {vname; scope} ->
       translate_pattern_variable env value vname scope
   | e ->
@@ -332,9 +332,10 @@ and translate_pattern_tuple env value exprs : Block.t =
   {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure}
 
 
-and translate_pattern_unary_expression (env : (_, _) Env.t) value line simple_expression : Block.t =
+and translate_pattern_unary_expression (env : (_, _) Env.t) value location simple_expression :
+    Block.t =
   (* Unary op pattern must evaluate to number, so just delegate to expression translation *)
-  let id, expr_block = translate_expression_to_fresh_id env {Ast.line; simple_expression} in
+  let id, expr_block = translate_expression_to_fresh_id env {Ast.location; simple_expression} in
   let branch_block = Block.make_branch env (Exp.BinOp (Eq, Var value, Var id)) in
   Block.all env [expr_block; branch_block]
 
@@ -394,8 +395,8 @@ and translate_guard_sequence env (guards : Ast.expression list list) : Block.t =
 (** Main entry point for translating an expression. The result is a block, which has the expression
     translated. The result is put into the variable as specified by the environment (or a fresh
     value). *)
-and translate_expression env {Ast.line; simple_expression} : Block.t =
-  let env = update_location line env in
+and translate_expression env {Ast.location; simple_expression} =
+  let env = update_location location env in
   let (Env.Present result) = env.result in
   let ret_var = match result with Exp.Var ret_var -> ret_var | _ -> mk_fresh_id () in
   let env = {env with result= Env.Present (Exp.Var ret_var)} in
@@ -407,12 +408,12 @@ and translate_expression env {Ast.line; simple_expression} : Block.t =
         translate_body env body
     | Call
         { module_= None
-        ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
+        ; function_= {Ast.location= _; simple_expression= Literal (Atom function_name)}
         ; args } ->
         translate_expression_call_static env ret_var None function_name args
     | Call
-        { module_= Some {Ast.line= _; simple_expression= Literal (Atom module_name)}
-        ; function_= {Ast.line= _; simple_expression= Literal (Atom function_name)}
+        { module_= Some {Ast.location= _; simple_expression= Literal (Atom module_name)}
+        ; function_= {Ast.location= _; simple_expression= Literal (Atom function_name)}
         ; args } ->
         translate_expression_call_static env ret_var (Some module_name) function_name args
     | Call {module_= None; function_; args} ->
@@ -1125,7 +1126,7 @@ and translate_body (env : (_, _) Env.t) body : Block.t =
     values on which patterns should be matched have been loaded into the identifiers listed in
     [values]. *)
 and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
-    {Ast.line= _; patterns; guards; body} : Block.t =
+    {Ast.location= _; patterns; guards; body} : Block.t =
   let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
   let matchers = List.map ~f (List.zip_exn values patterns) in
   let guard_block = translate_guard_sequence env guards in
@@ -1201,8 +1202,8 @@ let translate_one_function (env : (_, _) Env.t) function_ clauses =
 
 (** Translate and store each function of a module. *)
 let translate_functions (env : (_, _) Env.t) module_ =
-  let f {Ast.line; simple_form} =
-    let env = update_location line env in
+  let f {Ast.location; simple_form} =
+    let env = update_location location env in
     match simple_form with
     | Function {function_; clauses} ->
         translate_one_function env function_ clauses
