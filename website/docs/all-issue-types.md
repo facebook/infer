@@ -90,7 +90,7 @@ f() ->
 
 Reported as "Bad Key Latent" by [pulse](/docs/next/checker-pulse).
 
-See [BAD_KEY](#bad_key).
+A latent [BAD_KEY](#bad_key). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## BAD_MAP
 
 Reported as "Bad Map" by [pulse](/docs/next/checker-pulse).
@@ -108,7 +108,7 @@ f() ->
 
 Reported as "Bad Map Latent" by [pulse](/docs/next/checker-pulse).
 
-See [BAD_MAP](#bad_map).
+A latent [BAD_MAP](#bad_map). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## BAD_POINTER_COMPARISON
 
 Reported as "Bad Pointer Comparison" by [linters](/docs/next/checker-linters).
@@ -148,7 +148,7 @@ f() ->
 
 Reported as "Bad Record Latent" by [pulse](/docs/next/checker-pulse).
 
-See [BAD_RECORD](#bad_record).
+A latent [BAD_RECORD](#bad_record). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## BIABDUCTION_MEMORY_LEAK
 
 Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
@@ -526,7 +526,7 @@ For more information see the [`NULLPTR_DEREFERENCE`](#nullptr_dereference) issue
 
 Reported as "Constant Address Dereference Latent" by [pulse](/docs/next/checker-pulse).
 
-See [CONSTANT_ADDRESS_DEREFERENCE](#constant_address_dereference).
+A latent [CONSTANT_ADDRESS_DEREFERENCE](#constant_address_dereference). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## CREATE_INTENT_FROM_URI
 
 Reported as "Create Intent From Uri" by [quandary](/docs/next/checker-quandary).
@@ -1679,7 +1679,7 @@ Adding a check for `nil` before calling the block, or making sure never to call 
 
 Reported as "Nil Block Call Latent" by [pulse](/docs/next/checker-pulse).
 
-See [NIL_BLOCK_CALL](#nil_block_call).
+A latent [NIL_BLOCK_CALL](#nil_block_call). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NIL_INSERTION_INTO_COLLECTION
 
 Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
@@ -1729,7 +1729,7 @@ that the object passed will never be `nil`, or adding a check for `nil` before c
 
 Reported as "Nil Insertion Into Collection Latent" by [pulse](/docs/next/checker-pulse).
 
-See [NIL_INSERTION_INTO_COLLECTION](#nil_insertion_into_collection).
+A latent [NIL_INSERTION_INTO_COLLECTION](#nil_insertion_into_collection). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NIL_MESSAGING_TO_NON_POD
 
 Reported as "Nil Messaging To Non Pod" by [pulse](/docs/next/checker-pulse).
@@ -1763,7 +1763,7 @@ std::shared_ptr<int> callMethodReturnsnonPOD(bool b) {
 
 Reported as "Nil Messaging To Non Pod Latent" by [pulse](/docs/next/checker-pulse).
 
-See [NIL_MESSAGING_TO_NON_POD](#nil_messaging_to_non_pod).
+A latent [NIL_MESSAGING_TO_NON_POD](#nil_messaging_to_non_pod). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NO_MATCHING_BRANCH_IN_TRY
 
 Reported as "No Matching Branch In Try" by [pulse](/docs/next/checker-pulse).
@@ -1784,7 +1784,7 @@ tail(X) ->
 
 Reported as "No Matching Branch In Try Latent" by [pulse](/docs/next/checker-pulse).
 
-See [NO_MATCHING_BRANCH_IN_TRY](#no_matching_branch_in_try).
+A latent [NO_MATCHING_BRANCH_IN_TRY](#no_matching_branch_in_try). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NO_MATCHING_CASE_CLAUSE
 
 Reported as "No Matching Case Clause" by [pulse](/docs/next/checker-pulse).
@@ -1805,7 +1805,7 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 
 Reported as "No Matching Case Clause Latent" by [pulse](/docs/next/checker-pulse).
 
-See [NO_MATCHING_CASE_CLAUSE](#no_matching_case_clause).
+A latent [NO_MATCHING_CASE_CLAUSE](#no_matching_case_clause). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NO_MATCHING_FUNCTION_CLAUSE
 
 Reported as "No Matching Function Clause" by [pulse](/docs/next/checker-pulse).
@@ -1823,7 +1823,7 @@ This error is reported if either the pattern(s) or the guard(s) prevent matching
 
 Reported as "No Matching Function Clause Latent" by [pulse](/docs/next/checker-pulse).
 
-See [NO_MATCHING_FUNCTION_CLAUSE](#no_matching_function_clause).
+A latent [NO_MATCHING_FUNCTION_CLAUSE](#no_matching_function_clause). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NO_MATCH_OF_RHS
 
 Reported as "No Match Of Rhs" by [pulse](/docs/next/checker-pulse).
@@ -1836,7 +1836,7 @@ For example, `[H|T] = []` gives the error because the left hand side pattern req
 
 Reported as "No Match Of Rhs Latent" by [pulse](/docs/next/checker-pulse).
 
-See [NO_MATCH_OF_RHS](#no_match_of_rhs).
+A latent [NO_MATCH_OF_RHS](#no_match_of_rhs). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NO_TRUE_BRANCH_IN_IF
 
 Reported as "No True Branch In If" by [pulse](/docs/next/checker-pulse).
@@ -1856,7 +1856,7 @@ sign(X) ->
 
 Reported as "No True Branch In If Latent" by [pulse](/docs/next/checker-pulse).
 
-See [NO_TRUE_BRANCH_IN_IF](#no_true_branch_in_if).
+A latent [NO_TRUE_BRANCH_IN_IF](#no_true_branch_in_if). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NULLPTR_DEREFERENCE
 
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
@@ -1962,7 +1962,7 @@ also have a dedicated issue type for this case:
 
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
 
-See [NULLPTR_DEREFERENCE](#nullptr_dereference).
+A latent [NULLPTR_DEREFERENCE](#nullptr_dereference). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## NULL_DEREFERENCE
 
 Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).
@@ -2028,7 +2028,7 @@ int value_no_check() {
 
 Reported as "Optional Empty Access Latent" by [pulse](/docs/next/checker-pulse).
 
-See [OPTIONAL_EMPTY_ACCESS](#optional_empty_access).
+A latent [OPTIONAL_EMPTY_ACCESS](#optional_empty_access). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## PARAMETER_NOT_NULL_CHECKED
 
 Reported as "Parameter Not Null Checked" by [biabduction](/docs/next/checker-biabduction).
@@ -2096,7 +2096,7 @@ See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse.
 
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
 
-See [PULSE_UNINITIALIZED_VALUE](#pulse_uninitialized_value).
+A latent [PULSE_UNINITIALIZED_VALUE](#pulse_uninitialized_value). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## PULSE_UNNECESSARY_COPY
 
 Reported as "Unnecessary Copy" by [pulse](/docs/next/checker-pulse).
@@ -2841,7 +2841,7 @@ An address that was invalidated by a call to `delete` in C++ is dereferenced.
 
 Reported as "Use After Delete Latent" by [pulse](/docs/next/checker-pulse).
 
-See [USE_AFTER_DELETE](#use_after_delete).
+A latent [USE_AFTER_DELETE](#use_after_delete). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## USE_AFTER_FREE
 
 Reported as "Use After Free" by [pulse](/docs/next/checker-pulse).
@@ -2852,7 +2852,7 @@ An address that was invalidated by a call to `free` in C is dereferenced.
 
 Reported as "Use After Free Latent" by [pulse](/docs/next/checker-pulse).
 
-See [USE_AFTER_FREE](#use_after_free).
+A latent [USE_AFTER_FREE](#use_after_free). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## USE_AFTER_LIFETIME
 
 Reported as "Use After Lifetime" by [pulse](/docs/next/checker-pulse).
@@ -2876,7 +2876,7 @@ void foo() {
 
 Reported as "Use After Lifetime Latent" by [pulse](/docs/next/checker-pulse).
 
-See [USE_AFTER_LIFETIME](#use_after_lifetime).
+A latent [USE_AFTER_LIFETIME](#use_after_lifetime). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## VECTOR_INVALIDATION
 
 Reported as "Vector Invalidation" by [pulse](/docs/next/checker-pulse).
@@ -2904,7 +2904,7 @@ void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
 
 Reported as "Vector Invalidation Latent" by [pulse](/docs/next/checker-pulse).
 
-See [VECTOR_INVALIDATION](#vector_invalidation).
+A latent [VECTOR_INVALIDATION](#vector_invalidation). See the [documentation on Pulse latent issues](checker-pulse#latent-issues).
 ## WEAK_SELF_IN_NO_ESCAPE_BLOCK
 
 Reported as "Weak Self In No Escape Block" by [self-in-block](/docs/next/checker-self-in-block).

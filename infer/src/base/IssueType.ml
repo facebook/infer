@@ -268,7 +268,12 @@ end = struct
 
   let register_with_latent ?enabled ?hum ~id ~user_documentation default_severity checker =
     let issue = register ?enabled ?hum ~id ~user_documentation default_severity checker in
-    let user_documentation = "See [" ^ id ^ "](#" ^ String.lowercase id ^ ")." in
+    let user_documentation =
+      Printf.sprintf
+        "A latent [%s](#%s). See the [documentation on Pulse latent \
+         issues](checker-pulse#latent-issues)."
+        id (String.lowercase id)
+    in
     let latent_issue =
       register ~enabled:false ?hum ~id:(id ^ "_LATENT") ~user_documentation default_severity checker
     in
