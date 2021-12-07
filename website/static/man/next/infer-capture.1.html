@@ -327,6 +327,16 @@ of genrules like buck-java. (Conversely:
 <b>--no-buck-java-flavor</b>)</p>
 
 
+<p style="margin-left:11%;"><b>--buck-java-flavor-dependency-depth</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Capture dependencies only if
+they are at most the depth provided, or all transitive
+dependencies if depth is not provided (the default). In
+particular, depth zero means capture exactly the targets
+provided and nothing else.</p>
+
+
 <p style="margin-left:11%;"><b>--buck-java-flavor-suppress-config</b></p>
 
 <p style="margin-left:17%;">Activates: Suppress setting
@@ -362,14 +372,14 @@ matched by the specified regular expression. Only valid for
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -557,8 +567,8 @@ arguments to invocations of clang</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&lsquo;infer -- &lt;xcodebuild
-command&gt;&lsquo;</i>. (Conversely:
+still just <i>&rsquo;infer -- &lt;xcodebuild
+command&gt;&rsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <h2>ERLANG OPTIONS
