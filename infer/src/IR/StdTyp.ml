@@ -42,6 +42,9 @@ module Name = struct
     let java_lang_object = from_string "java.lang.Object"
 
     let java_lang_string = from_string "java.lang.String"
+
+    let kotlin_coroutines_jvm_internal_restrictedsuspendlambda =
+      from_string "kotlin.coroutines.jvm.internal.RestrictedSuspendLambda"
   end
 
   module CSharp = struct
