@@ -2148,11 +2148,10 @@ INTERNAL OPTIONS
            Set --pulse-report-ignore-unknown-java-methods-patterns to the
            empty list.
 
-       --pulse-report-latent-issues
-           Activates: Only use for testing, there should be no need to turn
-           this on for regular code analysis. Report latent issues instead of
-           waiting for them to become concrete. (Conversely:
-           --no-pulse-report-latent-issues)
+       --no-pulse-report-latent-issues
+           Deactivates: Report latent issues instead of waiting for them to
+           become manifest, when the latent issue itself is enabled.
+           (Conversely: --pulse-report-latent-issues)
 
        --pulse-scuba-logging
            Activates: Log unknown functions to scuba in pulse checkers; also

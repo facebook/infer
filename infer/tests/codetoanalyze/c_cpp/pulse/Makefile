@@ -8,8 +8,7 @@ TESTS_DIR = ../../..
 CLANG_OPTIONS_C = -c
 CLANG_OPTIONS_CPP = -x c++ -std=c++17 -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
-  --pulse-report-latent-issues
+INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR)
 
 INFERPRINT_OPTIONS = --issues-tests
 

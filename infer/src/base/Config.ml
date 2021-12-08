@@ -2180,9 +2180,9 @@ and pulse_recency_limit =
 
 
 and pulse_report_latent_issues =
-  CLOpt.mk_bool ~long:"pulse-report-latent-issues"
-    "Only use for testing, there should be no need to turn this on for regular code analysis. \
-     Report latent issues instead of waiting for them to become concrete."
+  CLOpt.mk_bool ~long:"pulse-report-latent-issues" ~default:true
+    "Report latent issues instead of waiting for them to become manifest, when the latent issue \
+     itself is enabled."
 
 
 and pulse_skip_procedures =
