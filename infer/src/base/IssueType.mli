@@ -314,6 +314,8 @@ val premature_nil_termination : t
 
 val pulse_memory_leak : t
 
+val pulse_resource_leak : t
+
 val pure_function : t
 
 val quandary_taint_error : t

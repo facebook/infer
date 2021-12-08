@@ -283,6 +283,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.allocate allocator address location)
 
 
+  let java_resource_release class_name address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.java_resource_release class_name address)
+
+
   let get_allocation addr astate =
     BaseAddressAttributes.get_allocation addr (astate.post :> base_domain).attrs
 
@@ -1059,6 +1063,10 @@ let summary_of_post tenv pdesc location astate =
     with
     | Ok () ->
         Ok (invalidate_locals pdesc astate)
+    | Error (unreachable_location, JavaResource class_name, trace) ->
+        Error
+          (`ResourceLeak
+            (astate, class_name, trace, Option.value unreachable_location ~default:location) )
     | Error (unreachable_location, proc_name, trace) ->
         Error
           (`MemoryLeak

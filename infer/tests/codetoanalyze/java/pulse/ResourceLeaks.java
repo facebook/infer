@@ -54,7 +54,7 @@ public class ResourceLeaks {
 
   // FileOutputStream tests
 
-  public void FN_fileOutputStreamNotClosedBad() throws IOException {
+  public void fileOutputStreamNotClosedBad() throws IOException {
     FileOutputStream fis = new FileOutputStream("file.txt");
   }
 
@@ -74,14 +74,14 @@ public class ResourceLeaks {
     fis.close();
   }
 
-  public void FN_fileOutputStreamOneLeakBad() throws IOException {
+  public void fileOutputStreamOneLeakBad() throws IOException {
     FileOutputStream fis = new FileOutputStream("file.txt");
     if (fis != null) {
     } else {
     }
   }
 
-  public int FN_fileOutputStreamTwoLeaksBad1(boolean ok) throws IOException {
+  public int fileOutputStreamTwoLeaksBad1(boolean ok) throws IOException {
     FileOutputStream fis = new FileOutputStream("file.txt");
     if (ok) {
       fis.write(1);
@@ -92,7 +92,7 @@ public class ResourceLeaks {
     }
   }
 
-  public void FN_fileOutputStreamTwoLeaksBad2() throws IOException {
+  public void fileOutputStreamTwoLeaksBad2() throws IOException {
     FileOutputStream fis = new FileOutputStream("file.txt");
     if (fis != null) {
     } else {
@@ -208,7 +208,7 @@ public class ResourceLeaks {
     g.close();
   }
 
-  public void FN_nestedBad2() throws IOException {
+  public void nestedBad2() throws IOException {
     GZIPOutputStream g = new GZIPOutputStream(new FileOutputStream("file.txt"));
     g.close();
   }
@@ -226,7 +226,7 @@ public class ResourceLeaks {
   }
 
   /* Fixed versions of this are below with ObjectInputStream tests */
-  public void FN_objectOutputStreamClosedNestedBad() throws IOException {
+  public void objectOutputStreamClosedNestedBad() throws IOException {
     ObjectOutputStream oin = null;
     try {
       oin = new ObjectOutputStream(new FileOutputStream("file.txt"));
@@ -359,7 +359,7 @@ public class ResourceLeaks {
 
   // ObjectOutputStream tests
 
-  public void FN_objectOutputStreamNotClosedAfterWriteBad() {
+  public void objectOutputStreamNotClosedAfterWriteBad() {
     byte[] arr = {1, 2, 3, 4, 5};
     ObjectOutputStream oout;
     try {
@@ -451,7 +451,7 @@ public class ResourceLeaks {
 
   // JarOutputStream tests
 
-  public static void jarOutputStreamNoLeakOk() throws IOException {
+  public static void FP_jarOutputStreamNoLeakOk() throws IOException {
     FileOutputStream fos = new FileOutputStream("");
     try {
       JarOutputStream g = new JarOutputStream(fos);
@@ -461,7 +461,7 @@ public class ResourceLeaks {
     }
   }
 
-  public static void FN_jarOutputStreamLeakBad() throws IOException {
+  public static void jarOutputStreamLeakBad() throws IOException {
     FileOutputStream fos = new FileOutputStream("");
     try {
       JarOutputStream g = new JarOutputStream(fos); //  Testing exceptional condition in constructor
@@ -471,7 +471,7 @@ public class ResourceLeaks {
     }
   }
 
-  public static void FN_nestedJarOutputStreamBad() throws IOException {
+  public static void nestedJarOutputStreamBad() throws IOException {
     JarOutputStream g = new JarOutputStream(new FileOutputStream("file.txt"));
     g.close();
   }
@@ -799,7 +799,7 @@ public class ResourceLeaks {
 
   // FileChannel
 
-  void FN_copyFileLeakBad(File src, File dst) throws IOException {
+  void copyFileLeakBad(File src, File dst) throws IOException {
     FileChannel inChannel = new FileInputStream(src).getChannel();
     FileChannel outChannel = new FileOutputStream(dst).getChannel();
     try {

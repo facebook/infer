@@ -430,6 +430,10 @@ let allocate allocator location addr astate =
   AddressAttributes.allocate allocator addr location astate
 
 
+let java_resource_release class_name addr astate =
+  AddressAttributes.java_resource_release class_name addr astate
+
+
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate
 
 let remove_allocation_attr address astate = AddressAttributes.remove_allocation_attr address astate

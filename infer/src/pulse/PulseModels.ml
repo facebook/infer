@@ -97,7 +97,7 @@ module Misc = struct
     let open SatUnsat.Import in
     match
       ( AbductiveDomain.summary_of_post tenv proc_desc location astate
-        >>| AccessResult.ignore_memory_leaks >>| AccessResult.of_abductive_result
+        >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
         :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t )
     with
     | Unsat ->
@@ -1370,6 +1370,24 @@ module Java = struct
         astate |> ok_continue
 end
 
+module JavaResource = struct
+  let init_FileOutputStream (this, _) _ : model =
+   fun {location; callee_procname} astate ->
+    let[@warning "-8"] (Some (Typ.JavaClass class_name)) =
+      Procname.get_class_type_name callee_procname
+    in
+    let allocator = Attribute.JavaResource class_name in
+    PulseOperations.allocate allocator location this astate |> ok_continue
+
+
+  let close_FileOutputStream (this, _) : model =
+   fun {callee_procname} astate ->
+    let[@warning "-8"] (Some (Typ.JavaClass class_name)) =
+      Procname.get_class_type_name callee_procname
+    in
+    PulseOperations.java_resource_release class_name this astate |> ok_continue
+end
+
 module JavaCollection = struct
   let pkg_name = "java.util"
 
@@ -2423,6 +2441,11 @@ module ProcNameDispatcher = struct
           $+...$--> Optional.get_pointer ~desc:"folly::Optional::get_pointer()"
         ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
           $+...$--> Optional.value_or ~desc:"folly::Optional::value_or()"
+        ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
+          &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> JavaResource.init_FileOutputStream
+        ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
+          &:: "close" <>$ capt_arg_payload $--> JavaResource.close_FileOutputStream
           (* std::optional *)
         ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
           $+ any_arg_of_typ (-"std" &:: "nullopt_t")

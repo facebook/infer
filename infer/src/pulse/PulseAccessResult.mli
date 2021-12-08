@@ -48,9 +48,10 @@ val of_abductive_access_result :
   -> ('a, [< `InvalidAccess of Invalidation.t * Trace.t * 'astate | 'astate abductive_error]) result
   -> ('a, 'astate) base_t
 
-val ignore_memory_leaks :
+val ignore_leaks :
      ( AbductiveDomain.summary
      , [< `MemoryLeak of AbductiveDomain.summary * Attribute.allocator * Trace.t * Location.t
+       | `ResourceLeak of AbductiveDomain.summary * JavaClassName.t * Trace.t * Location.t
        | AbductiveDomain.summary abductive_error ] )
      result
   -> (AbductiveDomain.summary, [> AbductiveDomain.summary abductive_error]) result

@@ -35,6 +35,11 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           (PulseReport.report_summary_error tenv proc_desc err_log
              (ReportableError
                 {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}} ) )
+    | Sat (Error (`ResourceLeak (astate, class_name, allocation_trace, location))) ->
+        Some
+          (PulseReport.report_summary_error tenv proc_desc err_log
+             (ReportableError
+                {astate; diagnostic= ResourceLeak {class_name; allocation_trace; location}} ) )
     | Sat (Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))) -> (
       match
         AbductiveDomain.find_post_cell_opt address (astate :> AbductiveDomain.t)
