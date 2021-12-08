@@ -9,9 +9,9 @@ open! IStd
 
 (** Location in the original source file *)
 type t =
-  { line: int  (** The line number. -1 means "do not know" *)
-  ; col: int  (** The column number. -1 means "do not know" *)
-  ; file: SourceFile.t  (** The name of the source file *) }
+  { file: SourceFile.t  (** The name of the source file *)
+  ; line: int  (** The line number. -1 means "do not know" *)
+  ; col: int  (** The column number. -1 means "do not know" *) }
 [@@deriving compare, sexp_of]
 
 val equal : t -> t -> bool

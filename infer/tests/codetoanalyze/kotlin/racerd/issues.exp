@@ -1,2 +1,2 @@
-GuardedByTests.kt, GuardedByTests.interprocUnguardedBad():void, 47, GUARDEDBY_VIOLATION, no_bucket, WARNING, [call to void GuardedByTests.privateUnguardedOk(),access to `this.privateUnguardedField`]
 GuardedByTests.kt, GuardedByTests.unguardedBad():void, 16, GUARDEDBY_VIOLATION, no_bucket, WARNING, [access to `this.unguardedBadField`]
+GuardedByTests.kt, GuardedByTests.interprocUnguardedBad():void, 47, GUARDEDBY_VIOLATION, no_bucket, WARNING, [call to void GuardedByTests.privateUnguardedOk(),access to `this.privateUnguardedField`]

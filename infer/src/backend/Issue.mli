@@ -8,9 +8,9 @@
 open! IStd
 
 type t =
-  { proc_name: Procname.t
-  ; proc_location_opt: Location.t option
+  { err_data: Errlog.err_data
   ; err_key: Errlog.err_key
-  ; err_data: Errlog.err_data }
+  ; proc_location_opt: Location.t option
+  ; proc_name: Procname.t }
 
 val sort_filter_issues : t list -> t list
