@@ -37,6 +37,7 @@ BUILD_SYSTEMS_TESTS += \
   j1 \
   linters \
   project_root_rel \
+  pulse_messages \
   reactive \
   results_xml \
   tracebugs \
@@ -100,11 +101,12 @@ endif
 ifeq ($(HAS_OBJC),yes)
 BUILD_SYSTEMS_TESTS += \
   clang_test_determinator \
+  differential_of_costs_report_objc \
   objc_getters_setters \
   objc_missing_fld \
   objc_retain_cycles \
   objc_retain_cycles_weak \
-  differential_of_costs_report_objc \
+  pulse_messages_objc \
 
 COST_TESTS += \
   objc_autoreleasepool \
