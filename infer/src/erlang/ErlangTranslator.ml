@@ -224,19 +224,24 @@ and translate_pattern_match (env : (_, _) Env.t) value pattern body : Block.t =
 and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
   (* For each update, check if key is there and if yes, match against value *)
   let make_submatcher (one_update : Ast.association) =
-    let has_key_id = mk_fresh_id () in
     let key_id, key_expr_block = translate_expression_to_fresh_id env one_update.key in
-    let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_is_key) in
     let args = [(Exp.Var key_id, any_typ); (Exp.Var value, any_typ)] in
-    let has_key_block : Block.t =
-      let start =
-        Node.make_stmt env
+    let has_key_block =
+      let has_key_id = mk_fresh_id () in
+      let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_is_key) in
+      let call_block =
+        Block.make_instruction env
           [Sil.Call ((has_key_id, any_typ), has_key_fun_exp, args, env.location, CallFlags.default)]
       in
-      let exit_success = Node.make_if env true (Var has_key_id) in
-      let exit_failure = Node.make_if env false (Var has_key_id) in
-      start |~~> [exit_success; exit_failure] ;
-      {start; exit_success; exit_failure}
+      let unboxed, unbox_block = unbox_bool env (Exp.Var has_key_id) in
+      let check_block : Block.t =
+        let start = Node.make_nop env in
+        let exit_success = Node.make_if env true unboxed in
+        let exit_failure = Node.make_if env false unboxed in
+        start |~~> [exit_success; exit_failure] ;
+        {start; exit_success; exit_failure}
+      in
+      Block.all env [call_block; unbox_block; check_block]
     in
     let value_id = mk_fresh_id () in
     let lookup_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_get) in
@@ -885,22 +890,23 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
       | Exact ->
           let has_key_id = mk_fresh_id () in
           let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_is_key) in
-          let has_key_args = [(Exp.Var key_id, any_typ); (Exp.Var map_id, any_typ)] in
-          let start =
-            Node.make_stmt env
+          let args = [(Exp.Var key_id, any_typ); (Exp.Var map_id, any_typ)] in
+          let call_block =
+            Block.make_instruction env
               [ Sil.Call
-                  ( (has_key_id, any_typ)
-                  , has_key_fun_exp
-                  , has_key_args
-                  , env.location
-                  , CallFlags.default ) ]
+                  ((has_key_id, any_typ), has_key_fun_exp, args, env.location, CallFlags.default) ]
           in
-          let exit_success = Node.make_if env true (Var has_key_id) in
-          let no_key_node = Node.make_if env false (Var has_key_id) in
-          let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badkey in
-          start |~~> [exit_success; no_key_node] ;
-          no_key_node |~~> [crash_node] ;
-          [{start; exit_success; exit_failure= crash_node}]
+          let unboxed, unbox_block = unbox_bool env (Exp.Var has_key_id) in
+          let check_block : Block.t =
+            let start = Node.make_nop env in
+            let exit_success = Node.make_if env true unboxed in
+            let no_key_node = Node.make_if env false unboxed in
+            let exit_failure = Node.make_fail env BuiltinDecl.__erlang_error_badkey in
+            start |~~> [exit_success; no_key_node] ;
+            no_key_node |~~> [exit_failure] ;
+            {start; exit_success; exit_failure}
+          in
+          [Block.all env [call_block; unbox_block; check_block]]
     in
     Block.all env ([key_expr_block; value_expr_block] @ has_key_block @ [update_block])
   in

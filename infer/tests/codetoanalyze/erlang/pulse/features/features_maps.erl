@@ -29,16 +29,14 @@ warn(0) -> ok.
 test_is_key_Ok() ->
     M = #{1 => 2},
     case maps:is_key(1, M) of
-        % TODO: 1 should be replaced with true when we support true/false atoms properly (T94670024)
-        1 -> ok;
+        true -> ok;
         _ -> warn(1)
     end.
 
 test_is_key_Bad() ->
     M = #{1 => 2},
     case maps:is_key(1, M) of
-        % TODO: 1 should be replaced with true when we support true/false atoms properly (T94670024)
-        1 -> warn(1);
+        true -> warn(1);
         _ -> ok
     end.
 
@@ -99,15 +97,13 @@ test_put6_Bad() ->
 test_new_Ok() ->
     M = maps:new(),
     case maps:is_key(1, M) of
-        % TODO: 0 should be replaced with false when we support true/false atoms properly (T94670024)
-        0 -> ok;
+        false -> ok;
         _ -> warn(1)
     end.
 
 test_new_Bad() ->
     M = maps:new(),
     case maps:is_key(1, M) of
-        % TODO: 0 should be replaced with false when we support true/false atoms properly (T94670024)
-        0 -> warn(1);
+        false-> warn(1);
         _ -> ok
     end.

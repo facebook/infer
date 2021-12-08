@@ -2180,7 +2180,7 @@ module Erlang = struct
       in
       let> astate = [PulseArithmetic.prune_positive is_empty astate] in
       let> astate = [PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate] in
-      [Ok (PulseOperations.write_id ret_id (ret_val_false, hist) astate)]
+      convert_bool_to_atom_return path location hist ret_val_false ret_id astate
     in
     let astate_haskey =
       let ret_val_true = AbstractValue.mk_fresh () in
@@ -2197,9 +2197,9 @@ module Erlang = struct
             (AbstractValueOperand tracked_key) astate ]
       in
       let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
-      [Ok (PulseOperations.write_id ret_id (ret_val_true, hist) astate)]
+      convert_bool_to_atom_return path location hist ret_val_true ret_id astate
     in
-    List.map ~f:map_continue (astate_empty @ astate_haskey) @ astate_badmap
+    astate_empty @ astate_haskey @ astate_badmap
 
 
   let maps_get (key, _key_history) map : model =
