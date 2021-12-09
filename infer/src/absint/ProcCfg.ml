@@ -201,100 +201,6 @@ module Normal = struct
   let wto = Procdesc.get_wto
 end
 
-(** Forward CFG with exceptional control-flow for throw exception instruction only*)
-module ExceptionalThrowOnly = struct
-  module Node = DefaultNode
-
-  type id_node_map = Node.t list Procdesc.IdMap.t
-
-  type t = Procdesc.t * id_node_map
-
-  type instrs_dir = Instrs.not_reversed
-
-  let instrs = Procdesc.Node.get_instrs
-
-  let fold_normal_succs _ n ~init ~f = n |> Procdesc.Node.get_succs |> List.fold ~init ~f
-
-  let fold_normal_preds _ n ~init ~f = n |> Procdesc.Node.get_preds |> List.fold ~init ~f
-  
-  let fold_exceptional_succs _ n ~init ~f = n |> Procdesc.Node.get_exn |> List.fold ~init ~f
-
-  let fold_exceptional_preds (_, exn_pred_map) n ~init ~f =
-    match Procdesc.IdMap.find (Procdesc.Node.get_id n) exn_pred_map with
-    | exn_preds ->
-        List.fold exn_preds ~init ~f
-    | exception Caml.Not_found ->
-        init
-
-  (** we fold the exception flow only when the throw instruction is encountered and exn is returned. 
-  Under this circumstances, resources could be disposed in finaly black through exception sink node *)
-  let fold_normal_or_exn_succs fold_normal_alpha fold_exceptional t n ~init ~f =
-    let choose_normal_or_exn_succs node = 
-      let instrs = Procdesc.Node.get_instrs node in
-      let instr_count = (Instrs.count instrs) - 3 in
-      let get_last_instr () =
-         if instr_count >= 0 then Instrs.nth_exn instrs instr_count else Instrs.last instrs |> Option.value ~default:Sil.skip_instr
-      in
-      let last_instr = get_last_instr () in
-      match last_instr with 
-      | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when Pvar.is_return pvar ->
-        fold_exceptional t node ~init ~f
-      | _ ->
-        fold_normal_alpha t node ~init ~f
-    in
-    choose_normal_or_exn_succs n
-  
-  let fold_succs t n ~init ~f =
-    fold_normal_or_exn_succs fold_normal_succs fold_exceptional_succs t n ~init ~f
-  
-  let fold_preds t n ~init ~f =
-    fold_normal_or_exn_succs fold_normal_preds fold_exceptional_preds t n ~init ~f
-
-  let proc_desc (pdesc, _) = pdesc
-
-  let start_node (pdesc, _) = Procdesc.get_start_node pdesc
-
-  let exit_node (pdesc, _) = Procdesc.get_exit_node pdesc
-
-  let fold_nodes (t, _) ~init ~f = Procdesc.fold_nodes t ~init ~f
-
-  let from_pdesc pdesc =
-    (* map from a node to its exceptional predecessors *)
-    let add_exn_preds exn_preds_acc n =
-      let add_exn_pred exn_preds_acc exn_succ_node =
-        let exn_succ_node_id = Procdesc.Node.get_id exn_succ_node in
-        let existing_exn_preds =
-          try Procdesc.IdMap.find exn_succ_node_id exn_preds_acc with Caml.Not_found -> []
-        in
-        if not (List.mem ~equal:Procdesc.Node.equal existing_exn_preds n) then
-          (* don't add duplicates *)
-          Procdesc.IdMap.add exn_succ_node_id (n :: existing_exn_preds) exn_preds_acc
-        else exn_preds_acc
-      in
-      fold_exceptional_succs pdesc n ~f:add_exn_pred ~init:exn_preds_acc
-    in
-    let exceptional_preds = Procdesc.fold_nodes pdesc ~f:add_exn_preds ~init:Procdesc.IdMap.empty in
-    (pdesc, exceptional_preds)
-
-  let is_loop_head = Procdesc.is_loop_head
-
-  module WTO = WeakTopologicalOrder.Bourdoncle_SCC (struct
-    module Node = Node
-
-    type t = Procdesc.t
-
-    let fold_succs _cfg n ~init ~f =
-      (* we do not care about duplicate edges *)
-      let init = List.fold ~init ~f (Procdesc.Node.get_succs n) in
-      List.fold ~init ~f (Procdesc.Node.get_exn n)
-
-
-    let start_node = Procdesc.get_start_node
-  end)
-
-  let wto (pdesc, _) = WTO.make pdesc
-end
-
 (** Forward CFG with exceptional control-flow *)
 module Exceptional = struct
   module Node = DefaultNode
@@ -390,6 +296,35 @@ module Exceptional = struct
   end)
 
   let wto (pdesc, _) = WTO.make pdesc
+end
+
+(** Forward CFG with exceptional control-flow for throw exception instruction only*)
+module ExceptionalThrowOnly = struct
+  include Exceptional
+
+  (** we fold the exception flow only when the throw instruction is encountered and exn is returned. 
+  Under this circumstances, resources could be disposed in finaly black through exception sink node *)
+  let fold_normal_or_exn_succs fold_normal_alpha fold_exceptional t n ~init ~f =
+    let choose_normal_or_exn_succs node = 
+      let instrs = Procdesc.Node.get_instrs node in
+      let instr_count = (Instrs.count instrs) - 3 in
+      let get_last_instr () =
+         if instr_count >= 0 then Instrs.nth_exn instrs instr_count else Instrs.last instrs |> Option.value ~default:Sil.skip_instr
+      in
+      let last_instr = get_last_instr () in
+      match last_instr with 
+      | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when Pvar.is_return pvar ->
+        fold_exceptional t node ~init ~f
+      | _ ->
+        fold_normal_alpha t node ~init ~f
+    in
+    choose_normal_or_exn_succs n
+  
+  let fold_succs t n ~init ~f =
+    fold_normal_or_exn_succs fold_normal_succs fold_exceptional_succs t n ~init ~f
+  
+  let fold_preds t n ~init ~f =
+    fold_normal_or_exn_succs fold_normal_preds fold_exceptional_preds t n ~init ~f
 end
 
 (** Wrapper that reverses the direction of the CFG *)
