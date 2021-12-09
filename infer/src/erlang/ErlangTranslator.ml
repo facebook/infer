@@ -12,6 +12,16 @@ module Env = ErlangEnvironment
 module L = Logging
 module Node = ErlangNode
 
+let maps_is_key = Procname.make_erlang ~module_name:"maps" ~function_name:"is_key" ~arity:2
+
+let maps_put = Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3
+
+let maps_get = Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2
+
+let lists_append2 = Procname.make_erlang ~module_name:"lists" ~function_name:"append" ~arity:2
+
+let lists_reverse = Procname.make_erlang ~module_name:"lists" ~function_name:"reverse" ~arity:1
+
 let mangled_arg (n : int) : Mangled.t = Mangled.from_string (Printf.sprintf "$arg%d" n)
 
 let any_typ = Env.ptr_typ_of_name Any
@@ -228,7 +238,7 @@ and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
     let args = [(Exp.Var key_id, any_typ); (Exp.Var value, any_typ)] in
     let has_key_block =
       let has_key_id = mk_fresh_id () in
-      let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_is_key) in
+      let has_key_fun_exp = Exp.Const (Cfun maps_is_key) in
       let call_block =
         Block.make_instruction env
           [Sil.Call ((has_key_id, any_typ), has_key_fun_exp, args, env.location, CallFlags.default)]
@@ -244,7 +254,7 @@ and translate_pattern_map (env : (_, _) Env.t) value updates : Block.t =
       Block.all env [call_block; unbox_block; check_block]
     in
     let value_id = mk_fresh_id () in
-    let lookup_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_get) in
+    let lookup_fun_exp = Exp.Const (Cfun maps_get) in
     let lookup_block =
       Block.make_instruction env
         [Sil.Call ((value_id, any_typ), lookup_fun_exp, args, env.location, CallFlags.default)]
@@ -576,7 +586,7 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | Less ->
       make_simple_eager_bool Lt
   | ListAdd ->
-      let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_lists_append2) in
+      let fun_exp = Exp.Const (Cfun lists_append2) in
       let args : (Exp.t * Typ.t) list = [(Var id1, any_typ); (Var id2, any_typ)] in
       let call_instr =
         Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
@@ -818,7 +828,7 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
   let loop_block = List.fold_right generators ~f:apply_one_gen ~init:loop_body_with_filters in
   (* Store lists:reverse(L) in return variable *)
   let store_return_block =
-    let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_lists_reverse) in
+    let fun_exp = Exp.Const (Cfun lists_reverse) in
     let args : (Exp.t * Typ.t) list = [(Var list_var, any_typ)] in
     let call_instr =
       Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
@@ -875,7 +885,7 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
   let translate_update (one_update : Ast.association) =
     let key_id, key_expr_block = translate_expression_to_fresh_id env one_update.key in
     let value_id, value_expr_block = translate_expression_to_fresh_id env one_update.value in
-    let update_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_put) in
+    let update_fun_exp = Exp.Const (Cfun maps_put) in
     let update_args =
       [(Exp.Var key_id, any_typ); (Exp.Var value_id, any_typ); (Exp.Var map_id, any_typ)]
     in
@@ -889,7 +899,7 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
           []
       | Exact ->
           let has_key_id = mk_fresh_id () in
-          let has_key_fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_maps_is_key) in
+          let has_key_fun_exp = Exp.Const (Cfun maps_is_key) in
           let args = [(Exp.Var key_id, any_typ); (Exp.Var map_id, any_typ)] in
           let call_block =
             Block.make_instruction env

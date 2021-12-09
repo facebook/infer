@@ -92,19 +92,9 @@ let __erlang_error_if_clause = create_procname "__erlang_error_if_clause"
 
 let __erlang_error_try_clause = create_procname "__erlang_error_try_clause"
 
-let __erlang_lists_append2 = create_procname "__erlang_list_append2"
-
-let __erlang_lists_reverse = create_procname "__erlang_list_reverse"
-
 let __erlang_make_cons = create_procname "__erlang_make_cons"
 
 let __erlang_make_map = create_procname "__erlang_make_map"
-
-let __erlang_maps_is_key = create_procname "__erlang_map_is_key"
-
-let __erlang_maps_get = create_procname "__erlang_map_get"
-
-let __erlang_maps_put = create_procname "__erlang_map_put"
 
 let __erlang_make_nil = create_procname "__erlang_make_nil"
 

@@ -2362,11 +2362,6 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
         ; +BuiltinDecl.(match_builtin abort) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
-        ; +BuiltinDecl.(match_builtin __erlang_lists_reverse)
-          <>$ capt_arg_payload $--> Erlang.lists_reverse
-        ; +BuiltinDecl.(match_builtin __erlang_lists_append2)
-          <>$ capt_arg_payload $+ capt_arg_payload
-          $--> Erlang.lists_append2 ~reverse:false
         ; +BuiltinDecl.(match_builtin __erlang_make_atom)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_atom
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
@@ -2374,12 +2369,6 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
         ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Erlang.make_map
-        ; +BuiltinDecl.(match_builtin __erlang_maps_is_key)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_is_key
-        ; +BuiltinDecl.(match_builtin __erlang_maps_get)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_get
-        ; +BuiltinDecl.(match_builtin __erlang_maps_put)
-          <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_put
         ; +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Erlang.error_badkey
         ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Erlang.error_badmap
         ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch
