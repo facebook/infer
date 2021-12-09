@@ -262,12 +262,17 @@ let retn tid _ freturn {areturn; caller_q} callee_q =
   | Some aret, None -> exec_kill tid aret caller_q
   | None, _ -> caller_q
 
+type term_code = unit [@@deriving compare, sexp_of]
+
+let term _ _ _ _ = ()
+let move_term_code _ _ () q = q
+
 (** map actuals to formals (via temporary registers), stash constraints on
     caller-local variables. Note that this exploits the non-relational-ness
     of Box to ignore all variables other than the formal/actual params/
     returns; this will not be possible if extended to a relational domain *)
-let call ~summaries _ ~globals:_ ~actuals ~areturn ~formals ~freturn:_
-    ~locals:_ q =
+let call ~summaries _ ?child:_ ~globals:_ ~actuals ~areturn ~formals
+    ~freturn:_ ~locals:_ q =
   if summaries then
     todo "Summaries not yet implemented for interval analysis" ()
   else

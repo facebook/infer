@@ -324,7 +324,7 @@ end
 module ObjC_Cpp = struct
   type kind =
     | CPPMethod of {mangled: string option}
-    | CPPConstructor of {mangled: string option}
+    | CPPConstructor of {mangled: string option; is_copy_ctor: bool}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -361,6 +361,10 @@ module ObjC_Cpp = struct
     if is_instance then ObjCInstanceMethod else ObjCClassMethod
 
 
+  let is_copy_ctor {kind} =
+    match kind with CPPConstructor {is_copy_ctor} -> is_copy_ctor | _ -> false
+
+
   let is_prefix_init s = String.is_prefix ~prefix:"init" s
 
   let is_objc_constructor method_name = String.equal method_name "new" || is_prefix_init method_name
@@ -392,8 +396,10 @@ module ObjC_Cpp = struct
   let pp_verbose_kind fmt = function
     | CPPMethod {mangled} | CPPDestructor {mangled} ->
         F.fprintf fmt "(%s)" (Option.value ~default:"" mangled)
-    | CPPConstructor {mangled} ->
-        F.fprintf fmt "{%s}" (Option.value ~default:"" mangled)
+    | CPPConstructor {mangled; is_copy_ctor} ->
+        F.fprintf fmt "{%s}%s"
+          (if is_copy_ctor then "[copy_ctor]" else "")
+          (Option.value ~default:"" mangled)
     | ObjCClassMethod ->
         F.pp_print_string fmt "class"
     | ObjCInstanceMethod ->
@@ -500,13 +506,15 @@ module Block = struct
   (** Type of Objective C block names. *)
   type block_type =
     | InOuterScope of {outer_scope: block_type; block_index: int}
-    | SurroundingProc of {name: string}
+    | SurroundingProc of {class_name: Typ.name option; name: string}
   [@@deriving compare, yojson_of]
 
   type t = {block_type: block_type; parameters: Parameter.clang_parameter list}
   [@@deriving compare, yojson_of]
 
-  let make_surrounding name parameters = {block_type= SurroundingProc {name}; parameters}
+  let make_surrounding class_name name parameters =
+    {block_type= SurroundingProc {class_name; name}; parameters}
+
 
   let make_in_outer_scope outer_scope block_index parameters =
     {block_type= InOuterScope {outer_scope; block_index}; parameters}
@@ -541,6 +549,18 @@ module Block = struct
   let get_parameters block = block.parameters
 
   let replace_parameters new_parameters block = {block with parameters= new_parameters}
+
+  let get_class_type_name {block_type} =
+    let rec get_class_type_name_aux = function
+      | InOuterScope {outer_scope} ->
+          get_class_type_name_aux outer_scope
+      | SurroundingProc {class_name} ->
+          class_name
+    in
+    get_class_type_name_aux block_type
+
+
+  let get_class_name block = get_class_type_name block |> Option.map ~f:Typ.Name.name
 end
 
 (** Type of procedure names. *)
@@ -613,6 +633,13 @@ let hash = Hashtbl.hash
 
 let with_block_parameters base blocks = WithBlockParameters (base, blocks)
 
+let is_copy_ctor = function
+  | ObjC_Cpp objc_cpp_pname ->
+      ObjC_Cpp.is_copy_ctor objc_cpp_pname
+  | _ ->
+      false
+
+
 let is_java = function Java _ -> true | _ -> false
 
 let is_csharp = function CSharp _ -> true | _ -> false
@@ -638,29 +665,29 @@ let is_java_anonymous_inner_class_method = is_java_lift Java.is_anonymous_inner_
 
 let is_java_autogen_method = is_java_lift Java.is_autogen_method
 
-let is_objc_method procname =
-  match procname with ObjC_Cpp name -> ObjC_Cpp.is_objc_method name | _ -> false
-
-
-let is_objc_dealloc procname =
-  is_objc_method procname
-  &&
-  match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_objc_dealloc method_name | _ -> false
-
-
-let is_objc_init procname =
-  is_objc_method procname
-  &&
-  match procname with ObjC_Cpp {method_name} -> ObjC_Cpp.is_prefix_init method_name | _ -> false
-
-
-let rec is_objc_instance_method = function
-  | ObjC_Cpp {kind= ObjCInstanceMethod} ->
-      true
+let rec is_objc_helper ~f = function
+  | ObjC_Cpp objc_cpp_pname ->
+      f objc_cpp_pname
   | WithBlockParameters (base, _) ->
-      is_objc_instance_method base
-  | ObjC_Cpp _ | C _ | CSharp _ | Block _ | Erlang _ | Linters_dummy_method | Java _ ->
+      is_objc_helper ~f base
+  | Block _ | C _ | CSharp _ | Erlang _ | Java _ | Linters_dummy_method ->
       false
+
+
+let is_objc_method = is_objc_helper ~f:ObjC_Cpp.is_objc_method
+
+let is_objc_dealloc =
+  is_objc_helper ~f:(fun objc_cpp_pname ->
+      ObjC_Cpp.is_objc_method objc_cpp_pname && ObjC_Cpp.is_objc_dealloc objc_cpp_pname.method_name )
+
+
+let is_objc_init =
+  is_objc_helper ~f:(fun objc_cpp_pname ->
+      ObjC_Cpp.is_objc_method objc_cpp_pname && ObjC_Cpp.is_prefix_init objc_cpp_pname.method_name )
+
+
+let is_objc_instance_method =
+  is_objc_helper ~f:(function {kind= ObjCInstanceMethod} -> true | _ -> false)
 
 
 let block_of_procname procname =
@@ -671,7 +698,7 @@ let block_of_procname procname =
       Logging.die InternalError "Only to be called with Objective-C block names"
 
 
-let empty_block = Block (Block.make_surrounding "" [])
+let empty_block = Block (Block.make_surrounding None "" [])
 
 (** Replace the class name component of a procedure name. In case of Java, replace package and class
     name. *)
@@ -696,6 +723,8 @@ let get_class_type_name = function
       Some (CSharp.get_class_type_name cs_pname)
   | ObjC_Cpp objc_pname ->
       Some (ObjC_Cpp.get_class_type_name objc_pname)
+  | Block block ->
+      Block.get_class_type_name block
   | _ ->
       None
 
@@ -707,6 +736,8 @@ let get_class_name = function
       Some (CSharp.get_class_name cs_pname)
   | ObjC_Cpp objc_pname ->
       Some (ObjC_Cpp.get_class_name objc_pname)
+  | Block block ->
+      Block.get_class_name block
   | _ ->
       None
 
@@ -885,7 +916,7 @@ let get_block_type proc =
   | Block {block_type} ->
       block_type
   | _ ->
-      Block.SurroundingProc {name= to_string proc}
+      Block.SurroundingProc {class_name= get_class_type_name proc; name= to_string proc}
 
 
 (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)

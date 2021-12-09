@@ -8,7 +8,7 @@ ROOT_DIR = $(TESTS_DIR)/../..
 CODETOANALYZE_DIR = ../codetoanalyze/objc_retain_cycles
 
 SOURCES = $(CODETOANALYZE_DIR)/View.m $(CODETOANALYZE_DIR)/ViewController.m $(CODETOANALYZE_DIR)/Caller.m
-OBJECTS = $(CODETOANALYZE_DIR)/View.o $(CODETOANALYZE_DIR)/ViewController.o $(CODETOANALYZE_DIR)/Caller.o
+OBJECTS = $(SOURCES:$(CODETOANALYZE_DIR)/%.m=%.o)
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests

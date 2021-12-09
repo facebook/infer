@@ -97,7 +97,7 @@ module Misc = struct
     let open SatUnsat.Import in
     match
       ( AbductiveDomain.summary_of_post tenv proc_desc location astate
-        >>| AccessResult.ignore_memory_leaks >>| AccessResult.of_abductive_result
+        >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
         :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t )
     with
     | Unsat ->
@@ -264,6 +264,15 @@ module Misc = struct
       cannot generate leaks (eg it is handled by the language's garbage collector, or we don't want
       to report leaks for some reason) *)
   let alloc_no_leak_not_null ?desc size = alloc_not_null_common ?desc ~allocator:None size
+
+  (* NOTE: starts from the [exp] representing the argument as there's some logic in
+     {PulseOperations.prune} that works better if we know the SIL expression. This just means we're
+     discarding some abstract values that were potentially created to evaluate [exp] when the model
+     was called. *)
+  let assert_ {ProcnameDispatcher.Call.FuncArg.exp= condition} : model =
+   fun {path; location} astate ->
+    let<+> astate, _ = PulseOperations.prune path location ~condition astate in
+    astate
 end
 
 module C = struct
@@ -344,22 +353,40 @@ module ObjCCoreFoundation = struct
 end
 
 module ObjC = struct
-  let dispatch_sync args : model =
+  let call args : model =
+   (* [call \[args...; Closure _\]] models a call to the closure. It is similar to a
+      dispatch function. *)
    fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate ->
     match List.last args with
-    | None ->
-        ok_continue astate
-    | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= lambda_ptr_hist} -> (
-        let<*> astate, (lambda, _) =
-          PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
+    | Some {ProcnameDispatcher.Call.FuncArg.exp= Closure c} when Procname.is_objc_block c.name ->
+        (* TODO(T101946461): This code is very similar to [Pulse.dispatch_call] after the special
+           case for objc dispatch models with a bit of [Pulse.interprocedural_call]. Maybe refactor
+           it? *)
+        let actuals = List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars in
+        let<*> astate, rev_actuals =
+          List.fold_result actuals ~init:(astate, [])
+            ~f:(fun (astate, rev_actuals) (actual_exp, actual_typ) ->
+              let+ astate, actual_evaled =
+                PulseOperations.eval path Read location actual_exp astate
+              in
+              (astate, (actual_evaled, actual_typ) :: rev_actuals) )
         in
-        match AddressAttributes.get_closure_proc_name lambda astate with
-        | None ->
-            ok_continue astate
-        | Some callee_proc_name ->
-            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
-              ~callee_data:(analyze_dependency callee_proc_name)
-              location callee_proc_name ~ret ~actuals:[] ~formals_opt:None astate )
+        let actuals = List.rev rev_actuals in
+        PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
+        let r =
+          let get_pvar_formals pname =
+            IRAttributes.load pname |> Option.map ~f:Pvar.get_pvar_formals
+          in
+          let formals_opt = get_pvar_formals c.name in
+          let callee_data = analyze_dependency c.name in
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location
+            c.name ~ret ~actuals ~formals_opt astate
+        in
+        PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+        r
+    | _ ->
+        (* Nothing to call *)
+        ok_continue astate
 
 
   let insertion_into_collection_key_and_value (value, value_hist) (key, key_hist) ~desc : model =
@@ -436,15 +463,35 @@ module ObjC = struct
     astate
 
 
-  let construct_string char_array : model =
+  let construct_string ((value, value_hist) as char_array) : model =
    fun {path; location; ret= ret_id, _} astate ->
-    let hist = Hist.single_call path location "NSString.stringWithUTF8String:" in
+    let desc = "NSString.stringWithUTF8String:" in
+    let event = Hist.call_event path location desc in
+    let<*> astate, _ =
+      PulseOperations.eval_access path Read location
+        (value, Hist.add_event path event value_hist)
+        Dereference astate
+    in
     let string = AbstractValue.mk_fresh () in
+    let string_hist = Hist.single_call path location desc in
     let<+> astate =
-      PulseOperations.write_field path location ~ref:(string, hist)
+      PulseOperations.write_field path location ~ref:(string, string_hist)
         PulseOperations.ModeledField.internal_string ~obj:char_array astate
     in
-    PulseOperations.write_id ret_id (string, hist) astate
+    PulseOperations.write_id ret_id (string, string_hist) astate
+
+
+  let check_arg_not_nil (value, value_hist) ~desc : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
+    let<*> astate, _ =
+      PulseOperations.eval_access path Read location
+        (value, Hist.add_event path event value_hist)
+        Dereference astate
+    in
+    let ret_val = AbstractValue.mk_fresh () in
+    let<+> astate = PulseArithmetic.prune_positive ret_val astate in
+    PulseOperations.write_id ret_id (ret_val, Hist.single_call path location desc) astate
 end
 
 module Optional = struct
@@ -1323,6 +1370,24 @@ module Java = struct
         astate |> ok_continue
 end
 
+module JavaResource = struct
+  let init_FileOutputStream (this, _) _ : model =
+   fun {location; callee_procname} astate ->
+    let[@warning "-8"] (Some (Typ.JavaClass class_name)) =
+      Procname.get_class_type_name callee_procname
+    in
+    let allocator = Attribute.JavaResource class_name in
+    PulseOperations.allocate allocator location this astate |> ok_continue
+
+
+  let close_FileOutputStream (this, _) : model =
+   fun {callee_procname} astate ->
+    let[@warning "-8"] (Some (Typ.JavaClass class_name)) =
+      Procname.get_class_type_name callee_procname
+    in
+    PulseOperations.java_resource_release class_name this astate |> ok_continue
+end
+
 module JavaCollection = struct
   let pkg_name = "java.util"
 
@@ -1816,6 +1881,111 @@ module Erlang = struct
         result
 
 
+  let atom_value_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_value
+
+  let atom_hash_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash
+
+  let make_atom value hash : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let hist = Hist.single_alloc path location "atom" in
+    let addr_atom = (AbstractValue.mk_fresh (), hist) in
+    let<*> astate =
+      write_field_and_deref path location ~struct_addr:addr_atom
+        ~field_addr:(AbstractValue.mk_fresh (), hist)
+        ~field_val:value atom_value_field astate
+    in
+    let<+> astate =
+      write_field_and_deref path location ~struct_addr:addr_atom
+        ~field_addr:(AbstractValue.mk_fresh (), hist)
+        ~field_val:hash atom_hash_field astate
+    in
+    write_dynamic_type_and_return addr_atom Atom ret_id astate
+
+
+  let convert_bool_to_atom_return path location hist bool_value ret_id astate =
+    let addr_atom = (AbstractValue.mk_fresh (), hist) in
+    let atom_value = AbstractValue.mk_fresh () in
+    let atom_hash = AbstractValue.mk_fresh () in
+    let mk_astate atom_str astate =
+      let<*> astate =
+        PulseArithmetic.and_eq_int atom_hash
+          (IntLit.of_int (ErlangTypeName.calculate_hash atom_str))
+          astate
+      in
+      (* TODO: write string to value *)
+      let<*> astate =
+        write_field_and_deref path location ~struct_addr:addr_atom
+          ~field_addr:(AbstractValue.mk_fresh (), hist)
+          ~field_val:(atom_value, hist) atom_value_field astate
+      in
+      let<+> astate =
+        write_field_and_deref path location ~struct_addr:addr_atom
+          ~field_addr:(AbstractValue.mk_fresh (), hist)
+          ~field_val:(atom_hash, hist) atom_hash_field astate
+      in
+      write_dynamic_type_and_return addr_atom Atom ret_id astate
+    in
+    let astate_true =
+      let<*> astate = PulseArithmetic.prune_positive bool_value astate in
+      mk_astate ErlangTypeName.atom_true astate
+    in
+    let astate_false =
+      let<*> astate = PulseArithmetic.prune_eq_zero bool_value astate in
+      mk_astate ErlangTypeName.atom_false astate
+    in
+    astate_true @ astate_false
+
+
+  let erlang_is_atom (atom_val, _atom_hist) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let typ = Typ.mk_struct (ErlangType Atom) in
+    let is_atom = AbstractValue.mk_fresh () in
+    let hist = Hist.single_call path location "is_atom" in
+    let<*> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
+    convert_bool_to_atom_return path location hist is_atom ret_id astate
+
+
+  let erlang_is_boolean ((atom_val, _atom_hist) as atom) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let hist = Hist.single_call path location "is_boolean" in
+    let astate_not_atom =
+      (* Assume not atom: just return false *)
+      let typ = Typ.mk_struct (ErlangType Atom) in
+      let is_atom = AbstractValue.mk_fresh () in
+      let<*> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
+      let<*> astate = PulseArithmetic.prune_eq_zero is_atom astate in
+      convert_bool_to_atom_return path location hist is_atom ret_id astate
+    in
+    let astate_is_atom =
+      (* Assume atom: return hash==hashof(true) or hash==hashof(false) *)
+      let> astate = prune_type path location atom Atom astate in
+      let astate, _hash_addr, (hash, _hash_hist) =
+        load_field path
+          (Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash)
+          location atom astate
+      in
+      let is_true = AbstractValue.mk_fresh () in
+      let is_false = AbstractValue.mk_fresh () in
+      let is_bool = AbstractValue.mk_fresh () in
+      let<*> astate, is_true =
+        PulseArithmetic.eval_binop is_true Binop.Eq (AbstractValueOperand hash)
+          (LiteralOperand (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_true)))
+          astate
+      in
+      let<*> astate, is_false =
+        PulseArithmetic.eval_binop is_false Binop.Eq (AbstractValueOperand hash)
+          (LiteralOperand (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_false)))
+          astate
+      in
+      let<*> astate, is_bool =
+        PulseArithmetic.eval_binop is_bool Binop.LOr (AbstractValueOperand is_true)
+          (AbstractValueOperand is_false) astate
+      in
+      convert_bool_to_atom_return path location hist is_bool ret_id astate
+    in
+    astate_not_atom @ astate_is_atom
+
+
   let cons_head_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_head
 
   let cons_tail_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_tail
@@ -1923,8 +2093,7 @@ module Erlang = struct
       PulseArithmetic.eval_binop is_list Binop.LOr (AbstractValueOperand is_cons)
         (AbstractValueOperand is_nil) astate
     in
-    let astate = PulseOperations.write_id ret_id (is_list, hist) astate in
-    [Ok (ContinueProgram astate)]
+    convert_bool_to_atom_return path location hist is_list ret_id astate
 
 
   let make_tuple (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
@@ -2006,10 +2175,10 @@ module Erlang = struct
   let erlang_is_map (map_val, _map_hist) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let typ = Typ.mk_struct (ErlangType Map) in
-    let instanceof_val = AbstractValue.mk_fresh () in
+    let is_map = AbstractValue.mk_fresh () in
     let hist = Hist.single_call path location "is_map" in
-    let<*> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
-    PulseOperations.write_id ret_id (instanceof_val, hist) astate |> ok_continue
+    let<*> astate = PulseArithmetic.and_equal_instanceof is_map map_val typ astate in
+    convert_bool_to_atom_return path location hist is_map ret_id astate
 
 
   let maps_is_key (key, _key_history) map : model =
@@ -2029,7 +2198,7 @@ module Erlang = struct
       in
       let> astate = [PulseArithmetic.prune_positive is_empty astate] in
       let> astate = [PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate] in
-      [Ok (PulseOperations.write_id ret_id (ret_val_false, hist) astate)]
+      convert_bool_to_atom_return path location hist ret_val_false ret_id astate
     in
     let astate_haskey =
       let ret_val_true = AbstractValue.mk_fresh () in
@@ -2046,9 +2215,9 @@ module Erlang = struct
             (AbstractValueOperand tracked_key) astate ]
       in
       let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
-      [Ok (PulseOperations.write_id ret_id (ret_val_true, hist) astate)]
+      convert_bool_to_atom_return path location hist ret_val_true ret_id astate
     in
-    List.map ~f:map_continue (astate_empty @ astate_haskey) @ astate_badmap
+    astate_empty @ astate_haskey @ astate_badmap
 
 
   let maps_get (key, _key_history) map : model =
@@ -2187,27 +2356,19 @@ module ProcNameDispatcher = struct
         ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> Cplusplus.new_array
         ; +BuiltinDecl.(match_builtin __placement_new) &++> Cplusplus.placement_new
         ; -"random" <>$$--> Misc.nondet ~desc:"random"
+        ; -"assert" <>$ capt_arg $--> Misc.assert_
         ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin __cast)
           <>$ capt_arg_payload $+...$--> Misc.id_first_arg ~desc:"cast"
         ; +BuiltinDecl.(match_builtin abort) <>--> Misc.early_exit
         ; +BuiltinDecl.(match_builtin exit) <>--> Misc.early_exit
-        ; +BuiltinDecl.(match_builtin __erlang_lists_reverse)
-          <>$ capt_arg_payload $--> Erlang.lists_reverse
-        ; +BuiltinDecl.(match_builtin __erlang_lists_append2)
-          <>$ capt_arg_payload $+ capt_arg_payload
-          $--> Erlang.lists_append2 ~reverse:false
+        ; +BuiltinDecl.(match_builtin __erlang_make_atom)
+          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_atom
         ; +BuiltinDecl.(match_builtin __erlang_make_cons)
           <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.make_cons
         ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Erlang.make_tuple
         ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Erlang.make_nil
         ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Erlang.make_map
-        ; +BuiltinDecl.(match_builtin __erlang_maps_is_key)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_is_key
-        ; +BuiltinDecl.(match_builtin __erlang_maps_get)
-          <>$ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_get
-        ; +BuiltinDecl.(match_builtin __erlang_maps_put)
-          <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> Erlang.maps_put
         ; +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Erlang.error_badkey
         ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Erlang.error_badmap
         ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Erlang.error_badmatch
@@ -2269,6 +2430,11 @@ module ProcNameDispatcher = struct
           $+...$--> Optional.get_pointer ~desc:"folly::Optional::get_pointer()"
         ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
           $+...$--> Optional.value_or ~desc:"folly::Optional::value_or()"
+        ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
+          &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> JavaResource.init_FileOutputStream
+        ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
+          &:: "close" <>$ capt_arg_payload $--> JavaResource.close_FileOutputStream
           (* std::optional *)
         ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
           $+ any_arg_of_typ (-"std" &:: "nullopt_t")
@@ -2428,6 +2594,10 @@ module ProcNameDispatcher = struct
           $--> Erlang.erlang_is_map
         ; -ErlangTypeName.erlang_namespace &:: "is_list" <>$ capt_arg_payload
           $--> Erlang.erlang_is_list
+        ; -ErlangTypeName.erlang_namespace &:: "is_atom" <>$ capt_arg_payload
+          $--> Erlang.erlang_is_atom
+        ; -ErlangTypeName.erlang_namespace &:: "is_boolean" <>$ capt_arg_payload
+          $--> Erlang.erlang_is_boolean
         ; -"lists" &:: "append" <>$ capt_arg_payload $+ capt_arg_payload
           $--> Erlang.lists_append2 ~reverse:false
         ; -"lists" &:: "reverse" <>$ capt_arg_payload $--> Erlang.lists_reverse
@@ -2539,7 +2709,9 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.Java.implements_android "text.TextUtils")
           &:: "isEmpty" <>$ capt_arg_payload
           $--> Android.text_utils_is_empty ~desc:"TextUtils.isEmpty"
-        ; -"dispatch_sync" &++> ObjC.dispatch_sync
+        ; -"dispatch_sync" <>$ any_arg $++$--> ObjC.call
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UITraitCollection")
+          &:: "performAsCurrentTraitCollection:" <>$ any_arg $++$--> ObjC.call
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
           &--> C.custom_alloc_not_null
         ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
@@ -2557,7 +2729,20 @@ module ProcNameDispatcher = struct
           <>$ capt_arg_payload $--> ObjCCoreFoundation.cf_bridging_release
         ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> ObjC.alloc_no_fail
         ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Misc.id_first_arg ~desc:"NSObject.init"
-        ; -"NSString" &:: "stringWithUTF8String:" <>$ capt_arg_payload $--> ObjC.construct_string
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "stringWithUTF8String:" <>$ capt_arg_payload $--> ObjC.construct_string
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "initWithFormat:" <>$ any_arg $+ capt_arg_payload
+          $+...$--> ObjC.check_arg_not_nil ~desc:"NSString.initWithFormat:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "stringWithFormat:" <>$ capt_arg_payload
+          $+...$--> ObjC.check_arg_not_nil ~desc:"NSString.stringWithFormat:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "stringWithString:" <>$ capt_arg_payload
+          $--> ObjC.check_arg_not_nil ~desc:"NSString.stringWithString:"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+          &:: "stringByAppendingString:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.check_arg_not_nil ~desc:"NSString.stringByAppendingString:"
         ; +BuiltinDecl.(match_builtin objc_insert_key)
           <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
@@ -2582,9 +2767,6 @@ module ProcNameDispatcher = struct
           &:: "dictionaryWithSharedKeySet:" <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Key
                  ~desc:"NSMutableDictionary.dictionaryWithSharedKeySet"
-        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
-          &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
-          $--> ObjC.read_from_collection ~desc:"NSMutableDictionary.objectForKey"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
           &:: "addObject:" <>$ any_arg $+ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value
@@ -2626,6 +2808,9 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
           &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
           $--> ObjC.read_from_collection ~desc:"NSDictionary.objectForKey"
+        ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
+          &:: "objectForKeyedSubscript:" <>$ any_arg $+ capt_arg_payload
+          $--> ObjC.read_from_collection ~desc:"NSDictionary.objectForKeyedSubscript"
         ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
           &:: "setWithObject:" <>$ capt_arg_payload
           $--> ObjC.insertion_into_collection_key_or_value ~value_kind:`Value

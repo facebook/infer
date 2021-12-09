@@ -133,7 +133,11 @@ let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
 let subst_find_or_new subst addr_callee =
   match AbstractValue.Map.find_opt addr_callee subst with
   | None ->
-      let addr_hist_fresh = (AbstractValue.mk_fresh (), ValueHistory.Epoch) in
+      (* map restricted (≥0) values to restricted values to preserve their semantics *)
+      let addr_caller = AbstractValue.mk_fresh_same_kind addr_callee in
+      L.d_printfln "new subst %a <-> %a (fresh)" AbstractValue.pp addr_callee AbstractValue.pp
+        addr_caller ;
+      let addr_hist_fresh = (addr_caller, ValueHistory.Epoch) in
       (AbstractValue.Map.add addr_callee addr_hist_fresh subst, fst addr_hist_fresh)
   | Some addr_hist_caller ->
       (subst, fst addr_hist_caller)
@@ -415,6 +419,12 @@ let prune_binop ~negated bop lhs_op rhs_op ({is_unsat; bo_itvs= _; citvs; formul
             (false_, [])
         | Sat (formula, new_eqs) ->
             ({phi with is_unsat; formula}, new_eqs) )
+
+
+let and_is_int v phi =
+  let+ {is_unsat; bo_itvs; citvs; formula} = phi in
+  let+| formula, new_eqs = Formula.and_is_int v formula in
+  ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
 
 
 let and_eq_instanceof v1 v2 t phi =

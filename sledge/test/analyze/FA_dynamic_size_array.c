@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-void main() {
+void
+main()
+{
   size_t n = __llair_choice();
   n = (n < 0 ? -n : n) + 1;
   int* a = __llair_alloc(n * sizeof(int));

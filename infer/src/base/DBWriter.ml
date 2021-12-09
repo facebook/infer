@@ -169,7 +169,8 @@ module Implementation = struct
 
 
   let canonicalize () =
-    ResultsDatabase.get_database () |> SqliteUtils.exec ~log:"running VACUUM" ~stmt:"VACUUM"
+    ResultsDatabase.get_database ()
+    |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
 
 
   let reset_capture_tables () =
@@ -242,6 +243,7 @@ module Command = struct
         ; tenv: Sqlite3.Data.t
         ; integer_type_widths: Sqlite3.Data.t
         ; proc_names: Sqlite3.Data.t }
+    | Checkpoint
     | DeleteAllSpecs
     | DeleteSpec of {proc_uid: string}
     | Handshake
@@ -262,11 +264,12 @@ module Command = struct
         ; callees: Sqlite3.Data.t }
     | ResetCaptureTables
     | Terminate
-    | Vacuum
 
   let to_string = function
     | AddSourceFile _ ->
         "AddSourceFile"
+    | Checkpoint ->
+        "Checkpoint"
     | DeleteAllSpecs ->
         "DeleteAllSpecs"
     | DeleteSpec _ ->
@@ -285,8 +288,6 @@ module Command = struct
         "StoreSpec"
     | Terminate ->
         "Terminate"
-    | Vacuum ->
-        "Vacuum"
 
 
   let pp fmt cmd = F.pp_print_string fmt (to_string cmd)
@@ -294,6 +295,8 @@ module Command = struct
   let execute = function
     | AddSourceFile {source_file; tenv; integer_type_widths; proc_names} ->
         Implementation.add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names
+    | Checkpoint ->
+        Implementation.canonicalize ()
     | DeleteAllSpecs ->
         Implementation.delete_all_specs ()
     | DeleteSpec {proc_uid} ->
@@ -314,8 +317,6 @@ module Command = struct
         Implementation.reset_capture_tables ()
     | Terminate ->
         Implementation.log_specs_overwrite_counts ()
-    | Vacuum ->
-        Implementation.canonicalize ()
 end
 
 type response = Ack | Error of (string * Caml.Printexc.raw_backtrace)
@@ -363,8 +364,9 @@ module Server = struct
 
   let socket_exists () = in_results_dir ~f:(fun () -> Sys.file_exists_exn socket_name)
 
-  let server () =
-    L.debug Analysis Quiet "Sqlite write daemon: starting up@." ;
+  (* Error recuperation is done by attempting this function at module initialization time, and
+     not using DbWriter at all in case it fails. See {!can_use_socket} below. *)
+  let setup_socket () =
     if socket_exists () then L.die InternalError "Sqlite write daemon: socket already exists@." ;
     let socket = Unix.socket ~domain:socket_domain ~kind:Unix.SOCK_STREAM ~protocol:0 () in
     in_results_dir ~f:(fun () -> Unix.bind socket ~addr:socket_addr) ;
@@ -372,13 +374,30 @@ module Server = struct
        there are no rules about the implied behaviour though.  Here use optimistically
        the number of workers, though even that is a guess. *)
     Unix.listen socket ~backlog:Config.jobs ;
+    socket
+
+
+  let remove_socket socket =
+    in_results_dir ~f:(fun () ->
+        Unix.close socket ;
+        Unix.unlink socket_name )
+
+
+  (* Check whether we can create a socket to communicate with the asynchronous DBWriter process. *)
+  let can_use_socket () =
+    try
+      let socket = setup_socket () in
+      remove_socket socket ;
+      true
+    with _ -> false
+
+
+  let server () =
+    L.debug Analysis Quiet "Sqlite write daemon: starting up@." ;
+    let socket = setup_socket () in
     L.debug Analysis Quiet "Sqlite write daemon: set up complete, waiting for connections@." ;
-    let shutdown () =
-      in_results_dir ~f:(fun () ->
-          Unix.close socket ;
-          Unix.remove socket_name )
-    in
-    Exception.try_finally ~f:(fun () -> server_loop socket) ~finally:shutdown
+    let finally () = remove_socket socket in
+    Exception.try_finally ~f:(fun () -> server_loop socket) ~finally
 
 
   let send cmd =
@@ -419,15 +438,30 @@ module Server = struct
 end
 
 let use_daemon =
-  let is_windows = match Version.build_platform with Windows -> true | Linux | Darwin -> false in
-  Config.((not is_windows) && dbwriter && (not (buck || genrule_mode)) && jobs > 1)
+  lazy
+    (let is_windows =
+       match Version.build_platform with Windows -> true | Linux | Darwin -> false
+     in
+     Config.((not is_windows) && dbwriter && (not (buck || genrule_mode)) && jobs > 1)
+     &&
+     (* Only the main process should try detecting whether the socket can be created.
+        Otherwise, re-spawned Infer will try to create a socket on top of the existing one. *)
+     if Config.is_originator then (
+       let socket_ok = Server.can_use_socket () in
+       if not socket_ok then
+         L.user_warning
+           "Cannot setup the socket to communicate with the database daemon. Performance will be \
+            impacted. Do you have enough rights to create a Unix socket in directory '%s'?@."
+           Config.toplevel_results_dir ;
+       socket_ok )
+     else Server.socket_exists () )
 
 
-let perform cmd = if use_daemon then Server.send cmd else Command.execute cmd
+let perform cmd = if Lazy.force use_daemon then Server.send cmd else Command.execute cmd
 
 let start () = Server.start ()
 
-let stop () = Server.send Command.Terminate
+let stop () = try Server.send Command.Terminate with Unix.Unix_error _ -> ()
 
 let replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg ~callees =
   perform
@@ -442,7 +476,7 @@ let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
 
 let merge ~infer_deps_file = perform (Merge {infer_deps_file})
 
-let canonicalize () = perform Vacuum
+let canonicalize () = perform Checkpoint
 
 let reset_capture_tables () = perform ResetCaptureTables
 

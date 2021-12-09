@@ -28,7 +28,7 @@ let setup () =
   let db_start =
     let already_started = ref false in
     fun () ->
-      if (not !already_started) && Config.is_originator && DBWriter.use_daemon then (
+      if (not !already_started) && Config.is_originator && Lazy.force DBWriter.use_daemon then (
         DBWriter.start () ;
         Epilogues.register ~f:DBWriter.stop ~description:"Stop Sqlite write daemon" ;
         already_started := true )

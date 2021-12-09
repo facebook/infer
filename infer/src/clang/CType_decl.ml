@@ -604,8 +604,9 @@ and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
-    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, _)) ->
-        Procname.ObjC_Cpp.CPPConstructor {mangled}
+    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_copy_constructor= is_copy_ctor}))
+      ->
+        Procname.ObjC_Cpp.CPPConstructor {mangled; is_copy_ctor}
     | Some (Clang_ast_t.CXXDestructorDecl _) ->
         Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->
@@ -646,7 +647,7 @@ and objc_method_procname ?tenv decl_info method_name mdi =
 and objc_block_procname outer_proc_opt parameters =
   let block_type =
     Option.value_map ~f:Procname.get_block_type outer_proc_opt
-      ~default:(Procname.Block.SurroundingProc {name= ""})
+      ~default:(Procname.Block.SurroundingProc {class_name= None; name= ""})
   in
   let block_index = CFrontend_config.get_fresh_block_index () in
   let block = Procname.Block.make_in_outer_scope block_type block_index parameters in
@@ -672,18 +673,30 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
     | None ->
         []
   in
+  let mk_cpp_method decl_info name_info fdi mdi =
+    let mangled = get_mangled_method_name fdi mdi in
+    let method_name = CAst_utils.get_unqualified_name name_info in
+    let class_typename = get_class_typename ?tenv decl_info in
+    mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled parameters
+  in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
       let name = CAst_utils.get_qualified_name name_info in
       mk_c_function ?tenv name (Some (decl_info, fdi)) parameters
+  | CXXConstructorDecl (decl_info, {ni_name= ""; ni_qual_name= "" :: qual_names}, _, fdi, mdi) ->
+      (* For some constructors of non-class objects in C++, the clang frontend gives empty method
+         name, e.g. struct, lambda, and union.  For better readability, we replace them to a
+         constant non-empty name. *)
+      let name_info =
+        { ni_name= CFrontend_config.cxx_constructor
+        ; ni_qual_name= CFrontend_config.cxx_constructor :: qual_names }
+      in
+      mk_cpp_method decl_info name_info fdi mdi
   | CXXMethodDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConstructorDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConversionDecl (decl_info, name_info, _, fdi, mdi)
   | CXXDestructorDecl (decl_info, name_info, _, fdi, mdi) ->
-      let mangled = get_mangled_method_name fdi mdi in
-      let method_name = CAst_utils.get_unqualified_name name_info in
-      let class_typename = get_class_typename ?tenv decl_info in
-      mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled parameters
+      mk_cpp_method decl_info name_info fdi mdi
   | ObjCMethodDecl (decl_info, name_info, mdi) ->
       objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name mdi parameters
   | BlockDecl _ ->
@@ -789,7 +802,7 @@ module CProcname = struct
         in
         objc_method_procname decl_info method_name mdi []
     | BlockDecl _ ->
-        Procname.Block (Procname.Block.make_surrounding Config.anonymous_block_prefix [])
+        Procname.Block (Procname.Block.make_surrounding None Config.anonymous_block_prefix [])
     | _ ->
         from_decl method_decl
 end

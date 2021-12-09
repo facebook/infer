@@ -49,7 +49,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let get_access_expr_list actuals = List.map actuals ~f:get_access_expr
 
-  let do_assume assume_exp (astate : Domain.t) =
+  let do_assume formals assume_exp (astate : Domain.t) =
     let open Domain in
     let add_thread_choice (acc : Domain.t) bool_value =
       let thread = if bool_value then ThreadDomain.UIThread else ThreadDomain.BGThread in
@@ -64,15 +64,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              in
              {acc with attributes} )
     in
-    match HilExp.get_access_exprs assume_exp with
-    | [access_expr] ->
-        if AttributeDomain.is_thread_guard access_expr astate.attributes then
+    let astate =
+      match HilExp.get_access_exprs assume_exp with
+      | [access_expr] when AttributeDomain.is_thread_guard access_expr astate.attributes ->
           HilExp.eval_boolean_exp access_expr assume_exp
           |> Option.fold ~init:astate ~f:add_thread_choice
-        else if AttributeDomain.is_future_done_guard access_expr astate.attributes then
+      | [access_expr] when AttributeDomain.is_future_done_guard access_expr astate.attributes ->
           HilExp.eval_boolean_exp access_expr assume_exp
           |> Option.fold ~init:astate ~f:(add_future_done_choice access_expr)
-        else astate
+      | _ ->
+          astate
+    in
+    match (assume_exp : HilExp.t) with
+    | (BinaryOperator (Eq, exp, null) | UnaryOperator (LNot, BinaryOperator (Ne, exp, null), _))
+      when HilExp.is_null_literal null ->
+        StarvationDomain.null_check formals exp astate
+    | (BinaryOperator (Eq, null, exp) | UnaryOperator (LNot, BinaryOperator (Ne, null, exp), _))
+      when HilExp.is_null_literal null ->
+        StarvationDomain.null_check formals exp astate
     | _ ->
         astate
 
@@ -119,12 +128,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Option.value_map work_opt ~default:astate ~f:schedule_work
 
 
-  let do_assignment tenv lhs_access_exp rhs_exp (astate : Domain.t) =
-    get_access_expr rhs_exp
-    |> Option.bind ~f:(fun exp -> get_exp_attributes tenv exp astate)
-    |> Option.value_map ~default:astate ~f:(fun attribute ->
-           let attributes = Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes in
-           {astate with attributes} )
+  let do_assignment tenv formals lhs_access_exp rhs_exp (astate : Domain.t) =
+    let astate =
+      get_access_expr rhs_exp
+      |> Option.bind ~f:(fun exp -> get_exp_attributes tenv exp astate)
+      |> Option.value_map ~default:astate ~f:(fun attribute ->
+             let attributes =
+               Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes
+             in
+             {astate with attributes} )
+    in
+    if HilExp.is_null_literal rhs_exp then astate
+    else Domain.set_non_null formals lhs_access_exp astate
 
 
   let do_call {interproc= {tenv; analyze_dependency}; formals} lhs callee actuals loc
@@ -203,7 +218,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let treat_assume () =
       if StarvationModels.is_assume_true tenv callee actuals then
-        List.hd actuals |> Option.map ~f:(fun exp -> do_assume exp astate)
+        List.hd actuals |> Option.map ~f:(fun exp -> do_assume formals exp astate)
       else None
     in
     let treat_arbitrary_code_exec () =
@@ -223,7 +238,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.map ~f:(fun summary ->
              let subst = Lock.make_subst formals actuals in
              let callsite = CallSite.make callee loc in
-             Domain.integrate_summary ~tenv ~lhs ~subst callsite astate summary )
+             Domain.integrate_summary ~tenv ~lhs ~subst formals callsite astate summary )
     in
     IList.eval_until_first_some
       [ treat_handler_constructor
@@ -238,7 +253,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match metadata with ExitScope (vars, _) -> Domain.remove_dead_vars astate vars | _ -> astate
 
 
-  let do_load tenv ~lhs rhs_exp rhs_typ (astate : Domain.t) =
+  let do_load tenv formals ~lhs rhs_exp rhs_typ (astate : Domain.t) =
     let lhs_var = fst lhs in
     let add_deref = match (lhs_var : Var.t) with LogicalVar _ -> true | ProgramVar _ -> false in
     let rhs_hil_exp = hilexp_of_sil ~add_deref astate rhs_exp rhs_typ in
@@ -248,13 +263,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              {astate with var_state= Domain.VarDomain.set lhs_var acc_exp astate.var_state} )
     in
     let lhs_hil_acc_exp = HilExp.AccessExpression.base lhs in
-    do_assignment tenv lhs_hil_acc_exp rhs_hil_exp astate
+    do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate
 
 
-  let do_cast tenv id base_typ actuals astate =
+  let do_cast tenv formals id base_typ actuals astate =
     match actuals with
     | [(e, typ); _sizeof] ->
-        do_load tenv ~lhs:(Var.of_id id, base_typ) e typ astate
+        do_load tenv formals ~lhs:(Var.of_id id, base_typ) e typ astate
     | _ ->
         astate
 
@@ -275,25 +290,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         do_metadata metadata astate
     | Prune (exp, _loc, _then_branch, _if_kind) ->
         let hil_exp = hilexp_of_sil ~add_deref:false astate exp StdTyp.boolean in
-        do_assume hil_exp astate
+        do_assume formals hil_exp astate
     | Load {id} when Ident.is_none id ->
         astate
     | Load {id; e; typ} ->
-        do_load tenv ~lhs:(Var.of_id id, typ) e typ astate
+        do_load tenv formals ~lhs:(Var.of_id id, typ) e typ astate
     | Store {e1= Lvar lhs_pvar; typ; e2} when Pvar.is_ssa_frontend_tmp lhs_pvar ->
-        do_load tenv ~lhs:(Var.of_pvar lhs_pvar, typ) e2 typ astate
+        do_load tenv formals ~lhs:(Var.of_pvar lhs_pvar, typ) e2 typ astate
     | Store {e1; typ; e2} ->
         let rhs_hil_exp = hilexp_of_sil ~add_deref:false astate e2 typ in
         hilexp_of_sil ~add_deref:true astate e1 (Typ.mk_ptr typ)
         |> get_access_expr
         |> Option.value_map ~default:astate ~f:(fun lhs_hil_acc_exp ->
-               do_assignment tenv lhs_hil_acc_exp rhs_hil_exp astate )
+               do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate )
     | Call (_, Const (Cfun callee), actuals, _, _)
       when should_skip_analysis tenv callee (hilexp_of_sils ~add_deref:false astate actuals) ->
         astate
     | Call ((id, base_typ), Const (Cfun callee), actuals, _, _)
       when Procname.equal callee BuiltinDecl.__cast ->
-        do_cast tenv id base_typ actuals astate
+        do_cast tenv formals id base_typ actuals astate
     | Call ((id, typ), Const (Cfun callee), sil_actuals, loc, _) -> (
         let ret_base = (Var.of_id id, typ) in
         let actuals = hilexp_of_sils ~add_deref:false astate sil_actuals in
@@ -332,6 +347,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let astate = do_work_scheduling tenv callee actuals loc astate in
             if may_block tenv callee actuals then Domain.blocking_call ~callee ~loc astate
             else if may_do_ipc tenv callee actuals then Domain.ipc ~callee ~loc astate
+            else if is_regex_op tenv callee actuals then Domain.regex_op ~callee ~loc astate
             else do_call analysis_data ret_exp callee actuals loc astate
         | NoEffect ->
             (* in C++/Obj C we only care about deadlocks, not starvation errors *)
@@ -457,17 +473,19 @@ module ReportMap : sig
   type report_add_t =
     Tenv.t -> ProcAttributes.t -> Location.t -> Errlog.loc_trace -> string -> t -> t
 
+  val add_arbitrary_code_execution_under_lock : report_add_t
+
   val add_deadlock : report_add_t
 
   val add_ipc : report_add_t
 
+  val add_lockless_violation : report_add_t
+
+  val add_regex_op : report_add_t
+
   val add_starvation : report_add_t
 
   val add_strict_mode_violation : report_add_t
-
-  val add_lockless_violation : report_add_t
-
-  val add_arbitrary_code_execution_under_lock : report_add_t
 
   val issue_log_of : t -> IssueLog.t
 
@@ -510,6 +528,10 @@ end = struct
     add tenv pattrs loc ltr message IssueType.ipc_on_ui_thread map
 
 
+  let add_regex_op tenv pattrs loc ltr message map =
+    add tenv pattrs loc ltr message IssueType.regex_op_on_ui_thread map
+
+
   let add_starvation tenv pattrs loc ltr message map =
     add tenv pattrs loc ltr message IssueType.starvation map
 
@@ -531,6 +553,7 @@ end = struct
       [ deadlock
       ; lockless_violation
       ; ipc_on_ui_thread
+      ; regex_op_on_ui_thread
       ; starvation
       ; strict_mode_violation
       ; arbitrary_code_execution_under_lock ]
@@ -593,8 +616,9 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
   (not Config.deduplicate)
   ||
   match (endpoint_elem.CriticalPair.elem.event, current_elem.CriticalPair.elem.event) with
-  | _, (StrictModeCall _ | Ipc _ | MayBlock _ | MonitorWait _ | MustNotOccurUnderLock _)
-  | (StrictModeCall _ | Ipc _ | MayBlock _ | MonitorWait _ | MustNotOccurUnderLock _), _ ->
+  | _, (Ipc _ | MayBlock _ | MonitorWait _ | MustNotOccurUnderLock _ | RegexOp _ | StrictModeCall _)
+  | (Ipc _ | MayBlock _ | MonitorWait _ | MustNotOccurUnderLock _ | RegexOp _ | StrictModeCall _), _
+    ->
       (* should never happen *)
       L.die InternalError "Deadlock cannot occur without two lock events: %a" CriticalPair.pp
         current_elem
@@ -666,7 +690,7 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
     if CriticalPair.can_run_in_parallel pair other_pair then
       let acquisitions = other_pair.CriticalPair.elem.acquisitions in
       match other_pair.CriticalPair.elem.event with
-      | (Ipc _ | MayBlock _) as event
+      | (Ipc _ | MayBlock _ | RegexOp _) as event
         when should_report_starvation
              && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
           let error_message =
@@ -747,6 +771,15 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       in
       let ltr, loc = make_trace_and_loc () in
       ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
+  | RegexOp _ when is_not_private && should_report_starvation ->
+      let error_message =
+        Format.asprintf
+          "%a runs on UI thread and may perform costly regular expression operations, potentially \
+           regressing scroll performance; %a."
+          pname_pp pname Event.describe event
+      in
+      let ltr, loc = make_trace_and_loc () in
+      ReportMap.add_regex_op tenv pattrs loc ltr error_message report_map
   | StrictModeCall _ when is_not_private && should_report_starvation ->
       let error_message =
         Format.asprintf "%a runs on UI thread and may violate Strict Mode; %a." pname_pp pname

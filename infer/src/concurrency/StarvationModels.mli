@@ -12,6 +12,8 @@ val may_block : Tenv.t -> Procname.t -> HilExp.t list -> bool
 
 val may_do_ipc : Tenv.t -> Procname.t -> HilExp.t list -> bool
 
+val is_regex_op : Tenv.t -> Procname.t -> HilExp.t list -> bool
+
 val is_strict_mode_violation : Tenv.t -> Procname.t -> HilExp.t list -> bool
 
 val is_monitor_wait : Tenv.t -> Procname.t -> HilExp.t list -> bool

@@ -156,7 +156,7 @@ values: <i>ant</i>, <i>buck</i>, <i>gradle</i>,
 <i>clang</i>, <i>gcc</i>, <i>clang++</i>, <i>c++</i>,
 <i>g++</i>, <i>make</i>, <i>configure</i>, <i>cmake</i>,
 <i>waf</i>, <i>mvn</i>, <i>mvnw</i>, <i>ndk-build</i>,
-<i>rebar3</i>, <i>xcodebuild</i>.</p>
+<i>rebar3</i>, <i>erlc</i>, <i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;"><b>--help</b></p>
 
@@ -325,6 +325,16 @@ default, all recursive dependencies are captured.</p>
 Java which uses the buck flavor #infer-java-capture instead
 of genrules like buck-java. (Conversely:
 <b>--no-buck-java-flavor</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--buck-java-flavor-dependency-depth</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Capture dependencies only if
+they are at most the depth provided, or all transitive
+dependencies if depth is not provided (the default). In
+particular, depth zero means capture exactly the targets
+provided and nothing else.</p>
 
 
 <p style="margin-left:11%;"><b>--buck-java-flavor-suppress-config</b></p>

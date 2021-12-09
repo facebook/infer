@@ -10,8 +10,6 @@ INFER_OPTIONS = --project-root ../codetoanalyze
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = ../codetoanalyze/hello.unknown_ext
+CLEAN_EXTRA += hello.o
 
 include $(TESTS_DIR)/clang.make
-
-../codetoanalyze/hello.o: ../codetoanalyze/hello.unknown_ext
-	clang $(CLANG_OPTIONS) $< > $@

@@ -58,6 +58,8 @@ val clang_bin : string -> string
 
 val class_method : string
 
+val cxx_constructor : string
+
 val fbAssertWithSignalAndLogFunctionHelper : string
 
 val google_LogMessageFatal : string

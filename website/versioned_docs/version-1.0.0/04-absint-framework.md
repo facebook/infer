@@ -16,7 +16,7 @@ languages Infer supports (C, Objective-C, C++, and Java)!
 
 This guide covers how to use the framework. For background on why we built the
 framework and how it works, check out these
-[slides](http://fbinfer.com/downloads/pldi17-infer-ai-tutorial.pdf) from a PLDI
+[slides](/downloads/pldi17-infer-ai-tutorial.pdf) from a PLDI
 2017 tutorial and this
 [talk](https://atscaleconference.com/videos/getting-the-most-out-of-static-analyzers)
 from @Scale2016.

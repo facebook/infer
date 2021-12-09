@@ -8,4 +8,4 @@
 
 open! IStd
 
-val process : Summary.t -> unit
+val process : Procdesc.t -> unit

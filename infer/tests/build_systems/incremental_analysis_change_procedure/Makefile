@@ -7,6 +7,7 @@ TESTS_DIR = ../..
 
 MODIFIED_FILES_FILE = changed_files.txt
 SOURCES = $(wildcard src/*.c src/*.h)
+CLEAN_EXTRA += $(patsubst src/%.c,%.o,$(wildcard src/*.c))
 INFER_OPTIONS = --changed-files-index $(MODIFIED_FILES_FILE) \
   --incremental-analysis \
   --debug-level-analysis 1

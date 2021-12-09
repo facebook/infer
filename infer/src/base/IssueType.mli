@@ -83,13 +83,15 @@ val assert_failure : t
 
 val bad_footprint : t
 
-val bad_key : t
+val bad_key : latent:bool -> t
 
-val bad_map : t
+val bad_map : latent:bool -> t
 
-val bad_record : t
+val bad_record : latent:bool -> t
 
 val biabduction_analysis_stops : t
+
+val block_parameter_not_null_checked : t
 
 val buffer_overrun_l1 : t
 
@@ -139,13 +141,11 @@ val condition_always_false : t
 
 val condition_always_true : t
 
-val config_checks_between_markers : t
-
 val config_impact_analysis : t
 
 val config_impact_analysis_strict : t
 
-val constant_address_dereference : t
+val constant_address_dereference : latent:bool -> t
 
 val create_intent_from_uri : t
 
@@ -211,8 +211,6 @@ val failure_exe : t
 val field_not_null_checked : t
 
 val guardedby_violation : t
-
-val guardedby_violation_nullsafe : t
 
 val impure_function : t
 
@@ -284,27 +282,27 @@ val multiple_weakself : t
 
 val mutable_local_variable_in_component_file : t
 
-val nil_block_call : t
+val nil_block_call : latent:bool -> t
 
-val nil_insertion_into_collection : t
+val nil_insertion_into_collection : latent:bool -> t
 
-val nil_messaging_to_non_pod : t
+val nil_messaging_to_non_pod : latent:bool -> t
 
-val no_match_of_rhs : t
+val no_match_of_rhs : latent:bool -> t
 
-val no_matching_case_clause : t
+val no_matching_case_clause : latent:bool -> t
 
-val no_matching_function_clause : t
+val no_matching_function_clause : latent:bool -> t
 
-val no_true_branch_in_if : t
+val no_true_branch_in_if : latent:bool -> t
 
-val no_matching_branch_in_try : t
+val no_matching_branch_in_try : latent:bool -> t
 
 val null_dereference : t
 
-val nullptr_dereference : t
+val nullptr_dereference : latent:bool -> t
 
-val optional_empty_access : t
+val optional_empty_access : latent:bool -> t
 
 val parameter_not_null_checked : t
 
@@ -316,9 +314,13 @@ val premature_nil_termination : t
 
 val pulse_memory_leak : t
 
+val pulse_resource_leak : t
+
 val pure_function : t
 
 val quandary_taint_error : t
+
+val regex_op_on_ui_thread : t
 
 val resource_leak : t
 
@@ -348,23 +350,21 @@ val symexec_memory_error : t
 
 val thread_safety_violation : t
 
-val thread_safety_violation_nullsafe : t
-
 val topl_error : t
 
 val uninitialized_value : t
 
-val uninitialized_value_pulse : t
+val uninitialized_value_pulse : latent:bool -> t
 
 val unnecessary_copy_pulse : t
 
 val unreachable_code_after : t
 
-val use_after_delete : t
+val use_after_delete : latent:bool -> t
 
-val use_after_free : t
+val use_after_free : latent:bool -> t
 
-val use_after_lifetime : t
+val use_after_lifetime : latent:bool -> t
 
 val untrusted_buffer_access : t
 
@@ -388,7 +388,7 @@ val untrusted_variable_length_array : t
 
 val user_controlled_sql_risk : t
 
-val vector_invalidation : t
+val vector_invalidation : latent:bool -> t
 
 val weak_self_in_noescape_block : t
 

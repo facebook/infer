@@ -7,7 +7,9 @@
 
 #include <assert.h>
 
-int main() {
+int
+main()
+{
   int two;
   int equals_two;
   two = 2;

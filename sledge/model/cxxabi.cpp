@@ -16,22 +16,31 @@
 
 extern "C" {
 
-void abort_message(const char* format, ...) { abort(); }
+void
+abort_message(const char* format, ...)
+{
+  abort();
+}
 
 #ifndef EXCEPTIONS
 
-__attribute__((noreturn)) void __llair_throw(void* thrown_exception) {
+__attribute__((noreturn)) void
+__llair_throw(void* thrown_exception)
+{
   __llair_unreachable();
 }
 
-void* __cxa_allocate_exception(size_t thrown_size) throw() {
+void*
+__cxa_allocate_exception(size_t thrown_size) throw()
+{
   __llair_unreachable();
 }
 
 #else
 
 __attribute__((always_inline)) _Unwind_Reason_Code
-_Unwind_RaiseException(_Unwind_Exception* unwind_exception) {
+_Unwind_RaiseException(_Unwind_Exception* unwind_exception)
+{
   __llair_throw(thrown_object_from_cxa_exception(
       abi::cxa_exception_from_exception_unwind_exception(unwind_exception)));
 }

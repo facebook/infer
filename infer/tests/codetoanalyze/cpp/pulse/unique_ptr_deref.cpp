@@ -72,15 +72,6 @@ void unique_ptr_release_bad() {
   x.release();
 }
 
-int make_unique_ptr_use_ok() {
-  std::unique_ptr<X> x = std::make_unique<X>();
-  return x->get();
-}
-
-void make_unique_ptr_release_bad() {
-  std::unique_ptr<X> x = std::make_unique<X>();
-  x.release();
-}
 
 int reset_ptr_null_deref_bad() {
   std::unique_ptr<int> x(new int);

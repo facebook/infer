@@ -85,14 +85,25 @@ module UncheckedCallee = struct
 
   let compare_callee_name = Procname.compare_name
 
+  type callee = Callee of callee_name | InstanceOf of Typ.t [@@deriving compare]
+
   type t =
-    { callee: callee_name
+    { callee: callee
     ; is_known_expensive: bool
     ; location: Location.t [@compare.ignore]
     ; call_type: call_type [@compare.ignore] }
   [@@deriving compare]
 
   and call_type = Direct | Indirect of {unchecked: t; via: Procname.t}
+
+  let pp_callee f = function
+    | Callee pname ->
+        Procname.pp f pname
+    | InstanceOf {desc= Tstruct (JavaClass java_class_name)} ->
+        F.fprintf f "instanceof(%s)" (JavaClassName.classname java_class_name)
+    | InstanceOf {desc} ->
+        F.fprintf f "instanceof(%a)" (Typ.pp_desc Pp.text) desc
+
 
   let pp_common ~with_location f {callee; location; call_type} =
     let pp_call_type f () =
@@ -102,7 +113,7 @@ module UncheckedCallee = struct
       | Indirect {via} ->
           F.fprintf f " indirectly via %a" Procname.pp via
     in
-    F.fprintf f "%a is called%a" Procname.pp callee pp_call_type () ;
+    F.fprintf f "%a is called%a" pp_callee callee pp_call_type () ;
     if with_location then F.fprintf f " at %a" Location.pp location
 
 
@@ -113,7 +124,7 @@ module UncheckedCallee = struct
   let pp_without_location_list f unchecked_callees =
     IList.pp_print_list ~max:Config.config_impact_max_callees_to_print
       ~pp_sep:(fun f () -> Format.pp_print_string f ", ")
-      (fun f {callee} -> Format.fprintf f "`%a`" Procname.pp callee)
+      (fun f {callee} -> Format.fprintf f "`%a`" pp_callee callee)
       f unchecked_callees
 
 
@@ -334,6 +345,82 @@ module Mem = struct
   let lookup loc mem = find_opt loc mem |> Option.value ~default:Val.bottom
 end
 
+module ClassGateConditions = struct
+  module Conditions = AbstractDomain.FiniteSet (Fields)
+
+  type t = Conditional of Conditions.t | Top
+
+  let pp f = function
+    | Conditional conds when Conditions.is_empty conds ->
+        F.pp_print_string f "gated"
+    | Conditional fields ->
+        Conditions.pp f fields
+    | Top ->
+        F.pp_print_string f "ungated"
+
+
+  let leq ~lhs ~rhs =
+    match (lhs, rhs) with
+    | _, Top ->
+        true
+    | Top, _ ->
+        false
+    | Conditional lhs, Conditional rhs ->
+        Conditions.leq ~lhs ~rhs
+
+
+  let join x y =
+    match (x, y) with
+    | _, Top | Top, _ ->
+        Top
+    | Conditional x, Conditional y ->
+        Conditional (Conditions.join x y)
+
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let empty = Conditional Conditions.empty
+
+  let singleton fields = Conditional (Conditions.singleton fields)
+
+  let add fields = function
+    | Conditional conds ->
+        Conditional (Conditions.add fields conds)
+    | Top ->
+        Top
+
+
+  let is_gated_condition ~config_fields fields =
+    Fields.exists (fun fname -> Fields.mem fname config_fields) fields
+
+
+  let is_gated config_fields = function
+    | Conditional conds ->
+        Conditions.for_all (is_gated_condition ~config_fields) conds
+    | Top ->
+        false
+end
+
+module GatedClasses = struct
+  include AbstractDomain.Map (Typ.Name) (ClassGateConditions)
+
+  let add_cond typ fields m =
+    update typ
+      (function
+        | None ->
+            Some (ClassGateConditions.singleton fields)
+        | Some gate_conditions ->
+            Some (ClassGateConditions.add fields gate_conditions) )
+      m
+
+
+  let add_gated typ m =
+    update typ
+      (function
+        | None -> Some ClassGateConditions.empty | Some _ as gate_conditions -> gate_conditions )
+      m
+end
+
 module Summary = struct
   type t =
     { unchecked_callees: UncheckedCallees.t  (** Set of unchecked callees *)
@@ -342,18 +429,23 @@ module Summary = struct
     ; has_call_stmt: bool  (** True if a function includes a call statement *)
     ; config_fields: Fields.t
           (** Intra-procedurally collected fields that may have config values *)
+    ; gated_classes: GatedClasses.t  (** Intra-procedurally collected gated classes *)
     ; ret: Val.t  (** Return value of the procedure *) }
 
-  let pp f {unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields; ret} =
+  let pp f
+      {unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields; gated_classes; ret}
+      =
     F.fprintf f
       "@[@[unchecked callees:@,\
        %a@],@ @[unchecked callees cond:@,\
-       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@],@ @[ret:%a@]@]" UncheckedCallees.pp
-      unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond has_call_stmt Fields.pp
-      config_fields Val.pp ret
+       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@],@ @[gated classes:%a@],@ @[ret:%a@]@]"
+      UncheckedCallees.pp unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond
+      has_call_stmt Fields.pp config_fields GatedClasses.pp gated_classes Val.pp ret
 
 
   let get_config_fields {config_fields} = config_fields
+
+  let get_gated_classes {gated_classes} = gated_classes
 
   let get_unchecked_callees {unchecked_callees} = unchecked_callees
 
@@ -382,10 +474,17 @@ module Dom = struct
     ; unchecked_callees: UncheckedCallees.t
     ; unchecked_callees_cond: UncheckedCalleesCond.t
     ; mem: Mem.t
-    ; config_fields: Fields.t }
+    ; config_fields: Fields.t
+    ; gated_classes: GatedClasses.t }
 
   let pp f
-      {config_checks; field_checks; unchecked_callees; unchecked_callees_cond; mem; config_fields} =
+      { config_checks
+      ; field_checks
+      ; unchecked_callees
+      ; unchecked_callees_cond
+      ; mem
+      ; config_fields
+      ; gated_classes } =
     F.fprintf f
       "@[@[config checks:@,\
        %a@]@ @[field checks:@,\
@@ -393,10 +492,11 @@ module Dom = struct
        %a@]@ @[unchecked callees cond:@,\
        %a@]@ @[mem:@,\
        %a@]@ @[config fields:@,\
+       %a@]@ @[gated classes:@,\
        %a@]@]"
       ConfigChecks.pp config_checks FieldChecks.pp field_checks UncheckedCallees.pp
       unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond Mem.pp mem Fields.pp
-      config_fields
+      config_fields GatedClasses.pp gated_classes
 
 
   let leq ~lhs ~rhs =
@@ -406,6 +506,7 @@ module Dom = struct
     && UncheckedCalleesCond.leq ~lhs:lhs.unchecked_callees_cond ~rhs:rhs.unchecked_callees_cond
     && Mem.leq ~lhs:lhs.mem ~rhs:rhs.mem
     && Fields.leq ~lhs:lhs.config_fields ~rhs:rhs.config_fields
+    && GatedClasses.leq ~lhs:lhs.gated_classes ~rhs:rhs.gated_classes
 
 
   let join x y =
@@ -415,7 +516,8 @@ module Dom = struct
     ; unchecked_callees_cond=
         UncheckedCalleesCond.join x.unchecked_callees_cond y.unchecked_callees_cond
     ; mem= Mem.join x.mem y.mem
-    ; config_fields= Fields.join x.config_fields y.config_fields }
+    ; config_fields= Fields.join x.config_fields y.config_fields
+    ; gated_classes= GatedClasses.join x.gated_classes y.gated_classes }
 
 
   let widen ~prev ~next ~num_iters =
@@ -427,13 +529,20 @@ module Dom = struct
         UncheckedCalleesCond.widen ~prev:prev.unchecked_callees_cond
           ~next:next.unchecked_callees_cond ~num_iters
     ; mem= Mem.widen ~prev:prev.mem ~next:next.mem ~num_iters
-    ; config_fields= Fields.widen ~prev:prev.config_fields ~next:next.config_fields ~num_iters }
+    ; config_fields= Fields.widen ~prev:prev.config_fields ~next:next.config_fields ~num_iters
+    ; gated_classes= GatedClasses.widen ~prev:prev.gated_classes ~next:next.gated_classes ~num_iters
+    }
 
 
-  let to_summary pname ~has_call_stmt {unchecked_callees; unchecked_callees_cond; config_fields; mem}
-      =
+  let to_summary pname ~has_call_stmt
+      {unchecked_callees; unchecked_callees_cond; config_fields; gated_classes; mem} =
     let ret = Mem.lookup (Loc.of_pvar (Pvar.get_ret_pvar pname)) mem in
-    {Summary.unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields; ret}
+    { Summary.unchecked_callees
+    ; unchecked_callees_cond
+    ; has_call_stmt
+    ; config_fields
+    ; gated_classes
+    ; ret }
 
 
   let init =
@@ -442,7 +551,8 @@ module Dom = struct
     ; unchecked_callees= UncheckedCallees.bottom
     ; unchecked_callees_cond= UncheckedCalleesCond.bottom
     ; mem= Mem.bottom
-    ; config_fields= Fields.bottom }
+    ; config_fields= Fields.bottom
+    ; gated_classes= GatedClasses.bottom }
 
 
   let add_mem loc v ({mem} as astate) = {astate with mem= Mem.add loc v mem}
@@ -532,32 +642,36 @@ module Dom = struct
              } )
 
 
-  type known_expensiveness = KnownCheap | KnownExpensive
+  type known_expensiveness = FbGKInteraction.known_expensiveness = KnownCheap | KnownExpensive
 
   let get_expensiveness_model =
     let dispatch : (Tenv.t, known_expensiveness, unit) ProcnameDispatcher.Call.dispatcher =
       let open ProcnameDispatcher.Call in
-      make_dispatcher
-        [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
-        ; +PatternMatch.Java.implements_android "content.SharedPreferences"
-          &:: "edit" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_android "content.SharedPreferences"
-          &::+ (fun _ method_name -> String.is_prefix method_name ~prefix:"get")
-          &--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkArgument" $ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkElementIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkNotNull" $ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkPositionIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_google "common.base.Preconditions"
-          &:: "checkState" $ any_arg $+ any_arg $+...$--> KnownExpensive
-        ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_regex "Pattern" &:: "compile" &--> KnownExpensive
-        ; +PatternMatch.Java.implements_regex "Pattern" &:: "matcher" &--> KnownExpensive ]
+      let dispatcher =
+        make_dispatcher
+          [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
+          ; +PatternMatch.Java.implements_android "content.SharedPreferences"
+            &:: "edit" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_android "content.SharedPreferences"
+            &::+ (fun _ method_name -> String.is_prefix method_name ~prefix:"get")
+            &--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkArgument" $ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkElementIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkNotNull" $ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkPositionIndex" $ any_arg $+ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_google "common.base.Preconditions"
+            &:: "checkState" $ any_arg $+ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_regex "Pattern" &:: "compile" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_regex "Pattern" &:: "matcher" &--> KnownExpensive
+          ; -"UICKeyChainStore" &::+ startsWith "dataForKey:" &--> KnownExpensive ]
+      in
+      merge_dispatchers dispatcher FbGKInteraction.ExpensivenessModel.dispatcher
     in
     fun tenv pname args ->
       let args =
@@ -570,6 +684,29 @@ module Dom = struct
   let is_setter_getter pname =
     let method_name = Procname.get_method pname in
     String.is_prefix method_name ~prefix:"set" || String.is_prefix method_name ~prefix:"get"
+
+
+  let update_gated_callees ~callee args ({config_checks; field_checks; gated_classes} as astate) =
+    match args with
+    | [(Exp.Sizeof {typ= {desc= Tstruct typ_name}}, _)]
+      when Procname.equal callee BuiltinDecl.__objc_alloc_no_fail ->
+        if ConfigChecks.exists (fun _ -> function True -> true | _ -> false) config_checks then
+          (* Gated by true gate condition *)
+          {astate with gated_classes= GatedClasses.add_gated typ_name gated_classes}
+        else
+          let fields =
+            FieldChecks.fold
+              (fun fname branch acc -> match branch with True -> Fields.add fname acc | _ -> acc)
+              field_checks Fields.empty
+          in
+          if Fields.is_empty fields then
+            (* Ungated by any condition *)
+            {astate with gated_classes= GatedClasses.add typ_name Top gated_classes}
+          else
+            (* Gated by fields *)
+            {astate with gated_classes= GatedClasses.add_cond typ_name fields gated_classes}
+    | _ ->
+        astate
 
 
   let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost) ~callee
@@ -601,77 +738,93 @@ module Dom = struct
         (UncheckedCalleesCond.replace_location_by_call location ~via:callee callee_summary_cond)
     in
     let add_callee_name ~is_known_expensive =
+      let callee =
+        match args with
+        | _ :: (Exp.Sizeof {typ}, _) :: _ when Procname.equal callee BuiltinDecl.__instanceof ->
+            UncheckedCallee.InstanceOf typ
+        | _ ->
+            UncheckedCallee.Callee callee
+      in
       join_unchecked_callees
         (UncheckedCallees.singleton (UncheckedCallee.make ~is_known_expensive ~callee location))
         UncheckedCalleesCond.empty
     in
-    if ConfigChecks.is_top config_checks then
-      let (callee_summary : Summary.t option) =
-        match analyze_dependency callee with
-        | None ->
-            None
-        | Some (_, (_, analysis_data, _)) ->
-            analysis_data
-      in
-      let expensiveness_model = get_expensiveness_model tenv callee args in
-      let has_expensive_callee =
-        Option.exists callee_summary ~f:Summary.has_known_expensive_callee
-      in
-      let is_cheap_call = match instantiated_cost with Cheap -> true | _ -> false in
-      let is_unmodeled_call = match instantiated_cost with NoModel -> true | _ -> false in
-      if strict_mode then
-        match callee_summary with
-        | Some
-            { Summary.unchecked_callees= callee_summary
-            ; unchecked_callees_cond= callee_summary_cond
-            ; has_call_stmt }
-          when has_call_stmt ->
-            (* If callee's summary is not leaf, use it. *)
-            join_callee_summary callee_summary callee_summary_cond
-        | _ -> (
-          match expensiveness_model with
-          | (None | Some KnownCheap) when is_setter_getter callee ->
-              (* If callee is unknown/cheap setter/getter, ignore it. *)
-              astate
-          | _ ->
-              (* Otherwise, add callee's name. *)
-              add_callee_name ~is_known_expensive:false )
-      else
-        match expensiveness_model with
-        | None when is_cheap_call && not has_expensive_callee ->
-            (* If callee is cheap by heuristics, ignore it. *)
-            astate
-        | Some KnownCheap ->
-            (* If callee is known cheap by model, ignore it. *)
-            astate
-        | Some KnownExpensive ->
-            (* If callee is known expensive by model, add callee's name. *)
-            add_callee_name ~is_known_expensive:true
-        | None -> (
+    let astate =
+      if ConfigChecks.is_top config_checks then
+        let (callee_summary : Summary.t option) =
+          match analyze_dependency callee with
+          | None ->
+              None
+          | Some (_, (_, analysis_data, _)) ->
+              analysis_data
+        in
+        let expensiveness_model = get_expensiveness_model tenv callee args in
+        let has_expensive_callee =
+          Option.exists callee_summary ~f:Summary.has_known_expensive_callee
+        in
+        let is_cheap_call = match instantiated_cost with Cheap -> true | _ -> false in
+        let is_unmodeled_call = match instantiated_cost with NoModel -> true | _ -> false in
+        if strict_mode then
           match callee_summary with
           | Some
               { Summary.unchecked_callees= callee_summary
               ; unchecked_callees_cond= callee_summary_cond
               ; has_call_stmt }
             when has_call_stmt ->
-              let callee_summary, callee_summary_cond =
-                if is_cheap_call then
-                  (* In this case, the callee is cheap by the heuristics, but its summary includes
-                     some known expensive callees. Thus, it filters the known expensive callees
-                     only. *)
-                  ( UncheckedCallees.filter_known_expensive callee_summary
-                  , UncheckedCalleesCond.filter_known_expensive callee_summary_cond )
-                else (callee_summary, callee_summary_cond)
-              in
               (* If callee's summary is not leaf, use it. *)
               join_callee_summary callee_summary callee_summary_cond
-          | None when Procname.is_objc_init callee || is_unmodeled_call ->
-              (* If callee is unknown ObjC initializer or has no cost model, ignore it. *)
+          | _ -> (
+            match expensiveness_model with
+            | (None | Some KnownCheap) when is_setter_getter callee ->
+                (* If callee is unknown/cheap setter/getter, ignore it. *)
+                astate
+            | _ ->
+                (* Otherwise, add callee's name. *)
+                add_callee_name ~is_known_expensive:false )
+        else
+          match expensiveness_model with
+          | None when is_cheap_call && not has_expensive_callee ->
+              (* If callee is cheap by heuristics, ignore it. *)
               astate
-          | _ ->
-              (* Otherwise, add callee's name. *)
-              add_callee_name ~is_known_expensive:false )
-    else astate
+          | Some KnownCheap ->
+              (* If callee is known cheap by model, ignore it. *)
+              astate
+          | Some KnownExpensive ->
+              (* If callee is known expensive by model, add callee's name. *)
+              add_callee_name ~is_known_expensive:true
+          | None -> (
+            match callee_summary with
+            | Some
+                { Summary.unchecked_callees= callee_summary
+                ; unchecked_callees_cond= callee_summary_cond
+                ; has_call_stmt }
+              when has_call_stmt ->
+                let callee_summary, callee_summary_cond =
+                  if is_cheap_call then
+                    (* In this case, the callee is cheap by the heuristics, but its summary includes
+                       some known expensive callees. Thus, it filters the known expensive callees
+                       only. *)
+                    ( UncheckedCallees.filter_known_expensive callee_summary
+                    , UncheckedCalleesCond.filter_known_expensive callee_summary_cond )
+                  else (callee_summary, callee_summary_cond)
+                in
+                (* If callee's summary is not leaf, use it. *)
+                join_callee_summary callee_summary callee_summary_cond
+            | None when Procname.is_objc_init callee || is_unmodeled_call ->
+                (* If callee is unknown ObjC initializer or has no cost model, ignore it. *)
+                astate
+            | _ ->
+                (* Otherwise, add callee's name. *)
+                add_callee_name ~is_known_expensive:false )
+      else astate
+    in
+    update_gated_callees ~callee args astate
+
+
+  let throw_exception astate =
+    { astate with
+      unchecked_callees= UncheckedCallees.empty
+    ; unchecked_callees_cond= UncheckedCalleesCond.empty }
 end
 
 type analysis_data =
@@ -748,8 +901,33 @@ module TransferFunctions = struct
         astate
 
 
+  let call {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
+      ((ret_id, _) as ret) callee args location astate =
+    match FbGKInteraction.get_config_check tenv callee args with
+    | Some (`Config config) ->
+        Dom.call_config_check ret_id config astate
+    | Some (`Exp (Exp.Var id)) ->
+        Dom.copy_value ret_id id astate
+    | Some (`Exp (Exp.Lvar pvar)) ->
+        Dom.copy_mem ~tgt:(Loc.of_id ret_id) ~src:(Loc.of_pvar pvar) astate
+    | Some (`Exp _) ->
+        (* NOTE: We need a more proper evaluation function for handling the case. *)
+        add_ret analyze_dependency ret_id callee astate
+    | Some (`ConfigToPvar (config, pvar)) ->
+        Dom.add_mem (Loc.of_pvar pvar) (Val.of_config config) astate
+    | None ->
+        (* normal function calls *)
+        let call =
+          CostInstantiate.Call.
+            {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
+        in
+        let instantiated_cost = get_instantiated_cost call in
+        Dom.call tenv analyze_dependency ~instantiated_cost ~callee args location astate
+        |> add_ret analyze_dependency ret_id callee
+
+
   let exec_instr ({Dom.config_checks} as astate)
-      {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx instr =
+      ({interproc= {tenv; analyze_dependency}} as analysis_data) node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e} -> (
       match FbGKInteraction.get_config e with
@@ -769,6 +947,8 @@ module TransferFunctions = struct
         Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:true config_checks) astate
     | Store {e1= Lvar pvar; e2= Var id} ->
         Dom.store_config pvar id astate
+    | Store {e1= Lvar pvar; e2= Exn _} when Pvar.is_return pvar ->
+        Dom.throw_exception astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
     | Call (_, Const (Cfun callee), _, _, _)
@@ -782,24 +962,17 @@ module TransferFunctions = struct
     | Call ((ret_id, _), Const (Cfun callee), _, _, _)
       when (not strict_mode) && is_known_cheap_method tenv callee ->
         add_ret analyze_dependency ret_id callee astate
-    | Call (((ret_id, _) as ret), Const (Cfun callee), args, location, _) -> (
-      match FbGKInteraction.get_config_check tenv callee args with
-      | Some (`Config config) ->
-          Dom.call_config_check ret_id config astate
-      | Some (`Exp (Exp.Var id)) ->
-          Dom.copy_value ret_id id astate
-      | Some (`Exp _) ->
-          (* NOTE: We need a more proper evaluation function for handling the case. *)
-          add_ret analyze_dependency ret_id callee astate
-      | None ->
-          (* normal function calls *)
-          let call =
-            CostInstantiate.Call.
-              {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
-          in
-          let instantiated_cost = get_instantiated_cost call in
-          Dom.call tenv analyze_dependency ~instantiated_cost ~callee args location astate
-          |> add_ret analyze_dependency ret_id callee )
+    | Call
+        ( ret
+        , Const (Cfun dispatch_sync)
+        , [_; (Closure {name= callee; captured_vars}, _)]
+        , location
+        , _ )
+      when Procname.equal dispatch_sync BuiltinDecl.dispatch_sync ->
+        let args = List.map captured_vars ~f:(fun (exp, _, typ, _) -> (exp, typ)) in
+        call analysis_data node idx ret callee args location astate
+    | Call (ret, Const (Cfun callee), args, location, _) ->
+        call analysis_data node idx ret callee args location astate
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->

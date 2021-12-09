@@ -9,5 +9,8 @@
   ],
   "external-java-packages" : [
     "com.racerd.donotreport"
+  ],
+  "racerd-ignore-classes" : [
+    "codetoanalyze.java.racerd.IgnoredSub"
   ]
 }

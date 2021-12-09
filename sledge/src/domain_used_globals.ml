@@ -28,6 +28,11 @@ let enter_scope _ _ state = state
 let recursion_beyond_bound = `skip
 let post _ _ _ state = state
 let retn _ _ _ from_call post = Llair.Global.Set.union from_call post
+
+type term_code = unit [@@deriving compare, sexp_of]
+
+let term _ _ _ _ = ()
+let move_term_code _ _ () q = q
 let dnf t = Set.of_ t
 
 let used_globals exp s =
@@ -54,8 +59,8 @@ let exec_inst _ inst st =
 type from_call = t [@@deriving sexp]
 
 (* Set abstract state to bottom (i.e. empty set) at function entry *)
-let call ~summaries:_ _ ~globals:_ ~actuals ~areturn:_ ~formals:_ ~freturn:_
-    ~locals:_ st =
+let call ~summaries:_ _ ?child:_ ~globals:_ ~actuals ~areturn:_ ~formals:_
+    ~freturn:_ ~locals:_ st =
   (empty, IArray.fold ~f:used_globals actuals st)
 
 let resolve_callee _ _ _ _ = []

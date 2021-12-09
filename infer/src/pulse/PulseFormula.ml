@@ -12,7 +12,18 @@ module SatUnsat = PulseSatUnsat
 module Var = PulseAbstractValue
 module Q = QSafeCapped
 module Z = ZSafe
-open SatUnsat
+open SatUnsat.Import
+
+(** a humble debug mechanism: set [debug] to [true] and run [make -C infer/src test] to see the
+    arithmetic engine at work in more details *)
+module Debug = struct
+  (** change this to [true] for more debug information *)
+  let debug = false
+
+  let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
+
+  let p fmt = if debug then F.printf fmt else F.ifprintf dummy_formatter fmt
+end
 
 type function_symbol = Unknown of Var.t | Procname of Procname.t
 [@@deriving compare, equal, yojson_of]
@@ -73,23 +84,70 @@ module LinArith : sig
 
   val has_var : Var.t -> t -> bool
 
+  val get_constant_part : t -> Q.t
+  (** [get_as_const (c + l)] is [c] *)
+
+  val get_coefficient : Var.t -> t -> Q.t option
+
   val subst : Var.t -> Var.t -> t -> t
 
   val get_variables : t -> Var.t Seq.t
 
   val fold_subst_variables : t -> init:'a -> f:('a -> Var.t -> 'a * subst_target) -> 'a * t
 
-  val subst_variables : t -> f:(Var.t -> subst_target) -> t
-end = struct
-  (** invariant: the representation is always "canonical": coefficients cannot be [Q.zero] *)
-  type t = Q.t * Q.t Var.Map.t [@@deriving compare, equal]
+  val fold : t -> init:'a -> f:('a -> Var.t * Q.t -> 'a) -> 'a
 
-  let yojson_of_t (c, vs) = `List [Var.Map.yojson_of_t Q.yojson_of_t vs; Q.yojson_of_t c]
+  val subst_variables : t -> f:(Var.t -> subst_target) -> t
+
+  (** {2 Tableau-Specific Operations} *)
+
+  val is_restricted : t -> bool
+  (** [true] iff all the variables involved in the expression satisfy {!Var.is_restricted} *)
+
+  val solve_for_unrestricted : Var.t -> t -> (Var.t * t) option
+  (** if [l] contains an unrestricted variable then [solve_for_unrestricted u l] is [Some (x, l')]
+      where [x] is the smallest unrestricted variable in [l] and [u=l <=> x=l']. If there are no
+      unrestricted variables in [l] then [solve_for_unrestricted u l] is [None]. Assumes [u∉l]. *)
+
+  val pivot : Var.t * Q.t -> t -> t
+  (** [pivot (v, q) l] assumes [v] appears in [l] with coefficient [q] and returns [l'] such that
+      [l' = -(1/q)·(l - q·v)]*)
+
+  val is_minimized : t -> bool
+  (** [true] iff all the coefficients are positive, hence the constant part is a lower bound of the
+      value of the linear expression (assuming all variables are restricted) *)
+
+  val is_maximized : t -> bool
+  (** [true] iff all the coefficients are negative, hence the constant part is an upper bound of the
+      value of the linear expression (assuming all variables are restricted) *)
+end = struct
+  (* define our own var map to get a custom order: we want to place unrestricted variables first in
+     the map so that [solve_for_unrestricted] can be implemented in terms of [solve_eq] easily *)
+  module VarMap = struct
+    include PrettyPrintable.MakePPMap (struct
+      type t = Var.t
+
+      let pp = Var.pp
+
+      let compare v1 v2 = Var.compare_unrestricted_first v1 v2
+    end)
+
+    (* unpleasant that we have to duplicate this definition from [Var.Map] here *)
+    let yojson_of_t yojson_of_val m =
+      `List (List.map ~f:(fun (k, v) -> `List [Var.yojson_of_t k; yojson_of_val v]) (bindings m))
+  end
+
+  (** invariant: the representation is always "canonical": coefficients cannot be [Q.zero] *)
+  type t = Q.t * Q.t VarMap.t [@@deriving compare, equal]
+
+  let yojson_of_t (c, vs) = `List [VarMap.yojson_of_t Q.yojson_of_t vs; Q.yojson_of_t c]
+
+  let fold (_, vs) ~init ~f = IContainer.fold_of_pervasives_map_fold VarMap.fold vs ~init ~f
 
   type subst_target = QSubst of Q.t | VarSubst of Var.t | LinSubst of t
 
   let pp pp_var fmt (c, vs) =
-    if Var.Map.is_empty vs then Q.pp_print fmt c
+    if VarMap.is_empty vs then Q.pp_print fmt c
     else
       let pp_c fmt c =
         if not (Q.is_zero c) then
@@ -102,7 +160,7 @@ end = struct
       in
       let pp_vs fmt vs =
         Pp.collection ~sep:" + "
-          ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
+          ~fold:(IContainer.fold_of_pervasives_map_fold VarMap.fold)
           ~pp_item:(fun fmt (v, q) -> F.fprintf fmt "%a%a" pp_coeff q pp_var v)
           fmt vs
       in
@@ -111,55 +169,58 @@ end = struct
 
   let add (c1, vs1) (c2, vs2) =
     ( Q.add c1 c2
-    , Var.Map.union
+    , VarMap.union
         (fun _v c1 c2 ->
           let c = Q.add c1 c2 in
           if Q.is_zero c then None else Some c )
         vs1 vs2 )
 
 
-  let minus (c, vs) = (Q.neg c, Var.Map.map (fun c -> Q.neg c) vs)
+  let minus (c, vs) = (Q.neg c, VarMap.map (fun c -> Q.neg c) vs)
 
   let subtract l1 l2 = add l1 (minus l2)
 
-  let zero = (Q.zero, Var.Map.empty)
+  let zero = (Q.zero, VarMap.empty)
 
-  let is_zero (c, vs) = Q.is_zero c && Var.Map.is_empty vs
+  let is_zero (c, vs) = Q.is_zero c && VarMap.is_empty vs
 
   let mult q ((c, vs) as l) =
-    if Q.is_zero q then (* needed for correction: coeffs cannot be zero *) zero
+    if Q.is_zero q then (* needed for correctness: coeffs cannot be zero *) zero
     else if Q.is_one q then (* purely an optimisation *) l
-    else (Q.mul q c, Var.Map.map (fun c -> Q.mul q c) vs)
+    else (Q.mul q c, VarMap.map (fun c -> Q.mul q c) vs)
 
 
-  let solve_eq_zero (c, vs) =
-    match Var.Map.min_binding_opt vs with
+  let pivot (x, coeff) (c, vs) =
+    let d = Q.neg coeff in
+    let vs' =
+      VarMap.fold
+        (fun v' coeff' vs' -> if Var.equal v' x then vs' else VarMap.add v' (Q.div coeff' d) vs')
+        vs VarMap.empty
+    in
+    (* note: [d≠0] by the invariant of the coefficient map [vs] *)
+    let c' = Q.div c d in
+    (c', vs')
+
+
+  let solve_eq_zero ((c, vs) as l) =
+    match VarMap.min_binding_opt vs with
     | None ->
         if Q.is_zero c then Sat None else Unsat
-    | Some (x, coeff) ->
-        let d = Q.neg coeff in
-        let vs' =
-          Var.Map.fold
-            (fun v' coeff' vs' ->
-              if Var.equal v' x then vs' else Var.Map.add v' (Q.div coeff' d) vs' )
-            vs Var.Map.empty
-        in
-        (* note: [d≠0] by the invariant of the coefficient map [vs] *)
-        let c' = Q.div c d in
-        Sat (Some (x, (c', vs')))
+    | Some ((x, _) as x_coeff) ->
+        Sat (Some (x, pivot x_coeff l))
 
 
   let solve_eq l1 l2 = solve_eq_zero (subtract l1 l2)
 
-  let of_var v = (Q.zero, Var.Map.singleton v Q.one)
+  let of_var v = (Q.zero, VarMap.singleton v Q.one)
 
-  let of_q q = (q, Var.Map.empty)
+  let of_q q = (q, VarMap.empty)
 
-  let get_as_const (c, vs) = if Var.Map.is_empty vs then Some c else None
+  let get_as_const (c, vs) = if VarMap.is_empty vs then Some c else None
 
   let get_as_var (c, vs) =
     if Q.is_zero c then
-      match Var.Map.is_singleton_or_more vs with
+      match VarMap.is_singleton_or_more vs with
       | Singleton (x, cx) when Q.is_one cx ->
           Some x
       | _ ->
@@ -167,14 +228,18 @@ end = struct
     else None
 
 
-  let has_var x (_, vs) = Var.Map.mem x vs
+  let has_var x (_, vs) = VarMap.mem x vs
+
+  let get_constant_part (c, _) = c
+
+  let get_coefficient v (_, vs) = VarMap.find_opt v vs
 
   let subst x y ((c, vs) as l) =
-    match Var.Map.find_opt x vs with
+    match VarMap.find_opt x vs with
     | None ->
         l
     | Some cx ->
-        let vs' = Var.Map.remove x vs |> Var.Map.add y cx in
+        let vs' = VarMap.remove x vs |> VarMap.add y cx in
         (c, vs')
 
 
@@ -183,13 +248,13 @@ end = struct
   let fold_subst_variables ((c, vs_foreign) as l0) ~init ~f =
     let changed = ref false in
     let acc_f, l' =
-      Var.Map.fold
+      VarMap.fold
         (fun v_foreign q0 (acc_f, l) ->
           let acc_f, op = f acc_f v_foreign in
           (match op with VarSubst v when Var.equal v v_foreign -> () | _ -> changed := true) ;
           (acc_f, add (mult q0 (of_subst_target op)) l) )
         vs_foreign
-        (init, (c, Var.Map.empty))
+        (init, (c, VarMap.empty))
     in
     let l' = if !changed then l' else l0 in
     (acc_f, l')
@@ -197,7 +262,125 @@ end = struct
 
   let subst_variables l ~f = fold_subst_variables l ~init:() ~f:(fun () v -> ((), f v)) |> snd
 
-  let get_variables (_, vs) = Var.Map.to_seq vs |> Seq.map fst
+  let get_variables (_, vs) = VarMap.to_seq vs |> Seq.map fst
+
+  (** {2 Tableau-Specific Operations} *)
+
+  let is_restricted (_, vs) = VarMap.for_all (fun v _ -> Var.is_restricted v) vs
+
+  let solve_for_unrestricted w l =
+    (* HACK: unrestricted variables come first so we first test if there exists any unrestricted
+       variable in the map by checking its min element *)
+    if VarMap.min_binding_opt (snd l) |> Option.exists ~f:(fun (v, _) -> Var.is_unrestricted v) then (
+      match solve_eq l (of_var w) with
+      | Unsat | Sat None ->
+          None
+      | Sat (Some (x, _) as r) ->
+          assert (Var.is_unrestricted x) ;
+          r )
+    else None
+
+
+  let is_minimized (_, vs) = VarMap.for_all (fun _ c -> Q.(c >= zero)) vs
+
+  let is_maximized (_, vs) = VarMap.for_all (fun _ c -> Q.(c <= zero)) vs
+end
+
+let pp_linear_eqs what pp_var fmt m =
+  if Var.Map.is_empty m then F.fprintf fmt "true (no %s)" what
+  else
+    Pp.collection ~sep:" ∧ "
+      ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
+      ~pp_item:(fun fmt (v, l) -> F.fprintf fmt "%a = %a" pp_var v (LinArith.pp pp_var) l)
+      fmt m
+
+
+(** An implementation of \[2\] "Solving Linear Arithmetic Constraints" by Harald Rueß and Natarajan
+    Shankar, SRI International, CSL Technical Report CSL-SRI-04-01, 15 January 2004. It uses a
+    Simplex-like technique to reason about inequalities over linear arithmetic expressions.
+
+    The main idea is to represent an inequality [x ≥ 0] as [x = u] with [u] belonging to a special
+    class of "restricted" (or "slack") variables, which are always non-negative, and then deal with
+    linear equalities on restricted variables (the tableau) instead of linear inequalities. Dark
+    magic happens to massage the tableau so that contradictions are detected.
+
+    Here restricted variables are distinguished by {!Var} directly using {!Var.is_restricted}. *)
+module Tableau = struct
+  (** As for linear equalities [linear_eqs] below, the tableau is represented as a map of bindings
+      [u -> l] meaning [u = l].
+
+      Invariants:
+
+      - all variables in the tableau are {e restricted}
+      - the tableau is {e feasible}: each equality [u = c + q1·v1 + ... + qN·vN] is such that [c>0] *)
+  type t = LinArith.t Var.Map.t [@@deriving compare, equal]
+
+  let pp = pp_linear_eqs "tableau"
+
+  let yojson_of_t = Var.Map.yojson_of_t LinArith.yojson_of_t
+
+  let empty = Var.Map.empty
+
+  let do_pivot u l ((v, _) as v_coeff) t =
+    let l_v = LinArith.pivot v_coeff (LinArith.subtract l (LinArith.of_var u)) in
+    Var.Map.map
+      (fun l ->
+        LinArith.subst_variables l ~f:(fun v' ->
+            if Var.equal v v' then LinSubst l_v else VarSubst v' ) )
+      t
+    |> Var.Map.add v l_v
+
+
+  let pivot_unbounded_with_positive_coeff t u l =
+    (* the set of variables in [t] that appear with a negative coefficient in at least one equality
+       *)
+    let bounded_vars_of_t =
+      Var.Map.fold
+        (fun _u l bounded ->
+          LinArith.fold l ~init:bounded ~f:(fun bounded (v, coeff) ->
+              if Q.(coeff < zero) then Var.Set.add v bounded else bounded ) )
+        t Var.Set.empty
+    in
+    (* the smallest variable that is unbounded in [t] and appears with a positive coefficient in [l]
+       *)
+    LinArith.fold l ~init:None ~f:(fun candidate ((v, coeff) as v_coeff) ->
+        if Option.is_none candidate && Q.(coeff > zero) && not (Var.Set.mem v bounded_vars_of_t)
+        then Some v_coeff
+        else candidate )
+    |> Option.map ~f:(fun v_coeff -> do_pivot u l v_coeff t)
+
+
+  let find_pivotable_to v t =
+    Debug.p "Looking for pivotable %a@\n" Var.pp v ;
+    Var.Map.fold
+      (fun u l candidate ->
+        if Option.is_some candidate then candidate
+        else
+          LinArith.get_coefficient v l
+          |> Option.bind ~f:(fun coeff ->
+                 if Q.(coeff < zero) then
+                   let q_c = LinArith.get_constant_part l in
+                   let gain = Q.(-(q_c / coeff)) in
+                   if
+                     Container.for_all ~iter:(Container.iter ~fold:LinArith.fold) l
+                       ~f:(fun (_, coeff') -> Q.(coeff' >= zero || -(q_c / coeff') >= gain))
+                   then Some (u, (v, coeff))
+                   else None
+                 else None ) )
+      t None
+
+
+  let find_pivot l t =
+    LinArith.fold l ~init:None ~f:(fun candidate (v, coeff) ->
+        if Option.is_none candidate && Q.(coeff > zero) then find_pivotable_to v t else candidate )
+
+
+  let pivot l t =
+    find_pivot l t
+    |> Option.map ~f:(fun (u', v') ->
+           Debug.p "found pivot: %a <- %a@\n" Var.pp u' Var.pp (fst v') ;
+           let l_u' = Var.Map.find u' t in
+           do_pivot u' l_u' v' (Var.Map.remove u' t) )
 end
 
 type subst_target = LinArith.subst_target =
@@ -238,6 +421,7 @@ module Term = struct
     | BitShiftRight of t * t
     | BitXor of t * t
     | IsInstanceOf of Var.t * Typ.t
+    | IsInt of t
   [@@deriving compare, equal, yojson_of]
 
   let equal_syntax = [%compare.equal: t]
@@ -274,7 +458,8 @@ module Term = struct
     | LessEqual _
     | Equal _
     | NotEqual _
-    | IsInstanceOf _ ->
+    | IsInstanceOf _
+    | IsInt _ ->
         true
 
 
@@ -337,6 +522,8 @@ module Term = struct
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | IsInstanceOf (v, t) ->
         F.fprintf fmt "(%a instanceof %a)" pp_var v (Typ.pp Pp.text) t
+    | IsInt t ->
+        F.fprintf fmt "is_int(%a)" (pp_no_paren pp_var) t
 
 
   let of_q q = Const q
@@ -426,18 +613,20 @@ module Term = struct
         let t' = if !changed then FunctionApplication {f= t_f'; actuals= actuals'} else t in
         (acc, t')
     (* one sub-term *)
-    | Minus t_not | BitNot t_not | Not t_not ->
-        let acc, t_not' = f init t_not in
+    | Minus sub_t | BitNot sub_t | Not sub_t | IsInt sub_t ->
+        let acc, sub_t' = f init sub_t in
         let t' =
-          if phys_equal t_not t_not' then t
+          if phys_equal sub_t sub_t' then t
           else
             match[@warning "-8"] t with
             | Minus _ ->
-                Minus t_not'
+                Minus sub_t'
             | BitNot _ ->
-                BitNot t_not'
+                BitNot sub_t'
             | Not _ ->
-                Not t_not'
+                Not sub_t'
+            | IsInt _ ->
+                IsInt sub_t'
         in
         (acc, t')
     (* two sub-terms *)
@@ -553,7 +742,8 @@ module Term = struct
     | BitNot _
     | BitShiftLeft _
     | BitShiftRight _
-    | BitXor _ ->
+    | BitXor _
+    | IsInt _ ->
         fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_subst_variables t' ~init:acc ~f)
 
 
@@ -594,6 +784,13 @@ module Term = struct
         t0
     | Linear l ->
         LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
+    | IsInt t' ->
+        q_map t' (fun q ->
+            if Z.(equal one) (Q.den q) then (* an integer *) Q.one
+            else (
+              (* a non-integer rational *)
+              L.d_printfln ~color:Orange "CONTRADICTION: is_int(%a)" Q.pp_print q ;
+              Q.zero ) )
     | Minus t' ->
         q_map t' Q.(mul minus_one)
     | Add (t1, t2) ->
@@ -605,7 +802,13 @@ module Term = struct
     | Mult (t1, t2) ->
         q_map2 t1 t2 Q.mul
     | Div (t1, t2) ->
-        q_map2 t1 t2 (fun c1 c2 -> if Q.is_zero c2 then Q.undef else Q.div c1 c2)
+        q_map2 t1 t2 (fun c1 c2 ->
+            let open Option.Monad_infix in
+            if Q.is_zero c2 then Q.undef
+            else
+              (* OPTIM: do the division in [Z] and not [Q] to avoid [Q] normalizing the intermediate
+                 result for nothing *)
+              Z.(Q.num c1 * Q.den c2 / (Q.den c1 * Q.num c2)) >>| Q.of_bigint |> or_undef )
     | Mod (t1, t2) ->
         q_map2 t1 t2 (fun c1 c2 ->
             if Q.is_zero c2 then Q.undef else map_z_z_opt c1 c2 Z.( mod ) |> or_undef )
@@ -642,8 +845,13 @@ module Term = struct
                 map_i64_i64 c1 c2 Int64.bit_xor |> or_undef )
 
 
-  (* defend in depth against exceptions *)
-  let eval_const_shallow t = Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef)
+  (* defend in depth against exceptions and debug *)
+  let eval_const_shallow t =
+    let t' = Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef) in
+    if not (phys_equal t t') then
+      Debug.p "eval_const_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
+    t'
+
 
   let rec simplify_shallow_ t =
     match t with
@@ -676,12 +884,15 @@ module Term = struct
     | Div (Const c, _) when Q.is_zero c ->
         (* [0 / t = 0] *)
         zero
+    | Div (t, Const c) when Q.is_one c ->
+        (* [t / 1 = t] *)
+        t
+    | Div (t, Const c) when Q.is_minus_one c ->
+        (* [t / (-1) = -t] *)
+        simplify_shallow_ (Minus t)
     | Div (_, Const c) when Q.is_zero c ->
         (* [t / 0 = undefined] *)
         Const Q.undef
-    | Div (t, Const c) ->
-        (* [t / c = (1/c)·t], [c≠0] *)
-        simplify_shallow_ (Mult (Const (Q.inv c), t))
     | Div (Minus t1, Minus t2) ->
         (* [(-t1) / (-t2) = t1 / t2] *)
         simplify_shallow_ (Div (t1, t2))
@@ -739,8 +950,13 @@ module Term = struct
         t
 
 
-  (* defend in depth against exceptions *)
-  let simplify_shallow t = Z.protect simplify_shallow_ t |> Option.value ~default:(Const Q.undef)
+  (* defend in depth against exceptions and debug *)
+  let simplify_shallow t =
+    let t' = Z.protect simplify_shallow_ t |> Option.value ~default:(Const Q.undef) in
+    if not (phys_equal t t') then
+      Debug.p "simplify_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
+    t'
+
 
   (** more or less syntactic attempt at detecting when an arbitrary term is a linear formula; call
       {!Atom.eval_term} first for best results *)
@@ -764,9 +980,6 @@ module Term = struct
       | Mult (Const c, t) | Mult (t, Const c) ->
           let+ l = aux_linearize t in
           LinArith.mult c l
-      | Div (t, Const c) when Q.is_not_zero c ->
-          let+ l = aux_linearize t in
-          LinArith.mult (Q.inv c) l
       | Procname _
       | FunctionApplication _
       | Mult _
@@ -785,10 +998,16 @@ module Term = struct
       | LessEqual _
       | Equal _
       | NotEqual _
-      | IsInstanceOf _ ->
+      | IsInstanceOf _
+      | IsInt _ ->
           None
     in
-    match aux_linearize t with None -> t | Some l -> Linear l
+    match aux_linearize t with
+    | None ->
+        t
+    | Some l ->
+        Debug.p "linearized: %a -> %a@\n" (pp_no_paren Var.pp) t (LinArith.pp Var.pp) l ;
+        Linear l
 
 
   let simplify_linear = function
@@ -1149,6 +1368,9 @@ module Formula = struct
     ; term_eqs: Term.VarMap.t_
           (** equalities of the form [t = x], used to detect when two abstract values are equal to
               the same term (hence equal) *)
+    ; tableau: Tableau.t
+          (** linear equalities similar to [linear_eqs] but involving only "restricted" (aka
+              "slack") variables; this is used for reasoning about inequalities, see \[2\] *)
     ; atoms: Atom.Set.t  (** "everything else"; not always normalized w.r.t. the components above *)
     }
   [@@deriving compare, equal, yojson_of]
@@ -1157,23 +1379,16 @@ module Formula = struct
     { var_eqs= VarUF.empty
     ; linear_eqs= Var.Map.empty
     ; term_eqs= Term.VarMap.empty
+    ; tableau= Tableau.empty
     ; atoms= Atom.Set.empty }
 
 
   let pp_with_pp_var pp_var fmt phi =
-    let pp_linear_eqs fmt m =
-      if Var.Map.is_empty m then F.pp_print_string fmt "true (no linear)"
-      else
-        Pp.collection ~sep:" ∧ "
-          ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
-          ~pp_item:(fun fmt (v, l) -> F.fprintf fmt "%a = %a" pp_var v (LinArith.pp pp_var) l)
-          fmt m
-    in
-    F.fprintf fmt "@[<hv>%a@ &&@ %a@ &&@ %a@ &&@ %a@]"
+    F.fprintf fmt "@[<hv>%a@ &&@ %a@ &&@ %a@ &&@ %a@ &&@ %a@]"
       (VarUF.pp ~pp_empty:(fun fmt -> F.pp_print_string fmt "true (no var=var)") pp_var)
-      phi.var_eqs pp_linear_eqs phi.linear_eqs
+      phi.var_eqs (pp_linear_eqs "linear" pp_var) phi.linear_eqs
       (Term.VarMap.pp_with_pp_var pp_var)
-      phi.term_eqs (Atom.Set.pp_with_pp_var pp_var) phi.atoms
+      phi.term_eqs (Tableau.pp pp_var) phi.tableau (Atom.Set.pp_with_pp_var pp_var) phi.atoms
 
 
   (** module that breaks invariants more often that the rest, with an interface that is safer to use *)
@@ -1224,17 +1439,22 @@ module Formula = struct
     (** the canonical representative of a given variable *)
     let get_repr phi x = VarUF.find phi.var_eqs x
 
-    (** substitute vars in [l] *once* with their linear form to discover more simplification
-        opportunities *)
-    let normalize_linear phi l =
+    let normalize_linear_ phi linear_eqs l =
       LinArith.subst_variables l ~f:(fun v ->
           let repr = (get_repr phi v :> Var.t) in
-          match Var.Map.find_opt repr phi.linear_eqs with
+          match Var.Map.find_opt repr linear_eqs with
           | None ->
               VarSubst repr
           | Some l' ->
               LinSubst l' )
 
+
+    (** substitute vars in [l] *once* with their linear form to discover more simplification
+        opportunities *)
+    let normalize_linear phi l = normalize_linear_ phi phi.linear_eqs l
+
+    (** same as [normalize_linear] but for slack variables, used for inequalities *)
+    let normalize_restricted phi l = normalize_linear_ phi phi.tableau l
 
     let normalize_var_const phi t =
       Term.subst_variables t ~f:(fun v ->
@@ -1263,7 +1483,8 @@ module Formula = struct
     (** add [l1 = l2] to [phi.linear_eqs] and resolves consequences of that new fact
 
         [l1] and [l2] should have already been through {!normalize_linear} (w.r.t. [phi]) *)
-    let rec solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi =
+    let rec solve_normalized_lin_eq ~fuel ?(force_no_tableau = false) new_eqs l1 l2 phi =
+      Debug.p "solve_normalized_lin_eq: %a=%a@\n" (LinArith.pp Var.pp) l1 (LinArith.pp Var.pp) l2 ;
       LinArith.solve_eq l1 l2
       >>= function
       | None ->
@@ -1273,35 +1494,40 @@ module Formula = struct
         | Some v' ->
             merge_vars ~fuel new_eqs (v :> Var.t) v' phi
         | None -> (
-          match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
-          | None ->
-              (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
-              let+ phi, new_eqs =
-                solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) (v :> Var.t) phi
-              in
-              let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
-              (* this can break the (as a result non-)invariant that variables in the domain of
-                 [linear_eqs] do not appear in the range of [linear_eqs] *)
-              ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
-          | Some l' ->
-              (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
-                 do not record these anywhere (except when their consequence can be recorded as [y =
-                 l''] or [y = y'], we could potentially discover the same equality over and over and
-                 diverge otherwise. Or could we? *)
-              (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
-                 normalize it, and replace [v]'s current binding *)
-              let l'' = normalize_linear phi l' in
-              let phi =
-                if phys_equal l' l'' then phi
-                else {phi with linear_eqs= Var.Map.add (v :> Var.t) l'' phi.linear_eqs}
-              in
-              if fuel > 0 then (
-                L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
-                solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l'' phi )
-              else (
-                (* [fuel = 0]: give up simplifying further for fear of diverging *)
-                L.d_printfln "Ran out of fuel solving linear equality" ;
-                Sat (phi, new_eqs) ) ) )
+            if (not force_no_tableau) && Var.is_restricted v && LinArith.is_restricted l then
+              (* linear equalities between restricted variables belong in the [tableau] instead of
+                 [linear_eqs], except if [force_no_tableau] is set *)
+              solve_tableau_restricted_eq ~fuel new_eqs v l phi
+            else
+              match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
+              | None ->
+                  (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
+                  let+ phi, new_eqs =
+                    solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) (v :> Var.t) phi
+                  in
+                  let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
+                  (* this can break the (as a result non-)invariant that variables in the domain of
+                     [linear_eqs] do not appear in the range of [linear_eqs] *)
+                  ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
+              | Some l' ->
+                  (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
+                     do not record these anywhere (except when their consequence can be recorded as [y =
+                     l''] or [y = y'], we could potentially discover the same equality over and over and
+                     diverge otherwise. Or could we?) *)
+                  (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
+                     normalize it, and replace [v]'s current binding *)
+                  let l'' = normalize_linear phi l' in
+                  let phi =
+                    if phys_equal l' l'' then phi
+                    else {phi with linear_eqs= Var.Map.add (v :> Var.t) l'' phi.linear_eqs}
+                  in
+                  if fuel > 0 then (
+                    L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
+                    solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l'' phi )
+                  else (
+                    (* [fuel = 0]: give up simplifying further for fear of diverging *)
+                    L.d_printfln "Ran out of fuel solving linear equality" ;
+                    Sat (phi, new_eqs) ) ) )
 
 
     (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; don't use directly
@@ -1314,6 +1540,61 @@ module Formula = struct
       | Some v' ->
           (* [t = v'] already in the map, need to explore consequences of [v = v']*)
           merge_vars ~fuel new_eqs v v' phi
+
+
+    (** TODO: at the moment this doesn't try to discover and return new equalities implied by the
+        tableau (see Chapter 5 in \[2\]) *)
+    and solve_tableau_restricted_eq ~fuel new_eqs w l phi =
+      Debug.p "tableau %a = %a@\n" Var.pp w (LinArith.pp Var.pp) l ;
+      let l_c = LinArith.get_constant_part l in
+      if Q.(l_c >= zero) then (
+        if LinArith.is_minimized l then (
+          (* [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≥0 (and so are all possible
+             values of all [vi]s since they are restricted variables), hence any possible value
+             of [w] is ≥0 so [w ≥ 0] is a tautologie and we can just discard the atom *)
+          Debug.p "Tautologie@\n" ;
+          Sat (phi, new_eqs) )
+        else
+          (* [w = l] is feasible and not a tautologie (and [l] is restricted), add to the
+             tableau *)
+          let tableau = Var.Map.add w l phi.tableau in
+          Debug.p "Add to tableau@\n" ;
+          Sat ({phi with tableau}, new_eqs) )
+      else if LinArith.is_maximized l then (
+        (* [l_c < 0], [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≤0 so [l] denotes
+           only negative values, hence cannot be ≥0: contradiction *)
+        Debug.p "Contradiction!@\n" ;
+        Unsat )
+      else
+        (* stuck, let's pivot to try to add a feasible equality to the tableau; there are two ways
+           to pivot in \[2\] *)
+        match Tableau.pivot_unbounded_with_positive_coeff phi.tableau w l with
+        | Some tableau ->
+            Sat ({phi with tableau}, new_eqs)
+        | None ->
+            if fuel > 0 then (
+              Debug.p "PIVOT %d in %a@\n" fuel (Tableau.pp Var.pp) phi.tableau ;
+              match Tableau.pivot l phi.tableau with
+              | None ->
+                  (* Huho, we cannot put the equality in a feasible form (i.e. [u = c + k1·v1 +
+                     ... + kn·vn] with [c≥0]). This isn't supposed to happen in theory but because
+                     we're a bit sloppy with normalization we can exceptionally get there in
+                     practice. Store it as an unrestricted linear equality to avoid losing
+                     completeness and hope a later re-normalization will take care of it better. *)
+                  L.debug Analysis Verbose "No pivot found for %a in %a@\n" (LinArith.pp Var.pp) l
+                    (Tableau.pp Var.pp) phi.tableau ;
+                  (* set [force_no_tableau] so that the equality won't just ping-pong back to here *)
+                  solve_normalized_lin_eq ~fuel ~force_no_tableau:true new_eqs (LinArith.of_var w)
+                    (normalize_restricted phi l) phi
+              | Some tableau ->
+                  let phi = {phi with tableau} in
+                  Debug.p "pivoted tableau: %a@\n" (Tableau.pp Var.pp) phi.tableau ;
+                  solve_tableau_restricted_eq ~fuel:(fuel - 1) new_eqs w
+                    (normalize_restricted phi l) phi )
+            else (
+              L.debug Analysis Verbose "Ran out of fuel pivoting the tableau %a@\n"
+                (Tableau.pp Var.pp) phi.tableau ;
+              Sat (phi, new_eqs) )
 
 
     (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; assumes that
@@ -1339,10 +1620,12 @@ module Formula = struct
 
     (** same as {!solve_normalized_eq_no_lin} but also adds linear to [phi.linear_eqs] *)
     and solve_normalized_term_eq ~fuel new_eqs (t : Term.t) v phi =
+      Debug.p "solve_normalized_term_eq: %a=%a in %a@\n" (Term.pp_no_paren Var.pp) t Var.pp v
+        (pp_with_pp_var Var.pp) phi ;
       match t with
       | Linear l when LinArith.get_as_var l |> Option.is_some ->
-          (* [v1=v2] is already taken care of by [var_eqs] *)
-          Sat (phi, new_eqs)
+          let v' = Option.value_exn (LinArith.get_as_var l) in
+          merge_vars ~fuel new_eqs v v' phi
       | Linear l -> (
           (* [l = v]: need to first solve it to get [l' = v'] such that [v' < vars(l')], and [l'] is
              normalized wrt [phi.linear_eqs] (to get a canonical form), add this to [term_eqs], then
@@ -1371,6 +1654,7 @@ module Formula = struct
 
 
     and merge_vars ~fuel new_eqs v1 v2 phi =
+      Debug.p "merge_vars: %a=%a@\n" Var.pp v1 Var.pp v2 ;
       let var_eqs, subst_opt = VarUF.union phi.var_eqs v1 v2 in
       let phi = {phi with var_eqs} in
       match subst_opt with
@@ -1409,6 +1693,7 @@ module Formula = struct
                    is smaller than [v_old] *)
                 ({phi with linear_eqs= Var.Map.remove v_old phi.linear_eqs}, Some l_old)
           in
+          (* NOTE: we don't propagate new variable equalities to the tableau eagerly at the moment *)
           match (l_old, l_new) with
           | None, None | None, Some _ ->
               Sat (phi, new_eqs)
@@ -1422,8 +1707,30 @@ module Formula = struct
               solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi )
 
 
+    (* Assumes [w] is restricted, [l] is normalized. This is called [addlineq] in \[2\]. *)
+    let solve_tableau_eq ~fuel new_eqs w l phi =
+      Debug.p "Solving %a = %a@\n" Var.pp w (LinArith.pp Var.pp) l ;
+      match LinArith.solve_for_unrestricted w l with
+      | Some (v, l_v) ->
+          (* there is at least one variable [v] whose value is not known to always be non-negative;
+             we cannot add it to the tableau, let's add the equality [v=l_v <=> w=l] to the "normal"
+             linear equalities for now *)
+          Debug.p "Unrestricted %a = %a@\n" Var.pp v (LinArith.pp Var.pp) l_v ;
+          solve_normalized_lin_eq ~fuel new_eqs l_v (LinArith.of_var v) phi
+      | None ->
+          (* [l] can go into the tableau as it contains only restricted (non-negative) variables *)
+          solve_tableau_restricted_eq ~fuel new_eqs w l phi
+
+
     (** an arbitrary value *)
     let base_fuel = 10
+
+    let solve_lin_ineq new_eqs l1 l2 phi =
+      (* [l1 ≤ l2] becomes [(l2-l1) ≥ 0], encoded as [l = w] with [w] a fresh restricted variable *)
+      let l = LinArith.subtract l2 l1 |> normalize_linear phi |> normalize_restricted phi in
+      let w = Var.mk_fresh_restricted () in
+      solve_tableau_eq ~fuel:base_fuel new_eqs w l phi
+
 
     let solve_lin_eq new_eqs t1 t2 phi =
       solve_normalized_lin_eq ~fuel:base_fuel new_eqs (normalize_linear phi t1)
@@ -1452,6 +1759,8 @@ module Formula = struct
 
 
     let and_var_term ~fuel v t (phi, new_eqs) =
+      Debug.p "and_var_term: %a=%a in %a@\n" Var.pp v (Term.pp_no_paren Var.pp) t
+        (pp_with_pp_var Var.pp) phi ;
       let t' : Term.t = normalize_var_const phi t |> Atom.eval_term in
       let v' = (get_repr phi v :> Var.t) in
       (* check if unsat given what we know of [v'] and [t'], in other words be at least as
@@ -1483,7 +1792,7 @@ module Formula = struct
           Sat (false, (phi, new_eqs))
       | Some (Atom.Equal (Linear _, Linear _)) ->
           assert false
-      | Some (Atom.Equal (Linear l, Const c)) | Some (Atom.Equal (Const c, Linear l)) ->
+      | Some (Atom.Equal (Linear l, Const c) | Atom.Equal (Const c, Linear l)) ->
           (* NOTE: {!normalize_atom} calls {!Atom.eval}, which normalizes linear equalities so
              they end up only on one side, hence only this match case is needed to detect linear
              equalities *)
@@ -1494,6 +1803,18 @@ module Formula = struct
           let v = Option.value_exn (LinArith.get_as_var l) in
           let+ phi_new_eqs' = solve_normalized_term_eq ~fuel:base_fuel new_eqs t v phi in
           (false, phi_new_eqs')
+      | Some (Atom.LessEqual (Linear l, Const c)) ->
+          let+ phi', new_eqs = solve_lin_ineq new_eqs l (LinArith.of_q c) phi in
+          (true, (phi', new_eqs))
+      | Some (Atom.LessEqual (Const c, Linear l)) ->
+          let+ phi', new_eqs = solve_lin_ineq new_eqs (LinArith.of_q c) l phi in
+          (true, (phi', new_eqs))
+      | Some (Atom.LessThan (Linear l, Const c)) ->
+          let+ phi', new_eqs = solve_lin_ineq new_eqs l (LinArith.of_q (Q.sub c Q.one)) phi in
+          (true, (phi', new_eqs))
+      | Some (Atom.LessThan (Const c, Linear l)) ->
+          let+ phi', new_eqs = solve_lin_ineq new_eqs (LinArith.of_q (Q.add c Q.one)) l phi in
+          (true, (phi', new_eqs))
       | Some atom' ->
           Sat (false, ({phi with atoms= Atom.Set.add atom' phi.atoms}, new_eqs))
 
@@ -1512,6 +1833,7 @@ module Formula = struct
         L.d_printfln "ran out of fuel when normalizing" ;
         Sat phi_new_eqs0 )
       else
+        (* NOTE: [phi.tableau] is eagerly normalized so no further normalization needed here *)
         let* new_linear_eqs, phi_new_eqs' =
           let* new_linear_eqs_from_linear, phi_new_eqs = normalize_linear_eqs phi_new_eqs0 in
           if new_linear_eqs_from_linear && fuel > 0 then
@@ -1535,7 +1857,13 @@ module Formula = struct
 
     let normalize phi_new_eqs = normalize_with_fuel ~fuel:base_fuel phi_new_eqs
 
-    let and_atom atom phi_new_eqs = and_atom atom phi_new_eqs >>| snd
+    let and_atom atom phi_new_eqs =
+      let phi_new_eqs' = and_atom atom phi_new_eqs >>| snd in
+      Debug.p "and_atom %a -> %a@\n" (Atom.pp_with_pp_var Var.pp) atom
+        (SatUnsat.pp (pp_with_pp_var Var.pp))
+        (SatUnsat.map fst phi_new_eqs') ;
+      phi_new_eqs'
+
 
     let and_var_term v t phi_new_eqs = and_var_term ~fuel:base_fuel v t phi_new_eqs
 
@@ -1589,6 +1917,11 @@ let and_equal = and_mk_atom Atom.equal
 
 let and_equal_instanceof v1 v2 t phi =
   let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in
+  and_known_atom atom phi
+
+
+let and_is_int v phi =
+  let atom = Atom.equal (IsInt (Var v)) Term.one in
   and_known_atom atom phi
 
 
@@ -1804,10 +2137,11 @@ end = struct
       atoms Atom.Set.empty
 
 
-  let subst_var_formula subst {Formula.var_eqs; linear_eqs; term_eqs; atoms} =
+  let subst_var_formula subst {Formula.var_eqs; linear_eqs; tableau; term_eqs; atoms} =
     { Formula.var_eqs= VarUF.apply_subst subst var_eqs
     ; linear_eqs= subst_var_linear_eqs subst linear_eqs
     ; term_eqs= Term.VarMap.apply_var_subst subst term_eqs
+    ; tableau= subst_var_linear_eqs subst tableau
     ; atoms= subst_var_atoms subst atoms }
 
 
@@ -1818,7 +2152,14 @@ end = struct
 
 
   let eliminate_vars ~keep phi =
-    let subst = VarUF.reorient ~should_keep:(fun x -> Var.Set.mem x keep) phi.known.var_eqs in
+    let subst =
+      VarUF.reorient phi.known.var_eqs ~should_keep:(fun x ->
+          (* TODO: we could probably be less coarse than keeping *all* restricted variables. This
+             ensures that substituting in the tableau doesn't introduce unrestricted variables in
+             the tableau. Also, getting rid of restricted variables risks losing information: if
+             [x=u] with [u] restricted then [x≥0]. *)
+          Var.is_restricted x || Var.Set.mem x keep )
+    in
     try Sat (subst_var subst phi) with Contradiction -> Unsat
 end
 
@@ -1930,6 +2271,7 @@ module DeadVariables = struct
       let linear_eqs =
         Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.linear_eqs
       in
+      let tableau = Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.tableau in
       let term_eqs =
         Term.VarMap.filter
           (fun t v -> Var.Set.mem v vars_to_keep && not (Term.has_var_notin vars_to_keep t))
@@ -1969,7 +2311,7 @@ module DeadVariables = struct
         else
           Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.Formula.atoms
       in
-      {Formula.var_eqs; linear_eqs; term_eqs; atoms}
+      {Formula.var_eqs; linear_eqs; term_eqs; tableau; atoms}
     in
     try
       let known = simplify_phi phi.known in

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
 
@@ -12,6 +13,13 @@ int* malloc_no_check_bad() {
   int* p = (int*)malloc(sizeof(int));
   *p = 42;
   return p;
+}
+
+void malloc_assert_ok() {
+  int* p = (int*)malloc(sizeof(int));
+  assert(p);
+  *p = 42;
+  free(p);
 }
 
 void create_null_path_ok(int* p) {
@@ -182,7 +190,7 @@ void FNlatent_random_modelled_bad(int y) {
   }
 }
 
-void FP_arithmetic_weakness_ok() {
+void arithmetic_weakness_ok() {
   int x = random();
   int y = random();
   if (x < y && x > y) {

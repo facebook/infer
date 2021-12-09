@@ -8,7 +8,7 @@
 #include <list>
 #include <assert.h>
 
-void out_of_bound_Bad_FN(std::vector<int> v) {
+void out_of_bound_Bad(std::vector<int> v) {
   unsigned int n = v.size();
   v[n] = 1;
 }
@@ -18,7 +18,7 @@ void simple_size_Good() {
   v[v.size() - 1] = 2;
 }
 
-void simple_size_Bad_FN() {
+void simple_size_Bad() {
   std::vector<int> v(3);
   v[v.size()] = 2;
 }
@@ -39,7 +39,7 @@ void push_back_Good() {
   v[0] = 2;
 }
 
-void push_back_Bad_FN() {
+void push_back_Bad() {
   std::vector<int> v;
   v.push_back(1);
   v[1] = 2;
@@ -51,7 +51,7 @@ void emplace_back_Good() {
   v[0] = 2;
 }
 
-void emplace_back_Bad_FN() {
+void emplace_back_Bad() {
   std::vector<int> v;
   v.emplace_back(1);
   v[1] = 2;
@@ -64,7 +64,7 @@ void reserve_Good() {
   v[0] = 2;
 }
 
-void reserve_Bad_FN() {
+void reserve_Bad() {
   std::vector<int> v;
   v.reserve(42);
   v[0] = 2;
@@ -97,7 +97,7 @@ void call_safe_access2_Good() {
   safe_access2(v);
 }
 
-void safe_access3_Good_FP() {
+void safe_access3_Good() {
   std::vector<int> v;
   if (!v.empty()) {
     v[0] = 1;
@@ -168,7 +168,7 @@ void assert_Good_2(int x) {
   v[4] = 1;
 }
 
-void assert_Bad_FN() {
+void assert_Bad() {
   std::vector<int> v;
   for (int i = 0; i < 5; i++) {
     v.push_back(1);
@@ -222,7 +222,7 @@ void resize_Good() {
   v[0] = 0;
 }
 
-void resize_Bad_FN() {
+void resize_Bad() {
   std::vector<int> v;
   v.resize(1);
   v[1] = 0;

@@ -10,7 +10,9 @@ typedef struct _ {
   int* g;
 } S;
 
-void main() {
+void
+main()
+{
   S x;
   int** p;
   int y;

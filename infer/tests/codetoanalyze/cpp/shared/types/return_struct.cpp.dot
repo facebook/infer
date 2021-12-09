@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_3" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" ;
-"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" [label="4:  Return Stmt \n   n$1=_fun_return_struct::X::X(n$0:return_struct::X*,&x:return_struct::X&) copy ctor [line 22, column 10]\n " shape="box"]
+"get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" [label="4:  Return Stmt \n   n$1=_fun_return_struct::X::X(n$0:return_struct::X*,&x:return_struct::X&) [line 22, column 10]\n " shape="box"]
 	
 
 	 "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_4" -> "get#return_struct(class return_struct::X)#15206943163581446197.86e6722206a41548a013622037de2b99_5" ;
@@ -50,7 +50,7 @@ digraph cfg {
 	
 
 	 "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_6" -> "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_5" ;
-"get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_7" [label="7:  DeclStmt \n   n$4=_fun_return_struct::X::X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const &) copy ctor [line 26, column 9]\n " shape="box"]
+"get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_7" [label="7:  DeclStmt \n   n$4=_fun_return_struct::X::X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const &) [line 26, column 9]\n " shape="box"]
 	
 
 	 "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_7" -> "get_div0#return_struct#3543093399648500387.0c3db3a444952aefeee44e54da50327a_3" ;
@@ -77,7 +77,7 @@ digraph cfg {
 	
 
 	 "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_6" -> "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_5" ;
-"get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_7" [label="7:  DeclStmt \n   n$4=_fun_return_struct::X::X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const &) copy ctor [line 38, column 9]\n " shape="box"]
+"get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_7" [label="7:  DeclStmt \n   n$4=_fun_return_struct::X::X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const &) [line 38, column 9]\n " shape="box"]
 	
 
 	 "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_7" -> "get_div1#return_struct#4287655186293816212.dabfacf04a7d838f8bdc3ef21786303d_3" ;
@@ -180,26 +180,26 @@ digraph cfg {
 	
 
 	 "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_4" -> "div#X#return_struct#(9073902918758280554).5ec34a4946de2226a51954167b2298aa_2" ;
-"X#X#return_struct#{11996548542918702168}.5f283169cbccf622b3d436ac75c52732_1" [label="1: Start return_struct::X::X\nFormals:  this:return_struct::X* x:return_struct::X const &\nLocals:  \n  " color=yellow style=filled]
+"X#X#return_struct#{[copy_ctor]}11996548542918702168.c0b7f2fe8e08ebf6ec6bff1c912ef5c4_1" [label="1: Start return_struct::X::X\nFormals:  this:return_struct::X* x:return_struct::X const &\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#return_struct#{11996548542918702168}.5f283169cbccf622b3d436ac75c52732_1" -> "X#X#return_struct#{11996548542918702168}.5f283169cbccf622b3d436ac75c52732_3" ;
-"X#X#return_struct#{11996548542918702168}.5f283169cbccf622b3d436ac75c52732_2" [label="2: Exit return_struct::X::X \n  " color=yellow style=filled]
+	 "X#X#return_struct#{[copy_ctor]}11996548542918702168.c0b7f2fe8e08ebf6ec6bff1c912ef5c4_1" -> "X#X#return_struct#{[copy_ctor]}11996548542918702168.c0b7f2fe8e08ebf6ec6bff1c912ef5c4_3" ;
+"X#X#return_struct#{[copy_ctor]}11996548542918702168.c0b7f2fe8e08ebf6ec6bff1c912ef5c4_2" [label="2: Exit return_struct::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#return_struct#{11996548542918702168}.5f283169cbccf622b3d436ac75c52732_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:return_struct::X* [line 13, column 19]\n  n$1=*&x:return_struct::X const & [line 13, column 23]\n  n$2=*n$1.f:int [line 13, column 23]\n  *n$0.f:int=n$2 [line 13, column 19]\n " shape="box"]
+"X#X#return_struct#{[copy_ctor]}11996548542918702168.c0b7f2fe8e08ebf6ec6bff1c912ef5c4_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:return_struct::X* [line 13, column 19]\n  n$1=*&x:return_struct::X const & [line 13, column 23]\n  n$2=*n$1.f:int [line 13, column 23]\n  *n$0.f:int=n$2 [line 13, column 19]\n " shape="box"]
 	
 
-	 "X#X#return_struct#{11996548542918702168}.5f283169cbccf622b3d436ac75c52732_3" -> "X#X#return_struct#{11996548542918702168}.5f283169cbccf622b3d436ac75c52732_2" ;
-"X#X#return_struct#{15110155151743929043}.acca57c4764b815fd56ca37bc7d69bd1_1" [label="1: Start return_struct::X::X\nFormals:  this:return_struct::X*\nLocals:  \n  " color=yellow style=filled]
+	 "X#X#return_struct#{[copy_ctor]}11996548542918702168.c0b7f2fe8e08ebf6ec6bff1c912ef5c4_3" -> "X#X#return_struct#{[copy_ctor]}11996548542918702168.c0b7f2fe8e08ebf6ec6bff1c912ef5c4_2" ;
+"X#X#return_struct#{}15110155151743929043.7d3775ce9242f223bdc61f33b1e8c353_1" [label="1: Start return_struct::X::X\nFormals:  this:return_struct::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#return_struct#{15110155151743929043}.acca57c4764b815fd56ca37bc7d69bd1_1" -> "X#X#return_struct#{15110155151743929043}.acca57c4764b815fd56ca37bc7d69bd1_3" ;
-"X#X#return_struct#{15110155151743929043}.acca57c4764b815fd56ca37bc7d69bd1_2" [label="2: Exit return_struct::X::X \n  " color=yellow style=filled]
+	 "X#X#return_struct#{}15110155151743929043.7d3775ce9242f223bdc61f33b1e8c353_1" -> "X#X#return_struct#{}15110155151743929043.7d3775ce9242f223bdc61f33b1e8c353_3" ;
+"X#X#return_struct#{}15110155151743929043.7d3775ce9242f223bdc61f33b1e8c353_2" [label="2: Exit return_struct::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#return_struct#{15110155151743929043}.acca57c4764b815fd56ca37bc7d69bd1_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:return_struct::X* [line 14, column 9]\n  *n$0.f:int=1 [line 14, column 9]\n " shape="box"]
+"X#X#return_struct#{}15110155151743929043.7d3775ce9242f223bdc61f33b1e8c353_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:return_struct::X* [line 14, column 9]\n  *n$0.f:int=1 [line 14, column 9]\n " shape="box"]
 	
 
-	 "X#X#return_struct#{15110155151743929043}.acca57c4764b815fd56ca37bc7d69bd1_3" -> "X#X#return_struct#{15110155151743929043}.acca57c4764b815fd56ca37bc7d69bd1_2" ;
+	 "X#X#return_struct#{}15110155151743929043.7d3775ce9242f223bdc61f33b1e8c353_3" -> "X#X#return_struct#{}15110155151743929043.7d3775ce9242f223bdc61f33b1e8c353_2" ;
 }

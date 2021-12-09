@@ -82,6 +82,15 @@ let empty = Empty
 
 let singleton instr = Singleton instr
 
+let copy = function
+  | NotReversed instrs ->
+      NotReversed (Array.copy instrs)
+  | Empty ->
+      Empty
+  | Singleton instr ->
+      Singleton instr
+
+
 let append_list t list =
   let instrs = get_underlying_not_reversed t in
   NotReversed (Array.append instrs (Array.of_list list))

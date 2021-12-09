@@ -11,14 +11,13 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-type t = ExecutionDomain.summary list * NonDisjDomain.t [@@deriving yojson_of]
+type t = ExecutionDomain.summary list [@@deriving yojson_of]
 
-let pp fmt (pre_posts, non_disj_astate) =
+let pp fmt pre_posts =
   F.open_vbox 0 ;
   F.fprintf fmt "%d pre/post(s)@;" (List.length pre_posts) ;
   List.iteri pre_posts ~f:(fun i (pre_post : ExecutionDomain.summary) ->
       F.fprintf fmt "#%d: @[%a@]@;" i ExecutionDomain.pp (pre_post :> ExecutionDomain.t) ) ;
-  F.fprintf fmt "\n Non-disj state:@[%a@]@;" NonDisjDomain.pp non_disj_astate ;
   F.close_box ()
 
 
@@ -36,6 +35,11 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           (PulseReport.report_summary_error tenv proc_desc err_log
              (ReportableError
                 {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}} ) )
+    | Sat (Error (`ResourceLeak (astate, class_name, allocation_trace, location))) ->
+        Some
+          (PulseReport.report_summary_error tenv proc_desc err_log
+             (ReportableError
+                {astate; diagnostic= ResourceLeak {class_name; allocation_trace; location}} ) )
     | Sat (Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))) -> (
       match
         AbductiveDomain.find_post_cell_opt address (astate :> AbductiveDomain.t)
@@ -76,9 +80,8 @@ let force_exit_program tenv proc_desc err_log post =
       ExitProgram astate )
 
 
-let of_posts tenv proc_desc err_log location posts non_disj_astate =
-  ( List.filter_mapi posts ~f:(fun i exec_state ->
-        L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
-        exec_summary_of_post_common tenv proc_desc err_log location exec_state
-          ~continue_program:(fun astate -> ContinueProgram astate) )
-  , non_disj_astate )
+let of_posts tenv proc_desc err_log location posts =
+  List.filter_mapi posts ~f:(fun i exec_state ->
+      L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
+      exec_summary_of_post_common tenv proc_desc err_log location exec_state
+        ~continue_program:(fun astate -> ContinueProgram astate) )

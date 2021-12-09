@@ -8,11 +8,12 @@
 open! IStd
 module L = Logging
 
+(* NOTE: field order determines how issues are sorted *)
 type t =
-  { proc_name: Procname.t
-  ; proc_location: Location.t
+  { err_data: Errlog.err_data
   ; err_key: Errlog.err_key
-  ; err_data: Errlog.err_data }
+  ; proc_location_opt: Location.t option
+  ; proc_name: Procname.t }
 [@@deriving compare]
 
 (** Wrapper of an issue that compares all parts except the procname *)
@@ -23,13 +24,11 @@ let compare_err_data_ (err_data1 : Errlog.err_data) (err_data2 : Errlog.err_data
   Location.compare err_data1.loc err_data2.loc
 
 
-type proc_name_ = Procname.t
-
-(* ignore proc name *)
-let compare_proc_name_ _ _ = 0
-
 type t_ignore_duplicates = t =
-  {proc_name: proc_name_; proc_location: Location.t; err_key: Errlog.err_key; err_data: err_data_}
+  { err_data: err_data_
+  ; err_key: Errlog.err_key
+  ; proc_location_opt: Location.t option
+  ; proc_name: Procname.t [@compare.ignore] }
 [@@deriving compare]
 
 (* If two issues are identical except for their procnames, they are probably duplicate reports on

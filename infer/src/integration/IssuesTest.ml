@@ -112,15 +112,7 @@ let pp_custom_of_report fmt report fields =
   List.iter ~f:(pp_custom_of_issue fmt) report
 
 
-let tests_jsonbug_compare (bug1 : Jsonbug_t.jsonbug) (bug2 : Jsonbug_t.jsonbug) =
-  let open Jsonbug_t in
-  [%compare: string * string * int * string * Caml.Digest.t]
-    (bug1.file, bug1.procedure, bug1.line - bug1.procedure_start_line, bug1.bug_type, bug1.hash)
-    (bug2.file, bug2.procedure, bug2.line - bug2.procedure_start_line, bug2.bug_type, bug2.hash)
-
-
 let write_from_json ~json_path ~out_path issues_tests_fields =
   Utils.with_file_out out_path ~f:(fun outf ->
       let report = Atdgen_runtime.Util.Json.from_file Jsonbug_j.read_report json_path in
-      let sorted_report = List.sort ~compare:tests_jsonbug_compare report in
-      pp_custom_of_report (F.formatter_of_out_channel outf) sorted_report issues_tests_fields )
+      pp_custom_of_report (F.formatter_of_out_channel outf) report issues_tests_fields )

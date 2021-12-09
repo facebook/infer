@@ -34,8 +34,8 @@ type 'astate abductive_error =
     AbductiveDomain.summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option)
   ]
 
-let ignore_memory_leaks = function
-  | Ok astate | Error (`MemoryLeak (astate, _, _, _)) ->
+let ignore_leaks = function
+  | Ok astate | Error (`MemoryLeak (astate, _, _, _)) | Error (`ResourceLeak (astate, _, _, _)) ->
       Ok astate
   | Error #abductive_error as result ->
       result

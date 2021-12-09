@@ -239,7 +239,7 @@ void enumerate_via_block_linear(NSArray* array) {
 
 @implementation MyBlock
 
-+ (void)call_enumerate_via_block_param_quadratic:(NSArray*)x:(int)size {
++ (void)call_enumerate_via_block_param_quadratic_FN:(NSArray*)x:(int)size {
   void (^b)(id, NSUInteger, BOOL*) =
       ^(id object, NSUInteger indexPath, BOOL* stop) {
         for (int i = 0; i < size; i++) {

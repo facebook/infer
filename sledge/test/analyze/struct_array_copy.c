@@ -10,7 +10,9 @@ typedef struct _ {
   int a[30];
 } S;
 
-int main() {
+int
+main()
+{
   S s;
   s = s;
   return s.x;

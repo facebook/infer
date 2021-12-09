@@ -475,8 +475,8 @@ let do_preanalysis exe_env pdesc =
   then FunctionPointers.substitute pdesc ;
   (* NOTE: It is important that this preanalysis stays before Liveness *)
   if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then (
-    ClosuresSubstitution.process_closure_call summary ;
-    ClosureSubstSpecializedMethod.process summary ;
+    CCallSpecializedWithClosures.process pdesc ;
+    (* Apply dynamic selection of copy and overriden methods *)
     ReplaceObjCMethodCall.process tenv pdesc proc_name ) ;
   Liveness.process summary tenv ;
   AddAbstractionInstructions.process pdesc ;

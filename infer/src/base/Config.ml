@@ -816,6 +816,14 @@ and buck_java_heap_size_gb =
     "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
 
 
+and buck_java_flavor_dependency_depth =
+  CLOpt.mk_int_opt ~long:"buck-java-flavor-dependency-depth"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Capture dependencies only if they are at most the depth provided, or all transitive \
+     dependencies if depth is not provided (the default). In particular, depth zero means capture \
+     exactly the targets provided and nothing else."
+
+
 and buck_java_flavor_suppress_config =
   CLOpt.mk_bool ~long:"buck-java-flavor-suppress-config" ~default:false
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -2172,9 +2180,15 @@ and pulse_recency_limit =
 
 
 and pulse_report_latent_issues =
-  CLOpt.mk_bool ~long:"pulse-report-latent-issues"
-    "Only use for testing, there should be no need to turn this on for regular code analysis. \
-     Report latent issues instead of waiting for them to become concrete."
+  CLOpt.mk_bool ~long:"pulse-report-latent-issues" ~default:true
+    "Report latent issues instead of waiting for them to become manifest, when the latent issue \
+     itself is enabled."
+
+
+and pulse_skip_procedures =
+  CLOpt.mk_string_opt ~long:"pulse-skip-procedures"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
 
 
 and pulse_widen_threshold =
@@ -2234,11 +2248,10 @@ and racerd_guardedby =
     "Check @GuardedBy annotations with RacerD"
 
 
-and _racerd_unknown_returns_owned =
-  CLOpt.mk_bool ~deprecated:["racerd-unknown-returns-owned"] ~long:"racerd-unknown-returns-owned"
-    ~default:true
+and racerd_ignore_classes =
+  CLOpt.mk_string_list ~long:"racerd-ignore-classes"
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
-    "DEPRECATED, does nothing."
+    "Any method in a class specified here will be ignored by RacerD."
 
 
 and reactive =
@@ -2362,6 +2375,12 @@ and results_dir =
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 
+and sarif =
+  CLOpt.mk_bool ~long:"sarif" ~default:false
+    ~in_help:InferCommand.[(Run, manual_generic)]
+    "Output issues in SARIF (Static Analysis Results Interchange Format) in infer-out/report.sarif"
+
+
 and scheduler =
   CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2461,8 +2480,9 @@ and siof_safe_methods =
 and skip_analysis_in_path =
   CLOpt.mk_string_list ~deprecated:["-skip-clang-analysis-in-path"] ~long:"skip-analysis-in-path"
     ~in_help:InferCommand.[(Capture, manual_generic); (Run, manual_generic)]
-    ~meta:"path_prefix_OCaml_regex"
-    "Ignore files whose path matches the given prefix (can be specified multiple times)"
+    ~meta:"regex"
+    "Ignore files whose path matches a given regex (can be specified multiple times, but you must \
+     make sure each regex is properly bracketed)"
 
 
 and skip_analysis_in_path_skips_compilation =
@@ -3024,6 +3044,8 @@ and buck_clang_use_toolchain_config = !buck_clang_use_toolchain_config
 
 and buck_java_heap_size_gb = !buck_java_heap_size_gb
 
+and buck_java_flavor_dependency_depth = !buck_java_flavor_dependency_depth
+
 and buck_java_flavor_suppress_config = !buck_java_flavor_suppress_config
 
 and buck_merge_all_deps = !buck_merge_all_deps
@@ -3474,6 +3496,8 @@ and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
+and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
+
 and pulse_scuba_logging = !pulse_scuba_logging
 
 and pulse_widen_threshold = !pulse_widen_threshold
@@ -3495,6 +3519,8 @@ and quandary_sinks = !quandary_sinks
 and quiet = !quiet
 
 and racerd_guardedby = !racerd_guardedby
+
+and racerd_ignore_classes = RevList.to_list !racerd_ignore_classes |> String.Set.of_list
 
 and reactive_mode = !reactive
 
@@ -3529,6 +3555,8 @@ and report_suppress_errors = RevList.to_list !report_suppress_errors
 and reports_include_ml_loc = !reports_include_ml_loc
 
 and results_dir = !results_dir
+
+and sarif = !sarif
 
 and scheduler = !scheduler
 
@@ -3566,7 +3594,13 @@ and siof_check_iostreams = !siof_check_iostreams
 
 and siof_safe_methods = RevList.to_list !siof_safe_methods
 
-and skip_analysis_in_path = RevList.to_list !skip_analysis_in_path
+and skip_analysis_in_path =
+  match RevList.to_list !skip_analysis_in_path with
+  | [] ->
+      None
+  | regexps ->
+      Some (Str.regexp (String.concat ~sep:"\\|" regexps))
+
 
 and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compilation
 

@@ -130,7 +130,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         ~f:(fun subst astate_post_call ->
           let* astate_summary_result =
             ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate_post_call
-              >>| AccessResult.ignore_memory_leaks >>| AccessResult.of_abductive_result
+              >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
               :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t
               )
           in
@@ -206,7 +206,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         (astate :> AbductiveDomain.t)
         ~f:(fun _subst astate ->
           ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
-            >>| AccessResult.ignore_memory_leaks >>| AccessResult.of_abductive_result
+            >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
             :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t )
           >>| Result.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
@@ -282,7 +282,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
     result_unknown @ result_unknown_nil
   in
   match callee_data with
-  | Some (callee_proc_desc, (exec_states, _)) ->
+  | Some (callee_proc_desc, exec_states) ->
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
         (exec_states :> ExecutionDomain.t list)
         astate

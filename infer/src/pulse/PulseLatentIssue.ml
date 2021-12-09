@@ -60,7 +60,7 @@ let is_manifest (astate : AbductiveDomain.summary) =
    not true as calling context cannot possibly influence such conditions *)
 let should_report (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
   match diagnostic with
-  | MemoryLeak _ | StackVariableAddressEscape _ | UnnecessaryCopy _ ->
+  | MemoryLeak _ | ResourceLeak _ | StackVariableAddressEscape _ | UnnecessaryCopy _ ->
       (* these issues are reported regardless of the calling context, not sure if that's the right
          decision yet *)
       `ReportNow

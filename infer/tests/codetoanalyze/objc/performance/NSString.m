@@ -133,9 +133,9 @@ void call_string_length_linear(NSAttributedString* s) {
   string_length_linear(s.string);
 }
 
-void enumerateAttribute_quadratic(NSAttributedString* attributedString,
-                                  NSString* kCTFontAttributeName,
-                                  int x) {
+void enumerateAttribute_quadratic_FN(NSAttributedString* attributedString,
+                                     NSString* kCTFontAttributeName,
+                                     int x) {
   [attributedString
       enumerateAttribute:kCTFontAttributeName
                  inRange:NSMakeRange(0, [attributedString length])
@@ -160,9 +160,7 @@ void enumerateAttribute_linear(NSAttributedString* attributedString,
               }];
 }
 
-// FN because captured block variable is added as last argument which our model
-// cannot recognize
-void enumerateAttribute_via_block_captured_linear_FN(NSArray* array, int x) {
+void enumerateAttribute_via_block_captured_linear(NSArray* array, int x) {
   __block BOOL answer = NO;
   [array enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL* stop) {
     answer = YES;

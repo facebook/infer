@@ -61,6 +61,8 @@ val is_unsat_cheap : AbductiveDomain.t -> bool
 
 val has_no_assumptions : AbductiveDomain.t -> bool
 
+val and_is_int : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t
+
 val and_equal_instanceof :
      AbstractValue.t
   -> AbstractValue.t

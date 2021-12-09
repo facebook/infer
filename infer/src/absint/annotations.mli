@@ -25,8 +25,6 @@ val no_allocation : string
 
 val nullable : string
 
-val nullsafe : string
-
 val nonnull : string
 
 val performance_critical : string

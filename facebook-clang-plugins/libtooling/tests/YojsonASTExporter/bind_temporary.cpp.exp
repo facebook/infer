@@ -350,6 +350,7 @@
             ]
           },
           {
+            "is_copy_constructor" : true
           }
         )>
       ],

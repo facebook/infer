@@ -7,7 +7,9 @@
 
 #include <assert.h>
 
-void main() {
+void
+main()
+{
   int x, y;
   assert(x != y);
 }

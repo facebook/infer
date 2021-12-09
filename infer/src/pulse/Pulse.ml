@@ -13,7 +13,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
-let report_topl_errors proc_desc err_log (summary, _) =
+let report_topl_errors proc_desc err_log summary =
   let f = function
     | ContinueProgram astate ->
         PulseTopl.report_errors proc_desc err_log (AbductiveDomain.Topl.get astate)
@@ -27,7 +27,7 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
   PulseNonDisjunctiveDomain.get_copied non_disj_astate
   |> List.iter ~f:(fun (var, location) ->
          let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; location} in
-         PulseReport.report_non_disj_error proc_desc err_log diagnostic )
+         PulseReport.report ~latent:false proc_desc err_log diagnostic )
 
 
 module PulseTransferFunctions = struct
@@ -290,6 +290,10 @@ module PulseTransferFunctions = struct
     (astates, ret_vars)
 
 
+  let and_is_int_if_integer_type typ v astate =
+    if Typ.is_int typ then PulseArithmetic.and_is_int v astate else Ok astate
+
+
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
@@ -302,18 +306,20 @@ module PulseTransferFunctions = struct
         ([astate], path, astate_n)
     | ContinueProgram astate -> (
       match instr with
-      | Load {id= lhs_id; e= rhs_exp; loc} ->
+      | Load {id= lhs_id; e= rhs_exp; loc; typ} ->
           (* [lhs_id := *rhs_exp] *)
           let deref_rhs astate =
             let results =
               if Config.pulse_isl then
                 PulseOperations.eval_deref_isl path loc rhs_exp astate
                 |> List.map ~f:(fun result ->
-                       let+ astate, rhs_addr_hist = result in
-                       PulseOperations.write_id lhs_id rhs_addr_hist astate )
+                       let* astate, rhs_addr_hist = result in
+                       and_is_int_if_integer_type typ (fst rhs_addr_hist) astate
+                       >>| PulseOperations.write_id lhs_id rhs_addr_hist )
               else
-                [ (let+ astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
-                   PulseOperations.write_id lhs_id rhs_addr_hist astate ) ]
+                [ (let* astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
+                   and_is_int_if_integer_type typ (fst rhs_addr_hist) astate
+                   >>| PulseOperations.write_id lhs_id rhs_addr_hist ) ]
             in
             PulseReport.report_results tenv proc_desc err_log loc results
           in
@@ -347,7 +353,7 @@ module PulseTransferFunctions = struct
                 [astate]
           in
           (List.concat_map set_global_astates ~f:deref_rhs, path, astate_n)
-      | Store {e1= lhs_exp; e2= rhs_exp; loc} ->
+      | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
           (* [*lhs_exp := rhs_exp] *)
           let event =
             match lhs_exp with
@@ -379,6 +385,7 @@ module PulseTransferFunctions = struct
             let astates =
               List.concat_map ls_astate_lhs_addr_hist ~f:(fun result ->
                   let<*> astate, lhs_addr_hist = result in
+                  let<*> astate = and_is_int_if_integer_type typ rhs_addr astate in
                   write_function lhs_addr_hist astate )
             in
             let astates =
@@ -404,8 +411,7 @@ module PulseTransferFunctions = struct
           in
           ( astates
           , path
-          , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals call_flags astates
-              astate_n )
+          , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals astates astate_n )
       | Prune (condition, loc, is_then_branch, if_kind) ->
           let result, path =
             match PulseOperations.prune path loc ~condition astate with
@@ -523,26 +529,33 @@ let initial tenv proc_desc =
     , PathContext.initial ) ]
 
 
+let should_analyze proc_desc =
+  let proc_name = Procname.to_unique_id (Procdesc.get_proc_name proc_desc) in
+  let f regex = not (Str.string_match regex proc_name 0) in
+  Option.value_map Config.pulse_skip_procedures ~f ~default:true
+
+
 let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
-  AbstractValue.State.reset () ;
-  match
-    DisjunctiveAnalyzer.compute_post analysis_data
-      ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
-      proc_desc
-  with
-  | Some (posts, non_disj_astate) ->
-      (* forget path contexts, we don't propagate them across functions *)
-      let posts = List.map ~f:fst posts in
-      with_debug_exit_node proc_desc ~f:(fun () ->
-          let objc_nil_summary = PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_desc in
-          let summary =
-            PulseSummary.of_posts tenv proc_desc err_log
-              (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
-              (Option.to_list objc_nil_summary @ posts)
-              non_disj_astate
-          in
-          report_topl_errors proc_desc err_log summary ;
-          report_unnecessary_copies proc_desc err_log non_disj_astate ;
-          Some summary )
-  | None ->
-      None
+  if should_analyze proc_desc then (
+    AbstractValue.State.reset () ;
+    match
+      DisjunctiveAnalyzer.compute_post analysis_data
+        ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
+        proc_desc
+    with
+    | Some (posts, non_disj_astate) ->
+        (* forget path contexts, we don't propagate them across functions *)
+        let posts = List.map ~f:fst posts in
+        with_debug_exit_node proc_desc ~f:(fun () ->
+            let objc_nil_summary = PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_desc in
+            let summary =
+              PulseSummary.of_posts tenv proc_desc err_log
+                (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
+                (Option.to_list objc_nil_summary @ posts)
+            in
+            report_topl_errors proc_desc err_log summary ;
+            report_unnecessary_copies proc_desc err_log non_disj_astate ;
+            Some summary )
+    | None ->
+        None )
+  else None

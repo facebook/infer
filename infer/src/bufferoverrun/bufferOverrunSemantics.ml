@@ -867,13 +867,13 @@ module Prune = struct
       match Mem.find_cpp_iterator_alias ident astate.mem with
       | None ->
           astate
-      | Some (iter, iter_end) ->
-          let iter_loc = Loc.of_pvar iter in
-          let iter_end_loc = Loc.of_pvar iter_end in
-          let iter_v = Mem.find iter_loc astate.mem in
-          let size_v = Mem.find iter_end_loc astate.mem in
-          let iter_v' = Val.prune_binop Lt iter_v size_v in
-          update_mem_in_prune iter_loc iter_v' astate )
+      | Some (iter_lhs, iter_rhs, binop) ->
+          let iter_lhs_loc = Loc.of_pvar iter_lhs in
+          let iter_lhs_v = Mem.find iter_lhs_loc astate.mem in
+          let iter_rhs_loc = Loc.of_pvar iter_rhs in
+          let iter_rhs_v = Mem.find iter_rhs_loc astate.mem in
+          let iter_v = Val.prune_binop binop iter_lhs_v iter_rhs_v in
+          update_mem_in_prune iter_lhs_loc iter_v astate )
     | _ ->
         astate
 

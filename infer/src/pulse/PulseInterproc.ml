@@ -154,7 +154,11 @@ let visit call_state ~pre ~addr_callee ~addr_hist_caller =
 let subst_find_or_new subst addr_callee ~default_hist_caller =
   match AddressMap.find_opt addr_callee subst with
   | None ->
-      let addr_hist_fresh = (AbstractValue.mk_fresh (), default_hist_caller) in
+      (* map restricted (≥0) values to restricted values to preserve their semantics *)
+      let addr_caller = AbstractValue.mk_fresh_same_kind addr_callee in
+      L.d_printfln "new subst %a <-> %a (fresh)" AbstractValue.pp addr_callee AbstractValue.pp
+        addr_caller ;
+      let addr_hist_fresh = (addr_caller, default_hist_caller) in
       (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
   | Some addr_hist_caller ->
       (subst, addr_hist_caller)
@@ -513,7 +517,7 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
           | Some return_caller_hist ->
               return_caller_hist
           | None ->
-              (AbstractValue.mk_fresh (), ValueHistory.Epoch)
+              (AbstractValue.mk_fresh_same_kind return_callee, ValueHistory.Epoch)
         in
         L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp return_caller ;
         let call_state =

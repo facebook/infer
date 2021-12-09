@@ -9,7 +9,7 @@ Activate with `--eradicate`.
 
 Supported languages:
 - C/C++/ObjC: No
-- C#/.Net: Yes
+- C#/.Net: No
 - Erlang: No
 - Java: Yes
 

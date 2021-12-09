@@ -421,11 +421,13 @@ module ConfigImpactItem = struct
                (UncheckedCallee.is_known_expensive x) )
     in
     let qualifier =
-      Format.asprintf "Function call%s to %a %s %a **without GK/QE**."
+      Format.asprintf
+        "Function call%s to %a %s %a **without GK/QE**, which might cause new unexpected behavior. \
+         %s"
         (if is_singleton then "" else "s")
         UncheckedCallee.pp_without_location_list unchecked_callees
         (if is_singleton then "is" else "are")
-        pp_change_type change_type
+        pp_change_type change_type FbGKInteraction.action_message
     in
     (* Note: It takes only one trace among the callees. *)
     let trace = List.hd_exn unchecked_callees |> UncheckedCallee.make_err_trace in

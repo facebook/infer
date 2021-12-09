@@ -179,6 +179,8 @@ val buck_cache_mode : bool
 
 val buck_clang_use_toolchain_config : bool
 
+val buck_java_flavor_dependency_depth : int option
+
 val buck_java_flavor_suppress_config : bool
 
 val buck_java_heap_size_gb : int option
@@ -544,6 +546,8 @@ val pulse_recency_limit : int
 
 val pulse_scuba_logging : bool
 
+val pulse_skip_procedures : Str.regexp option
+
 val pulse_widen_threshold : int
 
 val pulse_nullsafe_report_npe : bool
@@ -563,6 +567,8 @@ val quandary_sources : Yojson.Basic.t
 val quiet : bool
 
 val racerd_guardedby : bool
+
+val racerd_ignore_classes : String.Set.t
 
 val reactive_mode : bool
 
@@ -600,6 +606,8 @@ val rest : string list
 
 val results_dir : string
 
+val sarif : bool
+
 val scheduler : scheduler
 
 val scuba_logging : bool
@@ -626,7 +634,7 @@ val siof_check_iostreams : bool
 
 val siof_safe_methods : string list
 
-val skip_analysis_in_path : string list
+val skip_analysis_in_path : Str.regexp option
 
 val skip_analysis_in_path_skips_compilation : bool
 

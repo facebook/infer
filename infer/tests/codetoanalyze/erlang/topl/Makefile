@@ -5,12 +5,11 @@
 
 TESTS_DIR = ../../..
 
-# see explanations in cpp/biabduction/Makefile for the custom isystem
 INFER_OPTIONS = --topl --topl-properties taint.topl --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard src/*.erl)
 
-include $(TESTS_DIR)/erlang.make
+include $(TESTS_DIR)/erlc.make
 
 infer-out/report.json: $(MAKEFILE_LIST)

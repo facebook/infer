@@ -19,6 +19,7 @@ type allocator =
   | CustomRealloc of Procname.t
   | CppNew
   | CppNewArray
+  | JavaResource of JavaClassName.t
 [@@deriving equal]
 
 val pp_allocator : F.formatter -> allocator -> unit
@@ -34,6 +35,7 @@ type t =
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
   | MustBeInitialized of Timestamp.t * Trace.t
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
+  | JavaResourceReleased of JavaClassName.t
   | StdVectorReserve
   | Uninitialized
   | UnknownEffect of CallEvent.t * ValueHistory.t

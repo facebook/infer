@@ -10,33 +10,24 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-let report ?(extra_trace = []) proc_desc err_log diagnostic =
+let report ~latent proc_desc err_log diagnostic =
   let open Diagnostic in
-  Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
-    ~ltr:(extra_trace @ get_trace diagnostic)
-    Pulse (get_issue_type diagnostic) (get_message diagnostic)
-
-
-let report_latent_diagnostic proc_desc err_log diagnostic =
-  (* HACK: report latent issues with a prominent message to distinguish them from
-     non-latent. Useful for infer's own tests. *)
-  let extra_trace =
-    let depth = 0 in
-    let tags = [] in
-    let location = Diagnostic.get_location diagnostic in
-    [Errlog.make_trace_element depth location "*** LATENT ***" tags]
-  in
-  report ~extra_trace proc_desc err_log diagnostic
+  Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
+    Pulse
+    (get_issue_type ~latent diagnostic)
+    (get_message diagnostic)
 
 
 let report_latent_issue proc_desc err_log latent_issue =
-  LatentIssue.to_diagnostic latent_issue |> report_latent_diagnostic proc_desc err_log
+  LatentIssue.to_diagnostic latent_issue |> report ~latent:true proc_desc err_log
 
 
 (* skip reporting on Java classes annotated with [@Nullsafe] if requested *)
 let is_nullsafe_error tenv diagnostic jn =
   (not Config.pulse_nullsafe_report_npe)
-  && IssueType.equal (Diagnostic.get_issue_type diagnostic) IssueType.nullptr_dereference
+  && IssueType.equal
+       (Diagnostic.get_issue_type ~latent:false diagnostic)
+       (IssueType.nullptr_dereference ~latent:false)
   && match NullsafeMode.of_java_procname tenv jn with Default -> false | Local _ | Strict -> true
 
 
@@ -48,6 +39,7 @@ let is_nullsafe_error tenv diagnostic jn =
 let is_constant_deref_without_invalidation (diagnostic : Diagnostic.t) =
   match diagnostic with
   | MemoryLeak _
+  | ResourceLeak _
   | ErlangError _
   | ReadUninitializedValue _
   | StackVariableAddressEscape _
@@ -85,7 +77,8 @@ let is_suppressed tenv proc_desc diagnostic astate =
 
 let summary_of_error_post tenv proc_desc location mk_error astate =
   match AbductiveDomain.summary_of_post tenv proc_desc location astate with
-  | Sat (Ok astate) | Sat (Error (`MemoryLeak (astate, _, _, _))) ->
+  | Sat (Ok astate)
+  | Sat (Error (`MemoryLeak (astate, _, _, _)) | Error (`ResourceLeak (astate, _, _, _))) ->
       (* ignore potential memory leaks: error'ing in the middle of a function will typically produce
          spurious leaks *)
       Sat (mk_error astate)
@@ -122,7 +115,7 @@ let report_summary_error tenv proc_desc err_log
   | PotentialInvalidAccess {astate; address; must_be_valid}
   | PotentialInvalidAccessSummary {astate; address; must_be_valid} ->
       if Config.pulse_report_latent_issues then
-        report_latent_diagnostic proc_desc err_log
+        report ~latent:true proc_desc err_log
           (AccessToInvalidAddress
              { calling_context= []
              ; invalidation= ConstantDereference IntLit.zero
@@ -136,7 +129,7 @@ let report_summary_error tenv proc_desc err_log
     match LatentIssue.should_report astate diagnostic with
     | `ReportNow ->
         if not (is_suppressed tenv proc_desc diagnostic astate) then
-          report proc_desc err_log diagnostic ;
+          report ~latent:false proc_desc err_log diagnostic ;
         AbortProgram astate
     | `DelayReport latent_issue ->
         if Config.pulse_report_latent_issues then report_latent_issue proc_desc err_log latent_issue ;
@@ -149,8 +142,6 @@ let report_error tenv proc_desc err_log location
   summary_error_of_error tenv proc_desc location access_error
   >>| report_summary_error tenv proc_desc err_log
 
-
-let report_non_disj_error proc_desc err_log diagnostic = report proc_desc err_log diagnostic
 
 let report_exec_results tenv proc_desc err_log location results =
   List.filter_map results ~f:(fun exec_result ->

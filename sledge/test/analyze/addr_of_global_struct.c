@@ -12,7 +12,9 @@ typedef struct _ {
 
 S s;
 
-void main() {
+void
+main()
+{
   int x, y, z;
   S* p;
 

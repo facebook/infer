@@ -272,7 +272,7 @@ let eval path mode location exp0 astate =
             (AbstractValueOperand addr_rhs) astate
         in
         (astate, (binop_addr, ValueHistory.Branching [hist_lhs; hist_rhs]))
-    | Const _ | Sizeof _ | Exn _ ->
+    | Const (Cfloat _ | Cclass _) | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.Epoch))
   in
   eval path mode exp0 astate
@@ -428,6 +428,10 @@ let havoc_deref_field path location addr_trace field trace_obj astate =
 
 let allocate allocator location addr astate =
   AddressAttributes.allocate allocator addr location astate
+
+
+let java_resource_release class_name addr astate =
+  AddressAttributes.java_resource_release class_name addr astate
 
 
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate

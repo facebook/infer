@@ -62,6 +62,7 @@ module Event : sig
     | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
     | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
+    | RegexOp of {callee: Procname.t; thread: ThreadDomain.t}
     | StrictModeCall of {callee: Procname.t; thread: ThreadDomain.t}
   [@@deriving compare]
 
@@ -132,6 +133,8 @@ end
 
 module CriticalPairs : AbstractDomain.FiniteSetS with type elt = CriticalPair.t
 
+module NullLocsCriticalPairs : AbstractDomain.FiniteSetS
+
 module GuardToLockMap : AbstractDomain.WithTop
 
 (** Tracks expression attributes *)
@@ -171,15 +174,21 @@ end
 
 module ScheduledWorkDomain : AbstractDomain.FiniteSetS with type elt = ScheduledWorkItem.t
 
+module NullLocs : AbstractDomain.InvertedSetS with type elt = HilExp.AccessExpression.t
+
+module LazilyInitialized : AbstractDomain.FiniteSetS with type elt = HilExp.AccessExpression.t
+
 type t =
   { ignore_blocking_calls: bool
   ; guard_map: GuardToLockMap.t
   ; lock_state: LockState.t
-  ; critical_pairs: CriticalPairs.t
+  ; critical_pairs: NullLocsCriticalPairs.t
   ; attributes: AttributeDomain.t
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t
-  ; var_state: VarDomain.t }
+  ; var_state: VarDomain.t
+  ; null_locs: NullLocs.t
+  ; lazily_initalized: LazilyInitialized.t }
 
 include AbstractDomain.S with type t := t
 
@@ -199,6 +208,8 @@ val ipc : callee:Procname.t -> loc:Location.t -> t -> t
 val wait_on_monitor : loc:Location.t -> FormalMap.t -> HilExp.t list -> t -> t
 
 val future_get : callee:Procname.t -> loc:Location.t -> HilExp.t list -> t -> t
+
+val regex_op : callee:Procname.t -> loc:Location.t -> t -> t
 
 val strict_mode_call : callee:Procname.t -> loc:Location.t -> t -> t
 
@@ -243,6 +254,7 @@ val integrate_summary :
      tenv:Tenv.t
   -> lhs:HilExp.AccessExpression.t
   -> subst:Lock.subst
+  -> FormalMap.t
   -> CallSite.t
   -> t
   -> summary
@@ -257,3 +269,9 @@ val set_ignore_blocking_calls_flag : t -> t
 val remove_dead_vars : t -> Var.t list -> t
 
 val fold_critical_pairs_of_summary : (CriticalPair.t -> 'a -> 'a) -> summary -> 'a -> 'a
+
+val null_check : FormalMap.t -> HilExp.t -> t -> t
+(** if expression is a heap location, mark it as null in this branch *)
+
+val set_non_null : FormalMap.t -> HilExp.AccessExpression.t -> t -> t
+(** if expression is a heap location, mark it as set to non-null in this branch *)

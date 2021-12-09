@@ -37,6 +37,7 @@ BUILD_SYSTEMS_TESTS += \
   j1 \
   linters \
   project_root_rel \
+  pulse_messages \
   reactive \
   results_xml \
   tracebugs \
@@ -68,7 +69,10 @@ DIRECT_TESTS += \
   cpp_linters-for-test-only \
   cpp_liveness \
   cpp_performance \
+  cpp_performance-11 \
   cpp_pulse \
+  cpp_pulse-11 \
+  cpp_pulse-17 \
   cpp_pulse-isl \
   cpp_quandary \
   cpp_racerd \
@@ -97,11 +101,12 @@ endif
 ifeq ($(HAS_OBJC),yes)
 BUILD_SYSTEMS_TESTS += \
   clang_test_determinator \
+  differential_of_costs_report_objc \
   objc_getters_setters \
   objc_missing_fld \
   objc_retain_cycles \
   objc_retain_cycles_weak \
-  differential_of_costs_report_objc \
+  pulse_messages_objc \
 
 COST_TESTS += \
   objc_autoreleasepool \
@@ -116,6 +121,7 @@ DIRECT_TESTS += \
   objc_linters-def-folder \
   objc_linters-for-test-only \
   objc_liveness \
+  objc_parameter-not-null-checked \
   objc_performance \
   objc_pulse \
   objc_quandary \
@@ -135,8 +141,7 @@ BUILD_SYSTEMS_TESTS += \
   fb_differential_of_config_impact_report_objc
 
 DIRECT_TESTS += \
-  objc_fb-config-impact \
-  objc_fb-gk-interaction
+  objc_fb-config-impact
 endif
 
 
@@ -152,9 +157,8 @@ endif # BUILD_C_ANALYZERS
 ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
-  erlang_nonmatch \
+  erlang_pulse \
   erlang_topl \
-  erlang_features \
 
 BUILD_SYSTEMS_TESTS += rebar3
 endif
@@ -213,6 +217,7 @@ endif
 
 # javac has trouble running in parallel on the same files
 direct_java_pulse-isl_test: direct_java_pulse_test
+direct_java_pulse-isl_replace: direct_java_pulse_replace
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 BUILD_SYSTEMS_TESTS += \
@@ -224,7 +229,6 @@ DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-config-impact-paths \
   java_fb-config-impact-strict \
-  java_fb-gk-interaction \
   java_fb-immutability \
   java_fb-performance
 endif
@@ -511,7 +515,11 @@ ocaml_unit_test: src_build_common infer_models
 	$(MAKE_SOURCE) unit)
 
 define silence_make
-  $(1) 2> >(grep -v 'warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target')
+( TEMP="$$(mktemp)" && trap "$(RM) $$TEMP" EXIT; \
+  $(1) 2> "$$TEMP" || { \
+    grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target" "$$TEMP"; \
+    false; \
+  }; )
 endef
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
@@ -752,6 +760,8 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
 	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/rebar.config \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/
+	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/rebar.config.script \
+	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/
 	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.app.src \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/infer_parse_transform/src/
 	$(INSTALL_DATA) -C         '$(LIB_DIR)'/erlang/infer_parse_transform/src/infer_parse_transform.erl \
@@ -793,7 +803,15 @@ install-with-libs: install
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/infer/libso
 ifneq ($(LDD),no)
 ifneq ($(PATCHELF),no)
-#	this sort of assumes Linux
+ifneq ($(PLATFORM_ENV),)
+	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
+ifeq ($(BUILD_C_ANALYZERS),yes)
+	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib
+endif   # BUILD_C_ANALYZERS
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
+endif 	# IS_FACEBOOK_TREE
+else	# PLATFORM_ENV
 #	figure out where libgmp, libmpfr, and libsqlite3 are using ldd
 	set -x; \
 	for lib in $$($(LDD) $(INFER_BIN) \
@@ -808,11 +826,12 @@ ifneq ($(PATCHELF),no)
 	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif
-else # ldd found but not patchelf
+endif	# IS_FACEBOOK_TREE
+endif 	# PLATFORM_ENV
+else 	# PATCHELF
 	echo "ERROR: ldd (Linux?) found but not patchelf, please install patchelf" >&2; exit 1
-endif
-else # ldd not found
+endif	# PATCHELF
+else    # LDD
 ifneq ($(OTOOL),no)
 ifneq ($(INSTALL_NAME_TOOL),no)
 #	this sort of assumes osx
@@ -834,14 +853,14 @@ ifneq ($(INSTALL_NAME_TOOL),no)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
 	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif
-else # install_name_tool not found
+endif	# IS_FACEBOOK_TREE
+else 	# INSTALL_NAME_TOOL
 	echo "ERROR: otool (OSX?) found but not install_name_tool, please install install_name_tool" >&2; exit 1
-endif
-else # otool not found
+endif	# INSTALL_NAME_TOOL
+else 	# OTOOL
 	echo "ERROR: need ldd + patchelf (Linux) or otool + install_name_tool (OSX) available" >&2; exit 1
-endif
-endif # ldd
+endif	# OTOOL
+endif 	# LDD
 
 # Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
 .PHONY: ocaml_clean
@@ -956,6 +975,10 @@ devsetup: Makefile.autoconf
 	  echo "$(TERM_INFO)  eval \$$($(OPAM) env)$(TERM_RESET)" >&2; \
 	fi
 
+.PHONY: lock
+lock:
+	make -C opam
+
 GHPAGES ?= no
 
 .PHONY: doc
@@ -972,10 +995,14 @@ ifneq ($(NO_BROWSE_DOC),yes)
 	$(QUIET)echo "  odig doc"
 endif
 
+# if you are calling "make doc-publish" several times in a row then rebuilding infer from scratch
+# each time is annoying
+NOCLEAN=no
+
 .PHONY: doc-publish
 doc-publish:
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(call silent_on_success,Cleaning up FB-only files,\
+ifeq ($(IS_FACEBOOK_TREE)+$(NOCLEAN),yes+no)
+	$(QUIET)$(call silent_on_success,Cleaning up FB-only files (run with NOCLEAN=yes to skip this step if called several times in a row),\
 	$(MAKE) -C $(SRC_DIR) clean; \
 	$(MAKE) -C facebook clean)
 endif
@@ -983,7 +1010,7 @@ endif
 	$(MAKE) IS_FACEBOOK_TREE=no $(INFER_GROFF_MANUALS))
 	$(QUIET)$(MKDIR_P) "$(WEBSITE_DIR)"/static/man/next "$(WEBSITE_DIR)"/static/odoc/next
 	$(QUIET)$(call silent_on_success,Copying man pages,\
-	$(REMOVE) "$(WEBSITE_DIR)"/static/man/*; \
+	$(REMOVE) "$(WEBSITE_DIR)"/static/man/next/*; \
 	for man in $(INFER_GROFF_MANUALS); do \
 	  groff -Thtml "$$man" \
 	  | grep -v '^<!-- CreationDate: .*>$$' \
@@ -1036,7 +1063,14 @@ new-website-version: doc-publish
 	find docs versioned_docs -name versions.md \
 	  -exec sed -i -e 's#^- \[latest released version (\([^)]*\))\](/docs/getting-started)$$#- [latest released version ($(INFER_MAJOR).$(INFER_MINOR).$(INFER_PATCH))](/docs/getting-started)\n- [previous version (\1)](/docs/\1/getting-started)#' \{\} \+
 
-# print list of targets
+# for debugging: print list of targets
 .PHONY: show-targets
 show-targets:
 	$(QUIET)$(MAKE) -pqrR . | grep --only-matching -e '^[a-zA-Z0-9][^ ]*:' | cut -d ':' -f 1 | sort
+
+# For debugging: run the specified command in the Makefile's environment; you need to specify
+# CMD_DIR and CMD. To evaluate shell variables in CMD, you need to add $$ in front of them and not
+# just one $, eg make run-cmd CMD='echo $$PATH'. Setting CMD_DIR is optional.
+.PHONY: run-cmd
+run-cmd:
+	$(QUIET)cd $(CMD_DIR) || true; $(CMD)

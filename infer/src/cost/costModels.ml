@@ -186,6 +186,16 @@ module Algorithm = struct
     BoundsOfContainer.logarithmic_length_itv itv cost_model_env ~ret ~of_function
 
 
+  let find begin_arg end_arg cost_model_env ~ret inferbo_mem ~of_function =
+    let itv = Iterator.get_iter_itv begin_arg end_arg inferbo_mem in
+    BoundsOfContainer.linear_length_itv itv cost_model_env ~ret ~of_function
+
+
+  let erase begin_arg end_arg cost_model_env ~ret inferbo_mem ~of_function =
+    let itv = Iterator.get_iter_itv begin_arg end_arg inferbo_mem in
+    BoundsOfContainer.linear_length_itv itv cost_model_env ~ret ~of_function
+
+
   let sort begin_arg end_arg cost_model_env ~ret inferbo_mem ~of_function =
     let itv = Iterator.get_iter_itv begin_arg end_arg inferbo_mem in
     BoundsOfContainer.n_log_n_length_itv itv cost_model_env ~ret ~of_function
@@ -278,6 +288,10 @@ module ImmutableSet = struct
   let choose_table_size = log ~of_function:"ImmutableSet.chooseTableSize"
 end
 
+let std_container_ord _ str =
+  List.exists ~f:(String.equal str) ["map"; "multimap"; "multiset"; "set"]
+
+
 module Call = struct
   let dispatch : (Tenv.t, CostUtils.model, unit) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
@@ -365,6 +379,20 @@ module Call = struct
           $+...$--> Algorithm.binary_search ~of_function:"Container.binary_search"
         ; -"std" &:: "sort" $ capt_exp $+ capt_exp
           $+...$--> Algorithm.sort ~of_function:"Container.sort"
+        ; -"std" &:: "find" $ capt_exp $+ capt_exp
+          $+...$--> Algorithm.find ~of_function:"Container.find"
+        ; -"std" &::+ std_container_ord &:: "find" $ capt_exp
+          $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.find"
+        ; -"std" &::+ std_container_ord &:: "count" $ capt_exp
+          $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.count"
+        ; -"std" &::+ std_container_ord &:: "emplace" $ capt_exp
+          $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.emplace"
+        ; -"std" &::+ std_container_ord &:: "emplace_hint" $ capt_exp
+          $+...$--> BoundsOfContainer.logarithmic_length ~of_function:"Container.emplace_hint"
+        ; -"std" &::+ std_container_ord &:: "erase" $ capt_exp $+ any_arg
+          $--> BoundsOfContainer.logarithmic_length ~of_function:"Container.erase"
+        ; -"std" &::+ std_container_ord &:: "erase" $ any_arg $+ capt_exp $+ capt_exp
+          $+...$--> Algorithm.erase ~of_function:"Container.erase"
           (* Java Cost Models *)
         ; +PatternMatch.Java.implements_collections
           &:: "sort" $ capt_exp

@@ -142,7 +142,7 @@ end
 module ObjC_Cpp : sig
   type kind =
     | CPPMethod of {mangled: string option}
-    | CPPConstructor of {mangled: string option}
+    | CPPConstructor of {mangled: string option; is_copy_ctor: bool}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -204,11 +204,13 @@ module Block : sig
   type block_type =
     | InOuterScope of {outer_scope: block_type; block_index: int}
         (** a block nested in the scope of an outer one *)
-    | SurroundingProc of {name: string}  (** tracks the name of the surrounding proc *)
+    | SurroundingProc of {class_name: Typ.name option; name: string}
+        (** tracks the name of the surrounding proc and an optional class name where the procedure
+            is defined *)
 
   type t = {block_type: block_type; parameters: Parameter.clang_parameter list} [@@deriving compare]
 
-  val make_surrounding : string -> Parameter.clang_parameter list -> t
+  val make_surrounding : Typ.name option -> string -> Parameter.clang_parameter list -> t
 
   val make_in_outer_scope : block_type -> int -> Parameter.clang_parameter list -> t
 end
@@ -250,6 +252,8 @@ val replace_parameters : Parameter.t list -> t -> t
 
 val parameter_of_name : t -> Typ.Name.t -> Parameter.t
 
+val is_copy_ctor : t -> bool
+
 val is_java_access_method : t -> bool
 
 val is_java_class_initializer : t -> bool
@@ -259,7 +263,7 @@ val is_java_anonymous_inner_class_method : t -> bool
 val is_java_autogen_method : t -> bool
 
 val is_objc_method : t -> bool
-(** Note: this does not include specialized objective-c methods*)
+(** Includes specialized objective-c methods*)
 
 val is_objc_instance_method : t -> bool
 (** Includes specialized objective-c instance methods*)

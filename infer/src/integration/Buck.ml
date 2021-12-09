@@ -339,7 +339,9 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
   |> ( match buck_mode with
      | ClangFlavors | ClangCompilationDB NoDependencies ->
          Fn.id
-     | ClangCompilationDB DepsAllDepths | JavaFlavor ->
+     | JavaFlavor ->
+         Query.deps Config.buck_java_flavor_dependency_depth
+     | ClangCompilationDB DepsAllDepths ->
          Query.deps None
      | ClangCompilationDB (DepsUpToDepth depth) ->
          Query.deps (Some depth) )

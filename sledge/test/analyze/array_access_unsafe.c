@@ -7,7 +7,9 @@
 
 int x;
 
-void main() {
+void
+main()
+{
   int n = 4;
   int* A = (int*)__llair_alloc(n * sizeof(int));
   /* safe */

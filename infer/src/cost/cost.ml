@@ -310,7 +310,7 @@ module Check = struct
 
 
   let mk_report proc_desc pname err_log loc ~name ~is_autoreleasepool_trace cost =
-    let message suffix = F.asprintf "%s of the function %a %s" name Procname.pp pname suffix in
+    let message suffix = F.asprintf "%s of the function `%a` %s" name Procname.pp pname suffix in
     fun issue suffix ->
       Reporting.log_issue proc_desc err_log ~loc
         ~ltr:(BasicCostWithReason.polynomial_traces ~is_autoreleasepool_trace cost)
@@ -327,7 +327,7 @@ module Check = struct
   let report_expensive ~report ~expensive_issue cost =
     Option.iter (BasicCostWithReason.degree cost) ~f:(fun degree ->
         if not (Polynomials.Degree.is_constant degree) then
-          report expensive_issue "has non-constant cost" )
+          report expensive_issue "has non-constant and non-top cost" )
 
 
   let check_and_report {InterproceduralAnalysis.proc_desc; err_log} cost =

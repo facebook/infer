@@ -129,6 +129,9 @@ val ident_mem : t -> Ident.t -> bool
 val program_vars : t -> Pvar.t Sequence.t
 (** all the program variables appearing in the expression *)
 
+val constants : t -> Const.t Sequence.t
+(** all the constants appearing in the expression *)
+
 val fold_captured : f:('a -> t -> 'a) -> t -> 'a -> 'a
 (** Fold over the expressions captured by this expression. *)
 

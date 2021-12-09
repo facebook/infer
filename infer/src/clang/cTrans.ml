@@ -1611,7 +1611,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si
       function_type ~is_cpp_call_virtual ~is_injected_destructor extra_res_trans ~is_inherited_ctor
-      ~is_copy_ctor =
+      =
     let context = trans_state_pri.context in
     let sil_loc = CLocation.location_of_stmt_info context.translation_unit_context.source_file si in
     let callee_pname = Option.value_exn result_trans_callee.method_name in
@@ -1636,8 +1636,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let call_flags =
           { CallFlags.default with
             cf_virtual= is_cpp_call_virtual
-          ; cf_injected_destructor= is_injected_destructor
-          ; cf_is_copy_ctor= is_copy_ctor }
+          ; cf_injected_destructor= is_injected_destructor }
         in
         let res_trans_call =
           create_call_instr trans_state_pri function_type sil_method actual_params sil_loc
@@ -1669,7 +1668,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si function_type
       ~is_injected_destructor:false ~is_cpp_call_virtual None ~is_inherited_ctor:false
-      ~is_copy_ctor:false
 
 
   and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info ~is_inherited_ctor =
@@ -1702,11 +1700,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let res_trans_callee =
       decl_ref_trans ~context:(MemberOrIvar this_res_trans) trans_state si decl_ref
     in
-    let is_copy_ctor = cxx_constr_info.Clang_ast_t.xcei_is_copy_constructor in
     let res_trans =
       cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si StdTyp.void
         ~is_injected_destructor:false ~is_cpp_call_virtual:false (Some tmp_res_trans)
-        ~is_inherited_ctor ~is_copy_ctor
+        ~is_inherited_ctor
     in
     {res_trans with return= tmp_res_trans.return}
 
@@ -1728,7 +1725,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     assert (Option.is_some res_trans_callee.method_name) ;
     let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' StdTyp.void
-      ~is_injected_destructor ~is_cpp_call_virtual None ~is_inherited_ctor:false ~is_copy_ctor:false
+      ~is_injected_destructor ~is_cpp_call_virtual None ~is_inherited_ctor:false
 
 
   and is_receiver_instance = function `Instance | `SuperInstance -> true | _ -> false
@@ -2630,18 +2627,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
     let join_node = Procdesc.create_node context.procdesc sil_loc Join_node [] in
-    let continuation = Some {break= succ_nodes; continue= [join_node]; return_temp= false} in
+    let continuation = {break= succ_nodes; continue= [join_node]; return_temp= false} in
     (* set the flag to inform that we are translating a condition of a if *)
     let continuation_cond = mk_cond_continuation outer_continuation in
-    let init_incr_nodes =
+    let init_nodes, incr_nodes =
       match loop_kind with
       | Loops.For {init; increment} ->
-          let trans_state' = {trans_state with succ_nodes= [join_node]; continuation} in
-          let res_trans_init = instruction trans_state' init in
-          let res_trans_incr = instruction trans_state' increment in
-          Some (res_trans_init.control.root_nodes, res_trans_incr.control.root_nodes)
+          let trans_state' =
+            {trans_state with succ_nodes= [join_node]; continuation= Some continuation}
+          in
+          let res_trans_init =
+            exec_with_node_creation LoopIterInit ~f:instruction trans_state' init
+          in
+          let res_trans_incr =
+            exec_with_node_creation LoopIterIncr ~f:instruction trans_state' increment
+          in
+          (Some res_trans_init.control.root_nodes, Some res_trans_incr.control.root_nodes)
       | _ ->
-          None
+          (None, None)
     in
     let cond_stmt = Loops.get_cond loop_kind in
     let trans_state_cond = {trans_state with continuation= continuation_cond; succ_nodes= []} in
@@ -2664,25 +2667,25 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let body_succ_nodes =
       match loop_kind with
-      | Loops.For _ -> (
-        match init_incr_nodes with Some (_, nodes_incr) -> nodes_incr | None -> assert false )
+      | Loops.For _ ->
+          Option.value_exn incr_nodes
       | Loops.While _ ->
           [join_node]
       | Loops.DoWhile _ ->
           res_trans_cond.control.root_nodes
     in
     let body_continuation =
-      match (loop_kind, continuation, init_incr_nodes) with
-      | Loops.DoWhile _, Some c, _ ->
-          Some {c with continue= res_trans_cond.control.root_nodes}
-      | _, Some c, Some (_, nodes_incr) ->
-          Some {c with continue= nodes_incr}
+      match loop_kind with
+      | Loops.DoWhile _ ->
+          {continuation with continue= res_trans_cond.control.root_nodes}
+      | Loops.For _ ->
+          {continuation with continue= Option.value_exn incr_nodes}
       | _ ->
           continuation
     in
     let res_trans_body =
       let trans_state_body =
-        {trans_state with succ_nodes= body_succ_nodes; continuation= body_continuation}
+        {trans_state with succ_nodes= body_succ_nodes; continuation= Some body_continuation}
       in
       exec_with_node_creation LoopBody ~f:instruction trans_state_body (Loops.get_body loop_kind)
     in
@@ -2713,12 +2716,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       prune_nodes_f ;
     let root_nodes =
       match loop_kind with
-      | Loops.For _ -> (
-        match init_incr_nodes with
-        | Some (nodes_init, _) ->
-            if List.is_empty nodes_init then [join_node] else nodes_init
-        | None ->
-            assert false )
+      | Loops.For _ ->
+          let init_nodes = Option.value_exn init_nodes in
+          if List.is_empty init_nodes then [join_node] else init_nodes
       | Loops.While _ | Loops.DoWhile _ ->
           [join_node]
     in

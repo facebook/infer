@@ -33,7 +33,7 @@ struct X {
 
 void destruct_unique_deletes_pointer_bad() {
   X* p = new X;
-  { UniquePtr u = UniquePtr<X>(p); }
+  { UniquePtr<X> u = UniquePtr<X>(p); }
   int i = p->f;
 }
 

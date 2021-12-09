@@ -55,6 +55,7 @@ type t =
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
+  | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]
@@ -63,6 +64,6 @@ val get_message : t -> string
 
 val get_location : t -> Location.t
 
-val get_issue_type : t -> IssueType.t
+val get_issue_type : latent:bool -> t -> IssueType.t
 
 val get_trace : t -> Errlog.loc_trace

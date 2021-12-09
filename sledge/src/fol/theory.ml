@@ -76,6 +76,7 @@ let solve_poly p q s =
   @@ fun () ->
   match Trm.sub p q with
   | Z z -> if Z.equal Z.zero z then s else {s with solved= None}
+  | Q _ -> {s with solved= None}
   | Var _ as var -> add_solved ~var ~rep:Trm.zero s
   | p_q -> (
     match Trm.Arith.solve_zero_eq p_q with

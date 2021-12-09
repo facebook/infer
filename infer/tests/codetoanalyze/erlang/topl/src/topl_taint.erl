@@ -11,8 +11,8 @@
     test_c_Bad/0,
     test_d_Bad/0,
     test_e_Ok/0,
-    fp_test_f_Bad/0,
-    fp_test_g_Ok/0,
+    test_f_Bad/0,
+    test_g_Ok/0,
     test_h_Bad/0,
     test_i_Ok/0,
     test_j_Bad/0
@@ -34,15 +34,13 @@ test_d_Bad() ->
 test_e_Ok() ->
     call_sink_indirectly(tito(ok)).
 
-% FP: T94670024 (bad, but wrong warning reported)
-fp_test_f_Bad() ->
+test_f_Bad() ->
     case one() + one() - two() =:= 0 of
         true -> sink(dirty_if_argument_nil([]));
         false -> sink(dirty_if_argument_nil([1]))
     end.
 
-% FP: T94670024
-fp_test_g_Ok() ->
+test_g_Ok() ->
     case one() + one() - two() =/= 0 of
         true -> sink(dirty_if_argument_nil([]));
         false -> sink(dirty_if_argument_nil([1]))

@@ -67,6 +67,8 @@ val eval_unop : AbstractValue.t -> Unop.t -> AbstractValue.t -> t -> t * new_eqs
 
 val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t * new_eqs
 
+val and_is_int : AbstractValue.t -> t -> t * new_eqs
+
 val and_eq_instanceof : AbstractValue.t -> AbstractValue.t -> Typ.t -> t -> t * new_eqs
 
 (** {2 Queries} *)

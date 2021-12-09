@@ -86,6 +86,16 @@ module Unsafe : sig
     -> (string -> string, F.formatter, unit, string) format4
     -> t
 
+  val register_with_latent :
+       ?enabled:bool
+    -> ?hum:string
+    -> id:string
+    -> user_documentation:string
+    -> severity
+    -> Checker.t
+    -> latent:bool
+    -> t
+
   val all_issues : unit -> t list
 
   val set_enabled : t -> bool -> unit
@@ -256,6 +266,20 @@ end = struct
       ~id:issue_type ~visibility:User Error Cost ~user_documentation:(Some user_documentation)
 
 
+  let register_with_latent ?enabled ?hum ~id ~user_documentation default_severity checker =
+    let issue = register ?enabled ?hum ~id ~user_documentation default_severity checker in
+    let user_documentation =
+      Printf.sprintf
+        "A latent [%s](#%s). See the [documentation on Pulse latent \
+         issues](checker-pulse#latent-issues)."
+        id (String.lowercase id)
+    in
+    let latent_issue =
+      register ~enabled:false ?hum ~id:(id ^ "_LATENT") ~user_documentation default_severity checker
+    in
+    fun ~latent -> if latent then latent_issue else issue
+
+
   let all_issues () = IssueSet.elements !all_issues
 end
 
@@ -304,18 +328,23 @@ let _bad_pointer_comparison =
 
 
 let bad_key =
-  register ~id:"BAD_KEY" Error Pulse
+  register_with_latent ~id:"BAD_KEY" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_KEY.md"]
 
 
 let bad_map =
-  register ~id:"BAD_MAP" Error Pulse
+  register_with_latent ~id:"BAD_MAP" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_MAP.md"]
 
 
 let bad_record =
-  register ~id:"BAD_RECORD" Error Pulse
+  register_with_latent ~id:"BAD_RECORD" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_RECORD.md"]
+
+
+let block_parameter_not_null_checked =
+  register ~id:"BLOCK_PARAMETER_NOT_NULL_CHECKED" Warning ParameterNotNullChecked
+    ~user_documentation:[%blob "../../documentation/issues/BLOCK_PARAMETER_NOT_NULL_CHECKED.md"]
 
 
 let biabduction_analysis_stops =
@@ -416,18 +445,11 @@ let component_with_multiple_factory_methods =
 
 
 let condition_always_false =
-  register ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
-    ~user_documentation:"A condition expression is **always** evaluated to false."
+  register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
 
 
 let condition_always_true =
-  register ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" Warning BufferOverrunChecker
-    ~user_documentation:"A condition expression is **always** evaluated to true."
-
-
-let config_checks_between_markers =
-  register ~enabled:false ~id:"CONFIG_CHECKS_BETWEEN_MARKERS" Advice ConfigChecksBetweenMarkers
-    ~user_documentation:"A config checking is done between a marker's start and end"
+  register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" Warning BufferOverrunChecker
 
 
 let config_impact_analysis =
@@ -441,7 +463,7 @@ let config_impact_analysis_strict =
 
 
 let constant_address_dereference =
-  register ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
+  register_with_latent ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
 
@@ -648,12 +670,6 @@ let guardedby_violation =
     ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
 
 
-let guardedby_violation_nullsafe =
-  register Warning ~id:"GUARDEDBY_VIOLATION_NULLSAFE"
-    ~hum:"GuardedBy Violation in `@Nullsafe` Class" RacerD
-    ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
-
-
 let impure_function =
   register ~id:"IMPURE_FUNCTION" Error Impurity
     ~user_documentation:[%blob "../../documentation/issues/IMPURE_FUNCTION.md"]
@@ -666,27 +682,43 @@ let inefficient_keyset_iterator =
 
 let inferbo_alloc_is_big =
   register ~id:"INFERBO_ALLOC_IS_BIG" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` is passed a large constant value."
+    ~user_documentation:
+      "`malloc` is passed a large constant value (>=10^6). For example, `int n = 1000000; \
+       malloc(n);` generates `INFERBO_ALLOC_IS_BIG` on `malloc(n)`.\n\n\
+       Action: Fix the size argument or make sure it is really needed."
 
 
 let inferbo_alloc_is_negative =
   register ~id:"INFERBO_ALLOC_IS_NEGATIVE" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` is called with a negative size."
+    ~user_documentation:
+      "`malloc` is called with a negative size. For example, `int n = 3 - 5; malloc(n);` generates \
+       `INFERBO_ALLOC_IS_NEGATIVE` on `malloc(n)`.\n\n\
+       Action: Fix the size argument."
 
 
 let inferbo_alloc_is_zero =
   register ~id:"INFERBO_ALLOC_IS_ZERO" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` is called with a zero size."
+    ~user_documentation:
+      "`malloc` is called with a zero size. For example, `int n = 3 - 3; malloc(n);` generates \
+       `INFERBO_ALLOC_IS_ZERO` on `malloc(n)`.\n\n\
+       Action: Fix the size argument."
 
 
 let inferbo_alloc_may_be_big =
   register ~id:"INFERBO_ALLOC_MAY_BE_BIG" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` *may* be called with a large value."
+    ~user_documentation:
+      "`malloc` *may* be called with a large value. For example, `int n = b ? 3 : 1000000; \
+       malloc(n);` generates `INFERBO_ALLOC_MAY_BE_BIG` on `malloc(n)`.\n\n\
+       Action: Fix the size argument or add a bound checking, e.g. `if (n < A_SMALL_NUMBER) { \
+       malloc(n); }`."
 
 
 let inferbo_alloc_may_be_negative =
   register ~id:"INFERBO_ALLOC_MAY_BE_NEGATIVE" Error BufferOverrunChecker
-    ~user_documentation:"`malloc` *may* be called with a negative value."
+    ~user_documentation:
+      "`malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; \
+       malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.\n\n\
+       Action: Fix the size argument or add a bound checking, e.g. `if (n > 0) { malloc(n); }`."
 
 
 let infinite_cost_call ~kind = register_cost ~enabled:false "INFINITE_%s" ~kind
@@ -786,7 +818,7 @@ let missing_fld = register_hidden ~id:"Missing_fld" ~hum:"Missing Field" Error B
 
 let missing_required_prop =
   register ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop" Error LithoRequiredProps
-    ~user_documentation:"As explained by the analysis."
+    ~user_documentation:[%blob "../../documentation/issues/MISSING_REQUIRED_PROP.md"]
 
 
 let mixed_self_weakself =
@@ -811,42 +843,42 @@ let mutable_local_variable_in_component_file =
 
 
 let nil_block_call =
-  register ~id:"NIL_BLOCK_CALL" Error Pulse
-    ~user_documentation:"Calling a nil block is an error in Objective-C."
+  register_with_latent ~id:"NIL_BLOCK_CALL" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NIL_BLOCK_CALL.md"]
 
 
 let nil_insertion_into_collection =
-  register ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
-    ~user_documentation:"Inserting nil into a collection is an error in Objective-C."
+  register_with_latent ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NIL_INSERTION_INTO_COLLECTION.md"]
 
 
 let nil_messaging_to_non_pod =
-  register ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
+  register_with_latent ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
 
 
 let no_match_of_rhs =
-  register ~id:"NO_MATCH_OF_RHS" Error Pulse
+  register_with_latent ~id:"NO_MATCH_OF_RHS" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCH_OF_RHS.md"]
 
 
 let no_matching_case_clause =
-  register ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
+  register_with_latent ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_CASE_CLAUSE.md"]
 
 
 let no_matching_function_clause =
-  register ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
+  register_with_latent ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_FUNCTION_CLAUSE.md"]
 
 
 let no_true_branch_in_if =
-  register ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
+  register_with_latent ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_TRUE_BRANCH_IN_IF.md"]
 
 
 let no_matching_branch_in_try =
-  register ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
+  register_with_latent ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
 
 
@@ -856,12 +888,12 @@ let null_dereference =
 
 
 let nullptr_dereference =
-  register ~id:"NULLPTR_DEREFERENCE" ~hum:"Null Dereference" Error Pulse
+  register_with_latent ~id:"NULLPTR_DEREFERENCE" ~hum:"Null Dereference" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let optional_empty_access =
-  register ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
+  register_with_latent ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
@@ -889,6 +921,11 @@ let pulse_memory_leak =
     ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
 
 
+let pulse_resource_leak =
+  register ~enabled:false ~id:"PULSE_RESOURCE_LEAK" Error Pulse
+    ~user_documentation:"See [RESOURCE_LEAK](#resource_leak)"
+
+
 let pure_function =
   register ~id:"PURE_FUNCTION" Error PurityChecker
     ~user_documentation:[%blob "../../documentation/issues/PURE_FUNCTION.md"]
@@ -897,6 +934,12 @@ let pure_function =
 let quandary_taint_error =
   register ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary
     ~user_documentation:"Generic taint error when nothing else fits."
+
+
+let regex_op_on_ui_thread =
+  register Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
+    ~user_documentation:
+      "A potentially costly operation on a regular expression occurs on the UI thread."
 
 
 let resource_leak =
@@ -971,13 +1014,6 @@ let thread_safety_violation =
     ~user_documentation:[%blob "../../documentation/issues/THREAD_SAFETY_VIOLATION.md"]
 
 
-let thread_safety_violation_nullsafe =
-  register Warning ~id:"THREAD_SAFETY_VIOLATION_NULLSAFE" RacerD
-    ~hum:"Thread Safety Violation in `@Nullsafe` Class"
-    ~user_documentation:
-      "A [Thread Safety Violation](#thread_safety_violation) in a `@Nullsafe` class."
-
-
 let complexity_increase ~kind ~is_on_ui_thread =
   register_cost ~kind ~is_on_ui_thread "%s_COMPLEXITY_INCREASE"
 
@@ -993,7 +1029,7 @@ let uninitialized_value =
 
 
 let uninitialized_value_pulse =
-  register ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
+  register_with_latent ~id:"PULSE_UNINITIALIZED_VALUE" Error Pulse ~hum:"Uninitialized Value"
     ~user_documentation:
       "See [UNINITIALIZED_VALUE](#uninitialized_value). Re-implemented using Pulse."
 
@@ -1003,23 +1039,20 @@ let unnecessary_copy_pulse =
     ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
 
 
-let unreachable_code_after =
-  register ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
-    ~user_documentation:"A program point is unreachable."
-
+let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
 
 let use_after_delete =
-  register ~id:"USE_AFTER_DELETE" Error Pulse
+  register_with_latent ~id:"USE_AFTER_DELETE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_DELETE.md"]
 
 
 let use_after_free =
-  register ~id:"USE_AFTER_FREE" Error Pulse
+  register_with_latent ~id:"USE_AFTER_FREE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_FREE.md"]
 
 
 let use_after_lifetime =
-  register ~id:"USE_AFTER_LIFETIME" Error Pulse
+  register_with_latent ~id:"USE_AFTER_LIFETIME" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_LIFETIME.md"]
 
 
@@ -1084,7 +1117,7 @@ let untrusted_variable_length_array =
 
 
 let vector_invalidation =
-  register ~id:"VECTOR_INVALIDATION" Error Pulse
+  register_with_latent ~id:"VECTOR_INVALIDATION" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/VECTOR_INVALIDATION.md"]
 
 

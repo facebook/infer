@@ -80,8 +80,8 @@ module Make (State_domain : State_domain_sig) = struct
 
   let recursion_beyond_bound = State_domain.recursion_beyond_bound
 
-  let call ~summaries tid ~globals ~actuals ~areturn ~formals ~freturn
-      ~locals (entry, current) =
+  let call ~summaries tid ?child ~globals ~actuals ~areturn ~formals
+      ~freturn ~locals (entry, current) =
     [%Trace.call fun {pf} ->
       pf
         "@ @[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: \
@@ -93,8 +93,8 @@ module Make (State_domain : State_domain_sig) = struct
         State_domain.pp current]
     ;
     let caller_current, state_from_call =
-      State_domain.call tid ~summaries ~globals ~actuals ~areturn ~formals
-        ~freturn ~locals current
+      State_domain.call tid ?child ~summaries ~globals ~actuals ~areturn
+        ~formals ~freturn ~locals current
     in
     ( (caller_current, caller_current)
     , {state_from_call; caller_entry= entry} )
@@ -116,6 +116,14 @@ module Make (State_domain : State_domain_sig) = struct
     , State_domain.retn tid formals freturn state_from_call current )
     |>
     [%Trace.retn fun {pf} -> pf "%a" pp]
+
+  type term_code = State_domain.term_code [@@deriving compare, sexp_of]
+
+  let term tid formals freturn (_, current) =
+    State_domain.term tid formals freturn current
+
+  let move_term_code tid reg code (entry, current) =
+    (entry, State_domain.move_term_code tid reg code current)
 
   let dnf (entry, current) =
     State_domain.Set.fold (State_domain.dnf current) Set.empty

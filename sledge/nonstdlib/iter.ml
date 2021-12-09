@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module Option = Containers.Option
 include IterLabels
 
 module Import = struct
@@ -38,8 +39,8 @@ let pop seq =
   match head seq with Some x -> Some (x, drop 1 seq) | None -> None
 
 let find_map seq ~f = find_map ~f seq
-let find seq ~f = find (CCOpt.if_ f) seq
-let find_exn seq ~f = CCOpt.get_exn_or "Iter.find_exn" (find ~f seq)
+let find seq ~f = find (Option.if_ f) seq
+let find_exn seq ~f = Option.get_exn_or "Iter.find_exn" (find ~f seq)
 let fold seq init ~f = fold ~f:(fun s x -> f x s) ~init seq
 
 let contains_dup (type elt) seq ~cmp =

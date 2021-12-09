@@ -6,8 +6,11 @@
  */
 
 struct B {
-  void foo() {}
-  ~B() {
+  void
+  foo()
+  {}
+  ~B()
+  {
     if (!i_) {
       foo();
     }
@@ -16,7 +19,8 @@ struct B {
 };
 
 struct A {
-  ~A() {
+  ~A()
+  {
     if (b_) {
       b_->foo();
     }
@@ -32,9 +36,15 @@ struct S {
   B b;
 };
 
-int main(int argc, char* argv[]) {
+int
+main(int argc, char* argv[])
+{
   S s;
   return 0;
 }
 
-int _llair_main() { return main(0, nullptr); }
+int
+_llair_main()
+{
+  return main(0, nullptr);
+}

@@ -23,6 +23,8 @@ val empty : _ t
 
 val singleton : Sil.instr -> _ t
 
+val copy : not_reversed t -> not_reversed t
+
 val append_list : not_reversed t -> Sil.instr list -> not_reversed t
 
 val of_list : Sil.instr list -> not_reversed t

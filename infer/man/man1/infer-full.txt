@@ -170,6 +170,12 @@ OPTIONS
            #infer-java-capture instead of genrules like buck-java.
            (Conversely: --no-buck-java-flavor)           See also infer-capture(1).
 
+       --buck-java-flavor-dependency-depth int
+           Capture dependencies only if they are at most the depth provided,
+           or all transitive dependencies if depth is not provided (the
+           default). In particular, depth zero means capture exactly the
+           targets provided and nothing else.           See also infer-capture(1).
+
        --buck-java-flavor-suppress-config
            Activates: Suppress setting buck config values for the infer
            binary and its version in the buck-java-flavor integration.
@@ -267,16 +273,6 @@ OPTIONS
            escaped for the shell, eg coming from Xcode (can be specified
            multiple times)           See also infer-capture(1).
 
-       --config-checks-between-markers
-           Activates: checker config-checks-between-markers: [EXPERIMENTAL]
-           Collects config checks between marker start and end. (Conversely:
-           --no-config-checks-between-markers)           See also infer-analyze(1).
-
-       --config-checks-between-markers-only
-           Activates: Enable config-checks-between-markers and disable all
-           other checkers (Conversely:
-           --no-config-checks-between-markers-only)           See also infer-analyze(1).
-
        --config-impact-analysis
            Activates: checker config-impact-analysis: [EXPERIMENTAL] Collects
            function that are called without config checks. (Conversely:
@@ -320,9 +316,10 @@ OPTIONS
     See also infer-analyze(1).
 
        --cost
-           Activates: checker cost: Computes the time complexity of functions
-           and methods. Can be used to detect changes in runtime complexity
-           with `infer reportdiff`. (Conversely: --no-cost)           See also infer-analyze(1).
+           Activates: checker cost: Computes the asymptotic complexity of
+           functions with respect to execution cost or other user defined
+           resources. Can be used to detect changes in the complexity with
+           `infer reportdiff`. (Conversely: --no-cost)           See also infer-analyze(1).
 
        --cost-issues-tests file
            Write a list of cost issues in a format suitable for cost tests to
@@ -403,9 +400,9 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --racerd, --dotnet-resource-leak, --siof,
-           --self-in-block, --starvation (Conversely: --default-checkers)       
-    See also infer-analyze(1).
+           --liveness, --parameter-not-null-checked, --racerd,
+           --dotnet-resource-leak, --siof, --self-in-block, --starvation
+           (Conversely: --default-checkers)           See also infer-analyze(1).
 
        --no-default-linters
            Deactivates: Use the default linters for the analysis.
@@ -442,11 +439,15 @@ OPTIONS
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
              BAD_KEY (enabled by default),
+             BAD_KEY_LATENT (disabled by default),
              BAD_MAP (enabled by default),
+             BAD_MAP_LATENT (disabled by default),
              BAD_POINTER_COMPARISON (enabled by default),
              BAD_RECORD (enabled by default),
+             BAD_RECORD_LATENT (disabled by default),
              BIABDUCTION_ANALYSIS_STOPS (disabled by default),
              BIABDUCTION_MEMORY_LEAK (disabled by default),
+             BLOCK_PARAMETER_NOT_NULL_CHECKED (enabled by default),
              BUFFER_OVERRUN_L1 (enabled by default),
              BUFFER_OVERRUN_L2 (enabled by default),
              BUFFER_OVERRUN_L3 (enabled by default),
@@ -467,10 +468,10 @@ OPTIONS
              COMPONENT_WITH_MULTIPLE_FACTORY_METHODS (enabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
-             CONFIG_CHECKS_BETWEEN_MARKERS (disabled by default),
              CONFIG_IMPACT (disabled by default),
              CONFIG_IMPACT_STRICT (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
+             CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
              CROSS_SITE_SCRIPTING (enabled by default),
              CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK (enabled by default),
@@ -519,7 +520,6 @@ OPTIONS
              GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
            (disabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
-             GUARDEDBY_VIOLATION_NULLSAFE (enabled by default),
              IMPURE_FUNCTION (enabled by default),
              INEFFICIENT_KEYSET_ITERATOR (enabled by default),
              INFERBO_ALLOC_IS_BIG (enabled by default),
@@ -556,25 +556,38 @@ OPTIONS
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
              NIL_BLOCK_CALL (enabled by default),
+             NIL_BLOCK_CALL_LATENT (disabled by default),
              NIL_INSERTION_INTO_COLLECTION (enabled by default),
+             NIL_INSERTION_INTO_COLLECTION_LATENT (disabled by default),
              NIL_MESSAGING_TO_NON_POD (enabled by default),
+             NIL_MESSAGING_TO_NON_POD_LATENT (disabled by default),
              NO_MATCHING_BRANCH_IN_TRY (enabled by default),
+             NO_MATCHING_BRANCH_IN_TRY_LATENT (disabled by default),
              NO_MATCHING_CASE_CLAUSE (enabled by default),
+             NO_MATCHING_CASE_CLAUSE_LATENT (disabled by default),
              NO_MATCHING_FUNCTION_CLAUSE (enabled by default),
+             NO_MATCHING_FUNCTION_CLAUSE_LATENT (disabled by default),
              NO_MATCH_OF_RHS (enabled by default),
+             NO_MATCH_OF_RHS_LATENT (disabled by default),
              NO_TRUE_BRANCH_IN_IF (enabled by default),
+             NO_TRUE_BRANCH_IN_IF_LATENT (disabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
+             NULLPTR_DEREFERENCE_LATENT (disabled by default),
              NULL_DEREFERENCE (enabled by default),
              OPTIONAL_EMPTY_ACCESS (enabled by default),
+             OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default),
              PARAMETER_NOT_NULL_CHECKED (enabled by default),
              POINTER_TO_CONST_OBJC_CLASS (enabled by default),
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
+             PULSE_RESOURCE_LEAK (disabled by default),
              PULSE_UNINITIALIZED_VALUE (enabled by default),
+             PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),
              PULSE_UNNECESSARY_COPY (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
+             REGEX_OP_ON_UI_THREAD (enabled by default),
              RESOURCE_LEAK (enabled by default),
              RETAIN_CYCLE (enabled by default),
              SHELL_INJECTION (enabled by default),
@@ -590,7 +603,6 @@ OPTIONS
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
-             THREAD_SAFETY_VIOLATION_NULLSAFE (enabled by default),
              TOPL_ERROR (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),
@@ -606,9 +618,13 @@ OPTIONS
              UNTRUSTED_VARIABLE_LENGTH_ARRAY (enabled by default),
              USER_CONTROLLED_SQL_RISK (enabled by default),
              USE_AFTER_DELETE (enabled by default),
+             USE_AFTER_DELETE_LATENT (disabled by default),
              USE_AFTER_FREE (enabled by default),
+             USE_AFTER_FREE_LATENT (disabled by default),
              USE_AFTER_LIFETIME (enabled by default),
+             USE_AFTER_LIFETIME_LATENT (disabled by default),
              VECTOR_INVALIDATION (enabled by default),
+             VECTOR_INVALIDATION_LATENT (disabled by default),
              WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default),
              Wrong_argument_number (enabled by default).
            
@@ -944,6 +960,17 @@ OPTIONS
            and deduplicated before being stored in the main results
            directory.           See also infer-report(1).
 
+       --no-parameter-not-null-checked
+           Deactivates: checker parameter-not-null-checked: An
+           Objective-C-specific analysis to detect when a block parameter is
+           used before being checked for null first. (Conversely:
+           --parameter-not-null-checked)           See also infer-analyze(1).
+
+       --parameter-not-null-checked-only
+           Activates: Enable parameter-not-null-checked and disable all other
+           checkers (Conversely: --no-parameter-not-null-checked-only)       
+    See also infer-analyze(1).
+
        --pmd-xml
            Activates: Output issues in (PMD) XML format in
            infer-out/report.xml (Conversely: --no-pmd-xml)           See also infer-run(1).
@@ -1107,6 +1134,10 @@ OPTIONS
            issues will be reported regardless the presence of unknown code       
     See also infer-analyze(1).
 
+       --pulse-skip-procedures regex
+           Regex of procedures that should not be analyzed by Pulse.       
+    See also infer-analyze(1).
+
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
            functions. A different implementation of "impurity". (Conversely:
@@ -1151,13 +1182,13 @@ OPTIONS
            Activates: Check @GuardedBy annotations with RacerD (Conversely:
            --no-racerd-guardedby)           See also infer-analyze(1).
 
+       --racerd-ignore-classes +string
+           Any method in a class specified here will be ignored by RacerD.       
+    See also infer-analyze(1).
+
        --racerd-only
            Activates: Enable racerd and disable all other checkers
            (Conversely: --no-racerd-only)           See also infer-analyze(1).
-
-       --no-racerd-unknown-returns-owned
-           Deactivates: DEPRECATED, does nothing. (Conversely:
-           --racerd-unknown-returns-owned)           See also infer-analyze(1).
 
        --reactive,-r
            Activates: Reactive mode: the analysis starts from the files
@@ -1207,6 +1238,11 @@ OPTIONS
            Write results and internal files in the specified directory       
     See also infer-analyze(1), infer-capture(1), infer-explore(1),
            infer-report(1), and infer-run(1).
+
+       --sarif
+           Activates: Output issues in SARIF (Static Analysis Results
+           Interchange Format) in infer-out/report.sarif (Conversely:
+           --no-sarif)           See also infer-run(1).
 
        --scheduler { file | restart | callgraph }
            Specify the scheduler used for the analysis phase:           - file: schedule one job per file
@@ -1289,9 +1325,10 @@ OPTIONS
            "foo<int>::bar()", etc. (can be specified multiple times)       
     See also infer-analyze(1).
 
-       --skip-analysis-in-path +path_prefix_OCaml_regex
-           Ignore files whose path matches the given prefix (can be specified
-           multiple times)           See also infer-capture(1) and infer-run(1).
+       --skip-analysis-in-path +regex
+           Ignore files whose path matches a given regex (can be specified
+           multiple times, but you must make sure each regex is properly
+           bracketed)           See also infer-capture(1) and infer-run(1).
 
        --skip-analysis-in-path-skips-compilation
            Activates: Whether paths in --skip-analysis-in-path should be
@@ -1574,6 +1611,9 @@ INTERNAL OPTIONS
 
        --buck-compilation-database-reset
            Cancel the effect of --buck-compilation-database.
+
+       --buck-java-flavor-dependency-depth-reset
+           Cancel the effect of --buck-java-flavor-dependency-depth.
 
        --buck-java-heap-size-gb-reset
            Cancel the effect of --buck-java-heap-size-gb.
@@ -2108,15 +2148,17 @@ INTERNAL OPTIONS
            Set --pulse-report-ignore-unknown-java-methods-patterns to the
            empty list.
 
-       --pulse-report-latent-issues
-           Activates: Only use for testing, there should be no need to turn
-           this on for regular code analysis. Report latent issues instead of
-           waiting for them to become concrete. (Conversely:
-           --no-pulse-report-latent-issues)
+       --no-pulse-report-latent-issues
+           Deactivates: Report latent issues instead of waiting for them to
+           become manifest, when the latent issue itself is enabled.
+           (Conversely: --pulse-report-latent-issues)
 
        --pulse-scuba-logging
            Activates: Log unknown functions to scuba in pulse checkers; also
            sets --scuba-logging. (Conversely: --no-pulse-scuba-logging)
+
+       --pulse-skip-procedures-reset
+           Cancel the effect of --pulse-skip-procedures.
 
        --pulse-widen-threshold int
            Under-approximate after int loop iterations
@@ -2130,6 +2172,9 @@ INTERNAL OPTIONS
            data. When false, error traces are shorter and show only direct
            flow via souces/sinks (Conversely:
            --no-quandary-show-passthroughs)
+
+       --racerd-ignore-classes-reset
+           Set --racerd-ignore-classes to the empty list.
 
        --reanalyze
            Activates: Rerun the analysis. Not compatible with
@@ -2371,7 +2416,7 @@ FILES
        - for switches options, the value is a JSON boolean (true or false,
        without quotes)
        - for non-switches options with no arguments (for instance the
-       undefined option associated with a list option), the value is null
+       ...-reset option associated with a list option), the value is null
        - for integers, the value is a JSON integer (without quotes)
        - string options have string values
        - path options have string values, and are interpreted relative to the

@@ -6,12 +6,11 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS) -fobjc-arc
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
---pulse-report-latent-issues
+INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR)
 
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard *.m)
+SOURCES = $(wildcard *.m) $(wildcard */*.m)
 
 include $(TESTS_DIR)/clang.make
 include $(TESTS_DIR)/objc.make

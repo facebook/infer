@@ -12,7 +12,6 @@ type t =
   | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
-  | ConfigChecksBetweenMarkers
   | ConfigImpactAnalysis
   | Cost
   | DisjunctiveDemo
@@ -26,6 +25,7 @@ type t =
   | Liveness
   | LoopHoisting
   | NullsafeDeprecated
+  | ParameterNotNullChecked
   | PrintfArgs
   | Pulse
   | PurityAnalysis

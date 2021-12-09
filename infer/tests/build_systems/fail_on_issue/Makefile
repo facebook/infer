@@ -14,7 +14,7 @@ INFER_OPTIONS = --project-root $(CODETOANALYZE_DIR) --fail-on-issue
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(CODETOANALYZE_DIR)/hello.c
-OBJECTS = $(foreach source,$(SOURCES),$(basename $(source)).o)
+OBJECTS = $(SOURCES:$(CODETOANALYZE_DIR)/%.c=%.o)
 
 default: compile
 

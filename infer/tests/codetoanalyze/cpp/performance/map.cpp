@@ -38,7 +38,7 @@ void loop_over_map_size_linear(std::map<int, int> m) {
 }
 
 // Expected: O(m); got constant
-void loop_over_map_iterator_linear_FN(std::map<std::string, int> m) {
+void loop_over_map_iterator_linear(std::map<std::string, int> m) {
   std::map<std::string, int>::iterator it;
   for (it = m.begin(); it != m.end(); it++) {
   }
@@ -71,22 +71,15 @@ void iterate_over_map_rev_linear(std::map<int, int> m) {
   }
 }
 
-// m.count(e) is logarithmic
-// Expected: O(log(m)); got constant
-bool map_count_logm_FN(std::map<std::string, int> m, std::string str) {
+bool map_count_logm(std::map<std::string, int> m, std::string str) {
   return m.count(str) > 0;
 }
 
-// emplace is logarithmic
-// Expected: O(log(m)); got constant
-void emplace_logm_FN(std::map<char, int> m, char c, int i) { m.emplace(c, i); }
+void emplace_logm(std::map<char, int> m, char c, int i) { m.emplace(c, i); }
 
-// find is logarithmic
-// Expected: O(log(m)); got constant
-void find_logm_FN(std::map<char, int> m, char c) { m.find(c); }
+void find_logm(std::map<char, int> m, char c) { m.find(c); }
 
-// erase(val) is logarithmic
-// Expected: m * log(m); got constant
+// Expected: m * log(m); got log(m)
 void loop_and_erase_mlogm_FN(std::map<std::string, int> m) {
   std::map<std::string, int>::iterator it = m.begin();
 

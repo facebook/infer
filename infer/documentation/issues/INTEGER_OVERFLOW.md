@@ -1,3 +1,7 @@
+This is reported when integer overflow occurred by integer operations such as addition, subtraction,
+and multiplication. For example, `int n = INT_MAX; int m = n + 3;` generates a INTEGER_OVERFLOW_L1
+on `n + 3`.
+
 Integer overflows reports fall into several "buckets" corresponding to the expected precision of the
 report. The higher the number, the more likely it is to be a false positive.
 

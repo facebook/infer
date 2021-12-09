@@ -7,7 +7,7 @@ ROOT_DIR = $(TESTS_DIR)/../..
 
 CLEAN_EXTRA += duplicates.txt
 
-OBJECTS = $(foreach source,$(filter %.c %.cpp %.m %.mm,$(SOURCES)),$(basename $(source)).o)
+OBJECTS = $(foreach source,$(filter %.c %.cpp %.m %.mm %.S,$(SOURCES)),$(basename $(notdir $(source))).o)
 
 include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/clang-base.make

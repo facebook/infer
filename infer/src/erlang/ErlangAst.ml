@@ -21,7 +21,8 @@ type function_reference = FunctionName of string | FunctionVariable of string [@
 type function_ = {module_: module_reference; function_: function_reference; arity: int}
 [@@deriving sexp_of]
 
-type line = int [@@deriving sexp_of]
+(* Location info. For compatibility with [Location.t] -1 means unknown. *)
+type location = {line: int; col: int} [@@deriving sexp_of]
 
 type record_name = string [@@deriving sexp_of]
 
@@ -83,7 +84,11 @@ and simple_expression =
   | Cons of {head: expression; tail: expression}
   | Fun of function_
   | If of case_clause list
-  | Lambda of {name: string option; cases: case_clause list}
+  | Lambda of
+      { name: string option
+      ; cases: case_clause list
+      ; mutable procname: (Procname.t option[@sexp.opaque])
+      ; mutable captured: (Pvar.Set.t option[@sexp.opaque]) }
   | ListComprehension of {expression: expression; qualifiers: qualifier list}
   | Literal of literal
   | Map of {map: expression option; updates: association list}
@@ -96,10 +101,10 @@ and simple_expression =
   | TryCatch of {body: body; ok_cases: case_clause list; catch_cases: catch_clause list; after: body}
   | Tuple of expression list
   | UnaryOperator of unary_operator * expression
-  | Variable of string
+  | Variable of {vname: string; mutable scope: (Procname.t option[@sexp.opaque])}
 [@@deriving sexp_of]
 
-and expression = {line: line; simple_expression: simple_expression} [@@deriving sexp_of]
+and expression = {location: location; simple_expression: simple_expression} [@@deriving sexp_of]
 
 and qualifier =
   | BitsGenerator of {pattern: pattern; expression: expression}
@@ -124,7 +129,7 @@ and guard_test = expression [@@deriving sexp_of]
 
 (** {2 S8.5 Clauses} *)
 
-and 'pat clause = {line: line; patterns: 'pat list; guards: guard_test list list; body: body}
+and 'pat clause = {location: location; patterns: 'pat list; guards: guard_test list list; body: body}
 [@@deriving sexp_of]
 
 and case_clause = pattern clause [@@deriving sexp_of]
@@ -148,6 +153,6 @@ type simple_form =
   | Record of {name: string; fields: record_field list}
 [@@deriving sexp_of]
 
-type form = {line: line; simple_form: simple_form} [@@deriving sexp_of]
+type form = {location: location; simple_form: simple_form} [@@deriving sexp_of]
 
 type module_ = form list [@@deriving sexp_of]

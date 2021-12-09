@@ -148,8 +148,7 @@ void int_under_cap_ok() {
 // used to confuse inferbo
 int mult(int x, int y) { return x * y; }
 
-// integers are internally represented as rationals
-void FP_ints_are_not_rationals_ok() {
+void ints_are_not_rationals_ok() {
   int x = 5 / 2;
   if (x != mult(2, 1)) {
     int* p = nullptr;

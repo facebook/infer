@@ -83,6 +83,10 @@ void iterate_vector_linear(std::vector<std::string>& vec) {
   }
 }
 
+std::vector<int>::iterator find_in_vector(std::vector<int>& vec) {
+  return std::find(vec.begin(), vec.end(), 30);
+}
+
 void iterate_two_vectors_linear(std::vector<std::string>& vec1,
                                 std::vector<std::string>& vec2) {
   for (int i = 0; i < vec1.size(); i++) {
@@ -151,9 +155,9 @@ void insert_new_vector_loop_constant(std::vector<int>& vec) {
   }
 }
 
-// Expected: O(vec1 x vec2); got vec1
-// more details here: T104735254
-std::vector<int> remove_duplicates_quadratic_FN(std::vector<int>& vec1) {
+// Expected: O(vec1 x vec1);
+// got O(vec1 x vec2) incorrectly
+std::vector<int> remove_duplicates_quadratic(std::vector<int>& vec1) {
   std::vector<int> vec2;
 
   for (int x : vec1) {

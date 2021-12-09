@@ -117,33 +117,39 @@ module ProcessedPairSet = Caml.Set.Make (ProcessedPair)
 (* get all the ptr variables (and their dependencies) occurring on the
    RHS of the definition of a given variable. *)
 let get_ptr_vars_in_defn_path node loop_head var =
-  let rec aux node var processed_pairs =
-    if ProcessedPairSet.mem (var, node) processed_pairs then InvalidatedVars.empty
+  let rec aux node var processed_pairs acc =
+    if ProcessedPairSet.mem (var, node) processed_pairs then acc
     else
-      let invalidate_exp exp_rhs init =
-        let node_list =
-          node :: (if Procdesc.Node.equal node loop_head then [] else Procdesc.Node.get_preds node)
-        in
+      let invalidate_exp exp_rhs init : InvalidatedVars.t =
         let processed_pairs' = ProcessedPairSet.add (var, node) processed_pairs in
         Var.get_all_vars_in_exp exp_rhs
         |> Sequence.fold ~init ~f:(fun acc rhs_var ->
-               List.fold_left ~init:(InvalidatedVars.add rhs_var acc)
-                 ~f:(fun acc node -> InvalidatedVars.union (aux node rhs_var processed_pairs') acc)
-                 node_list )
+               aux node rhs_var processed_pairs' (InvalidatedVars.add rhs_var acc) )
       in
-      Procdesc.Node.get_instrs node
-      |> Instrs.fold ~init:InvalidatedVars.empty ~f:(fun acc instr ->
-             match instr with
-             | Sil.Load {id; e= exp_rhs; typ}
-               when Var.equal var (Var.of_id id) && is_non_primitive typ ->
-                 invalidate_exp exp_rhs acc
-             | Sil.Store {e1= Exp.Lvar pvar; typ; e2= exp_rhs}
-               when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
-                 invalidate_exp exp_rhs acc
-             | _ ->
-                 acc )
+      let acc =
+        Procdesc.Node.get_instrs node
+        |> Instrs.fold ~init:acc ~f:(fun acc instr ->
+               match instr with
+               | Sil.Load {id; e= exp_rhs; typ}
+                 when Var.equal var (Var.of_id id) && is_non_primitive typ ->
+                   invalidate_exp exp_rhs acc
+               | Sil.Store {e1= Exp.Lvar pvar; typ; e2= exp_rhs}
+                 when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
+                   invalidate_exp exp_rhs acc
+               | _ ->
+                   acc )
+      in
+      if Procdesc.Node.equal node loop_head then acc
+      else
+        Procdesc.Node.get_preds node
+        |> List.fold_left ~init:acc ~f:(fun acc node_pre ->
+               match Procdesc.Node.get_kind node_pre with
+               | Stmt_node _ ->
+                   aux node_pre var (ProcessedPairSet.add (var, node) processed_pairs) acc
+               | _ ->
+                   acc )
   in
-  aux node var ProcessedPairSet.empty
+  aux node var ProcessedPairSet.empty InvalidatedVars.empty
 
 
 let get_vars_to_invalidate node loop_head args modified_params invalidated_vars : InvalidatedVars.t

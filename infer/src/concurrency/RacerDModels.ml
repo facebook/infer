@@ -651,3 +651,19 @@ end
 
 let get_litho_explanation tenv pname =
   Litho.get_class_annot pname tenv |> Option.map ~f:Litho.message
+
+
+let class_is_ignored_by_racerd class_name =
+  Typ.Name.name class_name |> String.Set.mem Config.racerd_ignore_classes
+
+
+let proc_is_ignored_by_racerd callee =
+  Procname.get_class_type_name callee |> Option.exists ~f:class_is_ignored_by_racerd
+
+
+let is_kotlin_coroutine_generated classname =
+  Tenv.load_global ()
+  |> Option.bind ~f:(fun tenv -> Tenv.lookup tenv classname)
+  |> Option.exists ~f:(fun (tstruct : Struct.t) ->
+         List.mem tstruct.supers ~equal:Typ.Name.equal
+           StdTyp.Name.Java.kotlin_coroutines_jvm_internal_restrictedsuspendlambda )

@@ -1,5 +1,3 @@
-${XCODE_ISYSROOT}/System/Library/Frameworks/Foundation.framework/Headers/NSArray.h, NSArray.indexOfObjectPassingTest:[specialized with blocks], 0,  OnUIThread:false, []
-${XCODE_ISYSROOT}/System/Library/Frameworks/Foundation.framework/Headers/NSArray.h, NSArray.indexOfObjectPassingTest:[specialized with blocks], 0,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/arc_block.m, ArcBlock.callBlock:, |block|,  OnUIThread:false, []
 codetoanalyze/objc/autoreleasepool/arc_block.m, ArcBlock.callBlock:[specialized with blocks], 1,  OnUIThread:false, [autorelease,Call to objc_blockArcBlock.call_CallBlock_linear:_4,Call to NoArcCallee.giveMeObject,Modeled call to NSObject.autorelease]
 codetoanalyze/objc/autoreleasepool/arc_block.m, ArcBlock.callIndexOfObjectPassingTest_linear:, x->elements.length.ub,  OnUIThread:false, [{x->elements.length.ub},Modeled call to indexOfObjectPassingTest:,autorelease,Call to NoArcCallee.giveMeObject,Modeled call to NSObject.autorelease]

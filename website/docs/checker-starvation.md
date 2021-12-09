@@ -9,8 +9,8 @@ Activate with `--starvation`.
 
 Supported languages:
 - C/C++/ObjC: Yes
-- C#/.Net: Yes
-- Erlang: Yes
+- C#/.Net: No
+- Erlang: No
 - Java: Yes
 
 Detect several kinds of "starvation" problems:
@@ -27,5 +27,6 @@ The following issue types are reported by this checker:
 - [DEADLOCK](/docs/next/all-issue-types#deadlock)
 - [IPC_ON_UI_THREAD](/docs/next/all-issue-types#ipc_on_ui_thread)
 - [LOCKLESS_VIOLATION](/docs/next/all-issue-types#lockless_violation)
+- [REGEX_OP_ON_UI_THREAD](/docs/next/all-issue-types#regex_op_on_ui_thread)
 - [STARVATION](/docs/next/all-issue-types#starvation)
 - [STRICT_MODE_VIOLATION](/docs/next/all-issue-types#strict_mode_violation)

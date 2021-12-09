@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
@@ -48,6 +49,7 @@ type t =
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
+  | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]
@@ -60,6 +62,7 @@ let get_location = function
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
   | MemoryLeak {location}
+  | ResourceLeak {location}
   | ErlangError (Badkey {location})
   | ErlangError (Badmap {location})
   | ErlangError (Badmatch {location})
@@ -193,6 +196,24 @@ let get_message diagnostic =
       F.asprintf
         "%s memory leak. Memory dynamically allocated at line %d %a is not freed after the last \
          access at %a"
+        pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
+  | ResourceLeak {class_name; location; allocation_trace} ->
+      (* NOTE: this is very similar to the MemoryLeak case *)
+      let allocation_line =
+        let {Location.line; _} = Trace.get_outer_location allocation_trace in
+        line
+      in
+      let pp_allocation_trace fmt (trace : Trace.t) =
+        match trace with
+        | Immediate _ ->
+            F.fprintf fmt "by constructor %a()" JavaClassName.pp class_name
+        | ViaCall {f; _} ->
+            F.fprintf fmt "by constructor %a(), indirectly via call to %a" JavaClassName.pp
+              class_name CallEvent.describe f
+      in
+      F.asprintf
+        "%s resource leak. Resource dynamically allocated at line %d %a is not closed after the \
+         last access at %a"
         pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
   | ErlangError (Badkey {calling_context= _; location}) ->
       F.asprintf "%s bad key at %a" pulse_start_msg Location.pp location
@@ -346,6 +367,16 @@ let get_trace = function
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace
       @@ []
+  | ResourceLeak {class_name; location; allocation_trace} ->
+      (* NOTE: this is very similar to the MemoryLeak case *)
+      let access_start_location = Trace.get_start_location allocation_trace in
+      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
+        access_start_location
+      @@ Trace.add_to_errlog ~nesting:1
+           ~pp_immediate:(fun fmt ->
+             F.fprintf fmt "allocated by constructor %a() here" JavaClassName.pp class_name )
+           allocation_trace
+      @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | MemoryLeak {allocator; location; allocation_trace} ->
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
@@ -395,30 +426,35 @@ let get_trace = function
       [Errlog.make_trace_element nesting location "copied here" []]
 
 
-let get_issue_type = function
-  | AccessToInvalidAddress {invalidation; must_be_valid_reason} ->
-      Invalidation.issue_type_of_cause invalidation must_be_valid_reason
-  | MemoryLeak _ ->
+let get_issue_type ~latent issue_type =
+  match (issue_type, latent) with
+  | MemoryLeak _, false ->
       IssueType.pulse_memory_leak
-  | ErlangError (Badkey _) ->
-      IssueType.bad_key
-  | ErlangError (Badmap _) ->
-      IssueType.bad_map
-  | ErlangError (Badmatch _) ->
-      IssueType.no_match_of_rhs
-  | ErlangError (Badrecord _) ->
-      IssueType.bad_record
-  | ErlangError (Case_clause _) ->
-      IssueType.no_matching_case_clause
-  | ErlangError (Function_clause _) ->
-      IssueType.no_matching_function_clause
-  | ErlangError (If_clause _) ->
-      IssueType.no_true_branch_in_if
-  | ErlangError (Try_clause _) ->
-      IssueType.no_matching_branch_in_try
-  | ReadUninitializedValue _ ->
-      IssueType.uninitialized_value_pulse
-  | StackVariableAddressEscape _ ->
+  | ResourceLeak _, false ->
+      IssueType.pulse_resource_leak
+  | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
-  | UnnecessaryCopy _ ->
+  | UnnecessaryCopy _, false ->
       IssueType.unnecessary_copy_pulse
+  | (MemoryLeak _ | ResourceLeak _ | StackVariableAddressEscape _ | UnnecessaryCopy _), true ->
+      L.die InternalError "Issue type cannot be latent"
+  | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
+      Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
+  | ErlangError (Badkey _), _ ->
+      IssueType.bad_key ~latent
+  | ErlangError (Badmap _), _ ->
+      IssueType.bad_map ~latent
+  | ErlangError (Badmatch _), _ ->
+      IssueType.no_match_of_rhs ~latent
+  | ErlangError (Badrecord _), _ ->
+      IssueType.bad_record ~latent
+  | ErlangError (Case_clause _), _ ->
+      IssueType.no_matching_case_clause ~latent
+  | ErlangError (Function_clause _), _ ->
+      IssueType.no_matching_function_clause ~latent
+  | ErlangError (If_clause _), _ ->
+      IssueType.no_true_branch_in_if ~latent
+  | ErlangError (Try_clause _), _ ->
+      IssueType.no_matching_branch_in_try ~latent
+  | ReadUninitializedValue _, _ ->
+      IssueType.uninitialized_value_pulse ~latent

@@ -32,6 +32,7 @@ type id =
   | ReportCostsJson
   | ReportHtml
   | ReportJson
+  | ReportSarif
   | ReportText
   | ReportXML
   | RetainCycles
@@ -163,6 +164,11 @@ let of_id = function
       ; before_caching_capture= Delete }
   | ReportJson ->
       { rel_path= "report.json"
+      ; kind= File
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Delete }
+  | ReportSarif ->
+      { rel_path= "report.sarif"
       ; kind= File
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }

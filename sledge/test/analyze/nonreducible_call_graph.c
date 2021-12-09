@@ -13,18 +13,24 @@ char* d = "hello world";
 void f();
 void g();
 
-void f() { // accesses: b, c, d
+void
+f()
+{  // accesses: b, c, d
   char* s1 = b;
   g();
   char* s2 = c;
 }
 
-void g() { // accesses: b, c, d
+void
+g()
+{  // accesses: b, c, d
   char* s = d;
   f();
 }
 
-int main() { // accesses: a,b,c,d
+int
+main()
+{  // accesses: a,b,c,d
   if (__llair_choice()) {
     f();
   } else {

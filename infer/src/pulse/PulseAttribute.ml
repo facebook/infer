@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
 module Timestamp = PulseTimestamp
@@ -33,6 +34,7 @@ module Attribute = struct
     | CustomRealloc of Procname.t
     | CppNew
     | CppNewArray
+    | JavaResource of JavaClassName.t
   [@@deriving compare, equal]
 
   let pp_allocator fmt = function
@@ -48,6 +50,8 @@ module Attribute = struct
         F.fprintf fmt "new"
     | CppNewArray ->
         F.fprintf fmt "new[]"
+    | JavaResource class_name ->
+        F.fprintf fmt "resource %a" JavaClassName.pp class_name
 
 
   type t =
@@ -61,6 +65,7 @@ module Attribute = struct
     | ISLAbduced of Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
+    | JavaResourceReleased of JavaClassName.t
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -89,6 +94,10 @@ module Attribute = struct
 
   let invalid_rank =
     Variants.to_rank (Invalid (Invalidation.ConstantDereference IntLit.zero, dummy_trace))
+
+
+  let java_resource_released_rank =
+    Variants.to_rank (JavaResourceReleased (JavaClassName.from_string ""))
 
 
   let must_be_valid_rank = Variants.to_rank (MustBeValid (Timestamp.t0, dummy_trace, None))
@@ -165,6 +174,8 @@ module Attribute = struct
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
           trace Invalidation.pp_must_be_valid_reason reason
           (timestamp :> int)
+    | JavaResourceReleased class_name ->
+        F.fprintf f "Released(%a)" JavaClassName.pp class_name
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Uninitialized ->
@@ -187,6 +198,7 @@ module Attribute = struct
     | Closure _
     | DynamicType _
     | EndOfCollection
+    | JavaResourceReleased _
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect _
@@ -198,14 +210,15 @@ module Attribute = struct
   let is_suitable_for_post = function
     | MustBeInitialized _ | MustBeValid _ | UnreachableAt _ ->
         false
-    | Invalid _
-    | Allocated _
-    | ISLAbduced _
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
+    | Allocated _
     | Closure _
     | DynamicType _
     | EndOfCollection
+    | ISLAbduced _
+    | Invalid _
+    | JavaResourceReleased _
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect _
@@ -240,19 +253,22 @@ module Attribute = struct
       | Closure _
       | DynamicType _
       | EndOfCollection
+      | JavaResourceReleased _
       | StdVectorReserve
       | UnreachableAt _
       | Uninitialized ) as attr ->
         attr
 
 
-  let alloc_free_match allocator (invalidation : Invalidation.t) =
-    match (allocator, invalidation) with
-    | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), (CFree | CustomFree _) ->
+  let alloc_free_match allocator (invalidation : (Invalidation.t * Trace.t) option) released =
+    match (allocator, invalidation, released) with
+    | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), Some ((CFree | CustomFree _), _), _
+    | CppNew, Some (CppDelete, _), _
+    | CppNewArray, Some (CppDeleteArray, _), _ ->
         true
-    | CppNew, CppDelete ->
-        true
-    | CppNewArray, CppDeleteArray ->
+    | JavaResource allocated_class_name, _, Some released_class_name ->
+        if not (JavaClassName.equal allocated_class_name released_class_name) then
+          L.internal_error "Unexpected mismatch between allocated/released resources" ;
         true
     | _ ->
         false
@@ -266,6 +282,13 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.Invalid (invalidation, trace)) = attr in
            (invalidation, trace) )
+
+
+  let get_java_resource_released attrs =
+    Set.find_rank attrs Attribute.java_resource_released_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.JavaResourceReleased class_name) = attr in
+           class_name )
 
 
   let get_must_be_valid attrs =
@@ -394,15 +417,10 @@ module Attributes = struct
 
   let get_allocated_not_freed attributes =
     let allocated_opt = get_allocation attributes in
-    if Option.is_none allocated_opt then None
-    else
-      match (allocated_opt, get_invalid attributes) with
-      | None, _ ->
-          assert false
-      | Some (allocator, _), Some (invalidation, _) ->
-          if Attribute.alloc_free_match allocator invalidation then None else allocated_opt
-      | Some _, None ->
-          allocated_opt
+    Option.value_map ~default:None allocated_opt ~f:(fun (allocator, _) ->
+        let invalidation = get_invalid attributes in
+        let released = get_java_resource_released attributes in
+        if Attribute.alloc_free_match allocator invalidation released then None else allocated_opt )
 
 
   include Set

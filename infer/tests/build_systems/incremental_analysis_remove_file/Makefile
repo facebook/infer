@@ -7,6 +7,7 @@ TESTS_DIR = ../..
 
 MODIFIED_FILES_FILE = changed_files.txt
 SOURCES = $(wildcard src_after/*.c src_after/*.h src_before/*.c src_before/*.h)
+CLEAN_EXTRA += $(foreach source,$(wildcard src_after/*.c src_before/*.c),$(basename $(notdir $(source))).o)
 INFER_OPTIONS = --changed-files-index $(MODIFIED_FILES_FILE) \
   --incremental-analysis \
   --debug-level-analysis 1

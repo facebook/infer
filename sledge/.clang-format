@@ -1,2 +1,32 @@
-BasedOnStyle: llvm
+Language: Cpp
+BasedOnStyle: LLVM
+AccessModifierOffset: -1
+AlignAfterOpenBracket: DontAlign
+AlignEscapedNewlines: Left
+AlignOperands: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AlwaysBreakAfterReturnType: AllDefinitions
+AlwaysBreakTemplateDeclarations: 'Yes'
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+BreakBeforeBraces: Custom
+IndentCaseLabels: true
+KeepEmptyLinesAtTheStartOfBlocks: false
 PointerAlignment: Left
+SpacesBeforeTrailingComments: 2
+TabWidth: 2

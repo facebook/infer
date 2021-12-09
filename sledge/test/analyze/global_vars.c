@@ -8,9 +8,15 @@
 const char* a_string = "I'm a string";
 int an_int = 0;
 
-int idx() { return an_int; }
+int
+idx()
+{
+  return an_int;
+}
 
-int main() {
+int
+main()
+{
   const char* str = a_string;
 
   return str[idx()];

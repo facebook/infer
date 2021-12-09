@@ -27,13 +27,18 @@ let enter_scope _ _ () = ()
 
 type from_call = unit [@@deriving compare, equal, sexp]
 
-let call ~summaries:_ _ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_
+let call ~summaries:_ _ ?child:_ ~globals:_ ~actuals:_ ~areturn:_ ~formals:_
     ~freturn:_ ~locals:_ _ =
   ((), ())
 
 let recursion_beyond_bound = `skip
 let post _ _ _ () = ()
 let retn _ _ _ _ _ = ()
+
+type term_code = unit [@@deriving compare, sexp_of]
+
+let term _ _ _ _ = ()
+let move_term_code _ _ () () = ()
 let dnf () = Set.of_ ()
 let resolve_callee _ _ _ _ = []
 

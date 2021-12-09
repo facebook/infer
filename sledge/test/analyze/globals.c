@@ -11,7 +11,9 @@ const char* immutable_string = "a string";
 int mutable_int = 0;
 const int immutable_int = 0;
 
-int main() {
+int
+main()
+{
   int mi = mutable_int;
   int imi = immutable_int;
   char* c = mutable_string;

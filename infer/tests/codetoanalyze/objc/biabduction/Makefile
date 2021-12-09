@@ -8,23 +8,13 @@ TESTS_DIR = ../../..
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 
 CLEAN_EXTRA = infer-out-arc infer-out-all infer-out-all infer-out-arc \
-              issues.exp.test.all issues.exp.test.arc issues.exp.test.default
+              issues.exp.test.all issues.exp.test.arc issues.exp.test.default $(wildcard *.o)
 INFER_OPTIONS = --biabduction-only --dump-duplicate-symbols --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \
-  field_superclass/B.m \
-  memory_leaks_benchmark/MemoryLeakRaii.m \
   memory_leaks_benchmark/NSString_models_tests.m \
-  memory_leaks_benchmark/NSData_models_tests.m \
-  memory_leaks_benchmark/RetainReleaseExampleBucketing.m \
-  memory_leaks_benchmark/CoreVideoExample.m \
-  memory_leaks_benchmark/RetainCycleLength3.m \
-  memory_leaks_benchmark/ReleasedInBlock.m \
   npe/dynamic_dispatch.m \
-  npe/Fraction.m \
-  npe/NPD_core_foundation.m \
-  npe/Npe_with_equal_names.m \
   npe/block.m \
   npe/ivar_blocks.m \
   npe/skip_method_with_nil_object.m \
@@ -37,7 +27,6 @@ SOURCES_DEFAULT = \
   resource_leaks/Dispatch_sources.m \
   shared/block/block-it.m \
   shared/block/dispatch.m \
-  shared/category_procdesc/EOCPerson.m \
   shared/memory_leaks_benchmark/ArcExample.m \
   shared/memory_leaks_benchmark/AutoreleaseExample.m \
   shared/memory_leaks_benchmark/RetainReleaseExample.m \
@@ -51,20 +40,12 @@ SOURCES_DEFAULT = \
   shared/annotations/nullable_annotations.m \
   shared/annotations/nullable_annotations_fields.m \
   shared/annotations/nonnull_annotations.m \
-  taint/sources.m \
-  taint/viewController.m \
 
 SOURCES_BUCKET_ALL = \
-  field_superclass/field.c \
   global_const/global_const.m \
-  initialization/compound_literal.c \
-  memory_leaks_benchmark/RetainCycleStaticVar.m \
-  npe/blockenum.m \
-  npe/nil_param.m \
   npe/null_returned_by_method.m \
   procdescs/main.c \
   property/main.c \
-  returnstmt/return_npe_test.m \
   shared/assertions/NSAssert_example.m \
   shared/block/BlockVar.m \
   shared/block/AnonymousBlock.m \
@@ -73,39 +54,22 @@ SOURCES_BUCKET_ALL = \
   shared/block/block_release.m \
   shared/block/dispatch_in_macro.m \
   shared/block/Blocks_as_parameters.m \
-  shared/category_procdesc/main.c \
   shared/field_superclass/SuperExample.m \
   shared/npe/npe_malloc.m \
   warnings/ParameterNotNullableExample.m \
 
 SOURCES_ARC = \
-  field_superclass/SubtypingExample.m \
-  blocks_in_heap/BlockInHeap.m \
-  initialization/struct_initlistexpr.c \
-  memory_leaks_benchmark/CADisplayLinkRetainCycle.m \
-  memory_leaks_benchmark/RetainCycleExampleWeak.m \
-  memory_leaks_benchmark/RetainReleaseExampleBucketingArc.m \
-  memory_leaks_benchmark/retain_cycle.m \
-  memory_leaks_benchmark/retain_cycle2.m \
-  memory_leaks_benchmark/RetainCycleBlocks.m \
-  memory_leaks_benchmark/RetainCyclePropertyInProtocol.m \
-  memory_leaks_benchmark/RetainCycleBlockAsParameter.m \
-  memory_leaks_benchmark/RetainCycleBlockCapturedVar.m \
-  memory_leaks_benchmark/RetainCycleDeduplication.m \
+  retain_cycles/*.m \
   npe/BoxedNumberExample.m \
   npe/ObjCMethodCallInCondition.m \
   npe/UpdateDict.m \
-  npe/WeakCapturedVarsNPE.m \
   npe/nil_in_array_literal.m \
   npe/nil_in_dictionary_literal.m \
   npe/npe_conditional.m \
   npe/npe_self.m \
-  npe/Npe_self_annotation.m \
   npe/nullable.m \
-  property/ExplicitIvarName.m \
   shared/block/dispatch_examples.m \
   specialized_methods_with_blocks/BlockAsReceiver.m \
-  subtyping/KindOfClassExample.m \
   variadic_methods/premature_nil_termination.m \
 
 include $(TESTS_DIR)/clang.make

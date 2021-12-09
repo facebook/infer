@@ -259,6 +259,8 @@ val invalidate_biad_isl :
 
 val allocate : Attribute.allocator -> Location.t -> AbstractValue.t -> t -> t
 
+val java_resource_release : JavaClassName.t -> AbstractValue.t -> t -> t
+
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
 val remove_allocation_attr : AbstractValue.t -> t -> t

@@ -22,8 +22,15 @@ int copy_decl_bad() {
   return a.arr[0];
 }
 
-int source_mod_ok_FP() {
+int source_mod_ok() {
   Arr source;
+  auto copy = source;
+  source.arr[0] = 9; // source is modified, so copy is not unnecessary as we
+                     // can't just add &
+  return copy.arr[0];
+}
+
+int source_mod_param_ok(Arr source) {
   auto copy = source;
   source.arr[0] = 9; // source is modified, so copy is not unnecessary as we
                      // can't just add &
