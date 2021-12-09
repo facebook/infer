@@ -298,15 +298,16 @@ module Exceptional = struct
   let wto (pdesc, _) = WTO.make pdesc
 end
 
-(** Forward CFG with exceptional control-flow for throw exception instruction only*)
+(** Forward CFG with exceptional control-flow for throw exception node only*)
 module ExceptionalThrowOnly = struct
   include Exceptional
 
-  (** we fold the exception flow only when the throw instruction is encountered and exn is returned. 
+  (** We fold the exception flow only when the throw node is encountered and exn is returned. 
   Under this circumstances, resources could be disposed in finaly black through exception sink node *)
   let fold_normal_or_exn_succs fold_normal_alpha fold_exceptional t n ~init ~f =
     let choose_normal_or_exn_succs node = 
       let instrs = Procdesc.Node.get_instrs node in
+      (** Ensure throw exception node by verifying the third from the last instruction in the CFG node has exception returned *)
       let instr_count = (Instrs.count instrs) - 3 in
       let get_last_instr () =
          if instr_count >= 0 then Instrs.nth_exn instrs instr_count else Instrs.last instrs |> Option.value ~default:Sil.skip_instr
