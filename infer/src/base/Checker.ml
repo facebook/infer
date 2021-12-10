@@ -79,6 +79,9 @@ let config_unsafe checker =
   let supports_clang_erlang_and_java (language : Language.t) =
     match language with Clang | Erlang | Java -> Support | CIL -> NoSupport
   in
+  let supports_clang_erlang_and_java_experimental (language : Language.t) =
+    match language with Clang | Erlang | Java -> ExperimentalSupport | CIL -> NoSupport
+  in
   let supports_clang (language : Language.t) =
     match language with Clang -> Support | CIL | Erlang | Java -> NoSupport
   in
@@ -445,7 +448,7 @@ let config_unsafe checker =
       { id= "topl"
       ; kind=
           UserFacing {title= "Topl"; markdown_body= [%blob "../../documentation/checkers/Topl.md"]}
-      ; support= supports_clang_and_java_experimental
+      ; support= supports_clang_erlang_and_java_experimental
       ; short_documentation=
           "Detect errors based on user-provided state machines describing temporal properties over \
            multiple objects."
