@@ -608,6 +608,8 @@ val results_dir : string
 
 val sarif : bool
 
+val no_sarif_codeflows : bool
+
 val scheduler : scheduler
 
 val scuba_logging : bool

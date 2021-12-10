@@ -2381,6 +2381,12 @@ and sarif =
     "Output issues in SARIF (Static Analysis Results Interchange Format) in infer-out/report.sarif"
 
 
+and no_sarif_codeflows =
+  CLOpt.mk_bool ~long:"no-sarif-codeflows" ~default:false
+    ~in_help:InferCommand.[(Run, manual_generic)]
+    "Output issues in SARIF (Static Analysis Results Interchange Format) in infer-out/report.sarif without codeflows"
+
+
 and scheduler =
   CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3557,6 +3563,8 @@ and reports_include_ml_loc = !reports_include_ml_loc
 and results_dir = !results_dir
 
 and sarif = !sarif
+
+and no_sarif_codeflows = !no_sarif_codeflows
 
 and scheduler = !scheduler
 
