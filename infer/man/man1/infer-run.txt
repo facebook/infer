@@ -138,6 +138,11 @@ OPTIONS
            Interchange Format) in infer-out/report.sarif (Conversely:
            --no-sarif)
 
+       --no-sarif-codeflows
+           Activates: Output issues in SARIF (Static Analysis Results
+           Interchange Format) in infer-out/report.sarif without codeflows
+           (Conversely: --sarif-codeflows)
+
        --skip-analysis-in-path +regex
            Ignore files whose path matches a given regex (can be specified
            multiple times, but you must make sure each regex is properly
