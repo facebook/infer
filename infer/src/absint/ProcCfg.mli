@@ -106,6 +106,13 @@ module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.N
 module Normal :
   S with type t = Procdesc.t and module Node = DefaultNode and type instrs_dir = Instrs.not_reversed
 
+(** Forward .NET CFG with exceptional control-flow *)
+module ExceptionalThrowOnly :
+  S
+    with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t
+     and module Node = DefaultNode
+     and type instrs_dir = Instrs.not_reversed
+
 (** Forward CFG with exceptional control-flow *)
 module Exceptional :
   S

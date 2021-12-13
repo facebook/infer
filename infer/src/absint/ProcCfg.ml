@@ -298,6 +298,40 @@ module Exceptional = struct
   let wto (pdesc, _) = WTO.make pdesc
 end
 
+(** Forward CFG with exceptional control-flow for throw exception node only*)
+module ExceptionalThrowOnly = struct
+  include Exceptional
+
+  (** We fold the exception flow only when the throw node is encountered and exn is returned. Under
+      this circumstances, resources could be disposed in finaly black through exception sink node *)
+  let fold_normal_or_exn_succs fold_normal_alpha fold_exceptional t n ~init ~f =
+    let choose_normal_or_exn_succs node =
+      let instrs = Procdesc.Node.get_instrs node in
+      (* Ensure throw exception node by verifying the third from the last instruction in the CFG
+         node has exception returned *)
+      let instr_count = Instrs.count instrs - 3 in
+      let get_last_instr () =
+        if instr_count >= 0 then Instrs.nth_exn instrs instr_count
+        else Instrs.last instrs |> Option.value ~default:Sil.skip_instr
+      in
+      let last_instr = get_last_instr () in
+      match last_instr with
+      | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when Pvar.is_return pvar ->
+          fold_exceptional t node ~init ~f
+      | _ ->
+          fold_normal_alpha t node ~init ~f
+    in
+    choose_normal_or_exn_succs n
+
+
+  let fold_succs t n ~init ~f =
+    fold_normal_or_exn_succs fold_normal_succs fold_exceptional_succs t n ~init ~f
+
+
+  let fold_preds t n ~init ~f =
+    fold_normal_or_exn_succs fold_normal_preds fold_exceptional_preds t n ~init ~f
+end
+
 (** Wrapper that reverses the direction of the CFG *)
 module Backward (Base : S with type instrs_dir = Instrs.not_reversed) = struct
   include (
