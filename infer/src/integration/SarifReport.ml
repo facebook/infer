@@ -114,7 +114,7 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
   let thread_flow_locs = [{Sarifbug_j.locations= loc_trace_to_sarifbug_record bug_trace}] in
   let trace_list_length = List.length bug_trace in
   let thread_flow =
-    if not Config.no_sarif_codeflows && trace_list_length > 0 then Some [{Sarifbug_j.threadFlows= thread_flow_locs}] else None
+    if not Config.drop_sarif_codeflows && trace_list_length > 0 then Some [{Sarifbug_j.threadFlows= thread_flow_locs}] else None
   in
   let result =
     {Sarifbug_j.message; level; ruleId; codeFlows= thread_flow; locations= file_location_to_record}

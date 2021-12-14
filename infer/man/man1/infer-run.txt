@@ -65,6 +65,11 @@ OPTIONS
            Debug level for the linters. See --debug-level for accepted
            values.
 
+       --drop-sarif-codeflows
+           Activates: Output issues in SARIF (Static Analysis Results
+           Interchange Format) in infer-out/report.sarif without codeflows
+           (Conversely: --no-drop-sarif-codeflows)
+
        --fail-on-issue
            Activates: Exit with error code 2 if Infer found something to
            report (Conversely: --no-fail-on-issue)
@@ -137,11 +142,6 @@ OPTIONS
            Activates: Output issues in SARIF (Static Analysis Results
            Interchange Format) in infer-out/report.sarif (Conversely:
            --no-sarif)
-
-       --no-sarif-codeflows
-           Activates: Output issues in SARIF (Static Analysis Results
-           Interchange Format) in infer-out/report.sarif without codeflows
-           (Conversely: --sarif-codeflows)
 
        --skip-analysis-in-path +regex
            Ignore files whose path matches a given regex (can be specified

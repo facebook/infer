@@ -630,6 +630,11 @@ OPTIONS
            
            See also infer-report(1).
 
+       --drop-sarif-codeflows
+           Activates: Output issues in SARIF (Static Analysis Results
+           Interchange Format) in infer-out/report.sarif without codeflows
+           (Conversely: --no-drop-sarif-codeflows)           See also infer-run(1).
+
        --dump-duplicate-symbols
            Activates: Dump all symbols with the same name that are defined in
            more than one file. (Conversely: --no-dump-duplicate-symbols)       
@@ -1243,11 +1248,6 @@ OPTIONS
            Activates: Output issues in SARIF (Static Analysis Results
            Interchange Format) in infer-out/report.sarif (Conversely:
            --no-sarif)           See also infer-run(1).
-
-       --no-sarif-codeflows
-           Activates: Output issues in SARIF (Static Analysis Results
-           Interchange Format) in infer-out/report.sarif without codeflows
-           (Conversely: --sarif-codeflows)           See also infer-run(1).
 
        --scheduler { file | restart | callgraph }
            Specify the scheduler used for the analysis phase:           - file: schedule one job per file

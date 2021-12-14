@@ -608,7 +608,7 @@ val results_dir : string
 
 val sarif : bool
 
-val no_sarif_codeflows : bool
+val drop_sarif_codeflows : bool
 
 val scheduler : scheduler
 
