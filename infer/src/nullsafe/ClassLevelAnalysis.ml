@@ -107,6 +107,7 @@ let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
   let meta_issue_info =
     Jsonbug_t.
       { num_issues= currently_reportable_issue_count
+      ; num_fixmes= 0
       ; curr_nullsafe_mode= mode_to_json top_level_class_mode
       ; can_be_promoted_to= Option.map mode_to_promote_to ~f:mode_to_json }
   in
