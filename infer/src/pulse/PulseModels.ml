@@ -63,7 +63,7 @@ module Hist = struct
     alloc_event path location ?more model_desc |> single_event path
 
 
-  let branching path hists = PathContext.with_context path (Branching hists)
+  let binop path bop hist1 hist2 = PathContext.with_context path (BinaryOp (bop, hist1, hist2))
 
   let hist path hist = PathContext.with_context path hist
 end
@@ -1732,7 +1732,7 @@ module JavaInteger = struct
       PulseArithmetic.eval_binop binop_addr Eq (AbstractValueOperand int1)
         (AbstractValueOperand int2) astate
     in
-    PulseOperations.write_id ret_id (binop_addr, Hist.branching path [hist1; hist2]) astate
+    PulseOperations.write_id ret_id (binop_addr, Hist.binop path Eq hist1 hist2) astate
 
 
   let int_val this : model =

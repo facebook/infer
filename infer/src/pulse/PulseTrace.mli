@@ -36,7 +36,7 @@ val add_to_errlog :
   -> Errlog.loc_trace_elem list
 
 val find_map : t -> f:(ValueHistory.event -> 'a option) -> 'a option
-(** [find_map] applied to history events *)
+(** [find_map] applied to history events; does not look into contextual events *)
 
 val has_invalidation : t -> bool
-(** whether the trace contains an invalidation event *)
+(** whether the main part of the trace contains an invalidation event *)

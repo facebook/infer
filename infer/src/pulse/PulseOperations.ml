@@ -271,7 +271,7 @@ let eval path mode location exp0 astate =
           PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
             (AbstractValueOperand addr_rhs) astate
         in
-        (astate, (binop_addr, ValueHistory.Branching [hist_lhs; hist_rhs]))
+        (astate, (binop_addr, ValueHistory.BinaryOp (bop, hist_lhs, hist_rhs)))
     | Const (Cfloat _ | Cclass _) | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.Epoch))
   in
@@ -301,7 +301,7 @@ let prune path location ~condition astate =
                  empty) *)
               hist
           | _ ->
-              ValueHistory.Branching [lhs_hist; rhs_hist]
+              ValueHistory.BinaryOp (bop, lhs_hist, rhs_hist)
         in
         (astate, hist)
     | UnOp (LNot, exp', _) ->
