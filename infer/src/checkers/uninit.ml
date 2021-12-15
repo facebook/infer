@@ -105,7 +105,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let function_expects_a_pointer_as_nth_param callee_formals idx =
-    match List.nth callee_formals idx with Some (_, typ) -> Typ.is_pointer typ | _ -> false
+    match List.nth callee_formals idx with Some (_, typ, _) -> Typ.is_pointer typ | _ -> false
 
 
   let is_struct_field_passed_by_ref callee_formals t access_expr idx =
@@ -145,7 +145,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_dummy_constructor_of_a_struct call =
     let is_dummy_constructor_of_struct =
       match get_formals call with
-      | Some [(_, {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct _}, _)})] ->
+      | Some [(_, {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct _}, _)}, _)] ->
           true
       | _ ->
           false
@@ -167,7 +167,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match nth_formal_param callee_pname idx with
     | None ->
         None
-    | Some (fparam, t) ->
+    | Some (fparam, t, _) ->
         let var_fparam = Var.of_pvar (Pvar.mk fparam callee_pname) in
         if
           D.exists

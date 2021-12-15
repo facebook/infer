@@ -155,7 +155,7 @@ let remove_locals tenv (curr_f : Procdesc.t) p =
 
 let remove_formals tenv (curr_f : Procdesc.t) p =
   let pname = Procdesc.get_proc_name curr_f in
-  let formal_vars = List.map ~f:(fun (n, _) -> Pvar.mk n pname) (Procdesc.get_formals curr_f) in
+  let formal_vars = List.map ~f:(fun (n, _, _) -> Pvar.mk n pname) (Procdesc.get_formals curr_f) in
   Attribute.deallocate_stack_vars tenv p formal_vars
 
 

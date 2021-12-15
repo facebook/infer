@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 let all_formals_untainted pdesc =
-  let make_untainted (name, typ) = (name, typ, None) in
+  let make_untainted (name, typ, _) = (name, typ, None) in
   List.map ~f:make_untainted (Procdesc.get_formals pdesc)
 
 
@@ -87,7 +87,7 @@ module Dummy = struct
   let get ~caller_pname:_ _ _ _ = []
 
   let get_tainted_formals pdesc _ =
-    List.map ~f:(fun (name, typ) -> (name, typ, None)) (Procdesc.get_formals pdesc)
+    List.map ~f:(fun (name, typ, _) -> (name, typ, None)) (Procdesc.get_formals pdesc)
 
 
   module Kind = struct

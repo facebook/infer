@@ -205,14 +205,14 @@ module Class = struct
 end
 
 module Method = struct
-  type t = {return: Item.t; params: Item.t list}
+  type t = {return: Item.t}
 
   (** Pretty print a method annotation. *)
-  let pp s fmt {return; params} = F.fprintf fmt "%a %s(%a)" Item.pp return s (Pp.seq Item.pp) params
+  let pp s fmt {return} = F.fprintf fmt "%a %s" Item.pp return s
 
   (** Empty method annotation. *)
-  let empty = {return= []; params= []}
+  let empty = {return= []}
 
   (** Check if the method annotation is empty. *)
-  let is_empty {return; params} = Item.is_empty return && List.for_all ~f:Item.is_empty params
+  let is_empty {return} = Item.is_empty return
 end

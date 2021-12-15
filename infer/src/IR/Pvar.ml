@@ -340,7 +340,7 @@ end)
 
 let get_pvar_formals (attributes : ProcAttributes.t) =
   let pname = attributes.proc_name in
-  List.map attributes.formals ~f:(fun (name, typ) -> (mk name pname, typ))
+  List.map attributes.formals ~f:(fun (name, typ, _) -> (mk name pname, typ))
 
 
 let is_local_to_procedure proc_name pvar =

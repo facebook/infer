@@ -183,7 +183,7 @@ let compute_summary {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency
   let proc_name = Procdesc.get_proc_name proc_desc in
   let formals =
     Procdesc.get_formals proc_desc
-    |> List.map ~f:(fun (mname, _) -> Var.of_pvar (Pvar.mk mname proc_name))
+    |> List.map ~f:(fun (mname, _, _) -> Var.of_pvar (Pvar.mk mname proc_name))
   in
   let get_callee_summary callee_pname =
     analyze_dependency callee_pname |> Option.bind ~f:(fun (_, (purity_opt, _)) -> purity_opt)

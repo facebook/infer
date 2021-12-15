@@ -161,9 +161,9 @@ module SourceKind = struct
 
 
   let get_tainted_formals pdesc tenv =
-    let make_untainted (name, typ) = (name, typ, None) in
+    let make_untainted (name, typ, _) = (name, typ, None) in
     let taint_formals_with_types type_strs kind formals =
-      let taint_formal_with_types ((formal_name, formal_typ) as formal) =
+      let taint_formal_with_types ((formal_name, formal_typ, _) as formal) =
         let matches_classname =
           match formal_typ.Typ.desc with
           | Tptr ({desc= Tstruct typename}, _) ->
@@ -178,7 +178,7 @@ module SourceKind = struct
     (* taint all formals except for [this] *)
     let taint_all_but_this ~make_source =
       List.map
-        ~f:(fun (name, typ) ->
+        ~f:(fun (name, typ, _) ->
           let taint = if Mangled.is_this name then None else Some (make_source name typ.Typ.desc) in
           (name, typ, taint) )
         (Procdesc.get_formals pdesc)

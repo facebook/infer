@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" [label="1: Start NonnullAtrributeTest\nFormals:  callback:_fn_(*)\nLocals: \nAnnotation: <> NonnullAtrributeTest(<_Nonnull>) \n  " color=yellow style=filled]
+"NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" [label="1: Start NonnullAtrributeTest\nFormals:  <_Nonnull> callback:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_1" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" ;
@@ -48,7 +48,7 @@ digraph cfg {
 	
 
 	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" [label="1: Start NonnullC.initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* a:NonnullA*\nLocals:  y:int a1:NonnullA*\nAnnotation: <> NonnullC.initWithCoder:and:(<> <> <_Nonnull>) \n  " color=yellow style=filled]
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" [label="1: Start NonnullC.initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* <_Nonnull> a:NonnullA*\nLocals:  y:int a1:NonnullA* \n  " color=yellow style=filled]
 	
 
 	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_6" ;
@@ -71,7 +71,7 @@ digraph cfg {
 	
 
 	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_6" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" ;
-"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" [label="1: Start NonnullC.name\nFormals:  self:NonnullC*\nLocals: \nAnnotation: <_Nonnull> NonnullC.name(<>) \n  " color=yellow style=filled]
+"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" [label="1: Start NonnullC.name\nFormals:  self:NonnullC*\nLocals: \nAnnotation: <_Nonnull> NonnullC.name \n  " color=yellow style=filled]
 	
 
 	 "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" -> "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" ;
@@ -82,7 +82,7 @@ digraph cfg {
 	
 
 	 "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" -> "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_2" ;
-"setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_1" [label="1: Start NonnullC.setName:\nFormals:  self:NonnullC* name:NSString*\nLocals: \nAnnotation: <> NonnullC.setName:(<> <_Nonnull>) \n  " color=yellow style=filled]
+"setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_1" [label="1: Start NonnullC.setName:\nFormals:  self:NonnullC* <_Nonnull> name:NSString*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_1" -> "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_3" ;

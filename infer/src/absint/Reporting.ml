@@ -39,6 +39,7 @@ module Suppression = struct
 
   let is_method_suppressed proc_attributes kind =
     Annotations.ma_has_annotation_with proc_attributes.ProcAttributes.method_annotation
+      (List.map proc_attributes.ProcAttributes.formals ~f:trd3)
       (does_annotation_suppress_issue kind)
 
 

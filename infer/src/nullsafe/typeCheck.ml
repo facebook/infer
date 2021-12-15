@@ -431,7 +431,7 @@ let drop_unchecked_params calls_this curr_pname proc_attributes params =
     | Some _ ->
         constructor_check_calls_this curr_pname calls_this pname ;
         (* Drop reference parameters to this and outer objects. *)
-        let is_hidden_parameter (n, _) =
+        let is_hidden_parameter (n, _, _) =
           Mangled.is_this n || Str.string_match (Str.regexp "$bcvar[0-9]+") (Mangled.to_string n) 0
         in
         let rec drop_n_args ntl =
@@ -1137,7 +1137,7 @@ let typecheck_sil_call_function
                       Mangled.this
                     else Printf.sprintf "arg%d" i |> Mangled.from_string
                   in
-                  (arg, typ) )
+                  (arg, typ, Annot.Item.empty) )
                 etl_
             in
             let ret_type = Procname.Java.get_return_typ callee_pname_java in

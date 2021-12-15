@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals:  my_block1:_fn_(*) my_block2:_fn_(*) a:A*\nLocals: \nAnnotation: <> foo(<_Nullable> <_Nullable> <_Nonnull>) \n  " color=yellow style=filled]
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals:  <_Nullable> my_block1:_fn_(*) <_Nullable> my_block2:_fn_(*) <_Nonnull> a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;

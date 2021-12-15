@@ -95,7 +95,7 @@ let pp_errlog fmt err_log =
 
 
 let pp_signature fmt summary =
-  let pp_formal fmt (p, typ) = F.fprintf fmt "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
+  let pp_formal fmt (p, typ, _) = F.fprintf fmt "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
   F.fprintf fmt "%a %a(%a)" (Typ.pp_full Pp.text) (get_ret_type summary) Procname.pp
     (get_proc_name summary) (Pp.seq ~sep:", " pp_formal) (get_formals summary)
 

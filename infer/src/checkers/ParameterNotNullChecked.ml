@@ -9,7 +9,7 @@ module F = Format
 
 let is_block_param formals_not_captured name =
   List.exists
-    ~f:(fun (formal, typ) -> Mangled.equal formal name && Typ.is_pointer_to_function typ)
+    ~f:(fun (formal, typ, _) -> Mangled.equal formal name && Typ.is_pointer_to_function typ)
     formals_not_captured
 
 
@@ -157,7 +157,7 @@ module TransferFunctions = struct
   module Domain = Domain
   module CFG = ProcCfg.Normal
 
-  type analysis_data = IntraproceduralAnalysis.t * (Mangled.t * Typ.t) list
+  type analysis_data = IntraproceduralAnalysis.t * (Mangled.t * Typ.t * Annot.Item.t) list
 
   let pp_session_name _node fmt = F.pp_print_string fmt "ParameterNotNullChecked"
 
@@ -192,62 +192,36 @@ end
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
 let formals_annotations_not_captured attributes =
-  let formals = attributes.ProcAttributes.formals in
-  let param_annotations = attributes.ProcAttributes.method_annotation.params in
-  let formals_annotations_not_captured not_captured (formal, typ) annotation =
-    if
+  List.filter attributes.ProcAttributes.formals ~f:(fun (mangled, _, _) ->
       not
-        (List.exists
-           ~f:(fun ({name} : CapturedVar.t) -> Mangled.equal formal name)
-           attributes.ProcAttributes.captured )
-    then ((formal, typ), annotation) :: not_captured
-    else not_captured
-  in
-  let annotations_not_captured_opt =
-    List.fold2 ~f:formals_annotations_not_captured ~init:[] formals param_annotations
-  in
-  match annotations_not_captured_opt with
-  | List.Or_unequal_lengths.Ok not_captured ->
-      not_captured |> List.rev |> List.unzip
-  | List.Or_unequal_lengths.Unequal_lengths ->
-      (formals, param_annotations)
+        (List.exists attributes.ProcAttributes.captured ~f:(fun ({name} : CapturedVar.t) ->
+             Mangled.equal mangled name ) ) )
 
 
-let init_block_params formals_not_captured annotations_not_captured initBlockParams =
-  let add_non_nullable_block blockParams (formal, _) annotation =
+let init_block_params formals_not_captured =
+  let add_non_nullable_block blockParams (formal, _, annotation) =
     if is_block_param formals_not_captured formal && Annotations.ia_is_nonnull annotation then
       BlockParams.add formal blockParams
     else blockParams
   in
-  match
-    List.fold2 formals_not_captured annotations_not_captured ~init:initBlockParams
-      ~f:add_non_nullable_block
-  with
-  | List.Or_unequal_lengths.Ok blockParams ->
-      blockParams
-  | List.Or_unequal_lengths.Unequal_lengths ->
-      initBlockParams
+  List.fold formals_not_captured ~init:BlockParams.empty ~f:add_non_nullable_block
 
 
-let init_block_param_trace_info attributes formals_not_captured traceInfo =
-  let add_trace_info_block traceInfo (formal, _) =
+let init_block_param_trace_info attributes formals_not_captured =
+  let add_trace_info_block traceInfo (formal, _, _) =
     if is_block_param formals_not_captured formal then
       let usage = TraceData.Parameter attributes.ProcAttributes.proc_name in
       {TraceData.arg= formal; loc= attributes.ProcAttributes.loc; usage} :: traceInfo
     else traceInfo
   in
-  List.fold formals_not_captured ~init:traceInfo ~f:add_trace_info_block
+  List.fold formals_not_captured ~init:[] ~f:add_trace_info_block
 
 
 let checker ({IntraproceduralAnalysis.proc_desc} as analysis_data') =
   let attributes = Procdesc.get_attributes proc_desc in
-  let formals_not_captured, annotations_not_captured =
-    formals_annotations_not_captured attributes
-  in
-  let initial_blockParams =
-    init_block_params formals_not_captured annotations_not_captured BlockParams.empty
-  in
-  let initTraceInfo = init_block_param_trace_info attributes formals_not_captured [] in
+  let formals_not_captured = formals_annotations_not_captured attributes in
+  let initial_blockParams = init_block_params formals_not_captured in
+  let initTraceInfo = init_block_param_trace_info attributes formals_not_captured in
   let initial =
     Domain.singleton
       {Mem.vars= Vars.empty; blockParams= initial_blockParams; traceInfo= initTraceInfo}

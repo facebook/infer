@@ -55,7 +55,7 @@ let mk_nil_messaging_summary_aux tenv proc_desc =
   let event = ValueHistory.NilMessaging (location, t0) in
   let updated_self_value_hist = (self_value, ValueHistory.Sequence (event, self_history)) in
   match List.last (Procdesc.get_formals proc_desc) with
-  | Some (last_formal, {desc= Tptr (typ, _)}) when Mangled.is_return_param last_formal ->
+  | Some (last_formal, {desc= Tptr (typ, _)}, _) when Mangled.is_return_param last_formal ->
       let ret_param_var = Procdesc.get_ret_param_var proc_desc in
       let astate, ret_param_var_addr_hist =
         PulseOperations.eval_deref path location (Lvar ret_param_var) astate |> assert_ok

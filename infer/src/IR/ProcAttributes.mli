@@ -35,7 +35,8 @@ type t =
   ; captured: CapturedVar.t list
         (** name, type, and mode of variables captured in blocks and lambdas *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
-  ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
+  ; formals: (Mangled.t * Typ.t * Annot.Item.t) list
+        (** name, type, and annotation of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
@@ -77,10 +78,8 @@ val pp : Format.formatter -> t -> unit
 val get_access : t -> access
 (** Return the visibility attribute *)
 
-val get_formals : t -> (Mangled.t * Typ.t) list
-(** Return name and type of formal parameters *)
-
-val get_annotated_formals : t -> ((Mangled.t * Typ.t) * Annot.Item.t) list
+val get_formals : t -> (Mangled.t * Typ.t * Annot.Item.t) list
+(** Return name, type, and annotation of formal parameters *)
 
 val get_loc : t -> Location.t
 (** Return loc information for the procedure *)

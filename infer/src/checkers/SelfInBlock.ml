@@ -349,7 +349,7 @@ module TransferFunctions = struct
   let get_annotations attributes_opt =
     match attributes_opt with
     | Some proc_attrs ->
-        Some proc_attrs.ProcAttributes.method_annotation.params
+        Some (List.map proc_attrs.ProcAttributes.formals ~f:trd3)
     | None ->
         None
 

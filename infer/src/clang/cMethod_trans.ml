@@ -223,22 +223,20 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
     let all_params = Option.to_list ms.CMethodSignature.class_param @ ms.CMethodSignature.params in
     let has_added_return_param = ms.CMethodSignature.has_added_return_param in
     let formals =
-      List.map ~f:(fun ({name; typ} : CMethodSignature.param_type) -> (name, typ)) all_params
+      List.map
+        ~f:(fun ({name; typ; annot} : CMethodSignature.param_type) -> (name, typ, annot))
+        all_params
     in
     (* Captured variables for blocks are treated as parameters, but not for cpp lambdas *)
     let captured_as_formals =
       if is_cpp_lambda_call_operator then []
-      else List.map ~f:(fun {CapturedVar.name; typ} -> (name, typ)) captured_mangled
-    in
-    let captured_annotations =
-      List.init (List.length captured_as_formals) ~f:(fun _ -> Annot.Item.empty)
+      else
+        List.map ~f:(fun {CapturedVar.name; typ} -> (name, typ, Annot.Item.empty)) captured_mangled
     in
     let formals = captured_as_formals @ formals in
     let method_annotation =
       let return = snd ms.CMethodSignature.ret_type in
-      let params = List.map ~f:(fun ({annot} : CMethodSignature.param_type) -> annot) all_params in
-      let all_params = captured_annotations @ params in
-      Annot.Method.{return; params= all_params}
+      Annot.Method.{return}
     in
     let const_formals =
       get_const_params_indices ~shift:(List.length captured_as_formals) all_params
@@ -315,7 +313,8 @@ let create_external_procdesc trans_unit_ctx cfg proc_name clang_method_kind type
     let ret_type, formals =
       match type_opt with
       | Some (ret_type, arg_types) ->
-          (ret_type, List.map ~f:(fun typ -> (Mangled.from_string "x", typ)) arg_types)
+          ( ret_type
+          , List.map ~f:(fun typ -> (Mangled.from_string "x", typ, Annot.Item.empty)) arg_types )
       | None ->
           (StdTyp.void, [])
     in

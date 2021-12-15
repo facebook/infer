@@ -249,8 +249,8 @@ val get_captured : t -> CapturedVar.t list
 
 val get_exit_node : t -> Node.t
 
-val get_formals : t -> (Mangled.t * Typ.t) list
-(** Return name and type of formal parameters *)
+val get_formals : t -> (Mangled.t * Typ.t * Annot.Item.t) list
+(** Return name, type, and annotation of formal parameters *)
 
 val get_pvar_formals : t -> (Pvar.t * Typ.t) list
 (** Return pvar and type of formal parameters *)

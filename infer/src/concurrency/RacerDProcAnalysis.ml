@@ -297,7 +297,11 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       String.is_suffix ~suffix:Annotations.inject_prop class_name
     in
     let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
-    let is_inject_prop = Annotations.ma_has_annotation_with method_annotation is_owned_formal in
+    let is_inject_prop =
+      Annotations.ma_has_annotation_with method_annotation
+        (List.map (Procdesc.get_formals proc_desc) ~f:trd3)
+        is_owned_formal
+    in
     fun acc formal formal_index ->
       let ownership_value =
         if is_inject_prop then OwnershipAbstractValue.owned
@@ -327,7 +331,7 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
         is_initializer && Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject
       in
       Procdesc.get_formals proc_desc
-      |> List.foldi ~init:OwnershipDomain.empty ~f:(fun index acc (name, typ) ->
+      |> List.foldi ~init:OwnershipDomain.empty ~f:(fun index acc (name, typ, _) ->
              let base =
                AccessPath.base_of_pvar (Pvar.mk name proc_name) typ |> AccessExpression.base
              in

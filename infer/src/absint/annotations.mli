@@ -125,7 +125,7 @@ val pname_has_return_annot : Procname.t -> (Annot.Item.t -> bool) -> bool
 val attrs_return_annot_ends_with : ProcAttributes.t -> string -> bool
 (** return true if return value in [attrs] is annotated with a value ending with the given string *)
 
-val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
+val ma_has_annotation_with : Annot.Method.t -> Annot.Item.t list -> (Annot.t -> bool) -> bool
 
 val field_has_annot : Fieldname.t -> Struct.t -> (Annot.Item.t -> bool) -> bool
 

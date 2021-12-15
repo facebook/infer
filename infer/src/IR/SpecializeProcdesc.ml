@@ -139,13 +139,14 @@ let with_formals_types callee_pdesc resolved_pname args =
   let resolved_params, substitutions =
     match
       List.fold2 ~init:([], Mangled.Map.empty) callee_attributes.formals args
-        ~f:(fun (params, subts) (param_name, param_typ) (_, arg_typ) ->
+        ~f:(fun (params, subts) (param_name, param_typ, param_annot) (_, arg_typ) ->
           match arg_typ.Typ.desc with
           | Tptr ({desc= Tstruct typename}, Pk_pointer) ->
               (* Replace the type of the parameter by the type of the argument *)
-              ((param_name, arg_typ) :: params, Mangled.Map.add param_name typename subts)
+              ( (param_name, arg_typ, param_annot) :: params
+              , Mangled.Map.add param_name typename subts )
           | _ ->
-              ((param_name, param_typ) :: params, subts) )
+              ((param_name, param_typ, param_annot) :: params, subts) )
     with
     | Ok result ->
         result

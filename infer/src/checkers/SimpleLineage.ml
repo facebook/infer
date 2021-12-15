@@ -411,7 +411,7 @@ end
 (** Helper function. *)
 let get_formals proc_desc : Var.t list =
   let pname = Procdesc.get_proc_name proc_desc in
-  let f (var, _typ) = Var.of_pvar (Pvar.mk var pname) in
+  let f (var, _typ, _annot) = Var.of_pvar (Pvar.mk var pname) in
   List.map ~f (Procdesc.get_formals proc_desc)
 
 

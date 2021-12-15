@@ -16,7 +16,8 @@ let pp_cfgnodename pname fmt (n : Procdesc.Node.t) =
 
 
 let pp_etlist fmt etl =
-  List.iter etl ~f:(fun (id, typ) ->
+  List.iter etl ~f:(fun (id, typ, annot) ->
+      if not (Annot.Item.is_empty annot) then Format.fprintf fmt " %a" Annot.Item.pp annot ;
       Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) typ )
 
 

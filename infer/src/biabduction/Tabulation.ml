@@ -104,7 +104,7 @@ let spec_find_rename proc_attrs specs :
         (Exceptions.Precondition_not_found
            (Localise.verbatim_desc (Procname.to_string proc_name), __POS__) ) ;
     let formal_parameters =
-      List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) proc_attrs.ProcAttributes.formals
+      List.map ~f:(fun (x, _, _) -> Pvar.mk_callee x proc_name) proc_attrs.ProcAttributes.formals
     in
     (List.map ~f:rename_vars specs, formal_parameters)
   with Caml.Not_found ->

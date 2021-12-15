@@ -719,7 +719,7 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt 
   let attributes =
     let default = ProcAttributes.default env.location.file name in
     let access : ProcAttributes.access = Private in
-    let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ)) arity in
+    let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ, Annot.Item.empty)) arity in
     let mk_capt_var (var : Pvar.t) =
       {CapturedVar.name= Pvar.get_name var; typ= any_typ; capture_mode= CapturedVar.ByReference}
     in
@@ -1163,7 +1163,7 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
     procname clauses =
   (* Load formals into fresh identifiers. *)
   let idents, loads =
-    let load (formal, typ) =
+    let load (formal, typ, _) =
       let id = mk_fresh_id () in
       let pvar = Pvar.mk formal procname in
       let load = Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; typ; loc= attributes.loc} in
@@ -1197,7 +1197,9 @@ let translate_one_function (env : (_, _) Env.t) function_ clauses =
   let attributes =
     let default = ProcAttributes.default env.location.file procname in
     let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
-    let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ)) uf_name.arity in
+    let formals =
+      List.init ~f:(fun i -> (mangled_arg i, any_typ, Annot.Item.empty)) uf_name.arity
+    in
     {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
   in
   let procdesc =

@@ -1631,7 +1631,7 @@ and proc_call (callee_pdesc, callee_summary)
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   check_inherently_dangerous_function analysis_data callee_pname ;
-  let formal_types = List.map ~f:snd callee_attributes.ProcAttributes.formals in
+  let formal_types = List.map ~f:snd3 callee_attributes.ProcAttributes.formals in
   let rec comb actual_pars formal_types =
     match (actual_pars, formal_types) with
     | [], [] ->

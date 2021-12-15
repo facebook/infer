@@ -143,10 +143,7 @@ let get_impl ~is_callee_in_trust_list ~nullsafe_mode ~is_provisional_annotation_
       (ThirdPartyAnnotationGlobalRepo.get_repo ())
       proc_name
   in
-  let param_info =
-    ProcAttributes.get_annotated_formals proc_attributes
-    |> List.map ~f:(fun ((a, b), c) -> (a, b, c))
-  in
+  let param_info = ProcAttributes.get_formals proc_attributes in
   let params =
     extract_for_params ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
       ~is_provisional_annotation_mode param_info

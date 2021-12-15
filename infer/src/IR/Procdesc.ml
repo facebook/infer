@@ -569,7 +569,7 @@ let get_ret_type_from_signature pdesc =
   if pdesc.attributes.has_added_return_param then
     List.last pdesc.attributes.formals
     |> Option.value_map
-         ~f:(fun (_, typ) ->
+         ~f:(fun (_, typ, _) ->
            match typ.Typ.desc with Tptr (t, _) -> t | _ -> pdesc.attributes.ret_type )
          ~default:pdesc.attributes.ret_type
   else pdesc.attributes.ret_type
@@ -842,7 +842,7 @@ let pp_variable_list fmt etl =
   if List.is_empty etl then Format.pp_print_string fmt "None"
   else
     List.iter
-      ~f:(fun (id, ty) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty)
+      ~f:(fun (id, ty, _) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty)
       etl
 
 
@@ -894,7 +894,7 @@ let is_captured_pvar procdesc pvar =
   let pvar_local_matches (var_data : ProcAttributes.var_data) =
     Mangled.equal var_data.name pvar_name
   in
-  let pvar_matches (name, _) = Mangled.equal name pvar_name in
+  let pvar_matches (name, _, _) = Mangled.equal name pvar_name in
   let is_captured_var_cpp_lambda =
     (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
     Procname.is_cpp_lambda procname

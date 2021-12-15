@@ -68,10 +68,10 @@ let process_getter_setter tenv proc_name proc_desc =
   Ident.NameGenerator.reset () ;
   let getter_setter_instrs =
     match (attributes.ProcAttributes.objc_accessor, formals) with
-    | Some (Objc_getter field), (self, self_typ) :: _ ->
+    | Some (Objc_getter field), (self, self_typ, _) :: _ ->
         let self_var = Pvar.mk self proc_name in
         objc_getter tenv proc_desc location (self_var, self_typ) field
-    | Some (Objc_setter field), [(self, self_typ); (var_name, var_typ)] ->
+    | Some (Objc_setter field), [(self, self_typ, _); (var_name, var_typ, _)] ->
         let self_var = Pvar.mk self proc_name in
         let var = Pvar.mk var_name proc_name in
         objc_setter tenv location (self_var, self_typ) (var, var_typ) field

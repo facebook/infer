@@ -1106,15 +1106,13 @@ let rec iter_rearrange analysis_data pname tenv lexp typ_from_instr prop iter in
 
 let param_has_annot predicate pvar params_with_annotations =
   List.exists
-    ~f:(function
-      | (mangled, _), param_annotation_deprecated ->
-          Mangled.equal mangled (Pvar.get_name pvar) && predicate param_annotation_deprecated )
+    ~f:(fun (mangled, _, param_annotation_deprecated) ->
+      Mangled.equal mangled (Pvar.get_name pvar) && predicate param_annotation_deprecated )
     params_with_annotations
 
 
 let var_has_annotation pdesc is_annotation pvar =
-  Procdesc.get_attributes pdesc |> ProcAttributes.get_annotated_formals
-  |> param_has_annot is_annotation pvar
+  Procdesc.get_formals pdesc |> param_has_annot is_annotation pvar
 
 
 let attr_has_annot is_annotation tenv prop exp =

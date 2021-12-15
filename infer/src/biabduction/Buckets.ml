@@ -72,7 +72,7 @@ let check_access access_opt de_opt =
         in
         fun pvar ->
           let name = Pvar.get_name pvar in
-          List.exists ~f:(fun (formal_name, _) -> Mangled.equal name formal_name) formals
+          List.exists ~f:(fun (formal_name, _, _) -> Mangled.equal name formal_name) formals
       in
       let process_formal_letref = function
         | Sil.Load {id; e= Exp.Lvar pvar} ->

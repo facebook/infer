@@ -648,7 +648,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
 (** Construct an initial prop by extending [prop] with locals, and formals if [add_formals] is true
     as well as seed variables *)
 let initial_prop tenv (curr_f : Procdesc.t) (prop : 'a Prop.t) ~add_formals : Prop.normal Prop.t =
-  let construct_decl (x, typ) = (Pvar.mk x (Procdesc.get_proc_name curr_f), typ) in
+  let construct_decl (x, typ, _) = (Pvar.mk x (Procdesc.get_proc_name curr_f), typ) in
   let new_formals =
     if add_formals then List.map ~f:construct_decl (Procdesc.get_formals curr_f) else []
     (* no new formals added *)

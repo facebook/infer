@@ -361,9 +361,7 @@ and parse_struct (json : Safe.t) =
 
 
 let parse_method_annotation (json : Safe.t) : Annot.Method.t =
-  let return = parse_item_annotation (member "return_value" json) in
-  let params = parse_list parse_item_annotation (member "params" json) in
-  {return; params}
+  {return= parse_item_annotation (member "return_value" json)}
 
 
 let parse_captured_var (json : Safe.t) =
@@ -405,7 +403,23 @@ let parse_proc_attributes (json : Safe.t) =
         L.die InternalError "Unsupported access type %s" atype
   in
   let captured = parse_list parse_captured_var (member "captured" json) in
-  let formals = parse_list parse_proc_attributes_formals (member "formals" json) in
+  let formals =
+    let mangled_typs = parse_list parse_proc_attributes_formals (member "formals" json) in
+    let annots =
+      let json = member "method_annotations" json in
+      parse_list parse_item_annotation (member "params" json)
+    in
+    let rec construct_formals mangled_typs annots =
+      match (mangled_typs, annots) with
+      | (mangled, typ) :: mangled_typs, annot :: annots ->
+          (mangled, typ, annot) :: construct_formals mangled_typs annots
+      | _, [] ->
+          List.map mangled_typs ~f:(fun (mangled, typ) -> (mangled, typ, Annot.Item.empty))
+      | [], _ ->
+          []
+    in
+    construct_formals mangled_typs annots
+  in
   let locals = parse_list parse_proc_attributes_locals (member "locals" json) in
   let loc = parse_location (member "loc" json) in
   let file = loc.file in

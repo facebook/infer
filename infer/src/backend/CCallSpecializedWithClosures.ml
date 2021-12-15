@@ -8,15 +8,12 @@
 open! IStd
 module F = Format
 
-type formal_annot = {formal_type: Mangled.t * Typ.t; formal_annot: Annot.Item.t}
-[@@deriving compare]
+type formal_annot = Mangled.t * Typ.t * Annot.Item.t [@@deriving compare]
 
 type formal_actual = {formal: formal_annot; actual: Exp.t * Typ.t [@ignore]} [@@deriving compare]
 
-let pp_formal_annot fmt formal =
-  F.fprintf fmt "(formal_type=%a, formal_annot=%a)"
-    (Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp Pp.text))
-    formal.formal_type Annot.Item.pp formal.formal_annot
+let pp_formal_annot fmt (mangled, typ, annot) =
+  F.fprintf fmt "(%a, %a, %a)" Mangled.pp mangled (Typ.pp Pp.text) typ Annot.Item.pp annot
 
 
 let pp_formal_actual fmt formal_actual =
@@ -37,18 +34,15 @@ module FormalsActualsSet = PrettyPrintable.MakePPSet (struct
   let pp = pp_formal_actual
 end)
 
-let formals_actuals_map formals annotations actual_params =
-  let rec formals_actuals_map_inner acc formals annotations actual_params =
-    match (formals, annotations, actual_params) with
-    | [], [], [] ->
-        Some acc
-    | fml :: fmls, an :: ans, act :: acts ->
-        let acc = FormalsMap.add {formal_type= fml; formal_annot= an} act acc in
-        formals_actuals_map_inner acc fmls ans acts
-    | _, _, _ ->
-        None
-  in
-  formals_actuals_map_inner FormalsMap.empty formals annotations actual_params
+let formals_actuals_map formals actual_params =
+  match
+    List.fold2 formals actual_params ~init:FormalsMap.empty ~f:(fun acc fml act ->
+        FormalsMap.add fml act acc )
+  with
+  | Ok map ->
+      Some map
+  | Unequal_lengths ->
+      None
 
 
 let formals_actuals_new_set map =
@@ -58,9 +52,7 @@ let formals_actuals_new_set map =
       | Exp.Closure closure, _ ->
           let set = FormalsActualsSet.add {formal; actual} set in
           List.fold_left closure.Exp.captured_vars ~init:set ~f:(fun set (exp, var, typ, _) ->
-              let formal_annot =
-                {formal_type= (Pvar.build_formal_from_pvar var, typ); formal_annot= Annot.Item.empty}
-              in
+              let formal_annot = (Pvar.build_formal_from_pvar var, typ, Annot.Item.empty) in
               let formal_actual = {formal= formal_annot; actual= (exp, typ)} in
               FormalsActualsSet.add formal_actual set )
       | actual ->
@@ -68,11 +60,10 @@ let formals_actuals_new_set map =
     map FormalsActualsSet.empty
 
 
-let formals_annots_actuals_lists new_formals_actuals =
+let formals_actuals_lists new_formals_actuals =
   FormalsActualsSet.fold
-    (fun {formal; actual} (fs, ans, acts) ->
-      (formal.formal_type :: fs, formal.formal_annot :: ans, actual :: acts) )
-    new_formals_actuals ([], [], [])
+    (fun {formal; actual} (fs, acts) -> (formal :: fs, actual :: acts))
+    new_formals_actuals ([], [])
 
 
 let has_closure actual_params =
@@ -101,7 +92,7 @@ let pname_with_closure_args callee_pname actual_params =
 
 let formals_closures_map map =
   FormalsMap.fold
-    (fun formal actual new_map ->
+    (fun (mangled, _, _) actual new_map ->
       match actual with
       | Exp.Closure closure, _ ->
           let captured_as_formals =
@@ -109,7 +100,7 @@ let formals_closures_map map =
               ~f:(fun (_, var, typ, _) -> (Pvar.build_formal_from_pvar var, typ))
               closure.captured_vars
           in
-          Mangled.Map.add (fst formal.formal_type) (closure.name, captured_as_formals) new_map
+          Mangled.Map.add mangled (closure.name, captured_as_formals) new_map
       | _ ->
           new_map )
     map Mangled.Map.empty
@@ -144,14 +135,10 @@ let replace_with_specialize_methods instr =
            && (not (is_initializer proc_desc))
            && not (is_dispatch_model proc_desc) -> (
         let callee_attributes = Procdesc.get_attributes proc_desc in
-        match
-          formals_actuals_map callee_attributes.formals callee_attributes.method_annotation.params
-            actual_params
-        with
+        match formals_actuals_map callee_attributes.formals actual_params with
         | Some map -> (
             let set = formals_actuals_new_set map in
-            let new_formals, new_annots, new_actuals = formals_annots_actuals_lists set in
-            let annot = callee_attributes.method_annotation in
+            let new_formals, new_actuals = formals_actuals_lists set in
             let specialized_pname = pname_with_closure_args callee_pname actual_params in
             let new_attributes =
               { callee_attributes with
@@ -161,7 +148,6 @@ let replace_with_specialize_methods instr =
                     ; formals_to_procs_and_new_formals= formals_closures_map map }
               ; is_defined= true
               ; formals= new_formals
-              ; method_annotation= {annot with params= new_annots}
               ; proc_name= specialized_pname }
             in
             (* To avoid duplicated additions on a specialized procname, it does a membership check.

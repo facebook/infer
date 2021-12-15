@@ -95,9 +95,9 @@ let translate_item avlist : Annot.Item.t =
 
 
 (** Translate a method annotation. *)
-let translate_method ann : Annot.Method.t =
+let translate_method ann : Annot.Method.t * Annot.Item.t list =
   let global_ann = ann.Javalib.ma_global in
   let param_ann = ann.Javalib.ma_parameters in
   let return = translate_item global_ann in
   let params = List.map ~f:translate_item param_ann in
-  {return; params}
+  ({return}, params)

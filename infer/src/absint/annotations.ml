@@ -125,8 +125,8 @@ let ia_has_annotation_with (ia : Annot.Item.t) (predicate : Annot.t -> bool) : b
   List.exists ~f:(fun (a, _) -> predicate a) ia
 
 
-let ma_has_annotation_with ({return; params} : Annot.Method.t) (predicate : Annot.t -> bool) : bool
-    =
+let ma_has_annotation_with ({return} : Annot.Method.t) (params : Annot.Item.t list)
+    (predicate : Annot.t -> bool) : bool =
   let has_annot a = ia_has_annotation_with a predicate in
   has_annot return || List.exists ~f:has_annot params
 

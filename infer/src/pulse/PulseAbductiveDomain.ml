@@ -533,7 +533,7 @@ let mk_initial tenv proc_desc =
         , ValueHistory.singleton (FormalDeclared (pvar, location, Timestamp.t0)) ) )
     in
     let formals =
-      Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, typ) -> init_var mangled typ)
+      Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, typ, _) -> init_var mangled typ)
     in
     let captured =
       Procdesc.get_captured proc_desc

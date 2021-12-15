@@ -61,7 +61,7 @@ type t =
   { access: access  (** visibility access *)
   ; captured: CapturedVar.t list  (** name and type of variables captured in blocks *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
-  ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
+  ; formals: (Mangled.t * Typ.t * Annot.Item.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
@@ -94,26 +94,6 @@ type t =
   ; is_ret_type_pod: bool  (** whether or not the return type is POD *)
   ; is_ret_constexpr: bool  (** whether the (C++) function or method is declared as [constexpr] *)
   }
-
-let get_annotated_formals {method_annotation= {params}; formals} =
-  let rec zip_params ial parl =
-    match (ial, parl) with
-    | ia :: ial', param :: parl' ->
-        (param, ia) :: zip_params ial' parl'
-    | [], param :: parl' ->
-        (* List of annotations exhausted before the list of params -
-           treat lack of annotation info as an empty annotation *)
-        (param, Annot.Item.empty) :: zip_params [] parl'
-    | [], [] ->
-        []
-    | _ :: _, [] ->
-        (* List of params exhausted before the list of annotations -
-           this should never happen *)
-        assert false
-  in
-  (* zip formal params with annotation *)
-  List.rev (zip_params (List.rev params) (List.rev formals))
-
 
 let get_access attributes = attributes.access
 
@@ -157,7 +137,8 @@ let default translation_unit proc_name =
 
 
 let pp_parameters =
-  Pp.semicolon_seq ~print_env:Pp.text_break (Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp_full Pp.text))
+  Pp.semicolon_seq ~print_env:Pp.text_break (fun f (mangled, typ, _) ->
+      Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp_full Pp.text) f (mangled, typ) )
 
 
 let pp_specialized_with_blocks_info fmt info =

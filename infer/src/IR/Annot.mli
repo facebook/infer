@@ -53,6 +53,8 @@ module Item : sig
   val empty : t
   (** Empty item annotation. *)
 
+  val is_empty : t -> bool
+
   val is_final : t -> bool
   (** Check if final annotation is included in. *)
 
@@ -66,8 +68,8 @@ module Class : sig
 end
 
 module Method : sig
-  (** Annotation for a method: return value and list of parameters. *)
-  type t = {return: Item.t; params: Item.t list}
+  (** Annotation for a method: return value *)
+  type t = {return: Item.t}
 
   val empty : t
   (** Empty method annotation. *)

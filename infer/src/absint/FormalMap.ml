@@ -15,7 +15,7 @@ let make pdesc =
   let attrs = Procdesc.get_attributes pdesc in
   let formals_with_nums =
     List.mapi
-      ~f:(fun index (name, typ) ->
+      ~f:(fun index (name, typ, _) ->
         let pvar = Pvar.mk name pname in
         (AccessPath.base_of_pvar pvar typ, index) )
       attrs.ProcAttributes.formals

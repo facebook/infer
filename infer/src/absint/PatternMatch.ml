@@ -52,7 +52,7 @@ let is_subtype_of_str tenv cn1 classname_str =
 
 (** The type the method is invoked on *)
 let get_this_type_nonstatic_methods_only proc_attributes =
-  match proc_attributes.ProcAttributes.formals with (_, t) :: _ -> Some t | _ -> None
+  match proc_attributes.ProcAttributes.formals with (_, t, _) :: _ -> Some t | _ -> None
 
 
 let type_get_direct_supertypes tenv (typ : Typ.t) =

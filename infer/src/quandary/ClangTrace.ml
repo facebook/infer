@@ -142,7 +142,7 @@ module SourceKind = struct
       (* taint all formals except for [this] *)
       let taint_all_but_this_and_return ~make_source =
         List.map
-          ~f:(fun (name, typ) ->
+          ~f:(fun (name, typ, _) ->
             let taint =
               match Mangled.to_string name with
               | "this" | "_return" ->

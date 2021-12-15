@@ -120,7 +120,7 @@ let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
 
 
 let get_modified_params pname post_stack pre_heap post formals =
-  List.fold_left formals ~init:ImpurityDomain.ModifiedVarMap.bottom ~f:(fun acc (name, typ) ->
+  List.fold_left formals ~init:ImpurityDomain.ModifiedVarMap.bottom ~f:(fun acc (name, typ, _) ->
       let pvar = Pvar.mk name pname in
       match BaseStack.find_opt (Var.of_pvar pvar) post_stack with
       | Some (addr, _) when Typ.is_pointer typ -> (
