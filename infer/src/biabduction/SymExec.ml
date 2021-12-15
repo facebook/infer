@@ -949,11 +949,8 @@ let execute_load ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; _
 
 
 let load_ret_annots pname =
-  match Attributes.load pname with
-  | Some attrs ->
-      attrs.ProcAttributes.method_annotation.return
-  | None ->
-      Annot.Item.empty
+  Attributes.load pname
+  |> Option.value_map ~default:Annot.Item.empty ~f:(fun {ProcAttributes.ret_annots} -> ret_annots)
 
 
 let execute_store ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; _} as analysis_data)
@@ -1187,7 +1184,7 @@ let rec sym_exec
                 proc_call resolved_summary (call_args prop_ callee_pname norm_args ret_id_typ loc)
             | Some reason ->
                 let proc_attrs = Procdesc.get_attributes callee_proc_desc in
-                let ret_annots = proc_attrs.ProcAttributes.method_annotation.return in
+                let ret_annots = proc_attrs.ProcAttributes.ret_annots in
                 exec_skip_call ~reason resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
             ) )
       | Java callee_pname_java ->
@@ -1213,7 +1210,7 @@ let rec sym_exec
                   proc_call callee_summary handled_args
               | Some reason ->
                   let proc_attrs = Procdesc.get_attributes callee_proc_desc in
-                  let ret_annots = proc_attrs.ProcAttributes.method_annotation.return in
+                  let ret_annots = proc_attrs.ProcAttributes.ret_annots in
                   exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type )
           in
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
@@ -1240,7 +1237,7 @@ let rec sym_exec
                   proc_call callee_summary handled_args
               | Some reason ->
                   let proc_attrs = Procdesc.get_attributes callee_proc_desc in
-                  let ret_annots = proc_attrs.ProcAttributes.method_annotation.return in
+                  let ret_annots = proc_attrs.ProcAttributes.ret_annots in
                   exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type )
           in
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
@@ -1276,7 +1273,7 @@ let rec sym_exec
                 let ret_annots =
                   match resolved_summary_opt with
                   | Some (proc_desc, _) ->
-                      (Procdesc.get_attributes proc_desc).ProcAttributes.method_annotation.return
+                      (Procdesc.get_attributes proc_desc).ProcAttributes.ret_annots
                   | None ->
                       load_ret_annots resolved_pname
                 in

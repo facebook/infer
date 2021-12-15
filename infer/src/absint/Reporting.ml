@@ -38,7 +38,7 @@ module Suppression = struct
 
 
   let is_method_suppressed proc_attributes kind =
-    Annotations.ma_has_annotation_with proc_attributes.ProcAttributes.method_annotation
+    Annotations.method_has_annotation_with proc_attributes.ProcAttributes.ret_annots
       (List.map proc_attributes.ProcAttributes.formals ~f:trd3)
       (does_annotation_suppress_issue kind)
 
@@ -119,7 +119,7 @@ let log_issue_from_summary ?severity_override proc_desc err_log ~node ~session ~
     if Config.suppress_lint_ignore_types then
       (* This is for backwards compatibility only!
          We should really honor the issues types specified as params to @SuppressLint *)
-      Annotations.ia_is_suppress_lint proc_attributes.ProcAttributes.method_annotation.return
+      Annotations.ia_is_suppress_lint proc_attributes.ProcAttributes.ret_annots
     else Suppression.is_method_suppressed proc_attributes issue_type
   in
   let should_suppress_lint =

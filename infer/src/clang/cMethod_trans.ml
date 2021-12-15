@@ -234,10 +234,6 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         List.map ~f:(fun {CapturedVar.name; typ} -> (name, typ, Annot.Item.empty)) captured_mangled
     in
     let formals = captured_as_formals @ formals in
-    let method_annotation =
-      let return = snd ms.CMethodSignature.ret_type in
-      Annot.Method.{return}
-    in
     let const_formals =
       get_const_params_indices ~shift:(List.length captured_as_formals) all_params
     in
@@ -252,7 +248,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
       CLocation.location_of_source_range ~pick_location:`End
         trans_unit_ctx.CFrontend_config.source_file source_range
     in
-    let ret_type = fst ms.CMethodSignature.ret_type in
+    let ret_type, ret_annots = ms.CMethodSignature.ret_type in
     let objc_property_accessor =
       if set_objc_accessor_attr then get_objc_property_accessor tenv ms else None
     in
@@ -277,8 +273,8 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ; loc= loc_start
         ; clang_method_kind
         ; objc_accessor= objc_property_accessor
-        ; method_annotation
-        ; ret_type }
+        ; ret_type
+        ; ret_annots }
       in
       Cfg.create_proc_desc cfg proc_attributes
     in

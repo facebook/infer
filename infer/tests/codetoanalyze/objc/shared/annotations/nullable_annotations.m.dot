@@ -34,7 +34,7 @@ digraph cfg {
 	
 
 	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_3" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_2" ;
-"initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" [label="1: Start User.initWithName:\nFormals:  self:User* <_Nullable> name:NSString*\nLocals: \nAnnotation: <_Nullable> User.initWithName: \n  " color=yellow style=filled]
+"initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" [label="1: Start User.initWithName:\nFormals:  self:User* <_Nullable> name:NSString*\nLocals: \nReturn annotations: <_Nullable> \n  " color=yellow style=filled]
 	
 
 	 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" -> "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_3" ;
@@ -90,7 +90,7 @@ digraph cfg {
 	
 
 	 "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_3" -> "setName:#User(class NSString)#instance.feaa984173830aa4a9d325a5924f264f_2" ;
-"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" [label="1: Start User.tellMeSomething\nFormals:  self:User*\nLocals: \nAnnotation: <_Nullable> User.tellMeSomething \n  " color=yellow style=filled]
+"tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" [label="1: Start User.tellMeSomething\nFormals:  self:User*\nLocals: \nReturn annotations: <_Nullable> \n  " color=yellow style=filled]
 	
 
 	 "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_1" -> "tellMeSomething#User#instance.5ed632cdc46e048613dbc2d7030419cf_3" ;

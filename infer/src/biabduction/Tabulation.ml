@@ -1343,8 +1343,8 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
       ~f:(fun (p, path) -> (quantify_path_idents_remove_constant_strings tenv p, path))
       res_with_path_idents
   in
-  let ret_annot = callee_attrs.ProcAttributes.method_annotation.return in
-  let returns_nullable ret_annot = Annotations.ia_is_nullable ret_annot in
+  let ret_annots = callee_attrs.ProcAttributes.ret_annots in
+  let returns_nullable ret_annots = Annotations.ia_is_nullable ret_annots in
   let should_add_ret_attr _ =
     let is_likely_getter = function
       | Procname.Java pn_java ->
@@ -1353,13 +1353,13 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
           false
     in
     (Config.idempotent_getters && Language.curr_language_is Java && is_likely_getter callee_pname)
-    || returns_nullable ret_annot
+    || returns_nullable ret_annots
   in
   if should_add_ret_attr () then
     (* add attribute to remember what function call a return id came from *)
     let ret_var = Exp.Var ret_id in
     let mark_id_as_retval (p, path) =
-      let att_retval = PredSymb.Aretval (callee_pname, ret_annot) in
+      let att_retval = PredSymb.Aretval (callee_pname, ret_annots) in
       (Attribute.add tenv p att_retval [ret_var], path)
     in
     List.map ~f:mark_id_as_retval res

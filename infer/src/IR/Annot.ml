@@ -203,16 +203,3 @@ module Class = struct
 
   let cpp = of_string cpp_str
 end
-
-module Method = struct
-  type t = {return: Item.t}
-
-  (** Pretty print a method annotation. *)
-  let pp s fmt {return} = F.fprintf fmt "%a %s" Item.pp return s
-
-  (** Empty method annotation. *)
-  let empty = {return= []}
-
-  (** Check if the method annotation is empty. *)
-  let is_empty {return} = Item.is_empty return
-end

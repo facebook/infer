@@ -66,17 +66,3 @@ module Class : sig
 
   val cpp : Item.t
 end
-
-module Method : sig
-  (** Annotation for a method: return value *)
-  type t = {return: Item.t}
-
-  val empty : t
-  (** Empty method annotation. *)
-
-  val is_empty : t -> bool
-  (** Check if the method annotation is empty. *)
-
-  val pp : string -> F.formatter -> t -> unit
-  (** Pretty print a method annotation. *)
-end

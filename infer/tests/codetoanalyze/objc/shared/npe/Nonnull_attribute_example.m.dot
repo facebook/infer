@@ -71,7 +71,7 @@ digraph cfg {
 	
 
 	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_6" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" ;
-"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" [label="1: Start NonnullC.name\nFormals:  self:NonnullC*\nLocals: \nAnnotation: <_Nonnull> NonnullC.name \n  " color=yellow style=filled]
+"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" [label="1: Start NonnullC.name\nFormals:  self:NonnullC*\nLocals: \nReturn annotations: <_Nonnull> \n  " color=yellow style=filled]
 	
 
 	 "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" -> "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" ;

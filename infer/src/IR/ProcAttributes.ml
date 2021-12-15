@@ -86,10 +86,10 @@ type t =
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
-  ; method_annotation: Annot.Method.t  (** annotations for all methods *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
+  ; ret_annots: Annot.Item.t  (** annotations of return type *)
   ; has_added_return_param: bool  (** whether or not a return param was added *)
   ; is_ret_type_pod: bool  (** whether or not the return type is POD *)
   ; is_ret_constexpr: bool  (** whether the (C++) function or method is declared as [constexpr] *)
@@ -128,10 +128,10 @@ let default translation_unit proc_name =
   ; translation_unit
   ; locals= []
   ; has_added_return_param= false
-  ; method_annotation= Annot.Method.empty
   ; objc_accessor= None
   ; proc_name
   ; ret_type= StdTyp.void
+  ; ret_annots= Annot.Item.empty
   ; is_ret_type_pod= true
   ; is_ret_constexpr= false }
 
@@ -178,10 +178,10 @@ let pp f
      ; translation_unit
      ; locals
      ; has_added_return_param
-     ; method_annotation
      ; objc_accessor
      ; proc_name
      ; ret_type
+     ; ret_annots
      ; is_ret_type_pod
      ; is_ret_constexpr } [@warning "+9"] ) =
   let default = default translation_unit proc_name in
@@ -245,12 +245,12 @@ let pp f
   F.fprintf f "; locals= [@[%a@]]@," (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data) locals ;
   pp_bool_default ~default:default.has_added_return_param "has_added_return_param"
     has_added_return_param f () ;
-  if not (Annot.Method.is_empty method_annotation) then
-    F.fprintf f "; method_annotation= %a@," (Annot.Method.pp "") method_annotation ;
   if not ([%compare.equal: objc_accessor_type option] default.objc_accessor objc_accessor) then
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
   (* always print ret type *)
   F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;
+  if not (Annot.Item.is_empty ret_annots) then
+    F.fprintf f "; ret_annots= %a@," Annot.Item.pp ret_annots ;
   pp_bool_default ~default:default.is_ret_type_pod "is_ret_type_pod" is_ret_type_pod f () ;
   pp_bool_default ~default:default.is_ret_constexpr "is_ret_constexpr" is_ret_constexpr f () ;
   F.fprintf f "; proc_id= %a }@]" Procname.pp_unique_id proc_name

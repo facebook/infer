@@ -132,8 +132,7 @@ let extract_for_params ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_th
 
 
 let get_impl ~is_callee_in_trust_list ~nullsafe_mode ~is_provisional_annotation_mode
-    ( {ProcAttributes.proc_name; ret_type; method_annotation= {return= ret_annotation}} as
-    proc_attributes ) : t =
+    ({ProcAttributes.proc_name; ret_type; ret_annots} as proc_attributes) : t =
   let proc_name =
     Procname.as_java_exn ~explanation:"AnnotatedSignature.get:: should call only for Java methods"
       proc_name
@@ -150,7 +149,7 @@ let get_impl ~is_callee_in_trust_list ~nullsafe_mode ~is_provisional_annotation_
   in
   let ret =
     extract_for_ret ~proc_name ~is_callee_in_trust_list ~nullsafe_mode ~is_third_party
-      ~is_provisional_annotation_mode ret_type ret_annotation params
+      ~is_provisional_annotation_mode ret_type ret_annots params
   in
   let kind = if is_third_party then ThirdParty Unregistered else FirstParty in
   {nullsafe_mode; kind; ret; params}

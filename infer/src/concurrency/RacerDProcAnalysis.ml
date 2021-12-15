@@ -296,9 +296,9 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       (* [@InjectProp] allocates a fresh object to bind to the parameter *)
       String.is_suffix ~suffix:Annotations.inject_prop class_name
     in
-    let method_annotation = (Procdesc.get_attributes proc_desc).method_annotation in
+    let ret_annots = (Procdesc.get_attributes proc_desc).ret_annots in
     let is_inject_prop =
-      Annotations.ma_has_annotation_with method_annotation
+      Annotations.method_has_annotation_with ret_annots
         (List.map (Procdesc.get_formals proc_desc) ~f:trd3)
         is_owned_formal
     in

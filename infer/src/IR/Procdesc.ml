@@ -875,10 +875,9 @@ let pp_signature fmt pdesc =
     (get_locals pdesc) ;
   if not (List.is_empty (get_captured pdesc)) then
     Format.fprintf fmt ", Captured: %a" pp_captured_list (get_captured pdesc) ;
-  let method_annotation = attributes.ProcAttributes.method_annotation in
-  ( if not (Annot.Method.is_empty method_annotation) then
-    let pname_string = Procname.to_string pname in
-    Format.fprintf fmt ", Annotation: %a" (Annot.Method.pp pname_string) method_annotation ) ;
+  let ret_annots = attributes.ProcAttributes.ret_annots in
+  if not (Annot.Item.is_empty ret_annots) then
+    Format.fprintf fmt ", Return annotations: %a" Annot.Item.pp ret_annots ;
   Format.fprintf fmt "]@]@;"
 
 

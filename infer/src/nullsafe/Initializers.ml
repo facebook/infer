@@ -105,9 +105,7 @@ let get_class pn =
 
 let is_annotated_initializer tenv proc_name =
   PatternMatch.lookup_attributes tenv proc_name
-  |> Option.value_map
-       ~f:(fun ProcAttributes.{method_annotation= {return}} -> Annotations.ia_is_initializer return)
-       ~default:false
+  |> Option.exists ~f:(fun ProcAttributes.{ret_annots} -> Annotations.ia_is_initializer ret_annots)
 
 
 let is_annotated_initializer_in_chain tenv proc_name =

@@ -360,8 +360,8 @@ and parse_struct (json : Safe.t) =
   (fields, statics, supers, methods, annots)
 
 
-let parse_method_annotation (json : Safe.t) : Annot.Method.t =
-  {return= parse_item_annotation (member "return_value" json)}
+let parse_ret_annot (json : Safe.t) : Annot.Item.t =
+  parse_item_annotation (member "return_value" json)
 
 
 let parse_captured_var (json : Safe.t) =
@@ -435,8 +435,8 @@ let parse_proc_attributes (json : Safe.t) =
   ; is_synthetic_method= to_bool (member "is_synthetic_method" json)
   ; loc
   ; locals
-  ; method_annotation= parse_method_annotation (member "method_annotations" json)
-  ; ret_type= parse_sil_type_name (member "ret_type" json) }
+  ; ret_type= parse_sil_type_name (member "ret_type" json)
+  ; ret_annots= parse_ret_annot (member "method_annotations" json) }
 
 
 let parse_call_flags (json : Safe.t) =
