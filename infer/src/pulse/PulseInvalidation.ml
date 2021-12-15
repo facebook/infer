@@ -119,9 +119,9 @@ let describe f cause =
   | CustomFree proc_name ->
       F.fprintf f "was invalidated by call to `%a` (user config)" Procname.pp proc_name
   | ConstantDereference i when IntLit.iszero i ->
-      F.pp_print_string f "is the null pointer"
+      F.pp_print_string f "is assigned to the null pointer"
   | ConstantDereference i ->
-      F.fprintf f "is the constant %a" IntLit.pp i
+      F.fprintf f "is assigned to the constant %a" IntLit.pp i
   | CppDelete ->
       F.pp_print_string f "was invalidated by `delete`"
   | CppDeleteArray ->
@@ -136,7 +136,7 @@ let describe f cause =
       in
       F.fprintf f "%a whose lifetime has ended" pp_var pvar
   | OptionalEmpty ->
-      F.pp_print_string f "is optional empty"
+      F.pp_print_string f "is assigned an empty value"
   | StdVector std_vector_f ->
       F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
   | JavaIterator java_iterator_f ->

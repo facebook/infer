@@ -7,7 +7,6 @@
 open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
-module Invalidation = PulseInvalidation
 module ValueHistory = PulseValueHistory
 
 type t =
@@ -38,9 +37,6 @@ val add_to_errlog :
 
 val find_map : t -> f:(ValueHistory.event -> 'a option) -> 'a option
 (** [find_map] applied to history events *)
-
-val get_invalidation : t -> Invalidation.t option
-(** return the first invalidation event of the trace, if any *)
 
 val has_invalidation : t -> bool
 (** whether the trace contains an invalidation event *)

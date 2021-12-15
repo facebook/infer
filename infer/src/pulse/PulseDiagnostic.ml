@@ -85,101 +85,112 @@ let immediate_or_first_call calling_context (trace : Trace.t) =
       `Call f
 
 
+let pulse_start_msg = "Pulse found a potential"
+
+let pp_context_message pp_if_no_context issue_kind_str calling_context fmt =
+  match calling_context with
+  | [] ->
+      pp_if_no_context fmt
+  | (call_event, _) :: _ ->
+      F.fprintf fmt "The call to %a may indirectly trigger %s" CallEvent.pp call_event
+        issue_kind_str
+
+
 let get_message diagnostic =
-  let pulse_start_msg = "Pulse found a potential" in
   match diagnostic with
   | AccessToInvalidAddress
       {calling_context; invalidation; invalidation_trace; access_trace; must_be_valid_reason} -> (
-      let invalidation, invalidation_trace, same_trace =
-        Trace.get_invalidation access_trace
-        |> Option.value_map
-             ~f:(fun invalidation -> (invalidation, access_trace, true))
-             ~default:(invalidation, invalidation_trace, false)
-      in
-      match invalidation with
-      | ConstantDereference i when IntLit.equal i IntLit.zero ->
-          (* Special error message for nullptr dereference *)
-          let nil_issue_kind = function
-            | Invalidation.SelfOfNonPODReturnMethod non_pod_typ ->
-                F.asprintf "undefined behaviour caused by nil messaging of non-pod return type (%a)"
+    match invalidation with
+    (* Special error message for nullptr dereference *)
+    | ConstantDereference i when IntLit.equal i IntLit.zero ->
+        let issue_kind_str, null_str =
+          match must_be_valid_reason with
+          | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
+              ( F.asprintf
+                  "undefined behaviour caused by nil messaging of a C++ method with a non-POD \
+                   return type `%a`"
                   (Typ.pp_full Pp.text) non_pod_typ
-            | Invalidation.InsertionIntoCollectionKey ->
-                "nil key insertion into collection"
-            | Invalidation.InsertionIntoCollectionValue ->
-                "nil object insertion into collection"
-            | Invalidation.BlockCall ->
-                "nil block call"
-          in
-          let issue_kind_str =
-            Option.value_map must_be_valid_reason ~default:"null pointer dereference"
-              ~f:nil_issue_kind
-          in
-          let pp_access_trace fmt (trace : Trace.t) =
-            if same_trace then ()
-            else
-              match immediate_or_first_call calling_context trace with
-              | `Immediate ->
-                  ()
-              | `Call f ->
-                  F.fprintf fmt " in call to %a" CallEvent.describe f
-          in
-          let pp_invalidation_trace line fmt (trace : Trace.t) =
-            let pp_line fmt line = F.fprintf fmt "on line %d" line in
-            match immediate_or_first_call calling_context trace with
-            | `Immediate ->
-                F.fprintf fmt "%s %a" issue_kind_str pp_line line
-            | `Call f ->
-                F.fprintf fmt "%s %a indirectly during the call to %a" issue_kind_str pp_line line
-                  CallEvent.describe f
-          in
-          let invalidation_line =
-            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-            line
-          in
-          F.asprintf "%s %a%a." pulse_start_msg
-            (pp_invalidation_trace invalidation_line)
-            invalidation_trace pp_access_trace access_trace
-      | _ ->
-          (* The goal is to get one of the following messages depending on the scenario:
+              , "nil receiver" )
+          | Some InsertionIntoCollectionKey ->
+              ("nil key insertion into collection", "nil key")
+          | Some InsertionIntoCollectionValue ->
+              ("nil object insertion into collection", "nil value")
+          | Some BlockCall ->
+              ("nil block call", "nil block")
+          | None ->
+              ("null pointer dereference", "null")
+        in
+        let pp_access_trace fmt (trace : Trace.t) =
+          match immediate_or_first_call calling_context trace with
+          | `Immediate ->
+              ()
+          | `Call f ->
+              F.fprintf fmt " in call to %a" CallEvent.describe f
+        in
+        let pp_invalidation_trace line fmt (trace : Trace.t) =
+          match immediate_or_first_call calling_context trace with
+          | `Immediate ->
+              F.fprintf fmt "%s (%s assigned on line %d)" issue_kind_str null_str line
+          | `Call f ->
+              F.fprintf fmt "%s (%s value coming from the call to %a on line %d)" issue_kind_str
+                null_str CallEvent.describe f line
+        in
+        let invalidation_line =
+          let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+          line
+        in
+        F.asprintf "%t"
+          (pp_context_message
+             (fun fmt ->
+               F.fprintf fmt "%s %a%a." pulse_start_msg
+                 (pp_invalidation_trace invalidation_line)
+                 invalidation_trace pp_access_trace access_trace )
+             ("a " ^ issue_kind_str) calling_context )
+    | _ ->
+        (* The goal is to get one of the following messages depending on the scenario:
 
-             42: delete x; return x->f
-             "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x`"
+           42: delete x; return x->f
+           "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x`"
 
-             42: bar(x); return x->f
-             "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x` in call to `bar`"
+           42: bar(x); return x->f
+           "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x` in call to `bar`"
 
-             42: bar(x); foo(x);
-             "call to `foo` eventually accesses `x->f` but `x` was invalidated at line 42 by `delete` on `x` in call to `bar`"
+           42: bar(x); foo(x);
+           "call to `foo` eventually accesses `x->f` but `x` was invalidated at line 42 by `delete` on `x` in call to `bar`"
 
-             If we don't have "x->f" but instead some non-user-visible expression, then
-             "access to `x`, which was invalidated at line 42 by `delete` on `x`"
+           If we don't have "x->f" but instead some non-user-visible expression, then
+           "access to `x`, which was invalidated at line 42 by `delete` on `x`"
 
-             Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
-             "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
-          *)
-          let pp_access_trace fmt (trace : Trace.t) =
-            match immediate_or_first_call calling_context trace with
-            | `Immediate ->
-                F.fprintf fmt "accessing memory that "
-            | `Call f ->
-                F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
-          in
-          let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
-            let pp_line fmt line = F.fprintf fmt " on line %d" line in
-            match immediate_or_first_call calling_context trace with
-            | `Immediate ->
-                F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
-            | `Call f ->
-                F.fprintf fmt "%a%a indirectly during the call to %a" Invalidation.describe
-                  invalidation pp_line line CallEvent.describe f
-          in
-          let invalidation_line =
-            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-            line
-          in
-          F.asprintf "%a%a" pp_access_trace access_trace
-            (pp_invalidation_trace invalidation_line invalidation)
-            invalidation_trace )
+           Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
+           "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
+        *)
+        let pp_access_trace fmt (trace : Trace.t) =
+          match immediate_or_first_call calling_context trace with
+          | `Immediate ->
+              F.fprintf fmt "accessing memory that "
+          | `Call f ->
+              F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
+        in
+        let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
+          let pp_line fmt line = F.fprintf fmt " on line %d" line in
+          match immediate_or_first_call calling_context trace with
+          | `Immediate ->
+              F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
+          | `Call f ->
+              F.fprintf fmt "%a during the call to %a%a" Invalidation.describe invalidation
+                CallEvent.describe f pp_line line
+        in
+        let invalidation_line =
+          let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+          line
+        in
+        F.asprintf "%t"
+          (pp_context_message
+             (fun fmt ->
+               F.fprintf fmt "%a%a" pp_access_trace access_trace
+                 (pp_invalidation_trace invalidation_line invalidation)
+                 invalidation_trace )
+             "an invalid access" calling_context ) )
   | MemoryLeak {allocator; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
@@ -188,15 +199,14 @@ let get_message diagnostic =
       let pp_allocation_trace fmt (trace : Trace.t) =
         match trace with
         | Immediate _ ->
-            F.fprintf fmt "by `%a`" Attribute.pp_allocator allocator
+            F.fprintf fmt "by `%a` on line %d" Attribute.pp_allocator allocator allocation_line
         | ViaCall {f; _} ->
-            F.fprintf fmt "by `%a`, indirectly via call to %a" Attribute.pp_allocator allocator
-              CallEvent.describe f
+            F.fprintf fmt "by `%a`, indirectly via call to %a on line %d" Attribute.pp_allocator
+              allocator CallEvent.describe f allocation_line
       in
       F.asprintf
-        "%s memory leak. Memory dynamically allocated at line %d %a is not freed after the last \
-         access at %a"
-        pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
+        "%s memory leak. Memory dynamically allocated %a is not freed after the last access at %a"
+        pulse_start_msg pp_allocation_trace allocation_trace Location.pp location
   | ResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -206,15 +216,16 @@ let get_message diagnostic =
       let pp_allocation_trace fmt (trace : Trace.t) =
         match trace with
         | Immediate _ ->
-            F.fprintf fmt "by constructor %a()" JavaClassName.pp class_name
+            F.fprintf fmt "by constructor %a() on line %d" JavaClassName.pp class_name
+              allocation_line
         | ViaCall {f; _} ->
-            F.fprintf fmt "by constructor %a(), indirectly via call to %a" JavaClassName.pp
-              class_name CallEvent.describe f
+            F.fprintf fmt "by constructor %a(), indirectly via call to %a on line %d"
+              JavaClassName.pp class_name CallEvent.describe f allocation_line
       in
       F.asprintf
-        "%s resource leak. Resource dynamically allocated at line %d %a is not closed after the \
-         last access at %a"
-        pulse_start_msg allocation_line pp_allocation_trace allocation_trace Location.pp location
+        "%s resource leak. Resource dynamically allocated %a is not closed after the last access \
+         at %a"
+        pulse_start_msg pp_allocation_trace allocation_trace Location.pp location
   | ErlangError (Badkey {calling_context= _; location}) ->
       F.asprintf "%s bad key at %a" pulse_start_msg Location.pp location
   | ErlangError (Badmap {calling_context= _; location}) ->
