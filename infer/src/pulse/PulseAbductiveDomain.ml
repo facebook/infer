@@ -1058,6 +1058,9 @@ let summary_of_post tenv pdesc location astate =
   in
   match error with
   | None -> (
+    (* NOTE: it's important for correctness that we check leaks last because we are going to carry
+       on with the astate after the leak and we don't want to accidentally skip modifications of
+       the state because of the error monad *)
     match
       check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses astate_before_filter
     with

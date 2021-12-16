@@ -22,57 +22,59 @@ let pp fmt pre_posts =
 
 
 let exec_summary_of_post_common tenv ~continue_program proc_desc err_log location
-    (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t option =
+    (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
   match exec_astate with
   | ContinueProgram astate -> (
-    match AbductiveDomain.summary_of_post tenv proc_desc location astate with
-    | Unsat ->
-        None
-    | Sat (Ok astate) ->
-        Some (continue_program astate)
-    | Sat (Error (`MemoryLeak (astate, allocator, allocation_trace, location))) ->
-        Some
-          (PulseReport.report_summary_error tenv proc_desc err_log
-             (ReportableError
-                {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}} ) )
-    | Sat (Error (`ResourceLeak (astate, class_name, allocation_trace, location))) ->
-        Some
-          (PulseReport.report_summary_error tenv proc_desc err_log
-             (ReportableError
-                {astate; diagnostic= ResourceLeak {class_name; allocation_trace; location}} ) )
-    | Sat (Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))) -> (
-      match
-        AbductiveDomain.find_post_cell_opt address (astate :> AbductiveDomain.t)
-        |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
-      with
-      | None ->
-          Some (LatentInvalidAccess {astate; address; must_be_valid; calling_context= []})
-      | Some (invalidation, invalidation_trace) ->
-          (* NOTE: this probably leads to the error being dropped as the access trace is unlikely to
-             contain the reason for invalidation and thus we will filter out the report. TODO:
-             figure out if that's a problem. *)
+      let open SatUnsat.Import in
+      let+ summary_result = AbductiveDomain.summary_of_post tenv proc_desc location astate in
+      match (summary_result : _ result) with
+      | Ok astate ->
+          continue_program astate
+      | Error (`MemoryLeak (astate, allocator, allocation_trace, location)) ->
+          PulseReport.report_summary_error tenv proc_desc err_log
+            (ReportableError {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}}
+            )
+          |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
+      | Error (`ResourceLeak (astate, class_name, allocation_trace, location)) ->
           PulseReport.report_summary_error tenv proc_desc err_log
             (ReportableError
-               { diagnostic=
-                   AccessToInvalidAddress
-                     { calling_context= []
-                     ; invalidation
-                     ; invalidation_trace
-                     ; access_trace= fst must_be_valid
-                     ; must_be_valid_reason= snd must_be_valid }
-               ; astate } )
-          |> Option.some ) )
+               {astate; diagnostic= ResourceLeak {class_name; allocation_trace; location}} )
+          |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
+      | Error
+          (`PotentialInvalidAccessSummary
+            ((astate : AbductiveDomain.summary), address, must_be_valid) ) -> (
+        match
+          AbductiveDomain.find_post_cell_opt address (astate :> AbductiveDomain.t)
+          |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
+        with
+        | None ->
+            ExecutionDomain.LatentInvalidAccess {astate; address; must_be_valid; calling_context= []}
+        | Some (invalidation, invalidation_trace) ->
+            (* NOTE: this probably leads to the error being dropped as the access trace is unlikely to
+               contain the reason for invalidation and thus we will filter out the report. TODO:
+               figure out if that's a problem. *)
+            PulseReport.report_summary_error tenv proc_desc err_log
+              (ReportableError
+                 { diagnostic=
+                     AccessToInvalidAddress
+                       { calling_context= []
+                       ; invalidation
+                       ; invalidation_trace
+                       ; access_trace= fst must_be_valid
+                       ; must_be_valid_reason= snd must_be_valid }
+                 ; astate } )
+            |> Option.value ~default:(ExecutionDomain.ContinueProgram astate) ) )
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
   | AbortProgram astate ->
-      Some (AbortProgram astate)
+      Sat (AbortProgram astate)
   | ExitProgram astate ->
-      Some (ExitProgram astate)
+      Sat (ExitProgram astate)
   | LatentAbortProgram {astate; latent_issue} ->
-      Some (LatentAbortProgram {astate; latent_issue})
+      Sat (LatentAbortProgram {astate; latent_issue})
   | LatentInvalidAccess {astate; address; must_be_valid; calling_context} ->
-      Some (LatentInvalidAccess {astate; address; must_be_valid; calling_context})
+      Sat (LatentInvalidAccess {astate; address; must_be_valid; calling_context})
   | ISLLatentMemoryError astate ->
-      Some (ISLLatentMemoryError astate)
+      Sat (ISLLatentMemoryError astate)
 
 
 let force_exit_program tenv proc_desc err_log post =
@@ -84,4 +86,5 @@ let of_posts tenv proc_desc err_log location posts =
   List.filter_mapi posts ~f:(fun i exec_state ->
       L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
       exec_summary_of_post_common tenv proc_desc err_log location exec_state
-        ~continue_program:(fun astate -> ContinueProgram astate) )
+        ~continue_program:(fun astate -> ContinueProgram astate)
+      |> SatUnsat.sat )

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 open PulseDomainInterface
 
 type t = ExecutionDomain.summary list [@@deriving yojson_of]
@@ -18,6 +19,6 @@ val force_exit_program :
   -> Errlog.t
   -> Location.t
   -> ExecutionDomain.t
-  -> _ ExecutionDomain.base_t option
+  -> ExecutionDomain.summary SatUnsat.t
 
 val pp : Format.formatter -> t -> unit

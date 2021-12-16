@@ -45,3 +45,5 @@ include struct
   module PulseLatentIssue = PulseLatentIssue [@@deprecated "use the short form LatentIssue instead"]
   module PulsePathContext = PulsePathContext [@@deprecated "use the short form PathContext instead"]
 end
+
+include PulseResult.Type

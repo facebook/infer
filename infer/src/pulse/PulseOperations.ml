@@ -10,8 +10,6 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-type t = AbductiveDomain.t
-
 module Import = struct
   type access_mode = Read | Write | NoAccess
 
@@ -40,15 +38,31 @@ module Import = struct
     | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
     | ISLError of 'astate
 
-  include IResult.Let_syntax
+  include PulseResult.Let_syntax
 
-  let ( let<*> ) x f = match x with Error _ as err -> [err] | Ok y -> f y
+  let ( let<*> ) x f =
+    match (x : _ PulseResult.t) with
+    | FatalError _ as err ->
+        [err]
+    | Ok y ->
+        f y
+    | Recoverable (y, errors) ->
+        List.map (f y) ~f:(fun result -> PulseResult.append_errors errors result)
 
-  let ( let<+> ) x f =
-    match x with Error _ as err -> [err] | Ok y -> [Ok (ExecutionDomain.ContinueProgram (f y))]
+
+  let ( let<+> ) x f : _ PulseResult.t list =
+    match (x : _ PulseResult.t) with
+    | FatalError _ as err ->
+        [err]
+    | Ok y ->
+        [Ok (ExecutionDomain.ContinueProgram (f y))]
+    | Recoverable (y, errors) ->
+        [Recoverable (ExecutionDomain.ContinueProgram (f y), errors)]
 end
 
 include Import
+
+type t = AbductiveDomain.t
 
 let check_addr_access path ?must_be_valid_reason access_mode location (address, history) astate =
   let access_trace = Trace.Immediate {location; history} in
@@ -64,6 +78,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
                    ; access_trace
                    ; must_be_valid_reason }
              ; astate } )
+    |> AccessResult.of_result
   in
   match access_mode with
   | Read ->
@@ -73,6 +88,9 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
                { diagnostic=
                    Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
                ; astate } )
+      |> AccessResult.of_result_f ~f:(fun _ ->
+             (* do not report further uninitialized reads errors on this value *)
+             AbductiveDomain.initialize address astate )
   | Write ->
       Ok (AbductiveDomain.initialize address astate)
   | NoAccess ->
@@ -94,6 +112,9 @@ let check_and_abduce_addr_access_isl path access_mode location (address, history
                           Diagnostic.ReadUninitializedValue
                             {calling_context= []; trace= access_trace}
                       ; astate } )
+             |> AccessResult.of_result_f ~f:(fun _ ->
+                    (* do not report further uninitialized reads errors on this value *)
+                    AbductiveDomain.initialize address astate )
          | Write ->
              Ok (AbductiveDomain.initialize address astate)
          | NoAccess ->
@@ -142,18 +163,16 @@ module Closures = struct
     | None ->
         Ok astate
     | Some (edges, attributes) ->
-        let+ () =
-          IContainer.iter_result ~fold:Attributes.fold attributes ~f:(function
-            | Attribute.Closure _ ->
-                IContainer.iter_result ~fold:Memory.Edges.fold edges ~f:(fun (access, addr_trace) ->
+        Attributes.fold attributes ~init:(Ok astate) ~f:(fun astate_result (attr : Attribute.t) ->
+            match attr with
+            | Closure _ ->
+                Memory.Edges.fold edges ~init:astate_result
+                  ~f:(fun astate_result (access, addr_trace) ->
                     if is_captured_by_ref_fake_access access then
-                      let+ _ = check_addr_access path Read action addr_trace astate in
-                      ()
-                    else Ok () )
+                      astate_result >>= check_addr_access path Read action addr_trace
+                    else astate_result )
             | _ ->
-                Ok () )
-        in
-        astate
+                astate_result )
 
 
   let record {PathContext.timestamp} location pname captured astate =
@@ -227,8 +246,10 @@ let eval path mode location exp0 astate =
           astate
     | Closure {name; captured_vars} ->
         let+ astate, rev_captured =
-          List.fold_result captured_vars ~init:(astate, [])
-            ~f:(fun (astate, rev_captured) (capt_exp, captured_as, _, mode) ->
+          List.fold captured_vars
+            ~init:(Ok (astate, []))
+            ~f:(fun result (capt_exp, captured_as, _, mode) ->
+              let* astate, rev_captured = result in
               let+ astate, addr_trace = eval path Read capt_exp astate in
               (astate, (captured_as, addr_trace, mode) :: rev_captured) )
         in
@@ -583,7 +604,11 @@ let check_address_escape escape_location proc_desc address history astate =
                ; astate } ) )
         else Ok () )
   in
-  let+ () = check_address_of_cpp_temporary () >>= check_address_of_stack_variable in
+  let+ () =
+    let open Result.Monad_infix in
+    check_address_of_cpp_temporary () >>= check_address_of_stack_variable
+    |> AccessResult.of_result_f ~f:(fun _ -> ())
+  in
   astate
 
 
@@ -719,7 +744,7 @@ let remove_vars vars location astate =
 let get_captured_actuals path location ~captured_vars ~actual_closure astate =
   let* astate, this_value_addr = eval_access path Read location actual_closure Dereference astate in
   let+ _, astate, captured_vars_with_actuals =
-    List.fold_result captured_vars ~init:(0, astate, [])
+    PulseResult.list_fold captured_vars ~init:(0, astate, [])
       ~f:(fun (id, astate, captured) (var, mode, typ) ->
         let+ astate, captured_actual =
           eval_access path Read location this_value_addr

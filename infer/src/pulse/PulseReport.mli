@@ -18,7 +18,9 @@ val report_summary_error :
   -> Procdesc.t
   -> Errlog.t
   -> AbductiveDomain.summary AccessResult.error
-  -> _ ExecutionDomain.base_t
+  -> ExecutionDomain.summary option
+(** [None] means that the execution can continue but we could not compute the continuation state
+    (because this only takes a [AccessResult.error], which doesn't have the ok state) *)
 
 val report_result :
      Tenv.t

@@ -23,7 +23,7 @@ let map_path_condition ~f astate = map_path_condition_common ~f astate |> fst
 
 let map_path_condition_with_ret ~f astate ret =
   let result, new_eqs = map_path_condition_common ~f astate in
-  Result.map result ~f:(fun result ->
+  PulseResult.map result ~f:(fun result ->
       (result, AbductiveDomain.incorporate_new_eqs_on_val new_eqs ret) )
 
 

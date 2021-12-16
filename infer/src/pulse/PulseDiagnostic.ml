@@ -76,6 +76,29 @@ let get_location = function
       location
 
 
+let aborts_execution = function
+  | AccessToInvalidAddress _
+  | ErlangError
+      ( Badkey _
+      | Badmap _
+      | Badmatch _
+      | Badrecord _
+      | Case_clause _
+      | Function_clause _
+      | If_clause _
+      | Try_clause _ ) ->
+      (* these errors either abort the whole program or, if they are false positives, mean that
+         pulse is confused and the current abstract state has stopped making sense; either way,
+         abort! *)
+      true
+  | ReadUninitializedValue _
+  | StackVariableAddressEscape _
+  | UnnecessaryCopy _
+  | MemoryLeak _
+  | ResourceLeak _ ->
+      false
+
+
 (* whether the [calling_context + trace] starts with a call or contains only an immediate event *)
 let immediate_or_first_call calling_context (trace : Trace.t) =
   match (calling_context, trace) with

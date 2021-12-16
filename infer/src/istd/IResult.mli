@@ -7,6 +7,8 @@
 
 open! IStd
 
+[@@@warning "-32"]
+
 module Let_syntax : sig
   include module type of Result.Monad_infix
 

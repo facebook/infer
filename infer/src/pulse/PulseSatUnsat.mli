@@ -23,6 +23,10 @@ val map : ('a -> 'b) -> 'a t -> 'b t
 
 val bind : ('a -> 'b t) -> 'a t -> 'b t
 
+val sat : 'a t -> 'a option
+
+val of_option : 'a option -> 'a t
+
 module Import : sig
   include module type of Types
 

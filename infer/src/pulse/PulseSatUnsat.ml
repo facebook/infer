@@ -12,6 +12,10 @@ type 'a t = Unsat | Sat of 'a
 
 let pp pp_sat fmt = function Unsat -> F.pp_print_string fmt "unsat" | Sat x -> pp_sat fmt x
 
+let sat = function Unsat -> None | Sat x -> Some x
+
+let of_option = function None -> Unsat | Some x -> Sat x
+
 module Types = struct
   type nonrec 'a sat_unsat_t = 'a t = Unsat | Sat of 'a
 end

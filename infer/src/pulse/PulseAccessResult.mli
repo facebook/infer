@@ -22,7 +22,7 @@ type 'astate error =
   | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
   | ISLError of 'astate
 
-type ('a, 'astate) base_t = ('a, 'astate error) result
+type ('a, 'astate) base_t = ('a, 'astate error) PulseResult.t
 
 type 'a t = ('a, AbductiveDomain.t) base_t
 
@@ -38,6 +38,12 @@ type 'astate abductive_error =
   | `PotentialInvalidAccessSummary of
     AbductiveDomain.summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option)
   ]
+
+val of_result_f : ('a, AbductiveDomain.t error) result -> f:(AbductiveDomain.t error -> 'a) -> 'a t
+
+val of_result : (AbductiveDomain.t, AbductiveDomain.t error) result -> AbductiveDomain.t t
+
+val of_error_f : AbductiveDomain.t error -> f:(AbductiveDomain.t error -> 'a) -> 'a t
 
 val of_abductive_error : [< 'astate abductive_error] -> 'astate error
 

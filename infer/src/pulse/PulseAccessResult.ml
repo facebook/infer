@@ -22,7 +22,21 @@ type 'astate error =
   | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
   | ISLError of 'astate
 
-type ('a, 'astate) base_t = ('a, 'astate error) result
+let is_fatal = function
+  | PotentialInvalidAccess _ | PotentialInvalidAccessSummary _ | ISLError _ ->
+      true
+  | ReportableError {diagnostic} | ReportableErrorSummary {diagnostic} ->
+      Diagnostic.aborts_execution diagnostic
+
+
+let astate_of_error = function
+  | PotentialInvalidAccess {astate} | ReportableError {astate} | ISLError astate ->
+      astate
+  | PotentialInvalidAccessSummary {astate} | ReportableErrorSummary {astate} ->
+      (astate :> AbductiveDomain.t)
+
+
+type ('a, 'astate) base_t = ('a, 'astate error) PulseResult.t
 
 type 'a t = ('a, AbductiveDomain.t) base_t
 
@@ -50,19 +64,40 @@ let of_abductive_error = function
       PotentialInvalidAccessSummary {astate; address; must_be_valid}
 
 
-let of_abductive_result abductive_result = Result.map_error abductive_result ~f:of_abductive_error
+let of_abductive_result abductive_result =
+  (* note: all errors here are fatal *)
+  Result.map_error abductive_result ~f:of_abductive_error |> PulseResult.fatal_of_result
+
+
+let of_invalid_access access_trace = function
+  | `InvalidAccess (invalidation, invalidation_trace, astate) ->
+      ReportableError
+        { astate
+        ; diagnostic=
+            AccessToInvalidAddress
+              { calling_context= []
+              ; invalidation
+              ; invalidation_trace
+              ; access_trace
+              ; must_be_valid_reason= None } }
+
 
 let of_abductive_access_result access_trace abductive_result =
   Result.map_error abductive_result ~f:(function
-    | `InvalidAccess (invalidation, invalidation_trace, astate) ->
-        ReportableError
-          { astate
-          ; diagnostic=
-              AccessToInvalidAddress
-                { calling_context= []
-                ; invalidation
-                ; invalidation_trace
-                ; access_trace
-                ; must_be_valid_reason= None } }
+    | `InvalidAccess _ as invalid_access ->
+        of_invalid_access access_trace invalid_access
     | (`ISLError _ | `PotentialInvalidAccess _ | `PotentialInvalidAccessSummary _) as error ->
         of_abductive_error error )
+  (* note: all errors here are fatal *)
+  |> PulseResult.fatal_of_result
+
+
+let of_error_f error ~f : _ t =
+  if is_fatal error then FatalError (error, []) else Recoverable (f error, [error])
+
+
+let of_result_f (result : _ result) ~f : _ t =
+  match result with Ok x -> Ok x | Error error -> of_error_f ~f error
+
+
+let of_result result = of_result_f ~f:astate_of_error result

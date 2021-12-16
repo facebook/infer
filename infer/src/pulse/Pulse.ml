@@ -122,18 +122,18 @@ module PulseTransferFunctions = struct
       | LatentInvalidAccess _ ->
           exec_state
     in
-    List.map ~f:(Result.map ~f:do_one_exec_state) exec_state_res
+    List.map ~f:(PulseResult.map ~f:do_one_exec_state) exec_state_res
 
 
   let topl_store_step path loc ~lhs ~rhs:_ astate =
     match (lhs : Exp.t) with
     | Lindex (arr, index) ->
-        (let open IResult.Let_syntax in
+        (let open PulseResult.Let_syntax in
         let* _astate, (aw_array, _history) = PulseOperations.eval path Read loc arr astate in
         let+ _astate, (aw_index, _history) = PulseOperations.eval path Read loc index astate in
         let topl_event = PulseTopl.ArrayWrite {aw_array; aw_index} in
         AbductiveDomain.Topl.small_step loc topl_event astate)
-        |> Result.ok (* don't emit Topl event if evals fail *) |> Option.value ~default:astate
+        |> PulseResult.ok (* don't emit Topl event if evals fail *) |> Option.value ~default:astate
     | _ ->
         astate
 
@@ -155,7 +155,7 @@ module PulseTransferFunctions = struct
     in
     (* evaluate all actuals *)
     let<*> astate, rev_func_args =
-      List.fold_result actuals ~init:(astate, [])
+      PulseResult.list_fold actuals ~init:(astate, [])
         ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
           let+ astate, actual_evaled = PulseOperations.eval path Read call_loc actual_exp astate in
           ( astate
@@ -219,12 +219,12 @@ module PulseTransferFunctions = struct
     in
     if Option.exists callee_pname ~f:IRAttributes.is_no_return then
       List.filter_map exec_states_res ~f:(fun exec_state_res ->
-          match exec_state_res with
-          | Error _ as err ->
-              Some err
-          | Ok exec_state ->
-              PulseSummary.force_exit_program tenv proc_desc err_log call_loc exec_state
-              |> Option.map ~f:(fun exec_state -> Ok exec_state) )
+          (let+ exec_state = exec_state_res in
+           PulseSummary.force_exit_program tenv proc_desc err_log call_loc exec_state
+           |> SatUnsat.map (fun (exec_state : ExecutionDomain.summary) ->
+                  (exec_state :> ExecutionDomain.t) )
+           |> SatUnsat.sat )
+          |> PulseResult.of_some )
     else exec_states_res
 
 
@@ -413,24 +413,22 @@ module PulseTransferFunctions = struct
           , path
           , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals astates astate_n )
       | Prune (condition, loc, is_then_branch, if_kind) ->
-          let result, path =
-            match PulseOperations.prune path loc ~condition astate with
-            | Ok (astate, hist) ->
-                let path =
-                  if Sil.is_terminated_if_kind if_kind then
-                    let hist =
-                      ValueHistory.Sequence
-                        (ConditionPassed {if_kind; is_then_branch; location= loc; timestamp}, hist)
-                    in
-                    {path with conditions= hist :: path.conditions}
-                  else path
-                in
-                (Ok astate, path)
-            | Error _ as err ->
-                (err, path)
+          let prune_result = PulseOperations.prune path loc ~condition astate in
+          let path =
+            match PulseResult.ok prune_result with
+            | None ->
+                path
+            | Some (_, hist) ->
+                if Sil.is_terminated_if_kind if_kind then
+                  let hist =
+                    ValueHistory.Sequence
+                      (ConditionPassed {if_kind; is_then_branch; location= loc; timestamp}, hist)
+                  in
+                  {path with conditions= hist :: path.conditions}
+                else path
           in
           let results =
-            let<*> astate = result in
+            let<*> astate, _ = prune_result in
             if PulseArithmetic.is_unsat_cheap astate then
               (* [condition] is known to be unsatisfiable: prune path *)
               []

@@ -49,7 +49,7 @@ module Import : sig
 
   (** {2 Monadic syntax} *)
 
-  include module type of IResult.Let_syntax
+  include module type of PulseResult.Let_syntax
 
   val ( let<*> ) : 'a AccessResult.t -> ('a -> 'b AccessResult.t list) -> 'b AccessResult.t list
   (** monadic "bind" but not really that turns an [AccessResult.t] into a list of [AccessResult.t]s

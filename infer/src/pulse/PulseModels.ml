@@ -26,7 +26,7 @@ type model = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t
 let continue astate = ContinueProgram astate
 
 let map_continue astate_result =
-  let open IResult.Let_syntax in
+  let open PulseResult.Let_syntax in
   let+ astate = astate_result in
   continue astate
 
@@ -98,14 +98,17 @@ module Misc = struct
     match
       ( AbductiveDomain.summary_of_post tenv proc_desc location astate
         >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
-        :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t )
+        :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) PulseResult.t SatUnsat.t
+        )
     with
     | Unsat ->
         []
     | Sat (Ok astate) ->
         [Ok (ExitProgram astate)]
-    | Sat (Error _ as error) ->
-        [error]
+    | Sat (Recoverable (astate, errors)) ->
+        [Recoverable (ExitProgram astate, errors)]
+    | Sat (FatalError _ as err) ->
+        [err]
 
 
   let return_int ~desc : Int64.t -> model =
@@ -364,7 +367,7 @@ module ObjC = struct
            it? *)
         let actuals = List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars in
         let<*> astate, rev_actuals =
-          List.fold_result actuals ~init:(astate, [])
+          PulseResult.list_fold actuals ~init:(astate, [])
             ~f:(fun (astate, rev_actuals) (actual_exp, actual_typ) ->
               let+ astate, actual_evaled =
                 PulseOperations.eval path Read location actual_exp astate
@@ -1056,16 +1059,17 @@ module GenericArrayBackedCollectionIterator = struct
       if AddressAttributes.is_end_of_collection (fst pointer) astate && not is_minus_minus then
         let invalidation_trace = Trace.Immediate {location; history= Epoch} in
         let access_trace = Trace.Immediate {location; history= snd pointer} in
-        Error
-          (ReportableError
-             { diagnostic=
-                 Diagnostic.AccessToInvalidAddress
-                   { calling_context= []
-                   ; invalidation= EndIterator
-                   ; invalidation_trace
-                   ; access_trace
-                   ; must_be_valid_reason= None }
-             ; astate } )
+        FatalError
+          ( ReportableError
+              { diagnostic=
+                  Diagnostic.AccessToInvalidAddress
+                    { calling_context= []
+                    ; invalidation= EndIterator
+                    ; invalidation_trace
+                    ; access_trace
+                    ; must_be_valid_reason= None }
+              ; astate }
+          , [] )
       else Ok astate
     in
     (* We do not want to create internal array if iterator pointer has an invalid value *)
@@ -1799,7 +1803,7 @@ module Android = struct
 end
 
 module Erlang = struct
-  let error err astate = [Error (ReportableError {astate; diagnostic= ErlangError err})]
+  let error err astate = [FatalError (ReportableError {astate; diagnostic= ErlangError err}, [])]
 
   let error_badkey : model =
    fun {location} astate -> error (Badkey {calling_context= []; location}) astate
@@ -1857,11 +1861,23 @@ module Erlang = struct
       don't produce a list. One way to handle this is to wrap those functions in a list. For
       example, if [f] and [a] have the same type as before but [g] has type ['b->('c,'err) result],
       then we can write [let> =f a in let> y=\[g x\] in \[Ok y\].] *)
-  let ( let> ) x f = List.concat_map ~f:(function Error _ as error -> [error] | Ok ok -> f ok) x
+  let ( let> ) x f =
+    List.concat_map
+      ~f:(function
+        | FatalError _ as error ->
+            [error]
+        | Ok ok ->
+            f ok
+        | Recoverable (ok, errors) ->
+            f ok |> List.map ~f:(fun result -> PulseResult.append_errors errors result) )
+      x
+
 
   let prune_type path location (value, hist) typ astate : AbductiveDomain.t AccessResult.t list =
     (* If check_addr_access fails, we stop exploring this path. *)
-    let ( let^ ) x f = match x with Error _ -> [] | Ok astate -> [f astate] in
+    let ( let^ ) x f =
+      match x with Recoverable _ | FatalError _ -> [] | Ok astate -> [f astate]
+    in
     let^ astate = PulseOperations.check_addr_access path Read location (value, hist) astate in
     let typ = Typ.mk_struct (ErlangType typ) in
     let instanceof_val = AbstractValue.mk_fresh () in
@@ -1874,7 +1890,7 @@ module Erlang = struct
       [prune_type]). *)
   let load_field path field location obj astate =
     match Java.load_field path field location obj astate with
-    | Error _ ->
+    | Recoverable _ | FatalError _ ->
         L.die InternalError "@[<v>@[%s@]@;@[%a@]@;@]"
           "Could not load field. Did you call this function without calling prune_type?"
           AbductiveDomain.pp astate
@@ -2066,7 +2082,7 @@ module Erlang = struct
       let> elems, astate = list_assume_and_deconstruct list1 length astate path location in
       let elems = if reverse then elems else List.rev elems in
       let> result_list, astate =
-        [ List.fold_result ~init:(list2, astate)
+        [ PulseResult.list_fold ~init:(list2, astate)
             ~f:(fun (tl, astate) hd -> make_cons_no_return astate path location hd tl)
             elems ]
       in
@@ -2117,7 +2133,9 @@ module Erlang = struct
       write_field_and_deref path location ~struct_addr:addr_tuple ~field_addr:addr_elem
         ~field_val:payload (mk_field field_name) astate
     in
-    let<+> astate = List.fold_result addr_elems_fields_payloads ~init:astate ~f:write_tuple_field in
+    let<+> astate =
+      PulseResult.list_fold addr_elems_fields_payloads ~init:astate ~f:write_tuple_field
+    in
     write_dynamic_type_and_return addr_tuple (Tuple tuple_size) ret_id astate
 
 

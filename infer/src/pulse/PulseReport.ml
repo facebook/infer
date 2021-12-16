@@ -110,7 +110,7 @@ let summary_error_of_error tenv proc_desc location (error : AbductiveDomain.t Ac
 
 
 let report_summary_error tenv proc_desc err_log
-    (access_error : AbductiveDomain.summary AccessResult.error) : _ ExecutionDomain.base_t =
+    (access_error : AbductiveDomain.summary AccessResult.error) : ExecutionDomain.summary option =
   match access_error with
   | PotentialInvalidAccess {astate; address; must_be_valid}
   | PotentialInvalidAccessSummary {astate; address; must_be_valid} ->
@@ -122,18 +122,18 @@ let report_summary_error tenv proc_desc err_log
              ; invalidation_trace= Immediate {location= Procdesc.get_loc proc_desc; history= Epoch}
              ; access_trace= fst must_be_valid
              ; must_be_valid_reason= snd must_be_valid } ) ;
-      LatentInvalidAccess {astate; address; must_be_valid; calling_context= []}
+      Some (LatentInvalidAccess {astate; address; must_be_valid; calling_context= []})
   | ISLError astate ->
-      ISLLatentMemoryError astate
+      Some (ISLLatentMemoryError astate)
   | ReportableError {astate; diagnostic} | ReportableErrorSummary {astate; diagnostic} -> (
     match LatentIssue.should_report astate diagnostic with
     | `ReportNow ->
-        if not (is_suppressed tenv proc_desc diagnostic astate) then
-          report ~latent:false proc_desc err_log diagnostic ;
-        AbortProgram astate
+        if is_suppressed tenv proc_desc diagnostic astate then L.d_printfln "suppressed error"
+        else report ~latent:false proc_desc err_log diagnostic ;
+        if Diagnostic.aborts_execution diagnostic then Some (AbortProgram astate) else None
     | `DelayReport latent_issue ->
         if Config.pulse_report_latent_issues then report_latent_issue proc_desc err_log latent_issue ;
-        LatentAbortProgram {astate; latent_issue} )
+        Some (LatentAbortProgram {astate; latent_issue}) )
 
 
 let report_error tenv proc_desc err_log location
@@ -143,21 +143,39 @@ let report_error tenv proc_desc err_log location
   >>| report_summary_error tenv proc_desc err_log
 
 
+let report_errors tenv proc_desc err_log location errors =
+  let open SatUnsat.Import in
+  List.rev errors
+  |> List.fold ~init:(Sat None) ~f:(fun sat_result error ->
+         match sat_result with
+         | Unsat | Sat (Some _) ->
+             sat_result
+         | Sat None ->
+             report_error tenv proc_desc err_log location error )
+
+
 let report_exec_results tenv proc_desc err_log location results =
   List.filter_map results ~f:(fun exec_result ->
-      match exec_result with
+      match PulseResult.to_result exec_result with
       | Ok post ->
           Some post
-      | Error error -> (
-        match report_error tenv proc_desc err_log location error with
+      | Error errors -> (
+        match report_errors tenv proc_desc err_log location errors with
         | Unsat ->
             None
-        | Sat exec_state ->
-            Some exec_state ) )
+        | Sat None -> (
+          match exec_result with
+          | Ok _ | FatalError _ ->
+              L.die InternalError
+                "report_errors returned None but the result was not a recoverable error"
+          | Recoverable (exec_state, _) ->
+              Some exec_state )
+        | Sat (Some exec_state) ->
+            Some (exec_state :> ExecutionDomain.t) ) )
 
 
 let report_results tenv proc_desc err_log location results =
-  let open IResult.Let_syntax in
+  let open PulseResult.Let_syntax in
   List.map results ~f:(fun result ->
       let+ astate = result in
       ExecutionDomain.ContinueProgram astate )

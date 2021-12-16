@@ -46,31 +46,30 @@ let mk_nil_messaging_summary_aux tenv proc_desc =
   let astate = AbductiveDomain.mk_initial tenv proc_desc in
   (* HACK: we are operating on an "empty" initial state and do not expect to create any alarms
      (nothing is Invalid in the initial state) or unsatisfiability (we won't create arithmetic
-     contradictions) *)
-  let assert_ok = function Ok x -> x | Error _ -> assert false in
+     contradictions) so we make liberal use of [PulseResult.ok_exn] *)
   let astate, (self_value, self_history) =
-    PulseOperations.eval_deref path location (Lvar self) astate |> assert_ok
+    PulseOperations.eval_deref path location (Lvar self) astate |> PulseResult.ok_exn
   in
-  let astate = PulseArithmetic.prune_eq_zero self_value astate |> assert_ok in
+  let astate = PulseArithmetic.prune_eq_zero self_value astate |> PulseResult.ok_exn in
   let event = ValueHistory.NilMessaging (location, t0) in
   let updated_self_value_hist = (self_value, ValueHistory.Sequence (event, self_history)) in
   match List.last (Procdesc.get_formals proc_desc) with
   | Some (last_formal, {desc= Tptr (typ, _)}, _) when Mangled.is_return_param last_formal ->
       let ret_param_var = Procdesc.get_ret_param_var proc_desc in
       let astate, ret_param_var_addr_hist =
-        PulseOperations.eval_deref path location (Lvar ret_param_var) astate |> assert_ok
+        PulseOperations.eval_deref path location (Lvar ret_param_var) astate |> PulseResult.ok_exn
       in
       init_fields_zero tenv path location ~zero:updated_self_value_hist ret_param_var_addr_hist typ
         astate
-      |> assert_ok
+      |> PulseResult.ok_exn
   | _ ->
       let ret_var = Procdesc.get_ret_var proc_desc in
       let astate, ret_var_addr_hist =
-        PulseOperations.eval path Write location (Lvar ret_var) astate |> assert_ok
+        PulseOperations.eval path Write location (Lvar ret_var) astate |> PulseResult.ok_exn
       in
       PulseOperations.write_deref path location ~ref:ret_var_addr_hist ~obj:updated_self_value_hist
         astate
-      |> assert_ok
+      |> PulseResult.ok_exn
 
 
 let mk_latent_non_POD_nil_messaging tenv proc_desc =
@@ -78,13 +77,12 @@ let mk_latent_non_POD_nil_messaging tenv proc_desc =
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
   let astate = AbductiveDomain.mk_initial tenv proc_desc in
-  (* same HACK as above *)
-  let assert_ok = function Ok x -> x | Error _ -> assert false in
+  (* same HACK as above with respect to [PulseResult.ok_exn] *)
   let astate, (self_value, _self_history) =
-    PulseOperations.eval_deref path location (Lvar self) astate |> assert_ok
+    PulseOperations.eval_deref path location (Lvar self) astate |> PulseResult.ok_exn
   in
   let trace = Trace.Immediate {location; history= Epoch} in
-  let astate = PulseArithmetic.prune_eq_zero self_value astate |> assert_ok in
+  let astate = PulseArithmetic.prune_eq_zero self_value astate |> PulseResult.ok_exn in
   match AbductiveDomain.summary_of_post tenv proc_desc location astate with
   | Unsat | Sat (Error _) ->
       assert false
@@ -119,14 +117,13 @@ let mk_initial_with_positive_self tenv proc_desc =
   let self = mk_objc_self_pvar proc_desc in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let initial_astate = AbductiveDomain.mk_initial tenv proc_desc in
-  (* same HACK as above *)
-  let assert_ok = function Ok x -> x | Error _ -> assert false in
+  (* same HACK as above with respect to [PulseResult.ok_exn] *)
   if Procname.is_objc_instance_method proc_name then
     let astate, value =
       PulseOperations.eval_deref PathContext.initial location (Lvar self) initial_astate
-      |> assert_ok
+      |> PulseResult.ok_exn
     in
-    PulseArithmetic.and_positive (fst value) astate |> assert_ok
+    PulseArithmetic.and_positive (fst value) astate |> PulseResult.ok_exn
   else initial_astate
 
 

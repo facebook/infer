@@ -7,6 +7,8 @@
 
 open! IStd
 
+[@@@warning "-32"]
+
 val map_changed : equal:('a -> 'a -> bool) -> f:('a -> 'a) -> 'a list -> 'a list
 (** like map, but returns the original list if unchanged *)
 

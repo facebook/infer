@@ -95,28 +95,31 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
 
 let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
     callee_exec_state ~ret ~captured_vars_with_actuals ~formals ~actuals astate =
+  let open ExecutionDomain in
+  let ( let* ) x f =
+    SatUnsat.bind
+      (fun result ->
+        PulseResult.map result ~f |> PulseResult.map ~f:SatUnsat.sat |> PulseResult.of_some
+        |> SatUnsat.of_option |> SatUnsat.map PulseResult.join )
+      x
+  in
   let map_call_result ~is_isl_error_prepost callee_prepost ~f =
-    match
+    let* post, return_val_opt, subst =
       PulseInterproc.apply_prepost path ~is_isl_error_prepost callee_pname call_loc ~callee_prepost
         ~captured_vars_with_actuals ~formals ~actuals astate
-    with
-    | (Sat (Error _) | Unsat) as path_result ->
-        path_result
-    | Sat (Ok (post, return_val_opt, subst)) ->
-        let post =
-          match return_val_opt with
-          | Some return_val_hist ->
-              PulseOperations.write_id (fst ret) return_val_hist post
-          | None ->
-              PulseOperations.havoc_id (fst ret)
-                (ValueHistory.singleton
-                   (Call {f= Call callee_pname; location= call_loc; in_call= Epoch; timestamp}) )
-                post
-        in
-        f subst post
+    in
+    let post =
+      match return_val_opt with
+      | Some return_val_hist ->
+          PulseOperations.write_id (fst ret) return_val_hist post
+      | None ->
+          PulseOperations.havoc_id (fst ret)
+            (ValueHistory.singleton
+               (Call {f= Call callee_pname; location= call_loc; in_call= Epoch; timestamp}) )
+            post
+    in
+    f subst post
   in
-  let open ExecutionDomain in
-  let open SatUnsat.Import in
   match callee_exec_state with
   | ContinueProgram astate ->
       map_call_result ~is_isl_error_prepost:false astate ~f:(fun _subst astate ->
@@ -128,87 +131,87 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
       map_call_result ~is_isl_error_prepost:false
         (astate :> AbductiveDomain.t)
         ~f:(fun subst astate_post_call ->
-          let* astate_summary_result =
+          let* (astate_summary : AbductiveDomain.summary) =
+            let open SatUnsat.Import in
             ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate_post_call
               >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
-              :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t
-              )
+              :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) PulseResult.t
+                 SatUnsat.t )
           in
-          match astate_summary_result with
-          | Error _ as error ->
-              Sat error
-          | Ok (astate_summary : AbductiveDomain.summary) -> (
-            match callee_exec_state with
-            | ContinueProgram _ | ISLLatentMemoryError _ ->
-                assert false
-            | AbortProgram _ ->
-                Sat (Ok (AbortProgram astate_summary))
-            | ExitProgram _ ->
-                Sat (Ok (ExitProgram astate_summary))
-            | LatentAbortProgram {latent_issue} -> (
-                let latent_issue =
-                  LatentIssue.add_call (CallEvent.Call callee_pname, call_loc) latent_issue
+          match callee_exec_state with
+          | ContinueProgram _ | ISLLatentMemoryError _ ->
+              assert false
+          | AbortProgram _ ->
+              (* bypass the current errors to avoid compounding issues *)
+              Sat (Ok (AbortProgram astate_summary))
+          | ExitProgram _ ->
+              Sat (Ok (ExitProgram astate_summary))
+          | LatentAbortProgram {latent_issue} -> (
+              let latent_issue = LatentIssue.add_call (Call callee_pname, call_loc) latent_issue in
+              let diagnostic = LatentIssue.to_diagnostic latent_issue in
+              match LatentIssue.should_report astate_summary diagnostic with
+              | `DelayReport latent_issue ->
+                  Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
+              | `ReportNow ->
+                  Sat
+                    (AccessResult.of_error_f
+                       (ReportableErrorSummary {diagnostic; astate= astate_summary})
+                       ~f:(fun _ -> ContinueProgram (astate_summary :> AbductiveDomain.t)) )
+              | `ISLDelay astate ->
+                  Sat (FatalError (ISLError astate, [])) )
+          | LatentInvalidAccess
+              { address= address_callee
+              ; must_be_valid= callee_access_trace, must_be_valid_reason
+              ; calling_context } -> (
+            match AbstractValue.Map.find_opt address_callee subst with
+            | None ->
+                (* the address became unreachable so the bug can never be reached; drop it *)
+                Unsat
+            | Some (address, caller_history) -> (
+                let access_trace =
+                  Trace.ViaCall
+                    { in_call= callee_access_trace
+                    ; f= Call callee_pname
+                    ; location= call_loc
+                    ; history= caller_history }
                 in
-                let diagnostic = LatentIssue.to_diagnostic latent_issue in
-                match LatentIssue.should_report astate_summary diagnostic with
-                | `DelayReport latent_issue ->
-                    Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
-                | `ReportNow ->
-                    Sat (Error (ReportableErrorSummary {diagnostic; astate= astate_summary}))
-                | `ISLDelay astate ->
-                    Sat (Error (ISLError astate)) )
-            | LatentInvalidAccess
-                { address= address_callee
-                ; must_be_valid= callee_access_trace, must_be_valid_reason
-                ; calling_context } -> (
-              match AbstractValue.Map.find_opt address_callee subst with
-              | None ->
-                  (* the address became unreachable so the bug can never be reached; drop it *)
-                  Unsat
-              | Some (address, caller_history) -> (
-                  let access_trace =
-                    Trace.ViaCall
-                      { in_call= callee_access_trace
-                      ; f= Call callee_pname
-                      ; location= call_loc
-                      ; history= caller_history }
-                  in
-                  let calling_context =
-                    (CallEvent.Call callee_pname, call_loc) :: calling_context
-                  in
-                  match
-                    AbductiveDomain.find_post_cell_opt address astate_post_call
-                    |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
-                  with
-                  | None ->
-                      (* still no proof that the address is invalid *)
-                      Sat
-                        (Ok
-                           (LatentInvalidAccess
-                              { astate= astate_summary
-                              ; address
-                              ; must_be_valid= (access_trace, must_be_valid_reason)
-                              ; calling_context } ) )
-                  | Some (invalidation, invalidation_trace) ->
-                      Sat
-                        (Error
-                           (ReportableErrorSummary
-                              { diagnostic=
-                                  AccessToInvalidAddress
-                                    { calling_context
-                                    ; invalidation
-                                    ; invalidation_trace
-                                    ; access_trace
-                                    ; must_be_valid_reason }
-                              ; astate= astate_summary } ) ) ) ) ) )
+                let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
+                match
+                  AbductiveDomain.find_post_cell_opt address astate_post_call
+                  |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
+                with
+                | None ->
+                    (* still no proof that the address is invalid *)
+                    Sat
+                      (Ok
+                         (LatentInvalidAccess
+                            { astate= astate_summary
+                            ; address
+                            ; must_be_valid= (access_trace, must_be_valid_reason)
+                            ; calling_context } ) )
+                | Some (invalidation, invalidation_trace) ->
+                    Sat
+                      (FatalError
+                         ( ReportableErrorSummary
+                             { diagnostic=
+                                 AccessToInvalidAddress
+                                   { calling_context
+                                   ; invalidation
+                                   ; invalidation_trace
+                                   ; access_trace
+                                   ; must_be_valid_reason }
+                             ; astate= astate_summary }
+                         , [] ) ) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
         (astate :> AbductiveDomain.t)
         ~f:(fun _subst astate ->
+          let open SatUnsat.Import in
           ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
             >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
-            :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) result SatUnsat.t )
-          >>| Result.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
+            :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) PulseResult.t
+               SatUnsat.t )
+          >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 
 let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate) =
