@@ -29,8 +29,11 @@ val and_nonnegative : AbstractValue.t -> t -> t * new_eqs
 val and_positive : AbstractValue.t -> t -> t * new_eqs
 (** [and_positive v phi] is [phi ∧ v>0] *)
 
+val and_eq_const : AbstractValue.t -> Const.t -> t -> t * new_eqs
+(** [and_eq_const v c phi] is [phi ∧ v=c] *)
+
 val and_eq_int : AbstractValue.t -> IntLit.t -> t -> t * new_eqs
-(** [and_eq_int v i phi] is [phi ∧ v=i] *)
+(** [and_eq_int v i phi] is [and_eq_const v (Cint i) phi] *)
 
 val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
 
@@ -54,8 +57,8 @@ val and_callee :
 (** {2 Operations} *)
 
 type operand = PulseFormula.operand =
-  | LiteralOperand of IntLit.t
   | AbstractValueOperand of AbstractValue.t
+  | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
 [@@deriving compare]
 

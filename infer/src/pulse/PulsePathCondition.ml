@@ -64,11 +64,17 @@ let map_formula_sat (x : 'a SatUnsat.t) f = match x with Unsat -> (false_, []) |
 
 let ( let+| ) x f = map_formula_sat x f
 
+type operand = Formula.operand =
+  | AbstractValueOperand of AbstractValue.t
+  | ConstOperand of Const.t
+  | FunctionApplicationOperand of {f: Formula.function_symbol; actuals: AbstractValue.t list}
+[@@deriving compare]
+
+let literal_zero = ConstOperand (Const.Cint IntLit.zero)
+
 let and_nonnegative v phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula, new_eqs =
-    Formula.and_less_equal (LiteralOperand IntLit.zero) (AbstractValueOperand v) formula
-  in
+  let+| formula, new_eqs = Formula.and_less_equal literal_zero (AbstractValueOperand v) formula in
   ( { is_unsat
     ; bo_itvs= BoItvs.add v Itv.ItvPure.nat bo_itvs
     ; citvs= CItvs.add v CItv.zero_inf citvs
@@ -78,9 +84,7 @@ let and_nonnegative v phi =
 
 let and_positive v phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula, new_eqs =
-    Formula.and_less_than (LiteralOperand IntLit.zero) (AbstractValueOperand v) formula
-  in
+  let+| formula, new_eqs = Formula.and_less_than literal_zero (AbstractValueOperand v) formula in
   ( { is_unsat
     ; bo_itvs= BoItvs.add v Itv.ItvPure.pos bo_itvs
     ; citvs= CItvs.add v (CItv.ge_to IntLit.one) citvs
@@ -88,15 +92,20 @@ let and_positive v phi =
   , new_eqs )
 
 
-let and_eq_int v i phi =
+let and_eq_const v c phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
-  let+| formula, new_eqs = Formula.and_equal (AbstractValueOperand v) (LiteralOperand i) formula in
-  ( { is_unsat
-    ; bo_itvs= BoItvs.add v (Itv.ItvPure.of_int_lit i) bo_itvs
-    ; citvs= CItvs.add v (CItv.equal_to i) citvs
-    ; formula }
-  , new_eqs )
+  let+| formula, new_eqs = Formula.and_equal (AbstractValueOperand v) (ConstOperand c) formula in
+  let bo_itvs, citvs =
+    match (c : Const.t) with
+    | Cint i ->
+        (BoItvs.add v (Itv.ItvPure.of_int_lit i) bo_itvs, CItvs.add v (CItv.equal_to i) citvs)
+    | Cfloat _ | Cfun _ | Cstr _ | Cclass _ ->
+        (bo_itvs, citvs)
+  in
+  ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
 
+
+let and_eq_int v i phi = and_eq_const v (Cint i) phi
 
 let and_eq_vars v1 v2 phi =
   let+ {is_unsat; bo_itvs; citvs; formula} = phi in
@@ -258,20 +267,14 @@ let and_callee subst phi ~callee:phi_callee =
 
 (** {2 Operations} *)
 
-type operand = Formula.operand =
-  | LiteralOperand of IntLit.t
-  | AbstractValueOperand of AbstractValue.t
-  | FunctionApplicationOperand of {f: Formula.function_symbol; actuals: AbstractValue.t list}
-[@@deriving compare]
-
 let eval_citv_binop binop_addr bop op_lhs op_rhs citvs =
   let citv_of_op op citvs =
     match op with
-    | LiteralOperand i ->
-        Some (CItv.equal_to i)
     | AbstractValueOperand v ->
         CItvs.find_opt v citvs
-    | FunctionApplicationOperand _ ->
+    | ConstOperand (Cint i) ->
+        Some (CItv.equal_to i)
+    | ConstOperand (Cfloat _ | Cfun _ | Cstr _ | Cclass _) | FunctionApplicationOperand _ ->
         None
   in
   match
@@ -287,11 +290,11 @@ let eval_citv_binop binop_addr bop op_lhs op_rhs citvs =
 let eval_bo_itv_binop binop_addr bop op_lhs op_rhs bo_itvs =
   let bo_itv_of_op op bo_itvs =
     match op with
-    | LiteralOperand i ->
-        Some (Itv.ItvPure.of_int_lit i)
     | AbstractValueOperand v ->
         Some (BoItvs.find_or_default v bo_itvs)
-    | FunctionApplicationOperand _ ->
+    | ConstOperand (Cint i) ->
+        Some (Itv.ItvPure.of_int_lit i)
+    | ConstOperand (Cfloat _ | Cfun _ | Cstr _ | Cclass _) | FunctionApplicationOperand _ ->
         None
   in
   match Option.both (bo_itv_of_op op_lhs bo_itvs) (bo_itv_of_op op_rhs bo_itvs) with
@@ -356,11 +359,11 @@ let prune_bo_with_bop ~negated v_opt arith bop arith' phi =
 
 
 let eval_operand phi = function
-  | LiteralOperand i ->
-      (None, Some (CItv.equal_to i), Some (Itv.ItvPure.of_int_lit i))
   | AbstractValueOperand v ->
       (Some v, CItvs.find_opt v phi.citvs, Some (BoItvs.find_or_default v phi.bo_itvs))
-  | FunctionApplicationOperand _ ->
+  | ConstOperand (Cint i) ->
+      (None, Some (CItv.equal_to i), Some (Itv.ItvPure.of_int_lit i))
+  | ConstOperand (Cfloat _ | Cfun _ | Cstr _ | Cclass _) | FunctionApplicationOperand _ ->
       (None, None, None)
 
 

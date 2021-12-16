@@ -29,8 +29,8 @@ open PulseSatUnsat.Import
     This is convoluted, especially as each step may also return [Unsat] even during "term"
     construction, but as a result the tests themselves should be straightforward to understand. *)
 
-(** a literal integer leaves the formula unchanged and returns a [LiteralOperand] *)
-let i i phi = Sat (phi, LiteralOperand (IntLit.of_int i))
+(** a literal integer leaves the formula unchanged and returns a [ConstOperand] *)
+let i i phi = Sat (phi, ConstOperand (Cint (IntLit.of_int i)))
 
 (** similarly as for literals; this is not used directly in tests so the name is a bit more
     descriptive *)

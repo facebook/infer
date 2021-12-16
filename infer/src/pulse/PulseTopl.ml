@@ -179,10 +179,10 @@ end = struct
   let eliminate_exists ~keep constr =
     (* TODO(rgrigore): replace the current weak approximation *)
     let is_live_operand : PulseFormula.operand -> bool = function
-      | LiteralOperand _ ->
-          true
       | AbstractValueOperand v ->
           AbstractValue.Set.mem v keep
+      | ConstOperand _ ->
+          true
       | FunctionApplicationOperand _ ->
           true
     in
@@ -274,7 +274,7 @@ let eval_guard memory tcontext guard : Constraint.t =
   let operand_of_value (value : ToplAst.value) : PathCondition.operand =
     match value with
     | Constant (LiteralInt x) ->
-        LiteralOperand (IntLit.of_int x)
+        ConstOperand (Cint (IntLit.of_int x))
     | Register reg ->
         AbstractValueOperand (get memory reg)
     | Binding v ->
@@ -289,7 +289,7 @@ let eval_guard memory tcontext guard : Constraint.t =
         Constraint.and_predicate (Constraint.make binop l r) pruned
     | Value v ->
         let v = operand_of_value v in
-        let one = PathCondition.LiteralOperand IntLit.one in
+        let one = PathCondition.ConstOperand (Cint IntLit.one) in
         Constraint.and_predicate (Constraint.make Binop.Ne v one) pruned
   in
   List.fold ~init:Constraint.true_ ~f:conjoin_predicate guard

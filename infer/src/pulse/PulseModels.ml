@@ -762,7 +762,8 @@ module StdAtomicInteger = struct
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::operator++()" in
     let<+> astate =
-      arith_bop path `Pre location event ret_id (PlusA None) this (LiteralOperand IntLit.one) astate
+      arith_bop path `Pre location event ret_id (PlusA None) this (ConstOperand (Cint IntLit.one))
+        astate
     in
     astate
 
@@ -771,7 +772,7 @@ module StdAtomicInteger = struct
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic<T>::operator++(T)" in
     let<+> astate =
-      arith_bop path `Post location event ret_id (PlusA None) this (LiteralOperand IntLit.one)
+      arith_bop path `Post location event ret_id (PlusA None) this (ConstOperand (Cint IntLit.one))
         astate
     in
     astate
@@ -781,7 +782,7 @@ module StdAtomicInteger = struct
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::operator--()" in
     let<+> astate =
-      arith_bop path `Pre location event ret_id (MinusA None) this (LiteralOperand IntLit.one)
+      arith_bop path `Pre location event ret_id (MinusA None) this (ConstOperand (Cint IntLit.one))
         astate
     in
     astate
@@ -791,7 +792,7 @@ module StdAtomicInteger = struct
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic<T>::operator--(T)" in
     let<+> astate =
-      arith_bop path `Post location event ret_id (MinusA None) this (LiteralOperand IntLit.one)
+      arith_bop path `Post location event ret_id (MinusA None) this (ConstOperand (Cint IntLit.one))
         astate
     in
     astate
@@ -1969,12 +1970,14 @@ module Erlang = struct
       let is_bool = AbstractValue.mk_fresh () in
       let<*> astate, is_true =
         PulseArithmetic.eval_binop is_true Binop.Eq (AbstractValueOperand hash)
-          (LiteralOperand (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_true)))
+          (ConstOperand
+             (Cint (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_true))) )
           astate
       in
       let<*> astate, is_false =
         PulseArithmetic.eval_binop is_false Binop.Eq (AbstractValueOperand hash)
-          (LiteralOperand (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_false)))
+          (ConstOperand
+             (Cint (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_false))) )
           astate
       in
       let<*> astate, is_bool =

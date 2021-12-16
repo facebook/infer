@@ -258,6 +258,10 @@ let eval path mode location exp0 astate =
         let len_int = IntLit.of_int (String.length s) in
         let+ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
         (astate, (v, hist))
+    | Const ((Cfloat _ | Cclass _) as c) ->
+        let v = AbstractValue.mk_fresh () in
+        let+ astate = PulseArithmetic.and_eq_const v c astate in
+        (astate, (v, ValueHistory.singleton (Assignment (location, timestamp))))
     | UnOp (unop, exp, _typ) ->
         let* astate, (addr, hist) = eval path Read exp astate in
         let unop_addr = AbstractValue.mk_fresh () in
@@ -272,7 +276,7 @@ let eval path mode location exp0 astate =
             (AbstractValueOperand addr_rhs) astate
         in
         (astate, (binop_addr, ValueHistory.BinaryOp (bop, hist_lhs, hist_rhs)))
-    | Const (Cfloat _ | Cclass _) | Sizeof _ | Exn _ ->
+    | Sizeof _ | Exn _ ->
         Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.Epoch))
   in
   eval path mode exp0 astate
@@ -280,8 +284,8 @@ let eval path mode location exp0 astate =
 
 let eval_to_operand path location exp astate =
   match (exp : Exp.t) with
-  | Const (Cint i) ->
-      Ok (astate, PulseArithmetic.LiteralOperand i, ValueHistory.Epoch)
+  | Const c ->
+      Ok (astate, PulseArithmetic.ConstOperand c, ValueHistory.Epoch)
   | exp ->
       let+ astate, (value, hist) = eval path Read location exp astate in
       (astate, PulseArithmetic.AbstractValueOperand value, hist)

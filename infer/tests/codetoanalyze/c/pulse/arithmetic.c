@@ -37,3 +37,33 @@ void assume_non_negative_is_non_negative_ok() {
     *p = 42;
   }
 }
+
+float return_non_negative_float() {
+  float x = ((float)random()) / (2 ^ 31 - 1);
+  if (x < 0.) {
+    exit(1);
+  }
+  return x;
+}
+
+void return_non_negative_float_is_non_negative_ok() {
+  if (return_non_negative_float() < 0) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void assume_non_negative_float(float x) {
+  if (x < 0.) {
+    exit(1);
+  }
+}
+
+void assume_non_negative_float_is_non_negative_ok() {
+  float x = ((float)random()) / (2 ^ 31 - 1);
+  assume_non_negative_float(x);
+  if (x < 0.) {
+    int* p = NULL;
+    *p = 42;
+  }
+}

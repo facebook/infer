@@ -22,20 +22,26 @@ void even_cannot_be_odd_parameter_ok(int x) {
   }
 }
 
-void even_cannot_be_odd_float_conv_FP() {
+void even_cannot_be_odd_float_conv_ok() {
   int x = random();
-  // two causes here: 1) Pulse represents floats as arbitrary values
-  // and 2) the int conversion is omitted by the frontend
   if (x + x == (int)5.5) {
     int* p = NULL;
     *p = 42;
   }
 }
 
-void int_conversions_feasible_bad() {
+void FN_even_can_be_even_float_conv_bad() {
+  int x = random();
+  if (x + x == (int)6.5) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void FN_int_conversions_feasible_bad() {
   int x = random();
   int y = 3 / 2;
-  int z = (int)1.234;
+  int z = (int)1.234; // SIL ignores the cast so we get a contradiction here
   int w = x / 2;
   if (w == 5 && x == 10 && y == 1 && z == 1) {
     int* p = NULL;
@@ -54,5 +60,13 @@ void FPlatent_even_cannot_be_odd_fields_ok(struct s* x) {
     // when x and y are ints
     int* p = NULL;
     *p = 42;
+  }
+}
+
+void FN_float_are_not_ints_bad() {
+  float y = 5.0 / 2.0; // y is 2 here (incorrect)
+  if (y != 2.0) { // This is always false
+    int* p = NULL;
+    *p = 42; // FN
   }
 }

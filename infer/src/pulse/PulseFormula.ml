@@ -36,15 +36,15 @@ let pp_function_symbol fmt = function
 
 
 type operand =
-  | LiteralOperand of IntLit.t
   | AbstractValueOperand of Var.t
+  | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: function_symbol; actuals: Var.t list}
 
 let pp_operand fmt = function
-  | LiteralOperand i ->
-      IntLit.pp fmt i
   | AbstractValueOperand v ->
       Var.pp fmt v
+  | ConstOperand i ->
+      Const.pp Pp.text fmt i
   | FunctionApplicationOperand {f; actuals} ->
       F.fprintf fmt "%a(%a)" pp_function_symbol f (Pp.seq ~sep:"," Var.pp) actuals
 
@@ -528,11 +528,21 @@ module Term = struct
 
   let of_q q = Const q
 
+  let of_const (c : Const.t) =
+    match c with
+    | Cint i ->
+        IntLit.to_big_int i |> Q.of_bigint |> of_q
+    | Cfloat f ->
+        Q.of_float f |> of_q
+    | Cfun _ | Cstr _ | Cclass _ ->
+        of_q Q.undef
+
+
   let of_operand = function
     | AbstractValueOperand v ->
         Var v
-    | LiteralOperand i ->
-        IntLit.to_big_int i |> Q.of_bigint |> of_q
+    | ConstOperand c ->
+        of_const c
     | FunctionApplicationOperand {f; actuals} ->
         let f = match f with Unknown v -> Var v | Procname proc_name -> Procname proc_name in
         FunctionApplication {f; actuals= List.map actuals ~f:(fun v -> Var v)}

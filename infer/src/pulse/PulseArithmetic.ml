@@ -39,9 +39,13 @@ let and_eq_int v i astate =
   map_path_condition astate ~f:(fun phi -> PathCondition.and_eq_int v i phi)
 
 
+let and_eq_const v c astate =
+  map_path_condition astate ~f:(fun phi -> PathCondition.and_eq_const v c phi)
+
+
 type operand = PathCondition.operand =
-  | LiteralOperand of IntLit.t
   | AbstractValueOperand of AbstractValue.t
+  | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
 
 let and_equal op1 op2 astate =
@@ -62,12 +66,14 @@ let prune_binop ~negated bop lhs_op rhs_op astate =
   map_path_condition astate ~f:(fun phi -> PathCondition.prune_binop ~negated bop lhs_op rhs_op phi)
 
 
+let literal_zero = ConstOperand (Cint IntLit.zero)
+
 let prune_eq_zero v astate =
-  prune_binop ~negated:false Eq (AbstractValueOperand v) (LiteralOperand IntLit.zero) astate
+  prune_binop ~negated:false Eq (AbstractValueOperand v) literal_zero astate
 
 
 let prune_positive v astate =
-  prune_binop ~negated:false Gt (AbstractValueOperand v) (LiteralOperand IntLit.zero) astate
+  prune_binop ~negated:false Gt (AbstractValueOperand v) literal_zero astate
 
 
 let is_known_zero astate v = PathCondition.is_known_zero astate.AbductiveDomain.path_condition v
