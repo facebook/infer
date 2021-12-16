@@ -17,6 +17,12 @@ let leq ~lhs:_ ~rhs:_ = true
 (** see [leq] *)
 let equal_fast _ _ = true
 
+let is_normal _ = true
+
+let is_exceptional _ = true
+
+let exceptional_to_normal x = x
+
 let pp fmt ({conditions; timestamp} [@warning "+9"]) =
   let pp_condition fmt hist =
     if Config.debug_level_analysis >= 3 then F.fprintf fmt "[%a]" ValueHistory.pp hist

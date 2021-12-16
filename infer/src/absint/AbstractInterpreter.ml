@@ -88,6 +88,17 @@ module type Make = functor (TransferFunctions : TransferFunctions.SIL) ->
 module type NodeTransferFunctions = sig
   include TransferFunctions.SIL
 
+  val filter_normal : Domain.t -> Domain.t
+  (** refines the abstract state to select non-exceptional concrete states. return None if no such
+      states exist *)
+
+  val filter_exceptional : Domain.t -> Domain.t
+  (** refines the abstract state to select exceptional concrete states. return None if no such
+      states exist *)
+
+  val exceptional_to_normal : Domain.t -> Domain.t
+  (** convert all exceptional states into normal states (used when reaching a handler) *)
+
   val exec_node_instrs :
        Domain.t State.t option
     -> exec_instr:(ProcCfg.InstrNode.instr_index -> Domain.t -> Sil.instr -> Domain.t)
@@ -101,6 +112,12 @@ end
 (** most transfer functions will use this simple [Instrs.fold] approach *)
 module SimpleNodeTransferFunctions (T : TransferFunctions.SIL) = struct
   include T
+
+  let filter_normal x = x
+
+  let filter_exceptional x = x
+
+  let exceptional_to_normal x = x
 
   let exec_node_instrs _old_state_opt ~exec_instr pre instrs =
     Instrs.foldi ~init:pre instrs ~f:exec_instr
@@ -206,6 +223,17 @@ struct
       F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts ;
       F.fprintf f "\n Non-disj state:@[%a@]@;" T.NonDisjDomain.pp non_disj
   end
+
+  let filter_disjuncts ~f ((l, nd) : Domain.t) =
+    let filtered = List.filter l ~f in
+    if List.is_empty filtered then ([], T.NonDisjDomain.bottom) else (filtered, nd)
+
+
+  let filter_normal x = filter_disjuncts x ~f:T.DisjDomain.is_normal
+
+  let filter_exceptional x = filter_disjuncts x ~f:T.DisjDomain.is_exceptional
+
+  let exceptional_to_normal (l, nd) = (List.map ~f:T.DisjDomain.exceptional_to_normal l, nd)
 
   (** the number of remaining disjuncts taking into account disjuncts already recorded in the post
       of a node (and therefore that will stay there) *)
@@ -448,18 +476,29 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
   let compute_pre cfg node inv_map =
     let extract_post_ pred = extract_post (Node.id pred) inv_map in
-    CFG.fold_preds cfg node ~init:None ~f:(fun joined_post_opt pred ->
-        match extract_post_ pred with
-        | None ->
-            joined_post_opt
-        | Some post as some_post -> (
-          match joined_post_opt with
-          | None ->
-              some_post
-          | Some joined_post ->
-              let res = Domain.join post joined_post in
-              if Config.write_html then debug_absint_operation (`Join (joined_post, post, res)) ;
-              Some res ) )
+    let is_handler = match Node.kind node with Stmt_node ExceptionHandler -> true | _ -> false in
+    let join_opt =
+      let f a1 a2 =
+        let res = Domain.join a1 a2 in
+        if Config.write_html then debug_absint_operation (`Join (a1, a2, res)) ;
+        res
+      in
+      Option.merge ~f
+    in
+    let filter_and_join ~f joined_post_opt pred =
+      let pred_post =
+        let open IOption.Let_syntax in
+        let+ filtered_post = extract_post_ pred >>| f in
+        if is_handler then TransferFunctions.exceptional_to_normal filtered_post else filtered_post
+      in
+      join_opt pred_post joined_post_opt
+    in
+    let fold_normal =
+      CFG.fold_normal_preds cfg node ~init:None
+        ~f:(filter_and_join ~f:TransferFunctions.filter_normal)
+    in
+    CFG.fold_exceptional_preds cfg node ~init:fold_normal
+      ~f:(filter_and_join ~f:TransferFunctions.filter_exceptional)
 
 
   (* shadowed for HTML debug *)

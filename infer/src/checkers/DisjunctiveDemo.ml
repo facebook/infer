@@ -23,6 +23,12 @@ module DisjDomain = struct
   let leq ~lhs ~rhs = equal lhs rhs
 
   let equal_fast l1 l2 = equal l1 l2
+
+  let is_normal _ = true
+
+  let is_exceptional _ = false
+
+  let exceptional_to_normal _ = assert false (* no exceptional state anyway *)
 end
 
 module NonDisjDomain = AbstractDomain.BottomLifted (AbstractDomain.Empty)

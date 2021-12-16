@@ -17,6 +17,7 @@ module LatentIssue = PulseLatentIssue
    normalized them and don't need to normalize them again. *)
 type 'abductive_domain_t base_t =
   | ContinueProgram of 'abductive_domain_t
+  | ExceptionRaised of 'abductive_domain_t
   | ExitProgram of AbductiveDomain.summary
   | AbortProgram of AbductiveDomain.summary
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
@@ -40,6 +41,7 @@ let leq ~lhs ~rhs =
   | ExitProgram astate1, ExitProgram astate2
   | ISLLatentMemoryError astate1, ISLLatentMemoryError astate2 ->
       AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
+  | ExceptionRaised astate1, ExceptionRaised astate2
   | ContinueProgram astate1, ContinueProgram astate2 ->
       AbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
   | ( LatentAbortProgram {astate= astate1; latent_issue= issue1}
@@ -59,6 +61,8 @@ let pp fmt = function
       F.fprintf fmt "{AbortProgram %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
   | ContinueProgram astate ->
       AbductiveDomain.pp fmt astate
+  | ExceptionRaised astate ->
+      F.fprintf fmt "{ExceptionRaised %a}" AbductiveDomain.pp astate
   | ExitProgram astate ->
       F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
   | ISLLatentMemoryError astate ->
@@ -78,7 +82,7 @@ let pp fmt = function
 (* do not export this function as there lies wickedness: clients should generally care about what
    kind of state they are manipulating so let's not encourage them not to *)
 let get_astate : t -> AbductiveDomain.t = function
-  | ContinueProgram astate ->
+  | ExceptionRaised astate | ContinueProgram astate ->
       astate
   | ExitProgram astate
   | AbortProgram astate
@@ -104,3 +108,18 @@ let equal_fast exec_state1 exec_state2 =
       phys_equal astate1 astate2
   | _ ->
       false
+
+
+let is_normal (exec_state : t) : bool =
+  match exec_state with ExceptionRaised _ -> false | _ -> true
+
+
+let is_exceptional (exec_state : t) : bool =
+  match exec_state with ExceptionRaised _ -> true | _ -> false
+
+
+let exceptional_to_normal : t -> t = function
+  | ExceptionRaised astate ->
+      ContinueProgram astate
+  | x ->
+      x

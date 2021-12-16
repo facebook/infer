@@ -28,6 +28,12 @@ module type Disjunct = sig
   include Comparable
 
   val equal_fast : t -> t -> bool
+
+  val is_normal : t -> bool
+
+  val is_exceptional : t -> bool
+
+  val exceptional_to_normal : t -> t
 end
 
 module type S = sig
@@ -198,6 +204,13 @@ module PairDisjunct (Domain1 : Disjunct) (Domain2 : Disjunct) = struct
   include PairBase (Domain1) (Domain2)
 
   let equal_fast (x1, x2) (y1, y2) = Domain1.equal_fast x1 y1 && Domain2.equal_fast x2 y2
+
+  let is_normal (x1, x2) = Domain1.is_normal x1 && Domain2.is_normal x2
+
+  let is_exceptional (x1, x2) = Domain1.is_exceptional x1 && Domain2.is_exceptional x2
+
+  let exceptional_to_normal (x1, x2) =
+    (Domain1.exceptional_to_normal x1, Domain2.exceptional_to_normal x2)
 end
 
 module Pair (Domain1 : S) (Domain2 : S) = struct

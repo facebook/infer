@@ -32,6 +32,15 @@ module type Disjunct = sig
   val equal_fast : t -> t -> bool
   (** [equal_fast x y] must imply [x <=> y]; it's a good idea for this function to be "fast", e.g.
       not depend on the size of its input *)
+
+  val is_normal : t -> bool
+  (** test if the abstract state represents exactly concrete states *)
+
+  val is_exceptional : t -> bool
+  (** test if the abstract state represents exactly exceptional concrete states *)
+
+  val exceptional_to_normal : t -> t
+  (** convert all exceptional states into normal states (used when reaching a handler) *)
 end
 
 module type S = sig

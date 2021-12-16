@@ -42,6 +42,7 @@ let add_copies location call_exp actuals astates astate_non_disj =
             in
             NonDisjDomain.add ~source_opt copied_var copied astate_non_disj
           else astate_non_disj
+      | ExceptionRaised _, _, _
       | ISLLatentMemoryError _, _, _
       | AbortProgram _, _, _
       | ContinueProgram _, _, _
@@ -150,6 +151,7 @@ let mark_modified_copies vars disjuncts astate_n =
       match exec_state with
       | ISLLatentMemoryError _
       | AbortProgram _
+      | ExceptionRaised _
       | ExitProgram _
       | LatentAbortProgram _
       | LatentInvalidAccess _ ->

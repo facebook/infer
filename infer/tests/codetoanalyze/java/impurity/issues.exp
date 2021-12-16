@@ -52,5 +52,5 @@ codetoanalyze/java/impurity/Test.java, Test.alias_impure(int[],int,int):void, 0,
 codetoanalyze/java/impurity/Test.java, Test.systemNanoTime_impure():long, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function long Test.systemNanoTime_impure(),call to skipped function long System.nanoTime() occurs here]
 codetoanalyze/java/impurity/Test.java, Test.exit_impure():void, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function void Test.exit_impure()]
 codetoanalyze/java/impurity/Test.java, Test.modify_exit_impure(int[]):void, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function void Test.modify_exit_impure(int[]),parameter `a.*[]` modified here]
-codetoanalyze/java/impurity/Test.java, Test.while_true_impure():void, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function void Test.while_true_impure() with no pulse summary]
+codetoanalyze/java/impurity/Test.java, Test.while_true_impure():void, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function void Test.while_true_impure() with empty pulse summary]
 codetoanalyze/java/impurity/Test.java, Test.modify_both_impure():void, 0, IMPURE_FUNCTION, no_bucket, ERROR, [Impure function void Test.modify_both_impure(),when calling `void Test.set_impure(int,int)` here,parameter `this.*a` modified here,when calling `void Test.global_array_set_impure(int,int)` here,global variable `Test.*global_arr*[]` modified here]

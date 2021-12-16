@@ -31,7 +31,7 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
 
 
 module PulseTransferFunctions = struct
-  module CFG = ProcCfg.Normal
+  module CFG = ProcCfg.Exceptional
   module DisjDomain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
   module NonDisjDomain = NonDisjDomain
 
@@ -83,7 +83,7 @@ module PulseTransferFunctions = struct
   (** [out_of_scope_access_expr] has just gone out of scope and in now invalid *)
   let exec_object_out_of_scope path call_loc (pvar, typ) exec_state =
     match (exec_state : ExecutionDomain.t) with
-    | ContinueProgram astate ->
+    | ContinueProgram astate | ExceptionRaised astate ->
         let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
         let* astate, out_of_scope_base =
           PulseOperations.eval path NoAccess call_loc (Exp.Lvar pvar) astate
@@ -119,6 +119,7 @@ module PulseTransferFunctions = struct
       | AbortProgram _
       | LatentAbortProgram _
       | ExitProgram _
+      | ExceptionRaised _
       | LatentInvalidAccess _ ->
           exec_state
     in
@@ -270,6 +271,7 @@ module PulseTransferFunctions = struct
           match astate with
           | ISLLatentMemoryError _
           | AbortProgram _
+          | ExceptionRaised _
           | ExitProgram _
           | LatentAbortProgram _
           | LatentInvalidAccess _ ->
@@ -301,8 +303,11 @@ module PulseTransferFunctions = struct
     match astate with
     | AbortProgram _ | ISLLatentMemoryError _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
         ([astate], path, astate_n)
+    (* an exception has been raised, we skip the other instructions until we enter in
+       exception edge *)
+    | ExceptionRaised _
+    (* program already exited, simply propagate the exited state upwards  *)
     | ExitProgram _ ->
-        (* program already exited, simply propagate the exited state upwards  *)
         ([astate], path, astate_n)
     | ContinueProgram astate -> (
       match instr with
@@ -454,7 +459,9 @@ module PulseTransferFunctions = struct
                 | LatentInvalidAccess _ ->
                     exec_state
                 | ContinueProgram astate ->
-                    ContinueProgram (PulseOperations.remove_vars vars location astate) )
+                    ContinueProgram (PulseOperations.remove_vars vars location astate)
+                | ExceptionRaised astate ->
+                    ExceptionRaised (PulseOperations.remove_vars vars location astate) )
           in
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
             (remove_vars vars [ContinueProgram astate], path, astate_n)

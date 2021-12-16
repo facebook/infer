@@ -124,6 +124,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   | ContinueProgram astate ->
       map_call_result ~is_isl_error_prepost:false astate ~f:(fun _subst astate ->
           Sat (Ok (ContinueProgram astate)) )
+  | ExceptionRaised astate ->
+      map_call_result ~is_isl_error_prepost:false astate ~f:(fun _subst astate ->
+          Sat (Ok (ExceptionRaised astate)) )
   | AbortProgram astate
   | ExitProgram astate
   | LatentAbortProgram {astate}
@@ -139,7 +142,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                  SatUnsat.t )
           in
           match callee_exec_state with
-          | ContinueProgram _ | ISLLatentMemoryError _ ->
+          | ContinueProgram _ | ExceptionRaised _ | ISLLatentMemoryError _ ->
               assert false
           | AbortProgram _ ->
               (* bypass the current errors to avoid compounding issues *)

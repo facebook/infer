@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 open PulseBasicInterface
 
 type t =
@@ -18,9 +17,7 @@ type t =
   ; timestamp: Timestamp.t  (** step number in an intra-procedural analysis *) }
 [@@deriving compare, equal]
 
-val leq : lhs:t -> rhs:t -> bool
-
-val equal_fast : t -> t -> bool
+include AbstractDomain.Disjunct with type t := t
 
 val initial : t
 
@@ -28,5 +25,3 @@ val with_context : t -> ValueHistory.t -> ValueHistory.t
 
 val post_exec_instr : t -> t
 (** call this after each step of the symbolic execution to update the path information *)
-
-val pp : F.formatter -> t -> unit

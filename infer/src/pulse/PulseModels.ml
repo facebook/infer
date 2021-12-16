@@ -211,6 +211,7 @@ module Misc = struct
                     deleted_access astate
                 in
                 astate
+          | ExceptionRaised _
           | ExitProgram _
           | AbortProgram _
           | LatentAbortProgram _
@@ -334,6 +335,7 @@ module C = struct
            match (exec_state : ExecutionDomain.t) with
            | ContinueProgram astate ->
                alloc_common allocator ~size_exp_opt:(Some size) data astate
+           | ExceptionRaised _
            | ExitProgram _
            | AbortProgram _
            | LatentAbortProgram _
@@ -1382,7 +1384,12 @@ module JavaResource = struct
       Procname.get_class_type_name callee_procname
     in
     let allocator = Attribute.JavaResource class_name in
-    PulseOperations.allocate allocator location this astate |> ok_continue
+    let post = PulseOperations.allocate allocator location this astate in
+    [Ok (ContinueProgram post); Ok (ExceptionRaised astate)]
+
+
+  let write_FileOutputStream _ _ : model =
+   fun _ astate -> [Ok (ContinueProgram astate); Ok (ExceptionRaised astate)]
 
 
   let close_FileOutputStream (this, _) : model =
@@ -2454,6 +2461,9 @@ module ProcNameDispatcher = struct
         ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
           &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload
           $--> JavaResource.init_FileOutputStream
+        ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
+          &:: "write" <>$ capt_arg_payload $+ capt_arg_payload
+          $--> JavaResource.write_FileOutputStream
         ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
           &:: "close" <>$ capt_arg_payload $--> JavaResource.close_FileOutputStream
           (* std::optional *)
