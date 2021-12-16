@@ -938,7 +938,7 @@ module Normalize = struct
               BinOp (omult, e1', e2')
           | _, _ ->
               if abs then Exp.get_undefined false else BinOp (omult, e1', e2') )
-      | BinOp (Div, e1, e2) -> (
+      | BinOp (((DivI | DivF) as div), e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in
           match (e1', e2') with
@@ -963,7 +963,7 @@ module Normalize = struct
             when Typ.equal elt elt2 ->
               Const (Cint len)
           | _ ->
-              if abs then Exp.get_undefined false else BinOp (Div, e1', e2') )
+              if abs then Exp.get_undefined false else BinOp (div, e1', e2') )
       | BinOp (Mod, e1, e2) -> (
           let e1' = eval e1 in
           let e2' = eval e2 in

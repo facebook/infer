@@ -434,7 +434,7 @@ module ItvPure = struct
         minus x y
     | Mult _ ->
         mult x y
-    | Div ->
+    | DivI | DivF ->
         div x y
     | Mod ->
         mod_sem x y
@@ -537,7 +537,8 @@ module ItvPure = struct
     | MinusPI
     | MinusPP
     | Mult _
-    | Div
+    | DivI
+    | DivF
     | Mod
     | Shiftlt
     | Shiftrt

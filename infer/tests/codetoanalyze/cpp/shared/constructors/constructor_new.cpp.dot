@@ -200,7 +200,7 @@ digraph cfg {
 	
 
 	 "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_3" -> "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" ;
-"float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" [label="4:  Return Stmt \n   *&return:float=(1 / (n$1 - 5.4)) [line 44, column 3]\n " shape="box"]
+"float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" [label="4:  Return Stmt \n   *&return:float=(1 /. (n$1 - 5.4)) [line 44, column 3]\n " shape="box"]
 	
 
 	 "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_4" -> "float_init_number#constructor_new#3988440966025503299.b1d13528d0a983c1943c8fdd13e58be6_2" ;

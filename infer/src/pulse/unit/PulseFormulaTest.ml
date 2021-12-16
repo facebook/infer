@@ -63,7 +63,7 @@ let ( - ) f1 f2 phi = of_binop (MinusA None) f1 f2 phi
 
 let ( * ) f1 f2 phi = of_binop (Mult None) f1 f2 phi
 
-let ( / ) f1 f2 phi = of_binop Div f1 f2 phi
+let ( / ) f1 f2 phi = of_binop DivI f1 f2 phi
 
 let ( & ) f1 f2 phi = of_binop BAnd f1 f2 phi
 

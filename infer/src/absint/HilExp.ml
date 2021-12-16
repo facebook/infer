@@ -639,7 +639,7 @@ and eval = function
       Some c
   | Cast (_, e) ->
       eval e
-  | BinaryOperator (Binop.Div, e1, e2) -> (
+  | BinaryOperator (Binop.DivI, e1, e2) -> (
     try eval_arithmetic_binop IntLit.div e1 e2 with Division_by_zero -> None )
   | BinaryOperator (Binop.MinusA _, e1, e2) ->
       eval_arithmetic_binop IntLit.sub e1 e2

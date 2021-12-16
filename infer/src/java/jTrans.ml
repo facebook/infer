@@ -188,45 +188,47 @@ let get_constant (c : JBir.const) =
       raise (Frontend_error "MethodHandle constant")
 
 
-let get_binop typ binop =
-  match binop with
-  | JBir.Add _ ->
-      Binop.PlusA (Typ.get_ikind_opt typ)
-  | JBir.Sub _ ->
-      Binop.MinusA (Typ.get_ikind_opt typ)
-  | JBir.Mult _ ->
-      Binop.Mult (Typ.get_ikind_opt typ)
-  | JBir.Div _ ->
-      Binop.Div
-  | JBir.Rem _ ->
-      Binop.Mod
-  | JBir.IAnd ->
-      Binop.BAnd
-  | JBir.IShl ->
-      Binop.Shiftlt
-  | JBir.IShr ->
-      Binop.Shiftrt
-  | JBir.IOr ->
-      Binop.BOr
-  | JBir.IXor ->
-      Binop.BXor
-  | JBir.IUshr ->
-      Binop.Shiftrt
-  | JBir.LShl ->
-      Binop.Shiftlt
-  | JBir.LShr ->
-      Binop.Shiftrt
-  | JBir.LAnd ->
-      Binop.BAnd
-  | JBir.LOr ->
-      Binop.BOr
-  | JBir.LXor ->
-      Binop.BXor
-  | JBir.LUshr ->
-      Binop.Shiftrt
-  | JBir.CMP _ ->
+let get_binop typ binop : Binop.t =
+  match (binop : JBir.binop) with
+  | Add _ ->
+      PlusA (Typ.get_ikind_opt typ)
+  | Sub _ ->
+      MinusA (Typ.get_ikind_opt typ)
+  | Mult _ ->
+      Mult (Typ.get_ikind_opt typ)
+  | Div (`Int2Bool | `Long) ->
+      DivI
+  | Div (`Float | `Double) ->
+      DivF
+  | Rem _ ->
+      Mod
+  | IAnd ->
+      BAnd
+  | IShl ->
+      Shiftlt
+  | IShr ->
+      Shiftrt
+  | IOr ->
+      BOr
+  | IXor ->
+      BXor
+  | IUshr ->
+      Shiftrt
+  | LShl ->
+      Shiftlt
+  | LShr ->
+      Shiftrt
+  | LAnd ->
+      BAnd
+  | LOr ->
+      BOr
+  | LXor ->
+      BXor
+  | LUshr ->
+      Shiftrt
+  | CMP _ ->
       raise (Frontend_error "Comparison operators")
-  | JBir.ArrayLoad _ ->
+  | ArrayLoad _ ->
       raise (Frontend_error "Array load operator")
 
 

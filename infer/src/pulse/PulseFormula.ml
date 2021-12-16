@@ -558,7 +558,7 @@ module Term = struct
         Add (t1, Minus t2)
     | Mult _ ->
         Mult (t1, t2)
-    | Div ->
+    | DivI | DivF ->
         Div (t1, t2)
     | Mod ->
         Mod (t1, t2)

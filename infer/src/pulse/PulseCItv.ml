@@ -470,7 +470,8 @@ let binop (bop : Binop.t) a_lhs a_rhs =
   | MinusPI
   | MinusPP
   | Mult _
-  | Div
+  | DivI
+  | DivF
   | Mod
   | Shiftlt
   | Shiftrt

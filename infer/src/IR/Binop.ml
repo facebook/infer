@@ -22,7 +22,8 @@ type t =
   | MinusPI  (** pointer - integer *)
   | MinusPP  (** pointer - pointer *)
   | Mult of ikind_option_for_binop  (** * *)
-  | Div  (** / *)
+  | DivI  (** / for integers *)
+  | DivF  (** / for floats *)
   | Mod  (** % *)
   | Shiftlt  (** shift left *)
   | Shiftrt  (** shift right *)
@@ -52,7 +53,7 @@ let is_zero_runit = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> 
 let symmetric = function
   | (PlusA _ | PlusPI | Mult _ | Eq | Ne | BAnd | BXor | BOr | LAnd | LOr) as symmetric_op ->
       Some symmetric_op
-  | MinusA _ | MinusPP | MinusPI | Div | Mod | Shiftlt | Shiftrt ->
+  | MinusA _ | MinusPP | MinusPI | DivI | DivF | Mod | Shiftlt | Shiftrt ->
       None
   | Lt ->
       Some Gt
@@ -88,7 +89,8 @@ let negate = function
   | MinusA _
   | MinusPP
   | MinusPI
-  | Div
+  | DivI
+  | DivF
   | Mod
   | Shiftlt
   | Shiftrt ->
@@ -106,8 +108,10 @@ let to_string = function
       "-"
   | Mult _ ->
       "*"
-  | Div ->
+  | DivI ->
       "/"
+  | DivF ->
+      "/."
   | Mod ->
       "%"
   | Shiftlt ->

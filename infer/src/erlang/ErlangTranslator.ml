@@ -582,7 +582,7 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | Greater ->
       make_simple_eager_bool Gt
   | IDiv ->
-      make_simple_eager Div
+      make_simple_eager DivI
   | Less ->
       make_simple_eager_bool Lt
   | ListAdd ->

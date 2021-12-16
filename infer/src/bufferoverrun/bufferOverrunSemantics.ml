@@ -160,7 +160,7 @@ let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
         match bop with
         | Binop.(PlusA _ | MinusA _ | MinusPP) ->
             Val.set_itv_updated_by_addition v
-        | Binop.(Mult _ | Div | Mod | Shiftlt | Shiftrt) ->
+        | Binop.(Mult _ | DivI | DivF | Mod | Shiftlt | Shiftrt) ->
             Val.set_itv_updated_by_multiplication v
         | Binop.(PlusPI | MinusPI | Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr | BAnd | BXor | BOr) ->
             Val.set_itv_updated_by_unknown v )
@@ -227,46 +227,46 @@ and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Va
  fun integer_type_widths binop e1 e2 mem ->
   let v1 = eval integer_type_widths e1 mem in
   let v2 = eval integer_type_widths e2 mem in
-  match binop with
-  | Binop.PlusA _ ->
+  match (binop : Binop.t) with
+  | PlusA _ ->
       Val.plus_a v1 v2
-  | Binop.PlusPI ->
+  | PlusPI ->
       Val.plus_pi v1 v2
-  | Binop.MinusA _ ->
+  | MinusA _ ->
       Val.minus_a v1 v2
-  | Binop.MinusPI ->
+  | MinusPI ->
       Val.minus_pi v1 v2
-  | Binop.MinusPP ->
+  | MinusPP ->
       Val.minus_pp v1 v2
-  | Binop.Mult _ ->
+  | Mult _ ->
       Val.mult v1 v2
-  | Binop.Div ->
+  | DivI | DivF ->
       Val.div v1 v2
-  | Binop.Mod ->
+  | Mod ->
       Val.mod_sem v1 v2
-  | Binop.Shiftlt ->
+  | Shiftlt ->
       Val.shiftlt v1 v2
-  | Binop.Shiftrt ->
+  | Shiftrt ->
       Val.shiftrt v1 v2
-  | Binop.Lt ->
+  | Lt ->
       Val.lt_sem v1 v2
-  | Binop.Gt ->
+  | Gt ->
       Val.gt_sem v1 v2
-  | Binop.Le ->
+  | Le ->
       Val.le_sem v1 v2
-  | Binop.Ge ->
+  | Ge ->
       Val.ge_sem v1 v2
-  | Binop.Eq ->
+  | Eq ->
       Val.eq_sem v1 v2
-  | Binop.Ne ->
+  | Ne ->
       Val.ne_sem v1 v2
-  | Binop.BAnd ->
+  | BAnd ->
       Val.band_sem v1 v2
-  | Binop.BXor | Binop.BOr ->
+  | BXor | BOr ->
       Val.unknown_bit v1
-  | Binop.LAnd ->
+  | LAnd ->
       Val.land_sem v1 v2
-  | Binop.LOr ->
+  | LOr ->
       Val.lor_sem v1 v2
 
 

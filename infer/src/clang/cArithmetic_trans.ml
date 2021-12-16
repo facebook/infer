@@ -5,16 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Utility module for translating unary and binary operations and compound assignments *)
-
 open! IStd
 module L = Logging
 
-(* Returns a pair ([binary_expression], instructions) for binary operator representing a *)
-(* CompoundAssignment. "binary_expression" is returned when we are calculating an expression*)
-(* "instructions" is not empty when the binary operator is actually a statement like an *)
-(* assignment. *)
-let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 loc =
+let div_of_operand_types t1 t2 : Binop.t =
+  (* integer division semantics iff both operands are integers *)
+  if Typ.is_int t1 && Typ.is_int t2 then DivI else DivF
+
+
+let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ (e2, t2) loc =
   let instrs =
     let bop =
       match boi_kind with
@@ -25,7 +24,7 @@ let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 lo
       | `MulAssign ->
           Binop.Mult (Typ.get_ikind_opt typ)
       | `DivAssign ->
-          Binop.Div
+          div_of_operand_types t1 t2
       | `ShlAssign ->
           Binop.Shiftlt
       | `ShrAssign ->
@@ -49,7 +48,8 @@ let compound_assignment_binary_operation_instruction boi_kind (e1, t1) typ e2 lo
 (** Returns a pair ([binary_expression], instructions). "binary_expression" is returned when we are
     calculating an expression "instructions" is not empty when the binary operator is actually a
     statement like an assignment. *)
-let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ (e2, t2) loc =
+let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ
+    ((e2, t2) as e2_with_typ) loc =
   let binop_exp ?(change_order = false) op =
     if change_order then Exp.BinOp (op, e2, e1) else Exp.BinOp (op, e1, e2)
   in
@@ -71,7 +71,7 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
   | `Mul ->
       (binop_exp (Binop.Mult (Typ.get_ikind_opt typ)), [])
   | `Div ->
-      (binop_exp Binop.Div, [])
+      (binop_exp (div_of_operand_types t1 t2), [])
   | `Rem ->
       (binop_exp Binop.Mod, [])
   | `Sub ->
@@ -121,7 +121,7 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ 
     | `AndAssign
     | `XorAssign
     | `OrAssign ) as boi_kind ->
-      compound_assignment_binary_operation_instruction boi_kind e1_with_typ typ e2 loc
+      compound_assignment_binary_operation_instruction boi_kind e1_with_typ typ e2_with_typ loc
 
 
 let unary_operation_instruction translation_unit_context uoi e typ loc =
