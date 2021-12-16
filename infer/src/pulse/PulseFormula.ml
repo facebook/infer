@@ -409,7 +409,8 @@ module Term = struct
     | Equal of t * t
     | NotEqual of t * t
     | Mult of t * t
-    | Div of t * t
+    | DivI of t * t
+    | DivF of t * t
     | And of t * t
     | Or of t * t
     | Not of t
@@ -445,7 +446,8 @@ module Term = struct
     | Not _
     | Add _
     | Mult _
-    | Div _
+    | DivI _
+    | DivF _
     | Mod _
     | BitAnd _
     | BitOr _
@@ -492,8 +494,10 @@ module Term = struct
         F.fprintf fmt "%a+%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Mult (t1, t2) ->
         F.fprintf fmt "%a×%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
-    | Div (t1, t2) ->
+    | DivI (t1, t2) ->
         F.fprintf fmt "%a÷%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
+    | DivF (t1, t2) ->
+        F.fprintf fmt "%a÷.%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | Mod (t1, t2) ->
         F.fprintf fmt "%a mod %a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren)
           t2
@@ -568,8 +572,10 @@ module Term = struct
         Add (t1, Minus t2)
     | Mult _ ->
         Mult (t1, t2)
-    | DivI | DivF ->
-        Div (t1, t2)
+    | DivI ->
+        DivI (t1, t2)
+    | DivF ->
+        DivF (t1, t2)
     | Mod ->
         Mod (t1, t2)
     | Shiftlt ->
@@ -642,7 +648,8 @@ module Term = struct
     (* two sub-terms *)
     | Add (t1, t2)
     | Mult (t1, t2)
-    | Div (t1, t2)
+    | DivI (t1, t2)
+    | DivF (t1, t2)
     | Mod (t1, t2)
     | BitAnd (t1, t2)
     | BitOr (t1, t2)
@@ -665,8 +672,10 @@ module Term = struct
                 Add (t1', t2')
             | Mult _ ->
                 Mult (t1', t2')
-            | Div _ ->
-                Div (t1', t2')
+            | DivI _ ->
+                DivI (t1', t2')
+            | DivF _ ->
+                DivF (t1', t2')
             | Mod _ ->
                 Mod (t1', t2')
             | BitAnd _ ->
@@ -742,7 +751,8 @@ module Term = struct
     | Equal _
     | NotEqual _
     | Mult _
-    | Div _
+    | DivI _
+    | DivF _
     | And _
     | Or _
     | Not _
@@ -811,14 +821,18 @@ module Term = struct
             Q.to_int64 c >>| Int64.bit_not >>| Q.of_int64 |> or_undef )
     | Mult (t1, t2) ->
         q_map2 t1 t2 Q.mul
-    | Div (t1, t2) ->
+    | DivI (t1, t2) | DivF (t1, t2) ->
         q_map2 t1 t2 (fun c1 c2 ->
             let open Option.Monad_infix in
             if Q.is_zero c2 then Q.undef
             else
-              (* OPTIM: do the division in [Z] and not [Q] to avoid [Q] normalizing the intermediate
-                 result for nothing *)
-              Z.(Q.num c1 * Q.den c2 / (Q.den c1 * Q.num c2)) >>| Q.of_bigint |> or_undef )
+              match t0 with
+              | DivI _ ->
+                  (* OPTIM: do the division in [Z] and not [Q] to avoid [Q] normalizing the
+                     intermediate result for nothing *)
+                  Z.(Q.num c1 * Q.den c2 / (Q.den c1 * Q.num c2)) >>| Q.of_bigint |> or_undef
+              | _ ->
+                  (* DivF *) Q.(c1 / c2) )
     | Mod (t1, t2) ->
         q_map2 t1 t2 (fun c1 c2 ->
             if Q.is_zero c2 then Q.undef else map_z_z_opt c1 c2 Z.( mod ) |> or_undef )
@@ -891,22 +905,25 @@ module Term = struct
     | Mult (_, Const c) when Q.is_zero c ->
         (* [t × 0 = 0] *)
         zero
-    | Div (Const c, _) when Q.is_zero c ->
+    | (DivI (Const c, _) | DivF (Const c, _)) when Q.is_zero c ->
         (* [0 / t = 0] *)
         zero
-    | Div (t, Const c) when Q.is_one c ->
+    | (DivI (t, Const c) | DivF (t, Const c)) when Q.is_one c ->
         (* [t / 1 = t] *)
         t
-    | Div (t, Const c) when Q.is_minus_one c ->
+    | (DivI (t, Const c) | DivF (t, Const c)) when Q.is_minus_one c ->
         (* [t / (-1) = -t] *)
         simplify_shallow_ (Minus t)
-    | Div (_, Const c) when Q.is_zero c ->
+    | (DivI (_, Const c) | DivF (_, Const c)) when Q.is_zero c ->
         (* [t / 0 = undefined] *)
         Const Q.undef
-    | Div (Minus t1, Minus t2) ->
+    | DivI (Minus t1, Minus t2) ->
         (* [(-t1) / (-t2) = t1 / t2] *)
-        simplify_shallow_ (Div (t1, t2))
-    | Div (t1, t2) when equal_syntax t1 t2 ->
+        simplify_shallow_ (DivI (t1, t2))
+    | DivF (Minus t1, Minus t2) ->
+        (* [(-t1) /. (-t2) = t1 /. t2] *)
+        simplify_shallow_ (DivF (t1, t2))
+    | (DivI (t1, t2) | DivF (t1, t2)) when equal_syntax t1 t2 ->
         (* [t / t = 1] *)
         one
     | Mod (Const c, _) when Q.is_zero c ->
@@ -941,7 +958,7 @@ module Term = struct
             | BitShiftLeft _ ->
                 simplify_shallow_ (Mult (t', factor))
             | BitShiftRight _ ->
-                simplify_shallow_ (Div (t', factor)) ) )
+                simplify_shallow_ (DivI (t', factor)) ) )
     | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
         t1
     | And (t1, t2) when is_zero t1 || is_zero t2 ->
@@ -993,7 +1010,8 @@ module Term = struct
       | Procname _
       | FunctionApplication _
       | Mult _
-      | Div _
+      | DivI _
+      | DivF _
       | Mod _
       | BitNot _
       | BitAnd _

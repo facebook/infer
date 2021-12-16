@@ -63,10 +63,21 @@ void FPlatent_even_cannot_be_odd_fields_ok(struct s* x) {
   }
 }
 
-void FN_float_are_not_ints_bad() {
-  float y = 5.0 / 2.0; // y is 2 here (incorrect)
-  if (y != 2.0) { // This is always false
+void float_div_bad() {
+  float y = 5.0 / 2.0;
+  if (y != 2.0) { // always true
     int* p = NULL;
-    *p = 42; // FN
+    *p = 42;
   }
 }
+
+void float_comparison_latent(float f) {
+  if (2 + f < 2.2) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+// FN because x > y is translated as x >= y+1 by pulse, which is not
+// valid for floats
+void FN_call_float_comparison_bad() { float_comparison_latent(0.1); }
