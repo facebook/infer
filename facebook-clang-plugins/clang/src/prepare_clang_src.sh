@@ -38,6 +38,7 @@ rm -rf "llvm-project-${LLVM_VER}.src" "llvm-project"
 tar xf "${LLVM_FILE}"
 mv "llvm-project-${LLVM_VER}.src" "llvm-project"
 
+# apply prebuild patch
 for PATCH_FILE in "${CLANG_PREBUILD_PATCHES[@]}"; do
     "$PATCH" --force -p 1 < "$PATCH_FILE"
 done
