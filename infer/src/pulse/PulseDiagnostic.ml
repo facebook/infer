@@ -319,7 +319,7 @@ let get_message diagnostic =
         pulse_start_msg pp_var variable
   | UnnecessaryCopy {variable; location} ->
       F.asprintf
-        "%s unnecessary copy: copied variable %a is not modified since it is copied in %a. \
+        "%s unnecessary copy: copied variable `%a` is not modified since it is copied in %a. \
          Consider using a reference to it in order to avoid unnecessary copy"
         pulse_start_msg Var.pp variable Location.pp location
 
