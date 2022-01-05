@@ -43,7 +43,9 @@ module TraceData = struct
     | Execute ->
         F.asprintf "Executing `%a`" Mangled.pp arg
     | Parameter proc_name ->
-        F.asprintf "Parameter `%a` of %a" Mangled.pp arg Procname.pp proc_name
+        F.asprintf "Parameter `%a` of %a" Mangled.pp arg
+          (Procname.pp_simplified_string ~withclass:false)
+          proc_name
 
 
   let pp fmt {arg; loc; usage} =

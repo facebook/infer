@@ -111,4 +111,16 @@ void AnnotateSync(id flowId, NS_NOESCAPE AnnotateSyncBlock block) {}
   });
 }
 
++ (void)startWithSessionBad:(id)session video:(id)video {
+  NSString* const videoID = @"";
+  NSString* const flowId = @"";
+
+  NSString* const entryPointType = @"";
+
+  AnnotateSync(flowId, ^(AnnotateBlock annotate) {
+    annotate("entry_point_type", entryPointType);
+    annotate("media_id", videoID);
+  });
+}
+
 @end
