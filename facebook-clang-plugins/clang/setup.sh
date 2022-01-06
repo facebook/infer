@@ -11,7 +11,7 @@ set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLANG_RELATIVE_SRC="src/download/llvm-project/llvm"
-CLANG_SRC="$SCRIPT_DIR/$CLANG_RELATIVE_SRC"
+CLANG_SRC="${CLANG_SRC:-$SCRIPT_DIR/$CLANG_RELATIVE_SRC}"
 CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/src/err_ret_local_block.patch"
     "$SCRIPT_DIR/src/mangle_suppress_errors.patch"
@@ -45,10 +45,15 @@ usage () {
 }
 
 clang_hash () {
-    pushd "$SCRIPT_DIR" > /dev/null
-    HASH=$($SHASUM setup.sh src/prepare_clang_src.sh | $SHASUM)
-    printf "%s" "$HASH" | cut -d ' ' -f 1
-    popd > /dev/null
+    if [ "$CLANG_HASH_USE_GIT" = "yes" ]; then
+        HASH=$(git -C "$CLANG_SRC" rev-parse HEAD)
+        echo "$HASH"
+    else
+        pushd "$SCRIPT_DIR" > /dev/null
+        HASH=$($SHASUM setup.sh src/prepare_clang_src.sh | $SHASUM)
+        printf "%s" "$HASH" | cut -d ' ' -f 1
+        popd > /dev/null
+    fi
 }
 
 check_installed () {
@@ -221,12 +226,14 @@ if [ ! -d "$CLANG_SRC" ]; then
     exit 1
 fi
 
-# apply prebuild patch
-pushd "${SCRIPT_DIR}/src/download"
-for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
-    "$PATCH" --force -p 1 < "$PATCH_FILE"
-done
-popd
+if [ "$SKIP_PATCH" != "yes" ]; then
+    # apply prebuild patch
+    pushd "${SCRIPT_DIR}/src/download"
+    for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
+        "$PATCH" --force -p 1 < "$PATCH_FILE"
+    done
+    popd
+fi
 
 if [ -n "$CLANG_TMP_DIR" ]; then
     TMP=$CLANG_TMP_DIR
