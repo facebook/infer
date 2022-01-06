@@ -54,4 +54,15 @@ class ArrayTest {
     mutableArray[0] = 3; // modifications to mutable arrays are ok
     mutate_array_via_callee_bad(); // // modifications to immutables are not
   }
+
+  void mutate_arg_bad(ArrayTest a) {
+    int[] array = a.get_testArray();
+    array[0] = 42;
+  }
+
+  void FN_mutate_new_bad() {
+    ArrayTest a = new ArrayTest();
+    int[] array = a.get_testArray();
+    array[0] = 42;
+  }
 }
