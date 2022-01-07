@@ -166,7 +166,7 @@ fi
 platform=`uname`
 
 if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
-    CXXFLAGS="$CXXFLAGS -D _GLIBCXX_INCLUDE_NEXT_C_HEADERS -Wl,-rpath-link,${PLATFORM_ENV}/lib"
+    CXXFLAGS="$CXXFLAGS -DHAVE_RPC_XDR_H=0 -D_GLIBCXX_INCLUDE_NEXT_C_HEADERS -Wl,-rpath-link,${PLATFORM_ENV}/lib"
 fi
 
 CMAKE_ARGS=(
