@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 INFER_OPTIONS = \
-  --debug --cfg-json cfg.json \
+  --cfg-json cfg.json \
   --tenv-json tenv.json \
 
 INFERPRINT_OPTIONS = --issues-tests-fields "file,procedure,line_offset,bug_type,bucket" --issues-tests

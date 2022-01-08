@@ -1,1 +1,1 @@
-codetoanalyze/dotnet/starg/NullExceptionStarg.cs, Void TestCodeStarg.NullExceptionStargBad(), 3, NULL_DEREFERENCE, B5
+codetoanalyze/dotnet/starg/NullExceptionStarg.cs, Void TestCodeStarg.NullExceptionStargBad(), 3, NULL_DEREFERENCE, no_bucket

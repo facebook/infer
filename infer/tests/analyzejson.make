@@ -14,6 +14,6 @@ cfg.json: jsons.tar.xz
 infer-out/report.json: $(MAKEFILE_LIST) cfg.json
 	$(QUIET)$(call silent_on_success,Testing infer/dotnet in $(TEST_REL_DIR),\
 	  $(INFER_BIN) capture && \
-	  $(INFER_BIN) analyzejson --project-root $(TESTS_DIR) \
+	  $(INFER_BIN)   $(infer help --list-issue-types 2> /dev/null | grep ':true:' | cut -d ':' -f 1 | sed -e 's/^/--disable-issue-type /') --enable-issue-type NULL_DEREFERENCE --enable-issue-type DOTNET_RESOURCE_LEAK --enable-issue-type THREAD_SAFETY_VIOLATION analyzejson --project-root $(TESTS_DIR) \
 	    $(INFER_OPTIONS) && \
 	  sed -i -e 's#/app/infernew/infer/tests/##g' $@ )

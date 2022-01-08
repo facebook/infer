@@ -1,0 +1,2 @@
+codetoanalyze/dotnet/exception/NullExceptionException.cs, Void TestCodeException.NullExceptionCatchExceptionBad(), 3, NULL_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/exception/NullExceptionException.cs, Void TestCodeException.NullExceptionFinallyExceptionBad(), 3, NULL_DEREFERENCE, no_bucket

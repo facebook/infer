@@ -1,0 +1,1 @@
+codetoanalyze/dotnet/threadsafetyviolation/ThreadSafetyViolation.cs, Void TestCodeThreadSafetyViolation.ThreadSafetyViolationBad(), 11, THREAD_SAFETY_VIOLATION, no_bucket
