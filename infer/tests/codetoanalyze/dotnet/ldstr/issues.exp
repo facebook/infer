@@ -1,1 +1,1 @@
-codetoanalyze/dotnet/ldstr/NullDerefLdstr.cs, Void TestCodeIsInst.NullExceptionIsInst1Bad(), 3, NULL_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/ldstr/NullExceptionLdstr.cs, Void TestCodeLdstr.NullExceptionLdstrBad(), 3, NULL_DEREFERENCE, no_bucket
