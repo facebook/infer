@@ -170,17 +170,20 @@ if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
 fi
 
 CMAKE_ARGS=(
-  -DCMAKE_INSTALL_PREFIX="$CLANG_PREFIX"
   -DCMAKE_BUILD_TYPE=Release
   -DCMAKE_C_FLAGS="$CFLAGS $CMAKE_C_FLAGS"
   -DCMAKE_CXX_FLAGS="$CXXFLAGS $CPPFLAGS $CMAKE_CXX_FLAGS"
+  -DCMAKE_INSTALL_PREFIX="$CLANG_PREFIX"
+  -DLLVM_BUILD_EXTERNAL_COMPILER_RT=On
+  -DLLVM_BUILD_TOOLS=Off
   -DLLVM_ENABLE_ASSERTIONS=Off
   -DLLVM_ENABLE_EH=On
+  -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp"
   -DLLVM_ENABLE_RTTI=On
   -DLLVM_INCLUDE_DOCS=Off
-  -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp"
+  -DLLVM_INCLUDE_EXAMPLES=Off
+  -DLLVM_INCLUDE_TESTS=Off
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;ARM;Mips"
-  -DLLVM_BUILD_EXTERNAL_COMPILER_RT=On
 )
 
 if [ "$platform" = "Darwin" ]; then
@@ -262,6 +265,12 @@ $BUILD_BIN $BUILD_ARGS install
 
 popd # build
 popd # $TMP
+
+# delete libs not needed by Infer
+if [ "$KEEP_LIBS" != "yes" ]; then
+    rm -v "$CLANG_PREFIX"/lib/libclang*
+    rm -v "$CLANG_PREFIX"/lib/libLLVM*
+fi
 
 # brutally strip everything, ignore errors
 set +e
