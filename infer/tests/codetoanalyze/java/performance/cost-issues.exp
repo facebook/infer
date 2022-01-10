@@ -15,7 +15,7 @@ codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.binary_search_log(java.lang.String[]):int, 4 + log(arr.length),  OnUIThread:false, [{arr.length},Modeled call to Arrays.binarySearch]
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.bsearch_log(int):void, 5 + log(i),  OnUIThread:false, [{i},Modeled call to Arrays.binarySearch]
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.call_gen_and_iter_types(int):void, 17 + 6 ⋅ x + 5 ⋅ x,  OnUIThread:false, [{x},Call to String[] Array.gen_and_iter_types(int),Loop,{x},Loop]
-codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.call_gen_and_iter_types_linear_FP(int,int):void, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
+codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.call_gen_and_iter_types_linear_FP(int,int):void, 29 + 5 ⋅ x + 6 ⋅ y + 5 ⋅ y,  OnUIThread:false, [{y},Call to String[] Array.gen_and_iter_types(int),Loop,{y},Loop,{x},Call to String[] Array.gen_and_iter_types(int),Loop]
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.copyOf_constant(java.lang.String[]):void, 15,  OnUIThread:false, []
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.copyOf_linear(java.lang.String[]):void, 16 + 9 ⋅ arr.length + arr.length,  OnUIThread:false, [{arr.length},Modeled call to Arrays.copyOf,{arr.length},Loop]
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.fill_big_constant():void, 306,  OnUIThread:false, []
