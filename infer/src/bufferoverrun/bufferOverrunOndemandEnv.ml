@@ -63,15 +63,13 @@ let mk pdesc =
               L.(die InternalError) "Untyped expression is given." ) )
       | BoField.Field {typ= Some _ as some_typ} ->
           some_typ
-      | BoField.Field {fn; prefix= x} -> (
+      | BoField.Field {fn; prefix= x} | BoField.StarField {last_field= fn; prefix= x} -> (
         match BoField.get_type fn with
         | None ->
             let lookup = Tenv.lookup tenv in
             Option.map (typ_of_param_path x) ~f:(Struct.fld_typ ~lookup ~default:StdTyp.void fn)
         | some_typ ->
             some_typ )
-      | BoField.StarField {last_field} ->
-          BoField.get_type last_field
       | BoField.Prim (SPath.Callsite {ret_typ}) ->
           Some ret_typ
     in
