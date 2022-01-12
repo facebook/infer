@@ -11,7 +11,7 @@ set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLANG_RELATIVE_SRC="src/download/llvm-project/llvm"
-CLANG_SRC="$SCRIPT_DIR/$CLANG_RELATIVE_SRC"
+CLANG_SRC="${CLANG_SRC:-$SCRIPT_DIR/$CLANG_RELATIVE_SRC}"
 CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/src/err_ret_local_block.patch"
     "$SCRIPT_DIR/src/mangle_suppress_errors.patch"
@@ -45,10 +45,15 @@ usage () {
 }
 
 clang_hash () {
-    pushd "$SCRIPT_DIR" > /dev/null
-    HASH=$($SHASUM setup.sh src/prepare_clang_src.sh | $SHASUM)
-    printf "%s" "$HASH" | cut -d ' ' -f 1
-    popd > /dev/null
+    if [ "$CLANG_HASH_USE_GIT" = "yes" ]; then
+        HASH=$(git -C "$CLANG_SRC" rev-parse HEAD)
+        echo "$HASH"
+    else
+        pushd "$SCRIPT_DIR" > /dev/null
+        HASH=$($SHASUM setup.sh src/prepare_clang_src.sh | $SHASUM)
+        printf "%s" "$HASH" | cut -d ' ' -f 1
+        popd > /dev/null
+    fi
 }
 
 check_installed () {
@@ -161,21 +166,24 @@ fi
 platform=`uname`
 
 if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
-    CXXFLAGS="$CXXFLAGS -D _GLIBCXX_INCLUDE_NEXT_C_HEADERS -Wl,-rpath-link,${PLATFORM_ENV}/lib"
+    CXXFLAGS="$CXXFLAGS -DHAVE_RPC_XDR_H=0 -D_GLIBCXX_INCLUDE_NEXT_C_HEADERS -Wl,-rpath-link,${PLATFORM_ENV}/lib"
 fi
 
 CMAKE_ARGS=(
-  -DCMAKE_INSTALL_PREFIX="$CLANG_PREFIX"
   -DCMAKE_BUILD_TYPE=Release
   -DCMAKE_C_FLAGS="$CFLAGS $CMAKE_C_FLAGS"
   -DCMAKE_CXX_FLAGS="$CXXFLAGS $CPPFLAGS $CMAKE_CXX_FLAGS"
+  -DCMAKE_INSTALL_PREFIX="$CLANG_PREFIX"
+  -DLLVM_BUILD_EXTERNAL_COMPILER_RT=On
+  -DLLVM_BUILD_TOOLS=Off
   -DLLVM_ENABLE_ASSERTIONS=Off
   -DLLVM_ENABLE_EH=On
+  -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp"
   -DLLVM_ENABLE_RTTI=On
   -DLLVM_INCLUDE_DOCS=Off
-  -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp"
+  -DLLVM_INCLUDE_EXAMPLES=Off
+  -DLLVM_INCLUDE_TESTS=Off
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;ARM;Mips"
-  -DLLVM_BUILD_EXTERNAL_COMPILER_RT=On
 )
 
 if [ "$platform" = "Darwin" ]; then
@@ -221,12 +229,14 @@ if [ ! -d "$CLANG_SRC" ]; then
     exit 1
 fi
 
-# apply prebuild patch
-pushd "${SCRIPT_DIR}/src/download"
-for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
-    "$PATCH" --force -p 1 < "$PATCH_FILE"
-done
-popd
+if [ "$SKIP_PATCH" != "yes" ]; then
+    # apply prebuild patch
+    pushd "${SCRIPT_DIR}/src/download"
+    for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
+        "$PATCH" --force -p 1 < "$PATCH_FILE"
+    done
+    popd
+fi
 
 if [ -n "$CLANG_TMP_DIR" ]; then
     TMP=$CLANG_TMP_DIR
@@ -255,6 +265,12 @@ $BUILD_BIN $BUILD_ARGS install
 
 popd # build
 popd # $TMP
+
+# delete libs not needed by Infer
+if [ "$KEEP_LIBS" != "yes" ]; then
+    rm -v "$CLANG_PREFIX"/lib/libclang*
+    rm -v "$CLANG_PREFIX"/lib/libLLVM*
+fi
 
 # brutally strip everything, ignore errors
 set +e
