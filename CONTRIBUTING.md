@@ -12,8 +12,8 @@ We welcome contributions via [pull requests on GitHub](https://github.com/facebo
 
 ### Development Dependencies
 
-You'll want to install a few more dependencies to comfortably hack on the infer codebase. Simply
-run:
+You'll want to install a few more dependencies to comfortably hack on the infer codebase;
+in order to do this run `./build_infer.sh` which will allow you to then run:
 ```sh
 make devsetup
 ```
