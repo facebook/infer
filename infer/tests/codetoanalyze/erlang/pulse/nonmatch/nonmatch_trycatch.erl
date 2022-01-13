@@ -6,12 +6,12 @@
 -module(nonmatch_trycatch).
 
 -export([
-    try_test_simple1_Ok/0,
-    try_test_simple2_Ok/0,
-    try_test_simple3_Bad/0,
-    try_test_tail1_Ok/0,
-    try_test_tail2_Ok/0,
-    try_test_tail3_Bad/0
+    test_try_simple1_Ok/0,
+    test_try_simple2_Ok/0,
+    test_try_simple3_Bad/0,
+    test_try_tail1_Ok/0,
+    test_try_tail2_Ok/0,
+    test_try_tail3_Bad/0
 ]).
 
 try_simple(X) ->
@@ -29,16 +29,16 @@ tail_with_try(X) ->
         _ -> ok
     end.
 
-try_test_simple1_Ok() ->
+test_try_simple1_Ok() ->
     try_simple(0).
-try_test_simple2_Ok() ->
+test_try_simple2_Ok() ->
     try_simple(1).
-try_test_simple3_Bad() ->
+test_try_simple3_Bad() ->
     try_simple(2).
 
-try_test_tail1_Ok() ->
+test_try_tail1_Ok() ->
     tail_with_try([1, 2]).
-try_test_tail2_Ok() ->
+test_try_tail2_Ok() ->
     tail_with_try([1]).
-try_test_tail3_Bad() ->
+test_try_tail3_Bad() ->
     tail_with_try([]).
