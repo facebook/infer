@@ -249,6 +249,7 @@ DIRECT_TESTS += \
   dotnet_array \
   dotnet_bgeble \
   dotnet_box \
+  dotnet_exception \
   dotnet_fieldderef \
   dotnet_isinst \
   dotnet_ldstr \
@@ -259,7 +260,8 @@ DIRECT_TESTS += \
   dotnet_numcomparison \
   dotnet_reference \
   dotnet_resourceleak \
-  dotnet_starg
+  dotnet_starg \
+  dotnet_threadsafetyviolation
 
 ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
 BUILD_SYSTEMS_TESTS += make utf8_in_pwd waf
