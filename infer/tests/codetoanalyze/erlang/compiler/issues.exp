@@ -1,0 +1,508 @@
+----- features_arithmetic -----
+features_arithmetic:test_add1_Bad/0: function_clause
+features_arithmetic:test_add1_Ok/0: ok
+features_arithmetic:test_add2_Bad/0: function_clause
+features_arithmetic:test_add2_Ok/0: ok
+features_arithmetic:test_idiv1_Bad/0: function_clause
+features_arithmetic:test_idiv1_Ok/0: ok
+features_arithmetic:test_idiv2_Bad/0: function_clause
+features_arithmetic:test_idiv2_Ok/0: ok
+features_arithmetic:test_mul1_Bad/0: function_clause
+features_arithmetic:test_mul1_Ok/0: ok
+features_arithmetic:test_mul2_Bad/0: function_clause
+features_arithmetic:test_mul2_Ok/0: ok
+features_arithmetic:test_mul3_Bad/0: function_clause
+features_arithmetic:test_mul3_Ok/0: ok
+features_arithmetic:test_multiple_Bad/0: function_clause
+features_arithmetic:test_multiple_Ok/0: ok
+features_arithmetic:test_rem_Bad/0: function_clause
+features_arithmetic:test_rem_Ok/0: ok
+features_arithmetic:test_sub1_Bad/0: function_clause
+features_arithmetic:test_sub1_Ok/0: ok
+features_arithmetic:test_sub2_Bad/0: function_clause
+features_arithmetic:test_sub2_Ok/0: ok
+features_arithmetic:test_uminus1_Bad/0: function_clause
+features_arithmetic:test_uminus1_Ok/0: ok
+features_arithmetic:test_uminus2_Bad/0: function_clause
+features_arithmetic:test_uminus2_Ok/0: ok
+
+----- features_bitwise -----
+features_bitwise:test_band1_Bad/0: function_clause
+features_bitwise:test_band1_Ok/0: ok
+features_bitwise:test_band2_Bad/0: function_clause
+features_bitwise:test_band2_Ok/0: ok
+features_bitwise:test_bor1_Bad/0: function_clause
+features_bitwise:test_bor1_Ok/0: ok
+features_bitwise:test_bor2_Bad/0: function_clause
+features_bitwise:test_bor2_Ok/0: ok
+features_bitwise:test_bsl_Bad/0: function_clause
+features_bitwise:test_bsl_Ok/0: ok
+features_bitwise:test_bsr1_Bad/0: function_clause
+features_bitwise:test_bsr1_Ok/0: ok
+features_bitwise:test_bsr2_Bad/0: function_clause
+features_bitwise:test_bsr2_Ok/0: ok
+features_bitwise:test_bxor1_Bad/0: function_clause
+features_bitwise:test_bxor1_Ok/0: ok
+features_bitwise:test_bxor2_Bad/0: function_clause
+features_bitwise:test_bxor2_Ok/0: ok
+features_bitwise:test_ubnot1_Bad/0: function_clause
+features_bitwise:test_ubnot1_Ok/0: ok
+features_bitwise:test_ubnot2_Bad/0: function_clause
+features_bitwise:test_ubnot2_Ok/0: ok
+
+----- features_block -----
+features_block:test_block_Bad/0: function_clause
+features_block:test_block_Ok/0: ok
+features_block:test_block_in_function_Bad/0: function_clause
+features_block:test_block_in_function_Ok/0: ok
+
+----- features_case_expr -----
+features_case_expr:test_case_Bad/0: function_clause
+features_case_expr:test_case_Ok/0: ok
+features_case_expr:test_case_in_function_Bad/0: function_clause
+features_case_expr:test_case_in_function_Ok/0: ok
+
+----- features_catch_expr -----
+features_catch_expr:test_catch_ok_Bad/0: function_clause
+features_catch_expr:test_catch_ok_Ok/0: ok
+
+----- features_comparison -----
+features_comparison:fp_test_equal_Ok2/0: ok
+features_comparison:fp_test_exactly_not_equal_Ok2/0: ok
+features_comparison:test_atleast_Bad/0: if_clause
+features_comparison:test_atleast_Ok/0: ok
+features_comparison:test_atleast_Ok2/0: ok
+features_comparison:test_atmost_Bad/0: if_clause
+features_comparison:test_atmost_Ok/0: ok
+features_comparison:test_atmost_Ok2/0: ok
+features_comparison:test_equal_Bad/0: if_clause
+features_comparison:test_equal_Ok/0: ok
+features_comparison:test_exactly_equal_Bad/0: if_clause
+features_comparison:test_exactly_equal_Bad2/0: if_clause
+features_comparison:test_exactly_equal_Ok/0: ok
+features_comparison:test_exactly_not_equal_Bad/0: if_clause
+features_comparison:test_exactly_not_equal_Ok/0: ok
+features_comparison:test_greater_Bad/0: if_clause
+features_comparison:test_greater_Bad2/0: if_clause
+features_comparison:test_greater_Ok/0: ok
+features_comparison:test_less_Bad/0: if_clause
+features_comparison:test_less_Bad2/0: if_clause
+features_comparison:test_less_Ok/0: ok
+features_comparison:test_not_equal_Bad/0: if_clause
+features_comparison:test_not_equal_Bad2/0: if_clause
+features_comparison:test_not_equal_Ok/0: ok
+
+----- features_fun -----
+features_fun:fn_test_fun_notexists_Bad/0: undef
+features_fun:test_fun_Bad/0: {case_clause,1}
+features_fun:test_fun_Ok/0: ok
+features_fun:test_fun_nomodule_Bad/0: {case_clause,1}
+features_fun:test_fun_nomodule_Ok/0: ok
+
+----- features_functions -----
+features_functions:test_call1_Bad/0: function_clause
+features_functions:test_call1_Ok/0: ok
+features_functions:test_call2_Bad/0: function_clause
+features_functions:test_call2_Ok/0: ok
+features_functions:test_call3_Bad/0: function_clause
+features_functions:test_call3_Ok/0: ok
+features_functions:test_call4_Bad/0: function_clause
+features_functions:test_call4_Ok/0: ok
+
+----- features_guard_bifs -----
+features_guard_bifs:test_accepts_atom_Bad/0: function_clause
+features_guard_bifs:test_accepts_atom_Ok/0: ok
+features_guard_bifs:test_accepts_atom_nomodule_Bad/0: function_clause
+features_guard_bifs:test_accepts_atom_nomodule_Ok/0: ok
+features_guard_bifs:test_accepts_bool1_Ok/0: ok
+features_guard_bifs:test_accepts_bool2_Ok/0: ok
+features_guard_bifs:test_accepts_bool3_Bad/0: function_clause
+features_guard_bifs:test_accepts_bool4_Bad/0: function_clause
+features_guard_bifs:test_accepts_bool_nomodule1_Ok/0: ok
+features_guard_bifs:test_accepts_bool_nomodule2_Ok/0: ok
+features_guard_bifs:test_accepts_bool_nomodule3_Bad/0: function_clause
+features_guard_bifs:test_accepts_bool_nomodule4_Bad/0: function_clause
+features_guard_bifs:test_is_list1_Ok/0: ok
+features_guard_bifs:test_is_list2_Ok/0: ok
+features_guard_bifs:test_is_list3_Bad/0: function_clause
+features_guard_bifs:test_is_map_Bad/0: function_clause
+features_guard_bifs:test_is_map_Ok/0: ok
+features_guard_bifs:test_is_map_nomodule_Bad/0: function_clause
+features_guard_bifs:test_is_map_nomodule_Ok/0: ok
+
+----- features_if_expr -----
+features_if_expr:test_if_Bad/0: function_clause
+features_if_expr:test_if_Ok/0: ok
+features_if_expr:test_if_in_function_Bad/0: function_clause
+features_if_expr:test_if_in_function_Ok/0: ok
+
+----- features_lambdas -----
+features_lambdas:fp_test_apply_fun_Ok/0: ok
+features_lambdas:fp_test_lambda_capture_Ok/0: ok
+features_lambdas:test_apply_fun_Bad/0: function_clause
+features_lambdas:test_lambda_capture_Bad/0: function_clause
+features_lambdas:test_lambda_within_function_Bad/0: function_clause
+features_lambdas:test_lambda_within_function_Ok/0: ok
+features_lambdas:test_lambda_within_function_nested_Bad/0: function_clause
+features_lambdas:test_lambda_within_function_nested_Ok/0: ok
+
+----- features_lc -----
+features_lc:fn_test_simple1a_Bad/0: {case_clause,[3]}
+features_lc:fn_test_two_gen1_Bad/0: function_clause
+features_lc:fn_test_two_gen2_Bad/0: function_clause
+features_lc:test_empty_Bad/0: function_clause
+features_lc:test_empty_Ok/0: ok
+features_lc:test_filtered1_Bad/0: function_clause
+features_lc:test_filtered1_Ok/0: ok
+features_lc:test_filtered2_Bad/0: function_clause
+features_lc:test_filtered2_Ok/0: ok
+features_lc:test_simple1_Bad/0: function_clause
+features_lc:test_simple1_Ok/0: ok
+features_lc:test_simple2_Bad/0: function_clause
+features_lc:test_simple2_Ok/0: ok
+features_lc:test_simple3_Bad/0: function_clause
+features_lc:test_simple3_Ok/0: ok
+features_lc:test_two_filters_Bad/0: function_clause
+features_lc:test_two_filters_Ok/0: ok
+features_lc:test_two_gen1_Ok/0: ok
+features_lc:test_two_gen2_Ok/0: ok
+
+----- features_lists -----
+features_lists:fn_test_listadd4_Bad/0: function_clause
+features_lists:fn_test_listappend4_Bad/0: function_clause
+features_lists:fn_test_listappend5_Bad/0: badarg
+features_lists:fn_test_reverse4_Bad/0: function_clause
+features_lists:test_cons1_Bad/0: {case_clause,[1,3]}
+features_lists:test_cons1_Ok/0: ok
+features_lists:test_cons2_Bad/0: {case_clause,[100000,3]}
+features_lists:test_cons2_Ok/0: ok
+features_lists:test_listadd0_Bad/0: function_clause
+features_lists:test_listadd0_Ok/0: ok
+features_lists:test_listadd0a_Bad/0: function_clause
+features_lists:test_listadd0a_Ok/0: ok
+features_lists:test_listadd1_Bad/0: function_clause
+features_lists:test_listadd1_Ok/0: ok
+features_lists:test_listadd2_Bad/0: function_clause
+features_lists:test_listadd2_Ok/0: ok
+features_lists:test_listadd2a_Bad/0: function_clause
+features_lists:test_listadd2a_Ok/0: ok
+features_lists:test_listadd3_Bad/0: function_clause
+features_lists:test_listadd3_Ok/0: ok
+features_lists:test_listadd4_Ok/0: ok
+features_lists:test_listappend0_Bad/0: function_clause
+features_lists:test_listappend0_Ok/0: ok
+features_lists:test_listappend0a_Bad/0: function_clause
+features_lists:test_listappend0a_Ok/0: ok
+features_lists:test_listappend1_Bad/0: function_clause
+features_lists:test_listappend1_Ok/0: ok
+features_lists:test_listappend2_Bad/0: function_clause
+features_lists:test_listappend2_Ok/0: ok
+features_lists:test_listappend2a_Bad/0: function_clause
+features_lists:test_listappend2a_Ok/0: ok
+features_lists:test_listappend3_Bad/0: function_clause
+features_lists:test_listappend3_Ok/0: ok
+features_lists:test_listappend4_Ok/0: ok
+features_lists:test_nil_Bad/0: {case_clause,[1]}
+features_lists:test_nil_Ok/0: ok
+features_lists:test_reverse0_Bad/0: function_clause
+features_lists:test_reverse0_Ok/0: ok
+features_lists:test_reverse1_Bad/0: function_clause
+features_lists:test_reverse1_Ok/0: ok
+features_lists:test_reverse2_Bad/0: function_clause
+features_lists:test_reverse2_Ok/0: ok
+features_lists:test_reverse3_Bad/0: function_clause
+features_lists:test_reverse3_Ok/0: ok
+features_lists:test_reverse4_Ok/0: ok
+
+----- features_logic -----
+features_logic:test_and00_Bad/0: if_clause
+features_logic:test_and01_Bad/0: if_clause
+features_logic:test_and10_Bad/0: if_clause
+features_logic:test_and11_Ok/0: ok
+features_logic:test_andalso00_Bad/0: if_clause
+features_logic:test_andalso01_Bad/0: if_clause
+features_logic:test_andalso10_Bad/0: if_clause
+features_logic:test_andalso11_Ok/0: ok
+features_logic:test_false_Bad/0: {case_clause,false}
+features_logic:test_false_Ok/0: ok
+features_logic:test_or00_Bad/0: if_clause
+features_logic:test_or01_Ok/0: ok
+features_logic:test_or10_Ok/0: ok
+features_logic:test_or11_Ok/0: ok
+features_logic:test_orelse00_Bad/0: if_clause
+features_logic:test_orelse01_Ok/0: ok
+features_logic:test_orelse10_Ok/0: ok
+features_logic:test_orelse11_Ok/0: ok
+features_logic:test_true_Bad/0: {case_clause,true}
+features_logic:test_true_Ok/0: ok
+features_logic:test_unot_Bad/0: if_clause
+features_logic:test_unot_Ok/0: ok
+features_logic:test_xor00_Bad/0: if_clause
+features_logic:test_xor01_Ok/0: ok
+features_logic:test_xor10_Ok/0: ok
+features_logic:test_xor11_Bad/0: if_clause
+
+----- features_maps -----
+features_maps:test_get_Bad/0: function_clause
+features_maps:test_get_Ok/0: ok
+features_maps:test_get_badkey_Bad/0: {badkey,1}
+features_maps:test_get_badmap_Bad/0: {badmap,[not_a_map]}
+features_maps:test_is_key_Bad/0: function_clause
+features_maps:test_is_key_Ok/0: ok
+features_maps:test_is_key_badmap_Bad/0: {badmap,[not_a_map]}
+features_maps:test_new_Bad/0: function_clause
+features_maps:test_new_Ok/0: ok
+features_maps:test_put1_Ok/0: ok
+features_maps:test_put2_Ok/0: ok
+features_maps:test_put3_Ok/0: ok
+features_maps:test_put4_Bad/0: function_clause
+features_maps:test_put5_Bad/0: function_clause
+features_maps:test_put6_Bad/0: {badmap,[not_a_map]}
+
+----- features_records -----
+features_records:test_field2_Bad/0: function_clause
+features_records:test_field2_Ok/0: ok
+features_records:test_field3_Bad/0: function_clause
+features_records:test_field3_Ok/0: ok
+features_records:test_field4_Bad/0: function_clause
+features_records:test_field4_Ok/0: ok
+features_records:test_field_all_other1_Bad/0: function_clause
+features_records:test_field_all_other1_Ok/0: ok
+features_records:test_field_all_other2_Bad/0: function_clause
+features_records:test_field_all_other2_Ok/0: ok
+features_records:test_field_all_other3_Bad/0: function_clause
+features_records:test_field_all_other3_Ok/0: ok
+features_records:test_field_rearranged_Bad/0: function_clause
+features_records:test_field_rearranged_Ok/0: ok
+features_records:test_field_update1_Bad/0: function_clause
+features_records:test_field_update1_Ok/0: ok
+features_records:test_field_update2_Bad/0: function_clause
+features_records:test_field_update2_Ok/0: ok
+features_records:test_field_update3_Bad/0: function_clause
+features_records:test_field_update3_Ok/0: ok
+features_records:test_index2_Bad/0: function_clause
+features_records:test_index2_Ok/0: ok
+features_records:test_index3_Bad/0: function_clause
+features_records:test_index3_Ok/0: ok
+features_records:test_index4_Bad/0: function_clause
+features_records:test_index4_Ok/0: ok
+features_records:test_initializer1_Bad/0: function_clause
+features_records:test_initializer1_Ok/0: ok
+features_records:test_initializer2_Bad/0: function_clause
+features_records:test_initializer2_Ok/0: ok
+features_records:test_initializer_explicit_override_Bad/0: function_clause
+features_records:test_initializer_explicit_override_Ok/0: ok
+features_records:test_initializer_update_override_Bad/0: function_clause
+features_records:test_initializer_update_override_Ok/0: ok
+features_records:test_nested_Bad/0: function_clause
+features_records:test_nested_Ok/0: ok
+features_records:test_undefined_Bad/0: function_clause
+features_records:test_undefined_Ok/0: ok
+
+----- features_short_circuit -----
+features_short_circuit:test_and_Bad/0: function_clause
+features_short_circuit:test_and_Ok/0: ok
+features_short_circuit:test_andalso_Bad/0: function_clause
+features_short_circuit:test_andalso_Ok/0: ok
+features_short_circuit:test_or_Bad/0: function_clause
+features_short_circuit:test_or_Ok/0: ok
+features_short_circuit:test_orelse_Bad/0: function_clause
+features_short_circuit:test_orelse_Ok/0: ok
+
+----- features_trycatch -----
+features_trycatch:test_with_after_Bad/0: function_clause
+features_trycatch:test_with_after_Ok/0: ok
+features_trycatch:test_with_case_and_after1_Ok/0: ok
+features_trycatch:test_with_case_and_after2_Bad/0: function_clause
+features_trycatch:test_with_case_and_after3_Bad/0: function_clause
+features_trycatch:test_with_case_and_catch_Bad/0: function_clause
+features_trycatch:test_with_case_and_catch_Ok/0: ok
+features_trycatch:test_with_case_and_catch_and_after_Bad/0: function_clause
+features_trycatch:test_with_case_and_catch_and_after_Ok/0: ok
+features_trycatch:test_with_catch_Bad/0: function_clause
+features_trycatch:test_with_catch_Ok/0: ok
+
+----- features_tuples -----
+features_tuples:test_first_Bad/0: function_clause
+features_tuples:test_first_Ok/0: ok
+features_tuples:test_nested_Bad/0: function_clause
+features_tuples:test_nested_Ok/0: ok
+features_tuples:test_second_Bad/0: function_clause
+features_tuples:test_second_Ok/0: ok
+features_tuples:test_third_Bad/0: function_clause
+features_tuples:test_third_Ok/0: ok
+
+----- features_variables -----
+features_variables:test1_Ok/0: ok
+features_variables:test2_Bad/0: function_clause
+features_variables:test3_Bad/0: function_clause
+features_variables:test4_Ok/0: ok
+features_variables:test5_Bad/0: {badmatch,2}
+
+----- nonmatch_atoms -----
+nonmatch_atoms:test_match1_Ok/0: ok
+nonmatch_atoms:test_match2_Ok/0: ok
+nonmatch_atoms:test_match3_Bad/0: function_clause
+nonmatch_atoms:test_match4_Ok/0: ok
+nonmatch_atoms:test_match5_Ok/0: ok
+nonmatch_atoms:test_match6_Bad/0: function_clause
+nonmatch_atoms:test_match7_Bad/0: function_clause
+
+----- nonmatch_case_expr -----
+nonmatch_case_expr:test_case_simple1_Ok/0: ok
+nonmatch_case_expr:test_case_simple2_Ok/0: ok
+nonmatch_case_expr:test_case_simple3_Bad/0: {case_clause,2}
+nonmatch_case_expr:test_case_tail1_Ok/0: ok
+nonmatch_case_expr:test_case_tail2_Ok/0: ok
+nonmatch_case_expr:test_case_tail3_Bad/0: {case_clause,[]}
+
+----- nonmatch_case_guards -----
+nonmatch_case_guards:test_accepts_all_Ok/0: ok
+nonmatch_case_guards:test_accepts_positive2_Bad/0: {case_clause,0}
+nonmatch_case_guards:test_accepts_positive2_Ok/0: ok
+nonmatch_case_guards:test_accepts_positive_Bad/0: {case_clause,0}
+nonmatch_case_guards:test_accepts_positive_Ok/0: ok
+
+----- nonmatch_function_guards -----
+nonmatch_function_guards:fn_test_possible_exception2_Bad/0: function_clause
+nonmatch_function_guards:test_accepts_all_basic2_Ok/0: ok
+nonmatch_function_guards:test_accepts_all_basic_Ok/0: ok
+nonmatch_function_guards:test_accepts_all_tricky2_Ok/0: ok
+nonmatch_function_guards:test_accepts_all_tricky3_Ok/0: ok
+nonmatch_function_guards:test_accepts_all_tricky_Ok/0: ok
+nonmatch_function_guards:test_accepts_positive2_Bad/0: function_clause
+nonmatch_function_guards:test_accepts_positive2_Ok/0: ok
+nonmatch_function_guards:test_accepts_positive_Bad/0: function_clause
+nonmatch_function_guards:test_accepts_positive_Ok/0: ok
+nonmatch_function_guards:test_possible_exception_Bad/0: function_clause
+nonmatch_function_guards:test_possible_exception_Ok/0: ok
+
+----- nonmatch_if_expr -----
+nonmatch_if_expr:test_accepts_all_Ok/0: ok
+nonmatch_if_expr:test_accepts_positive_Bad/0: if_clause
+nonmatch_if_expr:test_accepts_positive_Ok/0: ok
+
+----- nonmatch_lists -----
+nonmatch_lists:test_empty1_Ok/0: ok
+nonmatch_lists:test_empty2_Bad/0: function_clause
+nonmatch_lists:test_empty3_Bad/0: function_clause
+nonmatch_lists:test_secondnil1_Ok/0: ok
+nonmatch_lists:test_secondnil2_Ok/0: ok
+nonmatch_lists:test_secondnil3_Bad/0: function_clause
+nonmatch_lists:test_tail1_Ok/0: ok
+nonmatch_lists:test_tail2_Ok/0: ok
+nonmatch_lists:test_tail3_Bad/0: function_clause
+
+----- nonmatch_maps -----
+nonmatch_maps:fn_test_create_multiple_elements_Bad/0: function_clause
+nonmatch_maps:fn_test_key_match3_Bad/0: function_clause
+nonmatch_maps:fn_test_key_value_match4_Bad/0: function_clause
+nonmatch_maps:fn_test_update_old_value_Bad/0: function_clause
+nonmatch_maps:test_create_multiple_elements_Ok/0: ok
+nonmatch_maps:test_key_match1_Ok/0: ok
+nonmatch_maps:test_key_match2_Bad/0: function_clause
+nonmatch_maps:test_key_match4_Ok/0: ok
+nonmatch_maps:test_key_value_match1_Ok/0: ok
+nonmatch_maps:test_key_value_match2_Bad/0: function_clause
+nonmatch_maps:test_key_value_match3_Bad/0: function_clause
+nonmatch_maps:test_type1_Ok/0: ok
+nonmatch_maps:test_type2_Ok/0: ok
+nonmatch_maps:test_type3_Bad/0: function_clause
+nonmatch_maps:test_type4_Bad/0: function_clause
+nonmatch_maps:test_update_arrow_Bad/0: function_clause
+nonmatch_maps:test_update_arrow_Ok/0: ok
+nonmatch_maps:test_update_badmap_Bad/0: {badmap,[1,2,3]}
+nonmatch_maps:test_update_exact_Bad/0: function_clause
+nonmatch_maps:test_update_exact_Ok/0: ok
+nonmatch_maps:test_update_exact_badkey_Bad/0: {badkey,1}
+nonmatch_maps:test_update_old_value_Ok/0: ok
+
+----- nonmatch_match_expr -----
+nonmatch_match_expr:test_match_a_Ok/0: ok
+nonmatch_match_expr:test_match_b_Bad/0: {badmatch,2}
+nonmatch_match_expr:test_match_c_Ok/0: ok
+nonmatch_match_expr:test_match_d_Ok/0: ok
+nonmatch_match_expr:test_match_e_Bad/0: function_clause
+nonmatch_match_expr:test_match_f_Ok/0: ok
+nonmatch_match_expr:test_match_g_Bad/0: function_clause
+nonmatch_match_expr:test_match_in_pattern_a_Ok/0: ok
+nonmatch_match_expr:test_match_in_pattern_b_Bad/0: {case_clause,3}
+nonmatch_match_expr:test_match_in_pattern_c_Bad/0: {case_clause,2}
+nonmatch_match_expr:test_match_in_pattern_d_Bad/0: {case_clause,3}
+nonmatch_match_expr:test_match_in_pattern_e_Ok/0: ok
+nonmatch_match_expr:test_match_in_pattern_f_Bad/0: {case_clause,1}
+nonmatch_match_expr:test_match_nested1_Ok/0: ok
+nonmatch_match_expr:test_match_nested2_Bad/0: {badmatch,2}
+nonmatch_match_expr:test_match_nested3_Bad/0: {badmatch,1}
+
+----- nonmatch_records -----
+nonmatch_records:test_bad_record_access_Bad/0: {badrecord,rabbit}
+nonmatch_records:test_bad_record_update_Bad/0: {badrecord,rabbit}
+nonmatch_records:test_index1_Ok/0: ok
+nonmatch_records:test_index2_Ok/0: ok
+nonmatch_records:test_index3_Bad/0: function_clause
+nonmatch_records:test_index4_Bad/0: function_clause
+nonmatch_records:test_match_field2_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_field2_Ok/0: ok
+nonmatch_records:test_match_field3_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_field3_Ok/0: ok
+nonmatch_records:test_match_field4_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_field4_Ok/0: ok
+nonmatch_records:test_match_field_multiple1_Ok/0: ok
+nonmatch_records:test_match_field_multiple2_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_field_multiple3_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_record_as_tuple1_Ok/0: ok
+nonmatch_records:test_match_record_as_tuple2_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_record_as_tuple3_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_record_as_tuple4_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_record_as_tuple5_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_record_as_tuple6_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_record_as_tuple7_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_tuple_as_record1_Ok/0: ok
+nonmatch_records:test_match_tuple_as_record2_Ok/0: ok
+nonmatch_records:test_match_tuple_as_record3_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_tuple_as_record4_Bad/0: {case_clause,123}
+nonmatch_records:test_match_tuple_as_record5_Bad/0: {badrecord,car}
+nonmatch_records:test_nested1_Ok/0: ok
+nonmatch_records:test_nested2_Ok/0: ok
+nonmatch_records:test_nested3_Ok/0: ok
+nonmatch_records:test_nested4_Bad/0: {case_clause,{car,987654,{person,123,45,6789}}}
+nonmatch_records:test_nested5_Bad/0: {case_clause,{car,987654,{person,123,45,6789}}}
+nonmatch_records:test_type_Bad/0: function_clause
+nonmatch_records:test_type_Ok/0: ok
+
+----- nonmatch_strings -----
+nonmatch_strings:test_match1_Ok/0: ok
+nonmatch_strings:test_match2_Bad/0: function_clause
+nonmatch_strings:test_match3_Bad/0: function_clause
+
+----- nonmatch_trycatch -----
+nonmatch_trycatch:test_try_simple1_Ok/0: ok
+nonmatch_trycatch:test_try_simple2_Ok/0: ok
+nonmatch_trycatch:test_try_simple3_Bad/0: {try_clause,2}
+nonmatch_trycatch:test_try_tail1_Ok/0: ok
+nonmatch_trycatch:test_try_tail2_Ok/0: ok
+nonmatch_trycatch:test_try_tail3_Bad/0: {try_clause,[]}
+
+----- nonmatch_tuples -----
+nonmatch_tuples:test_elements1_Ok/0: ok
+nonmatch_tuples:test_elements2_Bad/0: {badmatch,{1,2}}
+nonmatch_tuples:test_elements3_Bad/0: {badmatch,{1,2}}
+nonmatch_tuples:test_elements_partial1_Ok/0: ok
+nonmatch_tuples:test_elements_partial2_Ok/0: ok
+nonmatch_tuples:test_elements_partial3_Bad/0: {badmatch,{1,2}}
+nonmatch_tuples:test_elements_partial4_Bad/0: {badmatch,{1,2}}
+nonmatch_tuples:test_first1_Ok/0: ok
+nonmatch_tuples:test_first2_Ok/0: ok
+nonmatch_tuples:test_first3_Ok/0: ok
+nonmatch_tuples:test_first4_Bad/0: function_clause
+nonmatch_tuples:test_first5_Bad/0: function_clause
+nonmatch_tuples:test_nested1_Ok/0: ok
+nonmatch_tuples:test_nested2_Ok/0: ok
+nonmatch_tuples:test_nested3_Bad/0: {badmatch,{1,{1,2,3},3}}
+nonmatch_tuples:test_nested4_Bad/0: {badmatch,{1,{1,2},5}}
+nonmatch_tuples:test_size1_Ok/0: ok
+nonmatch_tuples:test_size2_Bad/0: function_clause
+nonmatch_tuples:test_size3_Bad/0: function_clause
+nonmatch_tuples:test_size4_Bad/0: function_clause
+

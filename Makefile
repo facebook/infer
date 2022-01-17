@@ -159,6 +159,7 @@ ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
   erlang_pulse \
   erlang_topl \
+  erlang_compiler \
 
 BUILD_SYSTEMS_TESTS += rebar3
 endif

@@ -6,11 +6,12 @@
 -module(features_fun).
 
 -export([
+    one/0,
     test_fun_Ok/0,
     test_fun_Bad/0,
     test_fun_nomodule_Ok/0,
     test_fun_nomodule_Bad/0,
-    fn_test_fun_notexists/0
+    fn_test_fun_notexists_Bad/0
 ]).
 
 one() -> 1.
@@ -39,7 +40,7 @@ test_fun_nomodule_Bad() ->
         0 -> ok
     end.
 
-fn_test_fun_notexists() ->
+fn_test_fun_notexists_Bad() ->
     F = fun features_fun:notexists/0,
     % This causes 'exception error: undefined function' but we don't support that yet
     F().
