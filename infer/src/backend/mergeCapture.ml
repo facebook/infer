@@ -33,7 +33,7 @@ module TenvMerger = struct
 
   let merge_global_tenvs infer_deps_file =
     ScubaLogging.execute_with_time_logging "merge_captured_tenvs" (fun () ->
-        merge_global_tenvs infer_deps_file )
+        GCStats.log_f ~name:"tenv_merge" MergeCapture (fun () -> merge_global_tenvs infer_deps_file) )
 
 
   let start infer_deps_file =
