@@ -20,6 +20,8 @@ Using Docker is the fastest way: you do not need to clone the Infer repository a
 
 ```shell
 cd /infer
+git branch --unset-upstream
+git branch --set-upstream-to=origin/main master
 git pull
 cp -av /infer/. /infer-host
 make -C /infer-host -j 4
