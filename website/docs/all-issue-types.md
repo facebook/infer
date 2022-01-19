@@ -2752,6 +2752,12 @@ These annotations can be found at `com.facebook.infer.annotation.*`.
 Reported as "Topl Error" by [topl](/docs/next/checker-topl).
 
 A violation of a Topl property (user-specified).
+There is an execution path in the code that drives a Topl property from a start state to an error state.
+
+This indicates that the code has a user-defined undesired behavior.
+
+See [Topl](/docs/next/checker-topl##what-is-it) for an example
+
 ## UNINITIALIZED_VALUE
 
 Reported as "Uninitialized Value" by [uninit](/docs/next/checker-uninit).
