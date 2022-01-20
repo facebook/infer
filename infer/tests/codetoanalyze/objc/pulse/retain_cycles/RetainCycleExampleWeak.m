@@ -55,22 +55,7 @@ void create_weak_cycle() {
   [r test_weak_adapter_no_cycle_good];
 }
 
-// AFeed.dealloc has 18 disjuncts but RetainCycleExampleWeak.dealloc only has 6:
-// - self is nil
-// - ref count = 1:
-//      - _feed is nil
-//      - _feed is not nil and its ref count = 1 :
-//              - _adapter and _strong_adapter are nil
-//              - _adapter is not nil and its ref count = 1:
-//                      - its _feed is nil
-//                      - its _feed is not nil
-// - ref count > 1
-//
-// Therefore, when we reach call RetainCycleExampleWeak.dealloc with _feed stuck
-// in a retain cycle (cause by the call to test_strong_adapter_cycle_bad), we
-// don't find any valid disjunct and end up with no Sat state: indeed, the
-// disjunct for ref count = 1, _feed not nil and its ref count > 1 is missing
-void create_strong_cycle_FN() {
+void create_strong_cycle() {
   RetainCycleExampleWeak* r = [[RetainCycleExampleWeak alloc] init];
   r.feed = [[AFeed alloc] init];
   r.feed.strong_adapter = [[Adapter alloc] init];

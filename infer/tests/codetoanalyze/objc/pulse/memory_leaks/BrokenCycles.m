@@ -94,7 +94,7 @@ void weak_cycle() {
   b_obj.a = a_obj; // Not a retain cycle
 }
 
-void broken_strong_cycle_memory_leak_FP() {
+void broken_strong_cycle() {
   ClassA* a_obj = [ClassA alloc];
   ClassBStrong* b_obj = [[ClassBStrong alloc] init];
 
@@ -110,7 +110,7 @@ void broken_strong_cycle_memory_leak_FP() {
   // the reassignment of a_obj.b leading to its deallocation
 }
 
-void broken_inner_cycle_memory_leak_FP() {
+void broken_inner_cycle() {
   ClassC* c_obj = [ClassC alloc];
   c_obj.a = [ClassA alloc];
   ClassBStrong* b_obj = [[ClassBStrong alloc] init];

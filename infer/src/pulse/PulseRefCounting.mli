@@ -10,3 +10,5 @@ open PulseBasicInterface
 open PulseDomainInterface
 
 val count_references : Tenv.t -> AbductiveDomain.t -> int AbstractValue.Map.t
+
+val removable_vars : Tenv.t -> AbductiveDomain.t -> Var.t list -> Var.t list

@@ -349,6 +349,67 @@ module PulseTransferFunctions = struct
     (astates, ret_vars)
 
 
+  let remove_vars vars location astates =
+    List.map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
+        match exec_state with
+        | ISLLatentMemoryError _
+        | AbortProgram _
+        | ExitProgram _
+        | LatentAbortProgram _
+        | LatentInvalidAccess _ ->
+            exec_state
+        | ContinueProgram astate ->
+            ContinueProgram (PulseOperations.remove_vars vars location astate)
+        | ExceptionRaised astate ->
+            ExceptionRaised (PulseOperations.remove_vars vars location astate) )
+
+
+  let exit_scope vars location path astate astate_n
+      ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) =
+    if Procname.is_java (Procdesc.get_proc_name proc_desc) then
+      (remove_vars vars location [ContinueProgram astate], path, astate_n)
+    else
+      (* Some RefCounted variables must not be removed at their ExitScope
+         because they may still be referenced by someone and that reference may
+         be destroyed in the future. In that case, we would miss the opportunity
+         to properly dealloc the object if it were removed from the stack,
+         leading to potential FP memory leaks *)
+      let vars = PulseRefCounting.removable_vars tenv astate vars in
+      (* Prepare objects in memory before calling any dealloc:
+         - set the number of unique strong references accessible from the
+          stack to each object's respective __infer_mode_reference_count
+          field by calling the __objc_set_ref_count modelled function
+         This needs to be done before any call to dealloc because dealloc's
+         behavior depends on this ref count and one's dealloc may call
+         another's. Consequently, they each need to be up to date beforehand.
+         The return variables of the calls to __objc_set_ref_count must be
+         removed *)
+      let astates, ret_vars = set_ref_counts astate location path analysis_data in
+      (* Here we add and execute calls to dealloc for Objective-C objects
+         before removing the variables. The return variables of those calls
+         must be removed as welll *)
+      let astates, ret_vars =
+        List.fold_left astates ~init:([], ret_vars)
+          ~f:(fun ((acc_astates, acc_ret_vars) as acc) astate ->
+            match astate with
+            | ContinueProgram astate ->
+                let astates, ret_vars =
+                  execute_injected_dealloc_calls analysis_data path vars astate location
+                in
+                (astates @ acc_astates, ret_vars @ acc_ret_vars)
+            | _ ->
+                acc )
+      in
+      (* OPTIM: avoid re-allocating [vars] when [ret_vars] is empty
+         (in particular if no ObjC objects are involved), but otherwise
+         assume [ret_vars] is potentially larger than [vars] and so
+         append [vars] to [ret_vars]. *)
+      let vars_to_remove = if List.is_empty ret_vars then vars else List.rev_append vars ret_vars in
+      ( remove_vars vars_to_remove location astates
+      , path
+      , PulseNonDisjunctiveOperations.mark_modified_copies vars astates astate_n )
+
+
   let and_is_int_if_integer_type typ v astate =
     if Typ.is_int typ then PulseArithmetic.and_is_int v astate else Ok astate
 
@@ -506,58 +567,7 @@ module PulseTransferFunctions = struct
           let path = {path with conditions= List.tl path.conditions |> Option.value ~default:[]} in
           ([ContinueProgram astate], path, astate_n)
       | Metadata (ExitScope (vars, location)) ->
-          let remove_vars vars astates =
-            List.map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
-                match exec_state with
-                | ISLLatentMemoryError _
-                | AbortProgram _
-                | ExitProgram _
-                | LatentAbortProgram _
-                | LatentInvalidAccess _ ->
-                    exec_state
-                | ContinueProgram astate ->
-                    ContinueProgram (PulseOperations.remove_vars vars location astate)
-                | ExceptionRaised astate ->
-                    ExceptionRaised (PulseOperations.remove_vars vars location astate) )
-          in
-          if Procname.is_java (Procdesc.get_proc_name proc_desc) then
-            (remove_vars vars [ContinueProgram astate], path, astate_n)
-          else
-            (* Prepare objects in memory before calling any dealloc:
-               - set the number of unique strong references accessible from the
-                stack to each object's respective __infer_mode_reference_count
-                field by calling the __objc_set_ref_count modelled function
-               This needs to be done before any call to dealloc because dealloc's
-               behavior depends on this ref count and one's dealloc may call
-               another's. Consequently, they each need to be up to date beforehand.
-               The return variables of the calls to __objc_set_ref_count must be
-               removed *)
-            let astates, ret_vars = set_ref_counts astate location path analysis_data in
-            (* Here we add and execute calls to dealloc for Objective-C objects
-               before removing the variables. The return variables of those calls
-               must be removed as welll *)
-            let astates, ret_vars =
-              List.fold_left astates ~init:([], ret_vars)
-                ~f:(fun ((acc_astates, acc_ret_vars) as acc) astate ->
-                  match astate with
-                  | ContinueProgram astate ->
-                      let astates, ret_vars =
-                        execute_injected_dealloc_calls analysis_data path vars astate location
-                      in
-                      (astates @ acc_astates, ret_vars @ acc_ret_vars)
-                  | _ ->
-                      acc )
-            in
-            (* OPTIM: avoid re-allocating [vars] when [ret_vars] is empty
-               (in particular if no ObjC objects are involved), but otherwise
-               assume [ret_vars] is potentially larger than [vars] and so
-               append [vars] to [ret_vars]. *)
-            let vars_to_remove =
-              if List.is_empty ret_vars then vars else List.rev_append vars ret_vars
-            in
-            ( remove_vars vars_to_remove astates
-            , path
-            , PulseNonDisjunctiveOperations.mark_modified_copies vars astates astate_n )
+          exit_scope vars location path astate astate_n analysis_data
       | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
           ( [ PulseOperations.realloc_pvar tenv path pvar typ location astate
               |> ExecutionDomain.continue ]
@@ -617,6 +627,33 @@ let should_analyze proc_desc =
   Option.value_map Config.pulse_skip_procedures ~f ~default:true
 
 
+let exit_function analysis_data location posts non_disj_astate =
+  let astates, astate_n =
+    List.fold_left posts ~init:([], non_disj_astate)
+      ~f:(fun (acc_astates, astate_n) (exec_state, path) ->
+        match exec_state with
+        | ISLLatentMemoryError _
+        | AbortProgram _
+        | ExitProgram _
+        | ExceptionRaised _
+        | LatentAbortProgram _
+        | LatentInvalidAccess _ ->
+            (exec_state :: acc_astates, astate_n)
+        | ContinueProgram astate ->
+            let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
+            let vars =
+              BaseStack.fold
+                (fun var _ vars -> if Var.is_return var then vars else var :: vars)
+                post.stack []
+            in
+            let astates, _, astate_n =
+              PulseTransferFunctions.exit_scope vars location path astate astate_n analysis_data
+            in
+            (PulseTransferFunctions.remove_vars vars location astates @ acc_astates, astate_n) )
+  in
+  (List.rev astates, astate_n)
+
+
 let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   if should_analyze proc_desc then (
     AbstractValue.State.reset () ;
@@ -626,13 +663,16 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
         proc_desc
     with
     | Some (posts, non_disj_astate) ->
-        (* forget path contexts, we don't propagate them across functions *)
-        let posts = List.map ~f:fst posts in
         with_debug_exit_node proc_desc ~f:(fun () ->
+            let exit_location = Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc in
+            let posts, non_disj_astate =
+              (* Do final cleanup at the end of procdesc
+                 Forget path contexts on the way, we don't propagate them across functions *)
+              exit_function analysis_data exit_location posts non_disj_astate
+            in
             let objc_nil_summary = PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_desc in
             let summary =
-              PulseSummary.of_posts tenv proc_desc err_log
-                (Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc)
+              PulseSummary.of_posts tenv proc_desc err_log exit_location
                 (Option.to_list objc_nil_summary @ posts)
             in
             report_topl_errors proc_desc err_log summary ;
