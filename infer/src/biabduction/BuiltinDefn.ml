@@ -892,6 +892,8 @@ let __objc_dictionary_literal =
   Builtin.register BuiltinDecl.__objc_dictionary_literal execute___objc_dictionary_literal
 
 
+let __objc_get_ref_count = Builtin.register BuiltinDecl.__objc_get_ref_count execute_skip
+
 let __objc_set_ref_count = Builtin.register BuiltinDecl.__objc_set_ref_count execute_skip
 
 let __placement_delete = Builtin.register BuiltinDecl.__placement_delete execute_skip

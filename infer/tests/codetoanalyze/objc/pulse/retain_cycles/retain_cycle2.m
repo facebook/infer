@@ -134,7 +134,7 @@
 
 @end
 
-void strongcycle2_bad_FN() {
+void strongcycle2_bad() {
   Parent* parent = [[Parent alloc] init];
   Child* child = [[Child alloc] init];
   [parent setChild:child];

@@ -3,7 +3,7 @@ digraph cfg {
 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_1" [label="1: Start PropertyImplSetter.dealloc\nFormals:  self:PropertyImplSetter*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_1" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" ;
+	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_1" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_4" ;
 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_2" [label="2: Exit PropertyImplSetter.dealloc \n  " color=yellow style=filled]
 	
 
@@ -11,6 +11,19 @@ digraph cfg {
 	
 
 	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_2" ;
+"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_4" [label="4:  Call dealloc \n   n$0=*&self:PropertyImplSetter* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:PropertyImplSetter*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:PropertyImplSetter*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:PropertyImplSetter*) [line 10, column 1]\n " shape="box"]
+	
+
+	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_4" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_5" ;
+	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_4" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_6" ;
+"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_5" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" ;
+"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_6" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_2" ;
 "maximumFileSize#PropertyImplSetter#instance.716325bc2c2bc7e4d2d62472c6a1d10d_1" [label="1: Start PropertyImplSetter.maximumFileSize\nFormals:  self:PropertyImplSetter*\nLocals:  \n  " color=yellow style=filled]
 	
 

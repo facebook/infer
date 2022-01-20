@@ -50,7 +50,7 @@
 @implementation BBAssign
 @end
 
-int strongcycle_bad_FN() {
+int strongcycle_bad() {
 
   AA* a_obj = [AA alloc];
   BBStrong* b_obj = [BBStrong alloc];

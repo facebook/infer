@@ -22,7 +22,7 @@ digraph cfg {
 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_1" [label="1: Start ASuper.dealloc\nFormals:  self:ASuper*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_1" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_3" ;
+	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_1" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_4" ;
 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_2" [label="2: Exit ASuper.dealloc \n  " color=yellow style=filled]
 	
 
@@ -30,6 +30,19 @@ digraph cfg {
 	
 
 	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_3" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_2" ;
+"dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_4" [label="4:  Call dealloc \n   n$0=*&self:ASuper* [line 26, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:ASuper*) [line 26, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:ASuper*,(n$1 - 1):unsigned int) [line 26, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:ASuper*) [line 26, column 1]\n " shape="box"]
+	
+
+	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_4" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_5" ;
+	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_4" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_6" ;
+"dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 26, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_5" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_3" ;
+"dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 26, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_6" -> "dealloc#ASuper#instance.d4e2053955a905d19c2f334e81096e84_2" ;
 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_1" [label="1: Start ASuper.init\nFormals:  self:ASuper*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -56,7 +69,7 @@ digraph cfg {
 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_1" [label="1: Start BSuper.dealloc\nFormals:  self:BSuper*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_1" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_3" ;
+	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_1" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_4" ;
 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_2" [label="2: Exit BSuper.dealloc \n  " color=yellow style=filled]
 	
 
@@ -64,6 +77,19 @@ digraph cfg {
 	
 
 	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_3" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_2" ;
+"dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_4" [label="4:  Call dealloc \n   n$4=*&self:BSuper* [line 14, column 1]\n  n$5=_fun___objc_get_ref_count(n$4:BSuper*) [line 14, column 1]\n  n$6=_fun___objc_set_ref_count(n$4:BSuper*,(n$5 - 1):unsigned int) [line 14, column 1]\n  n$7=_fun___objc_get_ref_count(n$4:BSuper*) [line 14, column 1]\n " shape="box"]
+	
+
+	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_4" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_5" ;
+	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_4" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_6" ;
+"dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$7 == 0), true); [line 14, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_5" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_3" ;
+"dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$7 != 0), false); [line 14, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_6" -> "dealloc#BSuper#instance.12f39640b96655b7899644ca00bba8a4_2" ;
 "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_1" [label="1: Start BSuper.init\nFormals:  self:BSuper*\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -3,7 +3,7 @@ digraph cfg {
 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_1" [label="1: Start Bicycle.dealloc\nFormals:  self:Bicycle*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_1" -> "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_3" ;
+	 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_1" -> "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_4" ;
 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_2" [label="2: Exit Bicycle.dealloc \n  " color=yellow style=filled]
 	
 
@@ -11,6 +11,19 @@ digraph cfg {
 	
 
 	 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_3" -> "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_2" ;
+"dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_4" [label="4:  Call dealloc \n   n$0=*&self:Bicycle* [line 11, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Bicycle*) [line 11, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Bicycle*,(n$1 - 1):unsigned int) [line 11, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Bicycle*) [line 11, column 1]\n " shape="box"]
+	
+
+	 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_4" -> "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_5" ;
+	 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_4" -> "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_6" ;
+"dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 11, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_5" -> "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_3" ;
+"dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 11, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_6" -> "dealloc#Bicycle#instance.6638bb9309381e06250999580487aff7_2" ;
 "lockToStructure:#Bicycle(struct objc_object)#instance.08c84c9f07aafb2f30ed48101344ca7a_1" [label="1: Start Bicycle.lockToStructure:\nFormals:  self:Bicycle* theStructure:objc_object*\nLocals:  \n  " color=yellow style=filled]
 	
 

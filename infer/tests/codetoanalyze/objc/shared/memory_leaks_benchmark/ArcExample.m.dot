@@ -3,7 +3,7 @@ digraph cfg {
 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_1" [label="1: Start ArcA.dealloc\nFormals:  self:ArcA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_1" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_3" ;
+	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_1" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_4" ;
 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_2" [label="2: Exit ArcA.dealloc \n  " color=yellow style=filled]
 	
 
@@ -11,6 +11,19 @@ digraph cfg {
 	
 
 	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_3" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_2" ;
+"dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_4" [label="4:  Call dealloc \n   n$3=*&self:ArcA* [line 17, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:ArcA*) [line 17, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:ArcA*,(n$4 - 1):unsigned int) [line 17, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:ArcA*) [line 17, column 1]\n " shape="box"]
+	
+
+	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_4" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_5" ;
+	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_4" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_6" ;
+"dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 17, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_5" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_3" ;
+"dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 17, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_6" -> "dealloc#ArcA#instance.89cdfdc7128dbab0ce26639a546c92cb_2" ;
 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_1" [label="1: Start ArcA.getS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 

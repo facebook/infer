@@ -143,6 +143,15 @@ let set_ref_count (value, value_hist) (ref_count, ref_count_hist) : model =
   astate
 
 
+let get_ref_count (value, value_hist) : model =
+ fun {path; location; ret= ret_id, _} astate ->
+  let<+> astate, (ret_val, ret_hist) =
+    PulseOperations.eval_access path Read location (value, value_hist)
+      (FieldAccess PulseOperations.ModeledField.internal_ref_count) astate
+  in
+  PulseOperations.write_id ret_id (ret_val, ret_hist) astate
+
+
 let construct_string ((value, value_hist) as char_array) : model =
  fun {path; location; ret= ret_id, _} astate ->
   let desc = "NSString.stringWithUTF8String:" in
@@ -216,6 +225,7 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __objc_bridge_transfer)
     <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
   ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> alloc_no_fail
+  ; +BuiltinDecl.(match_builtin __objc_get_ref_count) <>$ capt_arg_payload $--> get_ref_count
   ; +BuiltinDecl.(match_builtin __objc_set_ref_count)
     <>$ capt_arg_payload $+ capt_arg_payload $--> set_ref_count
   ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Basic.id_first_arg ~desc:"NSObject.init"

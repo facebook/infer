@@ -3,7 +3,7 @@ digraph cfg {
 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" ;
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" ;
 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
 	
 
@@ -11,6 +11,19 @@ digraph cfg {
 	
 
 	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" [label="4:  Call dealloc \n   n$3=*&self:A* [line 15, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:A*) [line 15, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:A*,(n$4 - 1):unsigned int) [line 15, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:A*) [line 15, column 1]\n " shape="box"]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" ;
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" ;
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 15, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" ;
+"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 15, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" [label="1: Start A.fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* 0$?%__sil_tmp__enumerator_n$1:NSEnumerator* size:int \n  " color=yellow style=filled]
 	
 

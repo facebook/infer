@@ -150,6 +150,8 @@ let __objc_dictionary_literal =
   create_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:" [None; None; None]
 
 
+let __objc_get_ref_count = create_procname "__objc_get_ref_count"
+
 let __objc_set_ref_count = create_procname "__objc_set_ref_count"
 
 let __placement_delete = create_procname "__placement_delete"

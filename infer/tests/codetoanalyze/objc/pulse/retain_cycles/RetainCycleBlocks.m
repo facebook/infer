@@ -69,7 +69,7 @@ int call_retain_self_in_block_cycle() {
   return 0;
 }
 
-int retain_a_in_block_cycle_bad_FN() {
+int retain_a_in_block_cycle_bad() {
   RCBlockAA* a = [RCBlockAA new];
   RCBlock* b = [RCBlock new];
   a.b = b;

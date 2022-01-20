@@ -83,7 +83,7 @@ digraph cfg {
 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_1" [label="1: Start My_manager.dealloc\nFormals:  self:My_manager*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_1" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" ;
+	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_1" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_4" ;
 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_2" [label="2: Exit My_manager.dealloc \n  " color=yellow style=filled]
 	
 
@@ -91,4 +91,17 @@ digraph cfg {
 	
 
 	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_2" ;
+"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_4" [label="4:  Call dealloc \n   n$0=*&self:My_manager* [line 16, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:My_manager*) [line 16, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:My_manager*,(n$1 - 1):unsigned int) [line 16, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:My_manager*) [line 16, column 1]\n " shape="box"]
+	
+
+	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_4" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_5" ;
+	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_4" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_6" ;
+"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 16, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_5" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" ;
+"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 16, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_6" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_2" ;
 }

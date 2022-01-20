@@ -14,7 +14,7 @@ digraph cfg {
 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_1" [label="1: Start NonnullAnnot.dealloc\nFormals:  self:NonnullAnnot*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_1" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_3" ;
+	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_1" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_4" ;
 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_2" [label="2: Exit NonnullAnnot.dealloc \n  " color=yellow style=filled]
 	
 
@@ -22,6 +22,19 @@ digraph cfg {
 	
 
 	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_3" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_2" ;
+"dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_4" [label="4:  Call dealloc \n   n$3=*&self:NonnullAnnot* [line 15, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:NonnullAnnot*) [line 15, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:NonnullAnnot*,(n$4 - 1):unsigned int) [line 15, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:NonnullAnnot*) [line 15, column 1]\n " shape="box"]
+	
+
+	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_4" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_5" ;
+	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_4" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_6" ;
+"dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 15, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_5" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_3" ;
+"dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 15, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_6" -> "dealloc#NonnullAnnot#instance.0759b4c4bc783d3b87f6d785a8b2c369_2" ;
 "init#NonnullAnnot#instance.b2b74f8dde6ae5957922f59d81ccda45_1" [label="1: Start NonnullAnnot.init\nFormals:  self:NonnullAnnot*\nLocals:  \n  " color=yellow style=filled]
 	
 

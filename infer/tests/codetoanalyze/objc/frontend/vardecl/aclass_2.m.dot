@@ -3,7 +3,7 @@ digraph cfg {
 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_1" [label="1: Start AClass.dealloc\nFormals:  self:AClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_1" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" ;
+	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_1" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_4" ;
 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" [label="2: Exit AClass.dealloc \n  " color=yellow style=filled]
 	
 
@@ -11,6 +11,19 @@ digraph cfg {
 	
 
 	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" ;
+"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_4" [label="4:  Call dealloc \n   n$0=*&self:AClass* [line 15, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:AClass*) [line 15, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:AClass*,(n$1 - 1):unsigned int) [line 15, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:AClass*) [line 15, column 1]\n " shape="box"]
+	
+
+	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_4" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_5" ;
+	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_4" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_6" ;
+"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 15, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_5" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" ;
+"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 15, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_6" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" ;
 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_1" [label="1: Start AClass.sharedInstance\nFormals:  self:AClass*\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -68,7 +68,7 @@ digraph cfg {
 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_1" [label="1: Start ArcMethodsA.dealloc\nFormals:  self:ArcMethodsA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_1" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_3" ;
+	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_1" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_4" ;
 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_2" [label="2: Exit ArcMethodsA.dealloc \n  " color=yellow style=filled]
 	
 
@@ -76,4 +76,17 @@ digraph cfg {
 	
 
 	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_3" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_2" ;
+"dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_4" [label="4:  Call dealloc \n   n$0=*&self:ArcMethodsA* [line 18, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:ArcMethodsA*) [line 18, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:ArcMethodsA*,(n$1 - 1):unsigned int) [line 18, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:ArcMethodsA*) [line 18, column 1]\n " shape="box"]
+	
+
+	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_4" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_5" ;
+	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_4" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_6" ;
+"dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 18, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_5" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_3" ;
+"dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 18, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_6" -> "dealloc#ArcMethodsA#instance.7ca05d78a1bcb0ca5ca59211927eef83_2" ;
 }

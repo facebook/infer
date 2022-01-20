@@ -3,7 +3,7 @@ digraph cfg {
 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_1" [label="1: Start Bla.dealloc\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_1" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_3" ;
+	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_1" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_4" ;
 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_2" [label="2: Exit Bla.dealloc \n  " color=yellow style=filled]
 	
 
@@ -11,6 +11,19 @@ digraph cfg {
 	
 
 	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_3" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_2" ;
+"dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_4" [label="4:  Call dealloc \n   n$0=*&self:Bla* [line 20, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Bla*) [line 20, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Bla*,(n$1 - 1):unsigned int) [line 20, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Bla*) [line 20, column 1]\n " shape="box"]
+	
+
+	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_4" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_5" ;
+	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_4" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_6" ;
+"dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 20, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_5" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_3" ;
+"dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 20, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_6" -> "dealloc#Bla#instance.febc9b8c0e8bc29905272eecbf85b31a_2" ;
 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla.fooMethod\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
 	
 

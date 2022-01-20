@@ -35,7 +35,7 @@
 @implementation MyClass3
 @end
 
-int strongcycle_length3_bad_FN() {
+int strongcycle_length3_bad() {
   MyClass1* a_obj = [MyClass1 new];
   MyClass2* b_obj = [MyClass2 new];
   MyClass3* c_obj = [MyClass3 new];

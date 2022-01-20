@@ -81,7 +81,7 @@ digraph cfg {
 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_1" [label="1: Start PropertyA.dealloc\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_1" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_3" ;
+	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_1" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_4" ;
 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_2" [label="2: Exit PropertyA.dealloc \n  " color=yellow style=filled]
 	
 
@@ -89,6 +89,19 @@ digraph cfg {
 	
 
 	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_3" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_2" ;
+"dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_4" [label="4:  Call dealloc \n   n$9=*&self:PropertyA* [line 22, column 1]\n  n$10=_fun___objc_get_ref_count(n$9:PropertyA*) [line 22, column 1]\n  n$11=_fun___objc_set_ref_count(n$9:PropertyA*,(n$10 - 1):unsigned int) [line 22, column 1]\n  n$12=_fun___objc_get_ref_count(n$9:PropertyA*) [line 22, column 1]\n " shape="box"]
+	
+
+	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_4" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_5" ;
+	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_4" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_6" ;
+"dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$12 == 0), true); [line 22, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_5" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_3" ;
+"dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$12 != 0), false); [line 22, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_6" -> "dealloc#PropertyA#instance.6f8be74d1c8a16eeeed561e5def4ae54_2" ;
 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" [label="1: Start PropertyA.init\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 

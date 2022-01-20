@@ -24,7 +24,7 @@
 
 @end
 
-int field_superclass_main_FN() {
+int field_superclass_main() {
   IvarInheritanceSubclass* b = [[IvarInheritanceSubclass alloc] init];
   b->x = 5;
   b->a = b; // create cycle --> leak

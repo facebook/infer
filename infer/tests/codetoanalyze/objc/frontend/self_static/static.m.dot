@@ -47,7 +47,7 @@ digraph cfg {
 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_1" [label="1: Start MyClass.dealloc\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_1" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" ;
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_1" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_4" ;
 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_2" [label="2: Exit MyClass.dealloc \n  " color=yellow style=filled]
 	
 
@@ -55,6 +55,19 @@ digraph cfg {
 	
 
 	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_2" ;
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_4" [label="4:  Call dealloc \n   n$0=*&self:MyClass* [line 17, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:MyClass*) [line 17, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:MyClass*,(n$1 - 1):unsigned int) [line 17, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:MyClass*) [line 17, column 1]\n " shape="box"]
+	
+
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_4" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_5" ;
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_4" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_6" ;
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 17, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_5" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_3" ;
+"dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 17, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_6" -> "dealloc#MyClass#instance.d6828163e8783bc124f5d6aa6c910fe9_2" ;
 "getX#MyClass#instance.ddf21e5eecd35d40e2b277a5d6933812_1" [label="1: Start MyClass.getX\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
 	
 

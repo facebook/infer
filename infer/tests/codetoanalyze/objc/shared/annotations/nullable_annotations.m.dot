@@ -26,7 +26,7 @@ digraph cfg {
 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_1" [label="1: Start User.dealloc\nFormals:  self:User*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_1" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_3" ;
+	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_1" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_4" ;
 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_2" [label="2: Exit User.dealloc \n  " color=yellow style=filled]
 	
 
@@ -34,6 +34,19 @@ digraph cfg {
 	
 
 	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_3" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_2" ;
+"dealloc#User#instance.845406211d2df26e556b3165fd367f01_4" [label="4:  Call dealloc \n   n$3=*&self:User* [line 27, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:User*) [line 27, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:User*,(n$4 - 1):unsigned int) [line 27, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:User*) [line 27, column 1]\n " shape="box"]
+	
+
+	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_4" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_5" ;
+	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_4" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_6" ;
+"dealloc#User#instance.845406211d2df26e556b3165fd367f01_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 27, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_5" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_3" ;
+"dealloc#User#instance.845406211d2df26e556b3165fd367f01_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 27, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#User#instance.845406211d2df26e556b3165fd367f01_6" -> "dealloc#User#instance.845406211d2df26e556b3165fd367f01_2" ;
 "initWithName:#User(class NSString)#instance.1755f5e97d3aa5318dd071b864db9bb7_1" [label="1: Start User.initWithName:\nFormals:  self:User* <_Nullable> name:NSString*\nLocals: \nReturn annotations: <_Nullable> \n  " color=yellow style=filled]
 	
 

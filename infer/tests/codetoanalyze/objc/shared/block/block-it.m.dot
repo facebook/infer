@@ -155,7 +155,7 @@ digraph cfg {
 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_1" [label="1: Start MyBlock.dealloc\nFormals:  self:MyBlock*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_1" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" ;
+	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_1" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_4" ;
 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_2" [label="2: Exit MyBlock.dealloc \n  " color=yellow style=filled]
 	
 
@@ -163,4 +163,17 @@ digraph cfg {
 	
 
 	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_2" ;
+"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_4" [label="4:  Call dealloc \n   n$0=*&self:MyBlock* [line 14, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:MyBlock*) [line 14, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:MyBlock*,(n$1 - 1):unsigned int) [line 14, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:MyBlock*) [line 14, column 1]\n " shape="box"]
+	
+
+	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_4" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_5" ;
+	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_4" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_6" ;
+"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 14, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_5" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" ;
+"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 14, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_6" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_2" ;
 }

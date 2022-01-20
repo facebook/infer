@@ -14,7 +14,7 @@ digraph cfg {
 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_1" [label="1: Start Block_no_args.dealloc\nFormals:  self:Block_no_args*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_1" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_3" ;
+	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_1" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_4" ;
 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_2" [label="2: Exit Block_no_args.dealloc \n  " color=yellow style=filled]
 	
 
@@ -22,6 +22,19 @@ digraph cfg {
 	
 
 	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_3" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_2" ;
+"dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_4" [label="4:  Call dealloc \n   n$0=*&self:Block_no_args* [line 17, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Block_no_args*) [line 17, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Block_no_args*,(n$1 - 1):unsigned int) [line 17, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Block_no_args*) [line 17, column 1]\n " shape="box"]
+	
+
+	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_4" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_5" ;
+	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_4" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_6" ;
+"dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 17, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_5" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_3" ;
+"dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 17, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_6" -> "dealloc#Block_no_args#instance.eac76c4150c7c9dce7f36154adee0b59_2" ;
 "m#Block_no_args#instance.385f8c4982ef6acc28cdc868a8cd4272_1" [label="1: Start Block_no_args.m\nFormals:  self:Block_no_args*\nLocals:  p:int* z:int b:_fn_(*) \n  " color=yellow style=filled]
 	
 

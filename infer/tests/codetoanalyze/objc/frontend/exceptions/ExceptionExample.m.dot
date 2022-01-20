@@ -3,7 +3,7 @@ digraph cfg {
 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_1" [label="1: Start ExceptionExample.dealloc\nFormals:  self:ExceptionExample*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_1" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_3" ;
+	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_1" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_4" ;
 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_2" [label="2: Exit ExceptionExample.dealloc \n  " color=yellow style=filled]
 	
 
@@ -11,6 +11,19 @@ digraph cfg {
 	
 
 	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_3" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_2" ;
+"dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_4" [label="4:  Call dealloc \n   n$0=*&self:ExceptionExample* [line 14, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:ExceptionExample*) [line 14, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:ExceptionExample*,(n$1 - 1):unsigned int) [line 14, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:ExceptionExample*) [line 14, column 1]\n " shape="box"]
+	
+
+	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_4" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_5" ;
+	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_4" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_6" ;
+"dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 14, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_5" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_3" ;
+"dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 14, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_6" -> "dealloc#ExceptionExample#instance.d3f98dfd383bac562b4173d739efcd78_2" ;
 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" [label="1: Start ExceptionExample.test\nFormals:  self:ExceptionExample*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 

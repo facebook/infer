@@ -14,7 +14,7 @@ digraph cfg {
 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_1" [label="1: Start NonnullA.dealloc\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_1" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" ;
+	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_1" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_4" ;
 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_2" [label="2: Exit NonnullA.dealloc \n  " color=yellow style=filled]
 	
 
@@ -22,6 +22,19 @@ digraph cfg {
 	
 
 	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_2" ;
+"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_4" [label="4:  Call dealloc \n   n$7=*&self:NonnullA* [line 21, column 1]\n  n$8=_fun___objc_get_ref_count(n$7:NonnullA*) [line 21, column 1]\n  n$9=_fun___objc_set_ref_count(n$7:NonnullA*,(n$8 - 1):unsigned int) [line 21, column 1]\n  n$10=_fun___objc_get_ref_count(n$7:NonnullA*) [line 21, column 1]\n " shape="box"]
+	
+
+	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_4" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_5" ;
+	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_4" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_6" ;
+"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$10 == 0), true); [line 21, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_5" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" ;
+"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$10 != 0), false); [line 21, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_6" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_2" ;
 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_1" [label="1: Start NonnullA.getA\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -40,7 +53,7 @@ digraph cfg {
 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_1" [label="1: Start NonnullC.dealloc\nFormals:  self:NonnullC*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_1" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" ;
+	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_1" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_4" ;
 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" [label="2: Exit NonnullC.dealloc \n  " color=yellow style=filled]
 	
 
@@ -48,6 +61,19 @@ digraph cfg {
 	
 
 	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" ;
+"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_4" [label="4:  Call dealloc \n   n$3=*&self:NonnullC* [line 34, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:NonnullC*) [line 34, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:NonnullC*,(n$4 - 1):unsigned int) [line 34, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:NonnullC*) [line 34, column 1]\n " shape="box"]
+	
+
+	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_4" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_5" ;
+	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_4" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_6" ;
+"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 34, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_5" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" ;
+"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 34, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_6" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" ;
 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" [label="1: Start NonnullC.initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* <_Nonnull> a:NonnullA*\nLocals:  y:int a1:NonnullA* \n  " color=yellow style=filled]
 	
 

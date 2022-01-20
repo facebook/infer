@@ -66,6 +66,8 @@ module type S = sig
 
   val __objc_dictionary_literal : t
 
+  val __objc_get_ref_count : t
+
   val __objc_set_ref_count : t
 
   val __placement_delete : t

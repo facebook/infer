@@ -231,7 +231,7 @@ digraph cfg {
 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_1" [label="1: Start DispatchEx.dealloc\nFormals:  self:DispatchEx*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_1" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_3" ;
+	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_1" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_4" ;
 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_2" [label="2: Exit DispatchEx.dealloc \n  " color=yellow style=filled]
 	
 
@@ -239,6 +239,19 @@ digraph cfg {
 	
 
 	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_3" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_2" ;
+"dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_4" [label="4:  Call dealloc \n   n$0=*&self:DispatchEx* [line 16, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:DispatchEx*) [line 16, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:DispatchEx*,(n$1 - 1):unsigned int) [line 16, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:DispatchEx*) [line 16, column 1]\n " shape="box"]
+	
+
+	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_4" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_5" ;
+	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_4" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_6" ;
+"dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 16, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_5" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_3" ;
+"dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 16, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_6" -> "dealloc#DispatchEx#instance.bdeaca414e9a942022acc0c08806f472_2" ;
 "init#DispatchEx#instance.04117ac30ba5664de2d577c4aa97d118_1" [label="1: Start DispatchEx.init\nFormals:  self:DispatchEx*\nLocals:  \n  " color=yellow style=filled]
 	
 

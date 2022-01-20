@@ -240,7 +240,7 @@ digraph cfg {
 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_1" [label="1: Start DispatchA.dealloc\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_1" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_3" ;
+	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_1" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_4" ;
 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_2" [label="2: Exit DispatchA.dealloc \n  " color=yellow style=filled]
 	
 
@@ -248,6 +248,19 @@ digraph cfg {
 	
 
 	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_3" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_2" ;
+"dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_4" [label="4:  Call dealloc \n   n$0=*&self:DispatchA* [line 18, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:DispatchA*) [line 18, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:DispatchA*,(n$1 - 1):unsigned int) [line 18, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:DispatchA*) [line 18, column 1]\n " shape="box"]
+	
+
+	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_4" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_5" ;
+	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_4" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_6" ;
+"dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 18, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_5" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_3" ;
+"dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 18, column 1]\n " shape="invhouse"]
+	
+
+	 "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_6" -> "dealloc#DispatchA#instance.efcbb5cd324f6ef16ae8c5197a17f974_2" ;
 "init#DispatchA#instance.ff6c7b9a5a49bb46493519a4290a6582_1" [label="1: Start DispatchA.init\nFormals:  self:DispatchA*\nLocals:  \n  " color=yellow style=filled]
 	
 
