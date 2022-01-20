@@ -23,3 +23,7 @@ test: $(TESTS_DIR)/$(TEST_REL_DIR)/issues.exp.test
 clean:
 	rm -f *.beam
 	rm -f issues.exp.test
+
+.PHONY: replace
+replace: issues.exp.test
+	cp $< issues.exp
