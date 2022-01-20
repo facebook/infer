@@ -140,6 +140,8 @@ module AddressAttributes : sig
 
   val add_ref_counted : AbstractValue.t -> t -> t
 
+  val is_ref_counted : AbstractValue.t -> t -> bool
+
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
   val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option

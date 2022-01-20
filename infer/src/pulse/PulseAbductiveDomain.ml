@@ -299,6 +299,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.add_ref_counted address)
 
 
+  let is_ref_counted addr astate =
+    BaseAddressAttributes.is_ref_counted addr (astate.post :> base_domain).attrs
+
+
   let remove_allocation_attr address astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.remove_allocation_attr address)
 

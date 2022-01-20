@@ -93,6 +93,9 @@ module ModeledField : sig
 
   val internal_string : Fieldname.t
   (** Modeled field for internal string *)
+
+  val internal_ref_count : Fieldname.t
+  (** Modeled field for reference_counting *)
 end
 
 val eval :
@@ -267,6 +270,8 @@ val java_resource_release : JavaClassName.t -> AbstractValue.t -> t -> t
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
 val add_ref_counted : AbstractValue.t -> t -> t
+
+val is_ref_counted : AbstractValue.t -> t -> bool
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
 

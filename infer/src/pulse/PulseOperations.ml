@@ -202,6 +202,8 @@ module ModeledField = struct
   let string_length = Fieldname.make pulse_model_type "__infer_model_string_length"
 
   let internal_string = Fieldname.make pulse_model_type "__infer_model_backing_string"
+
+  let internal_ref_count = Fieldname.make pulse_model_type "__infer_model_reference_count"
 end
 
 let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
@@ -465,6 +467,8 @@ let java_resource_release class_name addr astate =
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate
 
 let add_ref_counted address astate = AddressAttributes.add_ref_counted address astate
+
+let is_ref_counted address astate = AddressAttributes.is_ref_counted address astate
 
 let remove_allocation_attr address astate = AddressAttributes.remove_allocation_attr address astate
 

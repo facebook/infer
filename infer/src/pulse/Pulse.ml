@@ -249,6 +249,63 @@ module PulseTransferFunctions = struct
     List.filter_map ~f:get_dealloc dynamic_types_unreachable
 
 
+  (* Count strong references reachable from the stack for each RefCounted
+     object in memory and set that count to their respective
+     __infer_mode_reference_count field by calling the __objc_set_ref_count
+     builtin *)
+  let set_ref_counts astate location path
+      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
+    let find_var_opt astate addr =
+      Stack.fold
+        (fun var (var_addr, _) var_opt ->
+          if AbstractValue.equal addr var_addr then Some var else var_opt )
+        astate None
+    in
+    let ref_counts = PulseRefCounting.count_references tenv astate in
+    AbstractValue.Map.fold
+      (fun addr count (astates, ret_vars) ->
+        let ret_vars = ref ret_vars in
+        let astates =
+          List.concat_map astates ~f:(fun astate ->
+              match astate with
+              | ISLLatentMemoryError _
+              | AbortProgram _
+              | ExceptionRaised _
+              | ExitProgram _
+              | LatentAbortProgram _
+              | LatentInvalidAccess _ ->
+                  [astate]
+              | ContinueProgram astate as default_astate ->
+                  let astates : ExecutionDomain.t list option =
+                    let open IOption.Let_syntax in
+                    let* self_var = find_var_opt astate addr in
+                    let+ self_typ =
+                      let* attrs = AbductiveDomain.AddressAttributes.find_opt addr astate in
+                      Attributes.get_dynamic_type attrs
+                    in
+                    let ret_id = Ident.create_fresh Ident.knormal in
+                    ret_vars := Var.of_id ret_id :: !ret_vars ;
+                    let ret = (ret_id, StdTyp.void) in
+                    let call_flags = CallFlags.default in
+                    let call_exp = Exp.Const (Cfun BuiltinDecl.__objc_set_ref_count) in
+                    let actuals =
+                      [ (Var.to_exp self_var, self_typ)
+                      ; (Exp.Const (Cint (IntLit.of_int count)), StdTyp.uint) ]
+                    in
+                    let call_instr = Sil.Call (ret, call_exp, actuals, location, call_flags) in
+                    L.d_printfln ~color:Pp.Orange "@\nExecuting injected instr:%a@\n@."
+                      (Sil.pp_instr Pp.text ~print_types:true)
+                      call_instr ;
+                    dispatch_call analysis_data path ret call_exp actuals location call_flags astate
+                    |> PulseReport.report_exec_results tenv proc_desc err_log location
+                  in
+                  Option.value ~default:[default_astate] astates )
+        in
+        (astates, !ret_vars) )
+      ref_counts
+      ([ContinueProgram astate], [])
+
+
   (* In the case of variables that point to Objective-C classes for which we have a dynamic type, we
      add and execute calls to dealloc. The main advantage of adding this calls
      is that some memory could be freed in dealloc, and we would be reporting a leak on it if we
@@ -466,10 +523,30 @@ module PulseTransferFunctions = struct
           if Procname.is_java (Procdesc.get_proc_name proc_desc) then
             (remove_vars vars [ContinueProgram astate], path, astate_n)
           else
+            (* Prepare objects in memory before calling any dealloc:
+               - set the number of unique strong references accessible from the
+                stack to each object's respective __infer_mode_reference_count
+                field by calling the __objc_set_ref_count modelled function
+               This needs to be done before any call to dealloc because dealloc's
+               behavior depends on this ref count and one's dealloc may call
+               another's. Consequently, they each need to be up to date beforehand.
+               The return variables of the calls to __objc_set_ref_count must be
+               removed *)
+            let astates, ret_vars = set_ref_counts astate location path analysis_data in
             (* Here we add and execute calls to dealloc for Objective-C objects
-               before removing the variables *)
+               before removing the variables. The return variables of those calls
+               must be removed as welll *)
             let astates, ret_vars =
-              execute_injected_dealloc_calls analysis_data path vars astate location
+              List.fold_left astates ~init:([], ret_vars)
+                ~f:(fun ((acc_astates, acc_ret_vars) as acc) astate ->
+                  match astate with
+                  | ContinueProgram astate ->
+                      let astates, ret_vars =
+                        execute_injected_dealloc_calls analysis_data path vars astate location
+                      in
+                      (astates @ acc_astates, ret_vars @ acc_ret_vars)
+                  | _ ->
+                      acc )
             in
             (* OPTIM: avoid re-allocating [vars] when [ret_vars] is empty
                (in particular if no ObjC objects are involved), but otherwise

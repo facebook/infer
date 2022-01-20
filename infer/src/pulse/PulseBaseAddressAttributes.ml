@@ -161,6 +161,10 @@ let get_dynamic_type attrs v = get_attribute Attributes.get_dynamic_type v attrs
 
 let add_ref_counted address memory = add_one address Attribute.RefCounted memory
 
+let is_ref_counted address attrs =
+  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_ref_counted
+
+
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
 let add_unreachable_at address location memory = add_one address (UnreachableAt location) memory
