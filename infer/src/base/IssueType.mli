@@ -91,6 +91,8 @@ val bad_record : latent:bool -> t
 
 val biabduction_analysis_stops : t
 
+val biabduction_retain_cycle : t
+
 val block_parameter_not_null_checked : t
 
 val buffer_overrun_l1 : t

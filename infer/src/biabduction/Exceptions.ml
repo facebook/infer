@@ -158,7 +158,7 @@ let recognize_exception exn : IssueToReport.t =
   | Precondition_not_met (desc, ocaml_pos) ->
       {issue_type= IssueType.precondition_not_met; description= desc; ocaml_pos= Some ocaml_pos}
   | Retain_cycle (desc, ocaml_pos) ->
-      {issue_type= IssueType.retain_cycle; description= desc; ocaml_pos= Some ocaml_pos}
+      {issue_type= IssueType.biabduction_retain_cycle; description= desc; ocaml_pos= Some ocaml_pos}
   | Exception.Analysis_failure_exe _ ->
       {issue_type= IssueType.failure_exe; description= Localise.no_desc; ocaml_pos= None}
   | Skip_function desc ->

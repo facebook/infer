@@ -40,6 +40,7 @@ let is_constant_deref_without_invalidation (diagnostic : Diagnostic.t) =
   match diagnostic with
   | MemoryLeak _
   | ResourceLeak _
+  | RetainCycle _
   | ErlangError _
   | ReadUninitializedValue _
   | StackVariableAddressEscape _

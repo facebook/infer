@@ -351,6 +351,11 @@ let biabduction_analysis_stops =
   register_hidden ~enabled:false ~id:"BIABDUCTION_ANALYSIS_STOPS" Warning Biabduction
 
 
+let biabduction_retain_cycle =
+  register ~enabled:true ~id:"BIABDUCTION_RETAIN_CYCLE" Error Biabduction
+    ~user_documentation:"See [RETAIN_CYCLE](#retain_cycle)."
+
+
 let buffer_overrun_l1 =
   register ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
     ~user_documentation:[%blob "../../documentation/issues/BUFFER_OVERRUN.md"]
@@ -948,7 +953,7 @@ let resource_leak =
 
 
 let retain_cycle =
-  register ~enabled:true ~id:"RETAIN_CYCLE" Error Biabduction
+  register ~enabled:false ~id:"RETAIN_CYCLE" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/RETAIN_CYCLE.md"]
 
 

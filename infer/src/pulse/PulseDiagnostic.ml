@@ -47,6 +47,7 @@ let yojson_of_read_uninitialized_value = [%yojson_of: _]
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
+  | RetainCycle of {assignment_trace: Trace.t; location: Location.t}
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
@@ -63,6 +64,7 @@ let get_location = function
       (* report at the call site that triggers the bug *) location
   | MemoryLeak {location}
   | ResourceLeak {location}
+  | RetainCycle {location}
   | ErlangError (Badkey {location})
   | ErlangError (Badmap {location})
   | ErlangError (Badmatch {location})
@@ -94,6 +96,7 @@ let aborts_execution = function
   | ReadUninitializedValue _
   | StackVariableAddressEscape _
   | UnnecessaryCopy _
+  | RetainCycle _
   | MemoryLeak _
   | ResourceLeak _ ->
       false
@@ -249,6 +252,10 @@ let get_message diagnostic =
         "%s resource leak. Resource dynamically allocated %a is not closed after the last access \
          at %a"
         pulse_start_msg pp_allocation_trace allocation_trace Location.pp location
+  | RetainCycle {location} ->
+      F.asprintf
+        "%s retain cycle. Memory managed via reference counting is locked in a retain cycle at %a"
+        pulse_start_msg Location.pp location
   | ErlangError (Badkey {calling_context= _; location}) ->
       F.asprintf "%s bad key at %a" pulse_start_msg Location.pp location
   | ErlangError (Badmap {calling_context= _; location}) ->
@@ -420,6 +427,11 @@ let get_trace = function
              F.fprintf fmt "allocated by `%a` here" Attribute.pp_allocator allocator )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | RetainCycle {assignment_trace; location} ->
+      Trace.add_to_errlog ~nesting:1
+        ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
+        assignment_trace
+      @@ [Errlog.make_trace_element 0 location "retain cycle here" []]
   | ErlangError (Badkey {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad key here" []]
@@ -466,11 +478,18 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_memory_leak
   | ResourceLeak _, false ->
       IssueType.pulse_resource_leak
+  | RetainCycle _, false ->
+      IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
   | UnnecessaryCopy _, false ->
       IssueType.unnecessary_copy_pulse
-  | (MemoryLeak _ | ResourceLeak _ | StackVariableAddressEscape _ | UnnecessaryCopy _), true ->
+  | ( ( MemoryLeak _
+      | ResourceLeak _
+      | RetainCycle _
+      | StackVariableAddressEscape _
+      | UnnecessaryCopy _ )
+    , true ) ->
       L.die InternalError "Issue type cannot be latent"
   | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
       Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
