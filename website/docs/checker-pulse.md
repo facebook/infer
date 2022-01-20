@@ -10,7 +10,7 @@ Activate with `--pulse`.
 Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: No
-- Erlang: Yes
+- Erlang: Experimental
 - Java: Yes
 
 ## What is Infer:Pulse?
@@ -162,6 +162,7 @@ The following issue types are reported by this checker:
 - [NULLPTR_DEREFERENCE_LATENT](/docs/next/all-issue-types#nullptr_dereference_latent)
 - [OPTIONAL_EMPTY_ACCESS](/docs/next/all-issue-types#optional_empty_access)
 - [OPTIONAL_EMPTY_ACCESS_LATENT](/docs/next/all-issue-types#optional_empty_access_latent)
+- [PULSE_RESOURCE_LEAK](/docs/next/all-issue-types#pulse_resource_leak)
 - [PULSE_UNINITIALIZED_VALUE](/docs/next/all-issue-types#pulse_uninitialized_value)
 - [PULSE_UNINITIALIZED_VALUE_LATENT](/docs/next/all-issue-types#pulse_uninitialized_value_latent)
 - [PULSE_UNNECESSARY_COPY](/docs/next/all-issue-types#pulse_unnecessary_copy)

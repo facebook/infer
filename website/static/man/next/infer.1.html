@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.4 -->
+<!-- Creator     : groff version 1.19.2 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,17 +7,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer</title>
 
 </head>
 <body>
 
-<h1 align="center">infer</h1>
+<h1 align=center>infer</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -30,17 +29,15 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer - static
 analysis for Java and C/C++/Objective-C/Objective-C++</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -57,9 +54,8 @@ infer --compilation-database[-escaped]</b> <i>file
 infer</b> <i>[options]</i> <b>-- compile command <br>
 infer</b> <i>[options]</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Infer is a
@@ -79,9 +75,8 @@ specified via the <b>--</b> option or one of the
 <b>infer</b> behaves as <b>infer-run</b>(1). Otherwise,
 <b>infer</b> behaves as <b>infer-analyze</b>(1).</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Every infer
@@ -121,12 +116,12 @@ reserved for internal use). <b><br>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
-&rsquo;@Expensive&rsquo;, this checker will warn whenever
+annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
+&lsquo;@Expensive&lsquo;, this checker will warn whenever
 some method annotated with
-&rsquo;@PerformanceCritical&rsquo; calls, directly or
+&lsquo;@PerformanceCritical&lsquo; calls, directly or
 indirectly, another method annotated with
-&rsquo;@Expensive&rsquo; (Conversely:
+&lsquo;@Expensive&lsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -171,9 +166,10 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-} <br>
-This will cause us to create a new ISOLATED_REACHING_CONNECT
-<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will cause
+us to create a new ISOLATED_REACHING_CONNECT <br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -401,18 +397,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
+&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &rsquo;!&rsquo; character prefix. If a
-regex has a &rsquo;!&rsquo; prefix, the polarity is
+with an optional &lsquo;!&lsquo; character prefix. If a
+regex has a &lsquo;!&lsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;block list&quot;
 instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &rsquo;issue_type_regex&rsquo; or if it does
-match the &rsquo;filename_regex&rsquo;. The filenames that
+not match the &lsquo;issue_type_regex&lsquo; or if it does
+match the &lsquo;filename_regex&lsquo;. The filenames that
 are tested by the regex are relative to the
-&rsquo;--project-root&rsquo; directory. The
-&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
+&lsquo;--project-root&lsquo; directory. The
+&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
@@ -564,8 +560,8 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the asymptotic complexity of functions with respect
 to execution cost or other user defined resources. Can be
-used to detect changes in the complexity with &rsquo;infer
-reportdiff&rsquo;. (Conversely: <b>--no-cost</b>)</p>
+used to detect changes in the complexity with &lsquo;infer
+reportdiff&lsquo;. (Conversely: <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -760,9 +756,11 @@ have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
-follows: <br>
-ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
-<br>
+follows:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">ARBITRARY_CODE_EXECUTION_UNDER_LOCK
+(enabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
@@ -941,6 +939,7 @@ PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
+PULSE_RESOURCE_LEAK (disabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
 PULSE_UNNECESSARY_COPY (disabled by default), <br>
@@ -986,8 +985,10 @@ USE_AFTER_LIFETIME_LATENT (disabled by default), <br>
 VECTOR_INVALIDATION (enabled by default), <br>
 VECTOR_INVALIDATION_LATENT (disabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
-Wrong_argument_number (enabled by default). <br>
-See also <b>infer-report</b>(1). <b><br>
+Wrong_argument_number (enabled by default).</p>
+
+<p style="margin-left:11%; margin-top: 1em">See also
+<b>infer-report</b>(1). <b><br>
 --dump-duplicate-symbols</b></p>
 
 <p style="margin-left:17%;">Activates: Dump all symbols
@@ -1010,7 +1011,7 @@ or off.</p>
 --eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &rsquo;@Nullable&rsquo; checker for Java
+The eradicate &lsquo;@Nullable&lsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1250,9 +1251,9 @@ report of issues found. (Conversely: <b>--no-html</b>)</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
-&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
-&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
+from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
+&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
+&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1462,7 +1463,7 @@ issue types that infer might report. (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&rsquo;@Prop&rsquo;s have been specified when constructing
+&lsquo;@Prop&lsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -1563,7 +1564,7 @@ skipped. If omitted, all levels are shown.</p>
 
 <p style="margin-left:17%;">Activates: Generate OCaml
 analysis allocation traces in
-&rsquo;infer-out/memtrace&rsquo;. (Conversely:
+&lsquo;infer-out/memtrace&lsquo;. (Conversely:
 <b>--no-memtrace-analysis-profiling</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1639,11 +1640,11 @@ infer-run</b>(1). <b><br>
 --printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &rsquo;printf&rsquo;
+Detect mismatches between the Java &lsquo;printf&lsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&rsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&rsquo; (Conversely:
+&lsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&lsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1993,19 +1994,18 @@ annotations with RacerD (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--racerd-ignore-classes</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Any method in a class specified
+here will be ignored by RacerD.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --racerd-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable racerd and
 disable all other checkers (Conversely:
 <b>--no-racerd-only</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---no-racerd-unknown-returns-owned</b></p>
-
-<p style="margin-left:17%;">Deactivates: DEPRECATED, does
-nothing. (Conversely:
-<b>--racerd-unknown-returns-owned</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2140,7 +2140,7 @@ and <b>infer-explore</b>(1). <b><br>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &rsquo;self&rsquo;. (Conversely:
+when a block captures &lsquo;self&lsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2255,11 +2255,11 @@ multiple times)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---skip-analysis-in-path</b>
-<i>+path_prefix_OCaml_regex</i></p>
+--skip-analysis-in-path</b> <i>+regex</i></p>
 
 <p style="margin-left:17%;">Ignore files whose path matches
-the given prefix (can be specified multiple times)</p>
+a given regex (can be specified multiple times, but you must
+make sure each regex is properly bracketed)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
@@ -2512,7 +2512,7 @@ Infer directory to generate its website at
 --Xbuck</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;">See also
@@ -2520,7 +2520,7 @@ Only valid for <b>--buck-clang</b>.</p>
 --Xbuck-no-inline</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -2552,35 +2552,34 @@ isysroot directory, to avoid absolute paths in tests</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&rsquo;infer -- &lt;xcodebuild
-command&gt;&rsquo;</i>. (Conversely:
+still just <i>&lsquo;infer -- &lt;xcodebuild
+command&gt;&lsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1).</p>
 
-<table width="100%" border="0" rules="none" frame="void"
+<table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p><b>--</b></p></td>
+<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p>Stop argument processing, use remaining arguments as a
-build command</p></td></tr>
+<p style="margin-top: 1em" valign="top">Stop argument
+processing, use remaining arguments as a build command</p></td>
 </table>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1).</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Extra arguments
@@ -2588,9 +2587,9 @@ may be passed to all infer commands using the
 <b>INFER_ARGS</b> environment variable (see the
 <i>OPTIONS</i> section). <b>INFER_ARGS</b> is expected to
 contain a string of ^-separated options. For instance,
-calling &rsquo;INFER_ARGS=--debug^--print-logs infer&rsquo;
-is equivalent to calling &rsquo;infer --debug
---print-logs&rsquo;.</p>
+calling &lsquo;INFER_ARGS=--debug^--print-logs infer&lsquo;
+is equivalent to calling &lsquo;infer --debug
+--print-logs&lsquo;.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>INFERCONFIG</b>:
@@ -2603,9 +2602,8 @@ commands will exit with an error code in some cases when
 otherwise a simple warning would be emitted on stderr, for
 instance if a deprecated form of an option is used.</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -2640,9 +2638,8 @@ then its parent, etc., stopping at the first
 [&quot;@gen&quot;,&quot;/* no infer */&quot;] <br>
 }</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

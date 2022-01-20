@@ -2087,6 +2087,11 @@ An example of such variadic methods is
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be
 created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
+## PULSE_RESOURCE_LEAK
+
+Reported as "Pulse Resource Leak" by [pulse](/docs/next/checker-pulse).
+
+See [RESOURCE_LEAK](#resource_leak)
 ## PULSE_UNINITIALIZED_VALUE
 
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
