@@ -1020,7 +1020,7 @@ let complexity_increase ~kind ~is_on_ui_thread =
 
 let topl_error =
   register ~id:"TOPL_ERROR" Error Topl
-    ~user_documentation:"A violation of a Topl property (user-specified)."
+    ~user_documentation:[%blob "../../documentation/issues/TOPL_ERROR.md"]
 
 
 let uninitialized_value =
