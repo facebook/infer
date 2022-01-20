@@ -403,6 +403,8 @@ let realloc_pvar tenv ({PathContext.timestamp} as path) pvar typ location astate
 
 let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc astate
 
+let read_id id astate = Stack.find_opt (Var.of_id id) astate
+
 let havoc_id id loc_opt astate =
   (* Topl needs to track the return value of a method; even if nondet now, it may be pruned later. *)
   if Topl.is_active () || Stack.mem (Var.of_id id) astate then
@@ -461,6 +463,8 @@ let java_resource_release class_name addr astate =
 
 
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate
+
+let add_ref_counted address astate = AddressAttributes.add_ref_counted address astate
 
 let remove_allocation_attr address astate = AddressAttributes.remove_allocation_attr address astate
 

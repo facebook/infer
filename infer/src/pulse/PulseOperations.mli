@@ -179,6 +179,8 @@ val realloc_pvar : Tenv.t -> PathContext.t -> Pvar.t -> Typ.t -> Location.t -> t
 
 val write_id : Ident.t -> AbstractValue.t * ValueHistory.t -> t -> t
 
+val read_id : Ident.t -> t -> (AbstractValue.t * ValueHistory.t) option
+
 val write_field :
      PathContext.t
   -> Location.t
@@ -263,6 +265,8 @@ val allocate : Attribute.allocator -> Location.t -> AbstractValue.t -> t -> t
 val java_resource_release : JavaClassName.t -> AbstractValue.t -> t -> t
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
+
+val add_ref_counted : AbstractValue.t -> t -> t
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
 

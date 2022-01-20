@@ -54,6 +54,8 @@ val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
 val get_dynamic_type : t -> AbstractValue.t -> Typ.t option
 
+val add_ref_counted : AbstractValue.t -> t -> t
+
 val get_written_to : AbstractValue.t -> t -> Trace.t option
 
 val std_vector_reserve : AbstractValue.t -> t -> t

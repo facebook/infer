@@ -159,6 +159,8 @@ let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType
 
 let get_dynamic_type attrs v = get_attribute Attributes.get_dynamic_type v attrs
 
+let add_ref_counted address memory = add_one address Attribute.RefCounted memory
+
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
 let add_unreachable_at address location memory = add_one address (UnreachableAt location) memory

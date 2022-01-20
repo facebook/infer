@@ -58,6 +58,7 @@ val ignore_leaks :
      ( AbductiveDomain.summary
      , [< `MemoryLeak of AbductiveDomain.summary * Attribute.allocator * Trace.t * Location.t
        | `ResourceLeak of AbductiveDomain.summary * JavaClassName.t * Trace.t * Location.t
+       | `RetainCycle of AbductiveDomain.summary * Trace.t * Location.t
        | AbductiveDomain.summary abductive_error ] )
      result
   -> (AbductiveDomain.summary, [> AbductiveDomain.summary abductive_error]) result

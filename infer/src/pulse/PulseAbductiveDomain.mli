@@ -138,6 +138,8 @@ module AddressAttributes : sig
 
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
+  val add_ref_counted : AbstractValue.t -> t -> t
+
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
   val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
@@ -204,6 +206,7 @@ val summary_of_post :
   -> t
   -> ( summary
      , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
+       | `RetainCycle of summary * Trace.t * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
          summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )

@@ -12,6 +12,8 @@ module Access : sig
   include PrettyPrintable.PrintableOrderedType with type t = AbstractValue.t HilExp.Access.t
 
   val equal : t -> t -> bool
+
+  val is_strong_access : Tenv.t -> t -> bool
 end
 
 module AccessSet : Caml.Set.S with type elt = Access.t

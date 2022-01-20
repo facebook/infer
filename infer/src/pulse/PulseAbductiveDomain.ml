@@ -295,6 +295,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.add_dynamic_type typ address)
 
 
+  let add_ref_counted address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.add_ref_counted address)
+
+
   let remove_allocation_attr address astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.remove_allocation_attr address)
 
@@ -699,6 +703,89 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
           Ok () )
 
 
+(* A retain cycle is a memory path from and address to itself, following only
+   strong references. From that definition, detecting them can be made
+   trivial:
+   Given an address and a list of adresses seen on the path, if the adress is
+   part of the path then it is part of a retain cycle. Otherwise add that
+   adress to the path and reiterate for each strongly referenced adresses
+   there is from that adress. Explore paths starting from all dead addresses
+   (if an address is still reachable from outside the function, then the
+   cycle could be broken).
+   To improve on that simple algorithm, we can keep track of another marker
+   to indicate adresses that have already been explored to indicate there
+   will not be any retain cycle to be found down that path and skip it.
+   This is handled by [check_retain_cycle] which will recursively explore
+   paths from a given adress and mark explored adresses in the [checked]
+   list. This function is called over all the [dead_addresses].
+
+   When reporting a retain cycle, we want to give the location of its
+   creation, therefore we need to remember location of the latest assignement
+   in the cycle *)
+let check_retain_cycles ~dead_addresses tenv astate =
+  let get_assignment_trace addr =
+    match AddressAttributes.find_opt addr astate with
+    | None ->
+        None
+    | Some attributes ->
+        Attributes.get_written_to attributes
+  in
+  let get_most_recent trace1 trace2 =
+    let loc1 = Trace.get_outer_location trace1 in
+    let loc2 = Trace.get_outer_location trace2 in
+    if Location.compare loc1 loc2 > 0 then trace1 else trace2
+  in
+  (* remember explored adresses to avoid reexploring path without retain cycles *)
+  let checked = ref [] in
+  let check_retain_cycle src_addr =
+    (* [assignment_trace] tracks the most recent assignment met in the retain cycle
+       [seen] tracks addresses met in the current path
+       [addr] is the address to explore
+    *)
+    let rec contains_cycle assignment_trace seen addr =
+      if List.exists ~f:(AbstractValue.equal addr) !checked then Ok ()
+      else if List.exists ~f:(AbstractValue.equal addr) seen then
+        match assignment_trace with
+        | None ->
+            Ok ()
+        | Some assignment_trace ->
+            let location = Trace.get_outer_location assignment_trace in
+            Error (assignment_trace, location)
+      else
+        let res =
+          match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
+          | None ->
+              Ok ()
+          | Some edges_pre ->
+              BaseMemory.Edges.fold ~init:(Ok ()) edges_pre
+                ~f:(fun acc (access, (accessed_addr, _)) ->
+                  match acc with
+                  | Error _ ->
+                      acc
+                  | Ok () ->
+                      if BaseMemory.Access.is_strong_access tenv access then
+                        let assignment_trace =
+                          Option.merge (get_assignment_trace addr) assignment_trace
+                            ~f:get_most_recent
+                        in
+                        contains_cycle assignment_trace (addr :: seen) accessed_addr
+                      else Ok () )
+        in
+        (* all paths down [addr] have been explored *)
+        checked := addr :: !checked ;
+        res
+    in
+    contains_cycle None [] src_addr
+  in
+  List.fold_result dead_addresses ~init:() ~f:(fun () addr ->
+      match AddressAttributes.find_opt addr astate with
+      | None ->
+          Ok ()
+      | Some attributes ->
+          (* retain cycles exist in the context of reference counting *)
+          if Attributes.is_ref_counted attributes then check_retain_cycle addr else Ok () )
+
+
 let discard_unreachable_ ~for_summary ({pre; post} as astate) =
   let pre_addresses = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
   let pre_new =
@@ -1058,22 +1145,27 @@ let summary_of_post tenv pdesc location astate =
   in
   match error with
   | None -> (
-    (* NOTE: it's important for correctness that we check leaks last because we are going to carry
-       on with the astate after the leak and we don't want to accidentally skip modifications of
-       the state because of the error monad *)
-    match
-      check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses astate_before_filter
-    with
-    | Ok () ->
-        Ok (invalidate_locals pdesc astate)
-    | Error (unreachable_location, JavaResource class_name, trace) ->
-        Error
-          (`ResourceLeak
-            (astate, class_name, trace, Option.value unreachable_location ~default:location) )
-    | Error (unreachable_location, proc_name, trace) ->
-        Error
-          (`MemoryLeak
-            (astate, proc_name, trace, Option.value unreachable_location ~default:location) ) )
+    match check_retain_cycles ~dead_addresses tenv astate_before_filter with
+    | Error (assignment_trace, location) ->
+        Error (`RetainCycle (astate, assignment_trace, location))
+    | Ok () -> (
+      (* NOTE: it's important for correctness that we check leaks last because we are going to carry
+         on with the astate after the leak and we don't want to accidentally skip modifications of
+         the state because of the error monad *)
+      match
+        check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses
+          astate_before_filter
+      with
+      | Ok () ->
+          Ok (invalidate_locals pdesc astate)
+      | Error (unreachable_location, JavaResource class_name, trace) ->
+          Error
+            (`ResourceLeak
+              (astate, class_name, trace, Option.value unreachable_location ~default:location) )
+      | Error (unreachable_location, proc_name, trace) ->
+          Error
+            (`MemoryLeak
+              (astate, proc_name, trace, Option.value unreachable_location ~default:location) ) ) )
   | Some (address, must_be_valid) ->
       Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))
 

@@ -36,6 +36,7 @@ type t =
   | MustBeInitialized of Timestamp.t * Trace.t
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
   | JavaResourceReleased of JavaClassName.t
+  | RefCounted
   | StdVectorReserve
   | Uninitialized
   | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -62,6 +63,8 @@ module Attributes : sig
   val get_closure_proc_name : t -> Procname.t option
 
   val get_allocation : t -> (allocator * Trace.t) option
+
+  val is_ref_counted : t -> bool
 
   val get_unknown_effect : t -> (CallEvent.t * ValueHistory.t) option
 

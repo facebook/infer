@@ -118,13 +118,20 @@ let init_with_bytes_free_when_done bytes : model =
 
 
 let alloc_no_fail size : model =
- fun model_data astate ->
+ fun ({ret= ret_id, _} as model_data) astate ->
   (* NOTE: technically this doesn't initialize the result but we haven't modelled initialization so
      assume the object is initialized after [init] for now *)
   let<+> astate =
     Basic.alloc_no_leak_not_null ~initialize:true ~desc:"alloc" (Some size) model_data astate
   in
-  astate
+  let ret_addr =
+    match PulseOperations.read_id ret_id astate with
+    | None ->
+        AbstractValue.mk_fresh ()
+    | Some (ret_addr, _) ->
+        ret_addr
+  in
+  PulseOperations.add_ref_counted ret_addr astate
 
 
 let construct_string ((value, value_hist) as char_array) : model =

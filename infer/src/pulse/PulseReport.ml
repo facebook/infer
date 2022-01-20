@@ -79,7 +79,8 @@ let is_suppressed tenv proc_desc diagnostic astate =
 let summary_of_error_post tenv proc_desc location mk_error astate =
   match AbductiveDomain.summary_of_post tenv proc_desc location astate with
   | Sat (Ok astate)
-  | Sat (Error (`MemoryLeak (astate, _, _, _)) | Error (`ResourceLeak (astate, _, _, _))) ->
+  | Sat (Error (`MemoryLeak (astate, _, _, _)) | Error (`ResourceLeak (astate, _, _, _)))
+  | Sat (Error (`RetainCycle (astate, _, _))) ->
       (* ignore potential memory leaks: error'ing in the middle of a function will typically produce
          spurious leaks *)
       Sat (mk_error astate)

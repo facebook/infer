@@ -66,6 +66,7 @@ module Attribute = struct
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | JavaResourceReleased of JavaClassName.t
+    | RefCounted
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -105,6 +106,8 @@ module Attribute = struct
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
 
   let allocated_rank = Variants.to_rank (Allocated (CMalloc, dummy_trace))
+
+  let ref_counted_rank = Variants.to_rank RefCounted
 
   let dynamic_type_rank = Variants.to_rank (DynamicType StdTyp.void)
 
@@ -176,6 +179,8 @@ module Attribute = struct
           (timestamp :> int)
     | JavaResourceReleased class_name ->
         F.fprintf f "Released(%a)" JavaClassName.pp class_name
+    | RefCounted ->
+        F.fprintf f "RefCounted"
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Uninitialized ->
@@ -189,7 +194,7 @@ module Attribute = struct
 
 
   let is_suitable_for_pre = function
-    | MustBeValid _ | MustBeInitialized _ ->
+    | MustBeValid _ | MustBeInitialized _ | RefCounted ->
         true
     | Invalid _ | Allocated _ | ISLAbduced _ ->
         Config.pulse_isl
@@ -219,6 +224,7 @@ module Attribute = struct
     | ISLAbduced _
     | Invalid _
     | JavaResourceReleased _
+    | RefCounted
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect _
@@ -254,6 +260,7 @@ module Attribute = struct
       | DynamicType _
       | EndOfCollection
       | JavaResourceReleased _
+      | RefCounted
       | StdVectorReserve
       | UnreachableAt _
       | Uninitialized ) as attr ->
@@ -334,6 +341,8 @@ module Attributes = struct
 
 
   let is_uninitialized attrs = Set.find_rank attrs Attribute.uninitialized_rank |> Option.is_some
+
+  let is_ref_counted attrs = Set.find_rank attrs Attribute.ref_counted_rank |> Option.is_some
 
   let get_allocation attrs =
     Set.find_rank attrs Attribute.allocated_rank
