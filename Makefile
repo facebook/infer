@@ -138,7 +138,8 @@ DIRECT_TESTS += \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 BUILD_SYSTEMS_TESTS += \
-  fb_differential_of_config_impact_report_objc
+  fb_differential_of_config_impact_report_objc \
+  fb_differential_of_config_impact_strict_objc \
 
 DIRECT_TESTS += \
   objc_fb-config-impact
