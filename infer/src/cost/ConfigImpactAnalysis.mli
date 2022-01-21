@@ -11,7 +11,11 @@ val is_in_strict_mode_paths : SourceFile.t -> bool
 
 val strict_mode : bool
 
-module Fields : AbstractDomain.FiniteSetS
+module Field : sig
+  type t
+end
+
+module Fields : AbstractDomain.FiniteSetS with type elt = Field.t
 
 module UncheckedCallee : sig
   type t
@@ -42,6 +46,16 @@ end
 module GatedClasses :
   AbstractDomain.MapS with type key = Typ.Name.t and type value = ClassGateConditions.t
 
+module FieldAlias : sig
+  include AbstractDomain.WithBottom
+
+  val empty : t
+
+  val union : t -> t -> t
+
+  val get_all : Field.t -> t -> Field.t list
+end
+
 module Summary : sig
   type t
 
@@ -52,6 +66,8 @@ module Summary : sig
   val get_gated_classes : t -> GatedClasses.t
 
   val get_unchecked_callees : t -> UncheckedCallees.t
+
+  val get_field_alias : t -> FieldAlias.t
 
   val instantiate_unchecked_callees_cond : all_config_fields:Fields.t -> t -> t
 end

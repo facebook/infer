@@ -421,6 +421,16 @@ module GatedClasses = struct
       m
 end
 
+module FieldAlias = struct
+  include AbstractDomain.FiniteMultiMap (Field) (Field)
+
+  let empty = bottom
+
+  let add_all src tgt x = Fields.fold (fun src acc -> add src tgt acc) src x
+
+  let union x y = fold (fun key field acc -> add key field acc) y x
+end
+
 module Summary = struct
   type t =
     { unchecked_callees: UncheckedCallees.t  (** Set of unchecked callees *)
@@ -430,17 +440,25 @@ module Summary = struct
     ; config_fields: Fields.t
           (** Intra-procedurally collected fields that may have config values *)
     ; gated_classes: GatedClasses.t  (** Intra-procedurally collected gated classes *)
+    ; field_alias: FieldAlias.t  (** Aliases between field names *)
     ; ret: Val.t  (** Return value of the procedure *) }
 
   let pp f
-      {unchecked_callees; unchecked_callees_cond; has_call_stmt; config_fields; gated_classes; ret}
-      =
+      { unchecked_callees
+      ; unchecked_callees_cond
+      ; has_call_stmt
+      ; config_fields
+      ; gated_classes
+      ; field_alias
+      ; ret } =
     F.fprintf f
       "@[@[unchecked callees:@,\
        %a@],@ @[unchecked callees cond:@,\
-       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@],@ @[gated classes:%a@],@ @[ret:%a@]@]"
+       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@],@ @[gated classes:%a@],@ @[field \
+       alias:%a@],@ @[ret:%a@]@]"
       UncheckedCallees.pp unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond
-      has_call_stmt Fields.pp config_fields GatedClasses.pp gated_classes Val.pp ret
+      has_call_stmt Fields.pp config_fields GatedClasses.pp gated_classes FieldAlias.pp field_alias
+      Val.pp ret
 
 
   let get_config_fields {config_fields} = config_fields
@@ -448,6 +466,8 @@ module Summary = struct
   let get_gated_classes {gated_classes} = gated_classes
 
   let get_unchecked_callees {unchecked_callees} = unchecked_callees
+
+  let get_field_alias {field_alias} = field_alias
 
   let instantiate_unchecked_callees_cond ~all_config_fields
       ({unchecked_callees; unchecked_callees_cond} as x) =
@@ -475,7 +495,8 @@ module Dom = struct
     ; unchecked_callees_cond: UncheckedCalleesCond.t
     ; mem: Mem.t
     ; config_fields: Fields.t
-    ; gated_classes: GatedClasses.t }
+    ; gated_classes: GatedClasses.t
+    ; field_alias: FieldAlias.t }
 
   let pp f
       { config_checks
@@ -484,7 +505,8 @@ module Dom = struct
       ; unchecked_callees_cond
       ; mem
       ; config_fields
-      ; gated_classes } =
+      ; gated_classes
+      ; field_alias } =
     F.fprintf f
       "@[@[config checks:@,\
        %a@]@ @[field checks:@,\
@@ -493,10 +515,11 @@ module Dom = struct
        %a@]@ @[mem:@,\
        %a@]@ @[config fields:@,\
        %a@]@ @[gated classes:@,\
+       %a@]@ @[field alias:@,\
        %a@]@]"
       ConfigChecks.pp config_checks FieldChecks.pp field_checks UncheckedCallees.pp
       unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond Mem.pp mem Fields.pp
-      config_fields GatedClasses.pp gated_classes
+      config_fields GatedClasses.pp gated_classes FieldAlias.pp field_alias
 
 
   let leq ~lhs ~rhs =
@@ -507,6 +530,7 @@ module Dom = struct
     && Mem.leq ~lhs:lhs.mem ~rhs:rhs.mem
     && Fields.leq ~lhs:lhs.config_fields ~rhs:rhs.config_fields
     && GatedClasses.leq ~lhs:lhs.gated_classes ~rhs:rhs.gated_classes
+    && FieldAlias.leq ~lhs:lhs.field_alias ~rhs:rhs.field_alias
 
 
   let join x y =
@@ -517,7 +541,8 @@ module Dom = struct
         UncheckedCalleesCond.join x.unchecked_callees_cond y.unchecked_callees_cond
     ; mem= Mem.join x.mem y.mem
     ; config_fields= Fields.join x.config_fields y.config_fields
-    ; gated_classes= GatedClasses.join x.gated_classes y.gated_classes }
+    ; gated_classes= GatedClasses.join x.gated_classes y.gated_classes
+    ; field_alias= FieldAlias.join x.field_alias y.field_alias }
 
 
   let widen ~prev ~next ~num_iters =
@@ -531,17 +556,18 @@ module Dom = struct
     ; mem= Mem.widen ~prev:prev.mem ~next:next.mem ~num_iters
     ; config_fields= Fields.widen ~prev:prev.config_fields ~next:next.config_fields ~num_iters
     ; gated_classes= GatedClasses.widen ~prev:prev.gated_classes ~next:next.gated_classes ~num_iters
-    }
+    ; field_alias= FieldAlias.widen ~prev:prev.field_alias ~next:next.field_alias ~num_iters }
 
 
   let to_summary pname ~has_call_stmt
-      {unchecked_callees; unchecked_callees_cond; config_fields; gated_classes; mem} =
+      {unchecked_callees; unchecked_callees_cond; config_fields; gated_classes; field_alias; mem} =
     let ret = Mem.lookup (Loc.of_pvar (Pvar.get_ret_pvar pname)) mem in
     { Summary.unchecked_callees
     ; unchecked_callees_cond
     ; has_call_stmt
     ; config_fields
     ; gated_classes
+    ; field_alias
     ; ret }
 
 
@@ -552,7 +578,8 @@ module Dom = struct
     ; unchecked_callees_cond= UncheckedCalleesCond.bottom
     ; mem= Mem.bottom
     ; config_fields= Fields.bottom
-    ; gated_classes= GatedClasses.bottom }
+    ; gated_classes= GatedClasses.bottom
+    ; field_alias= FieldAlias.bottom }
 
 
   let add_mem loc v ({mem} as astate) = {astate with mem= Mem.add loc v mem}
@@ -567,9 +594,10 @@ module Dom = struct
 
   let store_config pvar id astate = copy_mem ~tgt:(Loc.of_pvar pvar) ~src:(Loc.of_id id) astate
 
-  let store_field fn id ({mem; config_fields} as astate) =
-    let {Val.config} = Mem.lookup (Loc.of_id id) mem in
-    if ConfigLifted.is_bottom config then astate
+  let store_field fn id ({mem; config_fields; field_alias} as astate) =
+    let {Val.config; fields} = Mem.lookup (Loc.of_id id) mem in
+    if ConfigLifted.is_bottom config then
+      {astate with field_alias= FieldAlias.add_all fields fn field_alias}
     else {astate with config_fields= Fields.add fn config_fields}
 
 
