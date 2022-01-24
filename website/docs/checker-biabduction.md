@@ -19,6 +19,7 @@ Read more about its foundations in the [Separation Logic and Biabduction page](s
 
 The following issue types are reported by this checker:
 - [BIABDUCTION_MEMORY_LEAK](/docs/next/all-issue-types#biabduction_memory_leak)
+- [BIABDUCTION_RETAIN_CYCLE](/docs/next/all-issue-types#biabduction_retain_cycle)
 - [DANGLING_POINTER_DEREFERENCE](/docs/next/all-issue-types#dangling_pointer_dereference)
 - [DIVIDE_BY_ZERO](/docs/next/all-issue-types#divide_by_zero)
 - [EMPTY_VECTOR_ACCESS](/docs/next/all-issue-types#empty_vector_access)
@@ -27,4 +28,3 @@ The following issue types are reported by this checker:
 - [PARAMETER_NOT_NULL_CHECKED](/docs/next/all-issue-types#parameter_not_null_checked)
 - [PREMATURE_NIL_TERMINATION_ARGUMENT](/docs/next/all-issue-types#premature_nil_termination_argument)
 - [RESOURCE_LEAK](/docs/next/all-issue-types#resource_leak)
-- [RETAIN_CYCLE](/docs/next/all-issue-types#retain_cycle)

@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.19.2 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,16 +7,17 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p     { margin-top: 0; margin-bottom: 0; }
-       pre   { margin-top: 0; margin-bottom: 0; }
-       table { margin-top: 0; margin-bottom: 0; }
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
 </style>
 <title>infer</title>
 
 </head>
 <body>
 
-<h1 align=center>infer</h1>
+<h1 align="center">infer</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -29,15 +30,17 @@
 <hr>
 
 
+<h2>NAME
 <a name="NAME"></a>
-<h2>NAME</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer - static
 analysis for Java and C/C++/Objective-C/Objective-C++</p>
 
+<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-<h2>SYNOPSIS</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -54,8 +57,9 @@ infer --compilation-database[-escaped]</b> <i>file
 infer</b> <i>[options]</i> <b>-- compile command <br>
 infer</b> <i>[options]</i></p>
 
+<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-<h2>DESCRIPTION</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Infer is a
@@ -75,8 +79,9 @@ specified via the <b>--</b> option or one of the
 <b>infer</b> behaves as <b>infer-run</b>(1). Otherwise,
 <b>infer</b> behaves as <b>infer-analyze</b>(1).</p>
 
+<h2>OPTIONS
 <a name="OPTIONS"></a>
-<h2>OPTIONS</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Every infer
@@ -166,10 +171,9 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-}</p>
-
-<p style="margin-left:11%; margin-top: 1em">This will cause
-us to create a new ISOLATED_REACHING_CONNECT <br>
+} <br>
+This will cause us to create a new ISOLATED_REACHING_CONNECT
+<br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -756,11 +760,9 @@ have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
-follows:</p>
-
-
-<p style="margin-left:11%; margin-top: 1em">ARBITRARY_CODE_EXECUTION_UNDER_LOCK
-(enabled by default), <br>
+follows: <br>
+ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
+<br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
@@ -784,6 +786,7 @@ BAD_RECORD (enabled by default), <br>
 BAD_RECORD_LATENT (disabled by default), <br>
 BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
 BIABDUCTION_MEMORY_LEAK (disabled by default), <br>
+BIABDUCTION_RETAIN_CYCLE (enabled by default), <br>
 BLOCK_PARAMETER_NOT_NULL_CHECKED (enabled by default), <br>
 BUFFER_OVERRUN_L1 (enabled by default), <br>
 BUFFER_OVERRUN_L2 (enabled by default), <br>
@@ -947,7 +950,7 @@ PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
-RETAIN_CYCLE (enabled by default), <br>
+RETAIN_CYCLE (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
 SHELL_INJECTION_RISK (enabled by default), <br>
 SKIP_FUNCTION (disabled by default), <br>
@@ -985,10 +988,8 @@ USE_AFTER_LIFETIME_LATENT (disabled by default), <br>
 VECTOR_INVALIDATION (enabled by default), <br>
 VECTOR_INVALIDATION_LATENT (disabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
-Wrong_argument_number (enabled by default).</p>
-
-<p style="margin-left:11%; margin-top: 1em">See also
-<b>infer-report</b>(1). <b><br>
+Wrong_argument_number (enabled by default). <br>
+See also <b>infer-report</b>(1). <b><br>
 --dump-duplicate-symbols</b></p>
 
 <p style="margin-left:17%;">Activates: Dump all symbols
@@ -2559,27 +2560,28 @@ command&gt;&lsquo;</i>. (Conversely:
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1).</p>
 
-<table width="100%" border=0 rules="none" frame="void"
+<table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
+<p><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p style="margin-top: 1em" valign="top">Stop argument
-processing, use remaining arguments as a build command</p></td>
+<p>Stop argument processing, use remaining arguments as a
+build command</p></td></tr>
 </table>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1).</p>
 
+<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-<h2>ENVIRONMENT</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Extra arguments
@@ -2602,8 +2604,9 @@ commands will exit with an error code in some cases when
 otherwise a simple warning would be emitted on stderr, for
 instance if a deprecated form of an option is used.</p>
 
+<h2>FILES
 <a name="FILES"></a>
-<h2>FILES</h2>
+</h2>
 
 
 
@@ -2638,8 +2641,9 @@ then its parent, etc., stopping at the first
 [&quot;@gen&quot;,&quot;/* no infer */&quot;] <br>
 }</p>
 
+<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-<h2>SEE ALSO</h2>
+</h2>
 
 
 

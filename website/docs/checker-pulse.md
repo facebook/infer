@@ -166,6 +166,7 @@ The following issue types are reported by this checker:
 - [PULSE_UNINITIALIZED_VALUE](/docs/next/all-issue-types#pulse_uninitialized_value)
 - [PULSE_UNINITIALIZED_VALUE_LATENT](/docs/next/all-issue-types#pulse_uninitialized_value_latent)
 - [PULSE_UNNECESSARY_COPY](/docs/next/all-issue-types#pulse_unnecessary_copy)
+- [RETAIN_CYCLE](/docs/next/all-issue-types#retain_cycle)
 - [STACK_VARIABLE_ADDRESS_ESCAPE](/docs/next/all-issue-types#stack_variable_address_escape)
 - [USE_AFTER_DELETE](/docs/next/all-issue-types#use_after_delete)
 - [USE_AFTER_DELETE_LATENT](/docs/next/all-issue-types#use_after_delete_latent)

@@ -154,6 +154,11 @@ A latent [BAD_RECORD](#bad_record). See the [documentation on Pulse latent issue
 Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
 
 See [MEMORY_LEAK](#memory_leak).
+## BIABDUCTION_RETAIN_CYCLE
+
+Reported as "Biabduction Retain Cycle" by [biabduction](/docs/next/checker-biabduction).
+
+See [RETAIN_CYCLE](#retain_cycle).
 ## BLOCK_PARAMETER_NOT_NULL_CHECKED
 
 Reported as "Block Parameter Not Null Checked" by [parameter-not-null-checked](/docs/next/checker-parameter-not-null-checked).
@@ -2453,7 +2458,7 @@ useful, but you cannot use it blindly when you see a resource-allocation site.
 
 ## RETAIN_CYCLE
 
-Reported as "Retain Cycle" by [biabduction](/docs/next/checker-biabduction).
+Reported as "Retain Cycle" by [pulse](/docs/next/checker-pulse).
 
 A retain cycle is a situation when object A retains object B, and object B
 retains object A at the same time. Here is an example:
