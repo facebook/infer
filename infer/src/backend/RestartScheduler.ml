@@ -21,12 +21,13 @@ let of_queue content : ('a, string) ProcessPool.TaskGenerator.t =
         Queue.enqueue content {work; dependency_filename_opt}
   in
   let work_if_dependency_allows w =
-    match w.dependency_filename_opt with
-    | Some dependency_filename when ProcLocker.is_locked ~proc_filename:dependency_filename ->
-        Queue.enqueue content w ;
-        None
-    | None | Some _ ->
-        Some w.work
+    Some w.work
+    (* match w.dependency_filename_opt with
+       | Some dependency_filename when ProcLocker.is_locked ~proc_filename:dependency_filename ->
+           Queue.enqueue content w ;
+           None
+       | None | Some _ ->
+           Some w.work *)
   in
   let next () = Option.bind (Queue.dequeue content) ~f:(fun w -> work_if_dependency_allows w) in
   {remaining_tasks; is_empty; finished; next}
