@@ -82,3 +82,24 @@ module MakeDisjunctive
     with type TransferFunctions.analysis_data = T.analysis_data
      and module TransferFunctions.CFG = T.CFG
      and type TransferFunctions.Domain.t = T.DisjDomain.t list * T.NonDisjDomain.t
+
+module type TransferFunctionsWithExceptions = sig
+  include TransferFunctions.SIL
+
+  val filter_normal : Domain.t -> Domain.t
+  (** Refines the abstract state to select non-exceptional concrete states. Should return bottom if
+      no such states exist *)
+
+  val filter_exceptional : Domain.t -> Domain.t
+  (** Refines the abstract state to select exceptional concrete states. Should return bottom if no
+      such states exist *)
+
+  val transform_on_exceptional_edge : Domain.t -> Domain.t
+  (** Change the nature normal/exceptional when flowing through an exceptional edge. For a forward
+      analysis, it should turn an exceptional state into normal. For a backward analysis, it should
+      turn an normal state into exceptional. *)
+end
+
+(* Create an intraprocedural backward abstract interpreter from transfer functions using the reverse
+   post-order scheduler. Dispatch properly exceptional flows backward. *)
+module MakeBackwardRPO (T : TransferFunctionsWithExceptions) : S with module TransferFunctions = T

@@ -234,6 +234,14 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
         prev next
 end
 
+module PairWithBottom (Domain1 : WithBottom) (Domain2 : WithBottom) = struct
+  include Pair (Domain1) (Domain2)
+
+  let bottom = (Domain1.bottom, Domain2.bottom)
+
+  let is_bottom (x1, x2) = Domain1.is_bottom x1 && Domain2.is_bottom x2
+end
+
 module Flat (V : PrettyPrintable.PrintableEquatableType) = struct
   type t = Bot | V of V.t | Top
 

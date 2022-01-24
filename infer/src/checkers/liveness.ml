@@ -12,26 +12,21 @@ module L = Logging
 (** backward analysis for computing set of maybe-live variables at each program point *)
 
 module VarSet = AbstractDomain.FiniteSet (Var)
+module Domain = VarSet
 
 module Exn = struct
-  include AbstractDomain.Map (Int) (VarSet)
+  module CExn = AbstractDomain.Map (Int) (VarSet)
 
-  let union = union (fun _ v1 v2 -> Some (VarSet.union v1 v2))
-
-  let diff =
-    merge (fun _ v1 v2 ->
-        match (v1, v2) with
-        | None, _ | Some _, None ->
-            v1
-        | Some v1, Some v2 ->
-            let r = VarSet.diff v1 v2 in
-            Option.some_if (not (VarSet.is_bottom r)) r )
+  (* We pair a C-liveset (for C++ exceptions) and a Java-liveset (for Java exceptions) *)
+  include AbstractDomain.PairWithBottom (CExn) (VarSet)
 end
 
-module Domain = struct
+module ExtendedDomain = struct
   type t = {normal: VarSet.t; exn: Exn.t}
 
-  let pp f {normal; exn} = F.fprintf f "@[@[normal:%a@],@ @[exn:%a@]@]" VarSet.pp normal Exn.pp exn
+  let pp f {normal; exn= c_exn, _} =
+    F.fprintf f "@[@[normal:%a@],@ @[exn:%a@]@]" VarSet.pp normal Exn.CExn.pp c_exn
+
 
   let leq ~lhs ~rhs =
     VarSet.leq ~lhs:lhs.normal ~rhs:rhs.normal && Exn.leq ~lhs:lhs.exn ~rhs:rhs.exn
@@ -43,6 +38,14 @@ module Domain = struct
     { normal= VarSet.widen ~prev:prev.normal ~next:next.normal ~num_iters
     ; exn= Exn.widen ~prev:prev.exn ~next:next.exn ~num_iters }
 
+
+  let filter_normal {normal} = {normal; exn= Exn.bottom}
+
+  let filter_exceptional {exn= _, j_exn} = {normal= VarSet.bottom; exn= (Exn.CExn.bottom, j_exn)}
+
+  let normal_to_exceptional {normal} = {normal= VarSet.bottom; exn= (Exn.CExn.bottom, normal)}
+
+  let exceptional_to_normal {exn= _, j_exn} = {normal= j_exn; exn= Exn.bottom}
 
   let bottom = {normal= VarSet.bottom; exn= Exn.bottom}
 
@@ -58,19 +61,17 @@ module Domain = struct
 
   let mem var = map_normal ~f:(VarSet.mem var)
 
-  let fold f x init = map_normal ~f:(fun normal -> VarSet.fold f normal init) x
+  let catch_entry try_id {normal; exn= c_exn, j_exn} =
+    {normal= VarSet.empty; exn= (Exn.CExn.add try_id normal c_exn, j_exn)}
 
-  let union x y = {normal= VarSet.union x.normal y.normal; exn= Exn.union x.exn y.exn}
 
-  let diff x y = {normal= VarSet.diff x.normal y.normal; exn= Exn.diff x.exn y.exn}
+  let try_entry try_id {normal; exn= c_exn, j_exn} =
+    {normal; exn= (Exn.CExn.remove try_id c_exn, j_exn)}
 
-  let catch_entry try_id x = {normal= VarSet.empty; exn= Exn.add try_id x.normal x.exn}
 
-  let try_entry try_id x = {x with exn= Exn.remove try_id x.exn}
-
-  let add_live_in_catch x =
-    { x with
-      normal= Exn.fold (fun _ live_in_catch acc -> VarSet.join acc live_in_catch) x.exn x.normal }
+  let add_live_in_catch {normal; exn= (c_exn, _) as exn} =
+    { normal= Exn.CExn.fold (fun _ live_in_catch acc -> VarSet.join acc live_in_catch) c_exn normal
+    ; exn }
 end
 
 (** only kill pvars that are local; don't kill those that can escape *)
@@ -163,7 +164,7 @@ end
     read, kill the variable when it is assigned *)
 module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
   module CFG = CFG
-  module Domain = Domain
+  module Domain = ExtendedDomain
 
   type analysis_data = Procdesc.t
 
@@ -178,12 +179,12 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
            Domain.add (Var.of_pvar pvar) astate_acc )
 
 
-  let add_live_actuals actuals live_acc =
+  let add_live_actuals actuals astate_acc =
     let actuals = List.map actuals ~f:(fun (e, _) -> Exp.ignore_cast e) in
-    List.fold actuals ~f:(fun acc_ exp -> exp_add_live exp acc_) ~init:live_acc
+    List.fold actuals ~f:(fun acc_ exp -> exp_add_live exp acc_) ~init:astate_acc
 
 
-  let exec_instr astate proc_desc _ _ = function
+  let exec_instr_normal astate proc_desc = function
     | Sil.Load {id= lhs_id} when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a read *)
         astate
@@ -226,12 +227,51 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
         astate
 
 
+  let exec_instr astate proc_dec _ _ instr =
+    (* A variable is live before [instr] if it is:
+       - live after instr and not set by [instr]
+       - or it used by [instr]
+       - or it is live before an exceptional successor node *)
+    let astate_exn = Domain.filter_exceptional astate in
+    Domain.join (exec_instr_normal astate proc_dec instr) (Domain.exceptional_to_normal astate_exn)
+
+
+  let filter_normal astate = Domain.filter_normal astate
+
+  let filter_exceptional astate = Domain.filter_exceptional astate
+
+  let transform_on_exceptional_edge astate = Domain.normal_to_exceptional astate
+
   let pp_session_name node fmt = F.fprintf fmt "liveness %a" CFG.Node.pp_id (CFG.Node.id node)
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
 module CheckerAnalyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CheckerMode) (CFG))
 module PreAnalysisTransferFunctions = TransferFunctions (PreAnalysisMode)
+module BackwardCfg = ProcCfg.Backward (ProcCfg.Exceptional)
+module Iter = AbstractInterpreter.MakeBackwardRPO (PreAnalysisTransferFunctions (BackwardCfg))
+
+type t = ExtendedDomain.t AbstractInterpreter.State.t Iter.InvariantMap.t
+
+let compute proc_desc =
+  let liveness_proc_cfg = BackwardCfg.from_pdesc proc_desc in
+  let initial = ExtendedDomain.bottom in
+  Iter.exec_cfg liveness_proc_cfg ~initial proc_desc
+
+
+(* note: because the analysis is backward, post and pre are reversed *)
+let live_before node_id inv_map =
+  let f {AbstractInterpreter.State.post} = post.ExtendedDomain.normal in
+  Iter.extract_state node_id inv_map |> Option.map ~f
+
+
+let live_after node_id inv_map =
+  let f {AbstractInterpreter.State.pre} =
+    let {ExtendedDomain.normal; exn= _, j_exn} = pre in
+    Domain.join normal j_exn
+  in
+  Iter.extract_state node_id inv_map |> Option.map ~f
+
 
 (* It's fine to have a dead store on a type that uses the "scope guard" pattern. These types
    are only read in their destructors, and this is expected/ok.
@@ -319,7 +359,7 @@ let ignored_constants =
 let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   let passed_by_ref_invariant_map = get_passed_by_ref_invariant_map proc_desc in
   let cfg = CFG.from_pdesc proc_desc in
-  let invariant_map = CheckerAnalyzer.exec_cfg cfg proc_desc ~initial:Domain.bottom in
+  let invariant_map = CheckerAnalyzer.exec_cfg cfg proc_desc ~initial:ExtendedDomain.bottom in
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
@@ -357,7 +397,7 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
       ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
       || is_constexpr_or_unused pvar
       || VarSet.mem (Var.of_pvar pvar) passed_by_ref_vars
-      || Domain.mem (Var.of_pvar pvar) live_vars
+      || ExtendedDomain.mem (Var.of_pvar pvar) live_vars
       || Procdesc.is_captured_pvar proc_desc pvar
       || is_scope_guard typ
       || Procdesc.has_modify_in_block_attr proc_desc pvar )

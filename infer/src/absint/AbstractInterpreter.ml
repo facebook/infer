@@ -84,20 +84,26 @@ end
 module type Make = functor (TransferFunctions : TransferFunctions.SIL) ->
   S with module TransferFunctions = TransferFunctions
 
-(** internal module that extends transfer functions *)
-module type NodeTransferFunctions = sig
+module type TransferFunctionsWithExceptions = sig
   include TransferFunctions.SIL
 
   val filter_normal : Domain.t -> Domain.t
-  (** refines the abstract state to select non-exceptional concrete states. return None if no such
-      states exist *)
+  (** Refines the abstract state to select non-exceptional concrete states. Should return bottom if
+      no such states exist *)
 
   val filter_exceptional : Domain.t -> Domain.t
-  (** refines the abstract state to select exceptional concrete states. return None if no such
-      states exist *)
+  (** Refines the abstract state to select exceptional concrete states. Should return bottom if no
+      such states exist *)
 
-  val exceptional_to_normal : Domain.t -> Domain.t
-  (** convert all exceptional states into normal states (used when reaching a handler) *)
+  val transform_on_exceptional_edge : Domain.t -> Domain.t
+  (** Change the nature normal/exceptional when flowing through an exceptional edge. For a forward
+      analysis, it should turn an exceptional state into normal. For a backward analysis, it should
+      turn a normal state into exceptional. *)
+end
+
+(** internal module that extends transfer functions *)
+module type NodeTransferFunctions = sig
+  include TransferFunctionsWithExceptions
 
   val exec_node_instrs :
        Domain.t State.t option
@@ -113,14 +119,37 @@ end
 module SimpleNodeTransferFunctions (T : TransferFunctions.SIL) = struct
   include T
 
+  (* Warning: we provide a very simple default implementation for the three next functions. If
+     you really wish to take into account exceptions, you may need to seriously add an exceptional
+     state in your abstract domain. *)
   let filter_normal x = x
 
   let filter_exceptional x = x
 
-  let exceptional_to_normal x = x
+  let transform_on_exceptional_edge x = x
 
   let exec_node_instrs _old_state_opt ~exec_instr pre instrs =
     Instrs.foldi ~init:pre instrs ~f:exec_instr
+end
+
+module BackwardNodeTransferFunction (T : TransferFunctionsWithExceptions) = struct
+  include T
+
+  (*
+     In a backward block, each instruction should receive the normal states from is successor instr,
+     plus the exceptional states from the successor nodes
+         instr1; <-- ingoing exn edge from exceptional successor nodes
+         instr2; <-- ingoing exn edge from exceptional successor nodes
+         intrs3; <-- ingoing exn edge from exceptional successor nodes
+          ^
+          |-- ingoing normal edge from normal successor nodes
+
+     We assume the backward post does not have an exceptional state.
+  *)
+  let exec_node_instrs _old_state_opt ~exec_instr pre instrs =
+    let pre_exn = filter_exceptional pre in
+    let f idx astate instr = exec_instr idx (Domain.join astate pre_exn) instr in
+    Instrs.foldi ~init:pre instrs ~f
 end
 
 (** build a disjunctive domain and transfer functions *)
@@ -233,7 +262,10 @@ struct
 
   let filter_exceptional x = filter_disjuncts x ~f:T.DisjDomain.is_exceptional
 
-  let exceptional_to_normal (l, nd) = (List.map ~f:T.DisjDomain.exceptional_to_normal l, nd)
+  let transform_on_exceptional_edge x =
+    let l, nd = filter_exceptional x in
+    (List.map ~f:T.DisjDomain.exceptional_to_normal l, nd)
+
 
   (** the number of remaining disjuncts taking into account disjuncts already recorded in the post
       of a node (and therefore that will stay there) *)
@@ -476,7 +508,6 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
   let compute_pre cfg node inv_map =
     let extract_post_ pred = extract_post (Node.id pred) inv_map in
-    let is_handler = match Node.kind node with Stmt_node ExceptionHandler -> true | _ -> false in
     let join_opt =
       let f a1 a2 =
         let res = Domain.join a1 a2 in
@@ -486,11 +517,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
       Option.merge ~f
     in
     let filter_and_join ~f joined_post_opt pred =
-      let pred_post =
-        let open IOption.Let_syntax in
-        let+ filtered_post = extract_post_ pred >>| f in
-        if is_handler then TransferFunctions.exceptional_to_normal filtered_post else filtered_post
-      in
+      let pred_post = Option.map ~f (extract_post_ pred) in
       join_opt pred_post joined_post_opt
     in
     let fold_normal =
@@ -498,7 +525,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
         ~f:(filter_and_join ~f:TransferFunctions.filter_normal)
     in
     CFG.fold_exceptional_preds cfg node ~init:fold_normal
-      ~f:(filter_and_join ~f:TransferFunctions.filter_exceptional)
+      ~f:(filter_and_join ~f:TransferFunctions.transform_on_exceptional_edge)
 
 
   (* shadowed for HTML debug *)
@@ -523,9 +550,9 @@ end
 
 module MakeWithScheduler
     (Scheduler : Scheduler.S)
-    (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) =
+    (NodeTransferFunctions : NodeTransferFunctions with module CFG = Scheduler.CFG) =
 struct
-  include AbstractInterpreterCommon (SimpleNodeTransferFunctions (TransferFunctions))
+  include AbstractInterpreterCommon (NodeTransferFunctions)
 
   let rec exec_worklist ~pp_instr cfg analysis_data work_queue inv_map =
     match Scheduler.pop work_queue with
@@ -570,8 +597,11 @@ struct
   let compute_post ?do_narrowing:_ = make_compute_post ~exec_cfg_internal ~do_narrowing:false
 end
 
-module MakeRPO (T : TransferFunctions.SIL) =
+module MakeRPONode (T : NodeTransferFunctions) =
   MakeWithScheduler (Scheduler.ReversePostorder (T.CFG)) (T)
+module MakeRPO (T : TransferFunctions.SIL) = MakeRPONode (SimpleNodeTransferFunctions (T))
+module MakeBackwardRPO (T : TransferFunctionsWithExceptions) =
+  MakeRPONode (BackwardNodeTransferFunction (T))
 
 module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
   include AbstractInterpreterCommon (TransferFunctions)

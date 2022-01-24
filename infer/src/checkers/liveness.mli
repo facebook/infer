@@ -18,10 +18,20 @@ module Domain : sig
   val diff : t -> t -> t
 end
 
+type t
+
+val live_before : Procdesc.Node.id -> t -> Domain.t option
+
+val live_after : Procdesc.Node.id -> t -> Domain.t option
+
+val compute : Procdesc.t -> t
+
+module ExtendedDomain : AbstractDomain.WithBottom
+
 module PreAnalysisTransferFunctions (CFG : ProcCfg.S) :
-  TransferFunctions.SIL
+  AbstractInterpreter.TransferFunctionsWithExceptions
     with module CFG = CFG
-     and module Domain = Domain
+     and module Domain = ExtendedDomain
      and type analysis_data = Procdesc.t
 
 val checker : IntraproceduralAnalysis.t -> unit

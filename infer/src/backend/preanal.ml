@@ -272,9 +272,6 @@ end
 (** perform liveness analysis and insert Nullify/Remove_temps instructions into the IR to make it
     easy for analyses to do abstract garbage collection *)
 module Liveness = struct
-  module BackwardCfg = ProcCfg.Backward (ProcCfg.Exceptional)
-  module LivenessAnalysis =
-    AbstractInterpreter.MakeRPO (Liveness.PreAnalysisTransferFunctions (BackwardCfg))
   module VarDomain = Liveness.Domain
 
   (** computes the non-nullified reaching definitions at the end of each node by building on the
@@ -294,17 +291,16 @@ module Liveness = struct
 
     module CFG = ProcCfg.Exceptional
 
-    type analysis_data = LivenessAnalysis.invariant_map ProcData.t
+    type analysis_data = Liveness.t ProcData.t
 
     let postprocess ((reaching_defs, _) as astate) node {ProcData.extras} =
       let node_id = Procdesc.Node.get_id (CFG.Node.underlying_node node) in
-      match LivenessAnalysis.extract_state node_id extras with
-      (* note: because the analysis is backward, post and pre are reversed *)
-      | Some {AbstractInterpreter.State.post= live_before; pre= live_after} ->
+      match (Liveness.live_before node_id extras, Liveness.live_after node_id extras) with
+      | Some live_before, Some live_after ->
           let to_nullify = VarDomain.diff (VarDomain.union live_before reaching_defs) live_after in
           let reaching_defs' = VarDomain.diff reaching_defs to_nullify in
           (reaching_defs', to_nullify)
-      | None ->
+      | _, _ ->
           astate
 
 
@@ -434,9 +430,7 @@ module Liveness = struct
 
   let process summary tenv =
     let proc_desc = Summary.get_proc_desc summary in
-    let liveness_proc_cfg = BackwardCfg.from_pdesc proc_desc in
-    let initial = Liveness.Domain.bottom in
-    let liveness_inv_map = LivenessAnalysis.exec_cfg liveness_proc_cfg proc_desc ~initial in
+    let liveness_inv_map = Liveness.compute proc_desc in
     add_nullify_instrs summary tenv liveness_inv_map
 end
 

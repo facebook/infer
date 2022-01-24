@@ -58,7 +58,14 @@ public class ResourceLeaks {
     FileOutputStream fis = new FileOutputStream("file.txt");
   }
 
-  /* removing these two functions temporarely to make the CI happy ...
+  /* Commented to make infer-smoke-build-macosx CI happy
+  public void fileOutputStreamNotClosedAfterWriteNoTryBad() throws IOException {
+    byte[] arr = {1, 2, 3};
+    FileOutputStream fis = new FileOutputStream("file.txt");
+    fis.write(arr);
+    fis.close();
+  }
+
   public void fileOutputStreamNotClosedAfterWriteBad() {
     byte[] arr = {1, 2, 3};
     FileOutputStream fis = null;
@@ -83,7 +90,6 @@ public class ResourceLeaks {
       // ignore this case and mark this method as Ok.
     }
   }
-
   */
 
   public void fileOutputStreamClosedAfterWriteOk() throws IOException {
