@@ -78,4 +78,7 @@ two() -> 2.
 
 %%
 source() -> dirty.
+% This should be something that crashes runtime (for our compiler tests),
+% but is not reported by Pulse (so that we get TOPL error in TOPL tests).
+sink(dirty) -> erlang:error(taint_error);
 sink(_) -> ok.

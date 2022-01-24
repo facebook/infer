@@ -506,3 +506,15 @@ nonmatch_tuples:test_size2_Bad/0: function_clause
 nonmatch_tuples:test_size3_Bad/0: function_clause
 nonmatch_tuples:test_size4_Bad/0: function_clause
 
+----- topl_taint -----
+topl_taint:test_a_Bad/0: taint_error
+topl_taint:test_b_Ok/0: ok
+topl_taint:test_c_Bad/0: taint_error
+topl_taint:test_d_Bad/0: taint_error
+topl_taint:test_e_Ok/0: ok
+topl_taint:test_f_Bad/0: taint_error
+topl_taint:test_g_Ok/0: ok
+topl_taint:test_h_Bad/0: taint_error
+topl_taint:test_i_Ok/0: ok
+topl_taint:test_j_Bad/0: {case_clause,3}
+
