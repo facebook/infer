@@ -27,7 +27,7 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?su
     ?annots ?java_class_info ?dummy name =
   let struct_typ =
     Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-      ?objc_protocols ?annots ?java_class_info ?dummy ()
+      ?objc_protocols ?annots ?java_class_info ?dummy name
   in
   TypenameHash.replace tenv name struct_typ ;
   struct_typ

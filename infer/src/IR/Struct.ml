@@ -104,8 +104,29 @@ let pp pe name f
     exported_objc_methods Annot.Item.pp annots pp_java_class_info_opt java_class_info dummy
 
 
+let compare_custom_field (fld, _, _) (fld', _, _) = Fieldname.compare fld fld'
+
+let compare_annot (annot, _) (annot', _) = Annot.compare annot annot'
+
+let make_java_struct fields' statics' methods' supers' annots' java_class_info dummy =
+  let fields = List.dedup_and_sort ~compare:compare_custom_field fields' in
+  let statics = List.dedup_and_sort ~compare:compare_custom_field statics' in
+  let methods = List.dedup_and_sort ~compare:Procname.compare methods' in
+  let supers = List.dedup_and_sort ~compare:Typ.Name.compare supers' in
+  let annots = List.dedup_and_sort ~compare:compare_annot annots' in
+  { fields
+  ; statics
+  ; methods
+  ; exported_objc_methods= []
+  ; supers
+  ; objc_protocols= []
+  ; annots
+  ; java_class_info
+  ; dummy }
+
+
 let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-    ?objc_protocols ?annots ?java_class_info ?dummy () =
+    ?objc_protocols ?annots ?java_class_info ?dummy typename =
   let default_ =
     { fields= []
     ; statics= []
@@ -120,19 +141,23 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
   let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
       ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
       ?(supers = default.supers) ?(objc_protocols = default.objc_protocols)
-      ?(annots = default.annots) ?(dummy = default.dummy) () =
-    { fields
-    ; statics
-    ; methods
-    ; exported_objc_methods
-    ; supers
-    ; objc_protocols
-    ; annots
-    ; java_class_info
-    ; dummy }
+      ?(annots = default.annots) ?(dummy = default.dummy) typename =
+    match typename with
+    | Typ.JavaClass _jclass ->
+        make_java_struct fields statics methods supers annots java_class_info dummy
+    | _ ->
+        { fields
+        ; statics
+        ; methods
+        ; exported_objc_methods
+        ; supers
+        ; objc_protocols
+        ; annots
+        ; java_class_info
+        ; dummy }
   in
   mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?objc_protocols
-    ?annots ?dummy ()
+    ?annots ?dummy typename
 
 
 (** the element typ of the final extensible array in the given typ, if any *)

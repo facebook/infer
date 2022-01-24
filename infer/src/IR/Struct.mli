@@ -22,7 +22,7 @@ type java_class_info =
             source file *) }
 
 (** Type for a structured value. *)
-type t =
+type t = private
   { fields: fields  (** non-static fields *)
   ; statics: fields  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
@@ -51,7 +51,7 @@ val internal_mk_struct :
   -> ?annots:Annot.Item.t
   -> ?java_class_info:java_class_info
   -> ?dummy:bool
-  -> unit
+  -> Typ.name
   -> t
 (** Construct a struct_typ, normalizing field types *)
 

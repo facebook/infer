@@ -373,6 +373,8 @@ class TestInitializerAnnotation {
     private String field2_BAD;
     private String field3_OK;
 
+    // FPs in constructor
+
     @Override
     public void markedInitializerInBase() {
       // OK: implicitly @Initializer (inherited from the base through the chain)
