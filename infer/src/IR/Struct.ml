@@ -229,15 +229,28 @@ let get_field_type_and_annotation ~lookup field_name_to_lookup typ =
 
 let is_dummy {dummy} = dummy
 
+(* is [lhs] included in [rhs] when both are sorted and deduped *)
+let rec is_subsumed ~compare lhs rhs =
+  match (lhs, rhs) with
+  | [], _ ->
+      true
+  | _, [] ->
+      false
+  | x :: xs, y :: ys ->
+      let r = compare x y in
+      if Int.equal 0 r then (* [x] is in both lists so skip *) is_subsumed ~compare xs ys
+      else if r < 0 then (* [x < y] but lists are sorted so [x] is not in [rhs] *) false
+      else (* [x > y] so it could be that [x] is in [ys] *) is_subsumed ~compare lhs ys
+
+
 let merge_lists ~compare ~newer ~current =
-  let equal x y = Int.equal 0 (compare x y) in
   match (newer, current) with
   | [], _ ->
       current
   | _, [] ->
       newer
-  | _, _ when List.equal equal newer current ->
-      newer
+  | _, _ when is_subsumed ~compare newer current ->
+      current
   | _, _ ->
       List.dedup_and_sort ~compare (newer @ current)
 
