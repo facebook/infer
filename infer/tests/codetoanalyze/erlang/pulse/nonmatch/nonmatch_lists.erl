@@ -14,7 +14,8 @@
     test_empty3_Bad/0,
     test_secondnil1_Ok/0,
     test_secondnil2_Ok/0,
-    test_secondnil3_Bad/0
+    test_secondnil3_Bad/0,
+    fp_test_primitive_Bad/0
 ]).
 
 tail([_ | Xs]) -> Xs.
@@ -41,3 +42,8 @@ test_secondnil2_Ok() ->
     assert_second_is_nil([1, []]).
 test_secondnil3_Bad() ->
     assert_second_is_nil([1, [2], 3]).
+
+% FP: T110368958
+fp_test_primitive_Bad() ->
+    [] = 2,            % This fails, should report
+    assert_empty([1]). % Cannot reach this, shouldn't report
