@@ -242,13 +242,13 @@ let merge_lists ~compare ~newer ~current =
       List.dedup_and_sort ~compare (newer @ current)
 
 
-let merge_fields ~newer ~current = merge_lists ~compare:compare_field ~newer ~current
+let merge_fields ~newer ~current = merge_lists ~compare:compare_custom_field ~newer ~current
 
 let merge_supers ~newer ~current = merge_lists ~compare:Typ.Name.compare ~newer ~current
 
 let merge_methods ~newer ~current = merge_lists ~compare:Procname.compare ~newer ~current
 
-let merge_annots ~newer ~current = merge_lists ~compare:[%compare: Annot.t * bool] ~newer ~current
+let merge_annots ~newer ~current = merge_lists ~compare:compare_annot ~newer ~current
 
 let merge_kind ~newer ~current =
   (* choose the maximal, ie most concrete *)
