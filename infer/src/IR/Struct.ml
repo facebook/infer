@@ -243,6 +243,32 @@ let rec is_subsumed ~compare lhs rhs =
       else (* [x > y] so it could be that [x] is in [ys] *) is_subsumed ~compare lhs ys
 
 
+let merge_dedup_sorted_lists ~compare lhs rhs =
+  let rec merge_dedup_sorted_lists_inner ~compare prev_opt lhs rhs =
+    match (lhs, rhs, prev_opt) with
+    | [], ys, _ ->
+        ys
+    | xs, [], _ ->
+        xs
+    | x :: xs, ys, Some last when Int.equal 0 (compare last x) ->
+        merge_dedup_sorted_lists_inner ~compare prev_opt xs ys
+    | xs, y :: ys, Some last when Int.equal 0 (compare last y) ->
+        merge_dedup_sorted_lists_inner ~compare prev_opt xs ys
+    | x :: xs, y :: ys, prev_opt -> (
+      match compare x y with
+      | 0 ->
+          (* first elements equal, drop lhs first and continue, keeping same [prev_opt] *)
+          merge_dedup_sorted_lists_inner ~compare prev_opt xs rhs
+      | r when r < 0 ->
+          (* first of lhs < first of rhs, keep [x] *)
+          x :: merge_dedup_sorted_lists_inner ~compare (Some x) xs rhs
+      | _ ->
+          (* first of lhs > first of rhs, keep [y] *)
+          y :: merge_dedup_sorted_lists_inner ~compare (Some y) lhs ys )
+  in
+  merge_dedup_sorted_lists_inner ~compare None lhs rhs
+
+
 let merge_lists ~compare ~newer ~current =
   match (newer, current) with
   | [], _ ->
@@ -252,7 +278,7 @@ let merge_lists ~compare ~newer ~current =
   | _, _ when is_subsumed ~compare newer current ->
       current
   | _, _ ->
-      List.dedup_and_sort ~compare (newer @ current)
+      merge_dedup_sorted_lists ~compare newer current
 
 
 let merge_fields ~newer ~current = merge_lists ~compare:compare_custom_field ~newer ~current
@@ -302,7 +328,6 @@ let full_merge ~newer ~current =
   let fields = merge_fields ~newer:newer.fields ~current:current.fields in
   let statics = merge_fields ~newer:newer.statics ~current:current.statics in
   let supers = merge_supers ~newer:newer.supers ~current:current.supers in
-  (* the semantics of [subs] is such that no merging is attempted *)
   let methods = merge_methods ~newer:newer.methods ~current:current.methods in
   (* we are merging only Java classes, so [exported_obj_methods] should be empty, so no merge *)
   let annots = merge_annots ~newer:newer.annots ~current:current.annots in
