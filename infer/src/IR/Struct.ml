@@ -291,18 +291,19 @@ let merge_annots ~newer ~current = merge_lists ~compare:compare_annot ~newer ~cu
 
 let merge_kind ~newer ~current =
   (* choose the maximal, ie most concrete *)
-  if compare_java_class_kind newer current < 0 then current else newer
+  if compare_java_class_kind newer current <= 0 then current else newer
 
 
 (* choose [Some] option if possible, [newer] if both [None] else [merge] *)
 let merge_opt ~merge ~newer ~current =
   match (newer, current) with
-  | _, None ->
-      newer
   | None, _ ->
       current
-  | Some newer, Some current ->
-      Some (merge ~newer ~current)
+  | _, None ->
+      newer
+  | Some newer_val, Some current_val ->
+      let merged_val = merge ~newer:newer_val ~current:current_val in
+      if phys_equal merged_val current_val then current else Some merged_val
 
 
 let merge_loc ~newer ~current =
@@ -316,8 +317,9 @@ let merge_loc ~newer ~current =
 let merge_loc_opt ~newer ~current = merge_opt ~merge:merge_loc ~newer ~current
 
 let merge_java_class_info ~newer ~current =
-  { kind= merge_kind ~newer:newer.kind ~current:current.kind
-  ; loc= merge_loc_opt ~newer:newer.loc ~current:current.loc }
+  let kind = merge_kind ~newer:newer.kind ~current:current.kind in
+  let loc = merge_loc_opt ~newer:newer.loc ~current:current.loc in
+  if phys_equal kind current.kind && phys_equal loc current.loc then current else {kind; loc}
 
 
 let merge_java_class_info_opt ~newer ~current =
@@ -334,7 +336,15 @@ let full_merge ~newer ~current =
   let java_class_info =
     merge_java_class_info_opt ~newer:newer.java_class_info ~current:current.java_class_info
   in
-  {newer with fields; statics; supers; methods; annots; java_class_info}
+  if
+    phys_equal fields current.fields
+    && phys_equal statics current.statics
+    && phys_equal supers current.supers
+    && phys_equal methods current.methods
+    && phys_equal annots current.annots
+    && phys_equal java_class_info current.java_class_info
+  then current
+  else {current with fields; statics; supers; methods; annots; java_class_info}
 
 
 let merge typename ~newer ~current =
@@ -345,15 +355,11 @@ let merge typename ~newer ~current =
       current
   | JavaClass _ when is_dummy current ->
       newer
-  | JavaClass _ when equal newer current ->
-      newer
   | JavaClass _ ->
       full_merge ~newer ~current
   | CSharpClass _ when is_dummy newer ->
       current
   | CSharpClass _ when is_dummy current ->
-      newer
-  | CSharpClass _ when equal newer current ->
       newer
   | CSharpClass _ ->
       full_merge ~newer ~current

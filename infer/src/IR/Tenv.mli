@@ -63,7 +63,7 @@ val pp_per_file : Format.formatter -> per_file -> unit
 (** print per file type environment *)
 
 val merge : src:t -> dst:t -> unit
-(** Merge [src] into [dst] possibly overwriting pre existing procs in [dst]. *)
+(** Merge [src] into [dst] *)
 
 val merge_per_file : src:per_file -> dst:per_file -> per_file
 (** Best-effort merge of [src] into [dst]. If a procedure is both in [dst] and [src], the one in

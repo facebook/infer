@@ -113,7 +113,8 @@ let merge ~src ~dst =
         TypenameHash.add dst typename newer
     | Some current ->
         let merged_struct = Struct.merge typename ~newer ~current in
-        TypenameHash.replace dst typename merged_struct
+        if not (phys_equal merged_struct current) then
+          TypenameHash.replace dst typename merged_struct
   in
   TypenameHash.iter merge_internal src
 
