@@ -85,7 +85,7 @@ let create_tables ?(prefix = "") db =
 
 
 let load_model_specs db =
-  if not Config.biabduction_models_mode then
+  if Config.is_checker_enabled Biabduction && not Config.biabduction_models_mode then
     try
       let time0 = Mtime_clock.counter () in
       SqliteUtils.exec db ~log:"begin transaction" ~stmt:"BEGIN IMMEDIATE TRANSACTION" ;
