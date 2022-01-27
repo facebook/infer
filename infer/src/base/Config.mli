@@ -532,6 +532,8 @@ val pulse_model_return_nonnull : Str.regexp option
 
 val pulse_model_skip_pattern : Str.regexp option
 
+val pulse_models_for_erlang : Yojson.Basic.t
+
 val pulse_prune_unsupported_arithmetic : bool
 
 val pulse_report_ignore_unknown_java_methods_patterns : Str.regexp option

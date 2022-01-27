@@ -12,4 +12,4 @@
  (libraries core iter IStdlib ATDGenerated IBase IR Absint BO Topllib
    Nullsafe)
  (preprocess
-  (pps ppx_yojson_conv ppx_compare ppx_variants_conv)))
+  (pps ppx_compare ppx_variants_conv ppx_yojson_conv)))

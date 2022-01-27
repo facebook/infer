@@ -12,6 +12,12 @@ open PulseDomainInterface
 open PulseOperations.Import
 open PulseModelsImport
 
+(** A type for transfer functions that make an object, add it to abstract state
+    ([AbductiveDomain.t]), and return a handle to it ([(AbstractValue.t * ValueHistory.t)]). Note
+    that the type is simlar to that of [PulseOperations.eval]. *)
+type maker =
+  AbductiveDomain.t -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
+
 let write_field_and_deref path location ~struct_addr ~field_addr ~field_val field_name astate =
   let* astate =
     PulseOperations.write_field path location ~ref:struct_addr field_name ~obj:field_addr astate
@@ -111,56 +117,63 @@ module Atoms = struct
 
   let hash_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash
 
-  let make value hash : model =
-   fun {location; path; ret= ret_id, _} astate ->
+  let make_raw location path value hash : maker =
+   fun astate ->
     let hist = Hist.single_alloc path location "atom" in
     let addr_atom = (AbstractValue.mk_fresh (), hist) in
-    let<*> astate =
+    let* astate =
       write_field_and_deref path location ~struct_addr:addr_atom
         ~field_addr:(AbstractValue.mk_fresh (), hist)
         ~field_val:value value_field astate
     in
-    let<+> astate =
+    let+ astate =
       write_field_and_deref path location ~struct_addr:addr_atom
         ~field_addr:(AbstractValue.mk_fresh (), hist)
         ~field_val:hash hash_field astate
     in
-    write_dynamic_type_and_return addr_atom Atom ret_id astate
+    ( PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Atom)) (fst addr_atom) astate
+    , addr_atom )
+
+
+  let make value hash : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let<+> astate, ret = make_raw location path value hash astate in
+    PulseOperations.write_id ret_id ret astate
+
+
+  let of_string location path (name : string) : maker =
+   fun astate ->
+    (* Note: This should correspond to [ErlangTranslator.mk_atom_call]. *)
+    let* astate, hash =
+      let hash_exp : Exp.t = Const (Cint (IntLit.of_int (ErlangTypeName.calculate_hash name))) in
+      PulseOperations.eval path Read location hash_exp astate
+    in
+    let* astate, name =
+      let name_exp : Exp.t = Const (Cstr name) in
+      PulseOperations.eval path Read location name_exp astate
+    in
+    make_raw location path name hash astate
+
+
+  (* Converts [bool_value] into true/false, and write it to [addr_atom]. *)
+  let of_bool path location bool_value astate =
+    let astate_true =
+      let* astate = PulseArithmetic.prune_positive bool_value astate in
+      of_string location path ErlangTypeName.atom_true astate
+    in
+    let astate_false : (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t =
+      let* astate = PulseArithmetic.prune_eq_zero bool_value astate in
+      of_string location path ErlangTypeName.atom_false astate
+    in
+    let> astate, (addr, hist) = [astate_true; astate_false] in
+    let typ = Typ.mk_struct (ErlangType Atom) in
+    [Ok (PulseOperations.add_dynamic_type typ addr astate, (addr, hist))]
 
 
   (** Takes a boolean value, converts it to true/false atom and writes to return value. *)
-  let write_return_from_bool path location hist bool_value ret_id astate =
-    let addr_atom = (AbstractValue.mk_fresh (), hist) in
-    let atom_value = AbstractValue.mk_fresh () in
-    let atom_hash = AbstractValue.mk_fresh () in
-    let mk_astate atom_str astate =
-      let<*> astate =
-        PulseArithmetic.and_eq_int atom_hash
-          (IntLit.of_int (ErlangTypeName.calculate_hash atom_str))
-          astate
-      in
-      (* TODO: write string to value *)
-      let<*> astate =
-        write_field_and_deref path location ~struct_addr:addr_atom
-          ~field_addr:(AbstractValue.mk_fresh (), hist)
-          ~field_val:(atom_value, hist) value_field astate
-      in
-      let<+> astate =
-        write_field_and_deref path location ~struct_addr:addr_atom
-          ~field_addr:(AbstractValue.mk_fresh (), hist)
-          ~field_val:(atom_hash, hist) hash_field astate
-      in
-      write_dynamic_type_and_return addr_atom Atom ret_id astate
-    in
-    let astate_true =
-      let<*> astate = PulseArithmetic.prune_positive bool_value astate in
-      mk_astate ErlangTypeName.atom_true astate
-    in
-    let astate_false =
-      let<*> astate = PulseArithmetic.prune_eq_zero bool_value astate in
-      mk_astate ErlangTypeName.atom_false astate
-    in
-    astate_true @ astate_false
+  let write_return_from_bool path location bool_value ret_id astate =
+    let> astate, ret_val = of_bool path location bool_value astate in
+    PulseOperations.write_id ret_id ret_val astate |> Basic.ok_continue
 end
 
 module Lists = struct
@@ -169,25 +182,27 @@ module Lists = struct
   let tail_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_tail
 
   (** Helper function to create a Nil structure without assigning it to return value *)
-  let make_nil_no_return location path astate =
+  let make_nil_raw location path : maker =
+   fun astate ->
     let event = Hist.alloc_event path location "[]" in
     let addr_nil_val = AbstractValue.mk_fresh () in
     let addr_nil = (addr_nil_val, Hist.single_event path event) in
     let astate =
       PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Nil)) addr_nil_val astate
     in
-    (addr_nil, astate)
+    Ok (astate, addr_nil)
 
 
   (** Create a Nil structure and assign it to return value *)
   let make_nil : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let addr_nil, astate = make_nil_no_return location path astate in
-    PulseOperations.write_id ret_id addr_nil astate |> Basic.ok_continue
+    let<+> astate, addr_nil = make_nil_raw location path astate in
+    PulseOperations.write_id ret_id addr_nil astate
 
 
   (** Helper function to create a Cons structure without assigning it to return value *)
-  let make_cons_no_return astate path location hd tl =
+  let make_cons_raw path location hd tl : maker =
+   fun astate ->
     let hist = Hist.single_alloc path location "[X|Xs]" in
     let addr_cons_val = AbstractValue.mk_fresh () in
     let addr_cons = (addr_cons_val, hist) in
@@ -204,13 +219,13 @@ module Lists = struct
     let astate =
       PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) addr_cons_val astate
     in
-    (addr_cons, astate)
+    (astate, addr_cons)
 
 
   (** Create a Cons structure and assign it to return value *)
   let make_cons head tail : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let<+> addr_cons, astate = make_cons_no_return astate path location head tail in
+    let<+> astate, addr_cons = make_cons_raw path location head tail astate in
     PulseOperations.write_id ret_id addr_cons astate
 
 
@@ -240,9 +255,9 @@ module Lists = struct
     let mk_astate_concat length =
       let> elems, astate = assume_and_deconstruct list1 length astate path location in
       let elems = if reverse then elems else List.rev elems in
-      let> result_list, astate =
-        [ PulseResult.list_fold ~init:(list2, astate)
-            ~f:(fun (tl, astate) hd -> make_cons_no_return astate path location hd tl)
+      let> astate, result_list =
+        [ PulseResult.list_fold ~init:(astate, list2)
+            ~f:(fun (astate, tl) hd -> make_cons_raw path location hd tl astate)
             elems ]
       in
       [Ok (PulseOperations.write_id ret_id result_list astate)]
@@ -253,13 +268,25 @@ module Lists = struct
 
   let reverse list : model =
    fun ({location; path; _} as data) astate ->
-    let nil, astate = make_nil_no_return location path astate in
+    let<*> astate, nil = make_nil_raw location path astate in
     append2 ~reverse:true list nil data astate
+
+
+  let rec make_raw location path elements : maker =
+   fun astate ->
+    match elements with
+    | [] ->
+        make_nil_raw location path astate
+    | head :: tail ->
+        let* astate, tail_val = make_raw location path tail astate in
+        make_cons_raw path location head tail_val astate
 end
 
 module Tuples = struct
-  let make (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
-   fun {location; path; ret= ret_id, _} astate ->
+  (** Helper: Like [Tuples.make] but with a more precise/composable type. *)
+  let make_raw (location : Location.t) (path : PathContext.t)
+      (args : (AbstractValue.t * ValueHistory.t) list) : maker =
+   fun astate ->
     let tuple_size = List.length args in
     let tuple_typ_name : Typ.name = ErlangType (Tuple tuple_size) in
     let hist = Hist.single_alloc path location "{}" in
@@ -267,19 +294,24 @@ module Tuples = struct
     let addr_elems = List.map ~f:(function _ -> (AbstractValue.mk_fresh (), hist)) args in
     let mk_field = Fieldname.make tuple_typ_name in
     let field_names = ErlangTypeName.tuple_field_names tuple_size in
-    let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
-    let arg_payloads = List.map ~f:get_payload args in
-    let addr_elems_fields_payloads =
-      List.zip_exn addr_elems (List.zip_exn field_names arg_payloads)
-    in
+    let addr_elems_fields_payloads = List.zip_exn addr_elems (List.zip_exn field_names args) in
     let write_tuple_field astate (addr_elem, (field_name, payload)) =
       write_field_and_deref path location ~struct_addr:addr_tuple ~field_addr:addr_elem
         ~field_val:payload (mk_field field_name) astate
     in
-    let<+> astate =
+    let+ astate =
       PulseResult.list_fold addr_elems_fields_payloads ~init:astate ~f:write_tuple_field
     in
-    write_dynamic_type_and_return addr_tuple (Tuple tuple_size) ret_id astate
+    ( PulseOperations.add_dynamic_type (Typ.mk_struct tuple_typ_name) (fst addr_tuple) astate
+    , addr_tuple )
+
+
+  let make (args : 'a ProcnameDispatcher.Call.FuncArg.t list) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
+    let arg_payloads = List.map ~f:get_payload args in
+    let<+> astate, ret = make_raw location path arg_payloads astate in
+    PulseOperations.write_id ret_id ret astate
 end
 
 (** Maps are currently approximated to store only the latest key/value *)
@@ -339,7 +371,6 @@ module Maps = struct
 
   let is_key (key, _key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
-    let hist = Hist.single_call path location "map_is_key" in
     (* Return 3 cases:
      * - Error & assume not map
      * - Ok & assume map & assume empty & return false
@@ -354,7 +385,7 @@ module Maps = struct
       in
       let> astate = [PulseArithmetic.prune_positive is_empty astate] in
       let> astate = [PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate] in
-      Atoms.write_return_from_bool path location hist ret_val_false ret_id astate
+      Atoms.write_return_from_bool path location ret_val_false ret_id astate
     in
     let astate_haskey =
       let ret_val_true = AbstractValue.mk_fresh () in
@@ -369,7 +400,7 @@ module Maps = struct
             (AbstractValueOperand tracked_key) astate ]
       in
       let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
-      Atoms.write_return_from_bool path location hist ret_val_true ret_id astate
+      Atoms.write_return_from_bool path location ret_val_true ret_id astate
     in
     astate_empty @ astate_haskey @ astate_badmap
 
@@ -447,21 +478,19 @@ module BIF = struct
    fun {location; path; ret= ret_id, _} astate ->
     let typ = Typ.mk_struct (ErlangType Atom) in
     let is_atom = AbstractValue.mk_fresh () in
-    let hist = Hist.single_call path location "is_atom" in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
-    Atoms.write_return_from_bool path location hist is_atom ret_id astate
+    Atoms.write_return_from_bool path location is_atom ret_id astate
 
 
   let is_boolean ((atom_val, _atom_hist) as atom) : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let hist = Hist.single_call path location "is_boolean" in
     let astate_not_atom =
       (* Assume not atom: just return false *)
       let typ = Typ.mk_struct (ErlangType Atom) in
       let is_atom = AbstractValue.mk_fresh () in
       let<*> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
       let<*> astate = PulseArithmetic.prune_eq_zero is_atom astate in
-      Atoms.write_return_from_bool path location hist is_atom ret_id astate
+      Atoms.write_return_from_bool path location is_atom ret_id astate
     in
     let astate_is_atom =
       (* Assume atom: return hash==hashof(true) or hash==hashof(false) *)
@@ -490,7 +519,7 @@ module BIF = struct
         PulseArithmetic.eval_binop is_bool Binop.LOr (AbstractValueOperand is_true)
           (AbstractValueOperand is_false) astate
       in
-      Atoms.write_return_from_bool path location hist is_bool ret_id astate
+      Atoms.write_return_from_bool path location is_bool ret_id astate
     in
     astate_not_atom @ astate_is_atom
 
@@ -502,49 +531,163 @@ module BIF = struct
     let is_cons = AbstractValue.mk_fresh () in
     let is_nil = AbstractValue.mk_fresh () in
     let is_list = AbstractValue.mk_fresh () in
-    let hist = Hist.single_call path location "erlang:is_list" in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
     let<*> astate, is_list =
       PulseArithmetic.eval_binop is_list Binop.LOr (AbstractValueOperand is_cons)
         (AbstractValueOperand is_nil) astate
     in
-    Atoms.write_return_from_bool path location hist is_list ret_id astate
+    Atoms.write_return_from_bool path location is_list ret_id astate
 
 
   let is_map (map_val, _map_hist) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let typ = Typ.mk_struct (ErlangType Map) in
     let is_map = AbstractValue.mk_fresh () in
-    let hist = Hist.single_call path location "is_map" in
     let<*> astate = PulseArithmetic.and_equal_instanceof is_map map_val typ astate in
-    Atoms.write_return_from_bool path location hist is_map ret_id astate
+    Atoms.write_return_from_bool path location is_map ret_id astate
+end
+
+(** Custom models, specified by Config.pulse_models_for_erlang. *)
+module Custom = struct
+  (* TODO: see T110841433 *)
+
+  (** Note: [None] means unknown/nondeterministic. *)
+  type erlang_value = known_erlang_value option [@@deriving of_yojson]
+
+  and known_erlang_value =
+    | Atom of string option
+    | IntLit of string
+    | List of erlang_value list
+    | Tuple of erlang_value list
+
+  type selector =
+    | ModuleFunctionArity of
+        {module_: string [@key "module"]; function_: string [@key "function"]; arity: int}
+        [@name "MFA"]
+  [@@deriving of_yojson]
+
+  type behavior = ReturnValue of erlang_value [@@deriving of_yojson]
+
+  type rule = {selector: selector; behavior: behavior} [@@deriving of_yojson]
+
+  type spec = rule list [@@deriving of_yojson]
+
+  let make_selector selector model =
+    let l0 f = f [] in
+    let l1 f x0 = f [x0] in
+    let l2 f x0 x1 = f [x0; x1] in
+    let l3 f x0 x1 x2 = f [x0; x1; x2] in
+    let open ProcnameDispatcher.Call in
+    match selector with
+    | ModuleFunctionArity {module_; function_; arity= 0} ->
+        -module_ &:: function_ <>$$--> l0 model
+    | ModuleFunctionArity {module_; function_; arity= 1} ->
+        -module_ &:: function_ <>$ capt_arg $--> l1 model
+    | ModuleFunctionArity {module_; function_; arity= 2} ->
+        -module_ &:: function_ <>$ capt_arg $+ capt_arg $--> l2 model
+    | ModuleFunctionArity {module_; function_; arity= 3} ->
+        -module_ &:: function_ <>$ capt_arg $+ capt_arg $+ capt_arg $--> l3 model
+    | ModuleFunctionArity {module_; function_; arity} ->
+        L.user_warning "@[<v>@[model for %s:%s/%d may match other arities (tool limitation)@]@;@]"
+          module_ function_ arity ;
+        -module_ &:: function_ &++> model
+
+
+  let return_value_helper location path =
+    (* Implementation note: [return_value_helper] groups two mutually recursive functions, [one] and
+       [many], both of which may access [location] and [path]. *)
+    let rec one (ret_val : erlang_value) : maker =
+     fun astate ->
+      match ret_val with
+      | None ->
+          let ret_addr = AbstractValue.mk_fresh () in
+          let ret_hist = Hist.single_alloc path location "nondet" in
+          Ok (astate, (ret_addr, ret_hist))
+      | Some (Atom None) ->
+          let ret_addr = AbstractValue.mk_fresh () in
+          let ret_hist = Hist.single_alloc path location "nondet_atom" in
+          Ok
+            ( PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Atom)) ret_addr astate
+            , (ret_addr, ret_hist) )
+      | Some (Atom (Some name)) ->
+          Atoms.of_string location path name astate
+      | Some (IntLit intlit) ->
+          let intlit_exp : Exp.t = Const (Cint (IntLit.of_string intlit)) in
+          let+ astate, intlit = PulseOperations.eval path Read location intlit_exp astate in
+          (astate, intlit)
+      | Some (List elements) ->
+          let mk = Lists.make_raw location path in
+          many mk elements astate
+      | Some (Tuple elements) ->
+          let mk = Tuples.make_raw location path in
+          many mk elements astate
+    and many (mk : (AbstractValue.t * ValueHistory.t) list -> maker) (elements : erlang_value list)
+        : maker =
+     fun astate ->
+      let mk_arg (args, astate) element =
+        let+ astate, arg = one element astate in
+        (arg :: args, astate)
+      in
+      let* args, astate = PulseResult.list_fold ~init:([], astate) ~f:mk_arg elements in
+      mk (List.rev args) astate
+    in
+    fun ret_val astate -> one ret_val astate
+
+
+  let return_value_model (ret_val : erlang_value) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let<+> astate, ret = return_value_helper location path ret_val astate in
+    PulseOperations.write_id ret_id ret astate
+
+
+  let make_model behavior _args : model =
+    match behavior with ReturnValue ret_val -> return_value_model ret_val
+
+
+  let matcher_of_rule {selector; behavior} = make_selector selector (make_model behavior)
+
+  let matchers () : matcher list =
+    let spec =
+      try spec_of_yojson (Config.pulse_models_for_erlang :> Yojson.Safe.t)
+      with Ppx_yojson_conv_lib__Yojson_conv.Of_yojson_error (what, json) ->
+        let details = match what with Failure what -> Printf.sprintf " (%s)" what | _ -> "" in
+        L.user_error
+          "@[<v>Failed to parse --pulse-models-for-erlang%s:@;\
+           %a@;\
+           Continuing with no custom models.@;\
+           @]"
+          details Yojson.Safe.pp json ;
+        []
+    in
+    List.map ~f:matcher_of_rule spec
 end
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
   let erlang_ns = ErlangTypeName.erlang_namespace in
-  [ +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey
-  ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap
-  ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch
-  ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Errors.badrecord
-  ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Errors.case_clause
-  ; +BuiltinDecl.(match_builtin __erlang_error_function_clause) <>--> Errors.function_clause
-  ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Errors.if_clause
-  ; +BuiltinDecl.(match_builtin __erlang_error_try_clause) <>--> Errors.try_clause
-  ; +BuiltinDecl.(match_builtin __erlang_make_atom) <>$ arg $+ arg $--> Atoms.make
-  ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
-  ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
-  ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
-  ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse
-  ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Maps.make
-  ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key
-  ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get
-  ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
-  ; -"maps" &:: "new" <>$$--> Maps.new_
-  ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
-  ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
-  ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
-  ; -erlang_ns &:: "is_list" <>$ arg $--> BIF.is_list
-  ; -erlang_ns &:: "is_map" <>$ arg $--> BIF.is_map ]
+  Custom.matchers ()
+  @ [ +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey
+    ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap
+    ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch
+    ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Errors.badrecord
+    ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Errors.case_clause
+    ; +BuiltinDecl.(match_builtin __erlang_error_function_clause) <>--> Errors.function_clause
+    ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Errors.if_clause
+    ; +BuiltinDecl.(match_builtin __erlang_error_try_clause) <>--> Errors.try_clause
+    ; +BuiltinDecl.(match_builtin __erlang_make_atom) <>$ arg $+ arg $--> Atoms.make
+    ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
+    ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
+    ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
+    ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse
+    ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Maps.make
+    ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key
+    ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get
+    ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
+    ; -"maps" &:: "new" <>$$--> Maps.new_
+    ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
+    ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
+    ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
+    ; -erlang_ns &:: "is_list" <>$ arg $--> BIF.is_list
+    ; -erlang_ns &:: "is_map" <>$ arg $--> BIF.is_map ]

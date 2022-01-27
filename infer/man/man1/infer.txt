@@ -1112,6 +1112,9 @@ OPTIONS
            Pulse. Accepted formats are method or namespace::method       
     See also infer-analyze(1).
 
+       --pulse-models-for-erlang json
+           Provide custom models for Erlang code using a DSL.           See also infer-analyze(1).
+
        --pulse-only
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).

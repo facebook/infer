@@ -323,6 +323,9 @@ OPTIONS
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method
 
+       --pulse-models-for-erlang json
+           Provide custom models for Erlang code using a DSL.
+
        --pulse-only
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)

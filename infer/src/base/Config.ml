@@ -2146,6 +2146,12 @@ and pulse_model_skip_pattern =
     "Regex of methods that should be modelled as \"skip\" in Pulse"
 
 
+and pulse_models_for_erlang =
+  CLOpt.mk_json ~long:"pulse-models-for-erlang"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Provide custom models for Erlang code using a DSL."
+
+
 and pulse_prune_unsupported_arithmetic =
   CLOpt.mk_bool ~long:"pulse-prune-unsupported-arithmetic" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3460,6 +3466,8 @@ and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_
 and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_nonnull
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
+
+and pulse_models_for_erlang = !pulse_models_for_erlang
 
 and pulse_prune_unsupported_arithmetic = !pulse_prune_unsupported_arithmetic
 
