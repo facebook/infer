@@ -404,49 +404,40 @@ module JavaClassInfoOptNormalizer = HashNormalizer.Make (struct
     IOption.map_changed java_class_info_opt ~equal:phys_equal ~f:normalize_java_class_info
 end)
 
-module Normalizer = struct
-  include HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal]
+module Normalizer = HashNormalizer.Make (struct
+  type nonrec t = t [@@deriving equal]
 
-    let hash = Hashtbl.hash
+  let hash = Hashtbl.hash
 
-    let normalize t =
-      let fields = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.fields in
-      let statics = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.statics in
-      let supers = IList.map_changed ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize t.supers in
-      let objc_protocols =
-        IList.map_changed ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize t.objc_protocols
-      in
-      let methods =
-        IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.methods
-      in
-      let exported_objc_methods =
-        IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.exported_objc_methods
-      in
-      let annots = Annot.Item.Normalizer.normalize t.annots in
-      let java_class_info = JavaClassInfoOptNormalizer.normalize t.java_class_info in
-      if
-        phys_equal fields t.fields && phys_equal statics t.statics && phys_equal supers t.supers
-        && phys_equal objc_protocols t.objc_protocols
-        && phys_equal methods t.methods
-        && phys_equal exported_objc_methods t.exported_objc_methods
-        && phys_equal annots t.annots
-        && phys_equal java_class_info t.java_class_info
-      then t
-      else
-        { fields
-        ; statics
-        ; supers
-        ; objc_protocols
-        ; methods
-        ; exported_objc_methods
-        ; annots
-        ; java_class_info
-        ; dummy= t.dummy }
-  end)
-
-  let reset () =
-    reset () ;
-    FieldNormalizer.reset () ;
-    JavaClassInfoOptNormalizer.reset ()
-end
+  let normalize t =
+    let fields = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.fields in
+    let statics = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.statics in
+    let supers = IList.map_changed ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize t.supers in
+    let objc_protocols =
+      IList.map_changed ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize t.objc_protocols
+    in
+    let methods = IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.methods in
+    let exported_objc_methods =
+      IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.exported_objc_methods
+    in
+    let annots = Annot.Item.Normalizer.normalize t.annots in
+    let java_class_info = JavaClassInfoOptNormalizer.normalize t.java_class_info in
+    if
+      phys_equal fields t.fields && phys_equal statics t.statics && phys_equal supers t.supers
+      && phys_equal objc_protocols t.objc_protocols
+      && phys_equal methods t.methods
+      && phys_equal exported_objc_methods t.exported_objc_methods
+      && phys_equal annots t.annots
+      && phys_equal java_class_info t.java_class_info
+    then t
+    else
+      { fields
+      ; statics
+      ; supers
+      ; objc_protocols
+      ; methods
+      ; exported_objc_methods
+      ; annots
+      ; java_class_info
+      ; dummy= t.dummy }
+end)

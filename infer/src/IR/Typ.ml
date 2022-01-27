@@ -863,20 +863,13 @@ module rec DescNormalizer : (HashNormalizer.S with type t = desc) = HashNormaliz
         if phys_equal elt elt' then t else Tarray {elt= elt'; length; stride}
 end)
 
-and Normalizer : (HashNormalizer.S with type t = t) = struct
-  include HashNormalizer.Make (struct
-    include T
+and Normalizer : (HashNormalizer.S with type t = t) = HashNormalizer.Make (struct
+  include T
 
-    let hash = Hashtbl.hash
+  let hash = Hashtbl.hash
 
-    let normalize t =
-      let quals = TypeQualsNormalizer.normalize t.quals in
-      let desc = DescNormalizer.normalize t.desc in
-      if phys_equal desc t.desc && phys_equal quals t.quals then t else {desc; quals}
-  end)
-
-  let reset () =
-    reset () ;
-    TypeQualsNormalizer.reset () ;
-    DescNormalizer.reset ()
-end
+  let normalize t =
+    let quals = TypeQualsNormalizer.normalize t.quals in
+    let desc = DescNormalizer.normalize t.desc in
+    if phys_equal desc t.desc && phys_equal quals t.quals then t else {desc; quals}
+end)

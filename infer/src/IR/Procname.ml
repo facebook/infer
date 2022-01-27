@@ -1204,22 +1204,16 @@ module UnitCache = struct
     (cache_get, cache_set)
 end
 
-module Normalizer = struct
-  include HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal]
+module Normalizer = HashNormalizer.Make (struct
+  type nonrec t = t [@@deriving equal]
 
-    let hash = hash
+  let hash = hash
 
-    let normalize t =
-      match t with
-      | Java java_pname ->
-          let java_pname' = Java.Normalizer.normalize java_pname in
-          if phys_equal java_pname java_pname' then t else Java java_pname'
-      | _ ->
-          t
-  end)
-
-  let reset () =
-    reset () ;
-    Java.Normalizer.reset ()
-end
+  let normalize t =
+    match t with
+    | Java java_pname ->
+        let java_pname' = Java.Normalizer.normalize java_pname in
+        if phys_equal java_pname java_pname' then t else Java java_pname'
+    | _ ->
+        t
+end)

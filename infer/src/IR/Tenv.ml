@@ -192,19 +192,6 @@ module Normalizer = struct
     in
     TypenameHash.iter normalize_mapping tenv ;
     new_tenv
-
-
-  let reset () =
-    Typ.Normalizer.reset () ;
-    Typ.Name.Normalizer.reset () ;
-    Struct.Normalizer.reset () ;
-    Fieldname.Normalizer.reset () ;
-    Procname.Normalizer.reset () ;
-    SourceFile.Normalizer.reset () ;
-    Location.Normalizer.reset () ;
-    Annot.Item.Normalizer.reset () ;
-    JavaClassName.Normalizer.reset () ;
-    HashNormalizer.StringNormalizer.reset ()
 end
 
 let store_global tenv =
@@ -214,7 +201,7 @@ let store_global tenv =
     L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
   let tenv = Normalizer.normalize tenv in
-  Normalizer.reset () ;
+  HashNormalizer.reset_all_normalizers () ;
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;

@@ -174,22 +174,13 @@ module Item = struct
 
   let is_final ia = List.exists ia ~f:(fun (x, b) -> b && is_final x)
 
-  module Normalizer = struct
-    include HashNormalizer.Make (struct
-      type nonrec t = t [@@deriving equal]
+  module Normalizer = HashNormalizer.Make (struct
+    type nonrec t = t [@@deriving equal]
 
-      let hash = Hashtbl.hash
+    let hash = Hashtbl.hash
 
-      let normalize pairs = IList.map_changed pairs ~equal:phys_equal ~f:PairNormalizer.normalize
-    end)
-
-    let reset () =
-      reset () ;
-      PairNormalizer.reset () ;
-      TNormalizer.reset () ;
-      ParameterNormalizer.reset () ;
-      ValueNormalizer.reset ()
-  end
+    let normalize pairs = IList.map_changed pairs ~equal:phys_equal ~f:PairNormalizer.normalize
+  end)
 end
 
 module Class = struct
