@@ -744,7 +744,16 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
             (* Note: We treat static field same as global variables *)
             let statics = [] in
             let methods = get_struct_methods definition_decl tenv in
-            let supers = get_superclass_list_cpp tenv definition_decl in
+            let supers =
+              get_superclass_list_cpp tenv definition_decl
+              (* Mitigation: Sometimes the list of super classes includes the root type. *)
+              |> List.filter ~f:(fun super ->
+                     let is_sil_typename = Typ.Name.equal sil_typename super in
+                     if is_sil_typename then
+                       Logging.internal_error "The type %a has a super class of itself.@\n"
+                         Typ.Name.pp sil_typename ;
+                     not is_sil_typename )
+            in
             let annots =
               if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
               else (* No annotations for structs *) Annot.Item.empty
