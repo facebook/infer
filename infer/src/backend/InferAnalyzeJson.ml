@@ -711,10 +711,9 @@ let analyze_json cfg_json tenv_json ~changed_files =
      let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
      Tenv.store_to_filename tenv tenv_file ; *)
   Tenv.store_global tenv ;
-  Cfg.store source_file cfg ;
+  Language.curr_language := Language.CIL ;
   SourceFiles.add source_file cfg Tenv.Global None ;
   (*Cfg.print_cfg_procs cfg ;*)
-  Language.curr_language := Language.CIL ;
   let exe_env = Exe_env.mk () in
   let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
   Ondemand.analyze_file exe_env source_file changed_files;
