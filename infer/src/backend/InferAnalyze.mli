@@ -14,5 +14,7 @@ val main : changed_files:SourceFile.Set.t option -> unit
 
 val register_active_checkers : unit -> unit
 
+val get_source_files_to_analyze : changed_files:SourceFile.Set.t option -> SourceFile.t list
+
 val invalidate_changed_procedures : SourceFile.Set.t option -> unit
 (** Invalidate specs files for procedures that have changed. Used for incremental analysis. *)

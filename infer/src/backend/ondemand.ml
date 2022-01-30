@@ -354,8 +354,21 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
 
 
 (** Invoke all procedure-level and file-level callbacks on a given environment. *)
-let analyze_file exe_env source_file =
-  let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
+let analyze_file exe_env source_file changed_files =
+  let procs_to_analyze = 
+    match changed_files with
+    | Some cf ->
+      let procname_list = ref [] in
+      SourceFile.Set.iter
+      (fun sf -> 
+        SourceFiles.proc_names_of_source sf
+        |> List.iter ~f:(fun x -> procname_list := !procname_list @ [x]))
+      cf ;
+      !procname_list
+    | None ->
+      SourceFiles.proc_names_of_source source_file 
+  in
+  List.iter ~f:(L.(debug Analysis Verbose) "%a@." Procname.pp) procs_to_analyze ;
   analyze_procedures exe_env procs_to_analyze (Some source_file)
 
 

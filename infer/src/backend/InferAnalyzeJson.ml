@@ -692,7 +692,7 @@ let clear_caches () =
   Procname.SQLite.clear_cache ()
 
 
-let analyze_json cfg_json tenv_json =
+let analyze_json cfg_json tenv_json ~changed_files =
   clear_caches () ;
   InferAnalyze.register_active_checkers () ;
   if not Config.continue_analysis then
@@ -716,6 +716,9 @@ let analyze_json cfg_json tenv_json =
   (*Cfg.print_cfg_procs cfg ;*)
   Language.curr_language := Language.CIL ;
   let exe_env = Exe_env.mk () in
-  Ondemand.analyze_file exe_env source_file ;
+  let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
+  Ondemand.analyze_file exe_env source_file changed_files;
   if Config.write_html then Printer.write_all_html_files source_file ;
+  BackendStats.log_aggregate [BackendStats.get ()] ;
+  GCStats.log_aggregate ~prefix:"backend_stats." Analysis [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)] ;
   ()

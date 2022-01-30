@@ -183,10 +183,10 @@ let execute_analyze ~changed_files =
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
-let execute_analyze_json () =
+let execute_analyze_json ~changed_files =
   match (Config.cfg_json, Config.tenv_json) with
   | Some cfg_json, Some tenv_json ->
-      InferAnalyzeJson.analyze_json cfg_json tenv_json
+      InferAnalyzeJson.analyze_json cfg_json tenv_json ~changed_files
   | _, _ ->
       L.user_warning
         "** Missing cfg or tenv json files. Provide them as arguments throught '--cfg-json' and \
@@ -276,7 +276,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     MergeCapture.merge_captured_targets () ;
     ResultsDir.RunState.set_merge_capture false ) ;
   if should_analyze then
-    if analyze_json then execute_analyze_json ()
+    if analyze_json then execute_analyze_json ~changed_files
     else if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else (
       execute_analyze ~changed_files ;
