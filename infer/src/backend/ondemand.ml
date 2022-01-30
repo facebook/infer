@@ -361,7 +361,6 @@ let analyze_file exe_env source_file changed_files =
       let procname_list = ref [] in
       SourceFile.Set.iter
       (fun sf -> 
-        L.environment_info "Changed file: %a but source file is %a@." SourceFile.pp sf SourceFile.pp source_file ;
         SourceFiles.proc_names_of_source sf
         |> List.iter ~f:(fun x -> procname_list := !procname_list @ [x]))
       cf ;
@@ -369,7 +368,6 @@ let analyze_file exe_env source_file changed_files =
     | None ->
       SourceFiles.proc_names_of_source source_file 
   in
-  List.iter ~f:(fun x -> L.environment_info "Procname: %a@." Procname.pp x) procs_to_analyze ;
   analyze_procedures exe_env procs_to_analyze (Some source_file)
 
 

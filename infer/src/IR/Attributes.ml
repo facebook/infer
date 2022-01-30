@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 type attributes_kind = ProcUndefined | ProcDefined [@@deriving compare, equal]
 
@@ -89,7 +88,6 @@ let update_source_file =
       | None ->
         [procname]
     in
-    List.iter ~f:(fun x -> L.environment_info "Now we have procname: %a for source file %a@." Procname.pp x SourceFile.pp source_file) new_proc_names ;
     DBWriter.add_source_file
       ~source_file:(SourceFile.SQLite.serialize source_file) 
       ~tenv:(Tenv.SQLite.serialize tenv) 
