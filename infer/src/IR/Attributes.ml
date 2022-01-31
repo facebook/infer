@@ -84,7 +84,10 @@ let update_source_file =
     let new_proc_names = 
       match load_proc_names source_file with
       | Some old_proc_names ->
-        List.append old_proc_names [procname]
+        if not (List.mem old_proc_names procname ~equal:Procname.equal) then 
+          List.append old_proc_names [procname]
+        else
+          old_proc_names
       | None ->
         [procname]
     in

@@ -26,7 +26,7 @@ module LocalCache : sig
   (** Remove an element from the cache of ondemand results *)
 end
 
-val analyze_file : Exe_env.t -> SourceFile.t -> SourceFile.Set.t option -> unit
+val analyze_file : Exe_env.t -> SourceFile.t -> Procname.t list option -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given file. *)
 
 val analyze_proc_name_toplevel : Exe_env.t -> Procname.t -> unit
