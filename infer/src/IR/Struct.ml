@@ -106,14 +106,12 @@ let pp pe name f
 
 let compare_custom_field (fld, _, _) (fld', _, _) = Fieldname.compare fld fld'
 
-let compare_annot (annot, _) (annot', _) = Annot.compare annot annot'
-
 let make_java_struct fields' statics' methods' supers' annots' java_class_info dummy =
   let fields = List.dedup_and_sort ~compare:compare_custom_field fields' in
   let statics = List.dedup_and_sort ~compare:compare_custom_field statics' in
   let methods = List.dedup_and_sort ~compare:Procname.compare methods' in
   let supers = List.dedup_and_sort ~compare:Typ.Name.compare supers' in
-  let annots = List.dedup_and_sort ~compare:compare_annot annots' in
+  let annots = List.dedup_and_sort ~compare:Annot.compare annots' in
   { fields
   ; statics
   ; methods
@@ -287,7 +285,7 @@ let merge_supers ~newer ~current = merge_lists ~compare:Typ.Name.compare ~newer 
 
 let merge_methods ~newer ~current = merge_lists ~compare:Procname.compare ~newer ~current
 
-let merge_annots ~newer ~current = merge_lists ~compare:compare_annot ~newer ~current
+let merge_annots ~newer ~current = merge_lists ~compare:Annot.compare ~newer ~current
 
 let merge_kind ~newer ~current =
   (* choose the maximal, ie most concrete *)

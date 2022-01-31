@@ -192,7 +192,7 @@ let pp proc_name fmt annotated_signature =
 let mk_ann_str s = {Annot.class_name= s; parameters= []}
 
 let mk_ia_nullable ia =
-  if Annotations.ia_is_nullable ia then ia else (mk_ann_str Annotations.nullable, true) :: ia
+  if Annotations.ia_is_nullable ia then ia else mk_ann_str Annotations.nullable :: ia
 
 
 let mark_ia_nullability ia x = if x then mk_ia_nullable ia else ia

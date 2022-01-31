@@ -141,9 +141,9 @@ let create_sil_class_field cn {Javalib.cf_signature; cf_annotations; cf_kind} =
     (* translate modifiers like "volatile" as annotations *)
     match cf_kind with
     | Javalib.Volatile ->
-        (Annot.volatile, true) :: real_annotations
+        Annot.volatile :: real_annotations
     | Javalib.Final ->
-        (Annot.final, true) :: real_annotations
+        Annot.final :: real_annotations
     | Javalib.NotFinal ->
         real_annotations
   in

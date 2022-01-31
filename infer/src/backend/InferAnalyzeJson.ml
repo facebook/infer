@@ -348,8 +348,7 @@ and parse_item_annotation (json : Safe.t) : Annot.Item.t =
   parse_list
     (fun j ->
       let a = member "annotation" j in
-      let v = member "visible" j in
-      (parse_annotation a, to_bool v) )
+      parse_annotation a )
     (member "annotations" json)
 
 

@@ -39,7 +39,7 @@ let pp_objc_accessor_type fmt objc_accessor_type =
   F.fprintf fmt "%s<%a:%a@,[%a]>"
     (kind_of_objc_accessor_type objc_accessor_type)
     Fieldname.pp fieldname (Typ.pp Pp.text) typ
-    (Pp.semicolon_seq ~print_env:Pp.text_break (Pp.pair ~fst:Annot.pp ~snd:F.pp_print_bool))
+    (Pp.semicolon_seq ~print_env:Pp.text_break Annot.pp)
     annots
 
 

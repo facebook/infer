@@ -90,7 +90,7 @@ let edge_is_strong tenv obj_edge =
     || ( match rc_field with
        | Some (_, _, ia) ->
            List.exists
-             ~f:(fun ((ann : Annot.t), _) ->
+             ~f:(fun (ann : Annot.t) ->
                ( String.equal ann.class_name Config.property_attributes
                || String.equal ann.class_name Config.ivar_attributes )
                && has_weak_or_unretained_or_assign ann.parameters )

@@ -64,7 +64,7 @@ end
 module FieldsAssignedInConstructorsChecker =
   AbstractInterpreter.MakeRPO (TransferFunctions (ProcCfg.Normal))
 
-let add_annot annot annot_name = ({Annot.class_name= annot_name; parameters= []}, true) :: annot
+let add_annot annot annot_name = {Annot.class_name= annot_name; parameters= []} :: annot
 
 let add_nonnull_to_selected_field given_field ((fieldname, typ, annot) as field) =
   if Fieldname.equal fieldname given_field && not (Annotations.ia_is_nullable annot) then

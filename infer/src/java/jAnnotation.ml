@@ -89,8 +89,7 @@ and translate a : Annot.t =
 
 (** Translate an item annotation. *)
 let translate_item avlist : Annot.Item.t =
-  let trans_vis = function Javalib.RTVisible -> true | Javalib.RTInvisible -> false in
-  let trans (a, v) = (translate a, trans_vis v) in
+  let trans (a, _) = translate a in
   List.map ~f:trans avlist
 
 

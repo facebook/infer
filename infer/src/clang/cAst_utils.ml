@@ -196,11 +196,10 @@ let get_decl_from_typ_ptr typ_ptr =
 
 
 let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
-  let default_visibility = true in
   let mk_annot annot_name_opt =
     match annot_name_opt with
     | Some annot_name ->
-        [({Annot.class_name= annot_name; parameters= []}, default_visibility)]
+        [{Annot.class_name= annot_name; parameters= []}]
     | None ->
         Annot.Item.empty
   in

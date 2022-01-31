@@ -146,25 +146,12 @@ and TNormalizer : (HashNormalizer.S with type t = t) = HashNormalizer.Make (stru
     else {class_name; parameters}
 end)
 
-module PairNormalizer = HashNormalizer.Make (struct
-  type nonrec t = t * bool [@@deriving equal]
-
-  let hash = Hashtbl.hash
-
-  let normalize ((t, b) as pair) =
-    let t' = TNormalizer.normalize t in
-    if phys_equal t t' then pair else (t', b)
-end)
-
 module Item = struct
   (** Annotation for one item: a list of annotations with visibility. *)
-  type nonrec t = (t * bool) list [@@deriving compare, equal]
+  type nonrec t = t list [@@deriving compare, equal]
 
   (** Pretty print an item annotation. *)
-  let pp fmt ann =
-    let pp fmt (a, _) = pp fmt a in
-    F.fprintf fmt "<%a>" (Pp.seq pp) ann
-
+  let pp fmt ann = F.fprintf fmt "<%a>" (Pp.seq pp) ann
 
   (** Empty item annotation. *)
   let empty = []
@@ -172,14 +159,14 @@ module Item = struct
   (** Check if the item annotation is empty. *)
   let is_empty ia = List.is_empty ia
 
-  let is_final ia = List.exists ia ~f:(fun (x, b) -> b && is_final x)
+  let is_final ia = List.exists ia ~f:is_final
 
   module Normalizer = HashNormalizer.Make (struct
     type nonrec t = t [@@deriving equal]
 
     let hash = Hashtbl.hash
 
-    let normalize pairs = IList.map_changed pairs ~equal:phys_equal ~f:PairNormalizer.normalize
+    let normalize pairs = IList.map_changed pairs ~equal:phys_equal ~f:TNormalizer.normalize
   end)
 end
 
@@ -188,7 +175,7 @@ module Class = struct
 
   let cpp_str = "Cpp-Class"
 
-  let of_string class_string = [({class_name= class_string; parameters= []}, true)]
+  let of_string class_string = [{class_name= class_string; parameters= []}]
 
   let objc = of_string objc_str
 

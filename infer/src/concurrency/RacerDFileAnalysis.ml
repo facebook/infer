@@ -170,7 +170,7 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
   in
   let field_is_annotated_guardedby field_name (f, _, a) =
     Fieldname.equal f field_name
-    && List.exists a ~f:(fun ((annot : Annot.t), _) ->
+    && List.exists a ~f:(fun (annot : Annot.t) ->
            Annotations.annot_ends_with annot Annotations.guarded_by
            &&
            match annot.parameters with

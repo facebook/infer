@@ -16,7 +16,7 @@ type required_prop = Prop of string | VarProp of {prop: string; var_prop: string
 let get_required_props typename tenv =
   let is_required annot_list =
     List.exists
-      ~f:(fun (({Annot.parameters} as annot), _) ->
+      ~f:(fun ({Annot.parameters} as annot) ->
         Annotations.annot_ends_with annot Annotations.prop
         && (* Don't count as required if it's @Prop(optional = true) *)
         not
@@ -28,7 +28,7 @@ let get_required_props typename tenv =
   in
   let get_var_args annot_list =
     List.fold ~init:None
-      ~f:(fun acc (({Annot.parameters} as annot), _) ->
+      ~f:(fun acc ({Annot.parameters} as annot) ->
         if Annotations.annot_ends_with annot Annotations.prop then
           (* Pick up the parameter for varArg if it has the form
              @Prop(varArg = myProp). *)

@@ -31,7 +31,7 @@ module Access = struct
 
   let is_strong_access tenv (access : t) =
     let has_weak_or_unretained_or_assign annotations =
-      List.exists annotations ~f:(fun ((ann : Annot.t), _) ->
+      List.exists annotations ~f:(fun (ann : Annot.t) ->
           ( String.equal ann.class_name Config.property_attributes
           || String.equal ann.class_name Config.ivar_attributes )
           && List.exists

@@ -20,9 +20,7 @@ let rec swap_elements_list l =
 
 
 let append_no_duplicates_annotations =
-  let cmp (annot1, _) (annot2, _) =
-    String.compare annot1.Annot.class_name annot2.Annot.class_name
-  in
+  let cmp annot1 annot2 = String.compare annot1.Annot.class_name annot2.Annot.class_name in
   Staged.unstage (IList.append_no_duplicates ~cmp)
 
 

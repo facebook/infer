@@ -45,7 +45,7 @@ val pp : F.formatter -> t -> unit
 
 module Item : sig
   (** Annotation for one item: a list of annotations with visibility. *)
-  type nonrec t = (t * bool) list [@@deriving compare, equal]
+  type nonrec t = t list [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
   (** Pretty print an item annotation. *)
