@@ -198,7 +198,7 @@ module ArrayAccessCondition = struct
     in
     let cmp = if c.last_included then "<=" else "<" in
     F.fprintf fmt "%t%a %s %a" pp_offset ItvPure.pp c.idx cmp ItvPure.pp
-      (ItvPure.make_positive c.size)
+      (ItvPure.make_non_negative c.size)
 
 
   let pp_description : markup:bool -> F.formatter -> t -> unit =
@@ -213,7 +213,8 @@ module ArrayAccessCondition = struct
     in
     F.fprintf fmt "Offset%s: %t Size: %a"
       (if c.last_included then " added" else "")
-      pp_offset (ItvPure.pp_mark ~markup) (ItvPure.make_positive c.size)
+      pp_offset (ItvPure.pp_mark ~markup)
+      (ItvPure.make_non_negative c.size)
 
 
   let make : offset:ItvPure.t -> idx:ItvPure.t -> size:ItvPure.t -> last_included:bool -> t option =
@@ -330,8 +331,8 @@ module ArrayAccessCondition = struct
        For adding into collections : we want to check that 0 <= idx <= size *)
     let real_idx = ItvPure.plus c.offset c.idx in
     let size =
-      let size_pos = ItvPure.make_positive c.size in
-      if c.last_included then ItvPure.succ size_pos else size_pos
+      let size_nonneg = ItvPure.make_non_negative c.size in
+      if c.last_included then ItvPure.succ size_nonneg else size_nonneg
     in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun = ItvPure.lt_sem real_idx size in

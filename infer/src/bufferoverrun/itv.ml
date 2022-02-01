@@ -559,8 +559,9 @@ module ItvPure = struct
     (not (SymbolSet.is_empty symbols)) && SymbolSet.for_all Symb.Symbol.is_non_int symbols
 
 
-  let make_positive : t -> t =
-   fun ((l, u) as x) -> if Bound.lt l Bound.zero then (Bound.zero, u) else x
+  let make_non_negative : t -> t =
+    let max_zero x = if Bound.lt x Bound.zero then Bound.zero else x in
+    fun (l, u) -> (max_zero l, max_zero u)
 
 
   let max_of_ikind integer_type_widths ikind =
@@ -729,6 +730,8 @@ let minus : t -> t -> t = lift2 ItvPure.minus
 let incr = plus one
 
 let decr x = minus x one
+
+let decr_length x = map ~f:ItvPure.make_non_negative (decr x)
 
 let set_lb lb = lift1 (ItvPure.set_lb lb)
 

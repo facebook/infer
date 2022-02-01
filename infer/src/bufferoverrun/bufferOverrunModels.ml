@@ -1102,7 +1102,7 @@ module AbstractCollection (Lang : Lang) = struct
 
 
   let remove_at_index coll_id index_exp =
-    { exec= change_size_by ~size_f:Itv.decr coll_id
+    { exec= change_size_by ~size_f:Itv.decr_length coll_id
     ; check= check_index ~last_included:false coll_id index_exp }
 
 
@@ -1254,7 +1254,7 @@ module NSCollection = struct
 
   let get_first coll_id = get_at_index coll_id Exp.zero
 
-  let remove_last coll_id = {exec= change_size_by ~size_f:Itv.decr coll_id; check= no_check}
+  let remove_last coll_id = {exec= change_size_by ~size_f:Itv.decr_length coll_id; check= no_check}
 
   let remove_all coll_id =
     let exec model_env ~ret mem =
