@@ -193,10 +193,11 @@ let compute_summary {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency
 
 
 let checker analysis_data =
-  let inferbo_invariant_map =
+  let open IOption.Let_syntax in
+  let* inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
       (InterproceduralAnalysis.bind_payload ~f:snd analysis_data)
   in
-  let astate_opt = compute_summary analysis_data inferbo_invariant_map in
-  Option.iter astate_opt ~f:(fun astate -> debug "Purity summary :%a \n" PurityDomain.pp astate) ;
-  astate_opt
+  let+ astate = compute_summary analysis_data inferbo_invariant_map in
+  debug "Purity summary :%a \n" PurityDomain.pp astate ;
+  astate

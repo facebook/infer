@@ -74,14 +74,14 @@ let get_instantiated_cost
 
 let prepare_call_args
     ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as analysis_data) call =
+  let open IOption.Let_syntax in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_proc_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
-  let inferbo_invariant_map =
+  let+ inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
       (InterproceduralAnalysis.bind_payload ~f:fst3 analysis_data)
   in
-  let open IOption.Let_syntax in
   let get_callee_cost_summary_and_formals callee_pname =
     let* callee_pdesc, (_inferbo, _, callee_costs_summary) = analyze_dependency callee_pname in
     let+ callee_costs_summary = callee_costs_summary in
@@ -102,12 +102,12 @@ let prepare_call_args
 
 
 let get_cost_if_expensive analysis_data call =
-  match prepare_call_args analysis_data call |> get_instantiated_cost with
-  | Symbolic cost ->
-      Some cost
-  | Cheap | NoModel ->
-      None
+  let open IOption.Let_syntax in
+  let* call_args = prepare_call_args analysis_data call in
+  match get_instantiated_cost call_args with Symbolic cost -> Some cost | Cheap | NoModel -> None
 
 
 let get_instantiated_cost analysis_data call =
-  prepare_call_args analysis_data call |> get_instantiated_cost
+  let open IOption.Let_syntax in
+  let+ call_args = prepare_call_args analysis_data call in
+  get_instantiated_cost call_args

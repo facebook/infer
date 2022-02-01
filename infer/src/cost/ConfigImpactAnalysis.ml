@@ -737,8 +737,8 @@ module Dom = struct
         astate
 
 
-  let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost) ~callee
-      args location
+  let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost option)
+      ~callee args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     let join_unchecked_callees new_unchecked_callees new_unchecked_callees_cond =
       if FieldChecks.is_top field_checks then
@@ -790,8 +790,8 @@ module Dom = struct
         let has_expensive_callee =
           Option.exists callee_summary ~f:Summary.has_known_expensive_callee
         in
-        let is_cheap_call = match instantiated_cost with Cheap -> true | _ -> false in
-        let is_unmodeled_call = match instantiated_cost with NoModel -> true | _ -> false in
+        let is_cheap_call = match instantiated_cost with Some Cheap -> true | _ -> false in
+        let is_unmodeled_call = match instantiated_cost with Some NoModel -> true | _ -> false in
         if strict_mode then
           match callee_summary with
           | Some
@@ -859,7 +859,7 @@ type analysis_data =
   { interproc:
       (BufferOverrunAnalysisSummary.t option * Summary.t option * CostDomain.summary option)
       InterproceduralAnalysis.t
-  ; get_instantiated_cost: CostInstantiate.Call.t -> CostInstantiate.instantiated_cost }
+  ; get_instantiated_cost: CostInstantiate.Call.t -> CostInstantiate.instantiated_cost option }
 
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal

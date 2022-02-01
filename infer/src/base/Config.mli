@@ -165,6 +165,8 @@ val bo_debug : int
 
 val bo_field_depth_limit : int option
 
+val bo_max_cfg_size : int
+
 val bootclasspath : string option
 
 val buck : bool

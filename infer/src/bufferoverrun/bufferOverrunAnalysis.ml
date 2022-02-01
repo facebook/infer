@@ -487,17 +487,29 @@ let compute_invariant_map :
   Analyzer.exec_pdesc ~do_narrowing:true ~initial analysis_data proc_desc
 
 
+let is_too_big proc_desc =
+  let proc_size = Procdesc.size proc_desc in
+  if proc_size > Config.bo_max_cfg_size then (
+    L.internal_error "Skipped large procedure (%a, size:%d) in Inferbo." Procname.pp
+      (Procdesc.get_proc_name proc_desc)
+      proc_size ;
+    true )
+  else false
+
+
 let cached_compute_invariant_map =
   let cache_get, cache_set = Procname.UnitCache.create () in
   fun ({InterproceduralAnalysis.proc_desc} as analysis_data) ->
-    let pname = Procdesc.get_proc_name proc_desc in
-    match cache_get pname with
-    | Some inv_map ->
-        inv_map
-    | None ->
-        let inv_map = compute_invariant_map analysis_data in
-        cache_set pname inv_map ;
-        inv_map
+    if is_too_big proc_desc then None
+    else
+      let pname = Procdesc.get_proc_name proc_desc in
+      match cache_get pname with
+      | Some _ as inv_map ->
+          inv_map
+      | None ->
+          let inv_map = compute_invariant_map analysis_data in
+          cache_set pname inv_map ;
+          Some inv_map
 
 
 let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_summary =
@@ -511,7 +523,8 @@ let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_
 
 
 let analyze_procedure ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  let inv_map = cached_compute_invariant_map analysis_data in
+  let open IOption.Let_syntax in
+  let+ inv_map = cached_compute_invariant_map analysis_data in
   let formals = Procdesc.get_pvar_formals proc_desc in
   let cfg = CFG.from_pdesc proc_desc in
-  Some (compute_summary formals cfg inv_map)
+  compute_summary formals cfg inv_map

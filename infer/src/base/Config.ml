@@ -761,6 +761,12 @@ and bo_field_depth_limit =
     "Limit of field depth of abstract location in buffer-overrun checker"
 
 
+and bo_max_cfg_size =
+  CLOpt.mk_int ~default:15000 ~long:"bo-max-cfg-size"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Larger CFGs than the max size are skipped in buffer overrun analysis."
+
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -3035,6 +3041,8 @@ and bootclasspath = !bootclasspath
 and bo_debug = !bo_debug
 
 and bo_field_depth_limit = !bo_field_depth_limit
+
+and bo_max_cfg_size = !bo_max_cfg_size
 
 and buck = !buck
 

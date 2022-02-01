@@ -408,10 +408,11 @@ let just_throws_exception proc_desc =
 
 
 let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as analysis_data) =
+  let open IOption.Let_syntax in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_proc_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
-  let inferbo_invariant_map =
+  let+ inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
       (InterproceduralAnalysis.bind_payload ~f:snd3 analysis_data)
   in
@@ -425,7 +426,6 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
   in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
-    let open IOption.Let_syntax in
     let get_summary_common callee_pname =
       let+ _, summaries = analyze_dependency callee_pname in
       summaries
@@ -466,4 +466,4 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
     if just_throws_exception proc_desc then CostDomain.set_operation_cost_zero astate else astate
   in
   Check.check_and_report analysis_data astate ;
-  Some (get_cost_summary ~is_on_ui_thread astate)
+  get_cost_summary ~is_on_ui_thread astate

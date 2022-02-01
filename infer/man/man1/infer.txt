@@ -136,6 +136,10 @@ OPTIONS
            Limit of field depth of abstract location in buffer-overrun
            checker           See also infer-analyze(1).
 
+       --bo-max-cfg-size int
+           Larger CFGs than the max size are skipped in buffer overrun
+           analysis.           See also infer-analyze(1).
+
        --bootclasspath string
            Specify the Java bootclasspath           See also infer-capture(1).
 

@@ -494,6 +494,10 @@ BUFFER OVERRUN OPTIONS
        --bo-field-depth-limit int
            Limit of field depth of abstract location in buffer-overrun
            checker
+
+       --bo-max-cfg-size int
+           Larger CFGs than the max size are skipped in buffer overrun
+           analysis.
 CLANG OPTIONS
        --annotation-reachability-cxx json
            Specify annotation reachability analyses to be performed on
