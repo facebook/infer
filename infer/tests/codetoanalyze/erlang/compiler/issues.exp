@@ -211,6 +211,8 @@ features_lists:test_listappend2a_Ok/0: ok
 features_lists:test_listappend3_Bad/0: function_clause
 features_lists:test_listappend3_Ok/0: ok
 features_lists:test_listappend4_Ok/0: ok
+features_lists:test_listforeach_returnvalue_Bad/0: function_clause
+features_lists:test_listforeach_returnvalue_Ok/0: ok
 features_lists:test_nil_Bad/0: {case_clause,[1]}
 features_lists:test_nil_Ok/0: ok
 features_lists:test_reverse0_Bad/0: function_clause

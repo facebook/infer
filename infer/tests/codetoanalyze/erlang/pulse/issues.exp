@@ -120,6 +120,7 @@ features/features_lists.erl, test_listappend1_Bad/0, -259, NO_MATCHING_FUNCTION_
 features/features_lists.erl, test_listappend2_Bad/0, -273, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]
 features/features_lists.erl, test_listappend2a_Bad/0, -287, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]
 features/features_lists.erl, test_listappend3_Bad/0, -301, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]
+features/features_lists.erl, test_listforeach_returnvalue_Bad/0, -336, NO_MATCHING_FUNCTION_CLAUSE, no_bucket, ERROR, [calling context starts here,in call to `warn/1`,no matching function clause here]
 features/features_lists.erl, warn/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
 features/features_lists.erl, test_nil_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 features/features_lists.erl, test_cons1_Bad/0, 4, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]

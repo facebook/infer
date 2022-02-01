@@ -280,6 +280,13 @@ module Lists = struct
     | head :: tail ->
         let* astate, tail_val = make_raw location path tail astate in
         make_cons_raw path location head tail_val astate
+
+
+  (** Approximation: we don't actually do the side-effect, just assume the return value. *)
+  let foreach _fun _list : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let<*> astate, ret = Atoms.of_string location path "ok" astate in
+    PulseOperations.write_id ret_id ret astate |> Basic.ok_continue
 end
 
 module Tuples = struct
@@ -680,6 +687,7 @@ let matchers : matcher list =
     ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
     ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
     ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
+    ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach
     ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse
     ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Maps.make
     ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key

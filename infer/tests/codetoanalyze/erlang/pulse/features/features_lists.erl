@@ -50,7 +50,9 @@
     test_listappend3_Bad/0,
     test_listappend4_Ok/0,
     fn_test_listappend4_Bad/0,
-    fn_test_listappend5_Bad/0
+    fn_test_listappend5_Bad/0,
+    test_listforeach_returnvalue_Ok/0,
+    test_listforeach_returnvalue_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -383,3 +385,15 @@ one() -> 1.
 fn_test_listappend5_Bad() ->
     % using the function one() makes the Erlang compiler not see the problem
     one() ++ "?".
+
+test_listforeach_returnvalue_Ok() ->
+    case lists:foreach(fun (X) -> X end, [1, 2, 3]) of
+        ok -> ok;
+        _ -> warn(1)
+    end.
+
+test_listforeach_returnvalue_Bad() ->
+    case lists:foreach(fun (X) -> X end, [1, 2, 3]) of
+        ok -> warn(1);
+        _ -> ok
+    end.
