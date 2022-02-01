@@ -36,6 +36,14 @@ AC_CHECK_FILE([.facebook], [is_facebook_tree=yes], [is_facebook_tree=no])
 IS_FACEBOOK_TREE=$is_facebook_tree
 AC_SUBST([IS_FACEBOOK_TREE])
 
+AC_ARG_ENABLE(opam-pin-ocamlformat,
+  AS_HELP_STRING([--disable-opam-pin-ocamlformat],
+    [do not pin ocamlformat to the right version using opam and use the already-installed ocamlformat instead]),
+  ,
+  enable_opam_pin_ocamlformat=yes,)
+OPAM_PIN_OCAMLFORMAT=$enable_opam_pin_ocamlformat
+AC_SUBST([OPAM_PIN_OCAMLFORMAT])
+
 AC_ARG_VAR([PATH], [the shell's $PATH list of directories to search for executables])
 
 # to compile the facebook-clang-plugins
