@@ -17,9 +17,6 @@ val vpath_find : Tenv.t -> 'a Prop.t -> Exp.t -> DecompiledExp.vpath * Typ.t opt
 val hpred_is_open_resource : Tenv.t -> 'a Prop.t -> Predicates.hpred -> PredSymb.resource option
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 
-val find_ident_assignment : Procdesc.Node.t -> Ident.t -> (Procdesc.Node.t * Exp.t) option
-(** Find a program variable assignment to id in the current node or predecessors. *)
-
 val exp_rv_dexp : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 (** describe rvalue [e] as a dexp *)
 

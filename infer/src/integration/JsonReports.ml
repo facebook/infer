@@ -77,10 +77,7 @@ let should_report issue_type error_desc =
     let issue_type_is_null_deref =
       let null_deref_issue_types =
         let open IssueType in
-        [ null_dereference
-        ; parameter_not_null_checked
-        ; premature_nil_termination
-        ; empty_vector_access ]
+        [null_dereference; premature_nil_termination; empty_vector_access]
       in
       List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
     in

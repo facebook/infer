@@ -56,8 +56,6 @@ exception Premature_nil_termination of Localise.error_desc * Logging.ocaml_pos
 
 exception Null_dereference of Localise.error_desc * Logging.ocaml_pos
 
-exception Parameter_not_null_checked of Localise.error_desc * Logging.ocaml_pos
-
 exception Precondition_not_found of Localise.error_desc * Logging.ocaml_pos
 
 exception Precondition_not_met of Localise.error_desc * Logging.ocaml_pos

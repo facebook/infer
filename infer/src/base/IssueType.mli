@@ -304,8 +304,6 @@ val nullptr_dereference : latent:bool -> t
 
 val optional_empty_access : latent:bool -> t
 
-val parameter_not_null_checked : t
-
 val precondition_not_found : t
 
 val precondition_not_met : t

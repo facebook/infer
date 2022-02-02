@@ -57,8 +57,6 @@ exception Premature_nil_termination of Localise.error_desc * L.ocaml_pos
 
 exception Null_dereference of Localise.error_desc * L.ocaml_pos
 
-exception Parameter_not_null_checked of Localise.error_desc * L.ocaml_pos
-
 exception Precondition_not_found of Localise.error_desc * L.ocaml_pos
 
 exception Precondition_not_met of Localise.error_desc * L.ocaml_pos
@@ -145,10 +143,6 @@ let recognize_exception exn : IssueToReport.t =
       {issue_type= IssueType.missing_fld; description= desc; ocaml_pos= Some ocaml_pos}
   | Premature_nil_termination (desc, ocaml_pos) ->
       {issue_type= IssueType.premature_nil_termination; description= desc; ocaml_pos= Some ocaml_pos}
-  | Parameter_not_null_checked (desc, ocaml_pos) ->
-      { issue_type= IssueType.parameter_not_null_checked
-      ; description= desc
-      ; ocaml_pos= Some ocaml_pos }
   | Precondition_not_found (desc, ocaml_pos) ->
       {issue_type= IssueType.precondition_not_found; description= desc; ocaml_pos= Some ocaml_pos}
   | Precondition_not_met (desc, ocaml_pos) ->
