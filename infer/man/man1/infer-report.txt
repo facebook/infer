@@ -213,7 +213,6 @@ OPTIONS
              INTERFACE_NOT_THREAD_SAFE (enabled by default),
              INVARIANT_CALL (disabled by default),
              IPC_ON_UI_THREAD (enabled by default),
-             IVAR_NOT_NULL_CHECKED (enabled by default),
              Internal_error (enabled by default),
              JAVASCRIPT_INJECTION (enabled by default),
              LAB_RESOURCE_LEAK (enabled by default),

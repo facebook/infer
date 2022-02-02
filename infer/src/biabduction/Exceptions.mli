@@ -36,8 +36,6 @@ exception
 
 exception Divide_by_zero of Localise.error_desc * Logging.ocaml_pos
 
-exception Field_not_null_checked of Localise.error_desc * Logging.ocaml_pos
-
 exception Empty_vector_access of Localise.error_desc * Logging.ocaml_pos
 
 exception Inherently_dangerous_function of Localise.error_desc

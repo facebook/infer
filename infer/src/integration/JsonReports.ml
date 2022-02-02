@@ -77,8 +77,7 @@ let should_report issue_type error_desc =
     let issue_type_is_null_deref =
       let null_deref_issue_types =
         let open IssueType in
-        [ field_not_null_checked
-        ; null_dereference
+        [ null_dereference
         ; parameter_not_null_checked
         ; premature_nil_termination
         ; empty_vector_access ]

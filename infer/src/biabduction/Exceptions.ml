@@ -39,8 +39,6 @@ exception Divide_by_zero of Localise.error_desc * L.ocaml_pos
 
 exception Empty_vector_access of Localise.error_desc * L.ocaml_pos
 
-exception Field_not_null_checked of Localise.error_desc * L.ocaml_pos
-
 exception Inherently_dangerous_function of Localise.error_desc
 
 exception Internal_error of Localise.error_desc
@@ -119,8 +117,6 @@ let recognize_exception exn : IssueToReport.t =
       {issue_type= IssueType.divide_by_zero; description= desc; ocaml_pos= Some ocaml_pos}
   | Empty_vector_access (desc, ocaml_pos) ->
       {issue_type= IssueType.empty_vector_access; description= desc; ocaml_pos= Some ocaml_pos}
-  | Field_not_null_checked (desc, ocaml_pos) ->
-      {issue_type= IssueType.field_not_null_checked; description= desc; ocaml_pos= Some ocaml_pos}
   | Null_dereference (desc, ocaml_pos) ->
       {issue_type= IssueType.null_dereference; description= desc; ocaml_pos= Some ocaml_pos}
   | Inherently_dangerous_function desc ->

@@ -210,8 +210,6 @@ val expensive_cost_call : kind:CostKind.t -> t
 
 val failure_exe : t
 
-val field_not_null_checked : t
-
 val guardedby_violation : t
 
 val impure_function : t

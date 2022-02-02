@@ -1391,25 +1391,6 @@ void invariant_hoist(int size) {
 Reported as "Ipc On Ui Thread" by [starvation](/docs/next/checker-starvation).
 
 A blocking `Binder` IPC call occurs on the UI thread.
-## IVAR_NOT_NULL_CHECKED
-
-Reported as "Ivar Not Null Checked" by [biabduction](/docs/next/checker-biabduction).
-
-This error type is only reported in Objective-C. This is similar to Null
-dereference, but Infer hasn't found a whole trace where the error can happen,
-but only found that a null dereference can happen if an instance variable of a
-parameter is `nil`. For example:
-
-```objectivec
-  -(int) foo {
-      B b* = [self->_a foo]; // sending a message with receiver nil returns nil
-      return b->x; // dereferencing b, potential NPE if you pass nil as the argument a.
-  }
-```
-
-Possible solutions are adding a check for `nil`, or making sure that the method
-is not called with `nil`.
-
 ## JAVASCRIPT_INJECTION
 
 Reported as "Javascript Injection" by [quandary](/docs/next/checker-quandary).

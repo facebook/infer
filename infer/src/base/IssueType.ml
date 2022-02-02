@@ -656,11 +656,6 @@ let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kin
 
 let failure_exe = register_hidden ~is_silent:true ~id:"Failure_exe" Info Biabduction
 
-let field_not_null_checked =
-  register ~id:"IVAR_NOT_NULL_CHECKED" Warning Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/IVAR_NOT_NULL_CHECKED.md"]
-
-
 (* from AL default linters *)
 let _global_variable_initialized_with_function_or_method_call =
   register ~enabled:false ~id:"GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL" Warning

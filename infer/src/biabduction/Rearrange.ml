@@ -1230,8 +1230,6 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
     in
     if Localise.is_parameter_not_null_checked_desc err_desc then
       raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))
-    else if Localise.is_field_not_null_checked_desc err_desc then
-      raise (Exceptions.Field_not_null_checked (err_desc, __POS__))
     else if Localise.is_empty_vector_access_desc err_desc then
       raise (Exceptions.Empty_vector_access (err_desc, __POS__))
     else raise (Exceptions.Null_dereference (err_desc, __POS__)) ) ;
@@ -1324,11 +1322,10 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     in
     match fun_exp with
     | Exp.Var id when Ident.is_footprint id -> (
-        let e_opt, is_field_deref = is_field_deref () in
+        let e_opt, _ = is_field_deref () in
         let warn err_desc =
           let err_desc = Localise.error_desc_set_bucket err_desc Localise.BucketLevel.b1 in
-          if is_field_deref then raise (Exceptions.Field_not_null_checked (err_desc, __POS__))
-          else raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))
+          raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))
         in
         match e_opt with
         | Some e when is_this e ->

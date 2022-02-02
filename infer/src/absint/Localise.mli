@@ -95,8 +95,6 @@ val parameter_field_not_null_checked_desc : error_desc -> Exp.t -> error_desc
 
 val is_parameter_not_null_checked_desc : error_desc -> bool
 
-val is_field_not_null_checked_desc : error_desc -> bool
-
 val desc_class_cast_exception :
   Procname.t option -> string -> string -> string option -> Location.t -> error_desc
 

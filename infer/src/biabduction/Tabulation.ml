@@ -1272,8 +1272,6 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
                 extend_path path_opt (Some pos) ;
                 if Localise.is_parameter_not_null_checked_desc desc then
                   raise (Exceptions.Parameter_not_null_checked (desc, __POS__))
-                else if Localise.is_field_not_null_checked_desc desc then
-                  raise (Exceptions.Field_not_null_checked (desc, __POS__))
                 else if Localise.is_empty_vector_access_desc desc then
                   raise (Exceptions.Empty_vector_access (desc, __POS__))
                 else raise (Exceptions.Null_dereference (desc, __POS__))
