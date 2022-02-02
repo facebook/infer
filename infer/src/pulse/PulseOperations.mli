@@ -327,4 +327,4 @@ val get_captured_actuals :
   -> captured_vars:(Var.t * CapturedVar.capture_mode * Typ.t) list
   -> actual_closure:AbstractValue.t * ValueHistory.t
   -> t
-  -> (t * (Var.t * ((AbstractValue.t * ValueHistory.t) * Typ.t)) list) AccessResult.t
+  -> (t * ((Var.t * Typ.t) * ((AbstractValue.t * ValueHistory.t) * Typ.t)) list) AccessResult.t

@@ -61,7 +61,7 @@ type contradiction =
           single address [caller_addr] in the caller's current state. Typically raised when calling
           [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
   | FormalActualLength of
-      {formals: Var.t list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
+      {formals: (Var.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | ISLPreconditionMismatch
   | PathCondition
 
@@ -215,8 +215,8 @@ let deref_non_c_struct addr typ astate =
 
 (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that has
     been instantiated with the corresponding [actual] into the current state [call_state.astate] *)
-let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual:(actual, typ)
-    call_state =
+let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal:(formal, typ)
+    ~actual:(actual, _) call_state =
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
   let* addr_formal_pre, _ = BaseStack.find_opt formal pre.BaseDomain.stack in
@@ -477,8 +477,8 @@ let rec record_post_for_address path callee_proc_name call_loc
               ~addr_callee:addr_callee_dest ~addr_hist_caller:addr_hist_curr_dest call_state ) )
 
 
-let record_post_for_actual path callee_proc_name call_loc pre_post ~formal ~actual:(actual, typ)
-    call_state =
+let record_post_for_actual path callee_proc_name call_loc pre_post ~formal:(formal, typ)
+    ~actual:(actual, _) call_state =
   L.d_printfln_escaped "Recording POST from [%a] <-> %a" Var.pp formal AbstractValue.pp (fst actual) ;
   match
     let open IOption.Let_syntax in
@@ -786,7 +786,8 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
 let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~callee_prepost:pre_post
     ~captured_vars_with_actuals ~formals ~actuals astate =
   L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
-    (Pp.seq ~sep:"," Var.pp) formals AbductiveDomain.pp pre_post ;
+    (Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f var))
+    formals AbductiveDomain.pp pre_post ;
   let empty_call_state =
     { astate
     ; subst= AddressMap.empty

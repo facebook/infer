@@ -760,6 +760,6 @@ let get_captured_actuals path location ~captured_vars ~actual_closure astate =
             (FieldAccess (Closures.mk_fake_field ~id mode))
             astate
         in
-        (id + 1, astate, (var, (captured_actual, typ)) :: captured) )
+        (id + 1, astate, ((var, typ), (captured_actual, typ)) :: captured) )
   in
   (astate, captured_vars_with_actuals)

@@ -32,4 +32,21 @@ int deref_after_move_ok() {
   auto x = p.move_age();
   return *x;
 }
+
+struct SimpleStruct {
+  int field;
+};
+
+std::unique_ptr<SimpleStruct> global_simple_struct;
+
+void register_to_global(std::unique_ptr<SimpleStruct> x) {
+  global_simple_struct = std::move(x);
+}
+
+void deref_after_register_ok(std::unique_ptr<SimpleStruct> x) {
+  SimpleStruct* p = x.get();
+  register_to_global(std::move(x));
+  int n = p->field;
+}
+
 } // namespace deref_after_mode_example

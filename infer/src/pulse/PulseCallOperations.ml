@@ -228,7 +228,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee
     exec_states (astate : AbductiveDomain.t) =
   let formals =
     Procdesc.get_formals callee_proc_desc
-    |> List.map ~f:(fun (mangled, _, _) -> Pvar.mk mangled callee_pname |> Var.of_pvar)
+    |> List.map ~f:(fun (mangled, typ, _) -> (Pvar.mk mangled callee_pname |> Var.of_pvar, typ))
   in
   let captured_vars =
     Procdesc.get_captured callee_proc_desc
