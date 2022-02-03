@@ -125,26 +125,11 @@ let check_and_abduce_addr_access_isl path access_mode location (address, history
 module Closures = struct
   module Memory = AbductiveDomain.Memory
 
-  let fake_capture_field_prefix = "__capture_"
-
-  let string_of_capture_mode = function
-    | CapturedVar.ByReference ->
-        "by_ref_"
-    | CapturedVar.ByValue ->
-        "by_value_"
-
-
-  let fake_captured_by_ref_field_prefix =
-    Printf.sprintf "%s%s" fake_capture_field_prefix (string_of_capture_mode ByReference)
-
-
-  let mk_fake_field ~id mode =
-    Fieldname.make
-      (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
-      (Printf.sprintf "%s%s%d" fake_capture_field_prefix (string_of_capture_mode mode) id)
-
-
   let is_captured_by_ref_fake_access (access : _ HilExp.Access.t) =
+    let fake_captured_by_ref_field_prefix =
+      Printf.sprintf "%s%s" Fieldname.fake_capture_field_prefix
+        (Fieldname.string_of_capture_mode ByReference)
+    in
     match access with
     | FieldAccess fieldname
       when String.is_prefix ~prefix:fake_captured_by_ref_field_prefix
@@ -155,8 +140,10 @@ module Closures = struct
 
 
   let mk_capture_edges captured =
-    List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges (mode, addr, trace) ->
-        Memory.Edges.add (HilExp.Access.FieldAccess (mk_fake_field ~id mode)) (addr, trace) edges )
+    List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges (mode, typ, addr, trace) ->
+        Memory.Edges.add
+          (HilExp.Access.FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
+          (addr, trace) edges )
 
 
   let check_captured_addresses path action lambda_addr (astate : t) =
@@ -178,11 +165,12 @@ module Closures = struct
 
   let record {PathContext.timestamp} location pname captured astate =
     let captured_addresses =
-      List.filter_map captured ~f:(fun (captured_as, (address_captured, trace_captured), mode) ->
+      List.filter_map captured
+        ~f:(fun (captured_as, (address_captured, trace_captured), typ, mode) ->
           let new_trace =
             ValueHistory.Sequence (Capture {captured_as; mode; location; timestamp}, trace_captured)
           in
-          Some (mode, address_captured, new_trace) )
+          Some (mode, typ, address_captured, new_trace) )
     in
     let closure_addr_hist =
       (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
@@ -264,10 +252,10 @@ let eval path mode location exp0 astate =
         let+ astate, rev_captured =
           List.fold captured_vars
             ~init:(Ok (astate, []))
-            ~f:(fun result (capt_exp, captured_as, _, mode) ->
+            ~f:(fun result (capt_exp, captured_as, typ, mode) ->
               let* astate, rev_captured = result in
               let+ astate, addr_trace = eval path Read capt_exp astate in
-              (astate, (captured_as, addr_trace, mode) :: rev_captured) )
+              (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
         in
         Closures.record path location name (List.rev rev_captured) astate
     | Const (Cfun proc_name) ->
@@ -768,7 +756,7 @@ let get_captured_actuals path location ~captured_vars ~actual_closure astate =
       ~f:(fun (id, astate, captured) (var, mode, typ) ->
         let+ astate, captured_actual =
           eval_access path Read location this_value_addr
-            (FieldAccess (Closures.mk_fake_field ~id mode))
+            (FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
             astate
         in
         (id + 1, astate, ((var, typ), (captured_actual, typ)) :: captured) )

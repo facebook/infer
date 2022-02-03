@@ -45,13 +45,13 @@ typedef void (^MyAHandler)(RCBlockAA* name);
   NSLog(@"Dealloc");
 }
 
-- (void)retain_self_in_block_retain_cycle_bad_FN {
+- (void)retain_self_in_block_retain_cycle {
   self.handler = ^(RCBlock* b) {
     self->_child = b;
   };
 }
 
-- (void)retain_weak_self_in_block_no_retain_cycle_good {
+- (void)retain_weak_self_in_block_no_retain_cycle {
   __weak typeof(self) weak_self = self;
   self.handler = ^(RCBlock* b) {
     __strong typeof(self) strong_self = weak_self;
@@ -61,11 +61,16 @@ typedef void (^MyAHandler)(RCBlockAA* name);
 }
 
 @end
-// This is a cycle, but with the current implementation we report it earlier
-// in retain_self_in_block_retain_cycle_bad
-int call_retain_self_in_block_cycle() {
+
+int test_retain_self_in_block_cycle_bad() {
   RCBlock* c = [[RCBlock alloc] init];
-  [c retain_self_in_block_retain_cycle_bad_FN];
+  [c retain_self_in_block_retain_cycle];
+  return 0;
+}
+
+int test_weak_self_in_block_no_retain_cycle_good() {
+  RCBlock* c = [[RCBlock alloc] init];
+  [c retain_weak_self_in_block_no_retain_cycle];
   return 0;
 }
 

@@ -19,6 +19,31 @@ let compare_name = compare_t_ Typ.Name.compare_name
 
 let make class_name field_name = {class_name; field_name}
 
+let fake_capture_field_prefix = "__capture_"
+
+let fake_capture_field_weak_prefix = fake_capture_field_prefix ^ "weak_"
+
+let string_of_capture_mode = function
+  | CapturedVar.ByReference ->
+      "by_ref_"
+  | CapturedVar.ByValue ->
+      "by_value_"
+
+
+let prefix_of_typ typ =
+  match typ.Typ.desc with
+  | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
+      fake_capture_field_weak_prefix
+  | _ ->
+      fake_capture_field_prefix
+
+
+let mk_fake_capture_field ~id typ mode =
+  make
+    (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
+    (Printf.sprintf "%s%s%d" (prefix_of_typ typ) (string_of_capture_mode mode) id)
+
+
 let get_class_name {class_name} = class_name
 
 let get_field_name {field_name} = field_name

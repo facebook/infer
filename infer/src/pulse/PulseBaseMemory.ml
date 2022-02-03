@@ -44,7 +44,16 @@ module Access = struct
     match access with
     | FieldAccess fieldname -> (
         let classname = Fieldname.get_class_name fieldname in
+        let is_fake_capture_field_strong fieldname =
+          (* a strongly referencing capture field is a capture field that is not weak *)
+          let str_fieldname = Fieldname.to_string fieldname in
+          String.is_prefix ~prefix:Fieldname.fake_capture_field_prefix str_fieldname
+          && not (String.is_prefix ~prefix:Fieldname.fake_capture_field_weak_prefix str_fieldname)
+        in
         match Tenv.lookup tenv classname with
+        | None when is_fake_capture_field_strong fieldname ->
+            (* Strongly referencing captures *)
+            true
         | None ->
             (* Can't tell if we have a strong reference. To avoid FP on retain cycles,
                assume weak reference by default *)

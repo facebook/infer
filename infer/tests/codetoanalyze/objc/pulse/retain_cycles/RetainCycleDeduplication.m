@@ -24,8 +24,7 @@
 
 @implementation CViewController
 
-- (void)setCaptureInteractionController_bad_FN:
-    (CaptureController*)captureController {
+- (void)setCaptureInteractionController:(CaptureController*)captureController {
   if (_captureController != captureController) {
     _captureController.delegate = nil;
     _captureController = captureController;
@@ -34,3 +33,9 @@
 }
 
 @end
+
+void test_setCaptureInteractionController_bad() {
+  CViewController* a = [CViewController new];
+  CaptureController* b = [CaptureController new];
+  [a setCaptureInteractionController:b];
+}

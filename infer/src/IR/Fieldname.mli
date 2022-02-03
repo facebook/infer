@@ -24,6 +24,14 @@ val get_class_name : t -> Typ.Name.t
 
 val get_field_name : t -> string
 
+val fake_capture_field_prefix : string
+
+val fake_capture_field_weak_prefix : string
+
+val string_of_capture_mode : CapturedVar.capture_mode -> string
+
+val mk_fake_capture_field : id:int -> Typ.t -> CapturedVar.capture_mode -> t
+
 val is_java : t -> bool
 
 val is_java_synthetic : t -> bool

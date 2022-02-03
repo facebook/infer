@@ -38,26 +38,26 @@
 
 @implementation RetainCycleExampleWeak
 
-- (void)test_weak_adapter_no_cycle_good {
+- (void)test_weak_adapter_no_cycle {
   _feed.adapter.feed = _feed;
 }
 
-- (void)test_strong_adapter_cycle_bad {
+- (void)test_strong_adapter_cycle {
   _feed.strong_adapter.feed = _feed;
 }
 
 @end
 
-void create_weak_cycle() {
+void create_weak_cycle_good() {
   RetainCycleExampleWeak* r = [[RetainCycleExampleWeak alloc] init];
   r.feed = [[AFeed alloc] init];
   r.feed.adapter = [[Adapter alloc] init];
-  [r test_weak_adapter_no_cycle_good];
+  [r test_weak_adapter_no_cycle];
 }
 
-void create_strong_cycle() {
+void create_strong_cycle_bad() {
   RetainCycleExampleWeak* r = [[RetainCycleExampleWeak alloc] init];
   r.feed = [[AFeed alloc] init];
   r.feed.strong_adapter = [[Adapter alloc] init];
-  [r test_strong_adapter_cycle_bad];
+  [r test_strong_adapter_cycle];
 }
