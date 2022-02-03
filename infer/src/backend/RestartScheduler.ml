@@ -75,15 +75,15 @@ let record_locked_proc (pname : Procname.t) =
 
 
 let add_to_useful_time from =
-  BackendStats.add_to_restart_scheduler_useful_time (ExecutionDuration.since from)
+  Stats.add_to_restart_scheduler_useful_time (ExecutionDuration.since from)
 
 
 let add_to_useful_exe_duration exe_duration =
-  BackendStats.add_to_restart_scheduler_useful_time exe_duration
+  Stats.add_to_restart_scheduler_useful_time exe_duration
 
 
 let add_to_total_time from =
-  BackendStats.add_to_restart_scheduler_total_time (ExecutionDuration.since from)
+  Stats.add_to_restart_scheduler_total_time (ExecutionDuration.since from)
 
 
 let unlock_all () =

@@ -8,6 +8,7 @@
 
 open! IStd
 module F = Format
+module BStats = Stats
 
 module Stats = struct
   type t =
@@ -222,9 +223,9 @@ module OnDisk = struct
           "SELECT analysis_summary, report_summary FROM specs WHERE proc_uid = :k"
       in
       fun proc_name ->
-        BackendStats.incr_summary_file_try_load () ;
+        BStats.incr_summary_file_try_load () ;
         let opt = load_spec ~load_statement proc_name in
-        if Option.is_some opt then BackendStats.incr_summary_read_from_disk () ;
+        if Option.is_some opt then BStats.incr_summary_read_from_disk () ;
         opt
     in
     let spec_of_model =
@@ -253,10 +254,10 @@ module OnDisk = struct
   let get proc_name =
     match Procname.Hash.find cache proc_name with
     | summary ->
-        BackendStats.incr_summary_cache_hits () ;
+        BStats.incr_summary_cache_hits () ;
         Some summary
     | exception Caml.Not_found ->
-        BackendStats.incr_summary_cache_misses () ;
+        BStats.incr_summary_cache_misses () ;
         load_summary_to_spec_table proc_name
 
 

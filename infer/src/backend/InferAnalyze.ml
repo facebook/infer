@@ -151,7 +151,7 @@ let analyze source_files_to_analyze =
     in
     let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
     Tasks.run_sequentially ~f:analyze_target target_files ;
-    ([BackendStats.get ()], [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]) )
+    ([Stats.get ()], [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]) )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
@@ -170,7 +170,7 @@ let analyze source_files_to_analyze =
       (* use a ref to pass data from prologue to epilogue without too much machinery *)
       let gc_stats_pre_fork = ref None in
       let child_prologue () =
-        BackendStats.reset () ;
+        Stats.reset () ;
         gc_stats_pre_fork := Some (GCStats.get ~since:ProgramStart) ;
         if Config.memtrace_analysis then
           let filename =
@@ -189,7 +189,7 @@ let analyze source_files_to_analyze =
               L.internal_error "child did not store GC stats in its prologue, what happened?" ;
               None
         in
-        (BackendStats.get (), gc_stats_in_fork)
+        (Stats.get (), gc_stats_in_fork)
       in
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue ~child_epilogue
         ~tasks:build_tasks_generator
@@ -260,7 +260,7 @@ let main ~changed_files =
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
   let backend_stats_list, gc_stats_list = analyze source_files in
-  BackendStats.log_aggregate backend_stats_list ;
+  Stats.log_aggregate backend_stats_list ;
   GCStats.log_aggregate ~prefix:"backend_stats." Analysis gc_stats_list ;
   let analysis_duration = ExecutionDuration.since start in
   L.debug Analysis Quiet "Analysis phase finished in %a@\n" Mtime.Span.pp_float_s

@@ -12,7 +12,7 @@
  (libraries cmdliner core memtrace mtime.clock.os parmap re sqlite3 zip
    ATDGenerated IStdlib OpenSource)
  (preprocess
-  (pps ppx_blob ppx_compare ppx_enumerate ppx_sexp_conv))
+  (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_sexp_conv))
  (preprocessor_deps
   (glob_files ../../documentation/checkers/*.md)
   (glob_files ../../documentation/issues/*.md)))

@@ -25,8 +25,8 @@ module LocalCache = struct
 
   let get proc_name =
     let summ_opt_opt = Procname.LRUHash.find_opt (Lazy.force results) proc_name in
-    if Option.is_some summ_opt_opt then BackendStats.incr_ondemand_local_cache_hits ()
-    else BackendStats.incr_ondemand_local_cache_misses () ;
+    if Option.is_some summ_opt_opt then Stats.incr_ondemand_local_cache_hits ()
+    else Stats.incr_ondemand_local_cache_misses () ;
     summ_opt_opt
 
 
@@ -153,7 +153,7 @@ let update_taskbar callee_pdesc =
 
 let analyze exe_env callee_summary =
   let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary in
-  BackendStats.incr_ondemand_procs_analyzed () ;
+  Stats.incr_ondemand_procs_analyzed () ;
   summary
 
 
