@@ -824,8 +824,8 @@ let sort_cmd =
       ~doc:"<file> read baseline results from report <file>"
   and tests = anon (sequence ("<file>" %: string)) in
   fun () -> sort_tests baseline tests
-
 ;;
+
 Command.run
   (Command.group ~summary:"SLEdge report manipulation"
      [ ("html", Command.basic ~summary:"generate html report" html_cmd)

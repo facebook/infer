@@ -13,7 +13,6 @@ module Trm1 = struct
   type compare [@@deriving compare, equal, sexp]
 
   type arith = (t, compare) Arithmetic.t
-
   and sized = {seq: t; siz: t}
 
   and t =

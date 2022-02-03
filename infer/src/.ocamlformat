@@ -25,4 +25,4 @@ parse-docstrings = true
 
 # See https://github.com/ocaml/dune/issues/4855
 
-version = 0.19.0-24-g2596a5c7
+version = 0.20.1
