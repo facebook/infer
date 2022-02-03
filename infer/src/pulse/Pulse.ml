@@ -622,9 +622,11 @@ let initial tenv proc_desc =
 
 
 let should_analyze proc_desc =
-  let proc_name = Procname.to_unique_id (Procdesc.get_proc_name proc_desc) in
-  let f regex = not (Str.string_match regex proc_name 0) in
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let proc_id = Procname.to_unique_id proc_name in
+  let f regex = not (Str.string_match regex proc_id 0) in
   Option.value_map Config.pulse_skip_procedures ~f ~default:true
+  && not (Procdesc.is_too_big Pulse ~max_cfg_size:Config.pulse_max_cfg_size proc_desc)
 
 
 let exit_function analysis_data location posts non_disj_astate =

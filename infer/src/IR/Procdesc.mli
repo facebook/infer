@@ -371,6 +371,10 @@ val size : t -> int
 (** Return number of nodes, plus number of instructions (in nodes), plus number of edges (between
     nodes). *)
 
+val is_too_big : Checker.t -> max_cfg_size:int -> t -> bool
+(** Check if the CFG of the procedure is too big to analyze. If it is too big, it logs an internal
+    error and returns true. *)
+
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
     CFG *)
 module SQLite : SqliteUtils.Data with type t = t option

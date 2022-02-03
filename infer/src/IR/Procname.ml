@@ -640,9 +640,9 @@ let is_copy_ctor = function
       false
 
 
-let is_java = function Java _ -> true | _ -> false
-
 let is_csharp = function CSharp _ -> true | _ -> false
+
+let is_java = function Java _ -> true | _ -> false
 
 let as_java_exn ~explanation t =
   match t with

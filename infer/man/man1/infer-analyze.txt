@@ -281,6 +281,9 @@ OPTIONS
            be used on pathologically large procedures to prevent too-big
            states from being produced.
 
+       --pulse-max-cfg-size int
+           Larger CFGs than the max size are skipped in Pulse.
+
        --pulse-model-abort +string
            Methods that should be modelled as abort in Pulse
 

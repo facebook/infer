@@ -929,6 +929,15 @@ let size pdesc =
   fold_nodes pdesc ~init:0 ~f
 
 
+let is_too_big checker ~max_cfg_size pdesc =
+  let proc_size = size pdesc in
+  if proc_size > max_cfg_size then (
+    L.internal_error "Skipped large procedure (%a, size:%d) in %s.@\n" Procname.pp
+      (get_proc_name pdesc) proc_size (Checker.get_id checker) ;
+    true )
+  else false
+
+
 module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
   type nonrec t = t
 end)

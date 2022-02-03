@@ -2086,6 +2086,12 @@ and pulse_manifest_emp =
     "[Pulse] manifest errors with postive heaps in pre. For experiments only."
 
 
+and pulse_max_cfg_size =
+  CLOpt.mk_int ~default:15000 ~long:"pulse-max-cfg-size"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Larger CFGs than the max size are skipped in Pulse."
+
+
 and pulse_max_disjuncts =
   CLOpt.mk_int ~long:"pulse-max-disjuncts" ~default:20
     "Under-approximate after $(i,int) disjunctions in the domain"
@@ -3454,6 +3460,8 @@ and pulse_intraprocedural_only = !pulse_intraprocedural_only
 and pulse_isl = !pulse_isl
 
 and pulse_manifest_emp = !pulse_manifest_emp
+
+and pulse_max_cfg_size = !pulse_max_cfg_size
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
 

@@ -487,20 +487,11 @@ let compute_invariant_map :
   Analyzer.exec_pdesc ~do_narrowing:true ~initial analysis_data proc_desc
 
 
-let is_too_big proc_desc =
-  let proc_size = Procdesc.size proc_desc in
-  if proc_size > Config.bo_max_cfg_size then (
-    L.internal_error "Skipped large procedure (%a, size:%d) in Inferbo." Procname.pp
-      (Procdesc.get_proc_name proc_desc)
-      proc_size ;
-    true )
-  else false
-
-
 let cached_compute_invariant_map =
   let cache_get, cache_set = Procname.UnitCache.create () in
   fun ({InterproceduralAnalysis.proc_desc} as analysis_data) ->
-    if is_too_big proc_desc then None
+    if Procdesc.is_too_big BufferOverrunAnalysis ~max_cfg_size:Config.bo_max_cfg_size proc_desc then
+      None
     else
       let pname = Procdesc.get_proc_name proc_desc in
       match cache_get pname with

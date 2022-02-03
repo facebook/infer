@@ -514,6 +514,8 @@ val pulse_isl : bool
 
 val pulse_manifest_emp : bool
 
+val pulse_max_cfg_size : int
+
 val pulse_max_disjuncts : int
 
 val pulse_model_abort : string list
