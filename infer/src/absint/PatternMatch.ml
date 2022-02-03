@@ -109,6 +109,10 @@ module Java = struct
     supertype_exists tenv is_interface (Typ.Name.Java.from_string typename)
 
 
+  let implements_one_of interfaces tenv typename =
+    List.exists interfaces ~f:(fun interface -> implements interface tenv typename)
+
+
   let implements_lang class_name = implements ("java.lang." ^ class_name)
 
   let implements_arrays = implements "java.util.Arrays"

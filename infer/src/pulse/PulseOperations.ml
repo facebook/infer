@@ -204,7 +204,17 @@ module ModeledField = struct
   let internal_string = Fieldname.make pulse_model_type "__infer_model_backing_string"
 
   let internal_ref_count = Fieldname.make pulse_model_type "__infer_model_reference_count"
+
+  let delegated_release = Fieldname.make pulse_model_type "__infer_model_delegated_release"
 end
+
+let if_valid_access_then_eval path mode location addr_hist access astate =
+  match check_addr_access path mode location addr_hist astate with
+  | Ok astate ->
+      Memory.find_edge_opt (fst addr_hist) access astate
+  | _ ->
+      None
+
 
 let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
   let+ astate = check_addr_access path ?must_be_valid_reason mode location addr_hist astate in
@@ -226,6 +236,12 @@ let eval_access_biad_isl path mode location addr_hist access astate =
   map_ok addr_hist access results
 
 
+let eval_var ({PathContext.timestamp} as path) location pvar astate =
+  Stack.eval path location
+    (ValueHistory.singleton (VariableAccessed (pvar, location, timestamp)))
+    (Var.of_pvar pvar) astate
+
+
 let eval path mode location exp0 astate =
   let rec eval ({PathContext.timestamp} as path) mode exp astate =
     match (exp : Exp.t) with
@@ -234,10 +250,7 @@ let eval path mode location exp0 astate =
           (Stack.eval path location (* error in case of missing history? *) Epoch (Var.of_id id)
              astate )
     | Lvar pvar ->
-        Ok
-          (Stack.eval path location
-             (ValueHistory.singleton (VariableAccessed (pvar, location, timestamp)))
-             (Var.of_pvar pvar) astate )
+        Ok (eval_var path location pvar astate)
     | Lfield (exp', field, _) ->
         let* astate, addr_hist = eval path Read exp' astate in
         eval_access path mode location addr_hist (FieldAccess field) astate
@@ -460,9 +473,7 @@ let allocate allocator location addr astate =
   AddressAttributes.allocate allocator addr location astate
 
 
-let java_resource_release class_name addr astate =
-  AddressAttributes.java_resource_release class_name addr astate
-
+let java_resource_release addr astate = AddressAttributes.java_resource_release addr astate
 
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate
 

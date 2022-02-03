@@ -19,7 +19,7 @@ public class FilterInputStreamLeaks {
 
   // BufferedInputStream  tests
 
-  public void bufferedInputStreamNotClosedAfterRead() {
+  public void bufferedInputStreamNotClosedAfterReadBad() {
     FileInputStream fis;
     try {
       fis = new FileInputStream("file.txt");
@@ -30,7 +30,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void bufferedInputStreamClosedAfterReset() throws IOException {
+  public void bufferedInputStreamClosedAfterResetOk() throws IOException {
     FileInputStream fis;
     BufferedInputStream bis = null;
     try {
@@ -45,7 +45,7 @@ public class FilterInputStreamLeaks {
 
   // CheckedInputStream  tests
 
-  public void checkedInputStreamNotClosedAfterRead() {
+  public void checkedInputStreamNotClosedAfterReadBad() {
     FileInputStream fis;
     try {
       fis = new FileInputStream("file.txt");
@@ -56,7 +56,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void checkedInputStreamClosedAfterSkip() throws IOException {
+  public void checkedInputStreamClosedAfterSkipOk() throws IOException {
     FileInputStream fis;
     CheckedInputStream chis = null;
     try {
@@ -71,7 +71,7 @@ public class FilterInputStreamLeaks {
 
   // CipherInputStream  tests
 
-  public void cipherInputStreamNotClosedAfterSkip() {
+  public void cipherInputStreamNotClosedAfterSkipBad() {
     FileInputStream fis;
     try {
       fis = new FileInputStream("file.txt");
@@ -82,7 +82,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void cipherInputStreamClosedAfterRead() throws IOException {
+  public void cipherInputStreamClosedAfterReadOk() throws IOException {
     FileInputStream fis;
     CipherInputStream cis = null;
     try {
@@ -97,7 +97,7 @@ public class FilterInputStreamLeaks {
 
   // DataInputStream  tests
 
-  public void dataInputStreamNotClosedAfterRead() {
+  public void dataInputStreamNotClosedAfterReadBad() {
     byte[] arr = new byte[10];
     FileInputStream fis;
     try {
@@ -109,7 +109,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void dataInputStreamClosedAfterReadBoolean() throws IOException {
+  public void dataInputStreamClosedAfterReadBooleanOk() throws IOException {
     FileInputStream fis;
     DataInputStream dis = null;
     try {
@@ -124,7 +124,7 @@ public class FilterInputStreamLeaks {
 
   // DeflaterInputStream  tests
 
-  public void deflaterInputStreamNotClosedAfterRead() {
+  public void deflaterInputStreamNotClosedAfterReadBad() {
     FileInputStream fis;
     try {
       fis = new FileInputStream("file.txt");
@@ -135,7 +135,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void deflaterInputStreamClosedAfterReset() throws IOException {
+  public void deflaterInputStreamClosedAfterResetOk() throws IOException {
     FileInputStream fis;
     DeflaterInputStream dis = null;
     try {
@@ -150,7 +150,7 @@ public class FilterInputStreamLeaks {
 
   // GZipInputStream  tests
 
-  public void gzipInputStreamNotClosedAfterRead() {
+  public void gzipInputStreamNotClosedAfterReadBad() {
     FileInputStream fis;
     try {
       fis = new FileInputStream("file.txt");
@@ -161,7 +161,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void gzipInputStreamClosedAfterRead() throws IOException {
+  public void gzipInputStreamClosedAfterReadOk() throws IOException {
     FileInputStream fis = null;
     GZIPInputStream gzipInputStream = null;
     try {
@@ -177,7 +177,7 @@ public class FilterInputStreamLeaks {
 
   // DigestInputStream  tests
 
-  public void digestInputStreamNotClosedAfterRead() {
+  public void digestInputStreamNotClosedAfterReadBad() {
     byte[] arr = new byte[10];
     FileInputStream fis;
     try {
@@ -189,7 +189,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void digestInputStreamClosedAfterRead() throws IOException {
+  public void digestInputStreamClosedAfterReadOk() throws IOException {
     FileInputStream fis;
     DigestInputStream dis = null;
     try {
@@ -204,7 +204,7 @@ public class FilterInputStreamLeaks {
 
   // InflaterInputStream  tests
 
-  public void inflaterInputStreamNotClosedAfterRead() {
+  public void inflaterInputStreamNotClosedAfterReadBad() {
     FileInputStream fis;
     try {
       fis = new FileInputStream("file.txt");
@@ -215,7 +215,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void inflaterInputStreamClosedAfterAvailable() throws IOException {
+  public void inflaterInputStreamClosedAfterAvailableOk() throws IOException {
     FileInputStream fis;
     InflaterInputStream iis = null;
     try {
@@ -230,7 +230,7 @@ public class FilterInputStreamLeaks {
 
   // PushbackInputStream tests
 
-  public void pushbackInputStreamNotClosedAfterRead() {
+  public void pushbackInputStreamNotClosedAfterReadBad() {
     FileInputStream fis;
     try {
       fis = new FileInputStream("file.txt");
@@ -241,7 +241,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void pushbackInputStreamClosedAfterReset() throws IOException {
+  public void pushbackInputStreamClosedAfterResetOk() throws IOException {
     FileInputStream fis;
     PushbackInputStream pms = null;
     try {
@@ -254,7 +254,7 @@ public class FilterInputStreamLeaks {
     }
   }
 
-  public void twoLevelWrapperNoLeak(File file) throws IOException {
+  public void twoLevelWrapperNoLeakOk(File file) throws IOException {
     DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
     in.close();
   }

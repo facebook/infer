@@ -29,6 +29,9 @@ module Java : sig
   val implements : string -> Tenv.t -> string -> bool
   (** Check whether class implements a given Java class *)
 
+  val implements_one_of : string list -> Tenv.t -> string -> bool
+  (** Check whether class implements at least one of the given Java classes *)
+
   val implements_android : string -> Tenv.t -> string -> bool
   (** Check whether class implements a class of Android *)
 

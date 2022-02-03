@@ -134,7 +134,7 @@ module AddressAttributes : sig
 
   val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
 
-  val java_resource_release : JavaClassName.t -> AbstractValue.t -> t -> t
+  val java_resource_release : AbstractValue.t -> t -> t
 
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 

@@ -78,9 +78,7 @@ let allocate allocator address location memory =
   add_one address (Attribute.Allocated (allocator, Immediate {location; history= Epoch})) memory
 
 
-let java_resource_release class_name address memory =
-  add_one address (Attribute.JavaResourceReleased class_name) memory
-
+let java_resource_release address memory = add_one address Attribute.JavaResourceReleased memory
 
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
 

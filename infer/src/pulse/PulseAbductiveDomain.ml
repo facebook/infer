@@ -283,8 +283,8 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.allocate allocator address location)
 
 
-  let java_resource_release class_name address astate =
-    map_post_attrs astate ~f:(BaseAddressAttributes.java_resource_release class_name address)
+  let java_resource_release address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.java_resource_release address)
 
 
   let get_allocation addr astate =

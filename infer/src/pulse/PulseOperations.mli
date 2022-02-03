@@ -96,6 +96,9 @@ module ModeledField : sig
 
   val internal_ref_count : Fieldname.t
   (** Modeled field for reference_counting *)
+
+  val delegated_release : Fieldname.t
+  (** Modeled field for resource release delegation *)
 end
 
 val eval :
@@ -110,6 +113,9 @@ val eval :
 
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
+
+val eval_var : PathContext.t -> Location.t -> Pvar.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+(** Similar to eval but for pvar only. Always succeeds. *)
 
 val eval_structure_isl :
      PathContext.t
@@ -139,6 +145,15 @@ val eval_deref_isl :
   -> Exp.t
   -> t
   -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t list
+
+val if_valid_access_then_eval :
+     PathContext.t
+  -> access_mode
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> BaseMemory.Access.t
+  -> t
+  -> (AbstractValue.t * ValueHistory.t) option
 
 val eval_access :
      PathContext.t
@@ -265,7 +280,7 @@ val invalidate_biad_isl :
 
 val allocate : Attribute.allocator -> Location.t -> AbstractValue.t -> t -> t
 
-val java_resource_release : JavaClassName.t -> AbstractValue.t -> t -> t
+val java_resource_release : AbstractValue.t -> t -> t
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 

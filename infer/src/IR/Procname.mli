@@ -254,6 +254,8 @@ val parameter_of_name : t -> Typ.Name.t -> Parameter.t
 
 val is_copy_ctor : t -> bool
 
+val is_java_static_method : t -> bool
+
 val is_java_access_method : t -> bool
 
 val is_java_class_initializer : t -> bool

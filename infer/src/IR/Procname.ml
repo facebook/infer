@@ -657,6 +657,8 @@ let is_c_method = function ObjC_Cpp _ -> true | _ -> false
 
 let is_java_lift f = function Java java_pname -> f java_pname | _ -> false
 
+let is_java_static_method = is_java_lift Java.is_static
+
 let is_java_access_method = is_java_lift Java.is_access_method
 
 let is_java_class_initializer = is_java_lift Java.is_class_initializer
