@@ -684,8 +684,7 @@ and biabduction_join_cond =
 
 and biabduction_memleak_buckets =
   CLOpt.mk_symbol_seq ~deprecated:["-ml-buckets"] ~long:"biabduction-memleak-buckets"
-    ~default:[`MLeak_cf]
-    ~symbols:ml_bucket_symbols ~eq:PolyVariantEqual.( = )
+    ~default:[`MLeak_cf] ~symbols:ml_bucket_symbols ~eq:PolyVariantEqual.( = )
     "Specify the memory leak buckets to be checked in C++."
 
 

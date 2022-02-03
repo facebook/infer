@@ -82,8 +82,7 @@ let basic_find =
   (* Make sure we can find what we just stored *)
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:(Nonnull, [Nonnull])
-    ~expected_file:"test.sig" ~expected_line:1 ;
+    ~expected_nullability:(Nonnull, [Nonnull]) ~expected_file:"test.sig" ~expected_line:1 ;
   assert_has_nullability_info storage
     {class_name= "b.B"; method_name= Method "bar"; param_types= ["c.C"; "d.D"]}
     ~expected_nullability:(Nullable, [Nonnull; Nullable])
@@ -114,8 +113,7 @@ let disregards_whitespace_lines_and_comments =
   in
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:(Nonnull, [Nonnull])
-    ~expected_file:"test.sig" ~expected_line:2 ;
+    ~expected_nullability:(Nonnull, [Nonnull]) ~expected_file:"test.sig" ~expected_line:2 ;
   (* Commented out signatures should be ignored *)
   assert_no_info storage {class_name= "a.A"; method_name= Method "bar"; param_types= ["b.B"]}
 
@@ -198,20 +196,17 @@ let can_add_several_files =
   in
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:(Nonnull, [Nonnull])
-    ~expected_file:"file1.sig" ~expected_line:1 ;
+    ~expected_nullability:(Nonnull, [Nonnull]) ~expected_file:"file1.sig" ~expected_line:1 ;
   (* 2. Add another file and check if we added info *)
   let file2 = ["e.E#baz(f.F)"; "g.G#<init>(h.H, @Nullable i.I) @Nullable"] in
   let storage = add_from_annot_file_and_check_success storage ~filename:"file2.sig" ~lines:file2 in
   assert_has_nullability_info storage
     {class_name= "e.E"; method_name= Method "baz"; param_types= ["f.F"]}
-    ~expected_nullability:(Nonnull, [Nonnull])
-    ~expected_file:"file2.sig" ~expected_line:1 ;
+    ~expected_nullability:(Nonnull, [Nonnull]) ~expected_file:"file2.sig" ~expected_line:1 ;
   (* 3. Ensure we did not forget the content from the first file *)
   assert_has_nullability_info storage
     {class_name= "a.A"; method_name= Method "foo"; param_types= ["b.B"]}
-    ~expected_nullability:(Nonnull, [Nonnull])
-    ~expected_file:"file1.sig" ~expected_line:1
+    ~expected_nullability:(Nonnull, [Nonnull]) ~expected_file:"file1.sig" ~expected_line:1
 
 
 let should_not_forgive_unparsable_strings =

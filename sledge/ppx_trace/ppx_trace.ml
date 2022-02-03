@@ -56,7 +56,7 @@
 open Ppxlib
 open Ast_builder.Default
 
-let debug = ref false;;
+let debug = ref false ;;
 
 Driver.Cookies.add_simple_handler "ppx_trace_enabled" Ast_pattern.__
   ~f:(function
@@ -74,7 +74,7 @@ let debug_extension =
     (Ast_pattern.pstr Ast_pattern.nil)
     expand_debug
 
-let debug_rule = Context_free.Rule.extension debug_extension;;
+let debug_rule = Context_free.Rule.extension debug_extension ;;
 
 Driver.register_transformation ~rules:[debug_rule] "debug"
 
@@ -138,6 +138,6 @@ let mapper =
       | _ -> super#expression exp
   end
 
-let impl = mapper#structure;;
+let impl = mapper#structure ;;
 
 Driver.register_transformation "trace" ~impl

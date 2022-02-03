@@ -324,9 +324,9 @@ let readme () =
    tracing."
 ;;
 
-Memtrace.trace_if_requested ();;
-if Version.debug then Printexc.record_backtrace true;;
-Stdlib.Sys.catch_break true;;
+Memtrace.trace_if_requested () ;;
+if Version.debug then Printexc.record_backtrace true ;;
+Stdlib.Sys.catch_break true ;;
 
 Command.run ~version:Version.version ~build_info:Version.build_info
   (Command.group ~summary ~readme ~preserve_subcommand_order:()
