@@ -64,7 +64,9 @@ let formals_closures_map map =
       | Exp.Closure closure, _ ->
           let captured_as_formals =
             List.map
-              ~f:(fun (_, var, typ, _) -> (Pvar.build_formal_from_pvar var, typ))
+              ~f:(fun (_, var, typ, capture_mode) ->
+                let name = Pvar.build_formal_from_pvar var in
+                CapturedVar.make ~name ~typ ~capture_mode )
               closure.captured_vars
           in
           Mangled.Map.add mangled (closure.name, captured_as_formals) new_map

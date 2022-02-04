@@ -12,7 +12,7 @@ type capture_mode = ByReference | ByValue [@@deriving compare, equal]
 
 let string_of_capture_mode = function ByReference -> "by ref" | ByValue -> "by value"
 
-type t = {name: Mangled.t; typ: Typ.t; capture_mode: capture_mode} [@@deriving compare]
+type t = {name: Mangled.t; typ: Typ.t; capture_mode: capture_mode} [@@deriving compare, equal]
 
 let make ~name ~typ ~capture_mode = {name; typ; capture_mode}
 

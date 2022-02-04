@@ -27,7 +27,7 @@ type var_data =
 
 type specialized_with_blocks_info =
   { orig_proc: Procname.t
-  ; formals_to_procs_and_new_formals: (Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t }
+  ; formals_to_procs_and_new_formals: (Procname.t * CapturedVar.t list) Mangled.Map.t }
 [@@deriving compare]
 
 type t =

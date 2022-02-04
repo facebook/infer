@@ -18,7 +18,7 @@ module VDom = AbstractDomain.Flat (PPPVar)
 module BlockIdMap = AbstractDomain.SafeInvertedMap (Ident) (VDom)
 
 module BlockSpec = struct
-  type t = Procname.t * (Mangled.t * Typ.t) list [@@deriving compare, equal]
+  type t = Procname.t * CapturedVar.t list [@@deriving compare, equal]
 
   let pp fmt (pname, _) = Procname.pp fmt pname
 end
@@ -147,27 +147,15 @@ let closure_of_exp pname (id_to_pvar_map, pvars_to_blocks_map) loc exp load_inst
           [Closure(block, \[block_capt1; block_capt2\])]
        We also create additional load instructions for the captured variables so they
        are easily accessible when matching passed captures and expected captures
-
-       Note: all captured vars are considered passed by reference in the closure. Passing
-        them by value does not change anything for the current analysis because the
-        block's summary is used and does not depend on this created information but on
-        the block's definition + if a captured var was supposed to be passed by
-        value then it would not be written to so passing it by reference would not have
-        any effect on its value. Passing [ByReference] has a wider semantic than
-        [ByValue] in objc: [ByValue] is read, [ByReference] is read-write. Therefore,
-        using [ByReference] for now fits the needs and better represent the
-        interactions with the captured vars (they may be read and written to).
-        However, if an analysis became dependent to the passing mode information at
-        call time (what we are creating), then there might be some issues.
     *)
     let captured_vars, load_instrs =
       List.fold block_formals ~init:([], load_instrs)
-        ~f:(fun (captured_vars, load_instrs) (name, typ) ->
+        ~f:(fun (captured_vars, load_instrs) CapturedVar.{name; typ; capture_mode} ->
           let pvar = Pvar.mk name pname in
           let e = Exp.Lvar pvar in
           let id = Ident.create_fresh Ident.knormal in
           let load_instr = Sil.Load {id; e; root_typ= typ; typ; loc} in
-          let captured_var = (Exp.Var id, pvar, typ, CapturedVar.ByReference) in
+          let captured_var = (Exp.Var id, pvar, typ, capture_mode) in
           (captured_var :: captured_vars, load_instr :: load_instrs) )
     in
     (* order of captured vars matters for correspondance with the closure calls *)

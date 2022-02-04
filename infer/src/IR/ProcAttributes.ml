@@ -54,7 +54,7 @@ let pp_var_data fmt {name; typ; modify_in_block; is_declared_unused} =
 
 type specialized_with_blocks_info =
   { orig_proc: Procname.t
-  ; formals_to_procs_and_new_formals: (Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t }
+  ; formals_to_procs_and_new_formals: (Procname.t * CapturedVar.t list) Mangled.Map.t }
 [@@deriving compare]
 
 type t =
@@ -142,10 +142,7 @@ let pp_parameters =
 
 
 let pp_specialized_with_blocks_info fmt info =
-  let pp_new_formal fmt el =
-    F.fprintf fmt "%a:%a" Mangled.pp (fst el) (Typ.pp_full Pp.text) (snd el)
-  in
-  let pp_new_formals = Pp.semicolon_seq ~print_env:Pp.text_break pp_new_formal in
+  let pp_new_formals = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp in
   F.fprintf fmt "orig_procname=%a, formals_to_procs_and_new_formals=%a" Procname.pp info.orig_proc
     (Mangled.Map.pp ~pp_value:(Pp.pair ~fst:Procname.pp ~snd:pp_new_formals))
     info.formals_to_procs_and_new_formals
