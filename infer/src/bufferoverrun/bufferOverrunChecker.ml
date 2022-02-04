@@ -238,14 +238,16 @@ let instantiate_cond :
     -> Procname.t
     -> (Pvar.t * Typ.t) list
     -> (Exp.t * Typ.t) list
+    -> (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
     -> Dom.Mem.t
     -> BufferOverrunCheckerSummary.t
     -> Location.t
     -> PO.ConditionSet.checked_t =
- fun ~is_args_ref integer_type_widths callee_pname callee_formals args caller_mem callee_cond
-     location ->
+ fun ~is_args_ref integer_type_widths callee_pname callee_formals args captured_vars caller_mem
+     callee_cond location ->
   let eval_sym_trace =
-    Sem.mk_eval_sym_trace ~is_args_ref integer_type_widths callee_formals args caller_mem
+    Sem.mk_eval_sym_trace ~is_args_ref integer_type_widths callee_formals args captured_vars
+      caller_mem
   in
   let latest_prune = Dom.Mem.get_latest_prune caller_mem in
   PO.ConditionSet.subst callee_cond eval_sym_trace callee_pname location latest_prune
@@ -254,6 +256,36 @@ let instantiate_cond :
 type checks_summary = BufferOverrunCheckerSummary.t
 
 type get_checks_summary = Procname.t -> checks_summary option
+
+let check_call get_checks_summary get_summary get_formals pname tenv integer_type_widths node
+    callee_pname args captured_vars location mem cond_set =
+  let cond_set =
+    List.fold args ~init:cond_set ~f:(fun cond_set (exp, _) ->
+        check_expr_for_integer_overflow integer_type_widths pname exp location mem cond_set )
+  in
+  let fun_arg_list =
+    List.map args ~f:(fun (exp, typ) ->
+        ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+  in
+  match Models.Call.dispatch tenv callee_pname fun_arg_list with
+  | Some {Models.check} ->
+      let model_env =
+        let node_hash = CFG.Node.hash node in
+        BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths get_summary
+      in
+      check model_env mem cond_set
+  | None -> (
+      let {BoUtils.ReplaceCallee.pname= callee_pname; args; is_args_ref} =
+        BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname args
+      in
+      match (get_checks_summary callee_pname, get_formals callee_pname) with
+      | Some callee_condset, Some callee_formals ->
+          instantiate_cond ~is_args_ref integer_type_widths callee_pname callee_formals args
+            captured_vars mem callee_condset location
+          |> PO.ConditionSet.join cond_set
+      | _, _ ->
+          (* unknown call / no inferbo payload *) cond_set )
+
 
 let check_instr :
        get_checks_summary
@@ -280,34 +312,12 @@ let check_instr :
       |> check_expr_for_array_access ~sub_expr_only:true integer_type_widths rexp location mem
       |> check_expr_for_integer_overflow integer_type_widths pname lexp location mem
       |> check_expr_for_integer_overflow integer_type_widths pname rexp location mem
-  | Sil.Call (_, Const (Cfun callee_pname), args, location, _) -> (
-      let cond_set =
-        List.fold args ~init:cond_set ~f:(fun cond_set (exp, _) ->
-            check_expr_for_integer_overflow integer_type_widths pname exp location mem cond_set )
-      in
-      let fun_arg_list =
-        List.map args ~f:(fun (exp, typ) ->
-            ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
-      in
-      match Models.Call.dispatch tenv callee_pname fun_arg_list with
-      | Some {Models.check} ->
-          let model_env =
-            let node_hash = CFG.Node.hash node in
-            BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
-              get_summary
-          in
-          check model_env mem cond_set
-      | None -> (
-          let {BoUtils.ReplaceCallee.pname= callee_pname; args; is_args_ref} =
-            BoUtils.ReplaceCallee.replace_make_shared tenv get_formals callee_pname args
-          in
-          match (get_checks_summary callee_pname, get_formals callee_pname) with
-          | Some callee_condset, Some callee_formals ->
-              instantiate_cond ~is_args_ref integer_type_widths callee_pname callee_formals args mem
-                callee_condset location
-              |> PO.ConditionSet.join cond_set
-          | _, _ ->
-              (* unknown call / no inferbo payload *) cond_set ) )
+  | Sil.Call (_, Const (Cfun callee_pname), args, location, _) ->
+      check_call get_checks_summary get_summary get_formals pname tenv integer_type_widths node
+        callee_pname args [] location mem cond_set
+  | Sil.Call (_, Closure {name= callee_pname; captured_vars}, args, location, _) ->
+      check_call get_checks_summary get_summary get_formals pname tenv integer_type_widths node
+        callee_pname args captured_vars location mem cond_set
   | Sil.Prune (exp, location, _, _) ->
       check_expr_for_integer_overflow integer_type_widths pname exp location mem cond_set
   | _ ->

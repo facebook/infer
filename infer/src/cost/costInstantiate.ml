@@ -13,6 +13,7 @@ module Call = struct
     ; pname: Procname.t
     ; node: ProcCfg.InstrNode.t
     ; args: (Exp.t * Typ.t) list
+    ; captured_vars: (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
     ; ret: Ident.t * Typ.t }
   [@@deriving compare]
 
@@ -40,7 +41,7 @@ let get_instantiated_cost
     ; get_callee_cost_summary_and_formals
     ; inferbo_invariant_map
     ; inferbo_get_summary
-    ; call= Call.{pname; node; ret; args} } =
+    ; call= Call.{pname; node; ret; args; captured_vars} } =
   let inferbo_mem =
     Option.value_exn
       (BufferOverrunAnalysis.extract_pre (ProcCfg.InstrNode.id node) inferbo_invariant_map)
@@ -53,8 +54,8 @@ let get_instantiated_cost
       let callee_cost = CostDomain.get_operation_cost cost_record in
       if CostDomain.BasicCost.is_symbolic callee_cost.cost then
         (Cost.instantiate_cost ~default_closure_cost:Ints.NonNegativeInt.one integer_type_widths
-           ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args ~callee_cost
-           ~loc )
+           ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args ~captured_vars
+           ~callee_cost ~loc )
           .cost |> get_symbolic
       else Cheap
   | None ->

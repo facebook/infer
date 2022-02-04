@@ -20,9 +20,13 @@ type t =
   ; class_name: Typ.name option }
 
 let mk pdesc =
+  let pname = Procdesc.get_proc_name pdesc in
   let formal_typs =
     List.fold (Procdesc.get_pvar_formals pdesc) ~init:FormalTyps.empty ~f:(fun acc (formal, typ) ->
         FormalTyps.add formal typ acc )
+    |> fun init ->
+    List.fold (Procdesc.get_captured pdesc) ~init ~f:(fun acc {CapturedVar.name; typ} ->
+        FormalTyps.add (Pvar.mk name pname) typ acc )
   in
   fun tenv integer_type_widths ->
     let rec typ_of_param_path = function
@@ -89,5 +93,5 @@ let mk pdesc =
                      true )
     in
     let entry_location = Procdesc.Node.get_loc (Procdesc.get_start_node pdesc) in
-    let class_name = Procname.get_class_type_name (Procdesc.get_proc_name pdesc) in
+    let class_name = Procname.get_class_type_name pname in
     {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths; class_name}

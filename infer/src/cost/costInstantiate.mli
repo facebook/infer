@@ -13,6 +13,7 @@ module Call : sig
     ; pname: Procname.t
     ; node: ProcCfg.InstrNode.t
     ; args: (Exp.t * Typ.t) list
+    ; captured_vars: (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
     ; ret: Ident.t * Typ.t }
   [@@deriving compare]
 

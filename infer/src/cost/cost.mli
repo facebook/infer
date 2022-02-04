@@ -22,6 +22,7 @@ val instantiate_cost :
   -> callee_pname:Procname.t
   -> callee_formals:(Pvar.t * Typ.t) list
   -> args:(Exp.t * Typ.t) list
+  -> captured_vars:(Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
   -> callee_cost:CostDomain.BasicCostWithReason.t
   -> loc:Location.t
   -> CostDomain.BasicCostWithReason.t

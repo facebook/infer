@@ -38,17 +38,6 @@ type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind} [@@deriving comp
 
 let yojson_of_t {pv_name} = [%yojson_of: Mangled.t] pv_name
 
-let build_formal_from_pvar var =
-  match var.pv_kind with
-  | Local_var pname ->
-      Mangled.from_string
-        (F.asprintf "%s[%a]" (Mangled.to_string var.pv_name)
-           (Procname.pp_simplified_string ~withclass:false)
-           pname )
-  | _ ->
-      var.pv_name
-
-
 let compare_modulo_this x y =
   if phys_equal x y then 0
   else

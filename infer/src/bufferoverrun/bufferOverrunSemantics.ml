@@ -340,17 +340,13 @@ let rec is_stack_exp : Exp.t -> Mem.t -> bool =
 
 
 module ParamBindings = struct
-  include PrettyPrintable.MakePPMap (struct
-    include Pvar
-
-    let pp = pp Pp.text
-  end)
+  include PrettyPrintable.MakePPMap (Mangled)
 
   let make formals actuals =
     let rec add_binding formals actuals acc =
       match (formals, actuals) with
       | (formal, _) :: formals', actual :: actuals' ->
-          add_binding formals' actuals' (add formal actual acc)
+          add_binding formals' actuals' (add (Pvar.get_name formal) actual acc)
       | _, _ ->
           acc
     in
@@ -390,7 +386,7 @@ let eval_sympath_modeled_partial ~mode p =
 let rec eval_sympath_partial ~mode params p mem =
   match p with
   | BoField.Prim (Symb.SymbolPath.Pvar x) -> (
-    try ParamBindings.find x params
+    try ParamBindings.find (Pvar.get_name x) params
     with Caml.Not_found ->
       L.d_printfln_escaped "Symbol %a is not found in parameters." (Pvar.pp Pp.text) x ;
       Val.Itv.top )
@@ -456,43 +452,48 @@ let eval_sympath ~mode params sympath mem =
 
 
 let mk_eval_sym_trace ?(is_args_ref = false) integer_type_widths
-    (callee_formals : (Pvar.t * Typ.t) list) (actual_exps : (Exp.t * Typ.t) list) caller_mem =
-  let args =
-    let actuals =
-      if is_args_ref then
-        match actual_exps with
-        | [] ->
-            []
-        | (this, _) :: actual_exps ->
-            let this_actual = eval integer_type_widths this caller_mem in
-            let actuals =
-              List.map actual_exps ~f:(fun (a, _) ->
-                  Mem.find_set (eval_locs a caller_mem) caller_mem )
-            in
-            this_actual :: actuals
-      else
-        List.map actual_exps ~f:(fun (a, _) ->
-            match (a : Exp.t) with
-            | Closure closure ->
-                FuncPtr.Set.of_closure closure |> Val.of_func_ptrs
-            | _ ->
-                eval integer_type_widths a caller_mem )
-    in
+    (callee_formals : (Pvar.t * Typ.t) list) (actual_exps : (Exp.t * Typ.t) list)
+    (captured_vars : (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list) caller_mem =
+  let actuals =
+    if is_args_ref then
+      match actual_exps with
+      | [] ->
+          []
+      | (this, _) :: actual_exps ->
+          let this_actual = eval integer_type_widths this caller_mem in
+          let actuals =
+            List.map actual_exps ~f:(fun (a, _) ->
+                Mem.find_set (eval_locs a caller_mem) caller_mem )
+          in
+          this_actual :: actuals
+    else
+      List.map actual_exps ~f:(fun (a, _) ->
+          match (a : Exp.t) with
+          | Closure closure ->
+              FuncPtr.Set.of_closure closure |> Val.of_func_ptrs
+          | _ ->
+              eval integer_type_widths a caller_mem )
+  in
+  let params =
     ParamBindings.make callee_formals actuals
+    |> fun init ->
+    List.fold captured_vars ~init ~f:(fun acc (_, pvar, _, _) ->
+        let v = Mem.find (Loc.of_pvar pvar) caller_mem in
+        ParamBindings.add (Pvar.get_name pvar) v acc )
   in
   let eval_sym ~mode s bound_end =
     let sympath = Symb.Symbol.path s in
-    let itv, _ = eval_sympath ~mode args sympath caller_mem in
+    let itv, _ = eval_sympath ~mode params sympath caller_mem in
     Symb.Symbol.check_bound_end s bound_end ;
     Itv.get_bound itv bound_end
   in
-  let eval_locpath ~mode partial = eval_locpath ~mode args partial caller_mem in
+  let eval_locpath ~mode partial = eval_locpath ~mode params partial caller_mem in
   let eval_func_ptrs ~mode partial =
-    eval_sympath_partial ~mode args partial caller_mem |> Val.get_func_ptrs
+    eval_sympath_partial ~mode params partial caller_mem |> Val.get_func_ptrs
   in
   let trace_of_sym s =
     let sympath = Symb.Symbol.path s in
-    let itv, traces = eval_sympath ~mode:EvalNormal args sympath caller_mem in
+    let itv, traces = eval_sympath ~mode:EvalNormal params sympath caller_mem in
     if Itv.eq itv Itv.bot then TraceSet.bottom else traces
   in
   fun ~mode ->
@@ -502,8 +503,9 @@ let mk_eval_sym_trace ?(is_args_ref = false) integer_type_widths
     ; trace_of_sym }
 
 
-let mk_eval_sym_cost integer_type_widths callee_formals actual_exps caller_mem =
-  mk_eval_sym_trace integer_type_widths callee_formals actual_exps caller_mem ~mode:EvalCost
+let mk_eval_sym_cost integer_type_widths callee_formals actual_exps captured_vars caller_mem =
+  mk_eval_sym_trace integer_type_widths callee_formals actual_exps captured_vars caller_mem
+    ~mode:EvalCost
 
 
 (* This function evaluates the array length conservatively, which is useful when there are multiple

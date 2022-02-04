@@ -41,8 +41,7 @@ let make_formals_to_procs_and_new_formals formals actual_params =
             let captured_as_formals =
               List.map
                 ~f:(fun (_, var, typ, capture_mode) ->
-                  let name = Pvar.build_formal_from_pvar var in
-                  CapturedVar.make ~name ~typ ~capture_mode )
+                  CapturedVar.make ~name:(Pvar.get_name var) ~typ ~capture_mode )
                 closure.captured_vars
             in
             Mangled.Map.add mangled (closure.name, captured_as_formals) map
@@ -58,7 +57,7 @@ let make_formals_to_procs_and_new_formals formals actual_params =
 let get_captured actual_params =
   ClosuresSubstitution.map_args_captured_vars actual_params ~f:(fun c ->
       List.map c.captured_vars ~f:(fun (_, var, typ, capture_mode) ->
-          CapturedVar.make ~name:(Pvar.build_formal_from_pvar var) ~capture_mode ~typ ) )
+          CapturedVar.make ~name:(Pvar.get_name var) ~capture_mode ~typ ) )
 
 
 let is_objc_setter proc_desc =

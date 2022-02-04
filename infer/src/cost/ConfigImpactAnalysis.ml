@@ -930,7 +930,7 @@ module TransferFunctions = struct
 
 
   let call {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
-      ((ret_id, _) as ret) callee args location astate =
+      ((ret_id, _) as ret) callee args captured_vars location astate =
     match FbGKInteraction.get_config_check tenv callee args with
     | Some (`Config config) ->
         Dom.call_config_check ret_id config astate
@@ -947,7 +947,12 @@ module TransferFunctions = struct
         (* normal function calls *)
         let call =
           CostInstantiate.Call.
-            {loc= location; pname= callee; node= CFG.Node.to_instr idx node; args; ret}
+            { loc= location
+            ; pname= callee
+            ; node= CFG.Node.to_instr idx node
+            ; args
+            ; captured_vars
+            ; ret }
         in
         let instantiated_cost = get_instantiated_cost call in
         Dom.call tenv analyze_dependency ~instantiated_cost ~callee args location astate
@@ -979,28 +984,30 @@ module TransferFunctions = struct
         Dom.throw_exception astate
     | Store {e1= Lfield (_, fn, _); e2= Var id} ->
         Dom.store_field fn id astate
-    | Call (_, Const (Cfun callee), _, _, _)
+    | Call (_, (Const (Cfun callee) | Closure {name= callee}), _, _, _)
       when Procname.is_java_class_initializer callee
            (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
            || FbGKInteraction.is_lazy_instance callee ->
         astate
-    | Call ((ret_id, _), Const (Cfun callee), [(Var id, _)], _, _) when is_modeled_as_id tenv callee
-      ->
+    | Call ((ret_id, _), (Const (Cfun callee) | Closure {name= callee}), [(Var id, _)], _, _)
+      when is_modeled_as_id tenv callee ->
         Dom.copy_value ret_id id astate
-    | Call ((ret_id, _), Const (Cfun callee), _, _, _)
+    | Call ((ret_id, _), (Const (Cfun callee) | Closure {name= callee}), _, _, _)
       when (not strict_mode) && is_known_cheap_method tenv callee ->
         add_ret analyze_dependency ret_id callee astate
     | Call
         ( ret
-        , Const (Cfun dispatch_sync)
+        , (Const (Cfun dispatch_sync) | Closure {name= dispatch_sync})
         , [_; (Closure {name= callee; captured_vars}, _)]
         , location
         , _ )
       when Procname.equal dispatch_sync BuiltinDecl.dispatch_sync ->
         let args = List.map captured_vars ~f:(fun (exp, _, typ, _) -> (exp, typ)) in
-        call analysis_data node idx ret callee args location astate
+        call analysis_data node idx ret callee args [] location astate
     | Call (ret, Const (Cfun callee), args, location, _) ->
-        call analysis_data node idx ret callee args location astate
+        call analysis_data node idx ret callee args [] location astate
+    | Call (ret, Closure {name= callee; captured_vars}, args, location, _) ->
+        call analysis_data node idx ret callee args captured_vars location astate
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
