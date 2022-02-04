@@ -80,6 +80,11 @@ let get_invariant_at_node (map : Analyzer.invariant_map) node =
   |> Option.value_map ~default:Domain.top ~f:(fun abstate -> abstate.AbstractInterpreter.State.pre)
 
 
+let map_args_captured_vars ~f actual_params =
+  List.concat_map actual_params ~f:(fun actual ->
+      match actual with Exp.Closure c, _ -> f c | _ -> [] )
+
+
 let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
   let kind = `ExecNode in
   let pp_name fmt = Format.pp_print_string fmt "Closure Call Substitution" in
@@ -93,15 +98,32 @@ let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.inst
               instr
           | Some c ->
               L.d_printfln "found closure %a for variable %a\n" Exp.pp (Exp.Closure c) Ident.pp id ;
-              let captured_values =
-                List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars
-              in
-              let actual_params = captured_values @ actual_params in
               let new_instr =
-                Sil.Call (ret_id_typ, Const (Cfun c.name), actual_params, loc, call_flags)
+                Sil.Call (ret_id_typ, Exp.Closure c, actual_params, loc, call_flags)
               in
               L.d_printfln "replaced by call %a " (Sil.pp_instr Pp.text ~print_types:true) new_instr ;
               new_instr )
+      | Call (ret_id_typ, Const (Cfun pname), actual_params, loc, call_flags) ->
+          L.d_printfln "call  %a " (Sil.pp_instr Pp.text ~print_types:true) instr ;
+          let captured_by_args =
+            map_args_captured_vars actual_params ~f:(fun c ->
+                L.d_printfln "found closure %a in arguments\n" Exp.pp (Exp.Closure c) ;
+                c.captured_vars )
+          in
+          if List.is_empty captured_by_args then (
+            L.d_printfln "(no closure found)" ;
+            instr )
+          else
+            let new_instr =
+              Sil.Call
+                ( ret_id_typ
+                , Exp.Closure {name= pname; captured_vars= captured_by_args}
+                , actual_params
+                , loc
+                , call_flags )
+            in
+            L.d_printfln "replaced by call %a " (Sil.pp_instr Pp.text ~print_types:true) new_instr ;
+            new_instr
       | _ ->
           instr )
 

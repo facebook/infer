@@ -339,7 +339,14 @@ val check_address_escape :
 val get_captured_actuals :
      PathContext.t
   -> Location.t
-  -> captured_vars:(Var.t * CapturedVar.capture_mode * Typ.t) list
+  -> captured_formals:(Var.t * CapturedVar.capture_mode * Typ.t) list
   -> actual_closure:AbstractValue.t * ValueHistory.t
   -> t
-  -> (t * ((Var.t * Typ.t) * ((AbstractValue.t * ValueHistory.t) * Typ.t)) list) AccessResult.t
+  -> (t * ((AbstractValue.t * ValueHistory.t) * Typ.t) list) AccessResult.t
+
+val get_block_captured_actuals :
+     PathContext.t
+  -> Location.t
+  -> captured_actuals:(Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  -> t
+  -> (t * ((AbstractValue.t * ValueHistory.t) * Typ.t) list) AccessResult.t

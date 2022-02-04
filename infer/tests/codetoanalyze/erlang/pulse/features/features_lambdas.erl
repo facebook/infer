@@ -12,8 +12,8 @@
     test_lambda_within_function_nested_Bad/0,
     fp_test_apply_fun_Ok/0,
     test_apply_fun_Bad/0,
-    fp_test_lambda_capture_Ok/0,
-    test_lambda_capture_Bad/0,
+    test_lambda_capture_Ok/0,
+    fn_test_lambda_capture_Bad/0,
     test_scopes_Ok/1
 ]).
 
@@ -76,8 +76,7 @@ test_apply_fun_Bad() ->
         _ -> ok
     end.
 
-% TODO: T104353993
-fp_test_lambda_capture_Ok() ->
+test_lambda_capture_Ok() ->
     N = 5,
     F = fun() -> N + 1 end,
     Y = F(),
@@ -86,7 +85,8 @@ fp_test_lambda_capture_Ok() ->
         _ -> warn(1)
     end.
 
-test_lambda_capture_Bad() ->
+% TODO: T104353993
+fn_test_lambda_capture_Bad() ->
     N = 5,
     F = fun() -> N + 1 end,
     Y = F(),

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" [label="1: Start objc_blockMy_manager.blockReleaseNoLeak_1\nFormals:  newImage:CGImage* a:int\nLocals: \nCaptured:  [by value]newImage:CGImage* \n  " color=yellow style=filled]
+"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" [label="1: Start objc_blockMy_manager.blockReleaseNoLeak_1\nFormals:  a:int\nLocals: \nCaptured:  [by value]newImage:CGImage* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_5" ;

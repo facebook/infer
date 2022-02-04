@@ -94,7 +94,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
 
 
 let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
-    callee_exec_state ~ret ~captured_vars_with_actuals ~formals ~actuals astate =
+    callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals astate =
   let open ExecutionDomain in
   let ( let* ) x f =
     SatUnsat.bind
@@ -106,7 +106,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   let map_call_result ~is_isl_error_prepost callee_prepost ~f =
     let* post, return_val_opt, subst =
       PulseInterproc.apply_prepost path ~is_isl_error_prepost callee_pname call_loc ~callee_prepost
-        ~captured_vars_with_actuals ~formals ~actuals astate
+        ~captured_formals ~captured_actuals ~formals ~actuals astate
     in
     let post =
       match return_val_opt with
@@ -224,27 +224,31 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
-let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
-    exec_states (astate : AbductiveDomain.t) =
+let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals captured_actuals
+    callee_proc_desc exec_states (astate : AbductiveDomain.t) =
   let formals =
     Procdesc.get_formals callee_proc_desc
     |> List.map ~f:(fun (mangled, typ, _) -> (Pvar.mk mangled callee_pname |> Var.of_pvar, typ))
   in
-  let captured_vars =
+  let captured_formals =
     Procdesc.get_captured callee_proc_desc
     |> List.map ~f:(fun {CapturedVar.name; capture_mode; typ} ->
            let pvar = Pvar.mk name callee_pname in
            (Var.of_pvar pvar, capture_mode, typ) )
   in
-  let<*> astate, captured_vars_with_actuals =
-    match actuals with
-    | (actual_closure, _) :: _
-      when not (Procname.is_objc_block callee_pname || List.is_empty captured_vars) ->
-        (* Assumption: the first parameter will be a closure *)
-        PulseOperations.get_captured_actuals path call_loc ~captured_vars ~actual_closure astate
-    | _ ->
-        Ok (astate, [])
+  let<*> astate, captured_actuals =
+    if Procname.is_objc_block callee_pname || Procname.is_specialized callee_pname then
+      PulseOperations.get_block_captured_actuals path call_loc ~captured_actuals astate
+    else
+      match actuals with
+      | (actual_closure, _) :: _ when not (List.is_empty captured_formals) ->
+          (* Assumption: the first parameter will be a closure *)
+          PulseOperations.get_captured_actuals path call_loc ~captured_formals ~actual_closure
+            astate
+      | _ ->
+          Ok (astate, [])
   in
+  let captured_formals = List.map captured_formals ~f:(fun (var, _, typ) -> (var, typ)) in
   let should_keep_at_most_one_disjunct =
     Option.exists Config.pulse_cut_to_one_path_procedures_pattern ~f:(fun regex ->
         Str.string_match regex (Procname.to_string callee_pname) 0 )
@@ -259,7 +263,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee
         (* apply all pre/post specs *)
         match
           apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state
-            ~captured_vars_with_actuals ~formals ~actuals ~ret astate
+            ~captured_formals ~captured_actuals ~formals ~actuals ~ret astate
         with
         | Unsat ->
             (* couldn't apply pre/post pair *)
@@ -269,7 +273,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee
 
 
 let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
-    callee_pname ~ret ~actuals ~formals_opt (astate : AbductiveDomain.t) =
+    callee_pname ~ret ~actuals ~formals_opt ?(captured_vars = []) (astate : AbductiveDomain.t) =
   (* a special case for objc nil messaging *)
   let unknown_objc_nil_messaging astate_unknown procdesc =
     let result_unknown =
@@ -282,14 +286,15 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
     let result_unknown_nil =
       PulseObjectiveCSummary.mk_nil_messaging_summary tenv procdesc
       |> Option.value_map ~default:[] ~f:(fun nil_summary ->
-             call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals procdesc
-               [nil_summary] astate )
+             call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals captured_vars
+               procdesc [nil_summary] astate )
     in
     result_unknown @ result_unknown_nil
   in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
-      call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals callee_proc_desc
+      call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals captured_vars
+        callee_proc_desc
         (exec_states :> ExecutionDomain.t list)
         astate
   | None ->

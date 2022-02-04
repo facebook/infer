@@ -60,6 +60,9 @@ type contradiction =
           addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
           single address [caller_addr] in the caller's current state. Typically raised when calling
           [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
+  | CapturedFormalActualLength of
+      { captured_formals: (Var.t * Typ.t) list
+      ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
       {formals: (Var.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | ISLPreconditionMismatch
@@ -71,6 +74,9 @@ let pp_contradiction fmt = function
         "address %a in caller already bound to %a, not %a@\nnote: current call state was %a"
         AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
         pp_call_state call_state
+  | CapturedFormalActualLength {captured_formals; captured_actuals} ->
+      F.fprintf fmt "captured formals have length %d but captured actuals have length %d"
+        (List.length captured_formals) (List.length captured_actuals)
   | FormalActualLength {formals; actuals} ->
       F.fprintf fmt "formals have length %d but actuals have length %d" (List.length formals)
         (List.length actuals)
@@ -230,13 +236,19 @@ let is_cell_read_only ~edges_pre_opt ~cell_post:(_, attrs_post) =
   match edges_pre_opt with None -> false | Some _ -> not (Attributes.is_modified attrs_post)
 
 
-let materialize_pre_for_captured_vars callee_proc_name call_location pre_post
-    ~captured_vars_with_actuals call_state =
-  PulseResult.list_fold captured_vars_with_actuals ~init:call_state
-    ~f:(fun call_state (formal, actual) ->
-      materialize_pre_from_actual callee_proc_name call_location
-        ~pre:(pre_post.AbductiveDomain.pre :> BaseDomain.t)
-        ~formal ~actual call_state )
+let materialize_pre_for_captured_vars callee_proc_name call_location pre_post ~captured_formals
+    ~captured_actuals call_state =
+  match
+    PulseResult.list_fold2 captured_formals captured_actuals ~init:call_state
+      ~f:(fun call_state formal actual ->
+        materialize_pre_from_actual callee_proc_name call_location
+          ~pre:(pre_post.AbductiveDomain.pre :> BaseDomain.t)
+          ~formal ~actual call_state )
+  with
+  | Unequal_lengths ->
+      raise (Contradiction (CapturedFormalActualLength {captured_formals; captured_actuals}))
+  | Ok result ->
+      result
 
 
 let materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
@@ -337,7 +349,7 @@ let apply_arithmetic_constraints {PathContext.timestamp} callee_proc_name call_l
       call_state.subst call_state
 
 
-let materialize_pre path callee_proc_name call_location pre_post ~captured_vars_with_actuals
+let materialize_pre path callee_proc_name call_location pre_post ~captured_formals ~captured_actuals
     ~formals ~actuals call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
   let r =
@@ -345,8 +357,8 @@ let materialize_pre path callee_proc_name call_location pre_post ~captured_vars_
     (* first make as large a mapping as we can between callee values and caller values... *)
     materialize_pre_for_parameters callee_proc_name call_location pre_post ~formals ~actuals
       call_state
-    >>= materialize_pre_for_captured_vars callee_proc_name call_location pre_post
-          ~captured_vars_with_actuals
+    >>= materialize_pre_for_captured_vars callee_proc_name call_location pre_post ~captured_formals
+          ~captured_actuals
     >>= materialize_pre_for_globals path callee_proc_name call_location pre_post
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
@@ -553,15 +565,24 @@ let apply_post_for_parameters path callee_proc_name call_location pre_post ~form
   with
   | Unequal_lengths ->
       (* should have been checked before by [materialize_pre] *)
-      assert false
+      L.(die InternalError) "formals and actuals have different lenghts"
   | Ok call_state ->
       call_state
 
 
-let apply_post_for_captured_vars path callee_proc_name call_location pre_post
-    ~captured_vars_with_actuals call_state =
-  List.fold captured_vars_with_actuals ~init:call_state ~f:(fun call_state (formal, actual) ->
-      record_post_for_actual path callee_proc_name call_location pre_post ~formal ~actual call_state )
+let apply_post_for_captured_vars path callee_proc_name call_location pre_post ~captured_formals
+    ~captured_actuals call_state =
+  match
+    List.fold2 captured_formals captured_actuals ~init:call_state
+      ~f:(fun call_state formal actual ->
+        record_post_for_actual path callee_proc_name call_location pre_post ~formal ~actual
+          call_state )
+  with
+  | Unequal_lengths ->
+      (* should have been checked before by [materialize_pre] *)
+      L.(die InternalError) "captured formals and captured actuals have different lenghts"
+  | Ok result ->
+      result
 
 
 let apply_post_for_globals path callee_proc_name call_location pre_post call_state =
@@ -646,16 +667,16 @@ let apply_unknown_effects pre_post call_state =
   {call_state with astate}
 
 
-let apply_post path callee_proc_name call_location pre_post ~captured_vars_with_actuals ~formals
-    ~actuals call_state =
+let apply_post path callee_proc_name call_location pre_post ~captured_formals ~captured_actuals
+    ~formals ~actuals call_state =
   let open PulseResult.Let_syntax in
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let r =
     let call_state, return_caller =
       apply_unknown_effects pre_post call_state
       |> apply_post_for_parameters path callee_proc_name call_location pre_post ~formals ~actuals
-      |> apply_post_for_captured_vars path callee_proc_name call_location pre_post
-           ~captured_vars_with_actuals
+      |> apply_post_for_captured_vars path callee_proc_name call_location pre_post ~captured_formals
+           ~captured_actuals
       |> apply_post_for_globals path callee_proc_name call_location pre_post
       |> record_post_for_return path callee_proc_name call_location pre_post
     in
@@ -784,7 +805,7 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
 
    - if aliasing is introduced at any time then give up *)
 let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~callee_prepost:pre_post
-    ~captured_vars_with_actuals ~formals ~actuals astate =
+    ~captured_formals ~captured_actuals ~formals ~actuals astate =
   L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
     (Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f var))
     formals AbductiveDomain.pp pre_post ;
@@ -797,7 +818,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
   in
   (* read the precondition *)
   match
-    materialize_pre path callee_proc_name call_location pre_post ~captured_vars_with_actuals
+    materialize_pre path callee_proc_name call_location pre_post ~captured_formals ~captured_actuals
       ~formals ~actuals empty_call_state
   with
   | exception Contradiction reason ->
@@ -827,8 +848,8 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
         let call_state = {call_state with astate; visited= AddressSet.empty} in
         (* apply the postcondition *)
         let* call_state, return_caller =
-          apply_post path callee_proc_name call_location pre_post ~captured_vars_with_actuals
-            ~formals ~actuals call_state
+          apply_post path callee_proc_name call_location pre_post ~captured_formals
+            ~captured_actuals ~formals ~actuals call_state
         in
         let astate =
           if Topl.is_active () then

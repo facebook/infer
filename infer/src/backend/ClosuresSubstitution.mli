@@ -7,7 +7,8 @@
 
 open! IStd
 
-val is_model : Procname.t -> bool
+val map_args_captured_vars : f:(Exp.closure -> 'a list) -> (Exp.t * 'b) list -> 'a list
 
-val get_dispatch_closure_opt :
-  (Exp.t * Typ.t) list -> (Procname.t * Exp.t * (Exp.t * Typ.t) list) option
+val process_closure_param : Procdesc.t -> unit
+
+val process_closure_call : Procdesc.t -> unit

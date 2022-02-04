@@ -1111,8 +1111,8 @@ let rec sym_exec
               Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
           | Exp.Const (Const.Cfun callee_pname) when ObjCDispatchModels.is_model callee_pname -> (
             match ObjCDispatchModels.get_dispatch_closure_opt par with
-            | Some (cname, args) ->
-                Sil.Call (ret, Exp.Const (Const.Cfun cname), args, loc, call_flags)
+            | Some (_cname, closure_exp, args) ->
+                Sil.Call (ret, closure_exp, args, loc, call_flags)
             | None ->
                 Sil.Call (ret, exp', par, loc, call_flags) )
           | _ ->

@@ -16,22 +16,10 @@ let pp_formal_annot fmt (mangled, typ, annot) =
   F.fprintf fmt "(%a, %a, %a)" Mangled.pp mangled (Typ.pp Pp.text) typ Annot.Item.pp annot
 
 
-let pp_formal_actual fmt formal_actual =
-  F.fprintf fmt "(formal=%a, actual=%a)" pp_formal_annot formal_actual.formal
-    (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp Pp.text))
-    formal_actual.actual
-
-
 module FormalsMap = PrettyPrintable.MakePPMap (struct
   type t = formal_annot [@@deriving compare]
 
   let pp = pp_formal_annot
-end)
-
-module FormalsActualsSet = PrettyPrintable.MakePPSet (struct
-  type t = formal_actual [@@deriving compare]
-
-  let pp = pp_formal_actual
 end)
 
 let formals_actuals_map formals actual_params =
@@ -43,27 +31,6 @@ let formals_actuals_map formals actual_params =
       Some map
   | Unequal_lengths ->
       None
-
-
-let formals_actuals_new_set map =
-  FormalsMap.fold
-    (fun formal actual set ->
-      match actual with
-      | Exp.Closure closure, _ ->
-          let set = FormalsActualsSet.add {formal; actual} set in
-          List.fold_left closure.Exp.captured_vars ~init:set ~f:(fun set (exp, var, typ, _) ->
-              let formal_annot = (Pvar.build_formal_from_pvar var, typ, Annot.Item.empty) in
-              let formal_actual = {formal= formal_annot; actual= (exp, typ)} in
-              FormalsActualsSet.add formal_actual set )
-      | actual ->
-          FormalsActualsSet.add {formal; actual} set )
-    map FormalsActualsSet.empty
-
-
-let formals_actuals_lists new_formals_actuals =
-  FormalsActualsSet.fold
-    (fun {formal; actual} (fs, acts) -> (formal :: fs, actual :: acts))
-    new_formals_actuals ([], [])
 
 
 let has_closure actual_params =
@@ -106,6 +73,12 @@ let formals_closures_map map =
     map Mangled.Map.empty
 
 
+let get_captured actual_params =
+  ClosuresSubstitution.map_args_captured_vars actual_params ~f:(fun c ->
+      List.map c.captured_vars ~f:(fun (_, var, typ, capture_mode) ->
+          CapturedVar.make ~name:(Pvar.build_formal_from_pvar var) ~capture_mode ~typ ) )
+
+
 let is_objc_setter proc_desc =
   let attributes = Procdesc.get_attributes proc_desc in
   match attributes.ProcAttributes.objc_accessor with Some (Objc_setter _) -> true | _ -> false
@@ -137,8 +110,6 @@ let replace_with_specialize_methods instr =
         let callee_attributes = Procdesc.get_attributes proc_desc in
         match formals_actuals_map callee_attributes.formals actual_params with
         | Some map -> (
-            let set = formals_actuals_new_set map in
-            let new_formals, new_actuals = formals_actuals_lists set in
             let specialized_pname = pname_with_closure_args callee_pname actual_params in
             let new_attributes =
               { callee_attributes with
@@ -146,8 +117,8 @@ let replace_with_specialize_methods instr =
                   Some
                     { orig_proc= callee_pname
                     ; formals_to_procs_and_new_formals= formals_closures_map map }
+              ; captured= get_captured actual_params @ callee_attributes.captured
               ; is_defined= true
-              ; formals= new_formals
               ; proc_name= specialized_pname }
             in
             (* To avoid duplicated additions on a specialized procname, it does a membership check.
@@ -158,7 +129,7 @@ let replace_with_specialize_methods instr =
                Here, it creates an empty procdesc temporarily.  The function body will be filled
                later by [ClosureSubstSpecializedMethod]. *)
             let specialized_instr =
-              Sil.Call (ret, Exp.Const (Const.Cfun specialized_pname), new_actuals, loc, flags)
+              Sil.Call (ret, Exp.Const (Const.Cfun specialized_pname), actual_params, loc, flags)
             in
             match Procdesc.load specialized_pname with
             | Some _ ->

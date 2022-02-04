@@ -146,10 +146,10 @@ features_if_expr:test_if_in_function_Bad/0: function_clause
 features_if_expr:test_if_in_function_Ok/0: ok
 
 ----- features_lambdas -----
+features_lambdas:fn_test_lambda_capture_Bad/0: function_clause
 features_lambdas:fp_test_apply_fun_Ok/0: ok
-features_lambdas:fp_test_lambda_capture_Ok/0: ok
 features_lambdas:test_apply_fun_Bad/0: function_clause
-features_lambdas:test_lambda_capture_Bad/0: function_clause
+features_lambdas:test_lambda_capture_Ok/0: ok
 features_lambdas:test_lambda_within_function_Bad/0: function_clause
 features_lambdas:test_lambda_within_function_Ok/0: ok
 features_lambdas:test_lambda_within_function_nested_Bad/0: function_clause

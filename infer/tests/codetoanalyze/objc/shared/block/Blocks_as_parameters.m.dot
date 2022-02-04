@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_1" [label="1: Start objc_blockB.f_1\nFormals:  self:B* const \nLocals: \nCaptured:  [by value]self:B* const  \n  " color=yellow style=filled]
+"objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_1" [label="1: Start objc_blockB.f_1\nFormals: \nLocals: \nCaptured:  [by value]self:B* const  \n  " color=yellow style=filled]
 	
 
 	 "objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_1" -> "objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_3" ;

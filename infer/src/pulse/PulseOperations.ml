@@ -749,16 +749,34 @@ let remove_vars vars location astate =
   Stack.remove_vars vars astate
 
 
-let get_captured_actuals path location ~captured_vars ~actual_closure astate =
+let get_captured_actuals path location ~captured_formals ~actual_closure astate =
   let* astate, this_value_addr = eval_access path Read location actual_closure Dereference astate in
-  let+ _, astate, captured_vars_with_actuals =
-    PulseResult.list_fold captured_vars ~init:(0, astate, [])
-      ~f:(fun (id, astate, captured) (var, mode, typ) ->
+  let+ _, astate, captured_actuals =
+    PulseResult.list_fold captured_formals ~init:(0, astate, [])
+      ~f:(fun (id, astate, captured) (_, mode, typ) ->
         let+ astate, captured_actual =
           eval_access path Read location this_value_addr
             (FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
             astate
         in
-        (id + 1, astate, ((var, typ), (captured_actual, typ)) :: captured) )
+        (id + 1, astate, (captured_actual, typ) :: captured) )
   in
-  (astate, captured_vars_with_actuals)
+  (* captured_actuals is currently in reverse order compared with the given
+     captured_formals because it is built during the above fold (equivalent to a
+     fold_left). We reverse it back to have a direct correspondece between the
+     two lists' elements *)
+  (astate, List.rev captured_actuals)
+
+
+let get_block_captured_actuals path location ~captured_actuals astate =
+  let+ astate, captured_actuals =
+    PulseResult.list_fold captured_actuals ~init:(astate, [])
+      ~f:(fun (astate, captured_actuals) (exp, _, typ, _) ->
+        let+ astate, captured_actual = eval path Read location exp astate in
+        (astate, (captured_actual, typ) :: captured_actuals) )
+  in
+  (* captured_actuals is currently in reverse order compared with its original
+     order. We reverse it back to have it in the same order as the given
+     captured_actuals and therefore not break the element-wise correspondence
+     between the captured_actuals and captured_formals in the caller *)
+  (astate, List.rev captured_actuals)

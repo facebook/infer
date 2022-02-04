@@ -27,25 +27,15 @@ let call args : model =
       (* TODO(T101946461): This code is very similar to [Pulse.dispatch_call] after the special
          case for objc dispatch models with a bit of [Pulse.interprocedural_call]. Maybe refactor
          it? *)
-      let actuals = List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars in
-      let<*> astate, rev_actuals =
-        PulseResult.list_fold actuals ~init:(astate, [])
-          ~f:(fun (astate, rev_actuals) (actual_exp, actual_typ) ->
-            let+ astate, actual_evaled =
-              PulseOperations.eval path Read location actual_exp astate
-            in
-            (astate, (actual_evaled, actual_typ) :: rev_actuals) )
-      in
-      let actuals = List.rev rev_actuals in
       PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
+      let actuals = [] in
+      let captured_vars = c.captured_vars in
+      let get_pvar_formals pname = IRAttributes.load pname |> Option.map ~f:Pvar.get_pvar_formals in
+      let formals_opt = get_pvar_formals c.name in
+      let callee_data = analyze_dependency c.name in
       let r =
-        let get_pvar_formals pname =
-          IRAttributes.load pname |> Option.map ~f:Pvar.get_pvar_formals
-        in
-        let formals_opt = get_pvar_formals c.name in
-        let callee_data = analyze_dependency c.name in
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location c.name
-          ~ret ~actuals ~formals_opt astate
+          ~ret ~actuals ~formals_opt ~captured_vars astate
       in
       PerfEvent.(log (fun logger -> log_end_event logger ())) ;
       r

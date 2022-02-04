@@ -23,7 +23,6 @@ let get_dispatch_closure_opt actual_params =
       | Exp.Closure c when Procname.is_objc_block c.name ->
           (* We assume that for these modelled functions, the block passed as parameter doesn't
              have arguments, so we only pass the captured variables. *)
-          let args = List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars in
-          Some (c.name, args)
+          Some (c.name, exp, [])
       | _ ->
           None )

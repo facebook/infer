@@ -340,6 +340,9 @@ val get_method : t -> string
 val is_objc_block : t -> bool
 (** Return whether the procname is a block procname. *)
 
+val is_specialized : t -> bool
+(** Return whether the procname is a specialized with blocks procname. *)
+
 val is_cpp_lambda : t -> bool
 (** Return whether the procname is a cpp lambda procname. *)
 

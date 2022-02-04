@@ -131,10 +131,9 @@ let should_create_procdesc cfg procname ~defined ~set_objc_accessor_attr =
       true
 
 
-(** Returns a list of the indices of expressions in [args] which point to const-typed values. Each
-    index is offset by [shift]. *)
-let get_const_params_indices ~shift params =
-  let i = ref shift in
+(** Returns a list of the indices of expressions in [args] which point to const-typed values *)
+let get_const_params_indices params =
+  let i = ref 0 in
   let rec aux result = function
     | [] ->
         List.rev result
@@ -227,16 +226,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ~f:(fun ({name; typ; annot} : CMethodSignature.param_type) -> (name, typ, annot))
         all_params
     in
-    (* Captured variables for blocks are treated as parameters, but not for cpp lambdas *)
-    let captured_as_formals =
-      if is_cpp_lambda_call_operator then []
-      else
-        List.map ~f:(fun {CapturedVar.name; typ} -> (name, typ, Annot.Item.empty)) captured_mangled
-    in
-    let formals = captured_as_formals @ formals in
-    let const_formals =
-      get_const_params_indices ~shift:(List.length captured_as_formals) all_params
-    in
+    let const_formals = get_const_params_indices all_params in
     let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose)
       "@\nCreating a new procdesc for function: '%a'@\n@." Procname.pp proc_name ;
