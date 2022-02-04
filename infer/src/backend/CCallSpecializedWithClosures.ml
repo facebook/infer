@@ -6,32 +6,8 @@
  *)
 
 open! IStd
-module F = Format
 
 type formal_annot = Mangled.t * Typ.t * Annot.Item.t [@@deriving compare]
-
-type formal_actual = {formal: formal_annot; actual: Exp.t * Typ.t [@ignore]} [@@deriving compare]
-
-let pp_formal_annot fmt (mangled, typ, annot) =
-  F.fprintf fmt "(%a, %a, %a)" Mangled.pp mangled (Typ.pp Pp.text) typ Annot.Item.pp annot
-
-
-module FormalsMap = PrettyPrintable.MakePPMap (struct
-  type t = formal_annot [@@deriving compare]
-
-  let pp = pp_formal_annot
-end)
-
-let formals_actuals_map formals actual_params =
-  match
-    List.fold2 formals actual_params ~init:FormalsMap.empty ~f:(fun acc fml act ->
-        FormalsMap.add fml act acc )
-  with
-  | Ok map ->
-      Some map
-  | Unequal_lengths ->
-      None
-
 
 let has_closure actual_params =
   List.exists actual_params ~f:(fun (exp, _) ->
@@ -57,22 +33,26 @@ let pname_with_closure_args callee_pname actual_params =
   Procname.with_block_parameters callee_pname block_args
 
 
-let formals_closures_map map =
-  FormalsMap.fold
-    (fun (mangled, _, _) actual new_map ->
-      match actual with
-      | Exp.Closure closure, _ ->
-          let captured_as_formals =
-            List.map
-              ~f:(fun (_, var, typ, capture_mode) ->
-                let name = Pvar.build_formal_from_pvar var in
-                CapturedVar.make ~name ~typ ~capture_mode )
-              closure.captured_vars
-          in
-          Mangled.Map.add mangled (closure.name, captured_as_formals) new_map
-      | _ ->
-          new_map )
-    map Mangled.Map.empty
+let make_formals_to_procs_and_new_formals formals actual_params =
+  match
+    List.fold2 formals actual_params ~init:Mangled.Map.empty ~f:(fun map (mangled, _, _) actual ->
+        match actual with
+        | Exp.Closure closure, _ ->
+            let captured_as_formals =
+              List.map
+                ~f:(fun (_, var, typ, capture_mode) ->
+                  let name = Pvar.build_formal_from_pvar var in
+                  CapturedVar.make ~name ~typ ~capture_mode )
+                closure.captured_vars
+            in
+            Mangled.Map.add mangled (closure.name, captured_as_formals) map
+        | _ ->
+            map )
+  with
+  | Ok map ->
+      Some map
+  | Unequal_lengths ->
+      None
 
 
 let get_captured actual_params =
@@ -110,15 +90,13 @@ let replace_with_specialize_methods instr =
            && (not (is_initializer proc_desc))
            && not (is_dispatch_model proc_desc) -> (
         let callee_attributes = Procdesc.get_attributes proc_desc in
-        match formals_actuals_map callee_attributes.formals actual_params with
-        | Some map -> (
+        match make_formals_to_procs_and_new_formals callee_attributes.formals actual_params with
+        | Some formals_to_procs_and_new_formals -> (
             let specialized_pname = pname_with_closure_args callee_pname actual_params in
             let new_attributes =
               { callee_attributes with
                 specialized_with_blocks_info=
-                  Some
-                    { orig_proc= callee_pname
-                    ; formals_to_procs_and_new_formals= formals_closures_map map }
+                  Some {orig_proc= callee_pname; formals_to_procs_and_new_formals}
               ; captured= get_captured actual_params @ callee_attributes.captured
               ; is_defined= true
               ; proc_name= specialized_pname }
