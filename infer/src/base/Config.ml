@@ -2655,7 +2655,7 @@ and test_determinator =
 
 and topl_max_conjuncts =
   CLOpt.mk_int ~long:"topl-max-conjuncts" ~default:20
-    "Stop tracking states that reach have at least $(i,int) conjuncts"
+    "Stop tracking states that have at least $(i,int) conjuncts"
 
 
 and topl_max_disjuncts =

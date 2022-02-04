@@ -225,7 +225,10 @@ let pp_simple_state f {pre; post; pruned} =
     pp_configuration post Constraint.pp pruned
 
 
-let pp_state f = Format.fprintf f "@[<2>[ %a ]@]" (pp_comma_seq pp_simple_state)
+let pp_state f state =
+  Format.fprintf f "@[<v2>{len=%d;content=@;@[<2>[ %a ]@]}@]" (List.length state)
+    (pp_comma_seq pp_simple_state) state
+
 
 let start () =
   let mk_simple_states () =

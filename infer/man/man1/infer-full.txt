@@ -2326,7 +2326,7 @@ INTERNAL OPTIONS
            dot files are created (clang only) (Conversely: --no-testing-mode)
 
        --topl-max-conjuncts int
-           Stop tracking states that reach have at least int conjuncts
+           Stop tracking states that have at least int conjuncts
 
        --topl-max-disjuncts int
            Under-approximate after int disjunctions in the domain
