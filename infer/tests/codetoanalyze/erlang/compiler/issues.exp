@@ -261,6 +261,7 @@ features_maps:test_get_badmap_Bad/0: {badmap,[not_a_map]}
 features_maps:test_is_key_Bad/0: function_clause
 features_maps:test_is_key_Ok/0: ok
 features_maps:test_is_key_badmap_Bad/0: {badmap,[not_a_map]}
+features_maps:test_merge_return_type_Ok/0: ok
 features_maps:test_new_Bad/0: function_clause
 features_maps:test_new_Ok/0: ok
 features_maps:test_put1_Ok/0: ok

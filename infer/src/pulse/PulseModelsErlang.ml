@@ -478,6 +478,14 @@ module Maps = struct
       [Ok (write_dynamic_type_and_return addr_map Map ret_id astate)]
     in
     List.map ~f:Basic.map_continue astate_ok @ astate_badmap
+
+
+  let merge _m1 _m2 : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    (* This is just a very rough approximation, we just assume that the return type. *)
+    let hist = Hist.single_alloc path location "maps:merge" in
+    let addr_map = (AbstractValue.mk_fresh (), hist) in
+    write_dynamic_type_and_return addr_map Map ret_id astate |> Basic.ok_continue
 end
 
 module BIF = struct
@@ -693,6 +701,7 @@ let matchers : matcher list =
     ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key
     ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get
     ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
+    ; -"maps" &:: "merge" <>$ arg $+ arg $--> Maps.merge
     ; -"maps" &:: "new" <>$$--> Maps.new_
     ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
     ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
