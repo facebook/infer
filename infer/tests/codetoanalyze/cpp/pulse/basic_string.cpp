@@ -25,3 +25,14 @@ bool use_range_of_invalidated_temporary_string_bad(const std::string& str) {
   auto s = setLanguage(str);
   return s[0] == 'k';
 }
+
+void some_function(std::string s);
+
+int string_passed_as_param_ok() {
+  std::string str = "";
+  some_function(str);
+  if (str.empty()) {
+    return 0;
+  }
+  return 1;
+}

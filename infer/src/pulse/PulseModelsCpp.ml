@@ -232,12 +232,27 @@ module BasicString = struct
 
 
   (* constructor from constant string *)
-  let constructor (this, hist) init_hist : model =
+  let constructor_from_constant (this, hist) exp : model =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::basic_string::basic_string()" in
+    let<*> astate, init_hist = PulseOperations.eval path Read location exp astate in
     let<+> astate =
       PulseOperations.write_field path location
         ~ref:(this, Hist.add_event path event hist)
+        PulseOperations.ModeledField.internal_string ~obj:init_hist astate
+    in
+    astate
+
+
+  let constructor this_hist init_hist : model =
+   fun {path; location} astate ->
+    let event = Hist.call_event path location "std::basic_string::basic_string()" in
+    let<*> astate, (addr, hist) =
+      PulseOperations.eval_access path Write location this_hist Dereference astate
+    in
+    let<+> astate =
+      PulseOperations.write_field path location
+        ~ref:(addr, Hist.add_event path event hist)
         PulseOperations.ModeledField.internal_string ~obj:init_hist astate
     in
     astate
@@ -496,6 +511,9 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
   ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
   ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
+  ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
+    $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
+    $--> BasicString.constructor_from_constant
   ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
     $--> BasicString.constructor
   ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> BasicString.data
