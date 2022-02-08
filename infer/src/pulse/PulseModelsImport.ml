@@ -158,6 +158,8 @@ module Basic = struct
     PulseOperations.havoc_id ret_id (Hist.single_call path location desc) astate |> ok_continue
 
 
+  let skip : model = fun _ astate -> ok_continue astate
+
   let id_first_arg ~desc (arg_value, arg_history) : model =
    fun {path; location; ret= ret_id, _} astate ->
     let ret_value = (arg_value, Hist.add_call path location desc arg_history) in

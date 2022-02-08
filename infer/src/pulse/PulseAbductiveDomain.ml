@@ -327,6 +327,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.std_vector_reserve addr)
 
 
+  let is_java_resource_released addr astate =
+    BaseAddressAttributes.is_java_resource_released addr (astate.post :> base_domain).attrs
+
+
   let is_std_vector_reserved addr astate =
     BaseAddressAttributes.is_std_vector_reserved addr (astate.post :> base_domain).attrs
 

@@ -686,7 +686,7 @@ public class ResourceLeaks {
     }
   }
 
-  public void FP_closeWithCloseablesNestedAllocOk() throws IOException {
+  public void closeWithCloseablesNestedAllocOk() throws IOException {
     BufferedInputStream b = null;
     try {
       b = new BufferedInputStream(new FileInputStream("file.txt"));

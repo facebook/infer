@@ -171,6 +171,10 @@ let is_end_of_collection address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection
 
 
+let is_java_resource_released adress attrs =
+  Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_java_resource_released
+
+
 let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_vector_reserved
 

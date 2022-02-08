@@ -410,9 +410,13 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
       Attributes.add_call timestamp callee_proc_name call_loc hist_caller attrs_callee_post
     in
     let astate =
-      if Config.pulse_isl then
-        AddressAttributes.add_attrs addr_caller attrs_post_caller call_state.astate
-      else AddressAttributes.abduce_and_add addr_caller attrs_post_caller call_state.astate
+      if Attributes.is_java_resource_released attrs_post_caller then
+        PulseOperations.java_resource_release addr_caller call_state.astate
+      else call_state.astate
+    in
+    let astate =
+      if Config.pulse_isl then AddressAttributes.add_attrs addr_caller attrs_post_caller astate
+      else AddressAttributes.abduce_and_add addr_caller attrs_post_caller astate
     in
     {call_state with astate}
   in

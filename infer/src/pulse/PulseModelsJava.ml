@@ -17,14 +17,6 @@ let mk_java_field pkg clazz field =
   Fieldname.make (Typ.JavaClass (JavaClassName.make ~package:(Some pkg) ~classname:clazz)) field
 
 
-let if_valid_field_then_load path field location obj astate =
-  let open IOption.Let_syntax in
-  let* field_addr =
-    PulseOperations.if_valid_access_then_eval path Read location obj (FieldAccess field) astate
-  in
-  PulseOperations.if_valid_access_then_eval path Read location field_addr Dereference astate
-
-
 let load_field path field location obj astate =
   let* astate, field_addr =
     PulseOperations.eval_access path Read location obj (FieldAccess field) astate
@@ -179,24 +171,7 @@ module Resource = struct
 
 
   let release this : model =
-   fun {location; path} astate ->
-    let delegated_release = PulseOperations.ModeledField.delegated_release in
-    let rec loop seen ((o, _) as obj) astate =
-      if AbstractValue.Set.mem o seen then Basic.ok_continue astate
-      else
-        let astate = PulseOperations.java_resource_release o astate in
-        match if_valid_field_then_load path delegated_release location obj astate with
-        | Some delegation ->
-            (* beware: if the field is not valid, a regular call to Java.load_field will generate a
-               fresh abstract value and we will loop forever, even if we use the [seen] set *)
-            loop (AbstractValue.Set.add o seen) delegation astate
-        | None ->
-            Basic.ok_continue astate
-    in
-    loop AbstractValue.Set.empty this astate
-
-
-  let skip_set_mem : model = fun _ astate -> Basic.ok_continue astate
+   fun _ astate -> PulseOperations.java_resource_release (fst this) astate |> Basic.ok_continue
 end
 
 module Collection = struct
@@ -579,7 +554,8 @@ let matchers : matcher list =
   [ +BuiltinDecl.(match_builtin __unwrap_exception)
     <>$ capt_arg_payload
     $--> Basic.id_first_arg ~desc:"unwrap_exception"
-  ; +BuiltinDecl.(match_builtin __set_mem_attribute) <>$ any_arg $--> Resource.skip_set_mem
+  ; +BuiltinDecl.(match_builtin __set_file_attribute) <>$ any_arg $--> Basic.skip
+  ; +BuiltinDecl.(match_builtin __set_mem_attribute) <>$ any_arg $--> Basic.skip
   ; +map_context_tenv
        (PatternMatch.Java.implements_one_of
           ["java.io.FileInputStream"; "java.io.FileOutputStream"] )

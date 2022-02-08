@@ -70,6 +70,8 @@ module Attributes : sig
 
   val get_dynamic_type : t -> Typ.t option
 
+  val is_java_resource_released : t -> bool
+
   val is_end_of_collection : t -> bool
 
   val get_invalid : t -> (Invalidation.t * Trace.t) option

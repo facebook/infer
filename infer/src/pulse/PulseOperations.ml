@@ -196,14 +196,6 @@ module ModeledField = struct
   let delegated_release = Fieldname.make pulse_model_type "__infer_model_delegated_release"
 end
 
-let if_valid_access_then_eval path mode location addr_hist access astate =
-  match check_addr_access path mode location addr_hist astate with
-  | Ok astate ->
-      Memory.find_edge_opt (fst addr_hist) access astate
-  | _ ->
-      None
-
-
 let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
   let+ astate = check_addr_access path ?must_be_valid_reason mode location addr_hist astate in
   Memory.eval_edge addr_hist access astate
@@ -461,7 +453,30 @@ let allocate allocator location addr astate =
   AddressAttributes.allocate allocator addr location astate
 
 
-let java_resource_release addr astate = AddressAttributes.java_resource_release addr astate
+let java_resource_release address astate =
+  let if_valid_access_then_eval addr access astate =
+    Option.map (Memory.find_edge_opt addr access astate) ~f:fst
+  in
+  let if_valid_field_then_load obj field astate =
+    let open IOption.Let_syntax in
+    let* field_addr = if_valid_access_then_eval obj (FieldAccess field) astate in
+    if_valid_access_then_eval field_addr Dereference astate
+  in
+  let rec loop seen obj astate =
+    if AbstractValue.Set.mem obj seen || AddressAttributes.is_java_resource_released obj astate then
+      astate
+    else
+      let astate = AddressAttributes.java_resource_release obj astate in
+      match if_valid_field_then_load obj ModeledField.delegated_release astate with
+      | Some delegation ->
+          (* beware: if the field is not valid, a regular call to Java.load_field will generate a
+             fresh abstract value and we will loop forever, even if we use the [seen] set *)
+          loop (AbstractValue.Set.add obj seen) delegation astate
+      | None ->
+          astate
+  in
+  loop AbstractValue.Set.empty address astate
+
 
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate
 

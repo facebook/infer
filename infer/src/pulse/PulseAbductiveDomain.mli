@@ -136,6 +136,8 @@ module AddressAttributes : sig
 
   val java_resource_release : AbstractValue.t -> t -> t
 
+  val is_java_resource_released : AbstractValue.t -> t -> bool
+
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
   val add_ref_counted : AbstractValue.t -> t -> t

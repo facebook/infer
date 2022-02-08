@@ -330,6 +330,7 @@ module Attributes = struct
     Option.is_some (Set.find_rank attrs Attribute.written_to_rank)
     || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
     || Option.is_some (Set.find_rank attrs Attribute.unknown_effect_rank)
+    || Option.is_some (Set.find_rank attrs Attribute.java_resource_released_rank)
 
 
   let is_uninitialized attrs = Set.find_rank attrs Attribute.uninitialized_rank |> Option.is_some

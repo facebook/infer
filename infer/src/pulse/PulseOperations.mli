@@ -146,15 +146,6 @@ val eval_deref_isl :
   -> t
   -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t list
 
-val if_valid_access_then_eval :
-     PathContext.t
-  -> access_mode
-  -> Location.t
-  -> AbstractValue.t * ValueHistory.t
-  -> BaseMemory.Access.t
-  -> t
-  -> (AbstractValue.t * ValueHistory.t) option
-
 val eval_access :
      PathContext.t
   -> ?must_be_valid_reason:Invalidation.must_be_valid_reason

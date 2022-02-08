@@ -62,6 +62,8 @@ val get_written_to : AbstractValue.t -> t -> Trace.t option
 
 val std_vector_reserve : AbstractValue.t -> t -> t
 
+val is_java_resource_released : AbstractValue.t -> t -> bool
+
 val is_std_vector_reserved : AbstractValue.t -> t -> bool
 
 val mark_as_end_of_collection : AbstractValue.t -> t -> t
