@@ -13,9 +13,11 @@ open! IStd
 type t =
   { mutable last_instr: Sil.instr option  (** Last instruction seen *)
   ; mutable last_node: Procdesc.Node.t option  (** Last node seen *)
-  ; mutable last_session: int  (** Last session seen *) }
+  ; mutable last_session: int  (** Last session seen *)
+  ; mutable remaining_disjuncts: int option
+        (** Number of remaining disjuncts in the transfer function for Pulse *) }
 
-let initial () = {last_instr= None; last_node= None; last_session= 0}
+let initial () = {last_instr= None; last_node= None; last_session= 0; remaining_disjuncts= None}
 
 (** Global state *)
 let gs = ref (initial ())
@@ -47,6 +49,12 @@ let get_loc_exn () =
 
 let get_loc () =
   match !gs.last_instr with Some instr -> Some (Sil.location_of_instr instr) | None -> None
+
+
+let get_remaining_disjuncts () = !gs.remaining_disjuncts
+
+let set_remaining_disjuncts remaining_disjuncts =
+  !gs.remaining_disjuncts <- Some remaining_disjuncts
 
 
 (** Return the old state, and revert the current state to the initial one. *)
