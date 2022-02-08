@@ -474,8 +474,14 @@ let get_trace = function
 
 let get_issue_type ~latent issue_type =
   match (issue_type, latent) with
-  | MemoryLeak _, false ->
-      IssueType.pulse_memory_leak
+  | MemoryLeak {allocator}, false -> (
+    match allocator with
+    | CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _ ->
+        IssueType.pulse_memory_leak_c
+    | CppNew | CppNewArray ->
+        IssueType.pulse_memory_leak_cpp
+    | JavaResource _ ->
+        L.die InternalError "Memory leaks should not have a Java resource as allocator" )
   | ResourceLeak _, false ->
       IssueType.pulse_resource_leak
   | RetainCycle _, false ->

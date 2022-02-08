@@ -911,9 +911,14 @@ let premature_nil_termination =
     ~user_documentation:[%blob "../../documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
-let pulse_memory_leak =
-  register ~id:"MEMORY_LEAK" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
+let pulse_memory_leak_c =
+  register ~id:"MEMORY_LEAK_C" ~hum:"Memory Leak" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK_C.md"]
+
+
+let pulse_memory_leak_cpp =
+  register ~id:"MEMORY_LEAK_CPP" ~hum:"Memory Leak" ~enabled:false Error Pulse
+    ~user_documentation:"See [MEMORY_LEAK_C](#memory_leak_c)"
 
 
 let pulse_resource_leak =

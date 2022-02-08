@@ -310,7 +310,9 @@ val precondition_not_met : t
 
 val premature_nil_termination : t
 
-val pulse_memory_leak : t
+val pulse_memory_leak_c : t
+
+val pulse_memory_leak_cpp : t
 
 val pulse_resource_leak : t
 

@@ -1170,10 +1170,10 @@ let summary_of_post tenv pdesc location astate =
           Error
             (`ResourceLeak
               (astate, class_name, trace, Option.value unreachable_location ~default:location) )
-      | Error (unreachable_location, proc_name, trace) ->
+      | Error (unreachable_location, allocator, trace) ->
           Error
             (`MemoryLeak
-              (astate, proc_name, trace, Option.value unreachable_location ~default:location) ) ) )
+              (astate, allocator, trace, Option.value unreachable_location ~default:location) ) ) )
   | Some (address, must_be_valid) ->
       Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))
 
