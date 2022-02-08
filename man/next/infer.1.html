@@ -911,7 +911,8 @@ LOGGING_PRIVATE_DATA (enabled by default), <br>
 Leak_after_array_abstraction (enabled by default), <br>
 Leak_in_footprint (enabled by default), <br>
 Leak_unknown_origin (disabled by default), <br>
-MEMORY_LEAK (enabled by default), <br>
+MEMORY_LEAK_C (enabled by default), <br>
+MEMORY_LEAK_CPP (disabled by default), <br>
 MISSING_REQUIRED_PROP (enabled by default), <br>
 MIXED_SELF_WEAKSELF (enabled by default), <br>
 MODIFIES_IMMUTABLE (enabled by default), <br>
@@ -1785,6 +1786,13 @@ Memory and lifetime analysis. (Conversely:
 pulse will only explore one path. Can be used on
 pathologically large procedures to prevent too-big states
 from being produced.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-max-cfg-size</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Larger CFGs than the max size
+are skipped in Pulse.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
