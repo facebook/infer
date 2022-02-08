@@ -1453,7 +1453,7 @@ container (an array, a vector, etc).
 Reported as "Logging Private Data" by [quandary](/docs/next/checker-quandary).
 
 Undocumented.
-## MEMORY_LEAK
+## MEMORY_LEAK_C
 
 Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).
 
@@ -1482,6 +1482,11 @@ objects from Core Foundation or Core Graphics don't get released.
 }
 ```
 
+## MEMORY_LEAK_CPP
+
+Reported as "Memory Leak" by [pulse](/docs/next/checker-pulse).
+
+See [MEMORY_LEAK_C](#memory_leak_c)
 ## MISSING_REQUIRED_PROP
 
 Reported as "Missing Required Prop" by [litho-required-props](/docs/next/checker-litho-required-props).
