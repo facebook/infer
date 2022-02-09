@@ -36,7 +36,7 @@
   }
 }
 
-- (void)no_early_return_npe_bad:(ContainerClass*)c {
+- (void)no_early_return_bad_latent_FN:(ContainerClass*)c {
   int i = 0;
   if (c == nil) {
   }
@@ -44,6 +44,24 @@
   if (i == 0) {
     i = c->containedValue;
   }
+}
+
+- (void)no_early_return_manifest_bad_FN:(ContainerClass*)c {
+  [self no_early_return_bad_latent_FN:nil];
+}
+
+- (void)no_early_return_no_zero_latent_bad_FN:(ContainerClass*)c {
+  int i = 1;
+  if (c == nil) {
+  }
+
+  if (i == 1) {
+    i = c->containedValue;
+  }
+}
+
+- (void)no_early_return_no_zero_manifest_bad:(ContainerClass*)c {
+  [self no_early_return_no_zero_latent_bad_FN:nil];
 }
 
 @end

@@ -134,7 +134,9 @@ let report_summary_error tenv proc_desc err_log
         else report ~latent:false proc_desc err_log diagnostic ;
         if Diagnostic.aborts_execution diagnostic then Some (AbortProgram astate) else None
     | `DelayReport latent_issue ->
-        if Config.pulse_report_latent_issues then report_latent_issue proc_desc err_log latent_issue ;
+        if is_suppressed tenv proc_desc diagnostic astate then L.d_printfln "suppressed error"
+        else if Config.pulse_report_latent_issues then
+          report_latent_issue proc_desc err_log latent_issue ;
         Some (LatentAbortProgram {astate; latent_issue}) )
 
 

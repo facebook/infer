@@ -10,6 +10,8 @@
 
 @interface AnotherObject : NSObject
 - (int)someMethod:(int)param1;
+
+- (NSObject*)unknown_function;
 @end
 
 @implementation AnotherObject
@@ -239,4 +241,11 @@ void nilMessagingToFunctionWithBlockParamOk() {
   Mutator* const mutator = nil;
   NSObject* const initial = [mutator setCallback:^(){
   }];
+}
+
+void unrelated_invalidation(SomeObject* obj) {
+  AnotherObject* ao = obj.anotherObject;
+  int y = 0; /* unrelated invalidation */
+  NSArray<NSObject*>* const constraints = @[ [ao unknown_function] ];
+  return 0;
 }
