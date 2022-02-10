@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "objc_blockEscapingByref.capture_global_byref_1.71c6ece6ee30cbceb6bb1ac4222fc774_3" -> "objc_blockEscapingByref.capture_global_byref_1.71c6ece6ee30cbceb6bb1ac4222fc774_2" ;
-"objc_blockEscapingByref.capture_local_block_byref_3.e3584f1ccd5f005a0c753b9bf434cd37_1" [label="1: Start objc_blockEscapingByref.capture_local_block_byref_3\nFormals: \nLocals: \nCaptured:  [by ref]local:int& \n  " color=yellow style=filled]
+"objc_blockEscapingByref.capture_local_block_byref_3.e3584f1ccd5f005a0c753b9bf434cd37_1" [label="1: Start objc_blockEscapingByref.capture_local_block_byref_3\nFormals: \nLocals: \nCaptured:  [by ref]&local:int& \n  " color=yellow style=filled]
 	
 
 	 "objc_blockEscapingByref.capture_local_block_byref_3.e3584f1ccd5f005a0c753b9bf434cd37_1" -> "objc_blockEscapingByref.capture_local_block_byref_3.e3584f1ccd5f005a0c753b9bf434cd37_3" ;
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "objc_blockEscapingByref.capture_local_block_byref_3.e3584f1ccd5f005a0c753b9bf434cd37_3" -> "objc_blockEscapingByref.capture_local_block_byref_3.e3584f1ccd5f005a0c753b9bf434cd37_2" ;
-"objc_blockEscapingByref.capture_local_byvalue_2.f19e514fa65b29c94c8ca5dfb300d895_1" [label="1: Start objc_blockEscapingByref.capture_local_byvalue_2\nFormals: \nLocals:  x:int\nCaptured:  [by value]local:int \n  " color=yellow style=filled]
+"objc_blockEscapingByref.capture_local_byvalue_2.f19e514fa65b29c94c8ca5dfb300d895_1" [label="1: Start objc_blockEscapingByref.capture_local_byvalue_2\nFormals: \nLocals:  x:int\nCaptured:  [by value]&local:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockEscapingByref.capture_local_byvalue_2.f19e514fa65b29c94c8ca5dfb300d895_1" -> "objc_blockEscapingByref.capture_local_byvalue_2.f19e514fa65b29c94c8ca5dfb300d895_3" ;
@@ -44,7 +44,7 @@ digraph cfg {
 	
 
 	 "objc_blockEscapingByref.capture_local_static_byvalue_4.c3f6724a818e1f8b6ce2010807ddaa98_3" -> "objc_blockEscapingByref.capture_local_static_byvalue_4.c3f6724a818e1f8b6ce2010807ddaa98_2" ;
-"objc_blockEscapingByref.capture_param_byvalue:_5.f5bb82a8a518c0c4d631c0f262866fb5_1" [label="1: Start objc_blockEscapingByref.capture_param_byvalue:_5\nFormals: \nLocals:  x:int\nCaptured:  [by value]param:int \n  " color=yellow style=filled]
+"objc_blockEscapingByref.capture_param_byvalue:_5.f5bb82a8a518c0c4d631c0f262866fb5_1" [label="1: Start objc_blockEscapingByref.capture_param_byvalue:_5\nFormals: \nLocals:  x:int\nCaptured:  [by value]&param:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockEscapingByref.capture_param_byvalue:_5.f5bb82a8a518c0c4d631c0f262866fb5_1" -> "objc_blockEscapingByref.capture_param_byvalue:_5.f5bb82a8a518c0c4d631c0f262866fb5_3" ;

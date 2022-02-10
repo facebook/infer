@@ -145,7 +145,9 @@ module Basic = struct
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
           (actual, typ) )
     in
-    let formals_opt = IRAttributes.load callee_procname |> Option.map ~f:Pvar.get_pvar_formals in
+    let formals_opt =
+      IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
+    in
     let<+> astate =
       PulseCallOperations.unknown_call path location (Model skip_reason) ~ret ~actuals ~formals_opt
         astate

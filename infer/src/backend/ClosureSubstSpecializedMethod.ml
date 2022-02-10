@@ -150,8 +150,8 @@ let closure_of_exp pname (id_to_pvar_map, pvars_to_blocks_map) loc exp load_inst
     *)
     let captured_vars, load_instrs =
       List.fold block_formals ~init:([], load_instrs)
-        ~f:(fun (captured_vars, load_instrs) CapturedVar.{name; typ; capture_mode} ->
-          let pvar = Pvar.mk name pname in
+        ~f:(fun (captured_vars, load_instrs) CapturedVar.{pvar; typ; capture_mode} ->
+          let pvar = Pvar.mk (Pvar.get_name pvar) pname in
           let e = Exp.Lvar pvar in
           let id = Ident.create_fresh Ident.knormal in
           let load_instr = Sil.Load {id; e; root_typ= typ; typ; loc} in

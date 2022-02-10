@@ -11,8 +11,6 @@ type capture_mode = ByReference | ByValue [@@deriving compare, equal]
 
 val string_of_capture_mode : capture_mode -> string
 
-type t = {name: Mangled.t; typ: Typ.t; capture_mode: capture_mode} [@@deriving compare, equal]
+type t = {pvar: Pvar.t; typ: Typ.t; capture_mode: capture_mode} [@@deriving compare, equal]
 
 val pp : Format.formatter -> t -> unit
-
-val make : name:Mangled.t -> typ:Typ.t -> capture_mode:capture_mode -> t

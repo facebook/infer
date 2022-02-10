@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_1" [label="1: Start objc_blockBlockVar.blockPostBad_2\nFormals: \nLocals: \nCaptured:  [by value]x:int* \n  " color=yellow style=filled]
+"objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_1" [label="1: Start objc_blockBlockVar.blockPostBad_2\nFormals: \nLocals: \nCaptured:  [by value]&x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_1" -> "objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_3" ;
@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_4" -> "objc_blockBlockVar.blockPostBad_2.9b5fc6c216acf1eebade4e80598bd292_2" ;
-"objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_1" [label="1: Start objc_blockBlockVar.blockPostOk_3\nFormals: \nLocals: \nCaptured:  [by value]x:int* \n  " color=yellow style=filled]
+"objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_1" [label="1: Start objc_blockBlockVar.blockPostOk_3\nFormals: \nLocals: \nCaptured:  [by value]&x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_1" -> "objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_3" ;
@@ -30,7 +30,7 @@ digraph cfg {
 	
 
 	 "objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_4" -> "objc_blockBlockVar.blockPostOk_3.860b502fd4305d26ee26104b0e266b62_2" ;
-"objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_1" [label="1: Start objc_blockBlockVar.capturedNoNullDeref_5\nFormals: \nLocals: \nCaptured:  [by value]x:int* \n  " color=yellow style=filled]
+"objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_1" [label="1: Start objc_blockBlockVar.capturedNoNullDeref_5\nFormals: \nLocals: \nCaptured:  [by value]&x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_1" -> "objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_3" ;
@@ -45,7 +45,7 @@ digraph cfg {
 	
 
 	 "objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_4" -> "objc_blockBlockVar.capturedNoNullDeref_5.05728b28cff98ce99554f69b47154636_2" ;
-"objc_blockBlockVar.capturedNullDeref_4.b2398d8a441f4c0e3ff276c92e1e2c2b_1" [label="1: Start objc_blockBlockVar.capturedNullDeref_4\nFormals: \nLocals: \nCaptured:  [by value]x:int* \n  " color=yellow style=filled]
+"objc_blockBlockVar.capturedNullDeref_4.b2398d8a441f4c0e3ff276c92e1e2c2b_1" [label="1: Start objc_blockBlockVar.capturedNullDeref_4\nFormals: \nLocals: \nCaptured:  [by value]&x:int* \n  " color=yellow style=filled]
 	
 
 	 "objc_blockBlockVar.capturedNullDeref_4.b2398d8a441f4c0e3ff276c92e1e2c2b_1" -> "objc_blockBlockVar.capturedNullDeref_4.b2398d8a441f4c0e3ff276c92e1e2c2b_3" ;

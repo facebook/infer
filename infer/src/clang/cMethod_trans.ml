@@ -203,9 +203,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         Public
   in
   let captured_mangled =
-    List.map
-      ~f:(fun (var, typ, capture_mode) -> {CapturedVar.name= Pvar.get_name var; typ; capture_mode})
-      captured
+    List.map ~f:(fun (pvar, typ, capture_mode) -> {CapturedVar.pvar; typ; capture_mode}) captured
   in
   (* Retrieve captured variables from procdesc created when translating captured variables in lambda expression *)
   (* We want to do this before `should_create_procdesc` is called as it can remove previous procdesc *)

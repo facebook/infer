@@ -534,7 +534,7 @@ let get_proc_name pdesc = pdesc.attributes.proc_name
 (** Return name and type of formal parameters *)
 let get_formals pdesc = pdesc.attributes.formals
 
-let get_pvar_formals pdesc = Pvar.get_pvar_formals pdesc.attributes
+let get_pvar_formals pdesc = ProcAttributes.get_pvar_formals pdesc.attributes
 
 let get_loc pdesc = pdesc.attributes.loc
 
@@ -848,10 +848,10 @@ let pp_variable_list fmt etl =
 
 let pp_captured_list fmt etl =
   List.iter
-    ~f:(fun {CapturedVar.name; typ; capture_mode} ->
+    ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
       Format.fprintf fmt " [%s] %a:%a"
         (CapturedVar.string_of_capture_mode capture_mode)
-        Mangled.pp name (Typ.pp_full Pp.text) typ )
+        (Pvar.pp Pp.text) pvar (Typ.pp_full Pp.text) typ )
     etl
 
 
@@ -901,7 +901,9 @@ let is_captured_pvar procdesc pvar =
          ( List.exists ~f:pvar_local_matches (get_locals procdesc)
          || List.exists ~f:pvar_matches (get_formals procdesc) )
   in
-  let pvar_matches_in_captured {CapturedVar.name} = Mangled.equal name pvar_name in
+  let pvar_matches_in_captured {CapturedVar.pvar= captured} =
+    Mangled.equal (Pvar.get_name captured) pvar_name
+  in
   let is_captured_var_objc_block =
     (* var is captured if the procedure is a objc block and the var is in the captured *)
     Procname.is_objc_block procname

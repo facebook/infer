@@ -50,8 +50,6 @@ let compare_modulo_this x y =
       else compare_pvar_kind x.pv_kind y.pv_kind
 
 
-let equal = [%compare.equal: t]
-
 let get_declaring_function pv =
   match pv.pv_kind with
   | Local_var n | Callee_var n | Abduced_retvar (n, _) | Abduced_ref_param (n, _, _) ->
@@ -197,6 +195,8 @@ let pp pe f pv =
   F.fprintf f "%s%a" ampersand pp_value pv
 
 
+let equal = [%compare.equal: t]
+
 (** Dump a program variable. *)
 let d (pvar : t) = L.d_pp_with_pe pp pvar
 
@@ -326,11 +326,6 @@ module Map = PrettyPrintable.MakePPMap (struct
 
   let pp = pp Pp.text
 end)
-
-let get_pvar_formals (attributes : ProcAttributes.t) =
-  let pname = attributes.proc_name in
-  List.map attributes.formals ~f:(fun (name, typ, _) -> (mk name pname, typ))
-
 
 let is_local_to_procedure proc_name pvar =
   get_declaring_function pvar |> Option.exists ~f:(Procname.equal proc_name)

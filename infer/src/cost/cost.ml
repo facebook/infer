@@ -438,7 +438,9 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       let* _cost_summary, inferbo_summary, _ = get_summary_common callee_pname in
       inferbo_summary
     in
-    let get_formals callee_pname = Attributes.load callee_pname >>| Pvar.get_pvar_formals in
+    let get_formals callee_pname =
+      Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
+    in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let extras =
       { inferbo_invariant_map

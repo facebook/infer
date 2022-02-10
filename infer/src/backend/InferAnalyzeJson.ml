@@ -366,9 +366,9 @@ let parse_ret_annot (json : Safe.t) : Annot.Item.t =
 
 
 let parse_captured_var (json : Safe.t) =
-  let n = to_string (member "name" json) in
-  let t = parse_sil_type_name (member "type" json) in
-  CapturedVar.make ~name:(Mangled.from_string n) ~typ:t ~capture_mode:ByValue
+  let pvar = parse_pvar (member "name" json) in
+  let typ = parse_sil_type_name (member "type" json) in
+  {CapturedVar.pvar; typ; capture_mode= ByValue}
 
 
 let parse_proc_attributes_var (json : Safe.t) =

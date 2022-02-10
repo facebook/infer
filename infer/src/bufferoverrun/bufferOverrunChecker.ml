@@ -468,7 +468,9 @@ let checker ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependen
           let* _checker_summary, analysis_summary = get_summary_common callee_pname in
           analysis_summary
         in
-        let get_formals callee_pname = Attributes.load callee_pname >>| Pvar.get_pvar_formals in
+        let get_formals callee_pname =
+          Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
+        in
         compute_checks get_checks_summary get_summary get_formals proc_name tenv integer_type_widths
           cfg inv_map
       in

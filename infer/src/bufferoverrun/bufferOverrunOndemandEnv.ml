@@ -25,8 +25,9 @@ let mk pdesc =
     List.fold (Procdesc.get_pvar_formals pdesc) ~init:FormalTyps.empty ~f:(fun acc (formal, typ) ->
         FormalTyps.add formal typ acc )
     |> fun init ->
-    List.fold (Procdesc.get_captured pdesc) ~init ~f:(fun acc {CapturedVar.name; typ} ->
-        FormalTyps.add (Pvar.mk name pname) typ acc )
+    List.fold (Procdesc.get_captured pdesc) ~init ~f:(fun acc {CapturedVar.pvar; typ} ->
+        let pvar = Pvar.mk (Pvar.get_name pvar) pname in
+        FormalTyps.add pvar typ acc )
   in
   fun tenv integer_type_widths ->
     let rec typ_of_param_path = function

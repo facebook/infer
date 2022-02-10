@@ -30,7 +30,9 @@ let call args : model =
       PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
       let actuals = [] in
       let captured_vars = c.captured_vars in
-      let get_pvar_formals pname = IRAttributes.load pname |> Option.map ~f:Pvar.get_pvar_formals in
+      let get_pvar_formals pname =
+        IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
+      in
       let formals_opt = get_pvar_formals c.name in
       let callee_data = analyze_dependency c.name in
       let r =

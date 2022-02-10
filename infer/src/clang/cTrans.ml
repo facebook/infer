@@ -845,8 +845,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let typ =
       if Procname.is_cpp_lambda procname || Procname.is_objc_block procname then
         let pvar_name = Pvar.get_name pvar in
-        List.find (Procdesc.get_captured context.procdesc)
-          ~f:(fun {CapturedVar.name= captured_var} -> Mangled.equal captured_var pvar_name)
+        List.find (Procdesc.get_captured context.procdesc) ~f:(fun {CapturedVar.pvar= captured} ->
+            Mangled.equal (Pvar.get_name captured) pvar_name )
         |> Option.value_map ~f:(fun {CapturedVar.typ} -> typ) ~default:typ
       else typ
     in

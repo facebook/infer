@@ -58,7 +58,7 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_11" -> "main1.38f534a9576db7ec6ebcbca8c111f942_10" ;
-"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_1" [label="1: Start objc_blockobjc_blockmain1_2_3\nFormals:  z:int\nLocals: \nCaptured:  [by value]x:int [by value]bla:int \n  " color=yellow style=filled]
+"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_1" [label="1: Start objc_blockobjc_blockmain1_2_3\nFormals:  z:int\nLocals: \nCaptured:  [by value]&x:int [by value]&bla:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_1" -> "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" ;
@@ -88,7 +88,7 @@ digraph cfg {
 	
 
 	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_4" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" [label="1: Start objc_blockmain1_2\nFormals:  c:int d:int\nLocals:  bla:int add2:int addblock2:_fn_(*)\nCaptured:  [by value]x:int \n  " color=yellow style=filled]
+"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" [label="1: Start objc_blockmain1_2\nFormals:  c:int d:int\nLocals:  bla:int add2:int addblock2:_fn_(*)\nCaptured:  [by value]&x:int \n  " color=yellow style=filled]
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_7" ;

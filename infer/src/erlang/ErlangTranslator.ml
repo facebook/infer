@@ -720,9 +720,7 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt 
     let default = ProcAttributes.default env.location.file name in
     let access : ProcAttributes.access = Private in
     let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ, Annot.Item.empty)) arity in
-    let mk_capt_var (var : Pvar.t) =
-      {CapturedVar.name= Pvar.get_name var; typ= any_typ; capture_mode= CapturedVar.ByReference}
-    in
+    let mk_capt_var (pvar : Pvar.t) = {CapturedVar.pvar; typ= any_typ; capture_mode= ByReference} in
     let captured = List.map ~f:mk_capt_var captured_vars in
     {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ; captured}
   in

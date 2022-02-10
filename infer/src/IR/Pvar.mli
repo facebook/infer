@@ -174,6 +174,3 @@ val swap_proc_in_local_pvar : t -> Procname.t -> t
 module Set : PrettyPrintable.PPSet with type elt = t
 
 module Map : PrettyPrintable.PPMap with type key = t
-
-val get_pvar_formals : ProcAttributes.t -> (t * Typ.t) list
-(** Return pvar and type of formal parameters *)
