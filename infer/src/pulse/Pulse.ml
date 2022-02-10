@@ -684,6 +684,7 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             report_unnecessary_copies proc_desc err_log non_disj_astate ;
             if Config.pulse_scuba_logging then
               ScubaLogging.log_count ~label:"pulse_summary" ~value:(List.length summary) ;
+            Stats.add_pulse_summaries_count (List.length summary) ;
             Some summary )
     | None ->
         None )

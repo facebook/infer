@@ -7,6 +7,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module PulseSumCountMap = Caml.Map.Make (Int)
 
 include struct
   (* ignore dead modules added by @@deriving fields *)
@@ -23,7 +24,8 @@ include struct
     ; mutable proc_locker_lock_time: ExecutionDuration.t
     ; mutable proc_locker_unlock_time: ExecutionDuration.t
     ; mutable restart_scheduler_useful_time: ExecutionDuration.t
-    ; mutable restart_scheduler_total_time: ExecutionDuration.t }
+    ; mutable restart_scheduler_total_time: ExecutionDuration.t
+    ; mutable pulse_summaries_count: int PulseSumCountMap.t }
   [@@deriving fields]
 end
 
@@ -38,7 +40,8 @@ let global_stats =
   ; proc_locker_lock_time= ExecutionDuration.zero
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
-  ; restart_scheduler_total_time= ExecutionDuration.zero }
+  ; restart_scheduler_total_time= ExecutionDuration.zero
+  ; pulse_summaries_count= PulseSumCountMap.empty }
 
 
 let get () = global_stats
@@ -85,6 +88,11 @@ let add_to_restart_scheduler_total_time execution_duration =
   add Fields.restart_scheduler_total_time execution_duration
 
 
+let add_pulse_summaries_count n =
+  update_with Fields.pulse_summaries_count ~f:(fun counters ->
+      PulseSumCountMap.update n (fun i -> Some (1 + Option.value ~default:0 i)) counters )
+
+
 let copy from ~into : unit =
   let { summary_file_try_load
       ; summary_read_from_disk
@@ -96,13 +104,14 @@ let copy from ~into : unit =
       ; proc_locker_lock_time
       ; proc_locker_unlock_time
       ; restart_scheduler_useful_time
-      ; restart_scheduler_total_time } =
+      ; restart_scheduler_total_time
+      ; pulse_summaries_count } =
     from
   in
   Fields.Direct.set_all_mutable_fields into ~summary_file_try_load ~summary_read_from_disk
     ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed ~ondemand_local_cache_hits
     ~ondemand_local_cache_misses ~proc_locker_lock_time ~proc_locker_unlock_time
-    ~restart_scheduler_useful_time ~restart_scheduler_total_time
+    ~restart_scheduler_useful_time ~restart_scheduler_total_time ~pulse_summaries_count
 
 
 let merge stats1 stats2 =
@@ -123,7 +132,10 @@ let merge stats1 stats2 =
         stats2.restart_scheduler_useful_time
   ; restart_scheduler_total_time=
       ExecutionDuration.add stats1.restart_scheduler_total_time stats2.restart_scheduler_total_time
-  }
+  ; pulse_summaries_count=
+      PulseSumCountMap.merge
+        (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
+        stats1.pulse_summaries_count stats2.pulse_summaries_count }
 
 
 let initial =
@@ -137,7 +149,8 @@ let initial =
   ; proc_locker_lock_time= ExecutionDuration.zero
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
-  ; restart_scheduler_total_time= ExecutionDuration.zero }
+  ; restart_scheduler_total_time= ExecutionDuration.zero
+  ; pulse_summaries_count= PulseSumCountMap.empty }
 
 
 let reset () = copy initial ~into:global_stats
@@ -160,6 +173,13 @@ let pp f stats =
     F.fprintf f "%s= %d (%t)@;" (Field.name cache_hits_field) cache_hits
       (pp_hit_percent cache_hits cache_misses)
   in
+  let pp_pulse_summaries_count stats f field =
+    let sumcounters : int PulseSumCountMap.t = Field.get field stats in
+    let pp_binding f (n, count) = Format.fprintf f "%d -> %d" n count in
+    F.fprintf f "%s= [%a]@;" (Field.name field)
+      (F.pp_print_list ~pp_sep:(fun f () -> F.fprintf f ", ") pp_binding)
+      (PulseSumCountMap.bindings sumcounters)
+  in
   let pp_stats stats f =
     Fields.iter ~summary_file_try_load:(pp_int_field stats f)
       ~summary_read_from_disk:(pp_int_field stats f)
@@ -171,6 +191,7 @@ let pp f stats =
       ~proc_locker_unlock_time:(pp_execution_duration_field stats f)
       ~restart_scheduler_useful_time:(pp_execution_duration_field stats f)
       ~restart_scheduler_total_time:(pp_execution_duration_field stats f)
+      ~pulse_summaries_count:(pp_pulse_summaries_count stats f)
   in
   F.fprintf f "@[Backend stats:@\n@[<v2>  %t@]@]@." (pp_stats stats)
 
@@ -183,6 +204,14 @@ let log_to_scuba stats =
     Field.get field stats
     |> ExecutionDuration.to_scuba_entries ~prefix:("backend_stats." ^ Field.name field)
   in
+  let create_pulse_summaries_count_entry field =
+    let counters : int PulseSumCountMap.t = Field.get field stats in
+    List.map
+      ~f:(fun (n, count) ->
+        LogEntry.mk_count ~label:(F.sprintf "backend_stats.pulse_summaries_count_%d" n) ~value:count
+        )
+      (PulseSumCountMap.bindings counters)
+  in
   let entries =
     Fields.to_list ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
       ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
@@ -190,6 +219,7 @@ let log_to_scuba stats =
       ~ondemand_local_cache_misses:create_counter ~proc_locker_lock_time:create_time_entry
       ~proc_locker_unlock_time:create_time_entry ~restart_scheduler_useful_time:create_time_entry
       ~restart_scheduler_total_time:create_time_entry
+      ~pulse_summaries_count:create_pulse_summaries_count_entry
     |> List.concat
   in
   ScubaLogging.log_many entries
