@@ -15,7 +15,8 @@ module L = Logging
 let clear_caches_except_lrus () =
   Summary.OnDisk.clear_cache () ;
   Procname.SQLite.clear_cache () ;
-  BufferOverrunUtils.clear_cache ()
+  BufferOverrunUtils.clear_cache () ;
+  Attributes.clear_cache ()
 
 
 let clear_caches () =

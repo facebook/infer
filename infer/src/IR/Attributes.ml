@@ -61,27 +61,41 @@ let find =
         |> Option.map ~f:ProcAttributes.SQLite.deserialize )
 
 
-let load pname = find (Procname.to_unique_id pname)
+let load, clear_cache, store =
+  (* capture DB attribute cache: only keeps positive entries as analysis may add entries *)
+  let cache : ProcAttributes.t Procname.Hash.t = Procname.Hash.create 1 in
+  let load pname =
+    match Procname.Hash.find_opt cache pname with
+    | Some _ as result ->
+        result
+    | None ->
+        let result = find (Procname.to_unique_id pname) in
+        Option.iter result ~f:(Procname.Hash.add cache pname) ;
+        result
+  in
+  let clear_cache () = Procname.Hash.clear cache in
+  let store ~proc_desc (attr : ProcAttributes.t) =
+    let pname = attr.proc_name in
+    let akind = proc_kind_of_attr attr in
+    let proc_uid = Procname.to_unique_id pname in
+    if should_try_to_update proc_uid akind then (
+      let proc_name = Procname.SQLite.serialize pname in
+      let attr_kind = int64_of_attributes_kind akind in
+      let cfg = Procdesc.SQLite.serialize proc_desc in
+      let proc_attributes = ProcAttributes.SQLite.serialize attr in
+      let source_file = SourceFile.SQLite.serialize attr.loc.Location.file in
+      let callees =
+        Option.value_map proc_desc ~f:Procdesc.get_static_callees ~default:[]
+        |> Procname.SQLiteList.serialize
+      in
+      DBWriter.replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg
+        ~callees ;
+      Procname.Hash.remove cache pname )
+  in
+  (load, clear_cache, store)
+
 
 let is_no_return pname = match load pname with Some {is_no_return} -> is_no_return | _ -> false
-
-let store ~proc_desc (attr : ProcAttributes.t) =
-  let pname = attr.proc_name in
-  let akind = proc_kind_of_attr attr in
-  let proc_uid = Procname.to_unique_id pname in
-  if should_try_to_update proc_uid akind then
-    let proc_name = Procname.SQLite.serialize pname in
-    let attr_kind = int64_of_attributes_kind akind in
-    let cfg = Procdesc.SQLite.serialize proc_desc in
-    let proc_attributes = ProcAttributes.SQLite.serialize attr in
-    let source_file = SourceFile.SQLite.serialize attr.loc.Location.file in
-    let callees =
-      Option.value_map proc_desc ~f:Procdesc.get_static_callees ~default:[]
-      |> Procname.SQLiteList.serialize
-    in
-    DBWriter.replace_attributes ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg
-      ~callees
-
 
 let pp_attributes_kind f = function
   | ProcUndefined ->
