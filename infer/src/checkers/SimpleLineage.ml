@@ -32,6 +32,7 @@ module LineageGraph = struct
   type data =
     | Local of ((local * PPNode.t)[@sexp.opaque])
     | Argument of int
+    | Captured of int
     | Return
     | ArgumentOf of int * (Procname.t[@sexp.opaque])
     | ReturnOf of (Procname.t[@sexp.opaque])
@@ -68,6 +69,8 @@ module LineageGraph = struct
         Format.fprintf fmt "%a@@%a" pp_local local PPNode.pp node
     | Argument index ->
         Format.fprintf fmt "arg%d" index
+    | Captured index ->
+        Format.fprintf fmt "cap%d" index
     | Return ->
         Format.fprintf fmt "ret"
     | ArgumentOf (index, proc_name) ->
@@ -201,7 +204,7 @@ module LineageGraph = struct
 
     (** Like [LineageGraph.data], but without the ability to refer to other procedures, which makes
         it "local". *)
-    type data_local = Argument of int | Return | Normal of local
+    type data_local = Argument of int | Captured of int | Return | Normal of local
 
     module Id = struct
       (** Internal representation of an Id. *)
@@ -274,6 +277,8 @@ module LineageGraph = struct
         match data with
         | Argument index ->
             Printf.sprintf "$arg%d" index
+        | Captured index ->
+            Printf.sprintf "$cap%d" index
         | Return ->
             "$ret"
         | Normal (Variable x) ->
@@ -283,7 +288,7 @@ module LineageGraph = struct
       in
       let term_type : Json.term_type =
         match data with
-        | Argument _ ->
+        | Argument _ | Captured _ ->
             Argument
         | Return ->
             Return
@@ -372,6 +377,11 @@ module LineageGraph = struct
           save procname
             (Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)))
             (Argument index)
+      | Captured index ->
+          let procname = Procdesc.get_proc_name proc_desc in
+          save procname
+            (Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)))
+            (Captured index)
       | Return ->
           let procname = Procdesc.get_proc_name proc_desc in
           save procname (Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc))) Return
@@ -410,9 +420,14 @@ end
 
 (** Helper function. *)
 let get_formals proc_desc : Var.t list =
-  let pname = Procdesc.get_proc_name proc_desc in
-  let f (var, _typ, _annot) = Var.of_pvar (Pvar.mk var pname) in
-  List.map ~f (Procdesc.get_formals proc_desc)
+  let f (pvar, _typ) = Var.of_pvar pvar in
+  List.map ~f (Procdesc.get_pvar_formals proc_desc)
+
+
+(** Helper function. *)
+let get_captured proc_desc : Var.t list =
+  let f {CapturedVar.pvar} = Var.of_pvar pvar in
+  List.map ~f (Procdesc.get_captured proc_desc)
 
 
 module Summary = struct
@@ -509,7 +524,7 @@ module Summary = struct
       match data with
       | Local (Variable var, _node) ->
           Var.appears_in_source_code var && not (Var.Set.mem var special_variables)
-      | Argument _ | Return | ArgumentOf _ | ReturnOf _ ->
+      | Argument _ | Captured _ | Return | ArgumentOf _ | ReturnOf _ ->
           true
       | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
           true
@@ -768,11 +783,13 @@ module TransferFunctions = struct
     |> add_summary_flows (analyze_dependency procname) args ret_id node
 
 
-  let exec_call (astate : Domain.t) node analyze_dependency ret_id fun_name args : Domain.t =
-    let callee_pname = procname_of_exp fun_name in
+  let exec_call (astate : Domain.t) node analyze_dependency ret_id fun_exp args : Domain.t =
+    let callee_pname = procname_of_exp fun_exp in
     let args = List.map ~f:fst args in
     match callee_pname with
     | None ->
+        let sources = locals_of_exp fun_exp in
+        let astate = update_write LineageGraph.Direct (Var.of_id ret_id, node) sources astate in
         add_tito_all args ret_id node astate
     | Some name ->
         let model =
@@ -823,14 +840,22 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
     let cfg = CFG.from_pdesc proc_desc in
     let initial =
       let formals = get_formals proc_desc in
+      let captured = get_captured proc_desc in
       let start_node = CFG.start_node cfg in
       let add_arg last_writes arg = Domain.Real.LastWrites.add arg start_node last_writes in
-      let last_writes = List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg formals in
+      let last_writes =
+        List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg (captured @ formals)
+      in
       let local_edges =
         List.mapi
           ~f:(fun i var ->
             LineageGraph.flow ~source:(Argument i) ~target:(Local (Variable var, start_node)) () )
           formals
+        @ List.mapi
+            ~f:(fun i var ->
+              LineageGraph.flow ~source:(Captured i) ~target:(Local (Variable var, start_node)) ()
+              )
+            captured
       in
       let has_unsupported_features = false in
       ((last_writes, has_unsupported_features), local_edges)
