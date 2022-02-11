@@ -678,6 +678,7 @@ module Dom = struct
       let dispatcher =
         make_dispatcher
           [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
+          ; +BuiltinDecl.(match_builtin __java_throw) <>--> KnownCheap
           ; +PatternMatch.Java.implements_android "content.SharedPreferences"
             &:: "edit" &--> KnownExpensive
           ; +PatternMatch.Java.implements_android "content.SharedPreferences"

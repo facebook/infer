@@ -147,7 +147,7 @@ public class ResourceLeaks {
     }
   }
 
-  public static void FP_twoResourcesHeliosFixOk() throws IOException {
+  public static void twoResourcesHeliosFixOk() throws IOException {
     FileInputStream fis = null;
     FileOutputStream fos = null;
     try {
@@ -927,15 +927,13 @@ public class ResourceLeaks {
     }
   }
 
-  /* removed to please the infer-smoke-build_macosx CI
-  public int FP_tryWithResourceOk() {
+  public int tryWithResourceOk() {
     try (FileInputStream inputStream = new FileInputStream("paf.txt")) {
       return inputStream.read();
     } catch (IOException e) {
       return 0;
     }
   }
-  */
 
   public InputStreamReader withCharsetOk(URLConnection urlConnection) {
     InputStreamReader reader = null;

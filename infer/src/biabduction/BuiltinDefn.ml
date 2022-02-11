@@ -875,6 +875,9 @@ let __infer_skip = Builtin.register BuiltinDecl.__infer_skip execute_skip
 (* [__instanceof(val,typ)] implements java's [val instanceof typ] *)
 let __instanceof = Builtin.register BuiltinDecl.__instanceof execute___instanceof
 
+(* Throw is not handled via this builtin by biabduction *)
+let __java_throw = Builtin.register BuiltinDecl.__java_throw execute_skip
+
 let __method_set_ignore_attribute =
   Builtin.register BuiltinDecl.__method_set_ignore_attribute execute___method_set_ignore_attribute
 

@@ -56,6 +56,10 @@ module type S = sig
   val __instanceof : t
   (** [__instanceof(val,typ)] implements java's [val instanceof typ] *)
 
+  val __java_throw : t
+  (** [__java_throw] implements java's throw instruction (without arg yet, but this is covered by
+      the usage of the return variable during frontend translation *)
+
   val __method_set_ignore_attribute : t
 
   val __new : t

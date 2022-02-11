@@ -48,7 +48,7 @@ let instance_of (argv, hist) typeexpr : model =
       astate |> Basic.ok_continue
 
 
-let throw_exception (exn : JavaClassName.t) : model =
+let call_may_throw_exception (exn : JavaClassName.t) : model =
  fun {location; path; analysis_data} astate ->
   let ret_addr = AbstractValue.mk_fresh () in
   let exn_name = JavaClassName.to_string exn in
@@ -62,6 +62,10 @@ let throw_exception (exn : JavaClassName.t) : model =
   let<*> astate = PulseOperations.write_deref path location ~ref ~obj astate in
   [Ok (ExceptionRaised astate)]
 
+
+let throw : model = fun _ astate -> [Ok (ExceptionRaised astate)]
+(* Note that the Java frontend should have inserted an assignment of the
+   thrown object to the `ret` variable just before this instruction. *)
 
 module Object = struct
   (* naively modeled as shallow copy. *)
@@ -150,7 +154,7 @@ module Resource = struct
     in
     let exn_state =
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
-          throw_exception (JavaClassName.from_string cn) model_data astate )
+          call_may_throw_exception (JavaClassName.from_string cn) model_data astate )
     in
     delegated_state @ exn_state
 
@@ -167,7 +171,8 @@ module Resource = struct
 
   let use ~exn_class_name : model =
     let exn = JavaClassName.from_string exn_class_name in
-    fun model_data astate -> Ok (ContinueProgram astate) :: throw_exception exn model_data astate
+    fun model_data astate ->
+      Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
 
 
   let release this : model =
@@ -551,7 +556,8 @@ let matchers : matcher list =
       ["add"; "addAll"; "append"; "delete"; "remove"; "replace"; "poll"; "put"; "putAll"]
   in
   let map_context_tenv f (x, _) = f x in
-  [ +BuiltinDecl.(match_builtin __unwrap_exception)
+  [ +BuiltinDecl.(match_builtin __java_throw) <>--> throw
+  ; +BuiltinDecl.(match_builtin __unwrap_exception)
     <>$ capt_arg_payload
     $--> Basic.id_first_arg ~desc:"unwrap_exception"
   ; +BuiltinDecl.(match_builtin __set_file_attribute) <>$ any_arg $--> Basic.skip

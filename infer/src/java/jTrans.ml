@@ -1123,8 +1123,18 @@ let instruction (context : JContext.t) pc instr : translation =
         let sil_instr =
           Sil.Store {e1= Exp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2= sil_exn; loc}
         in
-        let node = create_node Procdesc.Node.throw_kind (instrs @ [sil_instr]) in
-        JContext.add_goto_jump context pc JContext.Exit ;
+        let throw_builtin_call =
+          let throw_builtin = Exp.Const (Const.Cfun BuiltinDecl.__java_throw) in
+          Sil.Call
+            ( (Ident.create_fresh Ident.knormal, StdTyp.void)
+            , throw_builtin
+            , []
+            , loc
+            , CallFlags.default )
+        in
+        let node =
+          create_node Procdesc.Node.throw_kind (instrs @ [sil_instr; throw_builtin_call])
+        in
         Instr node
     | Alloc (var, cn) ->
         (* since Sawja 1.5.10 some allocation sites come without constructor calls *)
