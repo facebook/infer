@@ -368,23 +368,18 @@ module LineageGraph = struct
             (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; term}}) ;
         node_id
       in
+      let procname = Procdesc.get_proc_name proc_desc in
+      let start = Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)) in
+      let exit = Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc)) in
       match data with
       | Local (var, node) ->
-          let procname = Procdesc.get_proc_name proc_desc in
           save procname (Normal node) (Normal var)
       | Argument index ->
-          let procname = Procdesc.get_proc_name proc_desc in
-          save procname
-            (Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)))
-            (Argument index)
+          save procname start (Argument index)
       | Captured index ->
-          let procname = Procdesc.get_proc_name proc_desc in
-          save procname
-            (Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)))
-            (Captured index)
+          save procname start (Captured index)
       | Return ->
-          let procname = Procdesc.get_proc_name proc_desc in
-          save procname (Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc))) Return
+          save procname exit Return
       | ArgumentOf (index, callee_procname) ->
           save ~write:false callee_procname (Start Location.dummy) (Argument index)
       | ReturnOf callee_procname ->
