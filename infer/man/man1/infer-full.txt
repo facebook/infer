@@ -1723,6 +1723,15 @@ INTERNAL OPTIONS
        --compilation-database-reset
            Set --compilation-database to the empty list.
 
+       --config-impact-config-function-patterns +regex
+           Register known config functions that return a config value. The
+           matched name contains class and method names, without package
+           names and parameters, for example, Class.method in Java/ObjC and
+           Class::method in C++.
+
+       --config-impact-config-function-patterns-reset
+           Set --config-impact-config-function-patterns to the empty list.
+
        --config-impact-current-reset
            Cancel the effect of --config-impact-current.
 

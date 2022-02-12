@@ -6,7 +6,8 @@
 TESTS_DIR = ../../..
 
 INFER_OPTIONS = --config-impact-analysis-only --config-impact-strict-mode \
-  --debug-exceptions --report-force-relative-path
+  --debug-exceptions --report-force-relative-path \
+  --config-impact-config-function-patterns "ConfigValues\\.enable_feature"
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

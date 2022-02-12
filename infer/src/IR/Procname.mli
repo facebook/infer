@@ -425,4 +425,7 @@ val to_filename : t -> string
 val get_qualifiers : t -> QualifiedCppName.t
 (** get qualifiers of C/objc/C++ method/function *)
 
+val patterns_match : Re.Str.regexp list -> t -> bool
+(** Test whether a proc name matches to one of the regular expressions. *)
+
 module Normalizer : HashNormalizer.S with type t = t
