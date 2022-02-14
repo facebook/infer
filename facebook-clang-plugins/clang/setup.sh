@@ -12,16 +12,8 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLANG_RELATIVE_SRC="src/download/llvm-project/llvm"
 CLANG_SRC="${CLANG_SRC:-$SCRIPT_DIR/$CLANG_RELATIVE_SRC}"
-CLANG_PREBUILD_PATCHES=(
-    "$SCRIPT_DIR/src/err_ret_local_block.patch"
-    "$SCRIPT_DIR/src/mangle_suppress_errors.patch"
-    "$SCRIPT_DIR/src/AArch64SVEACLETypes.patch"
-    "$SCRIPT_DIR/src/benchmark_register.patch"
-    "$SCRIPT_DIR/src/nsattributedstring.patch"
-)
 CLANG_PREFIX="$SCRIPT_DIR/install"
 CLANG_INSTALLED_VERSION_FILE="$SCRIPT_DIR/installed.version"
-PATCH=${PATCH:-patch}
 PATCHELF=${PATCHELF:-patchelf}
 PLATFORM_ENV=${PLATFORM_ENV:-}
 STRIP=${STRIP:-strip}
@@ -227,15 +219,6 @@ fi
 if [ ! -d "$CLANG_SRC" ]; then
     echo "Clang src (${CLANG_SRC}) missing, please run src/prepare_clang_src.sh"
     exit 1
-fi
-
-if [ "$SKIP_PATCH" != "yes" ]; then
-    # apply prebuild patch
-    pushd "${SCRIPT_DIR}/src/download"
-    for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
-        "$PATCH" --force -p 1 < "$PATCH_FILE"
-    done
-    popd
 fi
 
 if [ -n "$CLANG_TMP_DIR" ]; then
