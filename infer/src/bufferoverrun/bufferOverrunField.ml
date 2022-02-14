@@ -65,7 +65,7 @@ let cpp_vector_elem ~vec_typ =
   Fieldname.make classname cpp_vector_elem_str
 
 
-let is_cpp_vector_elem fn = String.equal (Fieldname.to_simplified_string fn) cpp_vector_elem_str
+let is_cpp_vector_elem fn = String.equal (Fieldname.get_field_name fn) cpp_vector_elem_str
 
 (** Field domain constructor *)
 
