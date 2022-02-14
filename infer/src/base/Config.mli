@@ -233,6 +233,8 @@ val classpath : string option
 
 val command : InferCommand.t
 
+val config_impact_config_field_patterns : Re.Str.regexp list
+
 val config_impact_config_function_patterns : Re.Str.regexp list
 
 val config_impact_current : string option

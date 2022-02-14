@@ -102,6 +102,11 @@ let to_full_string fld =
   (if is_java fld then dot_join else cc_join) (Typ.Name.name fld.class_name) fld.field_name
 
 
+let patterns_match patterns fld =
+  let s = to_simplified_string fld in
+  List.exists patterns ~f:(fun pattern -> Re.Str.string_match pattern s 0)
+
+
 let pp f fld = F.pp_print_string f fld.field_name
 
 let is_java_outer_instance ({field_name} as field) =

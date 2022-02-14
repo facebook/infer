@@ -1723,6 +1723,15 @@ INTERNAL OPTIONS
        --compilation-database-reset
            Set --compilation-database to the empty list.
 
+       --config-impact-config-field-patterns +regex
+           Register known config fields that have a config value. The matched
+           name contains class and field names, without package names and
+           namespaces, for example, Class.field in Java/ObjC and Class::field
+           in C++.
+
+       --config-impact-config-field-patterns-reset
+           Set --config-impact-config-field-patterns to the empty list.
+
        --config-impact-config-function-patterns +regex
            Register known config functions that return a config value. The
            matched name contains class and method names, without package

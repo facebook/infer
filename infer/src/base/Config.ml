@@ -1035,6 +1035,13 @@ and compilation_database_escaped =
      from Xcode (can be specified multiple times)"
 
 
+and config_impact_config_field_patterns =
+  CLOpt.mk_string_list ~long:"config-impact-config-field-patterns" ~meta:"regex"
+    "Register known config fields that have a config value.  The matched name contains class and \
+     field names, without package names and namespaces, for example, $(b,Class.field) in Java/ObjC \
+     and $(b,Class::field) in C++."
+
+
 and config_impact_config_function_patterns =
   CLOpt.mk_string_list ~long:"config-impact-config-function-patterns" ~meta:"regex"
     "Register known config functions that return a config value.  The matched name contains class \
@@ -3153,6 +3160,10 @@ and clang_isystem_to_override_regex = Option.map ~f:Str.regexp !clang_isystem_to
 and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_regex
 
 and classpath = !classpath
+
+and config_impact_config_field_patterns =
+  RevList.rev_map !config_impact_config_field_patterns ~f:Re.Str.regexp
+
 
 and config_impact_config_function_patterns =
   RevList.rev_map !config_impact_config_function_patterns ~f:Re.Str.regexp
