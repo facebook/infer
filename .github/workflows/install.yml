@@ -73,6 +73,10 @@ jobs:
         run: brew install automake jq ninja pkg-config lzlib zlib coreutils
         if: runner.os == 'macOS'
 
+      - name: Get OS version
+        uses: sersoft-gmbh/os-version-action@v1
+        id: os-version
+
       - name: Compute hash of clang installation
         id: clang-hash
         run: |
@@ -102,7 +106,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.opam
-          key: opam-${{ runner.os }}-${{ hashFiles('opam/infer.opam.locked', 'opam/ocamlformat') }}-cache
+          key: opam-${{ matrix.os }}-${{steps.os-version.outputs.version}}-${{ hashFiles('opam/infer.opam.locked', 'opam/ocamlformat') }}
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: avsm/setup-ocaml@v1
