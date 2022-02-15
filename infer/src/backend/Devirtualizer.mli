@@ -9,5 +9,5 @@
 
 open! IStd
 
-val process : Summary.t -> Tenv.t -> unit
+val process : Procdesc.t -> Tenv.t -> unit
 (** Run the devirtualization pass by replacing some virtual calls by resolved calls *)
