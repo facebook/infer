@@ -16,8 +16,8 @@ let pp_llvalue fs t = Format.pp_print_string fs (Llvm.string_of_llvalue t)
 
 let pp_llblock fs t =
   Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t))
-
 ;;
+
 Exp.demangle :=
   let open Ctypes in
   let cxa_demangle =
@@ -952,8 +952,7 @@ let xlate_jump :
       let src_lbl = label_of_block (Llvm.instr_parent instr) in
       let lbl = src_lbl ^ ".jmp." ^ dst_lbl in
       let blk =
-        Block.mk ~lbl
-          ~cmnd:(IArray.of_array [|mov|])
+        Block.mk ~lbl ~cmnd:(IArray.of_array [|mov|])
           ~term:(Term.goto ~dst:jmp ~loc)
       in
       let blocks =
@@ -1407,8 +1406,7 @@ let xlate_instr :
         in
         let lbl_i = lbl ^ "." ^ Int.to_string i in
         let blk =
-          Block.mk ~lbl:lbl_i
-            ~cmnd:(IArray.of_array [|mov|])
+          Block.mk ~lbl:lbl_i ~cmnd:(IArray.of_array [|mov|])
             ~term:(Term.goto ~dst:(Jump.mk lbl) ~loc)
         in
         (Jump.mk lbl_i, blk :: rev_blocks)

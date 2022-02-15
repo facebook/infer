@@ -47,7 +47,9 @@ let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?fil
                 Cmdliner.Manpage.s_files section ) ]
   in
   CLOpt.mk_command_doc ~section ~version:Version.versionString
-    ~date:Version.man_pages_last_modify_date ~synopsis:[`Pre synopsis] ~environment ~files ?see_also
+    ~date:Version.man_pages_last_modify_date
+    ~synopsis:[`Pre synopsis]
+    ~environment ~files ?see_also
 
 
 let analyze =

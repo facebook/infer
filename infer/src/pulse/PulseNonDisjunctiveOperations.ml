@@ -111,8 +111,7 @@ let mark_modified_copy_at ~address ?(is_source = false) var astate (astate_n : N
     NonDisjDomain.t =
   NonDisjDomain.mark_copy_as_modified var astate_n ~is_modified:(fun copy_heap ->
       let reachable_addresses_from_copy =
-        BaseDomain.reachable_addresses_from
-          (Caml.List.to_seq [address])
+        BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
           (astate.AbductiveDomain.post :> BaseDomain.t)
       in
       let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in

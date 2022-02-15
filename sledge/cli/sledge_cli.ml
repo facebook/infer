@@ -322,15 +322,12 @@ let readme () =
    separated by + or -. For example, M-M.f enables all tracing in the M \
    module except the M.f function. The <spec> value * enables all debug \
    tracing."
+;;
 
-;;
-Memtrace.trace_if_requested ()
-;;
-if Version.debug then Printexc.record_backtrace true
-;;
-Stdlib.Sys.catch_break true
+Memtrace.trace_if_requested () ;;
+if Version.debug then Printexc.record_backtrace true ;;
+Stdlib.Sys.catch_break true ;;
 
-;;
 Command.run ~version:Version.version ~build_info:Version.build_info
   (Command.group ~summary ~readme ~preserve_subcommand_order:()
      [ ("buck", Sledge_buck.main ~command)

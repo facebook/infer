@@ -90,8 +90,7 @@ let%test_module _ =
       let q =
         or_
           (pure (x = !0))
-          (exists
-             ~$[x_]
+          (exists ~$[x_]
              (or_
                 (and_ (x = !1) (pure (y = !1)))
                 (exists ~$[x_] (pure (x = !2))) ) )
@@ -109,12 +108,10 @@ let%test_module _ =
 
     let%expect_test _ =
       let q =
-        exists
-          ~$[x_]
+        exists ~$[x_]
           (or_
              (pure (x = !0))
-             (exists
-                ~$[x_]
+             (exists ~$[x_]
                 (or_
                    (and_ (x = !1) (pure (y = !1)))
                    (exists ~$[x_] (pure (x = !2))) ) ) )
@@ -134,12 +131,10 @@ let%test_module _ =
 
     let%expect_test _ =
       let q =
-        exists
-          ~$[x_]
+        exists ~$[x_]
           (or_
              (pure (x = !0))
-             (exists
-                ~$[x_]
+             (exists ~$[x_]
                 (or_
                    (and_ (x = !1) (pure (y = !1)))
                    (exists ~$[x_] (pure (x = !2))) ) ) )
@@ -174,8 +169,7 @@ let%test_module _ =
              (pure (eq_concat (!16, e) [|(!8, a); (!8, d)|]))
              (or_
                 (pure (Formula.dq x !0))
-                (exists
-                   (Var.Set.of_list [b_])
+                (exists (Var.Set.of_list [b_])
                    (pure (eq_concat (!8, a) [|(!4, c); (!4, b)|])) ) ) )
       in
       pp_raw q ;
