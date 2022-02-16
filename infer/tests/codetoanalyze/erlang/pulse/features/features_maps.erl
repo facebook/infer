@@ -21,7 +21,8 @@
     test_put6_Bad/0,
     test_new_Ok/0,
     test_new_Bad/0,
-    test_merge_return_type_Ok/0
+    test_merge_return_type_Ok/0,
+    test_filter_return_type_Ok/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -111,4 +112,8 @@ test_new_Bad() ->
 
 test_merge_return_type_Ok() ->
     M = maps:merge(#{}, #{}),
+    maps:put(1, 3, M). % No BAD_MAP should happen here
+
+test_filter_return_type_Ok() ->
+    M = maps:filter(fun (_, _) -> ok end, #{}),
     maps:put(1, 3, M). % No BAD_MAP should happen here

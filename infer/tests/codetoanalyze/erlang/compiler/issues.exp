@@ -254,6 +254,7 @@ features_logic:test_xor10_Ok/0: ok
 features_logic:test_xor11_Bad/0: if_clause
 
 ----- features_maps -----
+features_maps:test_filter_return_type_Ok/0: ok
 features_maps:test_get_Bad/0: function_clause
 features_maps:test_get_Ok/0: ok
 features_maps:test_get_badkey_Bad/0: {badkey,1}
