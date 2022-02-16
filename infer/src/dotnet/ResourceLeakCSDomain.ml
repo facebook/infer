@@ -119,7 +119,6 @@ let assign lhs_access_path rhs_access_path held =
         ()
   in
   let equal_base (base1, _) (base2, _) = AccessPath.equal_base base1 base2 in
-  let replace_base base (_, accesses) = (base, accesses) in
   let one_binding access_path count held =
     match
       AccessPath.replace_prefix ~prefix:rhs_access_path ~replace_with:access_path lhs_access_path
@@ -131,10 +130,16 @@ let assign lhs_access_path rhs_access_path held =
         if AccessPath.equal rhs_access_path access_path then (
           add_type_map access_path lhs_access_path ;
           ResourcesHeld.add lhs_access_path count held )
-        else if equal_base rhs_access_path access_path then (
-          let new_access_path = replace_base (fst lhs_access_path) access_path in
-          add_type_map access_path new_access_path ;
-          ResourcesHeld.add new_access_path count held )
+        else if equal_base rhs_access_path access_path then
+          match
+            AccessPath.replace_prefix ~prefix:rhs_access_path ~replace_with:lhs_access_path
+              access_path
+          with
+          | Some new_access_path ->
+              add_type_map access_path new_access_path ;
+              ResourcesHeld.add new_access_path count held
+          | None ->
+              ResourcesHeld.add access_path count held
         else ResourcesHeld.add access_path count held
   in
   ResourcesHeld.fold one_binding held ResourcesHeld.empty
