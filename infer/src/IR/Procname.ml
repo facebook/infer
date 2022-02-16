@@ -11,7 +11,7 @@ module F = Format
 module L = Logging
 
 (** Level of verbosity of some to_string functions. *)
-type detail_level = Verbose | Non_verbose | Simple
+type detail_level = Verbose | Non_verbose | Simple | NameOnly
 
 let is_verbose v = match v with Verbose -> true | _ -> false
 
@@ -82,7 +82,7 @@ module CSharp = struct
         pp_package_method_and_params fmt cs ;
         F.fprintf fmt "%s%a" separator (pp_return_type ~verbose) cs
     | Non_verbose ->
-        (* [rtype package.class.method(params)], for creating reports *)
+        (* [rtype class.method(params)], for creating reports *)
         let separator = if Option.is_none cs.return_type then "" else " " in
         F.fprintf fmt "%a%s" (pp_return_type ~verbose) cs separator ;
         pp_package_method_and_params fmt cs
@@ -97,6 +97,9 @@ module CSharp = struct
             F.pp_print_string fmt cs.method_name )
         in
         F.fprintf fmt "%a(%s)" pp_method_name cs params
+    | NameOnly ->
+        (* [class.method], for simple name matching *)
+        F.fprintf fmt "%a%s" pp_class_name_dot cs cs.method_name
 end
 
 module Java = struct
@@ -175,7 +178,7 @@ module Java = struct
         pp_package_method_and_params fmt j ;
         F.fprintf fmt "%s%a" separator (pp_return_type ~verbose) j
     | Non_verbose ->
-        (* [rtype package.class.method(params)], for creating reports *)
+        (* [rtype class.method(params)], for creating reports *)
         let separator = if Option.is_none j.return_type then "" else " " in
         F.fprintf fmt "%a%s" (pp_return_type ~verbose) j separator ;
         pp_package_method_and_params fmt j
@@ -190,6 +193,9 @@ module Java = struct
             F.pp_print_string fmt j.method_name )
         in
         F.fprintf fmt "%a(%s)" pp_method_name j params
+    | NameOnly ->
+        (* [class.method], for simple name matching *)
+        F.fprintf fmt "%a%s" pp_class_name_dot j j.method_name
 
 
   let to_simplified_string ?(withclass = false) = Pp.string_of_pp (pp ~withclass Simple)
@@ -413,7 +419,7 @@ module ObjC_Cpp = struct
     match verbosity with
     | Simple ->
         F.pp_print_string fmt osig.method_name
-    | Non_verbose ->
+    | Non_verbose | NameOnly ->
         F.fprintf fmt "%s%s%s" (Typ.Name.name osig.class_name) sep osig.method_name
     | Verbose ->
         F.fprintf fmt "%s%s%s%a%a" (Typ.Name.name osig.class_name) sep osig.method_name
@@ -464,7 +470,7 @@ module C = struct
     match verbosity with
     | Simple ->
         F.fprintf fmt "%s()" plain
-    | Non_verbose ->
+    | Non_verbose | NameOnly ->
         F.pp_print_string fmt plain
     | Verbose ->
         let pp_mangled fmt = function None -> () | Some s -> F.fprintf fmt "{%s}" s in
@@ -493,6 +499,8 @@ module Erlang = struct
         F.fprintf fmt "%s%c%d" function_name arity_sep arity
     | Verbose ->
         F.fprintf fmt "%s:%s%c%d" module_name function_name arity_sep arity
+    | NameOnly ->
+        F.fprintf fmt "%s:%s" module_name function_name
 
 
   let pp verbosity fmt pname = pp_general '/' verbosity fmt pname
@@ -538,7 +546,7 @@ module Block = struct
   let pp verbosity fmt bsig =
     let pp_block = pp_block_type ~with_prefix_and_index:true in
     match verbosity with
-    | Simple ->
+    | Simple | NameOnly ->
         F.pp_print_string fmt "block"
     | Non_verbose ->
         pp_block fmt bsig.block_type
@@ -853,7 +861,7 @@ let pp_with_block_parameters verbose pp fmt base blocks =
   pp fmt base ;
   F.pp_print_string fmt "[" ;
   ( match verbose with
-  | Non_verbose | Simple ->
+  | Non_verbose | Simple | NameOnly ->
       F.pp_print_string fmt "specialized with blocks"
   | Verbose ->
       Pp.seq ~sep:"^" (Block.pp verbose) fmt blocks ) ;
@@ -922,6 +930,30 @@ let get_block_type proc =
       block_type
   | _ ->
       Block.SurroundingProc {class_name= get_class_type_name proc; name= to_string proc}
+
+
+let rec pp_name_only fmt = function
+  | Java j ->
+      Java.pp NameOnly fmt j
+  | CSharp cs ->
+      CSharp.pp NameOnly fmt cs
+  | C osig ->
+      C.pp NameOnly fmt osig
+  | Erlang e ->
+      Erlang.pp NameOnly fmt e
+  | ObjC_Cpp osig ->
+      ObjC_Cpp.pp NameOnly fmt osig
+  | Block bsig ->
+      Block.pp NameOnly fmt bsig
+  | WithBlockParameters (base, _) ->
+      pp_name_only fmt base
+  | Linters_dummy_method ->
+      pp_unique_id fmt Linters_dummy_method
+
+
+let patterns_match patterns proc_name =
+  let s = F.asprintf "%a" pp_name_only proc_name in
+  List.exists patterns ~f:(fun pattern -> Re.Str.string_match pattern s 0)
 
 
 (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)

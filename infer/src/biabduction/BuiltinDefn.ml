@@ -268,7 +268,9 @@ let execute___instanceof_cast ~instof
       in
       (* In Java, we throw an exception, in C++ we return 0 in case of a cast to a pointer, *)
       (* and throw an exception in case of a cast to a reference. *)
-      let should_throw_exception = Language.curr_language_is Java || is_cast_to_reference in
+      let should_throw_exception =
+        Language.curr_language_is Java || Language.curr_language_is CIL || is_cast_to_reference
+      in
       let deal_with_failed_cast val1 texp1 texp2 =
         raise (Tabulation.create_cast_exception tenv __POS__ None texp1 texp2 val1)
       in

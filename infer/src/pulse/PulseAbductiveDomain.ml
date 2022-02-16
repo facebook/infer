@@ -537,19 +537,27 @@ let mk_initial tenv proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let location = Procdesc.get_loc proc_desc in
   let formals_and_captured =
-    let init_pvar pvar typ =
-      ( Var.of_pvar pvar
-      , typ
-      , ( AbstractValue.mk_fresh ()
-        , ValueHistory.singleton (FormalDeclared (pvar, location, Timestamp.t0)) ) )
+    let init_var formal_or_captured mangled typ =
+      let pvar = Pvar.mk mangled proc_name in
+      let event =
+        match formal_or_captured with
+        | `Formal ->
+            ValueHistory.FormalDeclared (pvar, location, Timestamp.t0)
+        | `Captured mode ->
+            ValueHistory.Capture {captured_as= pvar; mode; location; timestamp= Timestamp.t0}
+      in
+      (Var.of_pvar pvar, typ, (AbstractValue.mk_fresh (), ValueHistory.singleton event))
     in
-    let init_var mangled typ = init_pvar (Pvar.mk mangled proc_name) typ in
     let formals =
-      Procdesc.get_formals proc_desc |> List.map ~f:(fun (mangled, typ, _) -> init_var mangled typ)
+      Procdesc.get_formals proc_desc
+      |> List.map ~f:(fun (mangled, typ, _) -> init_var `Formal mangled typ)
     in
     let captured =
       Procdesc.get_captured proc_desc
-      |> List.map ~f:(fun {CapturedVar.pvar; typ} -> init_var (Pvar.get_name pvar) typ)
+      |> List.map ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
+             (* NOTE: it's important to change the proc name of [pvar] here for some reason, hence why
+                we pass only its name to [init_var] *)
+             init_var (`Captured capture_mode) (Pvar.get_name pvar) typ )
     in
     captured @ formals
   in

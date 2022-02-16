@@ -56,7 +56,15 @@ val to_string : t -> string
 val to_full_string : t -> string
 
 val to_simplified_string : t -> string
-(** Convert a fieldname to a simplified string with at most one-level path. *)
+(** Convert a fieldname to a simplified string with at most one-level path. For example,
+
+    - In C++: "<ClassName>::<FieldName>"
+    - In Java, ObjC, C#: "<ClassName>.<FieldName>"
+    - In C: "<StructName>.<FieldName>" or "<UnionName>.<FieldName>"
+    - In Erlang: "<FieldName>" *)
+
+val patterns_match : Re.Str.regexp list -> t -> bool
+(** Test whether a field full string matches to one of the regular expressions. *)
 
 val pp : F.formatter -> t -> unit
 (** Pretty print a field name. *)

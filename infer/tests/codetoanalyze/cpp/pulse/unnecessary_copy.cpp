@@ -145,3 +145,36 @@ void loop_no_copy_ok(std::vector<std::string>& namesOfTheEntirePopulation) {
   for (const auto& name : namesOfTheEntirePopulation) {
   }
 }
+
+Arr& get_cond_arr_ref(Arr& arr1, Arr& arr2, bool cond) {
+  if (cond) {
+    return arr1;
+  } else {
+    return arr2;
+  }
+}
+
+// copy tracking is limited to a single disjunct (e.g tracks arr1), hence we
+// mistakenly think that copy is modified here (when we compare current arr2
+// with tracked arr1)
+void copy_in_both_cases_bad_FN(bool cond) {
+  Arr arr1;
+  Arr arr2;
+  auto copy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+}
+
+void copy_in_both_cases_branch_bad(bool cond) {
+  Arr arr1;
+  Arr arr2;
+  auto copy = get_cond_arr_ref(arr1, arr2, true); // call to copy ctor
+}
+
+void copy_modified_after_abort_ok_FP(std::vector<int> source_vec) {
+  auto copy = source_vec;
+  std::vector<int> vec(2);
+  int* elt = &vec[1];
+  vec.push_back(0);
+  int temp = *elt; // abort: vector invalidation
+  copy.push_back(0); // copy modified, but we propagate Abort state without
+                     // executing the rest of the stmts
+}
