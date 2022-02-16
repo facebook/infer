@@ -327,17 +327,17 @@ val remove_vars : Var.t list -> Location.t -> t -> t
 val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t AccessResult.t
 
+type call_kind =
+  [ `Closure of (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  | `Var of Ident.t
+  | `ResolvedProcname ]
+
 val get_captured_actuals :
-     PathContext.t
+     Procname.t
+  -> PathContext.t
   -> Location.t
   -> captured_formals:(Var.t * CapturedVar.capture_mode * Typ.t) list
-  -> actual_closure:AbstractValue.t * ValueHistory.t
-  -> t
-  -> (t * ((AbstractValue.t * ValueHistory.t) * Typ.t) list) AccessResult.t
-
-val get_block_captured_actuals :
-     PathContext.t
-  -> Location.t
-  -> captured_actuals:(Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  -> call_kind:call_kind
+  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> t
   -> (t * ((AbstractValue.t * ValueHistory.t) * Typ.t) list) AccessResult.t

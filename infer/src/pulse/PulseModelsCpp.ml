@@ -342,7 +342,8 @@ module Function = struct
         in
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
           ~callee_data:(analyze_dependency callee_proc_name)
-          location callee_proc_name ~ret ~actuals ~formals_opt:None astate
+          location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
+          astate
 
 
   let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =

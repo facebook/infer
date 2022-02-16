@@ -764,13 +764,12 @@ let remove_vars vars location astate =
   Stack.remove_vars vars astate
 
 
-let get_captured_actuals path location ~captured_formals ~actual_closure astate =
-  let* astate, this_value_addr = eval_access path Read location actual_closure Dereference astate in
+let get_var_captured_actuals path location ~captured_formals ~actual_closure astate =
   let+ _, astate, captured_actuals =
     PulseResult.list_fold captured_formals ~init:(0, astate, [])
       ~f:(fun (id, astate, captured) (_, mode, typ) ->
         let+ astate, captured_actual =
-          eval_access path Read location this_value_addr
+          eval_access path Read location actual_closure
             (FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
             astate
         in
@@ -783,7 +782,7 @@ let get_captured_actuals path location ~captured_formals ~actual_closure astate 
   (astate, List.rev captured_actuals)
 
 
-let get_block_captured_actuals path location ~captured_actuals astate =
+let get_closure_captured_actuals path location ~captured_actuals astate =
   let+ astate, captured_actuals =
     PulseResult.list_fold captured_actuals ~init:(astate, [])
       ~f:(fun (astate, captured_actuals) (exp, _, typ, _) ->
@@ -795,3 +794,30 @@ let get_block_captured_actuals path location ~captured_actuals astate =
      captured_actuals and therefore not break the element-wise correspondence
      between the captured_actuals and captured_formals in the caller *)
   (astate, List.rev captured_actuals)
+
+
+type call_kind =
+  [ `Closure of (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  | `Var of Ident.t
+  | `ResolvedProcname ]
+
+let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
+  if Procname.is_objc_block procname || Procname.is_specialized procname then
+    match call_kind with
+    | `Closure captured_actuals ->
+        get_closure_captured_actuals path location ~captured_actuals astate
+    | `Var id ->
+        let* astate, actual_closure = eval path Read location (Exp.Var id) astate in
+        get_var_captured_actuals path location ~captured_formals ~actual_closure astate
+    | `ResolvedProcname ->
+        Ok (astate, [])
+  else
+    match actuals with
+    | (actual_closure, _) :: _ when not (List.is_empty captured_formals) ->
+        (* Assumption: the first parameter will be a closure *)
+        let* astate, actual_closure =
+          eval_access path Read location actual_closure Dereference astate
+        in
+        get_var_captured_actuals path location ~captured_formals ~actual_closure astate
+    | _ ->
+        Ok (astate, [])
