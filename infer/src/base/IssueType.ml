@@ -271,7 +271,7 @@ end = struct
     let user_documentation =
       Printf.sprintf
         "A latent [%s](#%s). See the [documentation on Pulse latent \
-         issues](checker-pulse#latent-issues)."
+         issues](/docs/next/checker-pulse#latent-issues)."
         id (String.lowercase id)
     in
     let latent_issue =

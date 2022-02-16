@@ -64,6 +64,8 @@ let parse_cil_procname (json : Safe.t) : Procname.t =
       BuiltinDecl.__delete_locked_attribute
   | "__instanceof" ->
       BuiltinDecl.__instanceof
+  | "__cast" ->
+      BuiltinDecl.__cast
   | "__unwrap_exception" ->
       BuiltinDecl.__unwrap_exception
   | _ ->
@@ -298,6 +300,8 @@ and parse_exp (json : Safe.t) =
         Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
     | "instof" ->
         Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof}
+    | "cast" ->
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_cast}
     | _ ->
         Logging.die InternalError "Subtype in Sizeof instruction is not supported."
   else Logging.die InternalError "Unknown expression kind %s" ekind

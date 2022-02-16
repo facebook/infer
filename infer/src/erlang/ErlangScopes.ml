@@ -255,9 +255,12 @@ and annotate_one_catch_clause (env : (_, _) Env.t) lambda_cntr (scopes : scope l
 
 let annotate_one_function (env : (_, _) Env.t) function_ clauses =
   let _, name = Env.func_procname env function_ in
+  let funcname =
+    (* We use [to_filename] to avoid / in the name, which messes debug output. *)
+    String.substr_replace_all ~pattern:":" ~with_:"." (Procname.to_filename name)
+  in
   let scopes : scope list = push_scope [] name in
-  (* We use [to_filename] to avoid / in the name, which messes debug output. *)
-  let lambda_cntr = {funcname= Procname.to_filename name; counter= 0} in
+  let lambda_cntr = {funcname; counter= 0} in
   (* Process each clause independently *)
   List.iter
     ~f:(fun clause ->
