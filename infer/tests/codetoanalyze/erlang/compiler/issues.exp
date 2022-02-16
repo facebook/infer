@@ -272,6 +272,9 @@ features_maps:test_put5_Bad/0: function_clause
 features_maps:test_put6_Bad/0: {badmap,[not_a_map]}
 
 ----- features_records -----
+features_records:fp_test_lyse_robot_nested_Ok/0: ok
+features_records:fp_test_lyse_robot_update_Ok/0: ok
+features_records:fp_test_lyse_user_pattern_matching_fun_Ok/0: ok
 features_records:test_field2_Bad/0: function_clause
 features_records:test_field2_Ok/0: ok
 features_records:test_field3_Bad/0: function_clause
@@ -306,6 +309,27 @@ features_records:test_initializer_explicit_override_Bad/0: function_clause
 features_records:test_initializer_explicit_override_Ok/0: ok
 features_records:test_initializer_update_override_Bad/0: function_clause
 features_records:test_initializer_update_override_Ok/0: ok
+features_records:test_lyse_robot_default_value_atom_Bad/0: function_clause
+features_records:test_lyse_robot_default_value_atom_Ok/0: ok
+features_records:test_lyse_robot_default_value_list_Bad/0: function_clause
+features_records:test_lyse_robot_default_value_list_Ok/0: ok
+features_records:test_lyse_robot_default_value_override_Bad/0: function_clause
+features_records:test_lyse_robot_default_value_override_Ok/0: ok
+features_records:test_lyse_robot_default_value_undefined_Bad/0: function_clause
+features_records:test_lyse_robot_default_value_undefined_Ok/0: ok
+features_records:test_lyse_robot_field_number_Bad/0: function_clause
+features_records:test_lyse_robot_field_number_Ok/0: ok
+features_records:test_lyse_robot_nested_Bad/0: function_clause
+features_records:test_lyse_robot_nested_literals_Bad/0: function_clause
+features_records:test_lyse_robot_nested_literals_Ok/0: ok
+features_records:test_lyse_robot_update_Bad/0: function_clause
+features_records:test_lyse_robot_update_literals_Bad/0: function_clause
+features_records:test_lyse_robot_update_literals_Ok/0: ok
+features_records:test_lyse_user_guard_Bad/0: function_clause
+features_records:test_lyse_user_guard_Ok/0: ok
+features_records:test_lyse_user_pattern_matching_fun_Bad/0: function_clause
+features_records:test_lyse_user_pattern_matching_fun_literals_Bad/0: function_clause
+features_records:test_lyse_user_pattern_matching_fun_literals_Ok/0: ok
 features_records:test_nested_Bad/0: function_clause
 features_records:test_nested_Ok/0: ok
 features_records:test_undefined_Bad/0: function_clause
