@@ -118,27 +118,31 @@ let assign lhs_access_path rhs_access_path held =
     | exception Caml.Not_found ->
         ()
   in
-  let compare_expr_base ((base1, _)) ((base2, _)) = 
-    if AccessPath.equal_base base1 base2 then true
-    else false
+  let equal_expr_base (base1, _) (base2, _) =
+    if AccessPath.equal_base base1 base2 then true else false
   in
-  let construct_access_path ((base, _)) ((_, accesses)) = (base, accesses) in
   let one_binding access_path count held =
     match
       AccessPath.replace_prefix ~prefix:rhs_access_path ~replace_with:access_path lhs_access_path
     with
-    | Some base_access_path -> 
+    | Some base_access_path ->
         add_type_map access_path base_access_path ;
-        ResourcesHeld.add base_access_path count held 
-    | None -> 
+        ResourcesHeld.add base_access_path count held
+    | None ->
         if AccessPath.equal rhs_access_path access_path then (
           add_type_map access_path lhs_access_path ;
           ResourcesHeld.add lhs_access_path count held )
-        else if compare_expr_base rhs_access_path access_path then (
-          let new_access_path = construct_access_path lhs_access_path access_path in
-          add_type_map access_path new_access_path ;
-          ResourcesHeld.add new_access_path count held )
-        else ResourcesHeld.add access_path count held 
+        else if equal_expr_base rhs_access_path access_path then
+          match
+            AccessPath.replace_prefix ~prefix:rhs_access_path ~replace_with:lhs_access_path
+              access_path
+          with
+          | Some new_access_path ->
+              add_type_map access_path new_access_path ;
+              ResourcesHeld.add new_access_path count held
+          | None ->
+              ResourcesHeld.add access_path count held
+        else ResourcesHeld.add access_path count held
   in
   ResourcesHeld.fold one_binding held ResourcesHeld.empty
 
