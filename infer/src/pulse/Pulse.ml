@@ -47,11 +47,17 @@ module PulseTransferFunctions = struct
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
-        let captured_vars =
-          match call_exp with Exp.Closure {captured_vars} -> captured_vars | _ -> []
+        let call_kind =
+          match call_exp with
+          | Exp.Closure {captured_vars} ->
+              `Closure captured_vars
+          | Exp.Var id ->
+              `Var id
+          | _ ->
+              `ResolvedProcname
         in
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-          callee_pname ~ret ~actuals ~formals_opt ~captured_vars astate
+          callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
     | _ ->
         (* dereference call expression to catch nil issues *)
         let<*> astate, _ =

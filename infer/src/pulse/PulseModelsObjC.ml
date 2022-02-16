@@ -29,15 +29,15 @@ let call args : model =
          it? *)
       PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
       let actuals = [] in
-      let captured_vars = c.captured_vars in
       let get_pvar_formals pname =
         IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
       in
       let formals_opt = get_pvar_formals c.name in
       let callee_data = analyze_dependency c.name in
+      let call_kind = `Closure c.captured_vars in
       let r =
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location c.name
-          ~ret ~actuals ~formals_opt ~captured_vars astate
+          ~ret ~actuals ~formals_opt ~call_kind astate
       in
       PerfEvent.(log (fun logger -> log_end_event logger ())) ;
       r

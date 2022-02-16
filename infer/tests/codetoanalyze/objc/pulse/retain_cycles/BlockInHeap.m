@@ -41,7 +41,7 @@ int weak_handler_retain_cycle_ok() {
   return 5;
 }
 
-int strong_handler_retain_cycle_bad_FN() {
+int strong_handler_retain_cycle_bad() {
   BlockInHeap* c = [[BlockInHeap alloc] init];
   [c assign_strong_handler_to_ivar];
   BlockInHeap* b = [[BlockInHeap alloc] init];

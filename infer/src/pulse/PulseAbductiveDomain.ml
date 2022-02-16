@@ -968,8 +968,10 @@ let invalidate_locals pdesc astate : t =
         |> Option.value_map ~default:acc ~f:(fun (var, location, history) ->
                let get_local_typ_opt pvar =
                  Procdesc.get_locals pdesc
-                 |> List.find_map ~f:(fun ProcAttributes.{name; typ} ->
-                        if Mangled.equal name (Pvar.get_name pvar) then Some typ else None )
+                 |> List.find_map ~f:(fun ProcAttributes.{name; typ; modify_in_block} ->
+                        if (not modify_in_block) && Mangled.equal name (Pvar.get_name pvar) then
+                          Some typ
+                        else None )
                in
                match var with
                | Var.ProgramVar pvar ->
