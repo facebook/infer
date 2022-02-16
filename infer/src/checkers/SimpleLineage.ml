@@ -34,6 +34,7 @@ module LineageGraph = struct
     | Argument of int
     | Captured of int
     | Return
+    | CapturedBy of int * (Procname.t[@sexp.opaque])
     | ArgumentOf of int * (Procname.t[@sexp.opaque])
     | ReturnOf of (Procname.t[@sexp.opaque])
   [@@deriving compare, sexp]
@@ -73,6 +74,8 @@ module LineageGraph = struct
         Format.fprintf fmt "cap%d" index
     | Return ->
         Format.fprintf fmt "ret"
+    | CapturedBy (index, proc_name) ->
+        Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
     | ArgumentOf (index, proc_name) ->
         Format.fprintf fmt "%a.arg%d" Procname.pp proc_name index
     | ReturnOf proc_name ->
@@ -380,6 +383,8 @@ module LineageGraph = struct
           save procname start (Captured index)
       | Return ->
           save procname exit Return
+      | CapturedBy (index, lambda_procname) ->
+          save ~write:false lambda_procname (Start Location.dummy) (Captured index)
       | ArgumentOf (index, callee_procname) ->
           save ~write:false callee_procname (Start Location.dummy) (Argument index)
       | ReturnOf callee_procname ->
@@ -519,7 +524,7 @@ module Summary = struct
       match data with
       | Local (Variable var, _node) ->
           Var.appears_in_source_code var && not (Var.Set.mem var special_variables)
-      | Argument _ | Captured _ | Return | ArgumentOf _ | ReturnOf _ ->
+      | Argument _ | Captured _ | Return | CapturedBy _ | ArgumentOf _ | ReturnOf _ ->
           true
       | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
           true
@@ -661,19 +666,49 @@ module TransferFunctions = struct
     match e with Closure {name} | Const (Cfun name) -> Some name | _ -> None
 
 
+  let sources_of_local here last_writes (local : Local.t) : LineageGraph.data list =
+    match local with
+    | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
+        [LineageGraph.Local (local, here)]
+    | Variable variable ->
+        let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
+        List.map ~f:(fun node -> LineageGraph.Local (local, node)) source_nodes
+
+
+  (** For all closures in [instr], record capture flows. *)
+  let add_cap_flows node (instr : Sil.instr) (astate : Domain.t) : Domain.t =
+    let rec one_exp astate (exp : Exp.t) =
+      match exp with
+      | Var _ | Const _ | Lvar _ | Sizeof _ ->
+          astate
+      | UnOp (_, e, _) | Exn e | Cast (_, e) | Lfield (e, _, _) ->
+          one_exp astate e
+      | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+          one_exp (one_exp astate e1) e2
+      | Closure c ->
+          closure astate c
+    and closure astate ({name; captured_vars} : Exp.closure) =
+      let one_var index ((last_writes, has_unsupported_features), local_edges)
+          (_exp, pvar, _typ, _mode) =
+        let local : Local.t = Variable (Var.of_pvar pvar) in
+        let source_list = sources_of_local node last_writes local in
+        let add_one_flow local_edges source =
+          LineageGraph.flow ~source ~target:(CapturedBy (index, name)) () :: local_edges
+        in
+        let local_edges = List.fold source_list ~f:add_one_flow ~init:local_edges in
+        ((last_writes, has_unsupported_features), local_edges)
+      in
+      List.foldi ~init:astate ~f:one_var captured_vars
+    in
+    List.fold ~init:astate ~f:one_exp (Sil.exps_of_instr instr)
+
+
   let add_arg_flows (call_node : PPNode.t) (callee_pname : Procname.t) (argument_list : Exp.t list)
       (astate : Domain.t) : Domain.t =
     let add_flows_all_to_arg index ((last_writes, has_unsupported_features), local_edges) arg =
       let read_set = locals_of_exp arg in
       let add_flows_local_to_arg local_edges (local : Local.t) =
-        let sources =
-          match local with
-          | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-              [LineageGraph.Local (local, call_node)]
-          | Variable variable ->
-              let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
-              List.map ~f:(fun node -> LineageGraph.Local (local, node)) source_nodes
-        in
+        let sources = sources_of_local call_node last_writes local in
         let add_one_flow local_edges source =
           LineageGraph.flow ~source ~target:(ArgumentOf (index, callee_pname)) () :: local_edges
         in
@@ -807,7 +842,7 @@ module TransferFunctions = struct
       (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "SimpleLineage: INV broken: CFGs should be single instruction@\n" ;
-    let astate = (fst astate, [ (* don't repeat edges*) ]) in
+    let astate = add_cap_flows node instr (fst astate, [ (* don't repeat edges*) ]) in
     match instr with
     | Call ((ret_id, _ret_typ), name, args, _location, _flags) ->
         exec_call astate node analyze_dependency ret_id name args
