@@ -7,7 +7,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 module Hashtbl = Caml.Hashtbl
 
 module LeakList = struct
