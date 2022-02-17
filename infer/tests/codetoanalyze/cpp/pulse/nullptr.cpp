@@ -212,6 +212,7 @@ void call_test_after_dereference_bad() {
   FN_test_after_dereference_latent(NULL);
 }
 
+// Filtered out
 void test_after_dereference2_latent(int* x) {
   *x = 42;
   if (x == 0)

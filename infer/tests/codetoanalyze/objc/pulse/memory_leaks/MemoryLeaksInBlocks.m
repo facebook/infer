@@ -17,7 +17,7 @@ int block_captured_var_leak_bad() {
   return blk();
 }
 
-int block_free_ok_npe_latent_FP(int* y) {
+int block_free_ok_no_npe_ok(int* y) {
   int* x = malloc(sizeof(int));
   *x = 2;
   int (^blk)(int*) = ^(int* y) {

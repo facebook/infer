@@ -18,6 +18,7 @@ void latent_use_after_free(int b, int* x) {
   }
 }
 
+// Filtered out
 void manifest_use_after_free(int* x) { latent_use_after_free(1, x); }
 
 // FN because it's flagged only as latent at the moment
