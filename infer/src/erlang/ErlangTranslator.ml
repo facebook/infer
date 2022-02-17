@@ -22,6 +22,8 @@ let lists_append2 = Procname.make_erlang ~module_name:"lists" ~function_name:"ap
 
 let lists_reverse = Procname.make_erlang ~module_name:"lists" ~function_name:"reverse" ~arity:1
 
+let erlang_send2 = Procname.make_erlang ~module_name:"erlang" ~function_name:"send" ~arity:2
+
 let mangled_arg (n : int) : Mangled.t = Mangled.from_string (Printf.sprintf "$arg%d" n)
 
 let any_typ = Env.ptr_typ_of_name Any
@@ -552,6 +554,13 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
     store_id2 |~~> [exit_success] ;
     Block.all env [block1; unbox_block1; {start; exit_success; exit_failure}]
   in
+  let make_func_call fun_exp =
+    let args : (Exp.t * Typ.t) list = [(Var id1, any_typ); (Var id2, any_typ)] in
+    let call_instr =
+      Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
+    in
+    Block.all env [block1; block2; Block.make_instruction env [call_instr]]
+  in
   match op with
   | Add ->
       make_simple_eager (PlusA None)
@@ -586,12 +595,7 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | Less ->
       make_simple_eager_bool Lt
   | ListAdd ->
-      let fun_exp = Exp.Const (Cfun lists_append2) in
-      let args : (Exp.t * Typ.t) list = [(Var id1, any_typ); (Var id2, any_typ)] in
-      let call_instr =
-        Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
-      in
-      Block.all env [block1; block2; Block.make_instruction env [call_instr]]
+      make_func_call (Exp.Const (Cfun lists_append2))
   | Mul ->
       make_simple_eager (Mult None)
   | Or ->
@@ -600,6 +604,8 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       make_short_circuit_logic ~short_circuit_when_lhs_is:true
   | Rem ->
       make_simple_eager Mod (* TODO: check semantics of Rem vs Mod *)
+  | Send ->
+      make_func_call (Exp.Const (Cfun erlang_send2))
   | Sub ->
       make_simple_eager (MinusA None)
   | Xor ->
