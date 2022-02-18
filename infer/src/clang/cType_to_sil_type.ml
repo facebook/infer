@@ -94,9 +94,9 @@ let pointer_attribute_of_objc_attribute attr_info =
 let add_protocols_to_desc tenv desc protocol_desc_list =
   let rec add_nonempty_protocol desc =
     match (desc : Typ.desc) with
-    | Tstruct (CStruct nm | ObjcClass (nm, _)) ->
+    | Tstruct (CStruct nm | ObjcClass nm) ->
         let objc_protocols = List.map ~f:CType.objc_classname_of_desc protocol_desc_list in
-        let name = Typ.ObjcClass (nm, objc_protocols) in
+        let name = Typ.ObjcClass nm in
         ignore (Tenv.mk_struct tenv name ~objc_protocols) ;
         let desc = Typ.Tstruct name in
         Logging.(debug Analysis Verbose)

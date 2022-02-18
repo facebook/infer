@@ -84,7 +84,7 @@ let to_string fld =
 let to_simplified_string ({class_name; field_name} : t) =
   let last_class_name =
     match class_name with
-    | CStruct name | CUnion name | CppClass {name} | ObjcClass (name, _) | ObjcProtocol name ->
+    | CStruct name | CUnion name | CppClass {name} | ObjcClass name | ObjcProtocol name ->
         QualifiedCppName.extract_last name |> Option.map ~f:fst
     | CSharpClass name ->
         Some (CSharpClassName.classname name)

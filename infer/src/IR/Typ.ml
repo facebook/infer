@@ -189,7 +189,7 @@ module T = struct
     | CSharpClass of CSharpClassName.t
     | ErlangType of ErlangTypeName.t
     | JavaClass of JavaClassName.t
-    | ObjcClass of QualifiedCppName.t * name list
+    | ObjcClass of QualifiedCppName.t
     | ObjcProtocol of QualifiedCppName.t
 
   and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
@@ -309,8 +309,8 @@ and pp_desc pe f desc =
 and pp_name_c_syntax pe f = function
   | CStruct name | CUnion name | ObjcProtocol name ->
       QualifiedCppName.pp f name
-  | ObjcClass (name, protocol_names) ->
-      F.fprintf f "%a%a" QualifiedCppName.pp name (pp_protocols pe) protocol_names
+  | ObjcClass name ->
+      F.fprintf f "%a" QualifiedCppName.pp name
   | CppClass {name; template_spec_info} ->
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec_info
   | ErlangType name ->
@@ -338,13 +338,6 @@ and pp_template_spec_info pe f = function
             F.pp_print_string f "Opaque"
       in
       F.fprintf f "%s%a%s" (escape pe "<") (Pp.comma_seq pp_arg_opt) args (escape pe ">")
-
-
-and pp_protocols pe f protocols =
-  if not (List.is_empty protocols) then
-    F.fprintf f "%s%a%s" (escape pe "<")
-      (Pp.comma_seq (pp_name_c_syntax pe))
-      protocols (escape pe ">")
 
 
 (** Pretty print a type. Do nothing by default. *)
@@ -377,8 +370,7 @@ module Name = struct
         compare x y
 
 
-  let rec compare_name x y =
-    let open ICompare in
+  let compare_name x y =
     match (x, y) with
     | ( (CStruct name1 | CUnion name1 | CppClass {name= name1})
       , (CStruct name2 | CUnion name2 | CppClass {name= name2}) ) ->
@@ -405,9 +397,8 @@ module Name = struct
         -1
     | _, JavaClass _ ->
         1
-    | ObjcClass (name1, names1), ObjcClass (name2, names2) ->
+    | ObjcClass name1, ObjcClass name2 ->
         QualifiedCppName.compare_name name1 name2
-        <*> fun () -> List.compare compare_name names1 names2
     | ObjcClass _, _ ->
         -1
     | _, ObjcClass _ ->
@@ -419,11 +410,8 @@ module Name = struct
   let hash = Hashtbl.hash
 
   let qual_name = function
-    | CStruct name | CUnion name | ObjcProtocol name ->
+    | CStruct name | CUnion name | ObjcProtocol name | ObjcClass name ->
         name
-    | ObjcClass (name, protocol_names) ->
-        let protocols = F.asprintf "%a" (pp_protocols Pp.text) protocol_names in
-        QualifiedCppName.append_protocols name ~protocols
     | CppClass {name; template_spec_info} ->
         let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) template_spec_info in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
@@ -432,7 +420,7 @@ module Name = struct
 
 
   let unqualified_name = function
-    | CStruct name | CUnion name | ObjcProtocol name | ObjcClass (name, _) ->
+    | CStruct name | CUnion name | ObjcProtocol name | ObjcClass name ->
         name
     | CppClass {name} ->
         name
@@ -559,7 +547,7 @@ module Name = struct
   end
 
   module Objc = struct
-    let from_qual_name qual_name = ObjcClass (qual_name, [])
+    let from_qual_name qual_name = ObjcClass qual_name
 
     let from_string name_str = QualifiedCppName.of_qual_string name_str |> from_qual_name
 
@@ -585,8 +573,7 @@ module Name = struct
         |> List.map ~f:QualifiedCppName.of_qual_string
         |> QualifiedCppName.Set.of_list
       in
-      function
-      | ObjcClass (name, _) -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
+      function ObjcClass name -> not (QualifiedCppName.Set.mem name tagged_classes) | _ -> false
 
 
     let remodel_class = Option.map Config.remodel_class ~f:from_string
