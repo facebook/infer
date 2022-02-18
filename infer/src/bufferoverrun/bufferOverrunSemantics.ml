@@ -538,15 +538,19 @@ let conservative_array_length ?traces arr_locs mem =
 
 let eval_array_locs_length arr_locs mem =
   if PowLoc.is_bot arr_locs then Val.Itv.top
-  else
+  else (
+    L.d_printfln "eval_array_locs_length arr_locs=%a" PowLoc.pp arr_locs ;
     let arr = Mem.find_set arr_locs mem in
+    L.d_printfln "eval_array_locs_length arr=%a" Val.pp arr ;
     let traces = Val.get_traces arr in
     let length = Val.get_array_blk arr |> ArrayBlk.get_size in
+    L.d_printfln "eval_array_locs_length length=%a" Itv.pp length ;
     match Itv.get_bound length Symb.BoundEnd.UpperBound with
     | NonBottom b when not (Bounds.Bound.is_pinf b) ->
         Val.of_itv ~traces length
     | _ ->
-        conservative_array_length ~traces arr_locs mem
+        L.d_printfln "conservative_array_length" ;
+        conservative_array_length ~traces arr_locs mem )
 
 
 let eval_string_len exp mem = Mem.get_c_strlen (eval_locs exp mem) mem

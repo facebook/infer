@@ -114,11 +114,19 @@ let fgets str_exp num_exp =
   {exec; check}
 
 
-let malloc ~can_be_zero size_exp =
+let malloc ~can_be_zero ~set_length size_exp =
   let exec ({pname; node_hash; location; tenv; integer_type_widths} as model_env) ~ret:(id, _) mem =
+    L.d_printfln "malloc size_exp1=%a" Exp.pp size_exp ;
     let size_exp = Prop.exp_normalize_noabs tenv Predicates.sub_empty size_exp in
+    L.d_printfln "malloc size_exp=%a" Exp.pp size_exp ;
     let typ, stride, length0, dyn_length = get_malloc_info size_exp in
-    let length = Sem.eval integer_type_widths length0 mem in
+    let length =
+      match set_length with
+      | true ->
+          Sem.eval integer_type_widths length0 mem
+      | false ->
+          Dom.Val.bot
+    in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
     let path =
       Dom.Mem.find_simple_alias id mem
@@ -170,7 +178,7 @@ let malloc ~can_be_zero size_exp =
 
 let calloc size_exp stride_exp =
   let byte_size_exp = Exp.BinOp (Binop.Mult (Some Typ.size_t), size_exp, stride_exp) in
-  malloc byte_size_exp
+  malloc ~set_length:true byte_size_exp
 
 
 let memcpy dest_exp src_exp size_exp =
@@ -296,10 +304,11 @@ let realloc src_exp size_exp =
 let placement_new size_exp {exp= src_exp1; typ= t1} src_arg2_opt =
   match (t1.Typ.desc, src_arg2_opt) with
   | Tint _, None | Tint _, Some {typ= {Typ.desc= Tint _}} ->
-      malloc ~can_be_zero:true (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
+      malloc ~can_be_zero:true ~set_length:true
+        (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
   | Tstruct (CppClass {name}), None
     when [%compare.equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
-      malloc ~can_be_zero:true size_exp
+      malloc ~can_be_zero:true ~set_length:true size_exp
   | _, _ ->
       let exec {integer_type_widths} ~ret:(id, _) mem =
         let src_exp =
@@ -581,7 +590,7 @@ module StdVector = struct
 
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_size elt_typ {exp= vec_exp; typ= vec_typ} size_exp =
-    let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
+    let {exec= malloc_exec; check} = malloc ~can_be_zero:true ~set_length:true size_exp in
     let exec ({pname; node_hash; integer_type_widths; location} as model_env) ~ret:((id, _) as ret)
         mem =
       let mem = malloc_exec model_env ~ret mem in
@@ -738,7 +747,7 @@ module StdBasicString = struct
     let exec ({pname; node_hash} as model_env) ~ret mem =
       let mem =
         Option.value_map len_opt ~default:mem ~f:(fun len ->
-            let {exec= malloc_exec} = malloc ~can_be_zero:true len in
+            let {exec= malloc_exec} = malloc ~can_be_zero:true ~set_length:true len in
             malloc_exec model_env ~ret mem )
       in
       let tgt_locs = Sem.eval_locs tgt_exp mem in
@@ -757,7 +766,7 @@ module StdBasicString = struct
     in
     let check ({location; integer_type_widths} as model_env) mem cond_set =
       Option.value_map len_opt ~default:cond_set ~f:(fun len ->
-          let {check= malloc_check} = malloc ~can_be_zero:true len in
+          let {check= malloc_check} = malloc ~can_be_zero:true ~set_length:true len in
           let cond_set = malloc_check model_env mem cond_set in
           BoUtils.Check.lindex integer_type_widths ~array_exp:src ~index_exp:len ~last_included:true
             mem location cond_set )
@@ -1094,7 +1103,7 @@ module Container = struct
   let constructor_size {exp= vec_exp} size_exp =
     let exec ({pname; node_hash; integer_type_widths; location} as model_env) ~ret:((id, _) as ret)
         mem =
-      let mem = (malloc ~can_be_zero:true size_exp).exec model_env ~ret mem in
+      let mem = (malloc ~can_be_zero:true ~set_length:true size_exp).exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
       let deref_of_vec =
         Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
@@ -1480,10 +1489,18 @@ module JavaString = struct
 
 
   let malloc_and_set_length exp ({location} as model_env) ~ret:((id, _) as ret) length mem =
-    let {exec} = malloc ~can_be_zero:false exp in
+    let {exec} = malloc ~can_be_zero:false ~set_length:false exp in
+    L.d_printfln "malloc_and_set_length before=%a" Dom.Mem.pp mem ;
     let mem = exec model_env ~ret mem in
+    L.d_printfln "malloc_and_set_length before2=%a" Dom.Mem.pp mem ;
     let underlying_arr_loc = Dom.Mem.find_stack (Loc.of_id id) mem |> Dom.Val.get_pow_loc in
-    Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length) underlying_arr_loc mem
+    L.d_printfln "malloc_and_set_length before3=%a" Dom.Mem.pp mem ;
+    L.d_printfln "malloc_and_set_length underlying_arr_loc=%a" PowLoc.pp underlying_arr_loc ;
+    let mem =
+      Dom.Mem.transform_mem ~f:(Dom.Val.set_array_length location ~length) underlying_arr_loc mem
+    in
+    L.d_printfln "malloc_and_set_length=%a" Dom.Mem.pp mem ;
+    mem
 
 
   (** If the expression does not match any part of the input then the resulting array has just one
@@ -1493,6 +1510,7 @@ module JavaString = struct
       let length =
         ArrObjCommon.eval_size model_env exp ~fn mem |> range_itv_one_max_one_mone |> Dom.Val.of_itv
       in
+      L.d_printfln "split length=%a" Dom.Val.pp length ;
       malloc_and_set_length exp model_env ~ret length mem
     in
     {exec; check= no_check}
@@ -1665,7 +1683,7 @@ let objc_malloc exp =
       when PatternMatch.ObjectiveC.implements_ns_string_variants tenv (Typ.to_string typ) ->
         (NSString.create_with_c_string (Exp.Const (Const.Cstr ""))).exec model ~ret mem
     | _ ->
-        (malloc ~can_be_zero exp).exec model ~ret mem
+        (malloc ~can_be_zero ~set_length:true exp).exec model ~ret mem
   in
   {exec; check= check_alloc_size ~can_be_zero exp}
 
@@ -1818,8 +1836,12 @@ module Call = struct
       ; +BuiltinDecl.(match_builtin __new)
         <>$ any_arg_of_typ (+PatternMatch.Java.implements_pseudo_collection)
         $+...$--> Collection.new_collection
-      ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $+...$--> malloc ~can_be_zero:true
-      ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $+...$--> malloc ~can_be_zero:true
+      ; +BuiltinDecl.(match_builtin __new)
+        <>$ capt_exp
+        $+...$--> malloc ~can_be_zero:true ~set_length:true
+      ; +BuiltinDecl.(match_builtin __new_array)
+        <>$ capt_exp
+        $+...$--> malloc ~can_be_zero:true ~set_length:true
       ; +BuiltinDecl.(match_builtin __placement_new)
         <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
       ; +BuiltinDecl.(match_builtin __set_array_length)
@@ -1829,7 +1851,7 @@ module Call = struct
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"fgets" <>$ capt_exp $+ capt_exp $+...$--> fgets
       ; -"infer_print" <>$ capt_exp $!--> infer_print
-      ; -"malloc" <>$ capt_exp $+...$--> malloc ~can_be_zero:false
+      ; -"malloc" <>$ capt_exp $+...$--> malloc ~can_be_zero:false ~set_length:true
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset

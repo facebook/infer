@@ -250,7 +250,7 @@ module Val = struct
     of_c_array_alloc allocsite ~stride ~offset ~size ~traces:TraceSet.bottom
 
 
-  let of_func_ptrs func_ptrs = {bot with func_ptrs}
+  let of_func_ptrs func_ptrs = {bot with itv= Itv.one; func_ptrs}
 
   let deref_of_literal_string s =
     let max_char = String.fold s ~init:0 ~f:(fun acc c -> max acc (Char.to_int c)) in
@@ -311,9 +311,9 @@ module Val = struct
       with
       | NonBottom _, true, true, NonBottom _, true, true ->
           cmp_itv x.itv y.itv
-      | Bottom, false, true, Bottom, false, true ->
+      | _, false, true, _, false, true ->
           PowLoc.lift_cmp cmp_loc x.powloc y.powloc
-      | Bottom, true, false, Bottom, true, false ->
+      | _, true, false, _, true, false ->
           ArrayBlk.lift_cmp_itv cmp_itv cmp_loc x.arrayblk y.arrayblk
       | _ ->
           Boolean.Top
@@ -452,7 +452,7 @@ module Val = struct
    fun f x y ->
     let traces = TraceSet.join x.traces y.traces in
     if is_pointer_to_non_array x then {bot with itv= Itv.top; traces}
-    else {bot with arrayblk= f x.arrayblk y.itv; traces}
+    else {bot with itv= Itv.top; arrayblk= f x.arrayblk y.itv; traces}
 
 
   let plus_pi : t -> t -> t = fun x y -> lift_pi ArrayBlk.plus_offset x y
@@ -508,9 +508,14 @@ module Val = struct
 
   let set_array_length : Location.t -> length:t -> t -> t =
    fun location ~length v ->
-    { v with
-      arrayblk= ArrayBlk.set_length length.itv v.arrayblk
-    ; traces= Trace.(Set.add_elem location SetArraySize) length.traces }
+    L.d_printfln "set_array_length length=%a, v=%a" pp length pp v ;
+    let res =
+      { v with
+        arrayblk= ArrayBlk.set_length length.itv v.arrayblk
+      ; traces= Trace.(Set.add_elem location SetArraySize) length.traces }
+    in
+    L.d_printfln "set_array_length res=%a" pp res ;
+    res
 
 
   let transform_array_length : Location.t -> f:(Itv.t -> Itv.t) -> t -> t =
@@ -585,7 +590,7 @@ module Val = struct
         let size = Itv.of_length_path ~is_void path in
         ArrayBlk.make_c allocsite ~stride ~offset ~size
       in
-      {bot with arrayblk; traces}
+      {bot with itv= Itv.of_normal_path ~unsigned:true path; arrayblk; traces}
     in
     let is_java = Language.curr_language_is Java in
     L.d_printfln_escaped "Val.of_path %a : %a%s%s" SPath.pp_partial path (Typ.pp Pp.text) typ
@@ -613,7 +618,9 @@ module Val = struct
              that harmful for calculating WCET. *)
           let allocsite = SPath.deref ~deref_kind:Deref_CPointer path |> Allocsite.make_symbol in
           let size = Itv.of_length_path ~is_void:false path in
-          {bot with arrayblk= ArrayBlk.make_c allocsite ~offset:Itv.zero ~size ~stride:Itv.one}
+          { bot with
+            itv= Itv.of_normal_path ~unsigned:true path
+          ; arrayblk= ArrayBlk.make_c allocsite ~offset:Itv.zero ~size ~stride:Itv.one }
       | Tptr (elt, _) ->
           if is_java || SPath.is_this path then
             let deref_kind =
@@ -622,7 +629,10 @@ module Val = struct
             let deref_path = SPath.deref ~deref_kind path in
             let l = Loc.of_path deref_path in
             let traces = traces_of_loc l in
-            {bot with powloc= PowLoc.singleton l; traces}
+            { bot with
+              itv= Itv.of_normal_path ~unsigned:true path
+            ; powloc= PowLoc.singleton l
+            ; traces }
           else ptr_to_normal_c_array (Some elt)
       | Tstruct typename -> (
         match BufferOverrunTypModels.dispatch tenv typename with
@@ -1632,8 +1642,10 @@ module CoreVal = struct
 
 
   let is_symbolic v =
-    let itv = Val.get_itv v in
-    if Itv.is_bottom itv then ArrayBlk.is_symbolic (Val.get_array_blk v) else Itv.is_symbolic itv
+    if false then
+      let itv = Val.get_itv v in
+      if Itv.is_bottom itv then ArrayBlk.is_symbolic (Val.get_array_blk v) else Itv.is_symbolic itv
+    else Itv.is_symbolic (Val.get_itv v) || ArrayBlk.is_symbolic (Val.get_array_blk v)
 
 
   let is_bot = Val.is_bot
