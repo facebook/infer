@@ -804,8 +804,11 @@ module Dom = struct
               join_callee_summary callee_summary callee_summary_cond
           | _ -> (
             match expensiveness_model with
-            | (None | Some KnownCheap) when is_setter_getter callee ->
-                (* If callee is unknown/cheap setter/getter, ignore it. *)
+            | None when is_setter_getter callee ->
+                (* If callee is unknown setter/getter, ignore it. *)
+                astate
+            | Some KnownCheap ->
+                (* If callee is known cheap call, ignore it. *)
                 astate
             | _ ->
                 (* Otherwise, add callee's name. *)
@@ -872,7 +875,8 @@ module TransferFunctions = struct
     let open ProcnameDispatcher.ProcName in
     let dispatch : (Tenv.t, unit, unit) dispatcher =
       make_dispatcher
-        [ +PatternMatch.Java.implements_android "text.TextUtils" &:: "isEmpty" &--> ()
+        [ +BuiltinDecl.(match_builtin __cast) &--> ()
+        ; +PatternMatch.Java.implements_android "text.TextUtils" &:: "isEmpty" &--> ()
         ; +PatternMatch.Java.implements_lang "Boolean" &:: "booleanValue" &--> ()
         ; +PatternMatch.Java.implements_lang "Boolean" &:: "valueOf" &--> ()
         ; +PatternMatch.Java.implements_lang "Double" &:: "doubleValue" &--> ()
@@ -990,7 +994,7 @@ module TransferFunctions = struct
            (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
            || FbGKInteraction.is_lazy_instance callee ->
         astate
-    | Call ((ret_id, _), (Const (Cfun callee) | Closure {name= callee}), [(Var id, _)], _, _)
+    | Call ((ret_id, _), (Const (Cfun callee) | Closure {name= callee}), (Var id, _) :: _, _, _)
       when is_modeled_as_id tenv callee ->
         Dom.copy_value ret_id id astate
     | Call ((ret_id, _), (Const (Cfun callee) | Closure {name= callee}), _, _, _)
