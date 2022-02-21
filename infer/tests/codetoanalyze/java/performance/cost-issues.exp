@@ -346,7 +346,7 @@ codetoanalyze/java/performance/StringTest.java, StringTest.last_index_of_linear(
 codetoanalyze/java/performance/StringTest.java, StringTest.last_index_of_linear_FN(java.lang.String):void, 23,  OnUIThread:false, []
 codetoanalyze/java/performance/StringTest.java, StringTest.replace_linear(java.lang.String):void, 7 + 5 ⋅ s.length + 3 ⋅ (s.length + 1),  OnUIThread:false, [{s.length + 1},Loop,{s.length},Loop]
 codetoanalyze/java/performance/StringTest.java, StringTest.split_linear(java.lang.String):void, 8 + 6 ⋅ (-1+max(2, s.length)),  OnUIThread:false, [{-1+max(2, s.length)},Loop]
-codetoanalyze/java/performance/StringTest.java, StringTest.split_with_limit_linear(java.lang.String,int):void, 9 + 6 ⋅ (max(1, limit)),  OnUIThread:false, [{max(1, limit)},Loop]
+codetoanalyze/java/performance/StringTest.java, StringTest.split_with_limit_linear(java.lang.String,int):void, 15,  OnUIThread:false, []
 codetoanalyze/java/performance/StringTest.java, StringTest.startsWith_constant():java.lang.String, 17,  OnUIThread:false, []
 codetoanalyze/java/performance/StringTest.java, StringTest.string_constructor_constant():void, 44,  OnUIThread:false, []
 codetoanalyze/java/performance/StringTest.java, StringTest.string_constructor_linear(java.lang.String):void, 8 + 5 ⋅ s.length + 3 ⋅ (s.length + 1),  OnUIThread:false, [{s.length + 1},Loop,{s.length},Loop]
