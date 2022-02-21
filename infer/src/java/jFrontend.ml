@@ -16,6 +16,11 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
   let pc_nb = Array.length method_body_nodes in
   let last_pc = pc_nb - 1 in
   let is_last pc = Int.equal pc last_pc in
+  let is_a_throw pc =
+    let code = JBir.code impl in
+    if pc < 0 || pc >= Array.length code then false
+    else match code.(pc) with JBir.Throw _ -> true | _ -> false
+  in
   let rec get_body_nodes_ pc visited =
     let current_nodes = method_body_nodes.(pc) in
     match current_nodes with
@@ -35,7 +40,8 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
       match JContext.get_goto_jump context pc with
       | JContext.Next ->
           let next_pc = pc + 1 in
-          if Int.Set.mem visited next_pc then [] else get_body_nodes_ next_pc visited
+          if Int.Set.mem visited next_pc || is_a_throw pc then []
+          else get_body_nodes_ next_pc visited
       | JContext.Jump goto_pc when Int.Set.mem visited goto_pc ->
           [] (* loop in goto *)
       | JContext.Jump goto_pc ->
