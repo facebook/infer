@@ -213,8 +213,13 @@ DIRECT_TESTS += \
 
 ifneq ($(KOTLINC), no)
 DIRECT_TESTS += \
-	kotlin_racerd \
+  kotlin_racerd \
 
+ifeq ($(IS_FACEBOOK_TREE),yes)
+DIRECT_TESTS += \
+  kotlin_fb-config-impact-strict \
+
+endif
 endif
 
 # javac has trouble running in parallel on the same files

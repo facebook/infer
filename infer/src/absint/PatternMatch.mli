@@ -80,6 +80,9 @@ module Java : sig
   val implements_jackson : string -> Tenv.t -> string -> bool
   (** Check whether class implements a class from Jackson *)
 
+  val implements_kotlin_intrinsics : Tenv.t -> string -> bool
+  (** Check whether class implements [kotlin.jvm.internal.Intrinsics] *)
+
   val implements_lang : string -> Tenv.t -> string -> bool
   (** Check whether class implements a Java's lang *)
 

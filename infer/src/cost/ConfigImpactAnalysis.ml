@@ -698,6 +698,7 @@ module Dom = struct
           ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive
           ; +PatternMatch.Java.implements_regex "Pattern" &:: "compile" &--> KnownExpensive
           ; +PatternMatch.Java.implements_regex "Pattern" &:: "matcher" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_kotlin_intrinsics &::.*--> KnownCheap
           ; -"UICKeyChainStore" &::+ startsWith "dataForKey:" &--> KnownExpensive ]
       in
       merge_dispatchers dispatcher FbGKInteraction.ExpensivenessModel.dispatcher
@@ -882,7 +883,8 @@ module TransferFunctions = struct
         ; +PatternMatch.Java.implements_lang "Double" &:: "doubleValue" &--> ()
         ; +PatternMatch.Java.implements_lang "Double" &:: "valueOf" &--> ()
         ; +PatternMatch.Java.implements_lang "Long" &:: "longValue" &--> ()
-        ; +PatternMatch.Java.implements_lang "Long" &:: "valueOf" &--> () ]
+        ; +PatternMatch.Java.implements_lang "Long" &:: "valueOf" &--> ()
+        ; +PatternMatch.Java.implements_lang "Number" &::.*--> () ]
     in
     fun tenv pname -> dispatch tenv pname |> Option.is_some
 
