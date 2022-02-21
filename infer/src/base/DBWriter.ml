@@ -392,10 +392,7 @@ module Server = struct
     with _ -> false
 
 
-  let server () =
-    L.debug Analysis Quiet "Sqlite write daemon: starting up@." ;
-    let socket = setup_socket () in
-    L.debug Analysis Quiet "Sqlite write daemon: set up complete, waiting for connections@." ;
+  let server socket =
     let finally () = remove_socket socket in
     Exception.try_finally ~f:(fun () -> server_loop socket) ~finally
 
@@ -415,25 +412,15 @@ module Server = struct
     In_channel.close in_channel
 
 
-  (* wait for socket to appear with 0.1 sec timeout, doubling each time ;
-     choice of numbers is arbitrary *)
-  let initial_wait_for_socket_secs = 0.1
-
-  let rec wait_for_server_start ~wait_secs =
-    Unix.nanosleep wait_secs |> ignore ;
-    if not (socket_exists ()) then (
-      let wait_secs = 2.0 *. wait_secs in
-      L.progress "Waiting for Sqlite write daemon to start (%f seconds)@\n" wait_secs ;
-      wait_for_server_start ~wait_secs )
-
-
   let start () =
+    L.debug Analysis Quiet "Sqlite write daemon: starting up@." ;
+    let socket = setup_socket () in
+    L.debug Analysis Quiet "Sqlite write daemon: set up complete, waiting for connections@." ;
     match Unix.fork () with
     | `In_the_child ->
-        ForkUtils.protect ~f:server () ;
+        ForkUtils.protect ~f:server socket ;
         L.exit 0
     | `In_the_parent _child_pid ->
-        wait_for_server_start ~wait_secs:initial_wait_for_socket_secs ;
         send Command.Handshake
 end
 
