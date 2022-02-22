@@ -841,6 +841,8 @@ let select_parse_mode ~usage parse_mode =
   print_usage
 
 
+let ignore_usage (_usage : int -> _) = ()
+
 let string_of_command command =
   let _, s, _ = List.Assoc.find_exn !subcommands ~equal:InferCommand.equal command in
   s
@@ -852,7 +854,7 @@ let mk_rest_actions ?(parse_mode = InferCommand) ?(in_help = []) doc ~usage deco
     String
       (fun arg ->
         rest := Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0) ;
-        select_parse_mode ~usage (decode_action arg) |> ignore )
+        select_parse_mode ~usage (decode_action arg) |> ignore_usage )
   in
   add parse_mode in_help
     { long= "--"
@@ -1069,10 +1071,10 @@ let parse ?config_file ~usage action initial_command =
       args_to_export := arg_string
   in
   (* read .inferconfig first, then env vars, then command-line options *)
-  parse_args ~usage InferCommand inferconfig_args |> ignore ;
+  parse_args ~usage InferCommand inferconfig_args |> ignore_usage ;
   (* NOTE: do not add the contents of .inferconfig to INFER_ARGS. This helps avoid hitting the
      command line size limit. *)
-  parse_args ~usage InferCommand env_args |> ignore ;
+  parse_args ~usage InferCommand env_args |> ignore_usage ;
   add_parsed_args_to_args_to_export () ;
   let curr_usage =
     let cl_args = match Array.to_list (Sys.get_argv ()) with _ :: tl -> tl | [] -> [] in

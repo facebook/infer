@@ -1,28 +1,7 @@
+version = 0.19.0-25-gfae9197
 profile = ocamlformat
 break-before-in = fit-or-vertical
 break-sequences = true
 let-binding-spacing = sparse
 margin = 100
 parse-docstrings = true
-
-# note: on some machines pinning ocamlformat from opam results in ocamlformat having version
-# "0.19.0-24-g2596a5c" (last character missing), which conflicts with this file. You might need to
-# either adjust the version below locally to get ocamlformat to run, or build ocamlformat from
-# source by cloning the following version:
-#   https://github.com/ocaml-ppx/ocamlformat/commit/2596a5c780ab1dfb996a499b1355cdd23d36ce34
-# and applying the following patch:
-
-# --- a/lib/Version.ml
-# +++ b/lib/Version.ml
-# @@ -10,5 +10,6 @@
-#  (**************************************************************************)
-#  
-#  let version =
-# -  let open Build_info.V1 in
-# +(*  let open Build_info.V1 in
-#    version () |> Option.value_map ~f:Version.to_string ~default:"unknown"
-# +    *) "0.19.0-24-g2596a5c7"
-
-# See https://github.com/ocaml/dune/issues/4855
-
-version = 0.19.0-24-g2596a5c7

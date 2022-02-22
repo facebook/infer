@@ -121,7 +121,7 @@ jobs:
       - name: Install ocamlformat
         run: |
           opam pin `cat opam/ocamlformat` --no-action
-          opam install ocamlformat odoc-parser.0.9.0
+          opam install ocamlformat
 
       - name: Test infer
         run: make test -k NDKBUILD=no

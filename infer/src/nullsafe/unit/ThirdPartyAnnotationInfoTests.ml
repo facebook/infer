@@ -225,7 +225,9 @@ let should_not_forgive_unparsable_strings =
   let file_ok = [line1; line2_ok; line3] in
   let file_bad = [line1; line2_bad; line3] in
   (* Ensure we can add the good file, but can not add the bad one *)
-  add_from_annot_file_and_check_success (ThirdPartyAnnotationInfo.create_storage ()) ~lines:file_ok
+  add_from_annot_file_and_check_success ~filename:"test.sig"
+    (ThirdPartyAnnotationInfo.create_storage ())
+    ~lines:file_ok
   |> ignore ;
   add_from_annot_file_and_check_failure ~filename:"test.sig"
     (ThirdPartyAnnotationInfo.create_storage ())
