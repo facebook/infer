@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# FB-ONLY
-
 TESTS_DIR = ../../..
 
 INFER_OPTIONS = --config-impact-analysis-only --config-impact-strict-mode \
