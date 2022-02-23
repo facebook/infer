@@ -2217,6 +2217,11 @@ and pulse_report_latent_issues =
      itself is enabled."
 
 
+and pulse_report_issues_for_tests =
+  CLOpt.mk_bool ~long:"pulse-report-issues-for-tests" ~default:false
+    "Do not supress any of the issues found by Pulse."
+
+
 and pulse_skip_procedures =
   CLOpt.mk_string_opt ~long:"pulse-skip-procedures"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3541,6 +3546,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
+
+and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
 and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 

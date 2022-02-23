@@ -10,16 +10,29 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-let report ~latent proc_desc err_log diagnostic =
+let report ~is_suppressed ~latent proc_desc err_log diagnostic =
   let open Diagnostic in
-  Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ~ltr:(get_trace diagnostic)
-    Pulse
-    (get_issue_type ~latent diagnostic)
-    (get_message diagnostic)
+  if is_suppressed && not Config.pulse_report_issues_for_tests then ()
+  else
+    (* Report suppressed issues with a message to distinguish them from non-suppressed issues.
+       Useful for infer's tests. *)
+    let extra_trace =
+      if is_suppressed && Config.pulse_report_issues_for_tests then
+        let depth = 0 in
+        let tags = [] in
+        let location = Diagnostic.get_location diagnostic in
+        [Errlog.make_trace_element depth location "*** SUPPRESSED ***" tags]
+      else []
+    in
+    Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
+      ~ltr:(extra_trace @ get_trace diagnostic)
+      Pulse
+      (get_issue_type ~latent diagnostic)
+      (get_message diagnostic)
 
 
-let report_latent_issue proc_desc err_log latent_issue =
-  LatentIssue.to_diagnostic latent_issue |> report ~latent:true proc_desc err_log
+let report_latent_issue proc_desc err_log latent_issue ~is_suppressed =
+  LatentIssue.to_diagnostic latent_issue |> report ~latent:true ~is_suppressed proc_desc err_log
 
 
 (* skip reporting on Java classes annotated with [@Nullsafe] if requested *)
@@ -124,12 +137,13 @@ let report_summary_error tenv proc_desc err_log
       let is_constant_deref_without_invalidation =
         is_constant_deref_without_invalidation invalidation access_trace
       in
-      if
+      let is_suppressed =
         is_suppressed tenv proc_desc ~is_nullptr_dereference:true
           ~is_constant_deref_without_invalidation astate
-      then L.d_printfln "suppressed error"
-      else if Config.pulse_report_latent_issues then
-        report ~latent:true proc_desc err_log
+      in
+      if is_suppressed then L.d_printfln "suppressed error" ;
+      if Config.pulse_report_latent_issues then
+        report ~latent:true ~is_suppressed proc_desc err_log
           (AccessToInvalidAddress
              { calling_context= []
              ; invalidation
@@ -154,13 +168,13 @@ let report_summary_error tenv proc_desc err_log
       in
       match LatentIssue.should_report astate diagnostic with
       | `ReportNow ->
-          if is_suppressed then L.d_printfln "suppressed error"
-          else report ~latent:false proc_desc err_log diagnostic ;
+          if is_suppressed then L.d_printfln "suppressed error" ;
+          report ~latent:false ~is_suppressed proc_desc err_log diagnostic ;
           if Diagnostic.aborts_execution diagnostic then Some (AbortProgram astate) else None
       | `DelayReport latent_issue ->
-          if is_suppressed then L.d_printfln "suppressed error"
-          else if Config.pulse_report_latent_issues then
-            report_latent_issue proc_desc err_log latent_issue ;
+          if is_suppressed then L.d_printfln "suppressed error" ;
+          if Config.pulse_report_latent_issues then
+            report_latent_issue ~is_suppressed proc_desc err_log latent_issue ;
           Some (LatentAbortProgram {astate; latent_issue}) )
 
 

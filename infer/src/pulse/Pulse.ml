@@ -27,7 +27,7 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
   PulseNonDisjunctiveDomain.get_copied non_disj_astate
   |> List.iter ~f:(fun (var, location) ->
          let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; location} in
-         PulseReport.report ~latent:false proc_desc err_log diagnostic )
+         PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic )
 
 
 module PulseTransferFunctions = struct

@@ -11,7 +11,7 @@ open PulseBasicInterface
 
 [@@@warning "-32"]
 
-val report : latent:bool -> Procdesc.t -> Errlog.t -> Diagnostic.t -> unit
+val report : is_suppressed:bool -> latent:bool -> Procdesc.t -> Errlog.t -> Diagnostic.t -> unit
 
 val report_summary_error :
      Tenv.t
