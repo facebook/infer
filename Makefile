@@ -931,7 +931,7 @@ ifeq ($(OPAM_PIN_OCAMLFORMAT),yes)
 	  $(OPAM) pin add ocamlformat.0.19.0 'git+https://github.com/ocaml-ppx/ocamlformat#nebuchadnezzar' --yes)
 endif
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
-	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --assume-depexts user-setup $(OPAM_DEV_DEPS))
+	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes user-setup $(OPAM_DEV_DEPS))
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); OPAMYES=1; $(OPAM) user-setup install
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
