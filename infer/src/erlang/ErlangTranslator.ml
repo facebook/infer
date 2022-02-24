@@ -358,25 +358,23 @@ and translate_pattern_unary_expression (env : (_, _) Env.t) value location simpl
 
 
 and translate_pattern_variable (env : (_, _) Env.t) value vname scope : Block.t =
-  match vname with
-  | "_" ->
-      Block.make_success env
-  | _ ->
-      let procname =
-        match scope with
-        | Some name ->
-            name
-        | None ->
-            L.die InternalError "Scope not found for variable, probably missing annotation."
-      in
-      let store : Sil.instr =
-        let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
-        let e2 : Exp.t = Var value in
-        Store {e1; root_typ= any_typ; typ= any_typ; e2; loc= env.location}
-      in
-      let exit_success = Node.make_stmt env [store] in
-      let exit_failure = Node.make_nop env in
-      {start= exit_success; exit_success; exit_failure}
+  (* We also assign to _ so that stuff like f()->_=1. works. But if we start checking for
+     re-binding, we should exclude _ from such checks. *)
+  let procname =
+    match scope with
+    | Some name ->
+        name
+    | None ->
+        L.die InternalError "Scope not found for variable, probably missing annotation."
+  in
+  let store : Sil.instr =
+    let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
+    let e2 : Exp.t = Var value in
+    Store {e1; root_typ= any_typ; typ= any_typ; e2; loc= env.location}
+  in
+  let exit_success = Node.make_stmt env [store] in
+  let exit_failure = Node.make_nop env in
+  {start= exit_success; exit_success; exit_failure}
 
 
 and translate_guard_expression (env : (_, _) Env.t) (expression : Ast.expression) : Exp.t * Block.t
@@ -930,12 +928,13 @@ and translate_expression_map_update (env : (_, _) Env.t) ret_var map updates : B
 
 
 and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block.t =
-  let body_block = translate_expression_to_id env ret_var body in
-  let pattern_block = translate_pattern env ret_var pattern in
+  let body_id, body_block = translate_expression_to_fresh_id env body in
+  let pattern_block = translate_pattern env body_id pattern in
   let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badmatch in
   pattern_block.exit_failure |~~> [crash_node] ;
   let pattern_block = {pattern_block with exit_failure= crash_node} in
-  Block.all env [body_block; pattern_block]
+  let store_return_block = translate_expression_to_id env ret_var pattern in
+  Block.all env [body_block; pattern_block; store_return_block]
 
 
 and translate_expression_nil (env : (_, _) Env.t) ret_var : Block.t =

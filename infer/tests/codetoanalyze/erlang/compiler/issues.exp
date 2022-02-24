@@ -272,6 +272,12 @@ features_maps:test_put4_Bad/0: function_clause
 features_maps:test_put5_Bad/0: function_clause
 features_maps:test_put6_Bad/0: {badmap,[not_a_map]}
 
+----- features_matchexpr -----
+features_matchexpr:test_match1_Ok/0: ok
+features_matchexpr:test_match2_Bad/0: {badmatch,1}
+features_matchexpr:test_match3_Ok/0: ok
+features_matchexpr:test_match4_Bad/0: {badmatch,1}
+
 ----- features_records -----
 features_records:fp_test_lyse_robot_nested_Ok/0: ok
 features_records:fp_test_lyse_robot_update_Ok/0: ok
