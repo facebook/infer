@@ -374,7 +374,7 @@ module LineageGraph = struct
       let procname_id = Id.of_procname procname in
       let state_local_id = Id.of_state_local state_local in
       let location_id = Id.of_list [procname_id; state_local_id] in
-      if write then (
+      ( if write then
         let location =
           match state_local with
           | Start location | Exit location ->
@@ -382,10 +382,11 @@ module LineageGraph = struct
           | Normal node ->
               PPNode.loc node
         in
-        if Location.equal location Location.dummy then
-          L.die InternalError "Source file name should always be available" ;
         let function_ = Procname.hashable_name procname in
-        let file = SourceFile.to_rel_path location.Location.file in
+        let file =
+          if Location.equal Location.dummy location then "unknown"
+          else SourceFile.to_rel_path location.Location.file
+        in
         let line = if location.Location.line < 0 then None else Some location.Location.line in
         write_json Location location_id
           (Json.yojson_of_location {location= {id= Id.out location_id; function_; file; line}}) ) ;
@@ -419,7 +420,7 @@ module LineageGraph = struct
       | Argument index ->
           save procname start (Argument index)
       | ArgumentOf (index, callee_procname) ->
-          save ~write:false callee_procname (Start Location.dummy) (Argument index)
+          save callee_procname (Start Location.dummy) (Argument index)
       | Captured index ->
           save procname start (Captured index)
       | CapturedBy (index, lambda_procname) ->
@@ -427,7 +428,7 @@ module LineageGraph = struct
       | Return ->
           save procname exit Return
       | ReturnOf callee_procname ->
-          save ~write:false callee_procname (Exit Location.dummy) Return
+          save callee_procname (Exit Location.dummy) Return
       | Self ->
           save procname start Function
       | Function procname ->
