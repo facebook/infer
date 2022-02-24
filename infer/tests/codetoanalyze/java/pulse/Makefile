@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 TESTS_DIR = ../../..
-INFER_OPTIONS = --pulse-only --debug-exceptions --no-pulse-nullsafe-report-npe --pulse-report-ignore-unknown-java-methods-patterns-reset
+INFER_OPTIONS = --pulse-only --debug-exceptions --no-pulse-nullsafe-report-npe \
+--pulse-report-ignore-unknown-java-methods-patterns-reset --pulse-report-issues-for-tests
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 
