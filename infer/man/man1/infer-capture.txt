@@ -82,6 +82,12 @@ OPTIONS
            Do not start new parallel jobs if the load average is greater than
            that specified (Buck and make only)
 
+       --merge-infer-out +string
+           Specifies an Infer results directory. The files and procedures
+           captured in it will be merged together into the results directory
+           specified with -o. Relative paths are interpreted as relative to
+           project-root/buck-out.
+
        --print-logs
            Activates: Also log messages to stdout and stderr (Conversely:
            --no-print-logs)

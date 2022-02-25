@@ -958,6 +958,12 @@ OPTIONS
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
 
+       --merge-infer-out +string
+           Specifies an Infer results directory. The files and procedures
+           captured in it will be merged together into the results directory
+           specified with -o. Relative paths are interpreted as relative to
+           project-root/buck-out.           See also infer-capture(1).
+
        --merge-report +string
            Specifies an Infer results directory. The reports stored in JSON
            files in all specified results directories will be merged together

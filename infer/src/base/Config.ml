@@ -1843,6 +1843,14 @@ and merge =
     "Merge the captured results directories specified in the dependency file."
 
 
+and merge_infer_out =
+  CLOpt.mk_string_list ~long:"merge-infer-out"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "Specifies an Infer results directory. The files and procedures captured in it will be merged \
+     together into the results directory specified with $(b, -o). Relative paths are interpreted \
+     as relative to $(b, project-root/buck-out)."
+
+
 and merge_report =
   CLOpt.mk_string_list ~long:"merge-report"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -3389,6 +3397,8 @@ and memtrace_analysis = !memtrace_analysis
 and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
 
 and merge = !merge
+
+and merge_infer_out = RevList.to_list !merge_infer_out
 
 and merge_report = RevList.to_list !merge_report
 

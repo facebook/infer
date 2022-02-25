@@ -179,7 +179,8 @@ BUILD_SYSTEMS_TESTS += \
   java_test_determinator \
   javac \
   resource_leak_exception_lines \
-  racerd_dedup
+  racerd_dedup \
+  merge-infer-out \
 
 COST_TESTS += \
   java_hoistingExpensive \
