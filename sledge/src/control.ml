@@ -1055,7 +1055,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
                     ~parent:(Llair.Function.name jump.dst.parent.name)
                     ~name:jump.dst.lbl ) )
               jump ams wl )
-    | Call ({callee; actuals; areturn; return} as call) -> (
+    | Call ({callee= Direct callee; actuals; areturn; return} as call) -> (
       match (Llair.Function.name callee.name, IArray.to_array actuals) with
       | "sledge_thread_create", [|callee; arg|] -> (
         match resolve_callee pgm tid callee state with
@@ -1067,8 +1067,8 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
           exec_thread_resume thread return ams wl
       | "sledge_thread_join", [|thread|] ->
           exec_thread_join thread areturn return ams wl
-      | _ -> exec_call call ams wl )
-    | ICall ({callee; areturn; return} as call) -> (
+      | _ -> exec_call {call with callee} ams wl )
+    | Call ({callee= Indirect callee; areturn; return} as call) -> (
       match resolve_callee pgm tid callee state with
       | [] -> exec_skip_func areturn return ams wl
       | callees ->

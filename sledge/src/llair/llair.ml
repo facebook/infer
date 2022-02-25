@@ -62,6 +62,8 @@ type label = string [@@deriving compare, equal, sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
 
+and callee = Direct of func | Indirect of Exp.t
+
 and 'a call =
   { mutable callee: 'a
   ; typ: Typ.t
@@ -75,8 +77,7 @@ and 'a call =
 and term =
   | Switch of {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}
   | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
-  | Call of func call
-  | ICall of Exp.t call
+  | Call of callee call
   | Return of {exp: Exp.t option; loc: Loc.t}
   | Throw of {exc: Exp.t; loc: Loc.t}
   | Abort of {loc: Loc.t}
@@ -121,6 +122,9 @@ with type jump := jump
   type nonrec jump = jump = {mutable dst: block; mutable retreating: bool}
   [@@deriving compare, equal]
 
+  type nonrec callee = callee = Direct of func | Indirect of Exp.t
+  [@@deriving compare, equal]
+
   type nonrec 'a call = 'a call =
     { mutable callee: 'a
     ; typ: Typ.t
@@ -136,8 +140,7 @@ with type jump := jump
     | Switch of
         {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}
     | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
-    | Call of func call
-    | ICall of Exp.t call
+    | Call of callee call
     | Return of {exp: Exp.t option; loc: Loc.t}
     | Throw of {exc: Exp.t; loc: Loc.t}
     | Abort of {loc: Loc.t}
@@ -159,9 +162,13 @@ let sexp_ctor label args = sexp_cons (Sexp.Atom label) args
 let sexp_of_jump {dst; retreating} =
   [%sexp {dst: label = dst.lbl; retreating: bool}]
 
-let sexp_of_call (type callee) tag sexp_of_callee
-    {callee: callee; typ; actuals; areturn; return; throw; recursive; loc} =
-  sexp_ctor tag
+let sexp_of_callee = function
+  | Direct func -> sexp_ctor "Direct" [%sexp (func.name : Function.t)]
+  | Indirect exp -> sexp_ctor "Indirect" [%sexp (exp : Exp.t)]
+
+let sexp_of_call
+    {callee; typ; actuals; areturn; return; throw; recursive; loc} =
+  sexp_ctor "Call"
     [%sexp
       { callee: callee
       ; typ: Typ.t
@@ -179,9 +186,7 @@ let sexp_of_term = function
           {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}]
   | Iswitch {ptr; tbl; loc} ->
       sexp_ctor "Iswitch" [%sexp {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}]
-  | Call call ->
-      sexp_of_call "Call" (fun f -> Function.sexp_of_t f.name) call
-  | ICall call -> sexp_of_call "ICall" Exp.sexp_of_t call
+  | Call call -> sexp_of_call call
   | Return {exp; loc} ->
       sexp_ctor "Return" [%sexp {exp: Exp.t option; loc: Loc.t}]
   | Throw {exc; loc} -> sexp_ctor "Throw" [%sexp {exc: Exp.t; loc: Loc.t}]
@@ -253,12 +258,16 @@ let pp_formal fs reg = Reg.pp fs reg
 let pp_jump fs {dst; retreating} =
   Format.fprintf fs "@[<2>%s%%%s@]" (if retreating then "↑" else "") dst.lbl
 
-let pp_call tag pp_callee fs
-    {callee; actuals; areturn; return; throw; recursive; loc; _} =
+let pp_callee fs = function
+  | Direct f -> Function.pp fs f.name
+  | Indirect f -> Exp.pp fs f
+
+let pp_call fs
+    {callee; typ= _; actuals; areturn; return; throw; recursive; loc} =
   Format.fprintf fs
-    "@[<2>@[<7>%a%s @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
+    "@[<2>@[<7>%acall @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
     (Option.pp "%a := " Reg.pp)
-    areturn tag
+    areturn
     (if recursive then "↑" else "")
     pp_callee callee (pp_actuals Exp.pp) actuals pp_jump return
     (Option.pp "@ throwto %a" pp_jump)
@@ -284,8 +293,7 @@ let pp_term fs term =
         (IArray.pp "@ " (fun fs jmp ->
              Format.fprintf fs "%s: %a" jmp.dst.lbl pp_goto jmp ) )
         tbl Loc.pp loc
-  | Call call -> pp_call "call" (fun fs f -> Function.pp fs f.name) fs call
-  | ICall call -> pp_call "icall" Exp.pp fs call
+  | Call call -> pp_call fs call
   | Return {exp; loc} ->
       pf "@[<2>return%a@]\t%a" (Option.pp " %a" Exp.pp) exp Loc.pp loc
   | Throw {exc; loc} -> pf "@[<2>throw %a@]\t%a" Exp.pp exc Loc.pp loc
@@ -402,13 +410,13 @@ module Term = struct
   type t = term [@@deriving compare, equal, sexp_of]
 
   let pp = pp_term
+  let pp_callee = pp_callee
 
   let invariant ?parent term =
     let@ () = Invariant.invariant [%here] term [%sexp_of: t] in
     match term with
     | Switch _ | Iswitch _ -> assert true
-    | Call {typ; actuals; areturn; _} | ICall {typ; actuals; areturn; _}
-      -> (
+    | Call {typ; actuals; areturn; _} -> (
       match typ with
       | Pointer {elt= Function {args; return= retn_typ; _}} ->
           assert (IArray.length args = IArray.length actuals) ;
@@ -438,7 +446,7 @@ module Term = struct
 
   let call ~name ~typ ~actuals ~areturn ~return ~throw ~loc =
     let cal =
-      { callee= {dummy_func with name= Function.mk typ name}
+      { callee= Direct {dummy_func with name= Function.mk typ name}
       ; typ
       ; actuals
       ; areturn
@@ -448,11 +456,18 @@ module Term = struct
       ; loc }
     in
     let k = Call cal in
-    (k |> check invariant, fun ~callee -> cal.callee <- callee)
+    (k |> check invariant, fun ~callee -> cal.callee <- Direct callee)
 
   let icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
-    ICall
-      {callee; typ; actuals; areturn; return; throw; recursive= false; loc}
+    Call
+      { callee= Indirect callee
+      ; typ
+      ; actuals
+      ; areturn
+      ; return
+      ; throw
+      ; recursive= false
+      ; loc }
     |> check invariant
 
   let return ~exp ~loc = Return {exp; loc} |> check invariant
@@ -464,7 +479,6 @@ module Term = struct
     | Switch {loc; _}
      |Iswitch {loc; _}
      |Call {loc; _}
-     |ICall {loc; _}
      |Return {loc; _}
      |Throw {loc; _}
      |Abort {loc; _} ->
@@ -473,8 +487,7 @@ module Term = struct
 
   let union_locals term vs =
     match term with
-    | Call {areturn; _} | ICall {areturn; _} ->
-        Reg.Set.add_option areturn vs
+    | Call {areturn; _} -> Reg.Set.add_option areturn vs
     | Switch _ | Iswitch _ | Return _ | Throw _ | Abort _ | Unreachable ->
         vs
 end
@@ -538,8 +551,8 @@ module IP = struct
             true )
       | None -> (
         match ip.block.term with
-        | Call {callee; _} -> (
-          match Function.name callee.name with
+        | Call {callee= Direct f; _} -> (
+          match Function.name f.name with
           | "sledge_thread_join" -> true
           | _ -> false )
         | _ -> false )
@@ -607,8 +620,7 @@ module Func = struct
               let s = IArray.fold ~f:(fun (_, j) -> f j) tbl s in
               f els s
           | Iswitch {tbl; _} -> IArray.fold ~f tbl s
-          | Call {return; throw; _} | ICall {return; throw; _} ->
-              Option.fold ~f throw (f return s)
+          | Call {return; throw; _} -> Option.fold ~f throw (f return s)
           | Return _ | Throw _ | Abort _ | Unreachable -> s
         in
         f blk s
@@ -721,7 +733,7 @@ module Func = struct
       | Iswitch {tbl; _} ->
           IArray.iter ~f:jump' tbl ;
           None
-      | Call {return; throw; _} | ICall {return; throw; _} ->
+      | Call {return; throw; _} ->
           jump' return ;
           Option.iter ~f:jump' throw ;
           None
@@ -746,7 +758,7 @@ let set_derived_metadata functions =
     Function.Map.iter functions ~f:(fun func ->
         Func.iter_term func ~f:(fun term ->
             match term with
-            | Call {callee; _} -> FuncQ.remove roots callee |> ignore
+            | Call {callee= Direct f; _} -> FuncQ.remove roots f |> ignore
             | _ -> () ) ) ;
     roots
   in
@@ -764,15 +776,13 @@ let set_derived_metadata functions =
             IArray.iter tbl ~f:(fun (_, jmp) -> jump jmp) ;
             jump els
         | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
-        | Call ({callee; return; throw; _} as cal) ->
-            if Block_label.Set.mem callee.entry ancestors then
-              cal.recursive <- true
-            else visit ancestors callee.entry ;
-            jump return ;
-            Option.iter ~f:jump throw
-        | ICall ({return; throw; _} as call) ->
-            (* conservatively assume all indirect calls are recursive *)
-            call.recursive <- true ;
+        | Call ({callee; return; throw; _} as call) ->
+            ( match callee with
+            | Direct f when not (Block_label.Set.mem f.entry ancestors) ->
+                visit ancestors f.entry
+            | Direct _ | Indirect _ ->
+                (* conservatively assume all indirect calls are recursive *)
+                call.recursive <- true ) ;
             jump return ;
             Option.iter ~f:jump throw
         | Return _ | Throw _ | Abort _ | Unreachable -> () ) ;

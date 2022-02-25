@@ -76,6 +76,10 @@ type label = string
 (** A jump to a block. *)
 type jump = private {mutable dst: block; mutable retreating: bool}
 
+and callee =
+  | Direct of func  (** Statically resolved function *)
+  | Indirect of Exp.t  (** Dynamically resolved function-pointer *)
+
 (** A call to a function. *)
 and 'a call =
   { mutable callee: 'a
@@ -95,8 +99,7 @@ and term = private
           [case] which is equal to [key], if any, otherwise invoke [els]. *)
   | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
       (** Invoke the [jump] in [tbl] whose [dst] is equal to [ptr]. *)
-  | Call of func call  (** Call function with arguments. *)
-  | ICall of Exp.t call  (** Indirect call function with arguments. *)
+  | Call of callee call  (** Call function with arguments. *)
   | Return of {exp: Exp.t option; loc: Loc.t}
       (** Invoke [return] of the dynamically most recent [Call]. *)
   | Throw of {exc: Exp.t; loc: Loc.t}
@@ -182,6 +185,7 @@ module Term : sig
   type t = term [@@deriving compare, equal]
 
   val pp : t pp
+  val pp_callee : callee pp
 
   val goto : dst:jump -> loc:Loc.t -> term
   (** Construct a [Switch] representing an unconditional branch. *)
