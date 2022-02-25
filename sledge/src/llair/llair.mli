@@ -18,8 +18,8 @@ module GlobalDefn = GlobalDefn
 
 val cct_schedule_points : bool ref
 
-module Intrinsic : sig
-  include module type of Intrinsics
+module Builtin : sig
+  include module type of Builtins
 
   val to_string : t -> string
   val of_name : string -> t option
@@ -63,9 +63,9 @@ type inst = private
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
       (** Bind [reg] to an arbitrary value, representing non-deterministic
           approximation of behavior described by [msg]. *)
-  | Intrinsic of
-      {reg: Reg.t option; name: Intrinsic.t; args: Exp.t iarray; loc: Loc.t}
-      (** Bind [reg] to the value of applying intrinsic [name] to [args]. *)
+  | Builtin of
+      {reg: Reg.t option; name: Builtin.t; args: Exp.t iarray; loc: Loc.t}
+      (** Bind [reg] to the value of applying builtin [name] to [args]. *)
 
 (** A (straight-line) command is a sequence of instructions. *)
 type cmnd = inst iarray
@@ -162,9 +162,9 @@ module Inst : sig
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst
 
-  val intrinsic :
+  val builtin :
        reg:Reg.t option
-    -> name:Intrinsic.t
+    -> name:Builtin.t
     -> args:Exp.t iarray
     -> loc:Loc.t
     -> t

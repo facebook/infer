@@ -19,19 +19,19 @@ module GlobalDefn = GlobalDefn
 
 let cct_schedule_points = ref false
 
-module Intrinsic = struct
-  include Intrinsics
-  module Intrinsic_to_String = Bijection.Make (Intrinsics) (String)
+module Builtin = struct
+  include Builtins
+  module Builtin_to_String = Bijection.Make (Builtins) (String)
 
   let t_to_name =
     Iter.of_list all
     |> Iter.map ~f:(fun i -> (i, Sexp.to_string (sexp_of_t i)))
-    |> Intrinsic_to_String.of_iter
+    |> Builtin_to_String.of_iter
 
-  let to_string i = Intrinsic_to_String.find_left i t_to_name
+  let to_string i = Builtin_to_String.find_left i t_to_name
 
   let of_name s =
-    try Some (Intrinsic_to_String.find_right s t_to_name)
+    try Some (Builtin_to_String.find_right s t_to_name)
     with Not_found -> None
 
   let pp ppf i = Format.pp_print_string ppf (to_string i)
@@ -53,8 +53,8 @@ type inst =
   | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
-  | Intrinsic of
-      {reg: Reg.t option; name: Intrinsic.t; args: Exp.t iarray; loc: Loc.t}
+  | Builtin of
+      {reg: Reg.t option; name: Builtin.t; args: Exp.t iarray; loc: Loc.t}
 [@@deriving compare, equal, sexp_of]
 
 type cmnd = inst iarray [@@deriving compare, equal, sexp_of]
@@ -245,10 +245,10 @@ let pp_inst fs inst =
       pf "@[<2>%anondet \"%s\";@]\t%a"
         (Option.pp "%a := " Reg.pp)
         reg msg Loc.pp loc
-  | Intrinsic {reg; name; args; loc} ->
-      pf "@[<2>%aintrinsic@ %a(@,@[<hv>%a@]);@]\t%a"
+  | Builtin {reg; name; args; loc} ->
+      pf "@[<2>%abuiltin@ %a(@,@[<hv>%a@]);@]\t%a"
         (Option.pp "%a := " Reg.pp)
-        reg Intrinsic.pp name (IArray.pp ",@ " Exp.pp) args Loc.pp loc
+        reg Builtin.pp name (IArray.pp ",@ " Exp.pp) args Loc.pp loc
 
 let pp_actuals pp_actual fs actuals =
   Format.fprintf fs "@ (@[%a@])" (IArray.pp ",@ " pp_actual) actuals
@@ -348,7 +348,7 @@ module Inst = struct
   let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
   let free ~ptr ~loc = Free {ptr; loc}
   let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
-  let intrinsic ~reg ~name ~args ~loc = Intrinsic {reg; name; args; loc}
+  let builtin ~reg ~name ~args ~loc = Builtin {reg; name; args; loc}
 
   let loc = function
     | Move {loc; _}
@@ -359,7 +359,7 @@ module Inst = struct
      |Alloc {loc; _}
      |Free {loc; _}
      |Nondet {loc; _}
-     |Intrinsic {loc; _} ->
+     |Builtin {loc; _} ->
         loc
 
   let union_locals inst vs =
@@ -371,9 +371,9 @@ module Inst = struct
      |AtomicCmpXchg {reg; _}
      |Alloc {reg; _}
      |Nondet {reg= Some reg; _}
-     |Intrinsic {reg= Some reg; _} ->
+     |Builtin {reg= Some reg; _} ->
         Reg.Set.add reg vs
-    | Store _ | Free _ | Nondet {reg= None; _} | Intrinsic {reg= None; _} ->
+    | Store _ | Free _ | Nondet {reg= None; _} | Builtin {reg= None; _} ->
         vs
 
   let locals inst = union_locals inst Reg.Set.empty
@@ -390,7 +390,7 @@ module Inst = struct
     | Alloc {reg= _; num; len= _; loc= _} -> f num s
     | Free {ptr; loc= _} -> f ptr s
     | Nondet {reg= _; msg= _; loc= _} -> s
-    | Intrinsic {reg= _; name= _; args; loc= _} -> IArray.fold ~f args s
+    | Builtin {reg= _; name= _; args; loc= _} -> IArray.fold ~f args s
 end
 
 (** Jumps *)
@@ -533,14 +533,14 @@ module IP = struct
   let is_schedule_point ip =
     if !cct_schedule_points then
       match inst ip with
-      | Some (Intrinsic {name= `cct_point; _}) -> true
+      | Some (Builtin {name= `cct_point; _}) -> true
       | _ -> false
     else
       match inst ip with
       | Some (Load _ | Store _ | AtomicRMW _ | AtomicCmpXchg _ | Free _) ->
           true
       | Some (Move _ | Alloc _ | Nondet _) -> false
-      | Some (Intrinsic {name; _}) -> (
+      | Some (Builtin {name; _}) -> (
         match name with
         | `calloc | `malloc | `mallocx | `nallocx | `cct_point -> false
         | `_ZN5folly13usingJEMallocEv | `aligned_alloc | `dallocx

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Intrinsic instruction opcodes *)
+(** Builtin instruction opcodes *)
 
 type t =
   [ (* llvm intrinsics *)
