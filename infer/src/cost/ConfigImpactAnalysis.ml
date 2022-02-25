@@ -283,6 +283,8 @@ module TempBool = struct
 
   let bottom = Bot
 
+  let is_bottom = function Bot -> true | True _ | False _ | Joined _ -> false
+
   let make ~is_true config_checks = if is_true then True config_checks else False config_checks
 
   let get_config_checks_true = function
@@ -337,6 +339,10 @@ module Val = struct
 
   let of_temp_bool ~is_true config_checks =
     {bottom with temp_bool= TempBool.make ~is_true config_checks}
+
+
+  let is_field {config; fields; temp_bool} =
+    ConfigLifted.is_bottom config && (not (Fields.is_bottom fields)) && TempBool.is_bottom temp_bool
 end
 
 module Mem = struct
@@ -711,9 +717,34 @@ module Dom = struct
       dispatch tenv pname args
 
 
-  let is_setter_getter pname =
+  let is_config_typ =
+    let number_types =
+      ["java.lang.Boolean"; "java.lang.Double"; "java.lang.Long"; "java.lang.Number"]
+    in
+    fun {Typ.desc} ->
+      match desc with
+      | Tint _ | Tfloat _ ->
+          true
+      | Tptr ({desc= Tstruct name}, _) ->
+          let s = Typ.Name.name name in
+          List.exists number_types ~f:(String.equal s)
+      | Tvoid | Tfun | TVar _ | Tarray _ | Tstruct _ | Tptr _ ->
+          false
+
+
+  let is_config_setter_typ ret_typ args =
+    Typ.is_void ret_typ
+    && match args with [_this; (_, arg_typ)] when is_config_typ arg_typ -> true | _ -> false
+
+
+  let is_config_getter_typ ret_typ args =
+    is_config_typ ret_typ && match args with [_this] -> true | _ -> false
+
+
+  let is_config_setter_getter ret_typ pname args =
     let method_name = Procname.get_method pname in
-    String.is_prefix method_name ~prefix:"set" || String.is_prefix method_name ~prefix:"get"
+    (is_config_setter_typ ret_typ args && String.is_prefix method_name ~prefix:"set")
+    || (is_config_getter_typ ret_typ args && String.is_prefix method_name ~prefix:"get")
 
 
   let update_gated_callees ~callee args ({config_checks; field_checks; gated_classes} as astate) =
@@ -740,7 +771,7 @@ module Dom = struct
 
 
   let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost option)
-      ~callee args location
+      ret_typ ~callee args location
       ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     let join_unchecked_callees new_unchecked_callees new_unchecked_callees_cond =
       if FieldChecks.is_top field_checks then
@@ -804,7 +835,13 @@ module Dom = struct
             when has_call_stmt ->
               (* If callee's summary is not leaf, use it. *)
               join_callee_summary callee_summary callee_summary_cond
-          | None, None when is_setter_getter callee ->
+          | Some {Summary.has_call_stmt; ret}, _
+            when (not has_call_stmt)
+                 && ( is_config_setter_typ ret_typ args
+                    || (is_config_getter_typ ret_typ args && Val.is_field ret) ) ->
+              (* If callee seems to be a setter/getter, ignore it. *)
+              astate
+          | None, None when is_config_setter_getter ret_typ callee args ->
               (* If callee is unknown setter/getter, ignore it. *)
               astate
           | _, Some KnownCheap ->
@@ -936,7 +973,7 @@ module TransferFunctions = struct
 
 
   let call {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
-      ((ret_id, _) as ret) callee args captured_vars location astate =
+      ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
     match FbGKInteraction.get_config_check tenv callee args with
     | Some (`Config config) ->
         Dom.call_config_check ret_id config astate
@@ -961,7 +998,7 @@ module TransferFunctions = struct
             ; ret }
         in
         let instantiated_cost = get_instantiated_cost call in
-        Dom.call tenv analyze_dependency ~instantiated_cost ~callee args location astate
+        Dom.call tenv analyze_dependency ~instantiated_cost ret_typ ~callee args location astate
         |> add_ret analyze_dependency ret_id callee
 
 
