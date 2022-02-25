@@ -24,7 +24,7 @@ module Subst : sig
   val subst : t -> Term.t -> Term.t
   val fold_eqs : t -> 's -> f:(Fml.t -> 's -> 's) -> 's
   val fv : t -> Var.Set.t
-  val compose1 : key:Trm.t -> data:Trm.t -> t -> t
+  val compose1 : Theory.oriented_equality -> t -> t
   val compose : t -> t -> t
   val map_entries : f:(Trm.t -> Trm.t) -> t -> t
   val partition_valid : Var.Set.t -> t -> t * Var.Set.t * t
@@ -102,16 +102,16 @@ end = struct
       assert (r' == r || not (equal r' r))]
 
   (** compose a substitution with a mapping *)
-  let compose1 ~key ~data r =
-    if Trm.equal key data then r
+  let compose1 {Theory.var; rep} r =
+    if Trm.equal var rep then r
     else (
       assert (
-        Option.for_all ~f:(Trm.equal key) (Trm.Map.find key r)
-        || fail "domains intersect: %a ↦ %a in %a" Trm.pp key Trm.pp data pp
+        Option.for_all ~f:(Trm.equal var) (Trm.Map.find var r)
+        || fail "domains intersect: %a ↦ %a in %a" Trm.pp var Trm.pp rep pp
              r () ) ;
-      let s = Trm.Map.singleton key data in
+      let s = Trm.Map.singleton var rep in
       let r' = Trm.Map.map_endo ~f:(norm s) r in
-      Trm.Map.add ~key ~data r' )
+      Trm.Map.add ~key:var ~data:rep r' )
 
   (** map over a subst, applying [f] to both domain and range, requires that
       [f] is injective and for any set of terms [E], [f\[E\]] is disjoint
@@ -1086,7 +1086,7 @@ let solve_poly_eq us p' q' subst =
   ( match max_solvables_not_ito_us with
   | One kill ->
       let+ kill, keep = Trm.Arith.solve_zero_eq diff ~for_:kill in
-      Subst.compose1 ~key:(Trm.arith kill) ~data:(Trm.arith keep) subst
+      Subst.compose1 {var= Trm.arith kill; rep= Trm.arith keep} subst
   | Many | Zero -> None )
   |>
   [%Trace.retn fun {pf} subst' ->
@@ -1100,8 +1100,7 @@ let rec solve_pending (s : Theory.t) soln =
       match Theory.solve a' b' {s with pending} with
       | {solved= Some solved} as s ->
           solve_pending {s with solved= Some []}
-            (List.fold solved soln ~f:(fun {var; rep} soln ->
-                 Subst.compose1 ~key:var ~data:rep soln ) )
+            (List.fold ~f:Subst.compose1 solved soln)
       | {solved= None} -> None )
   | [] -> Some soln
 
@@ -1129,9 +1128,9 @@ let solve_seq_eq us e' f' subst =
   | (Concat ms as c), a when x_ito_us c a -> solve_concat c ms a
   | a, (Concat ms as c) when x_ito_us c a -> solve_concat c ms a
   | (Var _ as v), u when x_ito_us v u ->
-      Some (Subst.compose1 ~key:v ~data:u subst)
+      Some (Subst.compose1 {var= v; rep= u} subst)
   | u, (Var _ as v) when x_ito_us v u ->
-      Some (Subst.compose1 ~key:v ~data:u subst)
+      Some (Subst.compose1 {var= v; rep= u} subst)
   | _ -> None )
   |>
   [%Trace.retn fun {pf} subst' ->
@@ -1230,7 +1229,7 @@ let solve_uninterp_eqs us (cls, subst) =
         Cls.fold cls_xs subst ~f:(fun trm_xs subst ->
             let trm_xs = Subst.canon subst trm_xs in
             let rep_us = Subst.canon subst rep_us in
-            Subst.compose1 ~key:trm_xs ~data:rep_us subst )
+            Subst.compose1 {var= trm_xs; rep= rep_us} subst )
       in
       (cls, subst)
   | None -> (
@@ -1241,7 +1240,7 @@ let solve_uninterp_eqs us (cls, subst) =
           Cls.fold cls_xs subst ~f:(fun trm_xs subst ->
               let trm_xs = Subst.canon subst trm_xs in
               let rep_xs = Subst.canon subst rep_xs in
-              Subst.compose1 ~key:trm_xs ~data:rep_xs subst )
+              Subst.compose1 {var= trm_xs; rep= rep_xs} subst )
         in
         (cls, subst)
     | None -> (cls, subst) ) )
@@ -1326,7 +1325,7 @@ let solve_concat_extracts r us x (classes, subst, us_xs) =
   with
   | Some extracts ->
       let concat = Trm.concat (Array.of_list extracts) in
-      let subst = Subst.compose1 ~key:x ~data:concat subst in
+      let subst = Subst.compose1 {var= x; rep= concat} subst in
       (classes, subst, us_xs)
   | None -> (classes, subst, us_xs)
 
