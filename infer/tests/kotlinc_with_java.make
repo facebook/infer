@@ -20,11 +20,20 @@ PROJECT_ROOT ?= $(TESTS_DIR)
 
 JAVAC_FLAGS = -g -source 8 -target 8
 
-$(OBJECTS): $(JAVA_SOURCES) $(KOTLIN_SOURCES)
-	$(QUIET)$(call silent_on_success,Compile Kotlin/Java code, \
-	  $(KOTLINC) -cp $(CLASSPATH) $(JAVA_SOURCES) $(KOTLIN_SOURCES) && \
+.PHONY: kotlin_objects
+kotlin_objects: $(JAVA_SOURCES) $(KOTLIN_SOURCES)
+	$(QUIET)$(call silent_on_success,Compile Kotlin code, \
+	  $(KOTLINC) -cp $(CLASSPATH) $(JAVA_SOURCES) $(KOTLIN_SOURCES))
+
+$(OBJECTS): $(JAVA_SOURCES) kotlin_objects
+	$(QUIET)$(call silent_on_success,Compile Java code, \
 	  $(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(JAVA_SOURCES))
 
-infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(OBJECTS) $(MAKEFILE_LIST)
+infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(JAVA_SOURCES) kotlin_objects $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/java/kotlin in $(TEST_REL_DIR),\
-	  $(INFER_BIN) --project-root $(PROJECT_ROOT) --kotlin-capture --generated-classes . $(SOURCES_ARGS) -o $(@D) $(INFER_OPTIONS))
+	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) --kotlin-capture \
+	    --generated-classes . $(SOURCES_ARGS) -o $(@D) $(INFER_OPTIONS) && \
+	  $(INFER_BIN) capture --continue --project-root $(PROJECT_ROOT) --dump-duplicate-symbols \
+	    -o $(@D) $(INFER_OPTIONS) -- $(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(JAVA_SOURCES) \
+	    && \
+	  $(INFER_BIN) analyze -o $(@D) $(INFER_OPTIONS))
