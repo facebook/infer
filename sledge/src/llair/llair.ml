@@ -25,7 +25,7 @@ module Intrinsic = struct
 
   let t_to_name =
     Iter.of_list all
-    |> Iter.map ~f:(fun i -> (i, Variants.to_name i))
+    |> Iter.map ~f:(fun i -> (i, Sexp.to_string (sexp_of_t i)))
     |> Intrinsic_to_String.of_iter
 
   let to_string i = Intrinsic_to_String.find_left i t_to_name
