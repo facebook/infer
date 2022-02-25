@@ -17,6 +17,12 @@ type t =
   ; pp_action: Format.formatter -> unit
   ; pp_state: Format.formatter -> unit }
 
+let v kind loc pp_action action pp_state state =
+  { kind
+  ; loc
+  ; pp_action= Fun.flip pp_action action
+  ; pp_state= Fun.flip pp_state state }
+
 let pp fs {kind; loc; pp_action} =
   Format.fprintf fs "%a %a@;<1 2>@[%t@]" Llair.Loc.pp loc pp_kind kind
     pp_action

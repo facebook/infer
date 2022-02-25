@@ -72,10 +72,7 @@ let exec_move tid res q =
 
 let exec_inst tid inst pre =
   let alarm kind =
-    { Alarm.kind
-    ; loc= Llair.Inst.loc inst
-    ; pp_action= Fun.flip Llair.Inst.pp inst
-    ; pp_state= Fun.flip pp pre }
+    Alarm.v kind (Llair.Inst.loc inst) Llair.Inst.pp inst pp pre
   in
   let or_alarm = function
     | Some post -> Ok post
