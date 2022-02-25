@@ -37,4 +37,4 @@ type t =
     `_ZN5folly13usingJEMallocEv
   | (* cct *)
     `cct_point ]
-[@@deriving compare, equal, sexp, enumerate]
+[@@deriving compare, equal, sexp_of, enumerate]

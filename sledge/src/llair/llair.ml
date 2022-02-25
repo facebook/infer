@@ -56,9 +56,9 @@ type inst =
   | Abort of {loc: Loc.t}
   | Intrinsic of
       {reg: Reg.t option; name: Intrinsic.t; args: Exp.t iarray; loc: Loc.t}
-[@@deriving compare, equal, sexp]
+[@@deriving compare, equal, sexp_of]
 
-type cmnd = inst iarray [@@deriving compare, equal, sexp]
+type cmnd = inst iarray [@@deriving compare, equal, sexp_of]
 type label = string [@@deriving compare, equal, sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
@@ -322,7 +322,7 @@ and dummy_func =
 (** Instructions *)
 
 module Inst = struct
-  type t = inst [@@deriving compare, equal, sexp]
+  type t = inst [@@deriving compare, equal, sexp_of]
 
   let pp = pp_inst
   let move ~reg_exps ~loc = Move {reg_exps; loc}
