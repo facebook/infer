@@ -1076,6 +1076,9 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
               exec_call {call with callee} ams wl ) )
     | Return {exp} -> exec_return exp ams wl
     | Throw {exc} -> exec_throw exc ams wl
+    | Abort {loc} ->
+        Report.alarm (Alarm.v Abort loc Llair.Term.pp term D.pp state) ;
+        wl
     | Unreachable -> wl
 
   let rec exec_ip pgm ({ctrl= {ip; stk; tid}; state} as ams) wl =

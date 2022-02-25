@@ -1018,6 +1018,7 @@ let num_actuals instr lltyp llfunc =
 
 let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
   let emit_inst ?prefix inst = Some (emit_inst ?prefix inst) in
+  let emit_term ?(prefix = []) term = Some (prefix, term, []) in
   match name_segs with
   | ["__llair_choice"] ->
       let reg = xlate_name x instr in
@@ -1049,7 +1050,7 @@ let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
    |["free" (* void free(void* ptr) *)] ->
       let prefix, ptr = xlate_value x (Llvm.operand instr 0) in
       emit_inst ~prefix (Inst.free ~ptr ~loc)
-  | ["abort"] | ["llvm"; "trap"] -> emit_inst (Inst.abort ~loc)
+  | ["abort"] | ["llvm"; "trap"] -> emit_term (Term.abort ~loc)
   | [iname] | "llvm" :: iname :: _ -> (
     match Intrinsic.of_name iname with
     | Some name ->

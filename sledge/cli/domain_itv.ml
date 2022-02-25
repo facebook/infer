@@ -213,7 +213,6 @@ let exec_inst tid i q =
    |Intrinsic {reg= Some reg; _} ->
       Ok (exec_kill tid reg q)
   | Intrinsic {reg= None; _} -> Ok q
-  | Abort {loc} -> Error (Alarm.v Abort loc Llair.Inst.pp i pp q)
 
 let enter_scope _ _ q = q
 

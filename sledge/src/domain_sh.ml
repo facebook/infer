@@ -106,7 +106,6 @@ let exec_inst tid inst pre =
       |> or_alarm
   | Free {ptr; _} -> Exec.free pre ~ptr:(X.term tid ptr) |> or_alarm
   | Nondet {reg; _} -> Ok (Exec.nondet pre (Option.map ~f:(X.reg tid) reg))
-  | Abort _ -> Error (alarm Abort)
   | Intrinsic {reg; name; args; _} ->
       let areturn = Option.map ~f:(X.reg tid) reg in
       let actuals = IArray.map ~f:(X.term tid) args in

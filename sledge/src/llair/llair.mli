@@ -63,7 +63,6 @@ type inst = private
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
       (** Bind [reg] to an arbitrary value, representing non-deterministic
           approximation of behavior described by [msg]. *)
-  | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
   | Intrinsic of
       {reg: Reg.t option; name: Intrinsic.t; args: Exp.t iarray; loc: Loc.t}
       (** Bind [reg] to the value of applying intrinsic [name] to [args]. *)
@@ -103,6 +102,7 @@ and term = private
   | Throw of {exc: Exp.t; loc: Loc.t}
       (** Invoke [throw] of the dynamically most recent [Call] with [throw]
           not [None]. *)
+  | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
   | Unreachable
       (** Halt as control is assumed to never reach [Unreachable]. *)
 
@@ -158,7 +158,6 @@ module Inst : sig
   val alloc : reg:Reg.t -> num:Exp.t -> len:int -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst
-  val abort : loc:Loc.t -> inst
 
   val intrinsic :
        reg:Reg.t option
@@ -218,6 +217,7 @@ module Term : sig
   val return : exp:Exp.t option -> loc:Loc.t -> term
   val throw : exc:Exp.t -> loc:Loc.t -> term
   val unreachable : term
+  val abort : loc:Loc.t -> term
   val loc : term -> Loc.t
 end
 

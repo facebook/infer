@@ -53,7 +53,6 @@ type inst =
   | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
   | Free of {ptr: Exp.t; loc: Loc.t}
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
-  | Abort of {loc: Loc.t}
   | Intrinsic of
       {reg: Reg.t option; name: Intrinsic.t; args: Exp.t iarray; loc: Loc.t}
 [@@deriving compare, equal, sexp_of]
@@ -80,6 +79,7 @@ and term =
   | ICall of Exp.t call
   | Return of {exp: Exp.t option; loc: Loc.t}
   | Throw of {exc: Exp.t; loc: Loc.t}
+  | Abort of {loc: Loc.t}
   | Unreachable
 
 and block =
@@ -140,6 +140,7 @@ with type jump := jump
     | ICall of Exp.t call
     | Return of {exp: Exp.t option; loc: Loc.t}
     | Throw of {exc: Exp.t; loc: Loc.t}
+    | Abort of {loc: Loc.t}
     | Unreachable
   [@@deriving compare, equal]
 end
@@ -184,6 +185,7 @@ let sexp_of_term = function
   | Return {exp; loc} ->
       sexp_ctor "Return" [%sexp {exp: Exp.t option; loc: Loc.t}]
   | Throw {exc; loc} -> sexp_ctor "Throw" [%sexp {exc: Exp.t; loc: Loc.t}]
+  | Abort {loc} -> sexp_ctor "Abort" [%sexp {loc: Loc.t}]
   | Unreachable -> Sexp.Atom "Unreachable"
 
 let sexp_of_block {lbl; cmnd; term; parent; sort_index} =
@@ -238,7 +240,6 @@ let pp_inst fs inst =
       pf "@[<2>%anondet \"%s\";@]\t%a"
         (Option.pp "%a := " Reg.pp)
         reg msg Loc.pp loc
-  | Abort {loc} -> pf "@[<2>abort;@]\t%a" Loc.pp loc
   | Intrinsic {reg; name; args; loc} ->
       pf "@[<2>%aintrinsic@ %a(@,@[<hv>%a@]);@]\t%a"
         (Option.pp "%a := " Reg.pp)
@@ -288,6 +289,7 @@ let pp_term fs term =
   | Return {exp; loc} ->
       pf "@[<2>return%a@]\t%a" (Option.pp " %a" Exp.pp) exp Loc.pp loc
   | Throw {exc; loc} -> pf "@[<2>throw %a@]\t%a" Exp.pp exc Loc.pp loc
+  | Abort {loc} -> pf "@[<2>abort@]\t%a" Loc.pp loc
   | Unreachable -> pf "unreachable"
 
 let pp_cmnd = IArray.pp "@ " pp_inst
@@ -338,7 +340,6 @@ module Inst = struct
   let alloc ~reg ~num ~len ~loc = Alloc {reg; num; len; loc}
   let free ~ptr ~loc = Free {ptr; loc}
   let nondet ~reg ~msg ~loc = Nondet {reg; msg; loc}
-  let abort ~loc = Abort {loc}
   let intrinsic ~reg ~name ~args ~loc = Intrinsic {reg; name; args; loc}
 
   let loc = function
@@ -350,7 +351,6 @@ module Inst = struct
      |Alloc {loc; _}
      |Free {loc; _}
      |Nondet {loc; _}
-     |Abort {loc; _}
      |Intrinsic {loc; _} ->
         loc
 
@@ -365,10 +365,7 @@ module Inst = struct
      |Nondet {reg= Some reg; _}
      |Intrinsic {reg= Some reg; _} ->
         Reg.Set.add reg vs
-    | Store _ | Free _
-     |Nondet {reg= None; _}
-     |Abort _
-     |Intrinsic {reg= None; _} ->
+    | Store _ | Free _ | Nondet {reg= None; _} | Intrinsic {reg= None; _} ->
         vs
 
   let locals inst = union_locals inst Reg.Set.empty
@@ -385,7 +382,6 @@ module Inst = struct
     | Alloc {reg= _; num; len= _; loc= _} -> f num s
     | Free {ptr; loc= _} -> f ptr s
     | Nondet {reg= _; msg= _; loc= _} -> s
-    | Abort {loc= _} -> s
     | Intrinsic {reg= _; name= _; args; loc= _} -> IArray.fold ~f args s
 end
 
@@ -424,7 +420,7 @@ module Term = struct
           assert (
             Bool.equal (Option.is_some exp) (Option.is_some parent.freturn) )
       | None -> assert true )
-    | Throw _ | Unreachable -> assert true
+    | Throw _ | Abort _ | Unreachable -> assert true
 
   let goto ~dst ~loc =
     Switch {key= Exp.false_; tbl= IArray.empty; els= dst; loc}
@@ -461,6 +457,7 @@ module Term = struct
 
   let return ~exp ~loc = Return {exp; loc} |> check invariant
   let throw ~exc ~loc = Throw {exc; loc} |> check invariant
+  let abort ~loc = Abort {loc} |> check invariant
   let unreachable = Unreachable |> check invariant
 
   let loc = function
@@ -469,7 +466,8 @@ module Term = struct
      |Call {loc; _}
      |ICall {loc; _}
      |Return {loc; _}
-     |Throw {loc; _} ->
+     |Throw {loc; _}
+     |Abort {loc; _} ->
         loc
     | Unreachable -> Loc.none
 
@@ -477,7 +475,8 @@ module Term = struct
     match term with
     | Call {areturn; _} | ICall {areturn; _} ->
         Reg.Set.add_option areturn vs
-    | Switch _ | Iswitch _ | Return _ | Throw _ | Unreachable -> vs
+    | Switch _ | Iswitch _ | Return _ | Throw _ | Abort _ | Unreachable ->
+        vs
 end
 
 (** Basic-Blocks *)
@@ -527,7 +526,7 @@ module IP = struct
       match inst ip with
       | Some (Load _ | Store _ | AtomicRMW _ | AtomicCmpXchg _ | Free _) ->
           true
-      | Some (Move _ | Alloc _ | Nondet _ | Abort _) -> false
+      | Some (Move _ | Alloc _ | Nondet _) -> false
       | Some (Intrinsic {name; _}) -> (
         match name with
         | `calloc | `malloc | `mallocx | `nallocx | `cct_point -> false
@@ -610,7 +609,7 @@ module Func = struct
           | Iswitch {tbl; _} -> IArray.fold ~f tbl s
           | Call {return; throw; _} | ICall {return; throw; _} ->
               Option.fold ~f throw (f return s)
-          | Return _ | Throw _ | Unreachable -> s
+          | Return _ | Throw _ | Abort _ | Unreachable -> s
         in
         f blk s
     in
@@ -726,7 +725,7 @@ module Func = struct
           jump' return ;
           Option.iter ~f:jump' throw ;
           None
-      | Return _ | Throw _ | Unreachable -> None
+      | Return _ | Throw _ | Abort _ | Unreachable -> None
     in
     let resolve_parent_and_jumps block =
       resolve_parent_and_jumps Block_label.Set.empty block |> ignore
@@ -776,7 +775,7 @@ let set_derived_metadata functions =
             call.recursive <- true ;
             jump return ;
             Option.iter ~f:jump throw
-        | Return _ | Throw _ | Unreachable -> () ) ;
+        | Return _ | Throw _ | Abort _ | Unreachable -> () ) ;
         BlockQ.enqueue_back_exn tips_to_roots src ()
     in
     FuncQ.iter roots ~f:(fun root ->
