@@ -372,7 +372,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     type t =
       | Runnable of IP.t
       | Suspended of IP.t
-      | Terminated of ThreadID.t * D.term_code
+      | Terminated of D.term_code * ThreadID.t
     [@@deriving equal, sexp_of]
 
     val compare : t Ord.t
@@ -387,17 +387,17 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     type t =
       | Runnable of IP.t
       | Suspended of IP.t
-      | Terminated of ThreadID.t * D.term_code
+      | Terminated of D.term_code * ThreadID.t
     [@@deriving sexp_of]
 
     let pp ppf = function
       | Runnable ip -> IP.pp ppf ip
       | Suspended ip -> Format.fprintf ppf "S%a" IP.pp ip
-      | Terminated (tid, _) -> Format.fprintf ppf "T%i" tid
+      | Terminated (_, tid) -> Format.fprintf ppf "T%i" tid
 
     let id = function
       | Runnable {tid} | Suspended {tid} -> tid
-      | Terminated (tid, _) -> tid
+      | Terminated (_, tid) -> tid
 
     (* Note: Threads.inactive relies on comparing tid last *)
     let compare_aux compare_tid x y =
@@ -413,7 +413,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         | _, Runnable _ -> 1
         | Suspended _, _ -> -1
         | _, Suspended _ -> 1
-        | Terminated (x_tid, x_tc), Terminated (y_tid, y_tc) ->
+        | Terminated (x_tc, x_tid), Terminated (y_tc, y_tid) ->
             D.compare_term_code x_tc y_tc <?> (compare_tid, x_tid, y_tid)
 
     let compare = compare_aux ThreadID.compare
@@ -488,7 +488,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
 
     let join tid threads =
       match M.find tid threads with
-      | Some (Thread.Terminated (_, tc)) -> Some (tc, M.remove tid threads)
+      | Some (Thread.Terminated (tc, _)) -> Some (tc, M.remove tid threads)
       | _ ->
           [%Trace.info " prune join of non-terminated thread: %i" tid] ;
           None
@@ -539,7 +539,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         | _, {dst= Runnable _} -> 1
         | {dst= Suspended _}, _ -> -1
         | _, {dst= Suspended _} -> 1
-        | {dst= Terminated (x_tid, x_tc)}, {dst= Terminated (y_tid, y_tc)}
+        | {dst= Terminated (x_tc, x_tid)}, {dst= Terminated (y_tc, y_tid)}
           ->
             Llair.Block.compare x.src y.src
             <?> (D.compare_term_code, x_tc, y_tc)
@@ -952,7 +952,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         summarize exit_state |> ignore ;
         let tc = D.term tid formals freturn exit_state in
         Work.add ~retreating:false
-          {ams with ctrl= {dst= Terminated (tid, tc); src= block}}
+          {ams with ctrl= {dst= Terminated (tc, tid); src= block}}
           wl )
     |>
     [%Trace.retn fun {pf} _ -> pf ""]
