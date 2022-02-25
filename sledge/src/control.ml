@@ -1055,25 +1055,30 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
                     ~parent:(Llair.Function.name jump.dst.parent.name)
                     ~name:jump.dst.lbl ) )
               jump ams wl )
-    | Call ({callee= Direct callee; actuals; areturn; return} as call) -> (
-      match (Llair.Function.name callee.name, IArray.to_array actuals) with
-      | "sledge_thread_create", [|callee; arg|] -> (
-        match resolve_callee pgm tid callee state with
-        | [] -> exec_skip_func areturn return ams wl
-        | callees ->
-            List.fold callees wl ~f:(fun callee wl ->
-                exec_thread_create areturn callee arg return ams wl ) )
-      | "sledge_thread_resume", [|thread|] ->
-          exec_thread_resume thread return ams wl
-      | "sledge_thread_join", [|thread|] ->
-          exec_thread_join thread areturn return ams wl
-      | _ -> exec_call {call with callee} ams wl )
+    | Call ({callee= Direct callee} as call) ->
+        exec_call {call with callee} ams wl
     | Call ({callee= Indirect callee; areturn; return} as call) -> (
       match resolve_callee pgm tid callee state with
       | [] -> exec_skip_func areturn return ams wl
       | callees ->
           List.fold callees wl ~f:(fun callee wl ->
               exec_call {call with callee} ams wl ) )
+    | Call {callee= Intrinsic callee; actuals; areturn; return} -> (
+      match (callee, IArray.to_array actuals) with
+      | `sledge_thread_create, [|callee; arg|] -> (
+        match resolve_callee pgm tid callee state with
+        | [] -> exec_skip_func areturn return ams wl
+        | callees ->
+            List.fold callees wl ~f:(fun callee wl ->
+                exec_thread_create areturn callee arg return ams wl ) )
+      | `sledge_thread_resume, [|thread|] ->
+          exec_thread_resume thread return ams wl
+      | `sledge_thread_join, [|thread|] ->
+          exec_thread_join thread areturn return ams wl
+      | ( ( `sledge_thread_create | `sledge_thread_resume
+          | `sledge_thread_join )
+        , _ ) ->
+          violates Llair.Term.invariant term )
     | Return {exp} -> exec_return exp ams wl
     | Throw {exc} -> exec_throw exc ams wl
     | Abort {loc} ->

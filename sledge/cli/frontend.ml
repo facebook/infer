@@ -1069,19 +1069,26 @@ let xlate_builtin_inst emit_inst x name_segs instr num_actuals loc =
 
 let calls_to_backpatch = ref []
 
-let term_call x llcallee ~typ ~actuals ~areturn ~return ~throw ~loc =
-  match Llvm.classify_value llcallee with
-  | Function ->
-      let name = Llvm.value_name llcallee in
-      let call, backpatch =
-        Term.call ~name ~typ ~actuals ~areturn ~return ~throw ~loc
+let term_call x llcallee name ~typ ~actuals ~areturn ~return ~throw ~loc =
+  match Intrinsic.of_name name with
+  | Some callee ->
+      let call =
+        Term.intrinsic ~callee ~typ ~actuals ~areturn ~return ~throw ~loc
       in
-      calls_to_backpatch :=
-        (llcallee, typ, backpatch) :: !calls_to_backpatch ;
       ([], call)
-  | _ ->
-      let prefix, callee = xlate_value x llcallee in
-      (prefix, Term.icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc)
+  | None -> (
+    match Llvm.classify_value llcallee with
+    | Function ->
+        let call, backpatch =
+          Term.call ~name ~typ ~actuals ~areturn ~return ~throw ~loc
+        in
+        calls_to_backpatch :=
+          (llcallee, typ, backpatch) :: !calls_to_backpatch ;
+        ([], call)
+    | _ ->
+        let prefix, callee = xlate_value x llcallee in
+        ( prefix
+        , Term.icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc ) )
 
 let xlate_instr :
        pop_thunk
@@ -1238,7 +1245,7 @@ let xlate_instr :
               let areturn = xlate_name_opt x instr in
               let return = Jump.mk lbl in
               let pre_0, call =
-                term_call x llcallee ~typ ~actuals ~areturn ~return
+                term_call x llcallee fname ~typ ~actuals ~areturn ~return
                   ~throw:None ~loc
               in
               continue (fun (insts, term) ->
@@ -1297,7 +1304,7 @@ let xlate_instr :
                   xlate_jump x instr unwind_blk loc blocks
                 in
                 let pre_0, call =
-                  term_call x llcallee ~typ ~actuals ~areturn ~return
+                  term_call x llcallee fname ~typ ~actuals ~areturn ~return
                     ~throw:(Some throw) ~loc
                 in
                 let prefix = List.concat [pre_0; pre_1; pre_2; pre_3] in
@@ -1735,6 +1742,7 @@ let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
         if
           String.prefix name ~pre:"__llair_"
           || String.prefix name ~pre:"llvm."
+          || Option.is_some (Intrinsic.of_name name)
         then functions
         else
           let func = xlate_function x llf in

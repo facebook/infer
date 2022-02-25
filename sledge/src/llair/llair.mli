@@ -21,7 +21,13 @@ val cct_schedule_points : bool ref
 module Builtin : sig
   include module type of Builtins
 
-  val to_string : t -> string
+  val of_name : string -> t option
+  val pp : t pp
+end
+
+module Intrinsic : sig
+  include module type of Intrinsics
+
   val of_name : string -> t option
   val pp : t pp
 end
@@ -79,6 +85,8 @@ type jump = private {mutable dst: block; mutable retreating: bool}
 and callee =
   | Direct of func  (** Statically resolved function *)
   | Indirect of Exp.t  (** Dynamically resolved function-pointer *)
+  | Intrinsic of Intrinsic.t
+      (** Intrinsic implemented in analyzer rather than source code *)
 
 (** A call to a function. *)
 and 'a call =
@@ -186,6 +194,7 @@ module Term : sig
 
   val pp : t pp
   val pp_callee : callee pp
+  val invariant : ?parent:func -> t -> unit
 
   val goto : dst:jump -> loc:Loc.t -> term
   (** Construct a [Switch] representing an unconditional branch. *)
@@ -210,6 +219,16 @@ module Term : sig
 
   val icall :
        callee:Exp.t
+    -> typ:Typ.t
+    -> actuals:Exp.t iarray
+    -> areturn:Reg.t option
+    -> return:jump
+    -> throw:jump option
+    -> loc:Loc.t
+    -> term
+
+  val intrinsic :
+       callee:Intrinsic.t
     -> typ:Typ.t
     -> actuals:Exp.t iarray
     -> areturn:Reg.t option

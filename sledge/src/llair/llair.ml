@@ -19,23 +19,25 @@ module GlobalDefn = GlobalDefn
 
 let cct_schedule_points = ref false
 
-module Builtin = struct
-  include Builtins
-  module Builtin_to_String = Bijection.Make (Builtins) (String)
+module Bij (I : sig
+  type t [@@deriving compare, equal, sexp_of, enumerate]
+end) =
+struct
+  include I
+  module B = Bijection.Make (I) (String)
 
-  let t_to_name =
-    Iter.of_list all
-    |> Iter.map ~f:(fun i -> (i, Sexp.to_string (sexp_of_t i)))
-    |> Builtin_to_String.of_iter
+  let bij =
+    Iter.of_list I.all
+    |> Iter.map ~f:(fun i -> (i, Sexp.to_string (I.sexp_of_t i)))
+    |> B.of_iter
 
-  let to_string i = Builtin_to_String.find_left i t_to_name
-
-  let of_name s =
-    try Some (Builtin_to_String.find_right s t_to_name)
-    with Not_found -> None
-
-  let pp ppf i = Format.pp_print_string ppf (to_string i)
+  let to_name i = B.find_left i bij
+  let of_name s = try Some (B.find_right s bij) with Not_found -> None
+  let pp ppf i = Format.pp_print_string ppf (to_name i)
 end
+
+module Builtin = Bij (Builtins)
+module Intrinsic = Bij (Intrinsics)
 
 type inst =
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
@@ -62,7 +64,7 @@ type label = string [@@deriving compare, equal, sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
 
-and callee = Direct of func | Indirect of Exp.t
+and callee = Direct of func | Indirect of Exp.t | Intrinsic of Intrinsic.t
 
 and 'a call =
   { mutable callee: 'a
@@ -122,7 +124,10 @@ with type jump := jump
   type nonrec jump = jump = {mutable dst: block; mutable retreating: bool}
   [@@deriving compare, equal]
 
-  type nonrec callee = callee = Direct of func | Indirect of Exp.t
+  type nonrec callee = callee =
+    | Direct of func
+    | Indirect of Exp.t
+    | Intrinsic of Intrinsic.t
   [@@deriving compare, equal]
 
   type nonrec 'a call = 'a call =
@@ -165,6 +170,7 @@ let sexp_of_jump {dst; retreating} =
 let sexp_of_callee = function
   | Direct func -> sexp_ctor "Direct" [%sexp (func.name : Function.t)]
   | Indirect exp -> sexp_ctor "Indirect" [%sexp (exp : Exp.t)]
+  | Intrinsic intr -> sexp_ctor "Intrinsic" [%sexp (intr : Intrinsic.t)]
 
 let sexp_of_call
     {callee; typ; actuals; areturn; return; throw; recursive; loc} =
@@ -261,6 +267,7 @@ let pp_jump fs {dst; retreating} =
 let pp_callee fs = function
   | Direct f -> Function.pp fs f.name
   | Indirect f -> Exp.pp fs f
+  | Intrinsic i -> Intrinsic.pp fs i
 
 let pp_call fs
     {callee; typ= _; actuals; areturn; return; throw; recursive; loc} =
@@ -416,12 +423,23 @@ module Term = struct
     let@ () = Invariant.invariant [%here] term [%sexp_of: t] in
     match term with
     | Switch _ | Iswitch _ -> assert true
-    | Call {typ; actuals; areturn; _} -> (
-      match typ with
-      | Pointer {elt= Function {args; return= retn_typ; _}} ->
-          assert (IArray.length args = IArray.length actuals) ;
-          assert (Option.is_some retn_typ || Option.is_none areturn)
-      | _ -> assert false )
+    | Call {callee; typ; actuals; areturn; _} -> (
+        ( match typ with
+        | Pointer {elt= Function {args; return= retn_typ; _}} ->
+            assert (IArray.length args = IArray.length actuals) ;
+            assert (Option.is_some retn_typ || Option.is_none areturn)
+        | _ -> assert false ) ;
+        match callee with
+        | Intrinsic `sledge_thread_create ->
+            assert (IArray.length actuals = 2) ;
+            assert (Option.is_some areturn)
+        | Intrinsic `sledge_thread_resume ->
+            assert (IArray.length actuals = 1) ;
+            assert (Option.is_none areturn)
+        | Intrinsic `sledge_thread_join ->
+            assert (IArray.length actuals = 1) ;
+            assert (Option.is_some areturn)
+        | Direct _ | Indirect _ -> assert true )
     | Return {exp; _} -> (
       match parent with
       | Some parent ->
@@ -461,6 +479,18 @@ module Term = struct
   let icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
     Call
       { callee= Indirect callee
+      ; typ
+      ; actuals
+      ; areturn
+      ; return
+      ; throw
+      ; recursive= false
+      ; loc }
+    |> check invariant
+
+  let intrinsic ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
+    Call
+      { callee= Intrinsic callee
       ; typ
       ; actuals
       ; areturn
@@ -782,7 +812,8 @@ let set_derived_metadata functions =
                 visit ancestors f.entry
             | Direct _ | Indirect _ ->
                 (* conservatively assume all indirect calls are recursive *)
-                call.recursive <- true ) ;
+                call.recursive <- true
+            | Intrinsic _ -> () ) ;
             jump return ;
             Option.iter ~f:jump throw
         | Return _ | Throw _ | Abort _ | Unreachable -> () ) ;
