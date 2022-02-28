@@ -2657,18 +2657,7 @@ and sqlite_lock_timeout =
     "Timeout for SQLite results database operations, in milliseconds."
 
 
-and sqlite_vacuum =
-  CLOpt.mk_bool ~long:"sqlite-vacuum" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_generic)]
-    "$(b,VACUUM) the SQLite DB after performing capture."
-
-
 and sqlite_vfs = CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
-
-and (_ : bool ref) =
-  CLOpt.mk_bool ~default:false "[DEPRECATED][DOES NOTHING] option does not exist any more"
-    ~deprecated:["-sqlite-write-daemon"] ~deprecated_no:["-no-sqlite-write-daemon"] ~long:""
-
 
 and subtype_multirange =
   CLOpt.mk_bool ~deprecated:["subtype_multirange"] ~long:"subtype-multirange" ~default:true
@@ -3704,8 +3693,6 @@ and sqlite_cache_size = !sqlite_cache_size
 and sqlite_page_size = !sqlite_page_size
 
 and sqlite_lock_timeout = !sqlite_lock_timeout
-
-and sqlite_vacuum = !sqlite_vacuum
 
 and sqlite_vfs = !sqlite_vfs
 

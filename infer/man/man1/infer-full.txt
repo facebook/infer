@@ -1412,10 +1412,6 @@ OPTIONS
            SQLite page size in bytes, must be a power of two between 512 and
            65536.           See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
-       --sqlite-vacuum
-           Activates: VACUUM the SQLite DB after performing capture.
-           (Conversely: --no-sqlite-vacuum)           See also infer-capture(1).
-
        --no-starvation
            Deactivates: checker starvation: Detect various kinds of
            situations when no progress is being made because of concurrency

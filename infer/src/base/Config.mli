@@ -684,8 +684,6 @@ val sqlite_page_size : int
 
 val sqlite_lock_timeout : int
 
-val sqlite_vacuum : bool
-
 val sqlite_vfs : string option
 
 val starvation_skip_analysis : Yojson.Basic.t

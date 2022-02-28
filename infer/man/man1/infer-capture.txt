@@ -118,10 +118,6 @@ OPTIONS
            SQLite page size in bytes, must be a power of two between 512 and
            65536.
 
-       --sqlite-vacuum
-           Activates: VACUUM the SQLite DB after performing capture.
-           (Conversely: --no-sqlite-vacuum)
-
        --workspace path
            Specifies the root of the workspace, which is a directory
            containing --project-root. This can be needed if the capture phase

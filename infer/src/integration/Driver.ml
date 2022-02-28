@@ -106,7 +106,7 @@ let check_xcpretty () =
 
 
 let capture ~changed_files mode =
-  ( if not (List.is_empty Config.merge_infer_out) then (
+  if not (List.is_empty Config.merge_infer_out) then (
     let infer_deps_file = ResultsDir.get_path CaptureDependencies in
     List.map Config.merge_infer_out ~f:(fun dir -> Printf.sprintf "-\t-\t%s" dir)
     |> Out_channel.write_lines infer_deps_file ;
@@ -166,8 +166,7 @@ let capture ~changed_files mode =
         let db_files =
           CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args
         in
-        CaptureCompilationDatabase.capture ~changed_files ~db_files ) ;
-  if Config.sqlite_vacuum then DBWriter.canonicalize ()
+        CaptureCompilationDatabase.capture ~changed_files ~db_files
 
 
 (* shadowed for tracing *)
