@@ -35,18 +35,22 @@ module Import : sig
         ; calling_context: (CallEvent.t * Location.t) list }
     | ISLLatentMemoryError of AbductiveDomain.summary
 
-  type 'astate base_error = 'astate AccessResult.error =
-    | PotentialInvalidAccess of
-        { astate: 'astate
-        ; address: AbstractValue.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
+  type base_summary_error = AccessResult.summary_error =
     | PotentialInvalidAccessSummary of
         { astate: AbductiveDomain.summary
         ; address: AbstractValue.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
     | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
-    | ISLError of 'astate
+    | ISLErrorSummary of {astate: AbductiveDomain.summary}
+
+  type base_error = AccessResult.error =
+    | PotentialInvalidAccess of
+        { astate: AbductiveDomain.t
+        ; address: AbstractValue.t
+        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
+    | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
+    | ISLError of {astate: AbductiveDomain.t}
+    | Summary of base_summary_error
 
   (** {2 Monadic syntax} *)
 

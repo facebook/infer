@@ -41,6 +41,16 @@ let map x ~f =
       err
 
 
+let map_error x ~f =
+  match x with
+  | Ok _ as x ->
+      x
+  | Recoverable (x', errors) ->
+      Recoverable (x', List.map ~f errors)
+  | FatalError (fatal, errors) ->
+      FatalError (f fatal, List.map ~f errors)
+
+
 let bind x ~f =
   match x with
   | Ok x' ->

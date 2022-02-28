@@ -9,56 +9,68 @@ open! IStd
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 
-type 'astate error =
-  | PotentialInvalidAccess of
-      { astate: 'astate
-      ; address: AbstractValue.t
-      ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
+type summary_error =
   | PotentialInvalidAccessSummary of
       { astate: AbductiveDomain.summary
       ; address: AbstractValue.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-  | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
   | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
-  | ISLError of 'astate
+  | ISLErrorSummary of {astate: AbductiveDomain.summary}
 
-type ('a, 'astate) base_t = ('a, 'astate error) PulseResult.t
+type error =
+  | PotentialInvalidAccess of
+      { astate: AbductiveDomain.t
+      ; address: AbstractValue.t
+      ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
+  | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
+  | ISLError of {astate: AbductiveDomain.t}
+  | Summary of summary_error
 
-type 'a t = ('a, AbductiveDomain.t) base_t
+type 'a t = ('a, error) PulseResult.t
+
+type 'a summary = ('a, summary_error) PulseResult.t
 
 (** Intermediate datatype since {!AbductiveDomain} cannot refer to this module without creating a
     circular dependency.
 
     Purposefully omits [`MemoryLeak] errors as it's a good idea to double-check if you really want
     to report a leak. *)
-type 'astate abductive_error =
-  [ `ISLError of 'astate
+type abductive_error =
+  [ `ISLError of AbductiveDomain.t
   | `PotentialInvalidAccess of
-    'astate * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option)
-  | `PotentialInvalidAccessSummary of
+    AbductiveDomain.t * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ]
+
+type abductive_summary_error =
+  [ `PotentialInvalidAccessSummary of
     AbductiveDomain.summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option)
   ]
 
-val of_result_f : ('a, AbductiveDomain.t error) result -> f:(AbductiveDomain.t error -> 'a) -> 'a t
+val of_result_f : ('a, error) result -> f:(error -> 'a) -> 'a t
 
-val of_result : (AbductiveDomain.t, AbductiveDomain.t error) result -> AbductiveDomain.t t
+val of_result : (AbductiveDomain.t, error) result -> AbductiveDomain.t t
 
-val of_error_f : AbductiveDomain.t error -> f:(AbductiveDomain.t error -> 'a) -> 'a t
+val of_error_f : error -> f:(error -> 'a) -> 'a t
 
-val of_abductive_error : [< 'astate abductive_error] -> 'astate error
+val of_abductive_summary_error : [< abductive_summary_error] -> summary_error
 
-val of_abductive_result : ('a, [< 'astate abductive_error]) result -> ('a, 'astate) base_t
+val of_abductive_result : ('a, [< abductive_error]) result -> 'a t
+
+val of_abductive_summary_result : ('a, [< abductive_summary_error]) result -> 'a summary
 
 val of_abductive_access_result :
      Trace.t
-  -> ('a, [< `InvalidAccess of Invalidation.t * Trace.t * 'astate | 'astate abductive_error]) result
-  -> ('a, 'astate) base_t
+  -> ( 'a
+     , [< `InvalidAccess of Invalidation.t * Trace.t * AbductiveDomain.t | abductive_error] )
+     result
+  -> 'a t
+
+val of_summary : 'a summary -> 'a t
 
 val ignore_leaks :
      ( AbductiveDomain.summary
      , [< `MemoryLeak of AbductiveDomain.summary * Attribute.allocator * Trace.t * Location.t
        | `ResourceLeak of AbductiveDomain.summary * JavaClassName.t * Trace.t * Location.t
        | `RetainCycle of AbductiveDomain.summary * Trace.t * Location.t
-       | AbductiveDomain.summary abductive_error ] )
+       | abductive_summary_error ] )
      result
-  -> (AbductiveDomain.summary, [> AbductiveDomain.summary abductive_error]) result
+  -> (AbductiveDomain.summary, [> abductive_summary_error]) result

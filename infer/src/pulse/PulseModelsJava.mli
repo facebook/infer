@@ -19,7 +19,7 @@ val load_field :
   -> ( PulseAbductiveDomain.t
        * (AbstractValue.t * ValueHistory.t)
        * (AbstractValue.t * ValueHistory.t)
-     , PulseAbductiveDomain.t base_error )
+     , base_error )
      pulse_result
 
 val matchers : matcher list

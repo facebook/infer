@@ -103,34 +103,33 @@ let summary_of_error_post tenv proc_desc location mk_error astate =
   | Sat (Error (`PotentialInvalidAccessSummary (summary, addr, trace))) ->
       (* ignore the error we wanted to report (with [mk_error]): the abstract state contained a
          potential error already so report [error] instead *)
-      Sat (AccessResult.of_abductive_error (`PotentialInvalidAccessSummary (summary, addr, trace)))
+      Sat
+        (AccessResult.of_abductive_summary_error
+           (`PotentialInvalidAccessSummary (summary, addr, trace)) )
   | Unsat ->
       Unsat
 
 
-let summary_error_of_error tenv proc_desc location (error : AbductiveDomain.t AccessResult.error) :
-    AbductiveDomain.summary AccessResult.error SatUnsat.t =
+let summary_error_of_error tenv proc_desc location (error : AccessResult.error) :
+    AccessResult.summary_error SatUnsat.t =
   match error with
-  | PotentialInvalidAccessSummary {astate; address; must_be_valid} ->
-      Sat (PotentialInvalidAccessSummary {astate; address; must_be_valid})
+  | Summary summary_error ->
+      Sat summary_error
   | PotentialInvalidAccess {astate; address; must_be_valid} ->
       summary_of_error_post tenv proc_desc location
-        (fun astate -> PotentialInvalidAccess {astate; address; must_be_valid})
+        (fun astate -> PotentialInvalidAccessSummary {astate; address; must_be_valid})
         astate
   | ReportableError {astate; diagnostic} ->
       summary_of_error_post tenv proc_desc location
-        (fun astate -> ReportableError {astate; diagnostic})
+        (fun astate -> ReportableErrorSummary {astate; diagnostic})
         astate
-  | ReportableErrorSummary {astate; diagnostic} ->
-      Sat (ReportableErrorSummary {astate; diagnostic})
-  | ISLError astate ->
-      summary_of_error_post tenv proc_desc location (fun astate -> ISLError astate) astate
+  | ISLError {astate} ->
+      summary_of_error_post tenv proc_desc location (fun astate -> ISLErrorSummary {astate}) astate
 
 
-let report_summary_error tenv proc_desc err_log
-    (access_error : AbductiveDomain.summary AccessResult.error) : ExecutionDomain.summary option =
+let report_summary_error tenv proc_desc err_log (access_error : AccessResult.summary_error) :
+    ExecutionDomain.summary option =
   match access_error with
-  | PotentialInvalidAccess {astate; address; must_be_valid}
   | PotentialInvalidAccessSummary {astate; address; must_be_valid} ->
       let invalidation = Invalidation.ConstantDereference IntLit.zero in
       let access_trace = fst must_be_valid in
@@ -152,9 +151,9 @@ let report_summary_error tenv proc_desc err_log
              ; access_trace
              ; must_be_valid_reason= snd must_be_valid } ) ;
       Some (LatentInvalidAccess {astate; address; must_be_valid; calling_context= []})
-  | ISLError astate ->
+  | ISLErrorSummary {astate} ->
       Some (ISLLatentMemoryError astate)
-  | ReportableError {astate; diagnostic} | ReportableErrorSummary {astate; diagnostic} -> (
+  | ReportableErrorSummary {astate; diagnostic} -> (
       let is_nullptr_dereference =
         IssueType.equal
           (Diagnostic.get_issue_type ~latent:false diagnostic)
@@ -179,8 +178,7 @@ let report_summary_error tenv proc_desc err_log
           Some (LatentAbortProgram {astate; latent_issue}) )
 
 
-let report_error tenv proc_desc err_log location
-    (access_error : AbductiveDomain.t AccessResult.error) =
+let report_error tenv proc_desc err_log location access_error =
   let open SatUnsat.Import in
   summary_error_of_error tenv proc_desc location access_error
   >>| report_summary_error tenv proc_desc err_log

@@ -139,10 +139,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         ~f:(fun subst astate_post_call ->
           let* (astate_summary : AbductiveDomain.summary) =
             let open SatUnsat.Import in
-            ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate_post_call
-              >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
-              :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) PulseResult.t
-                 SatUnsat.t )
+            AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate_post_call
+            >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+            >>| AccessResult.of_summary
           in
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ | ISLLatentMemoryError _ ->
@@ -161,10 +160,10 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               | `ReportNow ->
                   Sat
                     (AccessResult.of_error_f
-                       (ReportableErrorSummary {diagnostic; astate= astate_summary})
+                       (Summary (ReportableErrorSummary {diagnostic; astate= astate_summary}))
                        ~f:(fun _ -> ContinueProgram (astate_summary :> AbductiveDomain.t)) )
               | `ISLDelay astate ->
-                  Sat (FatalError (ISLError astate, [])) )
+                  Sat (FatalError (Summary (ISLErrorSummary {astate}), [])) )
           | LatentInvalidAccess
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
@@ -198,25 +197,25 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                 | Some (invalidation, invalidation_trace) ->
                     Sat
                       (FatalError
-                         ( ReportableErrorSummary
-                             { diagnostic=
-                                 AccessToInvalidAddress
-                                   { calling_context
-                                   ; invalidation
-                                   ; invalidation_trace
-                                   ; access_trace
-                                   ; must_be_valid_reason }
-                             ; astate= astate_summary }
+                         ( Summary
+                             (ReportableErrorSummary
+                                { diagnostic=
+                                    AccessToInvalidAddress
+                                      { calling_context
+                                      ; invalidation
+                                      ; invalidation_trace
+                                      ; access_trace
+                                      ; must_be_valid_reason }
+                                ; astate= astate_summary } )
                          , [] ) ) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
         (astate :> AbductiveDomain.t)
         ~f:(fun _subst astate ->
           let open SatUnsat.Import in
-          ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
-            >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
-            :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) PulseResult.t
-               SatUnsat.t )
+          AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
+          >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+          >>| AccessResult.of_summary
           >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 
