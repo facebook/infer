@@ -583,6 +583,14 @@ type t =
   | WithBlockParameters of t * Block.t list
 [@@deriving compare, yojson_of]
 
+let is_erlang_unsupported name =
+  match name with
+  | Erlang {module_name; _} ->
+      String.equal module_name ErlangTypeName.unsupported
+  | _ ->
+      false
+
+
 let equal = [%compare.equal: t]
 
 let rec compare_name x y =

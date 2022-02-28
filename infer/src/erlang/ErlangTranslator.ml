@@ -30,6 +30,23 @@ let any_typ = Env.ptr_typ_of_name Any
 
 let mk_fresh_id () = Ident.create_fresh Ident.knormal
 
+let call_unsupported reason nargs =
+  Procname.make_erlang ~module_name:ErlangTypeName.unsupported ~function_name:reason ~arity:nargs
+
+
+let mk_general_unsupported_block (env : (Procdesc.t Env.present, _) Env.t) =
+  let fun_exp = Exp.Const (Cfun (call_unsupported "general" 0)) in
+  let call_instruction =
+    Sil.Call
+      ( (Ident.create_fresh Ident.knormal, Env.ptr_typ_of_name Any)
+      , fun_exp
+      , []
+      , env.location
+      , CallFlags.default )
+  in
+  Block.make_instruction env [call_instruction]
+
+
 let ( |~~> ) = ErlangBlock.( |~~> )
 
 let update_location (loc : Ast.location) (env : (_, _) Env.t) =
@@ -159,7 +176,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.location; simple_expression
       (* TODO: Cover all cases. *)
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
         (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
-      Block.all env [Block.make_unsupported env; Block.make_failure env]
+      Block.all env [mk_general_unsupported_block env; Block.make_failure env]
 
 
 and translate_pattern_cons env value head tail : Block.t =
@@ -432,12 +449,14 @@ and translate_expression env {Ast.location; simple_expression} =
         ; args } ->
         translate_expression_call_static env ret_var (Some module_name) function_name args
     | Call {module_= None; function_; args} ->
-        translate_expression_call_dynamic env ret_var function_ args
+        translate_expression_call_dynamic_nomodule env ret_var function_ args
+    | Call {module_= Some module_expr; function_; args} ->
+        translate_expression_call_dynamic env ret_var module_expr function_ args
     | Case {expression; cases} ->
         translate_expression_case env expression cases
     | Catch expression ->
         (* TODO: handle exceptions T95448111 *)
-        Block.all env [Block.make_unsupported env; translate_expression env expression]
+        Block.all env [mk_general_unsupported_block env; translate_expression env expression]
     | Cons {head; tail} ->
         translate_expression_cons env ret_var head tail
     | Fun {module_= ModuleName module_name; function_= FunctionName function_name; arity} ->
@@ -490,7 +509,7 @@ and translate_expression env {Ast.location; simple_expression} =
     | todo ->
         L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression %s@."
           (Sexp.to_string (Ast.sexp_of_simple_expression todo)) ;
-        Block.all env [Block.make_unsupported env; Block.make_success env]
+        Block.all env [mk_general_unsupported_block env; Block.make_success env]
   in
   (* Add extra nodes/instructions to store return value if needed *)
   match result with
@@ -620,7 +639,7 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | todo ->
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression_binary_operator %s@."
         (Sexp.to_string (Ast.sexp_of_binary_operator todo)) ;
-      Block.all env [block1; block2; Block.make_unsupported env]
+      Block.all env [block1; block2; mk_general_unsupported_block env]
 
 
 and lookup_module_for_unqualified (env : (_, _) Env.t) function_name arity =
@@ -652,10 +671,20 @@ and translate_expression_call (env : (_, _) Env.t) ret_var fun_exp args : Block.
   Block.all env (args_blocks @ [call_block])
 
 
-and translate_expression_call_dynamic (env : (_, _) Env.t) ret_var expression args : Block.t =
+and translate_expression_call_dynamic_nomodule (env : (_, _) Env.t) ret_var expression args :
+    Block.t =
   let fun_expr_id, fun_expr_block = translate_expression_to_fresh_id env expression in
   let call_block = translate_expression_call env ret_var (Exp.Var fun_expr_id) args in
   Block.all env [fun_expr_block; call_block]
+
+
+and translate_expression_call_dynamic (env : (_, _) Env.t) ret_var module_ function_ args : Block.t
+    =
+  (* Not yet supported but at least we translate the module, function and arguments, and
+     pass everything to unsupported function: Ret = missing_translation(M, F, Args). *)
+  let all_args = [module_; function_] @ args in
+  let missing_trans = Exp.Const (Cfun (call_unsupported "dynamic_call" (List.length all_args))) in
+  translate_expression_call env ret_var missing_trans all_args
 
 
 and translate_expression_call_static (env : (_, _) Env.t) ret_var module_name_opt function_name args
@@ -1070,7 +1099,7 @@ and translate_expression_trycatch (env : (_, _) Env.t) ret_var body ok_cases _ca
   let after_id = mk_fresh_id () in
   let after_block = translate_body {env with result= Env.Present (Exp.Var after_id)} after in
   (* TODO: handle exceptions T95448111 *)
-  let catch_blocks = Block.make_unsupported env in
+  let catch_blocks = mk_general_unsupported_block env in
   Block.all env [body_block; ok_blocks; catch_blocks; after_block]
 
 

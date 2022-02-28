@@ -877,7 +877,7 @@ module TransferFunctions = struct
   let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
       Domain.t =
     let has_unsupported_features =
-      has_unsupported_features || Procname.equal BuiltinDecl.__erlang_missing_translation name
+      has_unsupported_features || Procname.is_erlang_unsupported name
     in
     ((last_writes, has_unsupported_features), local_edges)
 

@@ -428,4 +428,6 @@ val get_qualifiers : t -> QualifiedCppName.t
 val patterns_match : Re.Str.regexp list -> t -> bool
 (** Test whether a proc name matches to one of the regular expressions. *)
 
+val is_erlang_unsupported : t -> bool
+
 module Normalizer : HashNormalizer.S with type t = t
