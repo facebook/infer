@@ -6,3 +6,4 @@ build_systems/pulse_messages_objc/nil_issues.mm, testCallMethodReturnsnonPODLate
 build_systems/pulse_messages_objc/nil_issues.mm, testAccessPropertyAccessorBad, 79, 14, ERROR, NIL_MESSAGING_TO_NON_POD, The call to `SomeObject.ptr` may indirectly trigger a undefined behaviour caused by nil messaging of a C++ method with a non-POD return type `std::shared_ptr<int>`.
 build_systems/pulse_messages_objc/nil_issues.mm, testTraceBad, 85, 10, ERROR, NULLPTR_DEREFERENCE, Pulse found a potential null pointer dereference (null assigned on line 83).
 build_systems/pulse_messages_objc/nil_issues.mm, testCallNullptrBad, 90, 3, ERROR, NULLPTR_DEREFERENCE, Pulse found a potential null pointer dereference (null assigned on line 89).
+build_systems/pulse_messages_objc/nil_issues.mm, nilInsertionIntoCollectionBad, 97, 3, ERROR, NIL_INSERTION_INTO_COLLECTION, Pulse found a potential nil object insertion into collection (nil value coming from the call to `returns_nil()` on line 96).

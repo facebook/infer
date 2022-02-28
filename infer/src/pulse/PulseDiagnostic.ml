@@ -158,8 +158,8 @@ let get_message diagnostic =
           | `Immediate ->
               F.fprintf fmt "%s (%s assigned on line %d)" issue_kind_str null_str line
           | `Call f ->
-              F.fprintf fmt "%s (%s value coming from the call to %a on line %d)" issue_kind_str
-                null_str CallEvent.describe f line
+              F.fprintf fmt "%s (%s coming from the call to %a on line %d)" issue_kind_str null_str
+                CallEvent.describe f line
         in
         let invalidation_line =
           let {Location.line; _} = Trace.get_outer_location invalidation_trace in
