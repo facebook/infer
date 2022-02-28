@@ -1,8 +1,14 @@
 ----- features_arithmetic -----
+features_arithmetic:fn_test_idiv_by_zero_Bad/0: badarith
+features_arithmetic:fn_test_idiv_zero_by_zero_Bad/0: badarith
+features_arithmetic:fn_test_rem_zero_Bad/0: badarith
+features_arithmetic:fn_test_rem_zero_by_zero_Bad/0: badarith
 features_arithmetic:test_add1_Bad/0: function_clause
 features_arithmetic:test_add1_Ok/0: ok
 features_arithmetic:test_add2_Bad/0: function_clause
 features_arithmetic:test_add2_Ok/0: ok
+features_arithmetic:test_big_Bad/0: function_clause
+features_arithmetic:test_big_Ok/0: ok
 features_arithmetic:test_idiv1_Bad/0: function_clause
 features_arithmetic:test_idiv1_Ok/0: ok
 features_arithmetic:test_idiv2_Bad/0: function_clause
@@ -17,6 +23,12 @@ features_arithmetic:test_multiple_Bad/0: function_clause
 features_arithmetic:test_multiple_Ok/0: ok
 features_arithmetic:test_rem_Bad/0: function_clause
 features_arithmetic:test_rem_Ok/0: ok
+features_arithmetic:test_rem_neg1_Bad/0: function_clause
+features_arithmetic:test_rem_neg1_Ok/0: ok
+features_arithmetic:test_rem_neg2_Bad/0: function_clause
+features_arithmetic:test_rem_neg2_Ok/0: ok
+features_arithmetic:test_rem_neg3_Bad/0: function_clause
+features_arithmetic:test_rem_neg3_Ok/0: ok
 features_arithmetic:test_sub1_Bad/0: function_clause
 features_arithmetic:test_sub1_Ok/0: ok
 features_arithmetic:test_sub2_Bad/0: function_clause
