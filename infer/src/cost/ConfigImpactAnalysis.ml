@@ -67,17 +67,34 @@ module Field = struct
   let compare = Fieldname.compare_name
 end
 
-module Fields = AbstractDomain.FiniteSet (Field)
+(** Placeholder for class fields or function parameters that gated some code. They may or may not
+    have config values later. *)
+module LatentConfig = struct
+  type t = LatentField of Field.t [@@deriving compare]
 
-module FieldChecks = struct
-  include AbstractDomain.SafeInvertedMap (Field) (Branch)
+  let pp f = function LatentField field -> Field.pp f field
+end
 
-  let get_fields field_map =
+module LatentConfigs = struct
+  include AbstractDomain.FiniteSet (LatentConfig)
+
+  let is_field latent_configs =
+    match is_singleton_or_more latent_configs with
+    | Singleton (LatentField _) ->
+        true
+    | Empty | More ->
+        false
+end
+
+module ConditionChecks = struct
+  include AbstractDomain.SafeInvertedMap (LatentConfig) (Branch)
+
+  let get_condition condition_map =
     fold
-      (fun field branch acc ->
+      (fun latent_config branch acc ->
         assert (not (Branch.is_top branch)) ;
-        Fields.add field acc )
-      field_map Fields.empty
+        LatentConfigs.add latent_config acc )
+      condition_map LatentConfigs.empty
 end
 
 module UncheckedCallee = struct
@@ -167,28 +184,28 @@ module UncheckedCallees = struct
 end
 
 module UncheckedCalleesCond = struct
-  include AbstractDomain.Map (Fields) (UncheckedCallees)
+  include AbstractDomain.Map (LatentConfigs) (UncheckedCallees)
 
-  let weak_update fields callees fields_map =
-    update fields
+  let weak_update cond callees conds_map =
+    update cond
       (function None -> Some callees | Some prev -> Some (UncheckedCallees.union prev callees))
-      fields_map
+      conds_map
 
 
-  let replace_location_by_call ~via location fields_map =
-    map (UncheckedCallees.replace_location_by_call ~via location) fields_map
+  let replace_location_by_call ~via location conds_map =
+    map (UncheckedCallees.replace_location_by_call ~via location) conds_map
 
 
-  let has_known_expensive_callee fields_map =
-    exists (fun _ callees -> UncheckedCallees.has_known_expensive_callee callees) fields_map
+  let has_known_expensive_callee conds_map =
+    exists (fun _ callees -> UncheckedCallees.has_known_expensive_callee callees) conds_map
 
 
-  let filter_known_expensive fields_map =
+  let filter_known_expensive conds_map =
     filter_map
       (fun _ callees ->
         let expensive_callees = UncheckedCallees.filter_known_expensive callees in
         Option.some_if (not (UncheckedCallees.is_empty expensive_callees)) expensive_callees )
-      fields_map
+      conds_map
 end
 
 module Loc = struct
@@ -306,43 +323,48 @@ module TempBool = struct
 end
 
 module Val = struct
-  type t = {config: ConfigLifted.t; fields: Fields.t; temp_bool: TempBool.t}
+  type t = {config: ConfigLifted.t; latent_configs: LatentConfigs.t; temp_bool: TempBool.t}
 
-  let pp f {config; fields; temp_bool} =
-    F.fprintf f "@[@[config:@,%a@]@ @[fields:@,%a@]@ @[temp_bool:@,%a@]@]" ConfigLifted.pp config
-      Fields.pp fields TempBool.pp temp_bool
+  let pp f {config; latent_configs; temp_bool} =
+    F.fprintf f "@[@[config:@,%a@]@ @[latent_configs:@,%a@]@ @[temp_bool:@,%a@]@]" ConfigLifted.pp
+      config LatentConfigs.pp latent_configs TempBool.pp temp_bool
 
 
   let leq ~lhs ~rhs =
     ConfigLifted.leq ~lhs:lhs.config ~rhs:rhs.config
-    && Fields.leq ~lhs:lhs.fields ~rhs:rhs.fields
+    && LatentConfigs.leq ~lhs:lhs.latent_configs ~rhs:rhs.latent_configs
     && TempBool.leq ~lhs:lhs.temp_bool ~rhs:rhs.temp_bool
 
 
   let join x y =
     { config= ConfigLifted.join x.config y.config
-    ; fields= Fields.join x.fields y.fields
+    ; latent_configs= LatentConfigs.join x.latent_configs y.latent_configs
     ; temp_bool= TempBool.join x.temp_bool y.temp_bool }
 
 
   let widen ~prev ~next ~num_iters =
     { config= ConfigLifted.widen ~prev:prev.config ~next:next.config ~num_iters
-    ; fields= Fields.widen ~prev:prev.fields ~next:next.fields ~num_iters
+    ; latent_configs=
+        LatentConfigs.widen ~prev:prev.latent_configs ~next:next.latent_configs ~num_iters
     ; temp_bool= TempBool.widen ~prev:prev.temp_bool ~next:next.temp_bool ~num_iters }
 
 
-  let bottom = {config= ConfigLifted.bottom; fields= Fields.bottom; temp_bool= TempBool.bottom}
+  let bottom =
+    {config= ConfigLifted.bottom; latent_configs= LatentConfigs.bottom; temp_bool= TempBool.bottom}
+
 
   let of_config config = {bottom with config= ConfigLifted.v config}
 
-  let of_field fn = {bottom with fields= Fields.singleton fn}
+  let of_field fn = {bottom with latent_configs= LatentConfigs.singleton (LatentField fn)}
 
   let of_temp_bool ~is_true config_checks =
     {bottom with temp_bool= TempBool.make ~is_true config_checks}
 
 
-  let is_field {config; fields; temp_bool} =
-    ConfigLifted.is_bottom config && (not (Fields.is_bottom fields)) && TempBool.is_bottom temp_bool
+  let is_field {config; latent_configs; temp_bool} =
+    ConfigLifted.is_bottom config
+    && LatentConfigs.is_field latent_configs
+    && TempBool.is_bottom temp_bool
 end
 
 module Mem = struct
@@ -352,15 +374,15 @@ module Mem = struct
 end
 
 module ClassGateConditions = struct
-  module Conditions = AbstractDomain.FiniteSet (Fields)
+  module Conditions = AbstractDomain.FiniteSet (LatentConfigs)
 
   type t = Conditional of Conditions.t | Top
 
   let pp f = function
     | Conditional conds when Conditions.is_empty conds ->
         F.pp_print_string f "gated"
-    | Conditional fields ->
-        Conditions.pp f fields
+    | Conditional conds ->
+        Conditions.pp f conds
     | Top ->
         F.pp_print_string f "ungated"
 
@@ -387,22 +409,22 @@ module ClassGateConditions = struct
 
   let empty = Conditional Conditions.empty
 
-  let singleton fields = Conditional (Conditions.singleton fields)
+  let singleton latent_configs = Conditional (Conditions.singleton latent_configs)
 
-  let add fields = function
+  let add latent_configs = function
     | Conditional conds ->
-        Conditional (Conditions.add fields conds)
+        Conditional (Conditions.add latent_configs conds)
     | Top ->
         Top
 
 
-  let is_gated_condition ~config_fields fields =
-    Fields.exists (fun fname -> Fields.mem fname config_fields) fields
+  let is_gated_condition ~configs cond =
+    LatentConfigs.exists (fun latent_config -> LatentConfigs.mem latent_config configs) cond
 
 
-  let is_gated config_fields = function
+  let is_gated configs = function
     | Conditional conds ->
-        Conditions.for_all (is_gated_condition ~config_fields) conds
+        Conditions.for_all (is_gated_condition ~configs) conds
     | Top ->
         false
 end
@@ -427,12 +449,12 @@ module GatedClasses = struct
       m
 end
 
-module FieldAlias = struct
-  include AbstractDomain.FiniteMultiMap (Field) (Field)
+module LatentConfigAlias = struct
+  include AbstractDomain.FiniteMultiMap (LatentConfig) (LatentConfig)
 
   let empty = bottom
 
-  let add_all src tgt x = Fields.fold (fun src acc -> add src tgt acc) src x
+  let add_all src tgt x = LatentConfigs.fold (fun src acc -> add src tgt acc) src x
 
   let union x y = fold (fun key field acc -> add key field acc) y x
 end
@@ -443,44 +465,44 @@ module Summary = struct
     ; unchecked_callees_cond: UncheckedCalleesCond.t
           (** Sets of unchecked callees that are called conditionally by object fields *)
     ; has_call_stmt: bool  (** True if a function includes a call statement *)
-    ; config_fields: Fields.t
+    ; configs: LatentConfigs.t
           (** Intra-procedurally collected fields that may have config values *)
     ; gated_classes: GatedClasses.t  (** Intra-procedurally collected gated classes *)
-    ; field_alias: FieldAlias.t  (** Aliases between field names *)
+    ; latent_config_alias: LatentConfigAlias.t  (** Aliases between latent configs *)
     ; ret: Val.t  (** Return value of the procedure *) }
 
   let pp f
       { unchecked_callees
       ; unchecked_callees_cond
       ; has_call_stmt
-      ; config_fields
+      ; configs
       ; gated_classes
-      ; field_alias
+      ; latent_config_alias
       ; ret } =
     F.fprintf f
       "@[@[unchecked callees:@,\
        %a@],@ @[unchecked callees cond:@,\
-       %a@],@ @[has_call_stmt:%b@],@ @[config fields:%a@],@ @[gated classes:%a@],@ @[field \
+       %a@],@ @[has_call_stmt:%b@],@ @[configs:%a@],@ @[gated classes:%a@],@ @[latent config \
        alias:%a@],@ @[ret:%a@]@]"
       UncheckedCallees.pp unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond
-      has_call_stmt Fields.pp config_fields GatedClasses.pp gated_classes FieldAlias.pp field_alias
-      Val.pp ret
+      has_call_stmt LatentConfigs.pp configs GatedClasses.pp gated_classes LatentConfigAlias.pp
+      latent_config_alias Val.pp ret
 
 
-  let get_config_fields {config_fields} = config_fields
+  let get_configs {configs} = configs
 
   let get_gated_classes {gated_classes} = gated_classes
 
   let get_unchecked_callees {unchecked_callees} = unchecked_callees
 
-  let get_field_alias {field_alias} = field_alias
+  let get_latent_config_alias {latent_config_alias} = latent_config_alias
 
-  let instantiate_unchecked_callees_cond ~all_config_fields
+  let instantiate_unchecked_callees_cond ~all_configs
       ({unchecked_callees; unchecked_callees_cond} as x) =
     let unchecked_callees =
       UncheckedCalleesCond.fold
-        (fun fields callees acc ->
-          if Fields.is_empty (Fields.inter all_config_fields fields) then
+        (fun latent_configs callees acc ->
+          if LatentConfigs.is_empty (LatentConfigs.inter all_configs latent_configs) then
             UncheckedCallees.union acc callees
           else acc )
         unchecked_callees_cond unchecked_callees
@@ -496,96 +518,100 @@ end
 module Dom = struct
   type t =
     { config_checks: ConfigChecks.t
-    ; field_checks: FieldChecks.t
+    ; condition_checks: ConditionChecks.t
     ; unchecked_callees: UncheckedCallees.t
     ; unchecked_callees_cond: UncheckedCalleesCond.t
     ; mem: Mem.t
-    ; config_fields: Fields.t
+    ; configs: LatentConfigs.t
     ; gated_classes: GatedClasses.t
-    ; field_alias: FieldAlias.t }
+    ; latent_config_alias: LatentConfigAlias.t }
 
   let pp f
       { config_checks
-      ; field_checks
+      ; condition_checks
       ; unchecked_callees
       ; unchecked_callees_cond
       ; mem
-      ; config_fields
+      ; configs
       ; gated_classes
-      ; field_alias } =
+      ; latent_config_alias } =
     F.fprintf f
       "@[@[config checks:@,\
-       %a@]@ @[field checks:@,\
+       %a@]@ @[condition checks:@,\
        %a@]@ @[unchecked callees:@,\
        %a@]@ @[unchecked callees cond:@,\
        %a@]@ @[mem:@,\
-       %a@]@ @[config fields:@,\
+       %a@]@ @[configs:@,\
        %a@]@ @[gated classes:@,\
-       %a@]@ @[field alias:@,\
+       %a@]@ @[latent config alias:@,\
        %a@]@]"
-      ConfigChecks.pp config_checks FieldChecks.pp field_checks UncheckedCallees.pp
-      unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond Mem.pp mem Fields.pp
-      config_fields GatedClasses.pp gated_classes FieldAlias.pp field_alias
+      ConfigChecks.pp config_checks ConditionChecks.pp condition_checks UncheckedCallees.pp
+      unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond Mem.pp mem LatentConfigs.pp
+      configs GatedClasses.pp gated_classes LatentConfigAlias.pp latent_config_alias
 
 
   let leq ~lhs ~rhs =
     ConfigChecks.leq ~lhs:lhs.config_checks ~rhs:rhs.config_checks
-    && FieldChecks.leq ~lhs:lhs.field_checks ~rhs:rhs.field_checks
+    && ConditionChecks.leq ~lhs:lhs.condition_checks ~rhs:rhs.condition_checks
     && UncheckedCallees.leq ~lhs:lhs.unchecked_callees ~rhs:rhs.unchecked_callees
     && UncheckedCalleesCond.leq ~lhs:lhs.unchecked_callees_cond ~rhs:rhs.unchecked_callees_cond
     && Mem.leq ~lhs:lhs.mem ~rhs:rhs.mem
-    && Fields.leq ~lhs:lhs.config_fields ~rhs:rhs.config_fields
+    && LatentConfigs.leq ~lhs:lhs.configs ~rhs:rhs.configs
     && GatedClasses.leq ~lhs:lhs.gated_classes ~rhs:rhs.gated_classes
-    && FieldAlias.leq ~lhs:lhs.field_alias ~rhs:rhs.field_alias
+    && LatentConfigAlias.leq ~lhs:lhs.latent_config_alias ~rhs:rhs.latent_config_alias
 
 
   let join x y =
     { config_checks= ConfigChecks.join x.config_checks y.config_checks
-    ; field_checks= FieldChecks.join x.field_checks y.field_checks
+    ; condition_checks= ConditionChecks.join x.condition_checks y.condition_checks
     ; unchecked_callees= UncheckedCallees.join x.unchecked_callees y.unchecked_callees
     ; unchecked_callees_cond=
         UncheckedCalleesCond.join x.unchecked_callees_cond y.unchecked_callees_cond
     ; mem= Mem.join x.mem y.mem
-    ; config_fields= Fields.join x.config_fields y.config_fields
+    ; configs= LatentConfigs.join x.configs y.configs
     ; gated_classes= GatedClasses.join x.gated_classes y.gated_classes
-    ; field_alias= FieldAlias.join x.field_alias y.field_alias }
+    ; latent_config_alias= LatentConfigAlias.join x.latent_config_alias y.latent_config_alias }
 
 
   let widen ~prev ~next ~num_iters =
     { config_checks= ConfigChecks.widen ~prev:prev.config_checks ~next:next.config_checks ~num_iters
-    ; field_checks= FieldChecks.widen ~prev:prev.field_checks ~next:next.field_checks ~num_iters
+    ; condition_checks=
+        ConditionChecks.widen ~prev:prev.condition_checks ~next:next.condition_checks ~num_iters
     ; unchecked_callees=
         UncheckedCallees.widen ~prev:prev.unchecked_callees ~next:next.unchecked_callees ~num_iters
     ; unchecked_callees_cond=
         UncheckedCalleesCond.widen ~prev:prev.unchecked_callees_cond
           ~next:next.unchecked_callees_cond ~num_iters
     ; mem= Mem.widen ~prev:prev.mem ~next:next.mem ~num_iters
-    ; config_fields= Fields.widen ~prev:prev.config_fields ~next:next.config_fields ~num_iters
+    ; configs= LatentConfigs.widen ~prev:prev.configs ~next:next.configs ~num_iters
     ; gated_classes= GatedClasses.widen ~prev:prev.gated_classes ~next:next.gated_classes ~num_iters
-    ; field_alias= FieldAlias.widen ~prev:prev.field_alias ~next:next.field_alias ~num_iters }
+    ; latent_config_alias=
+        LatentConfigAlias.widen ~prev:prev.latent_config_alias ~next:next.latent_config_alias
+          ~num_iters }
 
 
   let to_summary pname ~has_call_stmt
-      {unchecked_callees; unchecked_callees_cond; config_fields; gated_classes; field_alias; mem} =
+      {unchecked_callees; unchecked_callees_cond; configs; gated_classes; latent_config_alias; mem}
+      =
     let ret = Mem.lookup (Loc.of_pvar (Pvar.get_ret_pvar pname)) mem in
     { Summary.unchecked_callees
     ; unchecked_callees_cond
     ; has_call_stmt
-    ; config_fields
+    ; configs
     ; gated_classes
-    ; field_alias
+    ; latent_config_alias
     ; ret }
 
 
   let init =
     { config_checks= ConfigChecks.top
-    ; field_checks= FieldChecks.top
+    ; condition_checks= ConditionChecks.top
     ; unchecked_callees= UncheckedCallees.bottom
     ; unchecked_callees_cond= UncheckedCalleesCond.bottom
     ; mem= Mem.bottom
-    ; config_fields= Fields.bottom
+    ; configs= LatentConfigs.bottom
     ; gated_classes= GatedClasses.bottom
-    ; field_alias= FieldAlias.bottom }
+    ; latent_config_alias= LatentConfigAlias.bottom }
 
 
   let add_mem loc v ({mem} as astate) = {astate with mem= Mem.add loc v mem}
@@ -600,12 +626,16 @@ module Dom = struct
 
   let store_config pvar id astate = copy_mem ~tgt:(Loc.of_pvar pvar) ~src:(Loc.of_id id) astate
 
-  let store_field fn id ({mem; config_fields; field_alias} as astate) =
-    let {Val.config; fields} = Mem.lookup (Loc.of_id id) mem in
+  let assign_to_latent_config latent_config id ({mem; configs; latent_config_alias} as astate) =
+    let {Val.config; latent_configs} = Mem.lookup (Loc.of_id id) mem in
     if ConfigLifted.is_bottom config then
-      {astate with field_alias= FieldAlias.add_all fields fn field_alias}
-    else {astate with config_fields= Fields.add fn config_fields}
+      { astate with
+        latent_config_alias=
+          LatentConfigAlias.add_all latent_configs latent_config latent_config_alias }
+    else {astate with configs= LatentConfigs.add latent_config configs}
 
+
+  let store_field fn id astate = assign_to_latent_config (LatentField fn) id astate
 
   let copy_value id_tgt id_src astate =
     copy_mem ~tgt:(Loc.of_id id_tgt) ~src:(Loc.of_id id_src) astate
@@ -615,8 +645,8 @@ module Dom = struct
     Option.bind res ~f:(function
       | `Unconditional (config, Branch.True) ->
           Some (`Unconditional (config, cmp_branch))
-      | `Conditional (fields, Branch.True) ->
-          Some (`Conditional (fields, cmp_branch))
+      | `Conditional (conds, Branch.True) ->
+          Some (`Conditional (conds, cmp_branch))
       | _ ->
           None )
 
@@ -624,16 +654,16 @@ module Dom = struct
   let rec get_config_check_prune ~is_true_branch e mem =
     match (e : Exp.t) with
     | Var id -> (
-        let {Val.config; fields; temp_bool} = Mem.lookup (Loc.of_id id) mem in
+        let {Val.config; latent_configs; temp_bool} = Mem.lookup (Loc.of_id id) mem in
         let branch = if is_true_branch then Branch.True else Branch.False in
         match ConfigLifted.get config with
         | Some config ->
             Some (`Unconditional (config, branch))
-        | None when not (Fields.is_empty fields) ->
-            Some (`Conditional (fields, branch))
+        | None when not (LatentConfigs.is_empty latent_configs) ->
+            Some (`Conditional (latent_configs, branch))
         | None ->
-            (* Note: If the [id] is not a config value and not a field value, address it as a
-               temporary variable. *)
+            (* Note: If the [id] is not a config value or field, address it as a temporary
+               variable. *)
             TempBool.get_config_checks ~is_true:is_true_branch temp_bool
             |> Option.map ~f:(fun config_checks -> `TempBool config_checks) )
     | UnOp (LNot, e, _) ->
@@ -662,18 +692,19 @@ module Dom = struct
         None
 
 
-  let prune e ({config_checks; field_checks; mem} as astate) =
+  let prune e ({config_checks; condition_checks; mem} as astate) =
     get_config_check_prune ~is_true_branch:true e mem
     |> Option.value_map ~default:astate ~f:(function
          | `Unconditional (config, branch) ->
              {astate with config_checks= ConfigChecks.add config branch config_checks}
          | `TempBool config_checks' ->
              {astate with config_checks= ConfigChecks.add_all config_checks' ~into:config_checks}
-         | `Conditional (fields, branch) ->
+         | `Conditional (conds, branch) ->
              { astate with
-               field_checks=
-                 Fields.fold (fun field acc -> FieldChecks.add field branch acc) fields field_checks
-             } )
+               condition_checks=
+                 LatentConfigs.fold
+                   (fun latent_config acc -> ConditionChecks.add latent_config branch acc)
+                   conds condition_checks } )
 
 
   type known_expensiveness = FbGKInteraction.known_expensiveness = KnownCheap | KnownExpensive
@@ -747,7 +778,8 @@ module Dom = struct
     || (is_config_getter_typ ret_typ args && String.is_prefix method_name ~prefix:"get")
 
 
-  let update_gated_callees ~callee args ({config_checks; field_checks; gated_classes} as astate) =
+  let update_gated_callees ~callee args ({config_checks; condition_checks; gated_classes} as astate)
+      =
     match args with
     | [(Exp.Sizeof {typ= {desc= Tstruct typ_name}}, _)]
       when Procname.equal callee BuiltinDecl.__objc_alloc_no_fail ->
@@ -755,40 +787,40 @@ module Dom = struct
           (* Gated by true gate condition *)
           {astate with gated_classes= GatedClasses.add_gated typ_name gated_classes}
         else
-          let fields =
-            FieldChecks.fold
-              (fun fname branch acc -> match branch with True -> Fields.add fname acc | _ -> acc)
-              field_checks Fields.empty
+          let cond =
+            ConditionChecks.fold
+              (fun latent_config branch acc ->
+                match branch with True -> LatentConfigs.add latent_config acc | _ -> acc )
+              condition_checks LatentConfigs.empty
           in
-          if Fields.is_empty fields then
+          if LatentConfigs.is_empty cond then
             (* Ungated by any condition *)
             {astate with gated_classes= GatedClasses.add typ_name Top gated_classes}
           else
-            (* Gated by fields *)
-            {astate with gated_classes= GatedClasses.add_cond typ_name fields gated_classes}
+            (* Gated by latent configs *)
+            {astate with gated_classes= GatedClasses.add_cond typ_name cond gated_classes}
     | _ ->
         astate
 
 
   let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost option)
       ret_typ ~callee args location
-      ({config_checks; field_checks; unchecked_callees; unchecked_callees_cond} as astate) =
+      ({config_checks; condition_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     let join_unchecked_callees new_unchecked_callees new_unchecked_callees_cond =
-      if FieldChecks.is_top field_checks then
+      if ConditionChecks.is_top condition_checks then
         { astate with
           unchecked_callees= UncheckedCallees.join unchecked_callees new_unchecked_callees
         ; unchecked_callees_cond=
             UncheckedCalleesCond.join unchecked_callees_cond new_unchecked_callees_cond }
       else
-        let fields_to_add = FieldChecks.get_fields field_checks in
+        let cond_to_add = ConditionChecks.get_condition condition_checks in
         let unchecked_callees_cond =
-          UncheckedCalleesCond.weak_update fields_to_add new_unchecked_callees
-            unchecked_callees_cond
+          UncheckedCalleesCond.weak_update cond_to_add new_unchecked_callees unchecked_callees_cond
         in
         let unchecked_callees_cond =
           UncheckedCalleesCond.fold
-            (fun fields callees acc ->
-              UncheckedCalleesCond.weak_update (Fields.union fields fields_to_add) callees acc )
+            (fun cond callees acc ->
+              UncheckedCalleesCond.weak_update (LatentConfigs.union cond cond_to_add) callees acc )
             new_unchecked_callees_cond unchecked_callees_cond
         in
         {astate with unchecked_callees_cond}

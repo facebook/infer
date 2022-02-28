@@ -15,28 +15,30 @@ let payload_fold ~init ~f =
   !acc
 
 
-let all_config_fields =
+let all_configs =
   let open ConfigImpactAnalysis in
   lazy
-    (let config_fields, field_alias =
-       payload_fold ~init:(Fields.empty, FieldAlias.empty)
-         ~f:(fun summary (acc_fields, acc_alias) ->
-           let acc_fields = Fields.union acc_fields (Summary.get_config_fields summary) in
-           let acc_alias = FieldAlias.union acc_alias (Summary.get_field_alias summary) in
-           (acc_fields, acc_alias) )
+    (let config_cond, field_alias =
+       payload_fold ~init:(LatentConfigs.empty, LatentConfigAlias.empty)
+         ~f:(fun summary (acc_cond, acc_alias) ->
+           let acc_cond = LatentConfigs.union acc_cond (Summary.get_configs summary) in
+           let acc_alias =
+             LatentConfigAlias.union acc_alias (Summary.get_latent_config_alias summary)
+           in
+           (acc_cond, acc_alias) )
      in
      let rec apply_alias worklist acc =
        match worklist with
        | [] ->
            acc
-       | hd :: tl when Fields.mem hd acc ->
+       | hd :: tl when LatentConfigs.mem hd acc ->
            apply_alias tl acc
        | hd :: tl ->
-           let worklist = FieldAlias.get_all hd field_alias @ tl in
-           let acc = Fields.add hd acc in
+           let worklist = LatentConfigAlias.get_all hd field_alias @ tl in
+           let acc = LatentConfigs.add hd acc in
            apply_alias worklist acc
      in
-     apply_alias (Fields.elements config_fields) Fields.empty )
+     apply_alias (LatentConfigs.elements config_cond) LatentConfigs.empty )
 
 
 let all_gated_classes =
@@ -48,7 +50,7 @@ let all_gated_classes =
      in
      GatedClasses.fold
        (fun typ conditions acc ->
-         if ClassGateConditions.is_gated (Lazy.force all_config_fields) conditions then
+         if ClassGateConditions.is_gated (Lazy.force all_configs) conditions then
            Typ.Name.Set.add typ acc
          else acc )
        all_gated_classes Typ.Name.Set.empty )
@@ -56,7 +58,7 @@ let all_gated_classes =
 
 let instantiate_unchecked_callees_cond summary =
   ConfigImpactAnalysis.Summary.instantiate_unchecked_callees_cond
-    ~all_config_fields:(Lazy.force all_config_fields) summary
+    ~all_configs:(Lazy.force all_configs) summary
 
 
 let is_in_gated_classes pname =
