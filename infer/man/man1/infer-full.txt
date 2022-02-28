@@ -2144,6 +2144,13 @@ INTERNAL OPTIONS
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain
 
+       --pulse-max-heap int
+           Give up analysing a procedure if the number of words in the heap
+           exceeds this limit. Intended use: avoid OutOfMemory crashes.
+
+       --pulse-max-heap-reset
+           Cancel the effect of --pulse-max-heap.
+
        --pulse-model-abort-reset
            Set --pulse-model-abort to the empty list.
 

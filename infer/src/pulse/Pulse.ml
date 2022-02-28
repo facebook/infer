@@ -13,6 +13,10 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
+(** raised when we detect that pulse is using too much memory to stop the analysis of the current
+    procedure *)
+exception AboutToOOM
+
 let report_topl_errors proc_desc err_log summary =
   let f = function
     | ContinueProgram astate ->
@@ -29,6 +33,8 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
          let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; location} in
          PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic )
 
+
+let heap_size () = (Gc.quick_stat ()).heap_words
 
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Exceptional
@@ -598,11 +604,22 @@ module PulseTransferFunctions = struct
 
   let exec_instr ((astate, path), astate_n) analysis_data cfg_node instr :
       DisjDomain.t list * NonDisjDomain.t =
-    (* Sometimes instead of stopping on contradictions a false path condition is recorded
-       instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
+    let heap_size = heap_size () in
+    ( match Config.pulse_max_heap with
+    | Some max_heap_size when heap_size > max_heap_size ->
+        let pname = Procdesc.get_proc_name analysis_data.InterproceduralAnalysis.proc_desc in
+        L.internal_error
+          "OOM danger: heap size is %d words, more than the specified threshold of %d words. \
+           Aborting the analysis of the procedure %a to avoid running out of memory.@\n"
+          heap_size max_heap_size Procname.pp pname ;
+        raise AboutToOOM
+    | _ ->
+        () ) ;
     let astates, path, astate_n =
       exec_instr_aux path astate astate_n analysis_data cfg_node instr
     in
+    (* Sometimes instead of stopping on contradictions a false path condition is recorded
+       instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
     ( List.filter_map astates ~f:(fun exec_state ->
           if ExecutionDomain.is_unsat_cheap exec_state then None
           else Some (exec_state, PathContext.post_exec_instr path) )
@@ -668,7 +685,7 @@ let exit_function analysis_data location posts non_disj_astate =
   (List.rev astates, astate_n)
 
 
-let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
+let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   if should_analyze proc_desc then (
     AbstractValue.State.reset () ;
     match
@@ -697,4 +714,14 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             Some summary )
     | None ->
         None )
+  else None
+
+
+let checker analysis_data =
+  if should_analyze analysis_data.InterproceduralAnalysis.proc_desc then (
+    try analyze analysis_data
+    with AboutToOOM ->
+      (* We trigger GC to avoid skipping the next procedure that will be analyzed. *)
+      Gc.major () ;
+      None )
   else None

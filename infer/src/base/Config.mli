@@ -524,6 +524,8 @@ val pulse_max_cfg_size : int
 
 val pulse_max_disjuncts : int
 
+val pulse_max_heap : int option
+
 val pulse_model_abort : string list
 
 val pulse_model_alloc_pattern : Str.regexp option

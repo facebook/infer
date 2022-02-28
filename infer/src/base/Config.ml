@@ -2119,6 +2119,12 @@ and pulse_max_disjuncts =
     "Under-approximate after $(i,int) disjunctions in the domain"
 
 
+and pulse_max_heap =
+  CLOpt.mk_int_opt ~long:"pulse-max-heap" ~meta:"int"
+    "Give up analysing a procedure if the number of words in the heap exceeds this limit. Intended \
+     use: avoid OutOfMemory crashes."
+
+
 and pulse_model_abort =
   CLOpt.mk_string_list ~long:"pulse-model-abort"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3501,6 +3507,8 @@ and pulse_manifest_emp = !pulse_manifest_emp
 and pulse_max_cfg_size = !pulse_max_cfg_size
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
+
+and pulse_max_heap = !pulse_max_heap
 
 and pulse_model_abort = RevList.to_list !pulse_model_abort
 
