@@ -890,6 +890,9 @@ module Dom = struct
         let is_unmodeled_call = match instantiated_cost with Some NoModel -> true | _ -> false in
         if strict_mode then
           match (callee_summary, expensiveness_model) with
+          | _, Some KnownCheap ->
+              (* If callee is known cheap call, ignore it. *)
+              astate
           | ( Some
                 { Summary.unchecked_callees= callee_summary
                 ; unchecked_callees_cond= callee_summary_cond
@@ -906,9 +909,6 @@ module Dom = struct
               astate
           | None, None when is_config_setter_getter ret_typ callee args ->
               (* If callee is unknown setter/getter, ignore it. *)
-              astate
-          | _, Some KnownCheap ->
-              (* If callee is known cheap call, ignore it. *)
               astate
           | _, _ ->
               (* Otherwise, add callee's name. *)
