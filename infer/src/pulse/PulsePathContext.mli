@@ -21,7 +21,5 @@ include AbstractDomain.Disjunct with type t := t
 
 val initial : t
 
-val with_context : t -> ValueHistory.t -> ValueHistory.t
-
 val post_exec_instr : t -> t
 (** call this after each step of the symbolic execution to update the path information *)

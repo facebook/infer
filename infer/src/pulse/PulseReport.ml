@@ -147,7 +147,8 @@ let report_summary_error tenv proc_desc err_log
           (AccessToInvalidAddress
              { calling_context= []
              ; invalidation
-             ; invalidation_trace= Immediate {location= Procdesc.get_loc proc_desc; history= Epoch}
+             ; invalidation_trace=
+                 Immediate {location= Procdesc.get_loc proc_desc; history= ValueHistory.epoch}
              ; access_trace
              ; must_be_valid_reason= snd must_be_valid } ) ;
       Some (LatentInvalidAccess {astate; address; must_be_valid; calling_context= []})

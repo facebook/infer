@@ -75,7 +75,9 @@ let invalidate (address, history) invalidation location memory =
 
 
 let allocate allocator address location memory =
-  add_one address (Attribute.Allocated (allocator, Immediate {location; history= Epoch})) memory
+  add_one address
+    (Attribute.Allocated (allocator, Immediate {location; history= ValueHistory.epoch}))
+    memory
 
 
 let java_resource_release address memory = add_one address Attribute.JavaResourceReleased memory

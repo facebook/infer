@@ -38,26 +38,32 @@ module Hist = struct
 
   let call_event {PathContext.timestamp} location ?more model_desc =
     let desc = mk_desc ?more model_desc in
-    ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp}
+    ValueHistory.Call {f= Model desc; location; in_call= ValueHistory.epoch; timestamp}
 
 
-  let add_event path event hist = PathContext.with_context path (Sequence (event, hist))
+  let add_event path event hist =
+    ValueHistory.sequence ~context:path.PathContext.conditions event hist
 
-  let single_event path event = add_event path event Epoch
+
+  let single_event path event = add_event path event ValueHistory.epoch
 
   let add_call path location model_desc ?more hist =
     add_event path (call_event path location ?more model_desc) hist
 
 
-  let single_call path location ?more model_desc = add_call path location model_desc ?more Epoch
+  let single_call path location ?more model_desc =
+    add_call path location model_desc ?more ValueHistory.epoch
+
 
   let single_alloc path location ?more model_desc =
     alloc_event path location ?more model_desc |> single_event path
 
 
-  let binop path bop hist1 hist2 = PathContext.with_context path (BinaryOp (bop, hist1, hist2))
+  let binop path bop hist1 hist2 =
+    ValueHistory.in_context path.PathContext.conditions (ValueHistory.binary_op bop hist1 hist2)
 
-  let hist path hist = PathContext.with_context path hist
+
+  let hist path hist = ValueHistory.in_context path.PathContext.conditions hist
 end
 
 module Basic = struct

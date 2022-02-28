@@ -21,7 +21,8 @@ let is_ptr_to_const formal_typ_opt =
 let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) ~ret ~actuals
     ~formals_opt astate =
   let hist =
-    ValueHistory.singleton (Call {f= reason; location= call_loc; in_call= Epoch; timestamp})
+    ValueHistory.singleton
+      (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
   in
   let ret_val = AbstractValue.mk_fresh () in
   let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
@@ -66,7 +67,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
     match reason with
     | SkippedKnownCall proc_name ->
         AbductiveDomain.add_skipped_call proc_name
-          (Trace.Immediate {location= call_loc; history= Epoch})
+          (Trace.Immediate {location= call_loc; history= ValueHistory.epoch})
           astate
     | _ ->
         astate
@@ -115,7 +116,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
       | None ->
           PulseOperations.havoc_id (fst ret)
             (ValueHistory.singleton
-               (Call {f= Call callee_pname; location= call_loc; in_call= Epoch; timestamp}) )
+               (Call
+                  {f= Call callee_pname; location= call_loc; in_call= ValueHistory.epoch; timestamp}
+               ) )
             post
     in
     f subst post

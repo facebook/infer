@@ -52,7 +52,7 @@ let mk_nil_messaging_summary_aux tenv proc_desc =
   in
   let astate = PulseArithmetic.prune_eq_zero self_value astate |> PulseResult.ok_exn in
   let event = ValueHistory.NilMessaging (location, t0) in
-  let updated_self_value_hist = (self_value, ValueHistory.Sequence (event, self_history)) in
+  let updated_self_value_hist = (self_value, ValueHistory.sequence event self_history) in
   match List.last (Procdesc.get_formals proc_desc) with
   | Some (last_formal, {desc= Tptr (typ, _)}, _) when Mangled.is_return_param last_formal ->
       let ret_param_var = Procdesc.get_ret_param_var proc_desc in
@@ -81,7 +81,7 @@ let mk_latent_non_POD_nil_messaging tenv proc_desc =
   let astate, (self_value, _self_history) =
     PulseOperations.eval_deref path location (Lvar self) astate |> PulseResult.ok_exn
   in
-  let trace = Trace.Immediate {location; history= Epoch} in
+  let trace = Trace.Immediate {location; history= ValueHistory.epoch} in
   let astate = PulseArithmetic.prune_eq_zero self_value astate |> PulseResult.ok_exn in
   match AbductiveDomain.summary_of_post tenv proc_desc location astate with
   | Unsat | Sat (Error _) ->

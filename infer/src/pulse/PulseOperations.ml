@@ -163,12 +163,14 @@ module Closures = struct
                 astate_result )
 
 
-  let record {PathContext.timestamp} location pname captured astate =
+  let record {PathContext.timestamp; conditions} location pname captured astate =
     let captured_addresses =
       List.filter_map captured
         ~f:(fun (captured_as, (address_captured, trace_captured), typ, mode) ->
           let new_trace =
-            ValueHistory.Sequence (Capture {captured_as; mode; location; timestamp}, trace_captured)
+            ValueHistory.sequence ~context:conditions
+              (Capture {captured_as; mode; location; timestamp})
+              trace_captured
           in
           Some (mode, typ, address_captured, new_trace) )
     in
@@ -227,8 +229,8 @@ let eval path mode location exp0 astate =
     match (exp : Exp.t) with
     | Var id ->
         Ok
-          (Stack.eval path location (* error in case of missing history? *) Epoch (Var.of_id id)
-             astate )
+          (Stack.eval path location (* error in case of missing history? *) ValueHistory.epoch
+             (Var.of_id id) astate )
     | Lvar pvar ->
         Ok (eval_var path location pvar astate)
     | Lfield (exp', field, _) ->
@@ -292,9 +294,9 @@ let eval path mode location exp0 astate =
           PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
             (AbstractValueOperand addr_rhs) astate
         in
-        (astate, (binop_addr, ValueHistory.BinaryOp (bop, hist_lhs, hist_rhs)))
+        (astate, (binop_addr, ValueHistory.binary_op bop hist_lhs hist_rhs))
     | Sizeof _ | Exn _ ->
-        Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.Epoch))
+        Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch))
   in
   eval path mode exp0 astate
 
@@ -302,7 +304,7 @@ let eval path mode location exp0 astate =
 let eval_to_operand path location exp astate =
   match (exp : Exp.t) with
   | Const c ->
-      Ok (astate, PulseArithmetic.ConstOperand c, ValueHistory.Epoch)
+      Ok (astate, PulseArithmetic.ConstOperand c, ValueHistory.epoch)
   | exp ->
       let+ astate, (value, hist) = eval path Read location exp astate in
       (astate, PulseArithmetic.AbstractValueOperand value, hist)
@@ -322,7 +324,7 @@ let prune path location ~condition astate =
                  empty) *)
               hist
           | _ ->
-              ValueHistory.BinaryOp (bop, lhs_hist, rhs_hist)
+              ValueHistory.binary_op bop lhs_hist rhs_hist
         in
         (astate, hist)
     | UnOp (LNot, exp', _) ->
@@ -494,11 +496,15 @@ type invalidation_access =
   | StackAddress of Var.t * ValueHistory.t
   | UntraceableAccess
 
-let record_invalidation ({PathContext.timestamp} as path) access_path location cause astate =
+let record_invalidation ({PathContext.timestamp; conditions} as path) access_path location cause
+    astate =
   match access_path with
   | StackAddress (x, hist0) ->
       let astate, (addr, hist) = Stack.eval path location hist0 x astate in
-      Stack.add x (addr, Sequence (Invalidated (cause, location, timestamp), hist)) astate
+      let hist' =
+        ValueHistory.sequence ~context:conditions (Invalidated (cause, location, timestamp)) hist
+      in
+      Stack.add x (addr, hist') astate
   | MemoryAccess {pointer; access; hist_obj_default} ->
       let addr_obj, hist_obj =
         match Memory.find_edge_opt (fst pointer) access astate with
@@ -507,9 +513,12 @@ let record_invalidation ({PathContext.timestamp} as path) access_path location c
         | None ->
             (AbstractValue.mk_fresh (), hist_obj_default)
       in
-      Memory.add_edge pointer access
-        (addr_obj, Sequence (Invalidated (cause, location, timestamp), hist_obj))
-        location astate
+      let hist' =
+        ValueHistory.sequence ~context:conditions
+          (Invalidated (cause, location, timestamp))
+          hist_obj
+      in
+      Memory.add_edge pointer access (addr_obj, hist') location astate
   | UntraceableAccess ->
       astate
 

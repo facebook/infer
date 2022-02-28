@@ -38,6 +38,26 @@ and t =
   | BinaryOp of Binop.t * t * t
 [@@deriving compare, equal]
 
+let epoch = Epoch
+
+let in_context_f from new_context_opt ~f =
+  match new_context_opt with
+  | None | Some [] ->
+      f from
+  | Some new_context -> (
+    match from with
+    | InContext {main; context} when phys_equal context new_context ->
+        InContext {main= f main; context}
+    | Epoch | Sequence _ | BinaryOp _ | InContext _ ->
+        InContext {main= f from; context= new_context} )
+
+
+let sequence ?context event hist = in_context_f hist context ~f:(fun hist -> Sequence (event, hist))
+
+let in_context context hist = in_context_f hist (Some context) ~f:Fn.id
+
+let binary_op bop hist1 hist2 = BinaryOp (bop, hist1, hist2)
+
 let singleton event = Sequence (event, Epoch)
 
 let location_of_event = function
@@ -240,13 +260,13 @@ let pp fmt history =
         ()
     | Sequence ((Call {in_call} as event), tail) ->
         F.fprintf fmt "%a@;" pp_event event ;
-        F.fprintf fmt "[%a]@;" pp_aux in_call ;
+        F.fprintf fmt "[@[%a@]]@;" pp_aux in_call ;
         pp_aux fmt tail
     | Sequence (event, tail) ->
         F.fprintf fmt "%a@;" pp_event event ;
         pp_aux fmt tail
     | InContext {main; context} ->
-        F.fprintf fmt "[@[%a@]]" (Pp.seq ~sep:"; " pp_aux) (main :: context)
+        F.fprintf fmt "(@[%a@]){@[%a@]}" (Pp.seq ~sep:"; " pp_aux) context pp_aux main
     | BinaryOp (bop, hist1, hist2) ->
         F.fprintf fmt "[@[%a@]] %a [@[%a@]]" pp_aux hist1 Binop.pp bop pp_aux hist2
   in

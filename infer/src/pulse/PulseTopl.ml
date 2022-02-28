@@ -43,7 +43,7 @@ let sub_value (sub, value) =
       (sub, v)
   | None ->
       let v = AbstractValue.mk_fresh () in
-      let sub = AbstractValue.Map.add value (v, ValueHistory.Epoch) sub in
+      let sub = AbstractValue.Map.add value (v, ValueHistory.epoch) sub in
       (sub, v)
 
 
@@ -525,7 +525,7 @@ let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee
                 if AbstractValue.equal old_val1 val1 then (sub, eqs)
                 else (sub, Constraint.and_predicate (mk_eq old_val1 val1) eqs)
             | None ->
-                (AbstractValue.Map.add val2 (val1, ValueHistory.Epoch) sub, eqs)
+                (AbstractValue.Map.add val2 (val1, ValueHistory.epoch) sub, eqs)
         in
         of_unequal (List.fold2 p.post.memory q.pre.memory ~init:(substitution, Constraint.true_) ~f)
       in
