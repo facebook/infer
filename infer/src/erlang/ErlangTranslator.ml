@@ -31,6 +31,7 @@ let any_typ = Env.ptr_typ_of_name Any
 let mk_fresh_id () = Ident.create_fresh Ident.knormal
 
 let call_unsupported reason nargs =
+  L.debug Capture Verbose "@[todo ErlangTranslator unsupported construct: %s@." reason ;
   Procname.make_erlang ~module_name:ErlangTypeName.unsupported ~function_name:reason ~arity:nargs
 
 
@@ -636,10 +637,10 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       in
       let op_block = box_bool env ret_var expr in
       Block.all env [block1; unbox_block1; block2; unbox_block2; op_block]
-  | todo ->
-      L.debug Capture Verbose "@[todo ErlangTranslator.translate_expression_binary_operator %s@."
-        (Sexp.to_string (Ast.sexp_of_binary_operator todo)) ;
-      Block.all env [block1; block2; mk_general_unsupported_block env]
+  | FDiv ->
+      make_func_call (Exp.Const (Cfun (call_unsupported "float_div_op" 2)))
+  | ListSub ->
+      make_func_call (Exp.Const (Cfun (call_unsupported "list_sub_op" 2)))
 
 
 and lookup_module_for_unqualified (env : (_, _) Env.t) function_name arity =
