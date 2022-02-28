@@ -67,12 +67,22 @@ module Field = struct
   let compare = Fieldname.compare_name
 end
 
+module Param = struct
+  type t = Pvar.t [@@deriving compare]
+
+  let pp = Pvar.pp Pp.text
+end
+
 (** Placeholder for class fields or function parameters that gated some code. They may or may not
     have config values later. *)
 module LatentConfig = struct
-  type t = LatentField of Field.t [@@deriving compare]
+  type t = LatentField of Field.t | LatentParam of Param.t [@@deriving compare]
 
-  let pp f = function LatentField field -> Field.pp f field
+  let pp f = function
+    | LatentField field ->
+        Field.pp f field
+    | LatentParam param ->
+        Param.pp f param
 end
 
 module LatentConfigs = struct
@@ -82,7 +92,7 @@ module LatentConfigs = struct
     match is_singleton_or_more latent_configs with
     | Singleton (LatentField _) ->
         true
-    | Empty | More ->
+    | Singleton (LatentParam _) | Empty | More ->
         false
 end
 
@@ -357,6 +367,8 @@ module Val = struct
 
   let of_field fn = {bottom with latent_configs= LatentConfigs.singleton (LatentField fn)}
 
+  let of_param pvar = {bottom with latent_configs= LatentConfigs.singleton (LatentParam pvar)}
+
   let of_temp_bool ~is_true config_checks =
     {bottom with temp_bool= TempBool.make ~is_true config_checks}
 
@@ -466,7 +478,8 @@ module Summary = struct
           (** Sets of unchecked callees that are called conditionally by object fields *)
     ; has_call_stmt: bool  (** True if a function includes a call statement *)
     ; configs: LatentConfigs.t
-          (** Intra-procedurally collected fields that may have config values *)
+          (** Intra-procedurally collected fields and function parameters that may have config
+              values *)
     ; gated_classes: GatedClasses.t  (** Intra-procedurally collected gated classes *)
     ; latent_config_alias: LatentConfigAlias.t  (** Aliases between latent configs *)
     ; ret: Val.t  (** Return value of the procedure *) }
@@ -624,6 +637,8 @@ module Dom = struct
 
   let load_field id fn astate = add_mem (Loc.of_id id) (Val.of_field fn) astate
 
+  let load_param id pvar astate = add_mem (Loc.of_id id) (Val.of_param pvar) astate
+
   let store_config pvar id astate = copy_mem ~tgt:(Loc.of_pvar pvar) ~src:(Loc.of_id id) astate
 
   let assign_to_latent_config latent_config id ({mem; configs; latent_config_alias} as astate) =
@@ -662,8 +677,8 @@ module Dom = struct
         | None when not (LatentConfigs.is_empty latent_configs) ->
             Some (`Conditional (latent_configs, branch))
         | None ->
-            (* Note: If the [id] is not a config value or field, address it as a temporary
-               variable. *)
+            (* Note: If the [id] is not a config value, field, or parameter, address it as a
+               temporary variable. *)
             TempBool.get_config_checks ~is_true:is_true_branch temp_bool
             |> Option.map ~f:(fun config_checks -> `TempBool config_checks) )
     | UnOp (LNot, e, _) ->
@@ -803,8 +818,24 @@ module Dom = struct
         astate
 
 
+  let update_latent_params formals args astate =
+    Option.value_map formals ~default:astate ~f:(fun formals ->
+        match
+          List.fold2 formals args ~init:astate ~f:(fun acc formal arg ->
+              match (formal, arg) with
+              | (pvar, _), (Exp.Var id, _) ->
+                  assign_to_latent_config (LatentParam pvar) id acc
+              | _, _ ->
+                  acc )
+        with
+        | Ok astate ->
+            astate
+        | Unequal_lengths ->
+            astate )
+
+
   let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost option)
-      ret_typ ~callee args location
+      ret_typ ~callee formals args location
       ({config_checks; condition_checks; unchecked_callees; unchecked_callees_cond} as astate) =
     let join_unchecked_callees new_unchecked_callees new_unchecked_callees_cond =
       if ConditionChecks.is_top condition_checks then
@@ -919,7 +950,7 @@ module Dom = struct
                 add_callee_name ~is_known_expensive:false )
       else astate
     in
-    update_gated_callees ~callee args astate
+    update_gated_callees ~callee args astate |> update_latent_params formals args
 
 
   let throw_exception astate =
@@ -932,7 +963,9 @@ type analysis_data =
   { interproc:
       (BufferOverrunAnalysisSummary.t option * Summary.t option * CostDomain.summary option)
       InterproceduralAnalysis.t
-  ; get_instantiated_cost: CostInstantiate.Call.t -> CostInstantiate.instantiated_cost option }
+  ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option
+  ; get_instantiated_cost: CostInstantiate.Call.t -> CostInstantiate.instantiated_cost option
+  ; is_param: Pvar.t -> bool }
 
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal
@@ -1004,7 +1037,7 @@ module TransferFunctions = struct
         astate
 
 
-  let call {interproc= {tenv; analyze_dependency}; get_instantiated_cost} node idx
+  let call {interproc= {tenv; analyze_dependency}; get_formals; get_instantiated_cost} node idx
       ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
     match FbGKInteraction.get_config_check tenv callee args with
     | Some (`Config config) ->
@@ -1030,12 +1063,14 @@ module TransferFunctions = struct
             ; ret }
         in
         let instantiated_cost = get_instantiated_cost call in
-        Dom.call tenv analyze_dependency ~instantiated_cost ret_typ ~callee args location astate
+        let formals = get_formals callee in
+        Dom.call tenv analyze_dependency ~instantiated_cost ret_typ ~callee formals args location
+          astate
         |> add_ret analyze_dependency ret_id callee
 
 
   let exec_instr ({Dom.config_checks} as astate)
-      ({interproc= {tenv; analyze_dependency}} as analysis_data) node idx instr =
+      ({interproc= {tenv; analyze_dependency}; is_param} as analysis_data) node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e} -> (
       match FbGKInteraction.get_config e with
@@ -1043,6 +1078,8 @@ module TransferFunctions = struct
           Dom.call_config_check id config astate
       | None -> (
         match e with
+        | Lvar pvar when is_param pvar ->
+            Dom.load_param id pvar astate
         | Lvar pvar ->
             Dom.load_config id pvar astate
         | Lfield (_, fn, _) ->
@@ -1109,8 +1146,15 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
     (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
     None
   else
+    let get_formals pname =
+      Attributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
+    in
     let get_instantiated_cost = CostInstantiate.get_instantiated_cost analysis_data in
-    let analysis_data = {interproc= analysis_data; get_instantiated_cost} in
+    let is_param =
+      let formals = Procdesc.get_pvar_formals proc_desc in
+      fun pvar -> List.exists formals ~f:(fun (formal, _) -> Pvar.equal pvar formal)
+    in
+    let analysis_data = {interproc= analysis_data; get_formals; get_instantiated_cost; is_param} in
     Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
         let has_call_stmt = has_call_stmt proc_desc in
         Dom.to_summary pname ~has_call_stmt astate )
