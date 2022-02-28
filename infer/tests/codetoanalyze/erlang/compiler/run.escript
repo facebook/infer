@@ -27,37 +27,50 @@ run_test(Module, Function) ->
     end.
 
 run_tests(File) ->
-    {ok, Module} = compile:file(File, []),
-    io:format("----- ~s -----~n", [Module]),
-    Exports = Module:module_info(exports),
-    Tests = lists:filter(
-        fun({F, A}) ->
-            Fn = atom_to_list(F),
-            (A =:= 0) and
-                (lists:prefix("test", Fn) or lists:prefix("fp_", Fn) or lists:prefix("fn_", Fn))
-        end,
-        Exports
-    ),
-    lists:foreach(
-        fun({F, 0}) -> run_test(Module, F) end,
-        lists:sort(Tests)
-    ),
+    case compile:file(File, []) of
+        {ok, Module} ->
+            io:format("----- ~s -----~n", [Module]),
+            Exports = Module:module_info(exports),
+            Tests = lists:filter(
+                fun({F, A}) ->
+                    Fn = atom_to_list(F),
+                    (A =:= 0) and
+                        (lists:prefix("test", Fn) or lists:prefix("fp_", Fn) or
+                            lists:prefix("fn_", Fn))
+                end,
+                Exports
+            ),
+            lists:foreach(
+                fun({F, 0}) -> run_test(Module, F) end,
+                lists:sort(Tests)
+            );
+        error ->
+            io:format("Compile error for file ~s.~n", [File])
+    end,
     io:format("~n").
 
 process_path(Path) ->
-    {ok, Filenames} = file:list_dir(Path),
-    ErlFiles = lists:filtermap(
-        fun(F) ->
-            case lists:suffix(".erl", F) of
-                true -> {true, filename:join(Path, F)};
-                _ -> false
-            end
-        end,
-        Filenames
-    ),
-    lists:foreach(fun run_tests/1, lists:sort(ErlFiles)).
+    case file:list_dir(Path) of
+        {ok, Filenames} ->
+            ErlFiles = lists:filtermap(
+                fun(F) ->
+                    case lists:suffix(".erl", F) of
+                        true -> {true, filename:join(Path, F)};
+                        _ -> false
+                    end
+                end,
+                Filenames
+            ),
+            lists:foreach(fun run_tests/1, lists:sort(ErlFiles));
+        {error, enoent} ->
+            io:format("Directory '~s' does not exist.~n", [Path]);
+        {error, eacces} ->
+            io:format("Missing permissions for directory '~s'.~n", [Path]);
+        {error, Reason} ->
+            io:format("Error while reading directory '~s': ~w.~n", [Path, Reason])
+    end.
 
-main([H|T]) ->
-    lists:foreach(fun process_path/1, lists:sort([H|T]));
+main([H | T]) ->
+    lists:foreach(fun process_path/1, lists:sort([H | T]));
 main(_) ->
     usage().
