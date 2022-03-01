@@ -334,7 +334,6 @@ module ObjC_Cpp = struct
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
-    | ObjCInternalMethod
   [@@deriving compare, yojson_of]
 
   type t =
@@ -375,12 +374,7 @@ module ObjC_Cpp = struct
 
   let is_objc_constructor method_name = String.equal method_name "new" || is_prefix_init method_name
 
-  let is_objc_kind = function
-    | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
-        true
-    | _ ->
-        false
-
+  let is_objc_kind = function ObjCClassMethod | ObjCInstanceMethod -> true | _ -> false
 
   let is_objc_method {kind} = is_objc_kind kind
 
@@ -410,8 +404,6 @@ module ObjC_Cpp = struct
         F.pp_print_string fmt "class"
     | ObjCInstanceMethod ->
         F.pp_print_string fmt "instance"
-    | ObjCInternalMethod ->
-        F.pp_print_string fmt "internal"
 
 
   let pp verbosity fmt osig =

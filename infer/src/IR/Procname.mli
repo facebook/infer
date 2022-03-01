@@ -146,7 +146,6 @@ module ObjC_Cpp : sig
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
-    | ObjCInternalMethod
   [@@deriving compare]
 
   (** Type of Objective C and C++ procedure names: method signatures. *)
