@@ -778,19 +778,32 @@ module Dom = struct
           false
 
 
-  let is_config_setter_typ ret_typ args =
+  let is_config_setter_typ ~is_static ret_typ args =
     Typ.is_void ret_typ
-    && match args with [_this; (_, arg_typ)] when is_config_typ arg_typ -> true | _ -> false
+    &&
+    match (args, is_static) with
+    | ([(_, arg_typ)] | [_; (_, arg_typ)]), None
+    | [(_, arg_typ)], Some true
+    | [_; (_, arg_typ)], Some false ->
+        is_config_typ arg_typ
+    | _ ->
+        false
 
 
-  let is_config_getter_typ ret_typ args =
-    is_config_typ ret_typ && match args with [_this] -> true | _ -> false
+  let is_config_getter_typ ~is_static ret_typ args =
+    is_config_typ ret_typ
+    &&
+    match (args, is_static) with
+    | ([] | [_]), None | [], Some true | [_], Some false ->
+        true
+    | _ ->
+        false
 
 
-  let is_config_setter_getter ret_typ pname args =
+  let is_config_setter_getter ~is_static ret_typ pname args =
     let method_name = Procname.get_method pname in
-    (is_config_setter_typ ret_typ args && String.is_prefix method_name ~prefix:"set")
-    || (is_config_getter_typ ret_typ args && String.is_prefix method_name ~prefix:"get")
+    (is_config_setter_typ ~is_static ret_typ args && String.is_prefix method_name ~prefix:"set")
+    || (is_config_getter_typ ~is_static ret_typ args && String.is_prefix method_name ~prefix:"get")
 
 
   let update_gated_callees ~callee args ({config_checks; condition_checks; gated_classes} as astate)
@@ -889,6 +902,7 @@ module Dom = struct
         let is_cheap_call = match instantiated_cost with Some Cheap -> true | _ -> false in
         let is_unmodeled_call = match instantiated_cost with Some NoModel -> true | _ -> false in
         if strict_mode then
+          let is_static = Procname.is_static callee in
           match (callee_summary, expensiveness_model) with
           | _, Some KnownCheap ->
               (* If callee is known cheap call, ignore it. *)
@@ -903,11 +917,11 @@ module Dom = struct
               join_callee_summary callee_summary callee_summary_cond
           | Some {Summary.has_call_stmt; ret}, _
             when (not has_call_stmt)
-                 && ( is_config_setter_typ ret_typ args
-                    || (is_config_getter_typ ret_typ args && Val.is_field ret) ) ->
+                 && ( is_config_setter_typ ~is_static ret_typ args
+                    || (is_config_getter_typ ~is_static ret_typ args && Val.is_field ret) ) ->
               (* If callee seems to be a setter/getter, ignore it. *)
               astate
-          | None, None when is_config_setter_getter ret_typ callee args ->
+          | None, None when is_config_setter_getter ~is_static ret_typ callee args ->
               (* If callee is unknown setter/getter, ignore it. *)
               astate
           | _, _ ->

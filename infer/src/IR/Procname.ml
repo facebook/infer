@@ -846,6 +846,21 @@ let is_infer_undefined pn =
       false
 
 
+let rec is_static = function
+  | CSharp {kind= Static} | Java {kind= Static} | ObjC_Cpp {kind= ObjCClassMethod} ->
+      Some true
+  | CSharp {kind= Non_Static} | Java {kind= Non_Static} | ObjC_Cpp {kind= ObjCInstanceMethod} ->
+      Some false
+  | C _
+  | Block _
+  | Erlang _
+  | Linters_dummy_method
+  | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
+      None
+  | WithBlockParameters (pname, _) ->
+      is_static pname
+
+
 let get_global_name_of_initializer = function
   | C {name}
     when String.is_prefix ~prefix:Config.clang_initializer_prefix

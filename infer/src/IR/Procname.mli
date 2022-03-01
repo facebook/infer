@@ -375,6 +375,10 @@ val objc_cpp_replace_method_name : t -> string -> t
 val is_infer_undefined : t -> bool
 (** Check if this is a special Infer undefined procedure. *)
 
+val is_static : t -> bool option
+(** Check if a procedure is a static class method or not. If the procedure is not a class method or
+    is unknown to be static, it returns [None]. For now, this checking does not work on C++ methods. *)
+
 val get_global_name_of_initializer : t -> string option
 (** Return the name of the global for which this procedure is the initializer if this is an
     initializer, None otherwise. *)
