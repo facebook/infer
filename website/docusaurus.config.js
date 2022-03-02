@@ -15,6 +15,14 @@ module.exports = {
   organizationName: "facebook",
   projectName: "infer",
   themeConfig: {
+    announcementBar: {
+      id: 'support_ukraine',
+      content:
+        'Support Ukraine 🇺🇦 <a target="_blank" rel="noopener noreferrer" href="https://opensource.facebook.com/support-ukraine"> Help Provide Humanitarian Aid to Ukraine</a>.',
+      backgroundColor: '#20232a',
+      textColor: '#fff',
+      isCloseable: false,
+    },
     algolia: {
       apiKey: "aac9e661e851db0d4b6e74802c3df9de",
       indexName: "fbinfer",
