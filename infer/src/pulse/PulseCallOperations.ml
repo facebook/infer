@@ -161,7 +161,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                   Sat
                     (AccessResult.of_error_f
                        (Summary (ReportableErrorSummary {diagnostic; astate= astate_summary}))
-                       ~f:(fun _ -> ContinueProgram (astate_summary :> AbductiveDomain.t)) )
+                       ~f:(fun _ ->
+                         L.die InternalError
+                           "LatentAbortProgram cannot be applied to non-fatal errors" ) )
               | `ISLDelay astate ->
                   Sat (FatalError (Summary (ISLErrorSummary {astate}), [])) )
           | LatentInvalidAccess

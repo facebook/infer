@@ -88,17 +88,14 @@ let aborts_execution = function
       | Case_clause _
       | Function_clause _
       | If_clause _
-      | Try_clause _ ) ->
+      | Try_clause _ )
+  | ReadUninitializedValue _ ->
       (* these errors either abort the whole program or, if they are false positives, mean that
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       true
-  | ReadUninitializedValue _
-  | StackVariableAddressEscape _
-  | UnnecessaryCopy _
-  | RetainCycle _
-  | MemoryLeak _
-  | ResourceLeak _ ->
+  | StackVariableAddressEscape _ | UnnecessaryCopy _ | RetainCycle _ | MemoryLeak _ | ResourceLeak _
+    ->
       false
 
 
