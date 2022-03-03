@@ -625,6 +625,12 @@ let record_skipped_calls callee_proc_name call_loc pre_post call_state =
   {call_state with astate}
 
 
+let record_need_specialization pre_post call_state =
+  if pre_post.AbductiveDomain.need_specialization then
+    {call_state with astate= AbductiveDomain.set_need_specialization call_state.astate}
+  else call_state
+
+
 let apply_unknown_effects pre_post call_state =
   let open IOption.Let_syntax in
   L.d_printfln "call_state = {%a}@\n" pp_call_state call_state ;
@@ -685,6 +691,7 @@ let apply_post path callee_proc_name call_location pre_post ~captured_formals ~c
     let+ call_state =
       record_post_remaining_attributes path callee_proc_name call_location pre_post call_state
       |> record_skipped_calls callee_proc_name call_location pre_post
+      |> record_need_specialization pre_post
       |> conjoin_callee_arith pre_post
     in
     (call_state, return_caller)

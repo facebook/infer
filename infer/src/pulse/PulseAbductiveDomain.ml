@@ -102,15 +102,21 @@ type t =
   ; pre: PreDomain.t
   ; path_condition: PathCondition.t
   ; topl: (PulseTopl.state[@yojson.opaque])
+  ; need_specialization: bool
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
-let pp f {post; pre; topl; path_condition; skipped_calls} =
-  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;skipped_calls=%a@;Topl=%a@]" PathCondition.pp path_condition
-    PostDomain.pp post PreDomain.pp pre SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+let pp f {post; pre; topl; path_condition; need_specialization; skipped_calls} =
+  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;skipped_calls=%a@;Topl=%a@;need_specialization=%b@]"
+    PathCondition.pp path_condition PostDomain.pp post PreDomain.pp pre SkippedCalls.pp
+    skipped_calls PulseTopl.pp_state topl need_specialization
 
 
 let set_path_condition path_condition astate = {astate with path_condition}
+
+let set_need_specialization astate = {astate with need_specialization= true}
+
+let unset_need_specialization astate = {astate with need_specialization= false}
 
 let leq ~lhs ~rhs =
   phys_equal lhs rhs
@@ -180,6 +186,7 @@ module Stack = struct
         ( { post= PostDomain.update astate.post ~stack:post_stack ~heap:post_heap ~attrs:post_attrs
           ; pre
           ; topl= astate.topl
+          ; need_specialization= astate.need_specialization
           ; skipped_calls= astate.skipped_calls
           ; path_condition= astate.path_condition }
         , addr_hist )
@@ -468,6 +475,7 @@ module Memory = struct
         ( { post= PostDomain.update astate.post ~heap:post_heap
           ; pre= PreDomain.update astate.pre ~heap:foot_heap
           ; topl= astate.topl
+          ; need_specialization= astate.need_specialization
           ; skipped_calls= astate.skipped_calls
           ; path_condition= astate.path_condition }
         , addr_hist_dst )
@@ -623,6 +631,7 @@ let mk_initial tenv proc_desc =
   { pre
   ; post
   ; topl= PulseTopl.start ()
+  ; need_specialization= false
   ; skipped_calls= SkippedCalls.empty
   ; path_condition= PathCondition.true_ }
 
@@ -1019,6 +1028,8 @@ let is_pre_without_isl_abduced astate =
 
 
 type summary = t [@@deriving compare, equal, yojson_of]
+
+let summary_with_need_specialization summary = {summary with need_specialization= true}
 
 let is_heap_allocated {post; pre} v =
   BaseMemory.is_allocated (post :> BaseDomain.t).heap v

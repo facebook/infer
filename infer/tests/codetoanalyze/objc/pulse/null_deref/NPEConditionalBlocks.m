@@ -175,3 +175,42 @@ int apply_block_and_after_respecialized_bad() {
   }); // Calling block assigned in if branch
   return *ptr;
 }
+
+void conditionnaly_apply_block(int x, int** ptr, void (^block)(void)) {
+  if (x) {
+    block();
+  }
+  *ptr = NULL;
+}
+
+int conditionnaly_apply_block_unspecialized_bad() {
+  int x = 0;
+  __block int* ptr = NULL;
+  void (^block)(void);
+  if (!x) {
+    block = ^{
+    };
+  } else {
+    block = ^{
+    };
+  }
+  conditionnaly_apply_block(
+      x, &ptr, block); // block is not called; function is not specialized
+  return *ptr;
+}
+
+int conditionnaly_apply_block_specialized_bad() {
+  int x = 1;
+  __block int* ptr = NULL;
+  void (^block)(void);
+  if (!x) {
+    block = ^{
+    };
+  } else {
+    block = ^{
+    };
+  }
+  conditionnaly_apply_block(
+      x, &ptr, block); // Calling block assigned in else branch
+  return *ptr;
+}

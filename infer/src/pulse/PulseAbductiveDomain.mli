@@ -44,6 +44,8 @@ type t = private
             values are immutable) *)
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
+  ; need_specialization: bool
+        (** a call that could be resolved via analysis-time specialization has been skipped *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -198,6 +200,10 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val set_path_condition : PathCondition.t -> t -> t
 
+val set_need_specialization : t -> t
+
+val unset_need_specialization : t -> t
+
 val is_isl_without_allocation : t -> bool
 
 val is_pre_without_isl_abduced : t -> bool
@@ -206,6 +212,8 @@ val is_pre_without_isl_abduced : t -> bool
 type summary = private t [@@deriving compare, equal, yojson_of]
 
 val skipped_calls_match_pattern : summary -> bool
+
+val summary_with_need_specialization : summary -> summary
 
 val summary_of_post :
      Tenv.t

@@ -47,6 +47,56 @@ module PulseTransferFunctions = struct
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
+  let need_specialization astates =
+    List.exists astates ~f:(fun res ->
+        match PulseResult.ok res with
+        | Some
+            ( ContinueProgram {AbductiveDomain.need_specialization}
+            | ExceptionRaised {AbductiveDomain.need_specialization} ) ->
+            need_specialization
+        | Some
+            ( ExitProgram astate
+            | AbortProgram astate
+            | LatentAbortProgram {astate}
+            | LatentInvalidAccess {astate}
+            | ISLLatentMemoryError astate ) ->
+            (astate :> AbductiveDomain.t).need_specialization
+        | None ->
+            false )
+
+
+  let reset_need_specialization needed_specialization astates =
+    if needed_specialization then
+      List.map astates ~f:(fun res ->
+          PulseResult.map res ~f:(function
+            | ExceptionRaised astate ->
+                let astate = AbductiveDomain.set_need_specialization astate in
+                ExceptionRaised astate
+            | ContinueProgram astate ->
+                let astate = AbductiveDomain.set_need_specialization astate in
+                ContinueProgram astate
+            | ExitProgram astate ->
+                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                ExitProgram astate
+            | AbortProgram astate ->
+                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                AbortProgram astate
+            | LatentAbortProgram latent_abort_program ->
+                let astate =
+                  AbductiveDomain.summary_with_need_specialization latent_abort_program.astate
+                in
+                LatentAbortProgram {latent_abort_program with astate}
+            | LatentInvalidAccess latent_invalid_access ->
+                let astate =
+                  AbductiveDomain.summary_with_need_specialization latent_invalid_access.astate
+                in
+                LatentInvalidAccess {latent_invalid_access with astate}
+            | ISLLatentMemoryError astate ->
+                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                ISLLatentMemoryError astate ) )
+    else astates
+
+
   let interprocedural_call
       ({InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} as analysis_data) path ret
       callee_pname call_exp func_args call_loc (flags : CallFlags.t) astate =
@@ -55,7 +105,7 @@ module PulseTransferFunctions = struct
           (arg_payload, typ) )
     in
     match callee_pname with
-    | Some callee_pname when not Config.pulse_intraprocedural_only -> (
+    | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
         let call_kind_of call_exp =
@@ -67,22 +117,47 @@ module PulseTransferFunctions = struct
           | _ ->
               `ResolvedProcname
         in
-        match
-          PulseBlockSpecialization.make_specialized_call_exp func_args callee_pname analysis_data
-            astate
-        with
-        | Some (callee_pname, call_exp) ->
-            let formals_opt = get_pvar_formals callee_pname in
-            let callee_data = analyze_dependency callee_pname in
-            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-              callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
-        | None ->
-            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-              callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate )
+        (* [needed_specialization] = current function already needs specialization before
+           the upcoming call (i.e. we did not have enough information to sufficiently
+           specialize a callee). *)
+        let needed_specialization = astate.AbductiveDomain.need_specialization in
+        (* [astate.need_specialization] is false when entering the call. This is to
+           detect calls that need specialization. The value will be set back to true
+           (if it was) in the end by [reset_need_specialization] *)
+        let astate = AbductiveDomain.unset_need_specialization astate in
+        let maybe_res =
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
+            callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
+        in
+        let res =
+          if (not needed_specialization) && need_specialization maybe_res then
+            match
+              PulseBlockSpecialization.make_specialized_call_exp func_args callee_pname
+                analysis_data astate
+            with
+            | Some (callee_pname, call_exp) ->
+                let formals_opt = get_pvar_formals callee_pname in
+                let callee_data = analyze_dependency callee_pname in
+                PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
+                  callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
+            | None ->
+                maybe_res
+          else maybe_res
+        in
+        reset_need_specialization needed_specialization res
     | _ ->
         (* dereference call expression to catch nil issues *)
         let<*> astate, _ =
           if flags.cf_is_objc_block then
+            (* We are on an unknown block call, meaning that the block was defined
+               outside the current function and was either passed by the caller
+               as an argument or retrieved from an object. We do not handle blocks
+               inside objects yet so we assume we are in the former case. In this
+               case, we tell the caller that we are missing some information by
+               setting [need_specialization] in the resulting state and the caller
+               will then try to specialize the current function with its available
+               information. *)
+            let astate = AbductiveDomain.set_need_specialization astate in
             PulseOperations.eval_deref path ~must_be_valid_reason:BlockCall call_loc call_exp astate
           else PulseOperations.eval_deref path call_loc call_exp astate
         in
