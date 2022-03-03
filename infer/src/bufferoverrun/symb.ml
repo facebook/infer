@@ -84,6 +84,12 @@ module SymbolPath = struct
         false
 
 
+  let get_deref_kind path _ptr_kind =
+    if Language.curr_language_is Java then Deref_JavaPointer
+    else if is_this path then Deref_COneValuePointer
+    else Deref_CPointer
+
+
   let rec get_pvar = function
     | BoField.Prim (Pvar pvar) ->
         Some pvar

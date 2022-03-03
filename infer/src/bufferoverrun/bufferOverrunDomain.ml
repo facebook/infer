@@ -230,6 +230,28 @@ module Val = struct
 
   let of_pow_loc ~traces powloc = {bot with powloc; traces}
 
+  let of_ptr_loc ?(traces = TraceSet.bottom) ~(ptr_loc_type : Typ.t) ptr_loc =
+    match Loc.get_path ptr_loc with
+    | None ->
+        top
+    | Some path ->
+        let deref_loc =
+          let deref_kind =
+            match ptr_loc_type.desc with
+            | Tptr (_, ptr_kind) ->
+                Symb.SymbolPath.get_deref_kind path ptr_kind
+            | _ ->
+                SPath.Deref_CPointer
+          in
+          AbsLoc.Loc.of_path (Symb.SymbolPath.deref ~deref_kind path)
+        in
+        { top with
+          itv= Itv.of_normal_path ~unsigned:(Typ.is_unsigned_int ptr_loc_type) path
+        ; powloc= PowLoc.singleton deref_loc
+        ; arrayblk= ArrayBlk.bot
+        ; traces }
+
+
   let of_c_array_alloc :
       Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> traces:TraceSet.t -> t =
    fun allocsite ~stride ~offset ~size ~traces ->
@@ -2252,6 +2274,11 @@ module MemReach = struct
 
   let is_rep_multi_loc : Loc.t -> _ t0 -> bool = fun l m -> MemPure.is_rep_multi_loc l m.mem_pure
 
+  let on_demand ~loc mem =
+    let on_demand' oenv = Val.on_demand ~default:Val.top oenv loc in
+    GOption.value_map mem.oenv ~f:(fun oenv -> on_demand' oenv) ~default:Val.top
+
+
   let find_opt : Loc.t -> _ t0 -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
 
   let find_stack : Loc.t -> _ t0 -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
@@ -2804,6 +2831,10 @@ module Mem = struct
 
   let is_rep_multi_loc : Loc.t -> _ t0 -> bool =
    fun k -> f_lift_default ~default:false (MemReach.is_rep_multi_loc k)
+
+
+  let on_demand : loc:Loc.t -> _ t0 -> Val.t =
+   fun ~loc -> f_lift_default ~default:Val.top (MemReach.on_demand ~loc)
 
 
   let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.top (MemReach.find k)
