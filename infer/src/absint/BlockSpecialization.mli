@@ -7,6 +7,6 @@
 
 open! IStd
 
-val process_closure_param : Procdesc.t -> unit
+type arg = Block of (Procname.t * CapturedVar.t list) | Var
 
-val process_closure_call : Procdesc.t -> unit
+val create_specialized_procdesc : Procname.t -> arg list -> Procname.t option

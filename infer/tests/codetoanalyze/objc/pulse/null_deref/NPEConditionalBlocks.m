@@ -92,8 +92,7 @@ int conditional_call_good() { return conditional_call(1); }
 
 void apply_block(void (^block)(void)) { block(); }
 
-// Needs analysis-time specialization
-int apply_block_specialized_bad_FN() {
+int apply_block_specialized_bad() {
   int x = 0;
   __block int* ptr = &x;
   void (^block)(void);
@@ -122,5 +121,57 @@ int apply_block_specialized_good() {
     };
   }
   apply_block(block); // Calling block assigned in if branch
+  return *ptr;
+}
+
+void apply_block_and_after(void (^block)(void), void (^after)(void)) {
+  int x = 0;
+  if (x) {
+    block = ^{
+    };
+  }
+  apply_block(block);
+  after();
+}
+
+int apply_block_and_after_specialized_bad() {
+  int x = 0;
+  __block int* ptr = &x;
+  void (^block)(void);
+  void (^after)(void);
+  if (!x) {
+    block = ^{
+      ptr = NULL;
+    };
+    after = ^{
+      int x = *ptr;
+    };
+  } else {
+    block = ^{
+    };
+    after = ^{
+    };
+  }
+  apply_block_and_after(
+      block,
+      after); // Calling block assigned in if branch. NPE when calling after
+  return *ptr;
+}
+
+int apply_block_and_after_respecialized_bad() {
+  int x = 0;
+  __block int* ptr = &x;
+  void (^block)(void);
+  if (!x) {
+    block = ^{
+      ptr = NULL;
+    };
+  } else {
+    block = ^{
+    };
+  }
+  apply_block_and_after(block, ^{
+    int x = *ptr; // NPE here
+  }); // Calling block assigned in if branch
   return *ptr;
 }

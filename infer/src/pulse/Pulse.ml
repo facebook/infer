@@ -47,13 +47,18 @@ module PulseTransferFunctions = struct
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} path ret
-      callee_pname call_exp actuals call_loc (flags : CallFlags.t) astate =
+  let interprocedural_call
+      ({InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} as analysis_data) path ret
+      callee_pname call_exp func_args call_loc (flags : CallFlags.t) astate =
+    let actuals =
+      List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+          (arg_payload, typ) )
+    in
     match callee_pname with
-    | Some callee_pname when not Config.pulse_intraprocedural_only ->
+    | Some callee_pname when not Config.pulse_intraprocedural_only -> (
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
-        let call_kind =
+        let call_kind_of call_exp =
           match call_exp with
           | Exp.Closure {captured_vars} ->
               `Closure captured_vars
@@ -62,8 +67,18 @@ module PulseTransferFunctions = struct
           | _ ->
               `ResolvedProcname
         in
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-          callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
+        match
+          PulseBlockSpecialization.make_specialized_call_exp func_args callee_pname analysis_data
+            astate
+        with
+        | Some (callee_pname, call_exp) ->
+            let formals_opt = get_pvar_formals callee_pname in
+            let callee_data = analyze_dependency callee_pname in
+            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
+              callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
+        | None ->
+            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
+              callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate )
     | _ ->
         (* dereference call expression to catch nil issues *)
         let<*> astate, _ =
@@ -206,13 +221,9 @@ module PulseTransferFunctions = struct
           model {analysis_data; path; callee_procname; location= call_loc; ret} astate
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
-          let only_actuals_evaled =
-            List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-                (arg_payload, typ) )
-          in
           let r =
-            interprocedural_call analysis_data path ret callee_pname call_exp only_actuals_evaled
-              call_loc flags astate
+            interprocedural_call analysis_data path ret callee_pname call_exp func_args call_loc
+              flags astate
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
