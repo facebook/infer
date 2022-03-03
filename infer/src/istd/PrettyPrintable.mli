@@ -218,6 +218,8 @@ module type PPUniqRankSet = sig
   (** in case an element with the same rank is present both in [lhs] and [rhs], keep the one from
       [lhs] in [union_prefer_left lhs rhs] *)
 
+  val filter : t -> f:(elt -> bool) -> t
+
   val pp : ?print_rank:bool -> F.formatter -> t -> unit
 end
 

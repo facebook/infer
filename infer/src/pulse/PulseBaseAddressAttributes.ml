@@ -42,7 +42,8 @@ let remove_one addr attribute attrs =
       attrs
   | Some old_attrs ->
       let new_attrs = Attributes.remove attribute old_attrs in
-      Graph.add addr new_attrs attrs
+      if Attributes.is_empty new_attrs then Graph.remove addr attrs
+      else Graph.add addr new_attrs attrs
 
 
 let add addr attributes attrs =
@@ -131,6 +132,12 @@ let remove_must_be_valid_attr address memory =
       memory
 
 
+let remove_unsuitable_for_summary =
+  Graph.filter_map (fun _addr attrs ->
+      let new_attrs = Attributes.remove_unsuitable_for_summary attrs in
+      if Attributes.is_empty new_attrs then None else Some new_attrs )
+
+
 let initialize address attrs =
   if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then
     remove_one address Attribute.Uninitialized attrs
@@ -200,7 +207,8 @@ let canonicalize ~get_var_repr attrs_map =
                  Attributes.union_prefer_left attrs' attrs )
         in
         add addr' attrs' g )
-    attrs_map Graph.empty
+    (remove_unsuitable_for_summary attrs_map)
+    Graph.empty
 
 
 let subst_var (v, v') attrs_map =

@@ -1095,7 +1095,8 @@ let canonicalize astate =
        contradictions *)
     let* stack' = BaseStack.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).stack in
     let+ heap' = BaseMemory.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).heap in
-    PreDomain.update ~stack:stack' ~heap:heap' pre
+    let attrs' = BaseAddressAttributes.remove_unsuitable_for_summary (pre :> BaseDomain.t).attrs in
+    PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
   in
   let canonicalize_post (post : PostDomain.t) =
     let* stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in

@@ -229,6 +229,8 @@ module Attribute = struct
         true
 
 
+  let is_suitable_for_summary _ = true
+
   let add_call timestamp proc_name call_location caller_history attr =
     let add_call_to_trace in_call =
       Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
@@ -425,6 +427,8 @@ module Attributes = struct
         if Attribute.alloc_free_match allocator invalidation is_released then None
         else allocated_opt )
 
+
+  let remove_unsuitable_for_summary = Set.filter ~f:Attribute.is_suitable_for_summary
 
   include Set
 end

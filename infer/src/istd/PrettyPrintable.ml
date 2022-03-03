@@ -278,6 +278,8 @@ module type PPUniqRankSet = sig
 
   val union_prefer_left : t -> t -> t
 
+  val filter : t -> f:(elt -> bool) -> t
+
   val pp : ?print_rank:bool -> F.formatter -> t -> unit
 end
 
@@ -354,4 +356,6 @@ module MakePPUniqRankSet
   let singleton value = add Map.empty value
 
   let union_prefer_left m1 m2 = Map.union (fun _rank value1 _value2 -> Some value1) m1 m2
+
+  let filter map ~f = Map.filter (fun _ v -> f v) map
 end

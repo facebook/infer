@@ -104,4 +104,6 @@ module Attributes : sig
   val add_call : Timestamp.t -> Procname.t -> Location.t -> ValueHistory.t -> t -> t
 
   val get_allocated_not_freed : t -> (allocator * Trace.t) option
+
+  val remove_unsuitable_for_summary : t -> t
 end
