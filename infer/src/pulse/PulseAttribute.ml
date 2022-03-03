@@ -12,18 +12,14 @@ module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
-(** Make sure we don't depend on {!AbstractValue} to avoid attributes depending on values. Otherwise
-    they become a pain to handle when comparing memory states.
+(** Ideally, we don't want attributes to depend on {!AbstractValue} because they become a pain to
+    handle when comparing memory states.
 
-    If you find you need to make attributes depend on {!AbstractValue} then remember to modify graph
-    operations of {!PulseDomain} and the interprocedural operations in {!PulseAbductiveDomain} *)
-include struct
-  [@@@warning "-60"]
-
-  module AbstractValue = struct end
-
-  module PulseAbstractValue = struct end
-end
+    If you find you need to make attributes depend on {!AbstractValue} then remember to modify 1)
+    graph operations of {!PulseDomain.GraphVisit} for reachability and interprocedural operations in
+    {!PulseAbductiveDomain} 2) application of summaries if these attributes can appear in summaries
+    and 3) canonicalisation operations in {!PulseBaseMemory.ml} as these interpret abstract values
+    in the state up to some substitution. *)
 
 module Attribute = struct
   type allocator =
@@ -58,6 +54,7 @@ module Attribute = struct
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of allocator * Trace.t
     | Closure of Procname.t
+    | CopiedVar of Var.t
     | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
@@ -66,6 +63,7 @@ module Attribute = struct
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | JavaResourceReleased
     | RefCounted
+    | SourceOriginOfCopy of PulseAbstractValue.t
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -81,15 +79,24 @@ module Attribute = struct
 
   let dummy_trace = Trace.Immediate {location= Location.dummy; history= ValueHistory.epoch}
 
+  let dummy_var =
+    let pname = Procname.from_string_c_fun "" in
+    Var.of_pvar (Pvar.mk (Mangled.from_string "") pname)
+
+
   let closure_rank = Variants.to_rank (Closure (Procname.from_string_c_fun ""))
+
+  let copied_var_rank = Variants.to_rank (CopiedVar dummy_var)
+
+  let dummy_val = PulseAbstractValue.of_id 0
+
+  let copy_origin_rank = Variants.to_rank (SourceOriginOfCopy dummy_val)
 
   let written_to_rank = Variants.to_rank (WrittenTo dummy_trace)
 
   let address_of_stack_variable_rank =
-    let pname = Procname.from_string_c_fun "" in
-    let var = Var.of_pvar (Pvar.mk (Mangled.from_string "") pname) in
     let location = Location.dummy in
-    Variants.to_rank (AddressOfStackVariable (var, location, ValueHistory.epoch))
+    Variants.to_rank (AddressOfStackVariable (dummy_var, location, ValueHistory.epoch))
 
 
   let invalid_rank =
@@ -154,6 +161,8 @@ module Attribute = struct
           trace
     | Closure pname ->
         Procname.pp f pname
+    | CopiedVar var ->
+        Var.pp f var
     | DynamicType typ ->
         F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
@@ -178,6 +187,8 @@ module Attribute = struct
         F.pp_print_string f "Released"
     | RefCounted ->
         F.fprintf f "RefCounted"
+    | SourceOriginOfCopy source ->
+        F.fprintf f "copied of source %a" PulseAbstractValue.pp source
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Uninitialized ->
@@ -198,9 +209,11 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Closure _
+    | CopiedVar _
     | DynamicType _
     | EndOfCollection
     | JavaResourceReleased
+    | SourceOriginOfCopy _
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect _
@@ -216,12 +229,14 @@ module Attribute = struct
     | AddressOfStackVariable _
     | Allocated _
     | Closure _
+    | CopiedVar _
     | DynamicType _
     | EndOfCollection
     | ISLAbduced _
     | Invalid _
     | JavaResourceReleased
     | RefCounted
+    | SourceOriginOfCopy _
     | StdVectorReserve
     | Uninitialized
     | UnknownEffect _
@@ -229,7 +244,9 @@ module Attribute = struct
         true
 
 
-  let is_suitable_for_summary _ = true
+  let is_suitable_for_summary attr =
+    match attr with CopiedVar _ | SourceOriginOfCopy _ -> false | _ -> true
+
 
   let add_call timestamp proc_name call_location caller_history attr =
     let add_call_to_trace in_call =
@@ -256,10 +273,12 @@ module Attribute = struct
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Closure _
+      | CopiedVar _
       | DynamicType _
       | EndOfCollection
       | JavaResourceReleased
       | RefCounted
+      | SourceOriginOfCopy _
       | StdVectorReserve
       | UnreachableAt _
       | Uninitialized ) as attr ->
@@ -311,6 +330,20 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.Closure proc_name) = attr in
            proc_name )
+
+
+  let get_copied_var attrs =
+    Set.find_rank attrs Attribute.copied_var_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.CopiedVar var) = attr in
+           var )
+
+
+  let get_source_origin_of_copy attrs =
+    Set.find_rank attrs Attribute.copy_origin_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.SourceOriginOfCopy source) = attr in
+           source )
 
 
   let get_address_of_stack_variable attrs =

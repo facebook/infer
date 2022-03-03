@@ -549,9 +549,10 @@ module PulseTransferFunctions = struct
             dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
           in
-          ( astates
-          , path
-          , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals astates astate_n )
+          let astate_n, astates =
+            PulseNonDisjunctiveOperations.add_copies loc call_exp actuals astates astate_n
+          in
+          (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
           let prune_result = PulseOperations.prune path loc ~condition astate in
           let path =

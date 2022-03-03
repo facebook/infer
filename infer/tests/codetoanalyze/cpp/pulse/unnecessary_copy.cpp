@@ -154,13 +154,24 @@ Arr& get_cond_arr_ref(Arr& arr1, Arr& arr2, bool cond) {
   }
 }
 
-// copy tracking is limited to a single disjunct (e.g tracks arr1), hence we
-// mistakenly think that copy is modified here (when we compare current arr2
-// with tracked arr1)
-void copy_in_both_cases_bad_FN(bool cond) {
+void copy_in_both_cases_bad(bool cond) {
   Arr arr1;
   Arr arr2;
   auto copy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+}
+
+void copy_in_both_cases_mod_ok(bool cond) {
+  Arr arr1;
+  Arr arr2;
+  auto copy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+  copy.arr[0] = 9;
+}
+
+void copy_in_both_cases_source_mod_ok(bool cond) {
+  Arr arr1;
+  Arr arr2;
+  auto copy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+  arr1.arr[0] = 9;
 }
 
 void copy_in_both_cases_branch_bad(bool cond) {

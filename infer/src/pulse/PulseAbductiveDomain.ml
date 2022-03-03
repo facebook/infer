@@ -293,6 +293,14 @@ module AddressAttributes = struct
     BaseAddressAttributes.get_allocation addr (astate.post :> base_domain).attrs
 
 
+  let get_copied_var addr astate =
+    BaseAddressAttributes.get_copied_var addr (astate.post :> base_domain).attrs
+
+
+  let get_source_origin_of_copy addr astate =
+    BaseAddressAttributes.get_source_origin_of_copy addr (astate.post :> base_domain).attrs
+
+
   let add_dynamic_type typ address astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.add_dynamic_type typ address)
 

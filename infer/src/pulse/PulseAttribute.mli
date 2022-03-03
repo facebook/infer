@@ -29,6 +29,7 @@ type t =
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Allocated of allocator * Trace.t
   | Closure of Procname.t
+  | CopiedVar of Var.t  (** records the copied var for each source address *)
   | DynamicType of Typ.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
@@ -37,6 +38,9 @@ type t =
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
   | JavaResourceReleased
   | RefCounted
+  | SourceOriginOfCopy of PulseAbstractValue.t
+      (** records the source value for a given copy to lookup the appropriate heap in non-disj
+          domain *)
   | StdVectorReserve
   | Uninitialized
   | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -61,6 +65,10 @@ module Attributes : sig
   val get_address_of_stack_variable : t -> (Var.t * Location.t * ValueHistory.t) option
 
   val get_closure_proc_name : t -> Procname.t option
+
+  val get_copied_var : t -> Var.t option
+
+  val get_source_origin_of_copy : t -> PulseAbstractValue.t option
 
   val get_allocation : t -> (allocator * Trace.t) option
 

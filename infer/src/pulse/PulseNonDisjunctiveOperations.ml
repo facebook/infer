@@ -23,7 +23,7 @@ let get_var_opt args =
 
 
 let add_copies location call_exp actuals astates astate_non_disj =
-  List.fold astates ~init:astate_non_disj
+  List.fold_map astates ~init:astate_non_disj
     ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
       match (exec_state, (call_exp : Exp.t), actuals) with
       | ( ContinueProgram disjunct
@@ -34,14 +34,21 @@ let add_copies location call_exp actuals astates astate_non_disj =
           if Var.appears_in_source_code copied_var then
             let heap = (disjunct.post :> BaseDomain.t).heap in
             let copied = NonDisjDomain.Copied {heap; location} in
-            let source_opt =
+            let source_addr_opt =
               let open IOption.Let_syntax in
               let* source_var = get_var_opt rest_args in
-              let+ source, _ = Stack.find_opt source_var disjunct in
-              source
+              let+ source_addr, _ = Stack.find_opt source_var disjunct in
+              source_addr
             in
-            NonDisjDomain.add ~source_opt copied_var copied astate_non_disj
-          else astate_non_disj
+            let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
+            let disjunct' =
+              Option.value_map source_addr_opt ~default:disjunct ~f:(fun source_addr ->
+                  AddressAttributes.add_one source_addr (CopiedVar copied_var) disjunct
+                  |> AddressAttributes.add_one copy_addr (SourceOriginOfCopy source_addr) )
+            in
+            ( NonDisjDomain.add copied_var ~source_addr_opt copied astate_non_disj
+            , ExecutionDomain.continue disjunct' )
+          else (astate_non_disj, exec_state)
       | ExceptionRaised _, _, _
       | ISLLatentMemoryError _, _, _
       | AbortProgram _, _, _
@@ -49,7 +56,7 @@ let add_copies location call_exp actuals astates astate_non_disj =
       | ExitProgram _, _, _
       | LatentAbortProgram _, _, _
       | LatentInvalidAccess _, _, _ ->
-          astate_non_disj )
+          (astate_non_disj, exec_state) )
 
 
 let get_matching_dest_addr_opt (edges_curr, attr_curr) edges_orig : AbstractValue.t list option =
@@ -107,9 +114,9 @@ let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
   aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
 
 
-let mark_modified_copy_at ~address ?(is_source = false) var astate (astate_n : NonDisjDomain.t) :
-    NonDisjDomain.t =
-  NonDisjDomain.mark_copy_as_modified var astate_n ~is_modified:(fun copy_heap ->
+let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) var astate
+    (astate_n : NonDisjDomain.t) : NonDisjDomain.t =
+  NonDisjDomain.mark_copy_as_modified var ~source_addr_opt astate_n ~is_modified:(fun copy_heap ->
       let reachable_addresses_from_copy =
         BaseDomain.reachable_addresses_from
           (Caml.List.to_seq [address])
@@ -135,14 +142,15 @@ let mark_modified_copies vars astate astate_n =
   let mark_modified_copy var default =
     Stack.find_opt var astate
     |> Option.value_map ~default ~f:(fun (address, _history) ->
-           let () = Logging.d_printfln_escaped "Check address %a" AbstractValue.pp address in
-           mark_modified_copy_at ~address var astate default )
+           let source_addr_opt = AddressAttributes.get_source_origin_of_copy address astate in
+           mark_modified_address_at ~address ~source_addr_opt var astate default )
   in
   List.fold vars ~init:astate_n ~f:(fun astate_n var ->
       (let open IOption.Let_syntax in
-      let* source, _ = Stack.find_opt var astate in
-      let+ copy_var = NonDisjDomain.find_copy ~source astate_n in
-      mark_modified_copy_at ~address:source ~is_source:true copy_var astate astate_n)
+      let* source_addr, _ = Stack.find_opt var astate in
+      let+ copy_var = AddressAttributes.get_copied_var source_addr astate in
+      mark_modified_address_at ~address:source_addr ~source_addr_opt:(Some source_addr)
+        ~is_source:true copy_var astate astate_n)
       |> Option.value ~default:(mark_modified_copy var astate_n) )
 
 
