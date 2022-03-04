@@ -281,6 +281,11 @@ module AddressAttributes = struct
     else abduce_attribute addr (MustBeInitialized (path.PathContext.timestamp, access_trace)) astate
 
 
+  let check_not_tainted path sink trace addr astate =
+    let+ () = BaseAddressAttributes.check_not_tainted addr (astate.post :> base_domain).attrs in
+    abduce_attribute addr (MustNotBeTainted (path.PathContext.timestamp, sink, trace)) astate
+
+
   (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
   let map_post_attrs ~f astate =
     let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in

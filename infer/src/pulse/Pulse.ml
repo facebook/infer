@@ -304,6 +304,9 @@ module PulseTransferFunctions = struct
           r
     in
     let exec_states_res =
+      PulseTaintOperations.call path call_loc callee_pname func_args ret exec_states_res
+    in
+    let exec_states_res =
       if Topl.is_active () then
         match callee_pname with
         | Some callee_pname ->

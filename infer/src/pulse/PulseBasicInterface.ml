@@ -17,6 +17,7 @@ module Invalidation = PulseInvalidation
 module PathCondition = PulsePathCondition
 module SatUnsat = PulseSatUnsat
 module SkippedCalls = PulseSkippedCalls
+module Taint = PulseTaint
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -38,6 +39,7 @@ include struct
   module PulseTimestamp = PulseTimestamp [@@deprecated "use the short form Timestamp instead"]
   module PulseSkippedCalls = PulseSkippedCalls
   [@@deprecated "use the short form SkippedCalls instead"]
+  module PulseTaint = PulseTaint [@@deprecated "use the short form Taint instead"]
   module PulseTrace = PulseTrace [@@deprecated "use the short form Trace instead"]
   module PulseValueHistory = PulseValueHistory
   [@@deprecated "use the short form ValueHistory instead"]

@@ -103,6 +103,16 @@ let check_initialized address attrs =
   else Ok ()
 
 
+let check_not_tainted address attrs =
+  L.d_printfln "Checking that %a is not tainted" AbstractValue.pp address ;
+  match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_tainted with
+  | None ->
+      Ok ()
+  | Some ((source, _hist) as taint_hist) ->
+      L.d_printfln ~color:Red "TAINTED: %a" Taint.pp_source source ;
+      Error taint_hist
+
+
 let get_attribute getter address attrs =
   let open Option.Monad_infix in
   Graph.find_opt address attrs >>= getter
@@ -155,6 +165,8 @@ let get_source_origin_of_copy = get_attribute Attributes.get_source_origin_of_co
 let get_invalid = get_attribute Attributes.get_invalid
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
+
+let get_must_not_be_tainted = get_attribute Attributes.get_must_not_be_tainted
 
 let is_must_be_valid_or_allocated_isl address attrs =
   Option.is_some (get_must_be_valid address attrs)

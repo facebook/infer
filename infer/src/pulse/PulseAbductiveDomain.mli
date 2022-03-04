@@ -134,6 +134,14 @@ module AddressAttributes : sig
 
   val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
+  val check_not_tainted :
+       PathContext.t
+    -> Taint.sink
+    -> Trace.t
+    -> AbstractValue.t
+    -> t
+    -> (t, Taint.source * ValueHistory.t) result
+
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t

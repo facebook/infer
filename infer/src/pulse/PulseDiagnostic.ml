@@ -12,6 +12,7 @@ module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
 module Decompiler = PulseDecompiler
 module Invalidation = PulseInvalidation
+module Taint = PulseTaint
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -54,6 +55,11 @@ type t =
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
+  | TaintFlow of
+      { tainted: Decompiler.expr
+      ; source: Taint.source * ValueHistory.t
+      ; sink: Taint.sink * Trace.t
+      ; location: Location.t }
   | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]
 
@@ -76,6 +82,7 @@ let get_location = function
   | ErlangError (If_clause {location})
   | ErlangError (Try_clause {location})
   | StackVariableAddressEscape {location}
+  | TaintFlow {location}
   | UnnecessaryCopy {location} ->
       location
 
@@ -96,8 +103,12 @@ let aborts_execution = function
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       true
-  | StackVariableAddressEscape _ | UnnecessaryCopy _ | RetainCycle _ | MemoryLeak _ | ResourceLeak _
-    ->
+  | MemoryLeak _
+  | ResourceLeak _
+  | RetainCycle _
+  | StackVariableAddressEscape _
+  | TaintFlow _
+  | UnnecessaryCopy _ ->
       false
 
 
@@ -310,6 +321,10 @@ let get_message diagnostic =
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
       F.asprintf "Address of %a is returned by the function" pp_var variable
+  | TaintFlow {tainted; source= source, _; sink= sink, _} ->
+      (* TODO: say what line the source happened in the current function *)
+      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp_source
+        source Taint.pp_sink sink
   | UnnecessaryCopy {variable; location} ->
       F.asprintf
         "copied variable `%a` is not modified after it is copied on %a. Consider using a reference \
@@ -453,6 +468,13 @@ let get_trace = function
       @@
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]
+  | TaintFlow {source= _, source_history; sink= sink, sink_trace} ->
+      (* TODO: the sink trace includes the history for the source, creating duplicate information in
+         the trace. The history in the sink can also go further into source code than we want if the
+         source is a function that we analyze. *)
+      ValueHistory.add_to_errlog ~nesting:0 source_history
+      @@ Trace.add_to_errlog ~nesting:0 ~pp_immediate:(fun fmt -> Taint.pp_sink fmt sink) sink_trace
+      @@ []
   | UnnecessaryCopy {location; _} ->
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "copied here" []]
@@ -503,3 +525,5 @@ let get_issue_type ~latent issue_type =
       IssueType.no_matching_branch_in_try ~latent
   | ReadUninitializedValue _, _ ->
       IssueType.uninitialized_value_pulse ~latent
+  | TaintFlow _, _ ->
+      IssueType.taint_error

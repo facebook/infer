@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
+module Taint = PulseTaint
 module Timestamp = PulseTimestamp
 
 type event =
@@ -28,6 +29,7 @@ type event =
   | NilMessaging of Location.t * Timestamp.t
   | Returned of Location.t * Timestamp.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t * Timestamp.t
+  | TaintSource of Taint.source * Location.t * Timestamp.t
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
@@ -72,6 +74,7 @@ let location_of_event = function
   | NilMessaging (location, _)
   | Returned (location, _)
   | StructFieldAddressCreated (_, location, _)
+  | TaintSource (_, location, _)
   | VariableAccessed (_, location, _)
   | VariableDeclared (_, location, _) ->
       location
@@ -89,6 +92,7 @@ let timestamp_of_event = function
   | NilMessaging (_, timestamp)
   | Returned (_, timestamp)
   | StructFieldAddressCreated (_, _, timestamp)
+  | TaintSource (_, _, timestamp)
   | VariableAccessed (_, _, timestamp)
   | VariableDeclared (_, _, timestamp) ->
       timestamp
@@ -244,6 +248,8 @@ let pp_event_no_location fmt event =
       F.pp_print_string fmt "returned"
   | StructFieldAddressCreated (field_names, _, _) ->
       F.fprintf fmt "struct field address `%a` created" pp_fields field_names
+  | TaintSource (taint_source, _, _) ->
+      F.fprintf fmt "source of the taint here: %a" Taint.pp_source taint_source
   | VariableAccessed (pvar, _, _) ->
       F.fprintf fmt "%a accessed here" pp_pvar pvar
   | VariableDeclared (pvar, _, _) ->

@@ -8,6 +8,7 @@ open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
+module Taint = PulseTaint
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -61,10 +62,12 @@ module Attribute = struct
     | ISLAbduced of Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
+    | MustNotBeTainted of Timestamp.t * Taint.sink * Trace.t
     | JavaResourceReleased
     | RefCounted
     | SourceOriginOfCopy of PulseAbstractValue.t
     | StdVectorReserve
+    | Tainted of Taint.source * ValueHistory.t
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
@@ -105,6 +108,12 @@ module Attribute = struct
 
   let java_resource_released_rank = Variants.to_rank JavaResourceReleased
 
+  let must_not_be_tainted_rank =
+    let dummy_proc_name = Procname.from_string_c_fun "" in
+    Variants.to_rank
+      (MustNotBeTainted (Timestamp.t0, Taint.PassedAsArgumentTo dummy_proc_name, dummy_trace))
+
+
   let must_be_valid_rank = Variants.to_rank (MustBeValid (Timestamp.t0, dummy_trace, None))
 
   let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
@@ -118,6 +127,19 @@ module Attribute = struct
   let end_of_collection_rank = Variants.to_rank EndOfCollection
 
   let isl_abduced_rank = Variants.to_rank (ISLAbduced dummy_trace)
+
+  let tainted_rank =
+    let dummy_proc_name = Procname.from_string_c_fun "" in
+    Variants.to_rank (Tainted (ReturnValue dummy_proc_name, ValueHistory.epoch))
+
+
+  let uninitialized_rank = Variants.to_rank Uninitialized
+
+  let unknown_effect_rank = Variants.to_rank (UnknownEffect (Model "", ValueHistory.epoch))
+
+  let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
+
+  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized (Timestamp.t0, dummy_trace))
 
   let isl_subset attr1 attr2 =
     match (attr1, attr2) with
@@ -137,14 +159,6 @@ module Attribute = struct
     | _ ->
         true
 
-
-  let uninitialized_rank = Variants.to_rank Uninitialized
-
-  let unknown_effect_rank = Variants.to_rank (UnknownEffect (Model "", ValueHistory.epoch))
-
-  let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
-
-  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized (Timestamp.t0, dummy_trace))
 
   let pp f attribute =
     let pp_string_if_debug string fmt =
@@ -183,6 +197,11 @@ module Attribute = struct
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
           trace Invalidation.pp_must_be_valid_reason reason
           (timestamp :> int)
+    | MustNotBeTainted (timestamp, sink, trace) ->
+        F.fprintf f "MustNotBeTainted(%a, t=%d)"
+          (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp_sink fmt sink))
+          trace
+          (timestamp :> int)
     | JavaResourceReleased ->
         F.pp_print_string f "Released"
     | RefCounted ->
@@ -191,6 +210,8 @@ module Attribute = struct
         F.fprintf f "copied of source %a" PulseAbstractValue.pp source
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
+    | Tainted (source, hist) ->
+        F.fprintf f "Tainted(%a,%a)" Taint.pp_source source ValueHistory.pp hist
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
     | UnknownEffect (call, hist) ->
@@ -202,7 +223,7 @@ module Attribute = struct
 
 
   let is_suitable_for_pre = function
-    | MustBeValid _ | MustBeInitialized _ | RefCounted ->
+    | MustBeValid _ | MustBeInitialized _ | MustNotBeTainted _ | RefCounted ->
         true
     | Invalid _ | Allocated _ | ISLAbduced _ ->
         Config.pulse_isl
@@ -215,6 +236,7 @@ module Attribute = struct
     | JavaResourceReleased
     | SourceOriginOfCopy _
     | StdVectorReserve
+    | Tainted _
     | Uninitialized
     | UnknownEffect _
     | UnreachableAt _
@@ -223,7 +245,7 @@ module Attribute = struct
 
 
   let is_suitable_for_post = function
-    | MustBeInitialized _ | MustBeValid _ | UnreachableAt _ ->
+    | MustBeInitialized _ | MustBeValid _ | MustNotBeTainted _ | UnreachableAt _ ->
         false
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
@@ -238,6 +260,7 @@ module Attribute = struct
     | RefCounted
     | SourceOriginOfCopy _
     | StdVectorReserve
+    | Tainted _
     | Uninitialized
     | UnknownEffect _
     | WrittenTo _ ->
@@ -252,6 +275,9 @@ module Attribute = struct
     let add_call_to_trace in_call =
       Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
     in
+    let add_call_to_history in_call =
+      ValueHistory.singleton (Call {f= Call proc_name; location= call_location; in_call; timestamp})
+    in
     match attr with
     | Allocated (proc_name, trace) ->
         Allocated (proc_name, add_call_to_trace trace)
@@ -263,11 +289,12 @@ module Attribute = struct
         MustBeValid (timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized (_timestamp, trace) ->
         MustBeInitialized (timestamp, add_call_to_trace trace)
+    | MustNotBeTainted (_timestamp, sink, trace) ->
+        MustNotBeTainted (timestamp, sink, add_call_to_trace trace)
+    | Tainted (source, hist) ->
+        Tainted (source, add_call_to_history hist)
     | UnknownEffect (call, hist) ->
-        UnknownEffect
-          ( call
-          , ValueHistory.singleton
-              (Call {f= Call proc_name; location= call_location; in_call= hist; timestamp}) )
+        UnknownEffect (call, add_call_to_history hist)
     | WrittenTo trace ->
         WrittenTo (add_call_to_trace trace)
     | ( AddressOfCppTemporary _
@@ -307,6 +334,13 @@ module Attributes = struct
            (invalidation, trace) )
 
 
+  let get_tainted attrs =
+    Set.find_rank attrs Attribute.tainted_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.Tainted (source, hist)) = attr in
+           (source, hist) )
+
+
   let is_java_resource_released attrs =
     Set.find_rank attrs Attribute.java_resource_released_rank |> Option.is_some
 
@@ -316,6 +350,13 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.MustBeValid (timestamp, trace, reason)) = attr in
            (timestamp, trace, reason) )
+
+
+  let get_must_not_be_tainted attrs =
+    Set.find_rank attrs Attribute.must_not_be_tainted_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.MustNotBeTainted (timestamp, sink, trace)) = attr in
+           (timestamp, sink, trace) )
 
 
   let get_written_to attrs =

@@ -713,17 +713,28 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
           | Some must_be_valid_data ->
               (addr_hist_caller, `MustBeValid must_be_valid_data) :: to_check
         in
+        let to_check =
+          match
+            BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs
+          with
+          | None ->
+              to_check
+          | Some must_be_init_data ->
+              (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check
+        in
         match
-          BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs
+          BaseAddressAttributes.get_must_not_be_tainted addr_pre (pre :> BaseDomain.t).attrs
         with
         | None ->
             to_check
-        | Some must_be_init_data ->
-            (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check )
+        | Some must_not_be_tainted_data ->
+            (addr_hist_caller, `MustNotBeTainted must_not_be_tainted_data) :: to_check )
       call_state.subst []
   in
   let timestamp_of_check = function
-    | `MustBeValid (timestamp, _, _) | `MustBeInitialized (timestamp, _) ->
+    | `MustBeValid (timestamp, _, _)
+    | `MustBeInitialized (timestamp, _)
+    | `MustNotBeTainted (timestamp, _, _) ->
         timestamp
   in
   List.sort addresses_to_check ~compare:(fun (_, check1) (_, check2) ->
@@ -762,6 +773,20 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                       addr_caller ;
                     AccessResult.ReportableError
                       { diagnostic= ReadUninitializedValue {calling_context= []; trace= access_trace}
+                      ; astate } )
+         | `MustNotBeTainted (_timestamp, sink, callee_access_trace) ->
+             let access_trace = mk_access_trace callee_access_trace in
+             AddressAttributes.check_not_tainted path sink access_trace addr_caller astate
+             |> Result.map_error ~f:(fun source ->
+                    L.d_printfln ~color:Red "ERROR: caller's %a is tainted!" AbstractValue.pp
+                      addr_caller ;
+                    AccessResult.ReportableError
+                      { diagnostic=
+                          TaintFlow
+                            { location= call_location
+                            ; source
+                            ; sink= (sink, access_trace)
+                            ; tainted= Decompiler.find addr_caller astate }
                       ; astate } ) )
 
 
