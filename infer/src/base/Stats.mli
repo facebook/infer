@@ -34,6 +34,12 @@ val add_to_restart_scheduler_total_time : ExecutionDuration.t -> unit
 
 val add_to_restart_scheduler_useful_time : ExecutionDuration.t -> unit
 
+val incr_pulse_aliasing_contradictions : unit -> unit
+
+val incr_pulse_args_length_contradictions : unit -> unit
+
+val incr_pulse_captured_vars_length_contradictions : unit -> unit
+
 val add_pulse_summaries_count : int -> unit
 
 val add_proc_duration : string -> int -> unit

@@ -86,6 +86,17 @@ let pp_contradiction fmt = function
       F.pp_print_string fmt "pre does not imply call state"
 
 
+let log_contradiction = function
+  | Aliasing _ ->
+      Stats.incr_pulse_aliasing_contradictions ()
+  | FormalActualLength _ ->
+      Stats.incr_pulse_args_length_contradictions ()
+  | CapturedFormalActualLength _ ->
+      Stats.incr_pulse_captured_vars_length_contradictions ()
+  | ISLPreconditionMismatch | PathCondition ->
+      ()
+
+
 exception Contradiction of contradiction
 
 let fold_globals_of_stack ({PathContext.timestamp} as path) call_loc stack call_state ~f =
@@ -861,6 +872,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
       (* can't make sense of the pre-condition in the current context: give up on that particular
          pre/post pair *)
       L.d_printfln "Cannot apply precondition: %a" pp_contradiction reason ;
+      log_contradiction reason ;
       Unsat
   | result -> (
     try
@@ -907,4 +919,5 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
         (astate, return_caller, call_state.subst))
     with Contradiction reason ->
       L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
+      log_contradiction reason ;
       Unsat )

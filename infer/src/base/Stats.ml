@@ -59,6 +59,9 @@ include struct
     ; mutable proc_locker_unlock_time: ExecutionDuration.t
     ; mutable restart_scheduler_useful_time: ExecutionDuration.t
     ; mutable restart_scheduler_total_time: ExecutionDuration.t
+    ; mutable pulse_aliasing_contradictions: int
+    ; mutable pulse_args_length_contradictions: int
+    ; mutable pulse_captured_vars_length_contradictions: int
     ; mutable pulse_summaries_count: int PulseSumCountMap.t }
   [@@deriving fields]
 end
@@ -78,6 +81,9 @@ let global_stats =
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
   ; restart_scheduler_total_time= ExecutionDuration.zero
+  ; pulse_aliasing_contradictions= 0
+  ; pulse_args_length_contradictions= 0
+  ; pulse_captured_vars_length_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty }
 
 
@@ -125,6 +131,14 @@ let add_to_restart_scheduler_total_time execution_duration =
   add Fields.restart_scheduler_total_time execution_duration
 
 
+let incr_pulse_aliasing_contradictions () = incr Fields.pulse_aliasing_contradictions
+
+let incr_pulse_args_length_contradictions () = incr Fields.pulse_args_length_contradictions
+
+let incr_pulse_captured_vars_length_contradictions () =
+  incr Fields.pulse_captured_vars_length_contradictions
+
+
 let add_pulse_summaries_count n =
   update_with Fields.pulse_summaries_count ~f:(fun counters ->
       PulseSumCountMap.update n (fun i -> Some (1 + Option.value ~default:0 i)) counters )
@@ -150,6 +164,9 @@ let copy from ~into : unit =
       ; proc_locker_unlock_time
       ; restart_scheduler_useful_time
       ; restart_scheduler_total_time
+      ; pulse_aliasing_contradictions
+      ; pulse_args_length_contradictions
+      ; pulse_captured_vars_length_contradictions
       ; pulse_summaries_count } =
     from
   in
@@ -157,7 +174,8 @@ let copy from ~into : unit =
     ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed
     ~ondemand_local_cache_hits ~ondemand_local_cache_misses ~proc_locker_lock_time
     ~proc_locker_unlock_time ~restart_scheduler_useful_time ~restart_scheduler_total_time
-    ~pulse_summaries_count
+    ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
+    ~pulse_captured_vars_length_contradictions ~pulse_summaries_count
 
 
 let merge stats1 stats2 =
@@ -181,6 +199,13 @@ let merge stats1 stats2 =
         stats2.restart_scheduler_useful_time
   ; restart_scheduler_total_time=
       ExecutionDuration.add stats1.restart_scheduler_total_time stats2.restart_scheduler_total_time
+  ; pulse_aliasing_contradictions=
+      stats1.pulse_aliasing_contradictions + stats2.pulse_aliasing_contradictions
+  ; pulse_args_length_contradictions=
+      stats1.pulse_args_length_contradictions + stats2.pulse_args_length_contradictions
+  ; pulse_captured_vars_length_contradictions=
+      stats1.pulse_captured_vars_length_contradictions
+      + stats2.pulse_captured_vars_length_contradictions
   ; pulse_summaries_count=
       PulseSumCountMap.merge
         (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
@@ -200,6 +225,9 @@ let initial =
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
   ; restart_scheduler_total_time= ExecutionDuration.zero
+  ; pulse_aliasing_contradictions= 0
+  ; pulse_args_length_contradictions= 0
+  ; pulse_captured_vars_length_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty }
 
 
@@ -246,6 +274,9 @@ let pp f stats =
       ~proc_locker_unlock_time:(pp_execution_duration_field stats f)
       ~restart_scheduler_useful_time:(pp_execution_duration_field stats f)
       ~restart_scheduler_total_time:(pp_execution_duration_field stats f)
+      ~pulse_aliasing_contradictions:(pp_int_field stats f)
+      ~pulse_args_length_contradictions:(pp_int_field stats f)
+      ~pulse_captured_vars_length_contradictions:(pp_int_field stats f)
       ~pulse_summaries_count:(pp_pulse_summaries_count stats f)
   in
   F.fprintf f "@[Backend stats:@\n@[<v2>  %t@]@]@." (pp_stats stats)
@@ -283,7 +314,9 @@ let log_to_scuba stats =
       ~ondemand_procs_analyzed:create_counter ~ondemand_local_cache_hits:create_counter
       ~ondemand_local_cache_misses:create_counter ~proc_locker_lock_time:create_time_entry
       ~proc_locker_unlock_time:create_time_entry ~restart_scheduler_useful_time:create_time_entry
-      ~restart_scheduler_total_time:create_time_entry
+      ~restart_scheduler_total_time:create_time_entry ~pulse_aliasing_contradictions:create_counter
+      ~pulse_args_length_contradictions:create_counter
+      ~pulse_captured_vars_length_contradictions:create_counter
       ~pulse_summaries_count:create_pulse_summaries_count_entry
     |> List.concat
   in
