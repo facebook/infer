@@ -65,10 +65,10 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
 
 let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t) =
   match diagnostic with
+  | ErlangError _
   | MemoryLeak _
   | ResourceLeak _
   | RetainCycle _
-  | ErlangError _
   | ReadUninitializedValue _
   | StackVariableAddressEscape _
   | UnnecessaryCopy _ ->
@@ -85,9 +85,17 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
     true )
   else
     match Procdesc.get_proc_name proc_desc with
-    | Procname.Java jn ->
-        is_nullsafe_error tenv ~is_nullptr_dereference jn
-        || not (AbductiveDomain.skipped_calls_match_pattern astate)
+    | Procname.Java jn when is_nullptr_dereference ->
+        let b = is_nullsafe_error tenv ~is_nullptr_dereference jn in
+        if b then (
+          L.d_printfln ~color:Red "Dropping error: conflicting with nullsafe" ;
+          b )
+        else
+          let b = not (AbductiveDomain.skipped_calls_match_pattern astate) in
+          if b then
+            L.d_printfln ~color:Red
+              "Dropping error: skipped an unknown function not in the allow list" ;
+          b
     | _ ->
         false
 
@@ -156,9 +164,7 @@ let report_summary_error tenv proc_desc err_log (access_error : AccessResult.sum
       Some (ISLLatentMemoryError astate)
   | ReportableErrorSummary {astate; diagnostic} -> (
       let is_nullptr_dereference =
-        IssueType.equal
-          (Diagnostic.get_issue_type ~latent:false diagnostic)
-          (IssueType.nullptr_dereference ~latent:false)
+        match diagnostic with AccessToInvalidAddress _ -> true | _ -> false
       in
       let is_constant_deref_without_invalidation =
         is_constant_deref_without_invalidation_diagnostic diagnostic
@@ -169,11 +175,11 @@ let report_summary_error tenv proc_desc err_log (access_error : AccessResult.sum
       in
       match LatentIssue.should_report astate diagnostic with
       | `ReportNow ->
-          if is_suppressed then L.d_printfln "suppressed error" ;
+          if is_suppressed then L.d_printfln "ReportNow suppressed error" ;
           report ~latent:false ~is_suppressed proc_desc err_log diagnostic ;
           if Diagnostic.aborts_execution diagnostic then Some (AbortProgram astate) else None
       | `DelayReport latent_issue ->
-          if is_suppressed then L.d_printfln "suppressed error" ;
+          if is_suppressed then L.d_printfln "DelayReport suppressed error" ;
           if Config.pulse_report_latent_issues then
             report_latent_issue ~is_suppressed proc_desc err_log latent_issue ;
           Some (LatentAbortProgram {astate; latent_issue}) )
