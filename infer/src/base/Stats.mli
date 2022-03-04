@@ -36,6 +36,8 @@ val add_to_restart_scheduler_useful_time : ExecutionDuration.t -> unit
 
 val add_pulse_summaries_count : int -> unit
 
+val add_proc_duration : string -> int -> unit
+
 val reset : unit -> unit
 (** reset all stats *)
 

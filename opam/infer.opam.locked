@@ -24,6 +24,7 @@ depends: [
   "base64" {= "3.5.0"}
   "base_bigstring" {= "v0.14.0"}
   "base_quickcheck" {= "v0.14.1"}
+  "bheap" {= "2.0.0"}
   "bigarray-compat" {= "1.1.0"}
   "bin_prot" {= "v0.14.0"}
   "biniou" {= "1.2.1"}

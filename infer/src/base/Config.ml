@@ -2736,6 +2736,12 @@ and threadsafe_aliases =
     "Specify custom annotations that should be considered aliases of @ThreadSafe"
 
 
+and top_longest_proc_duration_size =
+  CLOpt.mk_int_opt ~long:"top-longest-proc-duration-size" ~default:10
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Number of procedures for which we track longest analysis duration info."
+
+
 and trace_events =
   CLOpt.mk_bool ~long:"trace-events"
     (Printf.sprintf "Emit Chrome performance trace events in %s"
@@ -3754,6 +3760,8 @@ and profiler_samples = !profiler_samples
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
+
+and top_longest_proc_duration_size = !top_longest_proc_duration_size
 
 and topl_max_conjuncts = !topl_max_conjuncts
 

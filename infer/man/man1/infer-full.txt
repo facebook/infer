@@ -1428,6 +1428,10 @@ OPTIONS
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
 
+       --top-longest-proc-duration-size int
+           Number of procedures for which we track longest analysis duration
+           info.           See also infer-analyze(1).
+
        --topl
            Activates: checker topl: Detect errors based on user-provided
            state machines describing temporal properties over multiple
@@ -2368,6 +2372,9 @@ INTERNAL OPTIONS
        --testing-mode
            Activates: Mode for testing, where no headers are translated, and
            dot files are created (clang only) (Conversely: --no-testing-mode)
+
+       --top-longest-proc-duration-size-reset
+           Cancel the effect of --top-longest-proc-duration-size.
 
        --topl-max-conjuncts int
            Stop tracking states that have at least int conjuncts
