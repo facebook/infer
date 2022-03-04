@@ -110,13 +110,24 @@ let immediate_or_first_call calling_context (trace : Trace.t) =
 
 let pulse_start_msg = "Pulse found a potential"
 
-let pp_context_message pp_if_no_context issue_kind_str calling_context fmt =
+let pp_calling_context_prefix fmt calling_context =
   match calling_context with
   | [] ->
-      pp_if_no_context fmt
-  | (call_event, _) :: _ ->
-      F.fprintf fmt "The call to %a may indirectly trigger %s" CallEvent.pp call_event
-        issue_kind_str
+      ()
+  | [(call_event, _)] ->
+      F.fprintf fmt "The call to %a may trigger the following issue: " CallEvent.pp call_event
+  | [(call_event1, _); (call_event2, _)] ->
+      F.fprintf fmt "The call to %a in turn calls %a and may trigger the following issue: "
+        CallEvent.pp call_event1 CallEvent.pp call_event2
+  | (call_event, _) :: _ :: _ :: _ ->
+      let in_between_calls = List.length calling_context - 2 in
+      F.fprintf fmt
+        "The call to %a ends up calling %a (after %d more call%s) and may trigger the following \
+         issue: "
+        CallEvent.pp call_event CallEvent.pp
+        (List.last_exn calling_context |> fst)
+        in_between_calls
+        (if in_between_calls > 1 then "s" else "")
 
 
 let get_message diagnostic =
@@ -162,13 +173,9 @@ let get_message diagnostic =
           let {Location.line; _} = Trace.get_outer_location invalidation_trace in
           line
         in
-        F.asprintf "%t"
-          (pp_context_message
-             (fun fmt ->
-               F.fprintf fmt "%s %a%a." pulse_start_msg
-                 (pp_invalidation_trace invalidation_line)
-                 invalidation_trace pp_access_trace access_trace )
-             ("a " ^ issue_kind_str) calling_context )
+        F.asprintf "%a%s %a%a." pp_calling_context_prefix calling_context pulse_start_msg
+          (pp_invalidation_trace invalidation_line)
+          invalidation_trace pp_access_trace access_trace
     | _ ->
         (* The goal is to get one of the following messages depending on the scenario:
 
@@ -207,13 +214,9 @@ let get_message diagnostic =
           let {Location.line; _} = Trace.get_outer_location invalidation_trace in
           line
         in
-        F.asprintf "%t"
-          (pp_context_message
-             (fun fmt ->
-               F.fprintf fmt "%a%a" pp_access_trace access_trace
-                 (pp_invalidation_trace invalidation_line invalidation)
-                 invalidation_trace )
-             "an invalid access" calling_context ) )
+        F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
+          (pp_invalidation_trace invalidation_line invalidation)
+          invalidation_trace )
   | MemoryLeak {allocator; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
