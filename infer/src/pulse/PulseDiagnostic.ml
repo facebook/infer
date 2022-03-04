@@ -110,8 +110,6 @@ let immediate_or_first_call calling_context (trace : Trace.t) =
       `Call f
 
 
-let pulse_start_msg = "Pulse found a potential"
-
 let pp_calling_context_prefix fmt calling_context =
   match calling_context with
   | [] ->
@@ -229,9 +227,8 @@ let get_message diagnostic =
             F.fprintf fmt "by `%a`, indirectly via call to %a on line %d" Attribute.pp_allocator
               allocator CallEvent.describe f allocation_line
       in
-      F.asprintf
-        "%s memory leak. Memory dynamically allocated %a is not freed after the last access at %a"
-        pulse_start_msg pp_allocation_trace allocation_trace Location.pp location
+      F.asprintf "Memory dynamically allocated %a is not freed after the last access at %a"
+        pp_allocation_trace allocation_trace Location.pp location
   | ResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -247,30 +244,27 @@ let get_message diagnostic =
             F.fprintf fmt "by constructor %a(), indirectly via call to %a on line %d"
               JavaClassName.pp class_name CallEvent.describe f allocation_line
       in
-      F.asprintf
-        "%s resource leak. Resource dynamically allocated %a is not closed after the last access \
-         at %a"
-        pulse_start_msg pp_allocation_trace allocation_trace Location.pp location
+      F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
+        pp_allocation_trace allocation_trace Location.pp location
   | RetainCycle {location} ->
-      F.asprintf
-        "%s retain cycle. Memory managed via reference counting is locked in a retain cycle at %a"
-        pulse_start_msg Location.pp location
+      F.asprintf "Memory managed via reference counting is locked in a retain cycle at %a"
+        Location.pp location
   | ErlangError (Badkey {calling_context= _; location}) ->
-      F.asprintf "%s bad key at %a" pulse_start_msg Location.pp location
+      F.asprintf "bad key at %a" Location.pp location
   | ErlangError (Badmap {calling_context= _; location}) ->
-      F.asprintf "%s bad map at %a" pulse_start_msg Location.pp location
+      F.asprintf "bad map at %a" Location.pp location
   | ErlangError (Badmatch {calling_context= _; location}) ->
-      F.asprintf "%s no match of RHS at %a" pulse_start_msg Location.pp location
+      F.asprintf "no match of RHS at %a" Location.pp location
   | ErlangError (Badrecord {calling_context= _; location}) ->
-      F.asprintf "%s bad record at %a" pulse_start_msg Location.pp location
+      F.asprintf "bad record at %a" Location.pp location
   | ErlangError (Case_clause {calling_context= _; location}) ->
-      F.asprintf "%s no matching case clause at %a" pulse_start_msg Location.pp location
+      F.asprintf "no matching case clause at %a" Location.pp location
   | ErlangError (Function_clause {calling_context= _; location}) ->
-      F.asprintf "%s no matching function clause at %a" pulse_start_msg Location.pp location
+      F.asprintf "no matching function clause at %a" Location.pp location
   | ErlangError (If_clause {calling_context= _; location}) ->
-      F.asprintf "%s no true branch in if expression at %a" pulse_start_msg Location.pp location
+      F.asprintf "no true branch in if expression at %a" Location.pp location
   | ErlangError (Try_clause {calling_context= _; location}) ->
-      F.asprintf "%s no matching branch in try at %a" pulse_start_msg Location.pp location
+      F.asprintf "no matching branch in try at %a" Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
         Trace.find_map trace ~f:(function VariableDeclared (pvar, _, _) -> Some pvar | _ -> None)
@@ -303,27 +297,24 @@ let get_message diagnostic =
       in
       let pp_access_path fmt = Option.iter access_path ~f:(F.fprintf fmt " `%s`") in
       let pp_location fmt =
-        let {Location.line} = Trace.get_outer_location trace in
         match immediate_or_first_call calling_context trace with
         | `Immediate ->
-            F.fprintf fmt "on line %d" line
+            ()
         | `Call f ->
-            F.fprintf fmt "during the call to %a on line %d" CallEvent.describe f line
+            F.fprintf fmt " during the call to %a" CallEvent.describe f
       in
-      F.asprintf "%s uninitialized value%t being read on %t" pulse_start_msg pp_access_path
-        pp_location
+      F.asprintf "%t is read without initialization%t" pp_access_path pp_location
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
-      F.asprintf "%s stack variable address escape. Address of %a is returned by the function"
-        pulse_start_msg pp_var variable
+      F.asprintf "Address of %a is returned by the function" pp_var variable
   | UnnecessaryCopy {variable; location} ->
       F.asprintf
-        "%s unnecessary copy: copied variable `%a` is not modified since it is copied in %a. \
-         Consider using a reference to it in order to avoid unnecessary copy"
-        pulse_start_msg Var.pp variable Location.pp location
+        "copied variable `%a` is not modified after it is copied on %a. Consider using a reference \
+         `&` instead to avoid the copy"
+        Var.pp variable Location.pp location
 
 
 let add_errlog_header ~nesting ~title location errlog =
