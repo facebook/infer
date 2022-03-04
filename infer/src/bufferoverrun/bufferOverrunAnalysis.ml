@@ -492,20 +492,26 @@ let compute_invariant_map :
   Analyzer.exec_pdesc ~do_narrowing:true ~initial analysis_data proc_desc
 
 
+type cached_invariant_map = Analyzed of invariant_map | Skipped
+
 let cached_compute_invariant_map =
   let cache_get, cache_set = Procname.UnitCache.create () in
   fun ({InterproceduralAnalysis.proc_desc} as analysis_data) ->
-    if Procdesc.is_too_big BufferOverrunAnalysis ~max_cfg_size:Config.bo_max_cfg_size proc_desc then
-      None
-    else
-      let pname = Procdesc.get_proc_name proc_desc in
-      match cache_get pname with
-      | Some _ as inv_map ->
-          inv_map
-      | None ->
-          let inv_map = compute_invariant_map analysis_data in
-          cache_set pname inv_map ;
-          Some inv_map
+    let pname = Procdesc.get_proc_name proc_desc in
+    match cache_get pname with
+    | Some (Analyzed inv_map) ->
+        Some inv_map
+    | Some Skipped ->
+        None
+    | None
+      when Procdesc.is_too_big BufferOverrunAnalysis ~max_cfg_size:Config.bo_max_cfg_size proc_desc
+      ->
+        cache_set pname Skipped ;
+        None
+    | None ->
+        let inv_map = compute_invariant_map analysis_data in
+        cache_set pname (Analyzed inv_map) ;
+        Some inv_map
 
 
 let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_summary =
