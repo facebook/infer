@@ -16,6 +16,7 @@ type os_type = Unix | Win32 | Cygwin
 type build_system =
   | BAnt
   | BBuck
+  | BBuck2
   | BClang
   | BGradle
   | BJava
@@ -170,6 +171,10 @@ val bo_max_cfg_size : int
 val bootclasspath : string option
 
 val buck : bool
+
+val buck2_build_args : string list
+
+val buck2_build_args_no_inline : string list
 
 val buck_block_list : string list
 

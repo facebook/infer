@@ -62,8 +62,8 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
-           clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
+           values: ant, buck, buck2, gradle, gradlew, java, javac, cc, clang,
+           gcc, clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
            ndk-build, rebar3, erlc, xcodebuild.
 
        --help
@@ -191,6 +191,15 @@ BUCK OPTIONS
 
        --Xbuck-no-inline +string
            Pass values as command-line arguments to invocations of `buck
+           build`, don't inline any args starting with '@'. Only valid for
+           --buck-clang.
+
+       --Xbuck2 +string
+           Pass values as command-line arguments to invocations of `buck2
+           build`. Only valid for --buck-clang.
+
+       --Xbuck2-no-inline +string
+           Pass values as command-line arguments to invocations of `buck2
            build`, don't inline any args starting with '@'. Only valid for
            --buck-clang.
 

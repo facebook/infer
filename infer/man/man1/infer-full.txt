@@ -691,8 +691,8 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
-           clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
+           values: ant, buck, buck2, gradle, gradlew, java, javac, cc, clang,
+           gcc, clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
            ndk-build, rebar3, erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
 
        --no-fragment-retains-view
@@ -1482,6 +1482,15 @@ OPTIONS
 
        --Xbuck-no-inline +string
            Pass values as command-line arguments to invocations of `buck
+           build`, don't inline any args starting with '@'. Only valid for
+           --buck-clang.           See also infer-capture(1).
+
+       --Xbuck2 +string
+           Pass values as command-line arguments to invocations of `buck2
+           build`. Only valid for --buck-clang.           See also infer-capture(1).
+
+       --Xbuck2-no-inline +string
+           Pass values as command-line arguments to invocations of `buck2
            build`, don't inline any args starting with '@'. Only valid for
            --buck-clang.           See also infer-capture(1).
 
@@ -2427,6 +2436,12 @@ INTERNAL OPTIONS
 
        --Xbuck-reset
            Set --Xbuck to the empty list.
+
+       --Xbuck2-no-inline-reset
+           Set --Xbuck2-no-inline to the empty list.
+
+       --Xbuck2-reset
+           Set --Xbuck2 to the empty list.
 
        --Xclang-reset
            Set --Xclang to the empty list.

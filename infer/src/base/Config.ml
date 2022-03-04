@@ -33,6 +33,7 @@ type os_type = Unix | Win32 | Cygwin
 type build_system =
   | BAnt
   | BBuck
+  | BBuck2
   | BClang
   | BGradle
   | BJava
@@ -53,6 +54,7 @@ type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 let build_system_exe_assoc =
   [ (BAnt, "ant")
   ; (BBuck, "buck")
+  ; (BBuck2, "buck2")
   ; (BGradle, "gradle")
   ; (BGradle, "gradlew")
   ; (BJava, "java")
@@ -775,6 +777,20 @@ and bootclasspath =
 
 (** Automatically set when running from within Buck *)
 and buck = CLOpt.mk_bool ~long:"buck" ""
+
+and buck2_build_args =
+  CLOpt.mk_string_list ~long:"Xbuck2"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Pass values as command-line arguments to invocations of $(i,`buck2 build`). Only valid for \
+     $(b,--buck-clang)."
+
+
+and buck2_build_args_no_inline_rev =
+  CLOpt.mk_string_list ~long:"Xbuck2-no-inline"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Pass values as command-line arguments to invocations of $(i,`buck2 build`), don't inline any \
+     args starting with '@'. Only valid for $(b,--buck-clang)."
+
 
 and buck_block_list =
   CLOpt.mk_string_list
@@ -3073,6 +3089,10 @@ and bo_field_depth_limit = !bo_field_depth_limit
 and bo_max_cfg_size = !bo_max_cfg_size
 
 and buck = !buck
+
+and buck2_build_args = RevList.to_list !buck2_build_args
+
+and buck2_build_args_no_inline = RevList.to_list !buck2_build_args_no_inline_rev
 
 and buck_block_list = RevList.to_list !buck_block_list
 
