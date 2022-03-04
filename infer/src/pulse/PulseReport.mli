@@ -7,7 +7,6 @@
 
 open! IStd
 open PulseDomainInterface
-open PulseBasicInterface
 
 [@@@warning "-32"]
 

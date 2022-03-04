@@ -86,10 +86,10 @@ let mk_latent_non_POD_nil_messaging tenv proc_desc =
   match AbductiveDomain.summary_of_post tenv proc_desc location astate with
   | Unsat | Sat (Error _) ->
       assert false
-  | Sat (Ok astate) ->
+  | Sat (Ok summary) ->
       ExecutionDomain.LatentInvalidAccess
-        { astate
-        ; address= self_value
+        { astate= summary
+        ; address= Decompiler.find self_value astate
         ; must_be_valid=
             (trace, Some (SelfOfNonPODReturnMethod (Procdesc.get_ret_type_from_signature proc_desc)))
         ; calling_context= [] }

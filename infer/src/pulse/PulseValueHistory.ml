@@ -251,7 +251,8 @@ let pp_event_no_location fmt event =
 
 
 let pp_event fmt event =
-  F.fprintf fmt "%a at %a" pp_event_no_location event Location.pp_line (location_of_event event)
+  F.fprintf fmt "%a at %a :t%a" pp_event_no_location event Location.pp_line
+    (location_of_event event) Timestamp.pp (timestamp_of_event event)
 
 
 let pp fmt history =

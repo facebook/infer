@@ -170,11 +170,13 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
               ; calling_context } -> (
-            match AbstractValue.Map.find_opt address_callee subst with
+            match
+              AbstractValue.Map.find_opt (Decompiler.abstract_value_of_expr address_callee) subst
+            with
             | None ->
                 (* the address became unreachable so the bug can never be reached; drop it *)
                 Unsat
-            | Some (address, caller_history) -> (
+            | Some (invalid_address, caller_history) -> (
                 let access_trace =
                   Trace.ViaCall
                     { in_call= callee_access_trace
@@ -184,7 +186,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                 in
                 let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
                 match
-                  AbductiveDomain.find_post_cell_opt address astate_post_call
+                  AbductiveDomain.find_post_cell_opt invalid_address astate_post_call
                   |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
                 with
                 | None ->
@@ -193,7 +195,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                       (Ok
                          (LatentInvalidAccess
                             { astate= astate_summary
-                            ; address
+                            ; address= Decompiler.find invalid_address astate_post_call
                             ; must_be_valid= (access_trace, must_be_valid_reason)
                             ; calling_context } ) )
                 | Some (invalidation, invalidation_trace) ->
@@ -204,6 +206,8 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                                 { diagnostic=
                                     AccessToInvalidAddress
                                       { calling_context
+                                      ; invalid_address=
+                                          Decompiler.find invalid_address astate_post_call
                                       ; invalidation
                                       ; invalidation_trace
                                       ; access_trace

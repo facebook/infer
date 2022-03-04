@@ -21,7 +21,7 @@ module Import = struct
     | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
     | LatentInvalidAccess of
         { astate: AbductiveDomain.summary
-        ; address: AbstractValue.t
+        ; address: Decompiler.expr
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
         ; calling_context: (CallEvent.t * Location.t) list }
     | ISLLatentMemoryError of AbductiveDomain.summary
@@ -29,7 +29,7 @@ module Import = struct
   type base_summary_error = AccessResult.summary_error =
     | PotentialInvalidAccessSummary of
         { astate: AbductiveDomain.summary
-        ; address: AbstractValue.t
+        ; address: Decompiler.expr
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
     | ISLErrorSummary of {astate: AbductiveDomain.summary}
@@ -37,7 +37,7 @@ module Import = struct
   type base_error = AccessResult.error =
     | PotentialInvalidAccess of
         { astate: AbductiveDomain.t
-        ; address: AbstractValue.t
+        ; address: Decompiler.expr
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
     | ISLError of {astate: AbductiveDomain.t}
@@ -78,6 +78,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
              { diagnostic=
                  Diagnostic.AccessToInvalidAddress
                    { calling_context= []
+                   ; invalid_address= Decompiler.find address astate
                    ; invalidation
                    ; invalidation_trace
                    ; access_trace

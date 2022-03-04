@@ -6,9 +6,9 @@
  *)
 
 open! IStd
-open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module Arithmetic = PulseArithmetic
+module Diagnostic = PulseDiagnostic
 
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address

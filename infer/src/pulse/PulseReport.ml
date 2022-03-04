@@ -94,12 +94,12 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
 
 let summary_of_error_post tenv proc_desc location mk_error astate =
   match AbductiveDomain.summary_of_post tenv proc_desc location astate with
-  | Sat (Ok astate)
-  | Sat (Error (`MemoryLeak (astate, _, _, _)) | Error (`ResourceLeak (astate, _, _, _)))
-  | Sat (Error (`RetainCycle (astate, _, _))) ->
+  | Sat (Ok summary)
+  | Sat (Error (`MemoryLeak (summary, _, _, _)) | Error (`ResourceLeak (summary, _, _, _)))
+  | Sat (Error (`RetainCycle (summary, _, _))) ->
       (* ignore potential memory leaks: error'ing in the middle of a function will typically produce
          spurious leaks *)
-      Sat (mk_error astate)
+      Sat (mk_error summary)
   | Sat (Error (`PotentialInvalidAccessSummary (summary, addr, trace))) ->
       (* ignore the error we wanted to report (with [mk_error]): the abstract state contained a
          potential error already so report [error] instead *)
@@ -145,7 +145,8 @@ let report_summary_error tenv proc_desc err_log (access_error : AccessResult.sum
         report ~latent:true ~is_suppressed proc_desc err_log
           (AccessToInvalidAddress
              { calling_context= []
-             ; invalidation
+             ; invalid_address= address
+             ; invalidation= ConstantDereference IntLit.zero
              ; invalidation_trace=
                  Immediate {location= Procdesc.get_loc proc_desc; history= ValueHistory.epoch}
              ; access_trace

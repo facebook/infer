@@ -742,11 +742,13 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
              let access_trace = mk_access_trace callee_access_trace in
              AddressAttributes.check_valid path access_trace addr_caller astate
              |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-                    L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
+                    L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp
+                      addr_caller ;
                     AccessResult.ReportableError
                       { diagnostic=
-                          Diagnostic.AccessToInvalidAddress
+                          AccessToInvalidAddress
                             { calling_context= []
+                            ; invalid_address= Decompiler.find addr_caller astate
                             ; invalidation
                             ; invalidation_trace
                             ; access_trace
@@ -756,11 +758,10 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
              let access_trace = mk_access_trace callee_access_trace in
              AddressAttributes.check_initialized path access_trace addr_caller astate
              |> Result.map_error ~f:(fun () ->
-                    L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
+                    L.d_printfln ~color:Red "ERROR: caller's %a is uninitialized!" AbstractValue.pp
+                      addr_caller ;
                     AccessResult.ReportableError
-                      { diagnostic=
-                          Diagnostic.ReadUninitializedValue
-                            {calling_context= []; trace= access_trace}
+                      { diagnostic= ReadUninitializedValue {calling_context= []; trace= access_trace}
                       ; astate } ) )
 
 
@@ -791,12 +792,13 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
               astate_result
           | Some (_, callee_access_trace) ->
               let access_trace = mk_access_trace callee_access_trace in
-              L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
+              L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
               FatalError
                 ( AccessResult.ReportableError
                     { diagnostic=
                         Diagnostic.AccessToInvalidAddress
                           { calling_context= []
+                          ; invalid_address= Decompiler.find addr_caller astate
                           ; invalidation
                           ; invalidation_trace
                           ; access_trace
@@ -866,6 +868,10 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
               ~substitution:call_state.subst ~condition:call_state.astate.path_condition
               ~callee_prepost:pre_post.AbductiveDomain.topl call_state.astate
           else call_state.astate
+        in
+        let astate =
+          Option.fold ~init:astate return_caller ~f:(fun astate ret_v ->
+              Decompiler.add_call_source (fst ret_v) (Call callee_proc_name) astate )
         in
         let+ astate =
           if is_isl_error_prepost then

@@ -8,6 +8,7 @@
 open! IStd
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
+module Decompiler = PulseDecompiler
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -19,6 +20,7 @@ type access_to_invalid_address =
         (** the list of function calls leading to the issue being realised, in
             outermost-to-innermost order, which is an additional common prefix to the traces in the
             record *)
+  ; invalid_address: Decompiler.expr
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to [invalidation] without

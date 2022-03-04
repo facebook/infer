@@ -13,6 +13,7 @@ module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
+module Decompiler = PulseDecompiler
 module PathContext = PulsePathContext
 module UninitBlocklist = PulseUninitBlocklist
 
@@ -101,15 +102,19 @@ type t =
   { post: PostDomain.t
   ; pre: PreDomain.t
   ; path_condition: PathCondition.t
+  ; decompiler: (Decompiler.t[@yojson.opaque] [@equal.ignore] [@compare.ignore])
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; need_specialization: bool
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
-let pp f {post; pre; topl; path_condition; need_specialization; skipped_calls} =
-  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;skipped_calls=%a@;Topl=%a@;need_specialization=%b@]"
-    PathCondition.pp path_condition PostDomain.pp post PreDomain.pp pre SkippedCalls.pp
-    skipped_calls PulseTopl.pp_state topl need_specialization
+let pp f {post; pre; path_condition; decompiler; need_specialization; topl; skipped_calls} =
+  let pp_decompiler f =
+    if Config.debug_level_analysis >= 3 then F.fprintf f "decompiler=%a;@;" Decompiler.pp decompiler
+  in
+  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;%tneed_specialization=%b@;skipped_calls=%a@;Topl=%a@]"
+    PathCondition.pp path_condition PostDomain.pp post PreDomain.pp pre pp_decompiler
+    need_specialization SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
 let set_path_condition path_condition astate = {astate with path_condition}
@@ -117,6 +122,8 @@ let set_path_condition path_condition astate = {astate with path_condition}
 let set_need_specialization astate = {astate with need_specialization= true}
 
 let unset_need_specialization astate = {astate with need_specialization= false}
+
+let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
 
 let leq ~lhs ~rhs =
   phys_equal lhs rhs
@@ -151,45 +158,54 @@ module Stack = struct
 
 
   let eval path location origin var astate =
-    match BaseStack.find_opt var (astate.post :> base_domain).stack with
-    | Some addr_hist ->
-        (astate, addr_hist)
-    | None ->
-        let addr = AbstractValue.mk_fresh () in
-        let addr_hist = (addr, origin) in
-        let post_stack = BaseStack.add var addr_hist (astate.post :> base_domain).stack in
-        let post_heap =
-          if Config.pulse_isl then
-            BaseMemory.register_address addr (astate.post :> base_domain).heap
-          else (astate.post :> base_domain).heap
-        in
-        let post_attrs =
-          if Config.pulse_isl then
-            let access_trace = Trace.Immediate {location; history= ValueHistory.epoch} in
-            BaseAddressAttributes.add_one addr
-              (MustBeValid (path.PathContext.timestamp, access_trace, None))
-              (astate.post :> base_domain).attrs
-          else (astate.post :> base_domain).attrs
-        in
-        let pre =
-          (* do not overwrite values of variables already in the pre *)
-          if (not (BaseStack.mem var (astate.pre :> base_domain).stack)) && is_abducible astate var
-          then
-            (* HACK: do not record the history of values in the pre as they are unused *)
-            let foot_stack =
-              BaseStack.add var (addr, ValueHistory.epoch) (astate.pre :> base_domain).stack
-            in
-            let foot_heap = BaseMemory.register_address addr (astate.pre :> base_domain).heap in
-            PreDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
-          else astate.pre
-        in
-        ( { post= PostDomain.update astate.post ~stack:post_stack ~heap:post_heap ~attrs:post_attrs
-          ; pre
-          ; topl= astate.topl
-          ; need_specialization= astate.need_specialization
-          ; skipped_calls= astate.skipped_calls
-          ; path_condition= astate.path_condition }
-        , addr_hist )
+    let astate, addr_hist =
+      match BaseStack.find_opt var (astate.post :> base_domain).stack with
+      | Some addr_hist ->
+          (astate, addr_hist)
+      | None ->
+          let addr = AbstractValue.mk_fresh () in
+          let addr_hist = (addr, origin) in
+          let post_stack = BaseStack.add var addr_hist (astate.post :> base_domain).stack in
+          let post_heap =
+            if Config.pulse_isl then
+              BaseMemory.register_address addr (astate.post :> base_domain).heap
+            else (astate.post :> base_domain).heap
+          in
+          let post_attrs =
+            if Config.pulse_isl then
+              let access_trace = Trace.Immediate {location; history= ValueHistory.epoch} in
+              BaseAddressAttributes.add_one addr
+                (MustBeValid (path.PathContext.timestamp, access_trace, None))
+                (astate.post :> base_domain).attrs
+            else (astate.post :> base_domain).attrs
+          in
+          let pre =
+            (* do not overwrite values of variables already in the pre *)
+            if
+              (not (BaseStack.mem var (astate.pre :> base_domain).stack)) && is_abducible astate var
+            then
+              (* HACK: do not record the history of values in the pre as they are unused *)
+              let foot_stack =
+                BaseStack.add var (addr, ValueHistory.epoch) (astate.pre :> base_domain).stack
+              in
+              let foot_heap = BaseMemory.register_address addr (astate.pre :> base_domain).heap in
+              PreDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
+            else astate.pre
+          in
+          ( { post= PostDomain.update astate.post ~stack:post_stack ~heap:post_heap ~attrs:post_attrs
+            ; pre
+            ; path_condition= astate.path_condition
+            ; decompiler= astate.decompiler
+            ; need_specialization= astate.need_specialization
+            ; topl= astate.topl
+            ; skipped_calls= astate.skipped_calls }
+          , addr_hist )
+    in
+    let astate =
+      map_decompiler astate ~f:(fun decompiler ->
+          Decompiler.add_var_source (fst addr_hist) var decompiler )
+    in
+    (astate, addr_hist)
 
 
   let add var addr_loc_opt astate =
@@ -431,7 +447,7 @@ module AddressAttributes = struct
           in
           not_null_astates @ null_astates
     | Some (invalidation, invalidation_trace) ->
-        [Error (`InvalidAccess (invalidation, invalidation_trace, astate))]
+        [Error (`InvalidAccess (addr, invalidation, invalidation_trace, astate))]
 end
 
 module Memory = struct
@@ -455,30 +471,38 @@ module Memory = struct
 
 
   let eval_edge (addr_src, hist_src) access astate =
-    match find_edge_opt addr_src access astate with
-    | Some addr_hist_dst ->
-        (astate, addr_hist_dst)
-    | None ->
-        let addr_dst = AbstractValue.mk_fresh () in
-        let addr_hist_dst = (addr_dst, hist_src) in
-        let post_heap =
-          BaseMemory.add_edge addr_src access addr_hist_dst (astate.post :> base_domain).heap
-        in
-        let foot_heap =
-          if BaseMemory.mem addr_src (astate.pre :> base_domain).heap then
-            (* HACK: do not record the history of values in the pre as they are unused *)
-            BaseMemory.add_edge addr_src access (addr_dst, ValueHistory.epoch)
-              (astate.pre :> base_domain).heap
-            |> BaseMemory.register_address addr_dst
-          else (astate.pre :> base_domain).heap
-        in
-        ( { post= PostDomain.update astate.post ~heap:post_heap
-          ; pre= PreDomain.update astate.pre ~heap:foot_heap
-          ; topl= astate.topl
-          ; need_specialization= astate.need_specialization
-          ; skipped_calls= astate.skipped_calls
-          ; path_condition= astate.path_condition }
-        , addr_hist_dst )
+    let astate, addr_hist_dst =
+      match find_edge_opt addr_src access astate with
+      | Some addr_hist_dst ->
+          (astate, addr_hist_dst)
+      | None ->
+          let addr_dst = AbstractValue.mk_fresh () in
+          let addr_hist_dst = (addr_dst, hist_src) in
+          let post_heap =
+            BaseMemory.add_edge addr_src access addr_hist_dst (astate.post :> base_domain).heap
+          in
+          let foot_heap =
+            if BaseMemory.mem addr_src (astate.pre :> base_domain).heap then
+              (* HACK: do not record the history of values in the pre as they are unused *)
+              BaseMemory.add_edge addr_src access (addr_dst, ValueHistory.epoch)
+                (astate.pre :> base_domain).heap
+              |> BaseMemory.register_address addr_dst
+            else (astate.pre :> base_domain).heap
+          in
+          ( { post= PostDomain.update astate.post ~heap:post_heap
+            ; pre= PreDomain.update astate.pre ~heap:foot_heap
+            ; path_condition= astate.path_condition
+            ; decompiler= astate.decompiler
+            ; need_specialization= astate.need_specialization
+            ; topl= astate.topl
+            ; skipped_calls= astate.skipped_calls }
+          , addr_hist_dst )
+    in
+    let astate =
+      map_decompiler astate ~f:(fun decompiler ->
+          Decompiler.add_access_source (fst addr_hist_dst) access ~src:addr_src decompiler )
+    in
+    (astate, addr_hist_dst)
 
 
   let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
@@ -630,10 +654,11 @@ let mk_initial tenv proc_desc =
   in
   { pre
   ; post
-  ; topl= PulseTopl.start ()
+  ; path_condition= PathCondition.true_
+  ; decompiler= Decompiler.empty
   ; need_specialization= false
-  ; skipped_calls= SkippedCalls.empty
-  ; path_condition= PathCondition.true_ }
+  ; topl= PulseTopl.start ()
+  ; skipped_calls= SkippedCalls.empty }
 
 
 let add_skipped_call pname trace astate =
@@ -1091,7 +1116,7 @@ let incorporate_new_eqs astate new_eqs =
              adding pointers from null values, but we'd need to know what values are null at all
              times. This would require normalizing the arithmetic part at each step, which is too
              expensive. *)
-          L.d_printfln "Potential ERROR: %a = 0 but is allocated" AbstractValue.pp v ;
+          L.d_printfln ~color:Red "Potential ERROR: %a = 0 but is allocated" AbstractValue.pp v ;
           match BaseAddressAttributes.get_must_be_valid v (astate.pre :> base_domain).attrs with
           | None ->
               (* we don't know why [v|->-] is in the state, weird and probably cannot happen; drop
@@ -1164,8 +1189,11 @@ let filter_for_summary tenv proc_name astate0 =
   , new_eqs )
 
 
-let summary_of_post tenv pdesc location astate =
+let summary_of_post tenv pdesc location astate0 =
   let open SatUnsat.Import in
+  (* do not store the decompiler in the summary and make sure we only use the original one by
+     marking it invalid *)
+  let astate = {astate0 with decompiler= Decompiler.invalid} in
   (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
      canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
      contradictions about addresses we are about to garbage collect *)
@@ -1208,7 +1236,9 @@ let summary_of_post tenv pdesc location astate =
             (`MemoryLeak
               (astate, allocator, trace, Option.value unreachable_location ~default:location) ) ) )
   | Some (address, must_be_valid) ->
-      Error (`PotentialInvalidAccessSummary (astate, address, must_be_valid))
+      Error
+        (`PotentialInvalidAccessSummary
+          (astate, Decompiler.find address astate0.decompiler, must_be_valid) )
 
 
 let get_pre {pre} = (pre :> BaseDomain.t)
@@ -1225,6 +1255,7 @@ let incorporate_new_eqs new_eqs astate =
     | Sat (astate, None) ->
         Ok astate
     | Sat (astate, Some (address, must_be_valid)) ->
+        L.d_printfln ~color:Red "potential error if %a is null" AbstractValue.pp address ;
         Error (`PotentialInvalidAccess (astate, address, must_be_valid))
 
 

@@ -50,7 +50,9 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           (`PotentialInvalidAccessSummary
             ((astate : AbductiveDomain.summary), address, must_be_valid) ) -> (
         match
-          AbductiveDomain.find_post_cell_opt address (astate :> AbductiveDomain.t)
+          AbductiveDomain.find_post_cell_opt
+            (Decompiler.abstract_value_of_expr address)
+            (astate :> AbductiveDomain.t)
           |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
         with
         | None ->
@@ -64,6 +66,7 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
                  { diagnostic=
                      AccessToInvalidAddress
                        { calling_context= []
+                       ; invalid_address= address
                        ; invalidation
                        ; invalidation_trace
                        ; access_trace= fst must_be_valid

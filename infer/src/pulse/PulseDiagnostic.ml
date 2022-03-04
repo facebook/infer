@@ -10,6 +10,7 @@ module F = Format
 module L = Logging
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
+module Decompiler = PulseDecompiler
 module Invalidation = PulseInvalidation
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -18,6 +19,7 @@ type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equa
 
 type access_to_invalid_address =
   { calling_context: calling_context
+  ; invalid_address: Decompiler.expr
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
   ; access_trace: Trace.t
@@ -133,27 +135,14 @@ let pp_calling_context_prefix fmt calling_context =
 let get_message diagnostic =
   match diagnostic with
   | AccessToInvalidAddress
-      {calling_context; invalidation; invalidation_trace; access_trace; must_be_valid_reason} -> (
+      { calling_context
+      ; invalid_address
+      ; invalidation
+      ; invalidation_trace
+      ; access_trace
+      ; must_be_valid_reason } -> (
     match invalidation with
-    (* Special error message for nullptr dereference *)
     | ConstantDereference i when IntLit.equal i IntLit.zero ->
-        let issue_kind_str, null_str =
-          match must_be_valid_reason with
-          | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
-              ( F.asprintf
-                  "undefined behaviour caused by nil messaging of a C++ method with a non-POD \
-                   return type `%a`"
-                  (Typ.pp_full Pp.text) non_pod_typ
-              , "nil receiver" )
-          | Some InsertionIntoCollectionKey ->
-              ("nil key insertion into collection", "nil key")
-          | Some InsertionIntoCollectionValue ->
-              ("nil object insertion into collection", "nil value")
-          | Some BlockCall ->
-              ("nil block call", "nil block")
-          | None ->
-              ("null pointer dereference", "null")
-        in
         let pp_access_trace fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
           | `Immediate ->
@@ -164,36 +153,46 @@ let get_message diagnostic =
         let pp_invalidation_trace line fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
           | `Immediate ->
-              F.fprintf fmt "%s (%s assigned on line %d)" issue_kind_str null_str line
+              F.fprintf fmt "(last assigned on line %d)" line
           | `Call f ->
-              F.fprintf fmt "%s (%s coming from the call to %a on line %d)" issue_kind_str null_str
-                CallEvent.describe f line
+              F.fprintf fmt "(from the call to %a on line %d)" CallEvent.describe f line
         in
         let invalidation_line =
           let {Location.line; _} = Trace.get_outer_location invalidation_trace in
           line
         in
-        F.asprintf "%a%s %a%a." pp_calling_context_prefix calling_context pulse_start_msg
-          (pp_invalidation_trace invalidation_line)
-          invalidation_trace pp_access_trace access_trace
+        let pp_must_be_valid_reason fmt =
+          match must_be_valid_reason with
+          | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
+              F.fprintf fmt
+                "%a could be nil and is used to call a C++ method with a non-POD return type \
+                 `%a`%a; nil messaging such methods is undefined behaviour"
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
+          | Some (InsertionIntoCollectionKey | InsertionIntoCollectionValue) ->
+              F.fprintf fmt
+                "could be nil %a and is used as a %s when inserting into a collection%a, \
+                 potentially causing a crash"
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace
+                ( match[@warning "-8"] must_be_valid_reason with
+                | Some InsertionIntoCollectionKey ->
+                    "key"
+                | Some InsertionIntoCollectionValue ->
+                    "value" )
+                pp_access_trace access_trace
+          | Some BlockCall ->
+              F.fprintf fmt "could be a nil block %a that is called%a, causing a crash"
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace pp_access_trace access_trace
+          | None ->
+              F.fprintf fmt "could be null %a and is dereferenced%a"
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace pp_access_trace access_trace
+        in
+        F.asprintf "%a`%a` %t" pp_calling_context_prefix calling_context Decompiler.pp_expr
+          invalid_address pp_must_be_valid_reason
     | _ ->
-        (* The goal is to get one of the following messages depending on the scenario:
-
-           42: delete x; return x->f
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x`"
-
-           42: bar(x); return x->f
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x` in call to `bar`"
-
-           42: bar(x); foo(x);
-           "call to `foo` eventually accesses `x->f` but `x` was invalidated at line 42 by `delete` on `x` in call to `bar`"
-
-           If we don't have "x->f" but instead some non-user-visible expression, then
-           "access to `x`, which was invalidated at line 42 by `delete` on `x`"
-
-           Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
-        *)
         let pp_access_trace fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
           | `Immediate ->
@@ -274,13 +273,9 @@ let get_message diagnostic =
       F.asprintf "%s no matching branch in try at %a" pulse_start_msg Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
-        PulseTrace.find_map trace ~f:(function
-          | VariableDeclared (pvar, _, _) ->
-              Some pvar
-          | _ ->
-              None )
+        Trace.find_map trace ~f:(function VariableDeclared (pvar, _, _) -> Some pvar | _ -> None)
         |> IOption.if_none_evalopt ~f:(fun () ->
-               PulseTrace.find_map trace ~f:(function
+               Trace.find_map trace ~f:(function
                  | FormalDeclared (pvar, _, _) ->
                      Some pvar
                  | _ ->
@@ -288,7 +283,7 @@ let get_message diagnostic =
         |> Option.map ~f:(F.asprintf "%a" Pvar.pp_value_non_verbose)
       in
       let declared_fields =
-        PulseTrace.find_map trace ~f:(function
+        Trace.find_map trace ~f:(function
           | StructFieldAddressCreated (fields, _, _) ->
               Some fields
           | _ ->

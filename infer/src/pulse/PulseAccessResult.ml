@@ -8,11 +8,13 @@
 open! IStd
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
+module Decompiler = PulseAbductiveDecompiler
+module Diagnostic = PulseDiagnostic
 
 type summary_error =
   | PotentialInvalidAccessSummary of
       { astate: AbductiveDomain.summary
-      ; address: AbstractValue.t
+      ; address: Decompiler.expr
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
   | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
   | ISLErrorSummary of {astate: AbductiveDomain.summary}
@@ -20,7 +22,7 @@ type summary_error =
 type error =
   | PotentialInvalidAccess of
       { astate: AbductiveDomain.t
-      ; address: AbstractValue.t
+      ; address: Decompiler.expr
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
   | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
   | ISLError of {astate: AbductiveDomain.t}
@@ -67,7 +69,7 @@ type abductive_error =
 
 type abductive_summary_error =
   [ `PotentialInvalidAccessSummary of
-    AbductiveDomain.summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option)
+    AbductiveDomain.summary * Decompiler.expr * (Trace.t * Invalidation.must_be_valid_reason option)
   ]
 
 let ignore_leaks = function
@@ -84,7 +86,7 @@ let of_abductive_error = function
   | `ISLError astate ->
       ISLError {astate}
   | `PotentialInvalidAccess (astate, address, must_be_valid) ->
-      PotentialInvalidAccess {astate; address; must_be_valid}
+      PotentialInvalidAccess {astate; address= Decompiler.find address astate; must_be_valid}
 
 
 let of_abductive_result abductive_result =
@@ -104,12 +106,13 @@ let of_abductive_summary_result abductive_summary_result =
 
 
 let of_invalid_access access_trace = function
-  | `InvalidAccess (invalidation, invalidation_trace, astate) ->
+  | `InvalidAccess (invalid_address, invalidation, invalidation_trace, astate) ->
       ReportableError
         { astate
         ; diagnostic=
             AccessToInvalidAddress
               { calling_context= []
+              ; invalid_address= Decompiler.find invalid_address astate
               ; invalidation
               ; invalidation_trace
               ; access_trace

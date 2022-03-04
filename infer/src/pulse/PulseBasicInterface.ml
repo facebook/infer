@@ -13,7 +13,6 @@ module AbstractValue = PulseAbstractValue
 module Attribute = PulseAttribute
 module Attributes = PulseAttribute.Attributes
 module CallEvent = PulseCallEvent
-module Diagnostic = PulseDiagnostic
 module Invalidation = PulseInvalidation
 module PathCondition = PulsePathCondition
 module SatUnsat = PulseSatUnsat
@@ -32,7 +31,6 @@ include struct
   [@@deprecated "use the short form AbstractValue instead"]
   module PulseAttribute = PulseAttribute [@@deprecated "use the short form Attribute instead"]
   module PulseCallEvent = PulseCallEvent [@@deprecated "use the short form CallEvent instead"]
-  module PulseDiagnostic = PulseDiagnostic [@@deprecated "use the short form Diagnostic instead"]
   module PulseInvalidation = PulseInvalidation
   [@@deprecated "use the short form Invalidation instead"]
   module PulsePathCondition = PulsePathCondition

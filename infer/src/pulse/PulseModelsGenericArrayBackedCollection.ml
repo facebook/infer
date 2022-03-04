@@ -79,6 +79,7 @@ module Iterator = struct
               { diagnostic=
                   Diagnostic.AccessToInvalidAddress
                     { calling_context= []
+                    ; invalid_address= Decompiler.find (fst pointer) astate
                     ; invalidation= EndIterator
                     ; invalidation_trace
                     ; access_trace

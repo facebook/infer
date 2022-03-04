@@ -10,6 +10,7 @@ open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
+module Decompiler = PulseDecompiler
 module PathContext = PulsePathContext
 
 (** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
@@ -42,6 +43,7 @@ type t = private
   ; path_condition: PathCondition.t
         (** arithmetic facts true along the path (holding for both [pre] and [post] since abstract
             values are immutable) *)
+  ; decompiler: Decompiler.t
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
   ; need_specialization: bool
@@ -174,7 +176,10 @@ module AddressAttributes : sig
     -> AbstractValue.t
     -> ?null_noop:bool
     -> t
-    -> (t, [> `ISLError of t | `InvalidAccess of Invalidation.t * Trace.t * t]) result list
+    -> ( t
+       , [> `ISLError of t | `InvalidAccess of AbstractValue.t * Invalidation.t * Trace.t * t] )
+       result
+       list
 end
 
 val apply_unknown_effect :
@@ -204,6 +209,8 @@ val set_need_specialization : t -> t
 
 val unset_need_specialization : t -> t
 
+val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
+
 val is_isl_without_allocation : t -> bool
 
 val is_pre_without_isl_abduced : t -> bool
@@ -225,7 +232,7 @@ val summary_of_post :
        | `RetainCycle of summary * Trace.t * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
-         summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+         summary * Decompiler.expr * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
      SatUnsat.t
 (** Trim the state down to just the procedure's interface (formals and globals), and simplify and
