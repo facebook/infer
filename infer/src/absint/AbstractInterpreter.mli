@@ -100,6 +100,13 @@ module type TransferFunctionsWithExceptions = sig
       turn an normal state into exceptional. *)
 end
 
+module type MakeExceptional = functor (T : TransferFunctionsWithExceptions) ->
+  S with module TransferFunctions = T
+
 (* Create an intraprocedural backward abstract interpreter from transfer functions using the reverse
    post-order scheduler. Dispatch properly exceptional flows backward. *)
-module MakeBackwardRPO (T : TransferFunctionsWithExceptions) : S with module TransferFunctions = T
+module MakeBackwardRPO : MakeExceptional
+
+(* Create an intraprocedural backward abstract interpreter from transfer functions using the weak
+   topological order scheduler. Dispatch properly exceptional flows backward. *)
+module MakeBackwardWTO : MakeExceptional

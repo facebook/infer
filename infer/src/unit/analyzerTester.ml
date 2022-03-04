@@ -16,6 +16,8 @@ module StructuredSil = struct
 
   type label = int
 
+  type exn_style = Java | Cpp of {try_id: int}
+
   type structured_instr =
     | Cmd of Sil.instr
     | If of Exp.t * structured_instr list * structured_instr list
@@ -23,7 +25,7 @@ module StructuredSil = struct
         (** try/catch/finally. note: there is no throw. the semantics are that every command in the
             try block is assumed to be possibly-excepting, and the catch block captures all
             exceptions *)
-    | Try of structured_instr list * structured_instr list * structured_instr list
+    | Try of exn_style * structured_instr list * structured_instr list * structured_instr list
     | Invariant of assertion * label
         (** gets autotranslated into assertions about abstract state *)
 
@@ -36,7 +38,7 @@ module StructuredSil = struct
           then_instrs pp_structured_instr_list else_instrs
     | While (exp, instrs) ->
         F.fprintf fmt "while (%a) {@.%a@.}" Exp.pp exp pp_structured_instr_list instrs
-    | Try (try_, catch, finally) ->
+    | Try (_, try_, catch, finally) ->
         F.fprintf fmt "try {@.%a@.} catch (...) {@.%a@.} finally {@.%a@.}" pp_structured_instr_list
           try_ pp_structured_instr_list catch pp_structured_instr_list finally
     | Invariant (inv_str, label) ->
@@ -153,14 +155,28 @@ module StructuredSil = struct
     let args = List.map ~f:(fun param_str -> (var_of_str param_str, dummy_typ)) arg_strs in
     let return = Option.map return ~f:(fun (str, typ) -> (ident_of_str str, typ)) in
     make_call ?return args
+
+
+  let make_try_block try_id instrs =
+    let open Sil in
+    let loc = dummy_loc in
+    let entry = Metadata (TryEntry {try_id; loc}) in
+    let exit = Metadata (TryExit {try_id; loc}) in
+    (Cmd entry :: instrs) @ [Cmd exit]
+
+
+  let make_catch_block try_id instrs =
+    let open Sil in
+    let loc = dummy_loc in
+    let entry = Metadata (CatchEntry {try_id; loc}) in
+    Cmd entry :: instrs
 end
 
-module MakeMake
-    (MakeAbstractInterpreter : AbstractInterpreter.Make)
-    (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
+module MakeTester
+    (I : AbstractInterpreter.S with type TransferFunctions.CFG.Node.t = Procdesc.Node.t) =
 struct
   open StructuredSil
-  module I = MakeAbstractInterpreter (T)
+  module T = I.TransferFunctions
   module M = I.InvariantMap
 
   let structured_program_to_cfg program test_pname =
@@ -221,7 +237,16 @@ struct
           set_succs loop_body_end_node [loop_head_join_node] ~exn_handlers ;
           set_succs false_prune_node [loop_exit_node] ~exn_handlers ;
           (loop_exit_node, assert_map')
-      | Try (try_instrs, catch_instrs, finally_instrs) ->
+      | Try (exn_style, try_instrs, catch_instrs, finally_instrs) ->
+          let try_instrs, catch_instrs =
+            match exn_style with
+            | Java ->
+                (try_instrs, catch_instrs)
+            | Cpp {try_id} ->
+                let try_instrs = make_try_block try_id try_instrs in
+                let catch_instrs = make_catch_block try_id catch_instrs in
+                (try_instrs, catch_instrs)
+          in
           let catch_start_node = create_node (Procdesc.Node.Skip_node "exn_handler") [] in
           (* use [catch_start_node] as the exn handler *)
           let try_end_node, assert_map' =
@@ -294,9 +319,12 @@ struct
         OUnit2.assert_failure assert_fail_message
 end
 
-module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) = struct
-  module AI_RPO = MakeMake (AbstractInterpreter.MakeRPO) (T)
-  module AI_WTO = MakeMake (AbstractInterpreter.MakeWTO) (T)
+module MakeTesters
+    (RPO : AbstractInterpreter.S with type TransferFunctions.CFG.Node.t = Procdesc.Node.t)
+    (WTO : AbstractInterpreter.S with module TransferFunctions = RPO.TransferFunctions) =
+struct
+  module AI_RPO = MakeTester (RPO)
+  module AI_WTO = MakeTester (WTO)
 
   let ai_list = [("ai_rpo", AI_RPO.create_test); ("ai_wto", AI_WTO.create_test)]
 
@@ -312,3 +340,9 @@ module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
             >:: create_test test_program make_analysis_data ~initial pp_opt test_pname ) )
       tests
 end
+
+module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
+  MakeTesters (AbstractInterpreter.MakeRPO (T)) (AbstractInterpreter.MakeWTO (T))
+module MakeBackwardExceptional
+    (T : AbstractInterpreter.TransferFunctionsWithExceptions with type CFG.Node.t = Procdesc.Node.t) =
+  MakeTesters (AbstractInterpreter.MakeBackwardRPO (T)) (AbstractInterpreter.MakeBackwardWTO (T))
