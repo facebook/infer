@@ -606,6 +606,7 @@ OPTIONS
              STRONG_DELEGATE_WARNING (enabled by default),
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
+             TAINT_ERROR (disabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
@@ -691,8 +692,8 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
-           clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
+           values: ant, buck, buck2, gradle, gradlew, java, javac, cc, clang,
+           gcc, clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
            ndk-build, rebar3, erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
 
        --no-fragment-retains-view
@@ -958,6 +959,12 @@ OPTIONS
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
 
+       --merge-infer-out +string
+           Specifies an Infer results directory. The files and procedures
+           captured in it will be merged together into the results directory
+           specified with -o. Relative paths are interpreted as relative to
+           project-root/buck-out.           See also infer-capture(1).
+
        --merge-report +string
            Specifies an Infer results directory. The reports stored in JSON
            files in all specified results directories will be merged together
@@ -1108,6 +1115,10 @@ OPTIONS
 
        --pulse-model-return-nonnull string
            Regex of methods that should be modelled as returning non-null in
+           Pulse           See also infer-analyze(1).
+
+       --pulse-model-returns-copy-pattern string
+           Regex of methods that should be modelled as creating copies in
            Pulse           See also infer-analyze(1).
 
        --pulse-model-skip-pattern string
@@ -1406,10 +1417,6 @@ OPTIONS
            SQLite page size in bytes, must be a power of two between 512 and
            65536.           See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
-       --sqlite-vacuum
-           Activates: VACUUM the SQLite DB after performing capture.
-           (Conversely: --no-sqlite-vacuum)           See also infer-capture(1).
-
        --no-starvation
            Deactivates: checker starvation: Detect various kinds of
            situations when no progress is being made because of concurrency
@@ -1425,6 +1432,10 @@ OPTIONS
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
+
+       --top-longest-proc-duration-size int
+           Number of procedures for which we track longest analysis duration
+           info.           See also infer-analyze(1).
 
        --topl
            Activates: checker topl: Detect errors based on user-provided
@@ -1480,6 +1491,15 @@ OPTIONS
 
        --Xbuck-no-inline +string
            Pass values as command-line arguments to invocations of `buck
+           build`, don't inline any args starting with '@'. Only valid for
+           --buck-clang.           See also infer-capture(1).
+
+       --Xbuck2 +string
+           Pass values as command-line arguments to invocations of `buck2
+           build`. Only valid for --buck-clang.           See also infer-capture(1).
+
+       --Xbuck2-no-inline +string
+           Pass values as command-line arguments to invocations of `buck2
            build`, don't inline any args starting with '@'. Only valid for
            --buck-clang.           See also infer-capture(1).
 
@@ -1990,6 +2010,9 @@ INTERNAL OPTIONS
        --memtrace-sampling-rate-reset
            Cancel the effect of --memtrace-sampling-rate.
 
+       --merge-infer-out-reset
+           Set --merge-infer-out to the empty list.
+
        --merge-report-reset
            Set --merge-report to the empty list.
 
@@ -2135,6 +2158,13 @@ INTERNAL OPTIONS
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain
 
+       --pulse-max-heap int
+           Give up analysing a procedure if the number of words in the heap
+           exceeds this limit. Intended use: avoid OutOfMemory crashes.
+
+       --pulse-max-heap-reset
+           Cancel the effect of --pulse-max-heap.
+
        --pulse-model-abort-reset
            Set --pulse-model-abort to the empty list.
 
@@ -2159,6 +2189,9 @@ INTERNAL OPTIONS
        --pulse-model-return-nonnull-reset
            Cancel the effect of --pulse-model-return-nonnull.
 
+       --pulse-model-returns-copy-pattern-reset
+           Cancel the effect of --pulse-model-returns-copy-pattern.
+
        --pulse-model-skip-pattern-reset
            Cancel the effect of --pulse-model-skip-pattern.
 
@@ -2176,6 +2209,10 @@ INTERNAL OPTIONS
        --pulse-report-ignore-unknown-java-methods-patterns-reset
            Set --pulse-report-ignore-unknown-java-methods-patterns to the
            empty list.
+
+       --pulse-report-issues-for-tests
+           Activates: Do not supress any of the issues found by Pulse.
+           (Conversely: --no-pulse-report-issues-for-tests)
 
        --no-pulse-report-latent-issues
            Deactivates: Report latent issues instead of waiting for them to
@@ -2344,6 +2381,9 @@ INTERNAL OPTIONS
            Activates: Mode for testing, where no headers are translated, and
            dot files are created (clang only) (Conversely: --no-testing-mode)
 
+       --top-longest-proc-duration-size-reset
+           Cancel the effect of --top-longest-proc-duration-size.
+
        --topl-max-conjuncts int
            Stop tracking states that have at least int conjuncts
 
@@ -2411,6 +2451,12 @@ INTERNAL OPTIONS
 
        --Xbuck-reset
            Set --Xbuck to the empty list.
+
+       --Xbuck2-no-inline-reset
+           Set --Xbuck2-no-inline to the empty list.
+
+       --Xbuck2-reset
+           Set --Xbuck2 to the empty list.
 
        --Xclang-reset
            Set --Xclang to the empty list.

@@ -16,6 +16,7 @@ type os_type = Unix | Win32 | Cygwin
 type build_system =
   | BAnt
   | BBuck
+  | BBuck2
   | BClang
   | BGradle
   | BJava
@@ -170,6 +171,10 @@ val bo_max_cfg_size : int
 val bootclasspath : string option
 
 val buck : bool
+
+val buck2_build_args : string list
+
+val buck2_build_args_no_inline : string list
 
 val buck_block_list : string list
 
@@ -436,6 +441,8 @@ val memtrace_sampling_rate : float
 
 val merge : bool
 
+val merge_infer_out : string list
+
 val merge_report : string list
 
 val method_decls_info : string option
@@ -522,6 +529,8 @@ val pulse_max_cfg_size : int
 
 val pulse_max_disjuncts : int
 
+val pulse_max_heap : int option
+
 val pulse_model_abort : string list
 
 val pulse_model_alloc_pattern : Str.regexp option
@@ -533,6 +542,8 @@ val pulse_model_malloc_pattern : Str.regexp option
 val pulse_model_realloc_pattern : Str.regexp option
 
 val pulse_model_release_pattern : Str.regexp option
+
+val pulse_model_returns_copy_pattern : Str.regexp option
 
 val pulse_model_return_first_arg : Str.regexp option
 
@@ -551,6 +562,8 @@ val pulse_model_transfer_ownership_namespace : (string * string) list
 val pulse_model_transfer_ownership : string list
 
 val pulse_report_latent_issues : bool
+
+val pulse_report_issues_for_tests : bool
 
 val pulse_recency_limit : int
 
@@ -678,8 +691,6 @@ val sqlite_page_size : int
 
 val sqlite_lock_timeout : int
 
-val sqlite_vacuum : bool
-
 val sqlite_vfs : string option
 
 val starvation_skip_analysis : Yojson.Basic.t
@@ -703,6 +714,8 @@ val export_changed_functions : bool
 val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Basic.t
+
+val top_longest_proc_duration_size : int option
 
 val topl_max_conjuncts : int
 

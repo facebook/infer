@@ -24,6 +24,8 @@ val ok_exn : ('ok, _) t -> 'ok
 
 val map : ('ok, 'err) t -> f:('ok -> 'okk) -> ('okk, 'err) t
 
+val map_error : ('ok, 'err) t -> f:('err -> 'err') -> ('ok, 'err') t
+
 val bind : ('ok, 'err) t -> f:('ok -> ('okk, 'err) t) -> ('okk, 'err) t
 
 val join : (('ok, 'err) t, 'err) t -> ('ok, 'err) t

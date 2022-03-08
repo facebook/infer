@@ -95,7 +95,8 @@ let tests =
         ; invariant "T" ] )
     ; ( "try"
       , [ Try
-            ( (* we expect the try block to be visited *)
+            ( Java
+            , (* we expect the try block to be visited *)
               [invariant "1"]
             , (* but not the catch block *)
               [invariant "_|_"]
@@ -107,7 +108,8 @@ let tests =
   let exceptional_test_list =
     [ ( "try1"
       , [ Try
-            ( [invariant "1"]
+            ( Java
+            , [invariant "1"]
             , (* catch block should be visited *)
               [invariant "1"]
             , (* could come from try or catch block *)
@@ -115,7 +117,8 @@ let tests =
         ; invariant "2" ] )
     ; ( "try1"
       , [ Try
-            ( (* point 3 *)
+            ( Java
+            , (* point 3 *)
               [ (* note: each instruction in try block is treated as potentially-excepting... *)
                 (* point 1 *)
                 invariant "1"

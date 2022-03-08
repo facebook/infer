@@ -276,6 +276,7 @@ OPTIONS
              STRONG_DELEGATE_WARNING (enabled by default),
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
+             TAINT_ERROR (disabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),

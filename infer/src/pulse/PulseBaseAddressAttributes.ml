@@ -42,7 +42,8 @@ let remove_one addr attribute attrs =
       attrs
   | Some old_attrs ->
       let new_attrs = Attributes.remove attribute old_attrs in
-      Graph.add addr new_attrs attrs
+      if Attributes.is_empty new_attrs then Graph.remove addr attrs
+      else Graph.add addr new_attrs attrs
 
 
 let add addr attributes attrs =
@@ -75,7 +76,9 @@ let invalidate (address, history) invalidation location memory =
 
 
 let allocate allocator address location memory =
-  add_one address (Attribute.Allocated (allocator, Immediate {location; history= Epoch})) memory
+  add_one address
+    (Attribute.Allocated (allocator, Immediate {location; history= ValueHistory.epoch}))
+    memory
 
 
 let java_resource_release address memory = add_one address Attribute.JavaResourceReleased memory
@@ -98,6 +101,16 @@ let check_initialized address attrs =
     L.d_printfln ~color:Red "UNINITIALIZED" ;
     Error () )
   else Ok ()
+
+
+let check_not_tainted address attrs =
+  L.d_printfln "Checking that %a is not tainted" AbstractValue.pp address ;
+  match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_tainted with
+  | None ->
+      Ok ()
+  | Some ((source, _hist) as taint_hist) ->
+      L.d_printfln ~color:Red "TAINTED: %a" Taint.pp_source source ;
+      Error taint_hist
 
 
 let get_attribute getter address attrs =
@@ -129,6 +142,12 @@ let remove_must_be_valid_attr address memory =
       memory
 
 
+let remove_unsuitable_for_summary =
+  Graph.filter_map (fun _addr attrs ->
+      let new_attrs = Attributes.remove_unsuitable_for_summary attrs in
+      if Attributes.is_empty new_attrs then None else Some new_attrs )
+
+
 let initialize address attrs =
   if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then
     remove_one address Attribute.Uninitialized attrs
@@ -139,9 +158,15 @@ let get_allocation = get_attribute Attributes.get_allocation
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
+let get_copied_var = get_attribute Attributes.get_copied_var
+
+let get_source_origin_of_copy = get_attribute Attributes.get_source_origin_of_copy
+
 let get_invalid = get_attribute Attributes.get_invalid
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
+
+let get_must_not_be_tainted = get_attribute Attributes.get_must_not_be_tainted
 
 let is_must_be_valid_or_allocated_isl address attrs =
   Option.is_some (get_must_be_valid address attrs)
@@ -198,7 +223,8 @@ let canonicalize ~get_var_repr attrs_map =
                  Attributes.union_prefer_left attrs' attrs )
         in
         add addr' attrs' g )
-    attrs_map Graph.empty
+    (remove_unsuitable_for_summary attrs_map)
+    Graph.empty
 
 
 let subst_var (v, v') attrs_map =

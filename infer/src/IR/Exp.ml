@@ -354,22 +354,24 @@ let rec gen_program_vars =
 
 let program_vars e = Sequence.Generator.run (gen_program_vars e)
 
-let rec gen_constants =
+let rec gen_closures =
   let open Sequence.Generator in
   function
-  | Const constant ->
-      yield constant
-  | Var _ | Lvar _ | Sizeof {dynamic_length= None} ->
+  | Closure closure ->
+      yield closure
+  | Const _ | Lvar _ | Var _ ->
       return ()
-  | Cast (_, e) | Exn e | Lfield (e, _, _) | Sizeof {dynamic_length= Some e} | UnOp (_, e, _) ->
-      gen_constants e
+  | UnOp (_, e1, _) | Exn e1 | Cast (_, e1) | Lfield (e1, _, _) ->
+      gen_closures e1
+  | Sizeof {dynamic_length= Some e1} ->
+      gen_closures e1
+  | Sizeof {dynamic_length= None} ->
+      return ()
   | BinOp (_, e1, e2) | Lindex (e1, e2) ->
-      gen_constants e1 >>= fun () -> gen_constants e2
-  | Closure {captured_vars} ->
-      ISequence.gen_sequence_list captured_vars ~f:(fun (e, _, _, _) -> gen_constants e)
+      gen_closures e1 >>= fun () -> gen_closures e2
 
 
-let constants e = Sequence.Generator.run (gen_constants e)
+let closures e = Sequence.Generator.run (gen_closures e)
 
 let zero_of_type typ =
   match typ.Typ.desc with

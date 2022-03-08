@@ -10,6 +10,7 @@ open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
+module Decompiler = PulseDecompiler
 module PathContext = PulsePathContext
 
 (** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
@@ -42,8 +43,11 @@ type t = private
   ; path_condition: PathCondition.t
         (** arithmetic facts true along the path (holding for both [pre] and [post] since abstract
             values are immutable) *)
+  ; decompiler: Decompiler.t
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
+  ; need_specialization: bool
+        (** a call that could be resolved via analysis-time specialization has been skipped *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -130,6 +134,14 @@ module AddressAttributes : sig
 
   val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
+  val check_not_tainted :
+       PathContext.t
+    -> Taint.sink
+    -> Trace.t
+    -> AbstractValue.t
+    -> t
+    -> (t, Taint.source * ValueHistory.t) result
+
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
@@ -150,6 +162,10 @@ module AddressAttributes : sig
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
+  val get_copied_var : AbstractValue.t -> t -> Var.t option
+
+  val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
+
   val is_end_of_collection : AbstractValue.t -> t -> bool
 
   val mark_as_end_of_collection : AbstractValue.t -> t -> t
@@ -168,7 +184,10 @@ module AddressAttributes : sig
     -> AbstractValue.t
     -> ?null_noop:bool
     -> t
-    -> (t, [> `ISLError of t | `InvalidAccess of Invalidation.t * Trace.t * t]) result list
+    -> ( t
+       , [> `ISLError of t | `InvalidAccess of AbstractValue.t * Invalidation.t * Trace.t * t] )
+       result
+       list
 end
 
 val apply_unknown_effect :
@@ -194,6 +213,12 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val set_path_condition : PathCondition.t -> t -> t
 
+val set_need_specialization : t -> t
+
+val unset_need_specialization : t -> t
+
+val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
+
 val is_isl_without_allocation : t -> bool
 
 val is_pre_without_isl_abduced : t -> bool
@@ -202,6 +227,8 @@ val is_pre_without_isl_abduced : t -> bool
 type summary = private t [@@deriving compare, equal, yojson_of]
 
 val skipped_calls_match_pattern : summary -> bool
+
+val summary_with_need_specialization : summary -> summary
 
 val summary_of_post :
      Tenv.t
@@ -213,7 +240,7 @@ val summary_of_post :
        | `RetainCycle of summary * Trace.t * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
-         summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+         summary * Decompiler.expr * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
      SatUnsat.t
 (** Trim the state down to just the procedure's interface (formals and globals), and simplify and

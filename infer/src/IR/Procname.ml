@@ -334,7 +334,6 @@ module ObjC_Cpp = struct
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
-    | ObjCInternalMethod
   [@@deriving compare, yojson_of]
 
   type t =
@@ -375,12 +374,7 @@ module ObjC_Cpp = struct
 
   let is_objc_constructor method_name = String.equal method_name "new" || is_prefix_init method_name
 
-  let is_objc_kind = function
-    | ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod ->
-        true
-    | _ ->
-        false
-
+  let is_objc_kind = function ObjCClassMethod | ObjCInstanceMethod -> true | _ -> false
 
   let is_objc_method {kind} = is_objc_kind kind
 
@@ -410,8 +404,6 @@ module ObjC_Cpp = struct
         F.pp_print_string fmt "class"
     | ObjCInstanceMethod ->
         F.pp_print_string fmt "instance"
-    | ObjCInternalMethod ->
-        F.pp_print_string fmt "internal"
 
 
   let pp verbosity fmt osig =
@@ -582,6 +574,14 @@ type t =
   | ObjC_Cpp of ObjC_Cpp.t
   | WithBlockParameters of t * Block.t list
 [@@deriving compare, yojson_of]
+
+let is_erlang_unsupported name =
+  match name with
+  | Erlang {module_name; _} ->
+      String.equal module_name ErlangTypeName.unsupported
+  | _ ->
+      false
+
 
 let equal = [%compare.equal: t]
 
@@ -844,6 +844,21 @@ let is_infer_undefined pn =
   | _ ->
       (* TODO: add cases for obj-c, c, c++ *)
       false
+
+
+let rec is_static = function
+  | CSharp {kind= Static} | Java {kind= Static} | ObjC_Cpp {kind= ObjCClassMethod} ->
+      Some true
+  | CSharp {kind= Non_Static} | Java {kind= Non_Static} | ObjC_Cpp {kind= ObjCInstanceMethod} ->
+      Some false
+  | C _
+  | Block _
+  | Erlang _
+  | Linters_dummy_method
+  | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
+      None
+  | WithBlockParameters (pname, _) ->
+      is_static pname
 
 
 let get_global_name_of_initializer = function

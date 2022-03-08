@@ -21,10 +21,6 @@ warn(0) -> ok.
 f(1) -> 1;
 f(_) -> 0.
 
-% T94670024
-iob(true) -> 1;
-iob(_) -> 0.
-
 first(X, _) -> X.
 
 second(_, Y) -> Y.
@@ -85,13 +81,13 @@ test_call4_Bad() ->
 is_map(_) -> true.
 
 test_override_Ok() ->
-    case iob(is_map(1)) of
-        1 -> ok;
+    case is_map(1) of
+        true -> ok;
         _ -> warn(1)
     end.
 
 test_override_Bad() ->
-    case iob(is_map(1)) of
-        1 -> warn(1);
+    case is_map(1) of
+        true -> warn(1);
         _ -> ok
     end.

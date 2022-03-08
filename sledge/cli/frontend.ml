@@ -462,7 +462,7 @@ let convert_to_siz =
 let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
  fun x typ arg -> Exp.convert typ ~to_:(i32 x) arg
 
-let rec xlate_intrinsic_exp :
+let rec xlate_builtin_exp :
     string -> (x -> Llvm.llvalue -> Inst.t list * Exp.t) option =
  fun name ->
   match name with
@@ -491,8 +491,8 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
     | Instruction Call -> (
         let func = Llvm.operand llv (Llvm.num_arg_operands llv) in
         let fname = Llvm.value_name func in
-        match xlate_intrinsic_exp fname with
-        | Some intrinsic when inline || should_inline llv -> intrinsic x llv
+        match xlate_builtin_exp fname with
+        | Some builtin when inline || should_inline llv -> builtin x llv
         | _ -> ([], Exp.reg (xlate_name x llv)) )
     | Instruction
         ( Invoke | Alloca | Load | AtomicRMW | AtomicCmpXchg | PHI
@@ -1016,8 +1016,9 @@ let num_actuals instr lltyp llfunc =
       warn "ignoring variable arguments to variadic function: %s" fname () ;
     Array.length (Llvm.param_types llelt)
 
-let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
+let xlate_builtin_inst emit_inst x name_segs instr num_actuals loc =
   let emit_inst ?prefix inst = Some (emit_inst ?prefix inst) in
+  let emit_term ?(prefix = []) term = Some (prefix, term, []) in
   match name_segs with
   | ["__llair_choice"] ->
       let reg = xlate_name x instr in
@@ -1049,9 +1050,9 @@ let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
    |["free" (* void free(void* ptr) *)] ->
       let prefix, ptr = xlate_value x (Llvm.operand instr 0) in
       emit_inst ~prefix (Inst.free ~ptr ~loc)
-  | ["abort"] | ["llvm"; "trap"] -> emit_inst (Inst.abort ~loc)
-  | [iname] | "llvm" :: iname :: _ -> (
-    match Intrinsic.of_name iname with
+  | ["abort"] | ["llvm"; "trap"] -> emit_term (Term.abort ~loc)
+  | [bname] | "llvm" :: bname :: _ -> (
+    match Builtin.of_name bname with
     | Some name ->
         let reg = xlate_name_opt x instr in
         let xlate_arg i pre =
@@ -1062,25 +1063,32 @@ let xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc =
           Iter.fold_map ~f:xlate_arg Iter.(0 -- (num_actuals - 1)) []
         in
         let args = IArray.of_iter args in
-        emit_inst ~prefix (Inst.intrinsic ~reg ~name ~args ~loc)
+        emit_inst ~prefix (Inst.builtin ~reg ~name ~args ~loc)
     | None -> None )
   | _ -> None
 
 let calls_to_backpatch = ref []
 
-let term_call x llcallee ~typ ~actuals ~areturn ~return ~throw ~loc =
-  match Llvm.classify_value llcallee with
-  | Function ->
-      let name = Llvm.value_name llcallee in
-      let call, backpatch =
-        Term.call ~name ~typ ~actuals ~areturn ~return ~throw ~loc
+let term_call x llcallee name ~typ ~actuals ~areturn ~return ~throw ~loc =
+  match Intrinsic.of_name name with
+  | Some callee ->
+      let call =
+        Term.intrinsic ~callee ~typ ~actuals ~areturn ~return ~throw ~loc
       in
-      calls_to_backpatch :=
-        (llcallee, typ, backpatch) :: !calls_to_backpatch ;
       ([], call)
-  | _ ->
-      let prefix, callee = xlate_value x llcallee in
-      (prefix, Term.icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc)
+  | None -> (
+    match Llvm.classify_value llcallee with
+    | Function ->
+        let call, backpatch =
+          Term.call ~name ~typ ~actuals ~areturn ~return ~throw ~loc
+        in
+        calls_to_backpatch :=
+          (llcallee, typ, backpatch) :: !calls_to_backpatch ;
+        ([], call)
+    | _ ->
+        let prefix, callee = xlate_value x llcallee in
+        ( prefix
+        , Term.icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc ) )
 
 let xlate_instr :
        pop_thunk
@@ -1193,12 +1201,12 @@ let xlate_instr :
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
-      (* intrinsics *)
-      match xlate_intrinsic_exp fname with
-      | Some intrinsic -> inline_or_move (intrinsic x)
+      (* builtins *)
+      match xlate_builtin_exp fname with
+      | Some builtin -> inline_or_move (builtin x)
       | None -> (
         match
-          xlate_intrinsic_inst emit_inst x name_segs instr num_actuals loc
+          xlate_builtin_inst emit_inst x name_segs instr num_actuals loc
         with
         | Some code -> code
         | None -> (
@@ -1237,7 +1245,7 @@ let xlate_instr :
               let areturn = xlate_name_opt x instr in
               let return = Jump.mk lbl in
               let pre_0, call =
-                term_call x llcallee ~typ ~actuals ~areturn ~return
+                term_call x llcallee fname ~typ ~actuals ~areturn ~return
                   ~throw:None ~loc
               in
               continue (fun (insts, term) ->
@@ -1252,8 +1260,8 @@ let xlate_instr :
       let name_segs = String.split_on_char fname ~by:'.' in
       let return_blk = Llvm.get_normal_dest instr in
       let unwind_blk = Llvm.get_unwind_dest instr in
-      (* intrinsics *)
-      match xlate_intrinsic_exp fname with
+      (* builtins *)
+      match xlate_builtin_exp fname with
       | Some _ ->
           (* instr will be translated to an exp by xlate_value, so only need
              to wire up control flow here *)
@@ -1267,9 +1275,7 @@ let xlate_instr :
             let prefix = pre_inst @ (inst :: pre_jump) in
             emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
           in
-          match
-            xlate_intrinsic_inst k x name_segs instr num_actuals loc
-          with
+          match xlate_builtin_inst k x name_segs instr num_actuals loc with
           | Some code -> code
           | None -> (
             match name_segs with
@@ -1298,7 +1304,7 @@ let xlate_instr :
                   xlate_jump x instr unwind_blk loc blocks
                 in
                 let pre_0, call =
-                  term_call x llcallee ~typ ~actuals ~areturn ~return
+                  term_call x llcallee fname ~typ ~actuals ~areturn ~return
                     ~throw:(Some throw) ~loc
                 in
                 let prefix = List.concat [pre_0; pre_1; pre_2; pre_3] in
@@ -1736,6 +1742,7 @@ let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
         if
           String.prefix name ~pre:"__llair_"
           || String.prefix name ~pre:"llvm."
+          || Option.is_some (Intrinsic.of_name name)
         then functions
         else
           let func = xlate_function x llf in

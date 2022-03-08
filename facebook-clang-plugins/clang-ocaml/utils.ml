@@ -9,10 +9,10 @@ module H = Hashtbl
 
 (* misc *)
 (* maps '-' to the standard input *)
-let open_in name = if name = "-" then stdin else Pervasives.open_in name
+let open_in name = if name = "-" then stdin else Stdlib.open_in name
 
 (* maps '-' to the standard output *)
-let open_out name = if name = "-" then stdout else Pervasives.open_out name
+let open_out name = if name = "-" then stdout else Stdlib.open_out name
 
 let make_cached f =
   let h = H.create 10 in

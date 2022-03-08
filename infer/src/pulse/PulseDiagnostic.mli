@@ -8,7 +8,9 @@
 open! IStd
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
+module Decompiler = PulseDecompiler
 module Invalidation = PulseInvalidation
+module Taint = PulseTaint
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -19,6 +21,7 @@ type access_to_invalid_address =
         (** the list of function calls leading to the issue being realised, in
             outermost-to-innermost order, which is an additional common prefix to the traces in the
             record *)
+  ; invalid_address: Decompiler.expr
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to [invalidation] without
@@ -58,6 +61,11 @@ type t =
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
+  | TaintFlow of
+      { tainted: Decompiler.expr
+      ; source: Taint.source * ValueHistory.t
+      ; sink: Taint.sink * Trace.t
+      ; location: Location.t }
   | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]
 

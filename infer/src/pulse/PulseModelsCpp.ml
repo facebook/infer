@@ -189,7 +189,7 @@ module AtomicInteger = struct
     in
     let astate =
       AddressAttributes.add_one (fst this_address)
-        (WrittenTo (Trace.Immediate {location; history= Epoch}))
+        (WrittenTo (Trace.Immediate {location; history= ValueHistory.epoch}))
         astate
     in
     let* astate, int_field =

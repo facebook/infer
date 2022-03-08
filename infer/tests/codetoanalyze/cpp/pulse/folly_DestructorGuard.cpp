@@ -25,7 +25,8 @@ class UsingDelayedDestruction : folly::DelayedDestruction {
 
   // should realise [this] cannot be null to avoid FP latent (that can never be
   // manifested)
-  void FP_latent_double_delete_ok() {
+  // FP latent is filtered out
+  void latent_double_delete_ok() {
     destroy(); // should not delete this double delete
     delete this;
   }

@@ -734,7 +734,7 @@ let deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc =
         L.die InternalError
           "Trying to deep copy pdesc from %a to %a. Node %a is not part of origin pdesc's nodes. \
            Origin pdesc might be empty or misconstructed"
-          Node.pp node Procname.pp node.Node.pname Procname.pp pname
+          Procname.pp node.Node.pname Procname.pp pname Node.pp node
     | Some node' ->
         node'
   in

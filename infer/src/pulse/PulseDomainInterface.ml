@@ -23,6 +23,8 @@ module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
+module Decompiler = PulseAbductiveDecompiler
+module Diagnostic = PulseDiagnostic
 module LatentIssue = PulseLatentIssue
 module PathContext = PulsePathContext
 
@@ -40,6 +42,9 @@ include struct
   module PulseBaseMemory = PulseBaseMemory [@@deprecated "use the short form BaseMemory instead"]
   module PulseBaseAddressAttributes = PulseBaseAddressAttributes
   [@@deprecated "use the short form BaseAddressAttributes instead"]
+  module PulseAbductiveDecompiler = PulseAbductiveDecompiler
+  [@@deprecated "use the short form Decompiler instead"]
+  module PulseDiagnostic = PulseDiagnostic [@@deprecated "use the short form Diagnostic instead"]
   module PulseExecutionDomain = PulseExecutionDomain
   [@@deprecated "use the short form ExecutionDomain instead"]
   module PulseLatentIssue = PulseLatentIssue [@@deprecated "use the short form LatentIssue instead"]

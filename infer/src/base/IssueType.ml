@@ -936,6 +936,11 @@ let quandary_taint_error =
     ~user_documentation:"Generic taint error when nothing else fits."
 
 
+let taint_error =
+  register ~enabled:false ~hum:"Taint Error" ~id:"TAINT_ERROR" Error Pulse
+    ~user_documentation:"A taint flow was detected from a source to a sink"
+
+
 let regex_op_on_ui_thread =
   register Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
     ~user_documentation:

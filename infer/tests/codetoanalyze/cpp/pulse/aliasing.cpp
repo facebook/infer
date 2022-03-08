@@ -70,8 +70,8 @@ void stack_addresses_are_distinct_ok() {
 }
 
 // latent because of the condition "x==0" in the pre-condition
-void null_test_after_deref_latent(int* x) {
-  *x = 42; // latent error given that x is tested for null below
+void null_test_after_deref_latent_FN(int* x) {
+  *x = 42; // filtered out latent error given that x is tested for null below
   if (x == nullptr) {
     int* p = nullptr;
     *p = 42; // should be ignored as we can never get there

@@ -23,8 +23,7 @@ let unknown_call call =
       call
       (fun fs (call : Llair.Term.t) ->
         match call with
-        | Call {callee} -> Llair.Function.pp fs callee.name
-        | ICall {callee} -> Llair.Exp.pp fs callee
+        | Call {callee} -> Llair.Term.pp_callee fs callee
         | _ -> () )
       call Llair.Term.pp call]
 

@@ -376,3 +376,17 @@ id stringConstValueOK(NSMutableDictionary* dict, NSString* key) {
   }
   return value;
 }
+
+NSString* get_object_from_array(NSArray<NSString*>* array) {
+  if (array.count == 0) {
+    return nil;
+  }
+
+  return [array objectAtIndex:0];
+}
+
+// missing models for collections
+void pass_non_empty_array_ok_FP(NSMutableArray<NSString*>* mArray) {
+  NSString* object = get_object_from_array(@[ @"element" ]);
+  [mArray addObject:object];
+}

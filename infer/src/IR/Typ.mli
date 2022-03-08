@@ -109,8 +109,7 @@ and name =
   | CSharpClass of CSharpClassName.t
   | ErlangType of ErlangTypeName.t
   | JavaClass of JavaClassName.t
-  | ObjcClass of QualifiedCppName.t * name list
-      (** ObjC class that conforms to a list of protocols, e.g. id<NSFastEnumeration, NSCopying> *)
+  | ObjcClass of QualifiedCppName.t  (** ObjC class *)
   | ObjcProtocol of QualifiedCppName.t
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
@@ -279,8 +278,6 @@ val pp_java : verbose:bool -> F.formatter -> t -> unit
 
 val pp_cs : verbose:bool -> F.formatter -> t -> unit
 (** Pretty print a Java type. Raises if type isn't produced by the CSharp frontend *)
-
-val pp_protocols : Pp.env -> F.formatter -> name list -> unit
 
 val to_string : t -> string
 

@@ -13,6 +13,10 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
+(** raised when we detect that pulse is using too much memory to stop the analysis of the current
+    procedure *)
+exception AboutToOOM
+
 let report_topl_errors proc_desc err_log summary =
   let f = function
     | ContinueProgram astate ->
@@ -27,8 +31,10 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
   PulseNonDisjunctiveDomain.get_copied non_disj_astate
   |> List.iter ~f:(fun (var, location) ->
          let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; location} in
-         PulseReport.report ~latent:false proc_desc err_log diagnostic )
+         PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic )
 
+
+let heap_size () = (Gc.quick_stat ()).heap_words
 
 module PulseTransferFunctions = struct
   module CFG = ProcCfg.Exceptional
@@ -41,13 +47,68 @@ module PulseTransferFunctions = struct
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} path ret
-      callee_pname call_exp actuals call_loc (flags : CallFlags.t) astate =
+  let need_specialization astates =
+    List.exists astates ~f:(fun res ->
+        match PulseResult.ok res with
+        | Some
+            ( ContinueProgram {AbductiveDomain.need_specialization}
+            | ExceptionRaised {AbductiveDomain.need_specialization} ) ->
+            need_specialization
+        | Some
+            ( ExitProgram astate
+            | AbortProgram astate
+            | LatentAbortProgram {astate}
+            | LatentInvalidAccess {astate}
+            | ISLLatentMemoryError astate ) ->
+            (astate :> AbductiveDomain.t).need_specialization
+        | None ->
+            false )
+
+
+  let reset_need_specialization needed_specialization astates =
+    if needed_specialization then
+      List.map astates ~f:(fun res ->
+          PulseResult.map res ~f:(function
+            | ExceptionRaised astate ->
+                let astate = AbductiveDomain.set_need_specialization astate in
+                ExceptionRaised astate
+            | ContinueProgram astate ->
+                let astate = AbductiveDomain.set_need_specialization astate in
+                ContinueProgram astate
+            | ExitProgram astate ->
+                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                ExitProgram astate
+            | AbortProgram astate ->
+                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                AbortProgram astate
+            | LatentAbortProgram latent_abort_program ->
+                let astate =
+                  AbductiveDomain.summary_with_need_specialization latent_abort_program.astate
+                in
+                LatentAbortProgram {latent_abort_program with astate}
+            | LatentInvalidAccess latent_invalid_access ->
+                let astate =
+                  AbductiveDomain.summary_with_need_specialization latent_invalid_access.astate
+                in
+                LatentInvalidAccess {latent_invalid_access with astate}
+            | ISLLatentMemoryError astate ->
+                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                ISLLatentMemoryError astate ) )
+    else astates
+
+
+  let interprocedural_call
+      ({InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} as analysis_data) path ret
+      callee_pname call_exp func_args call_loc (flags : CallFlags.t) astate =
+    let actuals =
+      List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+          (arg_payload, typ) )
+    in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
         let formals_opt = get_pvar_formals callee_pname in
         let callee_data = analyze_dependency callee_pname in
-        let call_kind =
+        let call_kind_of call_exp =
           match call_exp with
           | Exp.Closure {captured_vars} ->
               `Closure captured_vars
@@ -56,12 +117,47 @@ module PulseTransferFunctions = struct
           | _ ->
               `ResolvedProcname
         in
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-          callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
+        (* [needed_specialization] = current function already needs specialization before
+           the upcoming call (i.e. we did not have enough information to sufficiently
+           specialize a callee). *)
+        let needed_specialization = astate.AbductiveDomain.need_specialization in
+        (* [astate.need_specialization] is false when entering the call. This is to
+           detect calls that need specialization. The value will be set back to true
+           (if it was) in the end by [reset_need_specialization] *)
+        let astate = AbductiveDomain.unset_need_specialization astate in
+        let maybe_res =
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
+            callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
+        in
+        let res =
+          if (not needed_specialization) && need_specialization maybe_res then
+            match
+              PulseBlockSpecialization.make_specialized_call_exp func_args callee_pname
+                analysis_data astate
+            with
+            | Some (callee_pname, call_exp) ->
+                let formals_opt = get_pvar_formals callee_pname in
+                let callee_data = analyze_dependency callee_pname in
+                PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
+                  callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
+            | None ->
+                maybe_res
+          else maybe_res
+        in
+        reset_need_specialization needed_specialization res
     | _ ->
         (* dereference call expression to catch nil issues *)
         let<*> astate, _ =
           if flags.cf_is_objc_block then
+            (* We are on an unknown block call, meaning that the block was defined
+               outside the current function and was either passed by the caller
+               as an argument or retrieved from an object. We do not handle blocks
+               inside objects yet so we assume we are in the former case. In this
+               case, we tell the caller that we are missing some information by
+               setting [need_specialization] in the resulting state and the caller
+               will then try to specialize the current function with its available
+               information. *)
+            let astate = AbductiveDomain.set_need_specialization astate in
             PulseOperations.eval_deref path ~must_be_valid_reason:BlockCall call_loc call_exp astate
           else PulseOperations.eval_deref path call_loc call_exp astate
         in
@@ -101,7 +197,7 @@ module PulseTransferFunctions = struct
         in
         (* invalidate [&x] *)
         PulseOperations.invalidate path
-          (StackAddress (Var.of_pvar pvar, Epoch))
+          (StackAddress (Var.of_pvar pvar, ValueHistory.epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
     | ISLLatentMemoryError _
@@ -200,16 +296,15 @@ module PulseTransferFunctions = struct
           model {analysis_data; path; callee_procname; location= call_loc; ret} astate
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
-          let only_actuals_evaled =
-            List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-                (arg_payload, typ) )
-          in
           let r =
-            interprocedural_call analysis_data path ret callee_pname call_exp only_actuals_evaled
-              call_loc flags astate
+            interprocedural_call analysis_data path ret callee_pname call_exp func_args call_loc
+              flags astate
           in
           PerfEvent.(log (fun logger -> log_end_event logger ())) ;
           r
+    in
+    let exec_states_res =
+      PulseTaintOperations.call path call_loc callee_pname func_args ret exec_states_res
     in
     let exec_states_res =
       if Topl.is_active () then
@@ -507,7 +602,7 @@ module PulseTransferFunctions = struct
                 let+ astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
                 (false, [Ok (astate, lhs_addr_hist)])
             in
-            let hist = PathContext.with_context path (Sequence (event, rhs_history)) in
+            let hist = ValueHistory.sequence ~context:path.conditions event rhs_history in
             let write_function lhs_addr_hist astate =
               if is_structured then
                 PulseOperations.write_deref_biad_isl path loc ~ref:lhs_addr_hist Dereference
@@ -543,9 +638,10 @@ module PulseTransferFunctions = struct
             dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
           in
-          ( astates
-          , path
-          , PulseNonDisjunctiveOperations.add_copies loc call_exp actuals astates astate_n )
+          let astate_n, astates =
+            PulseNonDisjunctiveOperations.add_copies loc call_exp actuals astates astate_n
+          in
+          (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
           let prune_result = PulseOperations.prune path loc ~condition astate in
           let path =
@@ -555,8 +651,9 @@ module PulseTransferFunctions = struct
             | Some (_, hist) ->
                 if Sil.is_terminated_if_kind if_kind then
                   let hist =
-                    ValueHistory.Sequence
-                      (ConditionPassed {if_kind; is_then_branch; location= loc; timestamp}, hist)
+                    ValueHistory.sequence
+                      (ConditionPassed {if_kind; is_then_branch; location= loc; timestamp})
+                      hist
                   in
                   {path with conditions= hist :: path.conditions}
                 else path
@@ -597,11 +694,22 @@ module PulseTransferFunctions = struct
 
   let exec_instr ((astate, path), astate_n) analysis_data cfg_node instr :
       DisjDomain.t list * NonDisjDomain.t =
-    (* Sometimes instead of stopping on contradictions a false path condition is recorded
-       instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
+    let heap_size = heap_size () in
+    ( match Config.pulse_max_heap with
+    | Some max_heap_size when heap_size > max_heap_size ->
+        let pname = Procdesc.get_proc_name analysis_data.InterproceduralAnalysis.proc_desc in
+        L.internal_error
+          "OOM danger: heap size is %d words, more than the specified threshold of %d words. \
+           Aborting the analysis of the procedure %a to avoid running out of memory.@\n"
+          heap_size max_heap_size Procname.pp pname ;
+        raise AboutToOOM
+    | _ ->
+        () ) ;
     let astates, path, astate_n =
       exec_instr_aux path astate astate_n analysis_data cfg_node instr
     in
+    (* Sometimes instead of stopping on contradictions a false path condition is recorded
+       instead. Prune these early here so they don't spuriously count towards the disjunct limit. *)
     ( List.filter_map astates ~f:(fun exec_state ->
           if ExecutionDomain.is_unsat_cheap exec_state then None
           else Some (exec_state, PathContext.post_exec_instr path) )
@@ -667,7 +775,7 @@ let exit_function analysis_data location posts non_disj_astate =
   (List.rev astates, astate_n)
 
 
-let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
+let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   if should_analyze proc_desc then (
     AbstractValue.State.reset () ;
     match
@@ -696,4 +804,14 @@ let checker ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             Some summary )
     | None ->
         None )
+  else None
+
+
+let checker analysis_data =
+  if should_analyze analysis_data.InterproceduralAnalysis.proc_desc then (
+    try analyze analysis_data
+    with AboutToOOM ->
+      (* We trigger GC to avoid skipping the next procedure that will be analyzed. *)
+      Gc.major () ;
+      None )
   else None

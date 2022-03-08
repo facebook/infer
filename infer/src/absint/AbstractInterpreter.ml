@@ -598,8 +598,6 @@ end
 module MakeRPONode (T : NodeTransferFunctions) =
   MakeWithScheduler (Scheduler.ReversePostorder (T.CFG)) (T)
 module MakeRPO (T : TransferFunctions.SIL) = MakeRPONode (SimpleNodeTransferFunctions (T))
-module MakeBackwardRPO (T : TransferFunctionsWithExceptions) =
-  MakeRPONode (BackwardNodeTransferFunction (T))
 
 module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
   include AbstractInterpreterCommon (TransferFunctions)
@@ -726,3 +724,11 @@ module MakeDisjunctive
     (T : TransferFunctions.DisjReady)
     (DConfig : TransferFunctions.DisjunctiveConfig) =
   MakeWTONode (MakeDisjunctiveTransferFunctions (T) (DConfig))
+
+module type MakeExceptional = functor (T : TransferFunctionsWithExceptions) ->
+  S with module TransferFunctions = T
+
+module MakeBackwardRPO (T : TransferFunctionsWithExceptions) =
+  MakeRPONode (BackwardNodeTransferFunction (T))
+module MakeBackwardWTO (T : TransferFunctionsWithExceptions) =
+  MakeWTONode (BackwardNodeTransferFunction (T))

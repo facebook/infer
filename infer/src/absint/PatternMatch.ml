@@ -200,6 +200,8 @@ module Java = struct
 
   let implements_view_parent = implements "android.view.ViewParent"
 
+  let implements_kotlin_intrinsics = implements "kotlin.jvm.internal.Intrinsics"
+
   let initializer_classes =
     List.map ~f:Typ.Name.Java.from_string
       [ "android.app.Activity"

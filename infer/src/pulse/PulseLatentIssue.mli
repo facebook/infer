@@ -8,6 +8,7 @@
 open! IStd
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
+module Diagnostic = PulseDiagnostic
 
 (** A subset of [PulseDiagnostic] that can be "latent", i.e. there is a potential issue in the code
     but we want to delay reporting until we see the conditions for the bug manifest themselves in

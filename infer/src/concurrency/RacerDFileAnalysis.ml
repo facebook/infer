@@ -601,7 +601,7 @@ let should_report_on_proc file_exe_env proc_name =
              false
          | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
              is_not_private
-         | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod | ObjCInternalMethod; class_name} ->
+         | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod; class_name} ->
              Tenv.lookup tenv class_name
              |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
                     List.mem ~equal:Procname.equal exported_objc_methods proc_name )

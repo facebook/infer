@@ -297,7 +297,7 @@ module Collection = struct
     let event = Hist.call_event path location desc in
     let new_val = AbstractValue.mk_fresh () in
     let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
-    update path coll new_val Epoch event location ret_id astate
+    update path coll new_val ValueHistory.epoch event location ret_id astate
 
 
   (* Auxiliary function that updates the state by:

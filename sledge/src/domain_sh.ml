@@ -72,10 +72,7 @@ let exec_move tid res q =
 
 let exec_inst tid inst pre =
   let alarm kind =
-    { Alarm.kind
-    ; loc= Llair.Inst.loc inst
-    ; pp_action= Fun.flip Llair.Inst.pp inst
-    ; pp_state= Fun.flip pp pre }
+    Alarm.v kind (Llair.Inst.loc inst) Llair.Inst.pp inst pp pre
   in
   let or_alarm = function
     | Some post -> Ok post
@@ -109,11 +106,10 @@ let exec_inst tid inst pre =
       |> or_alarm
   | Free {ptr; _} -> Exec.free pre ~ptr:(X.term tid ptr) |> or_alarm
   | Nondet {reg; _} -> Ok (Exec.nondet pre (Option.map ~f:(X.reg tid) reg))
-  | Abort _ -> Error (alarm Abort)
-  | Intrinsic {reg; name; args; _} ->
+  | Builtin {reg; name; args; _} ->
       let areturn = Option.map ~f:(X.reg tid) reg in
       let actuals = IArray.map ~f:(X.term tid) args in
-      Exec.intrinsic pre areturn name actuals |> or_alarm )
+      Exec.builtin pre areturn name actuals |> or_alarm )
   |> Or_alarm.map ~f:simplify
 
 let enter_scope tid regs q =

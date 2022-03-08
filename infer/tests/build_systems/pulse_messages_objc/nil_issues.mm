@@ -89,3 +89,10 @@ void testCallNullptrBad() {
   void (*f)() = nullptr;
   f();
 }
+
+NSString* returns_nil() { return nil; }
+
+void nilInsertionIntoCollectionBad(NSMutableArray<NSString*>* mArray) {
+  NSString* object = returns_nil();
+  [mArray addObject:object];
+}

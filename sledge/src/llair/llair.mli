@@ -18,10 +18,16 @@ module GlobalDefn = GlobalDefn
 
 val cct_schedule_points : bool ref
 
+module Builtin : sig
+  include module type of Builtins
+
+  val of_name : string -> t option
+  val pp : t pp
+end
+
 module Intrinsic : sig
   include module type of Intrinsics
 
-  val to_string : t -> string
   val of_name : string -> t option
   val pp : t pp
 end
@@ -63,10 +69,9 @@ type inst = private
   | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
       (** Bind [reg] to an arbitrary value, representing non-deterministic
           approximation of behavior described by [msg]. *)
-  | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
-  | Intrinsic of
-      {reg: Reg.t option; name: Intrinsic.t; args: Exp.t iarray; loc: Loc.t}
-      (** Bind [reg] to the value of applying intrinsic [name] to [args]. *)
+  | Builtin of
+      {reg: Reg.t option; name: Builtin.t; args: Exp.t iarray; loc: Loc.t}
+      (** Bind [reg] to the value of applying builtin [name] to [args]. *)
 
 (** A (straight-line) command is a sequence of instructions. *)
 type cmnd = inst iarray
@@ -76,6 +81,12 @@ type label = string
 
 (** A jump to a block. *)
 type jump = private {mutable dst: block; mutable retreating: bool}
+
+and callee =
+  | Direct of func  (** Statically resolved function *)
+  | Indirect of Exp.t  (** Dynamically resolved function-pointer *)
+  | Intrinsic of Intrinsic.t
+      (** Intrinsic implemented in analyzer rather than source code *)
 
 (** A call to a function. *)
 and 'a call =
@@ -96,13 +107,13 @@ and term = private
           [case] which is equal to [key], if any, otherwise invoke [els]. *)
   | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
       (** Invoke the [jump] in [tbl] whose [dst] is equal to [ptr]. *)
-  | Call of func call  (** Call function with arguments. *)
-  | ICall of Exp.t call  (** Indirect call function with arguments. *)
+  | Call of callee call  (** Call function with arguments. *)
   | Return of {exp: Exp.t option; loc: Loc.t}
       (** Invoke [return] of the dynamically most recent [Call]. *)
   | Throw of {exc: Exp.t; loc: Loc.t}
       (** Invoke [throw] of the dynamically most recent [Call] with [throw]
           not [None]. *)
+  | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
   | Unreachable
       (** Halt as control is assumed to never reach [Unreachable]. *)
 
@@ -158,11 +169,10 @@ module Inst : sig
   val alloc : reg:Reg.t -> num:Exp.t -> len:int -> loc:Loc.t -> inst
   val free : ptr:Exp.t -> loc:Loc.t -> inst
   val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst
-  val abort : loc:Loc.t -> inst
 
-  val intrinsic :
+  val builtin :
        reg:Reg.t option
-    -> name:Intrinsic.t
+    -> name:Builtin.t
     -> args:Exp.t iarray
     -> loc:Loc.t
     -> t
@@ -183,6 +193,8 @@ module Term : sig
   type t = term [@@deriving compare, equal]
 
   val pp : t pp
+  val pp_callee : callee pp
+  val invariant : ?parent:func -> t -> unit
 
   val goto : dst:jump -> loc:Loc.t -> term
   (** Construct a [Switch] representing an unconditional branch. *)
@@ -215,9 +227,20 @@ module Term : sig
     -> loc:Loc.t
     -> term
 
+  val intrinsic :
+       callee:Intrinsic.t
+    -> typ:Typ.t
+    -> actuals:Exp.t iarray
+    -> areturn:Reg.t option
+    -> return:jump
+    -> throw:jump option
+    -> loc:Loc.t
+    -> term
+
   val return : exp:Exp.t option -> loc:Loc.t -> term
   val throw : exc:Exp.t -> loc:Loc.t -> term
   val unreachable : term
+  val abort : loc:Loc.t -> term
   val loc : term -> Loc.t
 end
 

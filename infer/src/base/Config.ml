@@ -33,6 +33,7 @@ type os_type = Unix | Win32 | Cygwin
 type build_system =
   | BAnt
   | BBuck
+  | BBuck2
   | BClang
   | BGradle
   | BJava
@@ -53,6 +54,7 @@ type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 let build_system_exe_assoc =
   [ (BAnt, "ant")
   ; (BBuck, "buck")
+  ; (BBuck2, "buck2")
   ; (BGradle, "gradle")
   ; (BGradle, "gradlew")
   ; (BJava, "java")
@@ -775,6 +777,20 @@ and bootclasspath =
 
 (** Automatically set when running from within Buck *)
 and buck = CLOpt.mk_bool ~long:"buck" ""
+
+and buck2_build_args =
+  CLOpt.mk_string_list ~long:"Xbuck2"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Pass values as command-line arguments to invocations of $(i,`buck2 build`). Only valid for \
+     $(b,--buck-clang)."
+
+
+and buck2_build_args_no_inline_rev =
+  CLOpt.mk_string_list ~long:"Xbuck2-no-inline"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Pass values as command-line arguments to invocations of $(i,`buck2 build`), don't inline any \
+     args starting with '@'. Only valid for $(b,--buck-clang)."
+
 
 and buck_block_list =
   CLOpt.mk_string_list
@@ -1843,6 +1859,14 @@ and merge =
     "Merge the captured results directories specified in the dependency file."
 
 
+and merge_infer_out =
+  CLOpt.mk_string_list ~long:"merge-infer-out"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "Specifies an Infer results directory. The files and procedures captured in it will be merged \
+     together into the results directory specified with $(b, -o). Relative paths are interpreted \
+     as relative to $(b, project-root/buck-out)."
+
+
 and merge_report =
   CLOpt.mk_string_list ~long:"merge-report"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -2111,6 +2135,12 @@ and pulse_max_disjuncts =
     "Under-approximate after $(i,int) disjunctions in the domain"
 
 
+and pulse_max_heap =
+  CLOpt.mk_int_opt ~long:"pulse-max-heap" ~meta:"int"
+    "Give up analysing a procedure if the number of words in the heap exceeds this limit. Intended \
+     use: avoid OutOfMemory crashes."
+
+
 and pulse_model_abort =
   CLOpt.mk_string_list ~long:"pulse-model-abort"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2152,6 +2182,12 @@ and pulse_model_release_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-release-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Regex of methods that should be modelled as release in Pulse"
+
+
+and pulse_model_returns_copy_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-returns-copy-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as creating copies in Pulse"
 
 
 and pulse_model_return_nonnull =
@@ -2215,6 +2251,11 @@ and pulse_report_latent_issues =
   CLOpt.mk_bool ~long:"pulse-report-latent-issues" ~default:true
     "Report latent issues instead of waiting for them to become manifest, when the latent issue \
      itself is enabled."
+
+
+and pulse_report_issues_for_tests =
+  CLOpt.mk_bool ~long:"pulse-report-issues-for-tests" ~default:false
+    "Do not supress any of the issues found by Pulse."
 
 
 and pulse_skip_procedures =
@@ -2638,18 +2679,7 @@ and sqlite_lock_timeout =
     "Timeout for SQLite results database operations, in milliseconds."
 
 
-and sqlite_vacuum =
-  CLOpt.mk_bool ~long:"sqlite-vacuum" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_generic)]
-    "$(b,VACUUM) the SQLite DB after performing capture."
-
-
 and sqlite_vfs = CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
-
-and (_ : bool ref) =
-  CLOpt.mk_bool ~default:false "[DEPRECATED][DOES NOTHING] option does not exist any more"
-    ~deprecated:["-sqlite-write-daemon"] ~deprecated_no:["-no-sqlite-write-daemon"] ~long:""
-
 
 and subtype_multirange =
   CLOpt.mk_bool ~deprecated:["subtype_multirange"] ~long:"subtype-multirange" ~default:true
@@ -2710,6 +2740,12 @@ and threadsafe_aliases =
   CLOpt.mk_json ~long:"threadsafe-aliases"
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
     "Specify custom annotations that should be considered aliases of @ThreadSafe"
+
+
+and top_longest_proc_duration_size =
+  CLOpt.mk_int_opt ~long:"top-longest-proc-duration-size" ~default:10
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Number of procedures for which we track longest analysis duration info."
 
 
 and trace_events =
@@ -3066,6 +3102,10 @@ and bo_max_cfg_size = !bo_max_cfg_size
 
 and buck = !buck
 
+and buck2_build_args = RevList.to_list !buck2_build_args
+
+and buck2_build_args_no_inline = RevList.to_list !buck2_build_args_no_inline_rev
+
 and buck_block_list = RevList.to_list !buck_block_list
 
 and buck_build_args = RevList.to_list !buck_build_args
@@ -3385,6 +3425,8 @@ and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
 
 and merge = !merge
 
+and merge_infer_out = RevList.to_list !merge_infer_out
+
 and merge_report = RevList.to_list !merge_report
 
 and method_decls_info = !method_decls_info
@@ -3487,6 +3529,8 @@ and pulse_max_cfg_size = !pulse_max_cfg_size
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
 
+and pulse_max_heap = !pulse_max_heap
+
 and pulse_model_abort = RevList.to_list !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
@@ -3498,6 +3542,8 @@ and pulse_model_malloc_pattern = Option.map ~f:Str.regexp !pulse_model_malloc_pa
 and pulse_model_realloc_pattern = Option.map ~f:Str.regexp !pulse_model_realloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
+
+and pulse_model_returns_copy_pattern = Option.map ~f:Str.regexp !pulse_model_returns_copy_pattern
 
 and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_first_arg
 
@@ -3541,6 +3587,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
+
+and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
 and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 
@@ -3680,8 +3728,6 @@ and sqlite_page_size = !sqlite_page_size
 
 and sqlite_lock_timeout = !sqlite_lock_timeout
 
-and sqlite_vacuum = !sqlite_vacuum
-
 and sqlite_vfs = !sqlite_vfs
 
 and starvation_skip_analysis = !starvation_skip_analysis
@@ -3722,6 +3768,8 @@ and profiler_samples = !profiler_samples
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
+
+and top_longest_proc_duration_size = !top_longest_proc_duration_size
 
 and topl_max_conjuncts = !topl_max_conjuncts
 

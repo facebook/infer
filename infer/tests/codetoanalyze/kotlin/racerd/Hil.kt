@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
- class Hil(public val o: Object) {
-    fun crashInfer(nums : List<Long>) {
-        val foldedNums = nums.fold(1) { _, _ -> 2 }
+class Hil(public val o: Object) {
+  fun crashInfer(nums: List<Long>) {
+    val foldedNums = nums.fold(1) { _, _ -> 2 }
 
-        val checked = checkNotNull(o) { "Boom" }
+    val checked = checkNotNull(o) { "Boom" }
 
-        val v = foldedNums.toLong()
-    }
+    val v = foldedNums.toLong()
+  }
 }

@@ -756,14 +756,11 @@ let alloc pre ~reg ~num ~len = exec_spec pre (alloc_spec reg num len)
 let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
 
-let intrinsic :
-       Sh.t
-    -> Var.t option
-    -> Llair.Intrinsic.t
-    -> Term.t iarray
-    -> Sh.t option =
- fun pre areturn intrinsic actuals ->
-  match (areturn, intrinsic, IArray.to_array actuals) with
+let builtin :
+    Sh.t -> Var.t option -> Llair.Builtin.t -> Term.t iarray -> Sh.t option
+    =
+ fun pre areturn builtin actuals ->
+  match (areturn, builtin, IArray.to_array actuals) with
   (*
    * llvm intrinsics
    *)
@@ -852,7 +849,6 @@ let intrinsic :
       | `mallctl | `mallctlnametomib | `mallctlbymib | `strlen
       | `_ZN5folly13usingJEMallocEv | `cct_point )
     , _ ) ->
-      fail "%aintrinsic %a%a;"
+      fail "%abuiltin %a%a;"
         (Option.pp "%a := " Var.pp)
-        areturn Llair.Intrinsic.pp intrinsic (IArray.pp "@ " Term.pp)
-        actuals ()
+        areturn Llair.Builtin.pp builtin (IArray.pp "@ " Term.pp) actuals ()

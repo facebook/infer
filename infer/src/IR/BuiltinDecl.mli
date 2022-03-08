@@ -41,8 +41,6 @@ val __erlang_make_map : Procname.t
 
 val __erlang_make_str_const : Procname.t
 
-val __erlang_missing_translation : Procname.t
-
 val __erlang_str_equal : Procname.t
 
 val __infer_initializer_list : Procname.t

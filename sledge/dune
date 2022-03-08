@@ -7,7 +7,7 @@
  (debug
   (flags
    (-w +a-4-9-18-30-40-42-44-48@50-66-70 -strict-formats -strict-sequence
-     -short-paths -bin-annot -keep-locs -keep-docs -g))
+     -error-style short -short-paths -bin-annot -keep-locs -keep-docs -g))
   (ocamlopt_flags (-O3))
   (env-vars
    (PPX_TRACE_ENABLED 1))
@@ -31,7 +31,7 @@
  (name ppx_sledge)
  (kind ppx_rewriter)
  (libraries ppx_compare ppx_enumerate ppx_expect ppx_here ppx_inline_test
-   ppx_let ppx_sexp_conv ppx_sexp_value ppx_variants_conv)
+   ppx_let ppx_sexp_conv ppx_sexp_value)
  (preprocess no_preprocessing))
 
 (subdir

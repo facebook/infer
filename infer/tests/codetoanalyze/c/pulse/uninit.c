@@ -192,5 +192,6 @@ void uninit_interproc_manifest_bad() {
   if (x == 4) {
     int* p = NULL;
     *p = 42; // NPE to test that uninit didn't terminate the symbolic execution
+    // currently FN as uninit does in fact terminate symbolic execution
   }
 }

@@ -80,11 +80,6 @@ let get_invariant_at_node (map : Analyzer.invariant_map) node =
   |> Option.value_map ~default:Domain.top ~f:(fun abstate -> abstate.AbstractInterpreter.State.pre)
 
 
-let map_args_captured_vars ~f actual_params =
-  List.concat_map actual_params ~f:(fun actual ->
-      match actual with Exp.Closure c, _ -> f c | _ -> [] )
-
-
 let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.instr =
   let kind = `ExecNode in
   let pp_name fmt = Format.pp_print_string fmt "Closure Call Substitution" in
@@ -106,9 +101,12 @@ let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.inst
       | Call (ret_id_typ, Const (Cfun pname), actual_params, loc, call_flags) ->
           L.d_printfln "call  %a " (Sil.pp_instr Pp.text ~print_types:true) instr ;
           let captured_by_args =
-            map_args_captured_vars actual_params ~f:(fun c ->
-                L.d_printfln "found closure %a in arguments\n" Exp.pp (Exp.Closure c) ;
-                c.captured_vars )
+            List.concat_map actual_params ~f:(function
+              | Exp.Closure c, _ ->
+                  L.d_printfln "found closure %a in arguments\n" Exp.pp (Exp.Closure c) ;
+                  c.captured_vars
+              | _ ->
+                  [] )
           in
           if List.is_empty captured_by_args then (
             L.d_printfln "(no closure found)" ;

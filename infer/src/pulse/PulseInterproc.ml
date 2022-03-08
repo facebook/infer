@@ -86,6 +86,17 @@ let pp_contradiction fmt = function
       F.pp_print_string fmt "pre does not imply call state"
 
 
+let log_contradiction = function
+  | Aliasing _ ->
+      Stats.incr_pulse_aliasing_contradictions ()
+  | FormalActualLength _ ->
+      Stats.incr_pulse_args_length_contradictions ()
+  | CapturedFormalActualLength _ ->
+      Stats.incr_pulse_captured_vars_length_contradictions ()
+  | ISLPreconditionMismatch | PathCondition ->
+      ()
+
+
 exception Contradiction of contradiction
 
 let fold_globals_of_stack ({PathContext.timestamp} as path) call_loc stack call_state ~f =
@@ -175,7 +186,7 @@ let translate_access_to_caller subst (access_callee : BaseMemory.Access.t) : _ *
   match access_callee with
   | ArrayAccess (typ, val_callee) ->
       let subst, (val_caller, _) =
-        subst_find_or_new subst val_callee ~default_hist_caller:ValueHistory.Epoch
+        subst_find_or_new subst val_callee ~default_hist_caller:ValueHistory.epoch
       in
       (subst, ArrayAccess (typ, val_caller))
   | FieldAccess _ | TakeAddress | Dereference ->
@@ -430,11 +441,9 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
         let translated_edges =
           BaseMemory.Edges.add access
             ( addr_curr
-            , PathContext.with_context path
-                (Sequence
-                   ( Call
-                       {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp}
-                   , hist_curr ) ) )
+            , ValueHistory.sequence ~context:path.conditions
+                (Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp})
+                hist_curr )
             translated_edges
         in
         (subst, translated_edges) )
@@ -533,7 +542,7 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
           | Some return_caller_hist ->
               return_caller_hist
           | None ->
-              (AbstractValue.mk_fresh_same_kind return_callee, ValueHistory.Epoch)
+              (AbstractValue.mk_fresh_same_kind return_callee, ValueHistory.epoch)
         in
         L.d_printfln_escaped "Recording POST from [return] <-> %a" AbstractValue.pp return_caller ;
         let call_state =
@@ -543,14 +552,11 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
         in
         (* need to add the call to the returned history too *)
         let return_caller_hist =
-          PathContext.with_context path
-            (Sequence
-               ( Call
-                   { f= Call callee_proc_name
-                   ; location= call_loc
-                   ; in_call= return_callee_hist
-                   ; timestamp }
-               , return_caller_hist ) )
+          ValueHistory.sequence ~context:path.conditions
+            (Call
+               {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist; timestamp}
+            )
+            return_caller_hist
         in
         (call_state, Some (return_caller, return_caller_hist)) )
 
@@ -621,10 +627,19 @@ let record_skipped_calls callee_proc_name call_loc pre_post call_state =
     pre_post.AbductiveDomain.skipped_calls
     |> SkippedCalls.map (fun trace ->
            Trace.ViaCall
-             {f= Call callee_proc_name; location= call_loc; history= Epoch; in_call= trace} )
+             { f= Call callee_proc_name
+             ; location= call_loc
+             ; history= ValueHistory.epoch
+             ; in_call= trace } )
   in
   let astate = AbductiveDomain.add_skipped_calls callee_skipped_map call_state.astate in
   {call_state with astate}
+
+
+let record_need_specialization pre_post call_state =
+  if pre_post.AbductiveDomain.need_specialization then
+    {call_state with astate= AbductiveDomain.set_need_specialization call_state.astate}
+  else call_state
 
 
 let apply_unknown_effects pre_post call_state =
@@ -687,6 +702,7 @@ let apply_post path callee_proc_name call_location pre_post ~captured_formals ~c
     let+ call_state =
       record_post_remaining_attributes path callee_proc_name call_location pre_post call_state
       |> record_skipped_calls callee_proc_name call_location pre_post
+      |> record_need_specialization pre_post
       |> conjoin_callee_arith pre_post
     in
     (call_state, return_caller)
@@ -708,17 +724,28 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
           | Some must_be_valid_data ->
               (addr_hist_caller, `MustBeValid must_be_valid_data) :: to_check
         in
+        let to_check =
+          match
+            BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs
+          with
+          | None ->
+              to_check
+          | Some must_be_init_data ->
+              (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check
+        in
         match
-          BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs
+          BaseAddressAttributes.get_must_not_be_tainted addr_pre (pre :> BaseDomain.t).attrs
         with
         | None ->
             to_check
-        | Some must_be_init_data ->
-            (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check )
+        | Some must_not_be_tainted_data ->
+            (addr_hist_caller, `MustNotBeTainted must_not_be_tainted_data) :: to_check )
       call_state.subst []
   in
   let timestamp_of_check = function
-    | `MustBeValid (timestamp, _, _) | `MustBeInitialized (timestamp, _) ->
+    | `MustBeValid (timestamp, _, _)
+    | `MustBeInitialized (timestamp, _)
+    | `MustNotBeTainted (timestamp, _, _) ->
         timestamp
   in
   List.sort addresses_to_check ~compare:(fun (_, check1) (_, check2) ->
@@ -737,11 +764,13 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
              let access_trace = mk_access_trace callee_access_trace in
              AddressAttributes.check_valid path access_trace addr_caller astate
              |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-                    L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
+                    L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp
+                      addr_caller ;
                     AccessResult.ReportableError
                       { diagnostic=
-                          Diagnostic.AccessToInvalidAddress
+                          AccessToInvalidAddress
                             { calling_context= []
+                            ; invalid_address= Decompiler.find addr_caller astate
                             ; invalidation
                             ; invalidation_trace
                             ; access_trace
@@ -751,11 +780,24 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
              let access_trace = mk_access_trace callee_access_trace in
              AddressAttributes.check_initialized path access_trace addr_caller astate
              |> Result.map_error ~f:(fun () ->
-                    L.d_printfln "ERROR: caller's %a is uninitialized!" AbstractValue.pp addr_caller ;
+                    L.d_printfln ~color:Red "ERROR: caller's %a is uninitialized!" AbstractValue.pp
+                      addr_caller ;
+                    AccessResult.ReportableError
+                      { diagnostic= ReadUninitializedValue {calling_context= []; trace= access_trace}
+                      ; astate } )
+         | `MustNotBeTainted (_timestamp, sink, callee_access_trace) ->
+             let access_trace = mk_access_trace callee_access_trace in
+             AddressAttributes.check_not_tainted path sink access_trace addr_caller astate
+             |> Result.map_error ~f:(fun source ->
+                    L.d_printfln ~color:Red "ERROR: caller's %a is tainted!" AbstractValue.pp
+                      addr_caller ;
                     AccessResult.ReportableError
                       { diagnostic=
-                          Diagnostic.ReadUninitializedValue
-                            {calling_context= []; trace= access_trace}
+                          TaintFlow
+                            { location= call_location
+                            ; source
+                            ; sink= (sink, access_trace)
+                            ; tainted= Decompiler.find addr_caller astate }
                       ; astate } ) )
 
 
@@ -786,12 +828,13 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
               astate_result
           | Some (_, callee_access_trace) ->
               let access_trace = mk_access_trace callee_access_trace in
-              L.d_printfln "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
+              L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
               FatalError
                 ( AccessResult.ReportableError
                     { diagnostic=
                         Diagnostic.AccessToInvalidAddress
                           { calling_context= []
+                          ; invalid_address= Decompiler.find addr_caller astate
                           ; invalidation
                           ; invalidation_trace
                           ; access_trace
@@ -829,6 +872,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
       (* can't make sense of the pre-condition in the current context: give up on that particular
          pre/post pair *)
       L.d_printfln "Cannot apply precondition: %a" pp_contradiction reason ;
+      log_contradiction reason ;
       Unsat
   | result -> (
     try
@@ -862,6 +906,10 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
               ~callee_prepost:pre_post.AbductiveDomain.topl call_state.astate
           else call_state.astate
         in
+        let astate =
+          Option.fold ~init:astate return_caller ~f:(fun astate ret_v ->
+              Decompiler.add_call_source (fst ret_v) (Call callee_proc_name) astate )
+        in
         let+ astate =
           if is_isl_error_prepost then
             isl_check_all_invalid invalid_subst callee_proc_name call_location pre_post pre_astate
@@ -871,4 +919,5 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
         (astate, return_caller, call_state.subst))
     with Contradiction reason ->
       L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
+      log_contradiction reason ;
       Unsat )

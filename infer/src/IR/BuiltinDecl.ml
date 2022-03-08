@@ -106,8 +106,6 @@ let __erlang_make_str_const = create_procname "__erlang_make_str_const"
 
 let __erlang_str_equal = create_procname "__erlang_str_equal"
 
-let __erlang_missing_translation = create_procname "__erlang_missing_translation"
-
 let __exit = create_procname "_exit"
 
 let __objc_bridge_transfer = create_procname "__objc_bridge_transfer"

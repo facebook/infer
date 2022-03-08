@@ -47,3 +47,5 @@ let tuple_elem i = Printf.sprintf "elem%d" i
 let tuple_field_names size = List.init size ~f:(fun i -> tuple_elem (i + 1))
 
 let erlang_namespace = "erlang"
+
+let unsupported = "__unsupported"

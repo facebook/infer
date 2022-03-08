@@ -31,7 +31,7 @@ let write_value path location this ~value ~desc astate =
 
 
 let assign_value_fresh path location this ~desc astate =
-  write_value path location this ~value:(AbstractValue.mk_fresh (), Epoch) ~desc astate
+  write_value path location this ~value:(AbstractValue.mk_fresh (), ValueHistory.epoch) ~desc astate
 
 
 let assign_none this ~desc : model =

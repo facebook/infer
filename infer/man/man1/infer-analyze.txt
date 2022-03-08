@@ -319,6 +319,10 @@ OPTIONS
            Regex of methods that should be modelled as returning non-null in
            Pulse
 
+       --pulse-model-returns-copy-pattern string
+           Regex of methods that should be modelled as creating copies in
+           Pulse
+
        --pulse-model-skip-pattern string
            Regex of methods that should be modelled as "skip" in Pulse
 
@@ -454,6 +458,10 @@ OPTIONS
        --starvation-only
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)
+
+       --top-longest-proc-duration-size int
+           Number of procedures for which we track longest analysis duration
+           info.
 
        --topl
            Activates: checker topl: Detect errors based on user-provided

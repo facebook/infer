@@ -6,12 +6,12 @@
  *)
 
 type kind = Abort | Invalid_memory_access
+type t
 
-type t =
-  { kind: kind
-  ; loc: Llair.Loc.t
-  ; pp_action: Format.formatter -> unit
-  ; pp_state: Format.formatter -> unit }
+val v : kind -> Llair.Loc.t -> 'a pp -> 'a -> 's pp -> 's -> t
+(** [v kind location pp_action action pp_state state] is a [kind] alarm
+    triggered at [location] by [action] (which can be printed by
+    [pp_action]) on [state] (which can be printed by [pp_state]). *)
 
 val pp : t pp
 (** print an alarm for the user report *)

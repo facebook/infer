@@ -21,7 +21,8 @@ let is_ptr_to_const formal_typ_opt =
 let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) ~ret ~actuals
     ~formals_opt astate =
   let hist =
-    ValueHistory.singleton (Call {f= reason; location= call_loc; in_call= Epoch; timestamp})
+    ValueHistory.singleton
+      (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
   in
   let ret_val = AbstractValue.mk_fresh () in
   let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
@@ -66,7 +67,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
     match reason with
     | SkippedKnownCall proc_name ->
         AbductiveDomain.add_skipped_call proc_name
-          (Trace.Immediate {location= call_loc; history= Epoch})
+          (Trace.Immediate {location= call_loc; history= ValueHistory.epoch})
           astate
     | _ ->
         astate
@@ -115,7 +116,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
       | None ->
           PulseOperations.havoc_id (fst ret)
             (ValueHistory.singleton
-               (Call {f= Call callee_pname; location= call_loc; in_call= Epoch; timestamp}) )
+               (Call
+                  {f= Call callee_pname; location= call_loc; in_call= ValueHistory.epoch; timestamp}
+               ) )
             post
     in
     f subst post
@@ -136,10 +139,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         ~f:(fun subst astate_post_call ->
           let* (astate_summary : AbductiveDomain.summary) =
             let open SatUnsat.Import in
-            ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate_post_call
-              >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
-              :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) PulseResult.t
-                 SatUnsat.t )
+            AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate_post_call
+            >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+            >>| AccessResult.of_summary
           in
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ | ISLLatentMemoryError _ ->
@@ -158,19 +160,23 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               | `ReportNow ->
                   Sat
                     (AccessResult.of_error_f
-                       (ReportableErrorSummary {diagnostic; astate= astate_summary})
-                       ~f:(fun _ -> ContinueProgram (astate_summary :> AbductiveDomain.t)) )
+                       (Summary (ReportableErrorSummary {diagnostic; astate= astate_summary}))
+                       ~f:(fun _ ->
+                         L.die InternalError
+                           "LatentAbortProgram cannot be applied to non-fatal errors" ) )
               | `ISLDelay astate ->
-                  Sat (FatalError (ISLError astate, [])) )
+                  Sat (FatalError (Summary (ISLErrorSummary {astate}), [])) )
           | LatentInvalidAccess
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
               ; calling_context } -> (
-            match AbstractValue.Map.find_opt address_callee subst with
+            match
+              AbstractValue.Map.find_opt (Decompiler.abstract_value_of_expr address_callee) subst
+            with
             | None ->
                 (* the address became unreachable so the bug can never be reached; drop it *)
                 Unsat
-            | Some (address, caller_history) -> (
+            | Some (invalid_address, caller_history) -> (
                 let access_trace =
                   Trace.ViaCall
                     { in_call= callee_access_trace
@@ -180,7 +186,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                 in
                 let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
                 match
-                  AbductiveDomain.find_post_cell_opt address astate_post_call
+                  AbductiveDomain.find_post_cell_opt invalid_address astate_post_call
                   |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
                 with
                 | None ->
@@ -189,31 +195,33 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                       (Ok
                          (LatentInvalidAccess
                             { astate= astate_summary
-                            ; address
+                            ; address= Decompiler.find invalid_address astate_post_call
                             ; must_be_valid= (access_trace, must_be_valid_reason)
                             ; calling_context } ) )
                 | Some (invalidation, invalidation_trace) ->
                     Sat
                       (FatalError
-                         ( ReportableErrorSummary
-                             { diagnostic=
-                                 AccessToInvalidAddress
-                                   { calling_context
-                                   ; invalidation
-                                   ; invalidation_trace
-                                   ; access_trace
-                                   ; must_be_valid_reason }
-                             ; astate= astate_summary }
+                         ( Summary
+                             (ReportableErrorSummary
+                                { diagnostic=
+                                    AccessToInvalidAddress
+                                      { calling_context
+                                      ; invalid_address=
+                                          Decompiler.find invalid_address astate_post_call
+                                      ; invalidation
+                                      ; invalidation_trace
+                                      ; access_trace
+                                      ; must_be_valid_reason }
+                                ; astate= astate_summary } )
                          , [] ) ) ) ) )
   | ISLLatentMemoryError astate ->
       map_call_result ~is_isl_error_prepost:true
         (astate :> AbductiveDomain.t)
         ~f:(fun _subst astate ->
           let open SatUnsat.Import in
-          ( AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
-            >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
-            :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) PulseResult.t
-               SatUnsat.t )
+          AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
+          >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+          >>| AccessResult.of_summary
           >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 

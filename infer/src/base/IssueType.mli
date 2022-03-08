@@ -348,6 +348,8 @@ val strong_self_not_checked : t
 
 val symexec_memory_error : t
 
+val taint_error : t
+
 val thread_safety_violation : t
 
 val topl_error : t
