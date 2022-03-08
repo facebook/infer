@@ -2184,6 +2184,12 @@ and pulse_model_release_pattern =
     "Regex of methods that should be modelled as release in Pulse"
 
 
+and pulse_model_returns_copy_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-returns-copy-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as creating copies in Pulse"
+
+
 and pulse_model_return_nonnull =
   CLOpt.mk_string_opt ~long:"pulse-model-return-nonnull"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3536,6 +3542,8 @@ and pulse_model_malloc_pattern = Option.map ~f:Str.regexp !pulse_model_malloc_pa
 and pulse_model_realloc_pattern = Option.map ~f:Str.regexp !pulse_model_realloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
+
+and pulse_model_returns_copy_pattern = Option.map ~f:Str.regexp !pulse_model_returns_copy_pattern
 
 and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_first_arg
 

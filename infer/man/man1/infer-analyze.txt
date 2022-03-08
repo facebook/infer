@@ -319,6 +319,10 @@ OPTIONS
            Regex of methods that should be modelled as returning non-null in
            Pulse
 
+       --pulse-model-returns-copy-pattern string
+           Regex of methods that should be modelled as creating copies in
+           Pulse
+
        --pulse-model-skip-pattern string
            Regex of methods that should be modelled as "skip" in Pulse
 

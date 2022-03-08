@@ -189,3 +189,14 @@ void copy_modified_after_abort_ok_FP(std::vector<int> source_vec) {
   copy.push_back(0); // copy modified, but we propagate Abort state without
                      // executing the rest of the stmts
 }
+namespace ns {
+
+template <typename X>
+X creates_copy(X a) {
+  // ....
+}
+} // namespace ns
+
+int copy_via_model_bad(Arr arr) {
+  auto copy = ns::creates_copy(arr); // creates copy (via model)
+}

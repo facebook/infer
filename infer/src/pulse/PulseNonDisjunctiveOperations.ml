@@ -10,8 +10,6 @@ module L = Logging
 open PulseDomainInterface
 open PulseBasicInterface
 
-let is_constructor = function Procname.ObjC_Cpp {kind= CPPConstructor _} -> true | _ -> false
-
 let get_var_opt args =
   match args with
   | (Exp.Var id, _) :: _ ->
@@ -22,41 +20,51 @@ let get_var_opt args =
       None
 
 
+let is_modeled_as_returning_copy proc_name =
+  Option.exists Config.pulse_model_returns_copy_pattern ~f:(fun r ->
+      let s = Procname.to_string proc_name in
+      Str.string_match r s 0 )
+
+
 let add_copies location call_exp actuals astates astate_non_disj =
-  List.fold_map astates ~init:astate_non_disj
-    ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
-      match (exec_state, (call_exp : Exp.t), actuals) with
-      | ( ContinueProgram disjunct
-        , (Const (Cfun procname) | Closure {name= procname})
-        , (Exp.Lvar copy_pvar, _) :: rest_args )
-        when is_constructor procname && Procname.is_copy_ctor procname ->
-          let copied_var = Var.of_pvar copy_pvar in
-          if Var.appears_in_source_code copied_var then
-            let heap = (disjunct.post :> BaseDomain.t).heap in
-            let copied = NonDisjDomain.Copied {heap; location} in
-            let source_addr_opt =
-              let open IOption.Let_syntax in
-              let* source_var = get_var_opt rest_args in
-              let+ source_addr, _ = Stack.find_opt source_var disjunct in
-              source_addr
-            in
-            let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
-            let disjunct' =
-              Option.value_map source_addr_opt ~default:disjunct ~f:(fun source_addr ->
-                  AddressAttributes.add_one source_addr (CopiedVar copied_var) disjunct
-                  |> AddressAttributes.add_one copy_addr (SourceOriginOfCopy source_addr) )
-            in
-            ( NonDisjDomain.add copied_var ~source_addr_opt copied astate_non_disj
-            , ExecutionDomain.continue disjunct' )
-          else (astate_non_disj, exec_state)
-      | ExceptionRaised _, _, _
-      | ISLLatentMemoryError _, _, _
-      | AbortProgram _, _, _
-      | ContinueProgram _, _, _
-      | ExitProgram _, _, _
-      | LatentAbortProgram _, _, _
-      | LatentInvalidAccess _, _, _ ->
-          (astate_non_disj, exec_state) )
+  let aux (copy_check_fn, args_map_fn) init astates =
+    List.fold_map astates ~init ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
+        match (exec_state, (call_exp : Exp.t), args_map_fn actuals) with
+        | ( ContinueProgram disjunct
+          , (Const (Cfun procname) | Closure {name= procname})
+          , (Exp.Lvar copy_pvar, _) :: rest_args )
+          when copy_check_fn procname ->
+            let copied_var = Var.of_pvar copy_pvar in
+            if Var.appears_in_source_code copied_var then
+              let heap = (disjunct.post :> BaseDomain.t).heap in
+              let copied = NonDisjDomain.Copied {heap; location} in
+              let source_addr_opt =
+                let open IOption.Let_syntax in
+                let* source_var = get_var_opt rest_args in
+                let+ source_addr, _ = Stack.find_opt source_var disjunct in
+                source_addr
+              in
+              let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
+              let disjunct' =
+                Option.value_map source_addr_opt ~default:disjunct ~f:(fun source_addr ->
+                    AddressAttributes.add_one source_addr (CopiedVar copied_var) disjunct
+                    |> AddressAttributes.add_one copy_addr (SourceOriginOfCopy source_addr) )
+              in
+              ( NonDisjDomain.add copied_var ~source_addr_opt copied astate_non_disj
+              , ExecutionDomain.continue disjunct' )
+            else (astate_non_disj, exec_state)
+        | ExceptionRaised _, _, _
+        | ISLLatentMemoryError _, _, _
+        | AbortProgram _, _, _
+        | ContinueProgram _, _, _
+        | ExitProgram _, _, _
+        | LatentAbortProgram _, _, _
+        | LatentInvalidAccess _, _, _ ->
+            (astate_non_disj, exec_state) )
+  in
+  let astate_n, astates = aux (Procname.is_copy_ctor, Fn.id) astate_non_disj astates in
+  (* For functions that return a copy, the last argument is the assigned copy *)
+  aux (is_modeled_as_returning_copy, List.rev) astate_n astates
 
 
 let get_matching_dest_addr_opt (edges_curr, attr_curr) edges_orig : AbstractValue.t list option =
