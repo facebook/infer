@@ -2618,6 +2618,11 @@ we assume that any captured weak pointer whose name contains "self" is a weak re
 In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to
 a local strong pointer that has been assigned `weakSelf`.
 
+## TAINT_ERROR
+
+Reported as "Taint Error" by [pulse](/docs/next/checker-pulse).
+
+A taint flow was detected from a source to a sink
 ## THREAD_SAFETY_VIOLATION
 
 Reported as "Thread Safety Violation" by [racerd](/docs/next/checker-racerd).
