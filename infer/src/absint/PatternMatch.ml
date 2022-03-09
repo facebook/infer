@@ -102,7 +102,6 @@ let get_field_type_name tenv (typ : Typ.t) (fieldname : Fieldname.t) : string op
   | _ ->
       None
 
-
 module Java = struct
   let implements interface tenv typename =
     let is_interface s _ = String.equal interface (Typ.Name.name s) in
