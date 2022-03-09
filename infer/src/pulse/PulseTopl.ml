@@ -357,11 +357,37 @@ let static_match_call return arguments procname label : tcontext option =
   if match_name () then match_args () else None
 
 
+module Debug = struct
+  let rec matched_transitions =
+    lazy
+      ( Epilogues.register ~f:log_unseen
+          ~description:"log which transitions never match because of their static pattern" ;
+        let automaton = Topl.automaton () in
+        let tcount = ToplAutomaton.tcount automaton in
+        Array.create ~len:tcount false )
+
+
+  and set_seen tindex = (Lazy.force matched_transitions).(tindex) <- true
+
+  and get_unseen () =
+    let f index seen = if seen then None else Some index in
+    Array.filter_mapi ~f (Lazy.force matched_transitions)
+
+
+  (** The transitions reported here *probably* have patterns that were miswrote by the user. *)
+  and log_unseen () =
+    let unseen = Array.to_list (get_unseen ()) in
+    let pp f i = ToplAutomaton.pp_tindex (Topl.automaton ()) f i in
+    if Config.trace_topl && not (List.is_empty unseen) then
+      L.user_warning "@[<v>@[<v2>The following Topl transitions never match:@;%a@]@;@]"
+        (Format.pp_print_list pp) unseen
+end
+
 (** Returns a list of transitions whose pattern matches (e.g., event type matches). Each match
     produces a tcontext (transition context), which matches transition-local variables to abstract
     values. *)
 let static_match event : (ToplAutomaton.transition * tcontext) list =
-  let match_one transition =
+  let match_one index transition =
     let f label =
       match event with
       | ArrayWrite {aw_array; aw_index} ->
@@ -372,9 +398,13 @@ let static_match event : (ToplAutomaton.transition * tcontext) list =
     let tcontext_opt = Option.value_map ~default:(Some []) ~f transition.ToplAutomaton.label in
     L.d_printfln "@[<2>PulseTopl.static_match:@;transition %a@;event %a@;result %a@]"
       ToplAutomaton.pp_transition transition pp_event event (Pp.option pp_tcontext) tcontext_opt ;
-    Option.map ~f:(fun tcontext -> (transition, tcontext)) tcontext_opt
+    Option.map
+      ~f:(fun tcontext ->
+        Debug.set_seen index ;
+        (transition, tcontext) )
+      tcontext_opt
   in
-  ToplAutomaton.tfilter_map (Topl.automaton ()) ~f:match_one
+  ToplAutomaton.tfilter_mapi (Topl.automaton ()) ~f:match_one
 
 
 let is_unsat_cheap path_condition pruned =
