@@ -970,6 +970,7 @@ STRICT_MODE_VIOLATION (enabled by default), <br>
 STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
+TAINT_ERROR (disabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
@@ -1101,12 +1102,13 @@ infer results directory. (Conversely:
 
 <p style="margin-left:17%;">Proceed as if the first
 argument after <b>--</b> was <i>command</i>. Possible
-values: <i>ant</i>, <i>buck</i>, <i>gradle</i>,
-<i>gradlew</i>, <i>java</i>, <i>javac</i>, <i>cc</i>,
-<i>clang</i>, <i>gcc</i>, <i>clang++</i>, <i>c++</i>,
-<i>g++</i>, <i>make</i>, <i>configure</i>, <i>cmake</i>,
-<i>waf</i>, <i>mvn</i>, <i>mvnw</i>, <i>ndk-build</i>,
-<i>rebar3</i>, <i>erlc</i>, <i>xcodebuild</i>.</p>
+values: <i>ant</i>, <i>buck</i>, <i>buck2</i>,
+<i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
+<i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
+<i>c++</i>, <i>g++</i>, <i>make</i>, <i>configure</i>,
+<i>cmake</i>, <i>waf</i>, <i>mvn</i>, <i>mvnw</i>,
+<i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
+<i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
@@ -1591,6 +1593,16 @@ results directories specified in the dependency file.
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--merge-infer-out</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Specifies an Infer results
+directory. The files and procedures captured in it will be
+merged together into the results directory specified with
+<b>-o</b>. Relative paths are interpreted as relative to
+<b>project-root/buck-out</b>.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --merge-report</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Specifies an Infer results
@@ -1860,6 +1872,13 @@ modelled as returning the first argument in Pulse</p>
 
 <p style="margin-left:17%;">Regex of methods that should be
 modelled as returning non-null in Pulse</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-model-returns-copy-pattern</b> <i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as creating copies in Pulse</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2405,14 +2424,6 @@ be a power of two between 512 and 65536.</p>
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1), <b>infer-capture</b>(1), and
 <b>infer-run</b>(1). <b><br>
---sqlite-vacuum</b></p>
-
-<p style="margin-left:17%;">Activates: <b>VACUUM</b> the
-SQLite DB after performing capture. (Conversely:
-<b>--no-sqlite-vacuum</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
 --no-starvation</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker
@@ -2440,6 +2451,13 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:17%;">Specify custom annotations that
 should be considered aliases of @ThreadSafe</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--top-longest-proc-duration-size</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Number of procedures for which
+we track longest analysis duration info.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2544,6 +2562,23 @@ Only valid for <b>--buck-clang</b>.</p>
 arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
+--Xbuck2</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Pass values as command-line
+arguments to invocations of <i>&lsquo;buck2
+build&lsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
+--Xbuck2-no-inline</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Pass values as command-line
+arguments to invocations of <i>&lsquo;buck2
+build&lsquo;</i>, don't inline any args starting with '@'.
+Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
