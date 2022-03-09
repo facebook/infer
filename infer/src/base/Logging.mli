@@ -38,6 +38,7 @@ val user_error : ('a, F.formatter, unit) format -> 'a
 (** bad input, etc. detected *)
 
 val user_warning : ('a, F.formatter, unit) format -> 'a
+(** the user may have done something wrong *)
 
 val internal_error : ('a, F.formatter, unit) format -> 'a
 (** huho, infer has a bug *)

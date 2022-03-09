@@ -128,6 +128,8 @@ let vname a i = a.states.(i)
 
 let vcount a = Array.length a.states
 
+let tcount a = Array.length a.transitions
+
 let registers a =
   (* TODO(rgrigore): cache *)
   let do_assignment acc (r, _v) = String.Set.add acc r in
@@ -148,11 +150,13 @@ let pp_message_of_state fmt (a, i) =
   Format.fprintf fmt "property %s reaches state %s" property state
 
 
-let tfilter_map a ~f = Array.to_list (Array.filter_map ~f a.transitions)
+let tfilter_mapi a ~f = Array.to_list (Array.filter_mapi ~f a.transitions)
 
 let pp_transition f {source; target; label} =
   Format.fprintf f "@[%d -> %d:@,%a@]" source target ToplAstOps.pp_label label
 
+
+let pp_tindex a f i = pp_transition f a.transitions.(i)
 
 let has_name n a i =
   let _property, name = vname a i in

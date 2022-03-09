@@ -35,7 +35,9 @@ val make : ToplAst.t list -> t
 
 val vcount : t -> int
 
-val tfilter_map : t -> f:(transition -> 'a option) -> 'a list
+val tcount : t -> int
+
+val tfilter_mapi : t -> f:(tindex -> transition -> 'a option) -> 'a list
 
 val registers : t -> ToplAst.register_name list
 
@@ -47,3 +49,5 @@ val is_start : t -> vindex -> bool
 val is_error : t -> vindex -> bool
 
 val pp_transition : Format.formatter -> transition -> unit
+
+val pp_tindex : t -> Format.formatter -> tindex -> unit
