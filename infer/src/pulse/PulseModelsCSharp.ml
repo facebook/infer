@@ -46,6 +46,9 @@ let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model =
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let map_context_tenv f (x, _) = f x in
-  [ +map_context_tenv (PatternMatch.Java.implements_android "text.TextUtils")
-    &:: "isEmpty" <>$ capt_arg_payload
-    $--> string_is_null_or_whitespace ~desc:"String.IsNullOrWhiteSpace" ]
+  [ +map_context_tenv (PatternMatch.CSharp.implements "System.String")
+    &:: "IsNullOrWhiteSpace" <>$ capt_arg_payload
+    $--> string_is_null_or_whitespace ~desc:"String.IsNullOrWhiteSpace" 
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.String")
+    &:: "IsNullOrEmpty" <>$ capt_arg_payload
+    $--> string_is_null_or_whitespace ~desc:"String.IsNullOrWhiteSpace"]
