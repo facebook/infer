@@ -2148,6 +2148,11 @@ INTERNAL OPTIONS
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
 
+       --pulse-inline-global-init-func-pointer
+           Activates: Inline the initializer of global variables that are of
+           type function pointer in Pulse. (Conversely:
+           --no-pulse-inline-global-init-func-pointer)
+
        --pulse-intraprocedural-only
            Activates: Disable inter-procedural analysis in Pulse. Used for
            experimentations only. (Conversely:

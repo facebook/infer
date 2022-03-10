@@ -553,10 +553,16 @@ module PulseTransferFunctions = struct
             PulseReport.report_results tenv proc_desc err_log loc results
           in
           let set_global_astates =
+            let is_global_constant pvar =
+              Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
+            in
+            let is_global_func_pointer pvar =
+              Pvar.is_global pvar && Typ.is_pointer_to_function typ
+              && Config.pulse_inline_global_init_func_pointer
+            in
             match rhs_exp with
-            | Lvar pvar when Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
-              -> (
-              (* Inline initializers of global constants when they are being used.
+            | Lvar pvar when is_global_constant pvar || is_global_func_pointer pvar -> (
+              (* Inline initializers of global constants or globals function pointers when they are being used.
                  This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
                  where global_constant_value is the value of global_var *)
               (* TODO: Initial global constants only once *)
