@@ -381,6 +381,9 @@ module Debug = struct
     if Config.trace_topl && not (List.is_empty unseen) then
       L.user_warning "@[<v>@[<v2>The following Topl transitions never match:@;%a@]@;@]"
         (Format.pp_print_list pp) unseen
+
+
+  let dropped_disjuncts_count = ref 0
 end
 
 (** Returns a list of transitions whose pattern matches (e.g., event type matches). Each match
@@ -449,9 +452,12 @@ let apply_conjuncts_limit state =
 
 
 let apply_disjuncts_limit state =
-  if List.length state <= Config.topl_max_disjuncts then state
+  let old_len = List.length state in
+  if old_len <= Config.topl_max_disjuncts then state
   else
     let new_len = (Config.topl_max_disjuncts / 2) + 1 in
+    if Config.trace_topl then
+      Debug.dropped_disjuncts_count := !Debug.dropped_disjuncts_count + old_len - new_len ;
     let add_score simple_state = (Constraint.size simple_state.pruned, simple_state) in
     let compare_score (score1, _simple_state1) (score2, _simple_state2) =
       Int.compare score1 score2

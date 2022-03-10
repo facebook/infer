@@ -778,6 +778,7 @@ let exit_function analysis_data location posts non_disj_astate =
 let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   if should_analyze proc_desc then (
     AbstractValue.State.reset () ;
+    PulseTopl.Debug.dropped_disjuncts_count := 0 ;
     match
       DisjunctiveAnalyzer.compute_post analysis_data
         ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
@@ -798,6 +799,11 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             in
             report_topl_errors proc_desc err_log summary ;
             report_unnecessary_copies proc_desc err_log non_disj_astate ;
+            if Config.trace_topl then
+              L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
+                !PulseTopl.Debug.dropped_disjuncts_count
+                Procname.pp_unique_id
+                (Procdesc.get_proc_name proc_desc) ;
             if Config.pulse_scuba_logging then
               ScubaLogging.log_count ~label:"pulse_summary" ~value:(List.length summary) ;
             Stats.add_pulse_summaries_count (List.length summary) ;
