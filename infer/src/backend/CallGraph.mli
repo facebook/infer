@@ -18,7 +18,7 @@ module type NodeSig = sig
 
   val unset_flag : t -> unit
 
-  val pp_dot : F.formatter -> t -> unit
+  val pp_dot : mem:(int -> bool) -> F.formatter -> t -> unit
 end
 
 module Node : NodeSig

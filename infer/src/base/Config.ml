@@ -2014,6 +2014,16 @@ and procedures_attributes =
     "Print the attributes of each procedure in the output of $(b,--procedures)"
 
 
+and procedures_call_graph =
+  CLOpt.mk_bool ~long:"procedures-call-graph"
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    (Printf.sprintf
+       "Output a dotty file in %s/syntactic-call-graph.dot. The graph is the syntactic call graph \
+        reachable from either all captured procedures or those determined by the option $(b, \
+        --changed-files-index). "
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
+
+
 and procedures_cfg =
   CLOpt.mk_bool ~long:"procedures-cfg"
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
@@ -3484,6 +3494,8 @@ and print_using_diff = !print_using_diff
 and procedures = !procedures
 
 and procedures_attributes = !procedures_attributes
+
+and procedures_call_graph = !procedures_call_graph
 
 and procedures_cfg = !procedures_cfg
 
