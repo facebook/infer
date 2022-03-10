@@ -397,7 +397,8 @@ let static_match event : (ToplAutomaton.transition * tcontext) list =
     in
     let tcontext_opt = Option.value_map ~default:(Some []) ~f transition.ToplAutomaton.label in
     L.d_printfln "@[<2>PulseTopl.static_match:@;transition %a@;event %a@;result %a@]"
-      ToplAutomaton.pp_transition transition pp_event event (Pp.option pp_tcontext) tcontext_opt ;
+      (ToplAutomaton.pp_transition (Topl.automaton ()))
+      transition pp_event event (Pp.option pp_tcontext) tcontext_opt ;
     Option.map
       ~f:(fun tcontext ->
         Debug.set_seen index ;
