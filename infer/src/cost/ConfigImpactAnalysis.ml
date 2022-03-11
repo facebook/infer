@@ -1053,9 +1053,9 @@ module TransferFunctions = struct
         astate
 
 
-  let call {interproc= {tenv; analyze_dependency}; get_formals; get_instantiated_cost} node idx
-      ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
-    match FbGKInteraction.get_config_check tenv callee args with
+  let call {interproc= {tenv; analyze_dependency}; get_formals; get_instantiated_cost; is_param}
+      node idx ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
+    match FbGKInteraction.get_config_check ~is_param tenv callee args with
     | Some (`Config config) ->
         Dom.call_config_check ret_id config astate
     | Some (`Exp (Exp.Var id)) ->
@@ -1089,7 +1089,7 @@ module TransferFunctions = struct
       ({interproc= {tenv; analyze_dependency}; is_param} as analysis_data) node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e} -> (
-      match FbGKInteraction.get_config e with
+      match FbGKInteraction.get_config ~is_param e with
       | Some config ->
           Dom.call_config_check id config astate
       | None -> (

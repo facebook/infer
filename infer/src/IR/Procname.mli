@@ -428,6 +428,13 @@ val to_filename : t -> string
 val get_qualifiers : t -> QualifiedCppName.t
 (** get qualifiers of C/objc/C++ method/function *)
 
+val pp_name_only : F.formatter -> t -> unit
+(** Print name of procedure with at most one-level path. For example,
+
+    - In C++: "<ClassName>::<ProcName>"
+    - In Java, ObjC, C#: "<ClassName>.<ProcName>"
+    - In C/Erlang: "<ProcName>" *)
+
 val patterns_match : Re.Str.regexp list -> t -> bool
 (** Test whether a proc name matches to one of the regular expressions. *)
 

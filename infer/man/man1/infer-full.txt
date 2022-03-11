@@ -1768,6 +1768,15 @@ INTERNAL OPTIONS
        --config-impact-config-function-patterns-reset
            Set --config-impact-config-function-patterns to the empty list.
 
+       --config-impact-config-param-patterns +regex
+           Register known config parameters that have a config value. The
+           matched name contains a method name and a parameter name,
+           separated by a space, for example, Class.method param in Java/ObjC
+           and Class::method param in C++.
+
+       --config-impact-config-param-patterns-reset
+           Set --config-impact-config-param-patterns to the empty list.
+
        --config-impact-current-reset
            Cancel the effect of --config-impact-current.
 

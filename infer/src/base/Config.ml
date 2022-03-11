@@ -1065,6 +1065,13 @@ and config_impact_config_function_patterns =
      Java/ObjC and $(b,Class::method) in C++."
 
 
+and config_impact_config_param_patterns =
+  CLOpt.mk_string_list ~long:"config-impact-config-param-patterns" ~meta:"regex"
+    "Register known config parameters that have a config value.  The matched name contains a \
+     method name and a parameter name, separated by a space, for example, $(b,Class.method param) \
+     in Java/ObjC and $(b,Class::method param) in C++."
+
+
 and config_impact_current =
   CLOpt.mk_path_opt ~long:"config-impact-current"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -3227,6 +3234,10 @@ and config_impact_config_field_patterns =
 
 and config_impact_config_function_patterns =
   RevList.rev_map !config_impact_config_function_patterns ~f:Re.Str.regexp
+
+
+and config_impact_config_param_patterns =
+  RevList.rev_map !config_impact_config_param_patterns ~f:Re.Str.regexp
 
 
 and config_impact_current = !config_impact_current
