@@ -215,6 +215,7 @@ DIRECT_TESTS += \
 ifneq ($(KOTLINC), no)
 DIRECT_TESTS += \
   kotlin_racerd \
+  kotlin_resources \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
