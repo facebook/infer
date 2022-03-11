@@ -4,7 +4,6 @@ title: List of all issue types
 
 Here is an overview of the issue types currently reported by Infer.
 
-
 ## ARBITRARY_CODE_EXECUTION_UNDER_LOCK
 
 Reported as "Arbitrary Code Execution Under lock" by [starvation](/docs/next/checker-starvation).
