@@ -13,6 +13,8 @@ let is_in_strict_mode_paths file =
   SourceFile.is_matching Config.config_impact_strict_mode_paths file
 
 
+let is_in_test_paths file = SourceFile.is_matching Config.config_impact_test_paths file
+
 let strict_mode =
   Config.config_impact_strict_mode
   ||
@@ -1156,9 +1158,11 @@ let has_call_stmt proc_desc =
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let pname = Procdesc.get_proc_name proc_desc in
-  if Procname.is_java_class_initializer pname then
+  if
+    Procname.is_java_class_initializer pname
     (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
-    None
+    || is_in_test_paths (Procdesc.get_attributes proc_desc).translation_unit
+  then None
   else
     let get_formals pname =
       Attributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
