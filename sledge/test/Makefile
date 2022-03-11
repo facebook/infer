@@ -34,7 +34,7 @@ export PATH:=$(shell $$(opam var conf-llvm:config) --bindir):$(PATH)
 
 # query llvm-config for compilation flags
 C_FLAGS:=$(shell $$(opam var conf-llvm:config) --cflags)
-CXX_FLAGS:=$(shell $$(opam var conf-llvm:config) --cxxflags)
+CXX_FLAGS:=$(shell $$(opam var conf-llvm:config) --cxxflags) -fexceptions
 
 # configure sort
 export LANG:=C
