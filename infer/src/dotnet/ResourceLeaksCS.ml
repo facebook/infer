@@ -8,11 +8,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module Hashtbl = Caml.Hashtbl
-
-let leak_list = ref []
-
-let type_map = ref (Hashtbl.create 100)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -62,8 +57,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   (** Take an abstract state and instruction, produce a new abstract state *)
   let exec_instr (astate : ResourceLeakCSDomain.t)
       {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency; _} _ _ (instr : HilInstr.t) =
-    let assign_type_map = type_map := ResourceLeakCSDomain.get_type_map in
-    assign_type_map ;
     let is_not_enumerable =
       let contains s1 s2 =
         let re = Str.regexp_string s2 in
@@ -170,25 +163,19 @@ let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} formal_map po
     let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc) in
     let proc_name = Procdesc.get_proc_name proc_desc in
     let message =
-      let concat_types =
-        Hashtbl.iter
-          (fun x y ->
-            if ResourceLeakCSDomain.check_count x post then
-              leak_list := ResourceLeakCSDomain.LeakList.append_one !leak_list y )
-          !type_map
+      let concat_leak_list =
+        ResourceLeakCSDomain.type_to_list post 
       in
-      concat_types ;
-      let concat_leak_list = String.concat ~sep:", " !leak_list in
       F.asprintf "Leaked %a resource(s) in method \"%a\" at type(s) %s" ResourceLeakCSDomain.pp post
         Procname.pp proc_name concat_leak_list
     in
     ResourceLeakCSDomain.reset_type_map ;
     ResourceLeakCSDomain.Summary.reset_interface_type_map ;
-    leak_list := [] ;
     Reporting.log_issue proc_desc err_log ~loc:last_loc DOTNETResourceLeaks
       IssueType.dotnet_resource_leak message )
-  else ResourceLeakCSDomain.reset_type_map ;
-  ResourceLeakCSDomain.Summary.reset_interface_type_map
+  else 
+    ResourceLeakCSDomain.reset_type_map ;
+    ResourceLeakCSDomain.Summary.reset_interface_type_map
 
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)

@@ -17,9 +17,7 @@ module LeakList : sig
   val append_one : 'a list -> 'a -> 'a list
 end
 
-val check_count : AccessPath.t -> t -> bool
-
-val get_type_map : (AccessPath.t, string) Caml.Hashtbl.t
+val type_to_list : t -> string
 
 val reset_type_map : unit
 
