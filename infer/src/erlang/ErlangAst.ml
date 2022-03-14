@@ -166,13 +166,19 @@ type type_ =
   | Tuple of tuple_type
   | Union of type_ list
   | UserDefined of string (* TODO: arguments *)
+  | Var of string
 [@@deriving sexp_of]
 
 and list_type = Proper of type_
 
 and tuple_type = AnySize | FixedSize of type_ list [@@deriving sexp_of]
 
-type spec = {function_: function_; arguments: type_ list; return: type_} [@@deriving sexp_of]
+(* Currently only "subtype of" constraints can be used in the "when" part of a spec. *)
+type type_constraint = {var: string; subtype_of: type_} [@@deriving sexp_of]
+
+type spec =
+  {function_: function_; arguments: type_ list; return: type_; constraints: type_constraint list}
+[@@deriving sexp_of]
 
 (** {2 S8.1: Module declarations and forms} *)
 

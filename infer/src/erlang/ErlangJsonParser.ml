@@ -613,6 +613,8 @@ let rec to_type json : Ast.type_ option =
   | `List [`String "user_type"; _anno; `String typ; `List []] ->
       (* TODO: arguments *)
       Some (Ast.UserDefined typ)
+  | `List [`String "var"; _anno; `String name] ->
+      Some (Ast.Var name)
   (* TODO: add more types *)
   | _ ->
       unknown "type" json
@@ -629,13 +631,39 @@ let to_spec_args json : Ast.type_ list option =
 
 let to_spec_ret : json -> Ast.type_ option = to_type
 
+let to_constraint json : Ast.type_constraint option =
+  match json with
+  | `List
+      [ `String "type"
+      ; _anno
+      ; `String "constraint"
+      ; `List
+          [ `List [`String "atom"; _anno2; `String "is_subtype"]
+          ; `List [`List [`String "var"; _anno3; `String var]; type_json] ] ] ->
+      let* subtype_of = to_type type_json in
+      Some {Ast.var; subtype_of}
+  | _ ->
+      unknown "spec constraint" json
+
+
 let to_spec func_json json : Ast.spec option =
+  let* function_ = to_function ~check_no_module:false func_json in
   match json with
   | `List [`String "type"; _anno; `String "fun"; `List [args_json; ret_json]] ->
-      let* function_ = to_function ~check_no_module:false func_json in
       let* return = to_spec_ret ret_json in
       let* arguments = to_spec_args args_json in
-      Some {Ast.function_; arguments; return}
+      Some {Ast.function_; arguments; return; constraints= []}
+  | `List
+      [ `String "type"
+      ; _anno
+      ; `String "bounded_fun"
+      ; `List
+          [ `List [`String "type"; _anno2; `String "fun"; `List [args_json; ret_json]]
+          ; constraints_json ] ] ->
+      let* return = to_spec_ret ret_json in
+      let* arguments = to_spec_args args_json in
+      let* constraints = to_list ~f:to_constraint constraints_json in
+      Some {Ast.function_; arguments; return; constraints}
   | _ ->
       unknown "spec" json
 
