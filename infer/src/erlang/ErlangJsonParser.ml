@@ -656,8 +656,12 @@ let to_loc_form json : Ast.form option =
       let* loc = to_loc anno in
       let* spec = to_spec func_json json in
       form loc (Spec spec)
+  | `List [`String "attribute"; anno; `String "type"; `List [`String name; type_json; `List []]] ->
+      let* loc = to_loc anno in
+      let* type_ = to_type type_json in
+      form loc (Type {name; type_})
   | `List [`String "attribute"; _anno; `String _unknown_attribute; _] ->
-      (* TODO: handle types (spec, ...) *)
+      (* TODO *)
       None
   | `List [`String "eof"; _] ->
       None

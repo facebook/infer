@@ -41,6 +41,7 @@ type ('procdesc, 'result) t =
   ; current_module: module_name  (** used to qualify function names *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
+  ; types: Ast.type_ String.Map.t  (** user defined types *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
   ; records: record_info String.Map.t  (** used to get fields, indexes and initializers *)
@@ -55,6 +56,7 @@ let initialize_environment module_ =
     ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
     ; functions= UnqualifiedFunction.Set.empty
     ; specs= UnqualifiedFunction.Map.empty
+    ; types= String.Map.empty
     ; exports= UnqualifiedFunction.Set.empty
     ; imports= UnqualifiedFunction.Map.empty
     ; records= String.Map.empty
@@ -118,6 +120,15 @@ let initialize_environment module_ =
             {env with specs}
         | `Duplicate ->
             L.die InternalError "repeated spec for %s/%d" key.name key.arity )
+    | Type {name; type_} -> (
+        (* TODO: might remove this later when we have tests *)
+        L.debug Capture Verbose "Adding type '%s' to environment: %s@." name
+          (Sexp.to_string (ErlangAst.sexp_of_type_ type_)) ;
+        match Map.add ~key:name ~data:type_ env.types with
+        | `Ok types ->
+            {env with types}
+        | `Duplicate ->
+            L.die InternalError "repeated type '%s'" name )
   in
   List.fold ~init ~f module_
 

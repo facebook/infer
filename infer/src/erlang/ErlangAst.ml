@@ -186,6 +186,7 @@ type simple_form =
   | Function of {function_: function_; clauses: case_clause list}
   | Record of {name: string; fields: record_field list}
   | Spec of spec
+  | Type of {name: string; type_: type_} (* TODO: arguments*)
 [@@deriving sexp_of]
 
 type form = {location: location; simple_form: simple_form} [@@deriving sexp_of]
