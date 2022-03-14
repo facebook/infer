@@ -90,7 +90,7 @@
   + then a < b iff there is a path from a to b
   + perhaps keep the graph transitively-closed, and then a < b iff b is a successor of a
   + extending such a graph can only add new ordering relationships, never change existing ones, the partial order is stable under extension, so translating code while analyzing will not break the queue
-  + is Fheap compatible with a partial order, rather than a total order?
+  + is PSQ compatible with a partial order, rather than a total order?
   + when adding just-translated code, need to add edges for all existing (non-retreating?) Call sites of added functions: will need to index them
 * Lazy translation
 - need to [[id:6D6A0AF5-F68F-4726-95E5-178145A4CB9B][generalize to partial weak topological order]] to enable adding code during analysis without breaking the priority queue

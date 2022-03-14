@@ -144,13 +144,6 @@ type ('a, 'b) zero_one_many2 = Zero2 | One2 of 'a * 'b | Many2
 
 module Pair = Containers.Pair
 module Bijection = CCBijection [@@warning "-49"]
-
-module FHeap = struct
-  include Fheap
-
-  let remove_top_exn h = snd (pop_exn h)
-end
-
 module HashQueue = Core_kernel.Hash_queue
 
 (** Input / Output *)

@@ -18,8 +18,12 @@ open Control_intf
 module type Elt = sig
   type t [@@deriving compare, equal, sexp_of]
 
+  module Dest : sig
+    type t [@@deriving compare]
+  end
+
   val pp : t pp
-  val equal_destination : t -> t -> bool
+  val dest : t -> Dest.t
   val dnf : t -> t list
 end
 
@@ -44,7 +48,9 @@ module type QueueS = sig
       the same destination as [e]. [q'] is equivalent to [q] but possibly
       more compactly represented. *)
 
-  val remove : elt -> elt iter -> t -> t
+  val remove_top : t -> t
+  (** [remove_top q] is [q'] where [q'] is [q] with all elements returned by
+      [top] removed *)
 end
 
 (** Type of a queue implementation, which is parameterized over elements. *)
@@ -56,42 +62,29 @@ module type Queue = functor (Elt : Elt) -> QueueS with type elt = Elt.t
 module PriorityQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
   type elt = Elt.t
 
-  module Elts = Set.Make (Elt)
+  module Pq = Psq.Make (Elt) (Elt.Dest)
 
-  type t = {queue: Elt.t FHeap.t; removed: Elts.t}
+  type t = Pq.t
 
-  let elts {queue; removed} =
-    Iter.unfoldr FHeap.pop queue
-    |> Iter.filter ~f:(fun elt -> not (Elts.mem elt removed))
+  let pp =
+    let sep f () = Format.fprintf f " ::@ " in
+    Pq.pp ~sep (fun f (elt, _) -> Elt.pp f elt)
 
-  let pp ppf q =
-    Format.fprintf ppf "@[%a@]" (List.pp " ::@ " Elt.pp)
-      (Iter.to_list (elts q))
+  let create () = Pq.empty
+  let add elt = Pq.add elt (Elt.dest elt)
 
-  let create () = {queue= FHeap.create ~cmp:Elt.compare; removed= Elts.empty}
+  let top q =
+    let+ top_elt, dest = Pq.min q in
+    let elts =
+      Iter.from_iter (fun f -> Pq.iter_at_most dest (fun x _ -> f x) q)
+    in
+    (top_elt, elts, q)
 
-  let add elt {queue; removed} =
-    let removed' = Elts.remove elt removed in
-    if removed' == removed then {queue= FHeap.add queue elt; removed}
-    else {queue; removed= removed'}
-
-  let rec top {queue; removed} =
-    let* next = FHeap.top queue in
-    let removed' = Elts.remove next removed in
-    if removed' != removed then
-      let queue' = FHeap.remove_top_exn queue in
-      top {queue= queue'; removed= removed'}
-    else
-      let elts =
-        Iter.filter ~f:(Elt.equal_destination next) (elts {queue; removed})
-      in
-      Some (next, elts, {queue; removed})
-
-  let remove top elts {queue; removed} =
-    assert (Elt.equal top (FHeap.top_exn queue)) ;
-    let queue = FHeap.remove_top_exn queue in
-    let removed = Elts.union (Elts.of_iter elts) removed in
-    {queue; removed}
+  let remove_top q =
+    match Pq.min q with
+    | None -> q
+    | Some (_, top_dest) ->
+        Pq.fold_at_most top_dest (fun e _ q -> Pq.remove e q) q q
 end
 
 module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
@@ -240,7 +233,7 @@ module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
           None )
 
   let top _ = todo "concurrent sampling analysis" ()
-  let remove _ = todo "concurrent sampling analysis" ()
+  let remove_top _ = todo "concurrent sampling analysis" ()
 end
 
 module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
@@ -619,6 +612,10 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
     module Elt = struct
       type t = elt [@@deriving sexp_of]
 
+      module Dest = Threads
+
+      let dest x = x.threads
+
       let pp ppf {ctrl= {edge; depth}; threads; switches} =
         Format.fprintf ppf "%i,%i: %a %a" switches depth Edge.pp edge
           Threads.pp threads
@@ -638,7 +635,6 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
             x y
 
       let equal = [%compare.equal: t]
-      let equal_destination x y = Threads.equal x.threads y.threads
 
       let dnf x =
         List.map
@@ -825,7 +821,7 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
             in
             (next, next_states, cursor) )
       in
-      let queue = if hit_end then Queue.remove top elts queue else queue in
+      let queue = if hit_end then Queue.remove_top queue else queue in
       match found with
       | Some ((switches, _, _), _, cursor)
         when switches > Config.switch_bound ->
