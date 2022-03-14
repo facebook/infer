@@ -26,6 +26,7 @@ depends: [
   "mtime"
   "ppx_compare"
   "ppxlib" {>= "0.21.0"}
+  "psq"
   "shexp"
   "smtlib-utils"
   "yojson"
