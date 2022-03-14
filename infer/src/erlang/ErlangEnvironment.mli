@@ -37,6 +37,7 @@ type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
   ; current_module: module_name  (** used to qualify function names *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
+  ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
   ; records: record_info String.Map.t  (** used to get fields, indexes and initializers *)

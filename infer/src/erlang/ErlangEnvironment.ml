@@ -40,6 +40,7 @@ type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
   ; current_module: module_name  (** used to qualify function names *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
+  ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
   ; records: record_info String.Map.t  (** used to get fields, indexes and initializers *)
@@ -53,6 +54,7 @@ let initialize_environment module_ =
     { cfg= Cfg.create ()
     ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
     ; functions= UnqualifiedFunction.Set.empty
+    ; specs= UnqualifiedFunction.Map.empty
     ; exports= UnqualifiedFunction.Set.empty
     ; imports= UnqualifiedFunction.Map.empty
     ; records= String.Map.empty
@@ -106,6 +108,16 @@ let initialize_environment module_ =
     | Function {function_; _} ->
         let key = UnqualifiedFunction.of_ast function_ in
         {env with functions= Set.add env.functions key}
+    | Spec ({Ast.function_; _} as data) -> (
+        let key = UnqualifiedFunction.of_ast function_ in
+        (* TODO: might remove this later when we have tests *)
+        L.debug Capture Verbose "Adding spec to environment: %s@."
+          (Sexp.to_string (ErlangAst.sexp_of_spec data)) ;
+        match Map.add ~key ~data env.specs with
+        | `Ok specs ->
+            {env with specs}
+        | `Duplicate ->
+            L.die InternalError "repeated spec for %s/%d" key.name key.arity )
   in
   List.fold ~init ~f module_
 

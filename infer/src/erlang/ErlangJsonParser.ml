@@ -473,9 +473,15 @@ and to_case_clause json : Ast.case_clause option = to_clause to_expression json
 
 and to_catch_clause json : Ast.catch_clause option = to_clause to_catch_pattern json
 
-let to_function json : Ast.function_ option =
+let to_function ~check_no_module json : Ast.function_ option =
   match json with
   | `List [`String function_; `Int arity] ->
+      let function_ = Ast.FunctionName function_ in
+      Some {module_= ModuleMissing; function_; arity}
+  | `List [`String _module; `String _; `Int _] when check_no_module ->
+      unknown "function with unexpected module" json
+  | `List [`String _module; `String function_; `Int arity] ->
+      (* TODO: assert [_module] is current module *)
       let function_ = Ast.FunctionName function_ in
       Some {module_= ModuleMissing; function_; arity}
   | _ ->
@@ -494,6 +500,131 @@ let rec to_record_field json : Ast.record_field option =
       unknown "record_field" json
 
 
+let rec to_type json : Ast.type_ option =
+  match json with
+  | `List [`String "ann_type"; _anno; `List [`List [`String "var"; _anno2; `String _varname]; typ]]
+    ->
+      to_type typ
+  | `List [`String "type"; _anno; `String "any"; `List []]
+  | `List [`String "type"; _anno; `String "term"; `List []] ->
+      Some Ast.Any
+  | `List [`String "type"; _anno; `String "atom"; `List []]
+  | `List [`String "type"; _anno; `String "module"; `List []]
+  | `List [`String "type"; _anno; `String "node"; `List []] ->
+      Some (Ast.Atom Any)
+  | `List [`String "atom"; _anno; `String value] ->
+      Some (Ast.Atom (Literal value))
+  | `List [`String "atom"; _anno; `Bool true] ->
+      Some (Ast.Atom (Literal "true"))
+  | `List [`String "atom"; _anno; `Bool false] ->
+      Some (Ast.Atom (Literal "false"))
+  | `List
+      [ `String "type"
+      ; _anno
+      ; `String "binary"
+      ; `List
+          [ `List [`String "integer"; _anno2; `Int start_size]
+          ; `List [`String "integer"; _anno3; `Int segment_size] ] ] ->
+      Some (Ast.BitString {start_size; segment_size})
+  | `List [`String "type"; _anno; `String "binary"; `List []] ->
+      Some (Ast.BitString {start_size= 0; segment_size= 8})
+  | `List [`String "type"; _anno; `String "bitstring"; `List []] ->
+      Some (Ast.BitString {start_size= 0; segment_size= 1})
+  | `List [`String "type"; _anno; `String "nonempty_binary"; `List []] ->
+      Some (Ast.BitString {start_size= 1; segment_size= 8})
+  | `List [`String "type"; _anno; `String "nonempty_bitstring"; `List []] ->
+      Some (Ast.BitString {start_size= 1; segment_size= 1})
+  | `List [`String "type"; _anno; `String "boolean"; `List []] ->
+      Some (Ast.Union [Atom (Literal "true"); Atom (Literal "false")])
+  | `List [`String "type"; _anno; `String "identifier"; `List []] ->
+      Some (Ast.Union [Pid; Port; Reference])
+  | `List [`String "type"; _anno; `String "integer"; `List []] ->
+      Some (Ast.Integer Any)
+  | `List [`String "type"; _anno; `String "non_neg_integer"; `List []] ->
+      Some (Ast.Integer NonNeg)
+  | `List [`String "type"; _anno; `String "neg_integer"; `List []] ->
+      Some (Ast.Integer Neg)
+  | `List [`String "type"; _anno; `String "pos_integer"; `List []] ->
+      Some (Ast.Integer Pos)
+  | `List [`String "type"; _anno; `String "list"; `List []] ->
+      Some (Ast.List (Proper Any))
+  | `List [`String "type"; _anno; `String "list"; `List [arg_json]] ->
+      let* arg = to_type arg_json in
+      Some (Ast.List (Proper arg))
+  | `List [`String "type"; _anno; `String "map"; _args_json] ->
+      (* TODO: associations *)
+      Some Ast.Map
+  | `List [`String "type"; _anno; `String "nil"; `List []] ->
+      Some Ast.Nil
+  | `List [`String "type"; _anno; `String "none"; `List []]
+  | `List [`String "type"; _anno; `String "no_return"; `List []] ->
+      Some Ast.None
+  | `List [`String "type"; _anno; `String "pid"; `List []] ->
+      Some Ast.Pid
+  | `List [`String "type"; _anno; `String "port"; `List []] ->
+      Some Ast.Port
+  | `List
+      [`String "type"; _anno; `String "record"; `List [`List [`String "atom"; _anno2; `String name]]]
+    ->
+      Some (Ast.Record name)
+  | `List
+      [ `String "type"
+      ; _anno
+      ; `String "record"
+      ; `List [`List [`String "atom"; _anno2; `String name]; _fields_json] ] ->
+      (* TODO: fields *)
+      Some (Ast.Record name)
+  | `List [`String "type"; _anno; `String "reference"; `List []] ->
+      Some Ast.Reference
+  | `List [`String "type"; _anno; `String "string"; `List []] ->
+      Some Ast.String
+  | `List [`String "type"; _anno; `String "tuple"; `String "any"] ->
+      Some (Ast.Tuple AnySize)
+  | `List [`String "type"; _anno; `String "tuple"; args_json] ->
+      let* args = to_list ~f:to_type args_json in
+      Some (Ast.Tuple (FixedSize args))
+  | `List [`String "type"; _anno; `String "union"; args_json] ->
+      let* args = to_list ~f:to_type args_json in
+      Some (Ast.Union args)
+  | `List
+      [ `String "remote_type"
+      ; _anno
+      ; `List
+          [ `List [`String "atom"; _anno2; `String module_]
+          ; `List [`String "atom"; _anno3; `String type_]
+          ; `List [] ] ] ->
+      (* TODO: arguments *)
+      Some (Ast.Remote {module_; type_})
+  | `List [`String "user_type"; _anno; `String typ; `List []] ->
+      (* TODO: arguments *)
+      Some (Ast.UserDefined typ)
+  (* TODO: add more types *)
+  | _ ->
+      unknown "type" json
+
+
+let to_spec_args json : Ast.type_ list option =
+  match json with
+  (* We expect a product type with a list, even if there are 0 or 1 arguments. *)
+  | `List [`String "type"; _anno; `String "product"; args_json] ->
+      to_list ~f:to_type args_json
+  | _ ->
+      unknown "spec argument types" json
+
+
+let to_spec_ret : json -> Ast.type_ option = to_type
+
+let to_spec func_json json : Ast.spec option =
+  match json with
+  | `List [`String "type"; _anno; `String "fun"; `List [args_json; ret_json]] ->
+      let* function_ = to_function ~check_no_module:false func_json in
+      let* return = to_spec_ret ret_json in
+      let* arguments = to_spec_args args_json in
+      Some {Ast.function_; arguments; return}
+  | _ ->
+      unknown "spec" json
+
+
 let to_loc_form json : Ast.form option =
   let form location simple_form : Ast.form option = Some {location; simple_form} in
   match json with
@@ -505,11 +636,11 @@ let to_loc_form json : Ast.form option =
       form loc (Module module_name)
   | `List [`String "attribute"; anno; `String "import"; `List [`String module_name; functions]] ->
       let* loc = to_loc anno in
-      let* functions = to_list ~f:to_function functions in
+      let* functions = to_list ~f:(to_function ~check_no_module:true) functions in
       form loc (Import {module_name; functions})
   | `List [`String "attribute"; anno; `String "export"; function_] ->
       let* loc = to_loc anno in
-      let* func_list = to_list ~f:to_function function_ in
+      let* func_list = to_list ~f:(to_function ~check_no_module:true) function_ in
       form loc (Export func_list)
   | `List [`String "function"; anno; `String function_; `Int arity; case_clause] ->
       let* loc = to_loc anno in
@@ -521,6 +652,10 @@ let to_loc_form json : Ast.form option =
       let* loc = to_loc anno in
       let* field_list = to_list ~f:to_record_field fields in
       form loc (Record {name; fields= field_list})
+  | `List [`String "attribute"; anno; `String "spec"; `List [func_json; `List [json]]] ->
+      let* loc = to_loc anno in
+      let* spec = to_spec func_json json in
+      form loc (Spec spec)
   | `List [`String "attribute"; _anno; `String _unknown_attribute; _] ->
       (* TODO: handle types (spec, ...) *)
       None
