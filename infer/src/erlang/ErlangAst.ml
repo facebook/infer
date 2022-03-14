@@ -145,7 +145,8 @@ and catch_pattern = {exception_: exception_; pattern: pattern; variable: string}
 
 type atom_type = Any | Literal of string [@@deriving sexp_of]
 
-type integer_type = Any | Neg | NonNeg | Pos [@@deriving sexp_of]
+type integer_type = Any | Literal of int | Range of {low: int; high: int} | Neg | NonNeg | Pos
+[@@deriving sexp_of]
 
 type type_ =
   | Any

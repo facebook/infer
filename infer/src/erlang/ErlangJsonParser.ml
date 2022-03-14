@@ -530,6 +530,9 @@ let rec to_type json : Ast.type_ option =
       Some (Ast.BitString {start_size= 0; segment_size= 8})
   | `List [`String "type"; _anno; `String "bitstring"; `List []] ->
       Some (Ast.BitString {start_size= 0; segment_size= 1})
+  | `List [`String "type"; _anno; `String "arity"; `List []]
+  | `List [`String "type"; _anno; `String "byte"; `List []] ->
+      Some (Ast.Integer (Range {low= 0; high= 255}))
   | `List [`String "type"; _anno; `String "nonempty_binary"; `List []] ->
       Some (Ast.BitString {start_size= 1; segment_size= 8})
   | `List [`String "type"; _anno; `String "nonempty_bitstring"; `List []] ->
@@ -540,6 +543,18 @@ let rec to_type json : Ast.type_ option =
       Some (Ast.Union [Pid; Port; Reference])
   | `List [`String "type"; _anno; `String "integer"; `List []] ->
       Some (Ast.Integer Any)
+  | `List [`String "integer"; _anno; `Int value] ->
+      Some (Ast.Integer (Literal value))
+  | `List
+      [ `String "type"
+      ; _anno
+      ; `String "range"
+      ; `List
+          [`List [`String "integer"; _anno2; `Int low]; `List [`String "integer"; _anno3; `Int high]]
+      ] ->
+      Some (Ast.Integer (Range {low; high}))
+  | `List [`String "type"; _anno; `String "mfa"; `List []] ->
+      Some (Ast.Union [Atom Any; Atom Any; Integer (Range {low= 0; high= 255})])
   | `List [`String "type"; _anno; `String "non_neg_integer"; `List []] ->
       Some (Ast.Integer NonNeg)
   | `List [`String "type"; _anno; `String "neg_integer"; `List []] ->
