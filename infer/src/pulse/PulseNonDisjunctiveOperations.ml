@@ -122,9 +122,10 @@ let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
   aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
 
 
-let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) var astate
+let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) ~copied_var astate
     (astate_n : NonDisjDomain.t) : NonDisjDomain.t =
-  NonDisjDomain.mark_copy_as_modified var ~source_addr_opt astate_n ~is_modified:(fun copy_heap ->
+  NonDisjDomain.mark_copy_as_modified ~copied_var ~source_addr_opt astate_n
+    ~is_modified:(fun copy_heap ->
       let reachable_addresses_from_copy =
         BaseDomain.reachable_addresses_from
           (Caml.List.to_seq [address])
@@ -146,23 +147,29 @@ let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) var 
         ~reachable_addresses_from_copy )
 
 
-let mark_modified_copies vars astate astate_n =
+let mark_modified_copies_with vars ~astate astate_n =
   let mark_modified_copy var default =
     Stack.find_opt var astate
     |> Option.value_map ~default ~f:(fun (address, _history) ->
            let source_addr_opt = AddressAttributes.get_source_origin_of_copy address astate in
-           mark_modified_address_at ~address ~source_addr_opt var astate default )
+           mark_modified_address_at ~address ~source_addr_opt ~copied_var:var astate default )
   in
   List.fold vars ~init:astate_n ~f:(fun astate_n var ->
-      (let open IOption.Let_syntax in
-      let* source_addr, _ = Stack.find_opt var astate in
-      let+ copy_var = AddressAttributes.get_copied_var source_addr astate in
-      mark_modified_address_at ~address:source_addr ~source_addr_opt:(Some source_addr)
-        ~is_source:true copy_var astate astate_n)
-      |> Option.value ~default:(mark_modified_copy var astate_n) )
+      let res_opt =
+        let open IOption.Let_syntax in
+        let* source_addr, _ = Stack.find_opt var astate in
+        let+ copied_var = AddressAttributes.get_copied_var source_addr astate in
+        mark_modified_address_at ~address:source_addr ~source_addr_opt:(Some source_addr)
+          ~is_source:true ~copied_var astate astate_n
+      in
+      match res_opt with Some res -> res | None -> mark_modified_copy var astate_n )
 
 
 let mark_modified_copies vars disjuncts astate_n =
+  let unchecked_vars =
+    List.filter vars ~f:(fun var ->
+        not (PulseNonDisjunctiveDomain.is_checked_via_dtor var astate_n) )
+  in
   List.fold disjuncts ~init:astate_n ~f:(fun astate_n (exec_state : ExecutionDomain.t) ->
       match exec_state with
       | ISLLatentMemoryError _
@@ -173,4 +180,4 @@ let mark_modified_copies vars disjuncts astate_n =
       | LatentInvalidAccess _ ->
           astate_n
       | ContinueProgram astate ->
-          mark_modified_copies vars astate astate_n )
+          mark_modified_copies_with unchecked_vars ~astate astate_n )

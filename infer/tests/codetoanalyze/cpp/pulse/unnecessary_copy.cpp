@@ -189,6 +189,7 @@ void copy_modified_after_abort_ok_FP(std::vector<int> source_vec) {
   copy.push_back(0); // copy modified, but we propagate Abort state without
                      // executing the rest of the stmts
 }
+
 namespace ns {
 
 template <typename X>
@@ -199,4 +200,32 @@ X creates_copy(X a) {
 
 int copy_via_model_bad(Arr arr) {
   auto copy = ns::creates_copy(arr); // creates copy (via model)
+}
+
+void source_modified_before_lib_destructor_ok(std::vector<int>& source_vec) {
+  auto copy = source_vec;
+  source_vec[0] = 0;
+}
+
+void copy_modified_before_lib_destructor_ok(std::vector<int>& source_vec) {
+  auto copy = source_vec;
+  copy[0] = 0;
+}
+
+class String {
+ private:
+  char* text;
+  int size;
+
+ public:
+  int x;
+  ~String() { delete[] text; } // destructor
+  void set_size(int new_size) { size = new_size; }
+};
+
+void check_before_custom_destructor_bad(String s) { auto copy = s; }
+
+void modified_before_custom_destructor_ok(String s) {
+  auto copy = s;
+  copy.set_size(10);
 }

@@ -520,6 +520,17 @@ module PulseTransferFunctions = struct
     if Typ.is_int typ then PulseArithmetic.and_is_int v astate else Ok astate
 
 
+  let check_modified_before_dtor args call_exp astate astate_n =
+    match ((call_exp : Exp.t), args) with
+    | (Const (Cfun proc_name) | Closure {name= proc_name}), (Exp.Lvar pvar, _) :: _
+      when Procname.is_destructor proc_name ->
+        let var = Var.of_pvar pvar in
+        PulseNonDisjunctiveOperations.mark_modified_copies_with [var] ~astate astate_n
+        |> NonDisjDomain.checked_via_dtor var
+    | _ ->
+        astate_n
+
+
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
@@ -640,6 +651,7 @@ module PulseTransferFunctions = struct
           in
           (PulseReport.report_results tenv proc_desc err_log loc result, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
+          let astate_n = check_modified_before_dtor actuals call_exp astate astate_n in
           let astates =
             dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
