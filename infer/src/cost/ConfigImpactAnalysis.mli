@@ -13,6 +13,8 @@ val pp_mode : Format.formatter -> mode -> unit
 
 val is_in_strict_mode_paths : SourceFile.t -> bool
 
+val is_in_strict_beta_mode_paths : SourceFile.t -> bool
+
 val mode : mode
 
 module LatentConfig : sig

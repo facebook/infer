@@ -1790,6 +1790,13 @@ INTERNAL OPTIONS
        --config-impact-previous-reset
            Cancel the effect of --config-impact-previous.
 
+       --config-impact-strict-beta-mode-paths +path_regex
+           Similar to --config-impact-strict-mode-paths, but the paths are
+           used only for beta testing.
+
+       --config-impact-strict-beta-mode-paths-reset
+           Set --config-impact-strict-beta-mode-paths to the empty list.
+
        --config-impact-strict-mode
            Activates: Make the config impact analysis stricter. It disables
            all heuristics of ignoring cheap method calls. (Conversely:

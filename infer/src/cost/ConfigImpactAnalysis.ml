@@ -17,6 +17,10 @@ let is_in_strict_mode_paths file =
   SourceFile.is_matching Config.config_impact_strict_mode_paths file
 
 
+let is_in_strict_beta_mode_paths file =
+  SourceFile.is_matching Config.config_impact_strict_beta_mode_paths file
+
+
 let is_in_test_paths file = SourceFile.is_matching Config.config_impact_test_paths file
 
 let mode =
@@ -26,9 +30,13 @@ let mode =
     | None ->
         (* NOTE: ConfigImpact analysis assumes that non-empty changed files are always given. The
            next condition check is only for checker's tests. *)
-        if List.is_empty Config.config_impact_strict_mode_paths then `Normal else `Strict
+        if not (List.is_empty Config.config_impact_strict_mode_paths) then `Strict
+        else if not (List.is_empty Config.config_impact_strict_beta_mode_paths) then `StrictBeta
+        else `Normal
     | Some changed_files ->
-        if SourceFile.Set.exists is_in_strict_mode_paths changed_files then `Strict else `Normal
+        if SourceFile.Set.exists is_in_strict_mode_paths changed_files then `Strict
+        else if SourceFile.Set.exists is_in_strict_beta_mode_paths changed_files then `StrictBeta
+        else `Normal
 
 
 module Branch = struct
