@@ -170,6 +170,7 @@ codetoanalyze/cpp/pulse/unnecessary_copy.cpp, multiple_copies_bad, 2, PULSE_UNNE
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, multiple_copies_bad, 4, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_via_constructor_read_bad, 2, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_vec_bad, 0, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_own_vec_bad, 2, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, loop_via_copy_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_in_both_cases_bad, 3, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_in_both_cases_branch_bad, 3, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]

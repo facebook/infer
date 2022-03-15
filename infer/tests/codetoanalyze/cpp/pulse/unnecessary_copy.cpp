@@ -112,22 +112,20 @@ class Vec {
  public:
   std::vector<int> vec;
   Vec() {
-    for (int i = 1; i <= 3; i) {
+    for (int i = 1; i <= 3; i++) {
       vec.push_back(i);
     }
   }
 
   Vec(const Vec& v) {
-    for (int i = 1; i < 3; i)
+    for (int i = 1; i <= 3; i++)
       vec.push_back(v.get(i));
   }
 
   int get(int i) const { return vec[i]; }
 };
 
-// Although underlying vectors are the same for the copy and the source,
-// __end_cap_,__begin__, and __end__ are different. TODO: investigate
-void copy_own_vec_bad_FN() {
+void copy_own_vec_bad() {
   Vec vec;
   auto copied_own_vec = vec; // copy
 }
