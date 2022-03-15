@@ -312,9 +312,9 @@ module JsonConfigImpactPrinterElt = struct
     { loc: Location.t
     ; proc_name: Procname.t
     ; config_impact_opt: ConfigImpactAnalysis.Summary.t option
-    ; is_strict: bool }
+    ; mode: Jsonconfigimpact_t.config_impact_mode }
 
-  let to_string {loc; proc_name; config_impact_opt; is_strict} =
+  let to_string {loc; proc_name; config_impact_opt; mode} =
     if is_in_clang_header loc.file then None
     else
       Option.map config_impact_opt ~f:(fun config_impact ->
@@ -331,7 +331,8 @@ module JsonConfigImpactPrinterElt = struct
             ; procedure_name
             ; procedure_id
             ; unchecked_callees
-            ; is_strict } )
+            ; is_strict= (match mode with `Normal -> false | `StrictBeta | `Strict -> true)
+            ; mode } )
 end
 
 module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)
@@ -377,7 +378,7 @@ let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile
         Option.map config_impact_opt ~f:ConfigImpactPostProcess.instantiate_unchecked_callees_cond
       in
       JsonConfigImpactPrinter.pp outfile.fmt
-        {loc; proc_name; config_impact_opt; is_strict= ConfigImpactAnalysis.strict_mode}
+        {loc; proc_name; config_impact_opt; mode= ConfigImpactAnalysis.mode}
 
 
 let process_summary proc_name loc ~cost:(cost_opt, costs_outf)

@@ -449,8 +449,13 @@ module ConfigImpactItem = struct
         {hash; loc; procedure_name; procedure_id}
       in
       let issue_type =
-        if config_impact_item.is_strict then IssueType.config_impact_analysis_strict
-        else IssueType.config_impact_analysis
+        match config_impact_item.mode with
+        | `Normal ->
+            IssueType.config_impact_analysis
+        | `StrictBeta ->
+            IssueType.config_impact_analysis_strict_beta
+        | `Strict ->
+            IssueType.config_impact_analysis_strict
       in
       Some
         (create_json_bug ~qualifier ~line ~file ~source_file ~trace
@@ -479,7 +484,9 @@ module ConfigImpactItem = struct
           (* current/previous reports cannot be empty. *)
           let current = join_unchecked_callees current_reports in
           let previous = join_unchecked_callees previous_reports in
-          if Bool.equal current.config_impact_item.is_strict previous.config_impact_item.is_strict
+          if
+            ConfigImpactAnalysis.equal_mode current.config_impact_item.mode
+              previous.config_impact_item.mode
           then
             let introduced =
               UncheckedCallees.diff current.unchecked_callees previous.unchecked_callees
@@ -492,8 +499,9 @@ module ConfigImpactItem = struct
             (Option.to_list introduced @ acc_introduced, Option.to_list removed @ acc_fixed)
           else (
             L.internal_error
-              "Config Impact issues' strict modes are different in current(%b) and previous(%b).@\n"
-              current.config_impact_item.is_strict previous.config_impact_item.is_strict ;
+              "Config Impact issues' strict modes are different in current(%a) and previous(%a).@\n"
+              ConfigImpactAnalysis.pp_mode current.config_impact_item.mode
+              ConfigImpactAnalysis.pp_mode previous.config_impact_item.mode ;
             acc )
       | `Left _ | `Right _ ->
           (* Note: The reports available on one side are ignored since we don't want to report on

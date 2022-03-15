@@ -7,9 +7,13 @@
 
 open! IStd
 
+type mode = Jsonconfigimpact_t.config_impact_mode [@@deriving equal]
+
+val pp_mode : Format.formatter -> mode -> unit
+
 val is_in_strict_mode_paths : SourceFile.t -> bool
 
-val strict_mode : bool
+val mode : mode
 
 module LatentConfig : sig
   type t
