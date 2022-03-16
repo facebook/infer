@@ -14,7 +14,7 @@ depends: [
   "base"
   "containers" {>= "3.4"}
   "containers-data"
-  "conf-llvm" {= "11.0.0"}
+  "conf-llvm" {= "12.0.1"}
   "core" {>= "v0.14"}
   "ctypes"
   "ctypes-foreign"
@@ -28,7 +28,7 @@ depends: [
   "ppxlib" {>= "0.21.0"}
   "psq"
   "shexp"
-  "smtlib-utils"
+  "smtlib-utils" {> "0.1"}
   "yojson"
   "zarith"
 ]
