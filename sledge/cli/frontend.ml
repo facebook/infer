@@ -94,7 +94,7 @@ let get_debug_loc_directory llv =
   if String.is_empty dir then dir
   else
     String.Tbl.find_or_add realpath_tbl dir ~default:(fun () ->
-        try Core.Filename.realpath dir with Unix.Unix_error _ -> dir )
+        try Unix.realpath dir with Unix.Unix_error _ -> dir )
 
 open struct
   open struct

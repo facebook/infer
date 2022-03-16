@@ -43,7 +43,7 @@ let command ~summary ?readme param =
     Trace.init ~colors ?margin ~config () ;
     Option.iter ~f:(Report.init ~append:append_report) report
   in
-  Llair.Loc.root := Some (Core.Filename.realpath (Sys.getcwd ())) ;
+  Llair.Loc.root := Some (Unix.realpath (Sys.getcwd ())) ;
   let flush main () = Fun.protect main ~finally:Trace.flush in
   let report main () =
     try main () |> Report.status
