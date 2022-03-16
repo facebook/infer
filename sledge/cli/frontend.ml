@@ -543,7 +543,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         let parent, _ = find_name (Llvm.operand llv 0) in
         let name, _ = find_name (Llvm.operand llv 1) in
         ([], Exp.label ~parent ~name)
-    | UndefValue ->
+    | UndefValue | PoisonValue ->
         let llt = Llvm.type_of llv in
         let typ = xlate_type x llt in
         if not (Typ.is_sized typ) then
