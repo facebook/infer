@@ -122,6 +122,15 @@ public class FilterInputStreamLeaks {
     }
   }
 
+  public static void try_with_resourceOK() throws IOException {
+    try (DataInputStream dis = new DataInputStream(new FileInputStream("foo.txt"))) {
+      int version = dis.readInt();
+      if (version != 0) {
+        throw new RuntimeException("Unexpected version " + version);
+      }
+    }
+  }
+
   // DeflaterInputStream  tests
 
   public void deflaterInputStreamNotClosedAfterReadBad() {
