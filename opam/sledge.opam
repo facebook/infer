@@ -18,7 +18,7 @@ depends: [
   "core" {>= "v0.14"}
   "ctypes"
   "ctypes-foreign"
-  "dune" {build & >= "2.7"}
+  "dune" {build & >= "3.0"}
   "dune-build-info" {build}
   "fpath"
   "iter"

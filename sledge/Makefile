@@ -43,7 +43,7 @@ setup: $(LLVM_OCAML_SENTINEL)
 
 .PHONY: check
 check: setup
-	dune build @check
+	dune build @check --display=quiet
 
 .PHONY: exes
 exes: setup
