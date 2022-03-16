@@ -50,8 +50,7 @@ val map_endo : 'a t -> f:('a -> 'a) -> 'a t
 
 val reduce_adjacent : 'a t -> f:('a -> 'a -> 'a option) -> 'a t
 val split : ('a * 'b) t -> 'a t * 'b t
-val combine : 'a t -> 'b t -> ('a * 'b) t option
-val combine_exn : 'a t -> 'b t -> ('a * 'b) t
+val combine : 'a t -> 'b t -> ('a * 'b) t
 val is_empty : 'a t -> bool
 val length : 'a t -> int
 val get : 'a t -> int -> 'a
