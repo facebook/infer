@@ -82,6 +82,7 @@ module TypeKind : sig
   | Token
   | ScalableVector
   | BFloat
+  | X86_amx
 end
 
 (** The linkage of a global value, accessed with {!linkage} and

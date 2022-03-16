@@ -45,6 +45,7 @@ module TypeKind = struct
   | Token
   | ScalableVector
   | BFloat
+  | X86_amx
 end
 
 module Linkage = struct
