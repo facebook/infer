@@ -12,7 +12,6 @@ type config_impact_mode = [Normal | StrictBeta | Strict]
 type item = {
   inherit sub_item;
   unchecked_callees : string;
-  ~is_strict : bool;
   ~mode <ocaml default="`Normal"> : config_impact_mode;
 }
 

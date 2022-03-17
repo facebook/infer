@@ -326,13 +326,7 @@ module JsonConfigImpactPrinterElt = struct
             |> ConfigImpactAnalysis.UncheckedCallees.encode
           in
           Jsonconfigimpact_j.string_of_item
-            { Jsonconfigimpact_t.hash
-            ; loc
-            ; procedure_name
-            ; procedure_id
-            ; unchecked_callees
-            ; is_strict= (match mode with `Normal -> false | `StrictBeta | `Strict -> true)
-            ; mode } )
+            {Jsonconfigimpact_t.hash; loc; procedure_name; procedure_id; unchecked_callees; mode} )
 end
 
 module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)
