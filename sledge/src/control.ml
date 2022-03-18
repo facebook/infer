@@ -726,7 +726,6 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
       [%Trace.info
         " %i,%i: %a%a@\n@[%a@]" elt.switches depth Edge.pp edge pp_queue
           queue pp_state state] ;
-      let depths = Depths.add ~key:edge ~data:depth depths in
       let threads, inactive = Threads.after_step dst threads in
       let queue =
         Queue.add
@@ -752,13 +751,16 @@ module Make (Config : Config) (D : Domain) (Queue : Queue) = struct
         (queue, cursor)
 
     let add ~retreating ({ctrl= edge; depths} as elt) wl =
-      let depth = Option.value (Depths.find edge depths) ~default:0 in
-      let depth = if retreating then depth + 1 else depth in
-      if depth > Config.loop_bound then (
-        prune elt.switches depth elt.ctrl ;
-        Report.hit_loop_bound Config.loop_bound ;
-        wl )
-      else enqueue depth elt wl
+      if not retreating then enqueue 0 elt wl
+      else
+        let depth = 1 + Option.value (Depths.find edge depths) ~default:0 in
+        if depth <= Config.loop_bound then
+          let depths = Depths.add ~key:edge ~data:depth depths in
+          enqueue depth {elt with depths} wl
+        else (
+          prune elt.switches depth elt.ctrl ;
+          Report.hit_loop_bound Config.loop_bound ;
+          wl )
 
     module Succs = struct
       module M = ConcSH.Map
