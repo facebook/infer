@@ -166,8 +166,11 @@ let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} formal_map po
       let concat_leak_list =
         ResourceLeakCSDomain.type_to_list post 
       in
-      F.asprintf "Leaked %a resource(s) in method \"%a\" at type(s) %s" ResourceLeakCSDomain.pp post
-        Procname.pp proc_name concat_leak_list
+      if Config.debug_mode then
+        F.asprintf "Leaked %a resource(s) in method \"%a\" at type(s) %s" ResourceLeakCSDomain.pp post
+          Procname.pp proc_name concat_leak_list
+      else
+        F.asprintf "Leaked resource(s) in method \"%a\" at type(s) %s" Procname.pp proc_name concat_leak_list
     in
     ResourceLeakCSDomain.reset_type_map ;
     ResourceLeakCSDomain.Summary.reset_interface_type_map ;
