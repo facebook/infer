@@ -6,11 +6,13 @@
 
 -mode(compile).
 
+-define(OPTIONS, ["specs_only"]).
+
 usage() ->
     Usage =
         [
             "Usage:",
-            "    extract.escript <PATH> <OUTDIR>",
+            "    extract.escript [--specs_only] <PATH> <OUTDIR>",
             "    extract.escript <TERM>",
             "",
             "In the first form, the script will traverse all beam files",
@@ -18,6 +20,7 @@ usage() ->
             "corresponding file in OUTDIR with the AST encoded as json.",
             "PATH can be;",
             "  a directory, a beam file, or a file with a list of beam files.",
+            "Optional flag `--specs_only` is to filter specs AST nodes only."
             "",
             "In the second form, intended for debugging, the string TERM will",
             "be converted to an Erlang term and rendered as json."
@@ -29,16 +32,27 @@ main([Str]) when is_integer(hd(Str)) ->
     {ok, Tokens, _} = erl_scan:string(Str ++ [$.]),
     {ok, Term} = erl_parse:parse_term(Tokens),
     io:fwrite("~s~n", [ast_to_json(Term)]);
-main([Path, OutDir]) ->
-    filelib:ensure_dir(filename:join(OutDir, dummy)),
-    ast_to_json(Path, OutDir);
-main(_) ->
+main(Args) ->
+    do_main(Args, []).
+
+do_main([[$-, $- | Option] | Rest], Options) ->
+    case lists:member(Option, ?OPTIONS) of
+        true ->
+            do_main(Rest, Options ++ [list_to_atom(Option)]);
+        _ ->
+            io:fwrite("Unrecognized option `--~s`~n~n", [Option]),
+            usage()
+    end;
+do_main([Path, OutDir], Options) ->
+    ast_to_json(Path, OutDir, Options);
+do_main(_, _) ->
     usage().
 
-ast_to_json(Path, OutDir) ->
+ast_to_json(Path, OutDir, Options) ->
+    filelib:ensure_dir(filename:join(OutDir, dummy)),
     Beams = path_to_beams(Path),
     filelib:ensure_dir(filename:join(OutDir, dummy)),
-    gather(mapper(OutDir, Beams)).
+    gather(mapper(OutDir, Beams, Options)).
 
 path_to_beams(Path) ->
     case filelib:is_dir(Path) of
@@ -52,15 +66,20 @@ path_to_beams(Path) ->
                     case file:consult(Path) of
                         {ok, Paths} ->
                             Paths;
-                        E ->
-                            io:format("error reading: ~s: ~p~n", [Path, E]),
-                            halt(1)
+                        _ ->
+                            case file:read_file(Path) of
+                                {ok, Bin} ->
+                                    string:tokens(binary_to_list(Bin), "\n");
+                                E ->
+                                    io:format("error reading: ~s: ~p~n", [Path, E]),
+                                    halt(1)
+                            end
                     end
             end
     end.
 
-mapper(OutDir, Beams) ->
-    Handler = fun(B) -> fun() -> exit(process_beam(B, OutDir)) end end,
+mapper(OutDir, Beams, Options) ->
+    Handler = fun(B) -> fun() -> exit(process_beam(B, OutDir, Options)) end end,
     Spawner = fun(B) -> spawn_monitor(Handler(B)) end,
     maps:from_list(lists:map(Spawner, Beams)).
 
@@ -81,12 +100,28 @@ maybe_err({C, {R, [{M, F, Args, Info} | _Stack]}}) when is_list(Args) ->
 maybe_err(R) ->
     io:fwrite("error: ~p~n", [R]).
 
+filter_specs([H | T], Acc) ->
+    case H of
+        {attribute, _, spec, _} -> filter_specs(T, [H | Acc]);
+        {attribute, _, type, _} -> filter_specs(T, [H | Acc]);
+        {attribute, _, file, _} -> filter_specs(T, [H | Acc]);
+        {attribute, _, module, _} -> filter_specs(T, [H | Acc]);
+        _ -> filter_specs(T, Acc)
+    end;
+filter_specs([], Acc) ->
+    lists:reverse(Acc).
+
 %% this runs in its own process
-process_beam(BeamFilePath, OutDir) ->
+process_beam(BeamFilePath, OutDir, Options) ->
     case get_ast(BeamFilePath) of
         {ok, Module, Forms} ->
+            Forms1 =
+                case lists:member(specs_only, Options) of
+                    true -> filter_specs(Forms, []);
+                    _ -> Forms
+                end,
+            JSON = ast_to_json(Forms1),
             OutFilePath = filename:join(OutDir, Module ++ ".json"),
-            JSON = ast_to_json(Forms),
             ok = file:write_file(OutFilePath, JSON);
         {error, E} ->
             exit(#{BeamFilePath => E})

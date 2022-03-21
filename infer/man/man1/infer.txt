@@ -669,6 +669,12 @@ OPTIONS
            with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)       
     See also infer-capture(1).
 
+       --erlang-with-otp-specs
+           Activates: [EXPERIMENTAL] Use type specs from OTP (available in
+           the system) to generate more precise Pulse summaries for unknown
+           library functions. (Conversely: --no-erlang-with-otp-specs)       
+    See also infer-capture(1).
+
        --external-java-packages +prefix
            Specify a list of Java package prefixes for external Java
            packages. If set, the analysis will not report non-actionable

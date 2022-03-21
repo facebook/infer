@@ -1502,6 +1502,13 @@ and erlang_skip_rebar3 =
     "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
 
 
+and erlang_with_otp_specs =
+  CLOpt.mk_bool ~long:"erlang-with-otp-specs"
+    ~in_help:InferCommand.[(Capture, manual_erlang)]
+    "[EXPERIMENTAL] Use type specs from OTP (available in the system) to generate more precise \
+     Pulse summaries for unknown library functions."
+
+
 and erlang_list_unfold_depth =
   CLOpt.mk_int ~long:"erlang-list-unfold-depth" ~default:4
     ~in_help:InferCommand.[(Analyze, manual_erlang)]
@@ -3327,6 +3334,8 @@ and eradicate_verbose = !eradicate_verbose
 and erlang_ast_dir = !erlang_ast_dir
 
 and erlang_skip_rebar3 = !erlang_skip_rebar3
+
+and erlang_with_otp_specs = !erlang_with_otp_specs
 
 and erlang_list_unfold_depth = !erlang_list_unfold_depth
 

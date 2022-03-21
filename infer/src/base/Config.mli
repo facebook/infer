@@ -324,6 +324,8 @@ val erlang_ast_dir : string option
 
 val erlang_skip_rebar3 : bool
 
+val erlang_with_otp_specs : bool
+
 val erlang_list_unfold_depth : int
 
 val fail_on_bug : bool
