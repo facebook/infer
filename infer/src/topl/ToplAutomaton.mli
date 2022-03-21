@@ -48,6 +48,6 @@ val is_start : t -> vindex -> bool
 
 val is_error : t -> vindex -> bool
 
-val pp_transition : Format.formatter -> transition -> unit
+val pp_transition : t -> Format.formatter -> transition -> unit
 
 val pp_tindex : t -> Format.formatter -> tindex -> unit

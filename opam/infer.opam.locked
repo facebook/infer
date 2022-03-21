@@ -4,9 +4,9 @@ version: "1.1.0"
 synopsis: "A static analyzer for Java, C, C++, and Objective-C"
 maintainer: "the infer team"
 authors: "Facebook"
-license: "MIT"
 homepage: "https://github.com/facebook/infer"
 bug-reports: "https://github.com/facebook/infer/issues"
+license: "MIT"
 depends: [
   "ANSITerminal" {= "0.8.3"}
   "async" {= "v0.14.0"}
@@ -53,7 +53,7 @@ depends: [
   "jane-street-headers" {= "v0.14.0"}
   "javalib" {= "3.2.1"}
   "jst-config" {= "v0.14.1"}
-  "lambda-term" {= "3.1.0" & with-test}
+  "lambda-term" {= "3.2.0" & with-test}
   "lwt" {= "5.5.0" & with-test}
   "lwt_log" {= "1.1.1" & with-test}
   "lwt_react" {= "1.1.5" & with-test}
@@ -63,7 +63,7 @@ depends: [
   "menhirSdk" {= "20211128"}
   "mew" {= "0.1.0" & with-test}
   "mew_vi" {= "0.5.0" & with-test}
-  "mmap" {= "1.1.0" & with-test}
+  "mmap" {= "1.2.0" & with-test}
   "mtime" {= "1.4.0"}
   "num" {= "1.4"}
   "ocaml" {= "4.13.1"}

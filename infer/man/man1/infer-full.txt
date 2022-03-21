@@ -475,6 +475,7 @@ OPTIONS
              CONDITION_ALWAYS_TRUE (disabled by default),
              CONFIG_IMPACT (disabled by default),
              CONFIG_IMPACT_STRICT (disabled by default),
+             CONFIG_IMPACT_STRICT_BETA (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
@@ -666,6 +667,12 @@ OPTIONS
        --erlang-skip-rebar3
            Activates: Skip running rebar, to save time. It is useful together
            with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)       
+    See also infer-capture(1).
+
+       --erlang-with-otp-specs
+           Activates: [EXPERIMENTAL] Use type specs from OTP (available in
+           the system) to generate more precise Pulse summaries for unknown
+           library functions. (Conversely: --no-erlang-with-otp-specs)       
     See also infer-capture(1).
 
        --external-java-packages +prefix
@@ -1013,6 +1020,13 @@ OPTIONS
            Activates: Print the attributes of each procedure in the output of
            --procedures (Conversely: --no-procedures-attributes)       
     See also infer-debug(1).
+
+       --procedures-call-graph
+           Activates: Output a dotty file in
+           infer-out/captured/syntactic-call-graph.dot. The graph is the
+           syntactic call graph reachable from either all captured procedures
+           or those determined by the option --changed-files-index.
+           (Conversely: --no-procedures-call-graph)           See also infer-debug(1).
 
        --procedures-cfg
            Activates: Output a dotty file in
@@ -1761,6 +1775,15 @@ INTERNAL OPTIONS
        --config-impact-config-function-patterns-reset
            Set --config-impact-config-function-patterns to the empty list.
 
+       --config-impact-config-param-patterns +regex
+           Register known config parameters that have a config value. The
+           matched name contains a method name and a parameter name,
+           separated by a space, for example, Class.method param in Java/ObjC
+           and Class::method param in C++.
+
+       --config-impact-config-param-patterns-reset
+           Set --config-impact-config-param-patterns to the empty list.
+
        --config-impact-current-reset
            Cancel the effect of --config-impact-current.
 
@@ -1772,6 +1795,13 @@ INTERNAL OPTIONS
 
        --config-impact-previous-reset
            Cancel the effect of --config-impact-previous.
+
+       --config-impact-strict-beta-mode-paths +path_regex
+           Similar to --config-impact-strict-mode-paths, but the paths are
+           used only for beta testing.
+
+       --config-impact-strict-beta-mode-paths-reset
+           Set --config-impact-strict-beta-mode-paths to the empty list.
 
        --config-impact-strict-mode
            Activates: Make the config impact analysis stricter. It disables
@@ -1787,6 +1817,12 @@ INTERNAL OPTIONS
 
        --config-impact-strict-mode-paths-reset
            Set --config-impact-strict-mode-paths to the empty list.
+
+       --config-impact-test-paths +path_regex
+           Ignore code changes under the given test paths.
+
+       --config-impact-test-paths-reset
+           Set --config-impact-test-paths to the empty list.
 
        --cost-issues-tests-reset
            Cancel the effect of --cost-issues-tests.
@@ -2140,6 +2176,11 @@ INTERNAL OPTIONS
 
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
+
+       --pulse-inline-global-init-func-pointer
+           Activates: Inline the initializer of global variables that are of
+           type function pointer in Pulse. (Conversely:
+           --no-pulse-inline-global-init-func-pointer)
 
        --pulse-intraprocedural-only
            Activates: Disable inter-procedural analysis in Pulse. Used for

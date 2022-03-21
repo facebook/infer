@@ -64,36 +64,50 @@ module CopyVar = struct
         Format.fprintf fmt "%a copied" Var.pp copied_var
 end
 
-include AbstractDomain.Map (CopyVar) (CopySpec)
+module DestructorChecked = AbstractDomain.FiniteSet (Var)
+module CopyMap = AbstractDomain.Map (CopyVar) (CopySpec)
+include AbstractDomain.Pair (CopyMap) (DestructorChecked)
 
-let bottom = empty
+let bottom = (CopyMap.empty, DestructorChecked.empty)
 
-let mark_copy_as_modified ~is_modified copied_var ~source_addr_opt astate_copy =
+let is_bottom (astate_copy, astate_d) =
+  CopyMap.is_bottom astate_copy && DestructorChecked.is_bottom astate_d
+
+
+let mark_copy_as_modified ~is_modified ~copied_var ~source_addr_opt (astate_copy, astate_d) =
   let copy_var = CopyVar.{copied_var; source_addr_opt} in
-  match find_opt copy_var astate_copy with
-  | Some (Copied {heap= copy_heap}) when is_modified copy_heap ->
-      Logging.d_printfln_escaped "Copy/source modified!" ;
-      add copy_var Modified astate_copy
-  | _ ->
-      astate_copy
+  let astate_copy =
+    match CopyMap.find_opt copy_var astate_copy with
+    | Some (Copied {heap= copy_heap}) when is_modified copy_heap ->
+        Logging.d_printfln_escaped "Copy/source modified!" ;
+        CopyMap.add copy_var Modified astate_copy
+    | _ ->
+        astate_copy
+  in
+  (astate_copy, astate_d)
 
 
-let get_copied astate =
+let checked_via_dtor var (astate_copy, astate_d) = (astate_copy, DestructorChecked.add var astate_d)
+
+let get_copied (astate_copy, _astate_d) =
   let modified =
-    fold
+    CopyMap.fold
       (fun CopyVar.{copied_var} (copy_spec : CopySpec.t) acc ->
         match copy_spec with Modified -> Var.Set.add copied_var acc | Copied _ -> acc )
-      astate Var.Set.empty
+      astate_copy Var.Set.empty
   in
-  fold
+  CopyMap.fold
     (fun CopyVar.{copied_var} (copy_spec : CopySpec.t) acc ->
       match copy_spec with
       | Modified ->
           acc
       | Copied {location} ->
           if Var.Set.mem copied_var modified then acc else (copied_var, location) :: acc )
-    astate []
+    astate_copy []
 
 
-let add copied_var ~source_addr_opt (res : copy_spec_t) astate_copy =
-  add {copied_var; source_addr_opt} res astate_copy
+let add copied_var ~source_addr_opt (res : copy_spec_t) (astate_copy, astate_d) =
+  (CopyMap.add {copied_var; source_addr_opt} res astate_copy, astate_d)
+
+
+let is_checked_via_dtor var (_, astate_d) = DestructorChecked.mem var astate_d

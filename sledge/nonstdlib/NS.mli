@@ -181,13 +181,6 @@ module Set = NSSet
 module Map = NSMap
 module Multiset = Multiset
 module Bijection = CCBijection [@@warning "-49"]
-
-module FHeap : sig
-  include module type of Fheap
-
-  val remove_top_exn : 'a t -> 'a t
-end
-
 module HashSet = HashSet
 module HashTable = HashTable
 module HashQueue = Core_kernel.Hash_queue

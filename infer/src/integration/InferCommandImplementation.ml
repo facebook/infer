@@ -43,6 +43,15 @@ let debug () =
         Option.iter
           (Procedures.select_proc_names_interactive ~filter)
           ~f:(if Config.procedures_summary_json then f_json else f_console_output)
+      else if Config.procedures_call_graph then
+        let files_to_graph =
+          match SourceFile.read_config_changed_files () with
+          | Some file_set ->
+              SourceFile.Set.elements file_set
+          | None ->
+              SourceFiles.get_all ~filter:(fun _ -> true) ()
+        in
+        SyntacticCallGraph.(build_from_sources files_to_graph |> to_dotty)
       else
         L.result "%a"
           Config.(

@@ -16,4 +16,4 @@ int handleIntentForKey(int* p) { return *p; }
 MOCK_DEF(MockMethodExample, handleIntentForKey);
 #define handleIntentForKey MOCK_USE(MockMethodExample, handleIntentForKey)
 
-int mock_ref_bad_FN() { return handleIntentForKey(NULL); }
+int mock_ref_bad() { return handleIntentForKey(NULL); }

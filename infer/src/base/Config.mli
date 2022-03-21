@@ -242,6 +242,8 @@ val config_impact_config_field_patterns : Re.Str.regexp list
 
 val config_impact_config_function_patterns : Re.Str.regexp list
 
+val config_impact_config_param_patterns : Re.Str.regexp list
+
 val config_impact_current : string option
 
 val config_impact_data_file : string option
@@ -255,6 +257,10 @@ val config_impact_previous : string option
 val config_impact_strict_mode : bool
 
 val config_impact_strict_mode_paths : Str.regexp list
+
+val config_impact_strict_beta_mode_paths : Str.regexp list
+
+val config_impact_test_paths : Str.regexp list
 
 val continue_analysis : bool
 
@@ -317,6 +323,8 @@ val eradicate_verbose : bool
 val erlang_ast_dir : string option
 
 val erlang_skip_rebar3 : bool
+
+val erlang_with_otp_specs : bool
 
 val erlang_list_unfold_depth : int
 
@@ -495,6 +503,8 @@ val procedures : bool
 
 val procedures_attributes : bool
 
+val procedures_call_graph : bool
+
 val procedures_cfg : bool
 
 val procedures_definedness : bool
@@ -518,6 +528,8 @@ val progress_bar : [`MultiLine | `Plain | `Quiet]
 val project_root : string
 
 val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
+
+val pulse_inline_global_init_func_pointer : bool
 
 val pulse_intraprocedural_only : bool
 

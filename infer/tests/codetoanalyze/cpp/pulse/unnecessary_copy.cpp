@@ -112,22 +112,20 @@ class Vec {
  public:
   std::vector<int> vec;
   Vec() {
-    for (int i = 1; i <= 3; i) {
+    for (int i = 1; i <= 3; i++) {
       vec.push_back(i);
     }
   }
 
   Vec(const Vec& v) {
-    for (int i = 1; i < 3; i)
+    for (int i = 1; i <= 3; i++)
       vec.push_back(v.get(i));
   }
 
   int get(int i) const { return vec[i]; }
 };
 
-// Although underlying vectors are the same for the copy and the source,
-// __end_cap_,__begin__, and __end__ are different. TODO: investigate
-void copy_own_vec_bad_FN() {
+void copy_own_vec_bad() {
   Vec vec;
   auto copied_own_vec = vec; // copy
 }
@@ -189,6 +187,7 @@ void copy_modified_after_abort_ok_FP(std::vector<int> source_vec) {
   copy.push_back(0); // copy modified, but we propagate Abort state without
                      // executing the rest of the stmts
 }
+
 namespace ns {
 
 template <typename X>
@@ -199,4 +198,32 @@ X creates_copy(X a) {
 
 int copy_via_model_bad(Arr arr) {
   auto copy = ns::creates_copy(arr); // creates copy (via model)
+}
+
+void source_modified_before_lib_destructor_ok(std::vector<int>& source_vec) {
+  auto copy = source_vec;
+  source_vec[0] = 0;
+}
+
+void copy_modified_before_lib_destructor_ok(std::vector<int>& source_vec) {
+  auto copy = source_vec;
+  copy[0] = 0;
+}
+
+class String {
+ private:
+  char* text;
+  int size;
+
+ public:
+  int x;
+  ~String() { delete[] text; } // destructor
+  void set_size(int new_size) { size = new_size; }
+};
+
+void check_before_custom_destructor_bad(String s) { auto copy = s; }
+
+void modified_before_custom_destructor_ok(String s) {
+  auto copy = s;
+  copy.set_size(10);
 }

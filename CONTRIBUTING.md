@@ -227,4 +227,4 @@ dependencies, especially for infer releases, for which it is more
 difficult to change their package constraints after the fact.
 
 To add an opam package or update its version constraints, edit
-`opam/infer.opam` then run `opam lock .` in directory `opam/`.
+`opam/infer.opam` then run `make` in directory `opam/`.

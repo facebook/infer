@@ -6,18 +6,7 @@ maintainer: "the infer team"
 authors: "Facebook"
 homepage: "https://github.com/facebook/infer"
 bug-reports: "https://github.com/facebook/infer/issues"
-dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"
-build: [
-  ["./autogen.sh"]
-  ["./configure"
-     "--prefix=%{prefix}%"]
-  [make "-j" jobs]
-  [make "-j" jobs "config_tests"] 
-]
-install: [
-  [make "install"]
-]
 depends: [
   "ANSITerminal" {= "0.8.3"}
   "async" {= "v0.14.0"}
@@ -35,6 +24,7 @@ depends: [
   "base64" {= "3.5.0"}
   "base_bigstring" {= "v0.14.0"}
   "base_quickcheck" {= "v0.14.1"}
+  "bheap" {= "2.0.0"}
   "bigarray-compat" {= "1.1.0"}
   "bin_prot" {= "v0.14.0"}
   "biniou" {= "1.2.1"}
@@ -63,7 +53,7 @@ depends: [
   "jane-street-headers" {= "v0.14.0"}
   "javalib" {= "3.2.1"}
   "jst-config" {= "v0.14.1"}
-  "lambda-term" {= "3.1.0"}
+  "lambda-term" {= "3.2.0"}
   "lwt" {= "5.5.0"}
   "lwt_log" {= "1.1.1"}
   "lwt_react" {= "1.1.5"}
@@ -73,7 +63,7 @@ depends: [
   "menhirSdk" {= "20211128"}
   "mew" {= "0.1.0"}
   "mew_vi" {= "0.5.0"}
-  "mmap" {= "1.1.0"}
+  "mmap" {= "1.2.0"}
   "mtime" {= "1.4.0"}
   "num" {= "1.4"}
   "ocaml" {= "4.13.1"}
@@ -150,7 +140,15 @@ depends: [
   "zarith" {= "1.12"}
   "zed" {= "3.1.0"}
 ]
-depexts: [
-  [ ["ubuntu"] ["default-jdk"] ]
-  [ ["debian"] ["default-jdk"] ]
+build: [
+  ["./autogen.sh"]
+  ["./configure" "--prefix=%{prefix}%"]
+  [make "-j" jobs]
+  [make "-j" jobs "config_tests"]
 ]
+install: [make "install"]
+depexts: [
+  ["default-jdk"] {"ubuntu"}
+  ["default-jdk"] {"debian"}
+]
+dev-repo: "git://github.com/facebook/infer.git"

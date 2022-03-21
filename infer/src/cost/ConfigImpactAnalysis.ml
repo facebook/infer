@@ -9,18 +9,34 @@ open! IStd
 module F = Format
 module ConfigName = FbGKInteraction.ConfigName
 
+type mode = Jsonconfigimpact_t.config_impact_mode [@@deriving equal]
+
+let pp_mode f mode = F.pp_print_string f (Jsonconfigimpact_j.string_of_config_impact_mode mode)
+
 let is_in_strict_mode_paths file =
   SourceFile.is_matching Config.config_impact_strict_mode_paths file
 
 
-let strict_mode =
-  Config.config_impact_strict_mode
-  ||
-  match SourceFile.read_config_changed_files () with
-  | None ->
-      not (List.is_empty Config.config_impact_strict_mode_paths)
-  | Some changed_files ->
-      SourceFile.Set.exists is_in_strict_mode_paths changed_files
+let is_in_strict_beta_mode_paths file =
+  SourceFile.is_matching Config.config_impact_strict_beta_mode_paths file
+
+
+let is_in_test_paths file = SourceFile.is_matching Config.config_impact_test_paths file
+
+let mode =
+  if Config.config_impact_strict_mode then `Strict
+  else
+    match SourceFile.read_config_changed_files () with
+    | None ->
+        (* NOTE: ConfigImpact analysis assumes that non-empty changed files are always given. The
+           next condition check is only for checker's tests. *)
+        if not (List.is_empty Config.config_impact_strict_mode_paths) then `Strict
+        else if not (List.is_empty Config.config_impact_strict_beta_mode_paths) then `StrictBeta
+        else `Normal
+    | Some changed_files ->
+        if SourceFile.Set.exists is_in_strict_mode_paths changed_files then `Strict
+        else if SourceFile.Set.exists is_in_strict_beta_mode_paths changed_files then `StrictBeta
+        else `Normal
 
 
 module Branch = struct
@@ -901,33 +917,34 @@ module Dom = struct
         in
         let is_cheap_call = match instantiated_cost with Some Cheap -> true | _ -> false in
         let is_unmodeled_call = match instantiated_cost with Some NoModel -> true | _ -> false in
-        if strict_mode then
-          let is_static = Procname.is_static callee in
-          match (callee_summary, expensiveness_model) with
-          | _, Some KnownCheap ->
-              (* If callee is known cheap call, ignore it. *)
-              astate
-          | ( Some
-                { Summary.unchecked_callees= callee_summary
-                ; unchecked_callees_cond= callee_summary_cond
-                ; has_call_stmt }
-            , _ )
-            when has_call_stmt ->
-              (* If callee's summary is not leaf, use it. *)
-              join_callee_summary callee_summary callee_summary_cond
-          | Some {Summary.has_call_stmt; ret}, _
-            when (not has_call_stmt)
-                 && ( is_config_setter_typ ~is_static ret_typ args
-                    || (is_config_getter_typ ~is_static ret_typ args && Val.is_field ret) ) ->
-              (* If callee seems to be a setter/getter, ignore it. *)
-              astate
-          | None, None when is_config_setter_getter ~is_static ret_typ callee args ->
-              (* If callee is unknown setter/getter, ignore it. *)
-              astate
-          | _, _ ->
-              (* Otherwise, add callee's name. *)
-              add_callee_name ~is_known_expensive:false
-        else
+        match mode with
+        | `StrictBeta | `Strict -> (
+            let is_static = Procname.is_static callee in
+            match (callee_summary, expensiveness_model) with
+            | _, Some KnownCheap ->
+                (* If callee is known cheap call, ignore it. *)
+                astate
+            | ( Some
+                  { Summary.unchecked_callees= callee_summary
+                  ; unchecked_callees_cond= callee_summary_cond
+                  ; has_call_stmt }
+              , _ )
+              when has_call_stmt ->
+                (* If callee's summary is not leaf, use it. *)
+                join_callee_summary callee_summary callee_summary_cond
+            | Some {Summary.has_call_stmt; ret}, _
+              when (not has_call_stmt)
+                   && ( is_config_setter_typ ~is_static ret_typ args
+                      || (is_config_getter_typ ~is_static ret_typ args && Val.is_field ret) ) ->
+                (* If callee seems to be a setter/getter, ignore it. *)
+                astate
+            | None, None when is_config_setter_getter ~is_static ret_typ callee args ->
+                (* If callee is unknown setter/getter, ignore it. *)
+                astate
+            | _, _ ->
+                (* Otherwise, add callee's name. *)
+                add_callee_name ~is_known_expensive:false )
+        | `Normal -> (
           match expensiveness_model with
           | None when is_cheap_call && not has_expensive_callee ->
               (* If callee is cheap by heuristics, ignore it. *)
@@ -961,7 +978,7 @@ module Dom = struct
                 astate
             | _ ->
                 (* Otherwise, add callee's name. *)
-                add_callee_name ~is_known_expensive:false )
+                add_callee_name ~is_known_expensive:false ) )
       else astate
     in
     update_gated_callees ~callee args astate |> update_latent_params formals args
@@ -1051,9 +1068,9 @@ module TransferFunctions = struct
         astate
 
 
-  let call {interproc= {tenv; analyze_dependency}; get_formals; get_instantiated_cost} node idx
-      ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
-    match FbGKInteraction.get_config_check tenv callee args with
+  let call {interproc= {tenv; analyze_dependency}; get_formals; get_instantiated_cost; is_param}
+      node idx ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
+    match FbGKInteraction.get_config_check ~is_param tenv callee args with
     | Some (`Config config) ->
         Dom.call_config_check ret_id config astate
     | Some (`Exp (Exp.Var id)) ->
@@ -1087,7 +1104,7 @@ module TransferFunctions = struct
       ({interproc= {tenv; analyze_dependency}; is_param} as analysis_data) node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e} -> (
-      match FbGKInteraction.get_config e with
+      match FbGKInteraction.get_config ~is_param e with
       | Some config ->
           Dom.call_config_check id config astate
       | None -> (
@@ -1119,7 +1136,7 @@ module TransferFunctions = struct
       when is_modeled_as_id tenv callee ->
         Dom.copy_value ret_id id astate
     | Call ((ret_id, _), (Const (Cfun callee) | Closure {name= callee}), _, _, _)
-      when (not strict_mode) && is_known_cheap_method tenv callee ->
+      when equal_mode mode `Normal && is_known_cheap_method tenv callee ->
         add_ret analyze_dependency ret_id callee astate
     | Call
         ( ret
@@ -1156,9 +1173,11 @@ let has_call_stmt proc_desc =
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let pname = Procdesc.get_proc_name proc_desc in
-  if Procname.is_java_class_initializer pname then
+  if
+    Procname.is_java_class_initializer pname
     (* Mitigation: We ignore Java class initializer to avoid non-deterministic FP. *)
-    None
+    || is_in_test_paths (Procdesc.get_attributes proc_desc).translation_unit
+  then None
   else
     let get_formals pname =
       Attributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals

@@ -475,6 +475,7 @@ OPTIONS
              CONDITION_ALWAYS_TRUE (disabled by default),
              CONFIG_IMPACT (disabled by default),
              CONFIG_IMPACT_STRICT (disabled by default),
+             CONFIG_IMPACT_STRICT_BETA (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
@@ -666,6 +667,12 @@ OPTIONS
        --erlang-skip-rebar3
            Activates: Skip running rebar, to save time. It is useful together
            with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)       
+    See also infer-capture(1).
+
+       --erlang-with-otp-specs
+           Activates: [EXPERIMENTAL] Use type specs from OTP (available in
+           the system) to generate more precise Pulse summaries for unknown
+           library functions. (Conversely: --no-erlang-with-otp-specs)       
     See also infer-capture(1).
 
        --external-java-packages +prefix
@@ -1013,6 +1020,13 @@ OPTIONS
            Activates: Print the attributes of each procedure in the output of
            --procedures (Conversely: --no-procedures-attributes)       
     See also infer-debug(1).
+
+       --procedures-call-graph
+           Activates: Output a dotty file in
+           infer-out/captured/syntactic-call-graph.dot. The graph is the
+           syntactic call graph reachable from either all captured procedures
+           or those determined by the option --changed-files-index.
+           (Conversely: --no-procedures-call-graph)           See also infer-debug(1).
 
        --procedures-cfg
            Activates: Output a dotty file in

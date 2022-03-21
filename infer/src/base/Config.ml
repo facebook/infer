@@ -1065,6 +1065,13 @@ and config_impact_config_function_patterns =
      Java/ObjC and $(b,Class::method) in C++."
 
 
+and config_impact_config_param_patterns =
+  CLOpt.mk_string_list ~long:"config-impact-config-param-patterns" ~meta:"regex"
+    "Register known config parameters that have a config value.  The matched name contains a \
+     method name and a parameter name, separated by a space, for example, $(b,Class.method param) \
+     in Java/ObjC and $(b,Class::method param) in C++."
+
+
 and config_impact_current =
   CLOpt.mk_path_opt ~long:"config-impact-current"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -1109,6 +1116,17 @@ and config_impact_strict_mode_paths =
      $(b,--config-impact-strict-mode-paths) is not given, the behavior depends on the \
      $(b,--config-impact-strict-mode) option: if $(b,--config-impact-strict-mode) is not given, it \
      runs as non-strict mode; otherwise, it runs as strict mode, but for all paths."
+
+
+and config_impact_strict_beta_mode_paths =
+  CLOpt.mk_string_list ~long:"config-impact-strict-beta-mode-paths" ~meta:"path_regex"
+    "Similar to $(b,--config-impact-strict-mode-paths), but the paths are used only for beta \
+     testing."
+
+
+and config_impact_test_paths =
+  CLOpt.mk_string_list ~long:"config-impact-test-paths" ~meta:"path_regex"
+    "Ignore code changes under the given test paths."
 
 
 (** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
@@ -1482,6 +1500,13 @@ and erlang_skip_rebar3 =
   CLOpt.mk_bool ~long:"erlang-skip-rebar3"
     ~in_help:InferCommand.[(Capture, manual_erlang)]
     "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
+
+
+and erlang_with_otp_specs =
+  CLOpt.mk_bool ~long:"erlang-with-otp-specs"
+    ~in_help:InferCommand.[(Capture, manual_erlang)]
+    "[EXPERIMENTAL] Use type specs from OTP (available in the system) to generate more precise \
+     Pulse summaries for unknown library functions."
 
 
 and erlang_list_unfold_depth =
@@ -2014,6 +2039,16 @@ and procedures_attributes =
     "Print the attributes of each procedure in the output of $(b,--procedures)"
 
 
+and procedures_call_graph =
+  CLOpt.mk_bool ~long:"procedures-call-graph"
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    (Printf.sprintf
+       "Output a dotty file in %s/syntactic-call-graph.dot. The graph is the syntactic call graph \
+        reachable from either all captured procedures or those determined by the option $(b, \
+        --changed-files-index). "
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
+
+
 and procedures_cfg =
   CLOpt.mk_bool ~long:"procedures-cfg"
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
@@ -2106,6 +2141,11 @@ and pulse_cut_to_one_path_procedures_pattern =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Regex of methods for which pulse will only explore one path. Can be used on pathologically \
      large procedures to prevent too-big states from being produced."
+
+
+and pulse_inline_global_init_func_pointer =
+  CLOpt.mk_bool ~long:"pulse-inline-global-init-func-pointer" ~default:false
+    "Inline the initializer of global variables that are of type function pointer in Pulse."
 
 
 and pulse_intraprocedural_only =
@@ -3209,6 +3249,10 @@ and config_impact_config_function_patterns =
   RevList.rev_map !config_impact_config_function_patterns ~f:Re.Str.regexp
 
 
+and config_impact_config_param_patterns =
+  RevList.rev_map !config_impact_config_param_patterns ~f:Re.Str.regexp
+
+
 and config_impact_current = !config_impact_current
 
 and config_impact_data_file = !config_impact_data_file
@@ -3222,6 +3266,12 @@ and config_impact_previous = !config_impact_previous
 and config_impact_strict_mode = !config_impact_strict_mode
 
 and config_impact_strict_mode_paths = RevList.rev_map !config_impact_strict_mode_paths ~f:Str.regexp
+
+and config_impact_strict_beta_mode_paths =
+  RevList.rev_map !config_impact_strict_beta_mode_paths ~f:Str.regexp
+
+
+and config_impact_test_paths = RevList.rev_map !config_impact_test_paths ~f:Str.regexp
 
 and continue_analysis = !continue_analysis
 
@@ -3284,6 +3334,8 @@ and eradicate_verbose = !eradicate_verbose
 and erlang_ast_dir = !erlang_ast_dir
 
 and erlang_skip_rebar3 = !erlang_skip_rebar3
+
+and erlang_with_otp_specs = !erlang_with_otp_specs
 
 and erlang_list_unfold_depth = !erlang_list_unfold_depth
 
@@ -3485,6 +3537,8 @@ and procedures = !procedures
 
 and procedures_attributes = !procedures_attributes
 
+and procedures_call_graph = !procedures_call_graph
+
 and procedures_cfg = !procedures_cfg
 
 and procedures_definedness = !procedures_definedness
@@ -3518,6 +3572,8 @@ and project_root = !project_root
 and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
+
+and pulse_inline_global_init_func_pointer = !pulse_inline_global_init_func_pointer
 
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 

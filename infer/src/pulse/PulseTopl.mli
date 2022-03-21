@@ -45,3 +45,7 @@ val report_errors : Procdesc.t -> Errlog.t -> state -> unit
 (** Calls [Reporting.log_issue] with error traces, if any. *)
 
 val pp_state : Format.formatter -> state -> unit
+
+module Debug : sig
+  val dropped_disjuncts_count : int ref
+end

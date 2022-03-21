@@ -12,3 +12,9 @@ val make : SourceFile.t list -> (TaskSchedulerTypes.target, string) ProcessPool.
     - loading the syntactic call graph from the capture DB
     - restricting it to the reachable procs from the modified files
     - scheduling leaves only and removing them from the graph when analysed. *)
+
+val build_from_sources : SourceFile.t list -> CallGraph.t
+(** construct the syntactic call graph from the capture DB *)
+
+val to_dotty : CallGraph.t -> unit
+(** write out the given syntactic call graph into [<results-dir>/syntactic-call-graph.dot] *)

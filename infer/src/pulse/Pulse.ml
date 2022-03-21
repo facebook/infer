@@ -520,6 +520,17 @@ module PulseTransferFunctions = struct
     if Typ.is_int typ then PulseArithmetic.and_is_int v astate else Ok astate
 
 
+  let check_modified_before_dtor args call_exp astate astate_n =
+    match ((call_exp : Exp.t), args) with
+    | (Const (Cfun proc_name) | Closure {name= proc_name}), (Exp.Lvar pvar, _) :: _
+      when Procname.is_destructor proc_name ->
+        let var = Var.of_pvar pvar in
+        PulseNonDisjunctiveOperations.mark_modified_copies_with [var] ~astate astate_n
+        |> NonDisjDomain.checked_via_dtor var
+    | _ ->
+        astate_n
+
+
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
@@ -553,10 +564,16 @@ module PulseTransferFunctions = struct
             PulseReport.report_results tenv proc_desc err_log loc results
           in
           let set_global_astates =
+            let is_global_constant pvar =
+              Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
+            in
+            let is_global_func_pointer pvar =
+              Pvar.is_global pvar && Typ.is_pointer_to_function typ
+              && Config.pulse_inline_global_init_func_pointer
+            in
             match rhs_exp with
-            | Lvar pvar when Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
-              -> (
-              (* Inline initializers of global constants when they are being used.
+            | Lvar pvar when is_global_constant pvar || is_global_func_pointer pvar -> (
+              (* Inline initializers of global constants or globals function pointers when they are being used.
                  This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
                  where global_constant_value is the value of global_var *)
               (* TODO: Initial global constants only once *)
@@ -634,6 +651,7 @@ module PulseTransferFunctions = struct
           in
           (PulseReport.report_results tenv proc_desc err_log loc result, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
+          let astate_n = check_modified_before_dtor actuals call_exp astate astate_n in
           let astates =
             dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
@@ -778,6 +796,7 @@ let exit_function analysis_data location posts non_disj_astate =
 let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   if should_analyze proc_desc then (
     AbstractValue.State.reset () ;
+    PulseTopl.Debug.dropped_disjuncts_count := 0 ;
     match
       DisjunctiveAnalyzer.compute_post analysis_data
         ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
@@ -798,6 +817,11 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             in
             report_topl_errors proc_desc err_log summary ;
             report_unnecessary_copies proc_desc err_log non_disj_astate ;
+            if Config.trace_topl then
+              L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
+                !PulseTopl.Debug.dropped_disjuncts_count
+                Procname.pp_unique_id
+                (Procdesc.get_proc_name proc_desc) ;
             if Config.pulse_scuba_logging then
               ScubaLogging.log_count ~label:"pulse_summary" ~value:(List.length summary) ;
             Stats.add_pulse_summaries_count (List.length summary) ;

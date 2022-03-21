@@ -8,6 +8,7 @@
 
 open! IStd
 module Hashtbl = Caml.Hashtbl
+open Javalib_pack
 open Sawja_pack
 
 let create_handler_table impl =
@@ -21,6 +22,10 @@ let create_handler_table impl =
   List.iter ~f:collect (JBir.exception_edges impl) ;
   handler_tb
 
+
+let java_lang_throwable = JBasics.make_cn "java.lang.Throwable"
+
+let is_java_lang_throwable cn = JBasics.cn_equal cn java_lang_throwable
 
 let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handler_table =
   let catch_block_table = Hashtbl.create 1 in
@@ -62,11 +67,16 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
           | [] ->
               Location.none context.source_file
         in
+        let finally_case () =
+          let finally_node = create_node loc (Procdesc.Node.Stmt_node FinallyBranch) [] in
+          Procdesc.node_set_succs procdesc finally_node ~normal:catch_nodes ~exn:exit_nodes ;
+          [finally_node]
+        in
         match handler.JBir.e_catch_type with
         | None ->
-            let finally_node = create_node loc (Procdesc.Node.Stmt_node FinallyBranch) [] in
-            Procdesc.node_set_succs procdesc finally_node ~normal:catch_nodes ~exn:exit_nodes ;
-            [finally_node]
+            finally_case ()
+        | Some exn_class_name when is_java_lang_throwable exn_class_name ->
+            finally_case ()
         | Some exn_class_name ->
             let exn_type =
               match

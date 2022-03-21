@@ -66,28 +66,6 @@ let reduce_adjacent xs ~f =
   in
   reduce_adjacent_ 0 0 xs
 
-let split xys =
-  let n = length xys in
-  if n = 0 then ([||], [||])
-  else
-    let x0, y0 = xys.(0) in
-    let xs = make n x0 in
-    let ys = make n y0 in
-    for i = 1 to n - 1 do
-      let xI, yI = xys.(i) in
-      xs.(i) <- xI ;
-      ys.(i) <- yI
-    done ;
-    (xs, ys)
-
-let combine_exn xs ys =
-  let len = length xs in
-  if len <> length ys then invalid_arg "Array.combine_exn" ;
-  init len ~f:(fun i -> (xs.(i), ys.(i)))
-
-let combine xs ys =
-  try Some (combine_exn xs ys) with Invalid_argument _ -> None
-
 let mem x xs ~eq = mem ~eq x xs
 let iter xs ~f = iter ~f xs
 let iteri xs ~f = iteri ~f xs

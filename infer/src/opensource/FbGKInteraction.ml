@@ -17,9 +17,9 @@ module ConfigName = struct
   let pp f () = F.pp_print_string f "()"
 end
 
-let get_config _ = None
+let get_config ~is_param:_ _ = None
 
-let get_config_check _ _ _ = None
+let get_config_check ~is_param:_ _ _ _ = None
 
 let is_lazy_instance _ = false
 

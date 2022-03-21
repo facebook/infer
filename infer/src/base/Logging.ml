@@ -14,21 +14,12 @@ module F = Format
 include Die
 
 (* log files *)
-(* make a copy of [f] *)
-let copy_formatter f =
-  let out_string, flush = F.pp_get_formatter_output_functions f () in
-  let out_funs = F.pp_get_formatter_out_functions f () in
-  let new_f = F.make_formatter out_string flush in
-  F.pp_set_formatter_out_functions new_f out_funs ;
-  new_f
-
 
 (* Return a formatter that multiplexes to [fmt1] and [fmt2]. *)
 let dup_formatter fmt1 fmt2 =
   let out_funs1 = F.pp_get_formatter_out_functions fmt1 () in
   let out_funs2 = F.pp_get_formatter_out_functions fmt2 () in
-  let f = copy_formatter fmt1 in
-  F.pp_set_formatter_out_functions f
+  F.formatter_of_out_functions
     { F.out_string=
         (fun s p n ->
           out_funs1.out_string s p n ;
@@ -48,8 +39,7 @@ let dup_formatter fmt1 fmt2 =
     ; out_spaces=
         (fun n ->
           out_funs1.out_spaces n ;
-          out_funs2.out_spaces n ) } ;
-  f
+          out_funs2.out_spaces n ) }
 
 
 (* can be set up to emit to a file later on *)
@@ -59,7 +49,7 @@ type formatters =
   { file: F.formatter option  (** send to log file *)
   ; console_file: F.formatter  (** send both to console and log file *) }
 
-let logging_formatters = ref []
+let logging_formatters : (formatters ref * (unit -> formatters)) list ref = ref []
 
 (* shared ref is less punishing to sloppy accounting of newlines *)
 let is_newline = ref true
@@ -67,8 +57,7 @@ let is_newline = ref true
 let prev_category = ref ""
 
 let mk_file_formatter file_fmt category0 =
-  let f = copy_formatter file_fmt in
-  let out_functions_orig = F.pp_get_formatter_out_functions f () in
+  let out_functions_orig = F.pp_get_formatter_out_functions file_fmt () in
   let prefix = Printf.sprintf "[%d][%s] " (Pid.to_int (Unix.getpid ())) category0 in
   let print_prefix_if_newline () =
     let category_has_changed =
@@ -100,16 +89,15 @@ let mk_file_formatter file_fmt category0 =
     print_prefix_if_newline () ;
     out_functions_orig.out_spaces n
   in
-  F.pp_set_formatter_out_functions f
-    {F.out_string; out_flush= out_functions_orig.out_flush; out_indent; out_newline; out_spaces} ;
-  f
+  F.formatter_of_out_functions
+    {F.out_string; out_flush= out_functions_orig.out_flush; out_indent; out_newline; out_spaces}
 
 
 let color_console ?(use_stdout = false) scheme =
   let scheme = Option.value scheme ~default:Normal in
   let formatter = if use_stdout then F.std_formatter else F.err_formatter in
   let can_colorize = Unix.(isatty (if use_stdout then stdout else stderr)) in
-  if can_colorize then (
+  if can_colorize then
     let styles = term_styles_of_style scheme in
     let orig_out_functions = F.pp_get_formatter_out_functions formatter () in
     let out_string s p n =
@@ -122,9 +110,7 @@ let color_console ?(use_stdout = false) scheme =
       orig_out_functions.F.out_string erase_eol 0 (String.length erase_eol) ;
       orig_out_functions.F.out_newline ()
     in
-    F.pp_set_formatter_out_functions formatter
-      {(F.pp_get_formatter_out_functions formatter ()) with F.out_string; out_newline} ;
-    formatter )
+    F.formatter_of_out_functions {orig_out_functions with F.out_string; out_newline}
   else formatter
 
 
@@ -153,7 +139,7 @@ let register_formatter =
        in
        let formatters = mk_formatters () in
        let formatters_ref = ref formatters in
-       logging_formatters := ((formatters_ref, mk_formatters), formatters) :: !logging_formatters ;
+       logging_formatters := (formatters_ref, mk_formatters) :: !logging_formatters ;
        formatters_ref )
 
 
@@ -163,7 +149,7 @@ let flush_formatters {file; console_file} =
 
 
 let close_logs () =
-  let close_fmt (_, formatters) = flush_formatters formatters in
+  let close_fmt (formatters, _) = flush_formatters !formatters in
   List.iter ~f:close_fmt !logging_formatters ;
   Option.iter !log_file ~f:(function file_fmt, chan ->
       F.pp_print_flush file_fmt () ;
@@ -175,17 +161,13 @@ let register_epilogue () =
 
 
 let reset_formatters () =
-  let refresh_formatter ((formatters_ref, mk_formatters), formatters) =
+  let refresh_formatter (formatters, mk_formatters) =
     (* flush to be nice *)
-    flush_formatters formatters ;
+    flush_formatters !formatters ;
     (* recreate formatters, in particular update PID info *)
-    formatters_ref := mk_formatters ()
+    formatters := mk_formatters ()
   in
-  let previous_formatters = !logging_formatters in
-  (* delete previous formatters *)
-  logging_formatters := [] ;
-  (* create new formatters *)
-  List.iter ~f:refresh_formatter previous_formatters ;
+  List.iter ~f:refresh_formatter !logging_formatters ;
   if not !is_newline then
     Option.iter !log_file ~f:(function log_file, _ -> F.pp_print_newline log_file ()) ;
   is_newline := true ;
@@ -359,6 +341,7 @@ let setup_log_file () =
       (* already set up *)
       ()
   | None ->
+      (* TODO T114149430 *)
       let fmt, chan, preexisting_logfile =
         (* if invoked in a sub-dir (e.g., in Buck integrations), log inside the original log file *)
         (* assumes the results dir exists already *)

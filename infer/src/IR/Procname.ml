@@ -648,6 +648,13 @@ let is_copy_ctor = function
       false
 
 
+let is_destructor = function
+  | ObjC_Cpp objc_cpp_pname ->
+      ObjC_Cpp.is_destructor objc_cpp_pname
+  | _ ->
+      false
+
+
 let is_csharp = function CSharp _ -> true | _ -> false
 
 let is_java = function Java _ -> true | _ -> false
