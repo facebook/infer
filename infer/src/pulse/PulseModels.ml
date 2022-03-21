@@ -15,6 +15,7 @@ module ProcNameDispatcher = struct
       @ PulseModelsAndroid.matchers @ PulseModelsC.matchers @ PulseModelsCpp.matchers
       @ PulseModelsErlang.matchers @ PulseModelsGenericArrayBackedCollection.matchers
       @ PulseModelsJava.matchers @ PulseModelsObjC.matchers @ PulseModelsOptional.matchers
+      @ PulseModelsCSharp.matchers
       @ Basic.matchers )
 end
 
