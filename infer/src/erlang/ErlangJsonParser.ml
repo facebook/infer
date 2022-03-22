@@ -44,6 +44,9 @@ let to_loc json : Ast.location option =
       Some {Ast.line; col= -1}
   | `List [`List (`String "generated" :: _); `List [`String "location"; `Int line]] ->
       Some {Ast.line; col= -1}
+  | `List [`List (`String "generated" :: _); `List [`String "location"; `List [`Int line; `Int col]]]
+    ->
+      Some {Ast.line; col}
   | `List [`Int line; `Int col] ->
       Some {Ast.line; col}
   | _ ->
