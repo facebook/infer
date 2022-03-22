@@ -649,13 +649,12 @@ let to_constraint json : Ast.type_constraint option =
       unknown "spec constraint" json
 
 
-let to_spec func_json json : Ast.spec option =
-  let* function_ = to_function ~check_no_module:false func_json in
+let to_spec_disjunct json : Ast.spec_disjunct option =
   match json with
   | `List [`String "type"; _anno; `String "fun"; `List [args_json; ret_json]] ->
       let* return = to_spec_ret ret_json in
       let* arguments = to_spec_args args_json in
-      Some {Ast.function_; arguments; return; constraints= []}
+      Some {Ast.arguments; return; constraints= []}
   | `List
       [ `String "type"
       ; _anno
@@ -666,9 +665,15 @@ let to_spec func_json json : Ast.spec option =
       let* return = to_spec_ret ret_json in
       let* arguments = to_spec_args args_json in
       let* constraints = to_list ~f:to_constraint constraints_json in
-      Some {Ast.function_; arguments; return; constraints}
+      Some {Ast.arguments; return; constraints}
   | _ ->
       unknown "spec" json
+
+
+let to_spec func_json specs_json : Ast.spec option =
+  let* function_ = to_function ~check_no_module:false func_json in
+  let* specs = to_list ~f:to_spec_disjunct specs_json in
+  Some {Ast.function_; specs}
 
 
 let to_loc_form json : Ast.form option =
@@ -698,9 +703,9 @@ let to_loc_form json : Ast.form option =
       let* loc = to_loc anno in
       let* field_list = to_list ~f:to_record_field fields in
       form loc (Record {name; fields= field_list})
-  | `List [`String "attribute"; anno; `String "spec"; `List [func_json; `List [json]]] ->
+  | `List [`String "attribute"; anno; `String "spec"; `List [func_json; specs_json]] ->
       let* loc = to_loc anno in
-      let* spec = to_spec func_json json in
+      let* spec = to_spec func_json specs_json in
       form loc (Spec spec)
   | `List [`String "attribute"; anno; `String "type"; `List [`String name; type_json; `List []]] ->
       let* loc = to_loc anno in

@@ -176,9 +176,11 @@ and tuple_type = AnySize | FixedSize of type_ list [@@deriving sexp_of]
 (* Currently only "subtype of" constraints can be used in the "when" part of a spec. *)
 type type_constraint = {var: string; subtype_of: type_} [@@deriving sexp_of]
 
-type spec =
-  {function_: function_; arguments: type_ list; return: type_; constraints: type_constraint list}
+(* Function specs can be overloaded, forming disjunctions. *)
+type spec_disjunct = {arguments: type_ list; return: type_; constraints: type_constraint list}
 [@@deriving sexp_of]
+
+type spec = {function_: function_; specs: spec_disjunct list} [@@deriving sexp_of]
 
 (** {2 S8.1: Module declarations and forms} *)
 
