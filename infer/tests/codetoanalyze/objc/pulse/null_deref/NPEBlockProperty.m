@@ -8,6 +8,8 @@
 #import <Foundation/Foundation.h>
 
 @class ExplicitCaptured;
+@class RetainCycle;
+;
 
 @interface ExplicitCaptured : NSObject
 
@@ -40,8 +42,33 @@
   self.set_explicitProperty = ^(int x) {
     weakSelf.explicit += x;
   };
+  self.get_explicitProperty = ^() {
+    return weakSelf.explicit;
+  };
 }
 
+@end
+
+@interface RetainCycle : NSObject
+
+@property RetainCycle* selfField;
+@property int (^call_counter)(void);
+
+@end
+
+@implementation RetainCycle
+
+- (instancetype)init {
+  self = [super init];
+  if (self != nil) {
+    __block int counter = 0;
+    self.call_counter = ^() {
+      counter = counter + 1;
+      return counter;
+    };
+  }
+  return self;
+}
 @end
 
 int test_explicitCaptured_no_specialization_bad() {
@@ -67,8 +94,28 @@ int test_explicitCaptured_specializable(ExplicitCaptured* a) {
   return explicit;
 }
 
-// Needs analysis-time specialization
-int test_explicitCaptured_specialized_bad_FN() {
+int test_explicitCaptured_specialized_no_alias_bad() {
+  ExplicitCaptured* a = [ExplicitCaptured new];
+  ExplicitCaptured* b = [ExplicitCaptured new];
+  b.get_explicitProperty = a.get_explicitProperty;
+  b.set_explicitProperty = a.set_explicitProperty;
+  b.set_explicitProperty(0);
+  int explicit = test_explicitCaptured_specializable(
+      b); // explicit = 0; a.explicit = explicit + 1 = 1
+  [a changeBehavior];
+  b.get_explicitProperty = a.get_explicitProperty;
+  b.set_explicitProperty = a.set_explicitProperty;
+  explicit = test_explicitCaptured_specializable(
+      b); // explicit = 1; a.explicit += (explicit + 1) -> 3
+  int* ptr = &explicit;
+  if (explicit == 1 && a.explicit == 3) {
+    ptr = NULL;
+  }
+  return *ptr; // Null deref here
+}
+
+// needs alias'ed disjunct
+int test_explicitCaptured_specialized_with_alias_bad_FN() {
   ExplicitCaptured* a = [ExplicitCaptured new];
   a.set_explicitProperty(0);
   int explicit = test_explicitCaptured_specializable(
@@ -81,4 +128,40 @@ int test_explicitCaptured_specialized_bad_FN() {
     ptr = NULL;
   }
   return *ptr; // Null deref here
+}
+
+int call_counter_3times(RetainCycle* rc) {
+  rc.call_counter();
+  rc.call_counter();
+  return rc.call_counter();
+}
+
+int test_retainCycle_unused_cycle_bad() {
+  RetainCycle* rc = [RetainCycle new];
+  rc.selfField = rc;
+  int counter = call_counter_3times(rc);
+  int* ptr = &counter;
+  if (counter == 3) {
+    ptr = NULL;
+  }
+  return *ptr;
+}
+
+int call_sub_counters(RetainCycle* rc) {
+  rc.call_counter();
+  rc.selfField.call_counter();
+  return rc.selfField.selfField.call_counter();
+}
+
+// needs aliasing
+// needs retain cycle handled in specialization
+int test_retainCycle_used_cycle_bad_FN() {
+  RetainCycle* rc = [RetainCycle new];
+  rc.selfField = rc;
+  int counter = call_sub_counters(rc);
+  int* ptr = &counter;
+  if (counter == 3) {
+    ptr = NULL;
+  }
+  return *ptr;
 }

@@ -12,4 +12,4 @@ val make_specialized_call_exp :
   -> Procname.t
   -> 'b InterproceduralAnalysis.t
   -> PulseAbductiveDomain.t
-  -> (Procname.t * Exp.t) option
+  -> (Procname.t * Exp.t * PulseAbductiveDomain.t) option

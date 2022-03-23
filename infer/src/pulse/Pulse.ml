@@ -135,7 +135,7 @@ module PulseTransferFunctions = struct
               PulseBlockSpecialization.make_specialized_call_exp func_args callee_pname
                 analysis_data astate
             with
-            | Some (callee_pname, call_exp) ->
+            | Some (callee_pname, call_exp, astate) ->
                 let formals_opt = get_pvar_formals callee_pname in
                 let callee_data = analyze_dependency callee_pname in
                 PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
