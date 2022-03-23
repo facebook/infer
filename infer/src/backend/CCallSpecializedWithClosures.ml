@@ -17,9 +17,9 @@ let replace_with_specialize_methods instr =
                 List.map c.captured_vars ~f:(fun (_, pvar, typ, capture_mode) ->
                     CapturedVar.{pvar; typ; capture_mode} )
               in
-              BlockSpecialization.Block (c.name, captured)
+              Some (ProcAttributes.Block (c.name, captured))
           | _ ->
-              BlockSpecialization.Var )
+              None )
       in
       match BlockSpecialization.create_specialized_procdesc callee_pname args with
       | Some specialized_pname ->

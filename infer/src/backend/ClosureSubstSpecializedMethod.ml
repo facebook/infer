@@ -8,48 +8,84 @@ open! IStd
 module CFG = ProcCfg.Normal
 module L = Logging
 
-module PPPVar = struct
-  type t = Pvar.t [@@deriving compare, equal]
-
-  let pp = Pvar.pp Pp.text
-end
-
-module VDom = AbstractDomain.Flat (PPPVar)
-module BlockIdMap = AbstractDomain.SafeInvertedMap (Ident) (VDom)
-
 module BlockSpec = struct
-  type t = Procname.t * CapturedVar.t list [@@deriving compare, equal]
+  type t = ProcAttributes.passed_block [@@deriving compare, equal]
 
-  let pp fmt (pname, _) = Procname.pp fmt pname
+  let pp fmt passed_block =
+    match passed_block with
+    | ProcAttributes.Block (pname, _) ->
+        Procname.pp fmt pname
+    | ProcAttributes.Fields _ ->
+        Format.fprintf fmt "In fields"
 end
 
 module SpecDom = AbstractDomain.Flat (BlockSpec)
-module BlockPvarSpecMap = AbstractDomain.SafeInvertedMap (Mangled) (SpecDom)
-module Domain = AbstractDomain.Pair (BlockIdMap) (BlockPvarSpecMap)
+module PvarBlockSpecMap = AbstractDomain.SafeInvertedMap (Mangled) (SpecDom)
+module IdBlockSpecMap = AbstractDomain.SafeInvertedMap (Ident) (SpecDom)
+module Domain = AbstractDomain.Pair (IdBlockSpecMap) (PvarBlockSpecMap)
 
-let eval_instr ((id_to_pvar_map, pvars_to_blocks_map) : Domain.t) instr =
+let rec get_block (id_to_block_map, pvar_to_block_map) exp =
+  match exp with
+  | Exp.Lvar pvar ->
+      PvarBlockSpecMap.find_opt (Pvar.get_name pvar) pvar_to_block_map
+  | Exp.Var id ->
+      IdBlockSpecMap.find_opt id id_to_block_map
+  | Exp.Lfield (e, fieldname, _) -> (
+      let open IOption.Let_syntax in
+      get_block (id_to_block_map, pvar_to_block_map) e
+      >>= SpecDom.get
+      >>= function
+      | ProcAttributes.Fields field_to_passed_block_map ->
+          Fieldname.Map.find_opt fieldname field_to_passed_block_map >>| SpecDom.v
+      | _ ->
+          None )
+  | _ ->
+      None
+
+
+let eval_instr ((id_to_block_map, pvar_to_block_map) as maps : Domain.t) instr =
   let open Sil in
   match instr with
-  | Load {id; e= Exp.Lvar pvar} ->
-      (BlockIdMap.add id (VDom.v pvar) id_to_pvar_map, pvars_to_blocks_map)
-  | Store {e1= Exp.Lvar pvar; e2= Exp.Var id} ->
-      let pvars_to_blocks_map =
-        match Option.bind ~f:VDom.get (BlockIdMap.find_opt id id_to_pvar_map) with
-        | Some block_var ->
-            Option.value_map
-              (BlockPvarSpecMap.find_opt (Pvar.get_name block_var) pvars_to_blocks_map)
-              ~default:pvars_to_blocks_map
-              ~f:(fun res -> BlockPvarSpecMap.add (Pvar.get_name pvar) res pvars_to_blocks_map)
-        | None ->
-            pvars_to_blocks_map
+  | Load {id; e} | Store {e1= Exp.Var id; e2= e} -> (
+    (* if [e] is associated with a known block then [id] is associated with the same block *)
+    match get_block maps e with
+    | None ->
+        maps
+    | Some passed_block ->
+        let id_to_block_map = IdBlockSpecMap.add id passed_block id_to_block_map in
+        (id_to_block_map, pvar_to_block_map) )
+  | Store {e1= Exp.Lvar pvar; e2} -> (
+    (* if [e2] is associated with a known block then [e1] is associated with the same block *)
+    match get_block maps e2 with
+    | None ->
+        maps
+    | Some passed_block ->
+        let pvar_to_block_map =
+          PvarBlockSpecMap.add (Pvar.get_name pvar) passed_block pvar_to_block_map
+        in
+        (id_to_block_map, pvar_to_block_map) )
+  | Call ((id, _), Exp.Const (Cfun callee_pname), (e, _) :: _, _, _) -> (
+      (* if the function called is a getter and the gotten field is associated with a known block
+         then [id] is associated with the same block *)
+      let passed_block =
+        let open IOption.Let_syntax in
+        let* attributes = Attributes.load callee_pname in
+        let* accessor = attributes.ProcAttributes.objc_accessor in
+        match accessor with
+        | ProcAttributes.Objc_getter (fieldname, typ, _) ->
+            let field_exp = Exp.Lfield (e, fieldname, typ) in
+            get_block maps field_exp
+        | _ ->
+            None
       in
-      (id_to_pvar_map, pvars_to_blocks_map)
-  | Load {id} ->
-      (BlockIdMap.add id VDom.top id_to_pvar_map, pvars_to_blocks_map)
-  | Call ((id, _), _, _, _, _) ->
-      (BlockIdMap.add id VDom.top id_to_pvar_map, pvars_to_blocks_map)
+      match passed_block with
+      | None ->
+          maps
+      | Some passed_block ->
+          let id_to_block_map = IdBlockSpecMap.add id passed_block id_to_block_map in
+          (id_to_block_map, pvar_to_block_map) )
   | _ ->
-      (id_to_pvar_map, pvars_to_blocks_map)
+      maps
 
 
 module TransferFunctions = struct
@@ -121,26 +157,16 @@ let rec exec_exp pname e =
               Sizeof {typ; nbytes; dynamic_length= Some dynamic_length'; subtype} ) )
 
 
-let closure_of_exp pname (id_to_pvar_map, pvars_to_blocks_map) loc exp load_instrs =
+let closure_of_exp pname maps loc exp load_instrs =
   (* Replace [exp] with the corresponding block as a closure if the block exists:
       [f] with [f = block] is transformed into
       [Closure(block, \[block_capt1; block_capt2\])]
      Additional load instructions are created to have captured variables live in the
      current memory
   *)
-  let get_block exp : BlockSpec.t option =
-    (* Find the block corresponding to the current expression if it exists *)
-    let open IOption.Let_syntax in
-    let* pvar =
-      match exp with
-      | Exp.Var id ->
-          BlockIdMap.find_opt id id_to_pvar_map >>= VDom.get
-      | Exp.Lvar pv ->
-          Some pv
-      | _ ->
-          None
-    in
-    BlockPvarSpecMap.find_opt (Pvar.get_name pvar) pvars_to_blocks_map >>= SpecDom.get
+  let get_block maps exp : BlockSpec.t option =
+    (* Find the block associated with the current expression if it exists *)
+    match get_block maps exp with Some passed_block -> SpecDom.get passed_block | None -> None
   in
   let closure_of_block (block_name, block_formals) load_instrs =
     (* Given a block, create a closure encapsulating its pname and captured vars:
@@ -163,10 +189,10 @@ let closure_of_exp pname (id_to_pvar_map, pvars_to_blocks_map) loc exp load_inst
     (Exp.Closure {name= block_name; captured_vars}, load_instrs)
   in
   let exp = exec_exp pname exp in
-  match get_block exp with
-  | Some block ->
+  match get_block maps exp with
+  | Some (Block block) ->
       closure_of_block block load_instrs
-  | None ->
+  | _ ->
       (exp, load_instrs)
 
 
@@ -253,7 +279,7 @@ let analyze_at_node (map : Analyzer.invariant_map) node : Domain.t =
   | Some abstate ->
       abstate.pre
   | None ->
-      (BlockIdMap.top, BlockPvarSpecMap.top)
+      (IdBlockSpecMap.top, PvarBlockSpecMap.top)
 
 
 let process pdesc =
@@ -265,15 +291,13 @@ let process pdesc =
     | Some orig_pdesc ->
         Procdesc.deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc:pdesc ;
         let formals_to_blocks_map = spec_with_blocks_info.formals_to_blocks in
-        let pvars_to_blocks_map =
-          Mangled.Map.filter_map
-            (fun _ -> function ProcAttributes.Block block -> Some (SpecDom.v block) | _ -> None)
-            formals_to_blocks_map
-          |> Mangled.Map.to_seq |> BlockPvarSpecMap.of_seq
+        let pvar_to_block_map =
+          Mangled.Map.map SpecDom.v formals_to_blocks_map
+          |> Mangled.Map.to_seq |> PvarBlockSpecMap.of_seq
         in
         let node_cfg = CFG.from_pdesc pdesc in
         let invariant_map =
-          Analyzer.exec_cfg node_cfg () ~initial:(BlockIdMap.empty, pvars_to_blocks_map)
+          Analyzer.exec_cfg node_cfg () ~initial:(IdBlockSpecMap.empty, pvar_to_block_map)
         in
         let update_context = eval_instr in
         CFG.fold_nodes node_cfg ~init:() ~f:(fun _ node ->

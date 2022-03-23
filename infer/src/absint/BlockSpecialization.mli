@@ -7,6 +7,6 @@
 
 open! IStd
 
-type arg = Block of (Procname.t * CapturedVar.t list) | Var
+type arg = ProcAttributes.passed_block option
 
 val create_specialized_procdesc : Procname.t -> arg list -> Procname.t option

@@ -36,11 +36,8 @@ let captured_by_args func_args analysis_data astate =
 let make_specialized_call_exp func_args callee_pname analysis_data astate =
   let args =
     List.map func_args ~f:(fun {FuncArg.arg_payload= value, _} ->
-        match get_procname_and_captured value analysis_data astate with
-        | Some procname_and_captured ->
-            BlockSpecialization.Block procname_and_captured
-        | None ->
-            BlockSpecialization.Var )
+        Option.map (get_procname_and_captured value analysis_data astate)
+          ~f:(fun procname_and_captured -> ProcAttributes.Block procname_and_captured) )
   in
   match BlockSpecialization.create_specialized_procdesc callee_pname args with
   | Some specialized_pname ->
