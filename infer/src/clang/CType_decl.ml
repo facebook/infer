@@ -282,10 +282,12 @@ let get_struct_decls decl =
   | TypeAliasDecl _
   | TypeAliasTemplateDecl _
   | TypedefDecl _
+  | UnresolvedUsingIfExistsDecl _
   | UnresolvedUsingTypenameDecl _
   | UnresolvedUsingValueDecl _
   | UsingDecl _
   | UsingDirectiveDecl _
+  | UsingEnumDecl _
   | UsingPackDecl _
   | UsingShadowDecl _
   | VarDecl _

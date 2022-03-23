@@ -418,7 +418,7 @@ TranslationUnitDecl None:None:None None:None:None
        ParmVarDecl tests/inheritance.cpp:23:7 tests/inheritance.cpp:23:7
     CXXDestructorDecl tests/inheritance.cpp:23:7 tests/inheritance.cpp:23:7
   TypedefDecl tests/inheritance.cpp:23:7 tests/inheritance.cpp:23:7
-41 48 132 
+41 48 138 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -629,7 +629,7 @@ TranslationUnitDecl None:None:None None:None:None
   NamespaceDecl tests/namespace_decl.cpp:17:1 tests/namespace_decl.cpp:19:1
   UsingDirectiveDecl tests/namespace_decl.cpp:17:11 tests/namespace_decl.cpp:17:11
   TypedefDecl tests/namespace_decl.cpp:17:11 tests/namespace_decl.cpp:17:11
-58 98 141 
+58 98 143 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -837,7 +837,7 @@ TranslationUnitDecl None:None:None None:None:None
               UnaryOperator
                 DeclRefExpr
   TypedefDecl tests/new.cpp:51:24 tests/new.cpp:51:24
-28 10 90 
+28 10 91 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -919,7 +919,7 @@ TranslationUnitDecl None:None:None None:None:None
     ImplicitCastExpr
       DeclRefExpr
   TypedefDecl tests/using_directive.cpp:14:9 tests/using_directive.cpp:14:9
-36 23 126 
+36 23 128 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -1088,7 +1088,7 @@ TranslationUnitDecl None:None:None None:None:None
               ImplicitCastExpr
                 DeclRefExpr
   TypedefDecl tests/no_except_expr.cpp:9:30 tests/no_except_expr.cpp:9:30
-21 2 114 
+21 2 116 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None

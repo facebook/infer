@@ -20,5 +20,5 @@ $(OBJECTS): $(SOURCES)
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(QUIET)cd $(PROJECT_ROOT) && \
 	$(call silent_on_success,Testing ndk-build clang integration,\
-	  $(INFER_BIN) --results-dir $(CURDIR)/infer-out -- \
+	  $(INFER_BIN) --Xclang --rtlib=libgcc --results-dir $(CURDIR)/infer-out -- \
 	    $(NDKBUILD) -B APP_ABI=x86 NDK_LIBS_OUT=./libs NDK_OUT=./obj V=1)

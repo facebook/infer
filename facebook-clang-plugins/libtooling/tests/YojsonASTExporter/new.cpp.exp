@@ -6430,6 +6430,14 @@
       )>,
       <"PointerType" : (
         {
+          "pointer" : 72
+        },
+        {
+          "type_ptr" : 8
+        }
+      )>,
+      <"PointerType" : (
+        {
           "pointer" : 273
         },
         {
@@ -6560,14 +6568,6 @@
           "type_ptr" : 280
         }
       )>,
-      <"PointerType" : (
-        {
-          "pointer" : 72
-        },
-        {
-          "type_ptr" : 8
-        }
-      )>,
       <"TemplateTypeParmType" : (
         {
           "pointer" : 282
@@ -6607,9 +6607,17 @@
         },
         10
       )>,
-      <"FunctionProtoType" : (
+      <"PointerType" : (
         {
           "pointer" : 284
+        },
+        {
+          "type_ptr" : 80
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 285
         },
         {
           "return_type" : {
@@ -6621,15 +6629,15 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 285
+          "pointer" : 286
         }
       )>,
       <"PointerType" : (
         {
-          "pointer" : 286
+          "pointer" : 287
         },
         {
-          "type_ptr" : 285
+          "type_ptr" : 286
         }
       )>,
       <"LValueReferenceType" : (
@@ -6643,7 +6651,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 287
+          "pointer" : 288
         },
         {
           "return_type" : {
@@ -6685,7 +6693,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 288
+          "pointer" : 289
         },
         {
           "return_type" : {
@@ -6719,15 +6727,15 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 289
+          "pointer" : 290
         }
       )>,
       <"PointerType" : (
         {
-          "pointer" : 290
+          "pointer" : 291
         },
         {
-          "type_ptr" : 289
+          "type_ptr" : 290
         }
       )>,
       <"AutoType" : (
@@ -6756,9 +6764,17 @@
         },
         10
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 292
+        },
+        {
+          "type_ptr" : 95
+        }
+      )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 291
+          "pointer" : 293
         },
         {
           "return_type" : {
@@ -6770,15 +6786,15 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 292
+          "pointer" : 294
         }
       )>,
       <"PointerType" : (
         {
-          "pointer" : 293
+          "pointer" : 295
         },
         {
-          "type_ptr" : 292
+          "type_ptr" : 294
         }
       )>,
       <"ConstantArrayType" : (
@@ -6795,19 +6811,6 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 294
-        }
-      )>,
-      <"PointerType" : (
-        {
-          "pointer" : 295
-        },
-        {
-          "type_ptr" : 294
-        }
-      )>,
-      <"TemplateTypeParmType" : (
-        {
           "pointer" : 296
         }
       )>,
@@ -6817,6 +6820,19 @@
         },
         {
           "type_ptr" : 296
+        }
+      )>,
+      <"TemplateTypeParmType" : (
+        {
+          "pointer" : 298
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 299
+        },
+        {
+          "type_ptr" : 298
         }
       )>,
       <"ConstantArrayType" : (
@@ -6833,20 +6849,20 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 298
+          "pointer" : 300
         }
       )>,
       <"PointerType" : (
         {
-          "pointer" : 299
+          "pointer" : 301
         },
         {
-          "type_ptr" : 298
+          "type_ptr" : 300
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 300
+          "pointer" : 302
         },
         {
           "return_type" : {
@@ -6892,7 +6908,7 @@
       )>,
       <"LValueReferenceType" : (
         {
-          "pointer" : 301
+          "pointer" : 303
         },
         {
           "type_ptr" : 11
@@ -6900,7 +6916,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 302
+          "pointer" : 304
         },
         {
           "return_type" : {
@@ -6923,26 +6939,10 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 303
+          "pointer" : 305
         }
       )>,
       <"PointerType" : (
-        {
-          "pointer" : 304
-        },
-        {
-          "type_ptr" : 303
-        }
-      )>,
-      <"ObjCObjectType" : (
-        {
-          "pointer" : 305
-        },
-        {
-          "base_type" : 256
-        }
-      )>,
-      <"ObjCObjectPointerType" : (
         {
           "pointer" : 306
         },
@@ -6950,26 +6950,42 @@
           "type_ptr" : 305
         }
       )>,
+      <"ObjCObjectType" : (
+        {
+          "pointer" : 307
+        },
+        {
+          "base_type" : 256
+        }
+      )>,
+      <"ObjCObjectPointerType" : (
+        {
+          "pointer" : 308
+        },
+        {
+          "type_ptr" : 307
+        }
+      )>,
       <"TypedefType" : (
         {
-          "pointer" : 307,
-          "desugared_type" : 306
+          "pointer" : 309,
+          "desugared_type" : 308
         },
         {
           "child_type" : {
-            "type_ptr" : 306
+            "type_ptr" : 308
           },
-          "decl_ptr" : 308
+          "decl_ptr" : 310
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 199,
-          "desugared_type" : 306
+          "desugared_type" : 308
         },
         {
           "child_type" : {
-            "type_ptr" : 307
+            "type_ptr" : 309
           },
           "decl_ptr" : 198
         }

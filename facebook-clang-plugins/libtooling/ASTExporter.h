@@ -1323,6 +1323,9 @@ void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
   case Language::OpenCL:
     OF.emitSimpleVariant("IK_OpenCL");
     break;
+  case Language::OpenCLCXX:
+    OF.emitSimpleVariant("IK_OpenCLCXX");
+    break;
   case Language::CUDA:
     OF.emitSimpleVariant("IK_CUDA");
     break;
@@ -2015,7 +2018,9 @@ void ASTExporter<ATDWriter>::dumpTemplateArgument(const TemplateArgument &Arg) {
     break;
   case TemplateArgument::Integral: {
     VariantScope Scope(OF, "Integral");
-    OF.emitString(Arg.getAsIntegral().toString(10));
+    llvm::SmallString<64> buf;
+    Arg.getAsIntegral().toString(buf, 10);
+    OF.emitString(buf.str().str());
     break;
   }
   case TemplateArgument::Template: {
@@ -3300,7 +3305,7 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
   VisitStmt(Node);
 
   ExprValueKind VK = Node->getValueKind();
-  bool HasNonDefaultValueKind = VK != VK_RValue;
+  bool HasNonDefaultValueKind = VK != VK_PRValue;
   ExprObjectKind OK = Node->getObjectKind();
   bool HasNonDefaultObjectKind = OK != OK_Ordinary;
   ObjectScope Scope(OF, 1 + HasNonDefaultValueKind + HasNonDefaultObjectKind);
@@ -3317,7 +3322,7 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
     case VK_XValue:
       OF.emitSimpleVariant("XValue");
       break;
-    case VK_RValue:
+    case VK_PRValue:
       llvm_unreachable("unreachable");
       break;
     }
@@ -3629,7 +3634,9 @@ void ASTExporter<ATDWriter>::emitAPInt(bool isSigned,
   OF.emitTag("bitwidth");
   OF.emitInteger(value.getBitWidth());
   OF.emitTag("value");
-  OF.emitString(value.toString(10, isSigned));
+  llvm::SmallString<64> buf;
+  value.toString(buf, 10, isSigned);
+  OF.emitString(buf.str().str());
 }
 
 template <class ATDWriter>

@@ -5105,8 +5105,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPBarrierDirective _
     | OMPCancelDirective _
     | OMPCancellationPointDirective _
+    | OMPCanonicalLoop _
     | OMPCriticalDirective _
     | OMPDepobjDirective _
+    | OMPDispatchDirective _
     | OMPDistributeDirective _
     | OMPDistributeParallelForDirective _
     | OMPDistributeParallelForSimdDirective _
@@ -5114,7 +5116,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPFlushDirective _
     | OMPForDirective _
     | OMPForSimdDirective _
+    | OMPInteropDirective _
     | OMPIteratorExpr _
+    | OMPMaskedDirective _
     | OMPMasterDirective _
     | OMPMasterTaskLoopDirective _
     | OMPMasterTaskLoopSimdDirective _
@@ -5156,6 +5160,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPTeamsDistributeParallelForDirective _
     | OMPTeamsDistributeParallelForSimdDirective _
     | OMPTeamsDistributeSimdDirective _
+    | OMPTileDirective _
+    | OMPUnrollDirective _
     | PackExpansionExpr _
     | ParenListExpr _
     | RecoveryExpr _
@@ -5166,6 +5172,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SEHTryStmt _
     | ShuffleVectorExpr _
     | SourceLocExpr _
+    | SYCLUniqueStableNameExpr _
     | TypoExpr _
     | UnresolvedLookupExpr _
     | UnresolvedMemberExpr _ ->
