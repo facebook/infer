@@ -44,9 +44,10 @@
 
 @interface ObjectHandler : NSObject {
   NSObject* _object;
-  WithCallback* _withCallback;
   void (^_updateCallback)(void);
 }
+
+@property WithCallback* withCallback;
 
 - (instancetype)initWithObject:(NSObject*)object
                 updateCallback:(void (^)(void))updateCallback;
@@ -83,8 +84,12 @@ id ObjectHandlerForObject(NSObject* object, void (^updateCallback)(void)) {
       // no specialization on init methods
       [[ObjectHandler alloc] initWithObject:object
                              updateCallback:updateCallback];
-  [objectHandler apply_updateCallback];
-  return objectHandler;
+  if (objectHandler.withCallback) {
+    [objectHandler apply_updateCallback];
+    return objectHandler;
+  } else {
+    return nil;
+  }
 }
 
 @interface ManipulatedContent : NSObject
@@ -105,14 +110,19 @@ id ObjectHandlerForObject(NSObject* object, void (^updateCallback)(void)) {
 
 + (ManipulatedContent*)ManipulatedContentWithObject:(NSObject*)object {
   ManipulatedContent* manipulatedContent = [self new];
-  [manipulatedContent
-      ignore:ObjectHandlerForObject(object, ^{ // specialized in pre-analysis
+  id objectHandler = [manipulatedContent
+      identity:ObjectHandlerForObject(object, ^{ // specialized in pre-analysis
         [manipulatedContent _updateContent];
       })];
-  return manipulatedContent;
+  if (objectHandler) {
+    return manipulatedContent;
+  } else {
+    return nil;
+  }
 }
 
-- (void)ignore:(id)objectHandler {
+- (id)identity:(id)objectHandler {
+  return objectHandler;
 }
 
 - (void)_updateContent {
@@ -134,6 +144,7 @@ void apply(void (^block)(void)) { block(); }
 @implementation Example
 
 - (void)application:(BOOL)condition {
+  _manipulatedContent = nil;
   if (condition) {
     apply(^{
       ManipulationEntry* manipulationEntry = ObjectForClass( // skipped call
@@ -171,7 +182,7 @@ BOOL test_Example_YES_using_property_bad() {
   return *ptr == y;
 }
 
-BOOL test_Example_YES_using_property_good_FP() {
+BOOL test_Example_YES_using_property_good() {
   Example* example = [Example new];
   [example application:YES];
   int y = example.manipulatedContent.y;
@@ -187,7 +198,7 @@ BOOL test_Example_NO_using_property_good() {
   [example application:NO];
   int y = example.manipulatedContent.y;
   int* ptr = &y;
-  if (y == 5) {
+  if (y != 0) {
     ptr = NULL;
   }
   return *ptr == y;
@@ -204,7 +215,7 @@ BOOL test_Example_YES_using_ivar_bad() {
   return *ptr == x;
 }
 
-BOOL test_Example_YES_using_ivar_good_FP() {
+BOOL test_Example_YES_using_ivar_good() {
   Example* example = [Example new];
   [example application:YES];
   int x = [example.manipulatedContent get_x];
@@ -223,7 +234,7 @@ BOOL test_Example_NO_using_ivar_good_FP() {
   [example application:NO];
   int x = [example.manipulatedContent get_x];
   int* ptr = &x;
-  if (x == 5) {
+  if (x != 0) {
     ptr = NULL;
   }
   return *ptr == x;

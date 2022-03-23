@@ -26,7 +26,6 @@ let mk pdesc =
         FormalTyps.add formal typ acc )
     |> fun init ->
     List.fold (Procdesc.get_captured pdesc) ~init ~f:(fun acc {CapturedVar.pvar; typ} ->
-        let pvar = Pvar.mk (Pvar.get_name pvar) pname in
         FormalTyps.add pvar typ acc )
   in
   fun tenv integer_type_widths ->

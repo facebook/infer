@@ -31,7 +31,7 @@ type passed_block =
 [@@deriving compare, equal]
 
 type specialized_with_blocks_info =
-  {orig_proc: Procname.t; formals_to_blocks: passed_block Mangled.Map.t}
+  {orig_proc: Procname.t; formals_to_blocks: passed_block Pvar.Map.t}
 [@@deriving compare]
 
 type t =

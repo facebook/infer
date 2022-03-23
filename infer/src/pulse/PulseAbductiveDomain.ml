@@ -585,8 +585,7 @@ let mk_initial tenv proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let location = Procdesc.get_loc proc_desc in
   let formals_and_captured =
-    let init_var formal_or_captured mangled typ =
-      let pvar = Pvar.mk mangled proc_name in
+    let init_var formal_or_captured pvar typ =
       let event =
         match formal_or_captured with
         | `Formal ->
@@ -598,14 +597,12 @@ let mk_initial tenv proc_desc =
     in
     let formals =
       Procdesc.get_formals proc_desc
-      |> List.map ~f:(fun (mangled, typ, _) -> init_var `Formal mangled typ)
+      |> List.map ~f:(fun (mangled, typ, _) -> init_var `Formal (Pvar.mk mangled proc_name) typ)
     in
     let captured =
       Procdesc.get_captured proc_desc
       |> List.map ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
-             (* NOTE: it's important to change the proc name of [pvar] here for some reason, hence why
-                we pass only its name to [init_var] *)
-             init_var (`Captured capture_mode) (Pvar.get_name pvar) typ )
+             init_var (`Captured capture_mode) pvar typ )
     in
     captured @ formals
   in

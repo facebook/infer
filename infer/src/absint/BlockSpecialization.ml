@@ -30,10 +30,11 @@ let pname_with_closure_actuals callee_pname actuals =
 
 
 let make_formals_to_blocks ~args:(arg_formals, arg_actuals)
-    ~captured_vars:(captured_formals, captured_actuals) =
+    ~captured_vars:(captured_formals, captured_actuals) pname =
   match
-    List.fold2 arg_formals arg_actuals ~init:Mangled.Map.empty ~f:(fun map (mangled, _, _) actual ->
-        Option.value_map actual ~default:map ~f:(fun actual -> Mangled.Map.add mangled actual map) )
+    List.fold2 arg_formals arg_actuals ~init:Pvar.Map.empty ~f:(fun map (mangled, _, _) actual ->
+        let pvar = Pvar.mk mangled pname in
+        Option.value_map actual ~default:map ~f:(fun actual -> Pvar.Map.add pvar actual map) )
   with
   | Unequal_lengths ->
       None
@@ -41,8 +42,7 @@ let make_formals_to_blocks ~args:(arg_formals, arg_actuals)
     match
       List.fold2 captured_formals captured_actuals ~init:map
         ~f:(fun map {CapturedVar.pvar} actual ->
-          let mangled = Pvar.get_name pvar in
-          Option.value_map actual ~default:map ~f:(fun actual -> Mangled.Map.add mangled actual map) )
+          Option.value_map actual ~default:map ~f:(fun actual -> Pvar.Map.add pvar actual map) )
     with
     | Unequal_lengths ->
         None
@@ -125,6 +125,7 @@ let create_specialized_procdesc callee_pname ~captured_actuals ~arg_actuals =
           make_formals_to_blocks
             ~args:(callee_attributes.formals, arg_actuals)
             ~captured_vars:(callee_attributes.captured, captured_actuals)
+            callee_pname
         with
         | Some formals_to_blocks -> (
             let specialized_pname = pname_with_closure_actuals callee_pname actuals in

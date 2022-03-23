@@ -20,14 +20,23 @@ module BlockSpec = struct
 end
 
 module SpecDom = AbstractDomain.Flat (BlockSpec)
-module PvarBlockSpecMap = AbstractDomain.SafeInvertedMap (Mangled) (SpecDom)
+
+module PvarBlockSpecMap =
+  AbstractDomain.SafeInvertedMap
+    (struct
+      include Pvar
+
+      let pp = pp Pp.text
+    end)
+    (SpecDom)
+
 module IdBlockSpecMap = AbstractDomain.SafeInvertedMap (Ident) (SpecDom)
 module Domain = AbstractDomain.Pair (IdBlockSpecMap) (PvarBlockSpecMap)
 
 let rec get_block (id_to_block_map, pvar_to_block_map) exp =
   match exp with
   | Exp.Lvar pvar ->
-      PvarBlockSpecMap.find_opt (Pvar.get_name pvar) pvar_to_block_map
+      PvarBlockSpecMap.find_opt pvar pvar_to_block_map
   | Exp.Var id ->
       IdBlockSpecMap.find_opt id id_to_block_map
   | Exp.Lfield (e, fieldname, _) -> (
@@ -60,9 +69,7 @@ let eval_instr ((id_to_block_map, pvar_to_block_map) as maps : Domain.t) instr =
     | None ->
         maps
     | Some passed_block ->
-        let pvar_to_block_map =
-          PvarBlockSpecMap.add (Pvar.get_name pvar) passed_block pvar_to_block_map
-        in
+        let pvar_to_block_map = PvarBlockSpecMap.add pvar passed_block pvar_to_block_map in
         (id_to_block_map, pvar_to_block_map) )
   | Call ((id, _), Exp.Const (Cfun callee_pname), (e, _) :: _, _, _) -> (
       (* if the function called is a getter and the gotten field is associated with a known block
@@ -108,7 +115,7 @@ let try_keep_original2 ~default orig1 new1 orig2 new2 ~f =
   if phys_equal orig1 new1 && phys_equal orig2 new2 then default else f new1 new2
 
 
-let exec_pvar pname pvar = Pvar.swap_proc_in_local_pvar pvar pname
+let exec_pvar pname pvar = Pvar.specialize_pvar pvar pname
 
 let exec_var pname var =
   let open Var in
@@ -177,7 +184,6 @@ let closure_of_exp pname maps loc exp load_instrs =
     let captured_vars, load_instrs =
       List.fold block_formals ~init:([], load_instrs)
         ~f:(fun (captured_vars, load_instrs) CapturedVar.{pvar; typ; capture_mode} ->
-          let pvar = Pvar.mk (Pvar.get_name pvar) pname in
           let e = Exp.Lvar pvar in
           let id = Ident.create_fresh Ident.knormal in
           let load_instr = Sil.Load {id; e; root_typ= typ; typ; loc} in
@@ -292,8 +298,7 @@ let process pdesc =
         Procdesc.deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc:pdesc ;
         let formals_to_blocks_map = spec_with_blocks_info.formals_to_blocks in
         let pvar_to_block_map =
-          Mangled.Map.map SpecDom.v formals_to_blocks_map
-          |> Mangled.Map.to_seq |> PvarBlockSpecMap.of_seq
+          Pvar.Map.map SpecDom.v formals_to_blocks_map |> Pvar.Map.to_seq |> PvarBlockSpecMap.of_seq
         in
         let node_cfg = CFG.from_pdesc pdesc in
         let invariant_map =
@@ -315,8 +320,8 @@ let process pdesc =
           let _, pvar_to_block_map = context_at_node (Procdesc.get_exit_node pdesc) in
           let formals_to_blocks =
             PvarBlockSpecMap.to_seq pvar_to_block_map
-            |> Mangled.Map.of_seq
-            |> Mangled.Map.filter_map (fun _ passed_block -> SpecDom.get passed_block)
+            |> Pvar.Map.of_seq
+            |> Pvar.Map.filter_map (fun _ passed_block -> SpecDom.get passed_block)
           in
           let new_attributes =
             { proc_attributes with

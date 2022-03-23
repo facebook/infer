@@ -57,7 +57,8 @@ val method_signature_of_pointer : Tenv.t -> Clang_ast_t.pointer -> CMethodSignat
 val get_method_name_from_clang : Tenv.t -> CMethodSignature.t option -> Procname.t option
 
 val create_procdesc_with_pointer :
-     ?captured_vars:(Pvar.t * Typ.t * CapturedVar.capture_mode) list
+     ?is_cpp_lambda_call_operator:bool
+  -> ?captured_vars:(Pvar.t * Typ.t * CapturedVar.capture_mode) list
   -> CContext.t
   -> Clang_ast_t.pointer
   -> Typ.Name.t option

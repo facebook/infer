@@ -203,7 +203,13 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         Public
   in
   let captured_mangled =
-    List.map ~f:(fun (pvar, typ, capture_mode) -> {CapturedVar.pvar; typ; capture_mode}) captured
+    List.map
+      ~f:(fun (pvar, typ, capture_mode) ->
+        let pvar =
+          if is_cpp_lambda_call_operator then Pvar.mk (Pvar.get_name pvar) proc_name else pvar
+        in
+        {CapturedVar.pvar; typ; capture_mode} )
+      captured
   in
   (* Retrieve captured variables from procdesc created when translating captured variables in lambda expression *)
   (* We want to do this before `should_create_procdesc` is called as it can remove previous procdesc *)
@@ -311,13 +317,14 @@ let create_external_procdesc trans_unit_ctx cfg proc_name clang_method_kind type
     ignore (Cfg.create_proc_desc cfg proc_attributes)
 
 
-let create_procdesc_with_pointer ?(captured_vars = []) context pointer class_name_opt name =
+let create_procdesc_with_pointer ?(is_cpp_lambda_call_operator = false) ?(captured_vars = [])
+    context pointer class_name_opt name =
   let open CContext in
   match method_signature_of_pointer context.tenv pointer with
   | Some callee_ms ->
       ignore
         (create_local_procdesc context.translation_unit_context context.cfg context.tenv callee_ms
-           [] captured_vars
+           [] captured_vars ~is_cpp_lambda_call_operator
            ~record_lambda_captured:(not (List.is_empty captured_vars)) ) ;
       callee_ms.CMethodSignature.name
   | None ->
@@ -341,7 +348,8 @@ let get_procname_from_cpp_lambda context dec captured_vars =
     match cxx_rdi.xrdi_lambda_call_operator with
     | Some dr ->
         let name_info, decl_ptr, _ = CAst_utils.get_info_from_decl_ref dr in
-        create_procdesc_with_pointer context decl_ptr None name_info.ni_name ~captured_vars
+        create_procdesc_with_pointer ~is_cpp_lambda_call_operator:true context decl_ptr None
+          name_info.ni_name ~captured_vars
     | _ ->
         assert false )
   | _ ->

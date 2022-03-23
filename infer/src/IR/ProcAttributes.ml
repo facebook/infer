@@ -58,7 +58,7 @@ type passed_block =
 [@@deriving compare, equal]
 
 type specialized_with_blocks_info =
-  {orig_proc: Procname.t; formals_to_blocks: passed_block Mangled.Map.t}
+  {orig_proc: Procname.t; formals_to_blocks: passed_block Pvar.Map.t}
 [@@deriving compare]
 
 type t =
@@ -160,7 +160,7 @@ let pp_specialized_with_blocks_info fmt info =
         Fieldname.Map.pp ~pp_value:pp_passed_block fmt field_to_block_map
   in
   F.fprintf fmt "orig_procname=%a, formals_to_blocks=%a" Procname.pp info.orig_proc
-    (Mangled.Map.pp ~pp_value:pp_passed_block)
+    (Pvar.Map.pp ~pp_value:pp_passed_block)
     info.formals_to_blocks
 
 

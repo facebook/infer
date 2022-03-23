@@ -169,7 +169,7 @@ val get_initializer_pname : t -> Procname.t option
 
 val materialized_cpp_temporary : string
 
-val swap_proc_in_local_pvar : t -> Procname.t -> t
+val specialize_pvar : t -> Procname.t -> t
 
 module Set : PrettyPrintable.PPSet with type elt = t
 

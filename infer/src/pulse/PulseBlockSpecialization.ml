@@ -26,9 +26,9 @@ let get_caller_values_to_blocks {InterproceduralAnalysis.proc_desc} path call_lo
   | None ->
       AbstractValue.Map.empty
   | Some {formals_to_blocks} ->
-      Mangled.Map.fold
-        (fun mangled passed_block map ->
-          let pvar = Pvar.mk mangled caller_pname in
+      Pvar.Map.fold
+        (fun pvar passed_block map ->
+          let pvar = Pvar.specialize_pvar pvar caller_pname in
           match PulseResult.ok (PulseOperations.eval path Read call_loc (Exp.Lvar pvar) astate) with
           | Some (_, (value, _)) ->
               let rec get_deepest value =
@@ -51,13 +51,13 @@ let captured_vars_of_captured caller_pname captured path call_loc astate =
     List.fold captured
       ~init:(Some (astate, []))
       ~f:(fun astate_captured_vars CapturedVar.{pvar; typ; capture_mode} ->
-        let is_local = Pvar.equal (Pvar.mk (Pvar.get_name pvar) caller_pname) pvar in
-        let pvar = Pvar.mk (Pvar.get_name pvar) caller_pname in
+        let pvar = Pvar.specialize_pvar pvar caller_pname in
         match astate_captured_vars with
         | None ->
             None
         | Some (astate, captured_vars) -> (
             let astate_addr_hist =
+              let is_local = Pvar.equal pvar (Pvar.mk (Pvar.get_name pvar) caller_pname) in
               match capture_mode with
               | ByReference when is_local ->
                   PulseOperations.eval path Read call_loc (Exp.Lvar pvar) astate
@@ -100,7 +100,7 @@ let captured_by_actuals ({InterproceduralAnalysis.proc_desc} as analysis_data) f
           let easy_access =
             List.for_all captured ~f:(fun ({CapturedVar.pvar} as captured) ->
                 let is_local =
-                  let pvar = Pvar.mk (Pvar.get_name pvar) caller_pname in
+                  let pvar = Pvar.specialize_pvar pvar caller_pname in
                   Stack.find_opt (Var.of_pvar pvar) astate |> Option.is_some
                 in
                 is_local || List.mem caller_captured captured ~equal:CapturedVar.equal )

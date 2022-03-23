@@ -241,7 +241,6 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
   let captured_formals =
     Procdesc.get_captured callee_proc_desc
     |> List.map ~f:(fun {CapturedVar.pvar; capture_mode; typ} ->
-           let pvar = Pvar.mk (Pvar.get_name pvar) callee_pname in
            (Var.of_pvar pvar, capture_mode, typ) )
   in
   let<*> astate, captured_actuals =

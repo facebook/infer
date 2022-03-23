@@ -147,6 +147,18 @@ int test_retainCycle_unused_cycle_bad() {
   return *ptr;
 }
 
+int test_retainCycle_unused_cycle_good() {
+  RetainCycle* rc = [RetainCycle new];
+  rc.selfField = rc;
+  int counter = call_counter_3times(rc);
+  int* ptr = &counter;
+  if (counter != 3) {
+    ptr = NULL;
+  }
+  rc.selfField = nil; // to avoid a RETAIN_CYCLE issue
+  return *ptr;
+}
+
 int call_sub_counters(RetainCycle* rc) {
   rc.call_counter();
   rc.selfField.call_counter();
