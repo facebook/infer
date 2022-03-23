@@ -25,6 +25,10 @@ val is_subtype : Tenv.t -> Typ.Name.t -> Typ.Name.t -> bool
 val is_subtype_of_str : Tenv.t -> Typ.Name.t -> string -> bool
 (** Resolve [typ_str] in [tenv], then check [typ] <: [typ_str] *)
 
+module CSharp : sig
+  val implements : string -> Tenv.t -> string -> bool
+end
+
 module Java : sig
   val implements : string -> Tenv.t -> string -> bool
   (** Check whether class implements a given Java class *)
