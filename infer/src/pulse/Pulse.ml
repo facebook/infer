@@ -125,23 +125,27 @@ module PulseTransferFunctions = struct
            detect calls that need specialization. The value will be set back to true
            (if it was) in the end by [reset_need_specialization] *)
         let astate = AbductiveDomain.unset_need_specialization astate in
+        let call_kind = call_kind_of call_exp in
         let maybe_res =
           PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-            callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
+            callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
         in
         let res =
-          if (not needed_specialization) && need_specialization maybe_res then
+          if (not needed_specialization) && need_specialization maybe_res then (
+            L.d_printfln "Trying to specialize %a" Exp.pp call_exp ;
             match
-              PulseBlockSpecialization.make_specialized_call_exp func_args callee_pname
-                analysis_data astate
+              PulseBlockSpecialization.make_specialized_call_exp analysis_data func_args
+                callee_pname call_kind path call_loc astate
             with
             | Some (callee_pname, call_exp, astate) ->
+                L.d_printfln "Succesfully specialized %a@\n" Exp.pp call_exp ;
                 let formals_opt = get_pvar_formals callee_pname in
                 let callee_data = analyze_dependency callee_pname in
                 PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
                   callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
             | None ->
-                maybe_res
+                L.d_printfln "Failed to specialize %a@\n" Exp.pp call_exp ;
+                maybe_res )
           else maybe_res
         in
         reset_need_specialization needed_specialization res

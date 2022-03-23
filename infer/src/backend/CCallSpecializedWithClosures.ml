@@ -21,7 +21,10 @@ let replace_with_specialize_methods instr =
           | _ ->
               None )
       in
-      match BlockSpecialization.create_specialized_procdesc callee_pname args with
+      match
+        BlockSpecialization.create_specialized_procdesc callee_pname ~captured_actuals:[]
+          ~arg_actuals:args
+      with
       | Some specialized_pname ->
           Sil.Call (ret, Exp.Const (Const.Cfun specialized_pname), actual_params, loc, flags)
       | None ->

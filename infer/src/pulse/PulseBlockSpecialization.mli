@@ -6,10 +6,15 @@
  *)
 
 open! IStd
+open PulseBasicInterface
+open PulseDomainInterface
 
 val make_specialized_call_exp :
-     (PulseAbstractValue.t * 'a) ProcnameDispatcher.Call.FuncArg.t list
+     'a InterproceduralAnalysis.t
+  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
   -> Procname.t
-  -> 'b InterproceduralAnalysis.t
-  -> PulseAbductiveDomain.t
-  -> (Procname.t * Exp.t * PulseAbductiveDomain.t) option
+  -> PulseOperations.call_kind
+  -> PathContext.t
+  -> Location.t
+  -> AbductiveDomain.t
+  -> (Procname.t * Exp.t * AbductiveDomain.t) option

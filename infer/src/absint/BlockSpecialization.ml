@@ -8,10 +8,10 @@
 open! IStd
 module IRAttributes = Attributes
 
-type arg = ProcAttributes.passed_block option
+type actual = ProcAttributes.passed_block option
 
-(* name for the specialized method instantiated with closure arguments *)
-let pname_with_closure_args callee_pname args =
+(* name for the specialized method instantiated with closure arguments and captured vars *)
+let pname_with_closure_actuals callee_pname actuals =
   let rec get_pnames pnames = function
     | ProcAttributes.Block (pname, _) when Procname.is_objc_block pname ->
         Procname.block_of_procname pname :: pnames
@@ -22,39 +22,50 @@ let pname_with_closure_args callee_pname args =
     | _ ->
         pnames
   in
-  let block_args =
-    List.fold_right args ~init:[] ~f:(fun arg pnames ->
-        Option.value_map arg ~default:pnames ~f:(fun arg -> get_pnames pnames arg) )
+  let block_actuals =
+    List.fold_right actuals ~init:[] ~f:(fun actual pnames ->
+        Option.value_map actual ~default:pnames ~f:(fun actual -> get_pnames pnames actual) )
   in
-  Procname.with_block_parameters callee_pname block_args
+  Procname.with_block_parameters callee_pname block_actuals
 
 
-let make_formals_to_blocks formals args =
+let make_formals_to_blocks ~args:(arg_formals, arg_actuals)
+    ~captured_vars:(captured_formals, captured_actuals) =
   match
-    List.fold2 formals args ~init:Mangled.Map.empty ~f:(fun map (mangled, _, _) arg ->
-        Option.value_map arg ~default:map ~f:(fun arg -> Mangled.Map.add mangled arg map) )
+    List.fold2 arg_formals arg_actuals ~init:Mangled.Map.empty ~f:(fun map (mangled, _, _) actual ->
+        Option.value_map actual ~default:map ~f:(fun actual -> Mangled.Map.add mangled actual map) )
   with
-  | Ok map ->
-      Some map
   | Unequal_lengths ->
       None
+  | Ok map -> (
+    match
+      List.fold2 captured_formals captured_actuals ~init:map
+        ~f:(fun map {CapturedVar.pvar} actual ->
+          let mangled = Pvar.get_name pvar in
+          Option.value_map actual ~default:map ~f:(fun actual -> Mangled.Map.add mangled actual map) )
+    with
+    | Unequal_lengths ->
+        None
+    | Ok map ->
+        Some map )
 
 
-let get_captured args =
+let get_captured actuals =
   let rec get_captured captured_vars_acc = function
     | ProcAttributes.Block (_, captured_vars) ->
         captured_vars :: captured_vars_acc
     | ProcAttributes.Fields passed_blocks ->
         Fieldname.Map.fold
-          (fun _ arg captured_vars_acc -> get_captured captured_vars_acc arg)
+          (fun _ actual captured_vars_acc -> get_captured captured_vars_acc actual)
           passed_blocks captured_vars_acc
   in
-  List.fold_right ~init:[] args ~f:(fun arg captured_vars ->
-      Option.value_map arg ~default:captured_vars ~f:(fun arg -> get_captured captured_vars arg) )
+  List.fold_right ~init:[] actuals ~f:(fun actual captured_vars ->
+      Option.value_map actual ~default:captured_vars ~f:(fun actual ->
+          get_captured captured_vars actual ) )
   |> List.concat
 
 
-let should_specialize args = List.exists args ~f:Option.is_some
+let should_specialize actuals = List.exists actuals ~f:Option.is_some
 
 let is_objc_setter proc_desc =
   let attributes = Procdesc.get_attributes proc_desc in
@@ -71,22 +82,24 @@ let is_dispatch_model proc_desc =
   ObjCDispatchModels.is_model proc_name
 
 
-let create_specialized_procdesc callee_pname args =
-  if should_specialize args then
+let create_specialized_procdesc callee_pname ~captured_actuals ~arg_actuals =
+  (* captured vars always come first *)
+  let actuals = captured_actuals @ arg_actuals in
+  if should_specialize actuals then
     match Procdesc.load callee_pname with
     | Some proc_desc
       when (not (is_objc_setter proc_desc))
            && (not (is_initializer proc_desc))
            && not (is_dispatch_model proc_desc) -> (
         (* The specialization is always a full specialization:
-             given a function and its known block arguments:
+             given a function and its known block arguments and captured vars:
              1. if the function is unspecialized then specialize it with the given blocks
              2. if the function is already specialized then get its unspecialized version
                 (available as [orig_proc] in the attributes) and apply case 1 with it
            Rather than adding the mechanism to do partial specialization:
-             2'. if the function is already specialized then filter-out the arguments that
-                 have already been used for its specialization and specialize it with the
-                 remaining arguments
+             2'. if the function is already specialized then filter-out the arguments and
+                 captured vars that have already been used for its specialization and
+                 specialize it with the remaining arguments and captured vars
 
            It is easier (and less error-prone) to always do a full specialization (1 and 2)
 
@@ -97,8 +110,8 @@ let create_specialized_procdesc callee_pname args =
              specialization information and, therefore, should be able to ensure the above
              property holds if there were any doubt
         *)
-        let callee_attributes =
-          let callee_attributes = Procdesc.get_attributes proc_desc in
+        let callee_attributes = Procdesc.get_attributes proc_desc in
+        let orig_attributes =
           let orig_attributes =
             let open IOption.Let_syntax in
             let* {ProcAttributes.orig_proc} = callee_attributes.specialized_with_blocks_info in
@@ -107,10 +120,14 @@ let create_specialized_procdesc callee_pname args =
           in
           Option.value ~default:callee_attributes orig_attributes
         in
-        let callee_pname = callee_attributes.proc_name in
-        match make_formals_to_blocks callee_attributes.formals args with
+        let callee_pname = orig_attributes.proc_name in
+        match
+          make_formals_to_blocks
+            ~args:(callee_attributes.formals, arg_actuals)
+            ~captured_vars:(callee_attributes.captured, captured_actuals)
+        with
         | Some formals_to_blocks -> (
-            let specialized_pname = pname_with_closure_args callee_pname args in
+            let specialized_pname = pname_with_closure_actuals callee_pname actuals in
             (* To avoid duplicated additions on a specialized procname, it does a
                membership check. This may happen when there are multiple function calls
                with the same callees and the same closure parameters.  For the following
@@ -125,9 +142,9 @@ let create_specialized_procdesc callee_pname args =
             | None ->
                 if (Procdesc.get_attributes proc_desc).is_defined then (
                   let new_attributes =
-                    { callee_attributes with
+                    { orig_attributes with
                       specialized_with_blocks_info= Some {orig_proc= callee_pname; formals_to_blocks}
-                    ; captured= get_captured args @ callee_attributes.captured
+                    ; captured= get_captured actuals @ orig_attributes.captured
                     ; proc_name= specialized_pname }
                   in
                   let specialized_pdesc = Procdesc.from_proc_attributes new_attributes in

@@ -165,3 +165,44 @@ int test_retainCycle_used_cycle_bad_FN() {
   }
   return *ptr;
 }
+
+int call_block_captured_in_captured(int (^block)(void)) { return block(); }
+
+int captured_in_captured_specializable(RetainCycle* rc) {
+  RetainCycle* rc2 = rc;
+  int (^block)(void) = ^{
+    return rc2.call_counter();
+  };
+  return call_block_captured_in_captured(block);
+}
+
+int test_captured_in_captured_specialized_bad() {
+  RetainCycle* rc = [RetainCycle new];
+  int x = 0;
+  __block int* ptr = &x;
+  rc.call_counter = ^{
+    ptr = NULL;
+    return x;
+  };
+  int y = 1;
+  y = captured_in_captured_specializable(rc);
+  if (x != y) { // should not happen
+    ptr = &y;
+  }
+  return *ptr;
+}
+
+int test_captured_in_captured_specialized_good() {
+  RetainCycle* rc = [RetainCycle new];
+  int x = 0;
+  int* ptr = &x;
+  rc.call_counter = ^{
+    return x;
+  };
+  int y = 1;
+  y = captured_in_captured_specializable(rc);
+  if (x != y) { // should not happen
+    *ptr = NULL;
+  }
+  return *ptr;
+}

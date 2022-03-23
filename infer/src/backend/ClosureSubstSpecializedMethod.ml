@@ -305,11 +305,25 @@ let process pdesc =
             Ident.update_name_generator used_ids ) ;
         let replace_instr _node = exec_instr proc_name in
         let context_at_node node = analyze_at_node invariant_map node in
-        let _has_changed : bool =
+        let has_changed : bool =
           Procdesc.replace_instrs_by_using_context pdesc ~f:replace_instr ~update_context
             ~context_at_node
         in
-        ()
+        if has_changed then
+          (* has_changed indicates that some of the values in formals_to_blocks have been
+             used and, therefore, may have some new correspondances *)
+          let _, pvar_to_block_map = context_at_node (Procdesc.get_exit_node pdesc) in
+          let formals_to_blocks =
+            PvarBlockSpecMap.to_seq pvar_to_block_map
+            |> Mangled.Map.of_seq
+            |> Mangled.Map.filter_map (fun _ passed_block -> SpecDom.get passed_block)
+          in
+          let new_attributes =
+            { proc_attributes with
+              specialized_with_blocks_info= Some {spec_with_blocks_info with formals_to_blocks} }
+          in
+          Procdesc.set_attributes pdesc new_attributes
+        else ()
     | None ->
         () )
   | _ ->

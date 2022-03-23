@@ -141,6 +141,9 @@ void apply(void (^block)(void)) { block(); }
       [manipulationEntry
           pass_obj:^(NSObject* obj) { // specialized in pre-analysis
             apply_second(obj, ^{ // specialized in pre-analysis
+              // confusion in self: we expect it to be the one of the
+              // current declaring context (an Example) but it is the
+              // one of the call context (a MSYSSampleMailboxSessionBind)
               [self update_manipulatedContent:obj];
             });
           }];
@@ -168,13 +171,12 @@ BOOL test_Example_YES_using_property_bad() {
   return *ptr == y;
 }
 
-// needs specialization over captured variables
 BOOL test_Example_YES_using_property_good_FP() {
   Example* example = [Example new];
   [example application:YES];
   int y = example.manipulatedContent.y;
   int* ptr = &y;
-  if (y != 5) {
+  if (example.manipulatedContent && y != 5) {
     ptr = NULL;
   }
   return *ptr == y;
@@ -202,13 +204,12 @@ BOOL test_Example_YES_using_ivar_bad() {
   return *ptr == x;
 }
 
-// needs specialization over captured variables
 BOOL test_Example_YES_using_ivar_good_FP() {
   Example* example = [Example new];
   [example application:YES];
   int x = [example.manipulatedContent get_x];
   int* ptr = &x;
-  if (x != 5) {
+  if (example.manipulatedContent && x != 5) {
     ptr = NULL;
   }
   return *ptr == x;
