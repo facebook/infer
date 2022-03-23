@@ -81,9 +81,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let objc_exp_of_type_block fun_exp_stmt =
     match fun_exp_stmt with
-    | Clang_ast_t.ImplicitCastExpr (_, _, ei, _, _)
-      when CType.is_block_type ei.Clang_ast_t.ei_qual_type ->
-        true
+    | Clang_ast_t.ImplicitCastExpr (_, _, ei, _, _) | Clang_ast_t.PseudoObjectExpr (_, _, ei) ->
+        CType.is_block_type ei.Clang_ast_t.ei_qual_type
     | _ ->
         false
 
