@@ -52,9 +52,13 @@ let pp_var_data fmt {name; typ; modify_in_block; is_declared_unused} =
     Mangled.pp name (Typ.pp_full Pp.text) typ modify_in_block is_declared_unused
 
 
+type passed_block =
+  | Block of (Procname.t * CapturedVar.t list)
+  | Fields of passed_block Fieldname.Map.t
+[@@deriving compare, equal]
+
 type specialized_with_blocks_info =
-  { orig_proc: Procname.t
-  ; formals_to_procs_and_new_formals: (Procname.t * CapturedVar.t list) Mangled.Map.t }
+  {orig_proc: Procname.t; formals_to_blocks: passed_block Mangled.Map.t}
 [@@deriving compare]
 
 type t =
@@ -147,10 +151,17 @@ let pp_parameters =
 
 
 let pp_specialized_with_blocks_info fmt info =
-  let pp_new_formals = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp in
-  F.fprintf fmt "orig_procname=%a, formals_to_procs_and_new_formals=%a" Procname.pp info.orig_proc
-    (Mangled.Map.pp ~pp_value:(Pp.pair ~fst:Procname.pp ~snd:pp_new_formals))
-    info.formals_to_procs_and_new_formals
+  let rec pp_passed_block fmt passed_block =
+    match passed_block with
+    | Block block ->
+        let pp_captured_vars = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp in
+        Pp.pair ~fst:Procname.pp ~snd:pp_captured_vars fmt block
+    | Fields field_to_block_map ->
+        Fieldname.Map.pp ~pp_value:pp_passed_block fmt field_to_block_map
+  in
+  F.fprintf fmt "orig_procname=%a, formals_to_blocks=%a" Procname.pp info.orig_proc
+    (Mangled.Map.pp ~pp_value:pp_passed_block)
+    info.formals_to_blocks
 
 
 let pp_captured = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp

@@ -264,9 +264,11 @@ let process pdesc =
     match Procdesc.load spec_with_blocks_info.ProcAttributes.orig_proc with
     | Some orig_pdesc ->
         Procdesc.deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc:pdesc ;
-        let formals_to_blocks_map = spec_with_blocks_info.formals_to_procs_and_new_formals in
+        let formals_to_blocks_map = spec_with_blocks_info.formals_to_blocks in
         let pvars_to_blocks_map =
-          Mangled.Map.map SpecDom.v formals_to_blocks_map
+          Mangled.Map.filter_map
+            (fun _ -> function ProcAttributes.Block block -> Some (SpecDom.v block) | _ -> None)
+            formals_to_blocks_map
           |> Mangled.Map.to_seq |> BlockPvarSpecMap.of_seq
         in
         let node_cfg = CFG.from_pdesc pdesc in

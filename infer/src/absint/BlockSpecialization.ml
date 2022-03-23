@@ -22,12 +22,12 @@ let pname_with_closure_args callee_pname args =
   Procname.with_block_parameters callee_pname block_args
 
 
-let make_formals_to_procs_and_new_formals formals args =
+let make_formals_to_blocks formals args =
   match
     List.fold2 formals args ~init:Mangled.Map.empty ~f:(fun map (mangled, _, _) arg ->
         match arg with
         | Block pname_and_captured_vars ->
-            Mangled.Map.add mangled pname_and_captured_vars map
+            Mangled.Map.add mangled (ProcAttributes.Block pname_and_captured_vars) map
         | Var ->
             map )
   with
@@ -101,13 +101,12 @@ let create_specialized_procdesc callee_pname args =
           Option.value ~default:callee_attributes orig_attributes
         in
         let callee_pname = callee_attributes.proc_name in
-        match make_formals_to_procs_and_new_formals callee_attributes.formals args with
-        | Some formals_to_procs_and_new_formals -> (
+        match make_formals_to_blocks callee_attributes.formals args with
+        | Some formals_to_blocks -> (
             let specialized_pname = pname_with_closure_args callee_pname args in
             let new_attributes =
               { callee_attributes with
-                specialized_with_blocks_info=
-                  Some {orig_proc= callee_pname; formals_to_procs_and_new_formals}
+                specialized_with_blocks_info= Some {orig_proc= callee_pname; formals_to_blocks}
               ; captured= get_captured args @ callee_attributes.captured
               ; proc_name= specialized_pname }
             in

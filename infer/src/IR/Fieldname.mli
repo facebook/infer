@@ -44,7 +44,7 @@ val is_internal : t -> bool
 module Set : Caml.Set.S with type elt = t
 
 (** Map for fieldnames *)
-module Map : Caml.Map.S with type key = t
+module Map : PrettyPrintable.PPMap with type key = t
 
 val is_java_outer_instance : t -> bool
 (** Check if the field is the synthetic this$n of a nested class, used to access the n-th outer
