@@ -43,7 +43,7 @@ module LineageGraph = struct
 
   module FlowKind = struct
     module T = struct
-      (** Order is important: see how [max_flow_kind] is used. *)
+      (** Order is important: see how [compare_flow_kind] is used. *)
       type t =
         | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
         | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
@@ -60,11 +60,10 @@ module LineageGraph = struct
 
   let rank_of_flow_kind = FlowKind.Variants.to_rank
 
-  let max_flow_kind flow_a flow_b = if compare_flow_kind flow_a flow_b > 0 then flow_a else flow_b
+  type flow = {source: data; target: data; kind: flow_kind; node: (PPNode.t[@sexp.opaque])}
+  [@@deriving compare, sexp]
 
-  type flow = {source: data; target: data; kind: flow_kind} [@@deriving compare, sexp]
-
-  let flow ?(kind = FlowKind.Direct) ~source ~target () = {source; target; kind}
+  let flow ?(kind = FlowKind.Direct) ~node ~source ~target () = {source; target; kind; node}
 
   type t = flow list
 
@@ -206,7 +205,8 @@ module LineageGraph = struct
             `String "DynamicCall"
 
 
-      type _edge = {source: node_id; target: node_id; edge_type: edge_type} [@@deriving yojson_of]
+      type _edge = {source: node_id; target: node_id; edge_type: edge_type; location: location_id}
+      [@@deriving yojson_of]
 
       type edge = {edge: _edge} [@@deriving yojson_of]
 
@@ -435,7 +435,7 @@ module LineageGraph = struct
           save ~write:false procname (Start Location.dummy) Function
 
 
-    let save_edge proc_desc {source; target; kind} =
+    let save_edge proc_desc {source; target; kind; node} =
       let source_id = save_node proc_desc source in
       let target_id = save_node proc_desc target in
       let kind_id = Id.of_kind kind in
@@ -451,9 +451,17 @@ module LineageGraph = struct
         | Summary ->
             Json.Derive
       in
+      let location_id =
+        let procname = Procdesc.get_proc_name proc_desc in
+        save_location ~write:true procname (Normal node)
+      in
       write_json Edge edge_id
         (Json.yojson_of_edge
-           {edge= {source= Id.out source_id; target= Id.out target_id; edge_type}} ) ;
+           { edge=
+               { source= Id.out source_id
+               ; target= Id.out target_id
+               ; edge_type
+               ; location= Id.out location_id } } ) ;
       edge_id
 
 
@@ -560,12 +568,13 @@ module Summary = struct
       not appear in source or a formal parameter or the return variable. The returned graph has an
       edge X0->Xn of type T between interesting vertices X0 and Xn iff the input graph has a path
       X0->X1->...->Xn with X1,...,X(n-1) being uninteresting and T is the maximum of the types of
-      the edges in the path. *)
+      the edges in the path. The location of the X0->Xn edge is the location of the first edge of
+      type T in the path X0->X1->...->Xn. *)
   let remove_temporaries proc_desc graph =
     (* Build adjacency list representation, to make DFS easy. *)
     let children =
-      let add_flow g {LineageGraph.source; target; kind} =
-        Map.add_multi ~key:source ~data:(target, kind) g
+      let add_flow g {LineageGraph.source; target; kind; node} =
+        Map.add_multi ~key:source ~data:(target, kind, node) g
       in
       List.fold ~init:Vertex.Map.empty ~f:add_flow graph
     in
@@ -587,15 +596,18 @@ module Summary = struct
           true
     in
     (* Do a DFS and produce edges. *)
-    let rec dfs (seen, result_graph) ({LineageGraph.source; target; kind} as state) =
+    let rec dfs (seen, result_graph) ({LineageGraph.source; target; kind; node} as state) =
       if not (is_interesting source) then L.die InternalError "INV broken" ;
       if not (Set.mem seen state) then
         let seen = Set.add seen state in
         if is_interesting target then (seen, state :: result_graph)
         else
-          let f (seen, result_graph) (target, edge_kind) =
-            let kind = LineageGraph.max_flow_kind kind edge_kind in
-            dfs (seen, result_graph) {LineageGraph.source; target; kind}
+          let f (seen, result_graph) (target, edge_kind, edge_node) =
+            let kind, node =
+              if LineageGraph.compare_flow_kind kind edge_kind > 0 then (kind, node)
+              else (edge_kind, edge_node)
+            in
+            dfs (seen, result_graph) (LineageGraph.flow ~kind ~node ~source ~target ())
           in
           List.fold ~init:(seen, result_graph) ~f (Map.find_multi children target)
       else (seen, result_graph)
@@ -785,7 +797,7 @@ module TransferFunctions = struct
         let local : Local.t = Variable (Var.of_pvar pvar) in
         let source_list = sources_of_local node last_writes local in
         let add_one_flow local_edges source =
-          LineageGraph.flow ~source ~target:(CapturedBy (index, name)) () :: local_edges
+          LineageGraph.flow ~node ~source ~target:(CapturedBy (index, name)) () :: local_edges
         in
         let local_edges = List.fold source_list ~f:add_one_flow ~init:local_edges in
         ((last_writes, has_unsupported_features), local_edges)
@@ -802,7 +814,8 @@ module TransferFunctions = struct
       let add_flows_local_to_arg local_edges (local : Local.t) =
         let sources = sources_of_local call_node last_writes local in
         let add_one_flow local_edges source =
-          LineageGraph.flow ~source ~target:(ArgumentOf (index, callee_pname)) () :: local_edges
+          LineageGraph.flow ~node:call_node ~source ~target:(ArgumentOf (index, callee_pname)) ()
+          :: local_edges
         in
         List.fold sources ~f:add_one_flow ~init:local_edges
       in
@@ -816,7 +829,7 @@ module TransferFunctions = struct
       Domain.t =
     let last_writes, local_edges = astate in
     let local_edges =
-      LineageGraph.flow ~source:(ReturnOf callee_pname)
+      LineageGraph.flow ~node ~source:(ReturnOf callee_pname)
         ~target:(Local (Variable (Var.of_id ret_id), node))
         ()
       :: local_edges
@@ -836,7 +849,9 @@ module TransferFunctions = struct
             let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
             List.map ~f:(fun node -> LineageGraph.Local (read_local, node)) source_nodes
       in
-      let add_edge local_edges source = LineageGraph.flow ~kind ~source ~target () :: local_edges in
+      let add_edge local_edges source =
+        LineageGraph.flow ~node:write_node ~kind ~source ~target () :: local_edges
+      in
       let local_edges = List.fold ~init:local_edges ~f:add_edge sources in
       local_edges
     in
@@ -924,7 +939,7 @@ module TransferFunctions = struct
   let add_lambda_edges (write_var, write_node) lambdas (real_state, local_edges) =
     let target = LineageGraph.Local (Variable write_var, write_node) in
     let add_one_lambda one_lambda local_edges =
-      LineageGraph.flow ~source:(Function one_lambda) ~target () :: local_edges
+      LineageGraph.flow ~node:write_node ~source:(Function one_lambda) ~target () :: local_edges
     in
     let local_edges = Procname.Set.fold add_one_lambda lambdas local_edges in
     (real_state, local_edges)
@@ -984,12 +999,15 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       let local_edges =
         List.mapi
           ~f:(fun i var ->
-            LineageGraph.flow ~source:(Argument i) ~target:(Local (Variable var, start_node)) () )
+            LineageGraph.flow ~node:start_node ~source:(Argument i)
+              ~target:(Local (Variable var, start_node))
+              () )
           formals
         @ List.mapi
             ~f:(fun i var ->
-              LineageGraph.flow ~source:(Captured i) ~target:(Local (Variable var, start_node)) ()
-              )
+              LineageGraph.flow ~node:start_node ~source:(Captured i)
+                ~target:(Local (Variable var, start_node))
+                () )
             captured
       in
       let has_unsupported_features = false in
@@ -1010,7 +1028,9 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       in
       let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
       let mk_ret_edge ret_node =
-        LineageGraph.flow ~source:(Local (Variable ret_var, ret_node)) ~target:Return ()
+        LineageGraph.flow ~node:ret_node
+          ~source:(Local (Variable ret_var, ret_node))
+          ~target:Return ()
       in
       List.map ~f:mk_ret_edge (Domain.Real.LastWrites.get_all ret_var exit_last_writes)
       @ (Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat)

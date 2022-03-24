@@ -682,7 +682,7 @@ and translate_expression_call_dynamic_nomodule (env : (_, _) Env.t) ret_var expr
 and translate_expression_call_dynamic (env : (_, _) Env.t) ret_var module_ function_ args : Block.t
     =
   (* Not yet supported but at least we translate the module, function and arguments, and
-     pass everything to unsupported function: Ret = missing_translation(M, F, Args). *)
+     pass everything to unsupported function: Ret = dynamic_call(M, F, Args). *)
   let all_args = [module_; function_] @ args in
   let missing_trans = Exp.Const (Cfun (call_unsupported "dynamic_call" (List.length all_args))) in
   translate_expression_call env ret_var missing_trans all_args
