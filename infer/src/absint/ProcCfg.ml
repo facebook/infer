@@ -307,22 +307,22 @@ module ExceptionalHandlerOnly = struct
   let fold_normal_or_exn_succs fold_normal_alpha fold_exceptional t n ~init ~f =
     let choose_normal_or_exn_succs node =
       let last_exn = List.last (Procdesc.Node.get_exn node) in
-      let is_last_exn_sink_kind_or_null = 
+      let is_last_exn_exception_handler = 
         match last_exn with
         | Some exn ->
           let exception_node_kind = Exceptional.Node.kind exn in
           if Procdesc.Node.equal_nodekind exception_node_kind Procdesc.Node.exn_handler_kind then 
-            false 
-          else
             true 
+          else
+            false 
         | _ ->
-          true 
+          false 
       in
-      match is_last_exn_sink_kind_or_null with
+      match is_last_exn_exception_handler with
       | true -> 
-        fold_normal_alpha t node ~init ~f
+        fold_exceptional t node ~init ~f
       | false -> 
-        fold_exceptional t node ~init ~f 
+        fold_normal_alpha t node ~init ~f 
     in
     choose_normal_or_exn_succs n
 
