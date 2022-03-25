@@ -86,8 +86,6 @@ integration with LLVM
 
   sledge llvm SUBCOMMAND
 
-Code can be provided by one or more LLVM bitcode files.
-
 === subcommands ===
 
   analyze      analyze LLVM bitcode
@@ -102,7 +100,7 @@ analyze LLVM bitcode
 
   sledge llvm analyze <input>
 
-Analyze code in one or more LLVM bitcode files. This is a convenience wrapper for the sequence `sledge llvm translate`; `sledge analyze`.
+Analyze LLVM bitcode. This is a convenience wrapper for the sequence `sledge llvm translate`; `sledge analyze`.
 
 === flags ===
 
@@ -153,7 +151,7 @@ translate LLVM bitcode to LLAIR
 
   sledge llvm translate <input>
 
-Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be either: an LLVM bitcode file, in binary (.bc) or textual (.ll) form; or of the form @<argsfile>, where <argsfile> names a file containing one <input> per line.
+Translate LLVM bitcode to LLAIR. The <input> file must contain LLVM bitcode in either binary (.bc) or textual (.ll) form.
 
 === flags ===
 
