@@ -173,11 +173,9 @@ and list_type = Proper of type_
 
 and tuple_type = AnySize | FixedSize of type_ list [@@deriving sexp_of]
 
-(* Currently only "subtype of" constraints can be used in the "when" part of a spec. *)
-type type_constraint = {var: string; subtype_of: type_} [@@deriving sexp_of]
-
-(* Function specs can be overloaded, forming disjunctions. *)
-type spec_disjunct = {arguments: type_ list; return: type_; constraints: type_constraint list}
+(* Function specs can be overloaded, forming disjunctions.
+   Currently the only kind of constraints are "subtype of" which we track in a map. *)
+type spec_disjunct = {arguments: type_ list; return: type_; constraints: type_ String.Map.t}
 [@@deriving sexp_of]
 
 type spec = {function_: function_; specs: spec_disjunct list} [@@deriving sexp_of]

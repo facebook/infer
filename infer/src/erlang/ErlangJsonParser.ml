@@ -634,7 +634,7 @@ let to_spec_args json : Ast.type_ list option =
 
 let to_spec_ret : json -> Ast.type_ option = to_type
 
-let to_constraint json : Ast.type_constraint option =
+let to_constraint json : (string * Ast.type_) option =
   match json with
   | `List
       [ `String "type"
@@ -644,7 +644,7 @@ let to_constraint json : Ast.type_constraint option =
           [ `List [`String "atom"; _anno2; `String "is_subtype"]
           ; `List [`List [`String "var"; _anno3; `String var]; type_json] ] ] ->
       let* subtype_of = to_type type_json in
-      Some {Ast.var; subtype_of}
+      Some (var, subtype_of)
   | _ ->
       unknown "spec constraint" json
 
@@ -654,7 +654,7 @@ let to_spec_disjunct json : Ast.spec_disjunct option =
   | `List [`String "type"; _anno; `String "fun"; `List [args_json; ret_json]] ->
       let* return = to_spec_ret ret_json in
       let* arguments = to_spec_args args_json in
-      Some {Ast.arguments; return; constraints= []}
+      Some {Ast.arguments; return; constraints= String.Map.empty}
   | `List
       [ `String "type"
       ; _anno
@@ -664,7 +664,17 @@ let to_spec_disjunct json : Ast.spec_disjunct option =
           ; constraints_json ] ] ->
       let* return = to_spec_ret ret_json in
       let* arguments = to_spec_args args_json in
-      let* constraints = to_list ~f:to_constraint constraints_json in
+      let* constr_list = to_list ~f:to_constraint constraints_json in
+      let f map (key, data) =
+        match Map.add ~key ~data map with
+        | `Ok map ->
+            map
+        | `Duplicate ->
+            L.debug Capture Verbose "Ignoring duplicate constraint for type variable %s in %s@." key
+              (Yojson.Safe.show json) ;
+            map
+      in
+      let constraints = List.fold ~f ~init:String.Map.empty constr_list in
       Some {Ast.arguments; return; constraints}
   | _ ->
       unknown "spec" json
