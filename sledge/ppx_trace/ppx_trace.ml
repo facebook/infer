@@ -12,10 +12,10 @@
     [--cookie 'ppx_trace_enabled="1"'] (or with [true] instead or [1]).
 
     It rewrites [\[%trace\] ~call ~retn ~rais] to a call
-    [Trace.trace ~call ~retn ~rais mod_name fun_name] where [mod_name] and
-    [fun_name] are the enclosing module and function names in the parsetree.
-    This is only done in debug mode, otherwise
-    [\[%trace\] ~call ~retn ~rais] is rewritten to [(fun k -> k ())].
+    [Trace.trace ~call ~retn ~rais fun_name] where [fun_name] is the value
+    of [__FUNCTION__] at the call site. This is only done in debug mode,
+    otherwise [\[%trace\] ~call ~retn ~rais] is rewritten to
+    [(fun k -> k ())].
 
     Similarly, [\[%Trace.info\]], [\[%Trace.infok\]], [\[%Trace.printf\]],
     [\[%Trace.fprintf\]], [\[%Trace.kprintf\]], and [\[%Trace.call\]] are
