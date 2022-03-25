@@ -1,0 +1,31 @@
+analyze/FA_dynamic_size_array.bc:	Unsafe: 1
+analyze/FA_mallctl_thread_allocatedp.bc:	Unsafe: 1
+analyze/FN_ptr_arith_bad.bc:	Safe
+analyze/addr_of_global_struct.bc:	Safe
+analyze/address_arith.bc:	Safe
+analyze/address_arith_unsafe.bc:	Unsafe: 1
+analyze/arithmetic.bc:	Safe
+analyze/arithmetic_loop.bc:	Safe
+analyze/arithmetic_loop_unsafe.bc:	Unsafe: 1
+analyze/array_access.bc:	Safe
+analyze/array_access_unsafe.bc:	Safe
+analyze/assert.bc:	Safe
+analyze/bool_to_int.bc:	Safe
+analyze/copy_struct_on_stack.bc:	Safe
+analyze/free_free.bc:	Safe
+analyze/free_local.bc:	Safe
+analyze/global_vars.bc:	Safe
+analyze/globals.bc:	Safe
+analyze/icall.bc:	Safe
+analyze/int_bool_assign.bc:	Unsafe: 1
+analyze/irreducible.bc:	Safe
+analyze/loop.bc:	Safe
+analyze/nested_loop_branch.bc:	Safe (_,5)
+analyze/nonreducible_call_graph.bc:	Safe (_,5)
+analyze/recursion.bc:	Safe (_,5)
+analyze/struct_array_copy.bc:	Safe
+analyze/thread.bc:	Safe
+analyze/tmp_uaf.bc:	Unsafe: 1
+analyze/treiber_stack.bc:	Safe (3,_)
+analyze/uad.bc:	Safe
+analyze/wrap_malloc.bc:	Safe

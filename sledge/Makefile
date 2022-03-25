@@ -81,8 +81,9 @@ test:
 	dune build @_build/debug/fmt --auto-promote 2>/dev/null
 
 .PHONY: ci-test
-ci-test:
+ci-test: exes
 	dune build @_build/debug/fmt @_build/debug/runtest
+	$(MAKE) --no-print-directory -C test ci-test
 
 .PHONY: clean
 clean:
