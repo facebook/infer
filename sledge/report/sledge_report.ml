@@ -756,6 +756,10 @@ let write_status ?baseline rows chan =
   let rows =
     Iter.sort ~cmp:(fun x y -> String.compare x.name y.name) rows
   in
+  let pp_status ppf =
+    if Option.is_none baseline then Report.pp_status_coarse ppf
+    else Report.pp_status ppf
+  in
   let pp_steps ppf {Report.steps} = Format.fprintf ppf "%+i" steps in
   let pp_solver_steps ppf {Report.solver_steps} =
     Format.fprintf ppf "%+i" solver_steps
@@ -764,10 +768,9 @@ let write_status ?baseline rows chan =
   let count = ref 0 in
   Iter.iter rows ~f:(fun {name; status; status_deltas; cov_deltas} ->
       incr count ;
-      Format.fprintf ppf "%s:\t%a%a%a%a@\n" name
-        (List.pp ", " Report.pp_status)
+      Format.fprintf ppf "%s:\t%a%a%a%a@\n" name (List.pp ", " pp_status)
         status
-        (Option.pp "\t%a" (List.pp ", " Report.pp_status))
+        (Option.pp "\t%a" (List.pp ", " pp_status))
         status_deltas
         (Option.pp "\t%a" (List.pp ", " pp_steps))
         cov_deltas
