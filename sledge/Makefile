@@ -25,15 +25,15 @@ LLVM_OCAML_SENTINEL=vendor/llvm-dune/src/llvm/common/dune
 
 # Note that llvm-config is broken and does not correctly detect llvm
 # shared libraries. A filthy workaround seems to be to create the
-# libLLVM-11.dylib file llvm-config looks for as a symbolic link to
+# libLLVM-12.dylib file llvm-config looks for as a symbolic link to
 # libLLVM.dylib.
 link_llvm_dylib:
 	@set -e ;\
 	LLVMLIB=$$($$(opam var conf-llvm:config) --libdir) ;\
-	ln -s $$LLVMLIB/libLLVM.dylib $$LLVMLIB/libLLVM-11.dylib
+	ln -s $$LLVMLIB/libLLVM.dylib $$LLVMLIB/libLLVM-12.dylib
 
 $(LLVM_OCAML_SENTINEL): $(LLVM_OCAML_SRC)
-	cd vendor/llvm-dune; ./setup.sh $$(opam var conf-llvm:config) # &>/dev/null
+	cd vendor/llvm-dune; ./setup.sh $$(opam var conf-llvm:config)
 
 clean_llvm:
 	rm -rf vendor/llvm-dune/{src,llvm_*.opam}
@@ -43,7 +43,7 @@ setup: $(LLVM_OCAML_SENTINEL)
 
 .PHONY: check
 check: setup
-	dune build @check --display=quiet
+	OCAML_ERROR_STYLE=short dune build @check --display=quiet
 
 .PHONY: exes
 exes: setup
