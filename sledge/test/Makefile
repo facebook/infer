@@ -10,6 +10,9 @@ CLANG_ARGS?=-O0 -Xclang -disable-O0-optnone
 SLEDGE_DBG:=$(CURDIR)/../_build/debug/cli/sledge_cli.exe
 SLEDGE_OPT:=$(CURDIR)/../_build/release/cli/sledge_cli.exe
 
+# sledge config file
+export SLEDGE_CONFIG:=$(CURDIR)/config
+
 # additional arguments to pass to sledge translate, disassemble, analyze, smt, and report
 SLEDGE_T_ARGS?=
 SLEDGE_D_ARGS?=
