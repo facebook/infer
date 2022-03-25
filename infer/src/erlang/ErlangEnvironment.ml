@@ -143,3 +143,18 @@ let func_procname env function_ =
   let module_name = env.current_module in
   let procname = Procname.make_erlang ~module_name ~function_name ~arity in
   (uf_name, procname)
+
+
+let has_type_instr (env : (_, _) t) ~result ~value (name : ErlangTypeName.t) : Sil.instr =
+  let any_typ = ptr_typ_of_name Any in
+  let fun_exp : Exp.t = Const (Cfun BuiltinDecl.__instanceof) in
+  let args : (Exp.t * Typ.t) list =
+    [ (value, any_typ)
+    ; ( Sizeof
+          { typ= typ_of_name name
+          ; nbytes= None
+          ; dynamic_length= None
+          ; subtype= Subtype.subtypes_instof }
+      , any_typ ) ]
+  in
+  Call ((result, Typ.mk (Tint IBool)), fun_exp, args, env.location, CallFlags.default)

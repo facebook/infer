@@ -55,23 +55,11 @@ let update_location (loc : Ast.location) (env : (_, _) Env.t) =
   {env with location}
 
 
-let has_type (env : (_, _) Env.t) ~result ~value (name : ErlangTypeName.t) : Sil.instr =
-  let fun_exp : Exp.t = Const (Cfun BuiltinDecl.__instanceof) in
-  let args : (Exp.t * Typ.t) list =
-    [ (value, any_typ)
-    ; ( Sizeof
-          { typ= Env.typ_of_name name
-          ; nbytes= None
-          ; dynamic_length= None
-          ; subtype= Subtype.subtypes_instof }
-      , any_typ ) ]
-  in
-  Call ((result, Typ.mk (Tint IBool)), fun_exp, args, env.location, CallFlags.default)
-
-
 let check_type env value typ : Block.t =
   let is_right_type_id = mk_fresh_id () in
-  let start = Node.make_stmt env [has_type env ~result:is_right_type_id ~value:(Var value) typ] in
+  let start =
+    Node.make_stmt env [Env.has_type_instr env ~result:is_right_type_id ~value:(Var value) typ]
+  in
   let exit_success = Node.make_if env true (Var is_right_type_id) in
   let exit_failure = Node.make_if env false (Var is_right_type_id) in
   start |~~> [exit_success; exit_failure] ;
@@ -126,7 +114,7 @@ let box_bool env into_id expr : Block.t =
     it was "false". But if we do plan to check for such errors, this is the place to do so. *)
 let unbox_bool env expr : Exp.t * Block.t =
   let is_atom = mk_fresh_id () in
-  let start = Node.make_stmt env [has_type env ~result:is_atom ~value:expr Atom] in
+  let start = Node.make_stmt env [Env.has_type_instr env ~result:is_atom ~value:expr Atom] in
   let prune_node = Node.make_if env true (Var is_atom) in
   let hash_id = mk_fresh_id () in
   let load =
@@ -771,7 +759,7 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt 
       procdesc= Env.Present procdesc
     ; result= Env.Present (Exp.Lvar (Pvar.get_ret_pvar name)) }
   in
-  let () = translate_function_clauses sub_env procdesc attributes name cases in
+  let () = translate_function_clauses sub_env procdesc attributes name cases None in
   let closure =
     let mk_capt_var (var : Pvar.t) = (Exp.Lvar var, var, any_typ, CapturedVar.ByReference) in
     let captured_vars = List.map ~f:mk_capt_var captured_vars in
@@ -833,7 +821,7 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
     let join_node = Node.make_join env in
     let is_cons_id = mk_fresh_id () in
     let check_cons_node =
-      Node.make_stmt env [has_type env ~result:is_cons_id ~value:(Var gen_var) Cons]
+      Node.make_stmt env [Env.has_type_instr env ~result:is_cons_id ~value:(Var gen_var) Cons]
     in
     let is_cons_node = Node.make_if env true (Var is_cons_id) in
     let no_cons_node = Node.make_if env false (Var is_cons_id) in
@@ -1193,7 +1181,7 @@ and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
 
 (** Translate all clauses of a function (top-level or lambda). *)
 and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcAttributes.t)
-    procname clauses =
+    procname clauses spec =
   (* Load formals into fresh identifiers. *)
   let idents, loads =
     let load (formal, typ, _) =
@@ -1210,10 +1198,16 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
     Block.any env blocks
   in
   let () =
-    (* Put the loading node before the translated clauses. *)
+    (* Put the loading node before the translated clauses or the specs (if any). *)
     let loads_node = Node.make_stmt env ~kind:ErlangCaseClause loads in
     Procdesc.get_start_node procdesc |~~> [loads_node] ;
-    loads_node |~~> [start]
+    match spec with
+    | Some spec ->
+        let assume_block = ErlangTypes.assume_spec env idents spec in
+        loads_node |~~> [assume_block.start] ;
+        assume_block.exit_success |~~> [start]
+    | None ->
+        loads_node |~~> [start]
   in
   let () =
     (* Finally, if all patterns fail, report error. *)
@@ -1248,7 +1242,8 @@ let translate_one_function (env : (_, _) Env.t) function_ clauses =
       procdesc= Env.Present procdesc
     ; result= Env.Present (Exp.Lvar (Pvar.get_ret_pvar procname)) }
   in
-  translate_function_clauses env procdesc attributes procname clauses
+  let spec = Env.UnqualifiedFunction.Map.find env.specs uf_name in
+  translate_function_clauses env procdesc attributes procname clauses spec
 
 
 (** Translate and store each function of a module. *)

@@ -55,3 +55,6 @@ val typ_of_name : ErlangTypeName.t -> Typ.t
 val ptr_typ_of_name : ErlangTypeName.t -> Typ.t
 
 val func_procname : (_, _) t -> Ast.function_ -> UnqualifiedFunction.t * Procname.t
+
+val has_type_instr : ('a, 'b) t -> result:Ident.t -> value:Exp.t -> ErlangTypeName.t -> Sil.instr
+(** Create an instruction that stores in a result if a given value has a given type. *)
