@@ -73,7 +73,6 @@ let release_resource access_path held =
   | Some (count, type_name) -> 
     ResourcesHeld.add access_path (decr_count count, type_name) held 
   | None -> 
-    let object_type = Typ.Name.CSharp.from_string "" in
     ResourcesHeld.add access_path (NonTop 0, TypeNameInfo.top) held
 
 
@@ -166,7 +165,7 @@ module Summary = struct
     let text = ref [] in
     let concat_text =
       ResourcesHeld.iter
-        (fun x (y, type_name) ->
+        (fun x (_, type_name) ->
           if check_count x held && debug then
             let type_name_str = TypeNameInfo.get type_name in
             match type_name_str with
