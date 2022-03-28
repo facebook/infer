@@ -115,6 +115,8 @@ end
 module ConditionChecks = struct
   include AbstractDomain.SafeInvertedMap (LatentConfig) (Branch)
 
+  let add_all x ~into = fold (fun k v acc -> add k v acc) x into
+
   let get_condition condition_map =
     fold
       (fun latent_config branch acc ->
@@ -247,26 +249,34 @@ end
 module ConfigLifted = AbstractDomain.Flat (ConfigName)
 
 module TempBool = struct
+  type checks = ConfigChecks.t * ConditionChecks.t
+
   type t =
     | Bot  (** bottom *)
-    | True of ConfigChecks.t  (** config checks when the temporary boolean is true *)
-    | False of ConfigChecks.t  (** config checks when the temporary boolean is false *)
-    | Joined of {true_: ConfigChecks.t; false_: ConfigChecks.t}
+    | True of checks  (** config checks when the temporary boolean is true *)
+    | False of checks  (** config checks when the temporary boolean is false *)
+    | Joined of {true_: checks; false_: checks}
         (** config checks when the temporary boolean is true or false *)
 
   let pp =
-    let pp_helper f (b, config_checks) =
-      F.fprintf f "@[%b when %a checked@]" b ConfigChecks.pp config_checks
+    let pp_helper f (b, (config_checks, condition_checks)) =
+      F.fprintf f "@[%b when %a and %a checked@]" b ConfigChecks.pp config_checks ConditionChecks.pp
+        condition_checks
     in
     fun f -> function
       | Bot ->
           AbstractDomain.BottomLiftedUtils.pp_bottom f
-      | True config_checks ->
-          pp_helper f (true, config_checks)
-      | False config_checks ->
-          pp_helper f (false, config_checks)
+      | True checks ->
+          pp_helper f (true, checks)
+      | False checks ->
+          pp_helper f (false, checks)
       | Joined {true_; false_} ->
           F.fprintf f "@[%a@ %a@]" pp_helper (true, true_) pp_helper (false, false_)
+
+
+  let checks_leq ~lhs ~rhs =
+    ConfigChecks.leq ~lhs:(fst lhs) ~rhs:(fst rhs)
+    && ConditionChecks.leq ~lhs:(snd lhs) ~rhs:(snd rhs)
 
 
   let leq ~lhs ~rhs =
@@ -279,29 +289,36 @@ module TempBool = struct
     | False c1, False c2
     | True c1, Joined {true_= c2}
     | False c1, Joined {false_= c2} ->
-        ConfigChecks.leq ~lhs:c1 ~rhs:c2
+        checks_leq ~lhs:c1 ~rhs:c2
     | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
-        ConfigChecks.leq ~lhs:t1 ~rhs:t2 && ConfigChecks.leq ~lhs:f1 ~rhs:f2
+        checks_leq ~lhs:t1 ~rhs:t2 && checks_leq ~lhs:f1 ~rhs:f2
     | _, _ ->
         false
 
+
+  let checks_join x y = (ConfigChecks.join (fst x) (fst y), ConditionChecks.join (snd x) (snd y))
 
   let join x y =
     match (x, y) with
     | Bot, v | v, Bot ->
         v
     | True c1, True c2 ->
-        True (ConfigChecks.join c1 c2)
+        True (checks_join c1 c2)
     | False c1, False c2 ->
-        False (ConfigChecks.join c1 c2)
+        False (checks_join c1 c2)
     | True c1, False c2 | False c2, True c1 ->
         Joined {true_= c1; false_= c2}
     | True c1, Joined {true_= c2; false_} | Joined {true_= c1; false_}, True c2 ->
-        Joined {true_= ConfigChecks.join c1 c2; false_}
+        Joined {true_= checks_join c1 c2; false_}
     | False c1, Joined {true_; false_= c2} | Joined {true_; false_= c1}, False c2 ->
-        Joined {true_; false_= ConfigChecks.join c1 c2}
+        Joined {true_; false_= checks_join c1 c2}
     | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
-        Joined {true_= ConfigChecks.join t1 t2; false_= ConfigChecks.join f1 f2}
+        Joined {true_= checks_join t1 t2; false_= checks_join f1 f2}
+
+
+  let checks_widen ~prev ~next ~num_iters =
+    ( ConfigChecks.widen ~prev:(fst prev) ~next:(fst next) ~num_iters
+    , ConditionChecks.widen ~prev:(snd prev) ~next:(snd next) ~num_iters )
 
 
   let widen ~prev ~next ~num_iters =
@@ -309,19 +326,19 @@ module TempBool = struct
     | Bot, v | v, Bot ->
         v
     | True c1, True c2 ->
-        True (ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters)
+        True (checks_widen ~prev:c1 ~next:c2 ~num_iters)
     | False c1, False c2 ->
-        False (ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters)
+        False (checks_widen ~prev:c1 ~next:c2 ~num_iters)
     | True c1, False c2 | False c2, True c1 ->
         Joined {true_= c1; false_= c2}
     | True c1, Joined {true_= c2; false_} | Joined {true_= c1; false_}, True c2 ->
-        Joined {true_= ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters; false_}
+        Joined {true_= checks_widen ~prev:c1 ~next:c2 ~num_iters; false_}
     | False c1, Joined {true_; false_= c2} | Joined {true_; false_= c1}, False c2 ->
-        Joined {true_; false_= ConfigChecks.widen ~prev:c1 ~next:c2 ~num_iters}
+        Joined {true_; false_= checks_widen ~prev:c1 ~next:c2 ~num_iters}
     | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
         Joined
-          { true_= ConfigChecks.widen ~prev:t1 ~next:t2 ~num_iters
-          ; false_= ConfigChecks.widen ~prev:f1 ~next:f2 ~num_iters }
+          { true_= checks_widen ~prev:t1 ~next:t2 ~num_iters
+          ; false_= checks_widen ~prev:f1 ~next:f2 ~num_iters }
 
 
   let bottom = Bot
@@ -728,8 +745,10 @@ module Dom = struct
     |> Option.value_map ~default:astate ~f:(function
          | `Unconditional (config, branch) ->
              {astate with config_checks= ConfigChecks.add config branch config_checks}
-         | `TempBool config_checks' ->
-             {astate with config_checks= ConfigChecks.add_all config_checks' ~into:config_checks}
+         | `TempBool (config_checks', condition_checks') ->
+             { astate with
+               config_checks= ConfigChecks.add_all config_checks' ~into:config_checks
+             ; condition_checks= ConditionChecks.add_all condition_checks' ~into:condition_checks }
          | `Conditional (conds, branch) ->
              { astate with
                condition_checks=
@@ -1100,7 +1119,7 @@ module TransferFunctions = struct
         |> add_ret analyze_dependency ret_id callee
 
 
-  let exec_instr ({Dom.config_checks} as astate)
+  let exec_instr ({Dom.config_checks; condition_checks} as astate)
       ({interproc= {tenv; analyze_dependency}; is_param} as analysis_data) node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e} -> (
@@ -1118,9 +1137,13 @@ module TransferFunctions = struct
         | _ ->
             astate ) )
     | Store {e1= Lvar pvar; e2= Const zero} when Const.iszero_int_float zero ->
-        Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:false config_checks) astate
+        Dom.add_mem (Loc.of_pvar pvar)
+          (Val.of_temp_bool ~is_true:false (config_checks, condition_checks))
+          astate
     | Store {e1= Lvar pvar; e2= Const one} when Const.isone_int_float one ->
-        Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:true config_checks) astate
+        Dom.add_mem (Loc.of_pvar pvar)
+          (Val.of_temp_bool ~is_true:true (config_checks, condition_checks))
+          astate
     | Store {e1= Lvar pvar; e2= Var id} ->
         Dom.store_config pvar id astate
     | Store {e1= Lvar pvar; e2= Exn _} when Pvar.is_return pvar ->
