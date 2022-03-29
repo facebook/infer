@@ -581,6 +581,12 @@ val pulse_recency_limit : int
 
 val pulse_scuba_logging : bool
 
+val pulse_simple_sanitizers : Yojson.Basic.t [@@warning "-32"]
+
+val pulse_simple_sinks : Yojson.Basic.t
+
+val pulse_simple_sources : Yojson.Basic.t
+
 val pulse_skip_procedures : Str.regexp option
 
 val pulse_widen_threshold : int

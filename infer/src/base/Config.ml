@@ -2256,6 +2256,28 @@ and pulse_model_return_first_arg =
     "Regex of methods that should be modelled as returning the first argument in Pulse"
 
 
+and pulse_simple_sanitizers =
+  CLOpt.mk_json ~long:"pulse-simple-sanitizers"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple sanitizers as a JSON objects. See $(b,--pulse-simple-sources) for \
+     the fields format documentation."
+
+
+and pulse_simple_sinks =
+  CLOpt.mk_json ~long:"pulse-simple-sinks"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple sinks as a JSON objects. See $(b,--pulse-simple-sources) for the \
+     fields format documentation."
+
+
+and pulse_simple_sources =
+  CLOpt.mk_json ~long:"pulse-simple-sources"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    {|Together with $(b,--pulse-simple-sinks) and $(b,--pulse-simple-sinks), this provides a quick way to specify simple taint properties, where all taint flows from any source flowing into any sink without passing through any sanitizer is reported. The JSON format is common to all three options, which expect a list of objects with the following fields, for example '[{"procedure": "mySimpleSink", "arg_indices": [1]}]':
+  - "procedure" to match a substring of the function or method name, or "procedure_regex" to specify an OCaml regex
+  - "arg_indices" (for sinks and sanitizers only): a list of integer positions of arguments to take into account, otherwise all of them will be considered as sinks/sanitizers|}
+
+
 and pulse_model_skip_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-skip-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3674,9 +3696,15 @@ and pulse_report_latent_issues = !pulse_report_latent_issues
 
 and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
-and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
-
 and pulse_scuba_logging = !pulse_scuba_logging
+
+and pulse_simple_sanitizers = !pulse_simple_sanitizers
+
+and pulse_simple_sinks = !pulse_simple_sinks
+
+and pulse_simple_sources = !pulse_simple_sources
+
+and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

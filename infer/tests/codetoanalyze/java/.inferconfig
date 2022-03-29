@@ -34,5 +34,23 @@
       "class": "android.view.View",
       "method": "findViewById"
     }
+  ],
+  "pulse-simple-sources": [
+    {"procedure": "inferSecretSource"},
+    {"procedure_regex": "codetoanalyze\\.java\\.quandary\\.ExternalSpecs\\.privateData.*"},
+    {"procedure": "codetoanalyze.java.quandary.InterfaceSpec.source"}
+  ],
+  "pulse-simple-sinks": [
+    {"procedure": "inferSensitiveSink"},
+    { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink1",
+      "arg_indices": [1] },
+    { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink2" },
+    { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sinkThatPropagates" },
+    { "procedure": "codetoanalyze.java.quandary.InterfaceSpec.sink" },
+    { "procedure": "codetoanalyze.java.quandary.ConstructorSink.<init>",
+      "arg_indices": [0] }
+  ],
+  "pulse-simple-sanitizers": [
+    { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sanitizer" }
   ]
 }

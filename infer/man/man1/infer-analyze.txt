@@ -354,6 +354,27 @@ OPTIONS
            --pulse-report-ignore-unknown-java-methods-patterns-reset, all
            issues will be reported regardless the presence of unknown code
 
+       --pulse-simple-sanitizers json
+           Quick way to specify simple sanitizers as a JSON objects. See
+           --pulse-simple-sources for the fields format documentation.
+
+       --pulse-simple-sinks json
+           Quick way to specify simple sinks as a JSON objects. See
+           --pulse-simple-sources for the fields format documentation.
+
+       --pulse-simple-sources json
+           Together with --pulse-simple-sinks and --pulse-simple-sinks, this
+           provides a quick way to specify simple taint properties, where all
+           taint flows from any source flowing into any sink without passing
+           through any sanitizer is reported. The JSON format is common to
+           all three options, which expect a list of objects with the
+           following fields, for example '[{"procedure": "mySimpleSink",
+           "arg_indices": [1]}]':             - "procedure" to match a substring of the function or method
+           name, or "procedure_regex" to specify an OCaml regex
+             - "arg_indices" (for sinks and sanitizers only): a list of
+           integer positions of arguments to take into account, otherwise all
+           of them will be considered as sinks/sanitizers
+
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.
 

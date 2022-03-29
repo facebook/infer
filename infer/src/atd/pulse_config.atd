@@ -1,0 +1,15 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+type matcher = {
+  (* exactly one of {procedure, procedure_regex} must be specified *)
+  ?procedure: string option;
+  ?procedure_regex: string option;
+  ~arg_indices: int list;
+}
+
+type matchers = matcher list
