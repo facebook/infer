@@ -1695,6 +1695,20 @@ and incremental_analysis =
      $(b,--reanalyze) and $(b,--continue-analysis)."
 
 
+and _inferconfig_path =
+  (* This is a no-op argument ensuring a meaningful message in case of error, as well as to
+     silently consume the argument which is parsed specially. *)
+  CLOpt.mk_path ~long:CLOpt.inferconfig_path_arg ~default:""
+    CommandDoc.(
+      Printf.sprintf
+        "Path to the $(b, %s) file, overriding the effects of the $(b, %s) environment variable as \
+         well as the filesystem search in the current working directory and its ancestors.\n\n\
+         NB: This option is parsed in a special pass over the command line, so it is always set \
+         (and the corresponding $(b, %s) file is read) first. In addition, this option will not \
+         function properly if used inside a $(b, %s) file."
+        inferconfig_file inferconfig_env_var inferconfig_file inferconfig_file)
+
+
 and issues_tests_fields =
   CLOpt.mk_symbol_seq ~long:"issues-tests-fields"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -2915,12 +2929,26 @@ let inferconfig_dir =
   find (Sys.getcwd ())
 
 
+let parse_inferconfig_path_arg () =
+  let full_arg = "--" ^ CLOpt.inferconfig_path_arg in
+  let argv = Sys.get_argv () |> Array.copy in
+  (* reverse in order to find last occurrence of [--inferconfig-path] *)
+  Array.rev_inplace argv ;
+  Array.findi argv ~f:(fun _ arg -> String.equal full_arg arg)
+  |> Option.bind ~f:(fun (index, _) ->
+         if index > 0 then Some (Array.get argv (index - 1)) else None )
+
+
 let inferconfig_file =
-  match Sys.getenv CommandDoc.inferconfig_env_var with
-  | Some _ as env_path ->
-      env_path
-  | None ->
-      Option.map inferconfig_dir ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
+  match parse_inferconfig_path_arg () with
+  | Some _ as some_inferconfig ->
+      some_inferconfig
+  | None -> (
+    match Sys.getenv CommandDoc.inferconfig_env_var with
+    | Some _ as env_path ->
+        env_path
+    | None ->
+        Option.map inferconfig_dir ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file) )
 
 
 let post_parsing_initialization command_opt =

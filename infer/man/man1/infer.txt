@@ -1570,8 +1570,12 @@ FILES
        location of the .inferconfig file
        - cumulative options are JSON arrays of the appropriate type
 
-       Infer will look for an .inferconfig file in the current directory,
-       then its parent, etc., stopping at the first .inferconfig file found.
+       If an .inferconfig file is specified on the command line with
+       --inferconfig-path then Infer will use that. Otherwise, Infer will
+       look for an .inferconfig file in the environment variable INFERCONFIG.
+       Finally, Infer will first look for an .inferconfig file in the current
+       directory, then its parent, etc., stopping at the first .inferconfig
+       file found.
 
        Example:
 

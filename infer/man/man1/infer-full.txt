@@ -1990,6 +1990,16 @@ INTERNAL OPTIONS
            files. Not compatible with --reanalyze and --continue-analysis.
            (Conversely: --no-incremental-analysis)
 
+       --inferconfig-path path
+           Path to the .inferconfig file, overriding the effects of the
+           INFERCONFIG environment variable as well as the filesystem search
+           in the current working directory and its ancestors.       
+    
+           NB: This option is parsed in a special pass over the command
+           line, so it is always set (and the corresponding  .inferconfig
+           file is read) first. In addition, this option will not function
+           properly if used inside a  .inferconfig file.
+
        --issues-tests-reset
            Cancel the effect of --issues-tests.
 
@@ -2539,8 +2549,12 @@ FILES
        location of the .inferconfig file
        - cumulative options are JSON arrays of the appropriate type
 
-       Infer will look for an .inferconfig file in the current directory,
-       then its parent, etc., stopping at the first .inferconfig file found.
+       If an .inferconfig file is specified on the command line with
+       --inferconfig-path then Infer will use that. Otherwise, Infer will
+       look for an .inferconfig file in the environment variable INFERCONFIG.
+       Finally, Infer will first look for an .inferconfig file in the current
+       directory, then its parent, etc., stopping at the first .inferconfig
+       file found.
 
        Example:
 
