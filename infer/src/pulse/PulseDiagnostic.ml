@@ -469,11 +469,16 @@ let get_trace = function
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]
   | TaintFlow {source= _, source_history; sink= sink, sink_trace} ->
-      (* TODO: the sink trace includes the history for the source, creating duplicate information in
-         the trace. The history in the sink can also go further into source code than we want if the
-         source is a function that we analyze. *)
+      (* TODO: the sink trace includes the history for the source in its own value history,
+         creating duplicate information in the trace if we don't pass
+         [include_value_history:false]. The history in the sink can also go further into source
+         code than we want if the source is a function that we analyze. Ideally we would cut just
+         the overlapping histories from [sink_trace] instead of not including value histories
+         altogether. *)
       ValueHistory.add_to_errlog ~nesting:0 source_history
-      @@ Trace.add_to_errlog ~nesting:0 ~pp_immediate:(fun fmt -> Taint.pp_sink fmt sink) sink_trace
+      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
+           ~pp_immediate:(fun fmt -> Taint.pp_sink fmt sink)
+           sink_trace
       @@ []
   | UnnecessaryCopy {location; _} ->
       let nesting = 0 in
