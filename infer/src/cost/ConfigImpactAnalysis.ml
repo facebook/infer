@@ -71,12 +71,6 @@ module Branch = struct
   let is_top = function Top -> true | True | False | Lt _ | Gt _ | Le _ | Ge _ -> false
 end
 
-module ConfigChecks = struct
-  include AbstractDomain.SafeInvertedMap (ConfigName) (Branch)
-
-  let add_all x ~into = fold (fun k v acc -> add k v acc) x into
-end
-
 module Field = struct
   include Fieldname
 
@@ -112,17 +106,39 @@ module LatentConfigs = struct
         false
 end
 
-module ConditionChecks = struct
-  include AbstractDomain.SafeInvertedMap (LatentConfig) (Branch)
+module MakeConditionChecks (Key : PrettyPrintable.PrintableOrderedType) = struct
+  include AbstractDomain.SafeInvertedMap (Key) (Branch)
 
   let add_all x ~into = fold (fun k v acc -> add k v acc) x into
+end
 
-  let get_condition condition_map =
-    fold
-      (fun latent_config branch acc ->
-        assert (not (Branch.is_top branch)) ;
-        LatentConfigs.add latent_config acc )
-      condition_map LatentConfigs.empty
+module ConfigChecks = MakeConditionChecks (ConfigName)
+
+module LatentConfigChecks = struct
+  include MakeConditionChecks (LatentConfig)
+
+  let get_configs x =
+    let add_latent_config config branch acc =
+      assert (not (Branch.is_top branch)) ;
+      LatentConfigs.add config acc
+    in
+    fold add_latent_config x LatentConfigs.empty
+end
+
+module ConditionChecks = struct
+  include AbstractDomain.PairWithTop (ConfigChecks) (LatentConfigChecks)
+
+  let add_config config branch (config_checks, latent_config_checks) =
+    (ConfigChecks.add config branch config_checks, latent_config_checks)
+
+
+  let add_latent_config config branch (config_checks, latent_config_checks) =
+    (config_checks, LatentConfigChecks.add config branch latent_config_checks)
+
+
+  let add_all (config_checks, latent_config_checks) ~into =
+    ( ConfigChecks.add_all config_checks ~into:(fst into)
+    , LatentConfigChecks.add_all latent_config_checks ~into:(snd into) )
 end
 
 module UncheckedCallee = struct
@@ -249,19 +265,16 @@ end
 module ConfigLifted = AbstractDomain.Flat (ConfigName)
 
 module TempBool = struct
-  type checks = ConfigChecks.t * ConditionChecks.t
-
   type t =
     | Bot  (** bottom *)
-    | True of checks  (** config checks when the temporary boolean is true *)
-    | False of checks  (** config checks when the temporary boolean is false *)
-    | Joined of {true_: checks; false_: checks}
+    | True of ConditionChecks.t  (** config checks when the temporary boolean is true *)
+    | False of ConditionChecks.t  (** config checks when the temporary boolean is false *)
+    | Joined of {true_: ConditionChecks.t; false_: ConditionChecks.t}
         (** config checks when the temporary boolean is true or false *)
 
   let pp =
-    let pp_helper f (b, (config_checks, condition_checks)) =
-      F.fprintf f "@[%b when %a and %a checked@]" b ConfigChecks.pp config_checks ConditionChecks.pp
-        condition_checks
+    let pp_helper f (b, condition_checks) =
+      F.fprintf f "@[%b when %a checked@]" b ConditionChecks.pp condition_checks
     in
     fun f -> function
       | Bot ->
@@ -274,11 +287,6 @@ module TempBool = struct
           F.fprintf f "@[%a@ %a@]" pp_helper (true, true_) pp_helper (false, false_)
 
 
-  let checks_leq ~lhs ~rhs =
-    ConfigChecks.leq ~lhs:(fst lhs) ~rhs:(fst rhs)
-    && ConditionChecks.leq ~lhs:(snd lhs) ~rhs:(snd rhs)
-
-
   let leq ~lhs ~rhs =
     match (lhs, rhs) with
     | Bot, _ ->
@@ -289,36 +297,29 @@ module TempBool = struct
     | False c1, False c2
     | True c1, Joined {true_= c2}
     | False c1, Joined {false_= c2} ->
-        checks_leq ~lhs:c1 ~rhs:c2
+        ConditionChecks.leq ~lhs:c1 ~rhs:c2
     | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
-        checks_leq ~lhs:t1 ~rhs:t2 && checks_leq ~lhs:f1 ~rhs:f2
+        ConditionChecks.leq ~lhs:t1 ~rhs:t2 && ConditionChecks.leq ~lhs:f1 ~rhs:f2
     | _, _ ->
         false
 
-
-  let checks_join x y = (ConfigChecks.join (fst x) (fst y), ConditionChecks.join (snd x) (snd y))
 
   let join x y =
     match (x, y) with
     | Bot, v | v, Bot ->
         v
     | True c1, True c2 ->
-        True (checks_join c1 c2)
+        True (ConditionChecks.join c1 c2)
     | False c1, False c2 ->
-        False (checks_join c1 c2)
+        False (ConditionChecks.join c1 c2)
     | True c1, False c2 | False c2, True c1 ->
         Joined {true_= c1; false_= c2}
     | True c1, Joined {true_= c2; false_} | Joined {true_= c1; false_}, True c2 ->
-        Joined {true_= checks_join c1 c2; false_}
+        Joined {true_= ConditionChecks.join c1 c2; false_}
     | False c1, Joined {true_; false_= c2} | Joined {true_; false_= c1}, False c2 ->
-        Joined {true_; false_= checks_join c1 c2}
+        Joined {true_; false_= ConditionChecks.join c1 c2}
     | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
-        Joined {true_= checks_join t1 t2; false_= checks_join f1 f2}
-
-
-  let checks_widen ~prev ~next ~num_iters =
-    ( ConfigChecks.widen ~prev:(fst prev) ~next:(fst next) ~num_iters
-    , ConditionChecks.widen ~prev:(snd prev) ~next:(snd next) ~num_iters )
+        Joined {true_= ConditionChecks.join t1 t2; false_= ConditionChecks.join f1 f2}
 
 
   let widen ~prev ~next ~num_iters =
@@ -326,19 +327,19 @@ module TempBool = struct
     | Bot, v | v, Bot ->
         v
     | True c1, True c2 ->
-        True (checks_widen ~prev:c1 ~next:c2 ~num_iters)
+        True (ConditionChecks.widen ~prev:c1 ~next:c2 ~num_iters)
     | False c1, False c2 ->
-        False (checks_widen ~prev:c1 ~next:c2 ~num_iters)
+        False (ConditionChecks.widen ~prev:c1 ~next:c2 ~num_iters)
     | True c1, False c2 | False c2, True c1 ->
         Joined {true_= c1; false_= c2}
     | True c1, Joined {true_= c2; false_} | Joined {true_= c1; false_}, True c2 ->
-        Joined {true_= checks_widen ~prev:c1 ~next:c2 ~num_iters; false_}
+        Joined {true_= ConditionChecks.widen ~prev:c1 ~next:c2 ~num_iters; false_}
     | False c1, Joined {true_; false_= c2} | Joined {true_; false_= c1}, False c2 ->
-        Joined {true_; false_= checks_widen ~prev:c1 ~next:c2 ~num_iters}
+        Joined {true_; false_= ConditionChecks.widen ~prev:c1 ~next:c2 ~num_iters}
     | Joined {true_= t1; false_= f1}, Joined {true_= t2; false_= f2} ->
         Joined
-          { true_= checks_widen ~prev:t1 ~next:t2 ~num_iters
-          ; false_= checks_widen ~prev:f1 ~next:f2 ~num_iters }
+          { true_= ConditionChecks.widen ~prev:t1 ~next:t2 ~num_iters
+          ; false_= ConditionChecks.widen ~prev:f1 ~next:f2 ~num_iters }
 
 
   let bottom = Bot
@@ -563,8 +564,7 @@ end
 
 module Dom = struct
   type t =
-    { config_checks: ConfigChecks.t
-    ; condition_checks: ConditionChecks.t
+    { condition_checks: ConditionChecks.t
     ; unchecked_callees: UncheckedCallees.t
     ; unchecked_callees_cond: UncheckedCalleesCond.t
     ; mem: Mem.t
@@ -573,8 +573,7 @@ module Dom = struct
     ; latent_config_alias: LatentConfigAlias.t }
 
   let pp f
-      { config_checks
-      ; condition_checks
+      { condition_checks
       ; unchecked_callees
       ; unchecked_callees_cond
       ; mem
@@ -582,8 +581,7 @@ module Dom = struct
       ; gated_classes
       ; latent_config_alias } =
     F.fprintf f
-      "@[@[config checks:@,\
-       %a@]@ @[condition checks:@,\
+      "@[@[condition checks:@,\
        %a@]@ @[unchecked callees:@,\
        %a@]@ @[unchecked callees cond:@,\
        %a@]@ @[mem:@,\
@@ -591,14 +589,13 @@ module Dom = struct
        %a@]@ @[gated classes:@,\
        %a@]@ @[latent config alias:@,\
        %a@]@]"
-      ConfigChecks.pp config_checks ConditionChecks.pp condition_checks UncheckedCallees.pp
-      unchecked_callees UncheckedCalleesCond.pp unchecked_callees_cond Mem.pp mem LatentConfigs.pp
-      configs GatedClasses.pp gated_classes LatentConfigAlias.pp latent_config_alias
+      ConditionChecks.pp condition_checks UncheckedCallees.pp unchecked_callees
+      UncheckedCalleesCond.pp unchecked_callees_cond Mem.pp mem LatentConfigs.pp configs
+      GatedClasses.pp gated_classes LatentConfigAlias.pp latent_config_alias
 
 
   let leq ~lhs ~rhs =
-    ConfigChecks.leq ~lhs:lhs.config_checks ~rhs:rhs.config_checks
-    && ConditionChecks.leq ~lhs:lhs.condition_checks ~rhs:rhs.condition_checks
+    ConditionChecks.leq ~lhs:lhs.condition_checks ~rhs:rhs.condition_checks
     && UncheckedCallees.leq ~lhs:lhs.unchecked_callees ~rhs:rhs.unchecked_callees
     && UncheckedCalleesCond.leq ~lhs:lhs.unchecked_callees_cond ~rhs:rhs.unchecked_callees_cond
     && Mem.leq ~lhs:lhs.mem ~rhs:rhs.mem
@@ -608,8 +605,7 @@ module Dom = struct
 
 
   let join x y =
-    { config_checks= ConfigChecks.join x.config_checks y.config_checks
-    ; condition_checks= ConditionChecks.join x.condition_checks y.condition_checks
+    { condition_checks= ConditionChecks.join x.condition_checks y.condition_checks
     ; unchecked_callees= UncheckedCallees.join x.unchecked_callees y.unchecked_callees
     ; unchecked_callees_cond=
         UncheckedCalleesCond.join x.unchecked_callees_cond y.unchecked_callees_cond
@@ -620,8 +616,7 @@ module Dom = struct
 
 
   let widen ~prev ~next ~num_iters =
-    { config_checks= ConfigChecks.widen ~prev:prev.config_checks ~next:next.config_checks ~num_iters
-    ; condition_checks=
+    { condition_checks=
         ConditionChecks.widen ~prev:prev.condition_checks ~next:next.condition_checks ~num_iters
     ; unchecked_callees=
         UncheckedCallees.widen ~prev:prev.unchecked_callees ~next:next.unchecked_callees ~num_iters
@@ -650,8 +645,7 @@ module Dom = struct
 
 
   let init =
-    { config_checks= ConfigChecks.top
-    ; condition_checks= ConditionChecks.top
+    { condition_checks= ConditionChecks.top
     ; unchecked_callees= UncheckedCallees.bottom
     ; unchecked_callees_cond= UncheckedCalleesCond.bottom
     ; mem= Mem.bottom
@@ -740,20 +734,20 @@ module Dom = struct
         None
 
 
-  let prune e ({config_checks; condition_checks; mem} as astate) =
+  let prune e ({condition_checks; mem} as astate) =
     get_config_check_prune ~is_true_branch:true e mem
     |> Option.value_map ~default:astate ~f:(function
          | `Unconditional (config, branch) ->
-             {astate with config_checks= ConfigChecks.add config branch config_checks}
-         | `TempBool (config_checks', condition_checks') ->
              { astate with
-               config_checks= ConfigChecks.add_all config_checks' ~into:config_checks
-             ; condition_checks= ConditionChecks.add_all condition_checks' ~into:condition_checks }
+               condition_checks= ConditionChecks.add_config config branch condition_checks }
+         | `TempBool condition_checks' ->
+             { astate with
+               condition_checks= ConditionChecks.add_all condition_checks' ~into:condition_checks }
          | `Conditional (conds, branch) ->
              { astate with
                condition_checks=
                  LatentConfigs.fold
-                   (fun latent_config acc -> ConditionChecks.add latent_config branch acc)
+                   (fun config acc -> ConditionChecks.add_latent_config config branch acc)
                    conds condition_checks } )
 
 
@@ -841,8 +835,8 @@ module Dom = struct
     || (is_config_getter_typ ~is_static ret_typ args && String.is_prefix method_name ~prefix:"get")
 
 
-  let update_gated_callees ~callee args ({config_checks; condition_checks; gated_classes} as astate)
-      =
+  let update_gated_callees ~callee args
+      ({condition_checks= config_checks, latent_config_checks; gated_classes} as astate) =
     match args with
     | [(Exp.Sizeof {typ= {desc= Tstruct typ_name}}, _)]
       when Procname.equal callee BuiltinDecl.__objc_alloc_no_fail ->
@@ -851,10 +845,10 @@ module Dom = struct
           {astate with gated_classes= GatedClasses.add_gated typ_name gated_classes}
         else
           let cond =
-            ConditionChecks.fold
+            LatentConfigChecks.fold
               (fun latent_config branch acc ->
                 match branch with True -> LatentConfigs.add latent_config acc | _ -> acc )
-              condition_checks LatentConfigs.empty
+              latent_config_checks LatentConfigs.empty
           in
           if LatentConfigs.is_empty cond then
             (* Ungated by any condition *)
@@ -884,15 +878,17 @@ module Dom = struct
 
   let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost option)
       ret_typ ~callee formals args location
-      ({config_checks; condition_checks; unchecked_callees; unchecked_callees_cond} as astate) =
+      ( { condition_checks= config_checks, latent_config_checks
+        ; unchecked_callees
+        ; unchecked_callees_cond } as astate ) =
     let join_unchecked_callees new_unchecked_callees new_unchecked_callees_cond =
-      if ConditionChecks.is_top condition_checks then
+      if LatentConfigChecks.is_top latent_config_checks then
         { astate with
           unchecked_callees= UncheckedCallees.join unchecked_callees new_unchecked_callees
         ; unchecked_callees_cond=
             UncheckedCalleesCond.join unchecked_callees_cond new_unchecked_callees_cond }
       else
-        let cond_to_add = ConditionChecks.get_condition condition_checks in
+        let cond_to_add = LatentConfigChecks.get_configs latent_config_checks in
         let unchecked_callees_cond =
           UncheckedCalleesCond.weak_update cond_to_add new_unchecked_callees unchecked_callees_cond
         in
@@ -1119,7 +1115,7 @@ module TransferFunctions = struct
         |> add_ret analyze_dependency ret_id callee
 
 
-  let exec_instr ({Dom.config_checks; condition_checks} as astate)
+  let exec_instr ({Dom.condition_checks} as astate)
       ({interproc= {tenv; analyze_dependency}; is_param} as analysis_data) node idx instr =
     match (instr : Sil.instr) with
     | Load {id; e} -> (
@@ -1137,13 +1133,9 @@ module TransferFunctions = struct
         | _ ->
             astate ) )
     | Store {e1= Lvar pvar; e2= Const zero} when Const.iszero_int_float zero ->
-        Dom.add_mem (Loc.of_pvar pvar)
-          (Val.of_temp_bool ~is_true:false (config_checks, condition_checks))
-          astate
+        Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:false condition_checks) astate
     | Store {e1= Lvar pvar; e2= Const one} when Const.isone_int_float one ->
-        Dom.add_mem (Loc.of_pvar pvar)
-          (Val.of_temp_bool ~is_true:true (config_checks, condition_checks))
-          astate
+        Dom.add_mem (Loc.of_pvar pvar) (Val.of_temp_bool ~is_true:true condition_checks) astate
     | Store {e1= Lvar pvar; e2= Var id} ->
         Dom.store_config pvar id astate
     | Store {e1= Lvar pvar; e2= Exn _} when Pvar.is_return pvar ->

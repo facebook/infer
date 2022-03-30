@@ -103,6 +103,9 @@ module Pair (Domain1 : S) (Domain2 : S) : S with type t = Domain1.t * Domain2.t
 module PairWithBottom (Domain1 : WithBottom) (Domain2 : WithBottom) :
   WithBottom with type t = Domain1.t * Domain2.t
 
+module PairWithTop (Domain1 : WithTop) (Domain2 : WithTop) :
+  WithTop with type t = Domain1.t * Domain2.t
+
 module PairDisjunct (Domain1 : Disjunct) (Domain2 : Disjunct) :
   Disjunct with type t = Domain1.t * Domain2.t
 
