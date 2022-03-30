@@ -66,20 +66,9 @@ let check_type env value typ : Block.t =
   {start; exit_success; exit_failure}
 
 
-(** into_id=expr.field_name *)
-let load_field_from_expr (env : (_, _) Env.t) into_id expr field_name typ : Sil.instr =
-  let field = Fieldname.make (ErlangType typ) field_name in
-  Load
-    { id= into_id
-    ; e= Lfield (expr, field, Env.typ_of_name typ)
-    ; root_typ= any_typ
-    ; typ= any_typ
-    ; loc= env.location }
-
-
 (** into_id=value_id.field_name *)
 let load_field_from_id (env : (_, _) Env.t) into_id value_id field_name typ : Sil.instr =
-  load_field_from_expr env into_id (Var value_id) field_name typ
+  Env.load_field_from_expr env into_id (Var value_id) field_name typ
 
 
 let mk_atom_call (env : (_, _) Env.t) ret_var atom =
@@ -118,7 +107,7 @@ let unbox_bool env expr : Exp.t * Block.t =
   let prune_node = Node.make_if env true (Var is_atom) in
   let hash_id = mk_fresh_id () in
   let load =
-    Node.make_stmt env [load_field_from_expr env hash_id expr ErlangTypeName.atom_hash Atom]
+    Node.make_stmt env [Env.load_field_from_expr env hash_id expr ErlangTypeName.atom_hash Atom]
   in
   let check_hash_expr =
     let hash = ErlangTypeName.calculate_hash ErlangTypeName.atom_true in

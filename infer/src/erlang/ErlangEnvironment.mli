@@ -60,3 +60,7 @@ val has_type_instr : ('a, 'b) t -> result:Ident.t -> value:Exp.t -> ErlangTypeNa
 (** Create an instruction that stores in a result if a given value has a given type. *)
 
 val procname_for_user_type : module_name -> module_name -> Procname.t
+
+val load_field_from_expr :
+  ('a, 'b) t -> Ident.t -> Exp.t -> module_name -> ErlangTypeName.t -> Sil.instr
+(** Create an instruction into_id=expr.field_name *)

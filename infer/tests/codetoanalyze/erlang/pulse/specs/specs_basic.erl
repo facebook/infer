@@ -21,6 +21,17 @@ atom_Ok(X) when is_atom(X) -> ok.
 
 atom_Latent(X) when is_atom(X) -> ok.
 
+-spec atom_literal1_Ok('ok') -> any().
+atom_literal1_Ok(X) when is_atom(X) -> ok.
+
+atom_literal2_Latent(X) when is_atom(X) -> ok.
+
+% T115354480
+-spec fp_atom_literal3_Ok('ok') -> any().
+fp_atom_literal3_Ok(ok) -> ok.
+
+atom_literal4_Latent(ok) -> ok.
+
 -spec map_Ok(map()) -> any().
 map_Ok(X) when is_map(X) -> ok.
 

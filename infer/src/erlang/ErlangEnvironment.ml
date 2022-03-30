@@ -164,3 +164,15 @@ let procname_for_user_type module_name name =
   (* Avoid conflict with a "normal" function that has the same name as the type and arity of 1. *)
   let function_name = "__infer_assume_type_" ^ name in
   Procname.make_erlang ~module_name ~function_name ~arity:1
+
+
+(** into_id=expr.field_name *)
+let load_field_from_expr (env : (_, _) t) into_id expr field_name typ : Sil.instr =
+  let any_typ = ptr_typ_of_name Any in
+  let field = Fieldname.make (ErlangType typ) field_name in
+  Load
+    { id= into_id
+    ; e= Lfield (expr, field, typ_of_name typ)
+    ; root_typ= any_typ
+    ; typ= any_typ
+    ; loc= env.location }

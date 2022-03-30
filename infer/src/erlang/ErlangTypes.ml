@@ -18,12 +18,12 @@ let true_const = Exp.Const (Cint IntLit.one)
 
 let succ_true env = (Block.make_success env, true_const)
 
+let any_typ = Env.ptr_typ_of_name Any
+
 let combine_bool ~op ~default exprs =
   let f e1 e2 = Exp.BinOp (op, e1, e2) in
   match List.reduce exprs ~f with Some expr -> expr | None -> default
 
-
-let any_typ = Env.ptr_typ_of_name Any
 
 let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t * Ast.type_) :
     Block.t * Exp.t =
@@ -53,6 +53,17 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       succ_true env
   | Atom Any ->
       simple_condition Atom
+  | Atom (Literal a) ->
+      let is_atom_block, is_atom_cond = simple_condition Atom in
+      let actual_hash = mk_fresh_id () in
+      let load_instr =
+        Env.load_field_from_expr env actual_hash (Var arg_id) ErlangTypeName.atom_hash Atom
+      in
+      let expected_hash = Exp.Const (Cint (IntLit.of_int (ErlangTypeName.calculate_hash a))) in
+      let condition =
+        Exp.BinOp (Binop.LAnd, is_atom_cond, Exp.BinOp (Binop.Eq, Var actual_hash, expected_hash))
+      in
+      (Block.all env [is_atom_block; Block.make_instruction env [load_instr]], condition)
   | List (Proper _) ->
       let block1, expr1 = simple_condition Cons in
       let block2, expr2 = simple_condition Nil in
