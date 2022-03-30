@@ -566,6 +566,8 @@ nonmatch_tuples:test_size4_Bad/0: function_clause
 specs_basic:test_no_args_Bad/0: {badmatch,2}
 specs_basic:test_no_args_Ok/0: ok
 
+----- specs_overloads -----
+
 ----- specs_remote -----
 
 ----- specs_typevars -----

@@ -14,11 +14,13 @@ module Node = ErlangNode
 
 let mk_fresh_id () = Ident.create_fresh Ident.knormal
 
-let succ_true env = (Block.make_success env, Exp.Const (Cint IntLit.one))
+let true_const = Exp.Const (Cint IntLit.one)
 
-let combine_bool exprs op =
+let succ_true env = (Block.make_success env, true_const)
+
+let combine_bool ~op ~default exprs =
   let f e1 e2 = Exp.BinOp (op, e1, e2) in
-  match List.reduce exprs ~f with Some expr -> expr | None -> Exp.Const (Cint IntLit.one)
+  match List.reduce exprs ~f with Some expr -> expr | None -> default
 
 
 let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t * Ast.type_) :
@@ -65,7 +67,8 @@ let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t 
   | Union types ->
       let f t = assume_type env constraints (arg_id, t) in
       let blocks, exprs = List.unzip (List.map ~f types) in
-      (Block.all env blocks, combine_bool exprs Binop.LOr)
+      (* Union shouldn't be empty, but if it somehow happens, just return true. *)
+      (Block.all env blocks, combine_bool ~op:Binop.LOr ~default:true_const exprs)
   | UserDefined name ->
       assume_userdef env.current_module name
   | Var v -> (
@@ -94,7 +97,7 @@ let assume_spec_disjunct (env : (_, _) Env.t) arg_ids (function_ : Ast.function_
       let blocks, exprs =
         List.unzip (List.map ~f:(assume_type env specd.constraints) args_with_types)
       in
-      (Block.all env blocks, combine_bool exprs Binop.LAnd)
+      (Block.all env blocks, combine_bool ~op:Binop.LAnd ~default:true_const exprs)
   | Unequal_lengths ->
       L.debug Capture Verbose
         "@[Number of arguments and specs do not match in module %s function %s@." env.current_module
@@ -109,7 +112,8 @@ let assume_spec (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
   in
   let prune_block =
     (* We could also use nondeterminism among blocks which could give more precision. *)
-    let condition = combine_bool exprs Binop.LOr in
+    (* Overloads shouldn't be empty, but if it somehow happens, just return true. *)
+    let condition = combine_bool ~op:Binop.LOr ~default:true_const exprs in
     let prune_node = Node.make_if env true condition in
     {Block.start= prune_node; exit_success= prune_node; exit_failure= Node.make_nop env}
   in
