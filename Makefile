@@ -64,6 +64,7 @@ DIRECT_TESTS += \
   cpp_bufferoverrun \
   cpp_conflicts \
   cpp_frontend \
+  cpp_frontend-17 \
   cpp_impurity \
   cpp_linters \
   cpp_linters-for-test-only \

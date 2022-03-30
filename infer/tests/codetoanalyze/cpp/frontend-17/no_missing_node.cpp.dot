@@ -1,0 +1,41 @@
+/* @generated */
+digraph cfg {
+"no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_1" [label="1: Start no_missing_node\nFormals:  __return_param:Sub*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:int \n  " color=yellow style=filled]
+	
+
+	 "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_1" -> "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_4" ;
+"no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_2" [label="2: Exit no_missing_node \n  " color=yellow style=filled]
+	
+
+"no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:int); [line 30, column 42]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:int=(unsigned int)0 [line 30, column 42]\n " shape="box"]
+	
+
+	 "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_3" -> "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_5" ;
+"no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_4" [label="4:  Return Stmt \n   n$0=*&__return_param:Sub* [line 30, column 25]\n " shape="box"]
+	
+
+	 "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_4" -> "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_3" ;
+"no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_5" [label="5:  Return Stmt \n   n$2=_fun_EnumWrapper::EnumWrapper(n$0:Sub*,&0$?%__sil_tmpSIL_materialize_temp__n$1:int&) [line 30, column 42]\n  *n$0.f1.v:int=0 [line 30, column 48]\n  *n$0.f2:int=0 [line 30, column 48]\n " shape="box"]
+	
+
+	 "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_5" -> "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_6" ;
+"no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_6" [label="6:  Return Stmt \n  " shape="box"]
+	
+
+	 "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_6" -> "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_2" ;
+"EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_1" [label="1: Start EnumWrapper::EnumWrapper\nFormals:  this:EnumWrapper* v:int&\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_1" -> "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_3" ;
+"EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_2" [label="2: Exit EnumWrapper::EnumWrapper \n  " color=yellow style=filled]
+	
+
+"EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_3" [label="3:  Constructor Init \n   n$1=*&this:EnumWrapper* [line 17, column 27]\n " shape="box"]
+	
+
+	 "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_3" -> "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_4" ;
+"EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_4" [label="4:  Constructor Init \n   n$2=*&v:int& [line 17, column 29]\n  n$3=*n$2:int [line 17, column 29]\n  *n$1.v:int=n$3 [line 17, column 27]\n " shape="box"]
+	
+
+	 "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_4" -> "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_2" ;
+}

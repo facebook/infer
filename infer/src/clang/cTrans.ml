@@ -5253,7 +5253,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             exec_trans_instrs_rev trans_state' trans_stmt_fun_list'
           in
           ( { root_nodes= control_tail_rev.root_nodes
-            ; leaf_nodes= res_trans_s.control.leaf_nodes
+            ; leaf_nodes=
+                ( if not (List.is_empty res_trans_s.control.leaf_nodes) then
+                  res_trans_s.control.leaf_nodes
+                else control_tail_rev.leaf_nodes )
             ; instrs= List.rev_append res_trans_s.control.instrs control_tail_rev.instrs
             ; initd_exps= List.rev_append res_trans_s.control.initd_exps control_tail_rev.initd_exps
             ; cxx_temporary_markers_set=
