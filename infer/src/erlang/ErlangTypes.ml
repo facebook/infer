@@ -23,6 +23,8 @@ let combine_bool ~op ~default exprs =
   match List.reduce exprs ~f with Some expr -> expr | None -> default
 
 
+let any_typ = Env.ptr_typ_of_name Any
+
 let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t * Ast.type_) :
     Block.t * Exp.t =
   let simple_condition typ =
@@ -110,11 +112,18 @@ let prune_spec (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
   let blocks, conditions =
     List.unzip (List.map ~f:(disjunct_condition env arg_ids spec.function_) spec.specs)
   in
+  (* We could also use nondeterminism among blocks which could give more precision. *)
+  (* Overloads shouldn't be empty, but if it somehow happens, just return true. *)
+  let condition = combine_bool ~op:Binop.LOr ~default:true_const conditions in
+  (* We could put the condition directly in the prune node, but we introduce a temp variable to help
+     Pulse figure out the unsatisfiability of some formulas. In short, the limitation is that if
+     a Pulse model for a function introduces a disjunction being false, it has (A or B) = C and C = 0.
+     If we put the disjunction directly in the prune node, it will add (A or B) != 0 in the formula,
+     and somehow Infer can't figure out that this is unsat. Adding a temp variable helps. T115354480 *)
+  let cond_id = mk_fresh_id () in
+  let load_block = Block.make_load env cond_id condition any_typ in
   let prune_block =
-    (* We could also use nondeterminism among blocks which could give more precision. *)
-    (* Overloads shouldn't be empty, but if it somehow happens, just return true. *)
-    let condition = combine_bool ~op:Binop.LOr ~default:true_const conditions in
-    let prune_node = Node.make_if env true condition in
+    let prune_node = Node.make_if env true (Var cond_id) in
     {Block.start= prune_node; exit_success= prune_node; exit_failure= Node.make_nop env}
   in
-  Block.all env (blocks @ [prune_block])
+  Block.all env (blocks @ [load_block; prune_block])

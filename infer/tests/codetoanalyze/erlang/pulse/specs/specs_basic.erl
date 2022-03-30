@@ -51,9 +51,8 @@ nil3_Latent([]) -> ok.
 list1_Ok([_|_]) -> cons;
 list1_Ok([]) -> nil.
 
-% Known limitation in Pulse
--spec fp_list2_Ok(list()) -> any().
-fp_list2_Ok(X) when is_list(X) -> ok.
+-spec list2_Ok(list()) -> any().
+list2_Ok(X) when is_list(X) -> ok.
 
 -spec list3_Ok(list(any())) -> any().
 list3_Ok([_|_]) -> cons;
