@@ -1203,9 +1203,9 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
     Procdesc.get_start_node procdesc |~~> [loads_node] ;
     match spec with
     | Some spec ->
-        let assume_block = ErlangTypes.assume_spec env idents spec in
-        loads_node |~~> [assume_block.start] ;
-        assume_block.exit_success |~~> [start]
+        let prune_block = ErlangTypes.prune_spec env idents spec in
+        loads_node |~~> [prune_block.start] ;
+        prune_block.exit_success |~~> [start]
     | None ->
         loads_node |~~> [start]
   in
@@ -1271,15 +1271,15 @@ let translate_one_type (env : (_, _) Env.t) name type_ =
     Sil.Load {id= arg_id; e= Exp.Lvar pvar; root_typ= any_typ; typ= any_typ; loc= attributes.loc}
   in
   let loads_node = Node.make_stmt env ~kind:Erlang [load] in
-  let assume_block, condition = ErlangTypes.assume_type env String.Map.empty (arg_id, type_) in
+  let type_block, condition = ErlangTypes.type_condition env String.Map.empty (arg_id, type_) in
   let store_node =
     Node.make_stmt env ~kind:Erlang
       [Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= condition; loc= env.location}]
   in
   Procdesc.get_start_node procdesc |~~> [loads_node] ;
-  loads_node |~~> [assume_block.start] ;
-  assume_block.exit_success |~~> [store_node] ;
-  assume_block.exit_failure |~~> [store_node] ;
+  loads_node |~~> [type_block.start] ;
+  type_block.exit_success |~~> [store_node] ;
+  type_block.exit_failure |~~> [store_node] ;
   store_node |~~> [Procdesc.get_exit_node procdesc]
 
 

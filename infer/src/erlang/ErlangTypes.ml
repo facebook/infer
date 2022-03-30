@@ -23,16 +23,16 @@ let combine_bool ~op ~default exprs =
   match List.reduce exprs ~f with Some expr -> expr | None -> default
 
 
-let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t * Ast.type_) :
+let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t * Ast.type_) :
     Block.t * Exp.t =
-  let assume_simple typ =
+  let simple_condition typ =
     let is_typ = mk_fresh_id () in
     let start =
       Node.make_stmt env [Env.has_type_instr env ~result:is_typ ~value:(Exp.Var arg_id) typ]
     in
     ({Block.start; exit_success= start; exit_failure= Node.make_nop env}, Exp.Var is_typ)
   in
-  let assume_userdef module_ name =
+  let userdef_condition module_ name =
     let procname = Env.procname_for_user_type module_ name in
     let condition = mk_fresh_id () in
     let call_instr =
@@ -50,33 +50,33 @@ let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t 
   | Any ->
       succ_true env
   | Atom Any ->
-      assume_simple Atom
+      simple_condition Atom
   | List (Proper _) ->
-      let block1, expr1 = assume_simple Cons in
-      let block2, expr2 = assume_simple Nil in
+      let block1, expr1 = simple_condition Cons in
+      let block2, expr2 = simple_condition Nil in
       (Block.all env [block1; block2], Exp.BinOp (LOr, expr1, expr2))
   | Map ->
-      assume_simple Map
+      simple_condition Map
   | Nil ->
-      assume_simple Nil
+      simple_condition Nil
   | Remote {module_; type_} ->
-      assume_userdef module_ type_
+      userdef_condition module_ type_
   | Tuple (FixedSize types) ->
       let n = List.length types in
-      assume_simple (Tuple n)
+      simple_condition (Tuple n)
   | Union types ->
-      let f t = assume_type env constraints (arg_id, t) in
+      let f t = type_condition env constraints (arg_id, t) in
       let blocks, exprs = List.unzip (List.map ~f types) in
       (* Union shouldn't be empty, but if it somehow happens, just return true. *)
       (Block.all env blocks, combine_bool ~op:Binop.LOr ~default:true_const exprs)
   | UserDefined name ->
-      assume_userdef env.current_module name
+      userdef_condition env.current_module name
   | Var v -> (
     (* Simple substitution. Can go into infinite loop. For now we assume that the type checker rejects
        such cases before. TODO: check for cycles in a validation step (T115271156) *)
     match Map.find constraints v with
     | Some subtyp ->
-        assume_type env constraints (arg_id, subtyp)
+        type_condition env constraints (arg_id, subtyp)
     | None ->
         L.debug Capture Verbose
           "@[No constraint found, or type is not supported for type variable %s, treating as \
@@ -89,13 +89,13 @@ let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t 
       succ_true env
 
 
-let assume_spec_disjunct (env : (_, _) Env.t) arg_ids (function_ : Ast.function_)
+let disjunct_condition (env : (_, _) Env.t) arg_ids (function_ : Ast.function_)
     (specd : Ast.spec_disjunct) : Block.t * Exp.t =
-  (* Assume the type of each argument and form a conjunction. *)
+  (* Generate condition for the type of each argument and form a conjunction. *)
   match List.zip arg_ids specd.arguments with
   | Ok args_with_types ->
       let blocks, exprs =
-        List.unzip (List.map ~f:(assume_type env specd.constraints) args_with_types)
+        List.unzip (List.map ~f:(type_condition env specd.constraints) args_with_types)
       in
       (Block.all env blocks, combine_bool ~op:Binop.LAnd ~default:true_const exprs)
   | Unequal_lengths ->
@@ -105,15 +105,15 @@ let assume_spec_disjunct (env : (_, _) Env.t) arg_ids (function_ : Ast.function_
       succ_true env
 
 
-let assume_spec (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
-  (* Assume each disjunct recursively and form a disjunction in a prune node. *)
-  let blocks, exprs =
-    List.unzip (List.map ~f:(assume_spec_disjunct env arg_ids spec.function_) spec.specs)
+let prune_spec (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
+  (* Generate condition for each disjunct recursively and form a disjunction in a prune node. *)
+  let blocks, conditions =
+    List.unzip (List.map ~f:(disjunct_condition env arg_ids spec.function_) spec.specs)
   in
   let prune_block =
     (* We could also use nondeterminism among blocks which could give more precision. *)
     (* Overloads shouldn't be empty, but if it somehow happens, just return true. *)
-    let condition = combine_bool ~op:Binop.LOr ~default:true_const exprs in
+    let condition = combine_bool ~op:Binop.LOr ~default:true_const conditions in
     let prune_node = Node.make_if env true condition in
     {Block.start= prune_node; exit_success= prune_node; exit_failure= Node.make_nop env}
   in
