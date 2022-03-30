@@ -50,13 +50,6 @@ smt/QF_UF/eq_diamond/eq_diamond6.smt2:	Ok
 smt/QF_UF/eq_diamond/eq_diamond7.smt2:	Ok
 smt/QF_UF/eq_diamond/eq_diamond8.smt2:	Ok
 smt/QF_UF/eq_diamond/eq_diamond9.smt2:	Ok
-smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.32_1_cilled_true-unreach-call_ok_nondet_linux-3.4-32_1-drivers--i2c--algos--i2c-algo-pca.ko-ldv_main0_sequence_infinite_withcheck_stateful.cil.out.c.smt2:	Ok
-smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.43_1a_cilled_true-unreach-call_ok_nondet_linux-43_1a-drivers--input--misc--ab8500-ponkey.ko-ldv_main0_sequence_infinite_withcheck_stateful.cil.out.c.smt2:	Ok
-smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.43_1a_cilled_true-unreach-call_ok_nondet_linux-43_1a-drivers--input--misc--mpu3050.ko-ldv_main0_sequence_infinite_withcheck_stateful.cil.out.c.smt2:	Ok
-smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.43_1a_cilled_true-unreach-call_ok_nondet_linux-43_1a-drivers--input--misc--pcap_keys.ko-ldv_main0_sequence_infinite_withcheck_stateful.cil.out.c.smt2:	Ok
-smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.43_1a_cilled_true-unreach-call_ok_nondet_linux-43_1a-drivers--net--arcnet--rfc1051.ko-ldv_main0_sequence_infinite_withcheck_stateful.cil.out.c.smt2:	Ok
-smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.43_1a_cilled_true-unreach-call_ok_nondet_linux-43_1a-drivers--net--arcnet--rfc1201.ko-ldv_main0_sequence_infinite_withcheck_stateful.cil.out.c.smt2:	Ok
-smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.43_1a_cilled_true-unreach-call_ok_nondet_linux-43_1a-drivers--rtc--rtc-ds1390.ko-ldv_main0_sequence_infinite_withcheck_stateful.cil.out.c.smt2:	Ok
 smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.gcd_4_true-unreach-call.i.smt2:	Ok
 smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.m0_true-unreach-call_drivers-staging-comedi-drivers-ni_pcidio-ko--107_1a--adbbc36.c.smt2:	Unsound
 smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.test_locks_10_true-unreach-call.c.smt2:	Ok
@@ -71,4 +64,3 @@ smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.test_locks_7_tru
 smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.test_locks_8_true-unreach-call_false-termination.c.smt2:	Ok
 smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.test_locks_9_true-unreach-call.c.smt2:	Ok
 smt/QF_UFLRA/cpachecker-induction-svcomp14/cpachecker-induction.while_infinite_loop_3_true-unreach-call_false-termination.i.smt2:	Ok
-smt/QF_UFLRA_inc/cpachecker-bmc-svcomp14/cpachecker-bmc.32_1_cilled_true-unreach-call_ok_nondet_linux-3.4-32_1-drivers--acpi--bgrt.ko-ldv_main0_sequence_infinite_withcheck_stateful.cil.out.c.smt2:	Ok
