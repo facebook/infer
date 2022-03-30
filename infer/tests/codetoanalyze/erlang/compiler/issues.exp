@@ -566,6 +566,8 @@ nonmatch_tuples:test_size4_Bad/0: function_clause
 specs_basic:test_no_args_Bad/0: {badmatch,2}
 specs_basic:test_no_args_Ok/0: ok
 
+----- specs_typevars -----
+
 ----- topl_taint -----
 topl_taint:test_a_Bad/0: taint_error
 topl_taint:test_b_Ok/0: ok

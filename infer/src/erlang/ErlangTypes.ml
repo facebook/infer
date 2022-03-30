@@ -21,7 +21,8 @@ let combine_bool exprs op =
   match List.reduce exprs ~f with Some expr -> expr | None -> Exp.Const (Cint IntLit.one)
 
 
-let rec assume_type (env : (_, _) Env.t) ((arg_id, type_) : Ident.t * Ast.type_) : Block.t * Exp.t =
+let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t * Ast.type_) :
+    Block.t * Exp.t =
   let assume_simple typ =
     let is_typ = mk_fresh_id () in
     let start =
@@ -46,13 +47,25 @@ let rec assume_type (env : (_, _) Env.t) ((arg_id, type_) : Ident.t * Ast.type_)
       let n = List.length types in
       assume_simple (Tuple n)
   | Union types ->
-      let f t = assume_type env (arg_id, t) in
+      let f t = assume_type env constraints (arg_id, t) in
       let blocks, exprs = List.unzip (List.map ~f types) in
       (Block.all env blocks, combine_bool exprs Binop.LOr)
+  | Var v -> (
+    (* Simple substitution. Can go into infinite loop. For now we assume that the type checker rejects
+       such cases before. TODO: check for cycles in a validation step (T115271156) *)
+    match Map.find constraints v with
+    | Some subtyp ->
+        assume_type env constraints (arg_id, subtyp)
+    | None ->
+        L.debug Capture Verbose
+          "@[No constraint found, or type is not supported for type variable %s, treating as \
+           any()@."
+          v ;
+        succ_true env )
   | t ->
       L.debug Capture Verbose "@[The following type is not supported and is ignored: %s@."
         (Sexp.to_string (Ast.sexp_of_type_ t)) ;
-      (Block.make_success env, Exp.Var (mk_fresh_id ()))
+      succ_true env
 
 
 let assume_spec_disjunct (env : (_, _) Env.t) arg_ids (function_ : Ast.function_)
@@ -60,7 +73,9 @@ let assume_spec_disjunct (env : (_, _) Env.t) arg_ids (function_ : Ast.function_
   (* Assume the type of each argument and form a conjunction. *)
   match List.zip arg_ids specd.arguments with
   | Ok args_with_types ->
-      let blocks, exprs = List.unzip (List.map ~f:(assume_type env) args_with_types) in
+      let blocks, exprs =
+        List.unzip (List.map ~f:(assume_type env specd.constraints) args_with_types)
+      in
       (Block.all env blocks, combine_bool exprs Binop.LAnd)
   | Unequal_lengths ->
       L.debug Capture Verbose
