@@ -16,10 +16,14 @@ any_Ok(_) -> ok.
 -spec any_Latent(any()) -> any().
 any_Latent([]) -> ok.
 
--spec atom_Ok(atom()) -> any().
-atom_Ok(X) when is_atom(X) -> ok.
+-spec atom1_Ok(atom()) -> any().
+atom1_Ok(X) when is_atom(X) -> ok.
 
-atom_Latent(X) when is_atom(X) -> ok.
+atom2_Latent(X) when is_atom(X) -> ok.
+
+-spec atom3_Latent(atom()) -> any().
+atom3_Latent(true) -> ok;
+atom3_Latent(false) -> ok.
 
 -spec atom_literal1_Ok('ok') -> any().
 atom_literal1_Ok(X) when is_atom(X) -> ok.
@@ -31,6 +35,26 @@ atom_literal2_Latent(X) when is_atom(X) -> ok.
 fp_atom_literal3_Ok(ok) -> ok.
 
 atom_literal4_Latent(ok) -> ok.
+
+-spec bool1_Ok(boolean()) -> any().
+bool1_Ok(X) when is_atom(X) -> ok.
+
+bool2_Latent(X) when is_atom(X) -> ok.
+
+% T115354480
+-spec fp_bool3_Ok(boolean()) -> any().
+fp_bool3_Ok(true) -> ok;
+fp_bool3_Ok(false) -> ok.
+
+-spec bool4_Latent(boolean()) -> any().
+bool4_Latent(true) -> ok.
+
+-spec bool5_Latent(boolean()) -> any().
+bool5_Latent(false) -> ok.
+
+% T115354480
+-spec fp_bool6_Ok(boolean()) -> any().
+fp_bool6_Ok(X) when is_boolean(X) -> ok.
 
 -spec map_Ok(map()) -> any().
 map_Ok(X) when is_map(X) -> ok.
