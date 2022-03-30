@@ -158,3 +158,9 @@ let has_type_instr (env : (_, _) t) ~result ~value (name : ErlangTypeName.t) : S
       , any_typ ) ]
   in
   Call ((result, Typ.mk (Tint IBool)), fun_exp, args, env.location, CallFlags.default)
+
+
+let procname_for_user_type module_name name =
+  (* Avoid conflict with a "normal" function that has the same name as the type and arity of 1. *)
+  let function_name = "__infer_assume_type_" ^ name in
+  Procname.make_erlang ~module_name ~function_name ~arity:1

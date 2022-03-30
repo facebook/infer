@@ -7,6 +7,12 @@
 
 open! IStd
 
+val assume_type :
+     (Procdesc.t ErlangEnvironment.present, 'a) ErlangEnvironment.t
+  -> (string, ErlangAst.type_, 'b) Map_intf.Map.t
+  -> Ident.t * ErlangAst.type_
+  -> ErlangBlock.t * Exp.t
+
 val assume_spec :
      (Procdesc.t ErlangEnvironment.present, _) ErlangEnvironment.t
   -> Ident.t list

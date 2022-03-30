@@ -1218,6 +1218,15 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
   exit_success |~~> [Procdesc.get_exit_node procdesc]
 
 
+let mk_procdesc (env : (_, _) Env.t) attributes =
+  let procdesc = Cfg.create_proc_desc env.cfg attributes in
+  let start_node = Procdesc.create_node procdesc env.location Start_node [] in
+  let exit_node = Procdesc.create_node procdesc env.location Exit_node [] in
+  Procdesc.set_start_node procdesc start_node ;
+  Procdesc.set_exit_node procdesc exit_node ;
+  procdesc
+
+
 (** Translate one top-level function. *)
 let translate_one_function (env : (_, _) Env.t) function_ clauses =
   let uf_name, procname = Env.func_procname env function_ in
@@ -1229,14 +1238,7 @@ let translate_one_function (env : (_, _) Env.t) function_ clauses =
     in
     {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
   in
-  let procdesc =
-    let procdesc = Cfg.create_proc_desc env.cfg attributes in
-    let start_node = Procdesc.create_node procdesc env.location Start_node [] in
-    let exit_node = Procdesc.create_node procdesc env.location Exit_node [] in
-    Procdesc.set_start_node procdesc start_node ;
-    Procdesc.set_exit_node procdesc exit_node ;
-    procdesc
-  in
+  let procdesc = mk_procdesc env attributes in
   let env =
     { env with
       procdesc= Env.Present procdesc
@@ -1246,13 +1248,50 @@ let translate_one_function (env : (_, _) Env.t) function_ clauses =
   translate_function_clauses env procdesc attributes procname clauses spec
 
 
+let translate_one_type (env : (_, _) Env.t) name type_ =
+  let procname = Env.procname_for_user_type env.current_module name in
+  let formal = mangled_arg 0 in
+  let attributes =
+    let default = ProcAttributes.default env.location.file procname in
+    (* TODO: only mark public if exported. *)
+    let access : ProcAttributes.access = Public in
+    { default with
+      access
+    ; formals= [(formal, any_typ, Annot.Item.empty)]
+    ; is_defined= true
+    ; loc= env.location
+    ; ret_type= any_typ }
+  in
+  let procdesc = mk_procdesc env attributes in
+  let ret_var = Exp.Lvar (Pvar.get_ret_pvar procname) in
+  let env = {env with procdesc= Env.Present procdesc; result= Env.Present ret_var} in
+  let arg_id = mk_fresh_id () in
+  let load =
+    let pvar = Pvar.mk formal procname in
+    Sil.Load {id= arg_id; e= Exp.Lvar pvar; root_typ= any_typ; typ= any_typ; loc= attributes.loc}
+  in
+  let loads_node = Node.make_stmt env ~kind:Erlang [load] in
+  let assume_block, condition = ErlangTypes.assume_type env String.Map.empty (arg_id, type_) in
+  let store_node =
+    Node.make_stmt env ~kind:Erlang
+      [Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= condition; loc= env.location}]
+  in
+  Procdesc.get_start_node procdesc |~~> [loads_node] ;
+  loads_node |~~> [assume_block.start] ;
+  assume_block.exit_success |~~> [store_node] ;
+  assume_block.exit_failure |~~> [store_node] ;
+  store_node |~~> [Procdesc.get_exit_node procdesc]
+
+
 (** Translate and store each function of a module. *)
-let translate_functions (env : (_, _) Env.t) module_ =
+let translate_module (env : (_, _) Env.t) module_ =
   let f {Ast.location; simple_form} =
     let env = update_location location env in
     match simple_form with
     | Function {function_; clauses} ->
         translate_one_function env function_ clauses
+    | Type {name; type_} ->
+        translate_one_type env name type_
     | _ ->
         ()
   in
@@ -1260,6 +1299,3 @@ let translate_functions (env : (_, _) Env.t) module_ =
   DB.Results_dir.init env.location.file ;
   let tenv = Tenv.FileLocal (Tenv.create ()) in
   SourceFiles.add env.location.file env.cfg tenv None
-
-
-let translate_module = translate_functions
