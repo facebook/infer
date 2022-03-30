@@ -170,20 +170,27 @@ let get_message diagnostic =
           let {Location.line; _} = Trace.get_outer_location invalidation_trace in
           line
         in
-        let pp_must_be_valid_reason fmt =
+        let pp_must_be_valid_reason fmt expr =
+          let pp_prefix fmt null_nil_block =
+            if Decompiler.is_unknown expr then
+              F.fprintf fmt "%s %a" null_nil_block
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace
+            else
+              F.fprintf fmt "`%a` could be %s %a and" Decompiler.pp_expr expr null_nil_block
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace
+          in
           match must_be_valid_reason with
           | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
               F.fprintf fmt
-                "%a could be nil and is used to call a C++ method with a non-POD return type \
-                 `%a`%a; nil messaging such methods is undefined behaviour"
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
+                "%a is used to call a C++ method with a non-POD return type `%a`%a; nil messaging \
+                 such methods is undefined behaviour"
+                pp_prefix "nil" (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
           | Some (InsertionIntoCollectionKey | InsertionIntoCollectionValue) ->
               F.fprintf fmt
-                "could be nil %a and is used as a %s when inserting into a collection%a, \
-                 potentially causing a crash"
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace
+                "%a is used as a %s when inserting into a collection%a, potentially causing a crash"
+                pp_prefix "nil"
                 ( match[@warning "-8"] must_be_valid_reason with
                 | Some InsertionIntoCollectionKey ->
                     "key"
@@ -191,16 +198,13 @@ let get_message diagnostic =
                     "value" )
                 pp_access_trace access_trace
           | Some BlockCall ->
-              F.fprintf fmt "could be a nil block %a that is called%a, causing a crash"
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace pp_access_trace access_trace
+              F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block" pp_access_trace
+                access_trace
           | None ->
-              F.fprintf fmt "could be null %a and is dereferenced%a"
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace pp_access_trace access_trace
+              F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
         in
-        F.asprintf "%a`%a` %t" pp_calling_context_prefix calling_context Decompiler.pp_expr
-          invalid_address pp_must_be_valid_reason
+        F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
+          invalid_address
     | _ ->
         let pp_access_trace fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with

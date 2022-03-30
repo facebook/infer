@@ -34,3 +34,5 @@ val pp_expr : Format.formatter -> expr -> unit
 val find : AbstractValue.t -> t -> expr
 
 val abstract_value_of_expr : expr -> AbstractValue.t
+
+val is_unknown : expr -> bool
