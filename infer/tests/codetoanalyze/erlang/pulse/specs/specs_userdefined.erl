@@ -5,6 +5,8 @@
 
 -module(specs_userdefined).
 
+-export_type([my_atom_type/0]).
+
 -type my_atom_type() :: atom().
 
 -type my_union_type() :: my_atom_type() | map().

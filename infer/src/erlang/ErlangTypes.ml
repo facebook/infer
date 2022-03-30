@@ -30,6 +30,20 @@ let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t 
     in
     ({Block.start; exit_success= start; exit_failure= Node.make_nop env}, Exp.Var is_typ)
   in
+  let assume_userdef module_ name =
+    let procname = Env.procname_for_user_type module_ name in
+    let condition = mk_fresh_id () in
+    let call_instr =
+      let any_typ = Env.ptr_typ_of_name Any in
+      Sil.Call
+        ( (condition, any_typ)
+        , Exp.Const (Cfun procname)
+        , [(Exp.Var arg_id, any_typ)]
+        , env.location
+        , CallFlags.default )
+    in
+    (Block.make_instruction env [call_instr], Exp.Var condition)
+  in
   match type_ with
   | Any ->
       succ_true env
@@ -43,6 +57,8 @@ let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t 
       assume_simple Map
   | Nil ->
       assume_simple Nil
+  | Remote {module_; type_} ->
+      assume_userdef module_ type_
   | Tuple (FixedSize types) ->
       let n = List.length types in
       assume_simple (Tuple n)
@@ -51,18 +67,7 @@ let rec assume_type (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t 
       let blocks, exprs = List.unzip (List.map ~f types) in
       (Block.all env blocks, combine_bool exprs Binop.LOr)
   | UserDefined name ->
-      let procname = Env.procname_for_user_type env.current_module name in
-      let condition = mk_fresh_id () in
-      let call_instr =
-        let any_typ = Env.ptr_typ_of_name Any in
-        Sil.Call
-          ( (condition, any_typ)
-          , Exp.Const (Cfun procname)
-          , [(Exp.Var arg_id, any_typ)]
-          , env.location
-          , CallFlags.default )
-      in
-      (Block.make_instruction env [call_instr], Exp.Var condition)
+      assume_userdef env.current_module name
   | Var v -> (
     (* Simple substitution. Can go into infinite loop. For now we assume that the type checker rejects
        such cases before. TODO: check for cycles in a validation step (T115271156) *)
