@@ -333,7 +333,7 @@ let get_message diagnostic =
       F.asprintf
         "copied variable `%a` is not modified after it is copied on %a. Consider using a reference \
          `&` instead to avoid the copy"
-        Var.pp variable Location.pp location
+        Var.pp variable Location.pp_line location
 
 
 let add_errlog_header ~nesting ~title location errlog =
