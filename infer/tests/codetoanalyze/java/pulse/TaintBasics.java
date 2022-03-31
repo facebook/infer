@@ -155,19 +155,19 @@ public class TaintBasics {
     InferTaint.inferSensitiveSink(src);
   }
 
-  void arrayWithTaintedContentsBad() {
+  void FN_arrayWithTaintedContentsBad() {
     Object src = InferTaint.inferSecretSource();
     Object[] arr = new Object[] {src};
     InferTaint.inferSensitiveSink(arr);
   }
 
-  void funCallBad1() {
-    Object src = InferTaint.inferSecretSource();
-    funCallBad2(2, src);
+  void passToSinkOk(int x, Object src) {
+    InferTaint.inferSensitiveSink(src);
   }
 
-  void funCallBad2(int x, Object src) {
-    InferTaint.inferSensitiveSink(src);
+  void funCallBad() {
+    Object src = InferTaint.inferSecretSource();
+    passToSinkOk(2, src);
   }
 
   /** should not report on these tests */
@@ -212,11 +212,7 @@ public class TaintBasics {
     synchronizedOk(o);
   }
 
-  /**
-   * "known false positive" tests demonstrating limitations. an ideal analysis would not report on
-   * these tests, but we do.
-   */
-  void FP_deadCodeOk() {
+  void deadCodeOk() {
     Object src = InferTaint.inferSecretSource();
     boolean b = false;
     if (b) {
@@ -224,7 +220,7 @@ public class TaintBasics {
     }
   }
 
-  void FP_loopInvariantOk() {
+  void loopInvariantOk() {
     Object src = InferTaint.inferSecretSource();
     for (int i = 0; i < 10; i++) {
       src = null;
