@@ -337,15 +337,6 @@ OPTIONS
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)
 
-       --pulse-prune-unsupported-arithmetic
-           Activates: The arithmetic engine in Pulse sometimes does not
-           detect that the collection of conditions on the path makes it
-           infeasible, especially outside the well-supported linear
-           arithmetic fragment. To avoid false positives, Pulse tries to
-           detect when there is a possibility of imprecise arithmetic
-           treatment and if so pessimistically assumes the path is
-           infeasible. (Conversely: --no-pulse-prune-unsupported-arithmetic)
-
        --pulse-report-ignore-unknown-java-methods-patterns +string
            On Java, issues that are found on program paths that contain calls
            to unknown methods (those without implementation) are not reported

@@ -2256,6 +2256,53 @@ and pulse_model_return_first_arg =
     "Regex of methods that should be modelled as returning the first argument in Pulse"
 
 
+and pulse_model_skip_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-skip-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as \"skip\" in Pulse"
+
+
+and pulse_models_for_erlang =
+  CLOpt.mk_json ~long:"pulse-models-for-erlang"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Provide custom models for Erlang code using a DSL."
+
+
+and pulse_model_transfer_ownership =
+  CLOpt.mk_string_list ~long:"pulse-model-transfer-ownership"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
+     are method or namespace::method"
+
+
+and pulse_recency_limit =
+  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
+    "Maximum number of array elements and structure fields to keep track of for a given array \
+     address."
+
+
+and pulse_report_ignore_unknown_java_methods_patterns =
+  CLOpt.mk_string_list ~default:[".*<init>.*"]
+    ~long:"pulse-report-ignore-unknown-java-methods-patterns"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "On Java, issues that are found on program paths that contain calls to unknown methods (those \
+     without implementation) are not reported unless all the unknown method names match this \
+     pattern. If the empty list is provided with \
+     $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset), all issues will be reported \
+     regardless the presence of unknown code"
+
+
+and pulse_report_latent_issues =
+  CLOpt.mk_bool ~long:"pulse-report-latent-issues" ~default:true
+    "Report latent issues instead of waiting for them to become manifest, when the latent issue \
+     itself is enabled."
+
+
+and pulse_report_issues_for_tests =
+  CLOpt.mk_bool ~long:"pulse-report-issues-for-tests" ~default:false
+    "Do not supress any of the issues found by Pulse."
+
+
 and pulse_simple_sanitizers =
   CLOpt.mk_json ~long:"pulse-simple-sanitizers"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2276,62 +2323,6 @@ and pulse_simple_sources =
     {|Together with $(b,--pulse-simple-sinks) and $(b,--pulse-simple-sinks), this provides a quick way to specify simple taint properties, where all taint flows from any source flowing into any sink without passing through any sanitizer is reported. The JSON format is common to all three options, which expect a list of objects with the following fields, for example '[{"procedure": "mySimpleSink", "arg_indices": [1]}]':
   - "procedure" to match a substring of the function or method name, or "procedure_regex" to specify an OCaml regex
   - "arg_indices" (for sinks only): a list of integer positions of arguments to take into account, otherwise all of them will be considered as sinks|}
-
-
-and pulse_model_skip_pattern =
-  CLOpt.mk_string_opt ~long:"pulse-model-skip-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Regex of methods that should be modelled as \"skip\" in Pulse"
-
-
-and pulse_models_for_erlang =
-  CLOpt.mk_json ~long:"pulse-models-for-erlang"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Provide custom models for Erlang code using a DSL."
-
-
-and pulse_prune_unsupported_arithmetic =
-  CLOpt.mk_bool ~long:"pulse-prune-unsupported-arithmetic" ~default:false
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "The arithmetic engine in Pulse sometimes does not detect that the collection of conditions on \
-     the path makes it infeasible, especially outside the well-supported linear arithmetic \
-     fragment. To avoid false positives, Pulse tries to detect when there is a possibility of \
-     imprecise arithmetic treatment and if so pessimistically assumes the path is infeasible."
-
-
-and pulse_report_ignore_unknown_java_methods_patterns =
-  CLOpt.mk_string_list ~default:[".*<init>.*"]
-    ~long:"pulse-report-ignore-unknown-java-methods-patterns"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "On Java, issues that are found on program paths that contain calls to unknown methods (those \
-     without implementation) are not reported unless all the unknown method names match this \
-     pattern. If the empty list is provided with \
-     $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset), all issues will be reported \
-     regardless the presence of unknown code"
-
-
-and pulse_model_transfer_ownership =
-  CLOpt.mk_string_list ~long:"pulse-model-transfer-ownership"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
-     are method or namespace::method"
-
-
-and pulse_recency_limit =
-  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
-    "Maximum number of array elements and structure fields to keep track of for a given array \
-     address."
-
-
-and pulse_report_latent_issues =
-  CLOpt.mk_bool ~long:"pulse-report-latent-issues" ~default:true
-    "Report latent issues instead of waiting for them to become manifest, when the latent issue \
-     itself is enabled."
-
-
-and pulse_report_issues_for_tests =
-  CLOpt.mk_bool ~long:"pulse-report-issues-for-tests" ~default:false
-    "Do not supress any of the issues found by Pulse."
 
 
 and pulse_skip_procedures =
@@ -3658,8 +3649,6 @@ and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_no
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
 
 and pulse_models_for_erlang = !pulse_models_for_erlang
-
-and pulse_prune_unsupported_arithmetic = !pulse_prune_unsupported_arithmetic
 
 and pulse_report_ignore_unknown_java_methods_patterns =
   match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with

@@ -2247,10 +2247,6 @@ module DeadVariables = struct
     graph
 
 
-  let is_source_of_incompleteness atom =
-    match (atom : Atom.t) with LessEqual _ | LessThan _ -> true | Equal _ | NotEqual _ -> false
-
-
   (** Intermediate step of [simplify]: construct transitive closure of variables reachable from [vs]
       in [graph]. *)
   let get_reachable_from graph vs =
@@ -2291,7 +2287,6 @@ module DeadVariables = struct
     let var_graph = build_var_graph phi.both in
     let vars_to_keep = get_reachable_from var_graph keep in
     L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
-    let exception Contradiction in
     let simplify_phi phi =
       let var_eqs =
         VarUF.filter_morphism ~f:(fun x -> Var.Set.mem x vars_to_keep) phi.Formula.var_eqs
@@ -2309,49 +2304,19 @@ module DeadVariables = struct
          to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
          closure on the graph above *)
       let atoms =
-        if Config.pulse_prune_unsupported_arithmetic then
-          Atom.Set.fold
-            (fun atom (atoms_to_keep, discarded_vars_in_atoms) ->
-              let discard_atom = ref false in
-              let discarded_vars_in_atoms =
-                Atom.fold_terms atom ~init:discarded_vars_in_atoms ~f:(fun discarded t ->
-                    Term.fold_variables t ~init:discarded ~f:(fun discarded v ->
-                        if (not (is_source_of_incompleteness atom)) || Var.Set.mem v vars_to_keep
-                        then discarded
-                        else if Var.Set.mem v discarded_vars_in_atoms then (
-                          (* the variable was already involved in *another* atom we discarded, we risk
-                             incompleteness by discarding both (eg [x<y, y≤x]) *)
-                          L.d_printfln ~color:Orange
-                            "%a appears in several atoms that should be discarded; incompleteness \
-                             feared, pruning the path"
-                            Var.pp v ;
-                          raise Contradiction )
-                        else (
-                          discard_atom := true ;
-                          Var.Set.add v discarded ) ) )
-              in
-              let atoms_to_keep =
-                if !discard_atom then atoms_to_keep else Atom.Set.add atom atoms_to_keep
-              in
-              (atoms_to_keep, discarded_vars_in_atoms) )
-            phi.Formula.atoms (Atom.Set.empty, Var.Set.empty)
-          |> fst
-        else
-          Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.Formula.atoms
+        Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.Formula.atoms
       in
       {Formula.var_eqs; linear_eqs; term_eqs; tableau; atoms}
     in
-    try
-      let known = simplify_phi phi.known in
-      let both = simplify_phi phi.both in
-      let pruned =
-        (* discard atoms that callers have no way of influencing, i.e. more or less those that do not
-           contain variables related to variables in the pre *)
-        let closed_prunable_vars = get_reachable_from var_graph can_be_pruned in
-        Atom.Set.filter (fun atom -> not (Atom.has_var_notin closed_prunable_vars atom)) phi.pruned
-      in
-      Sat ({known; pruned; both}, vars_to_keep)
-    with Contradiction -> Unsat
+    let known = simplify_phi phi.known in
+    let both = simplify_phi phi.both in
+    let pruned =
+      (* discard atoms that callers have no way of influencing, i.e. more or less those that do not
+         contain variables related to variables in the pre *)
+      let closed_prunable_vars = get_reachable_from var_graph can_be_pruned in
+      Atom.Set.filter (fun atom -> not (Atom.has_var_notin closed_prunable_vars atom)) phi.pruned
+    in
+    Sat ({known; pruned; both}, vars_to_keep)
 end
 
 let simplify tenv ~get_dynamic_type ~can_be_pruned ~keep phi =
