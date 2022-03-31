@@ -41,7 +41,7 @@
     {"procedure": "codetoanalyze.java.quandary.InterfaceSpec.source"}
   ],
   "pulse-simple-sinks": [
-    {"procedure": "inferSensitiveSink"},
+    { "procedure": "inferSensitiveSink" },
     { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink1",
       "arg_indices": [1] },
     { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink2" },
@@ -51,6 +51,7 @@
       "arg_indices": [0] }
   ],
   "pulse-simple-sanitizers": [
+    { "procedure": "inferUniversalSanitizer" },
     { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sanitizer" }
   ]
 }

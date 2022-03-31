@@ -2275,7 +2275,7 @@ and pulse_simple_sources =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     {|Together with $(b,--pulse-simple-sinks) and $(b,--pulse-simple-sinks), this provides a quick way to specify simple taint properties, where all taint flows from any source flowing into any sink without passing through any sanitizer is reported. The JSON format is common to all three options, which expect a list of objects with the following fields, for example '[{"procedure": "mySimpleSink", "arg_indices": [1]}]':
   - "procedure" to match a substring of the function or method name, or "procedure_regex" to specify an OCaml regex
-  - "arg_indices" (for sinks and sanitizers only): a list of integer positions of arguments to take into account, otherwise all of them will be considered as sinks/sanitizers|}
+  - "arg_indices" (for sinks only): a list of integer positions of arguments to take into account, otherwise all of them will be considered as sinks|}
 
 
 and pulse_model_skip_pattern =

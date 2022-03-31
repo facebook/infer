@@ -19,3 +19,9 @@ type sink = PassedAsArgumentTo of Procname.t
 
 let pp_sink fmt (PassedAsArgumentTo proc_name) =
   F.fprintf fmt "passed as argument to sensitive function %a" Procname.pp proc_name
+
+
+type sanitizer = SanitizedBy of Procname.t [@@deriving compare, equal]
+
+let pp_sanitizer fmt (SanitizedBy proc_name) =
+  F.fprintf fmt "passed as argument to sanitizer function %a" Procname.pp proc_name

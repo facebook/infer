@@ -1189,9 +1189,9 @@ OPTIONS
            following fields, for example '[{"procedure": "mySimpleSink",
            "arg_indices": [1]}]':             - "procedure" to match a substring of the function or method
            name, or "procedure_regex" to specify an OCaml regex
-             - "arg_indices" (for sinks and sanitizers only): a list of
-           integer positions of arguments to take into account, otherwise all
-           of them will be considered as sinks/sanitizers
+             - "arg_indices" (for sinks only): a list of integer positions
+           of arguments to take into account, otherwise all of them will be
+           considered as sinks
            See also infer-analyze(1).
 
        --pulse-skip-procedures regex

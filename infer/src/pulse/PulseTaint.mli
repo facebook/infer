@@ -15,3 +15,7 @@ val pp_source : F.formatter -> source -> unit
 type sink = PassedAsArgumentTo of Procname.t [@@deriving compare, equal]
 
 val pp_sink : F.formatter -> sink -> unit
+
+type sanitizer = SanitizedBy of Procname.t [@@deriving compare, equal]
+
+val pp_sanitizer : F.formatter -> sanitizer -> unit

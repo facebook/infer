@@ -68,6 +68,7 @@ module Attribute = struct
     | SourceOriginOfCopy of PulseAbstractValue.t
     | StdVectorReserve
     | Tainted of Taint.source * ValueHistory.t
+    | TaintSanitized of Taint.sanitizer
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
@@ -131,6 +132,11 @@ module Attribute = struct
   let tainted_rank =
     let dummy_proc_name = Procname.from_string_c_fun "" in
     Variants.to_rank (Tainted (ReturnValue dummy_proc_name, ValueHistory.epoch))
+
+
+  let taint_sanitized_rank =
+    let dummy_proc_name = Procname.from_string_c_fun "" in
+    Variants.to_rank (TaintSanitized (SanitizedBy dummy_proc_name))
 
 
   let uninitialized_rank = Variants.to_rank Uninitialized
@@ -212,6 +218,8 @@ module Attribute = struct
         F.pp_print_string f "std::vector::reserve()"
     | Tainted (source, hist) ->
         F.fprintf f "Tainted(%a,%a)" Taint.pp_source source ValueHistory.pp hist
+    | TaintSanitized sanitizer ->
+        F.fprintf f "TaintSanitized(%a)" Taint.pp_sanitizer sanitizer
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
     | UnknownEffect (call, hist) ->
@@ -237,6 +245,7 @@ module Attribute = struct
     | SourceOriginOfCopy _
     | StdVectorReserve
     | Tainted _
+    | TaintSanitized _
     | Uninitialized
     | UnknownEffect _
     | UnreachableAt _
@@ -261,6 +270,7 @@ module Attribute = struct
     | SourceOriginOfCopy _
     | StdVectorReserve
     | Tainted _
+    | TaintSanitized _
     | Uninitialized
     | UnknownEffect _
     | WrittenTo _ ->
@@ -307,6 +317,7 @@ module Attribute = struct
       | RefCounted
       | SourceOriginOfCopy _
       | StdVectorReserve
+      | TaintSanitized _
       | UnreachableAt _
       | Uninitialized ) as attr ->
         attr
@@ -339,6 +350,13 @@ module Attributes = struct
     |> Option.map ~f:(fun attr ->
            let[@warning "-8"] (Attribute.Tainted (source, hist)) = attr in
            (source, hist) )
+
+
+  let get_taint_sanitized attrs =
+    Set.find_rank attrs Attribute.taint_sanitized_rank
+    |> Option.map ~f:(fun attr ->
+           let[@warning "-8"] (Attribute.TaintSanitized sanitizer) = attr in
+           sanitizer )
 
 
   let is_java_resource_released attrs =

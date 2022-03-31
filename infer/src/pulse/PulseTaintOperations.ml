@@ -57,6 +57,11 @@ let sinks_matchers =
     (Yojson.Basic.to_string Config.pulse_simple_sinks)
 
 
+let sanitizers_matchers =
+  simple_matcher_of_config ~can_have_arg_indices:false ~option_name:"--pulse-sanitizers-matchers"
+    (Yojson.Basic.to_string Config.pulse_simple_sanitizers)
+
+
 let matches_simple matchers proc_name =
   let proc_name_s = Procname.to_string proc_name in
   (* handle [arg_indices] *)
@@ -81,6 +86,10 @@ let get_as_source proc_name_opt =
 
 let get_as_sink proc_name_opt =
   Option.find_map proc_name_opt ~f:(fun proc_name -> matches_simple sinks_matchers proc_name)
+
+
+let get_as_sanitizer proc_name_opt =
+  Option.find_map proc_name_opt ~f:(fun proc_name -> matches_simple sanitizers_matchers proc_name)
 
 
 let call_source path location (source_proc_name, _source_matcher) (return, _typ) exec_state_res =
@@ -154,7 +163,37 @@ let call_sink path location (sink_proc_name, sink_matcher) actuals exec_state_re
   List.map exec_state_res ~f:(PulseResult.bind ~f:one_exec_state)
 
 
+let call_sanitizer (sanitizer_proc_name, _sanitizer_matcher) (return, _typ) exec_state_res =
+  let sanitizer = Taint.SanitizedBy sanitizer_proc_name in
+  let return = Var.of_id return in
+  let taint astate =
+    Stack.find_opt return astate
+    |> Option.fold ~init:astate ~f:(fun astate (return_val, _) ->
+           AbductiveDomain.AddressAttributes.add_one return_val (TaintSanitized sanitizer) astate )
+  in
+  let one_exec_state (exec_state : ExecutionDomain.t) : ExecutionDomain.t =
+    match exec_state with
+    | ContinueProgram astate ->
+        ContinueProgram (taint astate)
+    | ISLLatentMemoryError _
+    | AbortProgram _
+    | LatentAbortProgram _
+    | ExitProgram _
+    | ExceptionRaised _
+    | LatentInvalidAccess _ ->
+        exec_state
+  in
+  List.map ~f:(PulseResult.map ~f:one_exec_state) exec_state_res
+
+
 let call path location proc_name_opt actuals ret exec_state_res =
+  let exec_state_res =
+    match get_as_sanitizer proc_name_opt with
+    | None ->
+        exec_state_res
+    | Some sanitizer ->
+        call_sanitizer sanitizer ret exec_state_res
+  in
   let exec_state_res =
     match get_as_source proc_name_opt with
     | None ->

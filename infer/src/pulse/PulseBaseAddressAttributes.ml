@@ -108,9 +108,17 @@ let check_not_tainted address attrs =
   match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_tainted with
   | None ->
       Ok ()
-  | Some ((source, _hist) as taint_hist) ->
+  | Some ((source, _hist) as taint_hist) -> (
       L.d_printfln ~color:Red "TAINTED: %a" Taint.pp_source source ;
-      Error taint_hist
+      let sanitizer =
+        Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_taint_sanitized
+      in
+      match sanitizer with
+      | Some sanitizer ->
+          L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp_sanitizer sanitizer ;
+          Ok ()
+      | None ->
+          Error taint_hist )
 
 
 let get_attribute getter address attrs =

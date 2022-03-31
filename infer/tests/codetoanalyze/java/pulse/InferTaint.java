@@ -23,6 +23,10 @@ public class InferTaint {
 
   public static void inferSensitiveSink(Object iMightBeTainted) {}
 
+  public static Object inferUniversalSanitizer(Object iMightBeTainted) {
+    return iMightBeTainted;
+  }
+
   // these are to test whether we can add a taint spec to undefined methods
   public static native Object inferSecretSourceUndefined();
 

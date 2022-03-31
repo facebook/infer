@@ -227,4 +227,9 @@ public class TaintBasics {
     }
     InferTaint.inferSensitiveSink(src);
   }
+
+  void taintedToSanitizedToSinkOk() {
+    InferTaint.inferSensitiveSink(
+        InferTaint.inferUniversalSanitizer(InferTaint.inferSecretSource()));
+  }
 }
