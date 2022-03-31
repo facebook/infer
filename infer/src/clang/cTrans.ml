@@ -2494,36 +2494,47 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let switch_cases, (_ : trans_result) =
       SwitchCase.in_switch_body ~f:(instruction inner_trans_state) body
     in
-    let link_up_switch_cases curr_succ_nodes case =
+    let is_all_enum_cases_covered = switch_stmt_info.Clang_ast_t.ssi_is_all_enum_cases_covered in
+    let link_up_switch_cases (curr_succ_nodes, is_last_case) case =
       L.debug Capture Verbose "switch: curr_succ_nodes=[%a], linking case %a@\n"
         (Pp.semicolon_seq Procdesc.Node.pp)
         curr_succ_nodes SwitchCase.pp case ;
-      match (case : SwitchCase.t) with
-      | {SwitchCase.condition= Case case_condition; stmt_info; root_nodes} ->
-          (* create case prune nodes, link the then branch to [root_nodes], the else branch to
-             [curr_succ_nodes] *)
-          let trans_state_pri = PriorityNode.try_claim_priority_node inner_trans_state stmt_info in
-          let res_trans_case_const = instruction trans_state_pri case_condition in
-          let e_const, _ = res_trans_case_const.return in
-          let sil_eq_cond = Exp.BinOp (Binop.Eq, condition_exp, e_const) in
-          let sil_loc =
-            CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
-          in
-          let true_prune_node =
-            create_prune_node context.procdesc ~branch:true ~negate_cond:false sil_eq_cond
-              res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
-          in
-          let false_prune_node =
-            create_prune_node context.procdesc ~branch:false ~negate_cond:true sil_eq_cond
-              res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
-          in
-          Procdesc.node_set_succs context.procdesc true_prune_node ~normal:root_nodes ~exn:[] ;
-          Procdesc.node_set_succs context.procdesc false_prune_node ~normal:curr_succ_nodes ~exn:[] ;
-          (* return prune nodes as next roots *)
-          [true_prune_node; false_prune_node]
-      | {SwitchCase.condition= Default; root_nodes} ->
-          (* just return the [root_nodes] to be linked to the previous case's fallthrough *)
-          root_nodes
+      let curr_succ_nodes =
+        match (case : SwitchCase.t) with
+        | {SwitchCase.condition= Case case_condition; stmt_info; root_nodes} ->
+            (* create case prune nodes, link the then branch to [root_nodes], the else branch to
+               [curr_succ_nodes] *)
+            let trans_state_pri =
+              PriorityNode.try_claim_priority_node inner_trans_state stmt_info
+            in
+            let res_trans_case_const = instruction trans_state_pri case_condition in
+            let e_const, _ = res_trans_case_const.return in
+            let sil_eq_cond = Exp.BinOp (Binop.Eq, condition_exp, e_const) in
+            let sil_loc =
+              CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+            in
+            let true_prune_node =
+              create_prune_node context.procdesc ~branch:true ~negate_cond:false sil_eq_cond
+                res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
+            in
+            Procdesc.node_set_succs context.procdesc true_prune_node ~normal:root_nodes ~exn:[] ;
+            if is_last_case && is_all_enum_cases_covered then
+              (* return only the true branch as next roots because the false branch is infeasible *)
+              [true_prune_node]
+            else
+              let false_prune_node =
+                create_prune_node context.procdesc ~branch:false ~negate_cond:true sil_eq_cond
+                  res_trans_case_const.control.instrs sil_loc Sil.Ik_switch
+              in
+              Procdesc.node_set_succs context.procdesc false_prune_node ~normal:curr_succ_nodes
+                ~exn:[] ;
+              (* return prune nodes as next roots *)
+              [true_prune_node; false_prune_node]
+        | {SwitchCase.condition= Default; root_nodes} ->
+            (* just return the [root_nodes] to be linked to the previous case's fallthrough *)
+            root_nodes
+      in
+      (curr_succ_nodes, false)
     in
     let switch_cases =
       (* move the default case to the last in the list of cases, which is the first in
@@ -2535,10 +2546,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | {SwitchCase.condition= Case _} ->
               false )
       in
-      default @ cases
+      if is_all_enum_cases_covered then
+        (* when all enum cases covered, the default case is infeasible *)
+        cases
+      else default @ cases
     in
-    let cases_root_nodes =
-      List.fold switch_cases ~init:trans_state.succ_nodes ~f:link_up_switch_cases
+    let cases_root_nodes, _ =
+      List.fold switch_cases ~init:(trans_state.succ_nodes, true) ~f:link_up_switch_cases
     in
     Procdesc.node_set_succs context.procdesc switch_node ~normal:cases_root_nodes ~exn:[] ;
     let top_nodes = variable_result.control.root_nodes in

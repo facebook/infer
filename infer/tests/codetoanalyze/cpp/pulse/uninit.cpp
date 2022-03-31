@@ -53,7 +53,7 @@ class Uninit {
     }
   }
 
-  void FP_call_get_MyClass_ok() { int x = get_MyClass().i; }
+  void call_get_MyClass_ok() { int x = get_MyClass().i; }
 
   MyClass get_MyClass_param(my_enum my_enum) {
     switch (my_enum) {
@@ -66,12 +66,11 @@ class Uninit {
     }
   }
 
-  /* It has an latent infeasible issue, but it is better to have no issues. */
-  void FP_call_get_MyClass_param_ok(my_enum my_enum) {
+  void call_get_MyClass_param_ok(my_enum my_enum) {
     int x = get_MyClass_param(my_enum).i;
   }
 
-  MyClass get_MyClass_default() {
+  MyClass get_MyClass_infeasible_default() {
     switch (get_my_enum()) {
       case (my_enum_1):
         return MyClass{1, 2};
@@ -80,12 +79,29 @@ class Uninit {
         return MyClass{1, 2};
         break;
       default:
-        return MyClass{1, 2};
+        // infeasible
         break;
     }
   }
 
-  void call_get_MyClass_default_ok() { int x = get_MyClass_default().i; }
+  void call_get_MyClass_infeasible_default_ok() {
+    int x = get_MyClass_infeasible_default().i;
+  }
+
+  MyClass get_MyClass_feasible_default() {
+    switch (get_my_enum()) {
+      case (my_enum_1):
+        return MyClass{1, 2};
+        break;
+      default:
+        // feasible
+        break;
+    }
+  }
+
+  void call_get_MyClass_feasible_default_bad() {
+    int x = get_MyClass_feasible_default().i;
+  }
 };
 
 class Uninit2 {

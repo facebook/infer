@@ -3196,13 +3196,15 @@ int ASTExporter<ATDWriter>::SwitchStmtTupleSize() {
 //@atd   ?cond_var : stmt option;
 //@atd   cond : pointer;
 //@atd   body : pointer;
+//@atd   ~is_all_enum_cases_covered : bool;
 //@atd } <ocaml field_prefix="ssi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitSwitchStmt(const SwitchStmt *Node) {
   VisitStmt(Node);
   const Stmt *Init = Node->getInit();
   const DeclStmt *CondVar = Node->getConditionVariableDeclStmt();
-  ObjectScope Scope(OF, 2 + (bool)Init + (bool)CondVar);
+  const bool IsAllEnumCasesCovered = Node->isAllEnumCasesCovered();
+  ObjectScope Scope(OF, 2 + (bool)Init + (bool)CondVar + IsAllEnumCasesCovered);
   if (Init) {
     OF.emitTag("init");
     dumpPointer(Init);
@@ -3215,6 +3217,7 @@ void ASTExporter<ATDWriter>::VisitSwitchStmt(const SwitchStmt *Node) {
   dumpPointer(Node->getCond());
   OF.emitTag("body");
   dumpPointer(Node->getBody());
+  OF.emitFlag("is_all_enum_cases_covered", IsAllEnumCasesCovered);
 }
 
 template <class ATDWriter>
