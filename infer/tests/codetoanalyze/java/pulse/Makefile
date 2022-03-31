@@ -7,6 +7,6 @@ TESTS_DIR = ../../..
 INFER_OPTIONS = --pulse-only --debug-exceptions --no-pulse-nullsafe-report-npe \
 --pulse-report-ignore-unknown-java-methods-patterns-reset --pulse-report-issues-for-tests
 INFERPRINT_OPTIONS = --issues-tests
-SOURCES = $(wildcard *.java)
+SOURCES = $(wildcard *.java taint/*.java)
 
 include $(TESTS_DIR)/javac.make
