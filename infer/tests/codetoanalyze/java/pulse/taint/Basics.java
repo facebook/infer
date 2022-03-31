@@ -8,7 +8,7 @@
 package codetoanalyze.java.pulse;
 
 /** testing basic intraprocedural functionality: assignment, ifs, loops, casts */
-public class TaintBasics {
+public class Basics {
 
   native Object notASource();
 
