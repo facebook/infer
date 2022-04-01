@@ -121,6 +121,26 @@ tuple_of_2_Ok({_, _}) -> ok.
 
 tuple_of_2_Latent({_, _}) -> ok.
 
+-record(car, {plate, owner}).
+
+-spec record1_Ok(#car{}) -> any().
+record1_Ok({_, _, _}) -> ok.
+
+record2_Latent({_, _, _}) -> ok.
+
+-spec record3_Latent(#car{}) -> any().
+record3_Latent({_, _}) -> ok.
+
+-spec record4_Latent(#car{}) -> any().
+record4_Latent({_, _, _, _}) -> ok.
+
+% T115354480
+-spec fp_record5_Ok(#car{}) -> any().
+fp_record5_Ok({car, _, _}) -> ok.
+
+-spec record6_Latent(#car{}) -> any().
+record6_Latent({not_a_car, _, _}) -> ok.
+
 % Just to check that we don't crash
 -spec test_no_args_Ok() -> any().
 test_no_args_Ok() -> 1 = 1.

@@ -27,11 +27,9 @@ let combine_bool ~op ~default exprs =
 
 let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t * Ast.type_) :
     Block.t * Exp.t =
-  let simple_condition typ =
+  let simple_condition typ id =
     let is_typ = mk_fresh_id () in
-    let start =
-      Node.make_stmt env [Env.has_type_instr env ~result:is_typ ~value:(Exp.Var arg_id) typ]
-    in
+    let start = Node.make_stmt env [Env.has_type_instr env ~result:is_typ ~value:(Var id) typ] in
     ({Block.start; exit_success= start; exit_failure= Node.make_nop env}, Exp.Var is_typ)
   in
   let userdef_condition module_ name =
@@ -48,35 +46,51 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
     in
     (Block.make_instruction env [call_instr], Exp.Var condition)
   in
+  let atom_literal atom id =
+    let is_atom_block, is_atom_cond = simple_condition Atom id in
+    let actual_hash = mk_fresh_id () in
+    let load_instr =
+      Env.load_field_from_expr env actual_hash (Var id) ErlangTypeName.atom_hash Atom
+    in
+    let expected_hash = Exp.Const (Cint (IntLit.of_int (ErlangTypeName.calculate_hash atom))) in
+    let condition =
+      Exp.BinOp (Binop.LAnd, is_atom_cond, Exp.BinOp (Binop.Eq, Var actual_hash, expected_hash))
+    in
+    (Block.all env [is_atom_block; Block.make_instruction env [load_instr]], condition)
+  in
   match type_ with
   | Any ->
       succ_true env
   | Atom Any ->
-      simple_condition Atom
+      simple_condition Atom arg_id
   | Atom (Literal a) ->
-      let is_atom_block, is_atom_cond = simple_condition Atom in
-      let actual_hash = mk_fresh_id () in
-      let load_instr =
-        Env.load_field_from_expr env actual_hash (Var arg_id) ErlangTypeName.atom_hash Atom
-      in
-      let expected_hash = Exp.Const (Cint (IntLit.of_int (ErlangTypeName.calculate_hash a))) in
-      let condition =
-        Exp.BinOp (Binop.LAnd, is_atom_cond, Exp.BinOp (Binop.Eq, Var actual_hash, expected_hash))
-      in
-      (Block.all env [is_atom_block; Block.make_instruction env [load_instr]], condition)
+      atom_literal a arg_id
   | List (Proper _) ->
-      let block1, expr1 = simple_condition Cons in
-      let block2, expr2 = simple_condition Nil in
+      let block1, expr1 = simple_condition Cons arg_id in
+      let block2, expr2 = simple_condition Nil arg_id in
       (Block.all env [block1; block2], Exp.BinOp (LOr, expr1, expr2))
   | Map ->
-      simple_condition Map
+      simple_condition Map arg_id
   | Nil ->
-      simple_condition Nil
+      simple_condition Nil arg_id
+  | Record name ->
+      let record_info = String.Map.find_exn env.records name in
+      let tuple_size = 1 + List.length record_info.field_names in
+      let tuple_typ = ErlangTypeName.Tuple tuple_size in
+      let is_tuple_block, is_tuple_cond = simple_condition tuple_typ arg_id in
+      let name_id = mk_fresh_id () in
+      let load_name_instr =
+        Env.load_field_from_expr env name_id (Var arg_id) (ErlangTypeName.tuple_elem 1) tuple_typ
+      in
+      let is_atom_block, is_atom_cond = atom_literal name name_id in
+      let condition = Exp.BinOp (Binop.LAnd, is_tuple_cond, is_atom_cond) in
+      ( Block.all env [is_tuple_block; Block.make_instruction env [load_name_instr]; is_atom_block]
+      , condition )
   | Remote {module_; type_} ->
       userdef_condition module_ type_
   | Tuple (FixedSize types) ->
       let n = List.length types in
-      simple_condition (Tuple n)
+      simple_condition (Tuple n) arg_id
   | Union types ->
       let f t = type_condition env constraints (arg_id, t) in
       let blocks, exprs = List.unzip (List.map ~f types) in
