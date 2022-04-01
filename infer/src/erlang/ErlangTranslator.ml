@@ -470,6 +470,8 @@ and translate_expression env {Ast.location; simple_expression} =
         translate_expression_match env ret_var pattern body
     | Nil ->
         translate_expression_nil env ret_var
+    | Receive {cases; timeout} ->
+        translate_expression_receive env cases timeout
     | RecordAccess {record; name; field} ->
         translate_expression_record_access env ret_var record name field
     | RecordIndex {name; field} ->
@@ -948,6 +950,37 @@ and translate_expression_nil (env : (_, _) Env.t) ret_var : Block.t =
   let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
   let instruction = Sil.Call ((ret_var, any_typ), fun_exp, [], env.location, CallFlags.default) in
   Block.make_instruction env [instruction]
+
+
+and translate_expression_receive (env : (_, _) Env.t) cases timeout : Block.t =
+  let id = mk_fresh_id () in
+  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_receive) in
+  let call_instr = Sil.Call ((id, any_typ), fun_exp, [], env.location, CallFlags.default) in
+  let call_receive_block = Block.make_instruction env [call_instr] in
+  let cases_block = Block.any env (List.map ~f:(translate_case_clause env [id]) cases) in
+  (* We don't have a crash node if all cases fail because we would report an error for every
+     non-exhaustive matching due to receive being non-deterministic. *)
+  let cases_block =
+    match timeout with
+    | Some {Ast.time; handler} ->
+        let cases_or_timeout_block =
+          let timeout_block = translate_body env handler in
+          let start = Node.make_nop env in
+          let exit_failure = Node.make_nop env in
+          let exit_success = Node.make_nop env in
+          start |~~> [cases_block.start; timeout_block.start] ;
+          cases_block.exit_success |~~> [exit_success] ;
+          timeout_block.exit_success |~~> [exit_success] ;
+          cases_block.exit_failure |~~> [exit_failure] ;
+          timeout_block.exit_failure |~~> [exit_failure] ;
+          {Block.start; exit_success; exit_failure}
+        in
+        let _, time_expr_block = translate_expression_to_fresh_id env time in
+        Block.all env [time_expr_block; cases_or_timeout_block]
+    | None ->
+        cases_block
+  in
+  Block.all env [call_receive_block; cases_block]
 
 
 and translate_expression_record_access (env : (_, _) Env.t) ret_var record name field : Block.t =

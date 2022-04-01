@@ -290,6 +290,17 @@ features_matchexpr:test_match2_Bad/0: {badmatch,1}
 features_matchexpr:test_match3_Ok/0: ok
 features_matchexpr:test_match4_Bad/0: {badmatch,1}
 
+----- features_receive -----
+features_receive:test_receive1_Ok/0: ok
+features_receive:test_receive2_Bad/0: {badmatch,123}
+features_receive:test_receive3_Ok/0: ok
+features_receive:test_receive4_Bad/0: {badmatch,123}
+features_receive:test_receive5_Bad/0: {badmatch,123}
+features_receive:test_receive6_Bad/0: {badmatch,2}
+features_receive:test_receive7_Ok/0: ok
+features_receive:test_receive8_Bad/0: {case_clause,hello}
+features_receive:test_receive_bad_timeout_Bad/0: {badmatch,2}
+
 ----- features_records -----
 features_records:fp_test_lyse_robot_nested_Ok/0: ok
 features_records:fp_test_lyse_robot_update_Ok/0: ok
