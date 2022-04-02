@@ -89,8 +89,21 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
   | Remote {module_; type_} ->
       userdef_condition module_ type_
   | Tuple (FixedSize types) ->
-      let n = List.length types in
-      simple_condition (Tuple n) arg_id
+      let tuple_size = List.length types in
+      let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
+      let is_tuple_block, is_tuple_cond = simple_condition tuple_typ arg_id in
+      let fields = ErlangTypeName.tuple_field_names tuple_size in
+      let fields_and_types = List.zip_exn fields types in
+      let f (field, type_) =
+        let id = mk_fresh_id () in
+        let load_instr = Env.load_field_from_expr env id (Var arg_id) field tuple_typ in
+        let load_block = Block.make_instruction env [load_instr] in
+        let sub_block, sub_expr = type_condition env constraints (id, type_) in
+        (Block.all env [load_block; sub_block], sub_expr)
+      in
+      let blocks, exprs = List.unzip (List.map ~f fields_and_types) in
+      ( Block.all env (is_tuple_block :: blocks)
+      , combine_bool ~op:Binop.LAnd ~default:true_const (is_tuple_cond :: exprs) )
   | Union types ->
       let f t = type_condition env constraints (arg_id, t) in
       let blocks, exprs = List.unzip (List.map ~f types) in

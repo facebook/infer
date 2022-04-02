@@ -121,6 +121,20 @@ tuple_of_2_Ok({_, _}) -> ok.
 
 tuple_of_2_Latent({_, _}) -> ok.
 
+-spec tuple_with_types1_Ok({atom()}) -> any().
+tuple_with_types1_Ok({X}) when is_atom(X) -> ok.
+
+tuple_with_types2_Latent({X}) when is_atom(X) -> ok.
+
+-spec tuple_with_types3_Ok({atom(), map()}) -> any().
+tuple_with_types3_Ok({X, Y}) when is_atom(X), is_map(Y) -> ok.
+
+-spec tuple_with_types4_Latent({atom(), map()}) -> any().
+tuple_with_types4_Latent({X, Y}) when is_map(X), is_atom(Y) -> ok.
+
+-spec tuple_with_types5_Latent({any()}) -> any().
+tuple_with_types5_Latent({X}) when is_atom(X) -> ok.
+
 -record(car, {plate, owner}).
 
 -spec record1_Ok(#car{}) -> any().
