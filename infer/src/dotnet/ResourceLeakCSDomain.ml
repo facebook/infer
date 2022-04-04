@@ -178,7 +178,7 @@ module Summary = struct
             let temp_var_regexp = Re.Str.regexp " n\\$[0-9]+ " in
             match type_name_str with
             | Some type_str ->
-              text := Re.Str.global_replace temp_var_regexp "" (F.asprintf "Leaked resource %a of type %a" ResourcesHeld.pp_key x Typ.Name.pp_name_only type_str) :: !text
+              text := Re.Str.global_replace temp_var_regexp " " (F.asprintf "Leaked resource %a of type %a" ResourcesHeld.pp_key x Typ.Name.pp_name_only type_str) :: !text
             | _ ->
               ()
         )
