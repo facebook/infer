@@ -148,7 +148,8 @@ let box_integer env into_id expr : Block.t =
 let unsafe_unbox_integer env expr : Exp.t * Block.t =
   let value_id = mk_fresh_id () in
   let load_node =
-    Node.make_stmt env [load_field_from_expr env value_id expr ErlangTypeName.integer_value Integer]
+    Node.make_stmt env
+      [Env.load_field_from_expr env value_id expr ErlangTypeName.integer_value Integer]
   in
   (Exp.Var value_id, {start= load_node; exit_success= load_node; exit_failure= Node.make_nop env})
 
