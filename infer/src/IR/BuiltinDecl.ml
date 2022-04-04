@@ -76,6 +76,8 @@ let __delete_array = create_procname "__delete_array"
 
 let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
+let __erlang_equal = create_procname "__erlang_equal"
+
 let __erlang_error_badkey = create_procname "__erlang_error_badkey"
 
 let __erlang_error_badmatch = create_procname "__erlang_error_badmatch"
@@ -99,6 +101,8 @@ let __erlang_make_map = create_procname "__erlang_make_map"
 let __erlang_make_nil = create_procname "__erlang_make_nil"
 
 let __erlang_make_atom = create_procname "__erlang_make_atom"
+
+let __erlang_make_integer = create_procname "__erlang_make_integer"
 
 let __erlang_make_tuple = create_procname "__erlang_make_tuple"
 

@@ -65,6 +65,8 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       simple_condition Atom arg_id
   | Atom (Literal a) ->
       atom_literal a arg_id
+  | Integer Any ->
+      assume_simple Integer
   | List (Proper _) ->
       let block1, expr1 = simple_condition Cons arg_id in
       let block2, expr2 = simple_condition Nil arg_id in

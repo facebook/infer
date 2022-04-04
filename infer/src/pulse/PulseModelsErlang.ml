@@ -18,6 +18,10 @@ open PulseModelsImport
 type maker =
   AbductiveDomain.t -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
+(** A type similar to {!maker} for functions that return a disjunction of (object, handler) results. *)
+type maker_disjunction =
+  AbductiveDomain.t -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t list
+
 let write_field_and_deref path location ~struct_addr ~field_addr ~field_val field_name astate =
   let* astate =
     PulseOperations.write_field path location ~ref:struct_addr field_name ~obj:field_addr astate
@@ -174,6 +178,117 @@ module Atoms = struct
   let write_return_from_bool path location bool_value ret_id astate =
     let> astate, ret_val = of_bool path location bool_value astate in
     PulseOperations.write_id ret_id ret_val astate |> Basic.ok_continue
+end
+
+module Integers = struct
+  let value_field = Fieldname.make (ErlangType Integer) ErlangTypeName.integer_value
+
+  let make_raw location path value : maker =
+   fun astate ->
+    let hist = Hist.single_alloc path location "integer" in
+    let addr = (AbstractValue.mk_fresh (), hist) in
+    let+ astate =
+      write_field_and_deref path location ~struct_addr:addr
+        ~field_addr:(AbstractValue.mk_fresh (), hist)
+        ~field_val:value value_field astate
+    in
+    (PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Integer)) (fst addr) astate, addr)
+
+
+  let make value : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let<+> astate, ret = make_raw location path value astate in
+    PulseOperations.write_id ret_id ret astate
+
+
+  let of_intlit location path (intlit : IntLit.t) : maker =
+   fun astate ->
+    let* astate, name =
+      let intlit_exp : Exp.t = Const (Cint intlit) in
+      PulseOperations.eval path Read location intlit_exp astate
+    in
+    make_raw location path name astate
+
+
+  let of_string location path (intlit : string) : maker =
+    of_intlit location path (IntLit.of_string intlit)
+end
+
+module Comparison = struct
+  (** Makes a disjunction of objects holding the comparison result of two parameters. The
+      disjunction matches a case analysis of the type of these parameters. Currently, it is built as
+      follows:
+
+      - The parameters are both integers, then we compare their values
+      - At least one of the parameters is not an integer, then we compare the raw objects.
+
+      TODO: T95767672 This matches the old behaviour where Erlang integers were represented with
+      native SIL one, but shall be modified and extended to make the model work with more types. In
+      particular, the last case where we compare raw objects in Pulse does not have a correct
+      semantics. *)
+  let make_binop_raw sil_op location path ((x_val, _) as x) ((y_val, _) as y) : maker_disjunction =
+   fun astate ->
+    (* TODO: we could assume that x and y have the same type then
+       reduce the typechecking operations to x only. This will be
+       particularly relevant when we extend this model to support
+       types other than integers. *)
+    let integer_type = Typ.mk_struct (ErlangType Integer) in
+    let x_is_integer = AbstractValue.mk_fresh () in
+    let y_is_integer = AbstractValue.mk_fresh () in
+    let x_and_y_are_integers = AbstractValue.mk_fresh () in
+    let<*> astate = PulseArithmetic.and_equal_instanceof x_is_integer x_val integer_type astate in
+    let<*> astate = PulseArithmetic.and_equal_instanceof y_is_integer y_val integer_type astate in
+    let<*> astate, x_and_y_are_integers_av =
+      PulseArithmetic.eval_binop x_and_y_are_integers Binop.LAnd (AbstractValueOperand x_is_integer)
+        (AbstractValueOperand y_is_integer) astate
+    in
+    let<*> astate_x_and_y_are_integers =
+      PulseArithmetic.prune_positive x_and_y_are_integers_av astate
+    in
+    let<*> astate_x_or_y_is_not_integer =
+      PulseArithmetic.prune_eq_zero x_and_y_are_integers astate
+    in
+    let astate_x_and_y_are_integers, _, (x_int_value, _) =
+      load_field path Integers.value_field location x astate_x_and_y_are_integers
+    in
+    let astate_x_and_y_are_integers, _, (y_int_value, _) =
+      load_field path Integers.value_field location y astate_x_and_y_are_integers
+    in
+    let int_comparison = AbstractValue.mk_fresh () in
+    let int_hist = Hist.single_alloc path location "int_comparison" in
+    let<*> astate_x_and_y_are_integers, int_comparison =
+      PulseArithmetic.eval_binop int_comparison sil_op (AbstractValueOperand x_int_value)
+        (AbstractValueOperand y_int_value) astate_x_and_y_are_integers
+    in
+    let not_int_comparison = AbstractValue.mk_fresh () in
+    let not_int_hist = Hist.single_alloc path location "not_int_comparison" in
+    let<*> astate_x_or_y_is_not_integer, not_int_comparison =
+      PulseArithmetic.eval_binop not_int_comparison sil_op (AbstractValueOperand x_val)
+        (AbstractValueOperand y_val) astate_x_or_y_is_not_integer
+    in
+    [ Ok (astate_x_and_y_are_integers, (int_comparison, int_hist))
+    ; Ok (astate_x_or_y_is_not_integer, (not_int_comparison, not_int_hist)) ]
+
+
+  (** A model of comparison operators where we store in the destination the result of comparing two
+      parameters. *)
+  let binop sil_op x y : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let> foo, (bar, _) = make_binop_raw sil_op location path x y astate in
+    Atoms.write_return_from_bool path location bar ret_id foo
+
+
+  (** Returns a list of abstract states, corresponding to the disjunction of {!make_binop_raw},
+      whose each element has been pruned according to the comparison. *)
+  let prune_binop sil_op location path x y astate : AbductiveDomain.t AccessResult.t list =
+    let> astate, (comparison, _hist) = make_binop_raw sil_op location path x y astate in
+    let astate = PulseArithmetic.prune_positive comparison astate in
+    [astate]
+
+
+  let prune_equal = prune_binop Binop.Eq
+
+  let equal = binop Binop.Eq
 end
 
 module Lists = struct
@@ -376,7 +491,7 @@ module Maps = struct
 
   let make_astate_goodmap path location map astate = prune_type path location map Map astate
 
-  let is_key (key, _key_history) map : model =
+  let is_key key map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     (* Return 3 cases:
      * - Error & assume not map
@@ -401,18 +516,15 @@ module Maps = struct
         load_field path is_empty_field location map astate
       in
       let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
-      let astate, _key_addr, (tracked_key, _hist) = load_field path key_field location map astate in
-      let> astate =
-        [ PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
-            (AbstractValueOperand tracked_key) astate ]
-      in
+      let astate, _key_addr, tracked_key = load_field path key_field location map astate in
+      let> astate = Comparison.prune_equal location path key tracked_key astate in
       let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
       Atoms.write_return_from_bool path location ret_val_true ret_id astate
     in
     astate_empty @ astate_haskey @ astate_badmap
 
 
-  let get (key, _key_history) map : model =
+  let get (key, key_history) map : model =
    fun ({location; path; ret= ret_id, _} as data) astate ->
     (* Return 3 cases:
      * - Error & assume not map
@@ -426,11 +538,8 @@ module Maps = struct
         load_field path is_empty_field location map astate
       in
       let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
-      let astate, _key_addr, (tracked_key, _hist) = load_field path key_field location map astate in
-      let> astate =
-        [ PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand key)
-            (AbstractValueOperand tracked_key) astate ]
-      in
+      let astate, _key_addr, tracked_key = load_field path key_field location map astate in
+      let> astate = Comparison.prune_equal location path (key, key_history) tracked_key astate in
       let astate, _value_addr, tracked_value = load_field path value_field location map astate in
       [Ok (PulseOperations.write_id ret_id tracked_value astate)]
     in
@@ -638,9 +747,7 @@ module Custom = struct
       | Some (Atom (Some name)) ->
           Atoms.of_string location path name astate
       | Some (IntLit intlit) ->
-          let intlit_exp : Exp.t = Const (Cint (IntLit.of_string intlit)) in
-          let+ astate, intlit = PulseOperations.eval path Read location intlit_exp astate in
-          (astate, intlit)
+          Integers.of_string location path intlit astate
       | Some (List elements) ->
           let mk = Lists.make_raw location path in
           many mk elements astate
@@ -702,8 +809,10 @@ let matchers : matcher list =
     ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Errors.if_clause
     ; +BuiltinDecl.(match_builtin __erlang_error_try_clause) <>--> Errors.try_clause
     ; +BuiltinDecl.(match_builtin __erlang_make_atom) <>$ arg $+ arg $--> Atoms.make
+    ; +BuiltinDecl.(match_builtin __erlang_make_integer) <>$ arg $--> Integers.make
     ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
     ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
+    ; +BuiltinDecl.(match_builtin __erlang_equal) <>$ arg $+ arg $--> Comparison.equal
     ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
     ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach
     ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse

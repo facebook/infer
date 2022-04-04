@@ -13,6 +13,8 @@ include BUILTINS.S with type t = Procname.t
 
 val is_declared : Procname.t -> bool
 
+val __erlang_equal : Procname.t
+
 val __erlang_error_badkey : Procname.t
 
 val __erlang_error_badmatch : Procname.t
@@ -30,6 +32,8 @@ val __erlang_error_if_clause : Procname.t
 val __erlang_error_try_clause : Procname.t
 
 val __erlang_make_atom : Procname.t
+
+val __erlang_make_integer : Procname.t
 
 val __erlang_make_cons : Procname.t
 

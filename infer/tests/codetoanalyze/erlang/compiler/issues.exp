@@ -154,6 +154,8 @@ features_guard_bifs:test_is_map_nomodule_Ok/0: ok
 ----- features_if_expr -----
 features_if_expr:test_if_Bad/0: function_clause
 features_if_expr:test_if_Ok/0: ok
+features_if_expr:test_if_in_function2_Bad/0: function_clause
+features_if_expr:test_if_in_function2_Ok/0: ok
 features_if_expr:test_if_in_function_Bad/0: function_clause
 features_if_expr:test_if_in_function_Ok/0: ok
 
@@ -447,6 +449,16 @@ nonmatch_function_guards:test_possible_exception_Ok/0: ok
 nonmatch_if_expr:test_accepts_all_Ok/0: ok
 nonmatch_if_expr:test_accepts_positive_Bad/0: if_clause
 nonmatch_if_expr:test_accepts_positive_Ok/0: ok
+
+----- nonmatch_integers -----
+nonmatch_integers:test_match1_Ok/0: ok
+nonmatch_integers:test_match2_Bad/0: function_clause
+nonmatch_integers:test_match3_Bad/0: function_clause
+nonmatch_integers:test_match4_Bad/0: function_clause
+nonmatch_integers:test_match5_Ok/0: ok
+nonmatch_integers:test_match6_Bad/0: function_clause
+nonmatch_integers:test_match7_Bad/0: function_clause
+nonmatch_integers:test_match8_Bad/0: function_clause
 
 ----- nonmatch_lists -----
 nonmatch_lists:fp_test_primitive_Bad/0: {badmatch,2}

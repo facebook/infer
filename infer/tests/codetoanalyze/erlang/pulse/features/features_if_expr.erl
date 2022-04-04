@@ -9,7 +9,9 @@
     test_if_Ok/0,
     test_if_Bad/0,
     test_if_in_function_Ok/0,
-    test_if_in_function_Bad/0
+    test_if_in_function_Bad/0,
+    test_if_in_function2_Ok/0,
+    test_if_in_function2_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -41,20 +43,34 @@ test_if_Bad() ->
 
 if_in_function(X) ->
     if
-        X == 1 -> 2;
-        not (X == 1) -> 3
+        X -> 2;
+        not X -> 3
     end.
 
 test_if_in_function_Ok() ->
-    Y = if_in_function(1),
+    Y = if_in_function(true),
     case Y of
         2 -> ok;
         _ -> warn(1)
     end.
 
 test_if_in_function_Bad() ->
-    Y = if_in_function(1),
+    Y = if_in_function(true),
     case Y of
         2 -> warn(1);
+        _ -> ok
+    end.
+
+test_if_in_function2_Ok() ->
+    Y = if_in_function(false),
+    case Y of
+        3 -> ok;
+        _ -> warn(1)
+    end.
+
+test_if_in_function2_Bad() ->
+    Y = if_in_function(false),
+    case Y of
+        3 -> warn(1);
         _ -> ok
     end.
