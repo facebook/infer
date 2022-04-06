@@ -904,12 +904,12 @@ let is_captured_pvar procdesc pvar =
   let pvar_matches_in_captured {CapturedVar.pvar= captured} =
     Mangled.equal (Pvar.get_name captured) pvar_name
   in
-  let is_captured_var_objc_block =
-    (* var is captured if the procedure is a objc block and the var is in the captured *)
-    Procname.is_objc_block procname
+  let is_captured_var_objc_block_erlang =
+    (* var is captured if the procedure is a objc block / erlang and the var is in the captured *)
+    (Procname.is_objc_block procname || Procname.is_erlang procname)
     && List.exists ~f:pvar_matches_in_captured (get_captured procdesc)
   in
-  is_captured_var_cpp_lambda || is_captured_var_objc_block
+  is_captured_var_cpp_lambda || is_captured_var_objc_block_erlang
 
 
 let is_captured_var procdesc var =

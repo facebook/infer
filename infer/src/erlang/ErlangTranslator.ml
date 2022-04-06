@@ -793,7 +793,7 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt 
     let default = ProcAttributes.default env.location.file name in
     let access : ProcAttributes.access = Private in
     let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ, Annot.Item.empty)) arity in
-    let mk_capt_var (pvar : Pvar.t) = {CapturedVar.pvar; typ= any_typ; capture_mode= ByReference} in
+    let mk_capt_var (pvar : Pvar.t) = {CapturedVar.pvar; typ= any_typ; capture_mode= ByValue} in
     let captured = List.map ~f:mk_capt_var captured_vars in
     {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ; captured}
   in
@@ -811,12 +811,18 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt 
     ; result= Env.Present (Exp.Lvar (Pvar.get_ret_pvar name)) }
   in
   let () = translate_function_clauses sub_env procdesc attributes name cases None in
-  let closure =
-    let mk_capt_var (var : Pvar.t) = (Exp.Lvar var, var, any_typ, CapturedVar.ByReference) in
-    let captured_vars = List.map ~f:mk_capt_var captured_vars in
-    Exp.Closure {name; captured_vars}
+  let load_block, closure =
+    let mk_capt_var (var : Pvar.t) =
+      let id = mk_fresh_id () in
+      let instr =
+        Sil.Load {id; e= Exp.Lvar var; root_typ= any_typ; typ= any_typ; loc= env.location}
+      in
+      (instr, (Exp.Var id, var, any_typ, CapturedVar.ByValue))
+    in
+    let instrs, captured_vars = List.unzip (List.map ~f:mk_capt_var captured_vars) in
+    (Block.make_instruction env instrs, Exp.Closure {name; captured_vars})
   in
-  Block.make_load env ret_var closure any_typ
+  Block.all env [load_block; Block.make_load env ret_var closure any_typ]
 
 
 and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :

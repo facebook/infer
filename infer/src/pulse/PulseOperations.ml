@@ -816,7 +816,10 @@ type call_kind =
   | `ResolvedProcname ]
 
 let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
-  if Procname.is_objc_block procname || Procname.is_specialized procname then
+  if
+    Procname.is_objc_block procname || Procname.is_specialized procname
+    || Procname.is_erlang procname
+  then
     match call_kind with
     | `Closure captured_actuals ->
         get_closure_captured_actuals path location ~captured_actuals astate

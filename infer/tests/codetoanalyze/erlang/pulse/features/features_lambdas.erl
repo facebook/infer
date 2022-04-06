@@ -13,7 +13,7 @@
     fp_test_apply_fun_Ok/0,
     test_apply_fun_Bad/0,
     test_lambda_capture_Ok/0,
-    fn_test_lambda_capture_Bad/0,
+    test_lambda_capture_Bad/0,
     test_scopes_Ok/1
 ]).
 
@@ -85,8 +85,7 @@ test_lambda_capture_Ok() ->
         _ -> warn(1)
     end.
 
-% TODO: T104353993
-fn_test_lambda_capture_Bad() ->
+test_lambda_capture_Bad() ->
     N = 5,
     F = fun() -> N + 1 end,
     Y = F(),
@@ -103,3 +102,37 @@ test_scopes_Ok(_) ->
     F = fun() -> X = 2 end,
     F(),
     X = 3.
+
+nondet_lambda1_Ok(X) ->
+    C = 1,
+    F = case X of
+        1 -> fun() -> C end;
+        _ -> fun() -> 2 end
+    end,
+    % We don't exactly know what F is, but it must be 1 or 2
+    case F() of
+        1 -> ok;
+        2 -> ok
+    end.
+
+nondet_lambda2_Latent(X) ->
+    C = 1,
+    F = case X of
+        1 -> fun() -> C end;
+        _ -> fun() -> 2 end
+    end,
+    % F might return 2
+    case F() of
+        1 -> ok
+    end.
+
+nondet_lambda3_Latent(X) ->
+    C = 1,
+    F = case X of
+        1 -> fun() -> C end;
+        _ -> fun() -> 2 end
+    end,
+    % F might return 1 (C)
+    case F() of
+        2 -> ok
+    end.
