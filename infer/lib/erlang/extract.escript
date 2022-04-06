@@ -106,6 +106,7 @@ filter_specs([H | T], Acc) ->
         {attribute, _, type, _} -> filter_specs(T, [H | Acc]);
         {attribute, _, file, _} -> filter_specs(T, [H | Acc]);
         {attribute, _, module, _} -> filter_specs(T, [H | Acc]);
+        {attribute, _, record, _} -> filter_specs(T, [H | Acc]);
         _ -> filter_specs(T, Acc)
     end;
 filter_specs([], Acc) ->
