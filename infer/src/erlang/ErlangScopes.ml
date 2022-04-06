@@ -122,7 +122,7 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       annotate_expression_list env lambda_cntr scopes exprs
   | UnaryOperator (_, e) ->
       annotate_expression env lambda_cntr scopes e
-  | Lambda lambda ->
+  | Lambda lambda -> (
       let arity =
         match lambda.cases with
         | c :: _ ->
@@ -138,7 +138,12 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       let scopes = annotate_clauses env lambda_cntr scopes lambda.cases in
       let popped, scopes = pop_scope scopes in
       lambda.captured <- Some popped.captured ;
-      scopes
+      (* Propagate captured to current scope. *)
+      match scopes with
+      | hd :: tl ->
+          {hd with captured= Pvar.Set.union popped.captured hd.captured} :: tl
+      | [] ->
+          L.die InternalError "No scope found during lambda annotation." )
   | Variable v -> (
     match scopes with
     | hd :: tl -> (

@@ -136,3 +136,25 @@ nondet_lambda3_Latent(X) ->
     case F() of
         2 -> ok
     end.
+
+test_nested_capture_Ok() ->
+    C = 1,
+    F = fun() ->
+        G = fun() -> C end,
+        G()
+    end,
+    case F() of
+        1 -> ok;
+        _ -> warn(1)
+    end.
+
+test_nested_capture_Bad() ->
+    C = 1,
+    F = fun() ->
+        G = fun() -> C end,
+        G()
+    end,
+    case F() of
+        1 -> warn(1);
+        _ -> ok
+    end.
