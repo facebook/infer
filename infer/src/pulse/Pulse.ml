@@ -780,10 +780,9 @@ module DisjunctiveAnalyzer =
       let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
 
-let with_debug_exit_node proc_desc ~f =
-  AnalysisCallbacks.html_debug_new_node_session
-    (Procdesc.get_exit_node proc_desc)
-    ~pp_name:(fun fmt -> F.pp_print_string fmt "pulse summary creation")
+let with_html_debug_node node ~desc ~f =
+  AnalysisCallbacks.html_debug_new_node_session node
+    ~pp_name:(fun fmt -> F.pp_print_string fmt desc)
     ~f
 
 
@@ -831,13 +830,14 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
   if should_analyze proc_desc then (
     AbstractValue.State.reset () ;
     PulseTopl.Debug.dropped_disjuncts_count := 0 ;
-    match
-      DisjunctiveAnalyzer.compute_post analysis_data
-        ~initial:(initial tenv proc_desc, NonDisjDomain.bottom)
-        proc_desc
-    with
+    let initial =
+      with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
+        ~f:(fun () -> (initial tenv proc_desc, NonDisjDomain.bottom))
+    in
+    match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
     | Some (posts, non_disj_astate) ->
-        with_debug_exit_node proc_desc ~f:(fun () ->
+        with_html_debug_node (Procdesc.get_exit_node proc_desc) ~desc:"pulse summary creation"
+          ~f:(fun () ->
             let exit_location = Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc in
             let posts, non_disj_astate =
               (* Do final cleanup at the end of procdesc
@@ -865,8 +865,8 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
   else None
 
 
-let checker analysis_data =
-  if should_analyze analysis_data.InterproceduralAnalysis.proc_desc then (
+let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+  if should_analyze proc_desc then (
     try analyze analysis_data
     with AboutToOOM ->
       (* We trigger GC to avoid skipping the next procedure that will be analyzed. *)
