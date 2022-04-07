@@ -195,17 +195,23 @@ let get_tainted matchers (return, return_typ) proc_name actuals astate =
 
 let taint_sources path location return proc_name actuals astate =
   let tainted = get_tainted source_matchers return proc_name actuals astate in
-  List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
-      let hist =
-        ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
-      in
-      AbductiveDomain.AddressAttributes.add_one v (Tainted (source, hist)) astate )
+  let astate =
+    List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
+        let hist =
+          ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
+        in
+        AbductiveDomain.AddressAttributes.add_one v (Tainted (source, hist)) astate )
+  in
+  (astate, not (List.is_empty tainted))
 
 
 let taint_sanitizers return proc_name actuals astate =
   let tainted = get_tainted sanitizer_matchers return proc_name actuals astate in
-  List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, _), _)) ->
-      AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
+  let astate =
+    List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, _), _)) ->
+        AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
+  in
+  (astate, not (List.is_empty tainted))
 
 
 let check_policy ~sink ~source ~sanitizer_opt =
@@ -254,17 +260,73 @@ let check_not_tainted_wrt_sink location (sink, sink_trace) v astate : _ Result.t
 
 let taint_sinks path location return proc_name actuals astate =
   let tainted = get_tainted sink_matchers return proc_name actuals astate in
-  PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
-      let sink_trace = Trace.Immediate {location; history} in
-      let astate = AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate in
-      match check_not_tainted_wrt_sink location (sink, sink_trace) v astate with
-      | Ok astate ->
-          Ok astate
-      | Error report ->
-          Recoverable (astate, [report]) )
+  let+ astate =
+    PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
+        let sink_trace = Trace.Immediate {location; history} in
+        let astate =
+          AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
+        in
+        match check_not_tainted_wrt_sink location (sink, sink_trace) v astate with
+        | Ok astate ->
+            Ok astate
+        | Error report ->
+            Recoverable (astate, [report]) )
+  in
+  (astate, not (List.is_empty tainted))
 
 
-let call path location return proc_name actuals astate =
-  taint_sanitizers return proc_name actuals astate
-  |> taint_sources path location return proc_name actuals
-  |> taint_sinks path location return proc_name actuals
+(* merge all taint from actuals into the return value; NOTE: currently only one source and one
+   sanitizer per value is supported so this may overwrite taint information *)
+let propagate_taint_for_unknown_calls path location (return, _) call actuals astate =
+  (* TODO: match values returned by reference by the frontend *)
+  L.d_printfln "propagating all taint for unknown call" ;
+  let return = Var.of_id return in
+  List.fold actuals ~init:astate
+    ~f:(fun astate {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
+      match
+        ( AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer actual astate
+        , Stack.find_opt return astate )
+      with
+      | None, _ | _, None ->
+          astate
+      | Some ((source, source_hist), sanitizer_opt), Some return_value ->
+          let hist =
+            ValueHistory.sequence ~context:path.PathContext.conditions
+              (Call
+                 { f= call
+                 ; location
+                 ; timestamp= path.PathContext.timestamp
+                 ; in_call= ValueHistory.epoch } )
+              source_hist
+          in
+          let astate =
+            AbductiveDomain.AddressAttributes.add_one (fst return_value)
+              (Tainted (source, hist))
+              astate
+          in
+          Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
+              AbductiveDomain.AddressAttributes.add_one (fst return_value)
+                (TaintSanitized sanitizer) astate ) )
+
+
+let call path location return ~call_was_unknown (call : _ Either.t) actuals astate =
+  match call with
+  | First call_exp ->
+      if call_was_unknown then
+        Ok
+          (propagate_taint_for_unknown_calls path location return (SkippedUnknownCall call_exp)
+             actuals astate )
+      else Ok astate
+  | Second proc_name ->
+      let astate, found_sanitizer_model = taint_sanitizers return proc_name actuals astate in
+      let astate, found_source_model =
+        taint_sources path location return proc_name actuals astate
+      in
+      let+ astate, found_sink_model = taint_sinks path location return proc_name actuals astate in
+      if
+        call_was_unknown && (not found_sanitizer_model) && (not found_source_model)
+        && not found_sink_model
+      then
+        propagate_taint_for_unknown_calls path location return (SkippedKnownCall proc_name) actuals
+          astate
+      else astate

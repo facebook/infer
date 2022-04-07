@@ -13,7 +13,8 @@ val call :
      PathContext.t
   -> Location.t
   -> Ident.t * Typ.t
-  -> Procname.t
+  -> call_was_unknown:bool
+  -> (Exp.t, Procname.t) Either.t
   -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t

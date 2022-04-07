@@ -148,33 +148,36 @@ module PulseTransferFunctions = struct
                 maybe_res )
           else maybe_res
         in
-        reset_need_specialization needed_specialization res
+        ( reset_need_specialization needed_specialization res
+        , if Option.is_none callee_data then `UnknownCall else `KnownCall )
     | _ ->
         (* dereference call expression to catch nil issues *)
-        let<*> astate, _ =
-          if flags.cf_is_objc_block then
-            (* We are on an unknown block call, meaning that the block was defined
-               outside the current function and was either passed by the caller
-               as an argument or retrieved from an object. We do not handle blocks
-               inside objects yet so we assume we are in the former case. In this
-               case, we tell the caller that we are missing some information by
-               setting [need_specialization] in the resulting state and the caller
-               will then try to specialize the current function with its available
-               information. *)
-            let astate = AbductiveDomain.set_need_specialization astate in
-            PulseOperations.eval_deref path ~must_be_valid_reason:BlockCall call_loc call_exp astate
-          else PulseOperations.eval_deref path call_loc call_exp astate
-        in
-        L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
-        let astate =
-          let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
-          PulseCallOperations.conservatively_initialize_args arg_values astate
-        in
-        let<+> astate =
-          PulseCallOperations.unknown_call path call_loc (SkippedUnknownCall call_exp) ~ret ~actuals
-            ~formals_opt:None astate
-        in
-        astate
+        ( (let<*> astate, _ =
+             if flags.cf_is_objc_block then
+               (* We are on an unknown block call, meaning that the block was defined
+                  outside the current function and was either passed by the caller
+                  as an argument or retrieved from an object. We do not handle blocks
+                  inside objects yet so we assume we are in the former case. In this
+                  case, we tell the caller that we are missing some information by
+                  setting [need_specialization] in the resulting state and the caller
+                  will then try to specialize the current function with its available
+                  information. *)
+               let astate = AbductiveDomain.set_need_specialization astate in
+               PulseOperations.eval_deref path ~must_be_valid_reason:BlockCall call_loc call_exp
+                 astate
+             else PulseOperations.eval_deref path call_loc call_exp astate
+           in
+           L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
+           let astate =
+             let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
+             PulseCallOperations.conservatively_initialize_args arg_values astate
+           in
+           let<+> astate =
+             PulseCallOperations.unknown_call path call_loc (SkippedUnknownCall call_exp) ~ret
+               ~actuals ~formals_opt:None astate
+           in
+           astate )
+        , `UnknownCall )
 
 
   (** has an object just gone out of scope? *)
@@ -286,7 +289,7 @@ module PulseTransferFunctions = struct
           None
     in
     (* do interprocedural call then destroy objects going out of scope *)
-    let exec_states_res =
+    let exec_states_res, call_was_unknown =
       match model with
       | Some (model, callee_procname) ->
           L.d_printfln "Found model for call@\n" ;
@@ -297,7 +300,7 @@ module PulseTransferFunctions = struct
             in
             PulseCallOperations.conservatively_initialize_args arg_values astate
           in
-          model {analysis_data; path; callee_procname; location= call_loc; ret} astate
+          (model {analysis_data; path; callee_procname; location= call_loc; ret} astate, `KnownCall)
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let r =
@@ -312,12 +315,19 @@ module PulseTransferFunctions = struct
         let* exec_state = exec_state_res in
         match exec_state with
         | ContinueProgram astate ->
-            let* astate =
+            let call_event =
               match callee_pname with
-              | Some callee_pname ->
-                  PulseTaintOperations.call path call_loc ret callee_pname func_args astate
               | None ->
-                  Ok astate
+                  Either.First call_exp
+              | Some proc_name ->
+                  Either.Second proc_name
+            in
+            let call_was_unknown =
+              match call_was_unknown with `UnknownCall -> true | `KnownCall -> false
+            in
+            let* astate =
+              PulseTaintOperations.call path call_loc ret ~call_was_unknown call_event func_args
+                astate
             in
             Ok (ContinueProgram astate)
         | ( ExceptionRaised _
