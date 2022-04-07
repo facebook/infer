@@ -2303,32 +2303,34 @@ and pulse_report_issues_for_tests =
     "Do not supress any of the issues found by Pulse."
 
 
-and pulse_simple_sanitizers =
-  CLOpt.mk_json ~long:"pulse-simple-sanitizers"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Quick way to specify simple sanitizers as a JSON objects. See $(b,--pulse-simple-sources) for \
-     the fields format documentation."
-
-
-and pulse_simple_sinks =
-  CLOpt.mk_json ~long:"pulse-simple-sinks"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Quick way to specify simple sinks as a JSON objects. See $(b,--pulse-simple-sources) for the \
-     fields format documentation."
-
-
-and pulse_simple_sources =
-  CLOpt.mk_json ~long:"pulse-simple-sources"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    {|Together with $(b,--pulse-simple-sinks) and $(b,--pulse-simple-sinks), this provides a quick way to specify simple taint properties, where all taint flows from any source flowing into any sink without passing through any sanitizer is reported. The JSON format is common to all three options, which expect a list of objects with the following fields, for example '[{"procedure": "mySimpleSink", "arg_indices": [1]}]':
-  - "procedure" to match a substring of the function or method name, or "procedure_regex" to specify an OCaml regex
-  - "arg_indices" (for sinks only): a list of integer positions of arguments to take into account, otherwise all of them will be considered as sinks|}
-
-
 and pulse_skip_procedures =
   CLOpt.mk_string_opt ~long:"pulse-skip-procedures"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
+
+
+and pulse_taint_sanitizers =
+  CLOpt.mk_json ~long:"pulse-taint-sanitizers"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple sanitizers as a JSON objects. See $(b,--pulse-taint-sources) for \
+     the fields format documentation."
+
+
+and pulse_taint_sinks =
+  CLOpt.mk_json ~long:"pulse-taint-sinks"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple sinks as a JSON objects. See $(b,--pulse-taint-sources) for the \
+     fields format documentation."
+
+
+and pulse_taint_sources =
+  CLOpt.mk_json ~long:"pulse-taint-sources"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), and $(b,--pulse-taint-specifications), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects with the following fields, for example '[{"procedure": "mySimpleSink", "formals": [{"index": 1}]}]':
+  - "procedure" to match a substring of the function or method name, or "procedure_regex" to specify an OCaml regex
+  - "formals" is a list of objects with one or two fields:
+    - "index" is the index of the formal that is tainted, starting at 0. For methods, index 0 is $(i,this), other arguments start at index 1
+    - "type_name" is optional string; only arguments whose type contains this substring match|}
 
 
 and pulse_widen_threshold =
@@ -3648,16 +3650,6 @@ and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_no
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
 
-and pulse_models_for_erlang = !pulse_models_for_erlang
-
-and pulse_report_ignore_unknown_java_methods_patterns =
-  match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
-  | [] ->
-      None
-  | patts ->
-      Some (Str.regexp (String.concat ~sep:"\\|" patts))
-
-
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =
     let re = Str.regexp "::" in
@@ -3679,7 +3671,19 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   RevList.rev_partition_map ~f:aux models
 
 
+and pulse_models_for_erlang = !pulse_models_for_erlang
+
+and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+
 and pulse_recency_limit = !pulse_recency_limit
+
+and pulse_report_ignore_unknown_java_methods_patterns =
+  match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
+  | [] ->
+      None
+  | patts ->
+      Some (Str.regexp (String.concat ~sep:"\\|" patts))
+
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
@@ -3687,17 +3691,15 @@ and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
 and pulse_scuba_logging = !pulse_scuba_logging
 
-and pulse_simple_sanitizers = !pulse_simple_sanitizers
-
-and pulse_simple_sinks = !pulse_simple_sinks
-
-and pulse_simple_sources = !pulse_simple_sources
-
 and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 
-and pulse_widen_threshold = !pulse_widen_threshold
+and pulse_taint_sanitizers = !pulse_taint_sanitizers
 
-and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+and pulse_taint_sinks = !pulse_taint_sinks
+
+and pulse_taint_sources = !pulse_taint_sources
+
+and pulse_widen_threshold = !pulse_widen_threshold
 
 and pure_by_default = !pure_by_default
 

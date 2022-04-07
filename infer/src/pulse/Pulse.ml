@@ -308,7 +308,27 @@ module PulseTransferFunctions = struct
           r
     in
     let exec_states_res =
-      PulseTaintOperations.call path call_loc callee_pname func_args ret exec_states_res
+      let one_state exec_state_res =
+        let* exec_state = exec_state_res in
+        match exec_state with
+        | ContinueProgram astate ->
+            let* astate =
+              match callee_pname with
+              | Some callee_pname ->
+                  PulseTaintOperations.call path call_loc ret callee_pname func_args astate
+              | None ->
+                  Ok astate
+            in
+            Ok (ContinueProgram astate)
+        | ( ExceptionRaised _
+          | ExitProgram _
+          | AbortProgram _
+          | LatentAbortProgram _
+          | LatentInvalidAccess _
+          | ISLLatentMemoryError _ ) as exec_state ->
+            Ok exec_state
+      in
+      List.map exec_states_res ~f:one_state
     in
     let exec_states_res =
       if Topl.is_active () then

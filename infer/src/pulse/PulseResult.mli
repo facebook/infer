@@ -52,6 +52,8 @@ val list_fold2 :
   -> f:('ok -> 'a -> 'b -> ('ok, 'err) t)
   -> ('ok, 'err) t List.Or_unequal_lengths.t
 
+val list_foldi : init:'acc -> f:(int -> 'acc -> 'a -> ('acc, 'err) t) -> 'a list -> ('acc, 'err) t
+
 val container_fold :
      fold:('t, 'a, ('accum, 'err) t) Container.fold
   -> 't

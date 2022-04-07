@@ -5,11 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+type formal_matcher = {index: int; ?type_name: string option}
+
 type matcher = {
   (* exactly one of {procedure, procedure_regex} must be specified *)
   ?procedure: string option;
   ?procedure_regex: string option;
-  ~arg_indices: int list;
+  ~formals: formal_matcher list;
 }
 
 type matchers = matcher list

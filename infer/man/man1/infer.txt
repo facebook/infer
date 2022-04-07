@@ -1160,33 +1160,35 @@ OPTIONS
            issues will be reported regardless the presence of unknown code       
     See also infer-analyze(1).
 
-       --pulse-simple-sanitizers json
-           Quick way to specify simple sanitizers as a JSON objects. See
-           --pulse-simple-sources for the fields format documentation.       
-    See also infer-analyze(1).
-
-       --pulse-simple-sinks json
-           Quick way to specify simple sinks as a JSON objects. See
-           --pulse-simple-sources for the fields format documentation.       
-    See also infer-analyze(1).
-
-       --pulse-simple-sources json
-           Together with --pulse-simple-sinks and --pulse-simple-sinks, this
-           provides a quick way to specify simple taint properties, where all
-           taint flows from any source flowing into any sink without passing
-           through any sanitizer is reported. The JSON format is common to
-           all three options, which expect a list of objects with the
-           following fields, for example '[{"procedure": "mySimpleSink",
-           "arg_indices": [1]}]':             - "procedure" to match a substring of the function or method
-           name, or "procedure_regex" to specify an OCaml regex
-             - "arg_indices" (for sinks only): a list of integer positions
-           of arguments to take into account, otherwise all of them will be
-           considered as sinks
-           See also infer-analyze(1).
-
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.       
     See also infer-analyze(1).
+
+       --pulse-taint-sanitizers json
+           Quick way to specify simple sanitizers as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.       
+    See also infer-analyze(1).
+
+       --pulse-taint-sinks json
+           Quick way to specify simple sinks as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.       
+    See also infer-analyze(1).
+
+       --pulse-taint-sources json
+           Together with --pulse-taint-sanitizers, --pulse-taint-sinks, and
+           --pulse-taint-specifications, specify taint properties. The JSON
+           format of sources also applies to sinks and sanitizers. It
+           consists of a list of objects with the following fields, for
+           example '[{"procedure": "mySimpleSink", "formals": [{"index":
+           1}]}]':             - "procedure" to match a substring of the function or method
+           name, or "procedure_regex" to specify an OCaml regex
+             - "formals" is a list of objects with one or two fields:
+               - "index" is the index of the formal that is tainted,
+           starting at 0. For methods, index 0 is this, other arguments start
+           at index 1
+               - "type_name" is optional string; only arguments whose type
+           contains this substring match
+           See also infer-analyze(1).
 
        --purity
            Activates: checker purity: Detects pure (side-effect-free)

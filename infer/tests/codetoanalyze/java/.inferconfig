@@ -35,12 +35,12 @@
       "method": "findViewById"
     }
   ],
-  "pulse-simple-sources": [
+  "pulse-taint-sources": [
     {"procedure": "inferSecretSource"},
     {"procedure_regex": "codetoanalyze\\.java\\.quandary\\.ExternalSpecs\\.privateData.*"},
     {"procedure": "codetoanalyze.java.quandary.InterfaceSpec.source"}
   ],
-  "pulse-simple-sinks": [
+  "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
     { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink1",
       "arg_indices": [1] },
@@ -50,7 +50,7 @@
     { "procedure": "codetoanalyze.java.quandary.ConstructorSink.<init>",
       "arg_indices": [0] }
   ],
-  "pulse-simple-sanitizers": [
+  "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },
     { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sanitizer" }
   ]

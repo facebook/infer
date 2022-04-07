@@ -12,9 +12,9 @@ open PulseDomainInterface
 val call :
      PathContext.t
   -> Location.t
-  -> Procname.t option
-  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
   -> Ident.t * Typ.t
-  -> ExecutionDomain.t AccessResult.t list
-  -> ExecutionDomain.t AccessResult.t list
+  -> Procname.t
+  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)

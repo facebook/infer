@@ -12,17 +12,43 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
-type arg_indices = Positions of int list | Any
+type taint_target =
+  | ArgumentPositions of Pulse_config_t.formal_matcher list
+  | AllArguments
+  | ReturnValue
 
-let arg_indices_of_list arg_indices =
-  if List.is_empty arg_indices then Any else Positions arg_indices
+let taint_target_of_list ~default_taint_target taint_target =
+  if List.is_empty taint_target then default_taint_target else ArgumentPositions taint_target
+
+
+let taint_target_matches taint_target actual_index actual_typ =
+  let type_name_matches type_name_opt actual_typ =
+    match type_name_opt with
+    | None ->
+        true
+    | Some type_name ->
+        String.is_substring ~substring:type_name (Typ.to_string actual_typ)
+  in
+  match taint_target with
+  | ReturnValue ->
+      false
+  | AllArguments ->
+      true
+  | ArgumentPositions indices ->
+      List.exists indices ~f:(fun {Pulse_config_t.index; type_name} ->
+          Int.equal actual_index index && type_name_matches type_name actual_typ )
 
 
 type simple_matcher =
-  | ProcedureName of {name: string; arg_indices: arg_indices}
-  | ProcedureNameRegex of {name_regex: Str.regexp; arg_indices: arg_indices}
+  | ProcedureName of {name: string; taint_target: taint_target}
+  | ProcedureNameRegex of {name_regex: Str.regexp; taint_target: taint_target}
 
-let simple_matcher_of_config ~can_have_arg_indices ~option_name config =
+let taint_target_of_matcher = function
+  | ProcedureName {taint_target} | ProcedureNameRegex {taint_target} ->
+      taint_target
+
+
+let matcher_of_config ~default_taint_target ~option_name config =
   (* TODO: write our own json handling using [Yojson] directly as atdgen generated parsers ignore
      extra fields, meaning we won't report errors to users when they spell things wrong. *)
   let matchers = Pulse_config_j.matchers_of_string config in
@@ -35,36 +61,32 @@ let simple_matcher_of_config ~can_have_arg_indices ~option_name config =
              \"procedure_regex\": %a"
             option_name (Pp.option F.pp_print_string) matcher.procedure
             (Pp.option F.pp_print_string) matcher.procedure_regex
-      | {arg_indices= _ :: _} when not can_have_arg_indices ->
-          L.die UserError
-            "When parsing option %s: Unexpected JSON format: Cannot have \"arg_indices\" in this \
-             specification but got \"[%a]\"."
-            option_name (Pp.seq ~sep:"," F.pp_print_int) matcher.arg_indices
-      | {procedure= Some name; procedure_regex= None; arg_indices} ->
-          ProcedureName {name; arg_indices= arg_indices_of_list arg_indices}
-      | {procedure= None; procedure_regex= Some name_regex; arg_indices} ->
+      | {procedure= Some name; procedure_regex= None; formals} ->
+          ProcedureName {name; taint_target= taint_target_of_list ~default_taint_target formals}
+      | {procedure= None; procedure_regex= Some name_regex; formals} ->
           ProcedureNameRegex
-            {name_regex= Str.regexp name_regex; arg_indices= arg_indices_of_list arg_indices} )
+            { name_regex= Str.regexp name_regex
+            ; taint_target= taint_target_of_list ~default_taint_target formals } )
 
 
-let sources_matchers =
-  simple_matcher_of_config ~can_have_arg_indices:false ~option_name:"--pulse-source-matchers"
-    (Yojson.Basic.to_string Config.pulse_simple_sources)
+let source_matchers =
+  matcher_of_config ~default_taint_target:ReturnValue ~option_name:"--pulse-taint-sources"
+    (Yojson.Basic.to_string Config.pulse_taint_sources)
 
 
-let sinks_matchers =
-  simple_matcher_of_config ~can_have_arg_indices:true ~option_name:"--pulse-sink-matchers"
-    (Yojson.Basic.to_string Config.pulse_simple_sinks)
+let sink_matchers =
+  matcher_of_config ~default_taint_target:AllArguments ~option_name:"--pulse-taint-sinks"
+    (Yojson.Basic.to_string Config.pulse_taint_sinks)
 
 
-let sanitizers_matchers =
-  simple_matcher_of_config ~can_have_arg_indices:false ~option_name:"--pulse-sanitizers-matchers"
-    (Yojson.Basic.to_string Config.pulse_simple_sanitizers)
+let sanitizer_matchers =
+  matcher_of_config ~default_taint_target:AllArguments ~option_name:"--pulse-taint-sanitizers"
+    (Yojson.Basic.to_string Config.pulse_taint_sanitizers)
 
 
 let matches_simple matchers proc_name =
   let proc_name_s = Procname.to_string proc_name in
-  (* handle [arg_indices] *)
+  (* handle [taint_target] *)
   List.find_map matchers ~f:(fun matcher ->
       let matches =
         match matcher with
@@ -77,135 +99,67 @@ let matches_simple matchers proc_name =
           | exception Caml.Not_found ->
               false )
       in
-      Option.some_if matches (proc_name, matcher) )
+      Option.some_if matches matcher )
 
 
-let get_as_source proc_name_opt =
-  Option.find_map proc_name_opt ~f:(fun proc_name -> matches_simple sources_matchers proc_name)
-
-
-let get_as_sink proc_name_opt =
-  Option.find_map proc_name_opt ~f:(fun proc_name -> matches_simple sinks_matchers proc_name)
-
-
-let get_as_sanitizer proc_name_opt =
-  Option.find_map proc_name_opt ~f:(fun proc_name -> matches_simple sanitizers_matchers proc_name)
-
-
-let call_source path location (source_proc_name, _source_matcher) (return, _typ) exec_state_res =
-  let source = Taint.ReturnValue source_proc_name in
-  let return = Var.of_id return in
-  let taint astate =
-    Stack.find_opt return astate
-    |> Option.fold ~init:astate ~f:(fun astate (return_val, _) ->
-           let hist =
-             ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
-           in
-           AbductiveDomain.AddressAttributes.add_one return_val (Tainted (source, hist)) astate )
-  in
-  let one_exec_state (exec_state : ExecutionDomain.t) : ExecutionDomain.t =
-    match exec_state with
-    | ContinueProgram astate ->
-        ContinueProgram (taint astate)
-    | ISLLatentMemoryError _
-    | AbortProgram _
-    | LatentAbortProgram _
-    | ExitProgram _
-    | ExceptionRaised _
-    | LatentInvalidAccess _ ->
-        exec_state
-  in
-  List.map ~f:(PulseResult.map ~f:one_exec_state) exec_state_res
-
-
-let call_sink path location (sink_proc_name, sink_matcher) actuals exec_state_res =
-  let sink = Taint.PassedAsArgumentTo sink_proc_name in
-  let actuals =
-    List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload} -> arg_payload)
-  in
-  let taint astate =
-    IList.foldi_result actuals ~init:astate ~f:(fun i astate (v, history) ->
-        let matches_arg =
-          match sink_matcher with
-          | ProcedureName {arg_indices= Any} | ProcedureNameRegex {arg_indices= Any} ->
-              true
-          | ProcedureName {arg_indices= Positions indices}
-          | ProcedureNameRegex {arg_indices= Positions indices} ->
-              List.mem ~equal:Int.equal indices i
+let get_tainted matchers (return, return_typ) proc_name actuals astate =
+  match matches_simple matchers proc_name with
+  | None ->
+      []
+  | Some matcher -> (
+    match taint_target_of_matcher matcher with
+    | ReturnValue ->
+        (* TODO: match values returned by reference by the frontend *)
+        let return = Var.of_id return in
+        Stack.find_opt return astate
+        |> Option.fold ~init:[] ~f:(fun tainted return_value ->
+               (return_value, return_typ) :: tainted )
+    | (AllArguments | ArgumentPositions _) as taint_target ->
+        let actuals =
+          List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
+              (arg_payload, typ) )
         in
-        if matches_arg then
-          let sink_trace = Trace.Immediate {location; history} in
-          AbductiveDomain.AddressAttributes.check_not_tainted path sink sink_trace v astate
-          |> Result.map_error ~f:(fun err -> (Decompiler.find v astate, sink_trace, err))
-        else Ok astate )
-  in
-  let one_exec_state (exec_state : ExecutionDomain.t) : ExecutionDomain.t AccessResult.t =
-    match exec_state with
-    | ContinueProgram astate -> (
-      match taint astate with
+        List.foldi actuals ~init:[] ~f:(fun i tainted ((_, actual_typ) as actual_hist_and_typ) ->
+            if taint_target_matches taint_target i actual_typ then actual_hist_and_typ :: tainted
+            else tainted ) )
+
+
+let taint_sources path location return proc_name actuals astate =
+  let tainted = get_tainted source_matchers return proc_name actuals astate in
+  let source = Taint.ReturnValue proc_name in
+  List.fold tainted ~init:astate ~f:(fun astate ((v, _), _) ->
+      let hist =
+        ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
+      in
+      AbductiveDomain.AddressAttributes.add_one v (Tainted (source, hist)) astate )
+
+
+let taint_sanitizers return proc_name actuals astate =
+  let tainted = get_tainted sanitizer_matchers return proc_name actuals astate in
+  let sanitizer = Taint.SanitizedBy proc_name in
+  List.fold tainted ~init:astate ~f:(fun astate ((v, _), _) ->
+      AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
+
+
+let taint_sinks path location return proc_name actuals astate =
+  let tainted = get_tainted sink_matchers return proc_name actuals astate in
+  let sink = Taint.PassedAsArgumentTo proc_name in
+  PulseResult.list_fold tainted ~init:astate ~f:(fun astate ((v, history), _typ) ->
+      let sink_trace = Trace.Immediate {location; history} in
+      match AbductiveDomain.AddressAttributes.check_not_tainted path sink sink_trace v astate with
       | Ok astate ->
-          Ok (ContinueProgram astate)
-      | Error (tainted, sink_trace, source) ->
+          Ok astate
+      | Error source ->
+          let tainted = Decompiler.find v astate in
           Recoverable
-            ( ContinueProgram astate
+            ( astate
             , [ ReportableError
                   { astate
                   ; diagnostic= TaintFlow {tainted; location; source; sink= (sink, sink_trace)} } ]
             ) )
-    | ISLLatentMemoryError _
-    | AbortProgram _
-    | LatentAbortProgram _
-    | ExitProgram _
-    | ExceptionRaised _
-    | LatentInvalidAccess _ ->
-        Ok exec_state
-  in
-  List.map exec_state_res ~f:(PulseResult.bind ~f:one_exec_state)
 
 
-let call_sanitizer (sanitizer_proc_name, _sanitizer_matcher) (return, _typ) exec_state_res =
-  let sanitizer = Taint.SanitizedBy sanitizer_proc_name in
-  let return = Var.of_id return in
-  let taint astate =
-    Stack.find_opt return astate
-    |> Option.fold ~init:astate ~f:(fun astate (return_val, _) ->
-           AbductiveDomain.AddressAttributes.add_one return_val (TaintSanitized sanitizer) astate )
-  in
-  let one_exec_state (exec_state : ExecutionDomain.t) : ExecutionDomain.t =
-    match exec_state with
-    | ContinueProgram astate ->
-        ContinueProgram (taint astate)
-    | ISLLatentMemoryError _
-    | AbortProgram _
-    | LatentAbortProgram _
-    | ExitProgram _
-    | ExceptionRaised _
-    | LatentInvalidAccess _ ->
-        exec_state
-  in
-  List.map ~f:(PulseResult.map ~f:one_exec_state) exec_state_res
-
-
-let call path location proc_name_opt actuals ret exec_state_res =
-  let exec_state_res =
-    match get_as_sanitizer proc_name_opt with
-    | None ->
-        exec_state_res
-    | Some sanitizer ->
-        call_sanitizer sanitizer ret exec_state_res
-  in
-  let exec_state_res =
-    match get_as_source proc_name_opt with
-    | None ->
-        exec_state_res
-    | Some source ->
-        call_source path location source ret exec_state_res
-  in
-  let exec_state_res =
-    match get_as_sink proc_name_opt with
-    | None ->
-        exec_state_res
-    | Some sink ->
-        call_sink path location sink actuals exec_state_res
-  in
-  exec_state_res
+let call path location return proc_name actuals astate =
+  taint_sanitizers return proc_name actuals astate
+  |> taint_sources path location return proc_name actuals
+  |> taint_sinks path location return proc_name actuals
