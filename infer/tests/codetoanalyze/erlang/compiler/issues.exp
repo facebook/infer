@@ -122,11 +122,9 @@ features_functions:test_call4_Bad/0: function_clause
 features_functions:test_call4_Ok/0: ok
 
 ----- features_guard_bifs -----
-features_guard_bifs:fp_test_accepts_atom3_Ok/0: ok
-features_guard_bifs:fp_test_is_list4_Ok/0: ok
-features_guard_bifs:fp_test_is_map3_Ok/0: ok
 features_guard_bifs:test_accepts_atom1_Ok/0: ok
 features_guard_bifs:test_accepts_atom2_Ok/0: ok
+features_guard_bifs:test_accepts_atom3_Ok/0: ok
 features_guard_bifs:test_accepts_atom4_Bad/0: function_clause
 features_guard_bifs:test_accepts_atom5_Bad/0: function_clause
 features_guard_bifs:test_accepts_atom_nomodule_Bad/0: function_clause
@@ -142,10 +140,12 @@ features_guard_bifs:test_accepts_bool_nomodule4_Bad/0: function_clause
 features_guard_bifs:test_is_list1_Ok/0: ok
 features_guard_bifs:test_is_list2_Ok/0: ok
 features_guard_bifs:test_is_list3_Ok/0: ok
+features_guard_bifs:test_is_list4_Ok/0: ok
 features_guard_bifs:test_is_list5_Bad/0: function_clause
 features_guard_bifs:test_is_list6_Bad/0: function_clause
 features_guard_bifs:test_is_map1_Ok/0: ok
 features_guard_bifs:test_is_map2_Ok/0: ok
+features_guard_bifs:test_is_map3_Ok/0: ok
 features_guard_bifs:test_is_map4_Bad/0: function_clause
 features_guard_bifs:test_is_map5_Bad/0: function_clause
 features_guard_bifs:test_is_map_nomodule_Bad/0: function_clause
@@ -461,10 +461,10 @@ nonmatch_integers:test_match7_Bad/0: function_clause
 nonmatch_integers:test_match8_Bad/0: function_clause
 
 ----- nonmatch_lists -----
-nonmatch_lists:fp_test_primitive_Bad/0: {badmatch,2}
 nonmatch_lists:test_empty1_Ok/0: ok
 nonmatch_lists:test_empty2_Bad/0: function_clause
 nonmatch_lists:test_empty3_Bad/0: function_clause
+nonmatch_lists:test_primitive_Bad/0: {badmatch,2}
 nonmatch_lists:test_secondnil1_Ok/0: ok
 nonmatch_lists:test_secondnil2_Ok/0: ok
 nonmatch_lists:test_secondnil3_Bad/0: function_clause
