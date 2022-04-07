@@ -11,7 +11,21 @@ type matcher = {
   (* exactly one of {procedure, procedure_regex} must be specified *)
   ?procedure: string option;
   ?procedure_regex: string option;
+  ?kind: string option; (** default is [Simple] which matches all Simple sources to all Simple sinks provided they haven't been sanitized by a Simple sanitizer *)
   ~formals: formal_matcher list;
 }
 
 type matchers = matcher list
+
+type taint_flow = {
+  source_kinds: string list;
+  ~sanitizer_kinds: string list;
+  sink_kinds: string list;
+}
+
+type taint_policy = {
+  short_description: string;
+  taint_flows: taint_flow list
+}
+
+type taint_policies = taint_policy list

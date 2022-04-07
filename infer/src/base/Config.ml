@@ -2309,6 +2309,18 @@ and pulse_skip_procedures =
     ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
 
 
+and pulse_taint_policies =
+  CLOpt.mk_json ~long:"pulse-taint-policies"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    {|A description of which taint flows should be reported, following this JSON format:
+  { "short_description": "<a short description of the issue>",
+    "taint_flows": [{ "source_kinds": [<matchers>],
+                      "sink_kinds": [<matchers>],
+                      "sanitizer_kinds": [<matchers>]}]
+  }
+where <matchers> are in the same format as $(b,--pulse-taint-sources); the field "sanitizer_kinds" is optional (assumed to be empty), and a policy may have several taint flows in the form of a list.|}
+
+
 and pulse_taint_sanitizers =
   CLOpt.mk_json ~long:"pulse-taint-sanitizers"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3692,6 +3704,8 @@ and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 and pulse_scuba_logging = !pulse_scuba_logging
 
 and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
+
+and pulse_taint_policies = !pulse_taint_policies
 
 and pulse_taint_sanitizers = !pulse_taint_sanitizers
 

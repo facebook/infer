@@ -581,6 +581,8 @@ val pulse_scuba_logging : bool
 
 val pulse_skip_procedures : Str.regexp option
 
+val pulse_taint_policies : Yojson.Basic.t
+
 val pulse_taint_sanitizers : Yojson.Basic.t
 
 val pulse_taint_sinks : Yojson.Basic.t

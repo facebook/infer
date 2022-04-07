@@ -1164,6 +1164,18 @@ OPTIONS
            Regex of procedures that should not be analyzed by Pulse.       
     See also infer-analyze(1).
 
+       --pulse-taint-policies json
+           A description of which taint flows should be reported, following
+           this JSON format:             { "short_description": "<a short description of the issue>",
+               "taint_flows": [{ "source_kinds": [<matchers>],
+                                 "sink_kinds": [<matchers>],
+                                 "sanitizer_kinds": [<matchers>]}]
+             }
+           where <matchers> are in the same format as --pulse-taint-sources;
+           the field "sanitizer_kinds" is optional (assumed to be empty), and
+           a policy may have several taint flows in the form of a list.
+           See also infer-analyze(1).
+
        --pulse-taint-sanitizers json
            Quick way to specify simple sanitizers as a JSON objects. See
            --pulse-taint-sources for the fields format documentation.       

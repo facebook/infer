@@ -8,8 +8,18 @@
 open! IStd
 module F = Format
 
+module Kind : sig
+  type t [@@deriving compare, equal]
+
+  val of_string : string -> t
+
+  val hash : t -> int
+
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+end
+
 type origin = Argument of {index: int} | ReturnValue
 
-type t = {proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
+type t = {kind: Kind.t; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit
