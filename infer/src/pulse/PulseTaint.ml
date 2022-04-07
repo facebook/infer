@@ -36,7 +36,9 @@ let pp_origin fmt = function
       F.fprintf fmt "value returned from"
 
 
-type t = {kind: Kind.t; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
+type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
 
-let pp fmt {kind; proc_name; origin} =
-  F.fprintf fmt "%a %a with kind %a" pp_origin origin Procname.pp proc_name Kind.pp kind
+let pp fmt {kinds; proc_name; origin} =
+  F.fprintf fmt "%a %a with kind%s %a" pp_origin origin Procname.pp proc_name
+    (match kinds with [_] -> "" | _ -> "s")
+    (Pp.seq ~sep:"," Kind.pp) kinds

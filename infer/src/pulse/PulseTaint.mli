@@ -20,6 +20,6 @@ end
 
 type origin = Argument of {index: int} | ReturnValue
 
-type t = {kind: Kind.t; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
+type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit

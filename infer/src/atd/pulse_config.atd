@@ -5,14 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type formal_matcher = {index: int; ?type_name: string option}
+type taint_target = [
+   ReturnValue
+ | AllArguments
+ | ArgumentPositions of int list
+ | AllArgumentsButPositions of int list
+ | ArgumentsMatchingTypes of string list
+]
+
+type argument_constraint = { index: int; type_matches: string list }
 
 type matcher = {
-  (* exactly one of {procedure, procedure_regex} must be specified *)
+  (* exactly one of procedure or procedure_regex must be specified, or else class_name and
+  method_names must be specified *)
   ?procedure: string option;
   ?procedure_regex: string option;
-  ?kind: string option; (** default is [Simple] which matches all Simple sources to all Simple sinks provided they haven't been sanitized by a Simple sanitizer *)
-  ~formals: formal_matcher list;
+  ?class_names: string list option;
+  ?method_names: string list option;
+  ~argument_constraints: argument_constraint list;
+  ?kinds: string list option; (** default is [Simple] which matches all Simple sources to all Simple sinks provided they haven't been sanitized by a Simple sanitizer *)
+  ?taint_target: taint_target option; (** default is all formals for sinks and sanitizers, return value for sources *)
 }
 
 type matchers = matcher list
