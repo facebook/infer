@@ -57,8 +57,8 @@ type t =
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { tainted: Decompiler.expr
-      ; source: Taint.source * ValueHistory.t
-      ; sink: Taint.sink * Trace.t
+      ; source: Taint.t * ValueHistory.t
+      ; sink: Taint.t * Trace.t
       ; location: Location.t }
   | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]
@@ -327,8 +327,8 @@ let get_message diagnostic =
       F.asprintf "Address of %a is returned by the function" pp_var variable
   | TaintFlow {tainted; source= source, _; sink= sink, _} ->
       (* TODO: say what line the source happened in the current function *)
-      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp_source
-        source Taint.pp_sink sink
+      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
+        Taint.pp sink
   | UnnecessaryCopy {variable; location} ->
       F.asprintf
         "copied variable `%a` is not modified after it is copied on %a. Consider using a reference \
@@ -481,7 +481,7 @@ let get_trace = function
          altogether. *)
       ValueHistory.add_to_errlog ~nesting:0 source_history
       @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
-           ~pp_immediate:(fun fmt -> Taint.pp_sink fmt sink)
+           ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
   | UnnecessaryCopy {location; _} ->

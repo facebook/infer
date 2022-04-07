@@ -787,8 +787,8 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                       ; astate } )
          | `MustNotBeTainted (_timestamp, sink, callee_access_trace) ->
              let access_trace = mk_access_trace callee_access_trace in
-             PulseTaintOperations.check_not_tainted call_location (sink, access_trace) addr_caller
-               astate )
+             PulseTaintOperations.check_not_tainted_wrt_sink call_location (sink, access_trace)
+               addr_caller astate )
 
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location

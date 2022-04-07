@@ -113,21 +113,23 @@ let get_tainted matchers (return, return_typ) proc_name actuals astate =
         let return = Var.of_id return in
         Stack.find_opt return astate
         |> Option.fold ~init:[] ~f:(fun tainted return_value ->
-               (return_value, return_typ) :: tainted )
+               let taint = {Taint.proc_name; origin= ReturnValue} in
+               (taint, (return_value, return_typ)) :: tainted )
     | (AllArguments | ArgumentPositions _) as taint_target ->
         let actuals =
           List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
               (arg_payload, typ) )
         in
         List.foldi actuals ~init:[] ~f:(fun i tainted ((_, actual_typ) as actual_hist_and_typ) ->
-            if taint_target_matches taint_target i actual_typ then actual_hist_and_typ :: tainted
+            if taint_target_matches taint_target i actual_typ then
+              let taint = {Taint.proc_name; origin= Argument {index= i}} in
+              (taint, actual_hist_and_typ) :: tainted
             else tainted ) )
 
 
 let taint_sources path location return proc_name actuals astate =
   let tainted = get_tainted source_matchers return proc_name actuals astate in
-  let source = Taint.ReturnValue proc_name in
-  List.fold tainted ~init:astate ~f:(fun astate ((v, _), _) ->
+  List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
       let hist =
         ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
       in
@@ -136,21 +138,20 @@ let taint_sources path location return proc_name actuals astate =
 
 let taint_sanitizers return proc_name actuals astate =
   let tainted = get_tainted sanitizer_matchers return proc_name actuals astate in
-  let sanitizer = Taint.SanitizedBy proc_name in
-  List.fold tainted ~init:astate ~f:(fun astate ((v, _), _) ->
+  List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, _), _)) ->
       AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
 
 
-let check_not_tainted location (sink, sink_trace) v astate : _ Result.t =
+let check_not_tainted_wrt_sink location (sink, sink_trace) v astate : _ Result.t =
   L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
-  match AbductiveDomain.AddressAttributes.get_taint v astate with
+  match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer v astate with
   | None ->
       Ok astate
   | Some (source, sanitizer_opt) -> (
-      L.d_printfln ~color:Red "TAINTED: %a" Taint.pp_source (fst source) ;
+      L.d_printfln ~color:Red "TAINTED: %a" Taint.pp (fst source) ;
       match sanitizer_opt with
       | Some sanitizer ->
-          L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp_sanitizer sanitizer ;
+          L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp sanitizer ;
           Ok astate
       | None ->
           let tainted = Decompiler.find v astate in
@@ -162,11 +163,10 @@ let check_not_tainted location (sink, sink_trace) v astate : _ Result.t =
 
 let taint_sinks path location return proc_name actuals astate =
   let tainted = get_tainted sink_matchers return proc_name actuals astate in
-  let sink = Taint.PassedAsArgumentTo proc_name in
-  PulseResult.list_fold tainted ~init:astate ~f:(fun astate ((v, history), _typ) ->
+  PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
       let sink_trace = Trace.Immediate {location; history} in
       let astate = AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate in
-      match check_not_tainted location (sink, sink_trace) v astate with
+      match check_not_tainted_wrt_sink location (sink, sink_trace) v astate with
       | Ok astate ->
           Ok astate
       | Error report ->

@@ -8,14 +8,8 @@
 open! IStd
 module F = Format
 
-type source = ReturnValue of Procname.t [@@deriving compare, equal]
+type origin = Argument of {index: int} | ReturnValue
 
-val pp_source : F.formatter -> source -> unit
+type t = {proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
 
-type sink = PassedAsArgumentTo of Procname.t [@@deriving compare, equal]
-
-val pp_sink : F.formatter -> sink -> unit
-
-type sanitizer = SanitizedBy of Procname.t [@@deriving compare, equal]
-
-val pp_sanitizer : F.formatter -> sanitizer -> unit
+val pp : F.formatter -> t -> unit

@@ -134,7 +134,7 @@ module AddressAttributes : sig
 
   val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
-  val add_taint_sink : PathContext.t -> Taint.sink -> Trace.t -> AbstractValue.t -> t -> t
+  val add_taint_sink : PathContext.t -> Taint.t -> Trace.t -> AbstractValue.t -> t -> t
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
@@ -160,8 +160,8 @@ module AddressAttributes : sig
 
   val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
-  val get_taint :
-    AbstractValue.t -> t -> ((Taint.source * ValueHistory.t) * Taint.sanitizer option) option
+  val get_taint_source_and_sanitizer :
+    AbstractValue.t -> t -> ((Taint.t * ValueHistory.t) * Taint.t option) option
 
   val is_end_of_collection : AbstractValue.t -> t -> bool
 

@@ -62,13 +62,13 @@ module Attribute = struct
     | ISLAbduced of Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-    | MustNotBeTainted of Timestamp.t * Taint.sink * Trace.t
+    | MustNotBeTainted of Timestamp.t * Taint.t * Trace.t
     | JavaResourceReleased
     | RefCounted
     | SourceOriginOfCopy of PulseAbstractValue.t
     | StdVectorReserve
-    | Tainted of Taint.source * ValueHistory.t
-    | TaintSanitized of Taint.sanitizer
+    | Tainted of Taint.t * ValueHistory.t
+    | TaintSanitized of Taint.t
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
@@ -181,7 +181,7 @@ module Attribute = struct
           (timestamp :> int)
     | MustNotBeTainted (timestamp, sink, trace) ->
         F.fprintf f "MustNotBeTainted(%a, t=%d)"
-          (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp_sink fmt sink))
+          (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sink))
           trace
           (timestamp :> int)
     | JavaResourceReleased ->
@@ -193,9 +193,9 @@ module Attribute = struct
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Tainted (source, hist) ->
-        F.fprintf f "Tainted(%a,%a)" Taint.pp_source source ValueHistory.pp hist
+        F.fprintf f "Tainted(%a,%a)" Taint.pp source ValueHistory.pp hist
     | TaintSanitized sanitizer ->
-        F.fprintf f "TaintSanitized(%a)" Taint.pp_sanitizer sanitizer
+        F.fprintf f "TaintSanitized(%a)" Taint.pp sanitizer
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
     | UnknownEffect (call, hist) ->
