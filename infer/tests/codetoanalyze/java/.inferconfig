@@ -35,23 +35,346 @@
       "method": "findViewById"
     }
   ],
+  "pulse-taint-policies": [
+    { "short_description": "Untrusted Android Intent creation",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["CreateIntent"] }
+      ]
+    },
+    { "short_description": "Untrusted file creation",
+      "taint_flows": [
+        { "source_kinds": ["Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["CreateFile"] }
+      ]
+    },
+    { "short_description": "Untrusted file creation risk",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint"],
+          "sink_kinds": ["CreateFile"] }
+      ]
+    },
+    { "short_description": "Untrusted deserialization",
+      "taint_flows": [
+        { "source_kinds": ["Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["Deserialization"] }
+      ]
+    },
+    { "short_description": "Untrusted deserialization risk",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint"],
+          "sink_kinds": ["Deserialization"] }
+      ]
+    },
+    { "short_description": "Cross-site scripting",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["HTML"] }
+      ]
+    },
+    { "short_description": "JavaScript injection",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["JavaScript"] }
+      ]
+    },
+    { "short_description": "SQL injection risk",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["SQLInjection"] }
+      ]
+    },
+    { "short_description": "User-controlled SQL risk",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["SQLRead", "SQLWrite"] }
+      ]
+    },
+    { "short_description": "Insecure Intent handling",
+      "taint_flows": [
+        { "source_kinds": ["IntentForInsecureIntentHandling"],
+          "sink_kinds": ["StartComponentForInsecureIntentHandling"] }
+      ]
+    },
+    { "short_description": "Create Intent from URI",
+      "taint_flows": [
+        { "source_kinds": ["IntentFromURI"],
+          "sink_kinds": ["StartComponent"] }
+      ]
+    },
+    { "short_description": "Logging private data",
+      "taint_flows": [
+        { "source_kinds": ["PrivateData"],
+          "sink_kinds": ["Logging"] }
+      ]
+    },
+    { "short_description": "Shell Injection",
+      "taint_flows": [
+        { "source_kinds": ["Intent", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["ShellExec"] }
+      ]
+    },
+    { "short_description": "Shell Injection risk",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint"],
+          "sink_kinds": ["ShellExec"] }
+      ]
+    },
+    { "short_description": "Class Loading Injection",
+      "taint_flows": [
+        { "source_kinds": ["Intent", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["StringConcatenation"],
+          "sink_kinds": ["ClassLoading"] }
+      ]
+    },
+    { "short_description": "Class Loading Injection risk",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint"],
+          "sanitizer_kinds": ["StringConcatenation"],
+          "sink_kinds": ["ClassLoading"] }
+      ]
+    }
+  ],
   "pulse-taint-sources": [
-    {"procedure": "inferSecretSource"},
-    {"procedure_regex": "codetoanalyze\\.java\\.quandary\\.ExternalSpecs\\.privateData.*"},
-    {"procedure": "codetoanalyze.java.quandary.InterfaceSpec.source"}
+    { "procedure": "inferSecretSource" },
+    { "class_names": ["android.app.Activity"],
+      "method_names": ["getIntent"],
+      "kinds": ["Intent", "IntentForInsecureIntentHandling"]
+    },
+    { "class_names": ["android.support.v4.app.FragmentActivity"],
+      "method_names": ["getIntent"],
+      "kinds": ["IntentForInsecureIntentHandling"]
+    },
+    { "class_names": ["android.content.Intent"],
+      "method_names": ["<init>"],
+      "argument_constraints": [{"index": 2, "type_matches": ["android.net.Uri"]}],
+      "kinds": ["IntentFromURI"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["android.content.Intent"],
+      "method_names": ["parseUri", "setData", "setDataAndNormalize", "setDataAndType", "setDataAndTypeAndNormalize"],
+      "kinds": ["IntentFromURI"]
+    },
+    { "class_names": ["android.content.Intent"],
+      "method_names": ["getData"],
+      "kinds": ["IntentForInsecureIntentHandling"]
+    },
+    { "class_names": ["android.content.Intent"],
+      "method_names": ["getStringExtra"],
+      "kinds": ["Intent"]
+    },
+    { "class_names": ["android.content.SharedPreferences"],
+      "method_names": ["getString"],
+      "kinds": ["PrivateData"]
+    },
+    { "class_names": ["android.content.ClipboardManager"],
+      "method_names": ["getPrimaryClip", "getText"],
+      "kinds": ["UserControlledString"]
+    },
+    { "class_names": ["android.text.ClipboardManager"],
+      "method_names": ["getPrimaryClip", "getText"],
+      "kinds": ["UserControlledString"]
+    },
+    { "class_names": ["android.location.Location"],
+      "method_names": ["getAltitude", "getBearing", "getLatitude", "getLongitude", "getSpeed"],
+      "kinds": ["PrivateData"]
+    },
+    { "class_names": ["android.telephony.TelephonyManager"],
+      "method_names": ["getDeviceId", "getLine1Number", "getSimSerialNumber", "getSubscriberId", "getVoiceMailNumber"],
+      "kinds": ["PrivateData"]
+    },
+    { "class_names": ["android.webkit.WebResourceRequest"],
+      "method_names": ["getUrl"],
+      "kinds": ["UserControlledURI"]
+    },
+    { "class_names": ["android.widget.EditText"],
+      "method_names": ["getText"],
+      "kinds": ["UserControlledString"]
+    },
+    { "class_names": [ "android.app.Activity", "android.app.Fragment",
+                       "android.support.v4.app.Fragment",
+                       "androidx.fragment.app.Fragment"
+                     ],
+      "method_names": ["onActivityResult", "onNewIntent"],
+      "kinds": ["Intent"],
+      "taint_target": ["ArgumentsMatchingTypes", ["android.content.Intent"]]
+    },
+    { "class_names": ["android.app.Service"],
+      "method_names": ["onBind", "onRebind", "onStart", "onStartCommand", "onTaskRemoved", "onUnbind"],
+      "kinds": ["Intent"],
+      "taint_target": ["ArgumentsMatchingTypes", ["android.content.Intent"]]
+    },
+    { "class_names": ["android.content.BroadcastReceiver"],
+      "method_names": ["onReceive"],
+      "kinds": ["Intent"],
+      "taint_target": ["ArgumentsMatchingTypes", ["android.content.Intent"]]
+    },
+    { "class_names": ["android.content.ContentProvider"],
+      "method_names": [ "bulkInsert", "call", "delete", "insert", "getType", "openAssetFile",
+                        "openFile", "openPipeHelper", "openTypedAssetFile", "query", "refresh",
+                        "update" ],
+      "kinds": ["UserControlledURI"],
+      "taint_target": ["ArgumentsMatchingTypes", ["android.net.Uri", "java.lang.String"]]
+    },
+    { "class_names": ["android.webkit.WebChromeClient"],
+      "method_names": ["onJsAlert", "onJsBeforeUnload", "onJsConfirm", "onJsPrompt"],
+      "kinds": ["UserControlledURI"],
+      "taint_target": ["ArgumentsMatchingTypes", ["java.lang.String"]]
+    },
+    { "class_names": ["android.webkit.WebViewClient"],
+      "method_names": ["onLoadResource", "shouldInterceptRequest", "shouldOverrideUrlLoading"],
+      "kinds": ["UserControlledURI"],
+      "taint_target": ["ArgumentsMatchingTypes", ["java.lang.String", "android.webkit.WebResourceRequest"]]
+    },
+    { "class_names": ["codetoanalyze.java.pulse.TaintedFormals"],
+      "method_names": ["taintedContextBad"],
+      "kinds": ["Simple"],
+      "taint_target": ["ArgumentsMatchingTypes", ["java.lang.Integer", "java.lang.String"]]
+    },
+    { "procedure_regex": "codetoanalyze\\.java\\.pulse\\.ExternalSpecs\\.privateData.*",
+      "kinds": ["PrivateData"]
+    },
+    { "procedure": "codetoanalyze.java.pulse.InterfaceSpec.source",
+      "kinds": ["PrivateData"]
+    }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
-    { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink1",
-      "arg_indices": [1] },
-    { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink2" },
-    { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sinkThatPropagates" },
-    { "procedure": "codetoanalyze.java.quandary.InterfaceSpec.sink" },
-    { "procedure": "codetoanalyze.java.quandary.ConstructorSink.<init>",
-      "arg_indices": [0] }
+    { "class_names": ["android.app.Activity"],
+      "method_names": ["startActivityFromChild", "startActivityFromFragment"],
+      "kinds": ["StartComponent"],
+      "taint_target": ["ArgumentPositions", [1]]
+    },
+    { "class_names": ["android.app.Activity", "android.content.Context", "android.support.v4.app.Fragment", "androidx.fragment.app.Fragment"],
+      "method_names": ["startIntentSenderForResult"],
+      "kinds": ["StartComponent"],
+      "taint_target": ["ArgumentPositions", [2]]
+    },
+    { "class_names": ["android.app.Fragment", "android.content.Context", "android.support.v4.app.Fragment", "androidx.fragment.app.Fragment"],
+      "method_names": ["startActivity"],
+      "kinds": ["StartComponent", "StartComponentForInsecureIntentHandling"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["android.app.Fragment", "android.content.Context", "android.support.v4.app.Fragment", "androidx.fragment.app.Fragment"],
+      "method_names": [ "bindService", "sendBroadcast", "sendBroadcastAsUser",
+                        "sendOrderedBroadcast", "sendOrderedBroadcastAsUser", "sendStickyBroadcast",
+                        "sendStickyBroadcastAsUser", "sendStickyOrderedBroadcast",
+                        "sendStickyOrderedBroadcastAsUser", "startActivities",
+                        "startActivityForResult", "startActivityIfNeeded",
+                        "startNextMatchingActivity", "startService", "stopService"
+                      ],
+      "kinds": ["StartComponent"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["android.content.Context"],
+      "method_names": ["startIntentSender"],
+      "kinds": ["StartComponent"],
+      "taint_target": ["ArgumentPositions", [1]]
+    },
+    { "class_names": ["android.content.Intent"],
+      "method_names": [ "parseUri", "getIntent", "getIntentOld", "setComponent", "setData",
+                        "setDataAndNormalize", "setDataAndType", "setDataAndTypeAndNormalize",
+                        "setPackage"
+                      ],
+      "kinds": ["CreateIntent"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["android.content.Intent"],
+      "method_names": ["setClassName"],
+      "kinds": ["CreateIntent"]
+    },
+    { "class_names": ["android.text.Html"],
+      "method_names": ["fromHtml"],
+      "kinds": ["HTML"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["android.util.Log"],
+      "method_names": ["e", "println", "w", "wtf"],
+      "kinds": ["Logging"]
+    },
+    { "class_names": ["android.webkit.WebView"],
+      "method_names": ["evaluateJavascript", "loadData", "loadDataWithBaseURL", "loadUrl", "postUrl", "postWebMessage"],
+      "kinds": ["JavaScript"]
+    },
+    { "class_names": ["java.io.File"],
+      "method_names": ["<init>"],
+      "kinds": ["CreateFile"]
+    },
+    { "class_names": ["java.nio.file.FileSystem"],
+      "method_names": ["getPath"],
+      "kinds": ["CreateFile"]
+    },
+    { "class_names": ["java.nio.file.Paths"],
+      "method_names": ["get"],
+      "kinds": ["CreateFile"]
+    },
+    { "class_names": ["java.io.ObjectInputStream"],
+      "method_names": ["<init>"],
+      "kinds": ["Deserialization"]
+    },
+    { "class_names": ["java.lang.Class"],
+      "method_names": ["forName"],
+      "kinds": ["ClassLoading"]
+    },
+    { "class_names": ["java.lang.ClassLoader"],
+      "method_names": ["loadClass"],
+      "kinds": ["ClassLoading"]
+    },
+    { "class_names": ["java.lang.ClassLoader"],
+      "method_names": ["defineClass"],
+      "kinds": ["ClassLoading"],
+      "taint_target": ["ArgumentPositions", [1]]
+    },
+    { "class_names": ["java.lang.ProcessBuilder"],
+      "method_names": ["<init>", "command"],
+      "kinds": ["ShellExec"]
+    },
+    { "class_names": ["java.lang.Runtime"],
+      "method_names": ["exec"],
+      "kinds": ["ShellExec"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["java.sql.Statement"],
+      "method_names": ["addBatch", "execute"],
+      "kinds": ["SQLInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["java.sql.Statement"],
+      "method_names": ["executeQuery"],
+      "kinds": ["SQLRead"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["java.sql.Statement"],
+      "method_names": ["executeUpdate", "executeLargeUpdate"],
+      "kinds": ["SQLWrite"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.loggingSink1",
+      "kinds": ["Logging"],
+      "taint_target": ["ArgumentPositions", [1]] },
+    { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.loggingSink2",
+      "kinds": ["Logging"]
+    },
+    { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.sinkThatPropagates",
+      "kinds": ["Logging"]
+    },
+    { "procedure": "codetoanalyze.java.pulse.InterfaceSpec.sink",
+      "kinds": ["Logging"]
+    },
+    { "procedure": "codetoanalyze.java.pulse.ConstructorSink.<init>",
+      "taint_target": ["ArgumentPositions", [0]]
+    }
   ],
   "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },
-    { "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sanitizer" }
+    { "class_names": ["java.lang.Object"],
+      "method_names": ["makeConcatWithConstants"],
+      "kinds": ["StringConcatenation"]
+    },
+    { "class_names": ["java.lang.StringBuilder"],
+      "method_names": ["append"],
+      "kinds": ["StringConcatenation"]
+    },
+    { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.sanitizer" }
   ]
 }
