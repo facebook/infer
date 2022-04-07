@@ -72,7 +72,7 @@ let release_resource access_path held =
   | Some (count, type_name) ->
       ResourcesHeld.add access_path (decr_count count, type_name) held
   | None ->
-      ResourcesHeld.add access_path (NonTop 0, TypeNameInfo.top) held
+      ResourcesHeld.add access_path (Top, TypeNameInfo.top) held
 
 
 (** Re-assigns resources when transferred to other objects*)
