@@ -141,22 +141,36 @@ let taint_sanitizers return proc_name actuals astate =
       AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
 
 
+let check_not_tainted location (sink, sink_trace) v astate : _ Result.t =
+  L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
+  match AbductiveDomain.AddressAttributes.get_taint v astate with
+  | None ->
+      Ok astate
+  | Some (source, sanitizer_opt) -> (
+      L.d_printfln ~color:Red "TAINTED: %a" Taint.pp_source (fst source) ;
+      match sanitizer_opt with
+      | Some sanitizer ->
+          L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp_sanitizer sanitizer ;
+          Ok astate
+      | None ->
+          let tainted = Decompiler.find v astate in
+          Error
+            (ReportableError
+               {astate; diagnostic= TaintFlow {tainted; location; source; sink= (sink, sink_trace)}}
+            ) )
+
+
 let taint_sinks path location return proc_name actuals astate =
   let tainted = get_tainted sink_matchers return proc_name actuals astate in
   let sink = Taint.PassedAsArgumentTo proc_name in
   PulseResult.list_fold tainted ~init:astate ~f:(fun astate ((v, history), _typ) ->
       let sink_trace = Trace.Immediate {location; history} in
-      match AbductiveDomain.AddressAttributes.check_not_tainted path sink sink_trace v astate with
+      let astate = AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate in
+      match check_not_tainted location (sink, sink_trace) v astate with
       | Ok astate ->
           Ok astate
-      | Error source ->
-          let tainted = Decompiler.find v astate in
-          Recoverable
-            ( astate
-            , [ ReportableError
-                  { astate
-                  ; diagnostic= TaintFlow {tainted; location; source; sink= (sink, sink_trace)} } ]
-            ) )
+      | Error report ->
+          Recoverable (astate, [report]) )
 
 
 let call path location return proc_name actuals astate =

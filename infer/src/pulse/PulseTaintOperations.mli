@@ -18,3 +18,10 @@ val call :
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
+
+val check_not_tainted :
+     Location.t
+  -> Taint.sink * Trace.t
+  -> AbstractValue.t
+  -> AbductiveDomain.t
+  -> (AbductiveDomain.t, AccessResult.error) result

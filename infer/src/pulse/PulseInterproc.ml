@@ -787,18 +787,8 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                       ; astate } )
          | `MustNotBeTainted (_timestamp, sink, callee_access_trace) ->
              let access_trace = mk_access_trace callee_access_trace in
-             AddressAttributes.check_not_tainted path sink access_trace addr_caller astate
-             |> Result.map_error ~f:(fun source ->
-                    L.d_printfln ~color:Red "ERROR: caller's %a is tainted!" AbstractValue.pp
-                      addr_caller ;
-                    AccessResult.ReportableError
-                      { diagnostic=
-                          TaintFlow
-                            { location= call_location
-                            ; source
-                            ; sink= (sink, access_trace)
-                            ; tainted= Decompiler.find addr_caller astate }
-                      ; astate } ) )
+             PulseTaintOperations.check_not_tainted call_location (sink, access_trace) addr_caller
+               astate )
 
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location

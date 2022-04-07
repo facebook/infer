@@ -103,24 +103,6 @@ let check_initialized address attrs =
   else Ok ()
 
 
-let check_not_tainted address attrs =
-  L.d_printfln "Checking that %a is not tainted" AbstractValue.pp address ;
-  match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_tainted with
-  | None ->
-      Ok ()
-  | Some ((source, _hist) as taint_hist) -> (
-      L.d_printfln ~color:Red "TAINTED: %a" Taint.pp_source source ;
-      let sanitizer =
-        Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_taint_sanitized
-      in
-      match sanitizer with
-      | Some sanitizer ->
-          L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp_sanitizer sanitizer ;
-          Ok ()
-      | None ->
-          Error taint_hist )
-
-
 let get_attribute getter address attrs =
   let open Option.Monad_infix in
   Graph.find_opt address attrs >>= getter
