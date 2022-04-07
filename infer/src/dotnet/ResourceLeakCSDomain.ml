@@ -41,7 +41,6 @@ end
 module TypeNameInfo = AbstractDomain.Flat (Typ.Name)
 module ResourceInfo = AbstractDomain.Pair (BoundsWithTop) (TypeNameInfo)
 module ResourcesHeld = AbstractDomain.Map (AccessPath) (ResourceInfo)
-
 open AbstractDomain.Types
 
 (** Initializes resources to count map *)
@@ -69,11 +68,11 @@ let acquire_resource access_path type_name held =
 
 (** Releases acquired resources from records when release function is called*)
 let release_resource access_path held =
-  match ResourcesHeld.find_opt access_path held with 
-  | Some (count, type_name) -> 
-    ResourcesHeld.add access_path (decr_count count, type_name) held 
-  | None -> 
-    ResourcesHeld.add access_path (NonTop 0, TypeNameInfo.top) held
+  match ResourcesHeld.find_opt access_path held with
+  | Some (count, type_name) ->
+      ResourcesHeld.add access_path (decr_count count, type_name) held
+  | None ->
+      ResourcesHeld.add access_path (NonTop 0, TypeNameInfo.top) held
 
 
 (** Re-assigns resources when transferred to other objects*)
@@ -86,8 +85,8 @@ let assign lhs_access_path rhs_access_path held =
     | Some base_access_path ->
         ResourcesHeld.add base_access_path (count, type_name) held
     | None ->
-        if AccessPath.equal rhs_access_path access_path then (
-          ResourcesHeld.add lhs_access_path (count, type_name) held )
+        if AccessPath.equal rhs_access_path access_path then
+          ResourcesHeld.add lhs_access_path (count, type_name) held
         else if equal_base rhs_access_path access_path then
           match
             AccessPath.replace_prefix ~prefix:rhs_access_path ~replace_with:lhs_access_path
@@ -155,10 +154,14 @@ module Summary = struct
   let pp = ResourcesFromFormals.pp ~pp_value:ResourceInfo.pp
 
   (** Return leaked resources and types as string*)
-  let resource_and_type_to_str held debug = 
+  let resource_and_type_to_str held debug =
     let check_count access_path held =
-      let old_count = 
-        match ResourcesHeld.find_opt access_path held with Some (count, _) -> count | None -> NonTop 0
+      let old_count =
+        match ResourcesHeld.find_opt access_path held with
+        | Some (count, _) ->
+            count
+        | None ->
+            NonTop 0
       in
       match old_count with NonTop count when count > 0 -> true | _ -> false
     in
@@ -170,22 +173,29 @@ module Summary = struct
             let type_name_str = TypeNameInfo.get type_name in
             match type_name_str with
             | Some type_str ->
-              text := (F.asprintf "Leaked resource %a of type %a" ResourcesHeld.pp_key x Typ.Name.pp_name_only type_str) :: !text
+                text :=
+                  F.asprintf "Leaked resource %a of type %a" ResourcesHeld.pp_key x
+                    Typ.Name.pp_name_only type_str
+                  :: !text
             | _ ->
-              ()
+                ()
           else if check_count x held then
             let type_name_str = TypeNameInfo.get type_name in
             let temp_var_regexp = Re.Str.regexp " n\\$[0-9]+ " in
             match type_name_str with
             | Some type_str ->
-              text := Re.Str.global_replace temp_var_regexp " " (F.asprintf "Leaked resource %a of type %a" ResourcesHeld.pp_key x Typ.Name.pp_name_only type_str) :: !text
+                text :=
+                  Re.Str.global_replace temp_var_regexp " "
+                    (F.asprintf "Leaked resource %a of type %a" ResourcesHeld.pp_key x
+                       Typ.Name.pp_name_only type_str )
+                  :: !text
             | _ ->
-              ()
-        )
-        held 
+                () )
+        held
     in
     concat_text ;
     String.concat ~sep:", " !text
+
 
   let make formal_map held =
     let to_interface access_path =
@@ -203,7 +213,7 @@ module Summary = struct
             ResourcesFromFormals.add interface_access_path (count, type_name) acquired
         | None ->
             acquired )
-      held ResourcesFromFormals.empty 
+      held ResourcesFromFormals.empty
 
 
   let apply ~callee:summary ~return ~actuals held =
@@ -231,9 +241,9 @@ module Summary = struct
                 let old_count =
                   match ResourcesHeld.find_opt access_path held with
                   | Some (count, _) ->
-                    count
+                      count
                   | None ->
-                    NonTop 0
+                      NonTop 0
                 in
                 update_count old_count callee_count
           in
