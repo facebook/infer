@@ -113,6 +113,8 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       (Block.all env blocks, combine_bool ~op:Binop.LOr ~default:true_const exprs)
   | UserDefined name ->
       userdef_condition env.current_module name
+  | Var "_" ->
+      succ_true env
   | Var v -> (
     (* Simple substitution. Can go into infinite loop. For now we assume that the type checker rejects
        such cases before. TODO: check for cycles in a validation step (T115271156) *)

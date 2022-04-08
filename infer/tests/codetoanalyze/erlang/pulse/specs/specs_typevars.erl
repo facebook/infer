@@ -33,3 +33,6 @@ union3_Latent(X) when is_atom(X) -> atom.
 
 -spec union4_Latent(T | S) -> any() when T :: atom(), S :: map().
 union4_Latent(X) when is_map(X) -> map.
+
+-spec underscore_Ok(_) -> any().
+underscore_Ok(X) -> X.
