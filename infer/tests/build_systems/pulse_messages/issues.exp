@@ -4,7 +4,7 @@ build_systems/pulse_messages/decompiler.c, trace_name_local_aliased, 43, 4, ERRO
 build_systems/pulse_messages/decompiler.c, trace_outer_name_return, 55, 3, ERROR, NULLPTR_DEREFERENCE, `x.ptr` could be null (from the call to `trace_inner()` on line 54) and is dereferenced.
 build_systems/pulse_messages/decompiler.c, trace_outer_name_return_complex, 66, 5, ERROR, NULLPTR_DEREFERENCE, `x->ptr` could be null (from the call to `trace_inner()` on line 63) and is dereferenced.
 build_systems/pulse_messages/decompiler.c, trace_outer_alias_return_indirect_deref_complex, 87, 5, ERROR, NULLPTR_DEREFERENCE, `x->ptr` could be null (from the call to `trace_inner()` on line 82) and is dereferenced in call to `deref()`.
-build_systems/pulse_messages/decompiler.c, trace_outer_anon_return, 94, 3, ERROR, NULLPTR_DEREFERENCE, ``trace_inner`` could be null (from the call to `trace_inner()` on line 94) and is dereferenced.
+build_systems/pulse_messages/decompiler.c, trace_outer_anon_return, 94, 3, ERROR, NULLPTR_DEREFERENCE, `trace_inner()` could be null (from the call to `trace_inner()` on line 94) and is dereferenced.
 build_systems/pulse_messages/decompiler.c, fields_in_correct_order, 99, 3, ERROR, NULLPTR_DEREFERENCE, `(**x->next.a.a_ptr)->ptr` could be null (last assigned on line 98) and is dereferenced.
 build_systems/pulse_messages/decompiler.c, array_deref_of_address, 105, 3, ERROR, NULLPTR_DEREFERENCE, `x` could be null (last assigned on line 104) and is dereferenced.
 build_systems/pulse_messages/decompiler.c, pass_null_to_deref, 110, 3, ERROR, NULLPTR_DEREFERENCE, null (last assigned on line 110) is dereferenced in call to `deref()`.
