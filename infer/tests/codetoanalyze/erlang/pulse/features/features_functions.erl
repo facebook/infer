@@ -5,6 +5,8 @@
 
 -module(features_functions).
 -export([
+    test_override_Bad/0,
+    test_override_Ok/0,
     test_call1_Ok/0,
     test_call1_Bad/0,
     test_call2_Ok/0,

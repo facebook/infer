@@ -44,5 +44,7 @@ test_secondnil3_Bad() ->
     assert_second_is_nil([1, [2], 3]).
 
 test_primitive_Bad() ->
-    [] = 2,            % This fails, should report
-    assert_empty([1]). % Cannot reach this, shouldn't report
+    % This fails, should report
+    [] = 2,
+    % Cannot reach this, shouldn't report
+    assert_empty([1]).

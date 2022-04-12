@@ -6,6 +6,54 @@
 -module(specs_basic).
 
 -export([
+    record6_Latent/1,
+    fp_record5_Ok/1,
+    record4_Latent/1,
+    record3_Latent/1,
+    record2_Latent/1,
+    record1_Ok/1,
+    tuple_with_types5_Latent/1,
+    tuple_with_types4_Latent/1,
+    tuple_with_types3_Ok/1,
+    tuple_with_types2_Latent/1,
+    tuple_with_types1_Ok/1,
+    tuple_of_2_Latent/1,
+    tuple_of_2_Ok/1,
+    tuple_of_1_Latent/1,
+    tuple_of_1_Ok/1,
+    tuple_of_0_Latent/1,
+    tuple_of_0_Ok/1,
+    list7_Latent/1,
+    list6_Latent/1,
+    list5_Latent/1,
+    list4_Ok/1,
+    list3_Ok/1,
+    list2_Ok/1,
+    list1_Ok/1,
+    nil3_Latent/1,
+    nil2_Ok/1,
+    nil1_Ok/1,
+    union4_Latent/1,
+    union3_Latent/1,
+    union2_Latent/1,
+    union1_Ok/1,
+    map_Latent/1,
+    map_Ok/1,
+    fp_bool6_Ok/1,
+    bool5_Latent/1,
+    bool4_Latent/1,
+    fp_bool3_Ok/1,
+    bool2_Latent/1,
+    bool1_Ok/1,
+    atom_literal4_Latent/1,
+    fp_atom_literal3_Ok/1,
+    atom_literal2_Latent/1,
+    atom_literal1_Ok/1,
+    atom3_Latent/1,
+    atom2_Latent/1,
+    atom1_Ok/1,
+    any_Latent/1,
+    any_Ok/1,
     test_no_args_Ok/0,
     test_no_args_Bad/0
 ]).
@@ -83,25 +131,25 @@ nil2_Ok([]) -> ok.
 nil3_Latent([]) -> ok.
 
 -spec list1_Ok(list()) -> any().
-list1_Ok([_|_]) -> cons;
+list1_Ok([_ | _]) -> cons;
 list1_Ok([]) -> nil.
 
 -spec list2_Ok(list()) -> any().
 list2_Ok(X) when is_list(X) -> ok.
 
 -spec list3_Ok(list(any())) -> any().
-list3_Ok([_|_]) -> cons;
+list3_Ok([_ | _]) -> cons;
 list3_Ok([]) -> nil.
 
 -spec list4_Ok([any()]) -> any().
-list4_Ok([_|_]) -> cons;
+list4_Ok([_ | _]) -> cons;
 list4_Ok([]) -> nil.
 
-list5_Latent([_|_]) -> cons;
+list5_Latent([_ | _]) -> cons;
 list5_Latent([]) -> nil.
 
 -spec list6_Latent(list()) -> any().
-list6_Latent([_|_]) -> cons.
+list6_Latent([_ | _]) -> cons.
 
 -spec list7_Latent(list()) -> any().
 list7_Latent([]) -> nil.

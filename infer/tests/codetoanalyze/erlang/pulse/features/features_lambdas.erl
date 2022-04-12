@@ -6,6 +6,11 @@
 -module(features_lambdas).
 
 -export([
+    test_nested_capture_Bad/0,
+    test_nested_capture_Ok/0,
+    nondet_lambda3_Latent/1,
+    nondet_lambda2_Latent/1,
+    nondet_lambda1_Ok/1,
     test_lambda_within_function_Ok/0,
     test_lambda_within_function_Bad/0,
     test_lambda_within_function_nested_Ok/0,
@@ -108,10 +113,11 @@ test_scopes_Ok(_) ->
 
 nondet_lambda1_Ok(X) ->
     C = 1,
-    F = case X of
-        1 -> fun() -> C end;
-        _ -> fun() -> 2 end
-    end,
+    F =
+        case X of
+            1 -> fun() -> C end;
+            _ -> fun() -> 2 end
+        end,
     % We don't exactly know what F is, but it must be 1 or 2
     case F() of
         1 -> ok;
@@ -120,10 +126,11 @@ nondet_lambda1_Ok(X) ->
 
 nondet_lambda2_Latent(X) ->
     C = 1,
-    F = case X of
-        1 -> fun() -> C end;
-        _ -> fun() -> 2 end
-    end,
+    F =
+        case X of
+            1 -> fun() -> C end;
+            _ -> fun() -> 2 end
+        end,
     % F might return 2
     case F() of
         1 -> ok
@@ -131,10 +138,11 @@ nondet_lambda2_Latent(X) ->
 
 nondet_lambda3_Latent(X) ->
     C = 1,
-    F = case X of
-        1 -> fun() -> C end;
-        _ -> fun() -> 2 end
-    end,
+    F =
+        case X of
+            1 -> fun() -> C end;
+            _ -> fun() -> 2 end
+        end,
     % F might return 1 (C)
     case F() of
         2 -> ok

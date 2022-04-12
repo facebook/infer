@@ -6,6 +6,9 @@
 -module(features_guard_bifs).
 
 -export([
+    test_is_list3_nomodule_Bad/0,
+    test_is_list2_nomodule_Ok/0,
+    test_is_list1_nomodule_Ok/0,
     test_is_map1_Ok/0,
     test_is_map2_Ok/0,
     test_is_map3_Ok/0,

@@ -75,6 +75,10 @@ features_case_expr:test_case_in_function_Bad/0: function_clause
 features_case_expr:test_case_in_function_Ok/0: ok
 
 ----- features_catch_expr -----
+features_catch_expr:fn_test_catch_exit_Bad/0: function_clause
+features_catch_expr:fn_test_catch_throw_Bad/0: function_clause
+features_catch_expr:fp_test_catch_exit_Ok/0: ok
+features_catch_expr:fp_test_catch_throw_Ok/0: ok
 features_catch_expr:test_catch_ok_Bad/0: function_clause
 features_catch_expr:test_catch_ok_Ok/0: ok
 
@@ -120,6 +124,8 @@ features_functions:test_call3_Bad/0: function_clause
 features_functions:test_call3_Ok/0: ok
 features_functions:test_call4_Bad/0: function_clause
 features_functions:test_call4_Ok/0: ok
+features_functions:test_override_Bad/0: function_clause
+features_functions:test_override_Ok/0: ok
 
 ----- features_guard_bifs -----
 features_guard_bifs:test_accepts_atom1_Ok/0: ok
@@ -138,8 +144,11 @@ features_guard_bifs:test_accepts_bool_nomodule2_Ok/0: ok
 features_guard_bifs:test_accepts_bool_nomodule3_Bad/0: function_clause
 features_guard_bifs:test_accepts_bool_nomodule4_Bad/0: function_clause
 features_guard_bifs:test_is_list1_Ok/0: ok
+features_guard_bifs:test_is_list1_nomodule_Ok/0: ok
 features_guard_bifs:test_is_list2_Ok/0: ok
+features_guard_bifs:test_is_list2_nomodule_Ok/0: ok
 features_guard_bifs:test_is_list3_Ok/0: ok
+features_guard_bifs:test_is_list3_nomodule_Bad/0: function_clause
 features_guard_bifs:test_is_list4_Ok/0: ok
 features_guard_bifs:test_is_list5_Bad/0: function_clause
 features_guard_bifs:test_is_list6_Bad/0: function_clause
@@ -250,6 +259,7 @@ features_logic:test_andalso00_Bad/0: if_clause
 features_logic:test_andalso01_Bad/0: if_clause
 features_logic:test_andalso10_Bad/0: if_clause
 features_logic:test_andalso11_Ok/0: ok
+features_logic:test_false2_Bad/0: if_clause
 features_logic:test_false_Bad/0: {case_clause,false}
 features_logic:test_false_Ok/0: ok
 features_logic:test_or00_Bad/0: if_clause
@@ -260,6 +270,7 @@ features_logic:test_orelse00_Bad/0: if_clause
 features_logic:test_orelse01_Ok/0: ok
 features_logic:test_orelse10_Ok/0: ok
 features_logic:test_orelse11_Ok/0: ok
+features_logic:test_true2_Ok/0: ok
 features_logic:test_true_Bad/0: {case_clause,true}
 features_logic:test_true_Ok/0: ok
 features_logic:test_unot_Bad/0: if_clause
@@ -573,6 +584,9 @@ nonmatch_tuples:test_elements_partial1_Ok/0: ok
 nonmatch_tuples:test_elements_partial2_Ok/0: ok
 nonmatch_tuples:test_elements_partial3_Bad/0: {badmatch,{1,2}}
 nonmatch_tuples:test_elements_partial4_Bad/0: {badmatch,{1,2}}
+nonmatch_tuples:test_empty1_Ok/0: ok
+nonmatch_tuples:test_empty2_Bad/0: function_clause
+nonmatch_tuples:test_empty3_Bad/0: function_clause
 nonmatch_tuples:test_first1_Ok/0: ok
 nonmatch_tuples:test_first2_Ok/0: ok
 nonmatch_tuples:test_first3_Ok/0: ok

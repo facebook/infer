@@ -78,7 +78,10 @@ test_receive8_Bad() ->
     % Make it crash when actually run
     self() ! hello,
     receive
-        X -> case X of 1 -> ok end
+        X ->
+            case X of
+                1 -> ok
+            end
     after 1 -> ok
     end.
 

@@ -5,6 +5,20 @@
 
 -module(specs_typevars).
 
+-export([
+    underscore_Ok/1,
+    union4_Latent/1,
+    union3_Latent/1,
+    union2_Latent/1,
+    union1_Ok/1,
+    multi3_Latent/1,
+    multi2_Latent/1,
+    multi1_Ok/1,
+    basic3_Latent/1,
+    basic2_Latent/1,
+    basic1_Ok/1
+]).
+
 -spec basic1_Ok(T) -> any() when T :: atom().
 basic1_Ok(X) when is_atom(X) -> ok.
 

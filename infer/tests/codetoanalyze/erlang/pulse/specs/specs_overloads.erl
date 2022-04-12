@@ -5,6 +5,15 @@
 
 -module(specs_overloads).
 
+-export([
+    combinations2_Latent/2,
+    combinations1_Ok/2,
+    overload4_Latent/2,
+    overload3_Latent/2,
+    overload2_Latent/2,
+    overload1_Ok/2
+]).
+
 -spec overload1_Ok
     (atom(), nil()) -> any();
     (map(), nil()) -> any().
