@@ -205,7 +205,10 @@ end = struct
   let solve_eq_zero ((c, vs) as l) =
     match VarMap.min_binding_opt vs with
     | None ->
-        if Q.is_zero c then Sat None else Unsat
+        if Q.is_zero c then Sat None
+        else (
+          L.d_printfln "Unsat when solving %a = 0" (pp Var.pp) l ;
+          Unsat )
     | Some ((x, _) as x_coeff) ->
         Sat (Some (x, pivot x_coeff l))
 
@@ -993,8 +996,12 @@ module Term = struct
       match t with
       | Var v ->
           Some (LinArith.of_var v)
-      | Const c ->
-          Some (LinArith.of_q c)
+      | Const c -> (
+        match Q.classify c with
+        | ZERO | NZERO ->
+            Some (LinArith.of_q c)
+        | UNDEF | INF | MINF ->
+            None )
       | Linear l ->
           Some l
       | Minus t ->
@@ -1345,8 +1352,15 @@ module Atom = struct
   end
 end
 
-let sat_of_eval_result (eval_result : Atom.eval_result) =
-  match eval_result with True -> Sat None | False -> Unsat | Atom atom -> Sat (Some atom)
+let sat_of_eval_result (eval_result : Atom.eval_result) ~on_unsat =
+  match eval_result with
+  | True ->
+      Sat None
+  | False ->
+      on_unsat () ;
+      Unsat
+  | Atom atom ->
+      Sat (Some atom)
 
 
 module VarUF =
@@ -1783,7 +1797,9 @@ module Formula = struct
 
     let normalize_atom phi (atom : Atom.t) =
       let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
-      Atom.eval atom' |> sat_of_eval_result
+      Atom.eval atom'
+      |> sat_of_eval_result ~on_unsat:(fun () ->
+             L.d_printfln "UNSAT atom: %a" (Atom.pp_with_pp_var Var.pp) atom' )
 
 
     let and_var_term ~fuel v t (phi, new_eqs) =
@@ -1793,7 +1809,11 @@ module Formula = struct
       let v' = (get_repr phi v :> Var.t) in
       (* check if unsat given what we know of [v'] and [t'], in other words be at least as
          complete as general atoms *)
-      let* _ = Atom.eval (Equal (t', normalize_var_const phi (Var v'))) |> sat_of_eval_result in
+      let* _ =
+        Atom.eval (Equal (t', normalize_var_const phi (Var v')))
+        |> sat_of_eval_result ~on_unsat:(fun () ->
+               L.d_printfln "UNSAT atom: %a == %a" (Term.pp_no_paren Var.pp) t' Var.pp v' )
+      in
       solve_normalized_term_eq ~fuel new_eqs t' v' phi
 
 

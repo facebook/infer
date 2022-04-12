@@ -325,11 +325,11 @@ module PulseTransferFunctions = struct
             let call_was_unknown =
               match call_was_unknown with `UnknownCall -> true | `KnownCall -> false
             in
-            let* astate =
+            let+ astate =
               PulseTaintOperations.call tenv path call_loc ret ~call_was_unknown call_event
                 func_args astate
             in
-            Ok (ContinueProgram astate)
+            ContinueProgram astate
         | ( ExceptionRaised _
           | ExitProgram _
           | AbortProgram _
