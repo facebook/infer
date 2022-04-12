@@ -8,6 +8,7 @@
 # or 'analyze' target.
 
 TESTS_DIR = ../..
+TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/base.make
