@@ -136,7 +136,7 @@
     }
   ],
   "pulse-taint-sources": [
-    { "procedure": "inferSecretSource" },
+    { "procedure": "inferSecretSource", "kinds": ["Simple", "UserControlledString"] },
     { "class_names": ["android.app.Activity"],
       "method_names": ["getIntent"],
       "kinds": ["Intent", "IntentForInsecureIntentHandling"]
