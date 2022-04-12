@@ -234,7 +234,8 @@
     { "procedure_regex": "codetoanalyze\\.java\\.pulse\\.ExternalSpecs\\.privateData.*",
       "kinds": ["PrivateData"]
     },
-    { "procedure": "codetoanalyze.java.pulse.InterfaceSpec.source",
+    { "class_names": ["codetoanalyze.java.pulse.InterfaceSpec"],
+      "method_names": ["source"],
       "kinds": ["PrivateData"]
     }
   ],
@@ -358,11 +359,12 @@
     { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.sinkThatPropagates",
       "kinds": ["Logging"]
     },
-    { "procedure": "codetoanalyze.java.pulse.InterfaceSpec.sink",
+    { "class_names": ["codetoanalyze.java.pulse.InterfaceSpec"],
+      "method_names": ["sink"],
       "kinds": ["Logging"]
     },
     { "procedure": "codetoanalyze.java.pulse.ConstructorSink.<init>",
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [1]]
     }
   ],
   "pulse-taint-sanitizers": [

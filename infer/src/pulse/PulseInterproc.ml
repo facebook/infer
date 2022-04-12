@@ -724,28 +724,17 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
           | Some must_be_valid_data ->
               (addr_hist_caller, `MustBeValid must_be_valid_data) :: to_check
         in
-        let to_check =
-          match
-            BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs
-          with
-          | None ->
-              to_check
-          | Some must_be_init_data ->
-              (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check
-        in
         match
-          BaseAddressAttributes.get_must_not_be_tainted addr_pre (pre :> BaseDomain.t).attrs
+          BaseAddressAttributes.get_must_be_initialized addr_pre (pre :> BaseDomain.t).attrs
         with
         | None ->
             to_check
-        | Some must_not_be_tainted_data ->
-            (addr_hist_caller, `MustNotBeTainted must_not_be_tainted_data) :: to_check )
+        | Some must_be_init_data ->
+            (addr_hist_caller, `MustBeInitialized must_be_init_data) :: to_check )
       call_state.subst []
   in
   let timestamp_of_check = function
-    | `MustBeValid (timestamp, _, _)
-    | `MustBeInitialized (timestamp, _)
-    | `MustNotBeTainted (timestamp, _, _) ->
+    | `MustBeValid (timestamp, _, _) | `MustBeInitialized (timestamp, _) ->
         timestamp
   in
   List.sort addresses_to_check ~compare:(fun (_, check1) (_, check2) ->
@@ -784,11 +773,32 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                       addr_caller ;
                     AccessResult.ReportableError
                       { diagnostic= ReadUninitializedValue {calling_context= []; trace= access_trace}
-                      ; astate } )
-         | `MustNotBeTainted (_timestamp, sink, callee_access_trace) ->
-             let access_trace = mk_access_trace callee_access_trace in
-             PulseTaintOperations.check_not_tainted_wrt_sink call_location (sink, access_trace)
-               addr_caller astate )
+                      ; astate } ) )
+
+
+let check_all_taint_valid callee_proc_name call_location pre_post astate call_state_subst =
+  let open PulseResult.Let_syntax in
+  AddressMap.fold
+    (fun addr_pre (addr_caller, hist_caller) astate_result ->
+      let* astate = astate_result in
+      match
+        BaseAddressAttributes.get_must_not_be_tainted addr_pre
+          (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
+      with
+      | None ->
+          Ok astate
+      | Some (_timestamp, sink, sink_trace) ->
+          let sink_trace =
+            Trace.ViaCall
+              { in_call= sink_trace
+              ; f= Call callee_proc_name
+              ; location= call_location
+              ; history= hist_caller }
+          in
+          PulseTaintOperations.check_not_tainted_wrt_sink call_location (sink, sink_trace)
+            addr_caller astate
+          |> AccessResult.of_result )
+    call_state_subst (Ok astate)
 
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
@@ -904,7 +914,11 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
           if is_isl_error_prepost then
             isl_check_all_invalid invalid_subst callee_proc_name call_location pre_post pre_astate
               astate
-          else Ok astate
+          else
+            (* This has to happen after the post has been applied so that we are aware of any
+               sanitizers applied to tainted values too, otherwise we'll report false positives if
+               the callee both taints and sanitizes a value *)
+            check_all_taint_valid callee_proc_name call_location pre_post astate call_state.subst
         in
         (astate, return_caller, call_state.subst))
     with Contradiction reason ->
