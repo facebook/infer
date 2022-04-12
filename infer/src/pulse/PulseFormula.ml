@@ -401,6 +401,7 @@ let targetted_subst_var subst_var x = VarSubst (subst_f subst_var x)
 module Term = struct
   type t =
     | Const of Q.t
+    | String of string
     | Var of Var.t
     | Procname of Procname.t
     | FunctionApplication of {f: t; actuals: t list}
@@ -436,6 +437,8 @@ module Term = struct
         false
     | Const _ ->
         (* negative and/or a fraction *) true
+    | String _ ->
+        false
     | Var _ ->
         false
     | Linear _ ->
@@ -477,6 +480,8 @@ module Term = struct
         pp_var fmt v
     | Const c ->
         Q.pp_print fmt c
+    | String s ->
+        F.fprintf fmt "\"%s\"" s
     | Procname proc_name ->
         Procname.pp fmt proc_name
     | FunctionApplication {f; actuals} ->
@@ -541,8 +546,12 @@ module Term = struct
         IntLit.to_big_int i |> Q.of_bigint |> of_q
     | Cfloat f ->
         Q.of_float f |> of_q
-    | Cfun _ | Cstr _ | Cclass _ ->
-        of_q Q.undef
+    | Cfun proc_name ->
+        Procname proc_name
+    | Cstr s ->
+        String s
+    | Cclass ident_name ->
+        String (Ident.name_to_string ident_name)
 
 
   let of_operand = function
@@ -617,7 +626,7 @@ module Term = struct
   let fold_map_direct_subterms t ~init ~f =
     match t with
     (* no sub-terms *)
-    | Var _ | Const _ | Procname _ | Linear _ | IsInstanceOf _ ->
+    | Var _ | Const _ | String _ | Procname _ | Linear _ | IsInstanceOf _ ->
         (init, t)
     (* list of sub-terms *)
     | FunctionApplication {f= t_f; actuals} ->
@@ -745,6 +754,7 @@ module Term = struct
         let t' = if phys_equal l l' then t else Linear l' in
         (acc, t')
     | Const _
+    | String _
     | Procname _
     | FunctionApplication _
     | Add _
@@ -803,7 +813,7 @@ module Term = struct
     in
     let or_undef q_opt = Option.value ~default:Q.undef q_opt in
     match t0 with
-    | Const _ | Var _ | IsInstanceOf _ | Procname _ | FunctionApplication _ ->
+    | Const _ | Var _ | IsInstanceOf _ | String _ | Procname _ | FunctionApplication _ ->
         t0
     | Linear l ->
         LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
@@ -1015,6 +1025,7 @@ module Term = struct
           let+ l = aux_linearize t in
           LinArith.mult c l
       | Procname _
+      | String _
       | FunctionApplication _
       | Mult _
       | DivI _

@@ -273,6 +273,8 @@ let eval path mode location exp0 astate =
         in
         (astate, (v, ValueHistory.singleton (Invalidated (invalidation, location, timestamp))))
     | Const (Cstr s) ->
+        (* TODO: record actual string value; since we are making strings be a record in memory
+           instead of pure values some care has to be added to access string values once written *)
         let v = AbstractValue.mk_fresh () in
         let* astate, (len_addr, hist) =
           eval_access path Write location
