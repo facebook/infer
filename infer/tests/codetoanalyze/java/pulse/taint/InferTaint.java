@@ -13,7 +13,9 @@ package codetoanalyze.java.pulse;
  */
 public class InferTaint {
 
-  public static native Object object_undefined();
+  public static Object object_undefined() {
+    return new Object();
+  }
 
   // these are to test whether we can add a taint spec to methods that have an implementation
   public static Object inferSecretSource() {
