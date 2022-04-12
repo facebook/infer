@@ -168,6 +168,8 @@ features_lambdas:test_lambda_within_function_Bad/0: function_clause
 features_lambdas:test_lambda_within_function_Ok/0: ok
 features_lambdas:test_lambda_within_function_nested_Bad/0: function_clause
 features_lambdas:test_lambda_within_function_nested_Ok/0: ok
+features_lambdas:test_nested_capture_Bad/0: function_clause
+features_lambdas:test_nested_capture_Ok/0: ok
 
 ----- features_lc -----
 features_lc:fn_test_simple1a_Bad/0: {case_clause,[3]}

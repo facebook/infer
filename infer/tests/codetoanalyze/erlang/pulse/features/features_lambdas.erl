@@ -14,7 +14,10 @@
     test_apply_fun_Bad/0,
     test_lambda_capture_Ok/0,
     test_lambda_capture_Bad/0,
-    test_scopes_Ok/1
+    test_scopes_Ok/1,
+    test_nested_capture_Ok/0,
+    test_nested_capture_Bad/0,
+    test_no_nullptr_Ok/1
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -158,3 +161,8 @@ test_nested_capture_Bad() ->
         1 -> warn(1);
         _ -> ok
     end.
+
+test_no_nullptr_Ok(X) ->
+    F = fun(_) -> X end,
+    % We used to report a null pointer issue here (which is wrong)
+    F(0).
