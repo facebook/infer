@@ -46,16 +46,22 @@ let parse_translate_store result_dir =
             false )
   in
   let process_one_file json_file =
-    if should_process json_file then (
-      L.progress "P: parsing %s@." json_file ;
+    ( if should_process json_file then
       match Utils.read_safe_json_file json_file with
       | Ok json ->
           if not (process_one_ast json) then
             L.debug Capture Verbose "Failed to parse %s@." json_file
       | Error error ->
-          L.internal_error "E: %s@." error )
+          L.internal_error "E: %s@." error ) ;
+    None
   in
-  Utils.directory_iter process_one_file result_dir
+  Tasks.Runner.create ~jobs:Config.jobs
+    ~child_prologue:(fun () -> ())
+    ~f:process_one_file
+    ~child_epilogue:(fun () -> ())
+    ~tasks:(fun () ->
+      ProcessPool.TaskGenerator.of_list (Utils.directory_fold (fun l p -> p :: l) [] result_dir) )
+  |> Tasks.Runner.run |> ignore
 
 
 let capture ~command ~args =
