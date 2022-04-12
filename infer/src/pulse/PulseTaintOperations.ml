@@ -12,14 +12,22 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
 
-let type_matches actual_typ types =
-  (* TODO: [Typ.to_string] is probably not the most intuitive representation of types here, also
+let type_matches tenv actual_typ types =
+  (* TODO: [Typ.Name.name] may not be the most intuitive representation of types here, also
      could be slow to generate. Maybe have more fine-grained matching for primitive types vs
      class names (with separate package names to avoid string building) *)
-  List.exists types ~f:(fun typ -> String.is_substring ~substring:typ (Typ.to_string actual_typ))
+  match actual_typ with
+  | {Typ.desc= Tptr ({desc= Tstruct actual_name}, _)} ->
+      PatternMatch.supertype_exists tenv
+        (fun type_name _struct ->
+          List.exists types ~f:(fun typ ->
+              String.is_substring ~substring:typ (Typ.Name.name type_name) ) )
+        actual_name
+  | _ ->
+      false
 
 
-let taint_target_matches taint_target actual_index actual_typ =
+let taint_target_matches tenv taint_target actual_index actual_typ =
   match taint_target with
   | `AllArguments ->
       true
@@ -28,7 +36,7 @@ let taint_target_matches taint_target actual_index actual_typ =
   | `AllArgumentsButPositions indices ->
       not (List.mem ~equal:Int.equal indices actual_index)
   | `ArgumentsMatchingTypes types ->
-      type_matches actual_typ types
+      type_matches tenv actual_typ types
 
 
 type procedure_matcher =
@@ -135,7 +143,7 @@ let sanitizer_matchers =
     (Yojson.Basic.to_string Config.pulse_taint_sanitizers)
 
 
-let procedure_matches matchers proc_name actuals =
+let procedure_matches tenv matchers proc_name actuals =
   List.find_map matchers ~f:(fun matcher ->
       let procedure_name_matches =
         match matcher.procedure_matcher with
@@ -150,8 +158,11 @@ let procedure_matches matchers proc_name actuals =
             | exception Caml.Not_found ->
                 false )
         | ClassAndMethodNames {class_names; method_names} ->
-            Option.exists (Procname.get_class_name proc_name) ~f:(fun class_name ->
-                List.mem ~equal:String.equal class_names class_name )
+            Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
+                PatternMatch.supertype_exists tenv
+                  (fun class_name _ ->
+                    List.mem ~equal:String.equal class_names (Typ.Name.name class_name) )
+                  class_name )
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
       in
       if procedure_name_matches then
@@ -159,42 +170,55 @@ let procedure_matches matchers proc_name actuals =
           List.for_all matcher.arguments ~f:(fun {Pulse_config_t.index; type_matches= types} ->
               List.nth actuals index
               |> Option.exists ~f:(fun {ProcnameDispatcher.Call.FuncArg.typ} ->
-                     type_matches typ types ) )
+                     type_matches tenv typ types ) )
         in
         Option.some_if actuals_match matcher
       else None )
 
 
-let get_tainted matchers (return, return_typ) proc_name actuals astate =
-  match procedure_matches matchers proc_name actuals with
+let get_tainted tenv matchers return_opt proc_name actuals astate =
+  match procedure_matches tenv matchers proc_name actuals with
   | None ->
       []
   | Some matcher -> (
-    match matcher.target with
-    | `ReturnValue ->
-        (* TODO: match values returned by reference by the frontend *)
-        let return = Var.of_id return in
-        Stack.find_opt return astate
-        |> Option.fold ~init:[] ~f:(fun tainted return_value ->
-               let taint = {Taint.proc_name; origin= ReturnValue; kinds= matcher.kinds} in
-               (taint, (return_value, return_typ)) :: tainted )
-    | ( `AllArguments
-      | `ArgumentPositions _
-      | `AllArgumentsButPositions _
-      | `ArgumentsMatchingTypes _ ) as taint_target ->
-        let actuals =
-          List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
-              (arg_payload, typ) )
-        in
-        List.foldi actuals ~init:[] ~f:(fun i tainted ((_, actual_typ) as actual_hist_and_typ) ->
-            if taint_target_matches taint_target i actual_typ then
-              let taint = {Taint.proc_name; origin= Argument {index= i}; kinds= matcher.kinds} in
-              (taint, actual_hist_and_typ) :: tainted
-            else tainted ) )
+      L.d_printfln "taint matches" ;
+      match matcher.target with
+      | `ReturnValue -> (
+          L.d_printf "matching return value... " ;
+          match return_opt with
+          | None ->
+              L.d_printfln "no match" ;
+              []
+          | Some (return, return_typ) ->
+              L.d_printfln "match! tainting return value" ;
+              (* TODO: match values returned by reference by the frontend *)
+              let return = Var.of_id return in
+              Stack.find_opt return astate
+              |> Option.fold ~init:[] ~f:(fun tainted return_value ->
+                     let taint = {Taint.proc_name; origin= ReturnValue; kinds= matcher.kinds} in
+                     (taint, (return_value, return_typ)) :: tainted ) )
+      | ( `AllArguments
+        | `ArgumentPositions _
+        | `AllArgumentsButPositions _
+        | `ArgumentsMatchingTypes _ ) as taint_target ->
+          L.d_printf "matching actuals... " ;
+          let actuals =
+            List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
+                (arg_payload, typ) )
+          in
+          List.foldi actuals ~init:[] ~f:(fun i tainted ((_, actual_typ) as actual_hist_and_typ) ->
+              if taint_target_matches tenv taint_target i actual_typ then (
+                L.d_printfln "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
+                  actual_typ ;
+                let taint = {Taint.proc_name; origin= Argument {index= i}; kinds= matcher.kinds} in
+                (taint, actual_hist_and_typ) :: tainted )
+              else (
+                L.d_printfln "no match for #%d with type %a" i (Typ.pp_full Pp.text) actual_typ ;
+                tainted ) ) )
 
 
-let taint_sources path location return proc_name actuals astate =
-  let tainted = get_tainted source_matchers return proc_name actuals astate in
+let taint_sources tenv path location return proc_name actuals astate =
+  let tainted = get_tainted tenv source_matchers return proc_name actuals astate in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
         let hist =
@@ -205,8 +229,8 @@ let taint_sources path location return proc_name actuals astate =
   (astate, not (List.is_empty tainted))
 
 
-let taint_sanitizers return proc_name actuals astate =
-  let tainted = get_tainted sanitizer_matchers return proc_name actuals astate in
+let taint_sanitizers tenv return proc_name actuals astate =
+  let tainted = get_tainted tenv sanitizer_matchers return proc_name actuals astate in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, _), _)) ->
         AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
@@ -258,8 +282,8 @@ let check_not_tainted_wrt_sink location (sink, sink_trace) v astate : _ Result.t
             ) )
 
 
-let taint_sinks path location return proc_name actuals astate =
-  let tainted = get_tainted sink_matchers return proc_name actuals astate in
+let taint_sinks tenv path location return proc_name actuals astate =
+  let tainted = get_tainted tenv sink_matchers return proc_name actuals astate in
   let+ astate =
     PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
         let sink_trace = Trace.Immediate {location; history} in
@@ -309,7 +333,7 @@ let propagate_taint_for_unknown_calls path location (return, _) call actuals ast
                 (TaintSanitized sanitizer) astate ) )
 
 
-let call path location return ~call_was_unknown (call : _ Either.t) actuals astate =
+let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
   match call with
   | First call_exp ->
       if call_was_unknown then
@@ -318,11 +342,15 @@ let call path location return ~call_was_unknown (call : _ Either.t) actuals asta
              actuals astate )
       else Ok astate
   | Second proc_name ->
-      let astate, found_sanitizer_model = taint_sanitizers return proc_name actuals astate in
-      let astate, found_source_model =
-        taint_sources path location return proc_name actuals astate
+      let astate, found_sanitizer_model =
+        taint_sanitizers tenv (Some return) proc_name actuals astate
       in
-      let+ astate, found_sink_model = taint_sinks path location return proc_name actuals astate in
+      let astate, found_source_model =
+        taint_sources tenv path location (Some return) proc_name actuals astate
+      in
+      let+ astate, found_sink_model =
+        taint_sinks tenv path location (Some return) proc_name actuals astate
+      in
       if
         call_was_unknown && (not found_sanitizer_model) && (not found_source_model)
         && not found_sink_model
@@ -330,3 +358,17 @@ let call path location return ~call_was_unknown (call : _ Either.t) actuals asta
         propagate_taint_for_unknown_calls path location return (SkippedKnownCall proc_name) actuals
           astate
       else astate
+
+
+let taint_initial tenv proc_desc astate =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let location = Procdesc.get_loc proc_desc in
+  let astate, actuals =
+    List.fold_map (Procdesc.get_pvar_formals proc_desc) ~init:astate ~f:(fun astate (pvar, typ) ->
+        let astate, actual_value =
+          PulseOperations.eval_deref PathContext.initial location (Lvar pvar) astate
+          |> PulseResult.ok_exn
+        in
+        (astate, {ProcnameDispatcher.Call.FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value}) )
+  in
+  taint_sources tenv PathContext.initial location None proc_name actuals astate |> fst

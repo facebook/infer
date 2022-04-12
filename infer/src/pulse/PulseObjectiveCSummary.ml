@@ -112,11 +112,10 @@ let mk_nil_messaging_summary tenv proc_desc =
   else None
 
 
-let mk_initial_with_positive_self tenv proc_desc =
+let initial_with_positive_self proc_desc initial_astate =
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let initial_astate = AbductiveDomain.mk_initial tenv proc_desc in
   (* same HACK as above with respect to [PulseResult.ok_exn] *)
   if Procname.is_objc_instance_method proc_name then
     let astate, value =

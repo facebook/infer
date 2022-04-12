@@ -326,8 +326,8 @@ module PulseTransferFunctions = struct
               match call_was_unknown with `UnknownCall -> true | `KnownCall -> false
             in
             let* astate =
-              PulseTaintOperations.call path call_loc ret ~call_was_unknown call_event func_args
-                astate
+              PulseTaintOperations.call tenv path call_loc ret ~call_was_unknown call_event
+                func_args astate
             in
             Ok (ContinueProgram astate)
         | ( ExceptionRaised _
@@ -787,8 +787,12 @@ let with_html_debug_node node ~desc ~f =
 
 
 let initial tenv proc_desc =
-  [ ( ContinueProgram (PulseObjectiveCSummary.mk_initial_with_positive_self tenv proc_desc)
-    , PathContext.initial ) ]
+  let initial_astate =
+    AbductiveDomain.mk_initial tenv proc_desc
+    |> PulseObjectiveCSummary.initial_with_positive_self proc_desc
+    |> PulseTaintOperations.taint_initial tenv proc_desc
+  in
+  [(ContinueProgram initial_astate, PathContext.initial)]
 
 
 let should_analyze proc_desc =

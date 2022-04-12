@@ -10,7 +10,8 @@ open PulseBasicInterface
 open PulseDomainInterface
 
 val call :
-     PathContext.t
+     Tenv.t
+  -> PathContext.t
   -> Location.t
   -> Ident.t * Typ.t
   -> call_was_unknown:bool
@@ -26,3 +27,5 @@ val check_not_tainted_wrt_sink :
   -> AbstractValue.t
   -> AbductiveDomain.t
   -> (AbductiveDomain.t, AccessResult.error) result
+
+val taint_initial : Tenv.t -> Procdesc.t -> AbductiveDomain.t -> AbductiveDomain.t
