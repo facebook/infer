@@ -240,6 +240,10 @@ val check : ('a -> unit) -> 'a -> 'a
 val violates : ('a -> unit) -> 'a -> _
 (** Assert that function raises on argument. *)
 
+val register_sexp_of_exn : exn -> (exn -> Sexp.t) -> unit
+(** Register a function to convert exceptions with the same constructor as
+    the given one to sexps. *)
+
 (**)
 
 module Hashtbl : sig end [@@deprecated "Use HashTable instead of Hashtbl"]

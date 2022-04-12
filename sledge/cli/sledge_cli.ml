@@ -20,14 +20,18 @@ let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
 let ( >*> ) : ('a -> 'b) param -> ('b -> 'c) param -> ('a -> 'c) param =
  fun f' g' -> Command.Param.both f' g' >>| fun (f, g) -> f >> g
 
+;;
+register_sexp_of_exn (Trace.Parse_failure "") (function
+  | Trace.Parse_failure msg -> Sexplib0.Sexp.Atom msg
+  | _ -> assert false )
+
 (* define a command, with trace flag, and with action wrapped in
    reporting *)
 let command ~summary ?readme param =
   let trace =
     let%map_open config =
       flag "trace" ~doc:"<spec> enable debug tracing"
-        (optional_with_default Trace.none
-           (Arg_type.create (fun s -> Trace.parse s |> Result.get_ok)) )
+        (optional_with_default Trace.none (Arg_type.create Trace.parse))
     and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"

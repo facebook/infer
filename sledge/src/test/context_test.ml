@@ -16,9 +16,8 @@ let%test_module _ =
     (* let () =
      *   Trace.init ~margin:160
      *     ~config:
-     *       (Result.get_ok
-     *          (Trace.parse
-     *             "+Context-Context.canon-Context.canon_f-Context.norm-Context.find_extend_"))
+     *       (Trace.parse
+     *          "+Context-Context.canon-Context.canon_f-Context.norm-Context.find_extend_" )
      *     () *)
 
     [@@@warning "-32"]

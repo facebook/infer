@@ -11,14 +11,11 @@ open Fol
 let%test_module _ =
   ( module struct
     let () =
-      Trace.init ~margin:68
-        ~config:(Result.get_ok (Trace.parse "+Solver.infer_frame"))
-        ()
+      Trace.init ~margin:68 ~config:(Trace.parse "+Solver.infer_frame") ()
 
     (* let () =
      *   Trace.init ~margin:160
-     *     ~config:
-     *       (Result.get_ok (Trace.parse "+Solver.infer_frame+Solver.excise"))
+     *     ~config:(Trace.parse "+Solver.infer_frame+Solver.excise")
      *     () *)
 
     [@@@warning "-32"]
