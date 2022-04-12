@@ -75,19 +75,24 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       simple_condition Map arg_id
   | Nil ->
       simple_condition Nil arg_id
-  | Record name ->
-      let record_info = String.Map.find_exn env.records name in
-      let tuple_size = 1 + List.length record_info.field_names in
-      let tuple_typ = ErlangTypeName.Tuple tuple_size in
-      let is_tuple_block, is_tuple_cond = simple_condition tuple_typ arg_id in
-      let name_id = mk_fresh_id () in
-      let load_name_instr =
-        Env.load_field_from_expr env name_id (Var arg_id) (ErlangTypeName.tuple_elem 1) tuple_typ
-      in
-      let is_atom_block, is_atom_cond = atom_literal name name_id in
-      let condition = Exp.BinOp (Binop.LAnd, is_tuple_cond, is_atom_cond) in
-      ( Block.all env [is_tuple_block; Block.make_instruction env [load_name_instr]; is_atom_block]
-      , condition )
+  | Record name -> (
+    (* We can replace this check with [find_exn] once we have AST validation for specs (T115271156). *)
+    match String.Map.find env.records name with
+    | Some record_info ->
+        let tuple_size = 1 + List.length record_info.field_names in
+        let tuple_typ = ErlangTypeName.Tuple tuple_size in
+        let is_tuple_block, is_tuple_cond = simple_condition tuple_typ arg_id in
+        let name_id = mk_fresh_id () in
+        let load_name_instr =
+          Env.load_field_from_expr env name_id (Var arg_id) (ErlangTypeName.tuple_elem 1) tuple_typ
+        in
+        let is_atom_block, is_atom_cond = atom_literal name name_id in
+        let condition = Exp.BinOp (Binop.LAnd, is_tuple_cond, is_atom_cond) in
+        ( Block.all env [is_tuple_block; Block.make_instruction env [load_name_instr]; is_atom_block]
+        , condition )
+    | None ->
+        L.debug Capture Verbose "@[Record definition %s not found treating as any()@]" name ;
+        succ_true env )
   | Remote {module_; type_} ->
       userdef_condition module_ type_
   | Tuple (FixedSize types) ->
