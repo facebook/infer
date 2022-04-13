@@ -299,7 +299,7 @@
     { "class_names": ["android.text.Html"],
       "method_names": ["fromHtml"],
       "kinds": ["HTML"],
-      "taint_target": ["ArgumentPositions", [1]]
+      "taint_target": ["ArgumentPositions", [0]]
     },
     { "class_names": ["android.util.Log"],
       "method_names": ["e", "println", "w", "wtf"],
