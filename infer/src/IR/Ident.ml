@@ -64,7 +64,7 @@ let knone = KNone
 (* timestamp for a path identifier *)
 let path_ident_stamp = -3
 
-type t = {kind: kind; name: Name.t; stamp: int} [@@deriving compare, yojson_of]
+type t = {kind: kind; name: Name.t; stamp: int; description: string} [@@deriving compare, yojson_of]
 
 (* most unlikely first *)
 let equal i1 i2 =
@@ -137,7 +137,8 @@ module NameGenerator = struct
         NameHash.add !name_map name 0 ;
         0
     in
-    {kind; name; stamp}
+    let description = "None" in
+    {kind; name; stamp; description}
 
 
   (** Make sure that fresh ids after whis one will be with different stamps *)
@@ -162,7 +163,14 @@ let standard_name kind =
 (** Every identifier with a given stamp should ultimately be created using this function *)
 let create_with_stamp kind name stamp =
   NameGenerator.update_name_hash name stamp ;
-  {kind; name; stamp}
+  let description = "None" in
+  {kind; name; stamp; description}
+
+
+(** Every identifier with a given stamp and description should be created using this function *)
+let create_with_stamp_and_description kind name stamp description =
+  NameGenerator.update_name_hash name stamp ;
+  {kind; name; stamp; description}
 
 
 (** Create an identifier with default name for the given kind *)
@@ -183,6 +191,9 @@ let create_footprint name stamp = create_with_stamp KFootprint name stamp
 
 (** Get a name of an identifier *)
 let get_name id = id.name
+
+(** Get a description of an identifier *)
+let get_description id = id.description
 
 let has_kind id kind = equal_kind id.kind kind
 
@@ -213,7 +224,8 @@ let pp f id =
   else
     let base_name = name_to_string id.name in
     let prefix = if has_kind id KFootprint then "@" else if has_kind id KNormal then "" else "_" in
-    F.fprintf f "%s%s$%d" prefix base_name id.stamp
+    if String.equal id.description "" then F.fprintf f "%s%s$%d" prefix base_name id.stamp
+    else F.fprintf f "%s%s$%d(%s)" prefix base_name id.stamp id.description
 
 
 (** Convert an identifier to a string. *)

@@ -78,7 +78,12 @@ val name_to_string : name -> string
 val get_name : t -> name
 (** Name of the identifier. *)
 
+val get_description : t -> string
+(** Description of the identifier. *)
+
 val create_with_stamp : kind -> name -> int -> t
+
+val create_with_stamp_and_description : kind -> name -> int -> string -> t
 
 val create : kind -> int -> t
 (** Create an identifier with default name for the given kind *)

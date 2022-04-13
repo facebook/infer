@@ -205,9 +205,10 @@ let parse_ident (json : Safe.t) =
     else if String.equal k "None" then Ident.knone
     else Logging.die InternalError "Unsupported identifier kind: %s" k
   in
-  Ident.create_with_stamp kind
+  Ident.create_with_stamp_and_description kind
     (Ident.string_to_name (to_string (member "name" json)))
     (to_int (member "stamp" json))
+    (to_string (member "description" json))
 
 
 let parse_fieldident (json : Safe.t) =
