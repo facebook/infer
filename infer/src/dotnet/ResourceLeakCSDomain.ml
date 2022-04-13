@@ -148,7 +148,6 @@ module Summary = struct
   end
 
   module ResourcesFromFormals = PrettyPrintable.MakePPMap (InterfaceAccessPath)
-  module ResourcesFromFormalsType = PrettyPrintable.MakePPMap (InterfaceAccessPath)
 
   type t = (BoundsWithTop.t * TypeNameInfo.t) ResourcesFromFormals.t
 
@@ -214,7 +213,7 @@ module Summary = struct
             ResourcesFromFormals.add interface_access_path (count, type_name) acquired
         | None ->
             acquired )
-      held ResourcesFromFormals.empty 
+      held ResourcesFromFormals.empty
 
 
   let apply ~callee:summary ~return ~actuals held =
