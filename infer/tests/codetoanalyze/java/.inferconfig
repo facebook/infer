@@ -98,7 +98,7 @@
     },
     { "short_description": "Create Intent from URI",
       "taint_flows": [
-        { "source_kinds": ["IntentFromURI"],
+        { "source_kinds": ["IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["StartComponent"] }
       ]
     },
@@ -244,17 +244,22 @@
     { "class_names": ["android.app.Activity"],
       "method_names": ["startActivityFromChild", "startActivityFromFragment"],
       "kinds": ["StartComponent"],
-      "taint_target": ["ArgumentPositions", [1]]
+      "taint_target": ["ArgumentPositions", [2]]
     },
     { "class_names": ["android.app.Activity", "android.content.Context", "android.support.v4.app.Fragment", "androidx.fragment.app.Fragment"],
       "method_names": ["startIntentSenderForResult"],
       "kinds": ["StartComponent"],
-      "taint_target": ["ArgumentPositions", [2]]
+      "taint_target": ["ArgumentPositions", [3]]
+    },
+    { "class_names": ["android.app.Activity"],
+      "method_names": ["startIntentSenderFromChild"],
+      "kinds": ["StartComponent"],
+      "taint_target": ["ArgumentPositions", [4]]
     },
     { "class_names": ["android.app.Fragment", "android.content.Context", "android.support.v4.app.Fragment", "androidx.fragment.app.Fragment"],
       "method_names": ["startActivity"],
       "kinds": ["StartComponent", "StartComponentForInsecureIntentHandling"],
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "class_names": ["android.app.Fragment", "android.content.Context", "android.support.v4.app.Fragment", "androidx.fragment.app.Fragment"],
       "method_names": [ "bindService", "sendBroadcast", "sendBroadcastAsUser",
@@ -265,20 +270,24 @@
                         "startNextMatchingActivity", "startService", "stopService"
                       ],
       "kinds": ["StartComponent"],
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "class_names": ["android.content.Context"],
       "method_names": ["startIntentSender"],
       "kinds": ["StartComponent"],
-      "taint_target": ["ArgumentPositions", [1]]
+      "taint_target": ["ArgumentPositions", [2]]
     },
     { "class_names": ["android.content.Intent"],
-      "method_names": [ "parseUri", "getIntent", "getIntentOld", "setComponent", "setData",
-                        "setDataAndNormalize", "setDataAndType", "setDataAndTypeAndNormalize",
-                        "setPackage"
-                      ],
+      "method_names": ["parseUri", "getIntent", "getIntentOld"],
       "kinds": ["CreateIntent"],
       "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["android.content.Intent"],
+      "method_names": [ "setComponent", "setData", "setDataAndNormalize", "setDataAndType",
+                        "setDataAndTypeAndNormalize", "setPackage"
+                      ],
+      "kinds": ["CreateIntent"],
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "class_names": ["android.content.Intent"],
       "method_names": ["setClassName"],
@@ -287,7 +296,7 @@
     { "class_names": ["android.text.Html"],
       "method_names": ["fromHtml"],
       "kinds": ["HTML"],
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "class_names": ["android.util.Log"],
       "method_names": ["e", "println", "w", "wtf"],
@@ -333,22 +342,22 @@
     { "class_names": ["java.lang.Runtime"],
       "method_names": ["exec"],
       "kinds": ["ShellExec"],
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "class_names": ["java.sql.Statement"],
       "method_names": ["addBatch", "execute"],
       "kinds": ["SQLInjection"],
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "class_names": ["java.sql.Statement"],
       "method_names": ["executeQuery"],
       "kinds": ["SQLRead"],
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "class_names": ["java.sql.Statement"],
       "method_names": ["executeUpdate", "executeLargeUpdate"],
       "kinds": ["SQLWrite"],
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.loggingSink1",
       "kinds": ["Logging"],

@@ -302,36 +302,79 @@ let taint_sinks tenv path location return proc_name actuals astate =
 
 (* merge all taint from actuals into the return value; NOTE: currently only one source and one
    sanitizer per value is supported so this may overwrite taint information *)
-let propagate_taint_for_unknown_calls path location (return, _) call actuals astate =
+let propagate_taint_for_unknown_calls tenv path location (return, return_typ) call proc_name_opt
+    actuals astate =
   (* TODO: match values returned by reference by the frontend *)
   L.d_printfln "propagating all taint for unknown call" ;
   let return = Var.of_id return in
-  List.fold actuals ~init:astate
-    ~f:(fun astate {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
-      match
-        ( AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer actual astate
-        , Stack.find_opt return astate )
-      with
-      | None, _ | _, None ->
-          astate
-      | Some ((source, source_hist), sanitizer_opt), Some return_value ->
-          let hist =
-            ValueHistory.sequence ~context:path.PathContext.conditions
-              (Call
-                 { f= call
-                 ; location
-                 ; timestamp= path.PathContext.timestamp
-                 ; in_call= ValueHistory.epoch } )
-              source_hist
-          in
-          let astate =
-            AbductiveDomain.AddressAttributes.add_one (fst return_value)
-              (Tainted (source, hist))
-              astate
-          in
-          Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
-              AbductiveDomain.AddressAttributes.add_one (fst return_value)
-                (TaintSanitized sanitizer) astate ) )
+  let propagate_to_return, propagate_to_receiver =
+    let is_static =
+      Option.exists proc_name_opt ~f:(fun proc_name ->
+          Option.value ~default:true (Procname.is_static proc_name) )
+    in
+    match (proc_name_opt, return_typ, actuals) with
+    | Some proc_name, _, _ when Procname.is_constructor proc_name ->
+        (false, true)
+    | _, {Typ.desc= Tint _ | Tfloat _ | Tvoid}, _ when not is_static ->
+        (* for instance methods with a non-Object return value, propagate the taint to the
+               receiver *)
+        (false, true)
+    | ( Some proc_name
+      , {Typ.desc= Tptr ({desc= Tstruct return_typename}, _)}
+      , {ProcnameDispatcher.Call.FuncArg.typ= {desc= Tptr ({desc= Tstruct receiver_typename}, _)}}
+        :: _ )
+      when (not is_static)
+           && Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_typename ->
+                  Typ.Name.equal return_typename class_typename
+                  && PatternMatch.supertype_exists tenv
+                       (fun type_name _struct -> Typ.Name.equal class_typename type_name)
+                       receiver_typename ) ->
+        (* if the receiver and return type are the same, propagate to both. we're assuming the call
+           is one of the common "builder-style" methods that both updates and returns the
+           receiver *)
+        (true, true)
+    | _, {Typ.desc= Tptr _ | Tstruct _}, _ ->
+        (true, false)
+    | _, _, _ ->
+        (false, false)
+  in
+  if propagate_to_return || propagate_to_receiver then
+    List.fold actuals ~init:astate
+      ~f:(fun astate {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
+        match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer actual astate with
+        | None ->
+            astate
+        | Some ((source, source_hist), sanitizer_opt) -> (
+            let hist =
+              ValueHistory.sequence ~context:path.PathContext.conditions
+                (Call
+                   { f= call
+                   ; location
+                   ; timestamp= path.PathContext.timestamp
+                   ; in_call= ValueHistory.epoch } )
+                source_hist
+            in
+            let propagate_to value astate =
+              let astate =
+                AbductiveDomain.AddressAttributes.add_one value (Tainted (source, hist)) astate
+              in
+              Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
+                  AbductiveDomain.AddressAttributes.add_one value (TaintSanitized sanitizer) astate )
+            in
+            let astate =
+              match Stack.find_opt return astate with
+              | Some (return_value, _) when propagate_to_return ->
+                  propagate_to return_value astate
+              | _ ->
+                  astate
+            in
+            match actuals with
+            | {ProcnameDispatcher.Call.FuncArg.arg_payload= this, _hist} :: _
+              when propagate_to_receiver ->
+                propagate_to this astate
+            | _ ->
+                astate ) )
+  else astate
 
 
 let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
@@ -339,8 +382,8 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
   | First call_exp ->
       if call_was_unknown then
         Ok
-          (propagate_taint_for_unknown_calls path location return (SkippedUnknownCall call_exp)
-             actuals astate )
+          (propagate_taint_for_unknown_calls tenv path location return (SkippedUnknownCall call_exp)
+             None actuals astate )
       else Ok astate
   | Second proc_name ->
       let astate, found_sanitizer_model =
@@ -356,8 +399,8 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
         call_was_unknown && (not found_sanitizer_model) && (not found_source_model)
         && not found_sink_model
       then
-        propagate_taint_for_unknown_calls path location return (SkippedKnownCall proc_name) actuals
-          astate
+        propagate_taint_for_unknown_calls tenv path location return (SkippedKnownCall proc_name)
+          (Some proc_name) actuals astate
       else astate
 
 
