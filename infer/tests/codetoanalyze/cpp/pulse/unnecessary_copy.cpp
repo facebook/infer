@@ -24,47 +24,47 @@ int copy_decl_bad() {
 
 int source_mod_ok() {
   Arr source;
-  auto copy = source;
+  auto cpy = source;
   source.arr[0] = 9; // source is modified, so copy is not unnecessary as we
                      // can't just add &
-  return copy.arr[0];
+  return cpy.arr[0];
 }
 
 int source_mod_param_ok(Arr source) {
-  auto copy = source;
+  auto cpy = source;
   source.arr[0] = 9; // source is modified, so copy is not unnecessary as we
                      // can't just add &
-  return copy.arr[0];
+  return cpy.arr[0];
 }
 
 void copy_in_branch_bad(bool b) {
   if (b) {
     Arr a;
-    auto copy = a;
+    auto cpy = a;
   }
 }
 
 void copy_in_branch_mod_ok(bool b) {
   if (b) {
     Arr a;
-    auto copy = a;
-    copy.arr[0] = 8;
+    auto cpy = a;
+    cpy.arr[0] = 8;
   }
 }
 
 void copy_outside_branch_mod_ok(bool b) {
   Arr a;
-  auto copy = a;
+  auto cpy = a;
   if (b) {
-    copy.arr[0] = 8;
+    cpy.arr[0] = 8;
   }
 }
 
 void multiple_copies_bad(bool b) {
   Arr a;
-  auto copy1 = a; // unnecessary copy
+  auto cpy1 = a; // unnecessary copy
   if (b) {
-    auto copy2 = copy1; // unnecessary copy
+    auto cpy2 = cpy1; // unnecessary copy
   }
 }
 
@@ -84,8 +84,8 @@ int get_first_elem(Arr a) { return a.arr[0]; }
 
 void copy_via_constructor_read_bad() {
   auto my_arr = Arr{{1, 2}}; // call to constructor
-  auto copy_arr = my_arr; // copy
-  get_first_elem(copy_arr);
+  auto cpy_arr = my_arr; // copy
+  get_first_elem(cpy_arr);
 }
 
 Arr get_a() {
@@ -100,11 +100,11 @@ void modified_interproc_copy_decl_ok() {
   set_to_zero(a.arr); // copy modified here by callee, it is not unnecessary
 }
 
-void copy_vec_bad(std::vector<int> vec) { auto copy_vec = vec; }
+void copy_vec_bad(std::vector<int> vec) { auto cpy_vec = vec; }
 
 void copy_vec_mod_ok(std::vector<int> vec) {
-  auto copy_vec = vec;
-  copy_vec.push_back(0);
+  auto cpy_vec = vec;
+  cpy_vec.push_back(0);
 }
 
 class Vec {
@@ -155,36 +155,36 @@ Arr& get_cond_arr_ref(Arr& arr1, Arr& arr2, bool cond) {
 void copy_in_both_cases_bad(bool cond) {
   Arr arr1;
   Arr arr2;
-  auto copy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+  auto cpy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
 }
 
 void copy_in_both_cases_mod_ok(bool cond) {
   Arr arr1;
   Arr arr2;
-  auto copy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
-  copy.arr[0] = 9;
+  auto cpy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+  cpy.arr[0] = 9;
 }
 
 void copy_in_both_cases_source_mod_ok(bool cond) {
   Arr arr1;
   Arr arr2;
-  auto copy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+  auto cpy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
   arr1.arr[0] = 9;
 }
 
 void copy_in_both_cases_branch_bad(bool cond) {
   Arr arr1;
   Arr arr2;
-  auto copy = get_cond_arr_ref(arr1, arr2, true); // call to copy ctor
+  auto cpy = get_cond_arr_ref(arr1, arr2, true); // call to copy ctor
 }
 
 void copy_modified_after_abort_ok_FP(std::vector<int> source_vec) {
-  auto copy = source_vec;
+  auto cpy = source_vec;
   std::vector<int> vec(2);
   int* elt = &vec[1];
   vec.push_back(0);
   int temp = *elt; // abort: vector invalidation
-  copy.push_back(0); // copy modified, but we propagate Abort state without
+  cpy.push_back(0); // copy modified, but we propagate Abort state without
                      // executing the rest of the stmts
 }
 
@@ -197,17 +197,17 @@ X creates_copy(X a) {
 } // namespace ns
 
 int copy_via_model_bad(Arr arr) {
-  auto copy = ns::creates_copy(arr); // creates copy (via model)
+  auto cpy = ns::creates_copy(arr); // creates copy (via model)
 }
 
 void source_modified_before_lib_destructor_ok(std::vector<int>& source_vec) {
-  auto copy = source_vec;
+  auto cpy = source_vec;
   source_vec[0] = 0;
 }
 
 void copy_modified_before_lib_destructor_ok(std::vector<int>& source_vec) {
-  auto copy = source_vec;
-  copy[0] = 0;
+  auto cpy = source_vec;
+  cpy[0] = 0;
 }
 
 class String {
@@ -221,9 +221,13 @@ class String {
   void set_size(int new_size) { size = new_size; }
 };
 
-void check_before_custom_destructor_bad(String s) { auto copy = s; }
+void check_before_custom_destructor_bad(String s) { auto cpy = s; }
 
 void modified_before_custom_destructor_ok(String s) {
-  auto copy = s;
-  copy.set_size(10);
+  auto cpy = s;
+  cpy.set_size(10);
 }
+
+void copy_vec_name_contains_copy_ok(std::vector<int> vec) {
+  auto copy_vec = vec;
+} // variable contains "copy", hence warning should be suppressed
