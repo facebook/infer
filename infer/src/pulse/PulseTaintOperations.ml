@@ -266,7 +266,7 @@ let taint_sanitizers tenv return proc_name actuals astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, _), _)) ->
         AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
   in
-  (astate, not (List.is_empty tainted))
+  astate
 
 
 let check_policy ~sink ~source ~sanitizer_opt =
@@ -344,10 +344,12 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
     in
     match (proc_name_opt, return_typ, actuals) with
     | Some proc_name, _, _ when Procname.is_constructor proc_name ->
+        L.d_printfln "unknown constructor, propagating taint to receiver" ;
         (false, true)
     | _, {Typ.desc= Tint _ | Tfloat _ | Tvoid}, _ when not is_static ->
         (* for instance methods with a non-Object return value, propagate the taint to the
                receiver *)
+        L.d_printfln "non-object return type, propagating taint to receiver" ;
         (false, true)
     | ( Some proc_name
       , {Typ.desc= Tptr ({desc= Tstruct return_typename}, _)}
@@ -362,10 +364,13 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
         (* if the receiver and return type are the same, propagate to both. we're assuming the call
            is one of the common "builder-style" methods that both updates and returns the
            receiver *)
+        L.d_printfln "chainable call, propagating taint to both return and receiver" ;
         (true, true)
     | _, {Typ.desc= Tptr _ | Tstruct _}, _ ->
+        L.d_printfln "object return type, propagating taint to return" ;
         (true, false)
     | _, _, _ ->
+        L.d_printfln "not propagating taint" ;
         (false, false)
   in
   if propagate_to_return || propagate_to_receiver then
@@ -385,10 +390,12 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
                 source_hist
             in
             let propagate_to value astate =
+              L.d_printfln "tainting %a as source" AbstractValue.pp value ;
               let astate =
                 AbductiveDomain.AddressAttributes.add_one value (Tainted (source, hist)) astate
               in
               Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
+                  L.d_printfln "registering %a as sanitizer" AbstractValue.pp value ;
                   AbductiveDomain.AddressAttributes.add_one value (TaintSanitized sanitizer) astate )
             in
             let astate =
@@ -407,6 +414,25 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
   else astate
 
 
+(* some pulse models are not a faithful reflection of the behaviour and should be treated as unknown
+   wrt taint behaviour (i.e. propagate taint like an unknown function would) *)
+let pulse_models_to_treat_as_unknown_for_taint =
+  (* HACK: make a list of matchers just to reuse the matching code below *)
+  let dummy_matcher_of_procedure_matcher procedure_matcher =
+    {procedure_matcher; arguments= []; kinds= []; target= `ReturnValue}
+  in
+  [ ClassAndMethodNames
+      { class_names= ["java.lang.StringBuilder"]
+      ; method_names= ["append"; "delete"; "replace"; "setLength"] } ]
+  |> List.map ~f:dummy_matcher_of_procedure_matcher
+
+
+let should_treat_as_unknown_for_taint tenv proc_name =
+  (* HACK: we already have a function for matching procedure names so just re-use it even though we
+     don't need its full power *)
+  procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name [] |> Option.is_some
+
+
 let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
   match call with
   | First call_exp ->
@@ -416,19 +442,17 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
              None actuals astate )
       else Ok astate
   | Second proc_name ->
-      let astate, found_sanitizer_model =
-        taint_sanitizers tenv (Some return) proc_name actuals astate
-      in
+      let call_was_unknown = call_was_unknown || should_treat_as_unknown_for_taint tenv proc_name in
+      let astate = taint_sanitizers tenv (Some return) proc_name actuals astate in
       let astate, found_source_model =
         taint_sources tenv path location (Some return) proc_name actuals astate
       in
       let+ astate, found_sink_model =
         taint_sinks tenv path location (Some return) proc_name actuals astate
       in
-      if
-        call_was_unknown && (not found_sanitizer_model) && (not found_source_model)
-        && not found_sink_model
-      then
+      (* NOTE: we don't care about sanitizers because we want to propagate taint source and sink
+         information even if a procedure also happens to sanitize *some* of the sources *)
+      if call_was_unknown && (not found_source_model) && not found_sink_model then
         propagate_taint_for_unknown_calls tenv path location return (SkippedKnownCall proc_name)
           (Some proc_name) actuals astate
       else astate

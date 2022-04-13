@@ -467,15 +467,19 @@ module Vector = struct
 
 
   let push_back vector : model =
-   fun {path; location} astate ->
-    let hist = Hist.single_call path location "std::vector::push_back()" in
-    if AddressAttributes.is_std_vector_reserved (fst vector) astate then
-      (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
-         (a perfect analysis would also make sure we don't exceed the reserved size) *)
-      Basic.ok_continue astate
-    else
-      (* simulate a re-allocation of the underlying array every time an element is added *)
-      let<+> astate = reallocate_internal_array path hist vector PushBack location astate in
+   fun {path; location; ret= ret_id, _} astate ->
+    let<+> astate =
+      let hist = Hist.single_call path location "std::vector::push_back()" in
+      if AddressAttributes.is_std_vector_reserved (fst vector) astate then
+        (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
+           (a perfect analysis would also make sure we don't exceed the reserved size) *)
+        Ok astate
+      else
+        (* simulate a re-allocation of the underlying array every time an element is added *)
+        reallocate_internal_array path hist vector PushBack location astate
+    in
+    PulseOperations.write_id ret_id
+      (fst vector, Hist.add_call path location "std::vector::push_back()" (snd vector))
       astate
 
 
