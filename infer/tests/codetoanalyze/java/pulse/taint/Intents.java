@@ -140,7 +140,6 @@ public class Intents {
     activity.sendStickyBroadcastAsUser(intent, null);
     activity.sendStickyOrderedBroadcast(intent, null, null, 0, null, null);
     activity.sendStickyOrderedBroadcastAsUser(intent, null, null, null, 0, null, null);
-    // FN because of the array
     activity.startActivities(new Intent[] {intent});
     activity.startActivity(intent);
     activity.startActivityForResult(intent, 0);

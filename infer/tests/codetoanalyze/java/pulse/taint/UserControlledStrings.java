@@ -32,20 +32,20 @@ public class UserControlledStrings {
     Runtime.getRuntime().exec(clipboard.getText().toString());
   }
 
-  void FN_clipboardToShellArrayBad() throws IOException {
+  void clipboardToShellArrayBad() throws IOException {
     String[] cmds = new String[] {"ls", clipboard.getText().toString()};
     Runtime.getRuntime().exec(cmds);
   }
 
-  ProcessBuilder FN_clipboardToProcessBuilder1Bad() {
+  ProcessBuilder clipboardToProcessBuilder1Bad() {
     return new ProcessBuilder(clipboard.getText().toString());
   }
 
-  ProcessBuilder FN_clipboardToProcessBuilder2Bad() {
+  ProcessBuilder clipboardToProcessBuilder2Bad() {
     return new ProcessBuilder("sh", clipboard.getText().toString());
   }
 
-  ProcessBuilder FN_clipboardToProcessBuilder3Bad(ProcessBuilder builder) {
+  ProcessBuilder clipboardToProcessBuilder3Bad(ProcessBuilder builder) {
     return builder.command(clipboard.getText().toString());
   }
 

@@ -335,12 +335,33 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
                             ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } } ] ) )
   in
   let rec check_dependencies policy_violations_reported visited v astate =
-    match AbductiveDomain.AddressAttributes.get_propagate_taint_from v astate with
+    let* astate =
+      match AbductiveDomain.AddressAttributes.get_propagate_taint_from v astate with
+      | None ->
+          Ok astate
+      | Some taints_in ->
+          PulseResult.list_fold taints_in ~init:astate ~f:(fun astate {Attribute.v= v'} ->
+              check policy_violations_reported visited v' astate )
+    in
+    (* if the value is an array we propagate the check to the array elements *)
+    (* NOTE: we could do the same for field accesses or really all accesses if we want the taint
+       analysis to consider that the insides of objects are tainted whenever the object is. This
+       might not be a very efficient way to do this though? *)
+    match AbductiveDomain.Memory.find_opt v astate with
     | None ->
         Ok astate
-    | Some taints_in ->
-        PulseResult.list_fold taints_in ~init:astate ~f:(fun astate {Attribute.v= v'} ->
-            check policy_violations_reported visited v' astate )
+    | Some edges ->
+        BaseMemory.Edges.fold edges ~init:(Ok astate) ~f:(fun astate_result (access, (dest, _)) ->
+            match (access : _ HilExp.Access.t) with
+            | ArrayAccess _ -> (
+              match AbductiveDomain.Memory.find_edge_opt dest Dereference astate with
+              | None ->
+                  astate_result
+              | Some (dest_value, _) ->
+                  let* astate = astate_result in
+                  check policy_violations_reported visited dest_value astate )
+            | FieldAccess _ | TakeAddress | Dereference ->
+                astate_result )
   and check policy_violations_reported visited v astate =
     if AbstractValue.Set.mem v visited then Ok astate
     else

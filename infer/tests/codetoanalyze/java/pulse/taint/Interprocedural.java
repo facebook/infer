@@ -288,7 +288,7 @@ class Interprocedural {
     InferTaint.inferSensitiveSink(params);
   }
 
-  public static void FN_callSinkVariadicBad() {
+  public static void callSinkVariadicBad() {
     callSinkVariadic(null, null, InferTaint.inferSecretSource());
   }
 

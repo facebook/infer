@@ -24,8 +24,7 @@ public class Files {
     return FileSystems.getDefault().getPath(taintedString);
   }
 
-  // FN because varargs is stored in an array and taint doesn't look into arrays at the moment
-  public Path FN_fileSystemConstructorSinkBad2() {
+  public Path fileSystemConstructorSinkBad2() {
     String taintedString = (String) InferTaint.inferSecretSource();
     return FileSystems.getDefault().getPath("", taintedString);
   }
@@ -35,8 +34,7 @@ public class Files {
     return Paths.get(taintedString);
   }
 
-  // similar FN as above
-  public Path FN_pathsSinkBad2() {
+  public Path pathsSinkBad2() {
     String taintedString = (String) InferTaint.inferSecretSource();
     return Paths.get("", taintedString);
   }

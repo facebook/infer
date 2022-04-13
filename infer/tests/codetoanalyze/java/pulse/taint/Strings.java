@@ -47,22 +47,20 @@ public class Strings {
     InferTaint.inferSensitiveSink(buffer.toString());
   }
 
-  /* the below pass taint via arrays, which causes false negatives at the moment */
-
-  void FN_viaFormatterBad() {
+  void viaFormatterBad() {
     Object source = InferTaint.inferSecretSource();
     Formatter formatter = new Formatter();
     InferTaint.inferSensitiveSink(formatter.format("%s", source).toString());
   }
 
-  void FN_viaFormatterIgnoreReturnBad() {
+  void viaFormatterIgnoreReturnBad() {
     Object source = InferTaint.inferSecretSource();
     Formatter formatter = new Formatter();
     formatter.format("%s", source);
     InferTaint.inferSensitiveSink(formatter.toString());
   }
 
-  void FN_viaStringFormatVarArgsDirectBad() {
+  void viaStringFormatVarArgsDirectBad() {
     Object source = InferTaint.inferSecretSource();
     String tainted = String.format("%s%s", "hi", source);
     InferTaint.inferSensitiveSink(tainted);
@@ -73,7 +71,7 @@ public class Strings {
     InferTaint.inferSensitiveSink(tainted);
   }
 
-  void FN_viaStringFormatVarArgsIndirectBad() {
+  void viaStringFormatVarArgsIndirectBad() {
     viaStringFormatVarArgsIndirect(InferTaint.inferSecretSource());
   }
 }
