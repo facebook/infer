@@ -332,7 +332,8 @@ let get_message diagnostic =
   | UnnecessaryCopy {variable; location} ->
       F.asprintf
         "copied variable `%a` is not modified after it is copied on %a. Consider using a reference \
-         `&` instead to avoid the copy"
+         `&` instead to avoid the copy. If this copy was intentional, consider adding the word \
+         `copy` into the variable name to suppress this warning"
         Var.pp variable Location.pp_line location
 
 
