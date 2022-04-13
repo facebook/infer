@@ -727,6 +727,15 @@ module Term = struct
     f acc t'
 
 
+  let satunsat_map_direct_subterms t ~f =
+    let exception FoundUnsat in
+    try
+      Sat
+        (map_direct_subterms t ~f:(fun t' ->
+             match f t' with Unsat -> raise FoundUnsat | Sat t'' -> t'' ) )
+    with FoundUnsat -> Unsat
+
+
   let fold_subterms t ~init ~f = fold_map_subterms t ~init ~f:(fun acc t' -> (f acc t', t')) |> fst
 
   let map_subterms t ~f = fold_map_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
@@ -811,191 +820,216 @@ module Term = struct
     let map_z_z_opt q1 q2 f =
       conv2 Q.to_bigint Q.to_bigint (Option.map ~f:Q.of_bigint) q1 q2 f |> Option.join
     in
-    let or_undef q_opt = Option.value ~default:Q.undef q_opt in
-    match t0 with
-    | Const _ | Var _ | IsInstanceOf _ | String _ | Procname _ | FunctionApplication _ ->
-        t0
-    | Linear l ->
-        LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
-    | IsInt t' ->
-        q_map t' (fun q ->
-            if Z.(equal one) (Q.den q) then (* an integer *) Q.one
-            else (
-              (* a non-integer rational *)
-              L.d_printfln ~color:Orange "CONTRADICTION: is_int(%a)" Q.pp_print q ;
-              Q.zero ) )
-    | Minus t' ->
-        q_map t' Q.(mul minus_one)
-    | Add (t1, t2) ->
-        q_map2 t1 t2 Q.add
-    | BitNot t' ->
-        q_map t' (fun c ->
-            let open Option.Monad_infix in
-            Q.to_int64 c >>| Int64.bit_not >>| Q.of_int64 |> or_undef )
-    | Mult (t1, t2) ->
-        q_map2 t1 t2 Q.mul
-    | DivI (t1, t2) | DivF (t1, t2) ->
-        q_map2 t1 t2 (fun c1 c2 ->
-            let open Option.Monad_infix in
-            if Q.is_zero c2 then Q.undef
-            else
-              match t0 with
-              | DivI _ ->
-                  (* OPTIM: do the division in [Z] and not [Q] to avoid [Q] normalizing the
-                     intermediate result for nothing *)
-                  Z.(Q.num c1 * Q.den c2 / (Q.den c1 * Q.num c2)) >>| Q.of_bigint |> or_undef
-              | _ ->
-                  (* DivF *) Q.(c1 / c2) )
-    | Mod (t1, t2) ->
-        q_map2 t1 t2 (fun c1 c2 ->
-            if Q.is_zero c2 then Q.undef else map_z_z_opt c1 c2 Z.( mod ) |> or_undef )
-    | Not t' ->
-        q_predicate_map t' Q.is_zero
-    | And (t1, t2) ->
-        map_const2 t1 t2 (fun c1 c2 -> of_bool (Q.is_not_zero c1 && Q.is_not_zero c2))
-    | Or (t1, t2) ->
-        map_const2 t1 t2 (fun c1 c2 -> of_bool (Q.is_not_zero c1 || Q.is_not_zero c2))
-    | LessThan (t1, t2) ->
-        q_predicate_map2 t1 t2 Q.lt
-    | LessEqual (t1, t2) ->
-        q_predicate_map2 t1 t2 Q.leq
-    | Equal (t1, t2) ->
-        q_predicate_map2 t1 t2 Q.equal
-    | NotEqual (t1, t2) ->
-        q_predicate_map2 t1 t2 Q.not_equal
-    | BitAnd (t1, t2)
-    | BitOr (t1, t2)
-    | BitShiftLeft (t1, t2)
-    | BitShiftRight (t1, t2)
-    | BitXor (t1, t2) ->
-        q_map2 t1 t2 (fun c1 c2 ->
-            match[@warning "-8"] t0 with
-            | BitAnd _ ->
-                map_i64_i64 c1 c2 Int64.bit_and |> or_undef
-            | BitOr _ ->
-                map_i64_i64 c1 c2 Int64.bit_or |> or_undef
-            | BitShiftLeft _ ->
-                map_i64_i c1 c2 Int64.shift_left |> or_undef
-            | BitShiftRight _ ->
-                map_i64_i c1 c2 Int64.shift_right |> or_undef
-            | BitXor _ ->
-                map_i64_i64 c1 c2 Int64.bit_xor |> or_undef )
+    let exception Undefined in
+    let or_raise = function Some q -> q | None -> raise Undefined in
+    let eval_const_shallow_or_raise t0 =
+      match t0 with
+      | Const _ | Var _ | IsInstanceOf _ | String _ | Procname _ | FunctionApplication _ ->
+          t0
+      | Linear l ->
+          LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
+      | IsInt t' ->
+          q_map t' (fun q ->
+              if Z.(equal one) (Q.den q) then (* an integer *) Q.one
+              else (
+                (* a non-integer rational *)
+                L.d_printfln ~color:Orange "CONTRADICTION: is_int(%a)" Q.pp_print q ;
+                Q.zero ) )
+      | Minus t' ->
+          q_map t' Q.(mul minus_one)
+      | Add (t1, t2) ->
+          q_map2 t1 t2 Q.add
+      | BitNot t' ->
+          q_map t' (fun c ->
+              let open Option.Monad_infix in
+              Q.to_int64 c >>| Int64.bit_not >>| Q.of_int64 |> or_raise )
+      | Mult (t1, t2) ->
+          q_map2 t1 t2 Q.mul
+      | DivI (t1, t2) | DivF (t1, t2) ->
+          q_map2 t1 t2 (fun c1 c2 ->
+              let open Option.Monad_infix in
+              if Q.is_zero c2 then raise Undefined
+              else
+                match t0 with
+                | DivI _ ->
+                    (* OPTIM: do the division in [Z] and not [Q] to avoid [Q] normalizing the
+                       intermediate result for nothing *)
+                    Z.(Q.num c1 * Q.den c2 / (Q.den c1 * Q.num c2)) >>| Q.of_bigint |> or_raise
+                | _ ->
+                    (* DivF *) Q.(c1 / c2) )
+      | Mod (t1, t2) ->
+          q_map2 t1 t2 (fun c1 c2 ->
+              if Q.is_zero c2 then raise Undefined else map_z_z_opt c1 c2 Z.( mod ) |> or_raise )
+      | Not t' ->
+          q_predicate_map t' Q.is_zero
+      | And (t1, t2) ->
+          map_const2 t1 t2 (fun c1 c2 -> of_bool (Q.is_not_zero c1 && Q.is_not_zero c2))
+      | Or (t1, t2) ->
+          map_const2 t1 t2 (fun c1 c2 -> of_bool (Q.is_not_zero c1 || Q.is_not_zero c2))
+      | LessThan (t1, t2) ->
+          q_predicate_map2 t1 t2 Q.lt
+      | LessEqual (t1, t2) ->
+          q_predicate_map2 t1 t2 Q.leq
+      | Equal (t1, t2) ->
+          q_predicate_map2 t1 t2 Q.equal
+      | NotEqual (t1, t2) ->
+          q_predicate_map2 t1 t2 Q.not_equal
+      | BitAnd (t1, t2)
+      | BitOr (t1, t2)
+      | BitShiftLeft (t1, t2)
+      | BitShiftRight (t1, t2)
+      | BitXor (t1, t2) ->
+          q_map2 t1 t2 (fun c1 c2 ->
+              match[@warning "-8"] t0 with
+              | BitAnd _ ->
+                  map_i64_i64 c1 c2 Int64.bit_and |> or_raise
+              | BitOr _ ->
+                  map_i64_i64 c1 c2 Int64.bit_or |> or_raise
+              | BitShiftLeft _ ->
+                  map_i64_i c1 c2 Int64.shift_left |> or_raise
+              | BitShiftRight _ ->
+                  map_i64_i c1 c2 Int64.shift_right |> or_raise
+              | BitXor _ ->
+                  map_i64_i64 c1 c2 Int64.bit_xor |> or_raise )
+    in
+    match eval_const_shallow_or_raise t0 with
+    | Const q as t ->
+        if Q.is_rational q then Some t else None
+    | t ->
+        Some t
+    | exception Undefined ->
+        None
 
 
   (* defend in depth against exceptions and debug *)
   let eval_const_shallow t =
-    let t' = Z.protect eval_const_shallow_ t |> Option.value ~default:(Const Q.undef) in
-    if not (phys_equal t t') then
-      Debug.p "eval_const_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
-    t'
-
-
-  let rec simplify_shallow_ t =
-    match t with
-    | Var _ | Const _ ->
-        t
-    | Minus (Minus t) ->
-        (* [--t = t] *)
-        t
-    | BitNot (BitNot t) ->
-        (* [~~t = t] *)
-        t
-    | Add (Const c, t) when Q.is_zero c ->
-        (* [0 + t = t] *)
-        t
-    | Add (t, Const c) when Q.is_zero c ->
-        (* [t + 0 = t] *)
-        t
-    | Mult (Const c, t) when Q.is_one c ->
-        (* [1 × t = t] *)
-        t
-    | Mult (t, Const c) when Q.is_one c ->
-        (* [t × 1 = t] *)
-        t
-    | Mult (Const c, _) when Q.is_zero c ->
-        (* [0 × t = 0] *)
-        zero
-    | Mult (_, Const c) when Q.is_zero c ->
-        (* [t × 0 = 0] *)
-        zero
-    | (DivI (Const c, _) | DivF (Const c, _)) when Q.is_zero c ->
-        (* [0 / t = 0] *)
-        zero
-    | (DivI (t, Const c) | DivF (t, Const c)) when Q.is_one c ->
-        (* [t / 1 = t] *)
-        t
-    | (DivI (t, Const c) | DivF (t, Const c)) when Q.is_minus_one c ->
-        (* [t / (-1) = -t] *)
-        simplify_shallow_ (Minus t)
-    | (DivI (_, Const c) | DivF (_, Const c)) when Q.is_zero c ->
-        (* [t / 0 = undefined] *)
-        Const Q.undef
-    | DivI (Minus t1, Minus t2) ->
-        (* [(-t1) / (-t2) = t1 / t2] *)
-        simplify_shallow_ (DivI (t1, t2))
-    | DivF (Minus t1, Minus t2) ->
-        (* [(-t1) /. (-t2) = t1 /. t2] *)
-        simplify_shallow_ (DivF (t1, t2))
-    | (DivI (t1, t2) | DivF (t1, t2)) when equal_syntax t1 t2 ->
-        (* [t / t = 1] *)
-        one
-    | Mod (Const c, _) when Q.is_zero c ->
-        (* [0 % t = 0] *)
-        zero
-    | Mod (_, Const q) when Q.is_one q ->
-        (* [t % 1 = 0] *)
-        zero
-    | Mod (t1, t2) when equal_syntax t1 t2 ->
-        (* [t % t = 0] *)
-        zero
-    | BitAnd (t1, t2) when is_zero t1 || is_zero t2 ->
-        zero
-    | BitXor (t1, t2) when equal_syntax t1 t2 ->
-        zero
-    | (BitShiftLeft (t1, _) | BitShiftRight (t1, _)) when is_zero t1 ->
-        zero
-    | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
-        t1
-    | BitShiftLeft (t', Const q) | BitShiftRight (t', Const q) -> (
-      match Q.to_int q with
-      | None ->
-          (* overflows or otherwise undefined, propagate puzzlement *)
-          Const Q.undef
-      | Some i -> (
-          if i >= 64 then (* assume 64-bit or fewer architecture *) zero
-          else if i < 0 then (* this is undefined, maybe we should report a bug here *)
-            Const Q.undef
-          else
-            let factor = Const Q.(of_int 1 lsl i) in
-            match[@warning "-8"] t with
-            | BitShiftLeft _ ->
-                simplify_shallow_ (Mult (t', factor))
-            | BitShiftRight _ ->
-                simplify_shallow_ (DivI (t', factor)) ) )
-    | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
-        t1
-    | And (t1, t2) when is_zero t1 || is_zero t2 ->
-        (* [false ∧ t = t ∧ false = false] *) zero
-    | And (t1, t2) when is_non_zero_const t1 ->
-        (* [true ∧ t = t] *) t2
-    | And (t1, t2) when is_non_zero_const t2 ->
-        (* [t ∧ true = t] *) t1
-    | Or (t1, t2) when is_non_zero_const t1 || is_non_zero_const t2 ->
-        (* [true ∨ t = t ∨ true = true] *) one
-    | Or (t1, t2) when is_zero t1 ->
-        (* [false ∨ t = t] *) t2
-    | Or (t1, t2) when is_zero t2 ->
-        (* [t ∨ false = t] *) t1
-    | _ ->
-        t
+    let t' = Z.protect eval_const_shallow_ t |> Option.join in
+    match t' with
+    | None ->
+        L.d_printfln ~color:Orange "Undefined result when evaluating %a" (pp_no_paren Var.pp) t ;
+        Unsat
+    | Some t' ->
+        if not (phys_equal t t') then
+          Debug.p "eval_const_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
+        Sat t'
 
 
   (* defend in depth against exceptions and debug *)
   let simplify_shallow t =
-    let t' = Z.protect simplify_shallow_ t |> Option.value ~default:(Const Q.undef) in
-    if not (phys_equal t t') then
-      Debug.p "simplify_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
-    t'
+    let exception Undefined in
+    let rec simplify_shallow_or_raise t =
+      match t with
+      | Var _ | Const _ ->
+          t
+      | Minus (Minus t) ->
+          (* [--t = t] *)
+          t
+      | BitNot (BitNot t) ->
+          (* [~~t = t] *)
+          t
+      | Add (Const c, t) when Q.is_zero c ->
+          (* [0 + t = t] *)
+          t
+      | Add (t, Const c) when Q.is_zero c ->
+          (* [t + 0 = t] *)
+          t
+      | Mult (Const c, t) when Q.is_one c ->
+          (* [1 × t = t] *)
+          t
+      | Mult (t, Const c) when Q.is_one c ->
+          (* [t × 1 = t] *)
+          t
+      | Mult (Const c, _) when Q.is_zero c ->
+          (* [0 × t = 0] *)
+          zero
+      | Mult (_, Const c) when Q.is_zero c ->
+          (* [t × 0 = 0] *)
+          zero
+      | (DivI (Const c, _) | DivF (Const c, _)) when Q.is_zero c ->
+          (* [0 / t = 0] *)
+          zero
+      | (DivI (t, Const c) | DivF (t, Const c)) when Q.is_one c ->
+          (* [t / 1 = t] *)
+          t
+      | (DivI (t, Const c) | DivF (t, Const c)) when Q.is_minus_one c ->
+          (* [t / (-1) = -t] *)
+          simplify_shallow_or_raise (Minus t)
+      | (DivI (_, Const c) | DivF (_, Const c)) when Q.is_zero c ->
+          (* [t / 0 = undefined] *)
+          raise Undefined
+      | DivI (Minus t1, Minus t2) ->
+          (* [(-t1) / (-t2) = t1 / t2] *)
+          simplify_shallow_or_raise (DivI (t1, t2))
+      | DivF (Minus t1, Minus t2) ->
+          (* [(-t1) /. (-t2) = t1 /. t2] *)
+          simplify_shallow_or_raise (DivF (t1, t2))
+      | (DivI (t1, t2) | DivF (t1, t2)) when equal_syntax t1 t2 ->
+          (* [t / t = 1] *)
+          one
+      | Mod (Const c, _) when Q.is_zero c ->
+          (* [0 % t = 0] *)
+          zero
+      | Mod (_, Const q) when Q.is_one q ->
+          (* [t % 1 = 0] *)
+          zero
+      | Mod (t1, t2) when equal_syntax t1 t2 ->
+          (* [t % t = 0] *)
+          zero
+      | BitAnd (t1, t2) when is_zero t1 || is_zero t2 ->
+          zero
+      | BitXor (t1, t2) when equal_syntax t1 t2 ->
+          zero
+      | (BitShiftLeft (t1, _) | BitShiftRight (t1, _)) when is_zero t1 ->
+          zero
+      | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
+          t1
+      | BitShiftLeft (t', Const q) | BitShiftRight (t', Const q) -> (
+        match Q.to_int q with
+        | None ->
+            (* overflows or otherwise undefined, propagate puzzlement *)
+            raise Undefined
+        | Some i -> (
+            if i >= 64 then (* assume 64-bit or fewer architecture *) zero
+            else if i < 0 then
+              (* this is undefined, maybe we should report a bug here *)
+              raise Undefined
+            else
+              let factor = Const Q.(of_int 1 lsl i) in
+              match[@warning "-8"] t with
+              | BitShiftLeft _ ->
+                  simplify_shallow_or_raise (Mult (t', factor))
+              | BitShiftRight _ ->
+                  simplify_shallow_or_raise (DivI (t', factor)) ) )
+      | (BitShiftLeft (t1, t2) | BitShiftRight (t1, t2)) when is_zero t2 ->
+          t1
+      | And (t1, t2) when is_zero t1 || is_zero t2 ->
+          (* [false ∧ t = t ∧ false = false] *) zero
+      | And (t1, t2) when is_non_zero_const t1 ->
+          (* [true ∧ t = t] *) t2
+      | And (t1, t2) when is_non_zero_const t2 ->
+          (* [t ∧ true = t] *) t1
+      | Or (t1, t2) when is_non_zero_const t1 || is_non_zero_const t2 ->
+          (* [true ∨ t = t ∨ true = true] *) one
+      | Or (t1, t2) when is_zero t1 ->
+          (* [false ∨ t = t] *) t2
+      | Or (t1, t2) when is_zero t2 ->
+          (* [t ∨ false = t] *) t1
+      | _ ->
+          t
+    in
+    let t' = try Z.protect simplify_shallow_or_raise t with Undefined -> None in
+    match t' with
+    | None ->
+        L.d_printfln ~color:Orange "Undefined result when simplifying %a" (pp_no_paren Var.pp) t ;
+        Unsat
+    | Some (Const q) when not (Q.is_rational q) ->
+        L.d_printfln ~color:Orange "Non-rational result %a when simplifying %a" Q.pp_print q
+          (pp_no_paren Var.pp) t ;
+        Unsat
+    | Some t' ->
+        if not (phys_equal t t') then
+          Debug.p "simplify_shallow: %a -> %a@\n" (pp_no_paren Var.pp) t (pp_no_paren Var.pp) t' ;
+        Sat t'
 
 
   (** more or less syntactic attempt at detecting when an arbitrary term is a linear formula; call
@@ -1006,12 +1040,8 @@ module Term = struct
       match t with
       | Var v ->
           Some (LinArith.of_var v)
-      | Const c -> (
-        match Q.classify c with
-        | ZERO | NZERO ->
-            Some (LinArith.of_q c)
-        | UNDEF | INF | MINF ->
-            None )
+      | Const c ->
+          if Q.is_rational c then Some (LinArith.of_q c) else None
       | Linear l ->
           Some l
       | Minus t ->
@@ -1320,9 +1350,10 @@ module Atom = struct
 
 
   let rec eval_term t =
-    let t =
-      Term.map_direct_subterms ~f:eval_term t
-      |> Term.eval_const_shallow |> Term.simplify_shallow |> Term.linearize |> Term.simplify_linear
+    let+ t =
+      Term.satunsat_map_direct_subterms ~f:eval_term t
+      >>= Term.eval_const_shallow >>= Term.simplify_shallow >>| Term.linearize
+      >>| Term.simplify_linear
     in
     match atom_of_term t with
     | Some atom ->
@@ -1332,7 +1363,13 @@ module Atom = struct
         t
 
 
-  let eval atom = map_terms atom ~f:eval_term |> eval_atom
+  let eval atom =
+    let exception FoundUnsat in
+    try
+      map_terms atom ~f:(fun t -> match eval_term t with Sat t' -> t' | Unsat -> raise FoundUnsat)
+      |> eval_atom
+    with FoundUnsat -> False
+
 
   let fold_subst_variables a ~init ~f =
     fold_map_terms a ~init ~f:(fun acc t -> Term.fold_subst_variables t ~init:acc ~f)
@@ -1816,7 +1853,7 @@ module Formula = struct
     let and_var_term ~fuel v t (phi, new_eqs) =
       Debug.p "and_var_term: %a=%a in %a@\n" Var.pp v (Term.pp_no_paren Var.pp) t
         (pp_with_pp_var Var.pp) phi ;
-      let t' : Term.t = normalize_var_const phi t |> Atom.eval_term in
+      let* (t' : Term.t) = normalize_var_const phi t |> Atom.eval_term in
       let v' = (get_repr phi v :> Var.t) in
       (* check if unsat given what we know of [v'] and [t'], in other words be at least as
          complete as general atoms *)
