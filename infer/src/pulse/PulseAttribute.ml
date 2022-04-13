@@ -68,7 +68,7 @@ module Attribute = struct
     | RefCounted
     | SourceOriginOfCopy of PulseAbstractValue.t
     | StdVectorReserve
-    | Tainted of Taint.t * ValueHistory.t
+    | Tainted of {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
     | TaintSanitized of Taint.t
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -197,8 +197,8 @@ module Attribute = struct
         F.fprintf f "copied of source %a" PulseAbstractValue.pp source
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
-    | Tainted (source, hist) ->
-        F.fprintf f "Tainted(%a,%a)" Taint.pp source ValueHistory.pp hist
+    | Tainted {source; hist; intra_procedural_only} ->
+        F.fprintf f "Tainted(%a,%a,%b)" Taint.pp source ValueHistory.pp hist intra_procedural_only
     | TaintSanitized sanitizer ->
         F.fprintf f "TaintSanitized(%a)" Taint.pp sanitizer
     | Uninitialized ->
@@ -261,7 +261,31 @@ module Attribute = struct
 
 
   let is_suitable_for_summary attr =
-    match attr with CopiedVar _ | SourceOriginOfCopy _ -> false | _ -> true
+    match attr with
+    | CopiedVar _ | SourceOriginOfCopy _ ->
+        false
+    | Tainted {intra_procedural_only} ->
+        not intra_procedural_only
+    | AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | Allocated _
+    | Closure _
+    | DynamicType _
+    | EndOfCollection
+    | Invalid _
+    | ISLAbduced _
+    | MustBeInitialized _
+    | MustBeValid _
+    | MustNotBeTainted _
+    | JavaResourceReleased
+    | RefCounted
+    | StdVectorReserve
+    | TaintSanitized _
+    | Uninitialized
+    | UnknownEffect _
+    | UnreachableAt _
+    | WrittenTo _ ->
+        true
 
 
   let add_call timestamp proc_name call_location caller_history attr =
@@ -284,8 +308,9 @@ module Attribute = struct
         MustBeInitialized (timestamp, add_call_to_trace trace)
     | MustNotBeTainted (_timestamp, sink, trace) ->
         MustNotBeTainted (timestamp, sink, add_call_to_trace trace)
-    | Tainted (source, hist) ->
-        Tainted (source, add_call_to_history hist)
+    | Tainted {source; hist; intra_procedural_only} ->
+        assert (not intra_procedural_only) ;
+        Tainted {source; hist= add_call_to_history hist; intra_procedural_only= false}
     | UnknownEffect (call, hist) ->
         UnknownEffect (call, add_call_to_history hist)
     | WrittenTo trace ->
@@ -332,8 +357,8 @@ module Attributes = struct
 
 
   let get_tainted =
-    get_by_rank Attribute.tainted_rank ~dest:(function [@warning "-8"] Tainted (source, hist) ->
-        (source, hist) )
+    get_by_rank Attribute.tainted_rank ~dest:(function [@warning "-8"]
+        | Tainted {source; hist; intra_procedural_only} -> (source, hist, intra_procedural_only) )
 
 
   let get_taint_sanitized =

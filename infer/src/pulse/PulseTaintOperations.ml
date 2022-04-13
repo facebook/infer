@@ -248,14 +248,16 @@ let get_tainted tenv matchers return_opt proc_name actuals astate =
                 tainted ) ) )
 
 
-let taint_sources tenv path location return proc_name actuals astate =
+let taint_sources tenv path location ~intra_procedural_only return proc_name actuals astate =
   let tainted = get_tainted tenv source_matchers return proc_name actuals astate in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
         let hist =
           ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
         in
-        AbductiveDomain.AddressAttributes.add_one v (Tainted (source, hist)) astate )
+        AbductiveDomain.AddressAttributes.add_one v
+          (Tainted {source; hist; intra_procedural_only})
+          astate )
   in
   (astate, not (List.is_empty tainted))
 
@@ -297,7 +299,7 @@ let check_not_tainted_wrt_sink location (sink, sink_trace) v astate : _ Result.t
   match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer v astate with
   | None ->
       Ok astate
-  | Some ((source, source_hist), sanitizer_opt) -> (
+  | Some ((source, source_hist, _), sanitizer_opt) -> (
       L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
       match check_policy ~sink ~source ~sanitizer_opt with
       | Ok () ->
@@ -379,7 +381,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
         match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer actual astate with
         | None ->
             astate
-        | Some ((source, source_hist), sanitizer_opt) -> (
+        | Some ((source, source_hist, intra_procedural_only), sanitizer_opt) -> (
             let hist =
               ValueHistory.sequence ~context:path.PathContext.conditions
                 (Call
@@ -392,7 +394,9 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
             let propagate_to value astate =
               L.d_printfln "tainting %a as source" AbstractValue.pp value ;
               let astate =
-                AbductiveDomain.AddressAttributes.add_one value (Tainted (source, hist)) astate
+                AbductiveDomain.AddressAttributes.add_one value
+                  (Tainted {source; hist; intra_procedural_only})
+                  astate
               in
               Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
                   L.d_printfln "registering %a as sanitizer" AbstractValue.pp value ;
@@ -445,7 +449,8 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
       let call_was_unknown = call_was_unknown || should_treat_as_unknown_for_taint tenv proc_name in
       let astate = taint_sanitizers tenv (Some return) proc_name actuals astate in
       let astate, found_source_model =
-        taint_sources tenv path location (Some return) proc_name actuals astate
+        taint_sources tenv path location ~intra_procedural_only:false (Some return) proc_name
+          actuals astate
       in
       let+ astate, found_sink_model =
         taint_sinks tenv path location (Some return) proc_name actuals astate
@@ -469,4 +474,6 @@ let taint_initial tenv proc_desc astate =
         in
         (astate, {ProcnameDispatcher.Call.FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value}) )
   in
-  taint_sources tenv PathContext.initial location None proc_name actuals astate |> fst
+  taint_sources tenv PathContext.initial location ~intra_procedural_only:true None proc_name actuals
+    astate
+  |> fst

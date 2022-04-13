@@ -45,7 +45,7 @@ type t =
       (** records the source value for a given copy to lookup the appropriate heap in non-disj
           domain *)
   | StdVectorReserve
-  | Tainted of Taint.t * ValueHistory.t
+  | Tainted of {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
   | TaintSanitized of Taint.t
   | Uninitialized
   | UnknownEffect of CallEvent.t * ValueHistory.t
@@ -89,7 +89,7 @@ module Attributes : sig
 
   val get_invalid : t -> (Invalidation.t * Trace.t) option
 
-  val get_tainted : t -> (Taint.t * ValueHistory.t) option
+  val get_tainted : t -> (Taint.t * ValueHistory.t * bool) option
 
   val get_taint_sanitized : t -> Taint.t option
 
