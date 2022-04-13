@@ -226,6 +226,9 @@
       "kinds": ["UserControlledURI"],
       "taint_target": ["ArgumentsMatchingTypes", ["java.lang.String", "android.webkit.WebResourceRequest"]]
     },
+    { "overrides_of_class_with_annotation": "ThriftService",
+      "kinds": ["Endpoint"],
+      "taint_target": ["AllArgumentsButPositions", [0]] },
     { "class_names": ["codetoanalyze.java.pulse.TaintedFormals"],
       "method_names": ["taintedContextBad"],
       "kinds": ["Simple"],

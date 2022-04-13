@@ -43,6 +43,7 @@ type procedure_matcher =
   | ProcedureName of {name: string}
   | ProcedureNameRegex of {name_regex: Str.regexp}
   | ClassAndMethodNames of {class_names: string list; method_names: string list}
+  | OverridesOfClassWithAnnotation of {annotation: string}
 
 type matcher =
   { procedure_matcher: procedure_matcher
@@ -99,28 +100,44 @@ let matcher_of_config ~default_taint_target ~option_name config =
   List.map matchers ~f:(fun (matcher : Pulse_config_j.matcher) ->
       let procedure_matcher =
         match matcher with
-        | {procedure= Some name; procedure_regex= None; class_names= None; method_names= None} ->
+        | { procedure= Some name
+          ; procedure_regex= None
+          ; class_names= None
+          ; method_names= None
+          ; overrides_of_class_with_annotation= None } ->
             ProcedureName {name}
-        | {procedure= None; procedure_regex= Some name_regex; class_names= None; method_names= None}
-          ->
+        | { procedure= None
+          ; procedure_regex= Some name_regex
+          ; class_names= None
+          ; method_names= None
+          ; overrides_of_class_with_annotation= None } ->
             ProcedureNameRegex {name_regex= Str.regexp name_regex}
         | { procedure= None
           ; procedure_regex= None
           ; class_names= Some class_names
-          ; method_names= Some method_names } ->
+          ; method_names= Some method_names
+          ; overrides_of_class_with_annotation= None } ->
             ClassAndMethodNames {class_names; method_names}
+        | { procedure= None
+          ; procedure_regex= None
+          ; class_names= None
+          ; method_names= None
+          ; overrides_of_class_with_annotation= Some annotation } ->
+            OverridesOfClassWithAnnotation {annotation}
         | _ ->
             L.die UserError
               "When parsing option %s: Unexpected JSON format: Exactly one of \"procedure\", \
                \"procedure_regex\" must be provided, or else \"class_names\" and \"method_names\" \
-               must be provided, but got \"procedure\": %a, \"procedure_regex\": %a, \
-               \"class_names\": %a, \"method_names\": %a"
+               must be provided, or else \"overrides_of_class_with_annotation\", but got \
+               \"procedure\": %a, \"procedure_regex\": %a, \"class_names\": %a, \"method_names\": \
+               %a, \"overrides_of_class_with_annotation\": %a"
               option_name (Pp.option F.pp_print_string) matcher.procedure
               (Pp.option F.pp_print_string) matcher.procedure_regex
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.class_names
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
-              matcher.method_names
+              matcher.method_names (Pp.option F.pp_print_string)
+              matcher.overrides_of_class_with_annotation
       in
       { procedure_matcher
       ; arguments= matcher.argument_constraints
@@ -165,6 +182,19 @@ let procedure_matches tenv matchers proc_name actuals =
                     List.mem ~equal:String.equal class_names (Typ.Name.name class_name) )
                   class_name )
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
+        | OverridesOfClassWithAnnotation {annotation} ->
+            Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
+                let method_name = Procname.get_method proc_name in
+                PatternMatch.supertype_exists tenv
+                  (fun class_name _ ->
+                    Option.exists (Tenv.lookup tenv class_name) ~f:(fun procedure_superclass_type ->
+                        Annotations.struct_typ_has_annot procedure_superclass_type
+                          (fun annot_item -> Annotations.ia_ends_with annot_item annotation)
+                        && PatternMatch.override_exists ~check_current_type:false
+                             (fun superclass_pname ->
+                               String.equal (Procname.get_method superclass_pname) method_name )
+                             tenv proc_name ) )
+                  procedure_class_name )
       in
       if procedure_name_matches then
         let actuals_match =
