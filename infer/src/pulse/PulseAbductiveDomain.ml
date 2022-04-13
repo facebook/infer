@@ -317,6 +317,10 @@ module AddressAttributes = struct
     else astate
 
 
+  let always_reachable address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.always_reachable address)
+
+
   let allocate allocator address location astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.allocate allocator address location)
 
@@ -701,6 +705,7 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
   let reaches_into addr addrs astate =
     AbstractValue.Set.mem addr addrs
     || BaseDomain.GraphVisit.fold_from_addresses (Seq.return addr) astate ~init:()
+         ~already_visited:AbstractValue.Set.empty
          ~finish:(fun () -> (* didn't find any reachable address in [addrs] *) false)
          ~f:(fun () addr' rev_accesses ->
            (* We want to know if [addr] is still reachable from the value [addr'] by pointer
@@ -857,12 +862,25 @@ let check_retain_cycles ~dead_addresses tenv astate =
           if Attributes.is_ref_counted attributes then check_retain_cycle addr else Ok () )
 
 
+let get_all_addrs_marked_as_always_reachable {post} =
+  BaseAddressAttributes.fold
+    (fun address attr addresses ->
+      if Attributes.is_always_reachable attr then Seq.cons address addresses else addresses )
+    (post :> BaseDomain.t).attrs Seq.empty
+
+
 let discard_unreachable_ ~for_summary ({pre; post} as astate) =
   let pre_addresses = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
   let pre_new =
     PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
+  let always_reachable_addresses = get_all_addrs_marked_as_always_reachable astate in
+  let always_reachable_trans_closure =
+    BaseDomain.reachable_addresses_from always_reachable_addresses
+      (post :> BaseDomain.t)
+      ~already_visited:post_addresses
+  in
   let canon_addresses =
     AbstractValue.Set.map (PathCondition.get_both_var_repr astate.path_condition) pre_addresses
     |> AbstractValue.Set.fold
@@ -876,6 +894,7 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
       ~f:(fun address ->
         AbstractValue.Set.mem address pre_addresses
         || AbstractValue.Set.mem address post_addresses
+        || AbstractValue.Set.mem address always_reachable_trans_closure
         ||
         let canon_addr = PathCondition.get_both_var_repr astate.path_condition address in
         AbstractValue.Set.mem canon_addr canon_addresses )
@@ -916,6 +935,7 @@ let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
   let post = (astate.post :> BaseDomain.t) in
   let heap, attrs =
     BaseDomain.GraphVisit.fold_from_addresses (Seq.return x) post ~init:(post.heap, post.attrs)
+      ~already_visited:AbstractValue.Set.empty
       ~f:(fun (heap, attrs) addr _edges ->
         let attrs =
           BaseAddressAttributes.remove_allocation_attr addr attrs

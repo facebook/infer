@@ -54,6 +54,7 @@ module Attribute = struct
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of allocator * Trace.t
+    | AlwaysReachable
     | Closure of Procname.t
     | CopiedVar of Var.t
     | DynamicType of Typ.t
@@ -84,6 +85,8 @@ module Attribute = struct
   let address_of_stack_variable_rank = Variants.addressofstackvariable.rank
 
   let allocated_rank = Variants.allocated.rank
+
+  let always_reachable_rank = Variants.alwaysreachable.rank
 
   let closure_rank = Variants.closure.rank
 
@@ -155,6 +158,8 @@ module Attribute = struct
         F.fprintf f "Allocated%a"
           (Trace.pp ~pp_immediate:(pp_string_if_debug (F.asprintf "(%a)" pp_allocator allocator)))
           trace
+    | AlwaysReachable ->
+        F.pp_print_string f "AlwaysReachable"
     | Closure pname ->
         Procname.pp f pname
     | CopiedVar var ->
@@ -213,6 +218,7 @@ module Attribute = struct
         Config.pulse_isl
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
+    | AlwaysReachable
     | Closure _
     | CopiedVar _
     | DynamicType _
@@ -235,6 +241,7 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Allocated _
+    | AlwaysReachable
     | Closure _
     | CopiedVar _
     | DynamicType _
@@ -285,6 +292,7 @@ module Attribute = struct
         WrittenTo (add_call_to_trace trace)
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
+      | AlwaysReachable
       | Closure _
       | CopiedVar _
       | DynamicType _
@@ -379,6 +387,8 @@ module Attributes = struct
     || mem_by_rank Attribute.unknown_effect_rank attrs
     || mem_by_rank Attribute.java_resource_released_rank attrs
 
+
+  let is_always_reachable = mem_by_rank Attribute.always_reachable_rank
 
   let is_uninitialized = mem_by_rank Attribute.uninitialized_rank
 

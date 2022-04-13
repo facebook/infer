@@ -458,6 +458,8 @@ let havoc_deref_field path location addr_trace field trace_obj astate =
     astate
 
 
+let always_reachable address astate = AddressAttributes.always_reachable address astate
+
 let allocate allocator location addr astate =
   AddressAttributes.allocate allocator addr location astate
 
@@ -707,6 +709,7 @@ let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
        ~finish:(fun () -> ()) ) ;
   let collect_reachable_from addrs base_state =
     BaseDomain.GraphVisit.fold_from_addresses addrs base_state ~init:()
+      ~already_visited:AbstractValue.Set.empty
       ~f:(fun () addr _ ->
         mark_reachable addr ;
         Continue () )

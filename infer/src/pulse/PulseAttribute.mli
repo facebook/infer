@@ -29,6 +29,7 @@ type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Allocated of allocator * Trace.t
+  | AlwaysReachable
   | Closure of Procname.t
   | CopiedVar of Var.t  (** records the copied var for each source address *)
   | DynamicType of Typ.t
@@ -100,6 +101,8 @@ module Attributes : sig
   val get_must_not_be_tainted : t -> (Timestamp.t * Taint.t * Trace.t) option
 
   val get_written_to : t -> Trace.t option
+
+  val is_always_reachable : t -> bool
 
   val is_modified : t -> bool
 

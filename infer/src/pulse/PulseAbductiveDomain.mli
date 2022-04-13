@@ -138,6 +138,8 @@ module AddressAttributes : sig
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
+  val always_reachable : AbstractValue.t -> t -> t
+
   val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
 
   val java_resource_release : AbstractValue.t -> t -> t

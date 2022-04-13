@@ -27,6 +27,8 @@ val add : AbstractValue.t -> Attributes.t -> t -> t
 
 val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
 
+val always_reachable : AbstractValue.t -> t -> t
+
 val java_resource_release : AbstractValue.t -> t -> t
 
 val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a

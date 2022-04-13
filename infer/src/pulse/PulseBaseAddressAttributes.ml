@@ -75,6 +75,8 @@ let invalidate (address, history) invalidation location memory =
   add_one address (Attribute.Invalid (invalidation, Immediate {location; history})) memory
 
 
+let always_reachable address memory = add_one address Attribute.AlwaysReachable memory
+
 let allocate allocator address location memory =
   add_one address
     (Attribute.Allocated (allocator, Immediate {location; history= ValueHistory.epoch}))
