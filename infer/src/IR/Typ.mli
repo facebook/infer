@@ -168,6 +168,9 @@ module Name : sig
 
   val pp : Format.formatter -> t -> unit
 
+  val pp_name_only : Format.formatter -> t -> unit
+  (** Print name only without prefix *)
+
   val is_class : t -> bool
   (** [is_class name] holds if [name] names CPP/Objc/Java class *)
 
