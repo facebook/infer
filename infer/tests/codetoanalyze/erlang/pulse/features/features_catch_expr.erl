@@ -6,6 +6,10 @@
 -module(features_catch_expr).
 
 -export([
+    fn_test_catch_exit_Bad/0,
+    fp_test_catch_exit_Ok/0,
+    fn_test_catch_throw_Bad/0,
+    fp_test_catch_throw_Ok/0,
     test_catch_ok_Ok/0,
     test_catch_ok_Bad/0
 ]).

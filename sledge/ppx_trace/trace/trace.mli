@@ -11,7 +11,12 @@ type config
 
 val none : config
 val all : config
-val parse : string -> (config, exn) result
+
+exception Parse_failure of string
+
+val parse : string -> config
+(** Parse a trace specification string to a config. May raise
+    [Parse_failure]. *)
 
 val init : ?colors:bool -> ?margin:int -> ?config:config -> unit -> unit
 (** Initialize the configuration of debug tracing. *)

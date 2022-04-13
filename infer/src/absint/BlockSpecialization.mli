@@ -7,6 +7,10 @@
 
 open! IStd
 
-type arg = Block of (Procname.t * CapturedVar.t list) | Var
+(* same representation for both args and captured variables *)
+type actual = ProcAttributes.passed_block option
 
-val create_specialized_procdesc : Procname.t -> arg list -> Procname.t option
+val get_captured : actual list -> CapturedVar.t list
+
+val create_specialized_procdesc :
+  Procname.t -> captured_actuals:actual list -> arg_actuals:actual list -> Procname.t option

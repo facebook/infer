@@ -4,7 +4,6 @@ title: List of all issue types
 
 Here is an overview of the issue types currently reported by Infer.
 
-
 ## ARBITRARY_CODE_EXECUTION_UNDER_LOCK
 
 Reported as "Arbitrary Code Execution Under lock" by [starvation](/docs/next/checker-starvation).
@@ -2618,6 +2617,11 @@ we assume that any captured weak pointer whose name contains "self" is a weak re
 In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to
 a local strong pointer that has been assigned `weakSelf`.
 
+## TAINT_ERROR
+
+Reported as "Taint Error" by [pulse](/docs/next/checker-pulse).
+
+A taint flow was detected from a source to a sink
 ## THREAD_SAFETY_VIOLATION
 
 Reported as "Thread Safety Violation" by [racerd](/docs/next/checker-racerd).

@@ -286,8 +286,11 @@ $(b,infer) $(i,[options])|}
       ; `P "- cumulative options are JSON arrays of the appropriate type"
       ; `P
           (Printf.sprintf
-             "Infer will look for an $(b,%s) file in the current directory, then its parent, etc., \
-              stopping at the first $(b,%s) file found."
+             "If an $(b,%s) file is specified on the command line with $(b,--%s) then Infer will \
+              use that. Otherwise, Infer will look for an $(b,%s) file in the environment variable \
+              $(b,%s). Finally, Infer will first look for an $(b,%s) file in the current \
+              directory, then its parent, etc., stopping at the first $(b,%s) file found."
+             inferconfig_file CLOpt.inferconfig_path_arg inferconfig_file inferconfig_env_var
              inferconfig_file inferconfig_file )
       ; `P "Example:"
       ; `Pre

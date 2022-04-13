@@ -7,8 +7,9 @@
 open! IStd
 module L = Logging
 
-let run_compile command result_dir args =
+let run_compile with_otp_specs command result_dir args =
   let args = [result_dir; "--"; command] @ args in
+  let args = if with_otp_specs then ["--with_otp_specs"] @ args else args in
   let prog = Config.lib_dir ^/ "erlang" ^/ "erlang.sh" in
   L.debug Capture Verbose "executing %s@." prog ;
   ignore (Process.create_process_and_wait_with_output ~prog ~args ReadStdout)
@@ -45,16 +46,22 @@ let parse_translate_store result_dir =
             false )
   in
   let process_one_file json_file =
-    if should_process json_file then (
-      L.progress "P: parsing %s@." json_file ;
+    ( if should_process json_file then
       match Utils.read_safe_json_file json_file with
       | Ok json ->
           if not (process_one_ast json) then
             L.debug Capture Verbose "Failed to parse %s@." json_file
       | Error error ->
-          L.internal_error "E: %s@." error )
+          L.internal_error "E: %s@." error ) ;
+    None
   in
-  Utils.directory_iter process_one_file result_dir
+  Tasks.Runner.create ~jobs:Config.jobs
+    ~child_prologue:(fun () -> ())
+    ~f:process_one_file
+    ~child_epilogue:(fun () -> ())
+    ~tasks:(fun () ->
+      ProcessPool.TaskGenerator.of_list (Utils.directory_fold (fun l p -> p :: l) [] result_dir) )
+  |> Tasks.Runner.run |> ignore
 
 
 let capture ~command ~args =
@@ -62,6 +69,6 @@ let capture ~command ~args =
   if not Config.erlang_skip_rebar3 then (
     let in_dir = ResultsDir.get_path Temporary in
     let result_dir = Filename.temp_dir ~in_dir (command ^ "infer") "" in
-    run_compile command result_dir args ;
+    run_compile Config.erlang_with_otp_specs command result_dir args ;
     parse_translate_store result_dir ;
     if not Config.debug_mode then Utils.rmtree result_dir )

@@ -1048,6 +1048,8 @@ let parse_args ~usage initial_action ?initial_command args =
 
 let keep_args_file = ref false
 
+let inferconfig_path_arg = "inferconfig-path"
+
 let parse ?config_file ~usage action initial_command =
   let env_args = decode_env_to_argv (Option.value (Sys.getenv args_env_var) ~default:"") in
   let inferconfig_args =

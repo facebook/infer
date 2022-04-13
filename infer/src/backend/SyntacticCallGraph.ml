@@ -88,7 +88,6 @@ let build_from_sources sources =
   let pname_info, n_captured = pname_info_from_captured_procs () in
   let q = queue_from_sources pname_info sources in
   bfs pname_info g q ;
-  if Config.debug_level_analysis > 0 then CallGraph.to_dotty g "syntactic_callgraph.dot" ;
   L.progress
     "Built call graph in %a, from %d total procs, %d reachable defined procs and takes %d bytes@."
     Mtime.Span.pp (Mtime_clock.count time0) n_captured (CallGraph.n_procs g)
@@ -96,9 +95,12 @@ let build_from_sources sources =
   g
 
 
+let to_dotty g = CallGraph.to_dotty g "syntactic_callgraph.dot"
+
 let bottom_up sources : (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t =
   let open TaskSchedulerTypes in
   let syntactic_call_graph = build_from_sources sources in
+  if Config.debug_level_analysis > 0 then to_dotty syntactic_call_graph ;
   let remaining = ref (CallGraph.n_procs syntactic_call_graph) in
   let remaining_tasks () = !remaining in
   let pending : CallGraph.Node.t Queue.t = Queue.create () in

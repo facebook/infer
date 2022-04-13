@@ -9,6 +9,8 @@
  * API for threads built from analyzer intrinsics
  */
 
+#include <stdint.h>
+
 typedef int error_t;
 #define OK 0
 

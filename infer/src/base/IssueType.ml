@@ -467,6 +467,11 @@ let config_impact_analysis_strict =
     ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT.md"]
 
 
+let config_impact_analysis_strict_beta =
+  register ~enabled:false ~id:"CONFIG_IMPACT_STRICT_BETA" Advice ConfigImpactAnalysis
+    ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
+
+
 let constant_address_dereference =
   register_with_latent ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
@@ -849,6 +854,7 @@ let nil_block_call =
 
 let nil_insertion_into_collection =
   register_with_latent ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+    ~hum:"Nil Insertion Into Collection"
     ~user_documentation:[%blob "../../documentation/issues/NIL_INSERTION_INTO_COLLECTION.md"]
 
 

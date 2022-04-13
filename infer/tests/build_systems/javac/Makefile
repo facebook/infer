@@ -11,5 +11,6 @@ INFERPRINT_OPTIONS = --issues-tests
 
 PROJECT_ROOT = $(ROOT_DIR)/examples
 SOURCES = $(PROJECT_ROOT)/Hello.java
+TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 
 include $(TESTS_DIR)/javac.make

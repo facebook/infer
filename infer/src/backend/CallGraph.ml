@@ -18,7 +18,7 @@ module type NodeSig = sig
 
   val unset_flag : t -> unit
 
-  val pp_dot : F.formatter -> t -> unit
+  val pp_dot : mem:(int -> bool) -> F.formatter -> t -> unit
 end
 
 module Node : NodeSig = struct
@@ -32,9 +32,9 @@ module Node : NodeSig = struct
 
   let unset_flag n = n.flag <- false
 
-  let pp_dot fmt {id; pname; successors; flag} =
+  let pp_dot ~mem fmt {id; pname; successors; flag} =
     let pp_id fmt id = F.fprintf fmt "N%d" id in
-    let pp_edge fmt src dst = F.fprintf fmt "  %a -> %a ;@\n" pp_id src pp_id dst in
+    let pp_edge fmt src dst = if mem dst then F.fprintf fmt "  %a -> %a ;@\n" pp_id src pp_id dst in
     let pp_flag fmt flag = F.fprintf fmt "%B" flag in
     F.fprintf fmt "  %a [ label = %S, flag = %a ];@\n" pp_id id
       (F.asprintf "%a" Procname.pp pname)
@@ -131,9 +131,10 @@ let flag_reachable g start_pname =
   node_of_procname g start_pname |> Option.iter ~f:(fun start_node -> flag_list [start_node])
 
 
-let pp_dot fmt {node_map} =
+let pp_dot fmt ({node_map} as g) =
   F.fprintf fmt "@\ndigraph callgraph {@\n" ;
-  NodeMap.iter (fun _id n -> Node.pp_dot fmt n) node_map ;
+  let mem id = mem g id in
+  NodeMap.iter (fun _id n -> Node.pp_dot ~mem fmt n) node_map ;
   F.fprintf fmt "}@."
 
 

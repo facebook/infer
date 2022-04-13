@@ -11,6 +11,7 @@ SOURCES = $(wildcard $(SOURCES_DIR)/*.java)
 # no objects since we only run a mock gradle that cannot compile Java sources
 OBJECTS =
 INFERPRINT_OPTIONS = --issues-tests
+TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/infer.make

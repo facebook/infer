@@ -7,6 +7,8 @@
 
 sledge=$PWD/cli/sledge_cli.exe
 
+export SLEDGE_CONFIG=$PWD/../../test/config
+
 line=$(\
   $sledge help -recursive -expand \
     | grep -n "== subcommands ===" \

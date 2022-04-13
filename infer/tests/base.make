@@ -11,6 +11,10 @@ include $(ROOT_DIR)/Makefile.config
 # reasons.
 TEST_REL_DIR = $(patsubst $(abspath $(TESTS_DIR))/%,%,$(abspath $(CURDIR)))
 
+# The relative path from the root directory to the directory containing the current Makefile. Same
+# cautionary warning as TEST_REL_DIR.
+ROOT_REL_DIR = $(patsubst $(abspath $(ROOT_DIR))/%,%,$(abspath $(CURDIR)))
+
 define check_no_duplicates
   if grep -q "DUPLICATE_SYMBOLS" $(1); then \
     printf '$(TERM_ERROR)Duplicate symbols found in $(CURDIR):$(TERM_RESET)\n' >&2; \
@@ -31,7 +35,7 @@ define check_no_diff
    printf '$(TERM_ERROR)Test output ($(2)) differs from expected test output $(1)$(TERM_RESET)\n' >&2; \
    printf '$(TERM_ERROR)Run the following command to replace the expected test output with the new output:$(TERM_RESET)\n' >&2; \
    printf '\n' >&2; \
-   printf '$(TERM_ERROR)  make -C $(TEST_REL_DIR) replace\n$(TERM_RESET)' >&2; \
+   printf '$(TERM_ERROR)  make -C $(ROOT_REL_DIR) replace\n$(TERM_RESET)' >&2; \
    printf '\n' >&2; \
    exit 1)
 endef

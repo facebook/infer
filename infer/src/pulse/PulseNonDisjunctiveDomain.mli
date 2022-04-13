@@ -14,11 +14,15 @@ include AbstractDomain.WithBottom
 
 val add : Var.t -> source_addr_opt:PulseAbstractValue.t option -> copy_spec_t -> t -> t
 
+val checked_via_dtor : Var.t -> t -> t
+
 val mark_copy_as_modified :
      is_modified:(BaseMemory.t -> bool)
-  -> Var.t
+  -> copied_var:Var.t
   -> source_addr_opt:PulseAbstractValue.t option
   -> t
   -> t
 
 val get_copied : t -> (Var.t * Location.t) list
+
+val is_checked_via_dtor : Var.t -> t -> bool

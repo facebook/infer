@@ -1065,6 +1065,13 @@ and config_impact_config_function_patterns =
      Java/ObjC and $(b,Class::method) in C++."
 
 
+and config_impact_config_param_patterns =
+  CLOpt.mk_string_list ~long:"config-impact-config-param-patterns" ~meta:"regex"
+    "Register known config parameters that have a config value.  The matched name contains a \
+     method name and a parameter name, separated by a space, for example, $(b,Class.method param) \
+     in Java/ObjC and $(b,Class::method param) in C++."
+
+
 and config_impact_current =
   CLOpt.mk_path_opt ~long:"config-impact-current"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -1109,6 +1116,17 @@ and config_impact_strict_mode_paths =
      $(b,--config-impact-strict-mode-paths) is not given, the behavior depends on the \
      $(b,--config-impact-strict-mode) option: if $(b,--config-impact-strict-mode) is not given, it \
      runs as non-strict mode; otherwise, it runs as strict mode, but for all paths."
+
+
+and config_impact_strict_beta_mode_paths =
+  CLOpt.mk_string_list ~long:"config-impact-strict-beta-mode-paths" ~meta:"path_regex"
+    "Similar to $(b,--config-impact-strict-mode-paths), but the paths are used only for beta \
+     testing."
+
+
+and config_impact_test_paths =
+  CLOpt.mk_string_list ~long:"config-impact-test-paths" ~meta:"path_regex"
+    "Ignore code changes under the given test paths."
 
 
 (** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
@@ -1484,6 +1502,13 @@ and erlang_skip_rebar3 =
     "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
 
 
+and erlang_with_otp_specs =
+  CLOpt.mk_bool ~long:"erlang-with-otp-specs"
+    ~in_help:InferCommand.[(Capture, manual_erlang)]
+    "[EXPERIMENTAL] Use type specs from OTP (available in the system) to generate more precise \
+     Pulse summaries for unknown library functions."
+
+
 and erlang_list_unfold_depth =
   CLOpt.mk_int ~long:"erlang-list-unfold-depth" ~default:4
     ~in_help:InferCommand.[(Analyze, manual_erlang)]
@@ -1668,6 +1693,20 @@ and incremental_analysis =
   CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
     "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
      $(b,--reanalyze) and $(b,--continue-analysis)."
+
+
+and _inferconfig_path =
+  (* This is a no-op argument ensuring a meaningful message in case of error, as well as to
+     silently consume the argument which is parsed specially. *)
+  CLOpt.mk_path ~long:CLOpt.inferconfig_path_arg ~default:""
+    CommandDoc.(
+      Printf.sprintf
+        "Path to the $(b, %s) file, overriding the effects of the $(b, %s) environment variable as \
+         well as the filesystem search in the current working directory and its ancestors.\n\n\
+         NB: This option is parsed in a special pass over the command line, so it is always set \
+         (and the corresponding $(b, %s) file is read) first. In addition, this option will not \
+         function properly if used inside a $(b, %s) file."
+        inferconfig_file inferconfig_env_var inferconfig_file inferconfig_file)
 
 
 and issues_tests_fields =
@@ -2014,6 +2053,16 @@ and procedures_attributes =
     "Print the attributes of each procedure in the output of $(b,--procedures)"
 
 
+and procedures_call_graph =
+  CLOpt.mk_bool ~long:"procedures-call-graph"
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    (Printf.sprintf
+       "Output a dotty file in %s/syntactic-call-graph.dot. The graph is the syntactic call graph \
+        reachable from either all captured procedures or those determined by the option $(b, \
+        --changed-files-index). "
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
+
+
 and procedures_cfg =
   CLOpt.mk_bool ~long:"procedures-cfg"
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
@@ -2106,6 +2155,11 @@ and pulse_cut_to_one_path_procedures_pattern =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Regex of methods for which pulse will only explore one path. Can be used on pathologically \
      large procedures to prevent too-big states from being produced."
+
+
+and pulse_inline_global_init_func_pointer =
+  CLOpt.mk_bool ~long:"pulse-inline-global-init-func-pointer" ~default:false
+    "Inline the initializer of global variables that are of type function pointer in Pulse."
 
 
 and pulse_intraprocedural_only =
@@ -2214,26 +2268,6 @@ and pulse_models_for_erlang =
     "Provide custom models for Erlang code using a DSL."
 
 
-and pulse_prune_unsupported_arithmetic =
-  CLOpt.mk_bool ~long:"pulse-prune-unsupported-arithmetic" ~default:false
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "The arithmetic engine in Pulse sometimes does not detect that the collection of conditions on \
-     the path makes it infeasible, especially outside the well-supported linear arithmetic \
-     fragment. To avoid false positives, Pulse tries to detect when there is a possibility of \
-     imprecise arithmetic treatment and if so pessimistically assumes the path is infeasible."
-
-
-and pulse_report_ignore_unknown_java_methods_patterns =
-  CLOpt.mk_string_list ~default:[".*<init>.*"]
-    ~long:"pulse-report-ignore-unknown-java-methods-patterns"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "On Java, issues that are found on program paths that contain calls to unknown methods (those \
-     without implementation) are not reported unless all the unknown method names match this \
-     pattern. If the empty list is provided with \
-     $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset), all issues will be reported \
-     regardless the presence of unknown code"
-
-
 and pulse_model_transfer_ownership =
   CLOpt.mk_string_list ~long:"pulse-model-transfer-ownership"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2245,6 +2279,17 @@ and pulse_recency_limit =
   CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
     "Maximum number of array elements and structure fields to keep track of for a given array \
      address."
+
+
+and pulse_report_ignore_unknown_java_methods_patterns =
+  CLOpt.mk_string_list ~default:[".*<init>.*"]
+    ~long:"pulse-report-ignore-unknown-java-methods-patterns"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "On Java, issues that are found on program paths that contain calls to unknown methods (those \
+     without implementation) are not reported unless all the unknown method names match this \
+     pattern. If the empty list is provided with \
+     $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset), all issues will be reported \
+     regardless the presence of unknown code"
 
 
 and pulse_report_latent_issues =
@@ -2262,6 +2307,42 @@ and pulse_skip_procedures =
   CLOpt.mk_string_opt ~long:"pulse-skip-procedures"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
+
+
+and pulse_taint_policies =
+  CLOpt.mk_json ~long:"pulse-taint-policies"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    {|A description of which taint flows should be reported, following this JSON format:
+  { "short_description": "<a short description of the issue>",
+    "taint_flows": [{ "source_kinds": [<matchers>],
+                      "sink_kinds": [<matchers>],
+                      "sanitizer_kinds": [<matchers>]}]
+  }
+where <matchers> are in the same format as $(b,--pulse-taint-sources); the field "sanitizer_kinds" is optional (assumed to be empty), and a policy may have several taint flows in the form of a list.|}
+
+
+and pulse_taint_sanitizers =
+  CLOpt.mk_json ~long:"pulse-taint-sanitizers"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple sanitizers as a JSON objects. See $(b,--pulse-taint-sources) for \
+     the fields format documentation."
+
+
+and pulse_taint_sinks =
+  CLOpt.mk_json ~long:"pulse-taint-sinks"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple sinks as a JSON objects. See $(b,--pulse-taint-sources) for the \
+     fields format documentation."
+
+
+and pulse_taint_sources =
+  CLOpt.mk_json ~long:"pulse-taint-sources"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), and $(b,--pulse-taint-specifications), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects with the following fields, for example '[{"procedure": "mySimpleSink", "formals": [{"index": 1}]}]':
+  - "procedure" to match a substring of the function or method name, or "procedure_regex" to specify an OCaml regex
+  - "formals" is a list of objects with one or two fields:
+    - "index" is the index of the formal that is tainted, starting at 0. For methods, index 0 is $(i,this), other arguments start at index 1
+    - "type_name" is optional string; only arguments whose type contains this substring match|}
 
 
 and pulse_widen_threshold =
@@ -2875,12 +2956,26 @@ let inferconfig_dir =
   find (Sys.getcwd ())
 
 
+let parse_inferconfig_path_arg () =
+  let full_arg = "--" ^ CLOpt.inferconfig_path_arg in
+  let argv = Sys.get_argv () |> Array.copy in
+  (* reverse in order to find last occurrence of [--inferconfig-path] *)
+  Array.rev_inplace argv ;
+  Array.findi argv ~f:(fun _ arg -> String.equal full_arg arg)
+  |> Option.bind ~f:(fun (index, _) ->
+         if index > 0 then Some (Array.get argv (index - 1)) else None )
+
+
 let inferconfig_file =
-  match Sys.getenv CommandDoc.inferconfig_env_var with
-  | Some _ as env_path ->
-      env_path
-  | None ->
-      Option.map inferconfig_dir ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
+  match parse_inferconfig_path_arg () with
+  | Some _ as some_inferconfig ->
+      some_inferconfig
+  | None -> (
+    match Sys.getenv CommandDoc.inferconfig_env_var with
+    | Some _ as env_path ->
+        env_path
+    | None ->
+        Option.map inferconfig_dir ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file) )
 
 
 let post_parsing_initialization command_opt =
@@ -3209,6 +3304,10 @@ and config_impact_config_function_patterns =
   RevList.rev_map !config_impact_config_function_patterns ~f:Re.Str.regexp
 
 
+and config_impact_config_param_patterns =
+  RevList.rev_map !config_impact_config_param_patterns ~f:Re.Str.regexp
+
+
 and config_impact_current = !config_impact_current
 
 and config_impact_data_file = !config_impact_data_file
@@ -3222,6 +3321,12 @@ and config_impact_previous = !config_impact_previous
 and config_impact_strict_mode = !config_impact_strict_mode
 
 and config_impact_strict_mode_paths = RevList.rev_map !config_impact_strict_mode_paths ~f:Str.regexp
+
+and config_impact_strict_beta_mode_paths =
+  RevList.rev_map !config_impact_strict_beta_mode_paths ~f:Str.regexp
+
+
+and config_impact_test_paths = RevList.rev_map !config_impact_test_paths ~f:Str.regexp
 
 and continue_analysis = !continue_analysis
 
@@ -3284,6 +3389,8 @@ and eradicate_verbose = !eradicate_verbose
 and erlang_ast_dir = !erlang_ast_dir
 
 and erlang_skip_rebar3 = !erlang_skip_rebar3
+
+and erlang_with_otp_specs = !erlang_with_otp_specs
 
 and erlang_list_unfold_depth = !erlang_list_unfold_depth
 
@@ -3485,6 +3592,8 @@ and procedures = !procedures
 
 and procedures_attributes = !procedures_attributes
 
+and procedures_call_graph = !procedures_call_graph
+
 and procedures_cfg = !procedures_cfg
 
 and procedures_definedness = !procedures_definedness
@@ -3519,6 +3628,8 @@ and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
 
+and pulse_inline_global_init_func_pointer = !pulse_inline_global_init_func_pointer
+
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
 and pulse_isl = !pulse_isl
@@ -3551,18 +3662,6 @@ and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_no
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
 
-and pulse_models_for_erlang = !pulse_models_for_erlang
-
-and pulse_prune_unsupported_arithmetic = !pulse_prune_unsupported_arithmetic
-
-and pulse_report_ignore_unknown_java_methods_patterns =
-  match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
-  | [] ->
-      None
-  | patts ->
-      Some (Str.regexp (String.concat ~sep:"\\|" patts))
-
-
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =
     let re = Str.regexp "::" in
@@ -3584,19 +3683,37 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   RevList.rev_partition_map ~f:aux models
 
 
+and pulse_models_for_erlang = !pulse_models_for_erlang
+
+and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+
 and pulse_recency_limit = !pulse_recency_limit
+
+and pulse_report_ignore_unknown_java_methods_patterns =
+  match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
+  | [] ->
+      None
+  | patts ->
+      Some (Str.regexp (String.concat ~sep:"\\|" patts))
+
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
 and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
-and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
-
 and pulse_scuba_logging = !pulse_scuba_logging
 
-and pulse_widen_threshold = !pulse_widen_threshold
+and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 
-and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+and pulse_taint_policies = !pulse_taint_policies
+
+and pulse_taint_sanitizers = !pulse_taint_sanitizers
+
+and pulse_taint_sinks = !pulse_taint_sinks
+
+and pulse_taint_sources = !pulse_taint_sources
+
+and pulse_widen_threshold = !pulse_widen_threshold
 
 and pure_by_default = !pure_by_default
 

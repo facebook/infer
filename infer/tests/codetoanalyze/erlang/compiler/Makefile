@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-SOURCES = ../pulse/features ../pulse/nonmatch ../topl/src
+SOURCES = ../pulse/features ../pulse/nonmatch ../pulse/specs ../topl/src
 
 include $(TESTS_DIR)/base.make
 

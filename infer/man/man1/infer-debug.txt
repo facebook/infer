@@ -50,6 +50,13 @@ DEBUG PROCEDURES
            Activates: Print the attributes of each procedure in the output of
            --procedures (Conversely: --no-procedures-attributes)
 
+       --procedures-call-graph
+           Activates: Output a dotty file in
+           infer-out/captured/syntactic-call-graph.dot. The graph is the
+           syntactic call graph reachable from either all captured procedures
+           or those determined by the option --changed-files-index.
+           (Conversely: --no-procedures-call-graph)
+
        --procedures-cfg
            Activates: Output a dotty file in
            infer-out/captured/<file_name>/<proc_name>.dot for each procedure

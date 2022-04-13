@@ -9,16 +9,17 @@ build: [
   [make "-C" "sledge" "release"]
 ]
 depends: [
-  "ocaml" {>= "4.12.0"}
+  "ocaml" {>= "4.13.0"}
   "apron" {>= "v0.9.13"}
   "base"
   "containers" {>= "3.4"}
   "containers-data"
-  "conf-llvm" {= "11.0.0"}
-  "core" {>= "v0.14"}
+  "conf-llvm" {= "12.0.1"}
+  "core" {>= "v0.14" & < "v0.15"}
+  "core_kernel" {>= "v0.14" & < "v0.15"}
   "ctypes"
   "ctypes-foreign"
-  "dune" {build & >= "2.7"}
+  "dune" {build & >= "3.0"}
   "dune-build-info" {build}
   "fpath"
   "iter"
@@ -26,8 +27,10 @@ depends: [
   "mtime"
   "ppx_compare"
   "ppxlib" {>= "0.21.0"}
+  "psq"
+  "sexplib"
   "shexp"
-  "smtlib-utils"
+  "smtlib-utils" {> "0.1"}
   "yojson"
   "zarith"
 ]

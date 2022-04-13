@@ -49,6 +49,7 @@ const poweredByImages = [
     url: "/blog/2016/03/17/collaboration-with-spotify",
     image: "/img/who/spotify.png",
   },
+  { url: "https://tangramflex.com", image: "/img/who/tangramflex.png" },
   { url: "https://www.uber.com", image: "/img/who/uber.svg" },
   { url: "https://www.whatsapp.com", image: "/img/who/whatsapp.svg" },
 ];

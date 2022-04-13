@@ -63,10 +63,32 @@ let empty = Graph.empty
 
 let filter = Graph.filter
 
-let filter_with_discarded_addrs f x =
+let filter_with_discarded_addrs f_keep memory =
   fold
-    (fun k v ((x, discarded) as acc) -> if f k v then acc else (Graph.remove k x, k :: discarded))
-    x (x, [])
+    (fun addr attrs ((memory, discarded) as acc) ->
+      if f_keep addr then
+        let attrs' =
+          Attributes.fold attrs ~init:attrs ~f:(fun attrs' attr ->
+              match Attribute.filter_unreachable f_keep attr with
+              | None ->
+                  Attributes.remove attr attrs'
+              | Some attr' ->
+                  if phys_equal attr attr' then attrs'
+                  else
+                    let attrs' = Attributes.remove attr attrs' in
+                    Attributes.add attrs' attr' )
+        in
+        if phys_equal attrs attrs' then acc
+        else
+          ( Graph.update addr
+              (fun _ -> if Attributes.is_empty attrs' then None else Some attrs')
+              memory
+          , (* HACK: don't add to the discarded addresses even if we did discard all the attributes
+               of the address; this is ok because the list of discarded addresses is only relevant
+               to allocation attributes, which are not affected by this filtering... sorry! *)
+            discarded )
+      else (Graph.remove addr memory, addr :: discarded) )
+    memory (memory, [])
 
 
 let pp = Graph.pp
@@ -74,6 +96,8 @@ let pp = Graph.pp
 let invalidate (address, history) invalidation location memory =
   add_one address (Attribute.Invalid (invalidation, Immediate {location; history})) memory
 
+
+let always_reachable address memory = add_one address Attribute.AlwaysReachable memory
 
 let allocate allocator address location memory =
   add_one address
@@ -101,16 +125,6 @@ let check_initialized address attrs =
     L.d_printfln ~color:Red "UNINITIALIZED" ;
     Error () )
   else Ok ()
-
-
-let check_not_tainted address attrs =
-  L.d_printfln "Checking that %a is not tainted" AbstractValue.pp address ;
-  match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_tainted with
-  | None ->
-      Ok ()
-  | Some ((source, _hist) as taint_hist) ->
-      L.d_printfln ~color:Red "TAINTED: %a" Taint.pp_source source ;
-      Error taint_hist
 
 
 let get_attribute getter address attrs =

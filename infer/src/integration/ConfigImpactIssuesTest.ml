@@ -12,7 +12,13 @@ let pp_custom_of_config_impact_report fmt report =
   let pp_custom_of_config_impact_issue fmt (config_impact_item : Jsonconfigimpact_t.item) =
     let open Jsonbug_t in
     F.fprintf fmt "%s%s, %s, {%a}@\n"
-      (if config_impact_item.is_strict then "[STRICT] " else "")
+      ( match config_impact_item.mode with
+      | `Normal ->
+          ""
+      | `StrictBeta ->
+          "[STRICT BETA] "
+      | `Strict ->
+          "[STRICT] " )
       config_impact_item.procedure_name config_impact_item.loc.file
       ConfigImpactAnalysis.UncheckedCallees.pp_without_location
       (ConfigImpactAnalysis.UncheckedCallees.decode config_impact_item.unchecked_callees)

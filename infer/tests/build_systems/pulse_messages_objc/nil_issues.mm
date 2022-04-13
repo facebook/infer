@@ -11,6 +11,7 @@
 @interface SomeObject : NSObject
 
 @property int x;
+@property int* x_ptr;
 @property std::shared_ptr<int> ptr;
 
 - (std::shared_ptr<int>)returnsnonPOD;
@@ -95,4 +96,13 @@ NSString* returns_nil() { return nil; }
 void nilInsertionIntoCollectionBad(NSMutableArray<NSString*>* mArray) {
   NSString* object = returns_nil();
   [mArray addObject:object];
+}
+
+void nilInsertionIntoCollectionThroughCallBad() {
+  NSDictionary* dictionary = @{@"key" : returns_nil()};
+}
+
+void property_accessorBad() {
+  SomeObject* obj = nil;
+  *(obj.x_ptr) = 42;
 }

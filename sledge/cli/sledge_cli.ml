@@ -20,14 +20,18 @@ let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
 let ( >*> ) : ('a -> 'b) param -> ('b -> 'c) param -> ('a -> 'c) param =
  fun f' g' -> Command.Param.both f' g' >>| fun (f, g) -> f >> g
 
+;;
+register_sexp_of_exn (Trace.Parse_failure "") (function
+  | Trace.Parse_failure msg -> Sexplib0.Sexp.Atom msg
+  | _ -> assert false )
+
 (* define a command, with trace flag, and with action wrapped in
    reporting *)
 let command ~summary ?readme param =
   let trace =
     let%map_open config =
       flag "trace" ~doc:"<spec> enable debug tracing"
-        (optional_with_default Trace.none
-           (Arg_type.create (fun s -> Trace.parse s |> Result.get_ok)) )
+        (optional_with_default Trace.none (Arg_type.create Trace.parse))
     and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
@@ -43,7 +47,7 @@ let command ~summary ?readme param =
     Trace.init ~colors ?margin ~config () ;
     Option.iter ~f:(Report.init ~append:append_report) report
   in
-  Llair.Loc.root := Some (Core.Filename.realpath (Sys.getcwd ())) ;
+  Llair.Loc.root := Some (Unix.realpath (Sys.getcwd ())) ;
   let flush main () = Fun.protect main ~finally:Trace.flush in
   let report main () =
     try main () |> Report.status
@@ -266,10 +270,8 @@ let llvm_grp =
   let translate_cmd =
     let summary = "translate LLVM bitcode to LLAIR" in
     let readme () =
-      "Translate one or more LLVM bitcode files to LLAIR. Each <input> \
-       filename may be either: an LLVM bitcode file, in binary (.bc) or \
-       textual (.ll) form; or of the form @<argsfile>, where <argsfile> \
-       names a file containing one <input> per line."
+      "Translate LLVM bitcode to LLAIR. The <input> file must contain LLVM \
+       bitcode in either binary (.bc) or textual (.ll) form."
     in
     let param =
       translate_input >*> Command.Param.return (fun _ -> Report.Ok)
@@ -287,18 +289,14 @@ let llvm_grp =
   let analyze_cmd =
     let summary = "analyze LLVM bitcode" in
     let readme () =
-      "Analyze code in one or more LLVM bitcode files. This is a \
-       convenience wrapper for the sequence `sledge llvm translate`; \
-       `sledge analyze`."
+      "Analyze LLVM bitcode. This is a convenience wrapper for the \
+       sequence `sledge llvm translate`; `sledge analyze`."
     in
     let param = translate_input |*> analyze in
     command ~summary ~readme param
   in
   let summary = "integration with LLVM" in
-  let readme () =
-    "Code can be provided by one or more LLVM bitcode files."
-  in
-  Command.group ~summary ~readme ~preserve_subcommand_order:()
+  Command.group ~summary ~preserve_subcommand_order:()
     [ ("analyze", analyze_cmd)
     ; ("translate", translate_cmd)
     ; ("disassemble", disassemble_cmd) ]

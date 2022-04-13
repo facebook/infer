@@ -387,13 +387,13 @@ fn_test_listappend5_Bad() ->
     one() ++ "?".
 
 test_listforeach_returnvalue_Ok() ->
-    case lists:foreach(fun (X) -> X end, [1, 2, 3]) of
+    case lists:foreach(fun(X) -> X end, [1, 2, 3]) of
         ok -> ok;
         _ -> warn(1)
     end.
 
 test_listforeach_returnvalue_Bad() ->
-    case lists:foreach(fun (X) -> X end, [1, 2, 3]) of
+    case lists:foreach(fun(X) -> X end, [1, 2, 3]) of
         ok -> warn(1);
         _ -> ok
     end.

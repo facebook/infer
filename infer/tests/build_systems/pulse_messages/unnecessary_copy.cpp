@@ -17,7 +17,7 @@ A& get_a_ref() {
 }
 
 std::vector<int> copy_decl_bad() {
-  auto copy = get_a_ref(); // unnecessary copy, use a ref
+  auto cpy = get_a_ref(); // unnecessary copy, use a ref
   // call to copy constructor A::A(a, n$0)
-  return copy.vec;
+  return cpy.vec;
 }

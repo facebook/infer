@@ -40,6 +40,8 @@ type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
   ; current_module: module_name  (** used to qualify function names *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
+  ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
+  ; types: Ast.type_ String.Map.t  (** user defined types *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
   ; records: record_info String.Map.t  (** used to get fields, indexes and initializers *)
@@ -53,6 +55,8 @@ let initialize_environment module_ =
     { cfg= Cfg.create ()
     ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
     ; functions= UnqualifiedFunction.Set.empty
+    ; specs= UnqualifiedFunction.Map.empty
+    ; types= String.Map.empty
     ; exports= UnqualifiedFunction.Set.empty
     ; imports= UnqualifiedFunction.Map.empty
     ; records= String.Map.empty
@@ -106,6 +110,25 @@ let initialize_environment module_ =
     | Function {function_; _} ->
         let key = UnqualifiedFunction.of_ast function_ in
         {env with functions= Set.add env.functions key}
+    | Spec ({Ast.function_; _} as data) -> (
+        let key = UnqualifiedFunction.of_ast function_ in
+        (* TODO: might remove this later when we have tests *)
+        L.debug Capture Verbose "Adding spec to environment: %s@."
+          (Sexp.to_string (ErlangAst.sexp_of_spec data)) ;
+        match Map.add ~key ~data env.specs with
+        | `Ok specs ->
+            {env with specs}
+        | `Duplicate ->
+            L.die InternalError "repeated spec for %s/%d" key.name key.arity )
+    | Type {name; type_} -> (
+        (* TODO: might remove this later when we have tests *)
+        L.debug Capture Verbose "Adding type '%s' to environment: %s@." name
+          (Sexp.to_string (ErlangAst.sexp_of_type_ type_)) ;
+        match Map.add ~key:name ~data:type_ env.types with
+        | `Ok types ->
+            {env with types}
+        | `Duplicate ->
+            L.die InternalError "repeated type '%s'" name )
   in
   List.fold ~init ~f module_
 
@@ -120,3 +143,36 @@ let func_procname env function_ =
   let module_name = env.current_module in
   let procname = Procname.make_erlang ~module_name ~function_name ~arity in
   (uf_name, procname)
+
+
+let has_type_instr (env : (_, _) t) ~result ~value (name : ErlangTypeName.t) : Sil.instr =
+  let any_typ = ptr_typ_of_name Any in
+  let fun_exp : Exp.t = Const (Cfun BuiltinDecl.__instanceof) in
+  let args : (Exp.t * Typ.t) list =
+    [ (value, any_typ)
+    ; ( Sizeof
+          { typ= typ_of_name name
+          ; nbytes= None
+          ; dynamic_length= None
+          ; subtype= Subtype.subtypes_instof }
+      , any_typ ) ]
+  in
+  Call ((result, Typ.mk (Tint IBool)), fun_exp, args, env.location, CallFlags.default)
+
+
+let procname_for_user_type module_name name =
+  (* Avoid conflict with a "normal" function that has the same name as the type and arity of 1. *)
+  let function_name = "__infer_assume_type_" ^ name in
+  Procname.make_erlang ~module_name ~function_name ~arity:1
+
+
+(** into_id=expr.field_name *)
+let load_field_from_expr (env : (_, _) t) into_id expr field_name typ : Sil.instr =
+  let any_typ = ptr_typ_of_name Any in
+  let field = Fieldname.make (ErlangType typ) field_name in
+  Load
+    { id= into_id
+    ; e= Lfield (expr, field, typ_of_name typ)
+    ; root_typ= any_typ
+    ; typ= any_typ
+    ; loc= env.location }

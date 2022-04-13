@@ -13,6 +13,8 @@ type 'typ_name t_ = {class_name: 'typ_name; field_name: string}
 
 type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of]
 
+let pp f fld = F.pp_print_string f fld.field_name
+
 let loose_compare = compare_t_ Typ.Name.loose_compare
 
 let compare_name = compare_t_ Typ.Name.compare_name
@@ -60,10 +62,12 @@ let is_internal {field_name} =
 
 module T = struct
   type nonrec t = t [@@deriving compare]
+
+  let pp = pp
 end
 
 module Set = Caml.Set.Make (T)
-module Map = Caml.Map.Make (T)
+module Map = PrettyPrintable.MakePPMap (T)
 
 let join ~sep c f = String.concat ~sep [c; f]
 
@@ -106,8 +110,6 @@ let patterns_match patterns fld =
   let s = to_simplified_string fld in
   List.exists patterns ~f:(fun pattern -> Re.Str.string_match pattern s 0)
 
-
-let pp f fld = F.pp_print_string f fld.field_name
 
 let is_java_outer_instance ({field_name} as field) =
   is_java field

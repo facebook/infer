@@ -27,7 +27,7 @@ module T = struct
     let vars =
       Environment.vars box.box1_env |> fun (i, r) -> Array.append i r
     in
-    Array.combine_exn vars box.interval_array
+    Array.combine vars box.interval_array
 
   let sexp_of_t (itv : t) =
     let sexps =
@@ -272,7 +272,7 @@ let call ~summaries _ ?child:_ ~globals:_ ~actuals ~areturn ~formals
     let mangle r =
       Llair.Reg.mk (Llair.Reg.typ r) 0 ("__tmp__" ^ Llair.Reg.name r)
     in
-    let args = IArray.combine_exn formals actuals in
+    let args = IArray.combine formals actuals in
     let q' =
       IArray.fold ~f:(fun (f, a) q -> assign (mangle f) a q) args q
     in

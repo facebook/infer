@@ -37,6 +37,8 @@ type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
   ; current_module: module_name  (** used to qualify function names *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
+  ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
+  ; types: Ast.type_ String.Map.t  (** user defined types *)
   ; exports: UnqualifiedFunction.Set.t  (** used to determine public/private access *)
   ; imports: module_name UnqualifiedFunction.Map.t  (** used to resolve function names *)
   ; records: record_info String.Map.t  (** used to get fields, indexes and initializers *)
@@ -53,3 +55,12 @@ val typ_of_name : ErlangTypeName.t -> Typ.t
 val ptr_typ_of_name : ErlangTypeName.t -> Typ.t
 
 val func_procname : (_, _) t -> Ast.function_ -> UnqualifiedFunction.t * Procname.t
+
+val has_type_instr : ('a, 'b) t -> result:Ident.t -> value:Exp.t -> ErlangTypeName.t -> Sil.instr
+(** Create an instruction that stores in a result if a given value has a given type. *)
+
+val procname_for_user_type : module_name -> module_name -> Procname.t
+
+val load_field_from_expr :
+  ('a, 'b) t -> Ident.t -> Exp.t -> module_name -> ErlangTypeName.t -> Sil.instr
+(** Create an instruction into_id=expr.field_name *)

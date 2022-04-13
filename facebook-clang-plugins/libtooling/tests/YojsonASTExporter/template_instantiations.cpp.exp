@@ -1455,7 +1455,7 @@
             {
               "name" : "LongTemplate",
               "qual_name" : [
-                "LongTemplate<78187493520>"
+                "LongTemplate<78187493520L>"
               ]
             },
             77,
@@ -1479,7 +1479,7 @@
                   "name" : "LongTemplate",
                   "qual_name" : [
                     "LongTemplate",
-                    "LongTemplate<78187493520>"
+                    "LongTemplate<78187493520L>"
                   ]
                 },
                 77,
@@ -1515,7 +1515,7 @@
                   "name" : "LongTemplate",
                   "qual_name" : [
                     "LongTemplate",
-                    "LongTemplate<78187493520>"
+                    "LongTemplate<78187493520L>"
                   ]
                 },
                 {
@@ -1565,7 +1565,7 @@
                   "name" : "LongTemplate",
                   "qual_name" : [
                     "LongTemplate",
-                    "LongTemplate<78187493520>"
+                    "LongTemplate<78187493520L>"
                   ]
                 },
                 {
@@ -1627,7 +1627,7 @@
                   "name" : "LongTemplate",
                   "qual_name" : [
                     "LongTemplate",
-                    "LongTemplate<78187493520>"
+                    "LongTemplate<78187493520L>"
                   ]
                 },
                 {
@@ -1866,7 +1866,7 @@
                 "name" : "LongTemplate",
                 "qual_name" : [
                   "LongTemplate",
-                  "LongTemplate<78187493520>"
+                  "LongTemplate<78187493520L>"
                 ]
               },
               "qual_type" : {
@@ -1917,7 +1917,7 @@
             {
               "name" : "X",
               "qual_name" : [
-                "X<&x5>"
+                "X<x5>"
               ]
             },
             100,
@@ -1941,7 +1941,7 @@
                   "name" : "X",
                   "qual_name" : [
                     "X",
-                    "X<&x5>"
+                    "X<x5>"
                   ]
                 },
                 100,
@@ -1977,7 +1977,7 @@
                   "name" : "X",
                   "qual_name" : [
                     "X",
-                    "X<&x5>"
+                    "X<x5>"
                   ]
                 },
                 {
@@ -2027,7 +2027,7 @@
                   "name" : "X",
                   "qual_name" : [
                     "X",
-                    "X<&x5>"
+                    "X<x5>"
                   ]
                 },
                 {
@@ -2089,7 +2089,7 @@
                   "name" : "X",
                   "qual_name" : [
                     "X",
-                    "X<&x5>"
+                    "X<x5>"
                   ]
                 },
                 {
@@ -3452,7 +3452,7 @@
                 "name" : "X",
                 "qual_name" : [
                   "X",
-                  "X<&x5>"
+                  "X<x5>"
                 ]
               },
               "qual_type" : {
@@ -4308,9 +4308,25 @@
         {
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 275
+        },
+        {
+          "type_ptr" : 12
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 276
+        },
+        {
+          "type_ptr" : 26
+        }
+      )>,
       <"DecltypeType" : (
         {
-          "pointer" : 275,
+          "pointer" : 277,
           "desugared_type" : 252
         },
         {
@@ -4324,24 +4340,24 @@
         },
         {
           "child_type" : {
-            "type_ptr" : 275
+            "type_ptr" : 277
           },
           "decl_ptr" : 28
         }
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 276
+          "pointer" : 278
         }
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 277
+          "pointer" : 279
         }
       )>,
       <"InjectedClassNameType" : (
         {
-          "pointer" : 278
+          "pointer" : 280
         }
       )>,
       <"RecordType" : (
@@ -4358,7 +4374,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 279
+          "pointer" : 281
         },
         {
           "return_type" : {
@@ -4379,7 +4395,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 280
+          "pointer" : 282
         },
         {
           "return_type" : {
@@ -4421,7 +4437,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 281
+          "pointer" : 283
         },
         {
           "return_type" : {
@@ -4453,24 +4469,20 @@
           ]
         }
       )>,
-      <"TemplateSpecializationType" : (
-        {
-          "pointer" : 282
-        }
-      )>,
-      <"TemplateSpecializationType" : (
-        {
-          "pointer" : 283
-        }
-      )>,
-      <"InjectedClassNameType" : (
+      <"PointerType" : (
         {
           "pointer" : 284
+        },
+        {
+          "type_ptr" : 32
         }
       )>,
-      <"TemplateSpecializationType" : (
+      <"PointerType" : (
         {
           "pointer" : 285
+        },
+        {
+          "type_ptr" : 45
         }
       )>,
       <"TemplateSpecializationType" : (
@@ -4478,12 +4490,12 @@
           "pointer" : 286
         }
       )>,
-      <"InjectedClassNameType" : (
+      <"TemplateSpecializationType" : (
         {
           "pointer" : 287
         }
       )>,
-      <"TemplateSpecializationType" : (
+      <"InjectedClassNameType" : (
         {
           "pointer" : 288
         }
@@ -4493,9 +4505,29 @@
           "pointer" : 289
         }
       )>,
-      <"InjectedClassNameType" : (
+      <"TemplateSpecializationType" : (
         {
           "pointer" : 290
+        }
+      )>,
+      <"InjectedClassNameType" : (
+        {
+          "pointer" : 291
+        }
+      )>,
+      <"TemplateSpecializationType" : (
+        {
+          "pointer" : 292
+        }
+      )>,
+      <"TemplateSpecializationType" : (
+        {
+          "pointer" : 293
+        }
+      )>,
+      <"InjectedClassNameType" : (
+        {
+          "pointer" : 294
         }
       )>,
       <"RecordType" : (
@@ -4512,7 +4544,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 291
+          "pointer" : 295
         },
         {
           "return_type" : {
@@ -4533,7 +4565,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 292
+          "pointer" : 296
         },
         {
           "return_type" : {
@@ -4575,7 +4607,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 293
+          "pointer" : 297
         },
         {
           "return_type" : {
@@ -4607,6 +4639,22 @@
           ]
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 298
+        },
+        {
+          "type_ptr" : 49
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 299
+        },
+        {
+          "type_ptr" : 90
+        }
+      )>,
       <"RecordType" : (
         {
           "pointer" : 63
@@ -4621,7 +4669,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 294
+          "pointer" : 300
         },
         {
           "return_type" : {
@@ -4642,7 +4690,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 295
+          "pointer" : 301
         },
         {
           "return_type" : {
@@ -4684,7 +4732,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 296
+          "pointer" : 302
         },
         {
           "return_type" : {
@@ -4716,6 +4764,22 @@
           ]
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 303
+        },
+        {
+          "type_ptr" : 63
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 304
+        },
+        {
+          "type_ptr" : 93
+        }
+      )>,
       <"RecordType" : (
         {
           "pointer" : 77
@@ -4730,7 +4794,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 297
+          "pointer" : 305
         },
         {
           "return_type" : {
@@ -4751,7 +4815,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 298
+          "pointer" : 306
         },
         {
           "return_type" : {
@@ -4793,7 +4857,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 299
+          "pointer" : 307
         },
         {
           "return_type" : {
@@ -4825,19 +4889,35 @@
           ]
         }
       )>,
-      <"TemplateSpecializationType" : (
+      <"PointerType" : (
         {
-          "pointer" : 300
+          "pointer" : 308
+        },
+        {
+          "type_ptr" : 77
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 309
+        },
+        {
+          "type_ptr" : 96
         }
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 301
+          "pointer" : 310
+        }
+      )>,
+      <"TemplateSpecializationType" : (
+        {
+          "pointer" : 311
         }
       )>,
       <"InjectedClassNameType" : (
         {
-          "pointer" : 302
+          "pointer" : 312
         }
       )>,
       <"ConstantArrayType" : (
@@ -4869,22 +4949,22 @@
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 303
+          "pointer" : 313
         }
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 304
+          "pointer" : 314
         }
       )>,
       <"InjectedClassNameType" : (
         {
-          "pointer" : 305
+          "pointer" : 315
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 306
+          "pointer" : 316
         },
         {
           "return_type" : {
@@ -4896,7 +4976,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 307
+          "pointer" : 317
         },
         {
           "return_type" : {
@@ -4938,7 +5018,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 308
+          "pointer" : 318
         },
         {
           "return_type" : {
@@ -4970,6 +5050,14 @@
           ]
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 319
+        },
+        {
+          "type_ptr" : 115
+        }
+      )>,
       <"ConstantArrayType" : (
         {
           "pointer" : 158
@@ -4984,7 +5072,7 @@
       )>,
       <"ParenType" : (
         {
-          "pointer" : 309,
+          "pointer" : 320,
           "desugared_type" : 158
         },
         {
@@ -4993,7 +5081,7 @@
       )>,
       <"LValueReferenceType" : (
         {
-          "pointer" : 310
+          "pointer" : 321
         },
         {
           "type_ptr" : 158
@@ -5001,25 +5089,25 @@
       )>,
       <"LValueReferenceType" : (
         {
-          "pointer" : 311
+          "pointer" : 322
         },
         {
-          "type_ptr" : 309
+          "type_ptr" : 320
         }
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 312
+          "pointer" : 323
         }
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 313
+          "pointer" : 324
         }
       )>,
       <"InjectedClassNameType" : (
         {
-          "pointer" : 314
+          "pointer" : 325
         }
       )>,
       <"FunctionProtoType" : (
@@ -5041,7 +5129,7 @@
       )>,
       <"ParenType" : (
         {
-          "pointer" : 315,
+          "pointer" : 326,
           "desugared_type" : 160
         },
         {
@@ -5050,7 +5138,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 316
+          "pointer" : 327
         },
         {
           "type_ptr" : 160
@@ -5058,30 +5146,30 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 317
+          "pointer" : 328
         },
         {
-          "type_ptr" : 315
+          "type_ptr" : 326
         }
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 318
+          "pointer" : 329
         }
       )>,
       <"TemplateSpecializationType" : (
         {
-          "pointer" : 319
+          "pointer" : 330
         }
       )>,
       <"InjectedClassNameType" : (
         {
-          "pointer" : 320
+          "pointer" : 331
         }
       )>,
       <"PointerType" : (
         {
-          "pointer" : 321
+          "pointer" : 332
         },
         {
           "type_ptr" : 10
@@ -5101,7 +5189,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 322
+          "pointer" : 333
         },
         {
           "return_type" : {
@@ -5122,7 +5210,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 323
+          "pointer" : 334
         },
         {
           "return_type" : {
@@ -5164,7 +5252,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 324
+          "pointer" : 335
         },
         {
           "return_type" : {
@@ -5196,6 +5284,22 @@
           ]
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 336
+        },
+        {
+          "type_ptr" : 100
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 337
+        },
+        {
+          "type_ptr" : 177
+        }
+      )>,
       <"RecordType" : (
         {
           "pointer" : 129
@@ -5210,7 +5314,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 325
+          "pointer" : 338
         },
         {
           "return_type" : {
@@ -5231,7 +5335,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 326
+          "pointer" : 339
         },
         {
           "return_type" : {
@@ -5273,7 +5377,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 327
+          "pointer" : 340
         },
         {
           "return_type" : {
@@ -5305,6 +5409,22 @@
           ]
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 341
+        },
+        {
+          "type_ptr" : 129
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 342
+        },
+        {
+          "type_ptr" : 180
+        }
+      )>,
       <"RecordType" : (
         {
           "pointer" : 145
@@ -5319,7 +5439,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 328
+          "pointer" : 343
         },
         {
           "return_type" : {
@@ -5340,7 +5460,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 329
+          "pointer" : 344
         },
         {
           "return_type" : {
@@ -5382,7 +5502,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 330
+          "pointer" : 345
         },
         {
           "return_type" : {
@@ -5414,9 +5534,25 @@
           ]
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 346
+        },
+        {
+          "type_ptr" : 145
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 347
+        },
+        {
+          "type_ptr" : 183
+        }
+      )>,
       <"LValueReferenceType" : (
         {
-          "pointer" : 331
+          "pointer" : 348
         },
         {
           "type_ptr" : 160
@@ -5436,7 +5572,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 332
+          "pointer" : 349
         },
         {
           "return_type" : {
@@ -5457,7 +5593,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 333
+          "pointer" : 350
         },
         {
           "return_type" : {
@@ -5499,7 +5635,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 334
+          "pointer" : 351
         },
         {
           "return_type" : {
@@ -5531,9 +5667,25 @@
           ]
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 352
+        },
+        {
+          "type_ptr" : 164
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 353
+        },
+        {
+          "type_ptr" : 186
+        }
+      )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 335
+          "pointer" : 354
         },
         {
           "base_type" : 248
@@ -5541,52 +5693,52 @@
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 336
+          "pointer" : 355
         },
         {
-          "type_ptr" : 335
+          "type_ptr" : 354
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 337,
-          "desugared_type" : 336
+          "pointer" : 356,
+          "desugared_type" : 355
         },
         {
           "child_type" : {
-            "type_ptr" : 336
+            "type_ptr" : 355
           },
-          "decl_ptr" : 338
+          "decl_ptr" : 357
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 189,
-          "desugared_type" : 336
+          "desugared_type" : 355
         },
         {
           "child_type" : {
-            "type_ptr" : 337
+            "type_ptr" : 356
           },
           "decl_ptr" : 188
         }
       )>,
       <"DecayedType" : (
         {
-          "pointer" : 339,
-          "desugared_type" : 321
+          "pointer" : 358,
+          "desugared_type" : 332
         },
         {
-          "type_ptr" : 321
+          "type_ptr" : 332
         }
       )>,
       <"DecayedType" : (
         {
-          "pointer" : 340,
-          "desugared_type" : 321
+          "pointer" : 359,
+          "desugared_type" : 332
         },
         {
-          "type_ptr" : 321
+          "type_ptr" : 332
         }
       )>,
       <"NoneType" : (

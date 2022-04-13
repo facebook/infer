@@ -94,7 +94,7 @@ let get_debug_loc_directory llv =
   if String.is_empty dir then dir
   else
     String.Tbl.find_or_add realpath_tbl dir ~default:(fun () ->
-        try Core.Filename.realpath dir with Unix.Unix_error _ -> dir )
+        try Unix.realpath dir with Unix.Unix_error _ -> dir )
 
 open struct
   open struct
@@ -321,7 +321,8 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
             in
             Typ.struct_ ~name elts ~bits ~byts
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
-      | Vector | ScalableVector -> todo "vector types: %a" pp_lltype llt ()
+      | Vector | X86_amx | ScalableVector ->
+          todo "vector types: %a" pp_lltype llt ()
       | Void | Label | Metadata | Token -> assert false
     else
       match Llvm.classify_type llt with
@@ -335,7 +336,7 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
           Typ.function_ ~return ~args
       | Struct when Llvm.is_opaque llt -> Typ.opaque ~name:(struct_name llt)
       | Token -> Typ.opaque ~name:"token"
-      | Vector | ScalableVector | Array | Struct ->
+      | Vector | X86_amx | ScalableVector | Array | Struct ->
           todo "unsized non-opaque aggregate types: %a" pp_lltype llt ()
       | Half | BFloat | Float | Double | X86fp80 | Fp128 | Ppc_fp128
        |Integer | X86_mmx | Pointer ->
@@ -542,7 +543,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         let parent, _ = find_name (Llvm.operand llv 0) in
         let name, _ = find_name (Llvm.operand llv 1) in
         ([], Exp.label ~parent ~name)
-    | UndefValue ->
+    | UndefValue | PoisonValue ->
         let llt = Llvm.type_of llv in
         let typ = xlate_type x llt in
         if not (Typ.is_sized typ) then

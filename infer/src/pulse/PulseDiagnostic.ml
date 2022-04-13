@@ -57,8 +57,8 @@ type t =
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { tainted: Decompiler.expr
-      ; source: Taint.source * ValueHistory.t
-      ; sink: Taint.sink * Trace.t
+      ; source: Taint.t * ValueHistory.t
+      ; sink: Taint.t * Trace.t
       ; location: Location.t }
   | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]
@@ -170,20 +170,27 @@ let get_message diagnostic =
           let {Location.line; _} = Trace.get_outer_location invalidation_trace in
           line
         in
-        let pp_must_be_valid_reason fmt =
+        let pp_must_be_valid_reason fmt expr =
+          let pp_prefix fmt null_nil_block =
+            if Decompiler.is_unknown expr then
+              F.fprintf fmt "%s %a" null_nil_block
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace
+            else
+              F.fprintf fmt "`%a` could be %s %a and" Decompiler.pp_expr expr null_nil_block
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace
+          in
           match must_be_valid_reason with
           | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
               F.fprintf fmt
-                "%a could be nil and is used to call a C++ method with a non-POD return type \
-                 `%a`%a; nil messaging such methods is undefined behaviour"
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
+                "%a is used to call a C++ method with a non-POD return type `%a`%a; nil messaging \
+                 such methods is undefined behaviour"
+                pp_prefix "nil" (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
           | Some (InsertionIntoCollectionKey | InsertionIntoCollectionValue) ->
               F.fprintf fmt
-                "could be nil %a and is used as a %s when inserting into a collection%a, \
-                 potentially causing a crash"
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace
+                "%a is used as a %s when inserting into a collection%a, potentially causing a crash"
+                pp_prefix "nil"
                 ( match[@warning "-8"] must_be_valid_reason with
                 | Some InsertionIntoCollectionKey ->
                     "key"
@@ -191,16 +198,13 @@ let get_message diagnostic =
                     "value" )
                 pp_access_trace access_trace
           | Some BlockCall ->
-              F.fprintf fmt "could be a nil block %a that is called%a, causing a crash"
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace pp_access_trace access_trace
+              F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block" pp_access_trace
+                access_trace
           | None ->
-              F.fprintf fmt "could be null %a and is dereferenced%a"
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace pp_access_trace access_trace
+              F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
         in
-        F.asprintf "%a`%a` %t" pp_calling_context_prefix calling_context Decompiler.pp_expr
-          invalid_address pp_must_be_valid_reason
+        F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
+          invalid_address
     | _ ->
         let pp_access_trace fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
@@ -323,13 +327,14 @@ let get_message diagnostic =
       F.asprintf "Address of %a is returned by the function" pp_var variable
   | TaintFlow {tainted; source= source, _; sink= sink, _} ->
       (* TODO: say what line the source happened in the current function *)
-      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp_source
-        source Taint.pp_sink sink
+      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
+        Taint.pp sink
   | UnnecessaryCopy {variable; location} ->
       F.asprintf
         "copied variable `%a` is not modified after it is copied on %a. Consider using a reference \
-         `&` instead to avoid the copy"
-        Var.pp variable Location.pp location
+         `&` instead to avoid the copy. If this copy was intentional, consider adding the word \
+         `copy` into the variable name to suppress this warning"
+        Var.pp variable Location.pp_line location
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -469,11 +474,16 @@ let get_trace = function
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]
   | TaintFlow {source= _, source_history; sink= sink, sink_trace} ->
-      (* TODO: the sink trace includes the history for the source, creating duplicate information in
-         the trace. The history in the sink can also go further into source code than we want if the
-         source is a function that we analyze. *)
+      (* TODO: the sink trace includes the history for the source in its own value history,
+         creating duplicate information in the trace if we don't pass
+         [include_value_history:false]. The history in the sink can also go further into source
+         code than we want if the source is a function that we analyze. Ideally we would cut just
+         the overlapping histories from [sink_trace] instead of not including value histories
+         altogether. *)
       ValueHistory.add_to_errlog ~nesting:0 source_history
-      @@ Trace.add_to_errlog ~nesting:0 ~pp_immediate:(fun fmt -> Taint.pp_sink fmt sink) sink_trace
+      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
+           ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
+           sink_trace
       @@ []
   | UnnecessaryCopy {location; _} ->
       let nesting = 0 in

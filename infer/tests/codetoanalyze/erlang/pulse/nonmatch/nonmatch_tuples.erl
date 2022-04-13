@@ -6,6 +6,9 @@
 -module(nonmatch_tuples).
 
 -export([
+    test_empty3_Bad/0,
+    test_empty2_Bad/0,
+    test_empty1_Ok/0,
     test_size1_Ok/0,
     test_size2_Bad/0,
     test_size3_Bad/0,

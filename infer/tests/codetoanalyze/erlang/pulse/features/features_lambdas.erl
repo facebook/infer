@@ -6,6 +6,11 @@
 -module(features_lambdas).
 
 -export([
+    test_nested_capture_Bad/0,
+    test_nested_capture_Ok/0,
+    nondet_lambda3_Latent/1,
+    nondet_lambda2_Latent/1,
+    nondet_lambda1_Ok/1,
     test_lambda_within_function_Ok/0,
     test_lambda_within_function_Bad/0,
     test_lambda_within_function_nested_Ok/0,
@@ -13,8 +18,11 @@
     fp_test_apply_fun_Ok/0,
     test_apply_fun_Bad/0,
     test_lambda_capture_Ok/0,
-    fn_test_lambda_capture_Bad/0,
-    test_scopes_Ok/1
+    test_lambda_capture_Bad/0,
+    test_scopes_Ok/1,
+    test_nested_capture_Ok/0,
+    test_nested_capture_Bad/0,
+    test_no_nullptr_Ok/1
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -85,8 +93,7 @@ test_lambda_capture_Ok() ->
         _ -> warn(1)
     end.
 
-% TODO: T104353993
-fn_test_lambda_capture_Bad() ->
+test_lambda_capture_Bad() ->
     N = 5,
     F = fun() -> N + 1 end,
     Y = F(),
@@ -103,3 +110,67 @@ test_scopes_Ok(_) ->
     F = fun() -> X = 2 end,
     F(),
     X = 3.
+
+nondet_lambda1_Ok(X) ->
+    C = 1,
+    F =
+        case X of
+            1 -> fun() -> C end;
+            _ -> fun() -> 2 end
+        end,
+    % We don't exactly know what F is, but it must be 1 or 2
+    case F() of
+        1 -> ok;
+        2 -> ok
+    end.
+
+nondet_lambda2_Latent(X) ->
+    C = 1,
+    F =
+        case X of
+            1 -> fun() -> C end;
+            _ -> fun() -> 2 end
+        end,
+    % F might return 2
+    case F() of
+        1 -> ok
+    end.
+
+nondet_lambda3_Latent(X) ->
+    C = 1,
+    F =
+        case X of
+            1 -> fun() -> C end;
+            _ -> fun() -> 2 end
+        end,
+    % F might return 1 (C)
+    case F() of
+        2 -> ok
+    end.
+
+test_nested_capture_Ok() ->
+    C = 1,
+    F = fun() ->
+        G = fun() -> C end,
+        G()
+    end,
+    case F() of
+        1 -> ok;
+        _ -> warn(1)
+    end.
+
+test_nested_capture_Bad() ->
+    C = 1,
+    F = fun() ->
+        G = fun() -> C end,
+        G()
+    end,
+    case F() of
+        1 -> warn(1);
+        _ -> ok
+    end.
+
+test_no_nullptr_Ok(X) ->
+    F = fun(_) -> X end,
+    % We used to report a null pointer issue here (which is wrong)
+    F(0).

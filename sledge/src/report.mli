@@ -33,6 +33,7 @@ type status =
 [@@deriving compare, equal, sexp]
 
 val pp_status : status pp
+val pp_status_coarse : status pp
 val safe_or_unsafe : unit -> status
 val status : status -> unit
 val coverage : Llair.program -> unit

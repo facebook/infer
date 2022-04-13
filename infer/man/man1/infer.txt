@@ -475,6 +475,7 @@ OPTIONS
              CONDITION_ALWAYS_TRUE (disabled by default),
              CONFIG_IMPACT (disabled by default),
              CONFIG_IMPACT_STRICT (disabled by default),
+             CONFIG_IMPACT_STRICT_BETA (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
@@ -666,6 +667,12 @@ OPTIONS
        --erlang-skip-rebar3
            Activates: Skip running rebar, to save time. It is useful together
            with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)       
+    See also infer-capture(1).
+
+       --erlang-with-otp-specs
+           Activates: [EXPERIMENTAL] Use type specs from OTP (available in
+           the system) to generate more precise Pulse summaries for unknown
+           library functions. (Conversely: --no-erlang-with-otp-specs)       
     See also infer-capture(1).
 
        --external-java-packages +prefix
@@ -1014,6 +1021,13 @@ OPTIONS
            --procedures (Conversely: --no-procedures-attributes)       
     See also infer-debug(1).
 
+       --procedures-call-graph
+           Activates: Output a dotty file in
+           infer-out/captured/syntactic-call-graph.dot. The graph is the
+           syntactic call graph reachable from either all captured procedures
+           or those determined by the option --changed-files-index.
+           (Conversely: --no-procedures-call-graph)           See also infer-debug(1).
+
        --procedures-cfg
            Activates: Output a dotty file in
            infer-out/captured/<file_name>/<proc_name>.dot for each procedure
@@ -1137,16 +1151,6 @@ OPTIONS
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).
 
-       --pulse-prune-unsupported-arithmetic
-           Activates: The arithmetic engine in Pulse sometimes does not
-           detect that the collection of conditions on the path makes it
-           infeasible, especially outside the well-supported linear
-           arithmetic fragment. To avoid false positives, Pulse tries to
-           detect when there is a possibility of imprecise arithmetic
-           treatment and if so pessimistically assumes the path is
-           infeasible. (Conversely: --no-pulse-prune-unsupported-arithmetic)       
-    See also infer-analyze(1).
-
        --pulse-report-ignore-unknown-java-methods-patterns +string
            On Java, issues that are found on program paths that contain calls
            to unknown methods (those without implementation) are not reported
@@ -1159,6 +1163,44 @@ OPTIONS
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.       
     See also infer-analyze(1).
+
+       --pulse-taint-policies json
+           A description of which taint flows should be reported, following
+           this JSON format:             { "short_description": "<a short description of the issue>",
+               "taint_flows": [{ "source_kinds": [<matchers>],
+                                 "sink_kinds": [<matchers>],
+                                 "sanitizer_kinds": [<matchers>]}]
+             }
+           where <matchers> are in the same format as --pulse-taint-sources;
+           the field "sanitizer_kinds" is optional (assumed to be empty), and
+           a policy may have several taint flows in the form of a list.
+           See also infer-analyze(1).
+
+       --pulse-taint-sanitizers json
+           Quick way to specify simple sanitizers as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.       
+    See also infer-analyze(1).
+
+       --pulse-taint-sinks json
+           Quick way to specify simple sinks as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.       
+    See also infer-analyze(1).
+
+       --pulse-taint-sources json
+           Together with --pulse-taint-sanitizers, --pulse-taint-sinks, and
+           --pulse-taint-specifications, specify taint properties. The JSON
+           format of sources also applies to sinks and sanitizers. It
+           consists of a list of objects with the following fields, for
+           example '[{"procedure": "mySimpleSink", "formals": [{"index":
+           1}]}]':             - "procedure" to match a substring of the function or method
+           name, or "procedure_regex" to specify an OCaml regex
+             - "formals" is a list of objects with one or two fields:
+               - "index" is the index of the formal that is tainted,
+           starting at 0. For methods, index 0 is this, other arguments start
+           at index 1
+               - "type_name" is optional string; only arguments whose type
+           contains this substring match
+           See also infer-analyze(1).
 
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
@@ -1556,8 +1598,12 @@ FILES
        location of the .inferconfig file
        - cumulative options are JSON arrays of the appropriate type
 
-       Infer will look for an .inferconfig file in the current directory,
-       then its parent, etc., stopping at the first .inferconfig file found.
+       If an .inferconfig file is specified on the command line with
+       --inferconfig-path then Infer will use that. Otherwise, Infer will
+       look for an .inferconfig file in the environment variable INFERCONFIG.
+       Finally, Infer will first look for an .inferconfig file in the current
+       directory, then its parent, etc., stopping at the first .inferconfig
+       file found.
 
        Example:
 

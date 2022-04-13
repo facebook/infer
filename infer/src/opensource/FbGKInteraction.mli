@@ -15,9 +15,9 @@ module ConfigName : sig
   val pp : Format.formatter -> t -> unit
 end
 
-val get_config : 'exp -> 'config_name option
+val get_config : is_param:'is_param -> 'exp -> 'config_name option
 
-val get_config_check : 'tenv -> 'pname -> 'args -> 'a option
+val get_config_check : is_param:'is_param -> 'tenv -> 'pname -> 'args -> 'a option
 
 val is_lazy_instance : 'pname -> bool
 

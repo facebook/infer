@@ -135,6 +135,12 @@ let list_fold2 l1 l2 ~init ~f =
       f acc x1 x2 )
 
 
+let list_foldi ~init ~f l =
+  List.foldi l ~init:(Ok init) ~f:(fun i result x ->
+      let* acc = result in
+      f i acc x )
+
+
 let container_fold :
        fold:('t, 'a, ('accum, 'err) t) Container.fold
     -> 't

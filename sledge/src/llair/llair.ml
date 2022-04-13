@@ -667,7 +667,7 @@ module Func = struct
       Format.fprintf fs "@[%a / %a@]" Exp.pp actual Reg.pp formal
     in
     let pp_args fs (actuals, formals) =
-      IArray.pp ",@ " pp_arg fs (IArray.combine_exn actuals formals)
+      IArray.pp ",@ " pp_arg fs (IArray.combine actuals formals)
     in
     Format.fprintf fs "%a%a(@[%a@])"
       (Option.pp "%a := " pp_arg)

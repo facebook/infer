@@ -30,3 +30,13 @@ let pp_config ~verbose fmt =
 let pp = pp_config ~verbose:true
 
 let describe = pp_config ~verbose:false
+
+let pp_name_only fmt = function
+  | Call proc_name ->
+      F.fprintf fmt "%a" Procname.pp proc_name
+  | Model model ->
+      F.fprintf fmt "%s" model
+  | SkippedKnownCall proc_name ->
+      F.fprintf fmt "%a" Procname.pp proc_name
+  | SkippedUnknownCall call_exp ->
+      F.fprintf fmt "%a" Exp.pp call_exp

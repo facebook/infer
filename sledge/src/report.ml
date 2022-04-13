@@ -92,6 +92,13 @@ let pp_status ppf stat =
   | Assert msg -> pf "Assert: %s" msg
   | UnknownError msg -> pf "Unknown error: %s" msg
 
+let pp_status_coarse ppf stat =
+  let pf fmt = Format.fprintf ppf fmt in
+  match stat with
+  | InvalidInput _ -> pf "Invalid input"
+  | Abort | Unimplemented _ | UnknownError _ -> pf "Error"
+  | _ -> pp_status ppf stat
+
 let safe_or_unsafe () =
   if !alarm_count = 0 then Safe {bound= !bound; switches= !switches}
   else Unsafe {alarms= !alarm_count; bound= !bound; switches= !switches}

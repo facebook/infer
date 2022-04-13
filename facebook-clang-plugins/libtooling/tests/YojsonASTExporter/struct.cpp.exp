@@ -1652,6 +1652,14 @@
         {
         }
       )>,
+      <"PointerType" : (
+        {
+          "pointer" : 127
+        },
+        {
+          "type_ptr" : 18
+        }
+      )>,
       <"RecordType" : (
         {
           "pointer" : 39
@@ -1666,7 +1674,7 @@
       )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 127
+          "pointer" : 128
         },
         {
           "base_type" : 109
@@ -1674,32 +1682,32 @@
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 128
+          "pointer" : 129
         },
         {
-          "type_ptr" : 127
+          "type_ptr" : 128
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 129,
-          "desugared_type" : 128
+          "pointer" : 130,
+          "desugared_type" : 129
         },
         {
           "child_type" : {
-            "type_ptr" : 128
+            "type_ptr" : 129
           },
-          "decl_ptr" : 130
+          "decl_ptr" : 131
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 51,
-          "desugared_type" : 128
+          "desugared_type" : 129
         },
         {
           "child_type" : {
-            "type_ptr" : 129
+            "type_ptr" : 130
           },
           "decl_ptr" : 50
         }

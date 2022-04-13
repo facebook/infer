@@ -104,3 +104,8 @@ void array_deref_of_address() {
   int* x = NULL;
   *(&x[0]) = 42;
 }
+
+void pass_null_to_deref() {
+  int z = 11;
+  deref(NULL, &z);
+}

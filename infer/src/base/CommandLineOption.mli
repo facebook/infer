@@ -260,3 +260,6 @@ val show_manual :
     default values for options. *)
 
 val keep_args_file : bool ref
+
+val inferconfig_path_arg : string
+(** name of argument for choosing path to inferconfig *)

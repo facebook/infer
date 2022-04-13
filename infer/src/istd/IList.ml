@@ -208,6 +208,10 @@ let fold2_result ~init ~f l1 l2 =
       Result.bind result ~f:(fun acc -> f acc x1 x2) )
 
 
+let foldi_result ~init ~f l =
+  List.foldi l ~init:(Ok init) ~f:(fun i result x -> Result.bind result ~f:(fun acc -> f i acc x))
+
+
 let eval_until_first_some thunks = List.find_map thunks ~f:(fun f -> f ())
 
 let rec product = function

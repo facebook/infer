@@ -29,7 +29,7 @@ type event =
   | NilMessaging of Location.t * Timestamp.t
   | Returned of Location.t * Timestamp.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t * Timestamp.t
-  | TaintSource of Taint.source * Location.t * Timestamp.t
+  | TaintSource of Taint.t * Location.t * Timestamp.t
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
@@ -249,7 +249,7 @@ let pp_event_no_location fmt event =
   | StructFieldAddressCreated (field_names, _, _) ->
       F.fprintf fmt "struct field address `%a` created" pp_fields field_names
   | TaintSource (taint_source, _, _) ->
-      F.fprintf fmt "source of the taint here: %a" Taint.pp_source taint_source
+      F.fprintf fmt "source of the taint here: %a" Taint.pp taint_source
   | VariableAccessed (pvar, _, _) ->
       F.fprintf fmt "%a accessed here" pp_pvar pvar
   | VariableDeclared (pvar, _, _) ->

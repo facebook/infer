@@ -312,9 +312,9 @@ module JsonConfigImpactPrinterElt = struct
     { loc: Location.t
     ; proc_name: Procname.t
     ; config_impact_opt: ConfigImpactAnalysis.Summary.t option
-    ; is_strict: bool }
+    ; mode: Jsonconfigimpact_t.config_impact_mode }
 
-  let to_string {loc; proc_name; config_impact_opt; is_strict} =
+  let to_string {loc; proc_name; config_impact_opt; mode} =
     if is_in_clang_header loc.file then None
     else
       Option.map config_impact_opt ~f:(fun config_impact ->
@@ -326,12 +326,7 @@ module JsonConfigImpactPrinterElt = struct
             |> ConfigImpactAnalysis.UncheckedCallees.encode
           in
           Jsonconfigimpact_j.string_of_item
-            { Jsonconfigimpact_t.hash
-            ; loc
-            ; procedure_name
-            ; procedure_id
-            ; unchecked_callees
-            ; is_strict } )
+            {Jsonconfigimpact_t.hash; loc; procedure_name; procedure_id; unchecked_callees; mode} )
 end
 
 module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)
@@ -367,7 +362,8 @@ let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile
   if
     ( ExternalConfigImpactData.is_in_config_data_file proc_name
     || (Config.config_impact_strict_mode && List.is_empty Config.config_impact_strict_mode_paths)
-    || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file )
+    || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file
+    || ConfigImpactAnalysis.is_in_strict_beta_mode_paths loc.Location.file )
     && is_in_changed_files loc
   then
     if ConfigImpactPostProcess.is_in_gated_classes proc_name then ()
@@ -377,7 +373,7 @@ let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile
         Option.map config_impact_opt ~f:ConfigImpactPostProcess.instantiate_unchecked_callees_cond
       in
       JsonConfigImpactPrinter.pp outfile.fmt
-        {loc; proc_name; config_impact_opt; is_strict= ConfigImpactAnalysis.strict_mode}
+        {loc; proc_name; config_impact_opt; mode= ConfigImpactAnalysis.mode}
 
 
 let process_summary proc_name loc ~cost:(cost_opt, costs_outf)

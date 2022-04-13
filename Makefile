@@ -64,6 +64,7 @@ DIRECT_TESTS += \
   cpp_bufferoverrun \
   cpp_conflicts \
   cpp_frontend \
+  cpp_frontend-17 \
   cpp_impurity \
   cpp_linters \
   cpp_linters-for-test-only \
@@ -215,6 +216,7 @@ DIRECT_TESTS += \
 ifneq ($(KOTLINC), no)
 DIRECT_TESTS += \
   kotlin_racerd \
+  kotlin_resources \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
@@ -237,6 +239,7 @@ DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-config-impact-paths \
   java_fb-config-impact-strict \
+  java_fb-config-impact-strict-beta-paths \
   java_fb-immutability \
   java_fb-performance
 endif

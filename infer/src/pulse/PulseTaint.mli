@@ -8,10 +8,20 @@
 open! IStd
 module F = Format
 
-type source = ReturnValue of Procname.t [@@deriving compare, equal]
+module Kind : sig
+  type t [@@deriving compare, equal]
 
-val pp_source : F.formatter -> source -> unit
+  val pp : F.formatter -> t -> unit
 
-type sink = PassedAsArgumentTo of Procname.t [@@deriving compare, equal]
+  val of_string : string -> t
 
-val pp_sink : F.formatter -> sink -> unit
+  val hash : t -> int
+
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+end
+
+type origin = Argument of {index: int} | ReturnValue
+
+type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
+
+val pp : F.formatter -> t -> unit

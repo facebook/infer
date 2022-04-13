@@ -583,6 +583,8 @@ let is_erlang_unsupported name =
       false
 
 
+let is_erlang = function Erlang _ -> true | _ -> false
+
 let equal = [%compare.equal: t]
 
 let rec compare_name x y =
@@ -644,6 +646,13 @@ let with_block_parameters base blocks = WithBlockParameters (base, blocks)
 let is_copy_ctor = function
   | ObjC_Cpp objc_cpp_pname ->
       ObjC_Cpp.is_copy_ctor objc_cpp_pname
+  | _ ->
+      false
+
+
+let is_destructor = function
+  | ObjC_Cpp objc_cpp_pname ->
+      ObjC_Cpp.is_destructor objc_cpp_pname
   | _ ->
       false
 
