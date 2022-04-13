@@ -308,12 +308,30 @@ let conjoin_callee_arith pre_post call_state =
     else {call_state with astate; subst}
 
 
+let caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller_history call_state
+    callee_attrs =
+  let subst_ref = ref call_state.subst in
+  let f_subst v =
+    let subst, (v', _hist) =
+      subst_find_or_new !subst_ref v ~default_hist_caller:ValueHistory.epoch
+    in
+    subst_ref := subst ;
+    v'
+  in
+  let attrs =
+    Attributes.add_call_and_subst f_subst timestamp callee_proc_name call_location caller_history
+      callee_attrs
+  in
+  ({call_state with subst= !subst_ref}, attrs)
+
+
 let apply_arithmetic_constraints {PathContext.timestamp} callee_proc_name call_location pre_post
     call_state =
   let open PulseResult.Let_syntax in
   let one_address_sat callee_attrs (addr_caller, caller_history) call_state =
-    let attrs_caller =
-      Attributes.add_call timestamp callee_proc_name call_location caller_history callee_attrs
+    let call_state, attrs_caller =
+      caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller_history
+        call_state callee_attrs
     in
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_caller call_state.astate in
     if phys_equal astate call_state.astate then call_state else {call_state with astate}
@@ -417,8 +435,9 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
 let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc ~edges_pre_opt
     ~cell_callee_post:(edges_callee_post, attrs_callee_post) (addr_caller, hist_caller) call_state =
   let call_state =
-    let attrs_post_caller =
-      Attributes.add_call timestamp callee_proc_name call_loc hist_caller attrs_callee_post
+    let call_state, attrs_post_caller =
+      caller_attrs_of_callee_attrs timestamp callee_proc_name call_loc hist_caller call_state
+        attrs_callee_post
     in
     let astate =
       if Attributes.is_java_resource_released attrs_post_caller then
@@ -616,7 +635,10 @@ let record_post_remaining_attributes {PathContext.timestamp} callee_proc_name ca
         | None ->
             (* callee address has no meaning for the caller *) call_state
         | Some (addr_caller, history) ->
-            let attrs' = Attributes.add_call timestamp callee_proc_name call_loc history attrs in
+            let call_state, attrs' =
+              caller_attrs_of_callee_attrs timestamp callee_proc_name call_loc history call_state
+                attrs
+            in
             let astate = AddressAttributes.abduce_and_add addr_caller attrs' call_state.astate in
             {call_state with astate} )
     (pre_post.AbductiveDomain.post :> BaseDomain.t).attrs call_state
@@ -776,7 +798,7 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                       ; astate } ) )
 
 
-let check_all_taint_valid callee_proc_name call_location pre_post astate call_state_subst =
+let check_all_taint_valid path callee_proc_name call_location pre_post astate call_state_subst =
   let open PulseResult.Let_syntax in
   AddressMap.fold
     (fun addr_pre (addr_caller, hist_caller) astate_result ->
@@ -795,9 +817,8 @@ let check_all_taint_valid callee_proc_name call_location pre_post astate call_st
               ; location= call_location
               ; history= hist_caller }
           in
-          PulseTaintOperations.check_not_tainted_wrt_sink call_location (sink, sink_trace)
-            addr_caller astate
-          |> AccessResult.of_result )
+          PulseTaintOperations.check_not_tainted_wrt_sink path call_location (sink, sink_trace)
+            addr_caller astate )
     call_state_subst (Ok astate)
 
 
@@ -918,7 +939,8 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
             (* This has to happen after the post has been applied so that we are aware of any
                sanitizers applied to tainted values too, otherwise we'll report false positives if
                the callee both taints and sanitizes a value *)
-            check_all_taint_valid callee_proc_name call_location pre_post astate call_state.subst
+            check_all_taint_valid path callee_proc_name call_location pre_post astate
+              call_state.subst
         in
         (astate, return_caller, call_state.subst))
     with Contradiction reason ->

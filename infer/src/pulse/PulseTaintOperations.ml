@@ -53,6 +53,7 @@ type matcher =
 
 type sink_policy =
   {source_kinds: Taint.Kind.t list; sanitizer_kinds: Taint.Kind.t list; description: string}
+[@@deriving equal]
 
 let sink_policies = Hashtbl.create (module Taint.Kind)
 
@@ -271,48 +272,86 @@ let taint_sanitizers tenv return proc_name actuals astate =
   astate
 
 
-let check_policy ~sink ~source ~sanitizer_opt =
-  let policies =
-    List.map sink.Taint.kinds ~f:(fun sink_kind -> Hashtbl.find_exn sink_policies sink_kind)
+let check_policies ~sink ~source ~sanitizer_opt =
+  let sinks_policies =
+    List.map sink.Taint.kinds ~f:(fun sink_kind ->
+        (sink_kind, Hashtbl.find_exn sink_policies sink_kind) )
   in
-  List.fold_result policies ~init:() ~f:(fun () policy ->
-      List.fold_result policy ~init:() ~f:(fun () {source_kinds; sanitizer_kinds} ->
-          if
-            List.exists source.Taint.kinds ~f:(fun source_kind ->
+  List.fold_result sinks_policies ~init:() ~f:(fun () (sink_kind, policies) ->
+      List.fold_result policies ~init:() ~f:(fun () ({source_kinds; sanitizer_kinds} as policy) ->
+          match
+            List.find source.Taint.kinds ~f:(fun source_kind ->
                 List.mem ~equal:Taint.Kind.equal source_kinds source_kind )
-          then (
-            L.d_printfln ~color:Red "TAINTED: %a" Taint.pp source ;
-            if
-              Option.exists sanitizer_opt ~f:(fun sanitizer ->
-                  List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
-                      List.mem ~equal:Taint.Kind.equal sanitizer_kinds sanitizer_kind ) )
-            then (
-              L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp
-                (Option.value_exn sanitizer_opt) ;
-              Ok () )
-            else Error () )
-          else Ok () ) )
+          with
+          | None ->
+              Ok ()
+          | Some suspicious_source ->
+              L.d_printfln ~color:Red "TAINTED: %a -> %a" Taint.Kind.pp suspicious_source
+                Taint.Kind.pp sink_kind ;
+              if
+                Option.exists sanitizer_opt ~f:(fun sanitizer ->
+                    List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
+                        List.mem ~equal:Taint.Kind.equal sanitizer_kinds sanitizer_kind ) )
+              then (
+                L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp
+                  (Option.value_exn sanitizer_opt) ;
+                Ok () )
+              else
+                (* TODO: we may want to collect *all* the policies that are violated instead of just
+                   the first one *)
+                Error (suspicious_source, sink_kind, policy) ) )
 
 
-let check_not_tainted_wrt_sink location (sink, sink_trace) v astate : _ Result.t =
-  L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
-  match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer v astate with
-  | None ->
-      Ok astate
-  | Some ((source, source_hist, _), sanitizer_opt) -> (
-      L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
-      match check_policy ~sink ~source ~sanitizer_opt with
-      | Ok () ->
-          Ok astate
-      | Error () ->
-          let tainted = Decompiler.find v astate in
-          Error
-            (ReportableError
-               { astate
-               ; diagnostic=
-                   TaintFlow
-                     {tainted; location; source= (source, source_hist); sink= (sink, sink_trace)} }
-            ) )
+let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
+  let check_immediate policy_violations_reported v astate =
+    L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
+    match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer v astate with
+    | None ->
+        Ok (policy_violations_reported, astate)
+    | Some ((source, source_hist, _), sanitizer_opt) -> (
+        L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
+        match check_policies ~sink ~source ~sanitizer_opt with
+        | Ok () ->
+            Ok (policy_violations_reported, astate)
+        | Error (source_kind, sink_kind, policy) ->
+            (* HACK: compare by pointer as policies are fixed throughout execution and each policy
+               record is different from all other policies; we could optimise this check by keeping
+               a set of policies around instead of a list, eg assign an integer id to each policy
+               (using a simple incrementing counter when reading the configuration) and comparing
+               only that id. *)
+            if List.mem ~equal:phys_equal policy_violations_reported policy then
+              Ok (policy_violations_reported, astate)
+            else
+              let tainted = Decompiler.find v astate in
+              Recoverable
+                ( (policy :: policy_violations_reported, astate)
+                , [ ReportableError
+                      { astate
+                      ; diagnostic=
+                          TaintFlow
+                            { tainted
+                            ; location
+                            ; source= ({source with kinds= [source_kind]}, source_hist)
+                            ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } } ] ) )
+  in
+  let rec check_dependencies policy_violations_reported visited v astate =
+    match AbductiveDomain.AddressAttributes.get_propagate_taint_from v astate with
+    | None ->
+        Ok astate
+    | Some taints_in ->
+        PulseResult.list_fold taints_in ~init:astate ~f:(fun astate {Attribute.v= v'} ->
+            check policy_violations_reported visited v' astate )
+  and check policy_violations_reported visited v astate =
+    if AbstractValue.Set.mem v visited then Ok astate
+    else
+      let visited = AbstractValue.Set.add v visited in
+      let astate = AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate in
+      let* policy_violations_reported, astate =
+        check_immediate policy_violations_reported v astate
+      in
+      check_dependencies policy_violations_reported visited v astate
+  in
+  check [] AbstractValue.Set.empty v astate
 
 
 let taint_sinks tenv path location return proc_name actuals astate =
@@ -323,11 +362,7 @@ let taint_sinks tenv path location return proc_name actuals astate =
         let astate =
           AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
         in
-        match check_not_tainted_wrt_sink location (sink, sink_trace) v astate with
-        | Ok astate ->
-            Ok astate
-        | Error report ->
-            Recoverable (astate, [report]) )
+        check_not_tainted_wrt_sink path location (sink, sink_trace) v astate )
   in
   (astate, not (List.is_empty tainted))
 
@@ -375,13 +410,22 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
         L.d_printfln "not propagating taint" ;
         (false, false)
   in
-  if propagate_to_return || propagate_to_receiver then
-    List.fold actuals ~init:astate
+  let propagate_to v values astate =
+    let astate =
+      if not (List.is_empty values) then
+        AbductiveDomain.AddressAttributes.add_one v
+          (PropagateTaintFrom
+             (List.map values ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= v, _hist} ->
+                  {Attribute.v} ) ) )
+          astate
+      else astate
+    in
+    List.fold values ~init:astate
       ~f:(fun astate {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
         match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer actual astate with
         | None ->
             astate
-        | Some ((source, source_hist, intra_procedural_only), sanitizer_opt) -> (
+        | Some ((source, source_hist, intra_procedural_only), sanitizer_opt) ->
             let hist =
               ValueHistory.sequence ~context:path.PathContext.conditions
                 (Call
@@ -391,31 +435,29 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
                    ; in_call= ValueHistory.epoch } )
                 source_hist
             in
-            let propagate_to value astate =
-              L.d_printfln "tainting %a as source" AbstractValue.pp value ;
-              let astate =
-                AbductiveDomain.AddressAttributes.add_one value
-                  (Tainted {source; hist; intra_procedural_only})
-                  astate
-              in
-              Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
-                  L.d_printfln "registering %a as sanitizer" AbstractValue.pp value ;
-                  AbductiveDomain.AddressAttributes.add_one value (TaintSanitized sanitizer) astate )
-            in
+            L.d_printfln "tainting %a as source" AbstractValue.pp v ;
             let astate =
-              match Stack.find_opt return astate with
-              | Some (return_value, _) when propagate_to_return ->
-                  propagate_to return_value astate
-              | _ ->
-                  astate
+              AbductiveDomain.AddressAttributes.add_one v
+                (Tainted {source; hist; intra_procedural_only})
+                astate
             in
-            match actuals with
-            | {ProcnameDispatcher.Call.FuncArg.arg_payload= this, _hist} :: _
-              when propagate_to_receiver ->
-                propagate_to this astate
-            | _ ->
-                astate ) )
-  else astate
+            Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
+                L.d_printfln "registering %a as sanitizer" AbstractValue.pp v ;
+                AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate ) )
+  in
+  let astate =
+    match Stack.find_opt return astate with
+    | Some (return_value, _) when propagate_to_return ->
+        propagate_to return_value actuals astate
+    | _ ->
+        astate
+  in
+  match actuals with
+  | {ProcnameDispatcher.Call.FuncArg.arg_payload= this, _hist} :: other_actuals
+    when propagate_to_receiver ->
+      propagate_to this other_actuals astate
+  | _ ->
+      astate
 
 
 (* some pulse models are not a faithful reflection of the behaviour and should be treated as unknown

@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
@@ -25,6 +26,8 @@ type allocator =
 
 val pp_allocator : F.formatter -> allocator -> unit
 
+type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
+
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
@@ -40,6 +43,7 @@ type t =
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
   | MustNotBeTainted of Timestamp.t * Taint.t * Trace.t
   | JavaResourceReleased
+  | PropagateTaintFrom of taint_in list
   | RefCounted
   | SourceOriginOfCopy of PulseAbstractValue.t
       (** records the source value for a given copy to lookup the appropriate heap in non-disj
@@ -91,6 +95,8 @@ module Attributes : sig
 
   val get_tainted : t -> (Taint.t * ValueHistory.t * bool) option
 
+  val get_propagate_taint_from : t -> taint_in list option
+
   val get_taint_sanitized : t -> Taint.t option
 
   val get_isl_abduced : t -> Trace.t option
@@ -122,7 +128,14 @@ module Attributes : sig
   (** While applying a spec, replacing ISLAbduced by Allocated and Invalidation.Cfree by
       Invalidation.delete, if applicable *)
 
-  val add_call : Timestamp.t -> Procname.t -> Location.t -> ValueHistory.t -> t -> t
+  val add_call_and_subst :
+       (AbstractValue.t -> AbstractValue.t)
+    -> Timestamp.t
+    -> Procname.t
+    -> Location.t
+    -> ValueHistory.t
+    -> t
+    -> t
 
   val get_allocated_not_freed : t -> (allocator * Trace.t) option
 

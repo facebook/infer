@@ -22,10 +22,11 @@ val call :
 (** add sources and sinks coming from a particular call site *)
 
 val check_not_tainted_wrt_sink :
-     Location.t
+     PathContext.t
+  -> Location.t
   -> Taint.t * Trace.t
   -> AbstractValue.t
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t, AccessResult.error) result
+  -> AbductiveDomain.t AccessResult.t
 
 val taint_initial : Tenv.t -> Procdesc.t -> AbductiveDomain.t -> AbductiveDomain.t

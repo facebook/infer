@@ -11,6 +11,8 @@ module F = Format
 module Kind : sig
   type t [@@deriving compare, equal]
 
+  val pp : F.formatter -> t -> unit
+
   val of_string : string -> t
 
   val hash : t -> int

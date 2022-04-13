@@ -294,6 +294,13 @@ module AddressAttributes = struct
     (source, sanitizer_opt)
 
 
+  let get_propagate_taint_from addr astate =
+    let attrs = (astate.post :> base_domain).attrs in
+    let open IOption.Let_syntax in
+    let* addr_attrs = BaseAddressAttributes.find_opt addr attrs in
+    Attribute.Attributes.get_propagate_taint_from addr_attrs
+
+
   (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
   let map_post_attrs ~f astate =
     let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
