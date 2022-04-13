@@ -143,6 +143,10 @@ features_guard_bifs:test_accepts_bool_nomodule1_Ok/0: ok
 features_guard_bifs:test_accepts_bool_nomodule2_Ok/0: ok
 features_guard_bifs:test_accepts_bool_nomodule3_Bad/0: function_clause
 features_guard_bifs:test_accepts_bool_nomodule4_Bad/0: function_clause
+features_guard_bifs:test_accepts_integer1_Ok/0: ok
+features_guard_bifs:test_accepts_integer2_Bad/0: function_clause
+features_guard_bifs:test_accepts_integer_nomodule1_Ok/0: ok
+features_guard_bifs:test_accepts_integer_nomodule2_Bad/0: function_clause
 features_guard_bifs:test_is_list1_Ok/0: ok
 features_guard_bifs:test_is_list1_nomodule_Ok/0: ok
 features_guard_bifs:test_is_list2_Ok/0: ok

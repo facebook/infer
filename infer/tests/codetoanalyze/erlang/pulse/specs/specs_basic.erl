@@ -55,7 +55,9 @@
     any_Latent/1,
     any_Ok/1,
     test_no_args_Ok/0,
-    test_no_args_Bad/0
+    test_no_args_Bad/0,
+    integer1_Ok/1,
+    integer2_Latent/1
 ]).
 
 -spec any_Ok(any()) -> any().
@@ -209,3 +211,8 @@ test_no_args_Ok() -> 1 = 1.
 
 -spec test_no_args_Bad() -> any().
 test_no_args_Bad() -> 1 = 2.
+
+-spec integer1_Ok(integer()) -> any().
+integer1_Ok(X) when is_integer(X) -> ok.
+
+integer2_Latent(X) when is_integer(X) -> ok.
