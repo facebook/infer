@@ -82,7 +82,7 @@ end = struct
     let heap' = BaseMemory.filter (fun address _ -> f address) foot.heap in
     let attrs', discarded_addresses =
       if heap_only then (foot.attrs, [])
-      else BaseAddressAttributes.filter_with_discarded_addrs (fun address _ -> f address) foot.attrs
+      else BaseAddressAttributes.filter_with_discarded_addrs f foot.attrs
     in
     (update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
 

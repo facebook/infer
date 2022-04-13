@@ -16,8 +16,7 @@ val filter : (AbstractValue.t -> Attributes.t -> bool) -> t -> t
 
 val for_all : (AbstractValue.t -> Attributes.t -> bool) -> t -> bool
 
-val filter_with_discarded_addrs :
-  (AbstractValue.t -> Attributes.t -> bool) -> t -> t * AbstractValue.t list
+val filter_with_discarded_addrs : (AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
 
 val find_opt : AbstractValue.t -> t -> Attributes.t option
 

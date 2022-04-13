@@ -63,10 +63,32 @@ let empty = Graph.empty
 
 let filter = Graph.filter
 
-let filter_with_discarded_addrs f x =
+let filter_with_discarded_addrs f_keep memory =
   fold
-    (fun k v ((x, discarded) as acc) -> if f k v then acc else (Graph.remove k x, k :: discarded))
-    x (x, [])
+    (fun addr attrs ((memory, discarded) as acc) ->
+      if f_keep addr then
+        let attrs' =
+          Attributes.fold attrs ~init:attrs ~f:(fun attrs' attr ->
+              match Attribute.filter_unreachable f_keep attr with
+              | None ->
+                  Attributes.remove attr attrs'
+              | Some attr' ->
+                  if phys_equal attr attr' then attrs'
+                  else
+                    let attrs' = Attributes.remove attr attrs' in
+                    Attributes.add attrs' attr' )
+        in
+        if phys_equal attrs attrs' then acc
+        else
+          ( Graph.update addr
+              (fun _ -> if Attributes.is_empty attrs' then None else Some attrs')
+              memory
+          , (* HACK: don't add to the discarded addresses even if we did discard all the attributes
+               of the address; this is ok because the list of discarded addresses is only relevant
+               to allocation attributes, which are not affected by this filtering... sorry! *)
+            discarded )
+      else (Graph.remove addr memory, addr :: discarded) )
+    memory (memory, [])
 
 
 let pp = Graph.pp

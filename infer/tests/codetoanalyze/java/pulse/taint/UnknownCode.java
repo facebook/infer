@@ -68,9 +68,12 @@ public abstract class UnknownCode {
     propagateFootprint((String) InferTaint.inferSecretSource());
   }
 
+  static native Object nativeMethod2(Object o, int i);
+
   String propagateTaint(String param) {
     String a = param;
-    return (String) nativeMethod(a);
+    int i = 1234;
+    return (String) nativeMethod2(a, i);
   }
 
   // the trace is not the best at the moment, worth improving

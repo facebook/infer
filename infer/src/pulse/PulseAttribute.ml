@@ -351,6 +351,35 @@ module Attribute = struct
         is_released
     | _ ->
         false
+
+
+  let filter_unreachable f_keep = function
+    | PropagateTaintFrom taints_in ->
+        let taints_in' = List.filter taints_in ~f:(fun {v} -> f_keep v) in
+        if List.is_empty taints_in' then None else Some (PropagateTaintFrom taints_in')
+    | ( AddressOfCppTemporary _
+      | AddressOfStackVariable _
+      | Allocated _
+      | Closure _
+      | CopiedVar _
+      | DynamicType _
+      | EndOfCollection
+      | Invalid _
+      | ISLAbduced _
+      | MustBeInitialized _
+      | MustBeValid _
+      | MustNotBeTainted _
+      | JavaResourceReleased
+      | RefCounted
+      | SourceOriginOfCopy _
+      | StdVectorReserve
+      | Tainted _
+      | TaintSanitized _
+      | Uninitialized
+      | UnknownEffect _
+      | UnreachableAt _
+      | WrittenTo _ ) as attr ->
+        Some attr
 end
 
 module Attributes = struct
