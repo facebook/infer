@@ -138,8 +138,7 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       succ_true env
 
 
-let disjunct_condition (env : (_, _) Env.t) arg_ids (function_ : Ast.function_)
-    (specd : Ast.spec_disjunct) : Block.t * Exp.t =
+let disjunct_condition (env : (_, _) Env.t) arg_ids (specd : Ast.spec_disjunct) : Block.t * Exp.t =
   (* Generate condition for the type of each argument and form a conjunction. *)
   match List.zip arg_ids specd.arguments with
   | Ok args_with_types ->
@@ -149,16 +148,14 @@ let disjunct_condition (env : (_, _) Env.t) arg_ids (function_ : Ast.function_)
       (Block.all env blocks, combine_bool ~op:Binop.LAnd ~default:true_const exprs)
   | Unequal_lengths ->
       L.debug Capture Verbose
-        "@[Number of arguments and specs do not match in module %s function %s@." env.current_module
-        (Sexp.to_string (ErlangAst.sexp_of_function_ function_)) ;
+        "@[Number of arguments and specs do not match in module %s for spec %s@." env.current_module
+        (Sexp.to_string (ErlangAst.sexp_of_spec_disjunct specd)) ;
       succ_true env
 
 
 let prune_spec (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
   (* Generate condition for each disjunct recursively and form a disjunction in a prune node. *)
-  let blocks, conditions =
-    List.unzip (List.map ~f:(disjunct_condition env arg_ids spec.function_) spec.specs)
-  in
+  let blocks, conditions = List.unzip (List.map ~f:(disjunct_condition env arg_ids) spec) in
   (* We could also use nondeterminism among blocks which could give more precision. *)
   (* Overloads shouldn't be empty, but if it somehow happens, just return true. *)
   let condition = combine_bool ~op:Binop.LOr ~default:true_const conditions in

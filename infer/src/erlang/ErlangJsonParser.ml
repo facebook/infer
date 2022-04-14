@@ -680,11 +680,7 @@ let to_spec_disjunct json : Ast.spec_disjunct option =
       unknown "spec" json
 
 
-let to_spec func_json specs_json : Ast.spec option =
-  let* function_ = to_function ~check_no_module:false func_json in
-  let* specs = to_list ~f:to_spec_disjunct specs_json in
-  Some {Ast.function_; specs}
-
+let to_spec = to_list ~f:to_spec_disjunct
 
 let to_loc_form json : Ast.form option =
   let form location simple_form : Ast.form option = Some {location; simple_form} in
@@ -715,8 +711,9 @@ let to_loc_form json : Ast.form option =
       form loc (Record {name; fields= field_list})
   | `List [`String "attribute"; anno; `String "spec"; `List [func_json; specs_json]] ->
       let* loc = to_loc anno in
-      let* spec = to_spec func_json specs_json in
-      form loc (Spec spec)
+      let* function_ = to_function ~check_no_module:false func_json in
+      let* spec = to_spec specs_json in
+      form loc (Spec {function_; spec})
   | `List [`String "attribute"; anno; `String "type"; `List [`String name; type_json; `List []]] ->
       let* loc = to_loc anno in
       let* type_ = to_type type_json in
