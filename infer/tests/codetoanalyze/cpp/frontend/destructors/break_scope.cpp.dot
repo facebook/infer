@@ -575,7 +575,7 @@ digraph cfg {
 	
 
 	 "operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_6" -> "operator++#iterator#break_scope(class break_scope::iterator)#(2766485846133390801).12f92dbbbaf6641d4bc9bd9bd9586210_3" ;
-"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_1" [label="1: Start break_scope::iterator::operator*\nFormals:  this:break_scope::iterator* __return_param:break_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const  \n  " color=yellow style=filled]
+"operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_1" [label="1: Start break_scope::iterator::operator*\nFormals:  this:break_scope::iterator const * __return_param:break_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::X const  \n  " color=yellow style=filled]
 	
 
 	 "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_1" -> "operator*#iterator#break_scope(class break_scope::X)#(4328339407583570703).89adb890a0c29514eda31053987e2050_5" ;
@@ -667,7 +667,7 @@ digraph cfg {
 	
 
 	 "iterator#iterator#break_scope#{}4422062655324687513.04038f4d1a1fc9aa8365fbf4de64229a_6" -> "iterator#iterator#break_scope#{}4422062655324687513.04038f4d1a1fc9aa8365fbf4de64229a_3" ;
-"get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_1" [label="1: Start break_scope::vec::get\nFormals:  this:break_scope::vec* pos:int __return_param:break_scope::X*\nLocals:  \n  " color=yellow style=filled]
+"get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_1" [label="1: Start break_scope::vec::get\nFormals:  this:break_scope::vec const * pos:int __return_param:break_scope::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_1" -> "get#vec#break_scope(class break_scope::X)#(1283787980840570343).f29590f18442006705e4b1df63322511_3" ;

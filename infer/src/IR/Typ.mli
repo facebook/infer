@@ -138,6 +138,8 @@ val mk_struct : name -> t
 val mk_ptr : ?ptr_kind:ptr_kind -> t -> t
 (** make a pointer to [t], default kind is [Pk_pointer] *)
 
+val set_ptr_to_const : t -> t
+
 val get_ikind_opt : t -> ikind option
 (** Get ikind if the type is integer. *)
 

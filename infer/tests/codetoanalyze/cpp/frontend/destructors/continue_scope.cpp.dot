@@ -443,7 +443,7 @@ digraph cfg {
 	
 
 	 "~X#X#continue_scope#(15469534718766326333).9fa422dd939a9f30f1c5eb6a7ca025e6_3" -> "~X#X#continue_scope#(15469534718766326333).9fa422dd939a9f30f1c5eb6a7ca025e6_2" ;
-"operator*#iterator#continue_scope(class continue_scope::X)#(10976315504449545146).6f0a140275409bbf42ae1dbc8842f6af_1" [label="1: Start continue_scope::iterator::operator*\nFormals:  this:continue_scope::iterator* __return_param:continue_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X const  \n  " color=yellow style=filled]
+"operator*#iterator#continue_scope(class continue_scope::X)#(10976315504449545146).6f0a140275409bbf42ae1dbc8842f6af_1" [label="1: Start continue_scope::iterator::operator*\nFormals:  this:continue_scope::iterator const * __return_param:continue_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X const  \n  " color=yellow style=filled]
 	
 
 	 "operator*#iterator#continue_scope(class continue_scope::X)#(10976315504449545146).6f0a140275409bbf42ae1dbc8842f6af_1" -> "operator*#iterator#continue_scope(class continue_scope::X)#(10976315504449545146).6f0a140275409bbf42ae1dbc8842f6af_5" ;
@@ -617,7 +617,7 @@ digraph cfg {
 	
 
 	 "begin#vec#continue_scope(class continue_scope::iterator)#(10867355481694456603).8c0551e386b9f2c25bf3629672b303c4_6" -> "begin#vec#continue_scope(class continue_scope::iterator)#(10867355481694456603).8c0551e386b9f2c25bf3629672b303c4_2" ;
-"get#vec#continue_scope(class continue_scope::X)#(13898317495016814620).3829388c237a09b0f1feeaf1c583e486_1" [label="1: Start continue_scope::vec::get\nFormals:  this:continue_scope::vec* pos:int __return_param:continue_scope::X*\nLocals:  \n  " color=yellow style=filled]
+"get#vec#continue_scope(class continue_scope::X)#(13898317495016814620).3829388c237a09b0f1feeaf1c583e486_1" [label="1: Start continue_scope::vec::get\nFormals:  this:continue_scope::vec const * pos:int __return_param:continue_scope::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "get#vec#continue_scope(class continue_scope::X)#(13898317495016814620).3829388c237a09b0f1feeaf1c583e486_1" -> "get#vec#continue_scope(class continue_scope::X)#(13898317495016814620).3829388c237a09b0f1feeaf1c583e486_3" ;
