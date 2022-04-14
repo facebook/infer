@@ -19,6 +19,7 @@ SLEDGE_D_ARGS?=
 SLEDGE_A_ARGS?=-loop-bound 5 -switch-bound 3 -cct-schedule-points
 SLEDGE_S_ARGS?=
 SLEDGE_R_ARGS?=
+SLEDGE_G_ARGS?=-trace Stop.on_reached_goal
 
 # limits for each test run
 TIMEOUT?=300
@@ -98,7 +99,14 @@ AnalyzeLLs:=$(shell find -L {,local/}analyze -name '*.ll' 2>/dev/null)
 AnalyzeTests:=$(AnalyzeBCs) $(AnalyzeLLs)
 AnalyzeTests:=$(shell echo $(AnalyzeTests) | tr ' ' '\n' | $(grep_disabled))
 
-GeneratedBCs:=$(TranslateGenBCs) $(AnalyzeGenBCs)
+# code to test sledge analyze in goal-directed mode
+GoalCs:=$(shell find -L {,local/}goal -name '*.c' 2>/dev/null)
+GoalCPPs:=$(shell find -L {,local/}goal -name '*.cpp' 2>/dev/null)
+GoalGenBCs:=$(GoalCs:.c=.bc) $(GoalCPPs:.cpp=.bc)
+GoalBCs:=$(GoalGenBCs) $(shell find -L extra/goal -name '*.bc' 2>/dev/null)
+GoalTests:=$(shell echo $(GoalGenBCs) | tr ' ' '\n' | $(grep_disabled))
+
+GeneratedBCs:=$(TranslateGenBCs) $(AnalyzeGenBCs) $(GoalGenBCs)
 
 # compile all c/c++ to bc
 .PHONY: compile
@@ -153,9 +161,14 @@ analyze-perf5: compile
 analyze-perf7: compile
 	-@$(parallel_sledge_opt) $(shell $(sledge_report) sort -baseline baseline/analyze.sexp $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests) $(AnalyzeTests))
 
+# for each `goal/<foo>.c` or `goal/<foo>.cpp`, analyze with goal trace `goal/<foo>.trace`
+analyze-goal: compile
+	$(foreach test,$(GoalTests), \
+	$(sledge_dbg) llvm analyze -goal-trace $(shell cat $(test:.bc=.trace)) $(SLEDGE_A_ARGS) $(SLEDGE_G_ARGS) $(test);)
+
 .PHONY: analyze.sexp
 analyze.sexp:
-	find -L {,local/,extra/}analyze -not -path 'baseline/*' -name '*.sexp' 2>/dev/null | xargs cat > analyze.sexp
+	find -L {,local/,extra/}analyze {,local/,extra/}goal -not -path 'baseline/*' -name '*.sexp' 2>/dev/null | xargs cat > analyze.sexp
 
 baseline/analyze.sexp: analyze.sexp
 	cp analyze.sexp $@
@@ -242,7 +255,7 @@ test-translate:
 
 test-analyze:
 	-rm $(AnalyzeTests:=.sexp) $(AnalyzeTests:=.out) $(AnalyzeTests:=.err) 2>/dev/null
-	-$(MAKE) --no-print-directory analyze
+	-$(MAKE) --no-print-directory analyze analyze-goal
 	$(MAKE) --no-print-directory analyze-status
 
 test-smt:
@@ -315,7 +328,7 @@ clean: cleanbc cleanout
 AnalyzeHs:=$(shell find -L {,local/}analyze -name '*.h' 2>/dev/null)
 
 fmt:
-	clang-format -i $(AnalyzeHs) $(AnalyzeCs) $(AnalyzeCPPs)
+	clang-format -i $(AnalyzeHs) $(AnalyzeCs) $(AnalyzeCPPs) $(GoalCs) $(GoalCPPs)
 
 # print any variable for Makefile debugging
 print-%:

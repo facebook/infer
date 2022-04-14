@@ -57,6 +57,7 @@ let hit_switch_bound n = switches := n
 type status =
   | Safe of {bound: int; switches: int}
   | Unsafe of {alarms: int; bound: int; switches: int}
+  | Reached_goal
   | Ok
   | Unsound
   | Incomplete
@@ -84,6 +85,7 @@ let pp_status ppf stat =
       pf "Unsafe: %i (_,%i)" alarms bound
   | Unsafe {alarms; bound; switches} ->
       pf "Unsafe: %i (%i,%i)" alarms switches bound
+  | Reached_goal -> pf "Reached goal"
   | Ok -> pf "Ok"
   | Unsound -> pf "Unsound"
   | Incomplete -> pf "Incomplete"
