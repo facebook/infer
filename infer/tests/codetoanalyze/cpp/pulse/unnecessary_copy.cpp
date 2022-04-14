@@ -255,9 +255,7 @@ void source_dispatch_non_const_fcn_bad_FN(std::set<int> source) {
                             // actually change this*
 }
 
-// FP because we can't detect that arguments to sort are pointers
-// (wrap_iter__<int*>)
-int iterator_ptr_modified_ok_FP(const std::vector<int>& numbers) {
+int iterator_ptr_modified_ok(const std::vector<int>& numbers) {
   auto lDataValues = numbers;
   std::sort(lDataValues.begin(), lDataValues.end());
 }

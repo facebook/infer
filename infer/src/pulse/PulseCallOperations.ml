@@ -29,35 +29,44 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
   (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the
      same value for the same inputs *)
   let is_functional = ref true in
+  let should_havoc actual_typ formal_typ_opt =
+    let matches_iter =
+      QualifiedCppName.Match.of_fuzzy_qual_names ["std::__wrap_iter"; "__gnu_cxx::__normal_iterator"]
+    in
+    match actual_typ.Typ.desc with
+    | Typ.Tstruct (Typ.CppClass {name}) ->
+        QualifiedCppName.Match.match_qualifiers matches_iter name
+    | Tptr _ ->
+        (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt)
+    | _ ->
+        false
+  in
   let havoc_actual_if_ptr ((actual, _), actual_typ) formal_typ_opt astate =
     (* We should not havoc when the corresponding formal is a pointer to const *)
-    match actual_typ.Typ.desc with
-    | Tptr _ when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
-        is_functional := false ;
-        (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
-           by [actual] *)
-        let astate =
-          AbductiveDomain.apply_unknown_effect hist actual astate
-          (* record the [UnknownEffect] attribute so callers of the current procedure can apply the
-             above effects too in calling contexts where more is reachable from [actual] than here *)
-          |> AddressAttributes.add_attrs actual
-               (Attributes.singleton (UnknownEffect (reason, hist)))
+    if should_havoc actual_typ formal_typ_opt then (
+      is_functional := false ;
+      (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
+         by [actual] *)
+      let astate =
+        AbductiveDomain.apply_unknown_effect hist actual astate
+        (* record the [UnknownEffect] attribute so callers of the current procedure can apply the
+           above effects too in calling contexts where more is reachable from [actual] than here *)
+        |> AddressAttributes.add_attrs actual (Attributes.singleton (UnknownEffect (reason, hist)))
+      in
+      if Option.value_map callee_pname_opt ~default:false ~f:Procname.is_copy_ctor then astate
+      else
+        (* record the [WrittenTo] attribute for all reachable values
+           starting from actual argument so that we don't assume
+           that they are not modified in the unnecessary copy analysis. *)
+        let reachable_from_arg =
+          BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
         in
-        if Option.value_map callee_pname_opt ~default:false ~f:Procname.is_copy_ctor then astate
-        else
-          (* record the [WrittenTo] attribute for all reachable values
-             starting from actual argument so that we don't assume
-             that they are not modified in the unnecessary copy analysis. *)
-          let reachable_from_arg =
-            BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
-          in
-          let call_trace = Trace.Immediate {location= call_loc; history= hist} in
-          let written_attrs = Attributes.singleton (WrittenTo call_trace) in
-          AbstractValue.Set.fold
-            (fun reachable_actual -> AddressAttributes.add_attrs reachable_actual written_attrs)
-            reachable_from_arg astate
-    | _ ->
-        astate
+        let call_trace = Trace.Immediate {location= call_loc; history= hist} in
+        let written_attrs = Attributes.singleton (WrittenTo call_trace) in
+        AbstractValue.Set.fold
+          (fun reachable_actual -> AddressAttributes.add_attrs reachable_actual written_attrs)
+          reachable_from_arg astate )
+    else astate
   in
   let add_skipped_proc astate =
     let* astate, f =
