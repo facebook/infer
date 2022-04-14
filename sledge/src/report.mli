@@ -20,7 +20,7 @@ val reached_goal : (Format.formatter -> unit) -> unit
 type status =
   | Safe of {bound: int; switches: int}
   | Unsafe of {alarms: int; bound: int; switches: int}
-  | Reached_goal
+  | Reached_goal of {steps: int}
   | Ok
   | Unsound
   | Incomplete

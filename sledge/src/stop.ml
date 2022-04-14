@@ -8,10 +8,10 @@
 (** Stop analysis when encountering issues *)
 
 exception Stop
-exception Reached_goal
+exception Reached_goal of {steps: int}
 
 let on_unknown_call _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
 let on_alarm _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
 
-let on_reached_goal _ =
-  Trace.kprintf __FUNCTION__ (fun _ -> raise Reached_goal) ""
+let on_reached_goal steps _ =
+  Trace.kprintf __FUNCTION__ (fun _ -> raise (Reached_goal {steps})) ""

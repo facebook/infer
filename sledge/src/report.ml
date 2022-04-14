@@ -5,6 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(** Functional statistics *)
+
+let solver_steps = ref 0
+let step_solver () = Int.incr solver_steps
+let steps = ref 0
+let hit_insts = Llair.IP.Tbl.create ()
+let hit_terms = Llair.Block.Tbl.create ()
+
+let step_inst ip =
+  Llair.IP.Tbl.incr hit_insts ip ;
+  Int.incr steps
+
+let step_term b =
+  Llair.Block.Tbl.incr hit_terms b ;
+  Int.incr steps
+
+let bound = ref (-1)
+let hit_loop_bound n = bound := n
+let switches = ref (-1)
+let hit_switch_bound n = switches := n
+
 (** Issue reporting *)
 
 let alarm_count = ref 0
@@ -29,35 +50,14 @@ let unknown_call call =
 
 let reached_goal goal =
   [%Trace.printf "@\n@[<v 2> %t@]@." goal] ;
-  Stop.on_reached_goal ()
-
-(** Functional statistics *)
-
-let solver_steps = ref 0
-let step_solver () = Int.incr solver_steps
-let steps = ref 0
-let hit_insts = Llair.IP.Tbl.create ()
-let hit_terms = Llair.Block.Tbl.create ()
-
-let step_inst ip =
-  Llair.IP.Tbl.incr hit_insts ip ;
-  Int.incr steps
-
-let step_term b =
-  Llair.Block.Tbl.incr hit_terms b ;
-  Int.incr steps
-
-let bound = ref (-1)
-let hit_loop_bound n = bound := n
-let switches = ref (-1)
-let hit_switch_bound n = switches := n
+  Stop.on_reached_goal !steps ()
 
 (** Status reporting *)
 
 type status =
   | Safe of {bound: int; switches: int}
   | Unsafe of {alarms: int; bound: int; switches: int}
-  | Reached_goal
+  | Reached_goal of {steps: int}
   | Ok
   | Unsound
   | Incomplete
@@ -85,7 +85,7 @@ let pp_status ppf stat =
       pf "Unsafe: %i (_,%i)" alarms bound
   | Unsafe {alarms; bound; switches} ->
       pf "Unsafe: %i (%i,%i)" alarms switches bound
-  | Reached_goal -> pf "Reached goal"
+  | Reached_goal {steps} -> pf "Reached goal in %i steps" steps
   | Ok -> pf "Ok"
   | Unsound -> pf "Unsound"
   | Incomplete -> pf "Incomplete"

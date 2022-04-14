@@ -67,7 +67,7 @@ let command ~summary ?readme param =
             Report.InternalError (Sexp.to_string_hum (sexp_of_exn exn))
         | Failure msg -> Report.InternalError msg
         | Stop.Stop -> Report.safe_or_unsafe ()
-        | Stop.Reached_goal -> Report.Reached_goal
+        | Stop.Reached_goal {steps} -> Report.Reached_goal {steps}
         | exn -> Report.UnknownError (Printexc.to_string exn)
       in
       Report.status (status_of_exn exn) ;

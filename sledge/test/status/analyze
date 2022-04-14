@@ -29,6 +29,7 @@ analyze/tmp_uaf.bc:	Unsafe: 1
 analyze/treiber_stack.bc:	Safe (3,_)
 analyze/uad.bc:	Safe
 analyze/wrap_malloc.bc:	Safe
-goal/calls.bc:	Reached goal
-goal/loop.bc:	Reached goal
+goal/calls.bc:	Reached goal in 14 steps
+goal/loop.bc:	Reached goal in 22 steps
+goal/shorter_path.bc:	Reached goal in 3 steps
 goal/unreachable.bc:	Safe
