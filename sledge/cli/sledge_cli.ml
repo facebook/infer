@@ -25,6 +25,11 @@ register_sexp_of_exn (Trace.Parse_failure "") (function
   | Trace.Parse_failure msg -> Sexplib0.Sexp.Atom msg
   | _ -> assert false )
 
+;;
+register_sexp_of_exn (Goal.Sparse_trace.Failed_lookup "") (function
+  | Goal.Sparse_trace.Failed_lookup msg -> Sexplib0.Sexp.Atom msg
+  | _ -> assert false )
+
 (* define a command, with trace flag, and with action wrapped in
    reporting *)
 let command ~summary ?readme param =
@@ -151,6 +156,15 @@ let analyze =
   and dump_simplify =
     flag "dump-simplify" (optional int)
       ~doc:"<int> dump simplify query <int> and halt"
+  and goal_trace =
+    flag "goal-trace"
+      (optional (Arg_type.create Goal.Sparse_trace.parse_exn))
+      ~doc:
+        "<string> specify a trace to try to explore, given as a \
+         \"+\"-delimited sequence of function names appearing in the input \
+         LLVM bitcode.  If provided, analysis prioritizes trace progress. \
+         When an execution is found that visits each function in order, \
+         terminate if \"Stop.on_reached_goal\" is being traced."
   in
   fun program () ->
     Timer.enabled := stats ;
@@ -179,7 +193,6 @@ let analyze =
       else (module Control.PriorityQueue)
     in
     let module Queue = (val queue) in
-    let module Analysis = Control.Make (Config) (Domain) (Queue) in
     (match seed with None -> Random.self_init () | Some n -> Random.init n) ;
     Llair.cct_schedule_points := cct_schedule_points ;
     Sh.do_normalize := normalize_states ;
@@ -187,7 +200,16 @@ let analyze =
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     Option.iter dump_simplify ~f:(fun n -> Sh.dump_simplify := n) ;
     at_exit (fun () -> Report.coverage pgm) ;
-    Analysis.exec_pgm pgm ;
+    ( match goal_trace with
+    | None ->
+        let module Analysis = Control.Make (Config) (Domain) (Queue) in
+        Analysis.exec_pgm pgm
+    | Some mk_goal ->
+        let module Analysis =
+          Control.MakeDirected (Config) (Domain) (Queue) (Goal.Sparse_trace)
+        in
+        let goal = mk_goal pgm in
+        Analysis.exec_pgm pgm goal ) ;
     Report.safe_or_unsafe ()
 
 let analyze_cmd =

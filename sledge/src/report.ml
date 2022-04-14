@@ -27,6 +27,10 @@ let unknown_call call =
         | _ -> () )
       call Llair.Term.pp call]
 
+let reached_goal goal =
+  [%Trace.printf "@\n@[<v 2> %t@]@." goal] ;
+  Stop.on_reached_goal ()
+
 (** Functional statistics *)
 
 let solver_steps = ref 0

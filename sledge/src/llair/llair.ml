@@ -90,7 +90,8 @@ and block =
   ; cmnd: cmnd
   ; term: term
   ; mutable parent: func
-  ; mutable sort_index: int }
+  ; mutable sort_index: int
+  ; mutable checkpoint_dists: int Function.Map.t }
 
 and func =
   { name: Function.t
@@ -199,13 +200,14 @@ let sexp_of_term = function
   | Abort {loc} -> sexp_ctor "Abort" [%sexp {loc: Loc.t}]
   | Unreachable -> Sexp.Atom "Unreachable"
 
-let sexp_of_block {lbl; cmnd; term; parent; sort_index} =
+let sexp_of_block {lbl; cmnd; term; parent; sort_index; checkpoint_dists} =
   [%sexp
     { lbl: label
     ; cmnd: cmnd
     ; term: term
     ; parent: Function.t = parent.name
-    ; sort_index: int }]
+    ; sort_index: int
+    ; checkpoint_dists: int Function.Map.t }]
 
 let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
   [%sexp
@@ -309,7 +311,8 @@ let pp_term fs term =
 
 let pp_cmnd = IArray.pp "@ " pp_inst
 
-let pp_block fs {lbl; cmnd; term; parent= _; sort_index} =
+let pp_block fs {lbl; cmnd; term; parent= _; sort_index; checkpoint_dists= _}
+    =
   Format.fprintf fs "@[<v 2>%%%s: #%i@ @[<v>%a%t%a@]@]" lbl sort_index
     pp_cmnd cmnd
     (fun fs -> if IArray.is_empty cmnd then () else Format.fprintf fs "@ ")
@@ -322,7 +325,8 @@ let rec dummy_block =
   ; cmnd= IArray.empty
   ; term= Unreachable
   ; parent= dummy_func
-  ; sort_index= 0 }
+  ; sort_index= 0
+  ; checkpoint_dists= Function.Map.empty }
 
 and dummy_func =
   { name=
@@ -536,13 +540,7 @@ module Block = struct
   module Tbl = HashTable.Make (T)
 
   let pp = pp_block
-
-  let mk ~lbl ~cmnd ~term =
-    { lbl
-    ; cmnd
-    ; term
-    ; parent= dummy_block.parent
-    ; sort_index= dummy_block.sort_index }
+  let mk ~lbl ~cmnd ~term = {dummy_block with lbl; cmnd; term}
 end
 
 type ip = {block: block; index: int} [@@deriving compare, equal, sexp_of]
@@ -861,4 +859,83 @@ module Program = struct
       ( Function.Map.values functions
       |> Iter.to_list
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
+
+  let reachable_dists prev next =
+    (* [intermediate_dists] maps [dst] blocks to [src] blocks to integers,
+       such that [intermediate_dists(dst)(src)] is the distance from src to
+       dst *)
+    let intermediate_dists = Block.Tbl.create () in
+    let rec visit ~next_checkpoint ~curr_block dists stack =
+      let changed = ref false in
+      let join_dists new_dists old_dists_opt =
+        match old_dists_opt with
+        | None ->
+            changed := true ;
+            new_dists
+        | Some old_dists ->
+            Block.Map.merge old_dists new_dists ~f:(fun _ -> function
+              | `Left d -> Some d
+              | `Right d ->
+                  changed := true ;
+                  Some d
+              | `Both (d, d') ->
+                  if d <= d' then Some d
+                  else (
+                    changed := true ;
+                    Some d' ) )
+      in
+      let new_dists =
+        Block.Map.(map ~f:succ dists |> add ~key:curr_block ~data:0)
+      in
+      Block.Tbl.update intermediate_dists curr_block
+        ~f:(join_dists new_dists >> Option.some) ;
+      if (not !changed) || Block.equal next_checkpoint curr_block then ()
+      else
+        let dists = Block.Tbl.find_exn intermediate_dists curr_block in
+        let visit_target tgt =
+          visit ~next_checkpoint ~curr_block:tgt dists
+        in
+        let jump jmp = visit_target jmp.dst stack in
+        match curr_block.term with
+        | Switch {tbl; els; _} ->
+            IArray.iter tbl ~f:(snd >> jump) ;
+            jump els
+        | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
+        | Call ({callee; return; _} as call) -> (
+          match callee with
+          | Direct f when not call.recursive ->
+              visit_target f.entry (return.dst :: stack)
+          | Intrinsic _ -> jump return
+          | Direct _ | Indirect _ -> () )
+        | Return _ -> (
+          match stack with
+          | ret :: stack -> visit_target ret stack
+          | [] ->
+              ()
+              (* empty stack indicates we're returning from one checkpoint
+                 function without having reached the next -- no
+                 sparse-trace-compatible executions down that path *) )
+        | Throw _ | Abort _ | Unreachable -> ()
+    in
+    visit ~next_checkpoint:next ~curr_block:prev Block.Map.empty [] ;
+    Block.Tbl.find intermediate_dists next
+    |> Option.value ~default:Block.Map.empty
+
+  let compute_distances ~entry ~trace pgm =
+    IArray.fold trace entry ~f:(fun next curr ->
+        let next_entry =
+          Function.Map.find_exn next pgm.functions
+          |> fun {entry; _} -> entry
+        in
+        let dists = reachable_dists curr next_entry in
+        [%Trace.info
+          "distances to %a from locations reachable from %a: %a" Block.pp
+            next_entry Block.pp curr
+            (Block.Map.pp Block.pp Int.pp)
+            dists] ;
+        Block.Map.iteri dists ~f:(fun ~key:blk ~data ->
+            blk.checkpoint_dists <-
+              Function.Map.add blk.checkpoint_dists ~key:next ~data ) ;
+        next_entry )
+    |> ignore
 end

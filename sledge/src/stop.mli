@@ -11,3 +11,4 @@ exception Stop
 
 val on_unknown_call : 'a -> unit
 val on_alarm : 'a -> unit
+val on_reached_goal : 'a -> unit

@@ -11,3 +11,4 @@ exception Stop
 
 let on_unknown_call _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
 let on_alarm _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
+let on_reached_goal _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""

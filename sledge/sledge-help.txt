@@ -120,6 +120,12 @@ Analyze LLVM bitcode. This is a convenience wrapper for the sequence `sledge llv
   [-dump-query <int>]     dump solver query <int> and halt
   [-dump-simplify <int>]  dump simplify query <int> and halt
   [-function-summaries]   use function summaries (in development)
+  [-goal-trace <string>]  specify a trace to try to explore, given as a
+                          "+"-delimited sequence of function names appearing in
+                          the input LLVM bitcode. If provided, analysis
+                          prioritizes trace progress. When an execution is found
+                          that visits each function in order, terminate if
+                          "Stop.on_reached_goal" is being traced.
   [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
                           a negative bound is never hit and leads to unbounded
                           exploration
@@ -226,6 +232,12 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
   [-dump-query <int>]     dump solver query <int> and halt
   [-dump-simplify <int>]  dump simplify query <int> and halt
   [-function-summaries]   use function summaries (in development)
+  [-goal-trace <string>]  specify a trace to try to explore, given as a
+                          "+"-delimited sequence of function names appearing in
+                          the input LLVM bitcode. If provided, analysis
+                          prioritizes trace progress. When an execution is found
+                          that visits each function in order, terminate if
+                          "Stop.on_reached_goal" is being traced.
   [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
                           a negative bound is never hit and leads to unbounded
                           exploration
