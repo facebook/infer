@@ -154,8 +154,8 @@ module Basic = struct
       IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
     let<+> astate =
-      PulseCallOperations.unknown_call path location (Model skip_reason) ~ret ~actuals ~formals_opt
-        astate
+      PulseCallOperations.unknown_call path location (Model skip_reason) (Some callee_procname) ~ret
+        ~actuals ~formals_opt astate
     in
     astate
 

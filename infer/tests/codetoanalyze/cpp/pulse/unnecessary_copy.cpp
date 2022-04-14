@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 #include <vector>
+#include <set>
 #include <string>
 
 struct Arr {
@@ -231,3 +232,32 @@ void modified_before_custom_destructor_ok(String s) {
 void copy_vec_name_contains_copy_ok(std::vector<int> vec) {
   auto copy_vec = vec;
 } // variable contains "copy", hence warning should be suppressed
+
+void set_erase_ok(std::set<int> source) {
+  auto cpy = source;
+  cpy.erase(3); // unmodeled call assumes all non-const ptr args are modified
+}
+
+void source_const_fcn_bad(std::set<int> source) {
+  auto cpy = source;
+  int count =
+      source.count(3); // count is a const function which doesn't modify this*
+}
+
+void source_dispatch_const_fcn_bad(const std::set<int>& source) {
+  auto cpy = source;
+  auto it = source.find(3); // const find is dispatched since argument is const
+}
+
+void source_dispatch_non_const_fcn_bad_FN(std::set<int> source) {
+  auto cpy = source;
+  auto it = source.find(3); // non-const version is dispatched, but find doesn't
+                            // actually change this*
+}
+
+// FP because we can't detect that arguments to sort are pointers
+// (wrap_iter__<int*>)
+int iterator_ptr_modified_ok_FP(const std::vector<int>& numbers) {
+  auto lDataValues = numbers;
+  std::sort(lDataValues.begin(), lDataValues.end());
+}
