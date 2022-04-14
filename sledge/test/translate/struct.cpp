@@ -15,7 +15,9 @@ struct list_head glob = {0};
 
 struct list_head ears = {&ears, &ears};
 
-int main() {
+int
+main()
+{
   struct list_head* node = (struct list_head*)malloc(sizeof(struct list_head));
   node->next = node->prev = node;
   free(node);

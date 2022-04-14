@@ -1,9 +1,11 @@
 /* from http://blog.llvm.org/2010/01/address-of-label-and-indirect-branches.html
  */
 
-static int fn(const char* opcodes) {
-  static const void* codetable[] = {&&RETURN, &&INCREMENT, &&DECREMENT,
-                                    &&DOUBLE, &&SWAPWORD};
+static int
+fn(const char* opcodes)
+{
+  static const void* codetable[] = {
+      &&RETURN, &&INCREMENT, &&DECREMENT, &&DOUBLE, &&SWAPWORD};
   int result = 0;
 
   goto* codetable[*(opcodes++)];
@@ -23,7 +25,9 @@ SWAPWORD:
   goto* codetable[*(opcodes++)];
 }
 
-int main() {
+int
+main()
+{
   char opcodes[10];
 
   return fn(opcodes);

@@ -328,7 +328,7 @@ clean: cleanbc cleanout
 AnalyzeHs:=$(shell find -L {,local/}analyze -name '*.h' 2>/dev/null)
 
 fmt:
-	clang-format -i $(AnalyzeHs) $(AnalyzeCs) $(AnalyzeCPPs) $(GoalCs) $(GoalCPPs)
+	clang-format -i $(AnalyzeHs) $(AnalyzeCs) $(AnalyzeCPPs) $(GoalCs) $(GoalCPPs) $(TranslateCs) $(TranslateCPPs)
 
 # print any variable for Makefile debugging
 print-%:
