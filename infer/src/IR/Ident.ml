@@ -225,7 +225,7 @@ let pp f id =
     let base_name = name_to_string id.name in
     let prefix = if has_kind id KFootprint then "@" else if has_kind id KNormal then "" else "_" in
     if String.equal id.description "" then F.fprintf f "%s%s$%d" prefix base_name id.stamp
-    else F.fprintf f "%s%s$%d(%s)" prefix base_name id.stamp id.description
+    else F.fprintf f "%s%s$%d (%s)" prefix base_name id.stamp id.description
 
 
 (** Convert an identifier to a string. *)
