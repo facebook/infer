@@ -166,14 +166,22 @@ let compute_affected_proc_names_clang ~clang_range_map ~source_file ~changed_lin
       []
 
 
-let emit_relevant_methods relevant_methods =
-  let cleaned_methods =
+let emit_string_list_to_tmp_dir tmp_dir_id source_file data =
+  if not (List.is_empty data) then (
+    let json = `List (List.map ~f:(fun t -> `String t) data) in
+    let tmp_dir = ResultsDir.get_path tmp_dir_id in
+    let abbrev_source_file = DB.source_file_encoding source_file in
+    let tmp_file = tmp_dir ^/ abbrev_source_file ^ ".json" in
+    Utils.create_dir tmp_dir ;
+    Utils.write_json_to_file tmp_file json )
+
+
+let emit_relevant_methods source_file relevant_methods =
+  let relevant_methods =
     List.dedup_and_sort ~compare:String.compare
       (List.map (Procname.Set.elements relevant_methods) ~f:Procname.to_string)
   in
-  let json = `List (List.map ~f:(fun t -> `String t) cleaned_methods) in
-  let outpath = ResultsDir.get_path ChangedFunctions in
-  YB.to_file outpath json
+  emit_string_list_to_tmp_dir ChangedFunctionsTempResults source_file relevant_methods
 
 
 let compute_and_emit_relevant_methods ~clang_range_map ~source_file =
@@ -182,7 +190,7 @@ let compute_and_emit_relevant_methods ~clang_range_map ~source_file =
   let relevant_methods =
     compute_affected_methods_clang ~clang_range_map ~source_file ~changed_lines_map
   in
-  emit_relevant_methods relevant_methods
+  emit_relevant_methods source_file relevant_methods
 
 
 (* test_to_run = { n | Affected_Method /\ ts_n != 0 } *)
@@ -314,13 +322,7 @@ let emit_tests_to_run_java relevant_tests =
 
 
 let emit_tests_to_run_clang source_file relevant_tests =
-  if not (List.is_empty relevant_tests) then (
-    let json = `List (List.map ~f:(fun t -> `String t) relevant_tests) in
-    let abbrev_source_file = DB.source_file_encoding source_file in
-    let test_determinator_results_path = ResultsDir.get_path TestDeterminatorTempResults in
-    let outpath = test_determinator_results_path ^/ abbrev_source_file ^ ".json" in
-    Utils.create_dir test_determinator_results_path ;
-    Utils.write_json_to_file outpath json )
+  emit_string_list_to_tmp_dir TestDeterminatorTempResults source_file relevant_tests
 
 
 let compute_and_emit_test_to_run ?clang_range_map ?source_file () =
@@ -333,23 +335,30 @@ let compute_and_emit_test_to_run ?clang_range_map ?source_file () =
       emit_tests_to_run_java relevant_tests
 
 
-let merge_test_determinator_results () =
-  let main_results_list = ref [] in
-  let merge_json_results intermediate_result =
-    let changed_json =
-      try YB.from_file intermediate_result |> YBU.to_list with Sys_error _ -> []
-    in
-    main_results_list := List.append changed_json !main_results_list
-  in
-  let test_determinator_results_path = ResultsDir.get_path TestDeterminatorTempResults in
-  Utils.directory_iter merge_json_results test_determinator_results_path ;
-  let main_results_list_sorted =
+let merge_string_list_tmp_results step ~tmp_dir_id ~result_file_id =
+  let results = ref [] in
+  let changed_functions_results_path = ResultsDir.get_path tmp_dir_id in
+  Utils.directory_iter
+    (fun file ->
+      let json = try YB.from_file file |> YBU.to_list with Sys_error _ -> [] in
+      results := List.append json !results )
+    changed_functions_results_path ;
+  let sorted_results =
     List.dedup_and_sort
       ~compare:(fun s1 s2 ->
         match (s1, s2) with `String s1, `String s2 -> String.compare s1 s2 | _ -> 0 )
-      !main_results_list
+      !results
   in
-  let main_results_file = ResultsDir.get_path TestDeterminatorReport in
-  YB.to_file main_results_file (`List main_results_list_sorted) ;
-  Logging.progress "Finished executing Test Determinator successfully, results are in %s@."
-    main_results_file
+  let main_results_file = ResultsDir.get_path result_file_id in
+  YB.to_file main_results_file (`List sorted_results) ;
+  Logging.progress "Finished %s successfully, results are in %s@." step main_results_file
+
+
+let merge_changed_functions_results () =
+  merge_string_list_tmp_results "merging changed functions" ~tmp_dir_id:ChangedFunctionsTempResults
+    ~result_file_id:ChangedFunctions
+
+
+let merge_test_determinator_results () =
+  merge_string_list_tmp_results "executing Test Determinator"
+    ~tmp_dir_id:TestDeterminatorTempResults ~result_file_id:TestDeterminatorReport

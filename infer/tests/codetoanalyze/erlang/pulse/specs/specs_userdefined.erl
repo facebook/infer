@@ -5,6 +5,15 @@
 
 -module(specs_userdefined).
 
+-export([
+    composite4_Latent/1,
+    composite3_Latent/1,
+    composite2_Latent/1,
+    composite1_Ok/1,
+    basic2_Latent/1,
+    basic1_Ok/1
+]).
+
 -export_type([my_atom_type/0]).
 
 -type my_atom_type() :: atom().

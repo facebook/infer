@@ -21,8 +21,10 @@ val reachable_addresses : ?var_filter:(Var.t -> bool) -> t -> AbstractValue.Set.
 (** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable from
     the stack variables *)
 
-val reachable_addresses_from : AbstractValue.t Seq.t -> t -> AbstractValue.Set.t
-(** compute the set of abstract addresses that are reachable from given abstract addresses *)
+val reachable_addresses_from :
+  ?already_visited:AbstractValue.Set.t -> AbstractValue.t Seq.t -> t -> AbstractValue.Set.t
+(** Compute the set of abstract addresses that are reachable from given abstract addresses. Use
+    already_visited as initial set of visited values (empty by default). *)
 
 type mapping
 
@@ -65,6 +67,7 @@ module GraphVisit : sig
        AbstractValue.t Seq.t
     -> t
     -> init:'accum
+    -> already_visited:AbstractValue.Set.t
     -> f:
          (   'accum
           -> AbstractValue.t
@@ -72,5 +75,6 @@ module GraphVisit : sig
           -> ('accum, 'final) Base.Continue_or_stop.t )
     -> finish:('accum -> 'final)
     -> AbstractValue.Set.t * 'final
-  (** Similar to [fold], but start from given addresses, instead of stack variables. *)
+  (** Similar to [fold], but start from given addresses, instead of stack variables. Use
+      already_visited as initial set of visited values. *)
 end

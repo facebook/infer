@@ -134,15 +134,11 @@ module AddressAttributes : sig
 
   val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
-  val check_not_tainted :
-       PathContext.t
-    -> Taint.sink
-    -> Trace.t
-    -> AbstractValue.t
-    -> t
-    -> (t, Taint.source * ValueHistory.t) result
+  val add_taint_sink : PathContext.t -> Taint.t -> Trace.t -> AbstractValue.t -> t -> t
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
+
+  val always_reachable : AbstractValue.t -> t -> t
 
   val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
 
@@ -165,6 +161,11 @@ module AddressAttributes : sig
   val get_copied_var : AbstractValue.t -> t -> Var.t option
 
   val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
+
+  val get_taint_source_and_sanitizer :
+    AbstractValue.t -> t -> ((Taint.t * ValueHistory.t * bool) * Taint.t option) option
+
+  val get_propagate_taint_from : AbstractValue.t -> t -> Attribute.taint_in list option
 
   val is_end_of_collection : AbstractValue.t -> t -> bool
 

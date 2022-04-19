@@ -39,6 +39,10 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -982,5 +986,56 @@ public class ResourceLeaks {
     InputStream stream = new FileInputStream(f);
     Preconditions.checkState(x > 0);
     stream.close();
+  }
+
+  static class RessourceInMap {
+    final Map<String, InputStream> map;
+
+    public RessourceInMap() {
+      map = new HashMap();
+    }
+
+    public void allocateOk(List<String> filenames) throws IOException {
+      for (String filename : filenames) map.put(filename, new FileInputStream(new File(filename)));
+    }
+
+    public void releaseAll() {
+      for (InputStream is : map.values())
+        try {
+          is.close();
+        } catch (IOException e) {
+
+        }
+    }
+  }
+
+  // to test reachability from a collection
+  static class Obj {
+    InputStream content;
+  }
+
+  static class RessourceInList {
+    final List<Obj> list;
+
+    public RessourceInList() {
+      list = new ArrayList();
+    }
+
+    public void allocateOk(List<String> filenames) throws IOException {
+      for (String filename : filenames) {
+        Obj o = new Obj();
+        o.content = new FileInputStream(new File(filename));
+        list.add(o);
+      }
+    }
+
+    public void releaseAll() {
+      for (Obj o : list)
+        try {
+          o.content.close();
+        } catch (IOException e) {
+
+        }
+    }
   }
 }

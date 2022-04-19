@@ -43,4 +43,8 @@ struct F : B, virtual C, D {
   ~F(){};
 };
 
-int main() { struct F f; }
+int
+main()
+{
+  struct F f;
+}

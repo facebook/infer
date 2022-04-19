@@ -221,12 +221,21 @@ module Collection = struct
     astate |> Basic.ok_continue
 
 
-  let add ~desc coll new_elem : model =
+  let add_common ~desc coll new_elem ?new_val : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let ret_value = AbstractValue.mk_fresh () in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
+    in
+    (* reads fst_field from collection *)
+    let<*> astate, _, (fst_val, _) = load_field path fst_field location coll_val astate in
+    (* mark the remove element as always reachable *)
+    let astate = PulseOperations.always_reachable fst_val astate in
+    (* in maps, every new value is marked as always reachable *)
+    let astate =
+      Option.value_map new_val ~default:astate ~f:(fun (obj, _) ->
+          PulseOperations.always_reachable obj astate )
     in
     (* reads snd_field from collection *)
     let<*> astate, snd_addr, snd_val = load_field path snd_field location coll_val astate in
@@ -254,6 +263,10 @@ module Collection = struct
       in
       astate |> Basic.ok_continue
 
+
+  let add ~desc coll new_elem : model = add_common ~desc coll new_elem
+
+  let put ~desc coll new_elem new_val : model = add_common ~desc coll new_elem ~new_val
 
   let update path coll new_val new_val_hist event location ret_id astate =
     (* case0: element not present in collection *)
@@ -646,7 +659,8 @@ let matchers : matcher list =
     &:: "<init>" <>$ capt_arg_payload
     $--> Collection.init ~desc:"Map.init()"
   ; +map_context_tenv PatternMatch.Java.implements_map
-    &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+...$--> Collection.add ~desc:"Map.put()"
+    &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> Collection.put ~desc:"Map.put()"
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "remove"
     &++> Collection.remove ~desc:"Map.remove()"

@@ -273,6 +273,8 @@ let eval path mode location exp0 astate =
         in
         (astate, (v, ValueHistory.singleton (Invalidated (invalidation, location, timestamp))))
     | Const (Cstr s) ->
+        (* TODO: record actual string value; since we are making strings be a record in memory
+           instead of pure values some care has to be added to access string values once written *)
         let v = AbstractValue.mk_fresh () in
         let* astate, (len_addr, hist) =
           eval_access path Write location
@@ -455,6 +457,8 @@ let havoc_deref_field path location addr_trace field trace_obj astate =
     ~obj:(AbstractValue.mk_fresh (), trace_obj)
     astate
 
+
+let always_reachable address astate = AddressAttributes.always_reachable address astate
 
 let allocate allocator location addr astate =
   AddressAttributes.allocate allocator addr location astate
@@ -705,6 +709,7 @@ let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
        ~finish:(fun () -> ()) ) ;
   let collect_reachable_from addrs base_state =
     BaseDomain.GraphVisit.fold_from_addresses addrs base_state ~init:()
+      ~already_visited:AbstractValue.Set.empty
       ~f:(fun () addr _ ->
         mark_reachable addr ;
         Continue () )
@@ -816,7 +821,10 @@ type call_kind =
   | `ResolvedProcname ]
 
 let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
-  if Procname.is_objc_block procname || Procname.is_specialized procname then
+  if
+    Procname.is_objc_block procname || Procname.is_specialized procname
+    || Procname.is_erlang procname
+  then
     match call_kind with
     | `Closure captured_actuals ->
         get_closure_captured_actuals path location ~captured_actuals astate

@@ -442,4 +442,6 @@ val patterns_match : Re.Str.regexp list -> t -> bool
 
 val is_erlang_unsupported : t -> bool
 
+val is_erlang : t -> bool
+
 module Normalizer : HashNormalizer.S with type t = t

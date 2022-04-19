@@ -155,7 +155,7 @@ public class Basics {
     InferTaint.inferSensitiveSink(src);
   }
 
-  void FN_arrayWithTaintedContentsBad() {
+  void arrayWithTaintedContentsBad() {
     Object src = InferTaint.inferSecretSource();
     Object[] arr = new Object[] {src};
     InferTaint.inferSensitiveSink(arr);

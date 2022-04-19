@@ -211,6 +211,7 @@ let report_exec_results tenv proc_desc err_log location results =
       | Error errors -> (
         match report_errors tenv proc_desc err_log location errors with
         | Unsat ->
+            L.d_printfln "UNSAT discovered during error reporting" ;
             None
         | Sat None -> (
           match exec_result with

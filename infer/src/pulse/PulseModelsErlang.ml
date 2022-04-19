@@ -608,13 +608,15 @@ module Maps = struct
 end
 
 module BIF = struct
-  let is_atom (atom_val, _atom_hist) : model =
+  let has_type (value, _hist) type_ : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let typ = Typ.mk_struct (ErlangType Atom) in
-    let is_atom = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
-    Atoms.write_return_from_bool path location is_atom ret_id astate
+    let typ = Typ.mk_struct (ErlangType type_) in
+    let is_typ = AbstractValue.mk_fresh () in
+    let<*> astate = PulseArithmetic.and_equal_instanceof is_typ value typ astate in
+    Atoms.write_return_from_bool path location is_typ ret_id astate
 
+
+  let is_atom x : model = has_type x Atom
 
   let is_boolean ((atom_val, _atom_hist) as atom) : model =
    fun {location; path; ret= ret_id, _} astate ->
@@ -658,6 +660,8 @@ module BIF = struct
     astate_not_atom @ astate_is_atom
 
 
+  let is_integer x : model = has_type x Integer
+
   let is_list (list_val, _list_hist) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let cons_typ = Typ.mk_struct (ErlangType Cons) in
@@ -674,12 +678,7 @@ module BIF = struct
     Atoms.write_return_from_bool path location is_list ret_id astate
 
 
-  let is_map (map_val, _map_hist) : model =
-   fun {location; path; ret= ret_id, _} astate ->
-    let typ = Typ.mk_struct (ErlangType Map) in
-    let is_map = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_equal_instanceof is_map map_val typ astate in
-    Atoms.write_return_from_bool path location is_map ret_id astate
+  let is_map x : model = has_type x Map
 end
 
 (** Custom models, specified by Config.pulse_models_for_erlang. *)
@@ -826,5 +825,6 @@ let matchers : matcher list =
     ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
     ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
     ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
+    ; -erlang_ns &:: "is_integer" <>$ arg $--> BIF.is_integer
     ; -erlang_ns &:: "is_list" <>$ arg $--> BIF.is_list
     ; -erlang_ns &:: "is_map" <>$ arg $--> BIF.is_map ]

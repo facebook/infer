@@ -25,13 +25,13 @@ type var_data =
   ; is_constexpr: bool
   ; is_declared_unused: bool  (** variable declared with attribute [unused] *) }
 
-type passed_block =
-  | Block of (Procname.t * CapturedVar.t list)
-  | Fields of passed_block Fieldname.Map.t
+type 'captured_var passed_block =
+  | Block of (Procname.t * 'captured_var list)
+  | Fields of 'captured_var passed_block Fieldname.Map.t
 [@@deriving compare, equal]
 
 type specialized_with_blocks_info =
-  {orig_proc: Procname.t; formals_to_blocks: passed_block Pvar.Map.t}
+  {orig_proc: Procname.t; formals_to_blocks: CapturedVar.t passed_block Pvar.Map.t}
 [@@deriving compare]
 
 type t =

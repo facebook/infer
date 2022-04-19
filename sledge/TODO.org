@@ -293,6 +293,10 @@ type from_call = State_domain.from_call with_entry
 ** change Work.run to move Domain.join into ~f
 ** canonicalize renamings in stacks
 It seems possible that two edges will be distinct only due to differences between choice of fresh variable names for shadowed variables. It is not obvious that this could not lead to an infinite number of Edge.t values even without recursion. Using predictable names for local variables, such as a pair of the declared name and the depth of the stack, would avoid these difficulties.
+** account for exceptional control flow when computing pairwise distances
+Llair.compute_distances currently ignores exceptional control flow, prioritizing normal control flow to the goal whenever possible.
+It would be better to properly compute distances along exceptional control flow paths, but that may require better exception handling in the llvm to llair frontend.
+
 * build
 ** adapt infer's dead code detection
 - this does not work easily, due at least to issues with wrapped libraries

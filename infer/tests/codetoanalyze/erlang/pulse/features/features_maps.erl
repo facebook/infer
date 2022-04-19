@@ -106,14 +106,16 @@ test_new_Ok() ->
 test_new_Bad() ->
     M = maps:new(),
     case maps:is_key(1, M) of
-        false-> warn(1);
+        false -> warn(1);
         _ -> ok
     end.
 
 test_merge_return_type_Ok() ->
     M = maps:merge(#{}, #{}),
-    maps:put(1, 3, M). % No BAD_MAP should happen here
+    % No BAD_MAP should happen here
+    maps:put(1, 3, M).
 
 test_filter_return_type_Ok() ->
-    M = maps:filter(fun (_, _) -> ok end, #{}),
-    maps:put(1, 3, M). % No BAD_MAP should happen here
+    M = maps:filter(fun(_, _) -> ok end, #{}),
+    % No BAD_MAP should happen here
+    maps:put(1, 3, M).

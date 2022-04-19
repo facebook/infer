@@ -17,9 +17,8 @@ let%test_module _ =
     (* let () =
      *   Trace.init ~margin:160
      *     ~config:
-     *       (Result.get_ok
-     *          (Trace.parse
-     *             "+Sh.simplify+Sh.simplify_+Sh.norm+Sh.and_subst+Context.solve_and_elim+Context.partition_valid+Context.solve_for_vars+Context.apply_and_elim+Context.apply_subst+Context.elim"))
+     *       (Trace.parse
+     *          "+Sh.simplify+Sh.simplify_+Sh.norm+Sh.and_subst+Context.solve_and_elim+Context.partition_valid+Context.solve_for_vars+Context.apply_and_elim+Context.apply_subst+Context.elim" )
      *     () *)
 
     [@@@warning "-32"]

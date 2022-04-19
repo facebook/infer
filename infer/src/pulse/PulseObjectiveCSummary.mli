@@ -15,7 +15,7 @@ val append_objc_actual_self_positive :
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 
-val mk_initial_with_positive_self : Tenv.t -> Procdesc.t -> AbductiveDomain.t
+val initial_with_positive_self : Procdesc.t -> AbductiveDomain.t -> AbductiveDomain.t
 (** The initial state of the analysis, with the additional path condition [self > 0] for Objective-C
     instance methods. *)
 

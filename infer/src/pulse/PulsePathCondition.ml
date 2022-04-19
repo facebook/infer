@@ -457,6 +457,7 @@ let is_unsat_expensive tenv ~get_dynamic_type phi =
   else
     match Formula.normalize tenv ~get_dynamic_type phi.formula with
     | Unsat ->
+        L.d_printfln "path condition is UNSAT" ;
         (false_, true, [])
     | Sat (formula, new_eqs) ->
         ({phi with formula}, false, new_eqs)

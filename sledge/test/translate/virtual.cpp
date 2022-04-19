@@ -5,19 +5,31 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-class B {
-public:
-  virtual void f() { g(); };
+class B
+{
+ public:
+  virtual void
+  f()
+  {
+    g();
+  };
   virtual void g(){};
 };
 
-class C : public B {
-public:
-  virtual void f() { B::f(); };
+class C : public B
+{
+ public:
+  virtual void
+  f()
+  {
+    B::f();
+  };
   virtual void g(){};
 };
 
-int main() {
+int
+main()
+{
   B* p = new C;
   p->f();
   return 0;

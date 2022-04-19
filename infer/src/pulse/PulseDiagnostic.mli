@@ -63,8 +63,8 @@ type t =
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { tainted: Decompiler.expr
-      ; source: Taint.source * ValueHistory.t
-      ; sink: Taint.sink * Trace.t
+      ; source: Taint.t * ValueHistory.t
+      ; sink: Taint.t * Trace.t
       ; location: Location.t }
   | UnnecessaryCopy of {variable: Var.t; location: Location.t}
 [@@deriving equal]

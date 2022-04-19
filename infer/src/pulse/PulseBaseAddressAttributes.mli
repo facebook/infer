@@ -16,8 +16,7 @@ val filter : (AbstractValue.t -> Attributes.t -> bool) -> t -> t
 
 val for_all : (AbstractValue.t -> Attributes.t -> bool) -> t -> bool
 
-val filter_with_discarded_addrs :
-  (AbstractValue.t -> Attributes.t -> bool) -> t -> t * AbstractValue.t list
+val filter_with_discarded_addrs : (AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
 
 val find_opt : AbstractValue.t -> t -> Attributes.t option
 
@@ -27,6 +26,8 @@ val add : AbstractValue.t -> Attributes.t -> t -> t
 
 val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
 
+val always_reachable : AbstractValue.t -> t -> t
+
 val java_resource_release : AbstractValue.t -> t -> t
 
 val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
@@ -34,8 +35,6 @@ val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) result
 
 val check_initialized : AbstractValue.t -> t -> (unit, unit) result
-
-val check_not_tainted : AbstractValue.t -> t -> (unit, Taint.source * ValueHistory.t) result
 
 val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
@@ -52,7 +51,7 @@ val get_invalid : AbstractValue.t -> t -> (Invalidation.t * Trace.t) option
 val get_must_be_valid :
   AbstractValue.t -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
-val get_must_not_be_tainted : AbstractValue.t -> t -> (Timestamp.t * Taint.sink * Trace.t) option
+val get_must_not_be_tainted : AbstractValue.t -> t -> (Timestamp.t * Taint.t * Trace.t) option
 
 val is_must_be_valid_or_allocated_isl : AbstractValue.t -> t -> bool
 

@@ -7,6 +7,7 @@ TESTS_DIR = ../../..
 
 INFER_OPTIONS = --quandary-only --quandary-show-passthroughs --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
+TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 SOURCES = $(wildcard *.java)
 
 include $(TESTS_DIR)/javac.make

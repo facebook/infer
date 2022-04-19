@@ -583,6 +583,8 @@ let is_erlang_unsupported name =
       false
 
 
+let is_erlang = function Erlang _ -> true | _ -> false
+
 let equal = [%compare.equal: t]
 
 let rec compare_name x y =

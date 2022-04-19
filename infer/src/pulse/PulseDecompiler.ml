@@ -40,7 +40,21 @@ let rec pp_access_expr fmt = function
   | ProgramVar pvar ->
       Pvar.pp_value fmt pvar
   | Call call ->
-      CallEvent.pp fmt call
+      let java_or_objc_getter =
+        match call with
+        | Call procname | SkippedKnownCall procname -> (
+            Procname.is_java procname
+            ||
+            match Attributes.load procname with
+            | Some {objc_accessor= Some (Objc_getter _)} ->
+                true
+            | _ ->
+                false )
+        | Model _ | SkippedUnknownCall _ ->
+            false
+      in
+      if java_or_objc_getter then CallEvent.pp_name_only fmt call
+      else F.fprintf fmt "%a()" CallEvent.pp_name_only call
   | ArrowField (access_expr, field) ->
       F.fprintf fmt "%a->%a" pp_access_expr access_expr Fieldname.pp field
   | DotField (access_expr, field) ->

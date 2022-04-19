@@ -75,19 +75,24 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       simple_condition Map arg_id
   | Nil ->
       simple_condition Nil arg_id
-  | Record name ->
-      let record_info = String.Map.find_exn env.records name in
-      let tuple_size = 1 + List.length record_info.field_names in
-      let tuple_typ = ErlangTypeName.Tuple tuple_size in
-      let is_tuple_block, is_tuple_cond = simple_condition tuple_typ arg_id in
-      let name_id = mk_fresh_id () in
-      let load_name_instr =
-        Env.load_field_from_expr env name_id (Var arg_id) (ErlangTypeName.tuple_elem 1) tuple_typ
-      in
-      let is_atom_block, is_atom_cond = atom_literal name name_id in
-      let condition = Exp.BinOp (Binop.LAnd, is_tuple_cond, is_atom_cond) in
-      ( Block.all env [is_tuple_block; Block.make_instruction env [load_name_instr]; is_atom_block]
-      , condition )
+  | Record name -> (
+    (* We can replace this check with [find_exn] once we have AST validation for specs (T115271156). *)
+    match String.Map.find env.records name with
+    | Some record_info ->
+        let tuple_size = 1 + List.length record_info.field_names in
+        let tuple_typ = ErlangTypeName.Tuple tuple_size in
+        let is_tuple_block, is_tuple_cond = simple_condition tuple_typ arg_id in
+        let name_id = mk_fresh_id () in
+        let load_name_instr =
+          Env.load_field_from_expr env name_id (Var arg_id) (ErlangTypeName.tuple_elem 1) tuple_typ
+        in
+        let is_atom_block, is_atom_cond = atom_literal name name_id in
+        let condition = Exp.BinOp (Binop.LAnd, is_tuple_cond, is_atom_cond) in
+        ( Block.all env [is_tuple_block; Block.make_instruction env [load_name_instr]; is_atom_block]
+        , condition )
+    | None ->
+        L.debug Capture Verbose "@[Record definition %s not found treating as any()@]" name ;
+        succ_true env )
   | Remote {module_; type_} ->
       userdef_condition module_ type_
   | Tuple (FixedSize types) ->
@@ -113,6 +118,8 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       (Block.all env blocks, combine_bool ~op:Binop.LOr ~default:true_const exprs)
   | UserDefined name ->
       userdef_condition env.current_module name
+  | Var "_" ->
+      succ_true env
   | Var v -> (
     (* Simple substitution. Can go into infinite loop. For now we assume that the type checker rejects
        such cases before. TODO: check for cycles in a validation step (T115271156) *)
@@ -131,8 +138,7 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       succ_true env
 
 
-let disjunct_condition (env : (_, _) Env.t) arg_ids (function_ : Ast.function_)
-    (specd : Ast.spec_disjunct) : Block.t * Exp.t =
+let disjunct_condition (env : (_, _) Env.t) arg_ids (specd : Ast.spec_disjunct) : Block.t * Exp.t =
   (* Generate condition for the type of each argument and form a conjunction. *)
   match List.zip arg_ids specd.arguments with
   | Ok args_with_types ->
@@ -142,16 +148,14 @@ let disjunct_condition (env : (_, _) Env.t) arg_ids (function_ : Ast.function_)
       (Block.all env blocks, combine_bool ~op:Binop.LAnd ~default:true_const exprs)
   | Unequal_lengths ->
       L.debug Capture Verbose
-        "@[Number of arguments and specs do not match in module %s function %s@." env.current_module
-        (Sexp.to_string (ErlangAst.sexp_of_function_ function_)) ;
+        "@[Number of arguments and specs do not match in module %s for spec %s@." env.current_module
+        (Sexp.to_string (ErlangAst.sexp_of_spec_disjunct specd)) ;
       succ_true env
 
 
 let prune_spec (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
   (* Generate condition for each disjunct recursively and form a disjunction in a prune node. *)
-  let blocks, conditions =
-    List.unzip (List.map ~f:(disjunct_condition env arg_ids spec.function_) spec.specs)
-  in
+  let blocks, conditions = List.unzip (List.map ~f:(disjunct_condition env arg_ids) spec) in
   (* We could also use nondeterminism among blocks which could give more precision. *)
   (* Overloads shouldn't be empty, but if it somehow happens, just return true. *)
   let condition = combine_bool ~op:Binop.LOr ~default:true_const conditions in

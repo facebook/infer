@@ -12,7 +12,7 @@ property TaintTrack
   // ... but we also keep an eye for derived strings
   track -> building:    StringBuilder(Builder, Void) => b := Builder
   building -> building: *
-  building -> dirty:    append(Builder, S) when S == s
+  building -> dirty:    append(Builder, S, BuilderChained) when S == s
   dirty -> track:       toString(Builder, S) => s := S
 
   // If anything we track is sent to Taint.sendToDb, we warn

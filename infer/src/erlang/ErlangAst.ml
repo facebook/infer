@@ -178,7 +178,7 @@ and tuple_type = AnySize | FixedSize of type_ list [@@deriving sexp_of]
 type spec_disjunct = {arguments: type_ list; return: type_; constraints: type_ String.Map.t}
 [@@deriving sexp_of]
 
-type spec = {function_: function_; specs: spec_disjunct list} [@@deriving sexp_of]
+type spec = spec_disjunct list [@@deriving sexp_of]
 
 (** {2 S8.1: Module declarations and forms} *)
 
@@ -192,7 +192,7 @@ type simple_form =
   | File of {path: string}
   | Function of {function_: function_; clauses: case_clause list}
   | Record of {name: string; fields: record_field list}
-  | Spec of spec
+  | Spec of {function_: function_; spec: spec}
   | Type of {name: string; type_: type_} (* TODO: arguments*)
 [@@deriving sexp_of]
 

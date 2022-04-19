@@ -173,7 +173,7 @@ void use_count_empty_bad() {
   }
 }
 
-void use_count_after_reset_bad(std::weak_ptr<int>& p) {
+void FN_use_count_after_reset_bad(std::weak_ptr<int>& p) {
   p.reset();
   if (p.use_count() == 0) {
     int* x = nullptr;
@@ -191,7 +191,7 @@ void expired_empty_bad() {
   }
 }
 
-void expired_after_reset_bad(std::weak_ptr<int>& p) {
+void FN_expired_after_reset_bad(std::weak_ptr<int>& p) {
   p.reset();
   if (p.expired()) {
     int* x = nullptr;
@@ -199,7 +199,7 @@ void expired_after_reset_bad(std::weak_ptr<int>& p) {
   }
 }
 
-void expired_after_swap_bad(std::weak_ptr<int>& p) {
+void FN_expired_after_swap_bad(std::weak_ptr<int>& p) {
   std::weak_ptr<int> q;
   q.swap(p);
   if (p.expired()) {

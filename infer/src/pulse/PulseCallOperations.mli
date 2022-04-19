@@ -31,6 +31,7 @@ val unknown_call :
      PathContext.t
   -> Location.t
   -> CallEvent.t
+  -> Procname.t option
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> formals_opt:(Pvar.t * Typ.t) list option

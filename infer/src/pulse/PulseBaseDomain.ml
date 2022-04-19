@@ -208,6 +208,7 @@ module GraphVisit : sig
        AbstractValue.t Seq.t
     -> t
     -> init:'accum
+    -> already_visited:AbstractValue.Set.t
     -> f:
          (   'accum
           -> AbstractValue.t
@@ -215,7 +216,8 @@ module GraphVisit : sig
           -> ('accum, 'final) Base.Continue_or_stop.t )
     -> finish:('accum -> 'final)
     -> AbstractValue.Set.t * 'final
-  (** Similar to [fold], but start from given addresses, instead of stack variables. *)
+  (** Similar to [fold], but start from given addresses, instead of stack variables. Use
+      already_visited as initial set of visited values. *)
 end = struct
   open Base.Continue_or_stop
 
@@ -269,9 +271,9 @@ end = struct
     visit_address address ~f:(f orig_var) rev_accesses astate visited_accum
 
 
-  let fold_common x astate ~fold ~filter ~visit ~init ~f ~finish =
+  let fold_common x astate ~fold ~filter ~visit ~init ~already_visited ~f ~finish =
     let finish (visited, accum) = (visited, finish accum) in
-    let init = (AbstractValue.Set.empty, init) in
+    let init = (already_visited, init) in
     Container.fold_until x ~fold ~init ~finish ~f:(fun visited_accum elem ->
         if filter elem then visit elem ~f [] astate visited_accum else Continue visited_accum )
 
@@ -280,7 +282,7 @@ end = struct
     fold_common astate.stack astate
       ~fold:(IContainer.fold_of_pervasives_map_fold Stack.fold)
       ~filter:(fun (var, _) -> var_filter var)
-      ~visit:visit_address_from_var
+      ~visit:visit_address_from_var ~already_visited:AbstractValue.Set.empty
 
 
   let fold_from_addresses from astate =
@@ -294,9 +296,9 @@ let reachable_addresses ?(var_filter = fun _ -> true) astate =
   GraphVisit.fold astate ~var_filter ~init:() ~finish:Fn.id ~f:(fun _ () _ _ -> Continue ()) |> fst
 
 
-let reachable_addresses_from addresses astate =
-  GraphVisit.fold_from_addresses addresses astate ~init:() ~finish:Fn.id ~f:(fun () _ _ ->
-      Continue () )
+let reachable_addresses_from ?(already_visited = AbstractValue.Set.empty) addresses astate =
+  GraphVisit.fold_from_addresses addresses astate ~init:() ~already_visited ~finish:Fn.id
+    ~f:(fun () _ _ -> Continue ())
   |> fst
 
 

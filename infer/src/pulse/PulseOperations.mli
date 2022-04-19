@@ -273,6 +273,8 @@ val invalidate_biad_isl :
 (** record that the address is invalid. If the address has not been allocated, abduce ISL specs for
     both invalid (null, free, unint) and allocated heap. *)
 
+val always_reachable : AbstractValue.t -> t -> t
+
 val allocate : Attribute.allocator -> Location.t -> AbstractValue.t -> t -> t
 
 val java_resource_release : AbstractValue.t -> t -> t

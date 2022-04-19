@@ -6,21 +6,14 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
+module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
-
-(** Ideally, we don't want attributes to depend on {!AbstractValue} because they become a pain to
-    handle when comparing memory states.
-
-    If you find you need to make attributes depend on {!AbstractValue} then remember to modify 1)
-    graph operations of {!PulseDomain.GraphVisit} for reachability and interprocedural operations in
-    {!PulseAbductiveDomain} 2) application of summaries if these attributes can appear in summaries
-    and 3) canonicalisation operations in {!PulseBaseMemory.ml} as these interpret abstract values
-    in the state up to some substitution. *)
 
 module Attribute = struct
   type allocator =
@@ -50,10 +43,15 @@ module Attribute = struct
         F.fprintf fmt "resource %a" JavaClassName.pp class_name
 
 
+  type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
+
+  let pp_taint_in fmt {v} = F.fprintf fmt "{@[v= %a@]}" AbstractValue.pp v
+
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of allocator * Trace.t
+    | AlwaysReachable
     | Closure of Procname.t
     | CopiedVar of Var.t
     | DynamicType of Typ.t
@@ -62,13 +60,16 @@ module Attribute = struct
     | ISLAbduced of Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-    | MustNotBeTainted of Timestamp.t * Taint.sink * Trace.t
+    | MustNotBeTainted of Timestamp.t * Taint.t * Trace.t
     | JavaResourceReleased
+    | PropagateTaintFrom of taint_in list (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
+                                             retain [v1] to [vn], in fact they should be collected
+                                             when they become unreachable *)
     | RefCounted
-    | SourceOriginOfCopy of PulseAbstractValue.t
+    | SourceOriginOfCopy of AbstractValue.t
     | StdVectorReserve
-    | Tainted of Taint.source * ValueHistory.t
-    | TaintSanitized of Taint.sanitizer
+    | Tainted of {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
+    | TaintSanitized of Taint.t
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
@@ -84,6 +85,8 @@ module Attribute = struct
   let address_of_stack_variable_rank = Variants.addressofstackvariable.rank
 
   let allocated_rank = Variants.allocated.rank
+
+  let always_reachable_rank = Variants.alwaysreachable.rank
 
   let closure_rank = Variants.closure.rank
 
@@ -106,6 +109,8 @@ module Attribute = struct
   let must_be_valid_rank = Variants.mustbevalid.rank
 
   let must_not_be_tainted_rank = Variants.mustnotbetainted.rank
+
+  let propagate_taint_from_rank = Variants.propagatetaintfrom.rank
 
   let ref_counted_rank = Variants.refcounted.rank
 
@@ -155,6 +160,8 @@ module Attribute = struct
         F.fprintf f "Allocated%a"
           (Trace.pp ~pp_immediate:(pp_string_if_debug (F.asprintf "(%a)" pp_allocator allocator)))
           trace
+    | AlwaysReachable ->
+        F.pp_print_string f "AlwaysReachable"
     | Closure pname ->
         Procname.pp f pname
     | CopiedVar var ->
@@ -181,21 +188,23 @@ module Attribute = struct
           (timestamp :> int)
     | MustNotBeTainted (timestamp, sink, trace) ->
         F.fprintf f "MustNotBeTainted(%a, t=%d)"
-          (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp_sink fmt sink))
+          (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sink))
           trace
           (timestamp :> int)
     | JavaResourceReleased ->
         F.pp_print_string f "Released"
+    | PropagateTaintFrom taints_in ->
+        F.fprintf f "PropagateTaintFrom([%a])" (Pp.seq ~sep:";" pp_taint_in) taints_in
     | RefCounted ->
         F.fprintf f "RefCounted"
     | SourceOriginOfCopy source ->
-        F.fprintf f "copied of source %a" PulseAbstractValue.pp source
+        F.fprintf f "copied of source %a" AbstractValue.pp source
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
-    | Tainted (source, hist) ->
-        F.fprintf f "Tainted(%a,%a)" Taint.pp_source source ValueHistory.pp hist
+    | Tainted {source; hist; intra_procedural_only} ->
+        F.fprintf f "Tainted(%a,%a,%b)" Taint.pp source ValueHistory.pp hist intra_procedural_only
     | TaintSanitized sanitizer ->
-        F.fprintf f "TaintSanitized(%a)" Taint.pp_sanitizer sanitizer
+        F.fprintf f "TaintSanitized(%a)" Taint.pp sanitizer
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
     | UnknownEffect (call, hist) ->
@@ -213,11 +222,13 @@ module Attribute = struct
         Config.pulse_isl
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
+    | AlwaysReachable
     | Closure _
     | CopiedVar _
     | DynamicType _
     | EndOfCollection
     | JavaResourceReleased
+    | PropagateTaintFrom _
     | SourceOriginOfCopy _
     | StdVectorReserve
     | Tainted _
@@ -235,6 +246,7 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Allocated _
+    | AlwaysReachable
     | Closure _
     | CopiedVar _
     | DynamicType _
@@ -242,6 +254,7 @@ module Attribute = struct
     | ISLAbduced _
     | Invalid _
     | JavaResourceReleased
+    | PropagateTaintFrom _
     | RefCounted
     | SourceOriginOfCopy _
     | StdVectorReserve
@@ -254,10 +267,36 @@ module Attribute = struct
 
 
   let is_suitable_for_summary attr =
-    match attr with CopiedVar _ | SourceOriginOfCopy _ -> false | _ -> true
+    match attr with
+    | CopiedVar _ | SourceOriginOfCopy _ ->
+        false
+    | Tainted {intra_procedural_only} ->
+        not intra_procedural_only
+    | AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | Allocated _
+    | AlwaysReachable
+    | Closure _
+    | DynamicType _
+    | EndOfCollection
+    | Invalid _
+    | ISLAbduced _
+    | MustBeInitialized _
+    | MustBeValid _
+    | MustNotBeTainted _
+    | JavaResourceReleased
+    | PropagateTaintFrom _
+    | RefCounted
+    | StdVectorReserve
+    | TaintSanitized _
+    | Uninitialized
+    | UnknownEffect _
+    | UnreachableAt _
+    | WrittenTo _ ->
+        true
 
 
-  let add_call timestamp proc_name call_location caller_history attr =
+  let add_call_and_subst subst timestamp proc_name call_location caller_history attr =
     let add_call_to_trace in_call =
       Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
     in
@@ -277,21 +316,25 @@ module Attribute = struct
         MustBeInitialized (timestamp, add_call_to_trace trace)
     | MustNotBeTainted (_timestamp, sink, trace) ->
         MustNotBeTainted (timestamp, sink, add_call_to_trace trace)
-    | Tainted (source, hist) ->
-        Tainted (source, add_call_to_history hist)
+    | PropagateTaintFrom taints_in ->
+        PropagateTaintFrom (List.map taints_in ~f:(fun {v} -> {v= subst v}))
+    | Tainted {source; hist; intra_procedural_only= false} ->
+        Tainted {source; hist= add_call_to_history hist; intra_procedural_only= false}
     | UnknownEffect (call, hist) ->
         UnknownEffect (call, add_call_to_history hist)
     | WrittenTo trace ->
         WrittenTo (add_call_to_trace trace)
+    | CopiedVar _ | SourceOriginOfCopy _ | Tainted {intra_procedural_only= true} ->
+        L.die InternalError "Unexpected attribute %a in the summary of %a" pp attr Procname.pp
+          proc_name
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
+      | AlwaysReachable
       | Closure _
-      | CopiedVar _
       | DynamicType _
       | EndOfCollection
       | JavaResourceReleased
       | RefCounted
-      | SourceOriginOfCopy _
       | StdVectorReserve
       | TaintSanitized _
       | UnreachableAt _
@@ -309,6 +352,36 @@ module Attribute = struct
         is_released
     | _ ->
         false
+
+
+  let filter_unreachable f_keep = function
+    | PropagateTaintFrom taints_in ->
+        let taints_in' = List.filter taints_in ~f:(fun {v} -> f_keep v) in
+        if List.is_empty taints_in' then None else Some (PropagateTaintFrom taints_in')
+    | ( AddressOfCppTemporary _
+      | AddressOfStackVariable _
+      | Allocated _
+      | AlwaysReachable
+      | Closure _
+      | CopiedVar _
+      | DynamicType _
+      | EndOfCollection
+      | Invalid _
+      | ISLAbduced _
+      | MustBeInitialized _
+      | MustBeValid _
+      | MustNotBeTainted _
+      | JavaResourceReleased
+      | RefCounted
+      | SourceOriginOfCopy _
+      | StdVectorReserve
+      | Tainted _
+      | TaintSanitized _
+      | Uninitialized
+      | UnknownEffect _
+      | UnreachableAt _
+      | WrittenTo _ ) as attr ->
+        Some attr
 end
 
 module Attributes = struct
@@ -323,9 +396,14 @@ module Attributes = struct
         | Invalid (invalidation, trace) -> (invalidation, trace) )
 
 
+  let get_propagate_taint_from =
+    get_by_rank Attribute.propagate_taint_from_rank ~dest:(function [@warning "-8"]
+        | PropagateTaintFrom taints_in -> taints_in )
+
+
   let get_tainted =
-    get_by_rank Attribute.tainted_rank ~dest:(function [@warning "-8"] Tainted (source, hist) ->
-        (source, hist) )
+    get_by_rank Attribute.tainted_rank ~dest:(function [@warning "-8"]
+        | Tainted {source; hist; intra_procedural_only} -> (source, hist, intra_procedural_only) )
 
 
   let get_taint_sanitized =
@@ -379,6 +457,8 @@ module Attributes = struct
     || mem_by_rank Attribute.unknown_effect_rank attrs
     || mem_by_rank Attribute.java_resource_released_rank attrs
 
+
+  let is_always_reachable = mem_by_rank Attribute.always_reachable_rank
 
   let is_uninitialized = mem_by_rank Attribute.uninitialized_rank
 
@@ -446,9 +526,9 @@ module Attributes = struct
         Set.add acc attr1 )
 
 
-  let add_call timestamp proc_name call_location caller_history attrs =
+  let add_call_and_subst subst timestamp proc_name call_location caller_history attrs =
     Set.map attrs ~f:(fun attr ->
-        Attribute.add_call timestamp proc_name call_location caller_history attr )
+        Attribute.add_call_and_subst subst timestamp proc_name call_location caller_history attr )
 
 
   let get_allocated_not_freed attributes =

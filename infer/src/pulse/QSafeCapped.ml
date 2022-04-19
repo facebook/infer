@@ -45,3 +45,6 @@ let mul q1 q2 =
 let div q1 q2 =
   (* {!Q.div} does not optimise these cases *)
   if is_one q2 then q1 else Q.div q1 q2
+
+
+let is_rational q = match Q.classify q with ZERO | NZERO -> true | UNDEF | INF | MINF -> false
