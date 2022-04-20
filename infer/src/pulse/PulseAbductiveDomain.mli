@@ -238,7 +238,7 @@ val summary_of_post :
   -> t
   -> ( summary
      , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
-       | `RetainCycle of summary * Trace.t * Decompiler.expr * Decompiler.expr * Location.t
+       | `RetainCycle of summary * Trace.t list * Decompiler.expr * Decompiler.expr * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
          summary * Decompiler.expr * (Trace.t * Invalidation.must_be_valid_reason option) ] )

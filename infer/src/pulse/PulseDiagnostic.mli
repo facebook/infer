@@ -57,7 +57,7 @@ type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of
-      { assignment_trace: Trace.t
+      { assignment_traces: Trace.t list
       ; value: Decompiler.expr
       ; path: Decompiler.expr
       ; location: Location.t }

@@ -814,29 +814,30 @@ let check_retain_cycles ~dead_addresses tenv astate =
     | Some attributes ->
         Attributes.get_written_to attributes
   in
-  let get_most_recent trace1 trace2 =
+  let compare_locs trace1 trace2 =
     let loc1 = Trace.get_outer_location trace1 in
     let loc2 = Trace.get_outer_location trace2 in
-    if Location.compare loc1 loc2 > 0 then trace1 else trace2
+    Location.compare loc2 loc1
   in
   (* remember explored adresses to avoid reexploring path without retain cycles *)
   let checked = ref [] in
   let check_retain_cycle src_addr =
-    (* [assignment_trace] tracks the most recent assignment met in the retain cycle
+    (* [assignment_traces] tracks the assignments met in the retain cycle
        [seen] tracks addresses met in the current path
        [addr] is the address to explore
     *)
-    let rec contains_cycle decompiler assignment_trace seen addr =
+    let rec contains_cycle decompiler assignment_traces seen addr =
       if List.exists ~f:(AbstractValue.equal addr) !checked then Ok ()
       else if List.exists ~f:(AbstractValue.equal addr) seen then
-        match assignment_trace with
-        | None ->
+        let assignment_traces = List.sort ~compare:compare_locs assignment_traces in
+        match assignment_traces with
+        | [] ->
             Ok ()
-        | Some assignment_trace ->
-            let location = Trace.get_outer_location assignment_trace in
+        | most_recent_trace :: _ ->
+            let location = Trace.get_outer_location most_recent_trace in
             let value = Decompiler.find addr astate.decompiler in
             let path = Decompiler.find addr decompiler in
-            Error (assignment_trace, value, path, location)
+            Error (List.rev assignment_traces, value, path, location)
       else
         let res =
           match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
@@ -850,22 +851,29 @@ let check_retain_cycles ~dead_addresses tenv astate =
                       acc
                   | Ok () ->
                       if BaseMemory.Access.is_strong_access tenv access then
-                        let assignment_trace =
-                          Option.merge (get_assignment_trace addr) assignment_trace
-                            ~f:get_most_recent
+                        let assignment_traces =
+                          match access with
+                          | HilExp.Access.FieldAccess _ -> (
+                            match get_assignment_trace accessed_addr with
+                            | None ->
+                                assignment_traces
+                            | Some assignment_trace ->
+                                assignment_trace :: assignment_traces )
+                          | _ ->
+                              assignment_traces
                         in
                         let decompiler =
                           Decompiler.add_access_source accessed_addr access ~src:addr
                             (astate.post :> base_domain).attrs decompiler
                         in
-                        contains_cycle decompiler assignment_trace (addr :: seen) accessed_addr
+                        contains_cycle decompiler assignment_traces (addr :: seen) accessed_addr
                       else Ok () )
         in
         (* all paths down [addr] have been explored *)
         checked := addr :: !checked ;
         res
     in
-    contains_cycle astate.decompiler None [] src_addr
+    contains_cycle astate.decompiler [] [] src_addr
   in
   List.fold_result dead_addresses ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
@@ -1262,8 +1270,8 @@ let summary_of_post tenv pdesc location astate0 =
       check_retain_cycles ~dead_addresses tenv
         {astate_before_filter with decompiler= astate0.decompiler}
     with
-    | Error (assignment_trace, value, path, location) ->
-        Error (`RetainCycle (astate, assignment_trace, value, path, location))
+    | Error (assignment_traces, value, path, location) ->
+        Error (`RetainCycle (astate, assignment_traces, value, path, location))
     | Ok () -> (
       (* NOTE: it's important for correctness that we check leaks last because we are going to carry
          on with the astate after the leak and we don't want to accidentally skip modifications of

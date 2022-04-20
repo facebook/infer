@@ -51,7 +51,7 @@ type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of
-      { assignment_trace: Trace.t
+      { assignment_traces: Trace.t list
       ; value: Decompiler.expr
       ; path: Decompiler.expr
       ; location: Location.t }
@@ -439,11 +439,13 @@ let get_trace = function
              F.fprintf fmt "allocated by `%a` here" Attribute.pp_allocator allocator )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
-  | RetainCycle {assignment_trace; location} ->
-      Trace.add_to_errlog ~nesting:1
-        ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
-        assignment_trace
-      @@ [Errlog.make_trace_element 0 location "retain cycle here" []]
+  | RetainCycle {assignment_traces; location} ->
+      List.fold_right assignment_traces
+        ~init:[Errlog.make_trace_element 0 location "retain cycle here" []]
+        ~f:(fun assignment_trace errlog ->
+          Trace.add_to_errlog ~nesting:1
+            ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
+            assignment_trace errlog )
   | ErlangError (Badkey {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad key here" []]
