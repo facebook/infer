@@ -50,7 +50,11 @@ let yojson_of_read_uninitialized_value = [%yojson_of: _]
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
-  | RetainCycle of {assignment_trace: Trace.t; location: Location.t}
+  | RetainCycle of
+      { assignment_trace: Trace.t
+      ; value: Decompiler.expr
+      ; path: Decompiler.expr
+      ; location: Location.t }
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
@@ -261,9 +265,11 @@ let get_message diagnostic =
       in
       F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
-  | RetainCycle {location} ->
-      F.asprintf "Memory managed via reference counting is locked in a retain cycle at %a"
-        Location.pp location
+  | RetainCycle {location; value; path} ->
+      F.asprintf
+        "Memory managed via reference counting is locked in a retain cycle at %a: `%a` retains \
+         itself via `%a`"
+        Location.pp location Decompiler.pp_expr value Decompiler.pp_expr path
   | ErlangError (Badkey {calling_context= _; location}) ->
       F.asprintf "bad key at %a" Location.pp location
   | ErlangError (Badmap {calling_context= _; location}) ->

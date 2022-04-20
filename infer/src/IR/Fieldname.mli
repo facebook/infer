@@ -32,6 +32,8 @@ val string_of_capture_mode : CapturedVar.capture_mode -> string
 
 val mk_fake_capture_field : id:int -> Typ.t -> CapturedVar.capture_mode -> t
 
+val get_capture_field_position : t -> int option
+
 val is_java : t -> bool
 
 val is_java_synthetic : t -> bool

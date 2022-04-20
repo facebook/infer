@@ -32,9 +32,10 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
       match (summary_result : _ result) with
       | Ok astate ->
           continue_program astate
-      | Error (`RetainCycle (astate, assignment_trace, location)) ->
+      | Error (`RetainCycle (astate, assignment_trace, value, path, location)) ->
           PulseReport.report_summary_error tenv proc_desc err_log
-            (ReportableErrorSummary {astate; diagnostic= RetainCycle {assignment_trace; location}})
+            (ReportableErrorSummary
+               {astate; diagnostic= RetainCycle {assignment_trace; value; path; location}} )
           |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
       | Error (`MemoryLeak (astate, allocator, allocation_trace, location)) ->
           PulseReport.report_summary_error tenv proc_desc err_log

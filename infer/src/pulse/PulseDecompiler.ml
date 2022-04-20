@@ -10,11 +10,13 @@ module F = Format
 module L = Logging
 module AbstractValue = PulseAbstractValue
 module BaseMemory = PulseBaseMemory
+module BaseAddressAttributes = PulseBaseAddressAttributes
 module CallEvent = PulseCallEvent
 
 type base = PVar of Pvar.t | ReturnValue of CallEvent.t [@@deriving compare, equal]
 
 type access =
+  | CaptureFieldAccess of CapturedVar.t
   | FieldAccess of Fieldname.t
   | ArrayAccess of source_expr option
   | TakeAddress
@@ -29,6 +31,7 @@ and source_expr = base * access list [@@deriving compare, equal]
 type access_expr =
   | ProgramVar of Pvar.t
   | Call of CallEvent.t
+  | Capture of access_expr * CapturedVar.t
   | Deref of access_expr
   | ArrowField of access_expr * Fieldname.t
   | DotField of access_expr * Fieldname.t
@@ -55,6 +58,9 @@ let rec pp_access_expr fmt = function
       in
       if java_or_objc_getter then CallEvent.pp_name_only fmt call
       else F.fprintf fmt "%a()" CallEvent.pp_name_only call
+  | Capture (access_expr, captured_var) ->
+      F.fprintf fmt "%a capturing %a" pp_access_expr access_expr Pvar.pp_value
+        captured_var.CapturedVar.pvar
   | ArrowField (access_expr, field) ->
       F.fprintf fmt "%a->%a" pp_access_expr access_expr Fieldname.pp field
   | DotField (access_expr, field) ->
@@ -98,29 +104,36 @@ let rec access_expr_of_source_expr (base, rev_accesses) =
           Deref (Parens access_expr)
     else access_expr
   in
-  let rec aux ~prev_is_deref access_expr accesses =
+  let rec aux ~prev_is_deref ~prev_is_capture access_expr accesses =
     match (accesses, base) with
     | [], _ ->
         access_expr
     | Dereference :: TakeAddress :: accesses', _ ->
-        aux ~prev_is_deref:false access_expr accesses'
+        aux ~prev_is_deref:false ~prev_is_capture:false access_expr accesses'
     | Dereference :: accesses', _ ->
-        aux ~prev_is_deref:true (deref_if prev_is_deref access_expr) accesses'
+        aux ~prev_is_deref:true ~prev_is_capture:false
+          (deref_if prev_is_deref access_expr)
+          accesses'
     | TakeAddress :: accesses', _ ->
-        aux ~prev_is_deref:false (AddressOf access_expr) accesses'
+        aux ~prev_is_deref:false ~prev_is_capture:false (AddressOf access_expr) accesses'
+    | CaptureFieldAccess captured_var :: accesses', _ ->
+        aux ~prev_is_deref:false ~prev_is_capture:true
+          (Capture (access_expr, captured_var))
+          accesses'
     | FieldAccess field :: accesses', _ ->
         let access_expr' =
           let needs_parens = match access_expr with Deref _ | AddressOf _ -> true | _ -> false in
           let access_expr = if needs_parens then Parens access_expr else access_expr in
-          if prev_is_deref then ArrowField (access_expr, field) else DotField (access_expr, field)
+          if prev_is_deref || prev_is_capture then ArrowField (access_expr, field)
+          else DotField (access_expr, field)
         in
-        aux ~prev_is_deref:false access_expr' accesses'
+        aux ~prev_is_deref:false ~prev_is_capture:false access_expr' accesses'
     | ArrayAccess index :: accesses', _ ->
-        aux ~prev_is_deref:false
+        aux ~prev_is_deref:false ~prev_is_capture:false
           (Array (access_expr, Option.map index ~f:access_expr_of_source_expr))
           accesses'
   in
-  aux ~prev_is_deref base_expr accesses
+  aux ~prev_is_deref ~prev_is_capture:false base_expr accesses
 
 
 let pp_source_expr fmt source_expr = pp_access_expr fmt (access_expr_of_source_expr source_expr)
@@ -200,7 +213,23 @@ let add_call_source v call decompiler =
   Map.add v (ReturnValue call, []) decompiler
 
 
-let access_of_memory_access decompiler (access : BaseMemory.Access.t) : access =
+let access_of_field_access src attrs field =
+  let capture_field_access =
+    let open IOption.Let_syntax in
+    let+ captured_var =
+      let* pos = Fieldname.get_capture_field_position field in
+      let* attributes =
+        let* procname = BaseAddressAttributes.get_closure_proc_name src attrs in
+        Attributes.load procname
+      in
+      List.nth attributes.ProcAttributes.captured pos
+    in
+    CaptureFieldAccess captured_var
+  in
+  IOption.if_none_eval capture_field_access ~f:(fun () -> FieldAccess field)
+
+
+let access_of_memory_access src attrs decompiler (access : BaseMemory.Access.t) : access =
   match access with
   | ArrayAccess (_, index) ->
       let index_expr =
@@ -208,20 +237,20 @@ let access_of_memory_access decompiler (access : BaseMemory.Access.t) : access =
       in
       ArrayAccess index_expr
   | FieldAccess field ->
-      FieldAccess field
+      access_of_field_access src attrs field
   | TakeAddress ->
       TakeAddress
   | Dereference ->
       Dereference
 
 
-let add_access_source v (access : BaseMemory.Access.t) ~src decompiler =
+let add_access_source v (access : BaseMemory.Access.t) ~src attrs decompiler =
   let+ decompiler in
   match Map.find src decompiler with
   | Unknown _ ->
       decompiler
   | SourceExpr ((base, accesses), _) ->
-      Map.add v (base, access_of_memory_access decompiler access :: accesses) decompiler
+      Map.add v (base, access_of_memory_access src attrs decompiler access :: accesses) decompiler
 
 
 type expr = decompiled [@@deriving compare, equal]

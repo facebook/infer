@@ -46,6 +46,17 @@ let mk_fake_capture_field ~id typ mode =
     (Printf.sprintf "%s%s%d" (prefix_of_typ typ) (string_of_capture_mode mode) id)
 
 
+let is_fake_capture_field {field_name} =
+  String.is_prefix ~prefix:fake_capture_field_prefix field_name
+
+
+let get_capture_field_position ({field_name} as field) =
+  if is_fake_capture_field field then
+    String.rsplit2 field_name ~on:'_'
+    |> Option.bind ~f:(fun (_, str_pos) -> int_of_string_opt str_pos)
+  else None
+
+
 let get_class_name {class_name} = class_name
 
 let get_field_name {field_name} = field_name

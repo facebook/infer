@@ -56,7 +56,11 @@ type read_uninitialized_value =
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
-  | RetainCycle of {assignment_trace: Trace.t; location: Location.t}
+  | RetainCycle of
+      { assignment_trace: Trace.t
+      ; value: Decompiler.expr
+      ; path: Decompiler.expr
+      ; location: Location.t }
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}

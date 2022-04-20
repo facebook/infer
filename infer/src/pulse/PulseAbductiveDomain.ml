@@ -524,7 +524,8 @@ module Memory = struct
     in
     let astate =
       map_decompiler astate ~f:(fun decompiler ->
-          Decompiler.add_access_source (fst addr_hist_dst) access ~src:addr_src decompiler )
+          Decompiler.add_access_source (fst addr_hist_dst) access ~src:addr_src
+            (astate.post :> base_domain).attrs decompiler )
     in
     (astate, addr_hist_dst)
 
@@ -786,7 +787,7 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
           Ok () )
 
 
-(* A retain cycle is a memory path from and address to itself, following only
+(* A retain cycle is a memory path from an address to itself, following only
    strong references. From that definition, detecting them can be made
    trivial:
    Given an address and a list of adresses seen on the path, if the adress is
@@ -825,7 +826,7 @@ let check_retain_cycles ~dead_addresses tenv astate =
        [seen] tracks addresses met in the current path
        [addr] is the address to explore
     *)
-    let rec contains_cycle assignment_trace seen addr =
+    let rec contains_cycle decompiler assignment_trace seen addr =
       if List.exists ~f:(AbstractValue.equal addr) !checked then Ok ()
       else if List.exists ~f:(AbstractValue.equal addr) seen then
         match assignment_trace with
@@ -833,7 +834,9 @@ let check_retain_cycles ~dead_addresses tenv astate =
             Ok ()
         | Some assignment_trace ->
             let location = Trace.get_outer_location assignment_trace in
-            Error (assignment_trace, location)
+            let value = Decompiler.find addr astate.decompiler in
+            let path = Decompiler.find addr decompiler in
+            Error (assignment_trace, value, path, location)
       else
         let res =
           match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
@@ -851,14 +854,18 @@ let check_retain_cycles ~dead_addresses tenv astate =
                           Option.merge (get_assignment_trace addr) assignment_trace
                             ~f:get_most_recent
                         in
-                        contains_cycle assignment_trace (addr :: seen) accessed_addr
+                        let decompiler =
+                          Decompiler.add_access_source accessed_addr access ~src:addr
+                            (astate.post :> base_domain).attrs decompiler
+                        in
+                        contains_cycle decompiler assignment_trace (addr :: seen) accessed_addr
                       else Ok () )
         in
         (* all paths down [addr] have been explored *)
         checked := addr :: !checked ;
         res
     in
-    contains_cycle None [] src_addr
+    contains_cycle astate.decompiler None [] src_addr
   in
   List.fold_result dead_addresses ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
@@ -1251,9 +1258,12 @@ let summary_of_post tenv pdesc location astate0 =
   in
   match error with
   | None -> (
-    match check_retain_cycles ~dead_addresses tenv astate_before_filter with
-    | Error (assignment_trace, location) ->
-        Error (`RetainCycle (astate, assignment_trace, location))
+    match
+      check_retain_cycles ~dead_addresses tenv
+        {astate_before_filter with decompiler= astate0.decompiler}
+    with
+    | Error (assignment_trace, value, path, location) ->
+        Error (`RetainCycle (astate, assignment_trace, value, path, location))
     | Ok () -> (
       (* NOTE: it's important for correctness that we check leaks last because we are going to carry
          on with the astate after the leak and we don't want to accidentally skip modifications of
