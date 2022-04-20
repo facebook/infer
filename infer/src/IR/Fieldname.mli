@@ -24,13 +24,13 @@ val get_class_name : t -> Typ.Name.t
 
 val get_field_name : t -> string
 
-val fake_capture_field_prefix : string
-
-val fake_capture_field_weak_prefix : string
-
-val string_of_capture_mode : CapturedVar.capture_mode -> string
-
 val mk_fake_capture_field : id:int -> Typ.t -> CapturedVar.capture_mode -> t
+
+val is_fake_capture_field : t -> bool
+
+val is_fake_capture_field_weak : t -> bool
+
+val is_fake_capture_field_by_ref : t -> bool
 
 val get_capture_field_position : t -> int option
 
