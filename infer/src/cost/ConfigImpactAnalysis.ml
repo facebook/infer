@@ -829,10 +829,18 @@ module Dom = struct
         false
 
 
+  let is_NS_method pname =
+    Procname.get_class_name pname |> Option.exists ~f:(String.is_prefix ~prefix:"NS")
+
+
   let is_config_setter_getter ~is_static ret_typ pname args =
     let method_name = Procname.get_method pname in
     (is_config_setter_typ ~is_static ret_typ args && String.is_prefix method_name ~prefix:"set")
-    || (is_config_getter_typ ~is_static ret_typ args && String.is_prefix method_name ~prefix:"get")
+    || is_config_getter_typ ~is_static ret_typ args
+       && ( String.is_prefix method_name ~prefix:"get"
+          || Language.curr_language_is Clang
+             && (not (is_NS_method pname))
+             && String.is_suffix method_name ~suffix:"Value" )
 
 
   let update_gated_callees ~callee args
