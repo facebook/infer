@@ -6,7 +6,7 @@
 
 -export([
     test_equal_Ok/0,
-    fp_test_equal_Ok2/0,
+    fp_test_equal2_Ok/0,
     test_equal_Bad/0,
     test_neg_equal_Ok/0,
     test_neg_equal_Bad/0,
@@ -18,24 +18,24 @@
     test_neg_equal_atom_Bad/0,
     test_exactly_equal_Ok/0,
     test_exactly_equal_Bad/0,
-    test_exactly_equal_Bad2/0,
+    test_exactly_equal2_Bad/0,
     test_not_equal_Ok/0,
     test_not_equal_Bad/0,
-    test_not_equal_Bad2/0,
+    test_not_equal2_Bad/0,
     test_exactly_not_equal_Ok/0,
-    fp_test_exactly_not_equal_Ok2/0,
+    fp_test_exactly_not_equal2_Ok/0,
     test_exactly_not_equal_Bad/0,
     test_greater_Ok/0,
     test_greater_Bad/0,
-    test_greater_Bad2/0,
+    test_greater2_Bad/0,
     test_less_Ok/0,
     test_less_Bad/0,
-    test_less_Bad2/0,
+    test_less2_Bad/0,
     test_atleast_Ok/0,
-    test_atleast_Ok2/0,
+    test_atleast2_Ok/0,
     test_atleast_Bad/0,
     test_atmost_Ok/0,
-    test_atmost_Ok2/0,
+    test_atmost2_Ok/0,
     test_atmost_Bad/0
 ]).
 
@@ -48,7 +48,7 @@ test_equal_Ok() ->
     assert(X == Y).
 
 % FP (T95767672)
-fp_test_equal_Ok2() ->
+fp_test_equal2_Ok() ->
     X = 2,
     Y = 2.0,
     assert(X == Y).
@@ -108,7 +108,7 @@ test_exactly_equal_Bad() ->
     Y = 3,
     assert(X =:= Y).
 
-test_exactly_equal_Bad2() ->
+test_exactly_equal2_Bad() ->
     X = 2,
     Y = 2.0,
     assert(X =:= Y).
@@ -123,7 +123,7 @@ test_not_equal_Bad() ->
     Y = 2,
     assert(X /= Y).
 
-test_not_equal_Bad2() ->
+test_not_equal2_Bad() ->
     X = 2,
     Y = 2.0,
     assert(X /= Y).
@@ -134,7 +134,7 @@ test_exactly_not_equal_Ok() ->
     assert(X =/= Y).
 
 % FP (T95767672)
-fp_test_exactly_not_equal_Ok2() ->
+fp_test_exactly_not_equal2_Ok() ->
     X = 2,
     Y = 2.0,
     assert(X =/= Y).
@@ -154,7 +154,7 @@ test_greater_Bad() ->
     Y = 3,
     assert(X > Y).
 
-test_greater_Bad2() ->
+test_greater2_Bad() ->
     X = 2,
     Y = 2,
     assert(X > Y).
@@ -169,7 +169,7 @@ test_less_Bad() ->
     Y = 2,
     assert(X < Y).
 
-test_less_Bad2() ->
+test_less2_Bad() ->
     X = 2,
     Y = 2,
     assert(X < Y).
@@ -179,7 +179,7 @@ test_atleast_Ok() ->
     Y = 2,
     assert(X >= Y).
 
-test_atleast_Ok2() ->
+test_atleast2_Ok() ->
     X = 3,
     Y = 2,
     assert(X >= Y).
@@ -194,7 +194,7 @@ test_atmost_Ok() ->
     Y = 2,
     assert(X =< Y).
 
-test_atmost_Ok2() ->
+test_atmost2_Ok() ->
     X = 2,
     Y = 3,
     assert(X =< Y).
