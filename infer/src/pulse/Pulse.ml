@@ -33,7 +33,9 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
          let var_name = Format.asprintf "%a" Var.pp var in
          let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; location} in
          PulseReport.report
-           ~is_suppressed:(String.is_substring var_name ~substring:"copy")
+           ~is_suppressed:
+             ( String.is_substring var_name ~substring:"copy"
+             || String.is_substring var_name ~substring:"Copy" )
            ~latent:false proc_desc err_log diagnostic )
 
 
