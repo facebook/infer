@@ -1,3 +1,15 @@
+----- otp_lists -----
+otp_lists:test_foreach_Bad/0: {badmatch,ok}
+otp_lists:test_foreach_Ok/0: ok
+otp_lists:test_sort1_Ok/0: ok
+otp_lists:test_sort2_Bad/0: {case_clause,[]}
+otp_lists:test_sort3_Bad/0: {case_clause,[1]}
+otp_lists:test_sort4_Bad/0: {case_clause,[]}
+
+----- otp_maps -----
+otp_maps:test_intersect1_Ok/0: ok
+otp_maps:test_intersect2_Bad/0: {case_clause,#{}}
+
 ----- features_arithmetic -----
 features_arithmetic:fn_test_idiv_by_zero_Bad/0: badarith
 features_arithmetic:fn_test_idiv_zero_by_zero_Bad/0: badarith

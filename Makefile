@@ -162,6 +162,7 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
   erlang_pulse \
+  erlang_pulse-otp \
   erlang_topl \
   erlang_compiler \
 

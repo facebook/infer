@@ -1295,7 +1295,7 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
     Procdesc.get_start_node procdesc |~~> [loads_node] ;
     match spec with
     | Some spec ->
-        let prune_block = ErlangTypes.prune_spec env idents spec in
+        let prune_block = ErlangTypes.prune_spec_args env idents spec in
         loads_node |~~> [prune_block.start] ;
         prune_block.exit_success |~~> [start]
     | None ->
@@ -1319,23 +1319,20 @@ let mk_procdesc (env : (_, _) Env.t) attributes =
   procdesc
 
 
+let mk_attributes (env : (_, _) Env.t) (uf_name : Env.UnqualifiedFunction.t) procname =
+  let default = ProcAttributes.default env.location.file procname in
+  let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
+  let formals = List.init ~f:(fun i -> (mangled_arg i, any_typ, Annot.Item.empty)) uf_name.arity in
+  {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
+
+
 (** Translate one top-level function. *)
 let translate_one_function (env : (_, _) Env.t) function_ clauses =
   let uf_name, procname = Env.func_procname env function_ in
-  let attributes =
-    let default = ProcAttributes.default env.location.file procname in
-    let access : ProcAttributes.access = if Set.mem env.exports uf_name then Public else Private in
-    let formals =
-      List.init ~f:(fun i -> (mangled_arg i, any_typ, Annot.Item.empty)) uf_name.arity
-    in
-    {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
-  in
+  let attributes = mk_attributes env uf_name procname in
   let procdesc = mk_procdesc env attributes in
-  let env =
-    { env with
-      procdesc= Env.Present procdesc
-    ; result= Env.Present (Exp.Lvar (Pvar.get_ret_pvar procname)) }
-  in
+  let ret_var = Exp.Lvar (Pvar.get_ret_pvar procname) in
+  let env = {env with procdesc= Env.Present procdesc; result= Env.Present ret_var} in
   let spec = Env.UnqualifiedFunction.Map.find env.specs uf_name in
   translate_function_clauses env procdesc attributes procname clauses spec
 
@@ -1375,7 +1372,31 @@ let translate_one_type (env : (_, _) Env.t) name type_ =
   store_node |~~> [Procdesc.get_exit_node procdesc]
 
 
-(** Translate and store each function of a module. *)
+let translate_one_spec (env : (_, _) Env.t) function_ spec =
+  let uf_name, procname = Env.func_procname env function_ in
+  (* Skip specs where we have a function, because those are translated
+     and the spec is used there. *)
+  if Env.UnqualifiedFunction.Set.mem env.functions uf_name then ()
+  else
+    (* Return a fresh value but prune on its type. *)
+    let attributes = mk_attributes env uf_name procname in
+    let procdesc = mk_procdesc env attributes in
+    let ret_var = Exp.Lvar (Pvar.get_ret_pvar procname) in
+    let env = {env with procdesc= Env.Present procdesc; result= Env.Present ret_var} in
+    let ret_id = mk_fresh_id () in
+    let store_instr =
+      Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= Var ret_id; loc= env.location}
+    in
+    let body =
+      let prune_block = ErlangTypes.prune_spec_return env ret_id spec in
+      let store_block = Block.make_instruction env [store_instr] in
+      Block.all env [prune_block; store_block]
+    in
+    Procdesc.get_start_node procdesc |~~> [body.start] ;
+    body.exit_success |~~> [Procdesc.get_exit_node procdesc]
+
+
+(** Translate forms of a module. *)
 let translate_module (env : (_, _) Env.t) module_ =
   let f {Ast.location; simple_form} =
     let env = update_location location env in
@@ -1384,6 +1405,8 @@ let translate_module (env : (_, _) Env.t) module_ =
         translate_one_function env function_ clauses
     | Type {name; type_} ->
         translate_one_type env name type_
+    | Spec {function_; spec} ->
+        translate_one_spec env function_ spec
     | _ ->
         ()
   in

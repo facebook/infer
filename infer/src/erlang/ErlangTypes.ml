@@ -25,7 +25,7 @@ let combine_bool ~op ~default exprs =
   match List.reduce exprs ~f with Some expr -> expr | None -> default
 
 
-let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident.t * Ast.type_) :
+let rec type_condition (env : (_, _) Env.t) constraints ((ident, type_) : Ident.t * Ast.type_) :
     Block.t * Exp.t =
   let simple_condition typ id =
     let is_typ = mk_fresh_id () in
@@ -40,7 +40,7 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       Sil.Call
         ( (condition, any_typ)
         , Exp.Const (Cfun procname)
-        , [(Exp.Var arg_id, any_typ)]
+        , [(Exp.Var ident, any_typ)]
         , env.location
         , CallFlags.default )
     in
@@ -62,29 +62,29 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
   | Any ->
       succ_true env
   | Atom Any ->
-      simple_condition Atom arg_id
+      simple_condition Atom ident
   | Atom (Literal a) ->
-      atom_literal a arg_id
+      atom_literal a ident
   | Integer Any ->
-      simple_condition Integer arg_id
+      simple_condition Integer ident
   | List (Proper _) ->
-      let block1, expr1 = simple_condition Cons arg_id in
-      let block2, expr2 = simple_condition Nil arg_id in
+      let block1, expr1 = simple_condition Cons ident in
+      let block2, expr2 = simple_condition Nil ident in
       (Block.all env [block1; block2], Exp.BinOp (LOr, expr1, expr2))
   | Map ->
-      simple_condition Map arg_id
+      simple_condition Map ident
   | Nil ->
-      simple_condition Nil arg_id
+      simple_condition Nil ident
   | Record name -> (
     (* We can replace this check with [find_exn] once we have AST validation for specs (T115271156). *)
     match String.Map.find env.records name with
     | Some record_info ->
         let tuple_size = 1 + List.length record_info.field_names in
         let tuple_typ = ErlangTypeName.Tuple tuple_size in
-        let is_tuple_block, is_tuple_cond = simple_condition tuple_typ arg_id in
+        let is_tuple_block, is_tuple_cond = simple_condition tuple_typ ident in
         let name_id = mk_fresh_id () in
         let load_name_instr =
-          Env.load_field_from_expr env name_id (Var arg_id) (ErlangTypeName.tuple_elem 1) tuple_typ
+          Env.load_field_from_expr env name_id (Var ident) (ErlangTypeName.tuple_elem 1) tuple_typ
         in
         let is_atom_block, is_atom_cond = atom_literal name name_id in
         let condition = Exp.BinOp (Binop.LAnd, is_tuple_cond, is_atom_cond) in
@@ -98,12 +98,12 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
   | Tuple (FixedSize types) ->
       let tuple_size = List.length types in
       let tuple_typ : ErlangTypeName.t = Tuple tuple_size in
-      let is_tuple_block, is_tuple_cond = simple_condition tuple_typ arg_id in
+      let is_tuple_block, is_tuple_cond = simple_condition tuple_typ ident in
       let fields = ErlangTypeName.tuple_field_names tuple_size in
       let fields_and_types = List.zip_exn fields types in
       let f (field, type_) =
         let id = mk_fresh_id () in
-        let load_instr = Env.load_field_from_expr env id (Var arg_id) field tuple_typ in
+        let load_instr = Env.load_field_from_expr env id (Var ident) field tuple_typ in
         let load_block = Block.make_instruction env [load_instr] in
         let sub_block, sub_expr = type_condition env constraints (id, type_) in
         (Block.all env [load_block; sub_block], sub_expr)
@@ -112,7 +112,7 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       ( Block.all env (is_tuple_block :: blocks)
       , combine_bool ~op:Binop.LAnd ~default:true_const (is_tuple_cond :: exprs) )
   | Union types ->
-      let f t = type_condition env constraints (arg_id, t) in
+      let f t = type_condition env constraints (ident, t) in
       let blocks, exprs = List.unzip (List.map ~f types) in
       (* Union shouldn't be empty, but if it somehow happens, just return true. *)
       (Block.all env blocks, combine_bool ~op:Binop.LOr ~default:true_const exprs)
@@ -125,7 +125,7 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
        such cases before. TODO: check for cycles in a validation step (T115271156) *)
     match Map.find constraints v with
     | Some subtyp ->
-        type_condition env constraints (arg_id, subtyp)
+        type_condition env constraints (ident, subtyp)
     | None ->
         L.debug Capture Verbose
           "@[No constraint found, or type is not supported for type variable %s, treating as \
@@ -138,7 +138,7 @@ let rec type_condition (env : (_, _) Env.t) constraints ((arg_id, type_) : Ident
       succ_true env
 
 
-let disjunct_condition (env : (_, _) Env.t) arg_ids (specd : Ast.spec_disjunct) : Block.t * Exp.t =
+let disjunct_condition_args (env : (_, _) Env.t) arg_ids (specd : Ast.spec_disjunct) =
   (* Generate condition for the type of each argument and form a conjunction. *)
   match List.zip arg_ids specd.arguments with
   | Ok args_with_types ->
@@ -153,9 +153,9 @@ let disjunct_condition (env : (_, _) Env.t) arg_ids (specd : Ast.spec_disjunct) 
       succ_true env
 
 
-let prune_spec (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
+let process_disjuncts env spec f =
   (* Generate condition for each disjunct recursively and form a disjunction in a prune node. *)
-  let blocks, conditions = List.unzip (List.map ~f:(disjunct_condition env arg_ids) spec) in
+  let blocks, conditions = List.unzip (List.map ~f spec) in
   (* We could also use nondeterminism among blocks which could give more precision. *)
   (* Overloads shouldn't be empty, but if it somehow happens, just return true. *)
   let condition = combine_bool ~op:Binop.LOr ~default:true_const conditions in
@@ -171,3 +171,12 @@ let prune_spec (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
     {Block.start= prune_node; exit_success= prune_node; exit_failure= Node.make_nop env}
   in
   Block.all env (blocks @ [load_block; prune_block])
+
+
+let prune_spec_args (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
+  process_disjuncts env spec (disjunct_condition_args env arg_ids)
+
+
+let prune_spec_return (env : (_, _) Env.t) ret_id (spec : Ast.spec) : Block.t =
+  let f (specd : Ast.spec_disjunct) = type_condition env specd.constraints (ret_id, specd.return) in
+  process_disjuncts env spec f
