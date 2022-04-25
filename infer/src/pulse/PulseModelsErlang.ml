@@ -18,9 +18,9 @@ open PulseModelsImport
 type maker =
   AbductiveDomain.t -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
-(** A type similar to {!maker} for functions that return a disjunction of (object, handler) results. *)
-type maker_disjunction =
-  AbductiveDomain.t -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t list
+(** A type similar to {!maker} for transfer functions that only return an abstract value without any
+    history attached to it. *)
+type value_maker = AbductiveDomain.t -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t
 
 let write_field_and_deref path location ~struct_addr ~field_addr ~field_val field_name astate =
   let* astate =
@@ -33,6 +33,20 @@ let write_dynamic_type_and_return (addr_val, hist) typ ret_id astate =
   let typ = Typ.mk_struct (ErlangType typ) in
   let astate = PulseOperations.add_dynamic_type typ addr_val astate in
   PulseOperations.write_id ret_id (addr_val, hist) astate
+
+
+(** A simple helper that wraps destination-passing-style evaluation functions that also return a
+    handler to their result into a function that allocates the destination under the hood and simply
+    return that handler.
+
+    This allows to transform this (somehow recurring) pattern:
+
+    [let dest = AbstractValue.mk_fresh () in let (astate, dest) = eval dest arg1 ... argN in ....]
+
+    into the simpler: [let (astate, dest) = eval_into_fresh eval arg1 ... argN in ...] *)
+let eval_into_fresh eval =
+  let symbol = AbstractValue.mk_fresh () in
+  eval symbol
 
 
 (** Use for chaining functions of the type ('a->('b,'err) result list). The idea of such functions
@@ -58,13 +72,21 @@ let ( let> ) x f =
     x
 
 
+(** Builds as an abstract value the truth value of the predicate "The value given as an argument as
+    the erlang type given as the other argument" *)
+let has_erlang_type value typ : value_maker =
+ fun astate ->
+  let instanceof_val = AbstractValue.mk_fresh () in
+  let sil_type = Typ.mk_struct (ErlangType typ) in
+  let+ astate = PulseArithmetic.and_equal_instanceof instanceof_val value sil_type astate in
+  (astate, instanceof_val)
+
+
 let prune_type path location (value, hist) typ astate : AbductiveDomain.t AccessResult.t list =
   (* If check_addr_access fails, we stop exploring this path. *)
   let ( let^ ) x f = match x with Recoverable _ | FatalError _ -> [] | Ok astate -> [f astate] in
   let^ astate = PulseOperations.check_addr_access path Read location (value, hist) astate in
-  let typ = Typ.mk_struct (ErlangType typ) in
-  let instanceof_val = AbstractValue.mk_fresh () in
-  let* astate = PulseArithmetic.and_equal_instanceof instanceof_val value typ astate in
+  let* astate, instanceof_val = has_erlang_type value typ astate in
   let+ astate = PulseArithmetic.prune_positive instanceof_val astate in
   astate
 
@@ -215,80 +237,202 @@ module Integers = struct
 end
 
 module Comparison = struct
-  (** Makes a disjunction of objects holding the comparison result of two parameters. The
-      disjunction matches a case analysis of the type of these parameters. Currently, it is built as
-      follows:
+  (** Makes an abstract value holding the comparison result of two parameters. We perform a case
+      analysis of the type of these parameters.
 
-      - The parameters are both integers, then we compare their values
-      - At least one of the parameters is not an integer, then we compare the raw objects.
+      See the documentation of {!Comparator} objects for the meaning of the [cmp] parameter. It will
+      be given as an argument by specific comparisons functions and should define a few methods that
+      return a result for comparisons on specific types.
 
-      TODO: T95767672 This matches the old behaviour where Erlang integers were represented with
-      native SIL one, but shall be modified and extended to make the model work with more types. In
-      particular, the last case where we compare raw objects in Pulse does not have a correct
-      semantics. *)
-  let make_binop_raw sil_op location path ((x_val, _) as x) ((y_val, _) as y) : maker_disjunction =
+      Note that we here say that two values are "incompatible" if they have separate types. That
+      does not mean that the comparison is invalid, as in erlang all comparisons are properly
+      defined even on differently-typed values:
+      {:https://www.erlang.org/doc/reference_manual/expressions.html#term-comparisons}.
+
+      Currently, the final result is built as follows:
+
+      - If the parameters are both integers, then we compare them as integers (the [cmp#integer]
+        method will then typically compare their value fields).
+      - If one of the parameters is an integer and the other one is not, then we return the result
+        of a comparison of incompatible types (eg. equality would be false, and difference would be
+        true).
+      - If both parameters are not integers, then the comparison is unsupported and we use the
+        [cmp#unsupported] method (that could for instance return an - overapproximating -
+        unconstrained result).
+
+      The final result is a disjunction of all these cases, built as a [LOr] tree (rather than a
+      dijunct list) to avoid the multiplication of cases that quickly leads to major precision
+      losses.
+
+      Note that, on supported types (eg. integers), it is important that the [cmp] methods decide
+      themselves if they should compare some specific fields or not, instead of getting these fields
+      in the global function and have the methods work on the field values. This is because, when we
+      extend this code to work on other more complex types, which field is used or not may depend on
+      the actual comparison operator that we're computing. For instance the equality of atoms can be
+      decided on their hash, but their relative ordering should check their names as
+      lexicographically ordered strings. *)
+  let make_raw cmp location path ((x_val, _) as x) ((y_val, _) as y) : maker =
    fun astate ->
-    (* TODO: we could assume that x and y have the same type then
-       reduce the typechecking operations to x only. This will be
-       particularly relevant when we extend this model to support
-       types other than integers. *)
-    let integer_type = Typ.mk_struct (ErlangType Integer) in
-    let x_is_integer = AbstractValue.mk_fresh () in
-    let y_is_integer = AbstractValue.mk_fresh () in
-    let x_and_y_are_integers = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_equal_instanceof x_is_integer x_val integer_type astate in
-    let<*> astate = PulseArithmetic.and_equal_instanceof y_is_integer y_val integer_type astate in
-    let<*> astate, x_and_y_are_integers_av =
-      PulseArithmetic.eval_binop x_and_y_are_integers Binop.LAnd (AbstractValueOperand x_is_integer)
-        (AbstractValueOperand y_is_integer) astate
+    let* astate, x_is_integer = has_erlang_type x_val Integer astate in
+    let* astate, y_is_integer = has_erlang_type y_val Integer astate in
+    let* astate, x_is_not_integer =
+      eval_into_fresh PulseArithmetic.eval_unop Unop.LNot x_is_integer astate
     in
-    let<*> astate_x_and_y_are_integers =
-      PulseArithmetic.prune_positive x_and_y_are_integers_av astate
+    let* astate, y_is_not_integer =
+      eval_into_fresh PulseArithmetic.eval_unop Unop.LNot y_is_integer astate
     in
-    let<*> astate_x_or_y_is_not_integer =
-      PulseArithmetic.prune_eq_zero x_and_y_are_integers astate
+    let* astate, are_integers =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd x_is_integer y_is_integer astate
     in
-    let astate_x_and_y_are_integers, _, (x_int_value, _) =
-      load_field path Integers.value_field location x astate_x_and_y_are_integers
+    let* astate, are_incompatible_1 =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd x_is_integer y_is_not_integer astate
     in
-    let astate_x_and_y_are_integers, _, (y_int_value, _) =
-      load_field path Integers.value_field location y astate_x_and_y_are_integers
+    let* astate, are_incompatible_2 =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd x_is_not_integer y_is_integer astate
     in
-    let int_comparison = AbstractValue.mk_fresh () in
-    let int_hist = Hist.single_alloc path location "int_comparison" in
-    let<*> astate_x_and_y_are_integers, int_comparison =
-      PulseArithmetic.eval_binop int_comparison sil_op (AbstractValueOperand x_int_value)
-        (AbstractValueOperand y_int_value) astate_x_and_y_are_integers
+    let* astate, are_incompatible =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LOr are_incompatible_1 are_incompatible_2
+        astate
     in
-    let not_int_comparison = AbstractValue.mk_fresh () in
-    let not_int_hist = Hist.single_alloc path location "not_int_comparison" in
-    let<*> astate_x_or_y_is_not_integer, not_int_comparison =
-      PulseArithmetic.eval_binop not_int_comparison sil_op (AbstractValueOperand x_val)
-        (AbstractValueOperand y_val) astate_x_or_y_is_not_integer
+    let* astate, are_unsupported =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd x_is_not_integer y_is_not_integer
+        astate
     in
-    [ Ok (astate_x_and_y_are_integers, (int_comparison, int_hist))
-    ; Ok (astate_x_or_y_is_not_integer, (not_int_comparison, not_int_hist)) ]
+    let* astate, int_comparison = cmp#integer location path x y astate in
+    let* astate, int_comparison =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_integers int_comparison astate
+    in
+    let* astate, incompatible_comparison = cmp#incompatible location path x y astate in
+    let* astate, incompatible_comparison =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_incompatible
+        incompatible_comparison astate
+    in
+    let* astate, unsupported_comparison = cmp#unsupported location path x y astate in
+    let* astate, unsupported_comparison =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_unsupported
+        unsupported_comparison astate
+    in
+    let* astate, comparison =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LOr unsupported_comparison
+        incompatible_comparison astate
+    in
+    let* astate, comparison =
+      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LOr comparison int_comparison astate
+    in
+    let hist = Hist.single_alloc path location "comparison" in
+    Ok (astate, (comparison, hist))
 
 
   (** A model of comparison operators where we store in the destination the result of comparing two
       parameters. *)
-  let binop sil_op x y : model =
+  let make cmp x y : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let> foo, (bar, _) = make_binop_raw sil_op location path x y astate in
-    Atoms.write_return_from_bool path location bar ret_id foo
+    let<*> astate, (result, _hist) = make_raw cmp location path x y astate in
+    Atoms.write_return_from_bool path location result ret_id astate
 
 
-  (** Returns a list of abstract states, corresponding to the disjunction of {!make_binop_raw},
-      whose each element has been pruned according to the comparison. *)
-  let prune_binop sil_op location path x y astate : AbductiveDomain.t AccessResult.t list =
-    let> astate, (comparison, _hist) = make_binop_raw sil_op location path x y astate in
-    let astate = PulseArithmetic.prune_positive comparison astate in
-    [astate]
+  (** Returns an abstract state that has been pruned on the comparison result being true. *)
+  let prune cmp location path x y astate : AbductiveDomain.t AccessResult.t =
+    let* astate, (comparison, _hist) = make_raw cmp location path x y astate in
+    PulseArithmetic.prune_positive comparison astate
 
 
-  let prune_equal = prune_binop Binop.Eq
+  module Comparator = struct
+    (** Objects that define how to compare values according to their types.
 
-  let equal = binop Binop.Eq
+        We use objects as "tuples with names" to avoid defining a cumbersome record type.
+
+        These objects define a few methods, each one corresponding to a comparison on values that
+        have a specific type. For instance, the [integer] method can assume that both compared
+        values are indeed of the integer type, and that method will be called by the global
+        comparison function on these cases.
+
+        Comparators must also define an [unsupported] method, that the dispatching function will
+        call on types that it does not support, and an [incompatible] method that will be called
+        when both compared values are known to be of a different type. *)
+
+    (** {1 Helper functions} *)
+
+    (** These functions are provided as helpers to define the comparator methods. *)
+
+    (** Compares two objects by comparing one specific field. No type checking is make and the user
+        should take care that the field is indeed a valid one for both arguments. *)
+    let from_fields sil_op field location path x y : value_maker =
+     fun astate ->
+      let astate, _addr, (x_field, _) = load_field path field location x astate in
+      let astate, _addr, (y_field, _) = load_field path field location y astate in
+      eval_into_fresh PulseArithmetic.eval_binop_av sil_op x_field y_field astate
+
+
+    (** A trivial comparison that is always false. Can be used eg. for equality on incompatible
+        types. *)
+    let const_false _location _path _x _y : value_maker =
+     fun astate ->
+      let const_result = AbstractValue.mk_fresh () in
+      let+ astate = PulseArithmetic.prune_eq_zero const_result astate in
+      (astate, const_result)
+
+
+    (** A trivial comparison that is always true. Can be used eg. for inequality on incompatible
+        types. *)
+    let _const_true _location _path _x _y : value_maker =
+     (* TODO T116009383: this is currently unused. Remove the leading underscore and this comment
+        when it becomes useful (probably when extending this model for inequality). *)
+     fun astate ->
+      let const_result = AbstractValue.mk_fresh () in
+      let+ astate = PulseArithmetic.prune_positive const_result astate in
+      (astate, const_result)
+
+
+    (** Returns an unconstrained value. Can be used eg. for overapproximation or for unsupported
+        comparisons. Note that, as an over-approximation, it can lead to some false positives. *)
+    let unknown _location _path _x _y : value_maker =
+     fun astate ->
+      let result = AbstractValue.mk_fresh () in
+      Ok (astate, result)
+
+
+    (** {1 Comparators as objects} *)
+
+    (** The type of the methods that compare two values based on a specific type combination. They
+        take the two values as parameters and build the abstract result that holds the comparison
+        value. We define this type explicitly to force monomorphism on class method definition. *)
+    type typed_comparison =
+         Location.t
+      -> PathContext.t
+      -> AbstractValue.t * ValueHistory.t
+      -> AbstractValue.t * ValueHistory.t
+      -> value_maker
+
+    class virtual default =
+      object (self)
+
+        (** Default objects with unsupported comparisons that return an unknown result and all other
+            cases that default on the unsupported one. Specific comparators can inherit this and
+            redefine supported operations. *)
+
+        method unsupported : typed_comparison = unknown
+
+        method integer = self#unsupported
+
+        method incompatible = self#unsupported
+      end
+
+    let eq =
+      object
+        inherit default
+
+        method integer = from_fields Binop.Eq Integers.value_field
+
+        method incompatible = const_false
+      end
+  end
+
+  (** {1 Specific comparison operators} *)
+
+  let equal = make Comparator.eq
+
+  let prune_equal = prune Comparator.eq
 end
 
 module Lists = struct
@@ -517,7 +661,7 @@ module Maps = struct
       in
       let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
       let astate, _key_addr, tracked_key = load_field path key_field location map astate in
-      let> astate = Comparison.prune_equal location path key tracked_key astate in
+      let<*> astate = Comparison.prune_equal location path key tracked_key astate in
       let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
       Atoms.write_return_from_bool path location ret_val_true ret_id astate
     in
@@ -539,7 +683,7 @@ module Maps = struct
       in
       let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
       let astate, _key_addr, tracked_key = load_field path key_field location map astate in
-      let> astate = Comparison.prune_equal location path (key, key_history) tracked_key astate in
+      let<*> astate = Comparison.prune_equal location path (key, key_history) tracked_key astate in
       let astate, _value_addr, tracked_value = load_field path value_field location map astate in
       [Ok (PulseOperations.write_id ret_id tracked_value astate)]
     in

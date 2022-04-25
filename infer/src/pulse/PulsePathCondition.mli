@@ -66,6 +66,10 @@ val and_equal : operand -> operand -> t -> t * new_eqs
 
 val eval_binop : AbstractValue.t -> Binop.t -> operand -> operand -> t -> t * new_eqs
 
+val eval_binop_av :
+  AbstractValue.t -> Binop.t -> AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
+(** Helper function that wraps [eval_binop], to be used when both operands are abstract values *)
+
 val eval_unop : AbstractValue.t -> Unop.t -> AbstractValue.t -> t -> t * new_eqs
 
 val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t * new_eqs

@@ -96,28 +96,36 @@ features_catch_expr:test_catch_ok_Ok/0: ok
 
 ----- features_comparison -----
 features_comparison:fp_test_equal_Ok2/0: ok
+features_comparison:fp_test_equal_atom_Ok/0: ok
 features_comparison:fp_test_exactly_not_equal_Ok2/0: ok
-features_comparison:test_atleast_Bad/0: if_clause
+features_comparison:fp_test_neg_equal_atom_Ok/0: ok
+features_comparison:test_atleast_Bad/0: function_clause
 features_comparison:test_atleast_Ok/0: ok
 features_comparison:test_atleast_Ok2/0: ok
-features_comparison:test_atmost_Bad/0: if_clause
+features_comparison:test_atmost_Bad/0: function_clause
 features_comparison:test_atmost_Ok/0: ok
 features_comparison:test_atmost_Ok2/0: ok
-features_comparison:test_equal_Bad/0: if_clause
+features_comparison:test_equal_Bad/0: function_clause
 features_comparison:test_equal_Ok/0: ok
-features_comparison:test_exactly_equal_Bad/0: if_clause
-features_comparison:test_exactly_equal_Bad2/0: if_clause
+features_comparison:test_equal_atom_Bad/0: function_clause
+features_comparison:test_equal_int_atom_Bad/0: function_clause
+features_comparison:test_exactly_equal_Bad/0: function_clause
+features_comparison:test_exactly_equal_Bad2/0: function_clause
 features_comparison:test_exactly_equal_Ok/0: ok
-features_comparison:test_exactly_not_equal_Bad/0: if_clause
+features_comparison:test_exactly_not_equal_Bad/0: function_clause
 features_comparison:test_exactly_not_equal_Ok/0: ok
-features_comparison:test_greater_Bad/0: if_clause
-features_comparison:test_greater_Bad2/0: if_clause
+features_comparison:test_greater_Bad/0: function_clause
+features_comparison:test_greater_Bad2/0: function_clause
 features_comparison:test_greater_Ok/0: ok
-features_comparison:test_less_Bad/0: if_clause
-features_comparison:test_less_Bad2/0: if_clause
+features_comparison:test_less_Bad/0: function_clause
+features_comparison:test_less_Bad2/0: function_clause
 features_comparison:test_less_Ok/0: ok
-features_comparison:test_not_equal_Bad/0: if_clause
-features_comparison:test_not_equal_Bad2/0: if_clause
+features_comparison:test_neg_equal_Bad/0: function_clause
+features_comparison:test_neg_equal_Ok/0: ok
+features_comparison:test_neg_equal_atom_Bad/0: function_clause
+features_comparison:test_neg_equal_int_atom_Ok/0: ok
+features_comparison:test_not_equal_Bad/0: function_clause
+features_comparison:test_not_equal_Bad2/0: function_clause
 features_comparison:test_not_equal_Ok/0: ok
 
 ----- features_fun -----

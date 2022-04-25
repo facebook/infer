@@ -37,6 +37,15 @@ val eval_binop :
   -> AbductiveDomain.t
   -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t
 
+val eval_binop_av :
+     AbstractValue.t
+  -> Binop.t
+  -> AbstractValue.t
+  -> AbstractValue.t
+  -> AbductiveDomain.t
+  -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t
+(** Shorter than [eval_binop] when both operands are abstract values *)
+
 val eval_unop :
      AbstractValue.t
   -> Unop.t

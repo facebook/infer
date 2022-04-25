@@ -48,22 +48,27 @@ type operand = PathCondition.operand =
   | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
 
-let and_equal op1 op2 astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.and_equal op1 op2 phi)
+let and_equal lhs rhs astate =
+  map_path_condition astate ~f:(fun phi -> PathCondition.and_equal lhs rhs phi)
 
 
-let eval_binop binop_addr binop op_lhs op_rhs astate =
-  map_path_condition_with_ret astate binop_addr ~f:(fun phi ->
-      PathCondition.eval_binop binop_addr binop op_lhs op_rhs phi )
+let eval_binop ret_addr binop lhs rhs astate =
+  map_path_condition_with_ret astate ret_addr ~f:(fun phi ->
+      PathCondition.eval_binop ret_addr binop lhs rhs phi )
 
 
-let eval_unop unop_addr unop addr astate =
-  map_path_condition_with_ret astate unop_addr ~f:(fun phi ->
-      PathCondition.eval_unop unop_addr unop addr phi )
+let eval_binop_av ret_addr binop lhs rhs astate =
+  map_path_condition_with_ret astate ret_addr ~f:(fun phi ->
+      PathCondition.eval_binop_av ret_addr binop lhs rhs phi )
 
 
-let prune_binop ~negated bop lhs_op rhs_op astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.prune_binop ~negated bop lhs_op rhs_op phi)
+let eval_unop ret_addr unop operand astate =
+  map_path_condition_with_ret astate ret_addr ~f:(fun phi ->
+      PathCondition.eval_unop ret_addr unop operand phi )
+
+
+let prune_binop ~negated binop lhs rhs astate =
+  map_path_condition astate ~f:(fun phi -> PathCondition.prune_binop ~negated binop lhs rhs phi)
 
 
 let literal_zero = ConstOperand (Cint IntLit.zero)
