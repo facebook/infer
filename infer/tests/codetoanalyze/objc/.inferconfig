@@ -6,13 +6,22 @@
           "sink_kinds": ["SimpleSink"]
         }
       ]
+     },
+     { "short_description": "Input Create to Handler",
+      "taint_flows": [
+        { "source_kinds": ["InputCreate"],
+          "sink_kinds": ["Handler"]
+        }
+      ]
      }
    ],
     "pulse-taint-sources": [
         { "class_names": ["InferTaint"],
           "method_names": ["source"],
           "kinds": ["SimpleSource"]
-        }
+        },
+        {"procedure": "AttributedStringProviderInputCreate", "kinds": ["InputCreate"]},
+        {"procedure": "StringProviderInputCreate", "kinds": ["InputCreate"]}
     ],
     "pulse-taint-sinks": [
         { "procedure": "inferSensitiveSink" },
@@ -20,6 +29,12 @@
           "method_names": ["sink:"],
           "kinds": ["SimpleSink"],
           "taint_target": ["ArgumentPositions", [0]]
-        }
+        },
+        { "procedure": "HandleIntentForKey",
+          "kinds": ["Handler"],
+          "taint_target": ["ArgumentPositions", [2]] },
+        { "procedure": "HandleIntent",
+          "kinds": ["Handler"],
+          "taint_target": ["ArgumentPositions", [2]] }
     ]
 }
