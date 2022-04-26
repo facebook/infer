@@ -1326,7 +1326,7 @@ let mk_attributes (env : (_, _) Env.t) (uf_name : Env.UnqualifiedFunction.t) pro
   {default with access; formals; is_defined= true; loc= env.location; ret_type= any_typ}
 
 
-(** Translate one top-level function. *)
+(** Translate one top-level function, including pruning based on it's specs (if any). *)
 let translate_one_function (env : (_, _) Env.t) function_ clauses =
   let uf_name, procname = Env.func_procname env function_ in
   let attributes = mk_attributes env uf_name procname in
@@ -1337,6 +1337,10 @@ let translate_one_function (env : (_, _) Env.t) function_ clauses =
   translate_function_clauses env procdesc attributes procname clauses spec
 
 
+(** Translate one user-defined type into a procedure that has one argument and returns true if and
+    only if the argument has this type. Can be used to prune based on types. Non-exported types
+    would not require a procedure (could be inlined), but remote types do require it and this way it
+    is more uniform. *)
 let translate_one_type (env : (_, _) Env.t) name type_ =
   let procname = Env.procname_for_user_type env.current_module name in
   let formal = mangled_arg 0 in
@@ -1354,46 +1358,52 @@ let translate_one_type (env : (_, _) Env.t) name type_ =
   let procdesc = mk_procdesc env attributes in
   let ret_var = Exp.Lvar (Pvar.get_ret_pvar procname) in
   let env = {env with procdesc= Env.Present procdesc; result= Env.Present ret_var} in
-  let arg_id = mk_fresh_id () in
-  let load =
+  let body =
+    let arg_id = mk_fresh_id () in
     let pvar = Pvar.mk formal procname in
-    Sil.Load {id= arg_id; e= Exp.Lvar pvar; root_typ= any_typ; typ= any_typ; loc= attributes.loc}
+    let load_instr =
+      Sil.Load {id= arg_id; e= Exp.Lvar pvar; root_typ= any_typ; typ= any_typ; loc= attributes.loc}
+    in
+    let load_block = Block.make_instruction env [load_instr] in
+    let type_check_block, condition =
+      ErlangTypes.type_condition env String.Map.empty (arg_id, type_)
+    in
+    let store_instr =
+      Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= condition; loc= env.location}
+    in
+    let store_block = Block.make_instruction env [store_instr] in
+    Block.all env [load_block; type_check_block; store_block]
   in
-  let loads_node = Node.make_stmt env ~kind:Erlang [load] in
-  let type_block, condition = ErlangTypes.type_condition env String.Map.empty (arg_id, type_) in
-  let store_node =
-    Node.make_stmt env ~kind:Erlang
-      [Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= condition; loc= env.location}]
-  in
-  Procdesc.get_start_node procdesc |~~> [loads_node] ;
-  loads_node |~~> [type_block.start] ;
-  type_block.exit_success |~~> [store_node] ;
-  type_block.exit_failure |~~> [store_node] ;
-  store_node |~~> [Procdesc.get_exit_node procdesc]
+  Procdesc.get_start_node procdesc |~~> [body.start] ;
+  body.exit_success |~~> [Procdesc.get_exit_node procdesc] ;
+  body.exit_failure |~~> [Procdesc.get_exit_node procdesc]
 
 
+(** Translate one spec without a function body defined, into a procedure that returns a fresh value,
+    but prunes based on the type. Can be used to make the analysis more precise if we don't know or
+    care about the body. *)
 let translate_one_spec (env : (_, _) Env.t) function_ spec =
   let uf_name, procname = Env.func_procname env function_ in
   (* Skip specs where we have a function, because those are translated
-     and the spec is used there. *)
+     by [translate_one_function] and the spec is used there. *)
   if Env.UnqualifiedFunction.Set.mem env.functions uf_name then ()
   else
-    (* Return a fresh value but prune on its type. *)
     let attributes = mk_attributes env uf_name procname in
     let procdesc = mk_procdesc env attributes in
     let ret_var = Exp.Lvar (Pvar.get_ret_pvar procname) in
     let env = {env with procdesc= Env.Present procdesc; result= Env.Present ret_var} in
-    let ret_id = mk_fresh_id () in
-    let store_instr =
-      Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= Var ret_id; loc= env.location}
-    in
     let body =
+      let ret_id = mk_fresh_id () in
+      let store_instr =
+        Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= Var ret_id; loc= env.location}
+      in
       let prune_block = ErlangTypes.prune_spec_return env ret_id spec in
       let store_block = Block.make_instruction env [store_instr] in
       Block.all env [prune_block; store_block]
     in
     Procdesc.get_start_node procdesc |~~> [body.start] ;
-    body.exit_success |~~> [Procdesc.get_exit_node procdesc]
+    body.exit_success |~~> [Procdesc.get_exit_node procdesc] ;
+    body.exit_failure |~~> [Procdesc.get_exit_node procdesc]
 
 
 (** Translate forms of a module. *)
