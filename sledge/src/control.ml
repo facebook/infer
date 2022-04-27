@@ -1142,12 +1142,11 @@ struct
   let call_entry_point pgm goal =
     let+ {name; formals; freturn; locals; entry} =
       List.find_map Config.entry_points ~f:(fun entry_point ->
-          let* func = Llair.Func.find entry_point pgm.Llair.functions in
-          if IArray.is_empty func.formals then Some func else None )
+          Llair.Func.find entry_point pgm.Llair.functions )
     in
     let summaries = Config.function_summaries in
     let globals = Domain_used_globals.by_function Config.globals name in
-    let actuals = IArray.empty in
+    let actuals = IArray.map ~f:Llair.Exp.reg formals in
     let areturn = None in
     let state, _ =
       D.call ThreadID.init ~summaries ~globals ~actuals ~areturn ~formals
