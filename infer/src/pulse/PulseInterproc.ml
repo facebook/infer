@@ -929,7 +929,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
         in
         let astate =
           Option.fold ~init:astate return_caller ~f:(fun astate ret_v ->
-              Decompiler.add_call_source (fst ret_v) (Call callee_proc_name) astate )
+              Decompiler.add_call_source (fst ret_v) (Call callee_proc_name) actuals astate )
         in
         let+ astate =
           if is_isl_error_prepost then

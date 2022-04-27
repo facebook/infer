@@ -53,6 +53,8 @@ module Name : sig
 
   module Objc : sig
     val ns_enumerator : t
+
+    val ns_object : t
   end
 end
 

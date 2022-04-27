@@ -12,6 +12,7 @@ module AbstractValue = PulseAbstractValue
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module CallEvent = PulseCallEvent
+module ValueHistory = PulseValueHistory
 
 type base = PVar of Pvar.t | ReturnValue of CallEvent.t [@@deriving compare, equal]
 
@@ -208,11 +209,6 @@ let add_var_source v var decompiler =
   else decompiler
 
 
-let add_call_source v call decompiler =
-  let+ decompiler in
-  Map.add v (ReturnValue call, []) decompiler
-
-
 let access_of_field_access src attrs field =
   let capture_field_access =
     let open IOption.Let_syntax in
@@ -251,6 +247,39 @@ let add_access_source v (access : BaseMemory.Access.t) ~src attrs decompiler =
       decompiler
   | SourceExpr ((base, accesses), _) ->
       Map.add v (base, access_of_memory_access src attrs decompiler access :: accesses) decompiler
+
+
+let replace_getter_call_with_property_access procname v call actuals decompiler =
+  if List.is_empty actuals then Map.add v (ReturnValue call, []) decompiler
+  else
+    let (fst, _), typ = List.hd_exn actuals in
+    let typ_struct = match typ.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> typ in
+    let typ_name = Option.value (Typ.name typ_struct) ~default:StdTyp.Name.Objc.ns_object in
+    let procname_str = Procname.to_simplified_string procname in
+    match Map.find fst decompiler with
+    | Unknown _ ->
+        Map.add v (ReturnValue call, []) decompiler
+    | SourceExpr ((base, accesses), _) ->
+        Map.add v
+          ( base
+          , access_of_memory_access (AbstractValue.mk_fresh ()) BaseAddressAttributes.empty
+              decompiler
+              (FieldAccess (Fieldname.make typ_name procname_str))
+            :: TakeAddress :: Dereference :: accesses )
+          decompiler
+
+
+let add_call_source v (call : CallEvent.t) actuals decompiler =
+  let+ decompiler = decompiler in
+  match call with
+  | CallEvent.Call procname | SkippedKnownCall procname -> (
+    match Attributes.load procname with
+    | Some {objc_accessor= Some (Objc_getter _)} ->
+        replace_getter_call_with_property_access procname v call actuals decompiler
+    | _ ->
+        Map.add v (ReturnValue call, []) decompiler )
+  | Model _ | SkippedUnknownCall _ ->
+      Map.add v (ReturnValue call, []) decompiler
 
 
 type expr = decompiled [@@deriving compare, equal]

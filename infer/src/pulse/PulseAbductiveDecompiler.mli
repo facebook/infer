@@ -10,11 +10,17 @@ module AbductiveDomain = PulseAbductiveDomain
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 module Decompiler = PulseDecompiler
+module ValueHistory = PulseValueHistory
 
 (** {1 Wrapper to access the {!PulseDecompiler.t} inside {!AbductiveDomain.t}; all of the interface
     of {!PulseDecompiler} is duplicated for ease of use} *)
 
-val add_call_source : AbstractValue.t -> CallEvent.t -> AbductiveDomain.t -> AbductiveDomain.t
+val add_call_source :
+     AbstractValue.t
+  -> CallEvent.t
+  -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t
 
 type expr = Decompiler.expr [@@deriving compare, equal, yojson_of]
 
