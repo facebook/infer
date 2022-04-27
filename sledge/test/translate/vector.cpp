@@ -7,7 +7,9 @@
 
 typedef double vector4 __attribute__((ext_vector_type(4)));
 
-int main() {
+int
+main()
+{
   vector4 x = {1, 2, 3, 4};
   vector4 y = 2 * x;
   return 0;

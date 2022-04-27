@@ -9,7 +9,9 @@ open! IStd
 module F = Format
 module AbstractValue = PulseAbstractValue
 module BaseMemory = PulseBaseMemory
+module BaseAddressAttributes = PulseBaseAddressAttributes
 module CallEvent = PulseCallEvent
+module ValueHistory = PulseValueHistory
 
 (** {1 Describe abstract values in terms of source code elements} *)
 
@@ -23,9 +25,11 @@ val invalid : t
 
 val add_var_source : AbstractValue.t -> Var.t -> t -> t
 
-val add_call_source : AbstractValue.t -> CallEvent.t -> t -> t
+val add_call_source :
+  AbstractValue.t -> CallEvent.t -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list -> t -> t
 
-val add_access_source : AbstractValue.t -> BaseMemory.Access.t -> src:AbstractValue.t -> t -> t
+val add_access_source :
+  AbstractValue.t -> BaseMemory.Access.t -> src:AbstractValue.t -> BaseAddressAttributes.t -> t -> t
 
 type expr [@@deriving compare, equal, yojson_of]
 

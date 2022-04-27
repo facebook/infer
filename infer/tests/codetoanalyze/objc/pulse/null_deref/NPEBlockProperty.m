@@ -9,7 +9,7 @@
 
 @class ExplicitCaptured;
 @class RetainCycle;
-;
+@class Callback;
 
 @interface ExplicitCaptured : NSObject
 
@@ -66,6 +66,24 @@
       counter = counter + 1;
       return counter;
     };
+  }
+  return self;
+}
+@end
+
+@interface Callback : NSObject
+
+@property void (^callback)(void);
+
+- (instancetype)initWithBlock:(void (^)(void))callback;
+
+@end
+
+@implementation Callback
+
+- (instancetype)initWithBlock:(void (^)(void))callback {
+  if (self = [super init]) {
+    _callback = callback;
   }
   return self;
 }
@@ -215,6 +233,42 @@ int test_captured_in_captured_specialized_good() {
   y = captured_in_captured_specializable(rc);
   if (x != y) { // should not happen
     *ptr = NULL;
+  }
+  return *ptr;
+}
+
+void call_callback(Callback* cb) { cb.callback(); }
+
+int test_localization_bad() {
+  ExplicitCaptured* b = [ExplicitCaptured new];
+  ExplicitCaptured* a = [ExplicitCaptured new];
+  a.get_explicitProperty = b.get_explicitProperty;
+  a.set_explicitProperty = b.set_explicitProperty;
+  Callback* cb = [[Callback alloc] initWithBlock:^{
+    a.set_explicitProperty(3);
+  }];
+  call_callback(cb);
+  int explicit = a.get_explicitProperty();
+  int* ptr = &explicit;
+  if (explicit == 3) {
+    ptr = NULL;
+  }
+  return *ptr;
+}
+
+int test_localization_good() {
+  ExplicitCaptured* b = [ExplicitCaptured new];
+  ExplicitCaptured* a = [ExplicitCaptured new];
+  a.get_explicitProperty = b.get_explicitProperty;
+  a.set_explicitProperty = b.set_explicitProperty;
+  Callback* cb = [[Callback alloc] initWithBlock:^{
+    a.set_explicitProperty(3);
+  }];
+  call_callback(cb);
+  int explicit = a.get_explicitProperty();
+  int* ptr = &explicit;
+  if (explicit != 3) {
+    ptr = NULL;
   }
   return *ptr;
 }

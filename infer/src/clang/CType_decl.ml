@@ -20,35 +20,47 @@ module BuildMethodSignature = struct
         None
 
 
-  let param_type_of_qual_type qual_type_to_sil_type tenv name qual_type =
+  let param_type_of_qual_type ?(is_const_member_function = false) qual_type_to_sil_type tenv name
+      qual_type =
     let typ = qual_type_to_sil_type tenv qual_type in
     let is_pointer_to_const = CType.is_pointer_to_const qual_type in
+    (* non-static member functions declared as const cannot modify their this*
+       object parameter, hence should have pointer to const type
+       https://en.cppreference.com/w/cpp/language/member_functions *)
+    let typ =
+      if Mangled.is_this name && is_const_member_function then Typ.set_ptr_to_const typ else typ
+    in
     let annot = CAst_utils.sil_annot_of_type qual_type in
     Some (CMethodSignature.mk_param_type ~is_pointer_to_const ~annot name typ)
 
 
   let get_class_param qual_type_to_sil_type tenv method_decl =
+    let aux ~is_const_member_function parent_pointer =
+      let method_kind = CMethodProperties.get_method_kind method_decl in
+      match method_kind with
+      | ClangMethodKind.CPP_INSTANCE | ClangMethodKind.OBJC_INSTANCE -> (
+        match (get_class_parameter_name method_kind, parent_pointer) with
+        | Some name, Some parent_pointer ->
+            let qual_type = CAst_utils.qual_type_of_decl_ptr parent_pointer in
+            let pointer_qual_type = Ast_expressions.create_pointer_qual_type qual_type in
+            param_type_of_qual_type ~is_const_member_function qual_type_to_sil_type tenv name
+              pointer_qual_type
+        | _ ->
+            None )
+      | _ ->
+          None
+    in
     let open Clang_ast_t in
     match method_decl with
     | FunctionDecl _ | BlockDecl _ ->
         None
-    | CXXMethodDecl (decl_info, _, _, _, _)
+    | CXXMethodDecl (decl_info, _, _, _, cmdi) ->
+        aux ~is_const_member_function:cmdi.Clang_ast_t.xmdi_is_const decl_info.di_parent_pointer
     | CXXConstructorDecl (decl_info, _, _, _, _)
     | CXXConversionDecl (decl_info, _, _, _, _)
     | CXXDestructorDecl (decl_info, _, _, _, _)
-    | ObjCMethodDecl (decl_info, _, _) -> (
-        let method_kind = CMethodProperties.get_method_kind method_decl in
-        match method_kind with
-        | ClangMethodKind.CPP_INSTANCE | ClangMethodKind.OBJC_INSTANCE -> (
-          match (get_class_parameter_name method_kind, decl_info.di_parent_pointer) with
-          | Some name, Some parent_pointer ->
-              let qual_type = CAst_utils.qual_type_of_decl_ptr parent_pointer in
-              let pointer_qual_type = Ast_expressions.create_pointer_qual_type qual_type in
-              param_type_of_qual_type qual_type_to_sil_type tenv name pointer_qual_type
-          | _ ->
-              None )
-        | _ ->
-            None )
+    | ObjCMethodDecl (decl_info, _, _) ->
+        aux ~is_const_member_function:false decl_info.di_parent_pointer
     | _ ->
         raise CFrontend_errors.Invalid_declaration
 

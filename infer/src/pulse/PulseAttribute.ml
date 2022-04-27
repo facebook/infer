@@ -275,6 +275,7 @@ module Attribute = struct
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Allocated _
+    | AlwaysReachable
     | Closure _
     | DynamicType _
     | EndOfCollection
@@ -360,6 +361,7 @@ module Attribute = struct
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Allocated _
+      | AlwaysReachable
       | Closure _
       | CopiedVar _
       | DynamicType _

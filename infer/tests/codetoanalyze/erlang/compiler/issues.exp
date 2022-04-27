@@ -1,3 +1,15 @@
+----- otp_lists -----
+otp_lists:test_foreach_Bad/0: {badmatch,ok}
+otp_lists:test_foreach_Ok/0: ok
+otp_lists:test_sort1_Ok/0: ok
+otp_lists:test_sort2_Bad/0: {case_clause,[]}
+otp_lists:test_sort3_Bad/0: {case_clause,[1]}
+otp_lists:test_sort4_Bad/0: {case_clause,[]}
+
+----- otp_maps -----
+otp_maps:test_intersect1_Ok/0: ok
+otp_maps:test_intersect2_Bad/0: {case_clause,#{}}
+
 ----- features_arithmetic -----
 features_arithmetic:fn_test_idiv_by_zero_Bad/0: badarith
 features_arithmetic:fn_test_idiv_zero_by_zero_Bad/0: badarith
@@ -83,29 +95,37 @@ features_catch_expr:test_catch_ok_Bad/0: function_clause
 features_catch_expr:test_catch_ok_Ok/0: ok
 
 ----- features_comparison -----
-features_comparison:fp_test_equal_Ok2/0: ok
-features_comparison:fp_test_exactly_not_equal_Ok2/0: ok
-features_comparison:test_atleast_Bad/0: if_clause
+features_comparison:fp_test_equal2_Ok/0: ok
+features_comparison:fp_test_equal_atom_Ok/0: ok
+features_comparison:fp_test_exactly_not_equal2_Ok/0: ok
+features_comparison:fp_test_neg_equal_atom_Ok/0: ok
+features_comparison:test_atleast2_Ok/0: ok
+features_comparison:test_atleast_Bad/0: function_clause
 features_comparison:test_atleast_Ok/0: ok
-features_comparison:test_atleast_Ok2/0: ok
-features_comparison:test_atmost_Bad/0: if_clause
+features_comparison:test_atmost2_Ok/0: ok
+features_comparison:test_atmost_Bad/0: function_clause
 features_comparison:test_atmost_Ok/0: ok
-features_comparison:test_atmost_Ok2/0: ok
-features_comparison:test_equal_Bad/0: if_clause
+features_comparison:test_equal_Bad/0: function_clause
 features_comparison:test_equal_Ok/0: ok
-features_comparison:test_exactly_equal_Bad/0: if_clause
-features_comparison:test_exactly_equal_Bad2/0: if_clause
+features_comparison:test_equal_atom_Bad/0: function_clause
+features_comparison:test_equal_int_atom_Bad/0: function_clause
+features_comparison:test_exactly_equal2_Bad/0: function_clause
+features_comparison:test_exactly_equal_Bad/0: function_clause
 features_comparison:test_exactly_equal_Ok/0: ok
-features_comparison:test_exactly_not_equal_Bad/0: if_clause
+features_comparison:test_exactly_not_equal_Bad/0: function_clause
 features_comparison:test_exactly_not_equal_Ok/0: ok
-features_comparison:test_greater_Bad/0: if_clause
-features_comparison:test_greater_Bad2/0: if_clause
+features_comparison:test_greater2_Bad/0: function_clause
+features_comparison:test_greater_Bad/0: function_clause
 features_comparison:test_greater_Ok/0: ok
-features_comparison:test_less_Bad/0: if_clause
-features_comparison:test_less_Bad2/0: if_clause
+features_comparison:test_less2_Bad/0: function_clause
+features_comparison:test_less_Bad/0: function_clause
 features_comparison:test_less_Ok/0: ok
-features_comparison:test_not_equal_Bad/0: if_clause
-features_comparison:test_not_equal_Bad2/0: if_clause
+features_comparison:test_neg_equal_Bad/0: function_clause
+features_comparison:test_neg_equal_Ok/0: ok
+features_comparison:test_neg_equal_atom_Bad/0: function_clause
+features_comparison:test_neg_equal_int_atom_Ok/0: ok
+features_comparison:test_not_equal2_Bad/0: function_clause
+features_comparison:test_not_equal_Bad/0: function_clause
 features_comparison:test_not_equal_Ok/0: ok
 
 ----- features_fun -----
@@ -183,6 +203,9 @@ features_lambdas:test_lambda_within_function_nested_Bad/0: function_clause
 features_lambdas:test_lambda_within_function_nested_Ok/0: ok
 features_lambdas:test_nested_capture_Bad/0: function_clause
 features_lambdas:test_nested_capture_Ok/0: ok
+features_lambdas:test_scopes2_Ok/0: ok
+features_lambdas:test_scopes3_Bad/0: {badmatch,1}
+features_lambdas:test_scopes4_Ok/0: ok
 
 ----- features_lc -----
 features_lc:fn_test_simple1a_Bad/0: {case_clause,[3]}
@@ -568,9 +591,9 @@ nonmatch_records:test_type_Bad/0: function_clause
 nonmatch_records:test_type_Ok/0: ok
 
 ----- nonmatch_strings -----
+nonmatch_strings:fn_test_match2_Bad/0: function_clause
+nonmatch_strings:fn_test_match3_Bad/0: function_clause
 nonmatch_strings:test_match1_Ok/0: ok
-nonmatch_strings:test_match2_Bad/0: function_clause
-nonmatch_strings:test_match3_Bad/0: function_clause
 
 ----- nonmatch_trycatch -----
 nonmatch_trycatch:test_try_simple1_Ok/0: ok

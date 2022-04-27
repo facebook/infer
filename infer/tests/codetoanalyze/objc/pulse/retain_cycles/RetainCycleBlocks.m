@@ -78,9 +78,8 @@ int retain_a_in_block_cycle_bad() {
   RCBlockAA* a = [RCBlockAA new];
   RCBlock* b = [RCBlock new];
   a.b = b;
-  b.a = a;
   b.a_handler = ^(RCBlockAA* b) {
-    a.child = a;
+    a.child = nil;
   };
   return 0;
 }

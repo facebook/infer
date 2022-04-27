@@ -8,6 +8,10 @@
 (** Stop analysis when encountering issues *)
 
 exception Stop
+exception Reached_goal of {steps: int}
+exception Unimplemented of {feature: string}
 
 val on_unknown_call : 'a -> unit
 val on_alarm : 'a -> unit
+val on_reached_goal : int -> 'a -> unit
+val on_unimplemented : string -> 'a -> unit
