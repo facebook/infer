@@ -1581,12 +1581,11 @@ let xlate_function_decl x llfunc typ k =
   let fthrow = Reg.mk exc_typ exc_id exc_name in
   k ~name ~formals ~freturn ~fthrow ~loc
 
-let xlate_function : x -> Llvm.llvalue -> Llair.func =
- fun x llf ->
+let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
+ fun x llf typ ->
   [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llf]
   ;
   undef_count := 0 ;
-  let typ = xlate_type x (Llvm.type_of llf) in
   xlate_function_decl x llf typ
   @@ fun ~name ~formals ~freturn ~fthrow ~loc ->
   ( match Llvm.block_begin llf with
@@ -1746,7 +1745,13 @@ let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
           || Option.is_some (Intrinsic.of_name name)
         then functions
         else
-          let func = xlate_function x llf in
+          let typ = xlate_type x (Llvm.type_of llf) in
+          let func =
+            try xlate_function x llf typ
+            with Unimplemented feature ->
+              xlate_function_decl x llf typ Func.mk_undefined
+              $> Report.unimplemented feature
+          in
           LlvalueTbl.set func_tbl ~key:llf ~data:func ;
           func :: functions )
       [] llmodule

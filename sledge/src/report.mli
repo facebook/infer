@@ -16,6 +16,7 @@ val hit_switch_bound : int -> unit
 val unknown_call : Llair.term -> unit
 val alarm : Alarm.t -> unit
 val reached_goal : (Format.formatter -> unit) -> unit
+val unimplemented : string -> Llair.func -> unit
 
 type status =
   | Safe of {bound: int; switches: int}

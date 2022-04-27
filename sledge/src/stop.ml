@@ -9,9 +9,13 @@
 
 exception Stop
 exception Reached_goal of {steps: int}
+exception Unimplemented of {feature: string}
 
 let on_unknown_call _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
 let on_alarm _ = Trace.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
 
 let on_reached_goal steps _ =
   Trace.kprintf __FUNCTION__ (fun _ -> raise (Reached_goal {steps})) ""
+
+let on_unimplemented feature _ =
+  Trace.kprintf __FUNCTION__ (fun _ -> raise (Unimplemented {feature})) ""

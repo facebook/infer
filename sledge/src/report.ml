@@ -52,6 +52,12 @@ let reached_goal goal =
   [%Trace.printf "@\n@[<v 2> %t@]@." goal] ;
   Stop.on_reached_goal !steps ()
 
+let unimplemented feature fn =
+  let open Llair in
+  [%Trace.printf
+    "@\n@[<v 2>%s unimplemented in %a@]@." feature Function.pp fn.name] ;
+  Stop.on_unimplemented feature fn
+
 (** Status reporting *)
 
 type status =
