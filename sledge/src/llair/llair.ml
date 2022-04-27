@@ -732,14 +732,19 @@ module Func = struct
       IArray.fold ~f:locals_block cfg (locals_block entry Reg.Set.empty)
     in
     let func = {name; formals; freturn; fthrow; locals; entry; loc} in
+    let seen = BlockS.create (IArray.length cfg) in
     let rec resolve_parent_and_jumps ancestors src =
       src.parent <- func ;
+      BlockS.add seen src |> ignore ;
       let ancestors = Block_label.Set.add src ancestors in
       let jump jmp =
         let dst = lookup cfg jmp.dst.lbl in
         if Block_label.Set.mem dst ancestors then (
           jmp.dst <- dst ;
           jmp.retreating <- true ;
+          jmp )
+        else if BlockS.mem seen dst then (
+          jmp.dst <- dst ;
           jmp )
         else
           match resolve_parent_and_jumps ancestors dst with
@@ -767,10 +772,7 @@ module Func = struct
           None
       | Return _ | Throw _ | Abort _ | Unreachable -> None
     in
-    let resolve_parent_and_jumps block =
-      resolve_parent_and_jumps Block_label.Set.empty block |> ignore
-    in
-    resolve_parent_and_jumps entry ;
+    resolve_parent_and_jumps Block_label.Set.empty entry |> ignore ;
     func |> check invariant
 end
 
