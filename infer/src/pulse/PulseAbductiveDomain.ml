@@ -939,6 +939,12 @@ let get_unreachable_attributes {post} =
     (post :> BaseDomain.t).attrs []
 
 
+let get_reachable {pre; post} =
+  let pre_keep = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
+  let post_keep = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
+  AbstractValue.Set.union pre_keep post_keep
+
+
 let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
   let havoc_accesses hist addr heap =
     match BaseMemory.find_opt addr heap with
@@ -1234,14 +1240,17 @@ let filter_for_summary tenv proc_name astate0 =
     else pre_live_addresses
   in
   let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
+  let get_dynamic_type =
+    BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs
+  in
   let+ path_condition, live_via_arithmetic, new_eqs =
-    PathCondition.simplify tenv
-      ~get_dynamic_type:
-        (BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs)
-      ~can_be_pruned ~keep:live_addresses astate.path_condition
+    PathCondition.simplify tenv ~get_dynamic_type ~can_be_pruned ~keep:live_addresses
+      astate.path_condition
   in
   let live_addresses = AbstractValue.Set.union live_addresses live_via_arithmetic in
-  ( {astate with path_condition; topl= PulseTopl.simplify ~keep:live_addresses astate.topl}
+  ( { astate with
+      path_condition
+    ; topl= PulseTopl.simplify ~keep:live_addresses ~get_dynamic_type ~path_condition astate.topl }
   , live_addresses
   , (* we could filter out the [live_addresses] if needed; right now they might overlap *)
     dead_addresses
@@ -1331,23 +1340,23 @@ let incorporate_new_eqs_on_val new_eqs v =
 
 
 module Topl = struct
-  let small_step loc event astate =
+  let small_step loc ~keep event astate =
     { astate with
       topl=
-        PulseTopl.small_step loc
+        PulseTopl.small_step loc ~keep
           ~get_dynamic_type:
             (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
-          astate.path_condition event astate.topl }
+          ~path_condition:astate.path_condition event astate.topl }
 
 
-  let large_step ~call_location ~callee_proc_name ~substitution ?(condition = PathCondition.true_)
+  let large_step ~call_location ~callee_proc_name ~substitution ~keep ~path_condition
       ~callee_prepost astate =
     { astate with
       topl=
-        PulseTopl.large_step ~call_location ~callee_proc_name ~substitution
+        PulseTopl.large_step ~call_location ~callee_proc_name ~substitution ~keep
           ~get_dynamic_type:
             (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
-          ~condition ~callee_prepost astate.topl }
+          ~path_condition ~callee_prepost astate.topl }
 
 
   let get {topl} = topl

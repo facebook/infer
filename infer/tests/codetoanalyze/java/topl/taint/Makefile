@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --topl-properties Taint.topl --topl-only
+INFER_OPTIONS = --topl-properties Taint.topl --topl-only --topl-max-disjuncts 100
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.java)

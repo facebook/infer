@@ -425,7 +425,7 @@ let is_unsat_expensive ~get_dynamic_type path_condition pruned =
   unsat
 
 
-let drop_infeasible ?(expensive = false) ~get_dynamic_type path_condition state =
+let drop_infeasible ?(expensive = false) ~get_dynamic_type ~path_condition state =
   let is_unsat = if expensive then is_unsat_expensive ~get_dynamic_type else is_unsat_cheap in
   let f {pruned} = not (is_unsat path_condition pruned) in
   List.filter ~f state
@@ -444,10 +444,27 @@ let normalize_simple_state {pre; post; pruned; last_step} =
 
 let normalize_state state = List.map ~f:normalize_simple_state state
 
-let apply_limits ~get_dynamic_type path_condition state =
-  let expensive_simplification state =
-    drop_infeasible ~expensive:true ~get_dynamic_type path_condition state
+let simplify ~keep ~get_dynamic_type ~path_condition state =
+  let simplify_simple_state {pre; post; pruned; last_step} =
+    (* NOTE(rgrigore): registers could be considered live for the program path_condition as well.
+       That should improve precision, but I'm wary of altering what the Pulse program state is just
+       because Topl is enabled. *)
+    let collect memory keep =
+      List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
+    in
+    let keep = keep |> collect pre.memory |> collect post.memory in
+    let pruned = Constraint.eliminate_exists ~keep pruned in
+    L.d_printfln "@[<2>PulseTopl.simplify@;before=%a@;after=%a@]" Constraint.pp pruned Constraint.pp
+      pruned ;
+    {pre; post; pruned; last_step}
   in
+  let state = List.map ~f:simplify_simple_state state in
+  let state = drop_infeasible ~expensive:true ~get_dynamic_type ~path_condition state in
+  List.dedup_and_sort ~compare:compare_simple_state state
+
+
+let apply_limits ~keep ~get_dynamic_type ~path_condition state =
+  let expensive_simplification state = simplify ~keep ~get_dynamic_type ~path_condition state in
   let drop_disjuncts state =
     let old_len = List.length state in
     let new_len = (Config.topl_max_disjuncts / 2) + 1 in
@@ -469,7 +486,7 @@ let apply_limits ~get_dynamic_type path_condition state =
   state |> maybe needs_shrinking expensive_simplification |> maybe needs_shrinking drop_disjuncts
 
 
-let small_step loc ~get_dynamic_type path_condition event simple_states =
+let small_step loc ~keep ~get_dynamic_type ~path_condition event simple_states =
   let tmatches = static_match event in
   let evolve_transition (old : simple_state) (transition, tcontext) : state =
     let mk ?(memory = old.post.memory) ?(pruned = Constraint.true_) significant =
@@ -495,26 +512,22 @@ let small_step loc ~get_dynamic_type path_condition event simple_states =
         [mk ~memory ~pruned true]
   in
   let evolve_simple_state old =
-    let path_condition = Constraint.prune_path old.pruned path_condition in
     let tmatches =
       List.filter ~f:(fun (t, _) -> Int.equal old.post.vertex t.ToplAutomaton.source) tmatches
     in
-    let nonskip =
-      drop_infeasible ~get_dynamic_type path_condition
-        (List.concat_map ~f:(evolve_transition old) tmatches)
-    in
+    let nonskip = List.concat_map ~f:(evolve_transition old) tmatches in
     let skip =
       let nonskip_disjunction = List.map ~f:(fun {pruned} -> pruned) nonskip in
       let skip_disjunction = Constraint.negate nonskip_disjunction in
       let f pruned = {old with pruned} (* keeps last_step from old *) in
-      drop_infeasible ~get_dynamic_type path_condition (List.map ~f skip_disjunction)
+      List.map ~f skip_disjunction
     in
     let add_old_pruned s = {s with pruned= Constraint.and_constr s.pruned old.pruned} in
     List.map ~f:add_old_pruned (List.rev_append nonskip skip)
   in
   let result = List.concat_map ~f:evolve_simple_state simple_states in
   L.d_printfln "@[<2>PulseTopl.small_step:@;%a@ -> %a@]" pp_state simple_states pp_state result ;
-  result |> apply_limits ~get_dynamic_type path_condition
+  result |> apply_limits ~keep ~get_dynamic_type ~path_condition
 
 
 let of_unequal (or_unequal : 'a List.Or_unequal_lengths.t) =
@@ -540,8 +553,8 @@ let sub_simple_state (sub, {pre; post; pruned; last_step}) =
   (sub, {pre; post; pruned; last_step})
 
 
-let large_step ~call_location ~callee_proc_name ~substitution ~get_dynamic_type ~condition
-    ~callee_prepost state =
+let large_step ~call_location ~callee_proc_name ~substitution ~keep ~get_dynamic_type
+    ~path_condition ~callee_prepost state =
   let seq ((p : simple_state), (q : simple_state)) =
     if not (Int.equal p.post.vertex q.pre.vertex) then None
     else
@@ -579,31 +592,14 @@ let large_step ~call_location ~callee_proc_name ~substitution ~get_dynamic_type 
   (* TODO(rgrigore): may be worth optimizing the cartesian_product *)
   let state = normalize_state state in
   let callee_prepost = normalize_state callee_prepost in
-  let new_state = List.filter_map ~f:seq (List.cartesian_product state callee_prepost) in
-  let result = drop_infeasible ~get_dynamic_type condition new_state in
+  let result = List.filter_map ~f:seq (List.cartesian_product state callee_prepost) in
   L.d_printfln "@[<2>PulseTopl.large_step:@;callee_prepost=%a@;%a@ -> %a@]" pp_state callee_prepost
     pp_state state pp_state result ;
-  result |> apply_limits ~get_dynamic_type condition
+  result |> apply_limits ~keep ~get_dynamic_type ~path_condition
 
 
 let filter_for_summary ~get_dynamic_type path_condition state =
-  drop_infeasible ~get_dynamic_type ~expensive:true path_condition state
-
-
-let simplify ~keep state =
-  let simplify_simple_state {pre; post; pruned; last_step} =
-    (* NOTE(rgrigore): registers could be considered live for the program path_condition as well.
-       That should improve precision, but I'm wary of altering what the Pulse program state is just
-       because Topl is enabled. *)
-    let collect memory keep =
-      List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
-    in
-    let keep = keep |> collect pre.memory |> collect post.memory in
-    let pruned = Constraint.eliminate_exists ~keep pruned in
-    {pre; post; pruned; last_step}
-  in
-  let state = List.map ~f:simplify_simple_state state in
-  List.dedup_and_sort ~compare:compare_simple_state state
+  drop_infeasible ~get_dynamic_type ~expensive:true ~path_condition state
 
 
 let description_of_step_data step_data =

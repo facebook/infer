@@ -20,8 +20,9 @@ val start : unit -> state
 
 val small_step :
      Location.t
+  -> keep:PulseAbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
-  -> PulsePathCondition.t
+  -> path_condition:PulsePathCondition.t
   -> event
   -> state
   -> state
@@ -30,12 +31,13 @@ val large_step :
      call_location:Location.t
   -> callee_proc_name:Procname.t
   -> substitution:(value * PulseValueHistory.t) PulseAbstractValue.Map.t
+  -> keep:PulseAbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
-  -> condition:PulsePathCondition.t
+  -> path_condition:PulsePathCondition.t
   -> callee_prepost:state
   -> state
   -> state
-(** [large_step ~substitution ~condition state ~callee_prepost] updates [state] according to
+(** [large_step ~substitution ~keep ~condition state ~callee_prepost] updates [state] according to
     [callee_prepost]. The abstract values in [condition] and [state] are in one scope, and those in
     [callee_prepost] in another scope: the [substitution] maps from the callee scope to the
     condition&state scope. *)
@@ -43,10 +45,15 @@ val large_step :
 val filter_for_summary :
   get_dynamic_type:(value -> Typ.t option) -> PulsePathCondition.t -> state -> state
 (** Remove from state those parts that are inconsistent with the path condition. (We do a cheap
-    check to not introduce inconsistent Topl states, but they mey become inconsistent because the
+    check to not introduce inconsistent Topl states, but they may become inconsistent because the
     program path condition is updated later.) *)
 
-val simplify : keep:PulseAbstractValue.Set.t -> state -> state
+val simplify :
+     keep:PulseAbstractValue.Set.t
+  -> get_dynamic_type:(value -> Typ.t option)
+  -> path_condition:PulsePathCondition.t
+  -> state
+  -> state
 (** Keep only a subset of abstract values. This is used for extracting summaries. *)
 
 val report_errors : Procdesc.t -> Errlog.t -> state -> unit
