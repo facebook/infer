@@ -444,11 +444,31 @@ let normalize_simple_state {pre; post; pruned; last_step} =
 
 let normalize_state state = List.map ~f:normalize_simple_state state
 
+(** Filters out simple states that cannot reach error because their registers refer to garbage.
+
+    - "Garbage" is a value unreachable from the program state and different from all vlaues held by
+      registers in the pre-simple-state.
+    - The current implementation is an approximation. If a register refers to garbage, it might
+      still be the case that "error" could be reached, depending on the structure of the automaton.
+      This could be determined by a pre-analysis of the automaton. However, because such cases are
+      empirically rare, we just under-approximate by dropping always when a register has garbage.
+    - We never drop simple-states corresponding to "error" vertices. *)
+let drop_garbage ~keep state =
+  let should_keep {pre; post} =
+    ToplAutomaton.is_error (Topl.automaton ()) post.vertex
+    ||
+    let add_register values (_register, v) = AbstractValue.Set.add v values in
+    let ok = List.fold ~f:add_register ~init:keep pre.memory in
+    let register_is_ok (_register, v) = AbstractValue.Set.mem v ok in
+    List.for_all ~f:register_is_ok post.memory
+  in
+  List.filter ~f:should_keep state
+
+
 let simplify ~keep ~get_dynamic_type ~path_condition state =
   let simplify_simple_state {pre; post; pruned; last_step} =
-    (* NOTE(rgrigore): registers could be considered live for the program path_condition as well.
-       That should improve precision, but I'm wary of altering what the Pulse program state is just
-       because Topl is enabled. *)
+    (* NOTE: We do not consider registers live. If the Topl monitor has a hold of something that is
+       garbage for the program, then that something is still garbage. *)
     let collect memory keep =
       List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
     in
@@ -458,7 +478,9 @@ let simplify ~keep ~get_dynamic_type ~path_condition state =
       pruned ;
     {pre; post; pruned; last_step}
   in
+  (* The following three steps are ordered from fastest to slowest. *)
   let state = List.map ~f:simplify_simple_state state in
+  let state = drop_garbage ~keep state in
   let state = drop_infeasible ~expensive:true ~get_dynamic_type ~path_condition state in
   List.dedup_and_sort ~compare:compare_simple_state state
 
