@@ -640,6 +640,13 @@ specs_basic:test_no_args_Ok/0: ok
 
 ----- specs_userdefined -----
 
+----- m -----
+m:test_a_Ok/0: ok
+m:test_b_Bad/0: topl_error
+m:test_c_Bad/0: topl_error
+m:test_d_Ok/0: ok
+m:test_e_Bad/0: topl_error
+
 ----- topl_taint -----
 topl_taint:test_a_Bad/0: taint_error
 topl_taint:test_b_Ok/0: ok
