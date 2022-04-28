@@ -1216,7 +1216,14 @@ let filter_for_summary tenv proc_name astate0 =
      to restore their initial values at the end of the function. Removing them altogether achieves
      this. *)
   let astate = restore_formals_for_summary astate_before_filter in
-  let astate = {astate with topl= PulseTopl.filter_for_summary astate.path_condition astate.topl} in
+  let astate =
+    { astate with
+      topl=
+        PulseTopl.filter_for_summary
+          ~get_dynamic_type:
+            (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
+          astate.path_condition astate.topl }
+  in
   let astate, pre_live_addresses, post_live_addresses, dead_addresses =
     discard_unreachable_ ~for_summary:true astate
   in
@@ -1325,15 +1332,22 @@ let incorporate_new_eqs_on_val new_eqs v =
 
 module Topl = struct
   let small_step loc event astate =
-    {astate with topl= PulseTopl.small_step loc astate.path_condition event astate.topl}
+    { astate with
+      topl=
+        PulseTopl.small_step loc
+          ~get_dynamic_type:
+            (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
+          astate.path_condition event astate.topl }
 
 
   let large_step ~call_location ~callee_proc_name ~substitution ?(condition = PathCondition.true_)
       ~callee_prepost astate =
     { astate with
       topl=
-        PulseTopl.large_step ~call_location ~callee_proc_name ~substitution ~condition
-          ~callee_prepost astate.topl }
+        PulseTopl.large_step ~call_location ~callee_proc_name ~substitution
+          ~get_dynamic_type:
+            (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
+          ~condition ~callee_prepost astate.topl }
 
 
   let get {topl} = topl

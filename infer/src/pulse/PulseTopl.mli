@@ -18,12 +18,19 @@ type state [@@deriving compare, equal]
 val start : unit -> state
 (** Return the initial state of [Topl.automaton ()]. *)
 
-val small_step : Location.t -> PulsePathCondition.t -> event -> state -> state
+val small_step :
+     Location.t
+  -> get_dynamic_type:(value -> Typ.t option)
+  -> PulsePathCondition.t
+  -> event
+  -> state
+  -> state
 
 val large_step :
      call_location:Location.t
   -> callee_proc_name:Procname.t
   -> substitution:(value * PulseValueHistory.t) PulseAbstractValue.Map.t
+  -> get_dynamic_type:(value -> Typ.t option)
   -> condition:PulsePathCondition.t
   -> callee_prepost:state
   -> state
@@ -33,7 +40,8 @@ val large_step :
     [callee_prepost] in another scope: the [substitution] maps from the callee scope to the
     condition&state scope. *)
 
-val filter_for_summary : PulsePathCondition.t -> state -> state
+val filter_for_summary :
+  get_dynamic_type:(value -> Typ.t option) -> PulsePathCondition.t -> state -> state
 (** Remove from state those parts that are inconsistent with the path condition. (We do a cheap
     check to not introduce inconsistent Topl states, but they mey become inconsistent because the
     program path condition is updated later.) *)
