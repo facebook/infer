@@ -2101,6 +2101,7 @@ int ASTExporter<ATDWriter>::CXXMethodDeclTupleSize() {
 //@atd type cxx_method_decl_info = {
 //@atd   ~is_virtual : bool;
 //@atd   ~is_static : bool;
+//@atd   ~is_const : bool;
 //@atd   ~is_copy_constructor : bool;
 //@atd   ~cxx_ctor_initializers : cxx_ctor_initializer list;
 //@atd   ~overriden_methods : decl_ref list;
@@ -2112,15 +2113,16 @@ void ASTExporter<ATDWriter>::VisitCXXMethodDecl(const CXXMethodDecl *D) {
   bool IsStatic = D->isStatic();
   const CXXConstructorDecl *C = dyn_cast<CXXConstructorDecl>(D);
   bool isCopyConstructor = C && C->isCopyConstructor();
+  bool isConst = D->isConst();
   bool HasCtorInitializers = C && C->init_begin() != C->init_end();
   auto OB = D->begin_overridden_methods();
   auto OE = D->end_overridden_methods();
-  ObjectScope Scope(
-      OF,
-                    IsVirtual + IsStatic + isCopyConstructor +
+  ObjectScope Scope(OF,
+                    IsVirtual + IsStatic + isConst + isCopyConstructor +
                         HasCtorInitializers + (OB != OE));
   OF.emitFlag("is_virtual", IsVirtual);
   OF.emitFlag("is_static", IsStatic);
+  OF.emitFlag("is_const", isConst);
   OF.emitFlag("is_copy_constructor", isCopyConstructor);
   if (HasCtorInitializers) {
     OF.emitTag("cxx_ctor_initializers");

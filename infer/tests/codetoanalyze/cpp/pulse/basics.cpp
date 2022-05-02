@@ -87,10 +87,10 @@ void iterator_pointer_arithmetic_ok(std::vector<Aggregate> v) {
 
 struct A {
   ~A();
-  int f(int i);
+  int f(int i) const;
 };
 
-A getA();
+const A getA();
 
 int struct_inside_loop_ok(std::vector<int> numbers) {
   int sum = 0;

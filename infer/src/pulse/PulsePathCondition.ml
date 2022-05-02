@@ -315,6 +315,10 @@ let eval_binop binop_addr binop op_lhs op_rhs phi =
   , new_eqs )
 
 
+let eval_binop_av binop_addr binop av_lhs av_rhs phi =
+  eval_binop binop_addr binop (AbstractValueOperand av_lhs) (AbstractValueOperand av_rhs) phi
+
+
 let eval_citv_unop unop_addr unop operand_addr citvs =
   match CItvs.find_opt operand_addr citvs |> Option.bind ~f:(fun a -> CItv.unop unop a) with
   | None ->

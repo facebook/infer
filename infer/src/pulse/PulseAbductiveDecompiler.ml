@@ -10,10 +10,11 @@ module AbductiveDomain = PulseAbductiveDomain
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 module Decompiler = PulseDecompiler
+module ValueHistory = PulseValueHistory
 
-let add_call_source v call astate =
+let add_call_source v call actuals astate =
   AbductiveDomain.map_decompiler astate ~f:(fun decompiler ->
-      Decompiler.add_call_source v call decompiler )
+      Decompiler.add_call_source v call actuals decompiler )
 
 
 type expr = Decompiler.expr [@@deriving compare, equal, yojson_of]

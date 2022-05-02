@@ -19,7 +19,10 @@
     test_apply_fun_Bad/0,
     test_lambda_capture_Ok/0,
     test_lambda_capture_Bad/0,
-    test_scopes_Ok/1,
+    test_scopes1_Ok/1,
+    test_scopes2_Ok/0,
+    test_scopes3_Bad/0,
+    test_scopes4_Ok/0,
     test_nested_capture_Ok/0,
     test_nested_capture_Bad/0,
     test_no_nullptr_Ok/1
@@ -102,14 +105,32 @@ test_lambda_capture_Bad() ->
         _ -> ok
     end.
 
-test_scopes_Ok(1) ->
+test_scopes1_Ok(1) ->
     X = 1;
-test_scopes_Ok(_) ->
+test_scopes1_Ok(_) ->
     % The X in the lambda is local to the lambda, despite
     % having seen an X in the previous function clause
     F = fun() -> X = 2 end,
     F(),
     X = 3.
+
+test_scopes2_Ok() ->
+    X = 1,
+    % X is captured, but matches
+    F = fun () -> 1 = X end,
+    F().
+
+test_scopes3_Bad() ->
+    X = 1,
+    % X is captured and doesn't match
+    F = fun () -> 2 = X end,
+    F().
+
+test_scopes4_Ok() ->
+    % Two different X variables
+    F = fun () -> X = 2 end,
+    X = 1,
+    F().
 
 nondet_lambda1_Ok(X) ->
     C = 1,

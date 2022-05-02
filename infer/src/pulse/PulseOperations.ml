@@ -131,15 +131,9 @@ module Closures = struct
   module Memory = AbductiveDomain.Memory
 
   let is_captured_by_ref_fake_access (access : _ HilExp.Access.t) =
-    let fake_captured_by_ref_field_prefix =
-      Printf.sprintf "%s%s" Fieldname.fake_capture_field_prefix
-        (Fieldname.string_of_capture_mode ByReference)
-    in
     match access with
-    | FieldAccess fieldname
-      when String.is_prefix ~prefix:fake_captured_by_ref_field_prefix
-             (Fieldname.to_string fieldname) ->
-        true
+    | FieldAccess fieldname ->
+        Fieldname.is_fake_capture_field_by_ref fieldname
     | _ ->
         false
 

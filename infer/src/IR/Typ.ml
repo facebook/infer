@@ -258,6 +258,14 @@ let mk ?default ?quals desc : t =
   mk_aux ?default ?quals desc
 
 
+let set_ptr_to_const ({desc} as typ) =
+  match desc with
+  | Tptr (t, ptr_kind) ->
+      {typ with desc= Tptr ({t with quals= {t.quals with is_const= true}}, ptr_kind)}
+  | _ ->
+      typ
+
+
 let mk_array ?default ?quals ?length ?stride elt : t =
   mk ?default ?quals (Tarray {elt; length; stride})
 

@@ -110,25 +110,19 @@ let initialize_environment module_ =
     | Function {function_; _} ->
         let key = UnqualifiedFunction.of_ast function_ in
         {env with functions= Set.add env.functions key}
-    | Spec ({Ast.function_; _} as data) -> (
+    | Spec {function_; spec} -> (
         let key = UnqualifiedFunction.of_ast function_ in
-        (* TODO: might remove this later when we have tests *)
-        L.debug Capture Verbose "Adding spec to environment: %s@."
-          (Sexp.to_string (ErlangAst.sexp_of_spec data)) ;
-        match Map.add ~key ~data env.specs with
+        match Map.add ~key ~data:spec env.specs with
         | `Ok specs ->
             {env with specs}
         | `Duplicate ->
             L.die InternalError "repeated spec for %s/%d" key.name key.arity )
     | Type {name; type_} -> (
-        (* TODO: might remove this later when we have tests *)
-        L.debug Capture Verbose "Adding type '%s' to environment: %s@." name
-          (Sexp.to_string (ErlangAst.sexp_of_type_ type_)) ;
-        match Map.add ~key:name ~data:type_ env.types with
-        | `Ok types ->
-            {env with types}
-        | `Duplicate ->
-            L.die InternalError "repeated type '%s'" name )
+      match Map.add ~key:name ~data:type_ env.types with
+      | `Ok types ->
+          {env with types}
+      | `Duplicate ->
+          L.die InternalError "repeated type '%s'" name )
   in
   List.fold ~init ~f module_
 

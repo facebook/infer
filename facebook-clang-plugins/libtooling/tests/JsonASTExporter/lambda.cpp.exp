@@ -464,6 +464,7 @@
                                         ]]
                                       },
                                       {
+                                        "is_const" : true
                                       }
                                     ]],
                                     ["CXXConversionDecl" , [
@@ -498,6 +499,7 @@
                                         "is_inline" : true
                                       },
                                       {
+                                        "is_const" : true
                                       }
                                     ]],
                                     ["CXXMethodDecl" , [
@@ -1049,6 +1051,7 @@
                                             ]]
                                           },
                                           {
+                                            "is_const" : true
                                           }
                                         ]],
                                         ["CXXConversionDecl" , [
@@ -1083,6 +1086,7 @@
                                             "is_inline" : true
                                           },
                                           {
+                                            "is_const" : true
                                           }
                                         ]],
                                         ["CXXMethodDecl" , [
@@ -1827,6 +1831,7 @@
                                         ]]
                                       },
                                       {
+                                        "is_const" : true
                                       }
                                     ]],
                                     ["FieldDecl" , [
@@ -2959,6 +2964,7 @@
                                             ]]
                                           },
                                           {
+                                            "is_const" : true
                                           }
                                         ]],
                                         ["FieldDecl" , [
@@ -3987,6 +3993,7 @@
                                         ]]
                                       },
                                       {
+                                        "is_const" : true
                                       }
                                     ]],
                                     ["FieldDecl" , [
@@ -4880,6 +4887,7 @@
                                             ]]
                                           },
                                           {
+                                            "is_const" : true
                                           }
                                         ]],
                                         ["FieldDecl" , [

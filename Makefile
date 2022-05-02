@@ -143,7 +143,9 @@ BUILD_SYSTEMS_TESTS += \
   fb_differential_of_config_impact_strict_objc \
 
 DIRECT_TESTS += \
-  objc_fb-config-impact
+  objc_fb-config-impact \
+  objc_fb-config-impact-strict \
+
 endif
 
 
@@ -160,6 +162,7 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
   erlang_pulse \
+  erlang_pulse-otp \
   erlang_topl \
   erlang_compiler \
 

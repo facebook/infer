@@ -125,7 +125,9 @@ and block = private
   ; mutable parent: func
   ; mutable sort_index: int
         (** Position in a topological order, ignoring [retreating] edges. *)
-  }
+  ; mutable checkpoint_dists: int Function.Map.t
+        (** Distances from this block to some checkpoint functions' entries,
+            as computed by [Program.compute_distances]. *) }
 
 (** A function is a control-flow graph with distinguished entry block, whose
     parameters are the function parameters. *)
@@ -311,4 +313,10 @@ module Program : sig
   include Invariant.S with type t := t
 
   val mk : globals:GlobalDefn.t list -> functions:func list -> t
+
+  val compute_distances :
+    entry:block -> trace:Function.t iarray -> t -> unit
+  (** Compute distances to the next "checkpoint" function in the [trace] for
+      each block reachable from the last checkpoint, and store the results
+      in the [checkpoint_dists] field of those blocks. *)
 end

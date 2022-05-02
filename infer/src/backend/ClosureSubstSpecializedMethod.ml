@@ -9,7 +9,7 @@ module CFG = ProcCfg.Normal
 module L = Logging
 
 module BlockSpec = struct
-  type t = ProcAttributes.passed_block [@@deriving compare, equal]
+  type t = CapturedVar.t ProcAttributes.passed_block [@@deriving compare, equal]
 
   let pp fmt passed_block =
     match passed_block with
