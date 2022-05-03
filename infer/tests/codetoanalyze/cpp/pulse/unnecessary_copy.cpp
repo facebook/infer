@@ -259,3 +259,25 @@ int iterator_ptr_modified_ok(const std::vector<int>& numbers) {
   auto lDataValues = numbers;
   std::sort(lDataValues.begin(), lDataValues.end());
 }
+
+struct SimpleS {
+  int a;
+};
+
+struct SwapSimple {
+  SimpleS v;
+  void swap_ok(SwapSimple& x) {
+    const auto temp = v;
+    v = x.v;
+    x.v = temp;
+  }
+};
+
+struct SwapVector {
+  std::vector<int> v;
+  void swap_ok_FP(SwapVector& x) {
+    const auto temp = v;
+    v = x.v;
+    x.v = temp;
+  }
+};

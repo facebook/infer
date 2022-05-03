@@ -922,8 +922,9 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
         in
         let astate =
           if Topl.is_active () then
+            let keep = AbductiveDomain.get_reachable call_state.astate in
             AbductiveDomain.Topl.large_step ~call_location ~callee_proc_name
-              ~substitution:call_state.subst ~condition:call_state.astate.path_condition
+              ~substitution:call_state.subst ~keep ~path_condition:call_state.astate.path_condition
               ~callee_prepost:pre_post.AbductiveDomain.topl call_state.astate
           else call_state.astate
         in

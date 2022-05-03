@@ -415,20 +415,18 @@ let is_unsat_cheap path_condition pruned =
   PathCondition.is_unsat_cheap (Constraint.prune_path pruned path_condition)
 
 
-let dummy_tenv = Tenv.create ()
+let default_tenv = Tenv.create ()
 
-let is_unsat_expensive path_condition pruned =
+let is_unsat_expensive ~get_dynamic_type path_condition pruned =
   let _path_condition, unsat, _new_eqs =
-    (* Not enabling dynamic type reasoning in Topl for now *)
-    PathCondition.is_unsat_expensive dummy_tenv
-      ~get_dynamic_type:(fun _ -> None)
+    PathCondition.is_unsat_expensive default_tenv ~get_dynamic_type
       (Constraint.prune_path pruned path_condition)
   in
   unsat
 
 
-let drop_infeasible ?(expensive = false) path_condition state =
-  let is_unsat = if expensive then is_unsat_expensive else is_unsat_cheap in
+let drop_infeasible ?(expensive = false) ~get_dynamic_type ~path_condition state =
+  let is_unsat = if expensive then is_unsat_expensive ~get_dynamic_type else is_unsat_cheap in
   let f {pruned} = not (is_unsat path_condition pruned) in
   List.filter ~f state
 
@@ -446,30 +444,71 @@ let normalize_simple_state {pre; post; pruned; last_step} =
 
 let normalize_state state = List.map ~f:normalize_simple_state state
 
-let apply_conjuncts_limit state =
-  let f simple_state = Constraint.size simple_state.pruned <= Config.topl_max_conjuncts in
-  IList.filter_changed ~f state
+(** Filters out simple states that cannot reach error because their registers refer to garbage.
+
+    - "Garbage" is a value unreachable from the program state and different from all vlaues held by
+      registers in the pre-simple-state.
+    - The current implementation is an approximation. If a register refers to garbage, it might
+      still be the case that "error" could be reached, depending on the structure of the automaton.
+      This could be determined by a pre-analysis of the automaton. However, because such cases are
+      empirically rare, we just under-approximate by dropping always when a register has garbage.
+    - We never drop simple-states corresponding to "error" vertices. *)
+let drop_garbage ~keep state =
+  let should_keep {pre; post} =
+    ToplAutomaton.is_error (Topl.automaton ()) post.vertex
+    ||
+    let add_register values (_register, v) = AbstractValue.Set.add v values in
+    let ok = List.fold ~f:add_register ~init:keep pre.memory in
+    let register_is_ok (_register, v) = AbstractValue.Set.mem v ok in
+    List.for_all ~f:register_is_ok post.memory
+  in
+  List.filter ~f:should_keep state
 
 
-let apply_disjuncts_limit state =
-  let old_len = List.length state in
-  if old_len <= Config.topl_max_disjuncts then state
-  else
+let simplify ~keep ~get_dynamic_type ~path_condition state =
+  let simplify_simple_state {pre; post; pruned; last_step} =
+    (* NOTE: We do not consider registers live. If the Topl monitor has a hold of something that is
+       garbage for the program, then that something is still garbage. *)
+    let collect memory keep =
+      List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
+    in
+    let keep = keep |> collect pre.memory |> collect post.memory in
+    let pruned = Constraint.eliminate_exists ~keep pruned in
+    L.d_printfln "@[<2>PulseTopl.simplify@;before=%a@;after=%a@]" Constraint.pp pruned Constraint.pp
+      pruned ;
+    {pre; post; pruned; last_step}
+  in
+  (* The following three steps are ordered from fastest to slowest. *)
+  let state = List.map ~f:simplify_simple_state state in
+  let state = drop_garbage ~keep state in
+  let state = drop_infeasible ~expensive:true ~get_dynamic_type ~path_condition state in
+  List.dedup_and_sort ~compare:compare_simple_state state
+
+
+let apply_limits ~keep ~get_dynamic_type ~path_condition state =
+  let expensive_simplification state = simplify ~keep ~get_dynamic_type ~path_condition state in
+  let drop_disjuncts state =
+    let old_len = List.length state in
     let new_len = (Config.topl_max_disjuncts / 2) + 1 in
     if Config.trace_topl then
       Debug.dropped_disjuncts_count := !Debug.dropped_disjuncts_count + old_len - new_len ;
-    let add_score simple_state = (Constraint.size simple_state.pruned, simple_state) in
+    let add_score simple_state =
+      let score = Constraint.size simple_state.pruned in
+      if score > Config.topl_max_conjuncts then None else Some (score, simple_state)
+    in
+    let strip_score = snd in
     let compare_score (score1, _simple_state1) (score2, _simple_state2) =
       Int.compare score1 score2
     in
-    let strip_score (_score, simple_state) = simple_state in
-    state |> List.map ~f:add_score |> List.sort ~compare:compare_score |> Fn.flip List.take new_len
-    |> List.map ~f:strip_score
+    state |> List.filter_map ~f:add_score |> List.sort ~compare:compare_score
+    |> Fn.flip List.take new_len |> List.map ~f:strip_score
+  in
+  let needs_shrinking state = List.length state > Config.topl_max_disjuncts in
+  let maybe condition transform x = if condition x then transform x else x in
+  state |> maybe needs_shrinking expensive_simplification |> maybe needs_shrinking drop_disjuncts
 
 
-let apply_limits state = state |> apply_conjuncts_limit |> apply_disjuncts_limit
-
-let small_step loc path_condition event simple_states =
+let small_step loc ~keep ~get_dynamic_type ~path_condition event simple_states =
   let tmatches = static_match event in
   let evolve_transition (old : simple_state) (transition, tcontext) : state =
     let mk ?(memory = old.post.memory) ?(pruned = Constraint.true_) significant =
@@ -495,25 +534,22 @@ let small_step loc path_condition event simple_states =
         [mk ~memory ~pruned true]
   in
   let evolve_simple_state old =
-    let path_condition = Constraint.prune_path old.pruned path_condition in
     let tmatches =
       List.filter ~f:(fun (t, _) -> Int.equal old.post.vertex t.ToplAutomaton.source) tmatches
     in
-    let nonskip =
-      drop_infeasible path_condition (List.concat_map ~f:(evolve_transition old) tmatches)
-    in
+    let nonskip = List.concat_map ~f:(evolve_transition old) tmatches in
     let skip =
       let nonskip_disjunction = List.map ~f:(fun {pruned} -> pruned) nonskip in
       let skip_disjunction = Constraint.negate nonskip_disjunction in
       let f pruned = {old with pruned} (* keeps last_step from old *) in
-      drop_infeasible path_condition (List.map ~f skip_disjunction)
+      List.map ~f skip_disjunction
     in
     let add_old_pruned s = {s with pruned= Constraint.and_constr s.pruned old.pruned} in
     List.map ~f:add_old_pruned (List.rev_append nonskip skip)
   in
   let result = List.concat_map ~f:evolve_simple_state simple_states in
   L.d_printfln "@[<2>PulseTopl.small_step:@;%a@ -> %a@]" pp_state simple_states pp_state result ;
-  result |> apply_limits
+  result |> apply_limits ~keep ~get_dynamic_type ~path_condition
 
 
 let of_unequal (or_unequal : 'a List.Or_unequal_lengths.t) =
@@ -539,7 +575,8 @@ let sub_simple_state (sub, {pre; post; pruned; last_step}) =
   (sub, {pre; post; pruned; last_step})
 
 
-let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee_prepost state =
+let large_step ~call_location ~callee_proc_name ~substitution ~keep ~get_dynamic_type
+    ~path_condition ~callee_prepost state =
   let seq ((p : simple_state), (q : simple_state)) =
     if not (Int.equal p.post.vertex q.pre.vertex) then None
     else
@@ -577,29 +614,14 @@ let large_step ~call_location ~callee_proc_name ~substitution ~condition ~callee
   (* TODO(rgrigore): may be worth optimizing the cartesian_product *)
   let state = normalize_state state in
   let callee_prepost = normalize_state callee_prepost in
-  let new_state = List.filter_map ~f:seq (List.cartesian_product state callee_prepost) in
-  let result = drop_infeasible condition new_state in
+  let result = List.filter_map ~f:seq (List.cartesian_product state callee_prepost) in
   L.d_printfln "@[<2>PulseTopl.large_step:@;callee_prepost=%a@;%a@ -> %a@]" pp_state callee_prepost
     pp_state state pp_state result ;
-  result |> apply_limits
+  result |> apply_limits ~keep ~get_dynamic_type ~path_condition
 
 
-let filter_for_summary path_condition state = drop_infeasible ~expensive:true path_condition state
-
-let simplify ~keep state =
-  let simplify_simple_state {pre; post; pruned; last_step} =
-    (* NOTE(rgrigore): registers could be considered live for the program path_condition as well.
-       That should improve precision, but I'm wary of altering what the Pulse program state is just
-       because Topl is enabled. *)
-    let collect memory keep =
-      List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
-    in
-    let keep = keep |> collect pre.memory |> collect post.memory in
-    let pruned = Constraint.eliminate_exists ~keep pruned in
-    {pre; post; pruned; last_step}
-  in
-  let state = List.map ~f:simplify_simple_state state in
-  List.dedup_and_sort ~compare:compare_simple_state state
+let filter_for_summary ~get_dynamic_type path_condition state =
+  drop_infeasible ~get_dynamic_type ~expensive:true ~path_condition state
 
 
 let description_of_step_data step_data =

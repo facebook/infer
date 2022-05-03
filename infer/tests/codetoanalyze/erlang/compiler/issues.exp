@@ -87,12 +87,12 @@ features_case_expr:test_case_in_function_Bad/0: function_clause
 features_case_expr:test_case_in_function_Ok/0: ok
 
 ----- features_catch_expr -----
-features_catch_expr:fn_test_catch_exit_Bad/0: function_clause
-features_catch_expr:fn_test_catch_throw_Bad/0: function_clause
 features_catch_expr:fp_test_catch_exit_Ok/0: ok
 features_catch_expr:fp_test_catch_throw_Ok/0: ok
+features_catch_expr:test_catch_exit_Bad/0: function_clause
 features_catch_expr:test_catch_ok_Bad/0: function_clause
 features_catch_expr:test_catch_ok_Ok/0: ok
+features_catch_expr:test_catch_throw_Bad/0: function_clause
 
 ----- features_comparison -----
 features_comparison:fp_test_equal2_Ok/0: ok
@@ -441,11 +441,11 @@ features_tuples:test_third_Bad/0: function_clause
 features_tuples:test_third_Ok/0: ok
 
 ----- features_variables -----
-features_variables:test1_Ok/0: ok
-features_variables:test2_Bad/0: function_clause
-features_variables:test3_Bad/0: function_clause
-features_variables:test4_Ok/0: ok
-features_variables:test5_Bad/0: {badmatch,2}
+features_variables:test_vars1_Ok/0: ok
+features_variables:test_vars2_Bad/0: function_clause
+features_variables:test_vars3_Bad/0: function_clause
+features_variables:test_vars4_Ok/0: ok
+features_variables:test_vars5_Bad/0: {badmatch,2}
 
 ----- nonmatch_atoms -----
 nonmatch_atoms:test_match1_Ok/0: ok
@@ -639,6 +639,13 @@ specs_basic:test_no_args_Ok/0: ok
 ----- specs_typevars -----
 
 ----- specs_userdefined -----
+
+----- m -----
+m:test_a_Ok/0: ok
+m:test_b_Bad/0: topl_error
+m:test_c_Bad/0: topl_error
+m:test_d_Ok/0: ok
+m:test_e_Bad/0: topl_error
 
 ----- topl_taint -----
 topl_taint:test_a_Bad/0: taint_error

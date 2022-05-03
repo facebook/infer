@@ -5,9 +5,11 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --topl-properties Taint.topl --topl-only --topl-max-disjuncts 1000
+INFER_OPTIONS = --topl-only --topl-properties property.topl --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard *.java)
+SOURCES = $(wildcard *.erl)
 
-include $(TESTS_DIR)/javac.make
+include $(TESTS_DIR)/erlc.make
+
+infer-out/report.json: $(MAKEFILE_LIST)

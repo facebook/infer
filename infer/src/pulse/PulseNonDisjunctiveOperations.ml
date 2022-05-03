@@ -10,23 +10,13 @@ module L = Logging
 open PulseDomainInterface
 open PulseBasicInterface
 
-let get_var_opt args =
-  match args with
-  | (Exp.Var id, _) :: _ ->
-      Some (Var.of_id id)
-  | (Exp.Lvar pvar, _) :: _ ->
-      Some (Var.of_pvar pvar)
-  | _ ->
-      None
-
-
 let is_modeled_as_returning_copy proc_name =
   Option.exists Config.pulse_model_returns_copy_pattern ~f:(fun r ->
       let s = Procname.to_string proc_name in
       Str.string_match r s 0 )
 
 
-let add_copies location call_exp actuals astates astate_non_disj =
+let add_copies path location call_exp actuals astates astate_non_disj =
   let aux (copy_check_fn, args_map_fn) init astates =
     List.fold_map astates ~init ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
         match (exec_state, (call_exp : Exp.t), args_map_fn actuals) with
@@ -38,11 +28,16 @@ let add_copies location call_exp actuals astates astate_non_disj =
             if Var.appears_in_source_code copied_var then
               let heap = (disjunct.post :> BaseDomain.t).heap in
               let copied = NonDisjDomain.Copied {heap; location} in
-              let source_addr_opt =
-                let open IOption.Let_syntax in
-                let* source_var = get_var_opt rest_args in
-                let+ source_addr, _ = Stack.find_opt source_var disjunct in
-                source_addr
+              let disjunct, source_addr_opt =
+                match rest_args with
+                | (source_arg, _) :: _ -> (
+                  match PulseOperations.eval path NoAccess location source_arg disjunct with
+                  | Ok (disjunct, (source_addr, _)) ->
+                      (disjunct, Some source_addr)
+                  | Recoverable _ | FatalError _ ->
+                      (disjunct, None) )
+                | _ ->
+                    (disjunct, None)
               in
               let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
               let disjunct' =
