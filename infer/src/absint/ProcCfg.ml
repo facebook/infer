@@ -306,23 +306,31 @@ module ExceptionalHandlerOnly = struct
       this circumstances, resources could be disposed in finaly block through exception flow *)
   let fold_normal_or_exn_succs fold_normal_alpha fold_exceptional t n ~init ~f =
     let choose_normal_or_exn_succs node =
-      let last_exn = List.last (Procdesc.Node.get_exn node) in
-      let is_last_exn_exception_handler = 
-        match last_exn with
-        | Some exn ->
-          let exception_node_kind = Exceptional.Node.kind exn in
-          if Procdesc.Node.equal_nodekind exception_node_kind Procdesc.Node.exn_handler_kind then 
-            true 
-          else
-            false 
-        | _ ->
-          false 
+      let last_succs = List.last (Procdesc.Node.get_succs node) in
+      let last_exn one_node = List.last (Procdesc.Node.get_exn one_node) in
+      let exception_node_kind exn_node = Exceptional.Node.kind exn_node in
+      let is_last_exn_exception_handler =
+        match last_succs with
+        | Some succs -> (
+          match last_exn succs with
+          | Some last_exn_of_succs -> (
+            if Procdesc.Node.equal_nodekind (exception_node_kind last_exn_of_succs) Procdesc.Node.exn_handler_kind then
+              false
+            else if Procdesc.Node.equal_nodekind (exception_node_kind node) Procdesc.Node.exn_handler_kind then
+              true
+            else false )
+          | _ ->
+            false )
+        | _ -> (
+          if Procdesc.Node.equal_nodekind (exception_node_kind node) Procdesc.Node.exn_handler_kind then
+            true
+          else false )
       in
       match is_last_exn_exception_handler with
-      | true -> 
-        fold_exceptional t node ~init ~f
-      | false -> 
-        fold_normal_alpha t node ~init ~f 
+      | true ->
+          fold_exceptional t node ~init ~f
+      | false ->
+          fold_normal_alpha t node ~init ~f
     in
     choose_normal_or_exn_succs n
 
