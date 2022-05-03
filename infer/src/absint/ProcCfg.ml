@@ -334,7 +334,7 @@ module ExceptionalHandlerOnly = struct
     in
     choose_normal_or_exn_succs n
 
-
+  
   let fold_succs t n ~init ~f =
     fold_normal_or_exn_succs fold_normal_succs fold_exceptional_succs t n ~init ~f
 
