@@ -6,11 +6,11 @@
 -module(specs_remote).
 
 -export([
-    remote2_Latent/1,
-    remote1_Ok/1
+    test_remote2_Latent/1,
+    test_remote1_Ok/1
 ]).
 
--spec remote1_Ok(specs_userdefined:my_atom_type()) -> any().
-remote1_Ok(X) when is_atom(X) -> X.
+-spec test_remote1_Ok(specs_userdefined:my_atom_type()) -> any().
+test_remote1_Ok(X) when is_atom(X) -> X.
 
-remote2_Latent(X) when is_atom(X) -> X.
+test_remote2_Latent(X) when is_atom(X) -> X.

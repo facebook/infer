@@ -6,12 +6,12 @@
 -module(specs_userdefined).
 
 -export([
-    composite4_Latent/1,
-    composite3_Latent/1,
-    composite2_Latent/1,
-    composite1_Ok/1,
-    basic2_Latent/1,
-    basic1_Ok/1
+    test_composite4_Latent/1,
+    test_composite3_Latent/1,
+    test_composite2_Latent/1,
+    test_composite1_Ok/1,
+    test_basic2_Latent/1,
+    test_basic1_Ok/1
 ]).
 
 -export_type([my_atom_type/0]).
@@ -20,20 +20,20 @@
 
 -type my_union_type() :: my_atom_type() | map().
 
--spec basic1_Ok(my_atom_type()) -> any().
-basic1_Ok(X) when is_atom(X) -> X.
+-spec test_basic1_Ok(my_atom_type()) -> any().
+test_basic1_Ok(X) when is_atom(X) -> X.
 
-basic2_Latent(X) when is_atom(X) -> X.
+test_basic2_Latent(X) when is_atom(X) -> X.
 
--spec composite1_Ok(my_union_type()) -> any().
-composite1_Ok(X) when is_atom(X) -> atom;
-composite1_Ok(X) when is_map(X) -> map.
+-spec test_composite1_Ok(my_union_type()) -> any().
+test_composite1_Ok(X) when is_atom(X) -> atom;
+test_composite1_Ok(X) when is_map(X) -> map.
 
-composite2_Latent(X) when is_atom(X) -> atom;
-composite2_Latent(X) when is_map(X) -> map.
+test_composite2_Latent(X) when is_atom(X) -> atom;
+test_composite2_Latent(X) when is_map(X) -> map.
 
--spec composite3_Latent(my_union_type()) -> any().
-composite3_Latent(X) when is_atom(X) -> atom.
+-spec test_composite3_Latent(my_union_type()) -> any().
+test_composite3_Latent(X) when is_atom(X) -> atom.
 
--spec composite4_Latent(my_union_type()) -> any().
-composite4_Latent(X) when is_map(X) -> map.
+-spec test_composite4_Latent(my_union_type()) -> any().
+test_composite4_Latent(X) when is_map(X) -> map.

@@ -8,9 +8,9 @@
 -export([
     test_nested_capture_Bad/0,
     test_nested_capture_Ok/0,
-    nondet_lambda3_Latent/1,
-    nondet_lambda2_Latent/1,
-    nondet_lambda1_Ok/1,
+    test_nondet_lambda3_Latent/1,
+    test_nondet_lambda2_Latent/1,
+    test_nondet_lambda1_Ok/1,
     test_lambda_within_function_Ok/0,
     test_lambda_within_function_Bad/0,
     test_lambda_within_function_nested_Ok/0,
@@ -132,7 +132,7 @@ test_scopes4_Ok() ->
     X = 1,
     F().
 
-nondet_lambda1_Ok(X) ->
+test_nondet_lambda1_Ok(X) ->
     C = 1,
     F =
         case X of
@@ -145,7 +145,7 @@ nondet_lambda1_Ok(X) ->
         2 -> ok
     end.
 
-nondet_lambda2_Latent(X) ->
+test_nondet_lambda2_Latent(X) ->
     C = 1,
     F =
         case X of
@@ -157,7 +157,7 @@ nondet_lambda2_Latent(X) ->
         1 -> ok
     end.
 
-nondet_lambda3_Latent(X) ->
+test_nondet_lambda3_Latent(X) ->
     C = 1,
     F =
         case X of
