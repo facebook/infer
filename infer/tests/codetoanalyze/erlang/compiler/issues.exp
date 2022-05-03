@@ -441,11 +441,11 @@ features_tuples:test_third_Bad/0: function_clause
 features_tuples:test_third_Ok/0: ok
 
 ----- features_variables -----
-features_variables:test1_Ok/0: ok
-features_variables:test2_Bad/0: function_clause
-features_variables:test3_Bad/0: function_clause
-features_variables:test4_Ok/0: ok
-features_variables:test5_Bad/0: {badmatch,2}
+features_variables:test_vars1_Ok/0: ok
+features_variables:test_vars2_Bad/0: function_clause
+features_variables:test_vars3_Bad/0: function_clause
+features_variables:test_vars4_Ok/0: ok
+features_variables:test_vars5_Bad/0: {badmatch,2}
 
 ----- nonmatch_atoms -----
 nonmatch_atoms:test_match1_Ok/0: ok

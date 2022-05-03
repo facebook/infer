@@ -5,17 +5,17 @@
 
 -module(features_variables).
 -export([
-    test1_Ok/0,
-    test2_Bad/0,
-    test3_Bad/0,
-    test4_Ok/0,
-    test5_Bad/0
+    test_vars1_Ok/0,
+    test_vars2_Bad/0,
+    test_vars3_Bad/0,
+    test_vars4_Ok/0,
+    test_vars5_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
 warn(0) -> ok.
 
-test1_Ok() ->
+test_vars1_Ok() ->
     X = 2,
     Y = X,
     Z = 3,
@@ -26,7 +26,7 @@ test1_Ok() ->
         3 -> ok
     end.
 
-test2_Bad() ->
+test_vars2_Bad() ->
     X = 2,
     Y = X,
     Z = 3,
@@ -37,7 +37,7 @@ test2_Bad() ->
         3 -> ok
     end.
 
-test3_Bad() ->
+test_vars3_Bad() ->
     X = 2,
     Y = X,
     Z = 3,
@@ -48,12 +48,12 @@ test3_Bad() ->
         3 -> warn(1)
     end.
 
-test4_Ok() ->
+test_vars4_Ok() ->
     X = 2,
     2 = X,
     ok.
 
-test5_Bad() ->
+test_vars5_Bad() ->
     X = 2,
     3 = X,
     ok.

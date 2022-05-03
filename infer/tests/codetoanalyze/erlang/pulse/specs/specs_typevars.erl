@@ -6,47 +6,47 @@
 -module(specs_typevars).
 
 -export([
-    underscore_Ok/1,
-    union4_Latent/1,
-    union3_Latent/1,
-    union2_Latent/1,
-    union1_Ok/1,
-    multi3_Latent/1,
-    multi2_Latent/1,
-    multi1_Ok/1,
-    basic3_Latent/1,
-    basic2_Latent/1,
-    basic1_Ok/1
+    test_underscore_Ok/1,
+    test_union4_Latent/1,
+    test_union3_Latent/1,
+    test_union2_Latent/1,
+    test_union1_Ok/1,
+    test_multi3_Latent/1,
+    test_multi2_Latent/1,
+    test_multi1_Ok/1,
+    test_basic3_Latent/1,
+    test_basic2_Latent/1,
+    test_basic1_Ok/1
 ]).
 
--spec basic1_Ok(T) -> any() when T :: atom().
-basic1_Ok(X) when is_atom(X) -> ok.
+-spec test_basic1_Ok(T) -> any() when T :: atom().
+test_basic1_Ok(X) when is_atom(X) -> ok.
 
-basic2_Latent(X) when is_atom(X) -> ok.
+test_basic2_Latent(X) when is_atom(X) -> ok.
 
--spec basic3_Latent(T) -> any() when T :: any().
-basic3_Latent(X) when is_atom(X) -> ok.
+-spec test_basic3_Latent(T) -> any() when T :: any().
+test_basic3_Latent(X) when is_atom(X) -> ok.
 
--spec multi1_Ok(T) -> any() when T :: S, S :: atom().
-multi1_Ok(X) when is_atom(X) -> ok.
+-spec test_multi1_Ok(T) -> any() when T :: S, S :: atom().
+test_multi1_Ok(X) when is_atom(X) -> ok.
 
-multi2_Latent(X) when is_atom(X) -> ok.
+test_multi2_Latent(X) when is_atom(X) -> ok.
 
--spec multi3_Latent(T) -> any() when T :: S, S :: any().
-multi3_Latent(X) when is_atom(X) -> ok.
+-spec test_multi3_Latent(T) -> any() when T :: S, S :: any().
+test_multi3_Latent(X) when is_atom(X) -> ok.
 
--spec union1_Ok(T | S) -> any() when T :: atom(), S :: map().
-union1_Ok(X) when is_atom(X) -> atom;
-union1_Ok(X) when is_map(X) -> map.
+-spec test_union1_Ok(T | S) -> any() when T :: atom(), S :: map().
+test_union1_Ok(X) when is_atom(X) -> atom;
+test_union1_Ok(X) when is_map(X) -> map.
 
-union2_Latent(X) when is_atom(X) -> atom;
-union2_Latent(X) when is_map(X) -> map.
+test_union2_Latent(X) when is_atom(X) -> atom;
+test_union2_Latent(X) when is_map(X) -> map.
 
--spec union3_Latent(T | S) -> any() when T :: atom(), S :: map().
-union3_Latent(X) when is_atom(X) -> atom.
+-spec test_union3_Latent(T | S) -> any() when T :: atom(), S :: map().
+test_union3_Latent(X) when is_atom(X) -> atom.
 
--spec union4_Latent(T | S) -> any() when T :: atom(), S :: map().
-union4_Latent(X) when is_map(X) -> map.
+-spec test_union4_Latent(T | S) -> any() when T :: atom(), S :: map().
+test_union4_Latent(X) when is_map(X) -> map.
 
--spec underscore_Ok(_) -> any().
-underscore_Ok(X) -> X.
+-spec test_underscore_Ok(_) -> any().
+test_underscore_Ok(X) -> X.
