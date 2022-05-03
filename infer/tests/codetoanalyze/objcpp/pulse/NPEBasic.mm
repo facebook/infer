@@ -249,3 +249,21 @@ void unrelated_invalidation(SomeObject* obj) {
   NSArray<NSObject*>* const constraints = @[ [ao unknown_function] ];
   return 0;
 }
+
+@interface Result
+- (const std::shared_ptr<int>&)shared_ptr_of_int_ref;
+@end
+
+@interface Builder : NSObject
+- (Result*)getResult;
+@end
+
+@implementation Builder : NSObject
+- (Result*)getResult {
+  return nil;
+}
+@end
+
+const std::shared_ptr<int>& nilMessagingSharedPtrRefBad(Builder* builder) {
+  return [[builder getResult] shared_ptr_of_int_ref];
+}
