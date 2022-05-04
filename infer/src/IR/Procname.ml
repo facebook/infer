@@ -497,7 +497,15 @@ module Erlang = struct
 
   let pp verbosity fmt pname = pp_general '/' verbosity fmt pname
 
-  let pp_filename fmt pname = pp_general '#' Verbose fmt pname
+  let pp_filename fmt {module_name; function_name; arity} =
+    (* Extend list of illegal characters if needed. *)
+    let target = "/:<>" in
+    let replacement = "_" in
+    let f = Staged.unstage (String.tr_multi ~target ~replacement) in
+    let module_name = f module_name in
+    let function_name = f function_name in
+    pp_general '#' Verbose fmt {module_name; function_name; arity}
+
 
   let set_arity arity name = {name with arity}
 end
