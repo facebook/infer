@@ -53,3 +53,5 @@ let tuple_field_names size = List.init size ~f:(fun i -> tuple_elem (i + 1))
 let erlang_namespace = "erlang"
 
 let unsupported = "__unsupported"
+
+let infer_erlang_namespace = "__infer__erlang"

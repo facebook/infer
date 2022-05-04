@@ -47,7 +47,6 @@ module LineageGraph = struct
       type t =
         | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
         | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
-        | DynamicCall  (** [X=F(args)] has DynamicCall flow from F to X *)
         | Summary  (** Summarizes the effect of a procedure call *)
       [@@deriving compare, sexp, variants]
     end
@@ -107,8 +106,6 @@ module LineageGraph = struct
         Format.fprintf fmt "Capture"
     | Direct ->
         Format.fprintf fmt "Direct"
-    | DynamicCall ->
-        Format.fprintf fmt "DynamicCall"
     | Summary ->
         Format.fprintf fmt "Summary"
 
@@ -191,7 +188,7 @@ module LineageGraph = struct
 
       type node = {node: _node} [@@deriving yojson_of]
 
-      type edge_type = Capture | Copy | Derive | DynamicCall
+      type edge_type = Capture | Copy | Derive
 
       let yojson_of_edge_type typ =
         match typ with
@@ -201,8 +198,6 @@ module LineageGraph = struct
             `String "Copy"
         | Derive ->
             `String "Derive"
-        | DynamicCall ->
-            `String "DynamicCall"
 
 
       type _edge = {source: node_id; target: node_id; edge_type: edge_type; location: location_id}
@@ -441,15 +436,7 @@ module LineageGraph = struct
       let kind_id = Id.of_kind kind in
       let edge_id = Id.of_list [source_id; target_id; kind_id] in
       let edge_type =
-        match kind with
-        | Capture ->
-            Json.Capture
-        | Direct ->
-            Json.Copy
-        | DynamicCall ->
-            Json.DynamicCall
-        | Summary ->
-            Json.Derive
+        match kind with Capture -> Json.Capture | Direct -> Json.Copy | Summary -> Json.Derive
       in
       let location_id =
         let procname = Procdesc.get_proc_name proc_desc in
@@ -919,21 +906,23 @@ module TransferFunctions = struct
     |> add_summary_flows (analyze_dependency procname) args ret_id node
 
 
+  let exec_named_call (astate : Domain.t) node analyze_dependency ret_id name args : Domain.t =
+    let model =
+      Procname.Map.find_opt name custom_call_models |> Option.value ~default:generic_call_model
+    in
+    model astate node analyze_dependency ret_id name args
+
+
   let exec_call (astate : Domain.t) node analyze_dependency ret_id fun_exp args : Domain.t =
     let callee_pname = procname_of_exp fun_exp in
     let args = List.map ~f:fst args in
     match callee_pname with
     | None ->
-        let sources = free_locals_of_exp fun_exp in
-        let astate =
-          update_write LineageGraph.FlowKind.DynamicCall (Var.of_id ret_id, node) sources astate
-        in
-        add_tito_all args ret_id node astate
+        let arity = List.length args in
+        let erlang_call_name = Procname.erlang_call_unqualified ~arity in
+        exec_named_call astate node analyze_dependency ret_id erlang_call_name (fun_exp :: args)
     | Some name ->
-        let model =
-          Procname.Map.find_opt name custom_call_models |> Option.value ~default:generic_call_model
-        in
-        model astate node analyze_dependency ret_id name args
+        exec_named_call astate node analyze_dependency ret_id name args
 
 
   let add_lambda_edges (write_var, write_node) lambdas (real_state, local_edges) =

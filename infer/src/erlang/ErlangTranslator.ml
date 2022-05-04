@@ -31,7 +31,7 @@ let any_typ = Env.ptr_typ_of_name Any
 let mk_fresh_id () = Ident.create_fresh Ident.knormal
 
 let call_unsupported reason nargs =
-  L.debug Capture Verbose "@[todo ErlangTranslator unsupported construct: %s@." reason ;
+  L.debug Capture Verbose "@[todo ErlangTranslator unsupported construct: %s@]@." reason ;
   Procname.make_erlang ~module_name:ErlangTypeName.unsupported ~function_name:reason ~arity:nargs
 
 
@@ -722,9 +722,10 @@ and translate_expression_call_dynamic (env : (_, _) Env.t) ret_var module_ funct
     =
   (* Not yet supported but at least we translate the module, function and arguments, and
      pass everything to unsupported function: Ret = dynamic_call(M, F, Args). *)
+  let arity = List.length args in
   let all_args = [module_; function_] @ args in
-  let missing_trans = Exp.Const (Cfun (call_unsupported "dynamic_call" (List.length all_args))) in
-  translate_expression_call env ret_var missing_trans all_args
+  let infer_call_proc = Exp.Const (Cfun (Procname.erlang_call_qualified ~arity)) in
+  translate_expression_call env ret_var infer_call_proc all_args
 
 
 and translate_expression_call_static (env : (_, _) Env.t) ret_var module_name_opt function_name args

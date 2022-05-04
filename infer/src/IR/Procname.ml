@@ -508,6 +508,17 @@ module Erlang = struct
 
 
   let set_arity arity name = {name with arity}
+
+  let call_unqualified fun_arity =
+    { module_name= ErlangTypeName.infer_erlang_namespace
+    ; function_name= "__call_unqualified"
+    ; arity= fun_arity + 1 }
+
+
+  let call_qualified fun_arity =
+    { module_name= ErlangTypeName.infer_erlang_namespace
+    ; function_name= "__call_qualified"
+    ; arity= fun_arity + 2 }
 end
 
 module Block = struct
@@ -1177,6 +1188,10 @@ let make_erlang ~module_name ~function_name ~arity = Erlang {module_name; functi
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
 
 let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZone ~is_mutable name)
+
+let erlang_call_unqualified ~arity = Erlang (Erlang.call_unqualified arity)
+
+let erlang_call_qualified ~arity = Erlang (Erlang.call_qualified arity)
 
 module Hashable = struct
   type nonrec t = t [@@deriving compare, equal]

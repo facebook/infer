@@ -444,4 +444,14 @@ val is_erlang_unsupported : t -> bool
 
 val is_erlang : t -> bool
 
+val erlang_call_unqualified : arity:int -> t
+(** A special infer-erlang procname that represents a syntactic erlang (unqualified) function call.
+    [arity] is the arity of the erlang function. First parameter of this procedure is expecteed to
+    be the erlang function name, and the remaining parameters are the erlang parameters (given
+    one-by-one and not as an erlang list). *)
+
+val erlang_call_qualified : arity:int -> t
+(** Same as [erlang_call_unqualified] but is expected to have an erlang module name as the first
+    parameter, and the function name as second. [arity] is (still) the erlang arity of the function. *)
+
 module Normalizer : HashNormalizer.S with type t = t
