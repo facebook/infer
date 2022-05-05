@@ -41,7 +41,7 @@ module type BaseDomainSig_ = sig
   (** compute new state containing only reachable addresses in its heap and attributes, as well as
       the list of discarded unreachable addresses *)
 
-  val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
+  val subst_var : for_summary:bool -> AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
 
   val pp : F.formatter -> t -> unit
 end
@@ -1121,9 +1121,9 @@ let is_heap_allocated {post; pre} v =
 
 let is_stack_allocated stack_allocations v = AbstractValue.Set.mem v (Lazy.force stack_allocations)
 
-let subst_var_in_post subst astate =
+let subst_var_in_post ~for_summary subst astate =
   let open SatUnsat.Import in
-  let+ post = PostDomain.subst_var subst astate.post in
+  let+ post = PostDomain.subst_var ~for_summary subst astate.post in
   if phys_equal astate.post post then astate else {astate with post}
 
 
@@ -1135,7 +1135,7 @@ let get_stack_allocated {post} =
     (post :> BaseDomain.t).stack AbstractValue.Set.empty
 
 
-let incorporate_new_eqs astate new_eqs =
+let incorporate_new_eqs ~for_summary astate new_eqs =
   let stack_allocations = lazy (get_stack_allocated astate) in
   List.fold_until new_eqs ~init:(astate, None)
     ~finish:(fun astate_error -> Sat astate_error)
@@ -1144,7 +1144,7 @@ let incorporate_new_eqs astate new_eqs =
       | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
           Continue (astate, error)
       | Equal (v1, v2) -> (
-        match subst_var_in_post (v1, v2) astate with
+        match subst_var_in_post ~for_summary (v1, v2) astate with
         | Unsat ->
             Stop Unsat
         | Sat astate' ->
@@ -1272,13 +1272,17 @@ let summary_of_post tenv pdesc location astate0 =
   in
   let* () = if is_unsat then Unsat else Sat () in
   let astate = {astate with path_condition} in
-  let* astate, error = incorporate_new_eqs astate new_eqs in
+  let* astate, error = incorporate_new_eqs ~for_summary:true astate new_eqs in
   let astate_before_filter = astate in
   let* astate, live_addresses, dead_addresses, new_eqs =
     filter_for_summary tenv (Procdesc.get_proc_name pdesc) astate
   in
   let+ astate, error =
-    match error with None -> incorporate_new_eqs astate new_eqs | Some _ -> Sat (astate, error)
+    match error with
+    | None ->
+        incorporate_new_eqs ~for_summary:true astate new_eqs
+    | Some _ ->
+        Sat (astate, error)
   in
   match error with
   | None -> (
@@ -1320,7 +1324,7 @@ let get_post {post} = (post :> BaseDomain.t)
 let incorporate_new_eqs new_eqs astate =
   if PathCondition.is_unsat_cheap astate.path_condition then Ok astate
   else
-    match incorporate_new_eqs astate new_eqs with
+    match incorporate_new_eqs ~for_summary:false astate new_eqs with
     | Unsat ->
         Ok {astate with path_condition= PathCondition.false_}
     | Sat (astate, None) ->

@@ -218,7 +218,7 @@ let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_vector_reserved
 
 
-let canonicalize ~get_var_repr attrs_map =
+let canonicalize_common ~for_summary ~get_var_repr attrs_map =
   (* TODO: merging attributes together can produce contradictory attributes, eg [MustBeValid] +
      [Invalid]. We could detect these and abort execution. This is not really restricted to merging
      as it might be possible to get a contradiction by accident too so maybe here is not the best
@@ -237,12 +237,16 @@ let canonicalize ~get_var_repr attrs_map =
                  Attributes.union_prefer_left attrs' attrs )
         in
         add addr' attrs' g )
-    (remove_unsuitable_for_summary attrs_map)
+    (if for_summary then remove_unsuitable_for_summary attrs_map else attrs_map)
     Graph.empty
 
 
-let subst_var (v, v') attrs_map =
+let canonicalize ~get_var_repr attrs_map =
+  canonicalize_common ~for_summary:true ~get_var_repr attrs_map
+
+
+let subst_var ~for_summary (v, v') attrs_map =
   if Graph.mem v attrs_map then
-    canonicalize attrs_map ~get_var_repr:(fun addr ->
+    canonicalize_common ~for_summary attrs_map ~get_var_repr:(fun addr ->
         if AbstractValue.equal addr v then v' else addr )
   else attrs_map

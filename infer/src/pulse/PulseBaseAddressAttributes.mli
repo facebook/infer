@@ -95,4 +95,4 @@ val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
 (** merge the attributes of all the variables that are equal according to [get_var_repr] and remove
     non-canonical variables in favor of their rerpresentative *)
 
-val subst_var : AbstractValue.t * AbstractValue.t -> t -> t
+val subst_var : for_summary:bool -> AbstractValue.t * AbstractValue.t -> t -> t
