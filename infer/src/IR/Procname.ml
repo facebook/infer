@@ -329,7 +329,7 @@ end
 
 module ObjC_Cpp = struct
   type kind =
-    | CPPMethod of {mangled: string option}
+    | CPPMethod of {mangled: string option; is_copy_assignment: bool}
     | CPPConstructor of {mangled: string option; is_copy_ctor: bool}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
@@ -364,6 +364,10 @@ module ObjC_Cpp = struct
 
   let objc_method_kind_of_bool is_instance =
     if is_instance then ObjCInstanceMethod else ObjCClassMethod
+
+
+  let is_copy_assignment {kind} =
+    match kind with CPPMethod {is_copy_assignment} -> is_copy_assignment | _ -> false
 
 
   let is_copy_ctor {kind} =
@@ -661,6 +665,13 @@ let rec compare_name x y =
 let hash = Hashtbl.hash
 
 let with_block_parameters base blocks = WithBlockParameters (base, blocks)
+
+let is_copy_assignment = function
+  | ObjC_Cpp objc_cpp_pname ->
+      ObjC_Cpp.is_copy_assignment objc_cpp_pname
+  | _ ->
+      false
+
 
 let is_copy_ctor = function
   | ObjC_Cpp objc_cpp_pname ->

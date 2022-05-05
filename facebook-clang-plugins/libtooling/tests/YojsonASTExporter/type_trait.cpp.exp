@@ -283,6 +283,7 @@
             ]
           },
           {
+            "is_copy_assignment" : true
           }
         )>,
         <"CXXMethodDecl" : (

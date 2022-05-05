@@ -895,6 +895,7 @@
             ]
           },
           {
+            "is_copy_assignment" : true
           }
         )>,
         <"CXXMethodDecl" : (
@@ -2501,6 +2502,7 @@
             ]
           },
           {
+            "is_copy_assignment" : true
           }
         )>,
         <"CXXMethodDecl" : (

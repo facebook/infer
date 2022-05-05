@@ -614,7 +614,7 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
   else Procname.C (Procname.C.c name mangled parameters template_info)
 
 
-and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
+and mk_cpp_method ~is_copy_assignment ?tenv class_name method_name ?meth_decl mangled parameters =
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
@@ -624,7 +624,7 @@ and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
     | Some (Clang_ast_t.CXXDestructorDecl _) ->
         Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->
-        Procname.ObjC_Cpp.CPPMethod {mangled}
+        Procname.ObjC_Cpp.CPPMethod {mangled; is_copy_assignment}
   in
   let template_info =
     match meth_decl with
@@ -691,7 +691,8 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
     let mangled = get_mangled_method_name fdi mdi in
     let method_name = CAst_utils.get_unqualified_name name_info in
     let class_typename = get_class_typename ?tenv decl_info in
-    mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled parameters
+    let is_copy_assignment = mdi.xmdi_is_copy_assignment in
+    mk_cpp_method ~is_copy_assignment ?tenv class_typename method_name ~meth_decl mangled parameters
   in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
@@ -805,7 +806,7 @@ module CProcname = struct
 
 
     let cpp_method_of_string tenv class_name method_name =
-      mk_cpp_method ~tenv class_name method_name None []
+      mk_cpp_method ~is_copy_assignment:false ~tenv class_name method_name None []
 
 
     let objc_method_of_string_kind class_name method_name method_kind =

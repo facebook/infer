@@ -141,7 +141,7 @@ end
 
 module ObjC_Cpp : sig
   type kind =
-    | CPPMethod of {mangled: string option}
+    | CPPMethod of {mangled: string option; is_copy_assignment: bool}
     | CPPConstructor of {mangled: string option; is_copy_ctor: bool}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
@@ -250,6 +250,8 @@ val get_parameters : t -> Parameter.t list
 val replace_parameters : Parameter.t list -> t -> t
 
 val parameter_of_name : t -> Typ.Name.t -> Parameter.t
+
+val is_copy_assignment : t -> bool [@@warning "-32"]
 
 val is_copy_ctor : t -> bool
 

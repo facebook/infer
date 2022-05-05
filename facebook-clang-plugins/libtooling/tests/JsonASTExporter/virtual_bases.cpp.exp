@@ -396,6 +396,7 @@
             ]
           },
           {
+            "is_copy_assignment" : true
           }
         ]]
       ],
@@ -753,6 +754,7 @@
             ]
           },
           {
+            "is_copy_assignment" : true
           }
         ]]
       ],
@@ -1067,6 +1069,7 @@
             ]
           },
           {
+            "is_copy_assignment" : true
           }
         ]]
       ],
@@ -1515,6 +1518,7 @@
             ]
           },
           {
+            "is_copy_assignment" : true
           }
         ]]
       ],
