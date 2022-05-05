@@ -275,7 +275,7 @@ struct SwapSimple {
 
 struct SwapVector {
   std::vector<int> v;
-  void swap_ok_FP(SwapVector& x) {
+  void swap_ok(SwapVector& x) {
     const auto temp = v;
     v = x.v;
     x.v = temp;

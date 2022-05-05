@@ -390,6 +390,15 @@ module Vector = struct
     astate
 
 
+  let init_copy_constructor this init_vector : model =
+   fun ({path; location} as model_data) astate ->
+    let<*> astate, init_list =
+      PulseOperations.eval_deref_access path Read location init_vector
+        (FieldAccess GenericArrayBackedCollection.field) astate
+    in
+    init_list_constructor this init_list model_data astate
+
+
   let invalidate_references vector_f vector : model =
    fun {path; location} astate ->
     let event =
@@ -400,6 +409,12 @@ module Vector = struct
       reallocate_internal_array path (Hist.single_event path event) vector vector_f location astate
     in
     astate
+
+
+  let invalidate_references_with_ret vector_f vector : model =
+   fun ({ret= ret_id, _} as model_data) astate ->
+    PulseOperations.write_id ret_id vector astate
+    |> invalidate_references vector_f vector model_data
 
 
   let at ~desc vector index : model =
@@ -560,6 +575,9 @@ let matchers : matcher list =
   ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
     $+...$--> Vector.init_list_constructor
+  ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
+    $+ capt_arg_payload_of_typ (-"std" &:: "vector")
+    $+...$--> Vector.init_copy_constructor
   ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
     $+...$--> Vector.invalidate_references Assign
   ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
@@ -574,6 +592,8 @@ let matchers : matcher list =
     $+...$--> Vector.invalidate_references EmplaceBack
   ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
     $+...$--> Vector.invalidate_references Insert
+  ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
+    $+...$--> Vector.invalidate_references_with_ret Assign
   ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vector.at ~desc:"std::vector::at()"
   ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload

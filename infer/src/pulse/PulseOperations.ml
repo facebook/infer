@@ -578,17 +578,13 @@ let invalidate_array_elements path location cause addr_trace astate =
 
 let shallow_copy ({PathContext.timestamp} as path) location addr_hist astate =
   let+ astate = check_addr_access path Read location addr_hist astate in
-  let cell =
-    match AbductiveDomain.find_post_cell_opt (fst addr_hist) astate with
-    | None ->
-        (Memory.Edges.empty, Attributes.empty)
-    | Some cell ->
-        cell
-  in
+  let cell_opt = AbductiveDomain.find_post_cell_opt (fst addr_hist) astate in
   let copy =
     (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
   in
-  (AbductiveDomain.set_post_cell copy cell location astate, copy)
+  ( Option.value_map cell_opt ~default:astate ~f:(fun cell ->
+        AbductiveDomain.set_post_cell copy cell location astate )
+  , copy )
 
 
 let check_address_escape escape_location proc_desc address history astate =
