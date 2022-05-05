@@ -281,3 +281,12 @@ struct SwapVector {
     x.v = temp;
   }
 };
+
+void capture_by_value_ok(SimpleS arg) {
+  auto f = [c = arg]() mutable { c.a = 19; };
+}
+
+// NOTE: Currently we do not support unnecessary capture-by-value in lambda.
+void capture_by_value_bad_FN(SimpleS arg) {
+  auto f = [c = arg]() { int n = c.a; };
+}

@@ -26,3 +26,5 @@ val mark_copy_as_modified :
 val get_copied : t -> (Var.t * Location.t) list
 
 val is_checked_via_dtor : Var.t -> t -> bool
+
+val set_captured_variables : Exp.t -> t -> t
