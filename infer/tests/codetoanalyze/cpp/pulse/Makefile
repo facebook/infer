@@ -11,7 +11,7 @@ INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
 --pulse-report-issues-for-tests
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard *.cpp)
+SOURCES = $(wildcard *.cpp taint/*.cpp)
 
 include $(TESTS_DIR)/clang.make
 

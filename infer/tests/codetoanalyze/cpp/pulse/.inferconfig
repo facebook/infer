@@ -2,5 +2,82 @@
   "pulse-model-abort": ["ns1::ns2::fun_abort"],
   "pulse-model-returns-copy-pattern": "ns::creates_copy",
   "pulse-model-return-nonnull": "Handle::get",
-  "pulse-model-skip-pattern": "skip_model::SkipAll::.*\\|.*SkipSome<.*>::skip_me"
+  "pulse-model-skip-pattern": "skip_model::SkipAll::.*\\|.*SkipSome<.*>::skip_me",
+  "pulse-taint-policies": [
+    { "short_description": "Simple Test",
+      "taint_flows": [
+        { "source_kinds": ["SimpleSource"],
+          "sink_kinds": ["SimpleSink"]
+        }
+      ]
+     },
+    { "short_description": "User-controlled Endpoint",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint"],
+          "sink_kinds": ["SimpleSink"] }
+      ]
+    }
+   ],
+  "pulse-taint-sources": [
+    { "procedure": "__infer_taint_source", "kinds": ["SimpleSource"] },
+    { "procedure": "basics::Obj::endpoint",
+      "kinds": ["Endpoint"],
+      "taint_target": ["AllArgumentsButPositions", [0]]
+    },
+    {
+      "procedure": "basics::Obj::method_source",
+      "kinds": ["SimpleSource"]
+    },
+    {
+      "procedure": "basics::Obj::static_source",
+      "kinds": ["SimpleSource"]
+    },
+    {
+      "procedure": "basics::template_source",
+      "kinds": ["SimpleSource"]
+    },
+    {
+      "procedure": "basics::Obj::string_source",
+      "kinds": ["SimpleSource"]
+    },
+    {
+      "procedure": "basics::Obj::taint_arg_source",
+      "kinds": ["SimpleSource"],
+       "taint_target": ["ArgumentPositions", [0]]
+    }
+    ],
+  "pulse-taint-sinks": [
+    { "procedure": "__infer_taint_sink",
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "procedure": "basics::Obj::string_sink",
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [1]]
+    },
+    {
+      "procedure": "basics::Obj::method_sink",
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [1]]
+    },
+    {
+      "procedure": "basics::Obj::static_sink",
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "procedure": "basics::template_sink",
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "procedure": "basics::Obj::string_sink",
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [1]]
+    }
+  ],
+  "pulse-taint-sanitizers": [
+     { "procedure": "basics::Obj::sanitizer1" }
+  ]
 }

@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module IRAttributes = Attributes
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -208,12 +209,16 @@ let procedure_matches tenv matchers proc_name actuals =
       else None )
 
 
-let get_tainted tenv matchers return_opt proc_name actuals astate =
+let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actuals astate =
   match procedure_matches tenv matchers proc_name actuals with
   | None ->
       []
   | Some matcher -> (
       L.d_printfln "taint matches" ;
+      let actuals =
+        List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
+            (arg_payload, typ) )
+      in
       match matcher.target with
       | `ReturnValue -> (
           L.d_printf "matching return value... " ;
@@ -221,23 +226,24 @@ let get_tainted tenv matchers return_opt proc_name actuals astate =
           | None ->
               L.d_printfln "no match" ;
               []
-          | Some (return, return_typ) ->
+          | Some (return, return_typ) -> (
               L.d_printfln "match! tainting return value" ;
-              (* TODO: match values returned by reference by the frontend *)
-              let return = Var.of_id return in
-              Stack.find_opt return astate
-              |> Option.fold ~init:[] ~f:(fun tainted return_value ->
-                     let taint = {Taint.proc_name; origin= ReturnValue; kinds= matcher.kinds} in
-                     (taint, (return_value, return_typ)) :: tainted ) )
+              let return_as_actual = if has_added_return_param then List.last actuals else None in
+              match return_as_actual with
+              | Some actual ->
+                  let taint = {Taint.proc_name; origin= ReturnValue; kinds= matcher.kinds} in
+                  [(taint, actual)]
+              | None ->
+                  let return = Var.of_id return in
+                  Stack.find_opt return astate
+                  |> Option.fold ~init:[] ~f:(fun tainted return_value ->
+                         let taint = {Taint.proc_name; origin= ReturnValue; kinds= matcher.kinds} in
+                         (taint, (return_value, return_typ)) :: tainted ) ) )
       | ( `AllArguments
         | `ArgumentPositions _
         | `AllArgumentsButPositions _
         | `ArgumentsMatchingTypes _ ) as taint_target ->
           L.d_printf "matching actuals... " ;
-          let actuals =
-            List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
-                (arg_payload, typ) )
-          in
           List.foldi actuals ~init:[] ~f:(fun i tainted ((_, actual_typ) as actual_hist_and_typ) ->
               if taint_target_matches tenv taint_target i actual_typ then (
                 L.d_printfln "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
@@ -249,8 +255,11 @@ let get_tainted tenv matchers return_opt proc_name actuals astate =
                 tainted ) ) )
 
 
-let taint_sources tenv path location ~intra_procedural_only return proc_name actuals astate =
-  let tainted = get_tainted tenv source_matchers return proc_name actuals astate in
+let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param proc_name
+    actuals astate =
+  let tainted =
+    get_tainted tenv source_matchers return ~has_added_return_param proc_name actuals astate
+  in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
         let hist =
@@ -263,8 +272,10 @@ let taint_sources tenv path location ~intra_procedural_only return proc_name act
   (astate, not (List.is_empty tainted))
 
 
-let taint_sanitizers tenv return proc_name actuals astate =
-  let tainted = get_tainted tenv sanitizer_matchers return proc_name actuals astate in
+let taint_sanitizers tenv return ~has_added_return_param proc_name actuals astate =
+  let tainted =
+    get_tainted tenv sanitizer_matchers return ~has_added_return_param proc_name actuals astate
+  in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, _), _)) ->
         AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
@@ -375,8 +386,10 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
   check [] AbstractValue.Set.empty v astate
 
 
-let taint_sinks tenv path location return proc_name actuals astate =
-  let tainted = get_tainted tenv sink_matchers return proc_name actuals astate in
+let taint_sinks tenv path location return ~has_added_return_param proc_name actuals astate =
+  let tainted =
+    get_tainted tenv sink_matchers return ~has_added_return_param proc_name actuals astate
+  in
   let+ astate =
     PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
         let sink_trace = Trace.Immediate {location; history} in
@@ -390,12 +403,11 @@ let taint_sinks tenv path location return proc_name actuals astate =
 
 (* merge all taint from actuals into the return value; NOTE: currently only one source and one
    sanitizer per value is supported so this may overwrite taint information *)
-let propagate_taint_for_unknown_calls tenv path location (return, return_typ) call proc_name_opt
-    actuals astate =
-  (* TODO: match values returned by reference by the frontend *)
+let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
+    ~has_added_return_param call proc_name_opt actuals astate =
   L.d_printfln "propagating all taint for unknown call" ;
   let return = Var.of_id return in
-  let propagate_to_return, propagate_to_receiver =
+  let propagate_to_return, propagate_to_receiver, propagate_to_last_actual =
     let is_static =
       Option.exists proc_name_opt ~f:(fun proc_name ->
           Option.value ~default:true (Procname.is_static proc_name) )
@@ -403,12 +415,14 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
     match (proc_name_opt, return_typ, actuals) with
     | Some proc_name, _, _ when Procname.is_constructor proc_name ->
         L.d_printfln "unknown constructor, propagating taint to receiver" ;
-        (false, true)
+        (false, true, false)
+    | _, {Typ.desc= Tvoid}, _ when has_added_return_param ->
+        (false, false, true)
     | _, {Typ.desc= Tint _ | Tfloat _ | Tvoid}, _ when not is_static ->
         (* for instance methods with a non-Object return value, propagate the taint to the
                receiver *)
         L.d_printfln "non-object return type, propagating taint to receiver" ;
-        (false, true)
+        (false, true, false)
     | ( Some proc_name
       , {Typ.desc= Tptr ({desc= Tstruct return_typename}, _)}
       , {ProcnameDispatcher.Call.FuncArg.typ= {desc= Tptr ({desc= Tstruct receiver_typename}, _)}}
@@ -423,13 +437,13 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
            is one of the common "builder-style" methods that both updates and returns the
            receiver *)
         L.d_printfln "chainable call, propagating taint to both return and receiver" ;
-        (true, true)
+        (true, true, false)
     | _, {Typ.desc= Tptr _ | Tstruct _}, _ ->
         L.d_printfln "object return type, propagating taint to return" ;
-        (true, false)
+        (true, false, false)
     | _, _, _ ->
         L.d_printfln "not propagating taint" ;
-        (false, false)
+        (false, false, false)
   in
   let propagate_to v values astate =
     let astate =
@@ -473,10 +487,18 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ) ca
     | _ ->
         astate
   in
-  match actuals with
-  | {ProcnameDispatcher.Call.FuncArg.arg_payload= this, _hist} :: other_actuals
-    when propagate_to_receiver ->
-      propagate_to this other_actuals astate
+  let astate =
+    match actuals with
+    | {ProcnameDispatcher.Call.FuncArg.arg_payload= this, _hist} :: other_actuals
+      when propagate_to_receiver ->
+        propagate_to this other_actuals astate
+    | _ ->
+        astate
+  in
+  match List.rev actuals with
+  | {ProcnameDispatcher.Call.FuncArg.arg_payload= last, _hist} :: other_actuals
+    when propagate_to_last_actual ->
+      propagate_to last other_actuals astate
   | _ ->
       astate
 
@@ -490,7 +512,8 @@ let pulse_models_to_treat_as_unknown_for_taint =
   in
   [ ClassAndMethodNames
       { class_names= ["java.lang.StringBuilder"]
-      ; method_names= ["append"; "delete"; "replace"; "setLength"] } ]
+      ; method_names= ["append"; "delete"; "replace"; "setLength"] }
+  ; ProcedureNameRegex {name_regex= Str.regexp "std::basic_string<.*>::basic_string"} ]
   |> List.map ~f:dummy_matcher_of_procedure_matcher
 
 
@@ -505,24 +528,34 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
   | First call_exp ->
       if call_was_unknown then
         Ok
-          (propagate_taint_for_unknown_calls tenv path location return (SkippedUnknownCall call_exp)
-             None actuals astate )
+          (propagate_taint_for_unknown_calls tenv path location return ~has_added_return_param:false
+             (SkippedUnknownCall call_exp) None actuals astate )
       else Ok astate
   | Second proc_name ->
       let call_was_unknown = call_was_unknown || should_treat_as_unknown_for_taint tenv proc_name in
-      let astate = taint_sanitizers tenv (Some return) proc_name actuals astate in
+      let has_added_return_param =
+        match IRAttributes.load proc_name with
+        | Some attrs when attrs.ProcAttributes.has_added_return_param ->
+            true
+        | _ ->
+            false
+      in
+      let astate =
+        taint_sanitizers tenv (Some return) ~has_added_return_param proc_name actuals astate
+      in
       let astate, found_source_model =
-        taint_sources tenv path location ~intra_procedural_only:false (Some return) proc_name
-          actuals astate
+        taint_sources tenv path location ~intra_procedural_only:false (Some return)
+          ~has_added_return_param proc_name actuals astate
       in
       let+ astate, found_sink_model =
-        taint_sinks tenv path location (Some return) proc_name actuals astate
+        taint_sinks tenv path location (Some return) ~has_added_return_param proc_name actuals
+          astate
       in
       (* NOTE: we don't care about sanitizers because we want to propagate taint source and sink
          information even if a procedure also happens to sanitize *some* of the sources *)
       if call_was_unknown && (not found_source_model) && not found_sink_model then
-        propagate_taint_for_unknown_calls tenv path location return (SkippedKnownCall proc_name)
-          (Some proc_name) actuals astate
+        propagate_taint_for_unknown_calls tenv path location return ~has_added_return_param
+          (SkippedKnownCall proc_name) (Some proc_name) actuals astate
       else astate
 
 
@@ -537,6 +570,6 @@ let taint_initial tenv proc_desc astate =
         in
         (astate, {ProcnameDispatcher.Call.FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value}) )
   in
-  taint_sources tenv PathContext.initial location ~intra_procedural_only:true None proc_name actuals
-    astate
+  taint_sources tenv PathContext.initial location ~intra_procedural_only:true None
+    ~has_added_return_param:false proc_name actuals astate
   |> fst
