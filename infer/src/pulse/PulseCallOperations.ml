@@ -53,7 +53,10 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
            above effects too in calling contexts where more is reachable from [actual] than here *)
         |> AddressAttributes.add_attrs actual (Attributes.singleton (UnknownEffect (reason, hist)))
       in
-      if Option.value_map callee_pname_opt ~default:false ~f:Procname.is_copy_ctor then astate
+      if
+        Option.value_map callee_pname_opt ~default:false ~f:(fun pname ->
+            Procname.is_constructor pname )
+      then astate
       else
         (* record the [WrittenTo] attribute for all reachable values
            starting from actual argument so that we don't assume

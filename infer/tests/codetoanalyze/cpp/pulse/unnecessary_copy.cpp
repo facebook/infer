@@ -290,3 +290,8 @@ void capture_by_value_ok(SimpleS arg) {
 void capture_by_value_bad_FN(SimpleS arg) {
   auto f = [c = arg]() { int n = c.a; };
 }
+
+void constructor_bad() {
+  std::vector<int> source;
+  auto cpy = source;
+}
