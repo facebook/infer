@@ -310,3 +310,35 @@ void call_incr_deref_with_alias_good(void) {
   }
   x = *ptr;
 }
+
+// FN in pulse-11 tests because incr_deref contructions forgets about its
+// captured vars
+void test_capture_alias_bad(void) {
+  int x = 0;
+  int* ptr = &x;
+  auto incr_deref = [ptr](int* ptr2) {
+    (*ptr)++;
+    (*ptr2)++;
+  };
+  incr_deref(ptr);
+  if (x == 2) {
+    ptr = nullptr;
+  }
+  x = *ptr;
+}
+
+// FP in pulse-11 tests because incr_deref contructions forgets about its
+// captured vars
+void test_capture_alias_good(void) {
+  int x = 0;
+  int* ptr = &x;
+  auto incr_deref = [ptr](int* ptr2) {
+    (*ptr)++;
+    (*ptr2)++;
+  };
+  incr_deref(ptr);
+  if (x != 2) {
+    ptr = nullptr;
+  }
+  x = *ptr;
+}

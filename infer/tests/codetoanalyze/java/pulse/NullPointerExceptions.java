@@ -665,4 +665,42 @@ public class NullPointerExceptions {
     }
     a.x = 0;
   }
+
+  interface AFunction {
+    void run(A a);
+  }
+
+  // FN because incr_deref.run(a) results in an unknown call
+  void test_capture_alias_bad_FN() {
+    A a = new A();
+    a.x = 0;
+    AFunction incr_deref =
+        (a2) -> {
+          a.x++;
+          a2.x++;
+        };
+    incr_deref.run(a);
+    A b = a;
+    if (a.x == 2) {
+      b = null;
+    }
+    b.x = 0;
+  }
+
+  // FP because incr_deref.run(a) results in an unknown call
+  void test_capture_alias_good_FP() {
+    A a = new A();
+    a.x = 0;
+    AFunction incr_deref =
+        (a2) -> {
+          a.x++;
+          a2.x++;
+        };
+    incr_deref.run(a);
+    A b = a;
+    if (a.x != 2) {
+      b = null;
+    }
+    b.x = 0;
+  }
 }

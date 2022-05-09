@@ -70,3 +70,63 @@ void call_incr_int_field_with_alias_good(void) {
   }
   ip.i = *ptr;
 }
+
+void test_capture_alias_bad(void) {
+  int x = 0;
+  int* ptr = &x;
+  void (^incr_deref)(int*) = ^(int* ptr2) {
+    (*ptr)++;
+    (*ptr2)++;
+  };
+  incr_deref(ptr);
+  if (x == 2) {
+    ptr = NULL;
+  }
+  x = *ptr;
+}
+
+void test_capture_alias_good(void) {
+  int x = 0;
+  int* ptr = &x;
+  void (^incr_deref)(int*) = ^(int* ptr2) {
+    (*ptr)++;
+    (*ptr2)++;
+  };
+  incr_deref(ptr);
+  if (x != 2) {
+    ptr = NULL;
+  }
+  x = *ptr;
+}
+
+void test_alias_in_block_specialization(void (^incr_deref)(int*), int* ptr) {
+  incr_deref(ptr);
+}
+
+void test_alias_in_block_specialization_bad(void) {
+  int x = 0;
+  int* ptr = &x;
+  void (^incr_deref)(int*) = ^(int* ptr2) {
+    (*ptr)++;
+    (*ptr2)++;
+  };
+  test_alias_in_block_specialization(incr_deref, ptr);
+  if (x == 2) {
+    ptr = NULL;
+  }
+  x = *ptr;
+}
+
+void test_alias_in_block_specialization_good(void) {
+  int x = 0;
+  int* ptr = &x;
+  void (^incr_deref)(int*) = ^(int* ptr2) {
+    (*ptr)++;
+    (*ptr2)++;
+  };
+  test_alias_in_block_specialization(incr_deref, ptr);
+  if (x != 2) {
+    ptr = NULL;
+  }
+  x = *ptr;
+}
