@@ -1,14 +1,14 @@
 ----- otp_lists -----
-otp_lists:test_foreach_Bad/0: {badmatch,ok}
+otp_lists:test_foreach_Bad/0: badmatch
 otp_lists:test_foreach_Ok/0: ok
 otp_lists:test_sort1_Ok/0: ok
-otp_lists:test_sort2_Bad/0: {case_clause,[]}
-otp_lists:test_sort3_Bad/0: {case_clause,[1]}
-otp_lists:test_sort4_Bad/0: {case_clause,[]}
+otp_lists:test_sort2_Bad/0: case_clause
+otp_lists:test_sort3_Bad/0: case_clause
+otp_lists:test_sort4_Bad/0: case_clause
 
 ----- otp_maps -----
 otp_maps:test_intersect1_Ok/0: ok
-otp_maps:test_intersect2_Bad/0: {case_clause,#{}}
+otp_maps:test_intersect2_Bad/0: case_clause
 
 ----- features_arithmetic -----
 features_arithmetic:fn_test_idiv_by_zero_Bad/0: badarith
@@ -130,9 +130,9 @@ features_comparison:test_not_equal_Ok/0: ok
 
 ----- features_fun -----
 features_fun:fn_test_fun_notexists_Bad/0: undef
-features_fun:test_fun_Bad/0: {case_clause,1}
+features_fun:test_fun_Bad/0: case_clause
 features_fun:test_fun_Ok/0: ok
-features_fun:test_fun_nomodule_Bad/0: {case_clause,1}
+features_fun:test_fun_nomodule_Bad/0: case_clause
 features_fun:test_fun_nomodule_Ok/0: ok
 
 ----- features_functions -----
@@ -204,11 +204,11 @@ features_lambdas:test_lambda_within_function_nested_Ok/0: ok
 features_lambdas:test_nested_capture_Bad/0: function_clause
 features_lambdas:test_nested_capture_Ok/0: ok
 features_lambdas:test_scopes2_Ok/0: ok
-features_lambdas:test_scopes3_Bad/0: {badmatch,1}
+features_lambdas:test_scopes3_Bad/0: badmatch
 features_lambdas:test_scopes4_Ok/0: ok
 
 ----- features_lc -----
-features_lc:fn_test_simple1a_Bad/0: {case_clause,[3]}
+features_lc:fn_test_simple1a_Bad/0: case_clause
 features_lc:fn_test_two_gen1_Bad/0: function_clause
 features_lc:fn_test_two_gen2_Bad/0: function_clause
 features_lc:test_empty_Bad/0: function_clause
@@ -233,9 +233,9 @@ features_lists:fn_test_listadd4_Bad/0: function_clause
 features_lists:fn_test_listappend4_Bad/0: function_clause
 features_lists:fn_test_listappend5_Bad/0: badarg
 features_lists:fn_test_reverse4_Bad/0: function_clause
-features_lists:test_cons1_Bad/0: {case_clause,[1,3]}
+features_lists:test_cons1_Bad/0: case_clause
 features_lists:test_cons1_Ok/0: ok
-features_lists:test_cons2_Bad/0: {case_clause,[100000,3]}
+features_lists:test_cons2_Bad/0: case_clause
 features_lists:test_cons2_Ok/0: ok
 features_lists:test_listadd0_Bad/0: function_clause
 features_lists:test_listadd0_Ok/0: ok
@@ -265,7 +265,7 @@ features_lists:test_listappend3_Ok/0: ok
 features_lists:test_listappend4_Ok/0: ok
 features_lists:test_listforeach_returnvalue_Bad/0: function_clause
 features_lists:test_listforeach_returnvalue_Ok/0: ok
-features_lists:test_nil_Bad/0: {case_clause,[1]}
+features_lists:test_nil_Bad/0: case_clause
 features_lists:test_nil_Ok/0: ok
 features_lists:test_reverse0_Bad/0: function_clause
 features_lists:test_reverse0_Ok/0: ok
@@ -287,7 +287,7 @@ features_logic:test_andalso01_Bad/0: if_clause
 features_logic:test_andalso10_Bad/0: if_clause
 features_logic:test_andalso11_Ok/0: ok
 features_logic:test_false2_Bad/0: if_clause
-features_logic:test_false_Bad/0: {case_clause,false}
+features_logic:test_false_Bad/0: case_clause
 features_logic:test_false_Ok/0: ok
 features_logic:test_or00_Bad/0: if_clause
 features_logic:test_or01_Ok/0: ok
@@ -298,7 +298,7 @@ features_logic:test_orelse01_Ok/0: ok
 features_logic:test_orelse10_Ok/0: ok
 features_logic:test_orelse11_Ok/0: ok
 features_logic:test_true2_Ok/0: ok
-features_logic:test_true_Bad/0: {case_clause,true}
+features_logic:test_true_Bad/0: case_clause
 features_logic:test_true_Ok/0: ok
 features_logic:test_unot_Bad/0: if_clause
 features_logic:test_unot_Ok/0: ok
@@ -311,11 +311,11 @@ features_logic:test_xor11_Bad/0: if_clause
 features_maps:test_filter_return_type_Ok/0: ok
 features_maps:test_get_Bad/0: function_clause
 features_maps:test_get_Ok/0: ok
-features_maps:test_get_badkey_Bad/0: {badkey,1}
-features_maps:test_get_badmap_Bad/0: {badmap,[not_a_map]}
+features_maps:test_get_badkey_Bad/0: badkey
+features_maps:test_get_badmap_Bad/0: badmap
 features_maps:test_is_key_Bad/0: function_clause
 features_maps:test_is_key_Ok/0: ok
-features_maps:test_is_key_badmap_Bad/0: {badmap,[not_a_map]}
+features_maps:test_is_key_badmap_Bad/0: badmap
 features_maps:test_merge_return_type_Ok/0: ok
 features_maps:test_new_Bad/0: function_clause
 features_maps:test_new_Ok/0: ok
@@ -324,24 +324,24 @@ features_maps:test_put2_Ok/0: ok
 features_maps:test_put3_Ok/0: ok
 features_maps:test_put4_Bad/0: function_clause
 features_maps:test_put5_Bad/0: function_clause
-features_maps:test_put6_Bad/0: {badmap,[not_a_map]}
+features_maps:test_put6_Bad/0: badmap
 
 ----- features_matchexpr -----
 features_matchexpr:test_match1_Ok/0: ok
-features_matchexpr:test_match2_Bad/0: {badmatch,1}
+features_matchexpr:test_match2_Bad/0: badmatch
 features_matchexpr:test_match3_Ok/0: ok
-features_matchexpr:test_match4_Bad/0: {badmatch,1}
+features_matchexpr:test_match4_Bad/0: badmatch
 
 ----- features_receive -----
 features_receive:test_receive1_Ok/0: ok
-features_receive:test_receive2_Bad/0: {badmatch,123}
+features_receive:test_receive2_Bad/0: badmatch
 features_receive:test_receive3_Ok/0: ok
-features_receive:test_receive4_Bad/0: {badmatch,123}
-features_receive:test_receive5_Bad/0: {badmatch,123}
-features_receive:test_receive6_Bad/0: {badmatch,2}
+features_receive:test_receive4_Bad/0: badmatch
+features_receive:test_receive5_Bad/0: badmatch
+features_receive:test_receive6_Bad/0: badmatch
 features_receive:test_receive7_Ok/0: ok
-features_receive:test_receive8_Bad/0: {case_clause,hello}
-features_receive:test_receive_bad_timeout_Bad/0: {badmatch,2}
+features_receive:test_receive8_Bad/0: case_clause
+features_receive:test_receive_bad_timeout_Bad/0: badmatch
 
 ----- features_records -----
 features_records:fp_test_lyse_robot_nested_Ok/0: ok
@@ -445,7 +445,7 @@ features_variables:test_vars1_Ok/0: ok
 features_variables:test_vars2_Bad/0: function_clause
 features_variables:test_vars3_Bad/0: function_clause
 features_variables:test_vars4_Ok/0: ok
-features_variables:test_vars5_Bad/0: {badmatch,2}
+features_variables:test_vars5_Bad/0: badmatch
 
 ----- nonmatch_atoms -----
 nonmatch_atoms:test_match1_Ok/0: ok
@@ -459,16 +459,16 @@ nonmatch_atoms:test_match7_Bad/0: function_clause
 ----- nonmatch_case_expr -----
 nonmatch_case_expr:test_case_simple1_Ok/0: ok
 nonmatch_case_expr:test_case_simple2_Ok/0: ok
-nonmatch_case_expr:test_case_simple3_Bad/0: {case_clause,2}
+nonmatch_case_expr:test_case_simple3_Bad/0: case_clause
 nonmatch_case_expr:test_case_tail1_Ok/0: ok
 nonmatch_case_expr:test_case_tail2_Ok/0: ok
-nonmatch_case_expr:test_case_tail3_Bad/0: {case_clause,[]}
+nonmatch_case_expr:test_case_tail3_Bad/0: case_clause
 
 ----- nonmatch_case_guards -----
 nonmatch_case_guards:test_accepts_all_Ok/0: ok
-nonmatch_case_guards:test_accepts_positive2_Bad/0: {case_clause,0}
+nonmatch_case_guards:test_accepts_positive2_Bad/0: case_clause
 nonmatch_case_guards:test_accepts_positive2_Ok/0: ok
-nonmatch_case_guards:test_accepts_positive_Bad/0: {case_clause,0}
+nonmatch_case_guards:test_accepts_positive_Bad/0: case_clause
 nonmatch_case_guards:test_accepts_positive_Ok/0: ok
 
 ----- nonmatch_function_guards -----
@@ -504,7 +504,7 @@ nonmatch_integers:test_match8_Bad/0: function_clause
 nonmatch_lists:test_empty1_Ok/0: ok
 nonmatch_lists:test_empty2_Bad/0: function_clause
 nonmatch_lists:test_empty3_Bad/0: function_clause
-nonmatch_lists:test_primitive_Bad/0: {badmatch,2}
+nonmatch_lists:test_primitive_Bad/0: badmatch
 nonmatch_lists:test_secondnil1_Ok/0: ok
 nonmatch_lists:test_secondnil2_Ok/0: ok
 nonmatch_lists:test_secondnil3_Bad/0: function_clause
@@ -530,29 +530,29 @@ nonmatch_maps:test_type3_Bad/0: function_clause
 nonmatch_maps:test_type4_Bad/0: function_clause
 nonmatch_maps:test_update_arrow_Bad/0: function_clause
 nonmatch_maps:test_update_arrow_Ok/0: ok
-nonmatch_maps:test_update_badmap_Bad/0: {badmap,[1,2,3]}
+nonmatch_maps:test_update_badmap_Bad/0: badmap
 nonmatch_maps:test_update_exact_Bad/0: function_clause
 nonmatch_maps:test_update_exact_Ok/0: ok
-nonmatch_maps:test_update_exact_badkey_Bad/0: {badkey,1}
+nonmatch_maps:test_update_exact_badkey_Bad/0: badkey
 nonmatch_maps:test_update_old_value_Ok/0: ok
 
 ----- nonmatch_match_expr -----
 nonmatch_match_expr:test_match_a_Ok/0: ok
-nonmatch_match_expr:test_match_b_Bad/0: {badmatch,2}
+nonmatch_match_expr:test_match_b_Bad/0: badmatch
 nonmatch_match_expr:test_match_c_Ok/0: ok
 nonmatch_match_expr:test_match_d_Ok/0: ok
 nonmatch_match_expr:test_match_e_Bad/0: function_clause
 nonmatch_match_expr:test_match_f_Ok/0: ok
 nonmatch_match_expr:test_match_g_Bad/0: function_clause
 nonmatch_match_expr:test_match_in_pattern_a_Ok/0: ok
-nonmatch_match_expr:test_match_in_pattern_b_Bad/0: {case_clause,3}
-nonmatch_match_expr:test_match_in_pattern_c_Bad/0: {case_clause,2}
-nonmatch_match_expr:test_match_in_pattern_d_Bad/0: {case_clause,3}
+nonmatch_match_expr:test_match_in_pattern_b_Bad/0: case_clause
+nonmatch_match_expr:test_match_in_pattern_c_Bad/0: case_clause
+nonmatch_match_expr:test_match_in_pattern_d_Bad/0: case_clause
 nonmatch_match_expr:test_match_in_pattern_e_Ok/0: ok
-nonmatch_match_expr:test_match_in_pattern_f_Bad/0: {case_clause,1}
+nonmatch_match_expr:test_match_in_pattern_f_Bad/0: case_clause
 nonmatch_match_expr:test_match_nested1_Ok/0: ok
-nonmatch_match_expr:test_match_nested2_Bad/0: {badmatch,2}
-nonmatch_match_expr:test_match_nested3_Bad/0: {badmatch,1}
+nonmatch_match_expr:test_match_nested2_Bad/0: badmatch
+nonmatch_match_expr:test_match_nested3_Bad/0: badmatch
 
 ----- nonmatch_records -----
 nonmatch_records:test_bad_record_access_Bad/0: badrecord
@@ -561,32 +561,32 @@ nonmatch_records:test_index1_Ok/0: ok
 nonmatch_records:test_index2_Ok/0: ok
 nonmatch_records:test_index3_Bad/0: function_clause
 nonmatch_records:test_index4_Bad/0: function_clause
-nonmatch_records:test_match_field2_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_field2_Bad/0: case_clause
 nonmatch_records:test_match_field2_Ok/0: ok
-nonmatch_records:test_match_field3_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_field3_Bad/0: case_clause
 nonmatch_records:test_match_field3_Ok/0: ok
-nonmatch_records:test_match_field4_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_field4_Bad/0: case_clause
 nonmatch_records:test_match_field4_Ok/0: ok
 nonmatch_records:test_match_field_multiple1_Ok/0: ok
-nonmatch_records:test_match_field_multiple2_Bad/0: {case_clause,{person,123,45,6789}}
-nonmatch_records:test_match_field_multiple3_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_field_multiple2_Bad/0: case_clause
+nonmatch_records:test_match_field_multiple3_Bad/0: case_clause
 nonmatch_records:test_match_record_as_tuple1_Ok/0: ok
-nonmatch_records:test_match_record_as_tuple2_Bad/0: {case_clause,{person,123,45,6789}}
-nonmatch_records:test_match_record_as_tuple3_Bad/0: {case_clause,{person,123,45,6789}}
-nonmatch_records:test_match_record_as_tuple4_Bad/0: {case_clause,{person,123,45,6789}}
-nonmatch_records:test_match_record_as_tuple5_Bad/0: {case_clause,{person,123,45,6789}}
-nonmatch_records:test_match_record_as_tuple6_Bad/0: {case_clause,{person,123,45,6789}}
-nonmatch_records:test_match_record_as_tuple7_Bad/0: {case_clause,{person,123,45,6789}}
+nonmatch_records:test_match_record_as_tuple2_Bad/0: case_clause
+nonmatch_records:test_match_record_as_tuple3_Bad/0: case_clause
+nonmatch_records:test_match_record_as_tuple4_Bad/0: case_clause
+nonmatch_records:test_match_record_as_tuple5_Bad/0: case_clause
+nonmatch_records:test_match_record_as_tuple6_Bad/0: case_clause
+nonmatch_records:test_match_record_as_tuple7_Bad/0: case_clause
 nonmatch_records:test_match_tuple_as_record1_Ok/0: ok
 nonmatch_records:test_match_tuple_as_record2_Ok/0: ok
-nonmatch_records:test_match_tuple_as_record3_Bad/0: {case_clause,{person,123,45,6789}}
-nonmatch_records:test_match_tuple_as_record4_Bad/0: {case_clause,123}
+nonmatch_records:test_match_tuple_as_record3_Bad/0: case_clause
+nonmatch_records:test_match_tuple_as_record4_Bad/0: case_clause
 nonmatch_records:test_match_tuple_as_record5_Bad/0: badrecord
 nonmatch_records:test_nested1_Ok/0: ok
 nonmatch_records:test_nested2_Ok/0: ok
 nonmatch_records:test_nested3_Ok/0: ok
-nonmatch_records:test_nested4_Bad/0: {case_clause,{car,987654,{person,123,45,6789}}}
-nonmatch_records:test_nested5_Bad/0: {case_clause,{car,987654,{person,123,45,6789}}}
+nonmatch_records:test_nested4_Bad/0: case_clause
+nonmatch_records:test_nested5_Bad/0: case_clause
 nonmatch_records:test_type_Bad/0: function_clause
 nonmatch_records:test_type_Ok/0: ok
 
@@ -598,19 +598,19 @@ nonmatch_strings:test_match1_Ok/0: ok
 ----- nonmatch_trycatch -----
 nonmatch_trycatch:test_try_simple1_Ok/0: ok
 nonmatch_trycatch:test_try_simple2_Ok/0: ok
-nonmatch_trycatch:test_try_simple3_Bad/0: {try_clause,2}
+nonmatch_trycatch:test_try_simple3_Bad/0: try_clause
 nonmatch_trycatch:test_try_tail1_Ok/0: ok
 nonmatch_trycatch:test_try_tail2_Ok/0: ok
-nonmatch_trycatch:test_try_tail3_Bad/0: {try_clause,[]}
+nonmatch_trycatch:test_try_tail3_Bad/0: try_clause
 
 ----- nonmatch_tuples -----
 nonmatch_tuples:test_elements1_Ok/0: ok
-nonmatch_tuples:test_elements2_Bad/0: {badmatch,{1,2}}
-nonmatch_tuples:test_elements3_Bad/0: {badmatch,{1,2}}
+nonmatch_tuples:test_elements2_Bad/0: badmatch
+nonmatch_tuples:test_elements3_Bad/0: badmatch
 nonmatch_tuples:test_elements_partial1_Ok/0: ok
 nonmatch_tuples:test_elements_partial2_Ok/0: ok
-nonmatch_tuples:test_elements_partial3_Bad/0: {badmatch,{1,2}}
-nonmatch_tuples:test_elements_partial4_Bad/0: {badmatch,{1,2}}
+nonmatch_tuples:test_elements_partial3_Bad/0: badmatch
+nonmatch_tuples:test_elements_partial4_Bad/0: badmatch
 nonmatch_tuples:test_empty1_Ok/0: ok
 nonmatch_tuples:test_empty2_Bad/0: function_clause
 nonmatch_tuples:test_empty3_Bad/0: function_clause
@@ -621,15 +621,15 @@ nonmatch_tuples:test_first4_Bad/0: function_clause
 nonmatch_tuples:test_first5_Bad/0: function_clause
 nonmatch_tuples:test_nested1_Ok/0: ok
 nonmatch_tuples:test_nested2_Ok/0: ok
-nonmatch_tuples:test_nested3_Bad/0: {badmatch,{1,{1,2,3},3}}
-nonmatch_tuples:test_nested4_Bad/0: {badmatch,{1,{1,2},5}}
+nonmatch_tuples:test_nested3_Bad/0: badmatch
+nonmatch_tuples:test_nested4_Bad/0: badmatch
 nonmatch_tuples:test_size1_Ok/0: ok
 nonmatch_tuples:test_size2_Bad/0: function_clause
 nonmatch_tuples:test_size3_Bad/0: function_clause
 nonmatch_tuples:test_size4_Bad/0: function_clause
 
 ----- specs_basic -----
-specs_basic:test_no_args_Bad/0: {badmatch,2}
+specs_basic:test_no_args_Bad/0: badmatch
 specs_basic:test_no_args_Ok/0: ok
 
 ----- specs_overloads -----
@@ -657,5 +657,5 @@ topl_taint:test_f_Bad/0: taint_error
 topl_taint:test_g_Ok/0: ok
 topl_taint:test_h_Bad/0: taint_error
 topl_taint:test_i_Ok/0: ok
-topl_taint:test_j_Bad/0: {case_clause,3}
+topl_taint:test_j_Bad/0: case_clause
 

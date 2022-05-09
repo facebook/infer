@@ -23,9 +23,8 @@ run_test(Module, Function) ->
         Module:Function(),
         io:format("ok~n")
     catch
-        % Ignore details of records: due to recent change (https://github.com/erlang/otp/pull/5694),
-        % details are printed differently in different OTP versions.
-        error:{badrecord,_} -> io:format("~w~n", [badrecord]);
+        % Ignore details, we don't need them and might change across versions
+        error:{Reason,_Details} -> io:format("~w~n", [Reason]);
         error:Error -> io:format("~w~n", [Error])
     end.
 
