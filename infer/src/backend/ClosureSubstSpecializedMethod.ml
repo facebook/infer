@@ -292,44 +292,39 @@ let process pdesc =
   let proc_name = Procdesc.get_proc_name pdesc in
   let proc_attributes = Procdesc.get_attributes pdesc in
   match proc_attributes.ProcAttributes.specialized_with_blocks_info with
-  | Some spec_with_blocks_info -> (
-    match Procdesc.load spec_with_blocks_info.ProcAttributes.orig_proc with
-    | Some orig_pdesc ->
-        Procdesc.deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc:pdesc ;
-        let formals_to_blocks_map = spec_with_blocks_info.formals_to_blocks in
-        let pvar_to_block_map =
-          Pvar.Map.map SpecDom.v formals_to_blocks_map |> Pvar.Map.to_seq |> PvarBlockSpecMap.of_seq
+  | Some spec_with_blocks_info ->
+      let formals_to_blocks_map = spec_with_blocks_info.formals_to_blocks in
+      let pvar_to_block_map =
+        Pvar.Map.map SpecDom.v formals_to_blocks_map |> Pvar.Map.to_seq |> PvarBlockSpecMap.of_seq
+      in
+      let node_cfg = CFG.from_pdesc pdesc in
+      let invariant_map =
+        Analyzer.exec_cfg node_cfg () ~initial:(IdBlockSpecMap.empty, pvar_to_block_map)
+      in
+      let update_context = eval_instr in
+      CFG.fold_nodes node_cfg ~init:() ~f:(fun _ node ->
+          let used_ids = Instrs.instrs_get_normal_vars (CFG.instrs node) in
+          Ident.update_name_generator used_ids ) ;
+      let replace_instr _node = exec_instr proc_name in
+      let context_at_node node = analyze_at_node invariant_map node in
+      let has_changed : bool =
+        Procdesc.replace_instrs_by_using_context pdesc ~f:replace_instr ~update_context
+          ~context_at_node
+      in
+      if has_changed then
+        (* has_changed indicates that some of the values in formals_to_blocks have been
+           used and, therefore, may have some new correspondances *)
+        let _, pvar_to_block_map = context_at_node (Procdesc.get_exit_node pdesc) in
+        let formals_to_blocks =
+          PvarBlockSpecMap.to_seq pvar_to_block_map
+          |> Pvar.Map.of_seq
+          |> Pvar.Map.filter_map (fun _ passed_block -> SpecDom.get passed_block)
         in
-        let node_cfg = CFG.from_pdesc pdesc in
-        let invariant_map =
-          Analyzer.exec_cfg node_cfg () ~initial:(IdBlockSpecMap.empty, pvar_to_block_map)
+        let new_attributes =
+          { proc_attributes with
+            specialized_with_blocks_info= Some {spec_with_blocks_info with formals_to_blocks} }
         in
-        let update_context = eval_instr in
-        CFG.fold_nodes node_cfg ~init:() ~f:(fun _ node ->
-            let used_ids = Instrs.instrs_get_normal_vars (CFG.instrs node) in
-            Ident.update_name_generator used_ids ) ;
-        let replace_instr _node = exec_instr proc_name in
-        let context_at_node node = analyze_at_node invariant_map node in
-        let has_changed : bool =
-          Procdesc.replace_instrs_by_using_context pdesc ~f:replace_instr ~update_context
-            ~context_at_node
-        in
-        if has_changed then
-          (* has_changed indicates that some of the values in formals_to_blocks have been
-             used and, therefore, may have some new correspondances *)
-          let _, pvar_to_block_map = context_at_node (Procdesc.get_exit_node pdesc) in
-          let formals_to_blocks =
-            PvarBlockSpecMap.to_seq pvar_to_block_map
-            |> Pvar.Map.of_seq
-            |> Pvar.Map.filter_map (fun _ passed_block -> SpecDom.get passed_block)
-          in
-          let new_attributes =
-            { proc_attributes with
-              specialized_with_blocks_info= Some {spec_with_blocks_info with formals_to_blocks} }
-          in
-          Procdesc.set_attributes pdesc new_attributes
-        else ()
-    | None ->
-        () )
+        Procdesc.set_attributes pdesc new_attributes
+      else ()
   | _ ->
       ()

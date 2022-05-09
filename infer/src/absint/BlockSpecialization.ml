@@ -119,16 +119,16 @@ let create_specialized_procdesc callee_pname ~extra_formals_to_blocks ~captured_
              specialization information and, therefore, should be able to ensure the above
              property holds if there were any doubt
         *)
-        let orig_attributes =
+        let orig_pdesc =
           let callee_attributes = Procdesc.get_attributes proc_desc in
-          let orig_attributes =
+          let orig_pdesc =
             let open IOption.Let_syntax in
             let* {ProcAttributes.orig_proc} = callee_attributes.specialized_with_blocks_info in
-            let+ orig_pdesc = Procdesc.load orig_proc in
-            Procdesc.get_attributes orig_pdesc
+            Procdesc.load orig_proc
           in
-          Option.value ~default:callee_attributes orig_attributes
+          Option.value ~default:proc_desc orig_pdesc
         in
+        let orig_attributes = Procdesc.get_attributes orig_pdesc in
         let callee_pname = orig_attributes.proc_name in
         match
           make_formals_to_blocks ~extra_formals_to_blocks
@@ -144,8 +144,8 @@ let create_specialized_procdesc callee_pname ~extra_formals_to_blocks ~captured_
                additions, we can simply ignore them, because the function bodies of the
                same procname must be the same.
 
-               Here, it creates an empty procdesc temporarily.  The function body will be
-               filled later by [ClosureSubstSpecializedMethod]. *)
+               Here, it creates a copy of orig_pdesc. The function body will be
+               specialized later by [CCallSpecializedWithClosures.process]. *)
             match Procdesc.load specialized_pname with
             | Some _ ->
                 Some specialized_pname (* already exists*)
@@ -163,6 +163,7 @@ let create_specialized_procdesc callee_pname ~extra_formals_to_blocks ~captured_
                     ; proc_name= specialized_pname }
                   in
                   let specialized_pdesc = Procdesc.from_proc_attributes new_attributes in
+                  Procdesc.deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc:specialized_pdesc ;
                   IRAttributes.store ~proc_desc:(Some specialized_pdesc) new_attributes ;
                   Some specialized_pname )
                 else (* No procdesc to specialize: not defined *)
