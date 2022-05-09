@@ -674,13 +674,57 @@ let mk_initial tenv proc_desc =
             (`LocalDecl (Pvar.mk name proc_name, None))
             typ location acc )
   in
-  { pre
-  ; post
-  ; path_condition= PathCondition.true_
-  ; decompiler= Decompiler.empty
-  ; need_specialization= false
-  ; topl= PulseTopl.start ()
-  ; skipped_calls= SkippedCalls.empty }
+  let astate =
+    { pre
+    ; post
+    ; path_condition= PathCondition.true_
+    ; decompiler= Decompiler.empty
+    ; need_specialization= false
+    ; topl= PulseTopl.start ()
+    ; skipped_calls= SkippedCalls.empty }
+  in
+  let apply_aliases astate =
+    (* If a function is alias-specialized, then we want to make sure all the captured
+       variables and parameters aliasing each other share the same memory. To do so, we
+       simply add a dereference access from each aliasing variables' address to the same
+       address in the pre and the post of the initial state.
+
+       e.g. f(x, y) with the aliasing information x = y will have the following pre:
+         roots={ &x=v1, &y=v2 };
+         mem  ={ v1 -> { * -> v3 }, v2 -> { * -> v3 }, v3 -> { } };
+         attrs={ };
+    *)
+    match Procdesc.get_specialized_with_aliasing_info proc_desc with
+    | None ->
+        astate
+    | Some {aliases} ->
+        let pre_heap = (astate.pre :> base_domain).heap in
+        let post_heap = (astate.post :> base_domain).heap in
+        let pre_heap, post_heap =
+          List.fold aliases ~init:(pre_heap, post_heap) ~f:(fun (pre_heap, post_heap) alias ->
+              let pre_heap, post_heap, _ =
+                List.fold alias ~init:(pre_heap, post_heap, None)
+                  ~f:(fun (pre_heap, post_heap, addr) pvar ->
+                    let addr =
+                      match addr with None -> AbstractValue.mk_fresh () | Some addr -> addr
+                    in
+                    let src_addr, addr_hist = BaseStack.find (Var.of_pvar pvar) initial_stack in
+                    let pre_heap =
+                      BaseMemory.add_edge src_addr Dereference (addr, ValueHistory.epoch) pre_heap
+                      |> BaseMemory.register_address addr
+                    in
+                    let post_heap =
+                      BaseMemory.add_edge src_addr Dereference (addr, addr_hist) post_heap
+                    in
+                    (pre_heap, post_heap, Some addr) )
+              in
+              (pre_heap, post_heap) )
+        in
+        { astate with
+          pre= PreDomain.update ~heap:pre_heap pre
+        ; post= PostDomain.update ~heap:post_heap post }
+  in
+  apply_aliases astate
 
 
 let add_skipped_call pname trace astate =

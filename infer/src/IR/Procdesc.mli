@@ -290,6 +290,8 @@ val get_start_node : t -> Node.t
 val get_static_callees : t -> Procname.t list
 (** get a list of unique static callees excluding self *)
 
+val get_specialized_with_aliasing_info : t -> ProcAttributes.specialized_with_aliasing_info option
+
 val is_defined : t -> bool
 (** Return [true] iff the procedure is defined, and not just declared *)
 

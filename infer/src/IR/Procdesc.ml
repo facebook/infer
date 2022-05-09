@@ -614,6 +614,8 @@ let get_static_callees pdesc =
   Procname.Set.remove (get_proc_name pdesc) callees |> Procname.Set.elements
 
 
+let get_specialized_with_aliasing_info pdesc = pdesc.attributes.specialized_with_aliasing_info
+
 let find_map_nodes pdesc ~f = List.find_map ~f (get_nodes pdesc)
 
 let find_map_instrs pdesc ~f =

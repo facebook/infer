@@ -640,4 +640,29 @@ public class NullPointerExceptions {
     ImmutableList.Builder<Object> listBuilder = ImmutableList.builder();
     listBuilder.add(getObject());
   }
+
+  void incr_deref(A a1, A a2) {
+    a1.x++;
+    a2.x++;
+  }
+
+  void call_incr_deref_with_alias_bad() {
+    A a = new A();
+    a.x = 0;
+    incr_deref(a, a);
+    if (a.x == 2) {
+      a = null;
+    }
+    a.x = 0;
+  }
+
+  void call_incr_deref_with_alias_good() {
+    A a = new A();
+    a.x = 0;
+    incr_deref(a, a);
+    if (a.x != 2) {
+      a = null;
+    }
+    a.x = 0;
+  }
 }
