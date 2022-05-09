@@ -52,6 +52,9 @@ let pp_var_data fmt {name; typ; modify_in_block; is_declared_unused} =
     Mangled.pp name (Typ.pp_full Pp.text) typ modify_in_block is_declared_unused
 
 
+type specialized_with_aliasing_info = {orig_proc: Procname.t; aliases: Pvar.t list list}
+[@@deriving compare]
+
 type 'captured_var passed_block =
   | Block of (Procname.t * 'captured_var list)
   | Fields of 'captured_var passed_block Fieldname.Map.t
@@ -82,6 +85,7 @@ type t =
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
+  ; specialized_with_aliasing_info: specialized_with_aliasing_info option
   ; specialized_with_blocks_info: specialized_with_blocks_info option
         (** the procedure is a clone specialized with calls to concrete closures, with link to the
             original procedure, and a map that links the original formals to the elements of the
@@ -128,6 +132,7 @@ let default translation_unit proc_name =
   ; is_no_return= false
   ; is_objc_arc_on= false
   ; is_specialized= false
+  ; specialized_with_aliasing_info= None
   ; specialized_with_blocks_info= None
   ; is_synthetic_method= false
   ; is_variadic= false
@@ -148,6 +153,14 @@ let default translation_unit proc_name =
 let pp_parameters =
   Pp.semicolon_seq ~print_env:Pp.text_break (fun f (mangled, typ, _) ->
       Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp_full Pp.text) f (mangled, typ) )
+
+
+let pp_specialized_with_aliasing_info fmt (info : specialized_with_aliasing_info) =
+  let pp_aliases fmt aliases =
+    let pp_alias fmt alias = Pp.seq ~sep:"=" Pvar.pp_value fmt alias in
+    PrettyPrintable.pp_collection ~pp_item:pp_alias fmt aliases
+  in
+  F.fprintf fmt "orig_procname=%a, aliases=%a" Procname.pp info.orig_proc pp_aliases info.aliases
 
 
 let pp_specialized_with_blocks_info fmt info =
@@ -182,6 +195,7 @@ let pp f
      ; is_no_return
      ; is_objc_arc_on
      ; is_specialized
+     ; specialized_with_aliasing_info
      ; specialized_with_blocks_info
      ; is_synthetic_method
      ; is_variadic
@@ -235,6 +249,14 @@ let pp f
   pp_bool_default ~default:default.is_no_return "is_no_return" is_no_return f () ;
   pp_bool_default ~default:default.is_objc_arc_on "is_objc_arc_on" is_objc_arc_on f () ;
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
+  if
+    not
+      ([%compare.equal: specialized_with_aliasing_info option]
+         default.specialized_with_aliasing_info specialized_with_aliasing_info )
+  then
+    F.fprintf f "; specialized_with_aliasing_info %a@,"
+      (Pp.option pp_specialized_with_aliasing_info)
+      specialized_with_aliasing_info ;
   if
     not
       ([%compare.equal: specialized_with_blocks_info option] default.specialized_with_blocks_info

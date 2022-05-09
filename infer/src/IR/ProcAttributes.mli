@@ -25,6 +25,14 @@ type var_data =
   ; is_constexpr: bool
   ; is_declared_unused: bool  (** variable declared with attribute [unused] *) }
 
+type specialized_with_aliasing_info =
+  { orig_proc: Procname.t
+  ; aliases: Pvar.t list list
+        (** all the pvars in a same list are aliasing each other. e.g.
+            [aliases = \[\[x; y; z\]; \[a; b\]\]] indicates that [x], [y] and [z] alias each other
+            and [a] and [b] as well *) }
+[@@deriving compare]
+
 type 'captured_var passed_block =
   | Block of (Procname.t * 'captured_var list)
   | Fields of 'captured_var passed_block Fieldname.Map.t
@@ -57,6 +65,10 @@ type t =
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
+  ; specialized_with_aliasing_info: specialized_with_aliasing_info option
+        (** the procedure is a clone specialized with captured variables and paramaters sharing
+            memory, with link to the original procedure, and a list of variables aliasing each
+            other. *)
   ; specialized_with_blocks_info: specialized_with_blocks_info option
         (** the procedure is a clone specialized with calls to concrete closures, with link to the
             original procedure, and a map that links the original formals to the elements of the

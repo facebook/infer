@@ -359,14 +359,24 @@ let is_android_lifecycle_method tenv pname =
     | _ ->
         false
   in
-  match (pname : Procname.t) with
-  | C _ | Erlang _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | WithBlockParameters _
-    ->
-      false
-  | Java _ ->
-      method_starts_with_on pname
-      && (not (is_allow_listed pname))
-      && overrides_android_method tenv pname
+  let rec test_pname pname =
+    match (pname : Procname.t) with
+    | C _
+    | Erlang _
+    | Linters_dummy_method
+    | Block _
+    | ObjC_Cpp _
+    | CSharp _
+    | WithBlockParameters _ ->
+        false
+    | WithAliasingParameters (base, _) ->
+        test_pname base
+    | Java _ ->
+        method_starts_with_on pname
+        && (not (is_allow_listed pname))
+        && overrides_android_method tenv pname
+  in
+  test_pname pname
 
 
 type annotation_trail = DirectlyAnnotated | Override of Procname.t | SuperClass of Typ.name

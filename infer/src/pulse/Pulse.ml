@@ -131,38 +131,59 @@ module PulseTransferFunctions = struct
            (if it was) in the end by [reset_need_specialization] *)
         let astate = AbductiveDomain.unset_need_specialization astate in
         let call_kind = call_kind_of call_exp in
-        let maybe_call_with_alias ((res, contradiction) as call_res) =
+        let maybe_call_with_alias callee_pname call_exp ((res, contradiction) as call_res) =
           if List.is_empty res then
             match contradiction with
-            | Some (PulseInterproc.Aliasing _) ->
-                (* TODO: alias specialization *) call_res
+            | Some (PulseInterproc.Aliasing _) -> (
+                L.d_printfln "Trying to alias-specialize %a" Exp.pp call_exp ;
+                match
+                  PulseAliasSpecialization.make_specialized_call_exp callee_pname func_args
+                    (call_kind_of call_exp) path call_loc astate
+                with
+                | Some (callee_pname, call_exp, astate) ->
+                    L.d_printfln "Succesfully alias-specialized %a@\n" Exp.pp call_exp ;
+                    let formals_opt = get_pvar_formals callee_pname in
+                    let callee_data = analyze_dependency callee_pname in
+                    let call_res =
+                      PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data
+                        call_loc callee_pname ~ret ~actuals ~formals_opt
+                        ~call_kind:(call_kind_of call_exp) astate
+                    in
+                    (callee_pname, call_exp, call_res)
+                | None ->
+                    L.d_printfln "Failed to alias-specialize %a@\n" Exp.pp call_exp ;
+                    (callee_pname, call_exp, call_res) )
             | _ ->
-                call_res
-          else call_res
+                (callee_pname, call_exp, call_res)
+          else (callee_pname, call_exp, call_res)
         in
-        let maybe_call_specialization ((res, _) as call_res) =
+        let maybe_call_specialization callee_pname call_exp ((res, _) as call_res) =
           if (not needed_specialization) && need_specialization res then (
-            L.d_printfln "Trying to specialize %a" Exp.pp call_exp ;
+            L.d_printfln "Trying to block-specialize %a" Exp.pp call_exp ;
             match
               PulseBlockSpecialization.make_specialized_call_exp analysis_data func_args
-                callee_pname call_kind path call_loc astate
+                callee_pname (call_kind_of call_exp) path call_loc astate
             with
             | Some (callee_pname, call_exp, astate) ->
-                L.d_printfln "Succesfully specialized %a@\n" Exp.pp call_exp ;
+                L.d_printfln "Succesfully block-specialized %a@\n" Exp.pp call_exp ;
                 let formals_opt = get_pvar_formals callee_pname in
                 let callee_data = analyze_dependency callee_pname in
                 PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
                   callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
-                |> maybe_call_with_alias
+                |> maybe_call_with_alias callee_pname call_exp
             | None ->
-                L.d_printfln "Failed to specialize %a@\n" Exp.pp call_exp ;
-                call_res )
-          else call_res
+                L.d_printfln "Failed to block-specialize %a@\n" Exp.pp call_exp ;
+                (callee_pname, call_exp, call_res) )
+          else (callee_pname, call_exp, call_res)
         in
         let res, _contradiction =
-          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-            callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
-          |> maybe_call_with_alias |> maybe_call_specialization
+          let callee_pname, call_exp, call_res =
+            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
+              callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
+            |> maybe_call_with_alias callee_pname call_exp
+          in
+          let _, _, call_res = maybe_call_specialization callee_pname call_exp call_res in
+          call_res
         in
         ( reset_need_specialization needed_specialization res
         , if Option.is_none callee_data then `UnknownCall else `KnownCall )

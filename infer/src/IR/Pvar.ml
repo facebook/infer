@@ -307,10 +307,13 @@ let swap_proc_in_local_pvar pvar proc_name =
   match pvar.pv_kind with Local_var _ -> {pvar with pv_kind= Local_var proc_name} | _ -> pvar
 
 
-let specialize_pvar pvar proc_name =
+let rec specialize_pvar pvar proc_name =
   match proc_name with
-  | Procname.WithBlockParameters (orig_pname, _) when equal (mk (get_name pvar) orig_pname) pvar ->
-      swap_proc_in_local_pvar pvar proc_name
+  | Procname.WithAliasingParameters (orig_pname, _) | Procname.WithBlockParameters (orig_pname, _)
+    ->
+      let pvar = specialize_pvar pvar orig_pname in
+      if equal (mk (get_name pvar) orig_pname) pvar then swap_proc_in_local_pvar pvar proc_name
+      else pvar
   | _ ->
       pvar
 

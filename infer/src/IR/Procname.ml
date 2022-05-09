@@ -595,6 +595,7 @@ type t =
   | Linters_dummy_method
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
+  | WithAliasingParameters of t * Mangled.t list list
   | WithBlockParameters of t * Block.t list
 [@@deriving compare, yojson_of]
 
@@ -657,42 +658,55 @@ let rec compare_name x y =
       -1
   | _, ObjC_Cpp _ ->
       1
-  | WithBlockParameters (x, _), WithBlockParameters (y, _) ->
+  | ( (WithAliasingParameters (x, _) | WithBlockParameters (x, _))
+    , (WithAliasingParameters (y, _) | WithBlockParameters (y, _)) ) ->
       compare_name x y
 
 
 (** hash function for procname *)
 let hash = Hashtbl.hash
 
+let with_aliasing_parameters base aliases = WithAliasingParameters (base, aliases)
+
 let with_block_parameters base blocks = WithBlockParameters (base, blocks)
 
-let is_copy_assignment = function
+let rec base_of = function
+  | WithAliasingParameters (base, _) | WithBlockParameters (base, _) ->
+      base_of base
+  | base ->
+      base
+
+
+let is_copy_assignment t =
+  match base_of t with
   | ObjC_Cpp objc_cpp_pname ->
       ObjC_Cpp.is_copy_assignment objc_cpp_pname
   | _ ->
       false
 
 
-let is_copy_ctor = function
+let is_copy_ctor t =
+  match base_of t with
   | ObjC_Cpp objc_cpp_pname ->
       ObjC_Cpp.is_copy_ctor objc_cpp_pname
   | _ ->
       false
 
 
-let is_destructor = function
+let is_destructor t =
+  match base_of t with
   | ObjC_Cpp objc_cpp_pname ->
       ObjC_Cpp.is_destructor objc_cpp_pname
   | _ ->
       false
 
 
-let is_csharp = function CSharp _ -> true | _ -> false
+let is_csharp t = match base_of t with CSharp _ -> true | _ -> false
 
-let is_java = function Java _ -> true | _ -> false
+let is_java t = match base_of t with Java _ -> true | _ -> false
 
 let as_java_exn ~explanation t =
-  match t with
+  match base_of t with
   | Java java ->
       java
   | _ ->
@@ -700,9 +714,9 @@ let as_java_exn ~explanation t =
 
 
 (* TODO: deprecate this unfortunately named function and use is_clang instead *)
-let is_c_method = function ObjC_Cpp _ -> true | _ -> false
+let is_c_method t = match base_of t with ObjC_Cpp _ -> true | _ -> false
 
-let is_java_lift f = function Java java_pname -> f java_pname | _ -> false
+let is_java_lift f t = match base_of t with Java java_pname -> f java_pname | _ -> false
 
 let is_java_static_method = is_java_lift Java.is_static
 
@@ -717,7 +731,7 @@ let is_java_autogen_method = is_java_lift Java.is_autogen_method
 let rec is_objc_helper ~f = function
   | ObjC_Cpp objc_cpp_pname ->
       f objc_cpp_pname
-  | WithBlockParameters (base, _) ->
+  | WithAliasingParameters (base, _) | WithBlockParameters (base, _) ->
       is_objc_helper ~f base
   | Block _ | C _ | CSharp _ | Erlang _ | Java _ | Linters_dummy_method ->
       false
@@ -759,13 +773,16 @@ let rec replace_class t (new_class : Typ.Name.t) =
       CSharp {cs with class_name= new_class}
   | ObjC_Cpp osig ->
       ObjC_Cpp {osig with class_name= new_class}
+  | WithAliasingParameters (base, aliases) ->
+      WithAliasingParameters (replace_class base new_class, aliases)
   | WithBlockParameters (base, blocks) ->
       WithBlockParameters (replace_class base new_class, blocks)
   | C _ | Block _ | Erlang _ | Linters_dummy_method ->
       t
 
 
-let get_class_type_name = function
+let get_class_type_name t =
+  match base_of t with
   | Java java_pname ->
       Some (Java.get_class_type_name java_pname)
   | CSharp cs_pname ->
@@ -778,7 +795,8 @@ let get_class_type_name = function
       None
 
 
-let get_class_name = function
+let get_class_name t =
+  match base_of t with
   | Java java_pname ->
       Some (Java.get_class_name java_pname)
   | CSharp cs_pname ->
@@ -799,6 +817,8 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
   match t with
   | ObjC_Cpp osig ->
       ObjC_Cpp {osig with method_name= new_method_name}
+  | WithAliasingParameters (base, aliases) ->
+      WithAliasingParameters (objc_cpp_replace_method_name base new_method_name, aliases)
   | WithBlockParameters (base, blocks) ->
       WithBlockParameters (objc_cpp_replace_method_name base new_method_name, blocks)
   | C _ | CSharp _ | Block _ | Erlang _ | Linters_dummy_method | Java _ ->
@@ -810,7 +830,7 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
 let rec get_method = function
   | ObjC_Cpp name ->
       name.method_name
-  | WithBlockParameters (base, _) ->
+  | WithAliasingParameters (base, _) | WithBlockParameters (base, _) ->
       get_method base
   | C {name} ->
       QualifiedCppName.to_qual_string name
@@ -827,13 +847,28 @@ let rec get_method = function
 
 
 (** Return whether the procname is a block procname. *)
-let is_objc_block = function Block _ -> true | _ -> false
+let rec is_objc_block = function
+  | Block _ ->
+      true
+  | WithAliasingParameters (base, _) ->
+      is_objc_block base
+  | _ ->
+      false
+
 
 (** Return whether the procname is a specialized with blocks procname. *)
-let is_specialized = function WithBlockParameters _ -> true | _ -> false
+let rec is_specialized = function
+  | WithBlockParameters _ ->
+      true
+  | WithAliasingParameters (base, _) ->
+      is_specialized base
+  | _ ->
+      false
+
 
 (** Return whether the procname is a cpp lambda procname. *)
-let is_cpp_lambda = function
+let is_cpp_lambda t =
+  match base_of t with
   | ObjC_Cpp cpp_pname when ObjC_Cpp.is_cpp_lambda cpp_pname ->
       true
   | _ ->
@@ -841,7 +876,7 @@ let is_cpp_lambda = function
 
 
 (** Return the language of the procedure. *)
-let get_language = function
+let rec get_language = function
   | ObjC_Cpp _ ->
       Language.Clang
   | C _ ->
@@ -852,8 +887,8 @@ let get_language = function
       Language.Clang
   | Linters_dummy_method ->
       Language.Clang
-  | WithBlockParameters _ ->
-      Language.Clang
+  | WithAliasingParameters (base, _) | WithBlockParameters (base, _) ->
+      get_language base
   | Java _ ->
       Language.Java
   | CSharp _ ->
@@ -861,7 +896,8 @@ let get_language = function
 
 
 (** [is_constructor pname] returns true if [pname] is a constructor *)
-let is_constructor = function
+let is_constructor t =
+  match base_of t with
   | CSharp c ->
       String.equal c.method_name CSharp.constructor_method_name
   | Java js ->
@@ -876,7 +912,7 @@ let is_constructor = function
 
 (** [is_infer_undefined pn] returns true if [pn] is a special Infer undefined proc *)
 let is_infer_undefined pn =
-  match pn with
+  match base_of pn with
   | Java j ->
       let regexp = Str.regexp_string "com.facebook.infer.builtins.InferUndefined" in
       Str.string_match regexp (Java.get_class_name j) 0
@@ -896,11 +932,14 @@ let rec is_static = function
   | Linters_dummy_method
   | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
       None
-  | WithBlockParameters (pname, _) ->
-      is_static pname
+  | WithAliasingParameters (base, _) ->
+      is_static base
+  | WithBlockParameters (base, _) ->
+      is_static base
 
 
-let get_global_name_of_initializer = function
+let get_global_name_of_initializer t =
+  match base_of t with
   | C {name}
     when String.is_prefix ~prefix:Config.clang_initializer_prefix
            (QualifiedCppName.to_qual_string name) ->
@@ -909,6 +948,18 @@ let get_global_name_of_initializer = function
       Some (String.sub name_str ~pos:prefix_len ~len:(String.length name_str - prefix_len))
   | _ ->
       None
+
+
+let pp_with_aliasing_parameters verbose pp fmt base aliases =
+  pp fmt base ;
+  F.pp_print_string fmt "[" ;
+  ( match verbose with
+  | Non_verbose | Simple | NameOnly ->
+      F.pp_print_string fmt "specialized with aliases"
+  | Verbose ->
+      let pp_alias fmt alias = Pp.seq ~sep:"=" Mangled.pp fmt alias in
+      Pp.seq ~sep:"^" pp_alias fmt aliases ) ;
+  F.pp_print_string fmt "]"
 
 
 let pp_with_block_parameters verbose pp fmt base blocks =
@@ -936,9 +987,11 @@ let rec pp_unique_id fmt = function
       ObjC_Cpp.pp Verbose fmt osig
   | Block bsig ->
       Block.pp Verbose fmt bsig
-  | WithBlockParameters (base, []) ->
+  | WithAliasingParameters (base, []) | WithBlockParameters (base, []) ->
       pp_unique_id fmt base
-  | WithBlockParameters (base, (_ :: _ as blocks)) ->
+  | WithAliasingParameters (base, aliases) ->
+      pp_with_aliasing_parameters Verbose pp_unique_id fmt base aliases
+  | WithBlockParameters (base, blocks) ->
       pp_with_block_parameters Verbose pp_unique_id fmt base blocks
   | Linters_dummy_method ->
       F.pp_print_string fmt "Linters_dummy_method"
@@ -960,8 +1013,10 @@ let rec pp fmt = function
       ObjC_Cpp.pp Non_verbose fmt osig
   | Block bsig ->
       Block.pp Non_verbose fmt bsig
-  | WithBlockParameters (base, []) ->
+  | WithAliasingParameters (base, []) | WithBlockParameters (base, []) ->
       pp fmt base
+  | WithAliasingParameters (base, aliases) ->
+      pp_with_aliasing_parameters Non_verbose pp fmt base aliases
   | WithBlockParameters (base, (_ :: _ as blocks)) ->
       pp_with_block_parameters Non_verbose pp fmt base blocks
   | Linters_dummy_method ->
@@ -979,7 +1034,7 @@ let pp_without_templates fmt = function
 let to_string proc_name = F.asprintf "%a" pp proc_name
 
 let get_block_type proc =
-  match proc with
+  match base_of proc with
   | Block {block_type} ->
       block_type
   | _ ->
@@ -999,7 +1054,7 @@ let rec pp_name_only fmt = function
       ObjC_Cpp.pp NameOnly fmt osig
   | Block bsig ->
       Block.pp NameOnly fmt bsig
-  | WithBlockParameters (base, _) ->
+  | WithAliasingParameters (base, _) | WithBlockParameters (base, _) ->
       pp_name_only fmt base
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
@@ -1024,7 +1079,7 @@ let rec pp_simplified_string ?(withclass = false) fmt = function
       ObjC_Cpp.pp (if withclass then Non_verbose else Simple) fmt osig
   | Block bsig ->
       Block.pp Simple fmt bsig
-  | WithBlockParameters (base, _) ->
+  | WithAliasingParameters (base, _) | WithBlockParameters (base, _) ->
       pp_simplified_string fmt base
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
@@ -1095,7 +1150,7 @@ let rec get_parameters procname =
       clang_param_to_param (ObjC_Cpp.get_parameters osig)
   | Block bsig ->
       clang_param_to_param (Block.get_parameters bsig)
-  | WithBlockParameters (base, _) ->
+  | WithAliasingParameters (base, _) | WithBlockParameters (base, _) ->
       get_parameters base
   | Linters_dummy_method ->
       []
@@ -1161,6 +1216,8 @@ let rec replace_parameters new_parameters procname =
       ObjC_Cpp (ObjC_Cpp.replace_parameters (params_to_clang_params new_parameters) osig)
   | Block bsig ->
       Block (Block.replace_parameters (params_to_clang_params new_parameters) bsig)
+  | WithAliasingParameters (base, aliases) ->
+      WithAliasingParameters (replace_parameters new_parameters base, aliases)
   | WithBlockParameters (base, blocks) ->
       WithBlockParameters (replace_parameters new_parameters base, blocks)
   | Linters_dummy_method ->
@@ -1168,7 +1225,7 @@ let rec replace_parameters new_parameters procname =
 
 
 let parameter_of_name procname class_name =
-  match procname with
+  match base_of procname with
   | Java _ ->
       Parameter.JavaParameter Typ.(mk_ptr (mk_struct class_name))
   | CSharp _ ->
@@ -1229,7 +1286,7 @@ module Set = PrettyPrintable.MakePPSet (struct
 end)
 
 let get_qualifiers pname =
-  match pname with
+  match base_of pname with
   | C {name} ->
       name
   | ObjC_Cpp objc_cpp ->

@@ -231,6 +231,7 @@ type t =
   | Linters_dummy_method
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
+  | WithAliasingParameters of t * Mangled.t list list
   | WithBlockParameters of t * Block.t list
 [@@deriving compare, yojson_of]
 
@@ -369,6 +370,10 @@ val is_java : t -> bool
 
 val as_java_exn : explanation:string -> t -> Java.t
 (** Converts to a Java.t. Throws if [is_java] is false *)
+
+val with_aliasing_parameters : t -> Mangled.t list list -> t
+(** Create a procedure name instantiated with aliasing parameters from a base procedure name and a
+    list aliases. *)
 
 val with_block_parameters : t -> Block.t list -> t
 (** Create a procedure name instantiated with block parameters from a base procedure name and a list
