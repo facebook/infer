@@ -555,8 +555,8 @@ nonmatch_match_expr:test_match_nested2_Bad/0: {badmatch,2}
 nonmatch_match_expr:test_match_nested3_Bad/0: {badmatch,1}
 
 ----- nonmatch_records -----
-nonmatch_records:test_bad_record_access_Bad/0: {badrecord,rabbit}
-nonmatch_records:test_bad_record_update_Bad/0: {badrecord,rabbit}
+nonmatch_records:test_bad_record_access_Bad/0: badrecord
+nonmatch_records:test_bad_record_update_Bad/0: badrecord
 nonmatch_records:test_index1_Ok/0: ok
 nonmatch_records:test_index2_Ok/0: ok
 nonmatch_records:test_index3_Bad/0: function_clause
@@ -581,7 +581,7 @@ nonmatch_records:test_match_tuple_as_record1_Ok/0: ok
 nonmatch_records:test_match_tuple_as_record2_Ok/0: ok
 nonmatch_records:test_match_tuple_as_record3_Bad/0: {case_clause,{person,123,45,6789}}
 nonmatch_records:test_match_tuple_as_record4_Bad/0: {case_clause,123}
-nonmatch_records:test_match_tuple_as_record5_Bad/0: {badrecord,car}
+nonmatch_records:test_match_tuple_as_record5_Bad/0: badrecord
 nonmatch_records:test_nested1_Ok/0: ok
 nonmatch_records:test_nested2_Ok/0: ok
 nonmatch_records:test_nested3_Ok/0: ok
