@@ -133,23 +133,29 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
       x
   in
   let map_call_result ~is_isl_error_prepost callee_prepost ~f =
-    let* post, return_val_opt, subst =
+    let sat_unsat, contradiction =
       PulseInterproc.apply_prepost path ~is_isl_error_prepost callee_pname call_loc ~callee_prepost
         ~captured_formals ~captured_actuals ~formals ~actuals astate
     in
-    let post =
-      match return_val_opt with
-      | Some return_val_hist ->
-          PulseOperations.write_id (fst ret) return_val_hist post
-      | None ->
-          PulseOperations.havoc_id (fst ret)
-            (ValueHistory.singleton
-               (Call
-                  {f= Call callee_pname; location= call_loc; in_call= ValueHistory.epoch; timestamp}
-               ) )
-            post
+    let sat_unsat =
+      let* post, return_val_opt, subst = sat_unsat in
+      let post =
+        match return_val_opt with
+        | Some return_val_hist ->
+            PulseOperations.write_id (fst ret) return_val_hist post
+        | None ->
+            PulseOperations.havoc_id (fst ret)
+              (ValueHistory.singleton
+                 (Call
+                    { f= Call callee_pname
+                    ; location= call_loc
+                    ; in_call= ValueHistory.epoch
+                    ; timestamp } ) )
+              post
+      in
+      f subst post
     in
-    f subst post
+    (sat_unsat, contradiction)
   in
   match callee_exec_state with
   | ContinueProgram astate ->
@@ -260,6 +266,18 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
+let ( let<*> ) x f =
+  match (x : _ PulseResult.t) with
+  | FatalError _ as err ->
+      ([err], None)
+  | Ok y ->
+      f y
+  | Recoverable (y, errors) ->
+      let res, contradiction = f y in
+      let res = List.map res ~f:(fun result -> PulseResult.append_errors errors result) in
+      (res, contradiction)
+
+
 let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind callee_proc_desc
     exec_states (astate : AbductiveDomain.t) =
   let formals =
@@ -284,19 +302,28 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
     L.d_printfln "Will keep at most one disjunct because %a is in block list" Procname.pp
       callee_pname ;
   (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-  List.fold ~init:[] exec_states ~f:(fun posts callee_exec_state ->
-      if should_keep_at_most_one_disjunct && not (List.is_empty posts) then posts
+  List.fold ~init:([], None) exec_states ~f:(fun (posts, contradiction) callee_exec_state ->
+      if should_keep_at_most_one_disjunct && not (List.is_empty posts) then (posts, contradiction)
       else
+        let merge_contradictions contradiction1 contradiction2 =
+          match (contradiction1, contradiction2) with
+          | None, contradiction
+          | contradiction, None
+          | (Some (PulseInterproc.Aliasing _) as contradiction), _
+          | _, (Some (PulseInterproc.Aliasing _) as contradiction)
+          | contradiction, _ ->
+              contradiction
+        in
         (* apply all pre/post specs *)
         match
           apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state
             ~captured_formals ~captured_actuals ~formals ~actuals ~ret astate
         with
-        | Unsat ->
+        | Unsat, new_contradiction ->
             (* couldn't apply pre/post pair *)
-            posts
-        | Sat post ->
-            post :: posts )
+            (posts, merge_contradictions contradiction new_contradiction)
+        | Sat post, new_contradiction ->
+            (post :: posts, merge_contradictions contradiction new_contradiction) )
 
 
 let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
@@ -310,13 +337,13 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
       in
       astate_unknown
     in
-    let result_unknown_nil =
+    let result_unknown_nil, contradiction =
       PulseObjectiveCSummary.mk_nil_messaging_summary tenv procdesc
-      |> Option.value_map ~default:[] ~f:(fun nil_summary ->
+      |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
              call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
                procdesc [nil_summary] astate )
     in
-    result_unknown @ result_unknown_nil
+    (result_unknown @ result_unknown_nil, contradiction)
   in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
@@ -339,5 +366,5 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
              callee_pname ) ;
       let callee_procdesc_opt = Procdesc.load callee_pname in
       Option.value_map callee_procdesc_opt
-        ~default:[Ok (ContinueProgram astate_unknown)]
+        ~default:([Ok (ContinueProgram astate_unknown)], None)
         ~f:(unknown_objc_nil_messaging astate_unknown)

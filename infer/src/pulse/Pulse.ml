@@ -131,12 +131,17 @@ module PulseTransferFunctions = struct
            (if it was) in the end by [reset_need_specialization] *)
         let astate = AbductiveDomain.unset_need_specialization astate in
         let call_kind = call_kind_of call_exp in
-        let maybe_res =
-          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-            callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
+        let maybe_call_with_alias ((res, contradiction) as call_res) =
+          if List.is_empty res then
+            match contradiction with
+            | Some (PulseInterproc.Aliasing _) ->
+                (* TODO: alias specialization *) call_res
+            | _ ->
+                call_res
+          else call_res
         in
-        let res =
-          if (not needed_specialization) && need_specialization maybe_res then (
+        let maybe_call_specialization ((res, _) as call_res) =
+          if (not needed_specialization) && need_specialization res then (
             L.d_printfln "Trying to specialize %a" Exp.pp call_exp ;
             match
               PulseBlockSpecialization.make_specialized_call_exp analysis_data func_args
@@ -148,10 +153,16 @@ module PulseTransferFunctions = struct
                 let callee_data = analyze_dependency callee_pname in
                 PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
                   callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
+                |> maybe_call_with_alias
             | None ->
                 L.d_printfln "Failed to specialize %a@\n" Exp.pp call_exp ;
-                maybe_res )
-          else maybe_res
+                call_res )
+          else call_res
+        in
+        let res, _contradiction =
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
+            callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
+          |> maybe_call_with_alias |> maybe_call_specialization
         in
         ( reset_need_specialization needed_specialization res
         , if Option.is_none callee_data then `UnknownCall else `KnownCall )
@@ -797,8 +808,8 @@ let with_html_debug_node node ~desc ~f =
 let initial tenv proc_desc =
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_desc
-    |> PulseObjectiveCSummary.initial_with_positive_self proc_desc
-    |> PulseTaintOperations.taint_initial tenv proc_desc
+    |> (fun init -> PulseObjectiveCSummary.initial_with_positive_self proc_desc init)
+    |> fun init -> PulseTaintOperations.taint_initial tenv proc_desc init
   in
   [(ContinueProgram initial_astate, PathContext.initial)]
 

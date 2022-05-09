@@ -344,6 +344,7 @@ module Function = struct
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
           astate
+        |> fst
 
 
   let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =

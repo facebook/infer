@@ -894,11 +894,11 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
          pre/post pair *)
       L.d_printfln "Cannot apply precondition: %a" pp_contradiction reason ;
       log_contradiction reason ;
-      Unsat
+      (Unsat, Some reason)
   | result -> (
     try
-      Sat
-        (let open PulseResult.Let_syntax in
+      let res =
+        let open PulseResult.Let_syntax in
         let* call_state = result in
         L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
         (* only call [check_all_valid] when ISL is not active: the ISL mode generates explicit error
@@ -943,8 +943,10 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
             check_all_taint_valid path callee_proc_name call_location pre_post astate
               call_state.subst
         in
-        (astate, return_caller, call_state.subst))
+        (astate, return_caller, call_state.subst)
+      in
+      (Sat res, None)
     with Contradiction reason ->
       L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
       log_contradiction reason ;
-      Unsat )
+      (Unsat, Some reason) )

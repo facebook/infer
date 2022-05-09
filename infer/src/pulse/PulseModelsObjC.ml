@@ -35,7 +35,7 @@ let call args : model =
       let formals_opt = get_pvar_formals c.name in
       let callee_data = analyze_dependency c.name in
       let call_kind = `Closure c.captured_vars in
-      let r =
+      let r, _contradiction =
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location c.name
           ~ret ~actuals ~formals_opt ~call_kind astate
       in
