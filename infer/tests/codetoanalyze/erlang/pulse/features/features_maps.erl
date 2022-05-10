@@ -20,7 +20,9 @@
     test_put5_Bad/0,
     test_put6_Bad/0,
     test_new_Ok/0,
-    test_new_Bad/0
+    test_new_Bad/0,
+    test_recency_abstraction_Latent/1,
+    test_recency_abstraction_Ok/1
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -106,4 +108,22 @@ test_new_Bad() ->
     case maps:is_key(1, M) of
         false -> warn(1);
         _ -> ok
+    end.
+
+test_recency_abstraction_Latent(M) ->
+    if
+        % We don't check for the key: BAD
+        is_map(M) -> maps:get(key, M);
+        true -> nope
+    end.
+
+test_recency_abstraction_Ok(M) ->
+    if
+        is_map(M) ->
+            % We first check the key: OK
+            case maps:is_key(key, M) of
+                true -> maps:get(key, M);
+                _ -> nope
+            end;
+        true -> nope
     end.
