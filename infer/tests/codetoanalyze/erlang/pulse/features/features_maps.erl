@@ -11,7 +11,9 @@
     test_is_key_badmap_Bad/0,
     test_get_Ok/0,
     test_get_Bad/0,
-    test_get_badkey_Bad/0,
+    test_get_badkey1_Ok/0,
+    test_get_badkey2_Bad/0,
+    fn_test_get_badkey3_Bad/0,
     test_get_badmap_Bad/0,
     test_put1_Ok/0,
     test_put2_Ok/0,
@@ -22,7 +24,10 @@
     test_new_Ok/0,
     test_new_Bad/0,
     test_recency_abstraction_Latent/1,
-    test_recency_abstraction_Ok/1
+    test_recency_abstraction_Ok/1,
+    test_update_exact1_Ok/0,
+    test_update_exact2_Bad/0,
+    fn_test_update_exact3_Bad/0
 ]).
 
 % Call this method with warn(1) to trigger a warning to expect
@@ -59,8 +64,17 @@ test_get_Bad() ->
         _ -> ok
     end.
 
-test_get_badkey_Bad() ->
+test_get_badkey1_Ok() ->
+    M = #{1 => 2},
+    maps:get(1, M).
+
+test_get_badkey2_Bad() ->
     M = #{},
+    maps:get(1, M).
+
+% Known limitation due to recency abstraction
+fn_test_get_badkey3_Bad() ->
+    M = #{2 => 3},
     maps:get(1, M).
 
 test_get_badmap_Bad() ->
@@ -127,3 +141,16 @@ test_recency_abstraction_Ok(M) ->
             end;
         true -> nope
     end.
+
+test_update_exact1_Ok() ->
+    M = #{2 => 1},
+    M#{2 := 3}.
+
+test_update_exact2_Bad() ->
+    M = #{},
+    M#{2 := 3}.
+
+% Known limitation due to recency abstraction
+fn_test_update_exact3_Bad() ->
+    M = #{1 => 2},
+    M#{2 := 3}.

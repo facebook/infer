@@ -324,9 +324,12 @@ features_logic:test_xor10_Ok/0: ok
 features_logic:test_xor11_Bad/0: if_clause
 
 ----- features_maps -----
+features_maps:fn_test_get_badkey3_Bad/0: badkey
+features_maps:fn_test_update_exact3_Bad/0: badkey
 features_maps:test_get_Bad/0: function_clause
 features_maps:test_get_Ok/0: ok
-features_maps:test_get_badkey_Bad/0: badkey
+features_maps:test_get_badkey1_Ok/0: ok
+features_maps:test_get_badkey2_Bad/0: badkey
 features_maps:test_get_badmap_Bad/0: badmap
 features_maps:test_is_key_Bad/0: function_clause
 features_maps:test_is_key_Ok/0: ok
@@ -339,6 +342,8 @@ features_maps:test_put3_Ok/0: ok
 features_maps:test_put4_Bad/0: function_clause
 features_maps:test_put5_Bad/0: function_clause
 features_maps:test_put6_Bad/0: badmap
+features_maps:test_update_exact1_Ok/0: ok
+features_maps:test_update_exact2_Bad/0: badkey
 
 ----- features_matchexpr -----
 features_matchexpr:test_match1_Ok/0: ok
