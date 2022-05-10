@@ -1,4 +1,7 @@
 ----- otp_lists -----
+otp_lists:fp_test_any1_Ok/0: ok
+otp_lists:test_any2_Bad/0: case_clause
+otp_lists:test_any3_Bad/0: case_clause
 otp_lists:test_foreach_Bad/0: badmatch
 otp_lists:test_foreach_Ok/0: ok
 otp_lists:test_sort1_Ok/0: ok

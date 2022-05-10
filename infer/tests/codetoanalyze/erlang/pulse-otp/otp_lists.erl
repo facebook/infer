@@ -11,7 +11,10 @@
     test_sort1_Ok/0,
     test_sort2_Bad/0,
     test_sort3_Bad/0,
-    test_sort4_Bad/0
+    test_sort4_Bad/0,
+    fp_test_any1_Ok/0,
+    test_any2_Bad/0,
+    test_any3_Bad/0
 ]).
 
 test_foreach_Ok() ->
@@ -43,4 +46,24 @@ test_sort4_Bad() ->
     X = lists:sort([]),
     case X of
         rabbit -> rabbit
+    end.
+
+% T115354480
+fp_test_any1_Ok() ->
+    X = lists:any(fun (_) -> true end, []),
+    case X of
+        true -> ok;
+        false -> ok
+    end.
+
+test_any2_Bad() ->
+    X = lists:any(fun (_) -> true end, []),
+    case X of
+        true -> ok
+    end.
+
+test_any3_Bad() ->
+    X = lists:any(fun (_) -> true end, [1]),
+    case X of
+        false -> ok
     end.

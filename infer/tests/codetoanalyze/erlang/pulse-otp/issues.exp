@@ -2,4 +2,7 @@ otp_lists.erl, test_foreach_Bad/0, 1, NO_MATCH_OF_RHS, no_bucket, ERROR, [no mat
 otp_lists.erl, test_sort2_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 otp_lists.erl, test_sort3_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 otp_lists.erl, test_sort4_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+otp_lists.erl, fp_test_any1_Ok/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+otp_lists.erl, test_any2_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+otp_lists.erl, test_any3_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 otp_maps.erl, test_intersect2_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
