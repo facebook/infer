@@ -19,8 +19,12 @@ otp_lists:test_sort3_Bad/0: case_clause
 otp_lists:test_sort4_Bad/0: case_clause
 
 ----- otp_maps -----
+otp_maps:test_filter1_Ok/0: ok
+otp_maps:test_filter2_Bad/0: case_clause
 otp_maps:test_intersect1_Ok/0: ok
 otp_maps:test_intersect2_Bad/0: case_clause
+otp_maps:test_merge1_Ok/0: ok
+otp_maps:test_merge2_Bad/0: case_clause
 
 ----- features_arithmetic -----
 features_arithmetic:fn_test_idiv_by_zero_Bad/0: badarith
@@ -320,7 +324,6 @@ features_logic:test_xor10_Ok/0: ok
 features_logic:test_xor11_Bad/0: if_clause
 
 ----- features_maps -----
-features_maps:test_filter_return_type_Ok/0: ok
 features_maps:test_get_Bad/0: function_clause
 features_maps:test_get_Ok/0: ok
 features_maps:test_get_badkey_Bad/0: badkey
@@ -328,7 +331,6 @@ features_maps:test_get_badmap_Bad/0: badmap
 features_maps:test_is_key_Bad/0: function_clause
 features_maps:test_is_key_Ok/0: ok
 features_maps:test_is_key_badmap_Bad/0: badmap
-features_maps:test_merge_return_type_Ok/0: ok
 features_maps:test_new_Bad/0: function_clause
 features_maps:test_new_Ok/0: ok
 features_maps:test_put1_Ok/0: ok
