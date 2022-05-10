@@ -1390,6 +1390,7 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
   if Env.UnqualifiedFunction.Set.mem env.functions uf_name then ()
   else
     let attributes = mk_attributes env uf_name procname in
+    let attributes = {attributes with is_synthetic_method= true} in
     let procdesc = mk_procdesc env attributes in
     let ret_var = Exp.Lvar (Pvar.get_ret_pvar procname) in
     let env = {env with procdesc= Env.Present procdesc; result= Env.Present ret_var} in
