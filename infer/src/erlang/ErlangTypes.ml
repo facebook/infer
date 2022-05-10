@@ -59,7 +59,7 @@ let rec type_condition (env : (_, _) Env.t) constraints ((ident, type_) : Ident.
     (Block.all env [is_atom_block; Block.make_instruction env [load_instr]], condition)
   in
   match type_ with
-  | Any ->
+  | Any | Unsupported ->
       succ_true env
   | Atom Any ->
       simple_condition Atom ident

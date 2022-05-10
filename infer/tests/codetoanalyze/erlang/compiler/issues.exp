@@ -8,6 +8,11 @@ otp_lists:test_any2_Bad/0: case_clause
 otp_lists:test_any3_Bad/0: case_clause
 otp_lists:test_foreach_Bad/0: badmatch
 otp_lists:test_foreach_Ok/0: ok
+otp_lists:test_partition1_Ok/0: ok
+otp_lists:test_partition2_Bad/0: badmatch
+otp_lists:test_partition3_Ok/0: ok
+otp_lists:test_partition4_Bad/0: badmatch
+otp_lists:test_partition5_Bad/0: badmatch
 otp_lists:test_sort1_Ok/0: ok
 otp_lists:test_sort2_Bad/0: case_clause
 otp_lists:test_sort3_Bad/0: case_clause

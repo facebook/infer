@@ -14,7 +14,12 @@
     test_sort4_Bad/0,
     fp_test_any1_Ok/0,
     test_any2_Bad/0,
-    test_any3_Bad/0
+    test_any3_Bad/0,
+    test_partition1_Ok/0,
+    test_partition2_Bad/0,
+    test_partition3_Ok/0,
+    test_partition4_Bad/0,
+    test_partition5_Bad/0
 ]).
 
 test_foreach_Ok() ->
@@ -67,3 +72,22 @@ test_any3_Bad() ->
     case X of
         false -> ok
     end.
+
+test_partition1_Ok() ->
+    {_, _} = lists:partition(fun(_) -> true end, []).
+
+test_partition2_Bad() ->
+    {_} = lists:partition(fun(_) -> true end, []).
+
+test_partition3_Ok() ->
+    {X, Y} = lists:partition(fun(_) -> true end, []),
+    true = is_list(X),
+    true = is_list(Y).
+
+test_partition4_Bad() ->
+    {X, _} = lists:partition(fun(_) -> true end, []),
+    false = is_list(X).
+
+test_partition5_Bad() ->
+    {_, Y} = lists:partition(fun(_) -> true end, []),
+    false = is_list(Y).

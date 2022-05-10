@@ -620,7 +620,8 @@ let rec to_type json : Ast.type_ option =
       Some (Ast.Var name)
   (* TODO: add more types *)
   | _ ->
-      unknown "type" json
+      let _ = unknown "type" json in
+      Some Ast.Unsupported
 
 
 let to_spec_args json : Ast.type_ list option =
