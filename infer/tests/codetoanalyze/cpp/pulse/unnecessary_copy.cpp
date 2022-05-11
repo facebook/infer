@@ -159,6 +159,14 @@ void copy_in_both_cases_bad(bool cond) {
   auto cpy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
 }
 
+// We can't detect this case because we only keep track of one source
+// (arr's abstract value) but in two brances they point to two
+// different addresses, making us think that one of them is modified
+void copy_in_both_cases_aliasing_bad_FN(bool cond) {
+  Arr arr;
+  auto cpy = get_cond_arr_ref(arr, arr, cond); // call to copy ctor
+}
+
 void copy_in_both_cases_mod_ok(bool cond) {
   Arr arr1;
   Arr arr2;
@@ -295,3 +303,7 @@ void constructor_bad() {
   std::vector<int> source;
   auto cpy = source;
 }
+
+// We can't detect this due to aliasing problem when we analyze the source code
+// of shared ptr copy ctor
+void shared_ptr_bad_FN(std::shared_ptr<Arr> source) { auto c = source; }
