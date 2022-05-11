@@ -98,7 +98,8 @@ type nullsafe_extra = {
 type extra = {
   ?cost_polynomial : string option;
   ?cost_degree : int option;
-  ?nullsafe_extra : nullsafe_extra option
+  ?nullsafe_extra : nullsafe_extra option;
+  ?copy_type : string option;
 }
 
 type jsonbug = {

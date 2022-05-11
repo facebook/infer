@@ -70,7 +70,7 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t }
-  | UnnecessaryCopy of {variable: Var.t; location: Location.t}
+  | UnnecessaryCopy of {variable: Var.t; typ: Typ.t; location: Location.t}
 [@@deriving equal]
 
 val aborts_execution : t -> bool
@@ -79,6 +79,8 @@ val aborts_execution : t -> bool
 val get_message : t -> string
 
 val get_location : t -> Location.t
+
+val get_copy_type : t -> Typ.t option
 
 val get_issue_type : latent:bool -> t -> IssueType.t
 

@@ -24,9 +24,13 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         [Errlog.make_trace_element depth location "*** SUPPRESSED ***" tags]
       else []
     in
+    let extras =
+      let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
+      Jsonbug_t.{cost_polynomial= None; cost_degree= None; nullsafe_extra= None; copy_type}
+    in
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
       ~ltr:(extra_trace @ get_trace diagnostic)
-      Pulse
+      ~extras Pulse
       (get_issue_type ~latent diagnostic)
       (get_message diagnostic)
 

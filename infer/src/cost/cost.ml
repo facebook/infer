@@ -251,9 +251,11 @@ module InstrBasicCostWithReason = struct
 end
 
 let compute_errlog_extras cost =
-  { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCostWithReason.pp_hum cost)
-  ; cost_degree= BasicCostWithReason.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
-  ; nullsafe_extra= None }
+  Jsonbug_t.
+    { cost_polynomial= Some (Format.asprintf "%a" BasicCostWithReason.pp_hum cost)
+    ; cost_degree= BasicCostWithReason.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
+    ; nullsafe_extra= None
+    ; copy_type= None }
 
 
 (** Calculate the final Worst Case Cost of the cfg. It is the dot product of the symbolic cost of

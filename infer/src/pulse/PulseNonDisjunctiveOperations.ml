@@ -22,12 +22,12 @@ let add_copies path location call_exp actuals astates astate_non_disj =
         match (exec_state, (call_exp : Exp.t), args_map_fn actuals) with
         | ( ContinueProgram disjunct
           , (Const (Cfun procname) | Closure {name= procname})
-          , (Exp.Lvar copy_pvar, _) :: rest_args )
+          , (Exp.Lvar copy_pvar, copy_type) :: rest_args )
           when copy_check_fn procname ->
             let copied_var = Var.of_pvar copy_pvar in
             if Var.appears_in_source_code copied_var then
               let heap = (disjunct.post :> BaseDomain.t).heap in
-              let copied = NonDisjDomain.Copied {heap; location} in
+              let copied = NonDisjDomain.Copied {heap; typ= Typ.strip_ptr copy_type; location} in
               let disjunct, source_addr_opt =
                 match rest_args with
                 | (source_arg, _) :: _ -> (

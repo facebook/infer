@@ -64,7 +64,7 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t }
-  | UnnecessaryCopy of {variable: Var.t; location: Location.t}
+  | UnnecessaryCopy of {variable: Var.t; typ: Typ.t; location: Location.t}
 [@@deriving equal]
 
 let get_location = function
@@ -90,6 +90,8 @@ let get_location = function
   | UnnecessaryCopy {location} ->
       location
 
+
+let get_copy_type = function UnnecessaryCopy {typ} -> Some typ | _ -> None
 
 let aborts_execution = function
   | AccessToInvalidAddress _
@@ -335,12 +337,12 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Taint.pp sink
-  | UnnecessaryCopy {variable; location} ->
+  | UnnecessaryCopy {variable; typ; location} ->
       F.asprintf
-        "copied variable `%a` is not modified after it is copied on %a. Consider using a reference \
-         `&` instead to avoid the copy. If this copy was intentional, consider adding the word \
-         `copy` into the variable name to suppress this warning"
-        Var.pp variable Location.pp_line location
+        "copied variable `%a` with type `%a` is not modified after it is copied on %a. Consider \
+         using a reference `&` instead to avoid the copy. If this copy was intentional, consider \
+         adding the word `copy` into the variable name to suppress this warning."
+        Var.pp variable (Typ.pp_full Pp.text) typ Location.pp_line location
 
 
 let add_errlog_header ~nesting ~title location errlog =
