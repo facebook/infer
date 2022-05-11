@@ -18,8 +18,7 @@ let pp = Llair.Global.Set.pp
 let empty = Llair.Global.Set.empty
 
 let init globals =
-  [%Trace.info
-    " globals: {%a}" (IArray.pp ", " Llair.GlobalDefn.pp) globals] ;
+  [%Dbg.info " globals: {%a}" (IArray.pp ", " Llair.GlobalDefn.pp) globals] ;
   empty
 
 let join l r = Llair.Global.Set.union l r
@@ -49,11 +48,11 @@ let exec_move _ reg_exps st =
   IArray.fold ~f:(fun (_, rhs) -> used_globals rhs) reg_exps st
 
 let exec_inst _ inst st =
-  [%Trace.call fun {pf} -> pf "@ pre:{%a} %a" pp st Llair.Inst.pp inst]
+  [%Dbg.call fun {pf} -> pf "@ pre:{%a} %a" pp st Llair.Inst.pp inst]
   ;
   Ok (Llair.Inst.fold_exps ~f:used_globals inst st)
   |>
-  [%Trace.retn fun {pf} ->
+  [%Dbg.retn fun {pf} ->
     Or_alarm.iter ~f:(fun uses -> pf "post:{%a}" pp uses)]
 
 type from_call = t [@@deriving sexp]
@@ -81,7 +80,7 @@ type used_globals =
 
 let by_function : used_globals -> Llair.Function.t -> t =
  fun s fn ->
-  [%Trace.call fun {pf} -> pf "@ %a" Llair.Function.pp fn]
+  [%Dbg.call fun {pf} -> pf "@ %a" Llair.Function.pp fn]
   ;
   ( match s with
   | Declared set -> set
@@ -94,4 +93,4 @@ let by_function : used_globals -> Llair.Function.t -> t =
            used-globals pre-analysis "
           Llair.Function.pp fn () ) )
   |>
-  [%Trace.retn fun {pf} r -> pf "%a" Llair.Global.Set.pp r]
+  [%Dbg.retn fun {pf} r -> pf "%a" Llair.Global.Set.pp r]

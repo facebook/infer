@@ -33,11 +33,11 @@ let alarm_count = ref 0
 let alarm alrm =
   Int.incr alarm_count ;
   Format.printf "@\n@[<v 2>%a@]@." Alarm.pp alrm ;
-  [%Trace.printf "@\n@[<v 2>%a@]@." Alarm.pp_trace alrm] ;
+  [%Dbg.printf "@\n@[<v 2>%a@]@." Alarm.pp_trace alrm] ;
   Stop.on_alarm ()
 
 let unknown_call call =
-  [%Trace.kprintf
+  [%Dbg.kprintf
     Stop.on_unknown_call
       "@\n@[<v 2>%a Unknown function call %a@;<1 2>@[%a@]@]@."
       (fun fs call -> Llair.Loc.pp fs (Llair.Term.loc call))
@@ -49,12 +49,12 @@ let unknown_call call =
       call Llair.Term.pp call]
 
 let reached_goal goal =
-  [%Trace.printf "@\n@[<v 2> %t@]@." goal] ;
+  [%Dbg.printf "@\n@[<v 2> %t@]@." goal] ;
   Stop.on_reached_goal !steps ()
 
 let unimplemented feature fn =
   let open Llair in
-  [%Trace.printf
+  [%Dbg.printf
     "@\n@[<v 2>%s unimplemented in %a@]@." feature Function.pp fn.name] ;
   Stop.on_unimplemented feature fn
 

@@ -49,14 +49,14 @@ end = struct
   (** apply a substitution, considered as the identity function overridden
       for finitely-many terms *)
   let apply s a =
-    [%trace]
+    [%dbg]
       ~call:(fun {pf} -> pf "@ %a" Trm.pp a)
       ~retn:(fun {pf} -> pf "%a" Trm.pp)
     @@ fun () -> match Trm.Map.find a s with Some a' -> a' | None -> a
 
   (** apply a substitution to maximal noninterpreted subterms *)
   let norm s a =
-    [%trace]
+    [%dbg]
       ~call:(fun {pf} -> pf "@ %a" Trm.pp a)
       ~retn:(fun {pf} a' ->
         pf "%a" Trm.pp a' ;
@@ -90,14 +90,14 @@ end = struct
 
   (** compose two substitutions *)
   let compose r s =
-    [%Trace.call fun {pf} -> pf "@ %a@ %a" pp r pp s]
+    [%Dbg.call fun {pf} -> pf "@ %a@ %a" pp r pp s]
     ;
     ( if is_empty s then r
     else
       let r' = Trm.Map.map_endo ~f:(norm s) r in
       Trm.Map.union_absent r' s )
     |>
-    [%Trace.retn fun {pf} r' ->
+    [%Dbg.retn fun {pf} r' ->
       pf "%a" pp_diff (r, r') ;
       assert (r' == r || not (equal r' r))]
 
@@ -141,12 +141,12 @@ end = struct
     ( noninterp_with_solvable_var_in xs e
     || noninterp_with_solvable_var_in xs f )
     $> fun b ->
-    [%Trace.info " %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
+    [%Dbg.info " %a%a=%a = %b" Var.Set.pp_xs xs Trm.pp e Trm.pp f b]
 
   (** Partition ∃xs. σ into equivalent ∃xs. τ ∧ ∃ks. ν where ks and ν are
       maximal where ∃ks. ν is universally valid, xs ⊇ ks and ks ∩ fv(τ) = ∅. *)
   let partition_valid xs s =
-    [%trace]
+    [%dbg]
       ~call:(fun {pf} -> pf "@ @[%a@ %a@]" Var.Set.pp_xs xs pp s)
       ~retn:(fun {pf} (t, ks, u) ->
         pf "%a@ %a@ %a" pp t Var.Set.pp_xs ks pp u )
@@ -427,7 +427,7 @@ let rec norm x a =
       else Trm.map ~f:(norm x) a
 
 let norm x a =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf " %a@ %a" Trm.pp a pp_raw x)
     ~retn:(fun {pf} a' ->
       pf "%a" Trm.pp a' ;
@@ -494,7 +494,7 @@ and canon_trms x a =
   else apply x a'
 
 let canon x a =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a@ | %a" Trm.pp a pp_raw x)
     ~retn:(fun {pf} a' ->
       pf "%a" Trm.pp a' ;
@@ -611,7 +611,7 @@ let pre_invariant x =
                    Trm.pp e Trm.pp a Trm.pp b () ) ) )
   with exc ->
     let bt = Printexc.get_raw_backtrace () in
-    [%Trace.info "@ %a" pp_raw x] ;
+    [%Dbg.info "@ %a" pp_raw x] ;
     Printexc.raise_with_backtrace exc bt
 
 let invariant x =
@@ -645,7 +645,7 @@ let add_uses_of a use =
 
 (** add a canonical term to the carrier *)
 let rec extend a x =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} ->
       pf "@ %a@ | %a" Trm.pp a pp_raw x ;
       assert (Trm.equal a (canon x a)) )
@@ -672,7 +672,7 @@ let rec extend a x =
     extended so that [a' = norm x' a']. This recursively adds solvable
     subterms of [a'] to the carrier. *)
 let canon_extend x a =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf " %a@ %a" Trm.pp a pp_raw x)
     ~retn:(fun {pf} (a', x') ->
       pf "%a@ %a" Trm.pp a' pp_diff (x, x') ;
@@ -687,7 +687,7 @@ let canon_extend x a =
 (* Propagation ===========================================================*)
 
 let propagate_use x0 t u x =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp u pp_raw x)
     ~retn:(fun {pf} x' -> pf "%a" pp_diff (x, x'))
   @@ fun () ->
@@ -755,7 +755,7 @@ let propagate_use x0 t u x =
 
 (** add v ↦ t to x *)
 let propagate1 {Theory.var= v; rep= t} x =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} ->
       pf "@ @[%a ↦ %a@]@ %a" Trm.pp v Trm.pp t pp_raw x ;
       (* v is a solvable term that is a representative or absent atom *)
@@ -793,7 +793,7 @@ let propagate1 {Theory.var= v; rep= t} x =
     {x with rep; cls; use}
 
 let solve ~wrt ~xs d e pending =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp d Trm.pp e)
     ~retn:(fun {pf} -> pf "%a" Theory.pp)
   @@ fun () ->
@@ -804,7 +804,7 @@ let rec propagate_ ~wrt x =
   match x.pnd with
   | [] -> x
   | (a, b) :: pnd -> (
-      [%Trace.info "@ %a = %a" Trm.pp a Trm.pp b] ;
+      [%Dbg.info "@ %a = %a" Trm.pp a Trm.pp b] ;
       let a' = norm x a in
       let b' = norm x b in
       if Trm.equal a' b' then propagate_ ~wrt {x with pnd}
@@ -817,7 +817,7 @@ let rec propagate_ ~wrt x =
         | {solved= None} -> {x with sat= false; pnd= []} )
 
 let propagate ~wrt x =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} ->
       pf "@ %a" pp_raw x ;
       pre_invariant x )
@@ -840,7 +840,7 @@ let empty =
 let unsat = {empty with sat= false}
 
 let merge ~wrt a b x =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf " @[%a =@ %a@] |@ %a" Trm.pp a Trm.pp b pp x)
     ~retn:(fun {pf} x' ->
       pf "%a" pp_diff (x, x') ;
@@ -850,7 +850,7 @@ let merge ~wrt a b x =
   propagate ~wrt x
 
 let and_eq ~wrt a b x =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ @[%a = %a@]@ | %a" Trm.pp a Trm.pp b pp x)
     ~retn:(fun {pf} x' ->
       pf "%a" pp_diff (x, x') ;
@@ -872,23 +872,23 @@ let is_empty {sat; rep} =
 let is_unsat {sat} = not sat
 
 let canon_f x b =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp_raw x)
     ~retn:(fun {pf} -> pf "%a" Fml.pp)
   @@ fun () -> Fml.map_trms ~f:(canon x) b
 
 let normalize x a =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a@ | %a" Term.pp a pp x)
     ~retn:(fun {pf} -> pf "%a" Term.pp)
   @@ fun () -> Term.map_trms ~f:(canon x) a
 
 let implies r b =
-  [%Trace.call fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp r]
+  [%Dbg.call fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp r]
   ;
   Fml.equal Fml.tt (canon_f r b)
   |>
-  [%Trace.retn fun {pf} -> pf "%b"]
+  [%Dbg.retn fun {pf} -> pf "%b"]
 
 let refutes r b = Fml.equal Fml.ff (canon_f r b)
 let fold_eqs x = Subst.fold_eqs x.rep
@@ -913,7 +913,7 @@ let ppx_diff var_strength fs parent_ctx fml ctx =
     (if Fml.(equal tt fml') then [] else [fml'])
 
 let apply_subst wrt s r =
-  [%Trace.call fun {pf} -> pf "@ %a@ %a" Subst.pp s pp r]
+  [%Dbg.call fun {pf} -> pf "@ %a@ %a" Subst.pp s pp r]
   ;
   ( if Subst.is_empty s then r
   else
@@ -926,12 +926,12 @@ let apply_subst wrt s r =
             and_eq ~wrt trm' rep' r ) ) )
   |> extract_xs
   |>
-  [%Trace.retn fun {pf} (xs, r') ->
+  [%Dbg.retn fun {pf} (xs, r') ->
     pf "%a%a" Var.Set.pp_xs xs pp_diff (r, r') ;
     invariant r']
 
 let union wrt r s =
-  [%Trace.call fun {pf} -> pf "@ @[<hv 1>   %a@ @<2>∧ %a@]" pp r pp s]
+  [%Dbg.call fun {pf} -> pf "@ @[<hv 1>   %a@ @<2>∧ %a@]" pp r pp s]
   ;
   ( if not r.sat then r
   else if not s.sat then s
@@ -942,12 +942,12 @@ let union wrt r s =
     Trm.Map.fold s.rep r ~f:(fun ~key:e ~data:e' r -> and_eq ~wrt e e' r) )
   |> extract_xs
   |>
-  [%Trace.retn fun {pf} (_, r') ->
+  [%Dbg.retn fun {pf} (_, r') ->
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
 let inter wrt (xs, r) (ys, s) =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ @[  @[<hv 2>{ %a }@]@ @<2>∨ @[<hv 2>{ %a }@]@]" pp r pp s]
   ;
   ( if not s.sat then r
@@ -972,7 +972,7 @@ let inter wrt (xs, r) (ys, s) =
     let i = merge_mems wrt (ys, s) (xs, r) i in
     i )
   |>
-  [%Trace.retn fun {pf} r' ->
+  [%Dbg.retn fun {pf} r' ->
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
@@ -998,11 +998,11 @@ let rec add_ wrt b r =
   | Distinct _ | Pos _ | Not _ | Or _ | Iff _ | Cond _ | Lit _ -> r
 
 let add us b r =
-  [%Trace.call fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp r]
+  [%Dbg.call fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp r]
   ;
   add_ us b r |> extract_xs
   |>
-  [%Trace.retn fun {pf} (_, r') ->
+  [%Dbg.retn fun {pf} (_, r') ->
     pf "%a" pp_diff (r, r') ;
     invariant r']
 
@@ -1015,7 +1015,7 @@ let dnf f =
   Iter.from_labelled_iter (Fml.iter_dnf ~meet1 ~top f)
 
 let rename x sub =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp x)
     ~retn:(fun {pf} x' ->
       pf "%a" pp_diff (x, x') ;
@@ -1041,7 +1041,7 @@ let rename x sub =
   else {x with rep; cls; use}
 
 let apply_and_elim ~wrt xs s r =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a%a@ %a" Var.Set.pp_xs xs Subst.pp s pp_raw r)
     ~retn:(fun {pf} (zs, r', ks) ->
       pf "%a@ %a@ %a" Var.Set.pp_xs zs pp_raw r' Var.Set.pp_xs ks ;
@@ -1073,7 +1073,7 @@ let subst_invariant us s0 s =
     most one maximal solvable subterm, [kill], where [fv kill ⊈ us]; solve
     [p = q] for [kill]; extend subst mapping [kill] to the solution *)
 let solve_poly_eq us p' q' subst =
-  [%Trace.call fun {pf} -> pf "@ %a = %a" Trm.pp p' Trm.pp q']
+  [%Dbg.call fun {pf} -> pf "@ %a = %a" Trm.pp p' Trm.pp q']
   ;
   let diff = Trm.sub p' q' in
   let max_solvables_not_ito_us =
@@ -1089,7 +1089,7 @@ let solve_poly_eq us p' q' subst =
       Subst.compose1 {var= Trm.arith kill; rep= Trm.arith keep} subst
   | Many | Zero -> None )
   |>
-  [%Trace.retn fun {pf} subst' ->
+  [%Dbg.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst)]
 
 let rec solve_pending (s : Theory.t) soln =
@@ -1105,7 +1105,7 @@ let rec solve_pending (s : Theory.t) soln =
   | [] -> Some soln
 
 let solve_seq_eq us e' f' subst =
-  [%Trace.call fun {pf} -> pf "@ %a = %a" Trm.pp e' Trm.pp f']
+  [%Dbg.call fun {pf} -> pf "@ %a = %a" Trm.pp e' Trm.pp f']
   ;
   let x_ito_us x u =
     (not (Var.Set.subset (Trm.fv x) ~of_:us))
@@ -1133,11 +1133,11 @@ let solve_seq_eq us e' f' subst =
       Some (Subst.compose1 {var= v; rep= u} subst)
   | _ -> None )
   |>
-  [%Trace.retn fun {pf} subst' ->
+  [%Dbg.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst)]
 
 let solve_interp_eq us e' (cls, subst) =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ trm: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Trm.pp e' Cls.pp cls
       Subst.pp subst]
   ;
@@ -1147,7 +1147,7 @@ let solve_interp_eq us e' (cls, subst) =
       | Some subst -> Some subst
       | None -> solve_poly_eq us e' f' subst )
   |>
-  [%Trace.retn fun {pf} subst' ->
+  [%Dbg.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst) ;
     Option.iter ~f:(subst_invariant us subst) subst']
 
@@ -1155,7 +1155,7 @@ let solve_interp_eq us e' (cls, subst) =
     and can be expressed, after normalizing with [subst], as [x ↦ u] where
     [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs] *)
 let rec solve_interp_eqs us (cls, subst) =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ cls: @[%a@]@ subst: @[%a@]" Cls.pp cls Subst.pp subst]
   ;
   let rec solve_interp_eqs_ cls' (cls, subst) =
@@ -1173,7 +1173,7 @@ let rec solve_interp_eqs us (cls, subst) =
   ( if subst' != subst then solve_interp_eqs us (cls', subst')
   else (cls', subst') )
   |>
-  [%Trace.retn fun {pf} (cls', subst') ->
+  [%Dbg.retn fun {pf} (cls', subst') ->
     pf "cls: @[%a@]@ subst: @[%a@]" Cls.pp_diff (cls, cls') Subst.pp_diff
       (subst, subst')]
 
@@ -1187,7 +1187,7 @@ type cls_solve_state =
     to [subst] which can be expressed as [x ↦ u] where [x] is noninterpreted
     [us ∪ xs ⊇ fv x ⊈ us] and [fv u ⊆ us] or else [fv u ⊆ us ∪ xs] *)
 let solve_uninterp_eqs us (cls, subst) =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ cls: @[%a@]@ subst: @[%a@]" Cls.pp cls Subst.pp subst]
   ;
   let compare e f =
@@ -1245,7 +1245,7 @@ let solve_uninterp_eqs us (cls, subst) =
         (cls, subst)
     | None -> (cls, subst) ) )
   |>
-  [%Trace.retn fun {pf} (cls', subst') ->
+  [%Dbg.retn fun {pf} (cls', subst') ->
     pf "cls: @[%a@]@ subst: @[%a@]" Cls.pp_diff (cls, cls') Subst.pp_diff
       (subst, subst') ;
     subst_invariant us subst subst']
@@ -1256,7 +1256,7 @@ let solve_uninterp_eqs us (cls, subst) =
     [fv u ⊆ us ∪ xs] *)
 let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
   let classes0 = classes in
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ rep: @[%a@]@ cls: @[%a@]@ subst: @[%a@]" Trm.pp rep Cls.pp cls
       Subst.pp subst]
   ;
@@ -1275,12 +1275,12 @@ let solve_class us us_xs ~key:rep ~data:cls (classes, subst) =
   in
   (classes, subst)
   |>
-  [%Trace.retn fun {pf} (classes', subst') ->
+  [%Dbg.retn fun {pf} (classes', subst') ->
     pf "subst: @[%a@]@ classes: @[%a@]" Subst.pp_diff (subst, subst')
       pp_diff_cls (classes0, classes')]
 
 let solve_concat_extracts_eq r x =
-  [%Trace.call fun {pf} -> pf "@ %a@ %a" Trm.pp x pp r]
+  [%Dbg.call fun {pf} -> pf "@ %a@ %a" Trm.pp x pp r]
   ;
   (* find terms of form [Extract {_=x}] *)
   let extract_uses =
@@ -1304,7 +1304,7 @@ let solve_concat_extracts_eq r x =
   in
   find_extracts [] [] Trm.zero
   |>
-  [%Trace.retn fun {pf} ->
+  [%Dbg.retn fun {pf} ->
     pf "@[[%a]@]" (List.pp ";@ " (List.pp ",@ " Trm.pp))]
 
 let solve_concat_extracts r us x (classes, subst, us_xs) =
@@ -1339,7 +1339,7 @@ let solve_for_xs r us xs =
     normalizing with [subst], as [x ↦ u] where [us ∪ xs ⊇ fv x ⊈ us] and
     [fv u ⊆ us] or else [fv u ⊆ us ∪ xs]. *)
 let solve_classes r xs (classes, subst, us) =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ us: {@[%a@]}@ xs: {@[%a@]}" Var.Set.pp us Var.Set.pp xs]
   ;
   let rec solve_classes_ (classes0, subst0, us_xs) =
@@ -1353,7 +1353,7 @@ let solve_classes r xs (classes, subst, us) =
   |> solve_classes_
   |> solve_for_xs r us xs
   |>
-  [%Trace.retn fun {pf} (classes', subst', _) ->
+  [%Dbg.retn fun {pf} (classes', subst', _) ->
     pf "subst: @[%a@]@ classes: @[%a@]" Subst.pp_diff (subst, subst')
       pp_diff_cls (classes, classes')]
 
@@ -1367,7 +1367,7 @@ let pp_vss fs vss =
     [⋃ⱼ₌₁ⁱ vⱼ ⊇ fv x ⊈ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] and [fv u ⊆ ⋃ⱼ₌₁ⁱ⁻¹ vⱼ] if possible and
     otherwise [fv u ⊆ ⋃ⱼ₌₁ⁱ vⱼ] *)
 let solve_for_vars vss r =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ %a@ @[%a@]" pp_vss vss pp r ;
     invariant r]
   ;
@@ -1376,7 +1376,7 @@ let solve_for_vars vss r =
   in
   List.fold ~f:(solve_classes r) vss (r.cls, Subst.empty, us) |> snd3
   |>
-  [%Trace.retn fun {pf} subst ->
+  [%Dbg.retn fun {pf} subst ->
     pf "%a" Subst.pp subst ;
     Trm.Map.iteri subst ~f:(fun ~key ~data ->
         assert (

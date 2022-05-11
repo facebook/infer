@@ -12,12 +12,12 @@ let%test_module _ =
     open Fol
     open Context
 
-    let () = Trace.init ~margin:68 ()
+    let () = Dbg.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160
+     *   Dbg.init ~margin:160
      *     ~config:
-     *       (Trace.parse
+     *       (Dbg.parse
      *          "+Fol+Context-Context.canon-Context.canon_f-Context.norm" )
      *     () *)
 

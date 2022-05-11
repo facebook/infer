@@ -9,25 +9,24 @@
 
     This ppx rewriter reads a cookie to determine whether to rewrite in
     "debug" mode or not. To enable "debug" mode, pass
-    [--cookie 'ppx_trace_enabled="1"'] (or with [true] instead or [1]).
+    [--cookie 'ppx_dbg_enabled="1"'] (or with [true] instead or [1]).
 
-    It rewrites [\[%trace\] ~call ~retn ~rais] to a call
-    [Trace.trace ~call ~retn ~rais fun_name] where [fun_name] is the value
-    of [__FUNCTION__] at the call site. This is only done in debug mode,
-    otherwise [\[%trace\] ~call ~retn ~rais] is rewritten to
+    It rewrites [\[%dbg\] ~call ~retn ~rais] to a call
+    [Dbg.dbg ~call ~retn ~rais fun_name] where [fun_name] is the value of
+    [__FUNCTION__] at the call site. This is only done in debug mode,
+    otherwise [\[%dbg\] ~call ~retn ~rais] is rewritten to
     [(fun k -> k ())].
 
-    Similarly, [\[%Trace.info\]], [\[%Trace.infok\]], [\[%Trace.printf\]],
-    [\[%Trace.fprintf\]], [\[%Trace.kprintf\]], and [\[%Trace.call\]] are
-    rewritten to their analogues in the [Trace] module, or [()]; and
-    [\[%Trace.retn\]] is rewritten to a call to [Trace.retn] or
-    [(fun x -> x)].
+    Similarly, [\[%Dbg.info\]], [\[%Dbg.infok\]], [\[%Dbg.printf\]],
+    [\[%Dbg.fprintf\]], [\[%Dbg.kprintf\]], and [\[%Dbg.call\]] are
+    rewritten to their analogues in the [Dbg] module, or [()]; and
+    [\[%Dbg.retn\]] is rewritten to a call to [Dbg.retn] or [(fun x -> x)].
 
     For example, this enables writing
 
     {[
       let func arg =
-        [%trace]
+        [%dbg]
           ~call:(fun {pf} -> pf "@ %a" pp_arg_type arg)
           ~retn:(fun {pf} -> pf "%a" pp_result_type)
         @@ fun () -> func arg
@@ -37,11 +36,11 @@
 
     {[
       let func arg =
-        [%Trace.call fun {pf} -> pf "@ %a" pp_arg_type arg]
+        [%Dbg.call fun {pf} -> pf "@ %a" pp_arg_type arg]
         ;
         func arg
         |>
-        [%Trace.retn fun {pf} -> pf "%a" pp_result_type]
+        [%Dbg.retn fun {pf} -> pf "%a" pp_result_type]
     ]}
 
     to trace calls to [func] in debug mode while completely compiling out
@@ -59,7 +58,7 @@ open Ast_builder.Default
 let debug = ref false
 
 ;;
-Driver.Cookies.add_simple_handler "ppx_trace_enabled" Ast_pattern.__
+Driver.Cookies.add_simple_handler "ppx_dbg_enabled" Ast_pattern.__
   ~f:(function
   | Some {pexp_desc= Pexp_constant (Pconst_string (("1" | "true"), _, _))}
     ->
@@ -99,17 +98,17 @@ let mapper =
       in
       match exp.pexp_desc with
       | Pexp_apply
-          ( { pexp_desc= Pexp_extension ({txt= "trace"; loc}, PStr [])
+          ( { pexp_desc= Pexp_extension ({txt= "dbg"; loc}, PStr [])
             ; pexp_loc }
           , args ) ->
           if not !debug then fun_go pexp_loc
           else
-            pexp_apply ~loc:exp.pexp_loc (evar ~loc "Trace.trace")
+            pexp_apply ~loc:exp.pexp_loc (evar ~loc "Dbg.dbg")
               (append_here_args args)
       | Pexp_extension
           ( { txt=
-                ( "Trace.info" | "Trace.infok" | "Trace.printf"
-                | "Trace.fprintf" | "Trace.kprintf" ) as txt
+                ( "Dbg.info" | "Dbg.infok" | "Dbg.printf" | "Dbg.fprintf"
+                | "Dbg.kprintf" ) as txt
             ; loc }
           , PStr [{pstr_desc= Pstr_eval (arg, []); _}] ) ->
           if not !debug then eunit ~loc:exp.pexp_loc
@@ -122,20 +121,20 @@ let mapper =
             pexp_apply ~loc:exp.pexp_loc (evar ~loc txt)
               (append_here_args args)
       | Pexp_extension
-          ( {txt= "Trace.call"; loc= call_loc}
+          ( {txt= "Dbg.call"; loc= call_loc}
           , PStr [{pstr_desc= Pstr_eval (call_fun, []); _}] ) ->
           if not !debug then eunit ~loc:exp.pexp_loc
           else
             pexp_apply ~loc:exp.pexp_loc
-              (evar ~loc:call_loc "Trace.call")
+              (evar ~loc:call_loc "Dbg.call")
               (append_here_args [(Nolabel, call_fun)])
       | Pexp_extension
-          ( {txt= "Trace.retn"; loc= retn_loc}
+          ( {txt= "Dbg.retn"; loc= retn_loc}
           , PStr [{pstr_desc= Pstr_eval (retn_fun, []); _}] ) ->
           if not !debug then fun_id exp.pexp_loc
           else
             pexp_apply ~loc:exp.pexp_loc
-              (evar ~loc:retn_loc "Trace.retn")
+              (evar ~loc:retn_loc "Dbg.retn")
               (append_here_args [(Nolabel, retn_fun)])
       | _ -> super#expression exp
   end
@@ -143,4 +142,4 @@ let mapper =
 let impl = mapper#structure
 
 ;;
-Driver.register_transformation "trace" ~impl
+Driver.register_transformation "dbg" ~impl

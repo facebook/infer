@@ -12,12 +12,12 @@ let%test_module _ =
   ( module struct
     open Sh
 
-    let () = Trace.init ~margin:68 ()
+    let () = Dbg.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160
+     *   Dbg.init ~margin:160
      *     ~config:
-     *       (Trace.parse
+     *       (Dbg.parse
      *          "+Sh.simplify+Sh.simplify_+Sh.norm+Sh.and_subst+Context.solve_and_elim+Context.partition_valid+Context.solve_for_vars+Context.apply_and_elim+Context.apply_subst+Context.elim" )
      *     () *)
 

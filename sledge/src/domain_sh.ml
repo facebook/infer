@@ -36,21 +36,21 @@ let init globals =
       | _ -> q )
 
 let join p q =
-  [%Trace.call fun {pf} -> pf "@ %a@ %a" pp p pp q]
+  [%Dbg.call fun {pf} -> pf "@ %a@ %a" pp p pp q]
   ;
   (if p == q then p else Sh.or_ p q |> simplify)
   |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
+  [%Dbg.retn fun {pf} -> pf "%a" pp]
 
 let joinN qs =
-  [%Trace.call fun {pf} -> pf "@ %a" Sh.pp_djn qs]
+  [%Dbg.call fun {pf} -> pf "@ %a" Sh.pp_djn qs]
   ;
   ( match Sh.Set.classify qs with
   | Zero -> Sh.orN qs
   | One q -> q
   | Many -> Sh.orN qs |> simplify )
   |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
+  [%Dbg.retn fun {pf} -> pf "%a" pp]
 
 let dnf = Sh.dnf
 
@@ -122,7 +122,7 @@ let value_determined_by ctx us a =
       Term.Set.subset (Term.Set.of_iter (Term.atoms b)) ~of_:us )
 
 let garbage_collect (q : Sh.t) ~wrt =
-  [%Trace.call fun {pf} -> pf "@ %a" pp q]
+  [%Dbg.call fun {pf} -> pf "@ %a" pp q]
   ;
   (* only support DNF for now *)
   assert (List.is_empty q.djns) ;
@@ -142,7 +142,7 @@ let garbage_collect (q : Sh.t) ~wrt =
   let r_vars = all_reachable_vars Term.Set.empty wrt q in
   Sh.filter_heap q ~f:(fun seg -> value_determined_by q.ctx r_vars seg.loc)
   |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
+  [%Dbg.retn fun {pf} -> pf "%a" pp]
 
 let and_eqs sub formals actuals q =
   let and_eq formal actual eqs =
@@ -166,7 +166,7 @@ let localize_entry tid globals actuals formals freturn locals shadow pre
          (Iter.map ~f:Term.var (IArray.to_iter formals)) )
   in
   let function_summary_pre = garbage_collect entry ~wrt in
-  [%Trace.info "function summary pre %a" pp function_summary_pre] ;
+  [%Dbg.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Sh.exists formals_set function_summary_pre in
   let xs, foot = Sh.bind_exists ~wrt:pre.Sh.us foot in
   let frame =
@@ -187,7 +187,7 @@ type from_call = {areturn: Var.t option; unshadow: Var.Subst.t; frame: Sh.t}
     equations between each formal and actual, and quantify fresh vars. *)
 let call ~summaries tid ?(child = tid) ~globals ~actuals ~areturn ~formals
     ~freturn ~locals q =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ @[<hv>locals: {@[%a@]}@ globals: {@[%a@]}@ q: %a@]"
       Llair.Reg.Set.pp locals Llair.Global.Set.pp globals pp q ;
     assert (
@@ -233,24 +233,24 @@ let call ~summaries tid ?(child = tid) ~globals ~actuals ~areturn ~formals
     in
     (q, {areturn; unshadow; frame}) )
   |>
-  [%Trace.retn fun {pf} (entry, {unshadow; frame}) ->
+  [%Dbg.retn fun {pf} (entry, {unshadow; frame}) ->
     pf "@[<v>unshadow: %a@ frame: %a@ entry: %a@]" Var.Subst.pp unshadow pp
       frame pp entry]
 
 (** Leave scope of locals: existentially quantify locals. *)
 let post tid locals _ q =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ @[<hv>locals: {@[%a@]}@ q: %a@]" Llair.Reg.Set.pp locals Sh.pp q]
   ;
   Sh.exists (X.regs tid locals) q |> simplify
   |>
-  [%Trace.retn fun {pf} -> pf "%a" Sh.pp]
+  [%Dbg.retn fun {pf} -> pf "%a" Sh.pp]
 
 (** Express in terms of actuals instead of formals: existentially quantify
     formals, and apply inverse of fresh variables for formals renaming to
     restore the shadowed variables. *)
 let retn tid formals freturn {areturn; unshadow; frame} q =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ @[<v>formals: {@[%a@]}%a%a@ unshadow: %a@ q: %a@ frame: %a@]"
       (IArray.pp ", " Llair.Reg.pp)
       formals
@@ -289,7 +289,7 @@ let retn tid formals freturn {areturn; unshadow; frame} q =
   (* simplify *)
   |> simplify
   |>
-  [%Trace.retn fun {pf} -> pf "%a" pp]
+  [%Dbg.retn fun {pf} -> pf "%a" pp]
 
 type term_code = Term.t option [@@deriving compare, sexp_of]
 
@@ -325,7 +325,7 @@ let pp_summary fs {xs; foot; post} =
     pp foot pp post
 
 let create_summary tid ~locals ~formals ~entry ~current:(post : Sh.t) =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ formals %a@ entry: %a@ current: %a"
       (IArray.pp ",@ " Llair.Reg.pp)
       formals pp entry pp post]
@@ -346,7 +346,7 @@ let create_summary tid ~locals ~formals ~entry ~current:(post : Sh.t) =
   let post = Sh.rename subst post in
   let foot = restore_formals foot in
   let post = restore_formals post in
-  [%Trace.info "subst: %a" Var.Subst.pp subst] ;
+  [%Dbg.info "subst: %a" Var.Subst.pp subst] ;
   let xs = Var.Set.inter (Sh.fv foot) (Sh.fv post) in
   let xs = Var.Set.diff xs formals in
   let xs_and_formals = Var.Set.union xs formals in
@@ -355,10 +355,10 @@ let create_summary tid ~locals ~formals ~entry ~current:(post : Sh.t) =
   let current = Sh.extend_us xs post in
   ({xs; foot; post}, current)
   |>
-  [%Trace.retn fun {pf} (fs, _) -> pf "@,%a" pp_summary fs]
+  [%Dbg.retn fun {pf} (fs, _) -> pf "@,%a" pp_summary fs]
 
 let apply_summary q ({xs; foot; post} as fs) =
-  [%Trace.call fun {pf} -> pf "@ fs: %a@ q: %a" pp_summary fs pp q]
+  [%Dbg.call fun {pf} -> pf "@ fs: %a@ q: %a" pp_summary fs pp q]
   ;
   let xs_in_q = Var.Set.inter xs q.Sh.us in
   let xs_in_fv_q = Var.Set.inter xs (Sh.fv q) in
@@ -369,8 +369,8 @@ let apply_summary q ({xs; foot; post} as fs) =
      free-variables of q and foot match it is benign. In the case where free
      variables match, we temporarily reduce the vocabulary of q to match the
      vocabulary of foot. *)
-  [%Trace.info "xs inter q.us: %a" Var.Set.pp xs_in_q] ;
-  [%Trace.info "xs inter fv.q %a" Var.Set.pp xs_in_fv_q] ;
+  [%Dbg.info "xs inter q.us: %a" Var.Set.pp xs_in_q] ;
+  [%Dbg.info "xs inter fv.q %a" Var.Set.pp xs_in_fv_q] ;
   let q, add_back =
     if Var.Set.is_empty xs_in_fv_q then (Sh.exists xs_in_q q, xs_in_q)
     else (q, Var.Set.empty)
@@ -379,15 +379,15 @@ let apply_summary q ({xs; foot; post} as fs) =
     if Var.Set.is_empty xs_in_fv_q then Solver.infer_frame q xs foot
     else None
   in
-  [%Trace.info "frame %a" (Option.pp "%a" pp) frame] ;
+  [%Dbg.info "frame %a" (Option.pp "%a" pp) frame] ;
   Option.map ~f:(Sh.extend_us add_back) (Option.map ~f:(Sh.star post) frame)
   |>
-  [%Trace.retn fun {pf} r ->
+  [%Dbg.retn fun {pf} r ->
     match r with None -> pf "None" | Some q -> pf "@,%a" pp q]
 
 let%test_module _ =
   ( module struct
-    let () = Trace.init ~margin:68 ()
+    let () = Dbg.init ~margin:68 ()
     let pp = Format.printf "@.%a@." Sh.pp
     let wrt = Var.Set.empty
     let main_, wrt = Var.fresh "main" ~wrt

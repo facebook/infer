@@ -344,11 +344,11 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       | Void | Label | Metadata -> assert false
   in
   LltypeTbl.find_or_add memo_type llt ~default:(fun () ->
-      [%Trace.call fun {pf} -> pf "@ %a" pp_lltype llt]
+      [%Dbg.call fun {pf} -> pf "@ %a" pp_lltype llt]
       ;
       xlate_type_ llt
       |>
-      [%Trace.retn fun {pf} ty ->
+      [%Dbg.retn fun {pf} ty ->
         pf "%a" Typ.pp_defn ty ;
         assert (
           (not (Llvm.type_is_sized llt))
@@ -576,16 +576,16 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         fail "xlate_value: %a" pp_llvalue llv ()
   in
   ValTbl.find_or_add memo_value (inline, llv) ~default:(fun () ->
-      [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llv]
+      [%Dbg.call fun {pf} -> pf "@ %a" pp_llvalue llv]
       ;
       xlate_value_ llv
       |>
-      [%Trace.retn fun {pf} -> pf "%a" pp_prefix_exp] )
+      [%Dbg.retn fun {pf} -> pf "%a" pp_prefix_exp] )
 
 and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
     =
  fun x llv opcode ->
-  [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llv]
+  [%Dbg.call fun {pf} -> pf "@ %a" pp_llvalue llv]
   ;
   let xlate_rand i = xlate_value x (Llvm.operand llv i) in
   let typ = lazy (xlate_type x (Llvm.type_of llv)) in
@@ -746,7 +746,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
       if len = 1 then convert BitCast
       else
         let rec xlate_indices i =
-          [%Trace.call fun {pf} ->
+          [%Dbg.call fun {pf} ->
             pf "@ %i %a" i pp_llvalue (Llvm.operand llv i)]
           ;
           let pre_i, arg_i = xlate_rand i in
@@ -784,7 +784,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
                 ((pre_i1 @ pre_i, ptr_fld x ~ptr ~fld ~lltyp), llelt)
             | _ -> fail "xlate_opcode: %i %a" i pp_llvalue llv () )
           |>
-          [%Trace.retn fun {pf} (pre_exp, llt) ->
+          [%Dbg.retn fun {pf} (pre_exp, llt) ->
             pf "%a %a" pp_prefix_exp pre_exp pp_lltype llt]
         in
         fst (xlate_indices (len - 1))
@@ -806,12 +806,12 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
    |CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch | VAArg ->
       fail "xlate_opcode: %a" pp_llvalue llv () )
   |>
-  [%Trace.retn fun {pf} -> pf "%a" pp_prefix_exp]
+  [%Dbg.retn fun {pf} -> pf "%a" pp_prefix_exp]
 
 and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
  fun x llg ->
   GlobTbl.find_or_add memo_global llg ~default:(fun () ->
-      [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llg]
+      [%Dbg.call fun {pf} -> pf "@ %a" pp_llvalue llg]
       ;
       let g =
         Global.mk (xlate_type x (Llvm.type_of llg)) (fst (find_name llg))
@@ -836,7 +836,7 @@ and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
       in
       GlobalDefn.mk ?init g loc
       |>
-      [%Trace.retn fun {pf} -> pf "%a" GlobalDefn.pp] )
+      [%Dbg.retn fun {pf} -> pf "%a" GlobalDefn.pp] )
 
 type pop_thunk = Loc.t -> Llair.inst list
 
@@ -1098,10 +1098,10 @@ let xlate_instr :
     -> ((Llair.inst list * Llair.term -> code) -> code)
     -> code =
  fun pop x instr continue ->
-  [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue instr]
+  [%Dbg.call fun {pf} -> pf "@ %a" pp_llvalue instr]
   ;
   let continue insts_term_to_code =
-    [%Trace.retn
+    [%Dbg.retn
       fun {pf} () ->
         pf "%a" pp_code (insts_term_to_code ([], Term.unreachable))]
       () ;
@@ -1112,7 +1112,7 @@ let xlate_instr :
     continue (fun (insts, term) -> (prefix @ (inst :: insts), term, []))
   in
   let emit_term ?(prefix = []) ?(blocks = []) term =
-    [%Trace.retn fun {pf} () -> pf "%a" pp_code (prefix, term, blocks)] () ;
+    [%Dbg.retn fun {pf} () -> pf "%a" pp_code (prefix, term, blocks)] () ;
     (prefix, term, blocks)
   in
   let loc = find_loc instr in
@@ -1546,18 +1546,18 @@ let skip_phis : Llvm.llbasicblock -> _ Llvm.llpos =
 
 let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
  fun pop x blk ->
-  [%Trace.call fun {pf} -> pf "@ %a" pp_llblock blk]
+  [%Dbg.call fun {pf} -> pf "@ %a" pp_llblock blk]
   ;
   let lbl = label_of_block blk in
   let pos = skip_phis blk in
   let insts, term, blocks = xlate_instrs pop x pos in
   Block.mk ~lbl ~cmnd:(IArray.of_list insts) ~term :: blocks
   |>
-  [%Trace.retn fun {pf} blocks -> pf "%s" (List.hd_exn blocks).lbl]
+  [%Dbg.retn fun {pf} blocks -> pf "%s" (List.hd_exn blocks).lbl]
 
 let report_undefined func name =
   if Option.is_some (Llvm.use_begin func) then
-    [%Trace.printf "@\n@[undefined function: %a@]" Function.pp name]
+    [%Dbg.printf "@\n@[undefined function: %a@]" Function.pp name]
 
 let xlate_function_decl x llfunc typ k =
   let loc = find_loc llfunc in
@@ -1583,7 +1583,7 @@ let xlate_function_decl x llfunc typ k =
 
 let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
  fun x llf typ ->
-  [%Trace.call fun {pf} -> pf "@ %a" pp_llvalue llf]
+  [%Dbg.call fun {pf} -> pf "@ %a" pp_llvalue llf]
   ;
   undef_count := 0 ;
   xlate_function_decl x llf typ
@@ -1614,7 +1614,7 @@ let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
       report_undefined llf name ;
       Func.mk_undefined ~name ~formals ~freturn ~fthrow ~loc )
   |>
-  [%Trace.retn fun {pf} -> pf "@\n%a" Func.pp]
+  [%Dbg.retn fun {pf} -> pf "@\n%a" Func.pp]
 
 let backpatch_calls x func_tbl =
   List.iter !calls_to_backpatch ~f:(fun (llfunc, typ, backpatch) ->
@@ -1647,7 +1647,7 @@ let transform ~internalize ~opt_level ~size_level : Llvm.llmodule -> unit =
   Llvm.PassManager.dispose pm
 
 let read_and_parse llcontext bc_file =
-  [%Trace.call fun {pf} -> pf "@ %s" bc_file]
+  [%Dbg.call fun {pf} -> pf "@ %s" bc_file]
   ;
   let llmemorybuffer =
     try Llvm.MemoryBuffer.of_file bc_file
@@ -1656,7 +1656,7 @@ let read_and_parse llcontext bc_file =
   ( try Llvm_irreader.parse_ir llcontext llmemorybuffer
     with Llvm_irreader.Error msg -> invalid_llvm msg )
   |>
-  [%Trace.retn fun {pf} _ -> pf ""]
+  [%Dbg.retn fun {pf} _ -> pf ""]
 
 let check_datalayout llcontext lldatalayout =
   let check_size llt typ =
@@ -1706,7 +1706,7 @@ let cleanup llmodule llcontext =
 let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
     string -> Llair.program =
  fun input ->
-  [%Trace.call fun {pf} -> pf "@ %s" input]
+  [%Dbg.call fun {pf} -> pf "@ %s" input]
   ;
   Llvm.install_fatal_error_handler invalid_llvm ;
   let llcontext = Llvm.global_context () in
@@ -1760,6 +1760,6 @@ let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
   cleanup llmodule llcontext ;
   Llair.Program.mk ~globals ~functions
   |>
-  [%Trace.retn fun {pf} _ ->
+  [%Dbg.retn fun {pf} _ ->
     pf "number of globals %d, number of functions %d" (List.length globals)
       (List.length functions)]

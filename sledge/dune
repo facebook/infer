@@ -10,21 +10,21 @@
      -short-paths -bin-annot -keep-locs -keep-docs -g))
   (ocamlopt_flags (-O3))
   (env-vars
-   (PPX_TRACE_ENABLED 1))
+   (PPX_DBG_ENABLED 1))
   (inline_tests enabled))
  (trace
   (flags
    (-w -a -noassert -unboxed-types -g))
   (ocamlopt_flags (-O3))
   (env-vars
-   (PPX_TRACE_ENABLED 1))
+   (PPX_DBG_ENABLED 1))
   (inline_tests disabled))
  (_ ; release, dev, default,...
   (flags
    (-w -a -noassert -unboxed-types))
   (ocamlopt_flags (-O3))
   (env-vars
-   (PPX_TRACE_ENABLED 0))
+   (PPX_DBG_ENABLED 0))
   (inline_tests disabled)))
 
 (library
@@ -43,7 +43,7 @@
   (flags
    (:standard -open NS))
   (preprocess
-   (pps ppx_sledge ppx_trace))
+   (pps ppx_sledge ppx_dbg))
   (inline_tests)))
 
 (subdir
@@ -55,7 +55,7 @@
   (flags
    (:standard -open NS))
   (preprocess
-   (pps ppx_sledge ppx_trace))
+   (pps ppx_sledge ppx_dbg))
   (inline_tests)))
 
 (subdir
@@ -67,7 +67,7 @@
   (flags
    (:standard -open NS))
   (preprocess
-   (pps ppx_sledge ppx_trace))
+   (pps ppx_sledge ppx_dbg))
   (inline_tests)))
 
 (subdir
@@ -80,7 +80,7 @@
   (flags
    (:standard -open NS -open Sledge))
   (preprocess
-   (pps ppx_sledge ppx_trace))))
+   (pps ppx_sledge ppx_dbg))))
 
 (subdir
  src/test
@@ -90,7 +90,7 @@
   (flags
    (:standard -open NS))
   (preprocess
-   (pps ppx_sledge ppx_trace))
+   (pps ppx_sledge ppx_dbg))
   (inline_tests)))
 
 (subdir
@@ -99,14 +99,14 @@
   (name sledge_cli)
   (public_name sledge)
   (package sledge)
-  (libraries apron apron.boxMPQ core ctypes ctypes.foreign dune-build-info
-    llvm llvm.analysis llvm.bitwriter llvm.ipo llvm.irreader llvm.linker
-    llvm.passmgr_builder llvm.scalar_opts llvm.target memtrace shexp.process
-    yojson trace nonstdlib sledge smtlib-utils)
+  (libraries apron apron.boxMPQ core ctypes ctypes.foreign dbg
+    dune-build-info llvm llvm.analysis llvm.bitwriter llvm.ipo llvm.irreader
+    llvm.linker llvm.passmgr_builder llvm.scalar_opts llvm.target memtrace
+    shexp.process yojson nonstdlib sledge smtlib-utils)
   (flags
    (:standard -w -58 -open NS -open Sledge))
   (preprocess
-   (pps ppx_sledge ppx_trace))))
+   (pps ppx_sledge ppx_dbg))))
 
 (dirs :standard \ test)
 

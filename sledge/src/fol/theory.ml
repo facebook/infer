@@ -70,7 +70,7 @@ let fresh name s =
     Some (Trm.var x, {s with wrt; fresh})
 
 let solve_poly p q s =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp p Trm.pp q)
     ~retn:(fun {pf} -> pf "%a" pp)
   @@ fun () ->
@@ -90,7 +90,7 @@ let solve_poly p q s =
 (* ⟨n,a⟩[o,l) = β ==> l = |β| ∧ a = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l))
    where c fresh *)
 let solve_extract a n o l b s =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} ->
       pf "@ %a = %a" Trm.pp
         (Trm.extract ~seq:a ~siz:n ~off:o ~len:l)
@@ -114,7 +114,7 @@ let solve_extract a n o l b s =
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
 let solve_concat a0V b m s =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp (Trm.concat a0V) Trm.pp b)
     ~retn:(fun {pf} -> pf "%a" pp)
   @@ fun () ->
@@ -129,13 +129,13 @@ let solve_concat a0V b m s =
 
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = e^ ==> … ∧ αⱼ = e^ ∧ … *)
 let solve_concat_splat a0V b s =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp (Trm.concat a0V) Trm.pp b)
     ~retn:(fun {pf} -> pf "%a" pp)
   @@ fun () -> Array.fold a0V s ~f:(fun {Trm.seq} s -> add_pending seq b s)
 
 let solve d e s =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp d Trm.pp e)
     ~retn:(fun {pf} -> pf "%a" pp)
   @@ fun () ->

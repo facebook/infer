@@ -712,7 +712,7 @@ module Func = struct
       | _ -> assert false
     with exc ->
       let bt = Printexc.get_raw_backtrace () in
-      [%Trace.info " %a" pp func] ;
+      [%Dbg.info " %a" pp func] ;
       Printexc.raise_with_backtrace exc bt
 
   let find name functions =
@@ -930,7 +930,7 @@ module Program = struct
           |> fun {entry; _} -> entry
         in
         let dists = reachable_dists curr next_entry in
-        [%Trace.info
+        [%Dbg.info
           "distances to %a from locations reachable from %a: %a" Block.pp
             next_entry Block.pp curr
             (Block.Map.pp Block.pp Int.pp)

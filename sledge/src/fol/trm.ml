@@ -78,16 +78,15 @@ module Trm3 = struct
       match trm with
       | Var {id; name} -> (
           if id < 0 then
-            Trace.pp_styled `Bold "%%%s!%i" fs name (id + Int.max_int)
+            Dbg.pp_styled `Bold "%%%s!%i" fs name (id + Int.max_int)
           else
             match strength trm with
             | None -> Format.fprintf fs "%%%s_%i" name id
-            | Some `Universal -> Trace.pp_styled `Bold "%%%s_%i" fs name id
-            | Some `Existential ->
-                Trace.pp_styled `Cyan "%%%s_%i" fs name id
-            | Some `Anonymous -> Trace.pp_styled `Cyan "_" fs )
-      | Z z -> Trace.pp_styled `Magenta "%a" fs Z.pp z
-      | Q q -> Trace.pp_styled `Magenta "%a" fs Q.pp q
+            | Some `Universal -> Dbg.pp_styled `Bold "%%%s_%i" fs name id
+            | Some `Existential -> Dbg.pp_styled `Cyan "%%%s_%i" fs name id
+            | Some `Anonymous -> Dbg.pp_styled `Cyan "_" fs )
+      | Z z -> Dbg.pp_styled `Magenta "%a" fs Z.pp z
+      | Q q -> Dbg.pp_styled `Magenta "%a" fs Q.pp q
       | Arith a -> Arith0.ppx (ppx strength) fs a
       | Splat x -> pf "%a^" pp x
       | Extract {seq; siz; off; len} ->
@@ -318,7 +317,7 @@ type kind = InterpApp | NonInterpAtom | InterpAtom | UninterpApp
 [@@deriving compare, equal, sexp_of]
 
 let classify e =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "%a" pp e)
     ~retn:(fun {pf} k -> pf "%a" Sexp.pp (sexp_of_kind k))
   @@ fun () ->
@@ -428,7 +427,7 @@ let partial_min x y =
 let empty_seq = Concat [||]
 
 let rec extract ~seq ~siz ~off ~len =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} ->
       pf "@ %a" pp (Extract {seq; siz; off; len}) ;
       assert (Option.for_all ~f:(equal siz) (seq_size seq)) )
@@ -528,7 +527,7 @@ let rec extract ~seq ~siz ~off ~len =
     | _ -> Extract {seq; siz; off; len}
 
 and concat xs =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a" pp (Concat xs))
     ~retn:(fun {pf} c ->
       pf "%a" pp c ;

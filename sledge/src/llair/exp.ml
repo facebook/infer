@@ -124,7 +124,7 @@ module T = struct
     | Function {name} -> pf "&%s%a" name pp_demangled name
     | Label {name} -> pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
-    | Integer {data} -> Trace.pp_styled `Magenta "%a" fs Z.pp data
+    | Integer {data} -> Dbg.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} -> pf "%s" data
     | Ap1 (Signed {bits}, dst, arg) ->
         pf "((%a)(s%i)@ %a)" Typ.pp dst bits pp arg

@@ -237,7 +237,7 @@ let retn mod_fun_name k result =
   k {pf= (fun fmt -> decf mod_fun_name fmt)} result ;
   result
 
-let trace :
+let dbg :
        ?call:(pf -> unit)
     -> ?retn:(pf -> 'a -> unit)
     -> ?rais:(pf -> exn -> Printexc.raw_backtrace -> unit)

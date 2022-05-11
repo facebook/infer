@@ -21,8 +21,8 @@ let ( >*> ) : ('a -> 'b) param -> ('b -> 'c) param -> ('a -> 'c) param =
  fun f' g' -> Command.Param.both f' g' >>| fun (f, g) -> f >> g
 
 ;;
-register_sexp_of_exn (Trace.Parse_failure "") (function
-  | Trace.Parse_failure msg -> Sexplib0.Sexp.Atom msg
+register_sexp_of_exn (Dbg.Parse_failure "") (function
+  | Dbg.Parse_failure msg -> Sexplib0.Sexp.Atom msg
   | _ -> assert false )
 
 ;;
@@ -36,7 +36,7 @@ let command ~summary ?readme param =
   let trace =
     let%map_open config =
       flag "trace" ~doc:"<spec> enable debug tracing"
-        (optional_with_default Trace.none (Arg_type.create Trace.parse))
+        (optional_with_default Dbg.none (Arg_type.create Dbg.parse))
     and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
@@ -49,11 +49,11 @@ let command ~summary ?readme param =
     and append_report =
       flag "append-report" no_arg ~doc:"append to report file"
     in
-    Trace.init ~colors ?margin ~config () ;
+    Dbg.init ~colors ?margin ~config () ;
     Option.iter ~f:(Report.init ~append:append_report) report
   in
   Llair.Loc.root := Some (Unix.realpath (Sys.getcwd ())) ;
-  let flush main () = Fun.protect main ~finally:Trace.flush in
+  let flush main () = Fun.protect main ~finally:Dbg.flush in
   let report main () =
     try main () |> Report.status
     with exn ->

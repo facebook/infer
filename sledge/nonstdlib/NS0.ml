@@ -205,11 +205,11 @@ register_sexp_of_exn
         Sexp.List [Atom "Replay"; sexp_of_exn exn; payload]
     | exn -> Sexp.Atom (Printexc.to_string exn) )
 
-let fail = Trace.fail
+let fail = Dbg.fail
 
 exception Unimplemented of string
 
-let todo fmt = Trace.raisef (fun msg -> Unimplemented msg) fmt
+let todo fmt = Dbg.raisef (fun msg -> Unimplemented msg) fmt
 
 let warn fmt =
   let fs = Format.std_formatter in

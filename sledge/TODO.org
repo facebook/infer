@@ -12,9 +12,9 @@
 ** fix the order of args to ~f args to fold functions
 ** implement the rest of the Array operations in Vector
 ** automatically keep interface of Vector in sync with Array
-* trace and ppx_trace
+* trace and ppx_dbg
 ** if a traced fun has a type annotation
-copy it to the left arg of |> and to the arg of Trace.retn
+copy it to the left arg of |> and to the arg of Dbg.retn
 ** use name of enclosing function that is a structure item
 rather than nearest enclosing
 * modeling

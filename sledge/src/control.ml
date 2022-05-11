@@ -485,14 +485,14 @@ struct
       | Some (Thread.Suspended ip) ->
           Some (M.add ~key:tid ~data:(Thread.Runnable ip) threads)
       | _ ->
-          [%Trace.info " prune resume of non-suspended thread: %i" tid] ;
+          [%Dbg.info " prune resume of non-suspended thread: %i" tid] ;
           None
 
     let join tid threads =
       match M.find tid threads with
       | Some (Thread.Terminated (tc, _)) -> Some (tc, M.remove tid threads)
       | _ ->
-          [%Trace.info " prune join of non-terminated thread: %i" tid] ;
+          [%Dbg.info " prune join of non-terminated thread: %i" tid] ;
           None
   end
 
@@ -608,7 +608,7 @@ struct
           (** pre-computed summary of inactive thread scheduling states, for
               use by e.g. [Elt.compare] *) }
 
-  let pp_state ppf state = [%Trace.fprintf ppf "@[%a@]@\n" D.pp state]
+  let pp_state ppf state = [%Dbg.fprintf ppf "@[%a@]@\n" D.pp state]
 
   module Work : sig
     type t
@@ -743,13 +743,13 @@ struct
     type t = Queue.t * Cursor.t
 
     let prune switches depth edge =
-      [%Trace.info " %i,%i: %a" switches depth Edge.pp edge]
+      [%Dbg.info " %i,%i: %a" switches depth Edge.pp edge]
 
-    let pp_queue ppf queue = [%Trace.fprintf ppf "@ | %a" Queue.pp queue]
+    let pp_queue ppf queue = [%Dbg.fprintf ppf "@ | %a" Queue.pp queue]
 
     let enqueue depth ({ctrl= {dst} as edge; state; threads; depths} as elt)
         (queue, cursor) =
-      [%Trace.info
+      [%Dbg.info
         " %i,%i: %a%a@\n@[%a@]" elt.switches depth Edge.pp edge pp_queue
           queue pp_state state] ;
       let threads, inactive = Threads.after_step dst threads in
@@ -859,7 +859,7 @@ struct
           dequeue (queue, cursor)
       | Some ((switches, ip, threads, goal), next_states, cursor) ->
           let state, depths, edges = Joinable.join next_states in
-          [%Trace.info
+          [%Dbg.info
             " %i,%i: %a <-t%i- {@[%a@]}%a" switches top.ctrl.depth IP.pp ip
               ip.tid
               (List.pp " ∨@ " Edge.pp)
@@ -878,7 +878,7 @@ struct
   let summary_table = Llair.Function.Tbl.create ()
 
   let pp_st () =
-    [%Trace.printf
+    [%Dbg.printf
       "@[<v>%t@]" (fun fs ->
           Llair.Function.Tbl.iteri summary_table ~f:(fun ~key ~data ->
               Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Function.pp key
@@ -900,7 +900,7 @@ struct
   let exec_call globals call ({ctrl= {stk; tid}; state} as ams) wl =
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
-    [%Trace.call fun {pf} ->
+    [%Dbg.call fun {pf} ->
       pf " t%i@[<2>@ %a from %a with state@]@;<1 2>%a" tid
         Llair.Func.pp_call call Llair.Function.pp return.dst.parent.name
         D.pp state]
@@ -933,7 +933,7 @@ struct
               wl
         | Some post -> exec_jump return {ams with state= post; goal} wl )
     |>
-    [%Trace.retn fun {pf} _ -> pf ""]
+    [%Dbg.retn fun {pf} _ -> pf ""]
 
   let exec_call call ams wl =
     let Llair.{callee= {name} as callee; areturn; return; _} = call in
@@ -947,7 +947,7 @@ struct
     let block = Llair.IP.block ip in
     let func = block.parent in
     let Llair.{name; formals; freturn; locals} = func in
-    [%Trace.call fun {pf} -> pf " t%i@ from: %a" tid Llair.Function.pp name]
+    [%Dbg.call fun {pf} -> pf " t%i@ from: %a" tid Llair.Function.pp name]
     ;
     let summarize post_state =
       if not Config.function_summaries then post_state
@@ -984,12 +984,12 @@ struct
           {ams with ctrl= {dst= Terminated (tc, tid); src= block}}
           wl )
     |>
-    [%Trace.retn fun {pf} _ -> pf ""]
+    [%Dbg.retn fun {pf} _ -> pf ""]
 
   let exec_throw exc ({ctrl= {ip; stk; tid}; state} as ams) wl =
     let func = (Llair.IP.block ip).parent in
     let Llair.{name; formals; freturn; fthrow; locals} = func in
-    [%Trace.call fun {pf} -> pf "@ from %a" Llair.Function.pp name]
+    [%Dbg.call fun {pf} -> pf "@ from %a" Llair.Function.pp name]
     ;
     let unwind formals scope from_call state =
       D.retn tid formals (Some fthrow) from_call
@@ -1008,13 +1008,13 @@ struct
           wl
     | None -> wl )
     |>
-    [%Trace.retn fun {pf} _ -> pf ""]
+    [%Dbg.retn fun {pf} _ -> pf ""]
 
   let exec_assume cond jump ({ctrl= {tid}; state} as ams) wl =
     match D.exec_assume tid state cond with
     | Some state -> exec_jump jump {ams with state} wl
     | None ->
-        [%Trace.info " infeasible %a@\n@[%a@]" Llair.Exp.pp cond D.pp state] ;
+        [%Dbg.info " infeasible %a@\n@[%a@]" Llair.Exp.pp cond D.pp state] ;
         wl
 
   let exec_thread_create areturn
@@ -1118,7 +1118,7 @@ struct
   let rec exec_ip pgm ({ctrl= {ip; stk; tid}; state} as ams) wl =
     match Llair.IP.inst ip with
     | Some inst -> (
-        [%Trace.info
+        [%Dbg.info
           " t%i %a@\n@[%a@]%a" tid Llair.IP.pp ip pp_state state
             Llair.Inst.pp inst] ;
         Report.step_inst ip ;
@@ -1134,7 +1134,7 @@ struct
             Report.alarm alarm ;
             wl )
     | None ->
-        [%Trace.info
+        [%Dbg.info
           " t%i %a@\n@[%a@]%a" tid Llair.IP.pp ip pp_state state
             Llair.Term.pp (Llair.IP.block ip).term] ;
         exec_term pgm ams wl

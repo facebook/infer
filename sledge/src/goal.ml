@@ -46,7 +46,7 @@ module Sparse_trace = struct
       && Llair.Function.equal fn (IArray.get trace cursor)
     then (
       let goal' = {goal with cursor= cursor + 1} in
-      [%Trace.info "updated goal: %a" pp goal'] ;
+      [%Dbg.info "updated goal: %a" pp goal'] ;
       if reached goal' then Report.reached_goal (fun fs -> pp fs goal') ;
       goal' )
     else goal

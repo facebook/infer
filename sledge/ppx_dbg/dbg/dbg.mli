@@ -50,14 +50,14 @@ val call : string -> (pf -> 'a) -> 'a
 val retn : string -> (pf -> 'a -> unit) -> 'a -> 'a
 (** Decrease indentation level and emit a message, if enabled. *)
 
-val trace :
+val dbg :
      ?call:(pf -> unit)
   -> ?retn:(pf -> 'a -> unit)
   -> ?rais:(pf -> exn -> Printexc.raw_backtrace -> unit)
   -> string
   -> (unit -> 'a)
   -> 'a
-(** [trace ~call ~retn ~rais function_name k] either simply invokes [k ()],
+(** [dbg ~call ~retn ~rais function_name k] either simply invokes [k ()],
     when not enabled, or else increases the indentation level and emits the
     [call] message, then invokes [k ()], then decreases the indentation
     level and either emits the [retn] or [rais] message, depending on

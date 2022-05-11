@@ -7,11 +7,11 @@
  (name NS)
  (public_name nonstdlib)
  (libraries containers containers-data core_kernel iter sexplib stdio zarith
-   trace)
+   dbg)
  (flags
   (:standard -w -no-cmx-file))
  (preprocess
-  (pps ppx_sledge ppx_trace))
+  (pps ppx_sledge ppx_dbg))
  (inline_tests))
 
 (include_subdirs unqualified)

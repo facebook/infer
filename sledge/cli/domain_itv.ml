@@ -144,7 +144,7 @@ let rec apron_texpr_of_llair_exp exp q =
       None
 
 let assign reg exp q =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ {%a}@\n%a := %a" pp q Llair.Reg.pp reg Llair.Exp.pp exp]
   ;
   let lval = apron_var_of_reg reg in
@@ -165,7 +165,7 @@ let assign reg exp q =
       Abstract1.assign_texpr man q lval (Texpr1.of_expr new_env e) None
   | _ -> q )
   |>
-  [%Trace.retn fun {pf} r -> pf "{%a}" pp r]
+  [%Dbg.retn fun {pf} r -> pf "{%a}" pp r]
 
 let resolve_int _ _ _ = []
 

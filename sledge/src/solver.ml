@@ -83,7 +83,7 @@ end = struct
       assert (Var.Set.disjoint us xs) ;
       assert (Var.Set.subset zs ~of_:(Var.Set.union us xs))
     with exc ->
-      [%Trace.info " %a" pp g] ;
+      [%Dbg.info " %a" pp g] ;
       raise exc
 
   let with_ ?us ?com ?min ?xs ?sub ?zs ?pgs g =
@@ -146,8 +146,8 @@ let fresh_var name vs zs ~wrt =
   (v, vs, zs, wrt)
 
 let difference x e f = Term.get_z (Context.normalize x (Term.sub e f))
-let excise (k : Trace.pf -> _) = [%Trace.infok k]
-let trace (k : Trace.pf -> _) = [%Trace.infok k]
+let excise (k : Dbg.pf -> _) = [%Dbg.infok k]
+let trace (k : Dbg.pf -> _) = [%Dbg.infok k]
 
 let excise_exists goal =
   trace (fun {pf} -> pf "excise_exists:@ %a" pp goal) ;
@@ -638,7 +638,7 @@ let excise_heap ({min; sub} as goal) =
 let pure_entails x q = Sh.is_empty q && Context.implies x (Sh.pure_approx q)
 
 let rec excise ({min; xs; sub; zs; pgs} as goal) =
-  [%Trace.info "@ %a" pp goal] ;
+  [%Dbg.info "@ %a" pp goal] ;
   Report.step_solver () ;
   if Sh.is_unsat min then Some (Sh.false_ (Var.Set.diff sub.us zs))
   else if pure_entails min.ctx sub then
@@ -646,14 +646,14 @@ let rec excise ({min; xs; sub; zs; pgs} as goal) =
   else if Sh.is_unsat sub then None
   else if pgs then
     goal |> with_ ~pgs:false |> excise_exists |> excise_heap >>= excise
-  else None $> fun _ -> [%Trace.info " fail@ %a" pp goal]
+  else None $> fun _ -> [%Dbg.info " fail@ %a" pp goal]
 
 let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
   let dnf_minuend = Sh.dnf minuend in
   let dnf_subtrahend = Sh.dnf subtrahend in
   let excise_subtrahend us min zs sub =
-    [%trace]
+    [%dbg]
       ~call:(fun {pf} -> pf "@ %a" Sh.pp sub)
       ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" Sh.pp))
     @@ fun () ->
@@ -662,7 +662,7 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
     excise (goal ~us ~com ~min ~xs ~sub ~zs ~pgs:true)
   in
   let from_minuend minuend remainders =
-    [%trace]
+    [%dbg]
       ~call:(fun {pf} -> pf "@ %a" Sh.pp minuend)
       ~retn:(fun {pf} ->
         pf "%a" (Option.pp "%a" (fun fs rs -> Sh.pp fs (Sh.orN rs))) )
@@ -685,7 +685,7 @@ let query_count = ref (-1)
 
 let infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option =
  fun minuend xs subtrahend ->
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} ->
       pf " %i@ @[<hv>%a@ \\- %a%a@]" !query_count Sh.pp minuend
         Var.Set.pp_xs xs Sh.pp subtrahend )

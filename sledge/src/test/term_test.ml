@@ -13,9 +13,9 @@ module F = Formula
 
 let%test_module _ =
   ( module struct
-    let () = Trace.init ~margin:68 ()
+    let () = Dbg.init ~margin:68 ()
 
-    (* let () = Trace.init ~margin:68 ~config:Trace.all () *)
+    (* let () = Dbg.init ~margin:68 ~config:Dbg.all () *)
 
     let pp = Format.printf "@\n%a@." T.pp
     let ppf = Format.printf "@\n%a@." F.pp
