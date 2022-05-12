@@ -235,6 +235,9 @@ type t =
   | WithBlockParameters of t * Block.t list
 [@@deriving compare, yojson_of]
 
+val base_of : t -> t
+(** if a procedure has been specialised, return the original one, otherwise itself *)
+
 val block_of_procname : t -> Block.t
 
 val equal : t -> t -> bool

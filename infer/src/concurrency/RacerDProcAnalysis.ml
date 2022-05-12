@@ -269,7 +269,7 @@ let set_constructor_attributes ({InterproceduralAnalysis.proc_desc} as interproc
 
 let set_initial_attributes ({InterproceduralAnalysis.proc_desc} as interproc) astate =
   let procname = Procdesc.get_proc_name proc_desc in
-  match procname with
+  match Procname.base_of procname with
   | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
       (* we are analyzing the class initializer, don't go through on-demand again *)
       astate

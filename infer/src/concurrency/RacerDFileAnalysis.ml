@@ -333,7 +333,7 @@ let report_thread_safety_violation ~make_description ~report_kind
 
 
 let report_unannotated_interface_violation reported_pname reported_access issue_log =
-  match reported_pname with
+  match Procname.base_of reported_pname with
   | Procname.Java java_pname ->
       let class_name = Procname.Java.get_class_name java_pname in
       let make_description _ _ _ _ =
@@ -498,7 +498,7 @@ let report_unsafe_access_objc_cpp accesses acc ({snapshot} as reported_access) =
 
 (** report hook dispatching to language specific functions *)
 let report_unsafe_access accesses acc ({procname} as reported_access) =
-  match (procname : Procname.t) with
+  match (Procname.base_of procname : Procname.t) with
   | Java _ | CSharp _ ->
       report_unsafe_access_java_csharp accesses acc reported_access
   | ObjC_Cpp _ ->
@@ -585,7 +585,7 @@ let should_report_on_proc file_exe_env proc_name =
   |> Option.exists ~f:(fun attrs ->
          let tenv = Exe_env.get_proc_tenv file_exe_env proc_name in
          let is_not_private = not ProcAttributes.(equal_access (get_access attrs) Private) in
-         match (proc_name : Procname.t) with
+         match (Procname.base_of proc_name : Procname.t) with
          | CSharp _ ->
              is_not_private
          | Java java_pname ->

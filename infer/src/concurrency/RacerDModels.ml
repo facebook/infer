@@ -600,7 +600,7 @@ let is_initializer tenv proc_name =
 
 
 let get_current_class_and_superclasses_satisfying_attr_check check tenv pname =
-  match pname with
+  match Procname.base_of pname with
   | Procname.Java java_pname ->
       let current_class = Procname.Java.get_class_type_name java_pname in
       let satisfying_classes =
