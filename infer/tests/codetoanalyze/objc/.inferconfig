@@ -21,7 +21,8 @@
           "kinds": ["SimpleSource"]
         },
         {"procedure": "AttributedStringProviderInputCreate", "kinds": ["InputCreate"]},
-        {"procedure": "StringProviderInputCreate", "kinds": ["InputCreate"]}
+        {"procedure": "StringProviderInputCreate", "kinds": ["InputCreate"]},
+        {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]}
     ],
     "pulse-taint-sinks": [
         { "procedure": "inferSensitiveSink" },
@@ -35,6 +36,9 @@
           "taint_target": ["ArgumentPositions", [2]] },
         { "procedure": "HandleIntent",
           "kinds": ["Handler"],
-          "taint_target": ["ArgumentPositions", [2]] }
+          "taint_target": ["ArgumentPositions", [2]] },
+        { "procedure": "VaultOpenAppleMapForAddress",
+          "kinds": ["Handler"],
+          "taint_target": ["ArgumentPositions", [0]] }
     ]
 }
