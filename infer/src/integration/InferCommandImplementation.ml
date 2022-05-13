@@ -60,27 +60,29 @@ let debug () =
               ~proc_cfg:procedures_cfg)
           () ) ;
     if Config.source_files then (
-      let filter = Lazy.force Filtering.source_files_filter in
-      L.result "%a"
-        (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
-           ~procedure_names:Config.source_files_procedure_names
-           ~freshly_captured:Config.source_files_freshly_captured )
-        () ;
-      if Config.source_files_cfg then (
-        let source_files = SourceFiles.get_all ~filter () in
-        List.iter source_files ~f:(fun source_file ->
-            (* create directory in captured/ *)
-            DB.Results_dir.init ~debug:true source_file ;
-            (* collect the CFGs for all the procedures in [source_file] *)
-            let proc_names = SourceFiles.proc_names_of_source source_file in
-            let cfgs = Procname.Hash.create (List.length proc_names) in
-            List.iter proc_names ~f:(fun proc_name ->
-                Procdesc.load proc_name
-                |> Option.iter ~f:(fun cfg -> Procname.Hash.add cfgs proc_name cfg) ) ;
-            (* emit the dot file in captured/... *)
-            DotCfg.emit_frontend_cfg source_file cfgs ) ;
-        L.result "CFGs written in %s/*/%s@." (ResultsDir.get_path Debug)
-          Config.dotty_frontend_output ) ) )
+      if Config.source_files_call_graph then SourceFileGraph.to_dotty "file-call-graph.dot"
+      else
+        let filter = Lazy.force Filtering.source_files_filter in
+        L.result "%a"
+          (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
+             ~procedure_names:Config.source_files_procedure_names
+             ~freshly_captured:Config.source_files_freshly_captured )
+          () ;
+        if Config.source_files_cfg then (
+          let source_files = SourceFiles.get_all ~filter () in
+          List.iter source_files ~f:(fun source_file ->
+              (* create directory in captured/ *)
+              DB.Results_dir.init ~debug:true source_file ;
+              (* collect the CFGs for all the procedures in [source_file] *)
+              let proc_names = SourceFiles.proc_names_of_source source_file in
+              let cfgs = Procname.Hash.create (List.length proc_names) in
+              List.iter proc_names ~f:(fun proc_name ->
+                  Procdesc.load proc_name
+                  |> Option.iter ~f:(fun cfg -> Procname.Hash.add cfgs proc_name cfg) ) ;
+              (* emit the dot file in captured/... *)
+              DotCfg.emit_frontend_cfg source_file cfgs ) ;
+          L.result "CFGs written in %s/*/%s@." (ResultsDir.get_path Debug)
+            Config.dotty_frontend_output ) ) )
 
 
 let explore () =

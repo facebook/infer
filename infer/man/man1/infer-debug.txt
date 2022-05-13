@@ -97,6 +97,13 @@ DEBUG SOURCE FILES
            Activates: Print source files discovered by infer (Conversely:
            --no-source-files)
 
+       --source-files-call-graph
+           Activates: Output a dotty file in
+           infer-out/captured/file-call-graph.dot. The graph is the
+           file-based syntactic call graph of all captured procedures (with
+           known translation units). (Conversely:
+           --no-source-files-call-graph)
+
        --source-files-cfg
            Activates: Output a dotty file in infer-out/captured for each
            source file in the output of --source-files (Conversely:

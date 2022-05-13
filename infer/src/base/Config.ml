@@ -2677,6 +2677,15 @@ and source_files =
     "Print source files discovered by infer"
 
 
+and source_files_call_graph =
+  CLOpt.mk_bool ~long:"source-files-call-graph"
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
+    (Printf.sprintf
+       "Output a dotty file in %s/file-call-graph.dot. The graph is the file-based syntactic call \
+        graph of all captured procedures (with known translation units). "
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
+
+
 and source_files_cfg =
   CLOpt.mk_bool ~long:"source-files-cfg"
     ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
@@ -3824,6 +3833,8 @@ and skip_translation_headers = RevList.to_list !skip_translation_headers
 and source_preview = !source_preview
 
 and source_files = !source_files
+
+and source_files_call_graph = !source_files_call_graph
 
 and source_files_cfg = !source_files_cfg
 
