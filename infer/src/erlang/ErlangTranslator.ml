@@ -20,6 +20,8 @@ let maps_get = Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~ar
 
 let lists_append2 = Procname.make_erlang ~module_name:"lists" ~function_name:"append" ~arity:2
 
+let lists_subtract = Procname.make_erlang ~module_name:"lists" ~function_name:"subtract" ~arity:2
+
 let lists_reverse = Procname.make_erlang ~module_name:"lists" ~function_name:"reverse" ~arity:1
 
 let erlang_send2 = Procname.make_erlang ~module_name:"erlang" ~function_name:"send" ~arity:2
@@ -653,6 +655,8 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       make_simple_eager_comparison Lt
   | ListAdd ->
       make_builtin_call lists_append2
+  | ListSub ->
+      make_builtin_call lists_subtract
   | Mul ->
       make_simple_eager_arith (Mult None)
   | Or ->
@@ -678,8 +682,6 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       Block.all env [block1; unbox_block1; block2; unbox_block2; op_block]
   | FDiv ->
       make_builtin_call (call_unsupported "float_div_op" 2)
-  | ListSub ->
-      make_builtin_call (call_unsupported "list_sub_op" 2)
 
 
 and lookup_module_for_unqualified (env : (_, _) Env.t) function_name arity =

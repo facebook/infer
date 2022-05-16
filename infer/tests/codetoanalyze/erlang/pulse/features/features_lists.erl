@@ -51,6 +51,10 @@
     test_listappend4_Ok/0,
     fn_test_listappend4_Bad/0,
     fn_test_listappend5_Bad/0,
+    fp_test_listsub1_Ok/0,
+    fp_test_listsub2_Ok/0,
+    test_listsub3_Bad/0,
+    test_listsub4_Bad/0,
     test_listforeach_returnvalue_Ok/0,
     test_listforeach_returnvalue_Bad/0
 ]).
@@ -376,6 +380,36 @@ fn_test_listappend4_Bad() ->
     L = lists:append([1, 2, 3, 4], [5]),
     case L of
         [1, 2, 3, 4, 5] -> warn(1);
+        _ -> ok
+    end.
+
+% Not yet supported
+fp_test_listsub1_Ok() ->
+    L = [1, 2, 3] -- [2],
+    case L of
+        [1, 3] -> ok;
+        _ -> warn(1)
+    end.
+
+% Not yet supported
+fp_test_listsub2_Ok() ->
+    L = lists:subtract([1, 2, 3], [2]),
+    case L of
+        [1, 3] -> ok;
+        _ -> warn(1)
+    end.
+
+test_listsub3_Bad() ->
+    L = [1, 2, 3] -- [2],
+    case L of
+        [1, 3] -> warn(1);
+        _ -> ok
+    end.
+
+test_listsub4_Bad() ->
+    L = lists:subtract([1, 2, 3], [2]),
+    case L of
+        [1, 3] -> warn(1);
         _ -> ok
     end.
 

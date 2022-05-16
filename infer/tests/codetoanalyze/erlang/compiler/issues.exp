@@ -17,6 +17,12 @@ otp_lists:test_sort1_Ok/0: ok
 otp_lists:test_sort2_Bad/0: case_clause
 otp_lists:test_sort3_Bad/0: case_clause
 otp_lists:test_sort4_Bad/0: case_clause
+otp_lists:test_sub1_Ok/0: ok
+otp_lists:test_sub2_Ok/0: ok
+otp_lists:test_sub3_Bad/0: case_clause
+otp_lists:test_sub4_Bad/0: case_clause
+otp_lists:test_sub5_Bad/0: case_clause
+otp_lists:test_sub6_Bad/0: case_clause
 
 ----- otp_maps -----
 otp_maps:test_filter1_Ok/0: ok
@@ -249,6 +255,8 @@ features_lists:fn_test_listadd4_Bad/0: function_clause
 features_lists:fn_test_listappend4_Bad/0: function_clause
 features_lists:fn_test_listappend5_Bad/0: badarg
 features_lists:fn_test_reverse4_Bad/0: function_clause
+features_lists:fp_test_listsub1_Ok/0: ok
+features_lists:fp_test_listsub2_Ok/0: ok
 features_lists:test_cons1_Bad/0: case_clause
 features_lists:test_cons1_Ok/0: ok
 features_lists:test_cons2_Bad/0: case_clause
@@ -281,6 +289,8 @@ features_lists:test_listappend3_Ok/0: ok
 features_lists:test_listappend4_Ok/0: ok
 features_lists:test_listforeach_returnvalue_Bad/0: function_clause
 features_lists:test_listforeach_returnvalue_Ok/0: ok
+features_lists:test_listsub3_Bad/0: function_clause
+features_lists:test_listsub4_Bad/0: function_clause
 features_lists:test_nil_Bad/0: case_clause
 features_lists:test_nil_Ok/0: ok
 features_lists:test_reverse0_Bad/0: function_clause

@@ -19,7 +19,13 @@
     test_partition2_Bad/0,
     test_partition3_Ok/0,
     test_partition4_Bad/0,
-    test_partition5_Bad/0
+    test_partition5_Bad/0,
+    test_sub1_Ok/0,
+    test_sub2_Ok/0,
+    test_sub3_Bad/0,
+    test_sub4_Bad/0,
+    test_sub5_Bad/0,
+    test_sub6_Bad/0
 ]).
 
 test_foreach_Ok() ->
@@ -91,3 +97,41 @@ test_partition4_Bad() ->
 test_partition5_Bad() ->
     {_, Y} = lists:partition(fun(_) -> true end, []),
     false = is_list(Y).
+
+test_sub1_Ok() ->
+    X = lists:subtract([], []),
+    case X of
+        [] -> nil;
+        [_ | _] -> cons
+    end.
+
+test_sub2_Ok() ->
+    X = [] -- [],
+    case X of
+        [] -> nil;
+        [_ | _] -> cons
+    end.
+
+test_sub3_Bad() ->
+    X = lists:subtract([], []),
+    case X of
+        [_ | _] -> cons
+    end.
+
+test_sub4_Bad() ->
+    X = [] -- [],
+    case X of
+        [_ | _] -> cons
+    end.
+
+test_sub5_Bad() ->
+    X = lists:subtract([1], []),
+    case X of
+        [] -> nil
+    end.
+
+test_sub6_Bad() ->
+    X = [1] -- [],
+    case X of
+        [] -> nil
+    end.
