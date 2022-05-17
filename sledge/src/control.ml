@@ -726,7 +726,7 @@ struct
         across several executions that share the same execution history. *)
     module Joinable = struct
       module T = struct
-        type t = D.t * Depths.t * (Hist.t[@ignore])
+        type t = {state: D.t; depths: Depths.t; history: Hist.t [@ignore]}
         [@@deriving compare, equal, sexp_of]
       end
 
@@ -750,8 +750,11 @@ struct
       let join m =
         let states, depths, hists, edges =
           M.fold m (D.Set.empty, Depths.empty, [], [])
-            ~f:(fun ~key:(q, d, h) ~data:e (qs, ds, hs, es) ->
-              (D.Set.add q qs, Depths.join d ds, h :: hs, List.append e es) )
+            ~f:(fun ~key ~data:e (qs, ds, hs, es) ->
+              ( D.Set.add key.state qs
+              , Depths.join key.depths ds
+              , key.history :: hs
+              , List.append e es ) )
         in
         (D.joinN states, depths, hists, edges)
     end
@@ -867,7 +870,7 @@ struct
                     in
                     Succs.add
                       ~key:(switches, ip, threads, goal)
-                      ~data:((state, depths, history), edge)
+                      ~data:(({state; depths; history} : Joinable.T.t), edge)
                       succs ) )
       in
       let found, hit_end =
