@@ -30,10 +30,10 @@ let hit_switch_bound n = switches := n
 
 let alarm_count = ref 0
 
-let alarm alrm =
+let alarm alrm ~dp_witness =
   Int.incr alarm_count ;
   Format.printf "@\n@[<v 2>%a@]@." Alarm.pp alrm ;
-  [%Dbg.printf "@\n@[<v 2>%a@]@." Alarm.pp_trace alrm] ;
+  [%Dbg.printf "@\n@[<v 2> %t@ %a@]@." dp_witness Alarm.pp_trace alrm] ;
   Stop.on_alarm ()
 
 let unknown_call call =
@@ -48,8 +48,8 @@ let unknown_call call =
         | _ -> () )
       call Llair.Term.pp call]
 
-let reached_goal goal =
-  [%Dbg.printf "@\n@[<v 2> %t@]@." goal] ;
+let reached_goal ~dp_goal ~dp_witness =
+  [%Dbg.printf "@\n@[<v 2> %t@ %t@]@." dp_witness dp_goal] ;
   Stop.on_reached_goal !steps ()
 
 let unimplemented feature fn =

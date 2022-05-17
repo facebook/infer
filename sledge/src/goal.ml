@@ -12,7 +12,7 @@ module type S = sig
   val status : t -> Llair.block option -> status
   val pp : t pp
   val reached : t -> bool
-  val after_call : Llair.Function.t -> t -> t
+  val after_call : Llair.Function.t -> t -> (Format.formatter -> unit) -> t
   val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit
 end
 
@@ -23,7 +23,7 @@ module Undirected = struct
   let status _ _ = ()
   let pp _ppf _ = ()
   let reached _ = false
-  let after_call _ _ = ()
+  let after_call _ _ _ = ()
   let initialize ~pgm:_ ~entry:_ _ = ()
 end
 
@@ -40,14 +40,17 @@ module Sparse_trace = struct
 
   let reached {cursor; trace} = Int.equal cursor (IArray.length trace)
 
-  let after_call fn ({cursor; trace} as goal) =
+  let after_call fn ({cursor; trace} as goal) dp_witness =
     if
       cursor < IArray.length trace
       && Llair.Function.equal fn (IArray.get trace cursor)
     then (
       let goal' = {goal with cursor= cursor + 1} in
       [%Dbg.info "updated goal: %a" pp goal'] ;
-      if reached goal' then Report.reached_goal (fun fs -> pp fs goal') ;
+      if reached goal' then
+        Report.reached_goal
+          ~dp_goal:(fun fs -> Format.fprintf fs "%a" pp goal')
+          ~dp_witness ;
       goal' )
     else goal
 

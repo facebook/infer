@@ -567,6 +567,41 @@ struct
         | `Both (d1, d2) -> Some (Int.max d1 d2) )
   end
 
+  module Hist = struct
+    (** a history is a current instruction pointer and some list of
+        predecessors. [preds] are empty iff this is an entrypoint. *)
+    type t = {curr: Llair.IP.t; preds: t iarray} [@@deriving sexp_of]
+
+    let init ip = {curr= ip; preds= IArray.empty}
+    let extend curr preds = {curr; preds= IArray.of_list preds}
+
+    let dump h fs =
+      (* todo: output nicely-formatted DAG; just printing a single
+         arbitrarily-chosen witness path from the root for now. *)
+      let path =
+        let rec path_impl h =
+          h.curr
+          ::
+          ( if IArray.is_empty h.preds then []
+          else path_impl (IArray.get h.preds 0) )
+        in
+        path_impl >> List.rev
+      in
+      let pp_ip fs ip =
+        let open Llair in
+        let loc =
+          let+ inst = IP.inst ip in
+          Inst.loc inst
+        in
+        Format.fprintf fs "%a%a%a" Function.pp (IP.block ip).parent.name
+          IP.pp ip
+          (Option.pp " (%a)" Loc.pp)
+          loc
+      in
+      Format.fprintf fs "Witness Trace:@\n@[<v 2>%a@]" (List.pp "@ " pp_ip)
+        (path h)
+  end
+
   type switches = int [@@deriving compare, equal, sexp_of]
 
   (** Abstract memory, control, and history state, with a slot used for the
@@ -581,7 +616,8 @@ struct
     ; threads: Threads.t  (** scheduling state of the threads *)
     ; switches: switches  (** count of preceding context switches *)
     ; depths: Depths.t  (** count of retreating edge crossings *)
-    ; goal: Goal.t  (** goal for symbolic execution exploration *) }
+    ; goal: Goal.t  (** goal for symbolic execution exploration *)
+    ; history: Hist.t  (** DAG history of executions to this point *) }
   [@@deriving sexp_of]
 
   (** An abstract machine state consists of the instruction pointer of the
@@ -690,7 +726,8 @@ struct
         across several executions that share the same execution history. *)
     module Joinable = struct
       module T = struct
-        type t = D.t * Depths.t [@@deriving compare, equal, sexp_of]
+        type t = D.t * Depths.t * (Hist.t[@ignore])
+        [@@deriving compare, equal, sexp_of]
       end
 
       module M = Map.Make (T)
@@ -711,12 +748,12 @@ struct
             M.add_multi ~key ~data m )
 
       let join m =
-        let states, depths, edges =
-          M.fold m (D.Set.empty, Depths.empty, [])
-            ~f:(fun ~key:(q, d) ~data:e (qs, ds, es) ->
-              (D.Set.add q qs, Depths.join d ds, List.append e es) )
+        let states, depths, hists, edges =
+          M.fold m (D.Set.empty, Depths.empty, [], [])
+            ~f:(fun ~key:(q, d, h) ~data:e (qs, ds, hs, es) ->
+              (D.Set.add q qs, Depths.join d ds, h :: hs, List.append e es) )
         in
-        (D.joinN states, depths, edges)
+        (D.joinN states, depths, hists, edges)
     end
 
     (** Sequential states indexed by concurrent states. When sequential
@@ -772,8 +809,9 @@ struct
       let depths = Depths.empty in
       let queue = Queue.create () in
       let cursor = Cursor.empty in
+      let history = Hist.init ip in
       enqueue depth
-        {ctrl= edge; state; threads; switches; depths; goal}
+        {ctrl= edge; state; threads; switches; depths; goal; history}
         (queue, cursor)
 
     let add ~retreating ({ctrl= edge; depths} as elt) wl =
@@ -816,7 +854,9 @@ struct
       let* ({threads} as top), elts, queue = Queue.top queue in
       let succs =
         Iter.fold elts Succs.empty ~f:(fun incoming succs ->
-            let {ctrl= {edge}; state; switches; depths; goal} = incoming in
+            let {ctrl= {edge}; state; switches; depths; goal; history} =
+              incoming
+            in
             let incoming_tid = Thread.id edge.dst in
             Threads.fold threads succs ~f:(fun active succs ->
                 match active with
@@ -827,7 +867,7 @@ struct
                     in
                     Succs.add
                       ~key:(switches, ip, threads, goal)
-                      ~data:((state, depths), edge)
+                      ~data:((state, depths, history), edge)
                       succs ) )
       in
       let found, hit_end =
@@ -858,14 +898,15 @@ struct
           Report.hit_switch_bound Config.switch_bound ;
           dequeue (queue, cursor)
       | Some ((switches, ip, threads, goal), next_states, cursor) ->
-          let state, depths, edges = Joinable.join next_states in
+          let state, depths, histories, edges = Joinable.join next_states in
+          let history = Hist.extend ip.ip histories in
           [%Dbg.info
             " %i,%i: %a <-t%i- {@[%a@]}%a" switches top.ctrl.depth IP.pp ip
               ip.tid
               (List.pp " ∨@ " Edge.pp)
               edges pp_queue queue] ;
           Some
-            ( {ctrl= ip; state; threads; switches; depths; goal}
+            ( {ctrl= ip; state; threads; switches; depths; goal; history}
             , (queue, cursor) )
       | None -> dequeue (queue, cursor)
 
@@ -897,7 +938,8 @@ struct
     let state = Option.fold ~f:(D.exec_kill tid) areturn state in
     exec_jump return {ams with state} wl
 
-  let exec_call globals call ({ctrl= {stk; tid}; state} as ams) wl =
+  let exec_call globals call ({ctrl= {stk; tid}; state; history} as ams) wl
+      =
     let Llair.{callee; actuals; areturn; return; recursive} = call in
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Dbg.call fun {pf} ->
@@ -905,7 +947,7 @@ struct
         Llair.Func.pp_call call Llair.Function.pp return.dst.parent.name
         D.pp state]
     ;
-    let goal = Goal.after_call name ams.goal in
+    let goal = Goal.after_call name ams.goal (Hist.dump history) in
     let dnf_states =
       if Config.function_summaries then D.dnf state else D.Set.of_ state
     in
@@ -1111,7 +1153,9 @@ struct
     | Return {exp} -> exec_return exp ams wl
     | Throw {exc} -> exec_throw exc ams wl
     | Abort {loc} ->
-        Report.alarm (Alarm.v Abort loc Llair.Term.pp term D.pp state) ;
+        Report.alarm
+          (Alarm.v Abort loc Llair.Term.pp term D.pp state)
+          ~dp_witness:(Hist.dump ams.history) ;
         wl
     | Unreachable -> wl
 
@@ -1131,7 +1175,7 @@ struct
               Work.add ~retreating:false {ams with ctrl= edge; state} wl
             else exec_ip pgm {ams with ctrl= {ams.ctrl with ip}; state} wl
         | Error alarm ->
-            Report.alarm alarm ;
+            Report.alarm alarm ~dp_witness:(Hist.dump ams.history) ;
             wl )
     | None ->
         [%Dbg.info
