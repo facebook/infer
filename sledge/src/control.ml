@@ -598,7 +598,7 @@ struct
           (Option.pp " (%a)" Loc.pp)
           loc
       in
-      Format.fprintf fs "Witness Trace:@\n@[<v 2>%a@]" (List.pp "@ " pp_ip)
+      Format.fprintf fs "@[<v 2>Witness Trace:@ %a@]" (List.pp "@ " pp_ip)
         (path h)
   end
 
