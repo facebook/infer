@@ -50,7 +50,7 @@ let unknown_call call =
 
 let reached_goal ~dp_goal ~dp_witness =
   [%Dbg.printf "@\n@[<v 2> %t@ %t@]@." dp_witness dp_goal] ;
-  Stop.on_reached_goal !steps ()
+  Stop.on_reached_goal ~dp_witness !steps ()
 
 let unimplemented feature fn =
   let open Llair in

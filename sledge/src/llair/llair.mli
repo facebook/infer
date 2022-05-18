@@ -263,6 +263,7 @@ module IP : sig
   val mk : block -> t
   val block : t -> block
   val inst : t -> inst option
+  val loc : t -> Loc.t
   val succ : t -> t
   val is_schedule_point : t -> bool
 

@@ -19,10 +19,8 @@ module type S = sig
   val reached : t -> bool
   (** true iff the goal has been reached and there is no more work to do *)
 
-  val after_call : Llair.Function.t -> t -> (Format.formatter -> unit) -> t
-  (** update the goal, having called the given Llair function. if the goal
-      is reached, then invoke the given callback to dump the witnessing
-      execution trace *)
+  val update_after_call : Llair.Function.t -> t -> t
+  (** update the goal, having called the given Llair function. *)
 
   val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit
   (** perform any upfront metadata computation and decorate [pgm] with it *)

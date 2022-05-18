@@ -589,14 +589,8 @@ struct
       in
       let pp_ip fs ip =
         let open Llair in
-        let loc =
-          let+ inst = IP.inst ip in
-          Inst.loc inst
-        in
         Format.fprintf fs "%a%a%a" Function.pp (IP.block ip).parent.name
-          IP.pp ip
-          (Option.pp " (%a)" Loc.pp)
-          loc
+          IP.pp ip Loc.pp (IP.loc ip)
       in
       Format.fprintf fs "@[<v 2>Witness Trace:@ %a@]" (List.pp "@ " pp_ip)
         (path h)
@@ -950,7 +944,12 @@ struct
         Llair.Func.pp_call call Llair.Function.pp return.dst.parent.name
         D.pp state]
     ;
-    let goal = Goal.after_call name ams.goal (Hist.dump history) in
+    let ip = Llair.IP.mk entry in
+    let goal = Goal.update_after_call name ams.goal in
+    if goal != ams.goal && Goal.reached goal then
+      Report.reached_goal
+        ~dp_goal:(fun fs -> Goal.pp fs goal)
+        ~dp_witness:(Hist.dump (Hist.extend ip [history])) ;
     let dnf_states =
       if Config.function_summaries then D.dnf state else D.Set.of_ state
     in
@@ -969,7 +968,6 @@ struct
             let state, from_call =
               domain_call ~summaries:Config.function_summaries state
             in
-            let ip = Llair.IP.mk entry in
             let stk = Stack.push_call call from_call stk in
             let src = Llair.IP.block ams.ctrl.ip in
             let edge = {dst= Runnable {ip; stk; tid}; src} in

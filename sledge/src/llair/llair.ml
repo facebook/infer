@@ -558,6 +558,11 @@ module IP = struct
 
   let block ip = ip.block
 
+  let loc ip =
+    match inst ip with
+    | Some i -> Inst.loc i
+    | None -> Term.loc (block ip).term
+
   let is_schedule_point ip =
     if !cct_schedule_points then
       match inst ip with
