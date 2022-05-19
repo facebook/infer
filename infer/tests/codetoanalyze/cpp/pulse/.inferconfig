@@ -44,6 +44,10 @@
       "procedure": "basics::Obj::taint_arg_source",
       "kinds": ["SimpleSource"],
        "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "procedure": "getenv",
+      "kinds": ["SimpleSource"]
     }
     ],
   "pulse-taint-sinks": [

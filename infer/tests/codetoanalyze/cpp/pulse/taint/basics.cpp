@@ -92,6 +92,11 @@ void string_source_bad(Obj obj) {
   obj.string_sink(source);
 }
 
+void getenv_source_bad(Obj obj) {
+  std::string source = std::getenv("var");
+  obj.string_sink(source);
+}
+
 void via_field_bad1_FN() {
   Obj* obj = new Obj();
   obj->field1 = *template_source<std::string>();
