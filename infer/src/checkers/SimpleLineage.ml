@@ -48,6 +48,8 @@ module LineageGraph = struct
         | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
         | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
         | Summary  (** Summarizes the effect of a procedure call *)
+        | DynamicCallFunction
+        | DynamicCallModule
       [@@deriving compare, sexp, variants]
     end
 
@@ -108,6 +110,10 @@ module LineageGraph = struct
         Format.fprintf fmt "Direct"
     | Summary ->
         Format.fprintf fmt "Summary"
+    | DynamicCallFunction ->
+        Format.fprintf fmt "DynamicCallFunction"
+    | DynamicCallModule ->
+        Format.fprintf fmt "DynamicCallModule"
 
 
   let pp_flow fmt {source; target; kind} =
@@ -188,7 +194,7 @@ module LineageGraph = struct
 
       type node = {node: _node} [@@deriving yojson_of]
 
-      type edge_type = Capture | Copy | Derive
+      type edge_type = Capture | Copy | Derive | DynamicCallFunction | DynamicCallModule
 
       let yojson_of_edge_type typ =
         match typ with
@@ -198,6 +204,10 @@ module LineageGraph = struct
             `String "Copy"
         | Derive ->
             `String "Derive"
+        | DynamicCallFunction ->
+            `String "DynamicCallFunction"
+        | DynamicCallModule ->
+            `String "DynamicCallModule"
 
 
       type _edge = {source: node_id; target: node_id; edge_type: edge_type; location: location_id}
@@ -436,7 +446,17 @@ module LineageGraph = struct
       let kind_id = Id.of_kind kind in
       let edge_id = Id.of_list [source_id; target_id; kind_id] in
       let edge_type =
-        match kind with Capture -> Json.Capture | Direct -> Json.Copy | Summary -> Json.Derive
+        match kind with
+        | Capture ->
+            Json.Capture
+        | Direct ->
+            Json.Copy
+        | Summary ->
+            Json.Derive
+        | DynamicCallFunction ->
+            Json.DynamicCallFunction
+        | DynamicCallModule ->
+            Json.DynamicCallModule
       in
       let location_id =
         let procname = Procdesc.get_proc_name proc_desc in
@@ -884,7 +904,32 @@ module TransferFunctions = struct
     ((last_writes, has_unsupported_features), local_edges)
 
 
-  let custom_call_models =
+  let generic_call_model astate node analyze_dependency ret_id procname args =
+    astate |> record_supported procname |> add_arg_flows node procname args
+    |> add_ret_flows procname ret_id node
+    |> add_summary_flows (analyze_dependency procname) args ret_id node
+
+
+  module CustomModel = struct
+    let call_unqualified astate node analyze_dependency ret_id procname args =
+      match args with
+      | fun_ :: _ ->
+          generic_call_model astate node analyze_dependency ret_id procname args
+          |> update_write DynamicCallFunction (Var.of_id ret_id, node) (free_locals_of_exp fun_)
+      | _ ->
+          L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
+
+
+    let call_qualified astate node analyze_dependency ret_id procname args =
+      match args with
+      | module_ :: fun_ :: _ ->
+          generic_call_model astate node analyze_dependency ret_id procname args
+          |> update_write DynamicCallFunction (Var.of_id ret_id, node) (free_locals_of_exp fun_)
+          |> update_write DynamicCallModule (Var.of_id ret_id, node) (free_locals_of_exp module_)
+      | _ ->
+          L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
+
+
     let make_atom astate node _analyze_dependency ret_id _procname (args : Exp.t list) =
       let atom_name =
         match args with
@@ -895,21 +940,29 @@ module TransferFunctions = struct
       in
       let sources = Local.Set.singleton (ConstantAtom atom_name) in
       update_write LineageGraph.FlowKind.Direct (Var.of_id ret_id, node) sources astate
-    in
-    let pairs = [(BuiltinDecl.__erlang_make_atom, make_atom)] in
-    Stdlib.List.to_seq pairs |> Procname.Map.of_seq
 
 
-  let generic_call_model astate node analyze_dependency ret_id procname args =
-    astate |> record_supported procname |> add_arg_flows node procname args
-    |> add_ret_flows procname ret_id node
-    |> add_summary_flows (analyze_dependency procname) args ret_id node
+    let custom_call_models =
+      let apply arity =
+        Procname.make_erlang ~module_name:ErlangTypeName.erlang_namespace ~function_name:"apply"
+          ~arity
+      in
+      let pairs =
+        [ (BuiltinDecl.__erlang_make_atom, make_atom)
+        ; (apply 2, call_unqualified)
+        ; (apply 3, call_qualified) ]
+      in
+      Stdlib.List.to_seq pairs |> Procname.Map.of_seq
 
+
+    let get name =
+      if Procname.is_erlang_call_unqualified name then Some call_unqualified
+      else if Procname.is_erlang_call_qualified name then Some call_qualified
+      else Procname.Map.find_opt name custom_call_models
+  end
 
   let exec_named_call (astate : Domain.t) node analyze_dependency ret_id name args : Domain.t =
-    let model =
-      Procname.Map.find_opt name custom_call_models |> Option.value ~default:generic_call_model
-    in
+    let model = CustomModel.get name |> Option.value ~default:generic_call_model in
     model astate node analyze_dependency ret_id name args
 
 

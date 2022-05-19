@@ -513,16 +513,30 @@ module Erlang = struct
 
   let set_arity arity name = {name with arity}
 
+  let call_unqualified_function_name = "__call_unqualified"
+
+  let call_qualified_function_name = "__call_qualified"
+
   let call_unqualified fun_arity =
     { module_name= ErlangTypeName.infer_erlang_namespace
-    ; function_name= "__call_unqualified"
+    ; function_name= call_unqualified_function_name
     ; arity= fun_arity + 1 }
+
+
+  let is_call_unqualified {module_name; function_name; _} =
+    String.equal module_name ErlangTypeName.infer_erlang_namespace
+    && String.equal function_name call_unqualified_function_name
 
 
   let call_qualified fun_arity =
     { module_name= ErlangTypeName.infer_erlang_namespace
-    ; function_name= "__call_qualified"
+    ; function_name= call_qualified_function_name
     ; arity= fun_arity + 2 }
+
+
+  let is_call_qualified {module_name; function_name; _} =
+    String.equal module_name ErlangTypeName.infer_erlang_namespace
+    && String.equal function_name call_qualified_function_name
 end
 
 module Block = struct
@@ -605,6 +619,14 @@ let is_erlang_unsupported name =
       String.equal module_name ErlangTypeName.unsupported
   | _ ->
       false
+
+
+let is_erlang_call_unqualified name =
+  match name with Erlang erlang_name -> Erlang.is_call_unqualified erlang_name | _ -> false
+
+
+let is_erlang_call_qualified name =
+  match name with Erlang erlang_name -> Erlang.is_call_qualified erlang_name | _ -> false
 
 
 let is_erlang = function Erlang _ -> true | _ -> false

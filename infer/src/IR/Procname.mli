@@ -464,4 +464,8 @@ val erlang_call_qualified : arity:int -> t
 (** Same as [erlang_call_unqualified] but is expected to have an erlang module name as the first
     parameter, and the function name as second. [arity] is (still) the erlang arity of the function. *)
 
+val is_erlang_call_unqualified : t -> bool
+
+val is_erlang_call_qualified : t -> bool
+
 module Normalizer : HashNormalizer.S with type t = t
