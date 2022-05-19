@@ -20,6 +20,9 @@
           "method_names": ["source"],
           "kinds": ["SimpleSource"]
         },
+        { "class_names": ["MailboxTaint"],
+          "method_names": ["source"],
+          "kinds": ["SimpleSource"] },
         {"procedure": "AttributedStringProviderInputCreate", "kinds": ["InputCreate"]},
         {"procedure": "StringProviderInputCreate", "kinds": ["InputCreate"]},
         {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]}
@@ -39,6 +42,10 @@
           "taint_target": ["ArgumentPositions", [2]] },
         { "procedure": "VaultOpenAppleMapForAddress",
           "kinds": ["Handler"],
+          "taint_target": ["ArgumentPositions", [0]] },
+        { "class_names": ["MailboxTaint"],
+          "method_names": ["sink:"],
+          "kinds": ["SimpleSink"],
           "taint_target": ["ArgumentPositions", [0]] }
     ]
 }
