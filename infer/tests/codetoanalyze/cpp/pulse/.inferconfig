@@ -74,11 +74,6 @@
       "procedure": "basics::template_sink",
       "kinds": ["SimpleSink"],
       "taint_target": ["ArgumentPositions", [0]]
-    },
-    {
-      "procedure": "basics::Obj::string_sink",
-      "kinds": ["SimpleSink"],
-      "taint_target": ["ArgumentPositions", [1]]
     }
   ],
   "pulse-taint-sanitizers": [
