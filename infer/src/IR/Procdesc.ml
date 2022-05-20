@@ -888,6 +888,12 @@ let is_specialized pdesc =
   attributes.ProcAttributes.is_specialized
 
 
+let is_kotlin pdesc =
+  let attributes = get_attributes pdesc in
+  let source = attributes.ProcAttributes.translation_unit in
+  SourceFile.has_extension ~ext:Config.kotlin_source_extension source
+
+
 (* true if pvar is a captured variable of a cpp lambda or objc block *)
 let is_captured_pvar procdesc pvar =
   let procname = get_proc_name procdesc in
