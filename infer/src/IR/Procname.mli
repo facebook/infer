@@ -255,7 +255,7 @@ val replace_parameters : Parameter.t list -> t -> t
 
 val parameter_of_name : t -> Typ.Name.t -> Parameter.t
 
-val is_copy_assignment : t -> bool [@@warning "-32"]
+val is_copy_assignment : t -> bool
 
 val is_copy_ctor : t -> bool
 

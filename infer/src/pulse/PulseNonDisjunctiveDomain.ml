@@ -26,7 +26,19 @@ module BaseMemory = PulseBaseMemory
 
     Then we compare the snapshot heap with the current heap (see {!PulseNonDisjunctiveOperations}.) *)
 
-type copy_spec_t = Copied of {typ: Typ.t; location: Location.t; heap: BaseMemory.t} | Modified
+module CopyOrigin = struct
+  type t = CopyCtor | CopyAssignment [@@deriving compare, equal]
+
+  let pp fmt = function
+    | CopyCtor ->
+        F.fprintf fmt "copied"
+    | CopyAssignment ->
+        F.fprintf fmt "copy assigned"
+end
+
+type copy_spec_t =
+  | Copied of {typ: Typ.t; location: Location.t; heap: BaseMemory.t; from: CopyOrigin.t}
+  | Modified
 [@@deriving equal]
 
 module CopySpec = struct
@@ -49,9 +61,9 @@ module CopySpec = struct
   let pp_typ fmt typ = Format.fprintf fmt "value of type %a" (Typ.pp Pp.text) typ
 
   let pp fmt = function
-    | Copied {typ; heap; location} ->
-        Format.fprintf fmt " copied (%a) at %a with heap= %a" pp_typ typ Location.pp location
-          BaseMemory.pp heap
+    | Copied {typ; heap; location; from} ->
+        Format.fprintf fmt " %a (%a) at %a with heap= %a" CopyOrigin.pp from pp_typ typ Location.pp
+          location BaseMemory.pp heap
     | Modified ->
         Format.fprintf fmt "modified"
 end
@@ -146,9 +158,9 @@ let get_copied {copy_map; captured} =
       match copy_spec with
       | Modified ->
           acc
-      | Copied {location; typ= copied_typ} ->
+      | Copied {location; typ= copied_typ; from} ->
           if Var.Set.mem copied_var modified || is_captured copied_var then acc
-          else (copied_var, copied_typ, location) :: acc )
+          else (copied_var, copied_typ, location, from) :: acc )
     copy_map []
 
 

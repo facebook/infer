@@ -70,7 +70,11 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t }
-  | UnnecessaryCopy of {variable: Var.t; typ: Typ.t; location: Location.t}
+  | UnnecessaryCopy of
+      { variable: Var.t
+      ; typ: Typ.t
+      ; location: Location.t
+      ; from: PulseNonDisjunctiveDomain.CopyOrigin.t }
 [@@deriving equal]
 
 val aborts_execution : t -> bool

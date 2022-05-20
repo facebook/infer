@@ -8,7 +8,15 @@
 open! IStd
 module BaseMemory = PulseBaseMemory
 
-type copy_spec_t = Copied of {typ: Typ.t; location: Location.t; heap: BaseMemory.t} | Modified
+module CopyOrigin : sig
+  type t = CopyCtor | CopyAssignment [@@deriving compare, equal]
+
+  val pp : Formatter.t -> t -> unit
+end
+
+type copy_spec_t =
+  | Copied of {typ: Typ.t; location: Location.t; heap: BaseMemory.t; from: CopyOrigin.t}
+  | Modified
 
 include AbstractDomain.WithBottom
 
@@ -23,7 +31,7 @@ val mark_copy_as_modified :
   -> t
   -> t
 
-val get_copied : t -> (Var.t * Typ.t * Location.t) list
+val get_copied : t -> (Var.t * Typ.t * Location.t * CopyOrigin.t) list
 
 val is_checked_via_dtor : Var.t -> t -> bool
 

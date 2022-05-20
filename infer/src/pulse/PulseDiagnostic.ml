@@ -64,7 +64,11 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t }
-  | UnnecessaryCopy of {variable: Var.t; typ: Typ.t; location: Location.t}
+  | UnnecessaryCopy of
+      { variable: Var.t
+      ; typ: Typ.t
+      ; location: Location.t
+      ; from: PulseNonDisjunctiveDomain.CopyOrigin.t }
 [@@deriving equal]
 
 let get_location = function
@@ -337,12 +341,23 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Taint.pp sink
-  | UnnecessaryCopy {variable; typ; location} ->
+  | UnnecessaryCopy {variable; typ; location; from} ->
+      let suppression_msg =
+        "If this copy was intentional, consider adding the word `copy` into the variable name to \
+         suppress this warning"
+      in
+      let suggestion_msg =
+        match from with
+        | PulseNonDisjunctiveDomain.CopyOrigin.CopyCtor ->
+            "try using a reference `&`"
+        | PulseNonDisjunctiveDomain.CopyOrigin.CopyAssignment ->
+            "try getting a reference to it or move it if possible"
+      in
       F.asprintf
-        "copied variable `%a` with type `%a` is not modified after it is copied on %a. Consider \
-         using a reference `&` instead to avoid the copy. If this copy was intentional, consider \
-         adding the word `copy` into the variable name to suppress this warning."
-        Var.pp variable (Typ.pp_full Pp.text) typ Location.pp_line location
+        "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid the \
+         copy, %s. %s."
+        PulseNonDisjunctiveDomain.CopyOrigin.pp from Var.pp variable (Typ.pp_full Pp.text) typ
+        Location.pp_line location suggestion_msg suppression_msg
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -495,9 +510,11 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
-  | UnnecessaryCopy {location; _} ->
+  | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
-      [Errlog.make_trace_element nesting location "copied here" []]
+      [ Errlog.make_trace_element nesting location
+          (F.asprintf "%a here" PulseNonDisjunctiveDomain.CopyOrigin.pp from)
+          [] ]
 
 
 let get_issue_type ~latent issue_type =
@@ -516,8 +533,10 @@ let get_issue_type ~latent issue_type =
       IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
-  | UnnecessaryCopy _, false ->
+  | UnnecessaryCopy {from= PulseNonDisjunctiveDomain.CopyOrigin.CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
+  | UnnecessaryCopy {from= PulseNonDisjunctiveDomain.CopyOrigin.CopyAssignment}, false ->
+      IssueType.unnecessary_copy_assignment_pulse
   | ( ( MemoryLeak _
       | ResourceLeak _
       | RetainCycle _

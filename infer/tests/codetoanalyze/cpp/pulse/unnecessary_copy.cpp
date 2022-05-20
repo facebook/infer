@@ -307,3 +307,20 @@ void constructor_bad() {
 // We can't detect this due to aliasing problem when we analyze the source code
 // of shared ptr copy ctor
 void shared_ptr_bad_FN(std::shared_ptr<Arr> source) { auto c = source; }
+
+void copy_assignment_bad(std::set<int> source) {
+  std::set<int> init_set; // default constructor is called
+  init_set = source; // copy assignment operator is called
+}
+
+void copy_assignment_ok(std::set<int> source) {
+  std::set<int> init_set; // default constructor is called
+  init_set = source; // copy assignment operator is called
+  source.insert(1); // source modified
+}
+
+void move_assignment_ok(std::set<int> source) {
+  std::set<int> init_set; // default constructor is called
+  init_set =
+      std::move(source); // move assignment operator is called, no copy created
+}

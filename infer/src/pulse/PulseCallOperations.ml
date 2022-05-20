@@ -54,8 +54,8 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         |> AddressAttributes.add_attrs actual (Attributes.singleton (UnknownEffect (reason, hist)))
       in
       if
-        Option.value_map callee_pname_opt ~default:false ~f:(fun pname ->
-            Procname.is_constructor pname )
+        Option.value_map callee_pname_opt ~default:false ~f:(fun p ->
+            Procname.is_constructor p || Procname.is_copy_assignment p )
       then astate
       else
         (* record the [WrittenTo] attribute for all reachable values
