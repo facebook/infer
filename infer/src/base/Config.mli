@@ -689,6 +689,8 @@ val source_files : bool
 
 val source_files_call_graph : bool
 
+val source_files_call_graph_partition : int option
+
 val source_files_cfg : bool
 
 val source_files_filter : string option

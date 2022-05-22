@@ -134,6 +134,77 @@ let to_dotty g filename =
   Out_channel.with_file (Config.results_dir ^/ filename) ~f:(fun out -> Dot.output_graph out g)
 
 
+module Dfs = Graph.Traverse.Dfs (G)
+
+module Dagify = struct
+  (** given a non-empty list of edges representing the reverse of a path with a cycle, where the
+      join node is the destination of the first edge, return a minimal edge inside the cycle. *)
+  let find_min_edge =
+    let min_edge e e' = if G.E.compare e e' <= 0 then e else e' in
+    (* [v] is the joint point, [e] is the best edge found so far *)
+    let rec find_edge v e = function
+      | [] ->
+          e
+      | e' :: _ when G.Vertex.equal v (G.E.src e') ->
+          (* we found the origin of the cycle *)
+          min_edge e e'
+      | e' :: rest ->
+          find_edge v (min_edge e e') rest
+    in
+    function [] -> assert false | e :: rest -> find_edge (G.E.dst e) e rest
+
+
+  (** [finished] is a hashset of nodes known not to participate in cycles; [path] is a (reversed)
+      path of edges; [nodes_in_path] is the set of source nodes in [path] ; [v] is the node to
+      explore in DFS fashion *)
+  let rec find_cycle_min_edge g finished path nodes_in_path v =
+    if SourceFile.Hash.mem finished v then None
+    else if SourceFile.Set.mem v nodes_in_path then Some (find_min_edge path)
+    else
+      let nodes_in_path' = SourceFile.Set.add v nodes_in_path in
+      let res =
+        G.succ_e g v
+        |> List.find_map ~f:(fun e' ->
+               let v' = G.E.dst e' in
+               let path' = e' :: path in
+               find_cycle_min_edge g finished path' nodes_in_path' v' )
+      in
+      if Option.is_none res then SourceFile.Hash.add finished v () ;
+      res
+
+
+  exception CycleFound of G.E.t
+
+  let make_acyclic g =
+    let finished = SourceFile.Hash.create (G.nb_vertex g) in
+    (* given a node, find a cycle and return minimum edge in it, or mark all reachable nodes as [finished] *)
+    let start_dfs v =
+      if SourceFile.Hash.mem finished v then ()
+      else
+        find_cycle_min_edge g finished [] SourceFile.Set.empty v
+        |> Option.iter ~f:(fun edge -> raise (CycleFound edge))
+    in
+    let rec make_acyclic_inner () =
+      try G.iter_vertex start_dfs g
+      with CycleFound edge ->
+        if Config.debug_mode then assert (Dfs.has_cycle g) ;
+        (* we found a cycle, break it and restart dfs modulo [finished] nodes *)
+        L.debug Capture Medium "Found back edge, src=%a, dst=%a@, weight=%d." SourceFile.pp
+          (G.E.src edge) SourceFile.pp (G.E.dst edge) (G.E.label edge) ;
+        G.remove_edge_e g edge ;
+        make_acyclic_inner ()
+    in
+    make_acyclic_inner () ;
+    if Config.debug_mode then (
+      assert (not (Dfs.has_cycle g)) ;
+      to_dotty g "file-call-graph-dag.dot" )
+end
+
+let partition_source_file_call_graph ~n_workers:_ =
+  let g = G.load_graph () in
+  Dagify.make_acyclic g
+
+
 let to_dotty filename =
   let g = G.load_graph () in
   to_dotty g filename

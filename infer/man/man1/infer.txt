@@ -1425,6 +1425,13 @@ OPTIONS
            known translation units). (Conversely:
            --no-source-files-call-graph)           See also infer-debug(1).
 
+       --source-files-call-graph-partition int
+           The number of partitions to divide the set of captured source
+           files, using static call graph information. The generated file
+           lists are found under infer-out/captured/workerXX.idx. Not setting
+           this option skips partitioning. This is used for distributed
+           analysis.           See also infer-debug(1).
+
        --source-files-cfg
            Activates: Output a dotty file in infer-out/captured for each
            source file in the output of --source-files (Conversely:

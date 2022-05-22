@@ -2686,6 +2686,16 @@ and source_files_call_graph =
        (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
 
 
+and source_files_call_graph_partition =
+  CLOpt.mk_int_opt ~long:"source-files-call-graph-partition"
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
+    (Printf.sprintf
+       "The number of partitions to divide the set of captured source files, using static call \
+        graph information. The generated file lists are found under %s/workerXX.idx. Not setting \
+        this option skips partitioning. This is used for distributed analysis."
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
+
+
 and source_files_cfg =
   CLOpt.mk_bool ~long:"source-files-cfg"
     ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
@@ -3835,6 +3845,8 @@ and source_preview = !source_preview
 and source_files = !source_files
 
 and source_files_call_graph = !source_files_call_graph
+
+and source_files_call_graph_partition = !source_files_call_graph_partition
 
 and source_files_cfg = !source_files_cfg
 

@@ -61,6 +61,9 @@ let debug () =
           () ) ;
     if Config.source_files then (
       if Config.source_files_call_graph then SourceFileGraph.to_dotty "file-call-graph.dot"
+      else if Option.is_some Config.source_files_call_graph_partition then
+        Option.iter Config.source_files_call_graph_partition ~f:(fun n_workers ->
+            SourceFileGraph.partition_source_file_call_graph ~n_workers )
       else
         let filter = Lazy.force Filtering.source_files_filter in
         L.result "%a"
