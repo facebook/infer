@@ -5,7 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+module F = Format
 module L = Logging
+
+let time_and_run ~f ~msg =
+  let result, duration_ms = Utils.timeit ~f in
+  L.debug Capture Medium "%s took %d ms.@\n" msg duration_ms ;
+  result
+
 
 module Loader = struct
   (** Build a hash table from procedure name to source file where it's defined, and a hash table
@@ -204,9 +211,9 @@ module Tree = struct
   (** trees are compared only by size *)
   type t = {vertices: SourceFile.t list [@compare.ignore]; size: int} [@@deriving compare]
 
-  let _size {size} = size
+  let size {size} = size
 
-  let _iter_vertices {vertices} ~f = List.iter vertices ~f
+  let iter_vertices {vertices} ~f = List.iter vertices ~f
 
   (** given a DAG [g], split it into a set of trees by deleting all incoming edges but the heaviest
       for every node *)
@@ -235,7 +242,7 @@ module Tree = struct
 
 
   (** given a graph that consists of a set of trees, make a list of [t]s sorted by increasing size *)
-  let _get_sorted_tree_list g =
+  let get_sorted_tree_list g =
     let roots =
       G.fold_vertex (fun v acc -> if Int.equal 0 (G.in_degree g v) then v :: acc else acc) g []
     in
@@ -248,7 +255,7 @@ module Tree = struct
 
 
   (** given a [t] in a forest graph [g], find and delete a minimal edge from [t] *)
-  let _split_tree g t =
+  let split_tree g t =
     let min_edge_of_tree =
       List.fold t.vertices ~init:None ~f:(fun acc v ->
           let parent_edge_opt = G.pred_e g v |> List.hd in
@@ -263,11 +270,137 @@ module Tree = struct
     min_edge_of_tree |> Option.value_exn |> G.remove_edge_e g
 end
 
-let partition_source_file_call_graph ~n_workers:_ =
-  let g = G.load_graph () in
-  Dagify.make_acyclic g ;
-  Tree.make_forest g
+module Bin = struct
+  (** a set of trees to send to a single worker, compared only by size *)
+  type t = {trees: Tree.t list [@compare.ignore]; bin_size: int} [@@deriving compare]
 
+  let empty = {trees= []; bin_size= 0}
+
+  let add_tree (tree : Tree.t) {trees; bin_size} =
+    {trees= tree :: trees; bin_size= tree.size + bin_size}
+
+
+  let iter_vertices bin ~f = List.iter bin.trees ~f:(Tree.iter_vertices ~f)
+
+  let size {bin_size} = bin_size
+
+  let find_max_tree init {trees} =
+    List.fold trees ~init ~f:(fun ((max_size, _) as acc) t ->
+        let m = max max_size (Tree.size t) in
+        if m > max_size then (m, Some t) else acc )
+
+
+  let max_tree_size t = find_max_tree (0, None) t |> fst
+
+  let pp fmt bin = F.fprintf fmt "%d(%d)" bin.bin_size (max_tree_size bin)
+end
+
+(** a priority heap of [Bin.t]s *)
+module Heap = struct
+  include Binary_heap.Make (Bin)
+
+  let to_list bins = fold (fun bin acc -> bin :: acc) bins []
+end
+
+(** a list of [Bin.t]s of a predefined length (equal to number of workers) *)
+module Schedule = struct
+  let size schedule = List.fold ~init:0 schedule ~f:(fun acc bin -> Bin.size bin + acc)
+
+  let max_tree_size schedule =
+    List.fold schedule ~init:0 ~f:(fun acc c -> max acc (Bin.max_tree_size c))
+
+
+  let find_max_tree schedule = List.fold schedule ~init:(0, None) ~f:Bin.find_max_tree
+
+  let pp fmt t = F.fprintf fmt "Schedule: %a" (PrettyPrintable.pp_collection ~pp_item:Bin.pp) t
+
+  let histogram_bins = 10
+
+  let pp_histogram fmt schedule =
+    let max_size = max_tree_size schedule in
+    let histogram_bin_size = 1 + (max_size / (histogram_bins - 1)) in
+    let histogram = Array.init histogram_bins ~f:(fun _ -> 0) in
+    L.debug Capture Quiet "max_size=%d, histogram_bin_size=%d.@." max_size histogram_bin_size ;
+    List.iter schedule ~f:(fun (bin : Bin.t) ->
+        List.iter bin.trees ~f:(fun t ->
+            let size = Tree.size t in
+            let hist_bin = size / histogram_bin_size in
+            1 + Array.get histogram hist_bin |> Array.set histogram hist_bin ) ) ;
+    F.fprintf fmt "tree histogram:@\n" ;
+    Array.iteri histogram ~f:(fun i num ->
+        F.fprintf fmt "[%d - %d]: %d@\n" (i * histogram_bin_size)
+          (((i + 1) * histogram_bin_size) - 1)
+          num )
+
+
+  (** schedule trees using "shortest processing time first" *)
+  let schedule_trees n_workers trees_list =
+    let bins = Heap.create ~dummy:Bin.empty n_workers in
+    for _ = 1 to n_workers do
+      Heap.add bins Bin.empty
+    done ;
+    List.iter trees_list ~f:(fun tree ->
+        Heap.pop_minimum bins |> Bin.add_tree tree |> Heap.add bins ) ;
+    Heap.to_list bins
+
+
+  (** "error" is the difference between the average size of a bin and the actual one. The sum of
+      absolute errors divided by the total size (as percentage) is compared to [max_error_pc]. *)
+  let is_error_leq_than_max ~n_workers ~max_error_pc schedule =
+    let total_size = size schedule in
+    let avg_size = total_size / n_workers in
+    let total_error =
+      List.fold ~init:0 schedule ~f:(fun acc bin -> abs (Bin.size bin - avg_size) + acc)
+    in
+    let avg_error_pc = 100 * total_error / total_size in
+    L.debug Capture Medium "Schedule error pc: %d@\n" avg_error_pc ;
+    avg_error_pc <= max_error_pc
+
+
+  (** given a set of trees [g] produce a schedule that has error lower/equal to [max_error_pc] *)
+  let rec find ~orig_size ~n_workers ~max_error_pc g =
+    let schedule = Tree.get_sorted_tree_list g |> schedule_trees n_workers in
+    L.debug Capture Medium "Found schedule with bins: %a@\n" pp schedule ;
+    L.debug Capture Medium "%a" pp_histogram schedule ;
+    if Config.debug_mode then assert (Int.equal orig_size (size schedule)) ;
+    if is_error_leq_than_max ~n_workers ~max_error_pc schedule then schedule
+    else (
+      find_max_tree schedule |> snd |> Option.value_exn |> Tree.split_tree g ;
+      find ~orig_size ~n_workers ~max_error_pc g )
+
+
+  let find ~orig_size ~n_workers ~max_error_pc g =
+    time_and_run
+      ~f:(fun () ->
+        Dagify.make_acyclic g ;
+        Tree.make_forest g ;
+        find ~orig_size ~n_workers ~max_error_pc g )
+      ~msg:"Find"
+
+
+  let output ~n_workers schedule =
+    let width = string_of_int (n_workers - 1) |> String.length in
+    let schedule_filename = Config.results_dir ^/ "schedule.txt" in
+    List.mapi schedule ~f:(fun i bin ->
+        L.progress "Schedule for worker %i contains %i files.@\n" i (Bin.size bin) ;
+        let filename = Printf.sprintf "%s/worker%*d.idx" Config.results_dir width i in
+        Out_channel.with_file filename ~f:(fun out ->
+            Bin.iter_vertices bin ~f:(fun source_file ->
+                Out_channel.output_string out (SourceFile.to_string source_file) ;
+                Out_channel.newline out ) ) ;
+        filename )
+    |> Out_channel.write_lines schedule_filename
+
+
+  let find_and_output ~n_workers ~max_error_pc =
+    let g = G.load_graph () in
+    let orig_size = G.nb_vertex g in
+    find ~orig_size ~n_workers ~max_error_pc g |> output ~n_workers
+end
+
+let max_error_pc = 10
+
+let partition_source_file_call_graph ~n_workers = Schedule.find_and_output ~n_workers ~max_error_pc
 
 let to_dotty filename =
   let g = G.load_graph () in
