@@ -200,9 +200,73 @@ module Dagify = struct
       to_dotty g "file-call-graph-dag.dot" )
 end
 
+module Tree = struct
+  (** trees are compared only by size *)
+  type t = {vertices: SourceFile.t list [@compare.ignore]; size: int} [@@deriving compare]
+
+  let _size {size} = size
+
+  let _iter_vertices {vertices} ~f = List.iter vertices ~f
+
+  (** given a DAG [g], split it into a set of trees by deleting all incoming edges but the heaviest
+      for every node *)
+  let make_forest g =
+    let is_forest g = G.fold_vertex (fun v acc -> acc && G.in_degree g v <= 1) g true in
+    let forestify_vertex g v =
+      let _max_edge_opt, edges_to_delete =
+        G.fold_pred_e
+          (fun e (max_edge_opt, edges_to_delete) ->
+            match max_edge_opt with
+            | None ->
+                (Some e, edges_to_delete)
+            | Some e' when G.E.compare e e' <= 0 ->
+                (max_edge_opt, e :: edges_to_delete)
+            | Some e' ->
+                (Some e, e' :: edges_to_delete) )
+          g v (None, [])
+      in
+      List.iter edges_to_delete ~f:(G.remove_edge_e g)
+    in
+    if Config.debug_mode then assert (not (Dfs.has_cycle g)) ;
+    G.iter_vertex (forestify_vertex g) g ;
+    if Config.debug_mode then (
+      assert (is_forest g) ;
+      to_dotty g "file-call-graph-forest.dot" )
+
+
+  (** given a graph that consists of a set of trees, make a list of [t]s sorted by increasing size *)
+  let _get_sorted_tree_list g =
+    let roots =
+      G.fold_vertex (fun v acc -> if Int.equal 0 (G.in_degree g v) then v :: acc else acc) g []
+    in
+    let reachable_nodes v =
+      Dfs.fold_component
+        (fun v' acc -> {vertices= v' :: acc.vertices; size= 1 + acc.size})
+        {vertices= []; size= 0} g v
+    in
+    List.fold roots ~init:[] ~f:(fun acc v -> reachable_nodes v :: acc) |> List.stable_sort ~compare
+
+
+  (** given a [t] in a forest graph [g], find and delete a minimal edge from [t] *)
+  let _split_tree g t =
+    let min_edge_of_tree =
+      List.fold t.vertices ~init:None ~f:(fun acc v ->
+          let parent_edge_opt = G.pred_e g v |> List.hd in
+          match (acc, parent_edge_opt) with
+          | None, None ->
+              None
+          | None, some_edge | some_edge, None ->
+              some_edge
+          | Some e, Some e' ->
+              if G.E.compare e e' <= 0 then acc else parent_edge_opt )
+    in
+    min_edge_of_tree |> Option.value_exn |> G.remove_edge_e g
+end
+
 let partition_source_file_call_graph ~n_workers:_ =
   let g = G.load_graph () in
-  Dagify.make_acyclic g
+  Dagify.make_acyclic g ;
+  Tree.make_forest g
 
 
 let to_dotty filename =
