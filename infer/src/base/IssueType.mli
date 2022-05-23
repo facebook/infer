@@ -17,7 +17,7 @@ type visibility =
 val string_of_visibility : visibility -> string
 
 (** severity of the report *)
-type severity = Like | Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
+type severity = Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
 val string_of_severity : severity -> string
 

@@ -223,7 +223,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
           (has_type("REGEXP('This.+')*"))
         HOLDS-IN-NODE ObjCMethodDecl;
   SET message = "Found a method with nth parameter of type....";
-  SET severity = "LIKE";
+  SET severity = "ADVICE";
 };
 
 DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK_FUNCTION = {
@@ -233,7 +233,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK_FUNCTION = {
           (has_value("2") HOLDS-EVENTUALLY)
         HOLDS-IN-NODE CallExpr;
   SET message = "Found a method with nth parameter of type....";
-  SET severity = "LIKE";
+  SET severity = "ADVICE";
 };
 
 DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {

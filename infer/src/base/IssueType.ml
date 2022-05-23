@@ -13,7 +13,7 @@ type visibility = User | Developer | Silent [@@deriving compare, equal]
 
 let string_of_visibility = function User -> "User" | Developer -> "Developer" | Silent -> "Silent"
 
-type severity = Like | Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
+type severity = Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
 let string_of_severity = function
   | Advice ->
@@ -22,8 +22,6 @@ let string_of_severity = function
       "ERROR"
   | Info ->
       "INFO"
-  | Like ->
-      "LIKE"
   | Warning ->
       "WARNING"
 

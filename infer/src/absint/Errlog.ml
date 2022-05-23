@@ -268,7 +268,7 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_f
               L.d_error
           | Warning ->
               L.d_warning
-          | Info | Advice | Like ->
+          | Info | Advice ->
               L.d_info
         in
         d warn_str ;
