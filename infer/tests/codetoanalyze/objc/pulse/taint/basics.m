@@ -12,6 +12,8 @@
 + (NSObject*)source;
 + (void)sink:(NSObject*)param;
 + (void)notASink:(NSObject*)param;
+
++ (void)call_block:(void (^)(InferTaint*))completion;
 @end
 
 @implementation InferTaint
@@ -41,4 +43,12 @@ void callSinkOnNonSourceOk() {
 void callNonSinkOnSourceOk() {
   NSObject* source = [InferTaint source];
   [InferTaint notASink:source];
+}
+
+void taintSourceParameterBad(InferTaint* source) { [InferTaint sink:source]; }
+
+void taintSourceParameterBlockBad() {
+  [InferTaint call_block:^(InferTaint* source) {
+    [InferTaint sink:source];
+  }];
 }

@@ -25,7 +25,9 @@
           "kinds": ["SimpleSource"] },
         {"procedure": "AttributedStringProviderInputCreate", "kinds": ["InputCreate"]},
         {"procedure": "StringProviderInputCreate", "kinds": ["InputCreate"]},
-        {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]}
+        {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]},
+        {"procedure": "taintSourceParameterBad", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
+        {"procedure": "objc_blocktaintSourceParameterBlockBad_1", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]}
     ],
     "pulse-taint-sinks": [
         { "procedure": "inferSensitiveSink" },
