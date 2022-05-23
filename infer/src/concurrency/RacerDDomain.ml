@@ -213,8 +213,6 @@ module ThreadsDomain = struct
     match join astate1 astate2 with AnyThread -> true | NoThread | AnyThreadButSelf -> false
 
 
-  let is_bottom = function NoThread -> true | _ -> false
-
   let is_any_but_self = function AnyThreadButSelf -> true | _ -> false
 
   let is_any = function AnyThread -> true | _ -> false
@@ -520,7 +518,7 @@ type t =
   ; ownership: OwnershipDomain.t
   ; attribute_map: AttributeMapDomain.t }
 
-let bottom =
+let initial =
   let threads = ThreadsDomain.bottom in
   let locks = LockDomain.bottom in
   let accesses = AccessDomain.empty in
@@ -529,18 +527,13 @@ let bottom =
   {threads; locks; accesses; ownership; attribute_map}
 
 
-let is_bottom {threads; locks; accesses; ownership; attribute_map} =
-  ThreadsDomain.is_bottom threads && LockDomain.is_bottom locks && AccessDomain.is_empty accesses
-  && OwnershipDomain.is_empty ownership
-  && AttributeMapDomain.is_empty attribute_map
-
-
 let leq ~lhs ~rhs =
   if phys_equal lhs rhs then true
   else
     ThreadsDomain.leq ~lhs:lhs.threads ~rhs:rhs.threads
     && LockDomain.leq ~lhs:lhs.locks ~rhs:rhs.locks
     && AccessDomain.leq ~lhs:lhs.accesses ~rhs:rhs.accesses
+    && OwnershipDomain.leq ~lhs:lhs.ownership ~rhs:rhs.ownership
     && AttributeMapDomain.leq ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
 
 
@@ -728,3 +721,21 @@ let integrate_summary formals ~callee_proc_desc summary ret_access_exp callee_pn
     ThreadsDomain.integrate_summary ~caller_astate:astate.threads ~callee_astate:threads
   in
   {astate with locks; threads; ownership; attribute_map}
+
+
+let acquire_lock (astate : t) =
+  { astate with
+    locks= LockDomain.acquire_lock astate.locks
+  ; threads= ThreadsDomain.update_for_lock_use astate.threads }
+
+
+let release_lock (astate : t) =
+  { astate with
+    locks= LockDomain.release_lock astate.locks
+  ; threads= ThreadsDomain.update_for_lock_use astate.threads }
+
+
+let lock_if_true ret_access_exp (astate : t) =
+  { astate with
+    attribute_map= AttributeMapDomain.add ret_access_exp Attribute.LockHeld astate.attribute_map
+  ; threads= ThreadsDomain.update_for_lock_use astate.threads }

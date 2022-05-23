@@ -59,9 +59,6 @@ module ThreadsDomain : sig
   (** return true if two accesses with these thread values can run concurrently *)
 
   val is_any : t -> bool
-
-  val update_for_lock_use : t -> t
-  (** update thread status when a lock instruction is observed *)
 end
 
 module OwnershipAbstractValue : sig
@@ -143,7 +140,9 @@ type t =
   ; attribute_map: AttributeMapDomain.t
         (** map of access paths to attributes such as owned, functional, ... *) }
 
-include AbstractDomain.WithBottom with type t := t
+include AbstractDomain.S with type t := t
+
+val initial : t
 
 val add_unannotated_call_access : FormalMap.t -> Procname.t -> HilExp.t list -> Location.t -> t -> t
 
@@ -189,3 +188,9 @@ val integrate_summary :
   -> Location.t
   -> t
   -> t
+
+val acquire_lock : t -> t
+
+val release_lock : t -> t
+
+val lock_if_true : HilExp.access_expression -> t -> t
