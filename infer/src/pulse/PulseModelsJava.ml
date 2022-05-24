@@ -176,7 +176,13 @@ module Resource = struct
 
 
   let release this : model =
-   fun _ astate -> PulseOperations.java_resource_release (fst this) astate |> Basic.ok_continue
+   fun _ astate ->
+    PulseOperations.java_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
+
+
+  let release_this_only this : model =
+   fun _ astate ->
+    PulseOperations.java_resource_release ~recursive:false (fst this) astate |> Basic.ok_continue
 end
 
 module Collection = struct
@@ -628,6 +634,8 @@ let matchers : matcher list =
     &:: "close" <>$ capt_arg_payload $+...$--> Resource.release
   ; +map_context_tenv (PatternMatch.Java.implements "com.google.common.io.Closeables")
     &:: "closeQuietly" <>$ capt_arg_payload $+...$--> Resource.release
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.DeflaterOutputStream")
+    &:: "finish" <>$ capt_arg_payload $+...$--> Resource.release_this_only
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
     &:: "clone" $ capt_arg_payload $--> Object.clone
   ; ( +map_context_tenv (PatternMatch.Java.implements_lang "System")

@@ -458,7 +458,7 @@ let allocate allocator location addr astate =
   AddressAttributes.allocate allocator addr location astate
 
 
-let java_resource_release address astate =
+let java_resource_release ~recursive address astate =
   let if_valid_access_then_eval addr access astate =
     Option.map (Memory.find_edge_opt addr access astate) ~f:fst
   in
@@ -476,7 +476,7 @@ let java_resource_release address astate =
       | Some delegation ->
           (* beware: if the field is not valid, a regular call to Java.load_field will generate a
              fresh abstract value and we will loop forever, even if we use the [seen] set *)
-          loop (AbstractValue.Set.add obj seen) delegation astate
+          if recursive then loop (AbstractValue.Set.add obj seen) delegation astate else astate
       | None ->
           astate
   in
