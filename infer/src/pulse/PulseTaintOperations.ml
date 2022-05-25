@@ -351,7 +351,15 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
                             { tainted
                             ; location
                             ; source= ({source with kinds= [source_kind]}, source_hist)
-                            ; destination= ({sink with kinds= [sink_kind]}, sink_trace) } } ] ) )
+                            ; destination= ({sink with kinds= [sink_kind]}, sink_trace) } }
+                  ; ReportableError
+                      { astate
+                      ; diagnostic=
+                          FlowToTaintSink
+                            { expr= tainted
+                            ; location
+                            ; source= ({source with kinds= [source_kind]}, source_hist)
+                            ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } } ] ) )
   in
   let rec check_dependencies policy_violations_reported visited v astate =
     let* astate =
