@@ -64,6 +64,11 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t }
+  | FlowFromTaintSource of
+      { tainted: Decompiler.expr
+      ; source: Taint.t * ValueHistory.t
+      ; destination: Taint.t * Trace.t
+      ; location: Location.t }
   | UnnecessaryCopy of
       { variable: Var.t
       ; typ: Typ.t
@@ -91,6 +96,7 @@ let get_location = function
   | ErlangError (Try_clause {location})
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
+  | FlowFromTaintSource {location}
   | UnnecessaryCopy {location} ->
       location
 
@@ -118,6 +124,7 @@ let aborts_execution = function
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
+  | FlowFromTaintSource _
   | UnnecessaryCopy _ ->
       false
 
@@ -341,6 +348,9 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Taint.pp sink
+  | FlowFromTaintSource {tainted; source= source, _; destination= destination, _} ->
+      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
+        Taint.pp destination
   | UnnecessaryCopy {variable; typ; location; from} ->
       let suppression_msg =
         "If this copy was intentional, consider adding the word `copy` into the variable name to \
@@ -510,6 +520,12 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
+  | FlowFromTaintSource {source= _, source_history; destination= destination, destination_trace} ->
+      ValueHistory.add_to_errlog ~nesting:0 source_history
+      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
+           ~pp_immediate:(fun fmt -> Taint.pp fmt destination)
+           destination_trace
+      @@ []
   | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location
@@ -566,3 +582,5 @@ let get_issue_type ~latent issue_type =
       IssueType.uninitialized_value_pulse ~latent
   | TaintFlow _, _ ->
       IssueType.taint_error
+  | FlowFromTaintSource _, _ ->
+      IssueType.sensitive_data_flow

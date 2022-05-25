@@ -76,6 +76,7 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ReadUninitializedValue _
   | StackVariableAddressEscape _
   | TaintFlow _
+  | FlowFromTaintSource _
   | UnnecessaryCopy _ ->
       false
   | AccessToInvalidAddress {invalidation; access_trace} ->

@@ -945,6 +945,11 @@ let taint_error =
     ~user_documentation:"A taint flow was detected from a source to a sink"
 
 
+let sensitive_data_flow =
+  register ~enabled:false ~hum:"Sensitive Data Flow" ~id:"SENSITIVE_DATA_FLOW" Advice Pulse
+    ~user_documentation:"A flow of sensitive data was detected from a source."
+
+
 let regex_op_on_ui_thread =
   register Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
     ~user_documentation:
