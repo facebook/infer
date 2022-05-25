@@ -5,7 +5,8 @@
 
 TESTS_DIR = ../../..
 INFER_OPTIONS = --pulse-only --debug-exceptions --no-pulse-nullsafe-report-npe \
---pulse-report-ignore-unknown-java-methods-patterns-reset --pulse-report-issues-for-tests
+--pulse-report-ignore-unknown-java-methods-patterns-reset --pulse-report-issues-for-tests \
+--report-suppress-errors SENSITIVE_DATA_FLOW
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java taint/*.java)
 
