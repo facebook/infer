@@ -25,7 +25,13 @@ let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} checker ?(fi
   let proc_name = get_proc_name proc_attrs in
   let nullsafe_extra = Some (NullsafeIssue.get_nullsafe_extra nullsafe_issue proc_name) in
   let extras =
-    Jsonbug_t.{nullsafe_extra; cost_degree= None; cost_polynomial= None; copy_type= None}
+    Jsonbug_t.
+      { nullsafe_extra
+      ; cost_degree= None
+      ; cost_polynomial= None
+      ; copy_type= None
+      ; taint_source= None
+      ; taint_sink= None }
   in
   let suppressed = Reporting.is_suppressed tenv proc_attrs issue_type ~field_name in
   if suppressed then Logging.debug Analysis Medium "Reporting is suppressed!@\n"

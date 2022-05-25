@@ -100,6 +100,8 @@ type extra = {
   ?cost_degree : int option;
   ?nullsafe_extra : nullsafe_extra option;
   ?copy_type : string option;
+  ?taint_source : string option;
+  ?taint_sink : string option;
 }
 
 type jsonbug = {

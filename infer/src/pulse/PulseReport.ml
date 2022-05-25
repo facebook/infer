@@ -26,7 +26,13 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
     in
     let extras =
       let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
-      Jsonbug_t.{cost_polynomial= None; cost_degree= None; nullsafe_extra= None; copy_type}
+      Jsonbug_t.
+        { cost_polynomial= None
+        ; cost_degree= None
+        ; nullsafe_extra= None
+        ; copy_type
+        ; taint_source= None
+        ; taint_sink= None }
     in
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
       ~ltr:(extra_trace @ get_trace diagnostic)
