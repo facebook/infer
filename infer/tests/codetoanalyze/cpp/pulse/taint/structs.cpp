@@ -18,12 +18,12 @@ extern void __infer_taint_sink(mystruct);
 
 namespace structs {
 
-void struct_source_bad_FN() {
+void struct_source_bad() {
   mystruct* source = __infer_taint_source();
   __infer_taint_sink(*source);
 }
 
-void struct_field_source_unique_pointer_bad_FN() {
+void struct_field_source_unique_pointer_bad() {
   std::unique_ptr<mystruct> source(__infer_taint_source());
   __infer_taint_sink(*source);
 }

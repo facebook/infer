@@ -618,9 +618,11 @@ and mk_cpp_method ~is_copy_assignment ?tenv class_name method_name ?meth_decl ma
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
-    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_copy_constructor= is_copy_ctor}))
-      ->
-        Procname.ObjC_Cpp.CPPConstructor {mangled; is_copy_ctor}
+    | Some
+        ( Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_copy_constructor= is_copy_ctor}) as
+        decl ) ->
+        let is_implicit = CAst_utils.is_implicit_decl decl in
+        Procname.ObjC_Cpp.CPPConstructor {mangled; is_copy_ctor; is_implicit}
     | Some (Clang_ast_t.CXXDestructorDecl _) ->
         Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->

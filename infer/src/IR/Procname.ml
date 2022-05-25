@@ -330,7 +330,7 @@ end
 module ObjC_Cpp = struct
   type kind =
     | CPPMethod of {mangled: string option; is_copy_assignment: bool}
-    | CPPConstructor of {mangled: string option; is_copy_ctor: bool}
+    | CPPConstructor of {mangled: string option; is_copy_ctor: bool; is_implicit: bool}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -372,6 +372,10 @@ module ObjC_Cpp = struct
 
   let is_copy_ctor {kind} =
     match kind with CPPConstructor {is_copy_ctor} -> is_copy_ctor | _ -> false
+
+
+  let is_implicit_ctor {kind} =
+    match kind with CPPConstructor {is_implicit} -> is_implicit | _ -> false
 
 
   let is_prefix_init s = String.is_prefix ~prefix:"init" s
@@ -711,6 +715,14 @@ let is_copy_ctor t =
   match base_of t with
   | ObjC_Cpp objc_cpp_pname ->
       ObjC_Cpp.is_copy_ctor objc_cpp_pname
+  | _ ->
+      false
+
+
+let is_implicit_ctor t =
+  match base_of t with
+  | ObjC_Cpp objc_cpp_pname ->
+      ObjC_Cpp.is_implicit_ctor objc_cpp_pname
   | _ ->
       false
 

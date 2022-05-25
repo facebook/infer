@@ -520,7 +520,9 @@ let pulse_models_to_treat_as_unknown_for_taint =
 let should_treat_as_unknown_for_taint tenv proc_name =
   (* HACK: we already have a function for matching procedure names so just re-use it even though we
      don't need its full power *)
-  procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name [] |> Option.is_some
+  Procname.is_implicit_ctor proc_name
+  || procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name []
+     |> Option.is_some
 
 
 let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
