@@ -49,17 +49,17 @@ module Sparse_trace = struct
 
   exception Failed_lookup of string
 
-  let parse_exn s pgm =
+  let of_file_exn file pgm =
     let lookup x =
       match Llair.(Func.find x pgm.functions) with
       | Some f -> f.name
       | None ->
           raise
             (Failed_lookup
-               ("Unable to resolve function " ^ x ^ " in goal trace " ^ s)
+               ("Unable to resolve function " ^ x ^ " in goal trace " ^ file)
             )
     in
-    List.map ~f:lookup (String.split_on_char ~by:'+' s)
+    List.map ~f:lookup (In_channel.read_lines file)
     |> IArray.of_list
     |> fun trace -> {cursor= 0; trace}
 

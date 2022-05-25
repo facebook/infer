@@ -35,8 +35,8 @@ module Sparse_trace : sig
       any function in the given [Llair.program] *)
   exception Failed_lookup of string
 
-  val parse_exn : string -> Llair.program -> t
-  (** parse a "+"-delimited sequence of function names to a sparse trace
-      over the given [Llair.program] IR. Raises [Failed_lookup] if a
-      function name is encountered that is not in the IR. *)
+  val of_file_exn : string -> Llair.program -> t
+  (** parse a file of function names (one per line) to a sparse trace over
+      the given [Llair.program] IR. Raises [Failed_lookup] if a function
+      name is encountered that is not in the IR. *)
 end

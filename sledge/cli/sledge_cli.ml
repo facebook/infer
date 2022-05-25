@@ -159,13 +159,13 @@ let analyze =
       ~doc:"<int> dump simplify query <int> and halt"
   and goal_trace =
     flag "goal-trace"
-      (optional (Arg_type.create Goal.Sparse_trace.parse_exn))
+      (optional (Arg_type.create Goal.Sparse_trace.of_file_exn))
       ~doc:
-        "<string> specify a trace to try to explore, given as a \
-         \"+\"-delimited sequence of function names appearing in the input \
-         LLVM bitcode.  If provided, analysis prioritizes trace progress. \
-         When an execution is found that visits each function in order, \
-         terminate if \"Stop.on_reached_goal\" is being traced."
+        "<string> specify a trace to try to explore, in the form of a file \
+         containing one LLVM function name per line. If provided, analysis \
+         prioritizes trace progress. When an execution is found that \
+         visits each function in order, terminate if \
+         \"Stop.on_reached_goal\" is being traced."
   in
   fun program () ->
     Timer.enabled := stats ;

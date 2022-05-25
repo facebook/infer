@@ -164,7 +164,7 @@ analyze-perf7: compile
 # for each `goal/<foo>.c` or `goal/<foo>.cpp`, analyze with goal trace `goal/<foo>.trace`
 analyze-goal: compile
 	$(foreach test,$(GoalTests), \
-	$(sledge_dbg) llvm analyze -goal-trace $(shell cat $(test:.bc=.trace)) $(SLEDGE_A_ARGS) $(SLEDGE_G_ARGS) $(test);)
+	$(sledge_dbg) llvm analyze -goal-trace $(test:.bc=.trace) $(SLEDGE_A_ARGS) $(SLEDGE_G_ARGS) $(test);)
 
 .PHONY: analyze.sexp
 analyze.sexp:
