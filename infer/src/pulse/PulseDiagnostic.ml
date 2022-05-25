@@ -69,6 +69,11 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; destination: Taint.t * Trace.t
       ; location: Location.t }
+  | FlowToTaintSink of
+      { expr: Decompiler.expr
+      ; source: Taint.t * ValueHistory.t
+      ; sink: Taint.t * Trace.t
+      ; location: Location.t }
   | UnnecessaryCopy of
       { variable: Var.t
       ; typ: Typ.t
@@ -97,6 +102,7 @@ let get_location = function
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
   | FlowFromTaintSource {location}
+  | FlowToTaintSink {location}
   | UnnecessaryCopy {location} ->
       location
 
@@ -125,6 +131,7 @@ let aborts_execution = function
   | StackVariableAddressEscape _
   | TaintFlow _
   | FlowFromTaintSource _
+  | FlowToTaintSink _
   | UnnecessaryCopy _ ->
       false
 
@@ -351,6 +358,9 @@ let get_message diagnostic =
   | FlowFromTaintSource {tainted; source= source, _; destination= destination, _} ->
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Taint.pp destination
+  | FlowToTaintSink {expr; source= source, _; sink= sink, _} ->
+      F.asprintf "`%a` flows from %a to taint sink %a" Decompiler.pp_expr expr Taint.pp source
+        Taint.pp sink
   | UnnecessaryCopy {variable; typ; location; from} ->
       let suppression_msg =
         "If this copy was intentional, consider adding the word `copy` into the variable name to \
@@ -526,6 +536,12 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt destination)
            destination_trace
       @@ []
+  | FlowToTaintSink {source= _, source_history; sink= sink, sink_trace} ->
+      ValueHistory.add_to_errlog ~nesting:0 source_history
+      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
+           ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
+           sink_trace
+      @@ []
   | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location
@@ -584,3 +600,5 @@ let get_issue_type ~latent issue_type =
       IssueType.taint_error
   | FlowFromTaintSource _, _ ->
       IssueType.sensitive_data_flow
+  | FlowToTaintSink _, _ ->
+      IssueType.data_flow_to_sink

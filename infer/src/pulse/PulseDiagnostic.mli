@@ -75,6 +75,11 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; destination: Taint.t * Trace.t
       ; location: Location.t }
+  | FlowToTaintSink of
+      { expr: Decompiler.expr
+      ; source: Taint.t * ValueHistory.t
+      ; sink: Taint.t * Trace.t
+      ; location: Location.t }
   | UnnecessaryCopy of
       { variable: Var.t
       ; typ: Typ.t

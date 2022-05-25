@@ -950,6 +950,11 @@ let sensitive_data_flow =
     ~user_documentation:"A flow of sensitive data was detected from a source."
 
 
+let data_flow_to_sink =
+  register ~enabled:false ~hum:"Data Flow to Sink" ~id:"DATA_FLOW_TO_SINK" Advice Pulse
+    ~user_documentation:"A flow of data was detected to a sink."
+
+
 let regex_op_on_ui_thread =
   register Warning ~id:"REGEX_OP_ON_UI_THREAD" Starvation
     ~user_documentation:
