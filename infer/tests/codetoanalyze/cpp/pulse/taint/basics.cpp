@@ -101,6 +101,7 @@ void via_field_bad1_FN() {
   Obj* obj = new Obj();
   obj->field1 = *template_source<std::string>();
   template_sink<std::string>(obj->field1);
+  delete obj;
 }
 
 void via_field_bad2_FN(Obj* obj) {
@@ -113,12 +114,14 @@ void via_field_ok1() {
   obj->field1 = *template_source<std::string>();
   obj->field1 = nullptr;
   template_sink<std::string>(obj->field1);
+  delete obj;
 }
 
 void via_field_ok2() {
   Obj* obj = new Obj();
   obj->field1 = *template_source<std::string>();
   template_sink<std::string>(obj->field2);
+  delete obj;
 }
 
 template <class T>
@@ -145,7 +148,7 @@ void via_passthrough_bad2_FN(Obj* obj) {
 }
 
 void taint_arg_source_bad_FN() {
-  int source;
+  int source = 1;
   Obj::taint_arg_source(&source);
   __infer_taint_sink((void*)source);
 }
@@ -191,9 +194,8 @@ struct node {
 };
 
 // we used to hang on this example before the widening operator was fixed
-void loop_ok() {
-  struct node* init;
-  struct node* tmp;
+void loop_ok(struct node* init) {
+  struct node* tmp = new node{.prev = nullptr, .prev = nullptr};
 
   while (1) {
     tmp->next = init;
