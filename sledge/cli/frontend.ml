@@ -1749,6 +1749,7 @@ let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
           let func =
             try xlate_function x llf typ
             with Unimplemented feature ->
+              [%Dbg.info "Unimplemented feature %s in %s" feature name] ;
               xlate_function_decl x llf typ Func.mk_undefined
               $> Report.unimplemented feature
           in

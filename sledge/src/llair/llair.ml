@@ -540,6 +540,10 @@ module Block = struct
   module Tbl = HashTable.Make (T)
 
   let pp = pp_block
+
+  let pp_ident fs b =
+    Format.fprintf fs "%a#%s" Function.pp b.parent.name b.lbl
+
   let mk ~lbl ~cmnd ~term = {dummy_block with lbl; cmnd; term}
 end
 
@@ -937,9 +941,9 @@ module Program = struct
         in
         let dists = reachable_dists curr next_entry in
         [%Dbg.info
-          "distances to %a from locations reachable from %a: %a" Block.pp
-            next_entry Block.pp curr
-            (Block.Map.pp Block.pp Int.pp)
+          "distances to %a from locations reachable from %a: %a"
+            Block.pp_ident entry Block.pp_ident curr
+            (Block.Map.pp Block.pp_ident Int.pp)
             dists] ;
         Block.Map.iteri dists ~f:(fun ~key:blk ~data ->
             blk.checkpoint_dists <-
