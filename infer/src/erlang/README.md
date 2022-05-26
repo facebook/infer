@@ -33,7 +33,7 @@ Put the following in a file called `WriteAfterClose.topl`:
 
     property WriteAfterClose
       start -> start: *
-      start -> closed: "file:close/1"(A,Ret) => f:=Ret
+      start -> closed: "file:close/1"(A,Ret) => f:=A
       closed -> error: "file:write/2"(F,D,Ret) when F==f
 
 Put the following in a file called `ex2.erl`:
