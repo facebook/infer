@@ -580,10 +580,13 @@ struct
          arbitrarily-chosen witness path from the root for now. *)
       let path =
         let rec path_impl h =
-          h.curr
-          ::
-          ( if IArray.is_empty h.preds then []
-          else path_impl (IArray.get h.preds 0) )
+          let tail =
+            if IArray.is_empty h.preds then []
+            else path_impl (IArray.get h.preds 0)
+          in
+          if Llair.IP.index h.curr = 0 || IArray.length h.preds > 1 then
+            h.curr :: tail
+          else tail
         in
         path_impl >> List.rev
       in

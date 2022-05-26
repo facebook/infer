@@ -262,6 +262,7 @@ module IP : sig
   val pp : t pp
   val mk : block -> t
   val block : t -> block
+  val index : t -> int
   val inst : t -> inst option
   val loc : t -> Loc.t
   val succ : t -> t

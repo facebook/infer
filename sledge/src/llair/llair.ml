@@ -557,6 +557,7 @@ module IP = struct
     else None
 
   let block ip = ip.block
+  let index ip = ip.index
 
   let loc ip =
     match inst ip with
