@@ -12,7 +12,16 @@ exception Reached_goal of {steps: int}
 exception Unimplemented of {feature: string}
 
 let on_unknown_call _ = Dbg.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
-let on_alarm _ = Dbg.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
+let on_abort _ = Dbg.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
+
+let on_invalid_memory_access _ =
+  Dbg.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
+
+let on_alarm a =
+  ( match Alarm.kind a with
+  | Alarm.Abort -> on_abort ()
+  | Alarm.Invalid_memory_access -> on_invalid_memory_access () ) ;
+  Dbg.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
 
 let on_reached_goal steps ~dp_witness _ =
   [%Dbg.printf "%t" dp_witness] ;

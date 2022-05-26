@@ -34,7 +34,7 @@ let alarm alrm ~dp_witness =
   Int.incr alarm_count ;
   Format.printf "@\n@[<v 2>%a@]@." Alarm.pp alrm ;
   [%Dbg.printf "@\n@[<v 2> %t@ %a@]@." dp_witness Alarm.pp_trace alrm] ;
-  Stop.on_alarm ()
+  Stop.on_alarm alrm
 
 let unknown_call call =
   [%Dbg.kprintf
