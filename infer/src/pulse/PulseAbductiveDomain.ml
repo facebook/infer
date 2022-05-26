@@ -364,6 +364,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.remove_allocation_attr address)
 
 
+  let remove_taint_attrs address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.remove_taint_attrs address)
+
+
   let add_one address attributes astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.add_one address attributes)
 

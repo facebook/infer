@@ -423,6 +423,9 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
     ~has_added_return_param call proc_name_opt actuals astate =
   L.d_printfln "propagating all taint for unknown call" ;
   let return = Var.of_id return in
+  let is_cpp_assignment_operator =
+    Option.value_map proc_name_opt ~default:false ~f:Procname.is_cpp_assignment_operator
+  in
   let propagate_to_return, propagate_to_receiver, propagate_to_last_actual =
     let is_static =
       Option.exists proc_name_opt ~f:(fun proc_name ->
@@ -454,6 +457,9 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
            receiver *)
         L.d_printfln "chainable call, propagating taint to both return and receiver" ;
         (true, true, false)
+    | _, {Typ.desc= Tptr _ | Tstruct _}, _ when is_cpp_assignment_operator ->
+        L.d_printfln "cpp operator=, propagating to receiver" ;
+        (false, true, false)
     | _, {Typ.desc= Tptr _ | Tstruct _}, _ ->
         L.d_printfln "object return type, propagating taint to return" ;
         (true, false, false)
@@ -495,6 +501,15 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
             Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
                 L.d_printfln "registering %a as sanitizer" AbstractValue.pp v ;
                 AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate ) )
+  in
+  let astate =
+    match actuals with
+    | {ProcnameDispatcher.Call.FuncArg.arg_payload= this, _hist} :: _
+      when is_cpp_assignment_operator ->
+        L.d_printfln "remove taint info of %a for cpp operator=" AbstractValue.pp this ;
+        AddressAttributes.remove_taint_attrs this astate
+    | _ ->
+        astate
   in
   let astate =
     match Stack.find_opt return astate with

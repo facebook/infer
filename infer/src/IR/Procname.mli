@@ -259,6 +259,8 @@ val is_copy_assignment : t -> bool
 
 val is_copy_ctor : t -> bool
 
+val is_cpp_assignment_operator : t -> bool
+
 val is_implicit_ctor : t -> bool
 
 val is_destructor : t -> bool

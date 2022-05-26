@@ -97,14 +97,14 @@ void getenv_source_bad(Obj obj) {
   obj.string_sink(source);
 }
 
-void via_field_bad1_FN() {
+void via_field_bad1() {
   Obj* obj = new Obj();
   obj->field1 = *template_source<std::string>();
   template_sink<std::string>(obj->field1);
   delete obj;
 }
 
-void via_field_bad2_FN(Obj* obj) {
+void via_field_bad2(Obj* obj) {
   obj->field1 = *template_source<std::string>();
   template_sink<std::string>(obj->field1);
 }

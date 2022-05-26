@@ -83,6 +83,8 @@ val pp : F.formatter -> t -> unit
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
 
+val remove_taint_attrs : AbstractValue.t -> t -> t
+
 val remove_must_be_valid_attr : AbstractValue.t -> t -> t
 
 val remove_isl_abduced_attr : AbstractValue.t -> t -> t

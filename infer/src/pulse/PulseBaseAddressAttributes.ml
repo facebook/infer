@@ -140,6 +140,35 @@ let remove_allocation_attr address memory =
       memory
 
 
+let remove_tainted address memory =
+  match get_attribute Attributes.get_tainted address memory with
+  | Some (source, hist, intra_procedural_only) ->
+      remove_one address (Attribute.Tainted {source; hist; intra_procedural_only}) memory
+  | None ->
+      memory
+
+
+let remove_taint_sanitizer address memory =
+  match get_attribute Attributes.get_taint_sanitized address memory with
+  | Some sanitized ->
+      remove_one address (Attribute.TaintSanitized sanitized) memory
+  | None ->
+      memory
+
+
+let remove_propagate_taint_from address memory =
+  match get_attribute Attributes.get_propagate_taint_from address memory with
+  | Some taint ->
+      remove_one address (Attribute.PropagateTaintFrom taint) memory
+  | None ->
+      memory
+
+
+let remove_taint_attrs address memory =
+  remove_tainted address memory |> remove_taint_sanitizer address
+  |> remove_propagate_taint_from address
+
+
 let remove_isl_abduced_attr address memory =
   match get_attribute Attributes.get_isl_abduced address memory with
   | Some trace ->

@@ -719,6 +719,14 @@ let is_copy_ctor t =
       false
 
 
+let is_cpp_assignment_operator t =
+  match base_of t with
+  | ObjC_Cpp name when String.equal name.method_name "operator=" ->
+      true
+  | _ ->
+      false
+
+
 let is_implicit_ctor t =
   match base_of t with
   | ObjC_Cpp objc_cpp_pname ->
