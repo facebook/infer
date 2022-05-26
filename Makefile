@@ -125,6 +125,7 @@ DIRECT_TESTS += \
   objc_parameter-not-null-checked \
   objc_performance \
   objc_pulse \
+  objc_pulse-data-lineage \
   objc_quandary \
   objc_self-in-block \
   objc_uninit \
