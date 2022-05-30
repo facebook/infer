@@ -571,6 +571,8 @@ nonmatch_match_expr:test_match_b_Bad/0: badmatch
 nonmatch_match_expr:test_match_c_Ok/0: ok
 nonmatch_match_expr:test_match_d_Ok/0: ok
 nonmatch_match_expr:test_match_e_Bad/0: function_clause
+nonmatch_match_expr:test_match_eager_Bad/0: badmatch
+nonmatch_match_expr:test_match_eager_Ok/0: ok
 nonmatch_match_expr:test_match_f_Ok/0: ok
 nonmatch_match_expr:test_match_g_Bad/0: function_clause
 nonmatch_match_expr:test_match_in_pattern_a_Ok/0: ok
