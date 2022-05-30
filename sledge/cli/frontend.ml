@@ -1000,6 +1000,7 @@ let norm_callee llfunc =
     match Llvm.constexpr_opcode llfunc with
     | BitCast -> Llvm.operand llfunc 0
     | _ -> todo "callee kind %a" pp_llvalue llfunc () )
+  | GlobalAlias -> Llvm.operand llfunc 0
   | _ -> todo "callee kind %a" pp_llvalue llfunc ()
 
 let num_actuals instr lltyp llfunc =
