@@ -363,6 +363,12 @@ OPTIONS
        --project-root,-C dir
            Specify the root directory of the project
 
+       --pulse-report-flows-from-taint-source procname
+           Report data flows which originate at taint source procname
+
+       --pulse-report-flows-to-taint-sink procname
+           Report data flows which pass through taint sink procname
+
        --quiet,-q
            Activates: Do not print anything on standard output. (Conversely:
            --no-quiet | -Q)

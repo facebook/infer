@@ -2292,6 +2292,18 @@ and pulse_report_ignore_unknown_java_methods_patterns =
      regardless the presence of unknown code"
 
 
+and pulse_report_flows_from_taint_source =
+  CLOpt.mk_string_opt ~long:"pulse-report-flows-from-taint-source"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    ~meta:"procname" "Report data flows which originate at taint source $(b,procname)"
+
+
+and pulse_report_flows_to_taint_sink =
+  CLOpt.mk_string_opt ~long:"pulse-report-flows-to-taint-sink"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    ~meta:"procname" "Report data flows which pass through taint sink $(b,procname)"
+
+
 and pulse_report_latent_issues =
   CLOpt.mk_bool ~long:"pulse-report-latent-issues" ~default:true
     "Report latent issues instead of waiting for them to become manifest, when the latent issue \
@@ -3715,6 +3727,10 @@ and pulse_report_ignore_unknown_java_methods_patterns =
   | patts ->
       Some (Str.regexp (String.concat ~sep:"\\|" patts))
 
+
+and pulse_report_flows_from_taint_source = !pulse_report_flows_from_taint_source
+
+and pulse_report_flows_to_taint_sink = !pulse_report_flows_to_taint_sink
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
 

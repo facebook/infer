@@ -235,23 +235,34 @@ let report () =
     , Config.cost_issues_tests
     , Config.config_impact_issues_tests
     , Config.simple_lineage_json_report
-    , Config.merge_report )
+    , Config.merge_report
+    , Config.pulse_report_flows_from_taint_source
+    , Config.pulse_report_flows_to_taint_sink )
   with
-  | None, None, None, false, [] ->
+  | None, None, None, false, [], None, None ->
       L.die UserError
         "Expected at least one of '--issues-tests', '--cost-issues-tests', \
-         '--config-impact-issues-tests', '--simple-lineage-json-report' or '--merge-report'.@\n"
-  | out_path, cost_out_path, config_impact_out_path, report_lineage, [] ->
+         '--config-impact-issues-tests', '--simple-lineage-json-report', '--merge-report', \
+         '--pulse-report-flows-from-taint-source', or '--pulse-report-flows-to-taint-sink'.@\n"
+  | _, _, _, _, [], Some _, Some _ ->
+      L.die UserError
+        "Only one of '--pulse-report-flows-from-taint-source' and \
+         '--pulse-report-flows-to-taint-sink' can be used.@\n"
+  | out_path, cost_out_path, config_impact_out_path, report_lineage, [], taint_source, taint_sink ->
       Option.iter out_path ~f:write_from_json ;
       Option.iter cost_out_path ~f:write_from_cost_json ;
       Option.iter config_impact_out_path ~f:write_from_config_impact_json ;
-      if report_lineage then ReportSimpleLineage.report ()
-  | None, None, None, false, _ ->
+      if report_lineage then ReportSimpleLineage.report () ;
+      Option.iter taint_source
+        ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:FromSource) ;
+      Option.iter taint_sink ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:ToSink)
+  | None, None, None, false, _, None, None ->
       merge_reports ()
-  | _, _, _, _, _ :: _ ->
+  | _, _, _, _, _ :: _, _, _ ->
       L.die UserError
         "Option '--merge-report' cannot be used with '--issues-tests', '--cost-issues-tests', \
-         '--config-impact-issues-tests' or '--simple-lineage-json-report'.@\n"
+         '--config-impact-issues-tests', '--simple-lineage-json-report', \
+         '--pulse-report-flows-from-taint-source', or '--pulse-report-flows-to-taint-sink'.@\n"
 
 
 let report_diff () =

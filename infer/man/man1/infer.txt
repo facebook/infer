@@ -1154,6 +1154,14 @@ OPTIONS
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).
 
+       --pulse-report-flows-from-taint-source procname
+           Report data flows which originate at taint source procname       
+    See also infer-report(1).
+
+       --pulse-report-flows-to-taint-sink procname
+           Report data flows which pass through taint sink procname       
+    See also infer-report(1).
+
        --pulse-report-ignore-unknown-java-methods-patterns +string
            On Java, issues that are found on program paths that contain calls
            to unknown methods (those without implementation) are not reported

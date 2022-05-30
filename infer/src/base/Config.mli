@@ -567,6 +567,10 @@ val pulse_models_for_erlang : Yojson.Basic.t
 
 val pulse_report_ignore_unknown_java_methods_patterns : Str.regexp option
 
+val pulse_report_flows_from_taint_source : string option
+
+val pulse_report_flows_to_taint_sink : string option
+
 val pulse_model_transfer_ownership_namespace : (string * string) list
 
 val pulse_model_transfer_ownership : string list
