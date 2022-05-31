@@ -124,7 +124,8 @@ let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
               |> Option.value_map ~default:true ~f:(fun matching_addr_list ->
                      aux ~addr_to_explore:(matching_addr_list @ addr_to_explore) ~visited ) )
   in
-  aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
+  BaseAddressAttributes.is_std_moved addr current_attrs
+  || aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
 
 
 let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) ~copied_var astate

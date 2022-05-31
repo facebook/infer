@@ -318,6 +318,14 @@ module PulseTransferFunctions = struct
             :: rev_func_args ) )
     in
     let func_args = List.rev rev_func_args in
+    let astate =
+      match (callee_pname, func_args) with
+      | Some callee_pname, [{PulseAliasSpecialization.FuncArg.arg_payload= arg, _}]
+        when Procname.is_std_move callee_pname ->
+          AddressAttributes.add_one arg StdMoved astate
+      | _, _ ->
+          astate
+    in
     let model =
       match callee_pname with
       | Some callee_pname ->

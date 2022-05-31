@@ -481,13 +481,18 @@ module C = struct
 
   let replace_parameters new_parameters c = {c with parameters= new_parameters}
 
-  (** NOTE: [std::make_shared] is parsed as [C] proc name in Sil, rather than [ObjC_Cpp]. *)
-  let is_make_shared {name} =
+  (** NOTE: [std::_] is parsed as [C] proc name in Sil, rather than [ObjC_Cpp]. *)
+  let is_std_function ~prefix {name} =
     match QualifiedCppName.to_rev_list name with
-    | [make_shared; "std"] when String.is_prefix make_shared ~prefix:"make_shared" ->
+    | [fname; "std"] when String.is_prefix fname ~prefix ->
         true
     | _ ->
         false
+
+
+  let is_make_shared c = is_std_function ~prefix:"make_shared" c
+
+  let is_std_move c = is_std_function ~prefix:"move" c
 end
 
 module Erlang = struct
@@ -702,6 +707,8 @@ let rec base_of = function
   | base ->
       base
 
+
+let is_std_move t = match base_of t with C c_pname -> C.is_std_move c_pname | _ -> false
 
 let is_copy_assignment t =
   match base_of t with

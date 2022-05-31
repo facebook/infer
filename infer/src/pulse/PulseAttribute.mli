@@ -48,6 +48,7 @@ type t =
   | SourceOriginOfCopy of PulseAbstractValue.t
       (** records the source value for a given copy to lookup the appropriate heap in non-disj
           domain *)
+  | StdMoved
   | StdVectorReserve
   | Tainted of {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
   | TaintSanitized of Taint.t
@@ -115,6 +116,8 @@ module Attributes : sig
   val is_always_reachable : t -> bool
 
   val is_modified : t -> bool
+
+  val is_std_moved : t -> bool
 
   val is_std_vector_reserved : t -> bool
 

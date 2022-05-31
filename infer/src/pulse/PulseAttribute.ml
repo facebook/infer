@@ -67,6 +67,7 @@ module Attribute = struct
                                              when they become unreachable *)
     | RefCounted
     | SourceOriginOfCopy of AbstractValue.t
+    | StdMoved
     | StdVectorReserve
     | Tainted of {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
     | TaintSanitized of Taint.t
@@ -113,6 +114,8 @@ module Attribute = struct
   let propagate_taint_from_rank = Variants.propagatetaintfrom.rank
 
   let ref_counted_rank = Variants.refcounted.rank
+
+  let std_moved_rank = Variants.stdmoved.rank
 
   let std_vector_reserve_rank = Variants.stdvectorreserve.rank
 
@@ -199,6 +202,8 @@ module Attribute = struct
         F.fprintf f "RefCounted"
     | SourceOriginOfCopy source ->
         F.fprintf f "copied of source %a" AbstractValue.pp source
+    | StdMoved ->
+        F.pp_print_string f "std::move()"
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Tainted {source; hist; intra_procedural_only} ->
@@ -230,6 +235,7 @@ module Attribute = struct
     | JavaResourceReleased
     | PropagateTaintFrom _
     | SourceOriginOfCopy _
+    | StdMoved
     | StdVectorReserve
     | Tainted _
     | TaintSanitized _
@@ -257,6 +263,7 @@ module Attribute = struct
     | PropagateTaintFrom _
     | RefCounted
     | SourceOriginOfCopy _
+    | StdMoved
     | StdVectorReserve
     | Tainted _
     | TaintSanitized _
@@ -287,6 +294,7 @@ module Attribute = struct
     | JavaResourceReleased
     | PropagateTaintFrom _
     | RefCounted
+    | StdMoved
     | StdVectorReserve
     | TaintSanitized _
     | Uninitialized
@@ -335,6 +343,7 @@ module Attribute = struct
       | EndOfCollection
       | JavaResourceReleased
       | RefCounted
+      | StdMoved
       | StdVectorReserve
       | TaintSanitized _
       | UnreachableAt _
@@ -374,6 +383,7 @@ module Attribute = struct
       | JavaResourceReleased
       | RefCounted
       | SourceOriginOfCopy _
+      | StdMoved
       | StdVectorReserve
       | Tainted _
       | TaintSanitized _
@@ -448,6 +458,8 @@ module Attributes = struct
 
 
   let is_end_of_collection = mem_by_rank Attribute.end_of_collection_rank
+
+  let is_std_moved = mem_by_rank Attribute.std_moved_rank
 
   let is_std_vector_reserved = mem_by_rank Attribute.std_vector_reserve_rank
 

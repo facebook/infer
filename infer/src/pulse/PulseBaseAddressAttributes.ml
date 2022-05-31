@@ -243,6 +243,10 @@ let is_java_resource_released adress attrs =
   Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_java_resource_released
 
 
+let is_std_moved address attrs =
+  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_moved
+
+
 let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_vector_reserved
 
