@@ -12,4 +12,4 @@ default: compile
 
 .PHONY: print replace test clean
 print replace test clean:
-	$(QUIET)INFER_ARGS=--Xclang^-std=c++11 $(MAKE) -C ../pulse TEST_SUFFIX=-11 TEST_RESULT_SUFFIX=-11  $@
+	$(QUIET)INFER_ARGS=--Xclang^-std=c++11 $(MAKE) -C ../pulse TEST_SUFFIX=-11 TEST_RESULT_SUFFIX=-11 ROOT_REL_SUFFIX=-11  $@

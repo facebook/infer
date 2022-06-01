@@ -35,7 +35,7 @@ define check_no_diff
    printf '$(TERM_ERROR)Test output ($(2)) differs from expected test output $(1)$(TERM_RESET)\n' >&2; \
    printf '$(TERM_ERROR)Run the following command to replace the expected test output with the new output:$(TERM_RESET)\n' >&2; \
    printf '\n' >&2; \
-   printf '$(TERM_ERROR)  make -C $(ROOT_REL_DIR) replace\n$(TERM_RESET)' >&2; \
+   printf '$(TERM_ERROR)  make -C $(ROOT_REL_DIR)$(ROOT_REL_SUFFIX) replace\n$(TERM_RESET)' >&2; \
    printf '\n' >&2; \
    exit 1)
 endef
