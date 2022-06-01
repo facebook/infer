@@ -284,18 +284,15 @@ let taint_sanitizers tenv return ~has_added_return_param proc_name actuals astat
 
 
 let check_policies ~sink ~source ~sanitizer_opt =
-  let sinks_policies =
-    List.map sink.Taint.kinds ~f:(fun sink_kind ->
-        (sink_kind, Hashtbl.find_exn sink_policies sink_kind) )
-  in
-  List.fold_result sinks_policies ~init:() ~f:(fun () (sink_kind, policies) ->
-      List.fold_result policies ~init:() ~f:(fun () ({source_kinds; sanitizer_kinds} as policy) ->
+  List.fold sink.Taint.kinds ~init:[] ~f:(fun acc sink_kind ->
+      let policies = Hashtbl.find_exn sink_policies sink_kind in
+      List.fold policies ~init:acc ~f:(fun acc ({source_kinds; sanitizer_kinds} as policy) ->
           match
             List.find source.Taint.kinds ~f:(fun source_kind ->
                 List.mem ~equal:Taint.Kind.equal source_kinds source_kind )
           with
           | None ->
-              Ok ()
+              acc
           | Some suspicious_source ->
               L.d_printfln ~color:Red "TAINTED: %a -> %a" Taint.Kind.pp suspicious_source
                 Taint.Kind.pp sink_kind ;
@@ -306,11 +303,8 @@ let check_policies ~sink ~source ~sanitizer_opt =
               then (
                 L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp
                   (Option.value_exn sanitizer_opt) ;
-                Ok () )
-              else
-                (* TODO: we may want to collect *all* the policies that are violated instead of just
-                   the first one *)
-                Error (suspicious_source, sink_kind, policy) ) )
+                acc )
+              else (suspicious_source, sink_kind, policy) :: acc ) )
 
 
 let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
@@ -318,48 +312,48 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
     L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
     match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer v astate with
     | None ->
-        Ok (policy_violations_reported, astate)
-    | Some ((source, source_hist, _), sanitizer_opt) -> (
+        Ok policy_violations_reported
+    | Some ((source, source_hist, _), sanitizer_opt) ->
         L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
-        match check_policies ~sink ~source ~sanitizer_opt with
-        | Ok () ->
-            Ok (policy_violations_reported, astate)
-        | Error (source_kind, sink_kind, policy) ->
-            (* HACK: compare by pointer as policies are fixed throughout execution and each policy
-               record is different from all other policies; we could optimise this check by keeping
-               a set of policies around instead of a list, eg assign an integer id to each policy
-               (using a simple incrementing counter when reading the configuration) and comparing
-               only that id. *)
-            if List.mem ~equal:phys_equal policy_violations_reported policy then
-              Ok (policy_violations_reported, astate)
-            else
-              let tainted = Decompiler.find v astate in
-              Recoverable
-                ( (policy :: policy_violations_reported, astate)
-                , [ ReportableError
-                      { astate
-                      ; diagnostic=
-                          TaintFlow
-                            { tainted
-                            ; location
-                            ; source= ({source with kinds= [source_kind]}, source_hist)
-                            ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } }
-                  ; ReportableError
-                      { astate
-                      ; diagnostic=
-                          FlowFromTaintSource
-                            { tainted
-                            ; location
-                            ; source= ({source with kinds= [source_kind]}, source_hist)
-                            ; destination= ({sink with kinds= [sink_kind]}, sink_trace) } }
-                  ; ReportableError
-                      { astate
-                      ; diagnostic=
-                          FlowToTaintSink
-                            { expr= tainted
-                            ; location
-                            ; source= ({source with kinds= [source_kind]}, source_hist)
-                            ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } } ] ) )
+        let potential_policy_violations = check_policies ~sink ~source ~sanitizer_opt in
+        let report_policy_violation reported_so_far (source_kind, sink_kind, violated_policy) =
+          (* HACK: compare by pointer as policies are fixed throughout execution and each policy
+             record is different from all other policies; we could optimise this check by keeping
+             a set of policies around instead of a list, eg assign an integer id to each policy
+             (using a simple incrementing counter when reading the configuration) and comparing
+             only that id. *)
+          if List.mem ~equal:phys_equal reported_so_far violated_policy then Ok reported_so_far
+          else
+            let tainted = Decompiler.find v astate in
+            Recoverable
+              ( violated_policy :: reported_so_far
+              , [ ReportableError
+                    { astate
+                    ; diagnostic=
+                        TaintFlow
+                          { tainted
+                          ; location
+                          ; source= ({source with kinds= [source_kind]}, source_hist)
+                          ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } }
+                ; ReportableError
+                    { astate
+                    ; diagnostic=
+                        FlowFromTaintSource
+                          { tainted
+                          ; location
+                          ; source= ({source with kinds= [source_kind]}, source_hist)
+                          ; destination= ({sink with kinds= [sink_kind]}, sink_trace) } }
+                ; ReportableError
+                    { astate
+                    ; diagnostic=
+                        FlowToTaintSink
+                          { expr= tainted
+                          ; location
+                          ; source= ({source with kinds= [source_kind]}, source_hist)
+                          ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } } ] )
+        in
+        PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
+          ~f:report_policy_violation
   in
   let rec check_dependencies policy_violations_reported visited v astate =
     let* astate =
@@ -394,9 +388,7 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
     else
       let visited = AbstractValue.Set.add v visited in
       let astate = AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate in
-      let* policy_violations_reported, astate =
-        check_immediate policy_violations_reported v astate
-      in
+      let* policy_violations_reported = check_immediate policy_violations_reported v astate in
       check_dependencies policy_violations_reported visited v astate
   in
   check [] AbstractValue.Set.empty v astate

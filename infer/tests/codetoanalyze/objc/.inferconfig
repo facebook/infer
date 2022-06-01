@@ -3,7 +3,7 @@
       { "short_description": "Simple Test",
       "taint_flows": [
         { "source_kinds": ["SimpleSource"],
-          "sink_kinds": ["SimpleSink"]
+          "sink_kinds": ["SimpleSink","SecondSimpleSink"]
         }
       ]
      },
@@ -34,6 +34,11 @@
         { "class_names": ["InferTaint"],
           "method_names": ["sink:"],
           "kinds": ["SimpleSink"],
+          "taint_target": ["ArgumentPositions", [0]]
+        },
+        { "class_names": ["InferTaint"],
+          "method_names": ["twoKindSink:"],
+          "kinds": ["SimpleSink","SecondSimpleSink"],
           "taint_target": ["ArgumentPositions", [0]]
         },
         { "procedure": "HandleIntentForKey",
