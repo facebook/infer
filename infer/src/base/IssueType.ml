@@ -1055,13 +1055,13 @@ let uninitialized_value_pulse =
 
 let unnecessary_copy_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY" Error Pulse ~hum:"Unnecessary Copy"
-    ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
+    ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
 
 
 let unnecessary_copy_assignment_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT" Error Pulse
     ~hum:"Unnecessary Copy Assignment"
-    ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
+    ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
 let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
