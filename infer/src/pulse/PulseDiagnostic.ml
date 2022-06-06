@@ -557,8 +557,9 @@ let get_issue_type ~latent issue_type =
         IssueType.pulse_memory_leak_c
     | CppNew | CppNewArray ->
         IssueType.pulse_memory_leak_cpp
-    | JavaResource _ ->
-        L.die InternalError "Memory leaks should not have a Java resource as allocator" )
+    | JavaResource _ | ObjCAlloc ->
+        L.die InternalError
+          "Memory leaks should not have a Java resource or Objective-C alloc as allocator" )
   | ResourceLeak _, false ->
       IssueType.pulse_resource_leak
   | RetainCycle _, false ->

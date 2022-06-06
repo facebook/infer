@@ -22,6 +22,7 @@ type allocator =
   | CppNew
   | CppNewArray
   | JavaResource of JavaClassName.t
+  | ObjCAlloc
 [@@deriving equal]
 
 val pp_allocator : F.formatter -> allocator -> unit

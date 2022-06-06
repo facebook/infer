@@ -24,6 +24,7 @@ module Attribute = struct
     | CppNew
     | CppNewArray
     | JavaResource of JavaClassName.t
+    | ObjCAlloc
   [@@deriving compare, equal]
 
   let pp_allocator fmt = function
@@ -41,6 +42,8 @@ module Attribute = struct
         F.fprintf fmt "new[]"
     | JavaResource class_name ->
         F.fprintf fmt "resource %a" JavaClassName.pp class_name
+    | ObjCAlloc ->
+        F.fprintf fmt "alloc"
 
 
   type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
@@ -355,7 +358,8 @@ module Attribute = struct
     match (allocator, invalidation) with
     | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), Some ((CFree | CustomFree _), _)
     | CppNew, Some (CppDelete, _)
-    | CppNewArray, Some (CppDeleteArray, _) ->
+    | CppNewArray, Some (CppDeleteArray, _)
+    | ObjCAlloc, _ ->
         true
     | JavaResource _, _ ->
         is_released

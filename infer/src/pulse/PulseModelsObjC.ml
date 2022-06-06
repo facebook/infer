@@ -114,7 +114,7 @@ let alloc_no_fail size : model =
   (* NOTE: technically this doesn't initialize the result but we haven't modelled initialization so
      assume the object is initialized after [init] for now *)
   let<+> astate =
-    Basic.alloc_no_leak_not_null ~initialize:true ~desc:"alloc" (Some size) model_data astate
+    Basic.alloc_not_null ~initialize:true ~desc:"alloc" ObjCAlloc (Some size) model_data astate
   in
   let ret_addr =
     match PulseOperations.read_id ret_id astate with
