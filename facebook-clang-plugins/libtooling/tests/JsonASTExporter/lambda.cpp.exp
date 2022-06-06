@@ -193,7 +193,8 @@
                     ]
                   },
                   {
-                    "type_ptr" : 12
+                    "type_ptr" : 12,
+                    "is_trivially_copyable" : true
                   },
                   {
                   }
@@ -219,7 +220,8 @@
                     ]
                   },
                   {
-                    "type_ptr" : 12
+                    "type_ptr" : 12,
+                    "is_trivially_copyable" : true
                   },
                   {
                   }
@@ -334,7 +336,8 @@
                                           ],
                                           {
                                             "qual_type" : {
-                                              "type_ptr" : 12
+                                              "type_ptr" : 12,
+                                              "is_trivially_copyable" : true
                                             }
                                           },
                                           {
@@ -350,7 +353,8 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 22
+                                  "type_ptr" : 22,
+                                  "is_trivially_copyable" : true
                                 }
                               },
                               {
@@ -449,7 +453,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 12
+                                                      "type_ptr" : 12,
+                                                      "is_trivially_copyable" : true
                                                     }
                                                   },
                                                   {
@@ -762,7 +767,8 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 22
+                              "type_ptr" : 22,
+                              "is_trivially_copyable" : true
                             },
                             "value_kind" : "XValue"
                           },
@@ -772,7 +778,8 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 41
+                          "type_ptr" : 41,
+                          "is_trivially_copyable" : true
                         }
                       },
                       {
@@ -797,7 +804,8 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 41
+                      "type_ptr" : 41,
+                      "is_trivially_copyable" : true
                     }
                   },
                   {
@@ -824,7 +832,8 @@
                     ]
                   },
                   {
-                    "type_ptr" : 41
+                    "type_ptr" : 41,
+                    "is_trivially_copyable" : true
                   },
                   {
                     "init_expr" : ["ExprWithCleanups" , [
@@ -921,7 +930,8 @@
                                               ],
                                               {
                                                 "qual_type" : {
-                                                  "type_ptr" : 12
+                                                  "type_ptr" : 12,
+                                                  "is_trivially_copyable" : true
                                                 }
                                               },
                                               {
@@ -937,7 +947,8 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 22
+                                      "type_ptr" : 22,
+                                      "is_trivially_copyable" : true
                                     }
                                   },
                                   {
@@ -1036,7 +1047,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 12
+                                                          "type_ptr" : 12,
+                                                          "is_trivially_copyable" : true
                                                         }
                                                       },
                                                       {
@@ -1349,7 +1361,8 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 22
+                                  "type_ptr" : 22,
+                                  "is_trivially_copyable" : true
                                 },
                                 "value_kind" : "XValue"
                               },
@@ -1359,7 +1372,8 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 41
+                              "type_ptr" : 41,
+                              "is_trivially_copyable" : true
                             }
                           },
                           {
@@ -1384,7 +1398,8 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 41
+                          "type_ptr" : 41,
+                          "is_trivially_copyable" : true
                         }
                       },
                       {
@@ -1476,7 +1491,8 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 12
+                                      "type_ptr" : 12,
+                                      "is_trivially_copyable" : true
                                     },
                                     "value_kind" : "LValue"
                                   },
@@ -1491,7 +1507,8 @@
                                         ]
                                       },
                                       "qual_type" : {
-                                        "type_ptr" : 12
+                                        "type_ptr" : 12,
+                                        "is_trivially_copyable" : true
                                       }
                                     }
                                   }
@@ -1525,7 +1542,8 @@
                                       ],
                                       {
                                         "qual_type" : {
-                                          "type_ptr" : 12
+                                          "type_ptr" : 12,
+                                          "is_trivially_copyable" : true
                                         },
                                         "value_kind" : "LValue"
                                       },
@@ -1540,7 +1558,8 @@
                                             ]
                                           },
                                           "qual_type" : {
-                                            "type_ptr" : 12
+                                            "type_ptr" : 12,
+                                            "is_trivially_copyable" : true
                                           }
                                         }
                                       }
@@ -1548,7 +1567,8 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 12
+                                      "type_ptr" : 12,
+                                      "is_trivially_copyable" : true
                                     }
                                   },
                                   {
@@ -1613,7 +1633,8 @@
                                               ],
                                               {
                                                 "qual_type" : {
-                                                  "type_ptr" : 12
+                                                  "type_ptr" : 12,
+                                                  "is_trivially_copyable" : true
                                                 },
                                                 "value_kind" : "LValue"
                                               },
@@ -1628,7 +1649,8 @@
                                                     ]
                                                   },
                                                   "qual_type" : {
-                                                    "type_ptr" : 12
+                                                    "type_ptr" : 12,
+                                                    "is_trivially_copyable" : true
                                                   }
                                                 }
                                               }
@@ -1636,7 +1658,8 @@
                                           ],
                                           {
                                             "qual_type" : {
-                                              "type_ptr" : 12
+                                              "type_ptr" : 12,
+                                              "is_trivially_copyable" : true
                                             }
                                           },
                                           {
@@ -1653,7 +1676,8 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 55
+                                  "type_ptr" : 55,
+                                  "is_trivially_copyable" : true
                                 }
                               },
                               {
@@ -1729,7 +1753,8 @@
                                               ]
                                             },
                                             {
-                                              "type_ptr" : 12
+                                              "type_ptr" : 12,
+                                              "is_trivially_copyable" : true
                                             },
                                             {
                                               "parm_index_in_function" : 0
@@ -1792,7 +1817,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 12
+                                                          "type_ptr" : 12,
+                                                          "is_trivially_copyable" : true
                                                         },
                                                         "value_kind" : "LValue"
                                                       },
@@ -1807,7 +1833,8 @@
                                                             ]
                                                           },
                                                           "qual_type" : {
-                                                            "type_ptr" : 12
+                                                            "type_ptr" : 12,
+                                                            "is_trivially_copyable" : true
                                                           }
                                                         }
                                                       }
@@ -1815,7 +1842,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 12
+                                                      "type_ptr" : 12,
+                                                      "is_trivially_copyable" : true
                                                     }
                                                   },
                                                   {
@@ -1889,7 +1917,8 @@
                                         ]
                                       },
                                       {
-                                        "type_ptr" : 12
+                                        "type_ptr" : 12,
+                                        "is_trivially_copyable" : true
                                       },
                                       {
                                       }
@@ -2139,7 +2168,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 55
+                                                          "type_ptr" : 55,
+                                                          "is_trivially_copyable" : true
                                                         },
                                                         "value_kind" : "LValue"
                                                       },
@@ -2162,7 +2192,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 55
+                                                      "type_ptr" : 55,
+                                                      "is_trivially_copyable" : true
                                                     },
                                                     "value_kind" : "XValue"
                                                   },
@@ -2179,7 +2210,8 @@
                                               ],
                                               {
                                                 "qual_type" : {
-                                                  "type_ptr" : 12
+                                                  "type_ptr" : 12,
+                                                  "is_trivially_copyable" : true
                                                 },
                                                 "value_kind" : "LValue"
                                               },
@@ -2224,7 +2256,8 @@
                                                 ]
                                               },
                                               "qual_type" : {
-                                                "type_ptr" : 12
+                                                "type_ptr" : 12,
+                                                "is_trivially_copyable" : true
                                               }
                                             }],
                                             "source_range" : [
@@ -2290,7 +2323,8 @@
                                                           ],
                                                           {
                                                             "qual_type" : {
-                                                              "type_ptr" : 55
+                                                              "type_ptr" : 55,
+                                                              "is_trivially_copyable" : true
                                                             },
                                                             "value_kind" : "LValue"
                                                           },
@@ -2313,7 +2347,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 55
+                                                          "type_ptr" : 55,
+                                                          "is_trivially_copyable" : true
                                                         },
                                                         "value_kind" : "XValue"
                                                       },
@@ -2330,7 +2365,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 12
+                                                      "type_ptr" : 12,
+                                                      "is_trivially_copyable" : true
                                                     },
                                                     "value_kind" : "XValue"
                                                   },
@@ -2356,7 +2392,8 @@
                                                         ]
                                                       },
                                                       "qual_type" : {
-                                                        "type_ptr" : 12
+                                                        "type_ptr" : 12,
+                                                        "is_trivially_copyable" : true
                                                       }
                                                     }
                                                   }
@@ -2364,7 +2401,8 @@
                                               ],
                                               {
                                                 "qual_type" : {
-                                                  "type_ptr" : 12
+                                                  "type_ptr" : 12,
+                                                  "is_trivially_copyable" : true
                                                 }
                                               },
                                               {
@@ -2431,7 +2469,8 @@
                                             ]
                                           },
                                           "qual_type" : {
-                                            "type_ptr" : 12
+                                            "type_ptr" : 12,
+                                            "is_trivially_copyable" : true
                                           }
                                         },
                                         "location" : [
@@ -2456,7 +2495,8 @@
                                             ]
                                           },
                                           "qual_type" : {
-                                            "type_ptr" : 12
+                                            "type_ptr" : 12,
+                                            "is_trivially_copyable" : true
                                           }
                                         },
                                         "location" : [
@@ -2476,7 +2516,8 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 55
+                              "type_ptr" : 55,
+                              "is_trivially_copyable" : true
                             },
                             "value_kind" : "XValue"
                           },
@@ -2486,7 +2527,8 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 80
+                          "type_ptr" : 80,
+                          "is_trivially_copyable" : true
                         }
                       },
                       {
@@ -2511,7 +2553,8 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 80
+                      "type_ptr" : 80,
+                      "is_trivially_copyable" : true
                     }
                   },
                   {
@@ -2538,7 +2581,8 @@
                     ]
                   },
                   {
-                    "type_ptr" : 80
+                    "type_ptr" : 80,
+                    "is_trivially_copyable" : true
                   },
                   {
                     "init_expr" : ["ExprWithCleanups" , [
@@ -2609,7 +2653,8 @@
                                       ],
                                       {
                                         "qual_type" : {
-                                          "type_ptr" : 12
+                                          "type_ptr" : 12,
+                                          "is_trivially_copyable" : true
                                         },
                                         "value_kind" : "LValue"
                                       },
@@ -2624,7 +2669,8 @@
                                             ]
                                           },
                                           "qual_type" : {
-                                            "type_ptr" : 12
+                                            "type_ptr" : 12,
+                                            "is_trivially_copyable" : true
                                           }
                                         }
                                       }
@@ -2658,7 +2704,8 @@
                                           ],
                                           {
                                             "qual_type" : {
-                                              "type_ptr" : 12
+                                              "type_ptr" : 12,
+                                              "is_trivially_copyable" : true
                                             },
                                             "value_kind" : "LValue"
                                           },
@@ -2673,7 +2720,8 @@
                                                 ]
                                               },
                                               "qual_type" : {
-                                                "type_ptr" : 12
+                                                "type_ptr" : 12,
+                                                "is_trivially_copyable" : true
                                               }
                                             }
                                           }
@@ -2681,7 +2729,8 @@
                                       ],
                                       {
                                         "qual_type" : {
-                                          "type_ptr" : 12
+                                          "type_ptr" : 12,
+                                          "is_trivially_copyable" : true
                                         }
                                       },
                                       {
@@ -2746,7 +2795,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 12
+                                                      "type_ptr" : 12,
+                                                      "is_trivially_copyable" : true
                                                     },
                                                     "value_kind" : "LValue"
                                                   },
@@ -2761,7 +2811,8 @@
                                                         ]
                                                       },
                                                       "qual_type" : {
-                                                        "type_ptr" : 12
+                                                        "type_ptr" : 12,
+                                                        "is_trivially_copyable" : true
                                                       }
                                                     }
                                                   }
@@ -2769,7 +2820,8 @@
                                               ],
                                               {
                                                 "qual_type" : {
-                                                  "type_ptr" : 12
+                                                  "type_ptr" : 12,
+                                                  "is_trivially_copyable" : true
                                                 }
                                               },
                                               {
@@ -2786,7 +2838,8 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 55
+                                      "type_ptr" : 55,
+                                      "is_trivially_copyable" : true
                                     }
                                   },
                                   {
@@ -2862,7 +2915,8 @@
                                                   ]
                                                 },
                                                 {
-                                                  "type_ptr" : 12
+                                                  "type_ptr" : 12,
+                                                  "is_trivially_copyable" : true
                                                 },
                                                 {
                                                   "parm_index_in_function" : 0
@@ -2925,7 +2979,8 @@
                                                           ],
                                                           {
                                                             "qual_type" : {
-                                                              "type_ptr" : 12
+                                                              "type_ptr" : 12,
+                                                              "is_trivially_copyable" : true
                                                             },
                                                             "value_kind" : "LValue"
                                                           },
@@ -2940,7 +2995,8 @@
                                                                 ]
                                                               },
                                                               "qual_type" : {
-                                                                "type_ptr" : 12
+                                                                "type_ptr" : 12,
+                                                                "is_trivially_copyable" : true
                                                               }
                                                             }
                                                           }
@@ -2948,7 +3004,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 12
+                                                          "type_ptr" : 12,
+                                                          "is_trivially_copyable" : true
                                                         }
                                                       },
                                                       {
@@ -3022,7 +3079,8 @@
                                             ]
                                           },
                                           {
-                                            "type_ptr" : 12
+                                            "type_ptr" : 12,
+                                            "is_trivially_copyable" : true
                                           },
                                           {
                                           }
@@ -3272,7 +3330,8 @@
                                                           ],
                                                           {
                                                             "qual_type" : {
-                                                              "type_ptr" : 55
+                                                              "type_ptr" : 55,
+                                                              "is_trivially_copyable" : true
                                                             },
                                                             "value_kind" : "LValue"
                                                           },
@@ -3295,7 +3354,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 55
+                                                          "type_ptr" : 55,
+                                                          "is_trivially_copyable" : true
                                                         },
                                                         "value_kind" : "XValue"
                                                       },
@@ -3312,7 +3372,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 12
+                                                      "type_ptr" : 12,
+                                                      "is_trivially_copyable" : true
                                                     },
                                                     "value_kind" : "LValue"
                                                   },
@@ -3357,7 +3418,8 @@
                                                     ]
                                                   },
                                                   "qual_type" : {
-                                                    "type_ptr" : 12
+                                                    "type_ptr" : 12,
+                                                    "is_trivially_copyable" : true
                                                   }
                                                 }],
                                                 "source_range" : [
@@ -3423,7 +3485,8 @@
                                                               ],
                                                               {
                                                                 "qual_type" : {
-                                                                  "type_ptr" : 55
+                                                                  "type_ptr" : 55,
+                                                                  "is_trivially_copyable" : true
                                                                 },
                                                                 "value_kind" : "LValue"
                                                               },
@@ -3446,7 +3509,8 @@
                                                           ],
                                                           {
                                                             "qual_type" : {
-                                                              "type_ptr" : 55
+                                                              "type_ptr" : 55,
+                                                              "is_trivially_copyable" : true
                                                             },
                                                             "value_kind" : "XValue"
                                                           },
@@ -3463,7 +3527,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 12
+                                                          "type_ptr" : 12,
+                                                          "is_trivially_copyable" : true
                                                         },
                                                         "value_kind" : "XValue"
                                                       },
@@ -3489,7 +3554,8 @@
                                                             ]
                                                           },
                                                           "qual_type" : {
-                                                            "type_ptr" : 12
+                                                            "type_ptr" : 12,
+                                                            "is_trivially_copyable" : true
                                                           }
                                                         }
                                                       }
@@ -3497,7 +3563,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 12
+                                                      "type_ptr" : 12,
+                                                      "is_trivially_copyable" : true
                                                     }
                                                   },
                                                   {
@@ -3564,7 +3631,8 @@
                                                 ]
                                               },
                                               "qual_type" : {
-                                                "type_ptr" : 12
+                                                "type_ptr" : 12,
+                                                "is_trivially_copyable" : true
                                               }
                                             },
                                             "location" : [
@@ -3589,7 +3657,8 @@
                                                 ]
                                               },
                                               "qual_type" : {
-                                                "type_ptr" : 12
+                                                "type_ptr" : 12,
+                                                "is_trivially_copyable" : true
                                               }
                                             },
                                             "location" : [
@@ -3609,7 +3678,8 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 55
+                                  "type_ptr" : 55,
+                                  "is_trivially_copyable" : true
                                 },
                                 "value_kind" : "XValue"
                               },
@@ -3619,7 +3689,8 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 80
+                              "type_ptr" : 80,
+                              "is_trivially_copyable" : true
                             }
                           },
                           {
@@ -3644,7 +3715,8 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 80
+                          "type_ptr" : 80,
+                          "is_trivially_copyable" : true
                         }
                       },
                       {
@@ -3736,7 +3808,8 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 12
+                                      "type_ptr" : 12,
+                                      "is_trivially_copyable" : true
                                     }
                                   },
                                   {
@@ -3801,7 +3874,8 @@
                                               {
                                                 "qual_type" : {
                                                   "type_ptr" : 92,
-                                                  "is_const" : true
+                                                  "is_const" : true,
+                                                  "is_trivially_copyable" : true
                                                 },
                                                 "value_kind" : "LValue"
                                               },
@@ -3816,7 +3890,8 @@
                                                     ]
                                                   },
                                                   "qual_type" : {
-                                                    "type_ptr" : 92
+                                                    "type_ptr" : 92,
+                                                    "is_trivially_copyable" : true
                                                   }
                                                 }
                                               }
@@ -3824,7 +3899,8 @@
                                           ],
                                           {
                                             "qual_type" : {
-                                              "type_ptr" : 92
+                                              "type_ptr" : 92,
+                                              "is_trivially_copyable" : true
                                             }
                                           },
                                           {
@@ -3841,7 +3917,8 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 94
+                                  "type_ptr" : 94,
+                                  "is_trivially_copyable" : true
                                 }
                               },
                               {
@@ -3954,7 +4031,8 @@
                                                       {
                                                         "qual_type" : {
                                                           "type_ptr" : 92,
-                                                          "is_const" : true
+                                                          "is_const" : true,
+                                                          "is_trivially_copyable" : true
                                                         },
                                                         "value_kind" : "LValue"
                                                       },
@@ -3969,7 +4047,8 @@
                                                             ]
                                                           },
                                                           "qual_type" : {
-                                                            "type_ptr" : 92
+                                                            "type_ptr" : 92,
+                                                            "is_trivially_copyable" : true
                                                           }
                                                         }
                                                       }
@@ -3977,7 +4056,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 92
+                                                      "type_ptr" : 92,
+                                                      "is_trivially_copyable" : true
                                                     }
                                                   },
                                                   {
@@ -4021,7 +4101,8 @@
                                         ]
                                       },
                                       {
-                                        "type_ptr" : 92
+                                        "type_ptr" : 92,
+                                        "is_trivially_copyable" : true
                                       },
                                       {
                                       }
@@ -4218,7 +4299,8 @@
                                                 ]
                                               },
                                               "qual_type" : {
-                                                "type_ptr" : 92
+                                                "type_ptr" : 92,
+                                                "is_trivially_copyable" : true
                                               }
                                             }],
                                             "source_range" : [
@@ -4284,7 +4366,8 @@
                                                           ],
                                                           {
                                                             "qual_type" : {
-                                                              "type_ptr" : 94
+                                                              "type_ptr" : 94,
+                                                              "is_trivially_copyable" : true
                                                             },
                                                             "value_kind" : "LValue"
                                                           },
@@ -4307,7 +4390,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 94
+                                                          "type_ptr" : 94,
+                                                          "is_trivially_copyable" : true
                                                         },
                                                         "value_kind" : "XValue"
                                                       },
@@ -4324,7 +4408,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 92
+                                                      "type_ptr" : 92,
+                                                      "is_trivially_copyable" : true
                                                     },
                                                     "value_kind" : "XValue"
                                                   },
@@ -4350,7 +4435,8 @@
                                                         ]
                                                       },
                                                       "qual_type" : {
-                                                        "type_ptr" : 92
+                                                        "type_ptr" : 92,
+                                                        "is_trivially_copyable" : true
                                                       }
                                                     }
                                                   }
@@ -4358,7 +4444,8 @@
                                               ],
                                               {
                                                 "qual_type" : {
-                                                  "type_ptr" : 92
+                                                  "type_ptr" : 92,
+                                                  "is_trivially_copyable" : true
                                                 }
                                               },
                                               {
@@ -4436,7 +4523,8 @@
                                             ]
                                           },
                                           {
-                                            "type_ptr" : 92
+                                            "type_ptr" : 92,
+                                            "is_trivially_copyable" : true
                                           },
                                           {
                                             "is_init_ice" : true,
@@ -4456,7 +4544,8 @@
                                               ],
                                               {
                                                 "qual_type" : {
-                                                  "type_ptr" : 12
+                                                  "type_ptr" : 12,
+                                                  "is_trivially_copyable" : true
                                                 }
                                               },
                                               {
@@ -4477,7 +4566,8 @@
                                             ]
                                           },
                                           "qual_type" : {
-                                            "type_ptr" : 92
+                                            "type_ptr" : 92,
+                                            "is_trivially_copyable" : true
                                           }
                                         },
                                         "location" : [
@@ -4497,7 +4587,8 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 94
+                              "type_ptr" : 94,
+                              "is_trivially_copyable" : true
                             },
                             "value_kind" : "XValue"
                           },
@@ -4507,7 +4598,8 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 112
+                          "type_ptr" : 112,
+                          "is_trivially_copyable" : true
                         }
                       },
                       {
@@ -4532,7 +4624,8 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 112
+                      "type_ptr" : 112,
+                      "is_trivially_copyable" : true
                     }
                   },
                   {
@@ -4559,7 +4652,8 @@
                     ]
                   },
                   {
-                    "type_ptr" : 112
+                    "type_ptr" : 112,
+                    "is_trivially_copyable" : true
                   },
                   {
                     "init_expr" : ["ExprWithCleanups" , [
@@ -4630,7 +4724,8 @@
                                       ],
                                       {
                                         "qual_type" : {
-                                          "type_ptr" : 12
+                                          "type_ptr" : 12,
+                                          "is_trivially_copyable" : true
                                         }
                                       },
                                       {
@@ -4695,7 +4790,8 @@
                                                   {
                                                     "qual_type" : {
                                                       "type_ptr" : 92,
-                                                      "is_const" : true
+                                                      "is_const" : true,
+                                                      "is_trivially_copyable" : true
                                                     },
                                                     "value_kind" : "LValue"
                                                   },
@@ -4710,7 +4806,8 @@
                                                         ]
                                                       },
                                                       "qual_type" : {
-                                                        "type_ptr" : 92
+                                                        "type_ptr" : 92,
+                                                        "is_trivially_copyable" : true
                                                       }
                                                     }
                                                   }
@@ -4718,7 +4815,8 @@
                                               ],
                                               {
                                                 "qual_type" : {
-                                                  "type_ptr" : 92
+                                                  "type_ptr" : 92,
+                                                  "is_trivially_copyable" : true
                                                 }
                                               },
                                               {
@@ -4735,7 +4833,8 @@
                                   ],
                                   {
                                     "qual_type" : {
-                                      "type_ptr" : 94
+                                      "type_ptr" : 94,
+                                      "is_trivially_copyable" : true
                                     }
                                   },
                                   {
@@ -4848,7 +4947,8 @@
                                                           {
                                                             "qual_type" : {
                                                               "type_ptr" : 92,
-                                                              "is_const" : true
+                                                              "is_const" : true,
+                                                              "is_trivially_copyable" : true
                                                             },
                                                             "value_kind" : "LValue"
                                                           },
@@ -4863,7 +4963,8 @@
                                                                 ]
                                                               },
                                                               "qual_type" : {
-                                                                "type_ptr" : 92
+                                                                "type_ptr" : 92,
+                                                                "is_trivially_copyable" : true
                                                               }
                                                             }
                                                           }
@@ -4871,7 +4972,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 92
+                                                          "type_ptr" : 92,
+                                                          "is_trivially_copyable" : true
                                                         }
                                                       },
                                                       {
@@ -4915,7 +5017,8 @@
                                             ]
                                           },
                                           {
-                                            "type_ptr" : 92
+                                            "type_ptr" : 92,
+                                            "is_trivially_copyable" : true
                                           },
                                           {
                                           }
@@ -5112,7 +5215,8 @@
                                                     ]
                                                   },
                                                   "qual_type" : {
-                                                    "type_ptr" : 92
+                                                    "type_ptr" : 92,
+                                                    "is_trivially_copyable" : true
                                                   }
                                                 }],
                                                 "source_range" : [
@@ -5178,7 +5282,8 @@
                                                               ],
                                                               {
                                                                 "qual_type" : {
-                                                                  "type_ptr" : 94
+                                                                  "type_ptr" : 94,
+                                                                  "is_trivially_copyable" : true
                                                                 },
                                                                 "value_kind" : "LValue"
                                                               },
@@ -5201,7 +5306,8 @@
                                                           ],
                                                           {
                                                             "qual_type" : {
-                                                              "type_ptr" : 94
+                                                              "type_ptr" : 94,
+                                                              "is_trivially_copyable" : true
                                                             },
                                                             "value_kind" : "XValue"
                                                           },
@@ -5218,7 +5324,8 @@
                                                       ],
                                                       {
                                                         "qual_type" : {
-                                                          "type_ptr" : 92
+                                                          "type_ptr" : 92,
+                                                          "is_trivially_copyable" : true
                                                         },
                                                         "value_kind" : "XValue"
                                                       },
@@ -5244,7 +5351,8 @@
                                                             ]
                                                           },
                                                           "qual_type" : {
-                                                            "type_ptr" : 92
+                                                            "type_ptr" : 92,
+                                                            "is_trivially_copyable" : true
                                                           }
                                                         }
                                                       }
@@ -5252,7 +5360,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 92
+                                                      "type_ptr" : 92,
+                                                      "is_trivially_copyable" : true
                                                     }
                                                   },
                                                   {
@@ -5330,7 +5439,8 @@
                                                 ]
                                               },
                                               {
-                                                "type_ptr" : 92
+                                                "type_ptr" : 92,
+                                                "is_trivially_copyable" : true
                                               },
                                               {
                                                 "is_init_ice" : true,
@@ -5350,7 +5460,8 @@
                                                   ],
                                                   {
                                                     "qual_type" : {
-                                                      "type_ptr" : 12
+                                                      "type_ptr" : 12,
+                                                      "is_trivially_copyable" : true
                                                     }
                                                   },
                                                   {
@@ -5371,7 +5482,8 @@
                                                 ]
                                               },
                                               "qual_type" : {
-                                                "type_ptr" : 92
+                                                "type_ptr" : 92,
+                                                "is_trivially_copyable" : true
                                               }
                                             },
                                             "location" : [
@@ -5391,7 +5503,8 @@
                               ],
                               {
                                 "qual_type" : {
-                                  "type_ptr" : 94
+                                  "type_ptr" : 94,
+                                  "is_trivially_copyable" : true
                                 },
                                 "value_kind" : "XValue"
                               },
@@ -5401,7 +5514,8 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 112
+                              "type_ptr" : 112,
+                              "is_trivially_copyable" : true
                             }
                           },
                           {
@@ -5426,7 +5540,8 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 112
+                          "type_ptr" : 112,
+                          "is_trivially_copyable" : true
                         }
                       },
                       {
@@ -5466,7 +5581,8 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 12
+                      "type_ptr" : 12,
+                      "is_trivially_copyable" : true
                     }
                   },
                   {
@@ -5922,7 +6038,8 @@
         },
         {
           "type_ptr" : 12,
-          "is_const" : true
+          "is_const" : true,
+          "is_trivially_copyable" : true
         }
       ]],
       ["PointerType" , [
@@ -5931,7 +6048,8 @@
         },
         {
           "type_ptr" : 120,
-          "is_const" : true
+          "is_const" : true,
+          "is_trivially_copyable" : true
         }
       ]],
       ["PointerType" , [
@@ -5939,7 +6057,8 @@
           "pointer" : 187
         },
         {
-          "type_ptr" : 120
+          "type_ptr" : 120,
+          "is_trivially_copyable" : true
         }
       ]],
       ["RecordType" , [
@@ -5954,7 +6073,8 @@
         },
         {
           "element_type" : {
-            "type_ptr" : 188
+            "type_ptr" : 188,
+            "is_trivially_copyable" : true
           },
           "stride" : 24
         },
@@ -5966,7 +6086,8 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 12
+            "type_ptr" : 12,
+            "is_trivially_copyable" : true
           }
         },
         {
@@ -5977,7 +6098,8 @@
           "pointer" : 191
         },
         {
-          "type_ptr" : 187
+          "type_ptr" : 187,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6020,7 +6142,8 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 12
+            "type_ptr" : 12,
+            "is_trivially_copyable" : true
           }
         },
         {
@@ -6032,7 +6155,8 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 92
+            "type_ptr" : 92,
+            "is_trivially_copyable" : true
           }
         },
         {
@@ -6044,7 +6168,8 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 92
+            "type_ptr" : 92,
+            "is_trivially_copyable" : true
           }
         },
         {
@@ -6072,7 +6197,8 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 197
+            "type_ptr" : 197,
+            "is_trivially_copyable" : true
           }
         },
         {
@@ -6084,7 +6210,8 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 198
+            "type_ptr" : 198,
+            "is_trivially_copyable" : true
           }
         },
         {
@@ -6143,7 +6270,8 @@
         },
         {
           "type_ptr" : 22,
-          "is_const" : true
+          "is_const" : true,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6185,7 +6313,8 @@
           "pointer" : 39
         },
         {
-          "type_ptr" : 22
+          "type_ptr" : 22,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6227,7 +6356,8 @@
           "pointer" : 206
         },
         {
-          "type_ptr" : 22
+          "type_ptr" : 22,
+          "is_trivially_copyable" : true
         }
       ]],
       ["PointerType" , [
@@ -6235,7 +6365,8 @@
           "pointer" : 207
         },
         {
-          "type_ptr" : 41
+          "type_ptr" : 41,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6267,7 +6398,8 @@
         {
           "params_type" : [
             {
-              "type_ptr" : 12
+              "type_ptr" : 12,
+              "is_trivially_copyable" : true
             }
           ]
         }
@@ -6283,7 +6415,8 @@
           "pointer" : 61
         },
         {
-          "type_ptr" : 12
+          "type_ptr" : 12,
+          "is_trivially_copyable" : true
         }
       ]],
       ["TemplateTypeParmType" , [
@@ -6297,13 +6430,15 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 12
+            "type_ptr" : 12,
+            "is_trivially_copyable" : true
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 12
+              "type_ptr" : 12,
+              "is_trivially_copyable" : true
             }
           ]
         }
@@ -6314,13 +6449,15 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 92
+            "type_ptr" : 92,
+            "is_trivially_copyable" : true
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 12
+              "type_ptr" : 12,
+              "is_trivially_copyable" : true
             }
           ]
         }
@@ -6354,7 +6491,8 @@
         },
         {
           "type_ptr" : 55,
-          "is_const" : true
+          "is_const" : true,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6396,7 +6534,8 @@
           "pointer" : 71
         },
         {
-          "type_ptr" : 55
+          "type_ptr" : 55,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6438,7 +6577,8 @@
           "pointer" : 216
         },
         {
-          "type_ptr" : 55
+          "type_ptr" : 55,
+          "is_trivially_copyable" : true
         }
       ]],
       ["PointerType" , [
@@ -6446,7 +6586,8 @@
           "pointer" : 217
         },
         {
-          "type_ptr" : 80
+          "type_ptr" : 80,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6511,7 +6652,8 @@
         },
         {
           "type_ptr" : 94,
-          "is_const" : true
+          "is_const" : true,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6553,7 +6695,8 @@
           "pointer" : 106
         },
         {
-          "type_ptr" : 94
+          "type_ptr" : 94,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6595,7 +6738,8 @@
           "pointer" : 225
         },
         {
-          "type_ptr" : 94
+          "type_ptr" : 94,
+          "is_trivially_copyable" : true
         }
       ]],
       ["PointerType" , [
@@ -6603,7 +6747,8 @@
           "pointer" : 226
         },
         {
-          "type_ptr" : 112
+          "type_ptr" : 112,
+          "is_trivially_copyable" : true
         }
       ]],
       ["FunctionProtoType" , [
@@ -6646,7 +6791,8 @@
         },
         {
           "child_type" : {
-            "type_ptr" : 228
+            "type_ptr" : 228,
+            "is_trivially_copyable" : true
           },
           "decl_ptr" : 230
         }
@@ -6658,7 +6804,8 @@
         },
         {
           "child_type" : {
-            "type_ptr" : 229
+            "type_ptr" : 229,
+            "is_trivially_copyable" : true
           },
           "decl_ptr" : 116
         }

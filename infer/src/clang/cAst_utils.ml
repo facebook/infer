@@ -237,6 +237,7 @@ let qual_type_of_decl_ptr decl_ptr =
     Clang_ast_t.qt_type_ptr= Clang_ast_extend.DeclPtr decl_ptr
   ; qt_is_const= false
   ; qt_is_volatile= false
+  ; qt_is_trivially_copyable= false
   ; qt_is_restrict= false }
 
 

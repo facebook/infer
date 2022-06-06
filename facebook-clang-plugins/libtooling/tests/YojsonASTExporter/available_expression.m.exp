@@ -404,7 +404,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
                   ]
                 },
                 {
-                  "type_ptr" : 20
+                  "type_ptr" : 20,
+                  "is_trivially_copyable" : true
                 },
                 {
                   "parm_index_in_function" : 0
@@ -479,7 +480,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
                   ]
                 },
                 {
-                  "type_ptr" : 5
+                  "type_ptr" : 5,
+                  "is_trivially_copyable" : true
                 },
                 {
                 }
@@ -531,7 +533,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 28
+                          "type_ptr" : 28,
+                          "is_trivially_copyable" : true
                         }
                       },
                       {
@@ -592,7 +595,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 28
+                          "type_ptr" : 28,
+                          "is_trivially_copyable" : true
                         }
                       },
                       {
@@ -1118,7 +1122,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
         },
         {
           "type_ptr" : 20,
-          "is_const" : true
+          "is_const" : true,
+          "is_trivially_copyable" : true
         }
       )>,
       <"PointerType" : (
@@ -1127,7 +1132,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
         },
         {
           "type_ptr" : 35,
-          "is_const" : true
+          "is_const" : true,
+          "is_trivially_copyable" : true
         }
       )>,
       <"PointerType" : (
@@ -1135,7 +1141,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
           "pointer" : 106
         },
         {
-          "type_ptr" : 35
+          "type_ptr" : 35,
+          "is_trivially_copyable" : true
         }
       )>,
       <"RecordType" : (
@@ -1150,7 +1157,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
         },
         {
           "element_type" : {
-            "type_ptr" : 107
+            "type_ptr" : 107,
+            "is_trivially_copyable" : true
           },
           "stride" : 24
         },
@@ -1183,7 +1191,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
         },
         {
           "child_type" : {
-            "type_ptr" : 98
+            "type_ptr" : 98,
+            "is_trivially_copyable" : true
           },
           "decl_ptr" : 6
         }
@@ -1195,7 +1204,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
         },
         {
           "child_type" : {
-            "type_ptr" : 7
+            "type_ptr" : 7,
+            "is_trivially_copyable" : true
           },
           "decl_ptr" : 33
         }
@@ -1207,7 +1217,8 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
         },
         {
           "child_type" : {
-            "type_ptr" : 96
+            "type_ptr" : 96,
+            "is_trivially_copyable" : true
           },
           "decl_ptr" : 4
         }

@@ -162,7 +162,8 @@ let ptr_kind_string = function
 
 
 module T = struct
-  type type_quals = {is_const: bool; is_restrict: bool; is_volatile: bool}
+  type type_quals =
+    {is_const: bool; is_restrict: bool; is_trivially_copyable: bool; is_volatile: bool}
   [@@deriving compare, equal, yojson_of]
 
   (** types for sil (structured) expressions *)
@@ -233,18 +234,23 @@ end
 
 include T
 
-let mk_type_quals ?default ?is_const ?is_restrict ?is_volatile () =
-  let default_ = {is_const= false; is_restrict= false; is_volatile= false} in
-  let mk_aux ?(default = default_) ?(is_const = default.is_const)
-      ?(is_restrict = default.is_restrict) ?(is_volatile = default.is_volatile) () =
-    {is_const; is_restrict; is_volatile}
+let mk_type_quals ?default ?is_const ?is_restrict ?is_trivially_copyable ?is_volatile () =
+  let default_ =
+    {is_const= false; is_restrict= false; is_trivially_copyable= false; is_volatile= false}
   in
-  mk_aux ?default ?is_const ?is_restrict ?is_volatile ()
+  let mk_aux ?(default = default_) ?(is_const = default.is_const)
+      ?(is_restrict = default.is_restrict) ?(is_trivially_copyable = default.is_trivially_copyable)
+      ?(is_volatile = default.is_volatile) () =
+    {is_const; is_restrict; is_trivially_copyable; is_volatile}
+  in
+  mk_aux ?default ?is_const ?is_restrict ?is_trivially_copyable ?is_volatile ()
 
 
 let is_const {is_const} = is_const
 
 let is_restrict {is_restrict} = is_restrict
+
+let is_trivially_copyable {is_trivially_copyable} = is_trivially_copyable
 
 let is_volatile {is_volatile} = is_volatile
 

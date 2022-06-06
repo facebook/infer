@@ -605,6 +605,7 @@ void ASTExporter<ATDWriter>::dumpSourceRange(SourceRange R) {
 //@atd   type_ptr : type_ptr;
 //@atd   ~is_const : bool;
 //@atd   ~is_restrict : bool;
+//@atd   ~is_trivially_copyable : bool;
 //@atd   ~is_volatile : bool;
 //@atd } <ocaml field_prefix="qt_">
 template <class ATDWriter>
@@ -613,12 +614,16 @@ void ASTExporter<ATDWriter>::dumpQualType(const QualType &qt) {
       qt.isNull() ? clang::Qualifiers() : qt.getQualifiers();
   bool isConst = Quals.hasConst();
   bool isRestrict = Quals.hasRestrict();
+  bool isTriviallyCopyable =
+      qt.isNull() ? false : qt.isTriviallyCopyableType(Context);
   bool isVolatile = Quals.hasVolatile();
-  ObjectScope oScope(OF, 1 + isConst + isVolatile + isRestrict);
+  ObjectScope oScope(
+      OF, 1 + isConst + isRestrict + isTriviallyCopyable + isVolatile);
   OF.emitTag("type_ptr");
   dumpQualTypeNoQuals(qt);
   OF.emitFlag("is_const", isConst);
   OF.emitFlag("is_restrict", isRestrict);
+  OF.emitFlag("is_trivially_copyable", isTriviallyCopyable);
   OF.emitFlag("is_volatile", isVolatile);
 }
 

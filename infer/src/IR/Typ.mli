@@ -75,6 +75,7 @@ val mk_type_quals :
      ?default:type_quals
   -> ?is_const:bool
   -> ?is_restrict:bool
+  -> ?is_trivially_copyable:bool
   -> ?is_volatile:bool
   -> unit
   -> type_quals
@@ -82,6 +83,8 @@ val mk_type_quals :
 val is_const : type_quals -> bool
 
 val is_restrict : type_quals -> bool
+
+val is_trivially_copyable : type_quals -> bool
 
 val is_volatile : type_quals -> bool
 
