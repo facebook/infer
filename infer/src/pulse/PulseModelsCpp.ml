@@ -360,7 +360,7 @@ module Function = struct
       PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
     else
       match src_typ.Typ.desc with
-      | Tptr (_, Pk_reference) ->
+      | Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
           Basic.shallow_copy path location event ret_id dest src astate
       | _ ->
           Basic.shallow_copy_value path location event ret_id dest src astate

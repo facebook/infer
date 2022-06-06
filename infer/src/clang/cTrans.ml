@@ -131,13 +131,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match expr_info.Clang_ast_t.ei_value_kind with `LValue | `XValue -> true | `RValue -> false
     in
     match (is_glvalue, typ.desc) with
-    | true, Tptr (_, Pk_reference) ->
+    | true, Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
         (* reference of reference is not allowed in C++ - it's most likely frontend *)
         (* trying to add same reference to same type twice*)
         (* this is hacky and should be fixed (t9838691) *)
         typ
     | true, _ ->
-        Typ.mk (Tptr (typ, Pk_reference))
+        Typ.mk (Tptr (typ, Pk_lvalue_reference))
     | _ ->
         typ
 
@@ -570,7 +570,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | MemberOrIvar {return= (_, {Typ.desc= Tptr _}) as return} ->
             (return, [])
         | MemberOrIvar {return= exp, typ} ->
-            ((exp, Typ.mk (Tptr (typ, Typ.Pk_reference))), [])
+            ((exp, Typ.mk (Tptr (typ, Typ.Pk_lvalue_reference))), [])
         | DeclRefExpr ->
             (mk_fresh_void_exp_typ (), [])
       else (* don't add 'this' expression for static methods. *)
@@ -824,7 +824,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match ast_typ.Typ.desc with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
           if CGeneral_utils.is_cpp_translation context.translation_unit_context then
-            Typ.mk (Tptr (ast_typ, Pk_reference))
+            Typ.mk (Tptr (ast_typ, Pk_lvalue_reference))
           else ast_typ
       | _ ->
           ast_typ
@@ -858,12 +858,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (Typ.pp Pp.text) typ ;
     let res_trans = mk_trans_result return empty_control in
     let res_trans =
-      match typ.desc with
-      | Tptr (_, Pk_reference) ->
-          (* dereference pvar due to the behavior of reference types in clang's AST *)
-          dereference_value_from_result stmt_info.Clang_ast_t.si_source_range sil_loc res_trans
-      | _ ->
-          res_trans
+      if Typ.is_reference typ then
+        (* dereference pvar due to the behavior of reference types in clang's AST *)
+        dereference_value_from_result stmt_info.Clang_ast_t.si_source_range sil_loc res_trans
+      else res_trans
     in
     (* TODO: For now, it does not generate the initializers for static local variables. This is
        unsound because a static local varaible should be initialized once globally.  On the other
@@ -3852,7 +3850,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block) ->
               let mode, typ =
                 if modify_in_block || Pvar.is_global var then
-                  (CapturedVar.ByReference, Typ.mk (Tptr (typ, Pk_reference)))
+                  (CapturedVar.ByReference, Typ.mk (Tptr (typ, Pk_lvalue_reference)))
                 else (CapturedVar.ByValue, typ)
               in
               (var, typ, mode) )
@@ -3886,7 +3884,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let translate_captured_var_assign exp pvar typ mode =
       (* Structs always have reference if passed as parameters *)
       let typ =
-        match typ.Typ.desc with Tstruct _ -> Typ.mk (Tptr (typ, Pk_reference)) | _ -> typ
+        match typ.Typ.desc with Tstruct _ -> Typ.mk (Tptr (typ, Pk_lvalue_reference)) | _ -> typ
       in
       let instr, exp = CTrans_utils.dereference_var_sil (exp, typ) loc in
       let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
@@ -3911,7 +3909,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match (mode : CapturedVar.capture_mode) with
       | ByReference -> (
         match typ.Typ.desc with
-        | Tptr (_, Typ.Pk_reference) ->
+        | Tptr (_, Typ.Pk_lvalue_reference) ->
             let trans_result, captured_var =
               translate_captured_var_assign (Exp.Lvar pvar) pvar typ mode
             in
@@ -3922,13 +3920,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | _ ->
             (* A variable captured by ref (except ref variables) is missing ref in its type *)
             ( trans_results_acc
-            , (Exp.Lvar pvar, pvar, Typ.mk (Tptr (typ, Pk_reference)), mode) :: captured_vars_acc )
-        )
+            , (Exp.Lvar pvar, pvar, Typ.mk (Tptr (typ, Pk_lvalue_reference)), mode)
+              :: captured_vars_acc ) )
       | ByValue -> (
           let init, exp, typ_new =
             match typ.Typ.desc with
             (* TODO: Structs are missing copy constructor instructions when passed by value *)
-            | Tptr (typ_no_ref, Pk_reference) when not (Typ.is_struct typ_no_ref) ->
+            | Tptr (typ_no_ref, Pk_lvalue_reference) when not (Typ.is_struct typ_no_ref) ->
                 let return = (Exp.Lvar pvar, typ) in
                 (* We need to dereference ref variable as usual when we read its value *)
                 let init_trans_results =

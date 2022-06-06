@@ -23,7 +23,7 @@ digraph cfg {
 	
 
 	 "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_6" -> "no_missing_node(class Sub)#286112514955136003.8843aaec68040db1eb8de92baa3f966d_2" ;
-"EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_1" [label="1: Start EnumWrapper::EnumWrapper\nFormals:  this:EnumWrapper* v:int&\nLocals:  \n  " color=yellow style=filled]
+"EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_1" [label="1: Start EnumWrapper::EnumWrapper\nFormals:  this:EnumWrapper* v:int&&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_1" -> "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_3" ;
@@ -34,7 +34,7 @@ digraph cfg {
 	
 
 	 "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_3" -> "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_4" ;
-"EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_4" [label="4:  Constructor Init \n   n$2=*&v:int& [line 17, column 29]\n  n$3=*n$2:int [line 17, column 29]\n  *n$1.v:int=n$3 [line 17, column 27]\n " shape="box"]
+"EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_4" [label="4:  Constructor Init \n   n$2=*&v:int&& [line 17, column 29]\n  n$3=*n$2:int [line 17, column 29]\n  *n$1.v:int=n$3 [line 17, column 27]\n " shape="box"]
 	
 
 	 "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_4" -> "EnumWrapper#EnumWrapper#{}5449733473115967278.721cef8a6563825098670bb66fb6663b_2" ;

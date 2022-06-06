@@ -61,7 +61,8 @@ type fkind = FFloat  (** [float] *) | FDouble  (** [double] *) | FLongDouble  (*
 (** kind of pointer *)
 type ptr_kind =
   | Pk_pointer  (** C/C++, Java, Objc standard/__strong pointer *)
-  | Pk_reference  (** C++ reference *)
+  | Pk_lvalue_reference  (** C++ lvalue reference *)
+  | Pk_rvalue_reference  (** C++ rvalue reference *)
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
@@ -329,6 +330,8 @@ val is_pointer_to_function : t -> bool
 val is_pointer : t -> bool
 
 val is_reference : t -> bool
+
+val is_rvalue_reference : t -> bool [@@warning "-32"]
 
 val is_struct : t -> bool
 

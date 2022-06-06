@@ -142,15 +142,18 @@ let fkind_to_string = function
 (** kind of pointer *)
 type ptr_kind =
   | Pk_pointer  (** C/C++, Java, Objc standard/__strong pointer *)
-  | Pk_reference  (** C++ reference *)
+  | Pk_lvalue_reference  (** C++ lvalue reference *)
+  | Pk_rvalue_reference  (** C++ rvalue reference *)
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
 [@@deriving compare, equal, yojson_of]
 
 let ptr_kind_string = function
-  | Pk_reference ->
+  | Pk_lvalue_reference ->
       "&"
+  | Pk_rvalue_reference ->
+      "&&"
   | Pk_pointer ->
       "*"
   | Pk_objc_weak ->
@@ -669,7 +672,13 @@ let is_cpp_class = is_class_of_kind Name.Cpp.is_class
 
 let is_pointer typ = match typ.desc with Tptr _ -> true | _ -> false
 
-let is_reference typ = match typ.desc with Tptr (_, Pk_reference) -> true | _ -> false
+let is_reference typ =
+  match typ.desc with Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) -> true | _ -> false
+
+
+let is_rvalue_reference typ =
+  match typ.desc with Tptr (_, Pk_rvalue_reference) -> true | _ -> false
+
 
 let is_struct typ = match typ.desc with Tstruct _ -> true | _ -> false
 

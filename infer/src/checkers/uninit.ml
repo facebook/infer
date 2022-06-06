@@ -24,7 +24,7 @@ end
 
 let should_report_on_type t =
   match t.Typ.desc with
-  | Tptr (_, Pk_reference) ->
+  | Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
       false
   | Tint _ | Tfloat _ | Tvoid | Tptr _ ->
       true

@@ -183,9 +183,12 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
         Typ.Tvoid )
   | ObjCInterfaceType (_, pointer) ->
       decl_ptr_to_type_desc translate_decl tenv pointer
-  | RValueReferenceType (_, qual_type) | LValueReferenceType (_, qual_type) ->
+  | RValueReferenceType (_, qual_type) ->
       let typ = qual_type_to_sil_type translate_decl tenv qual_type in
-      Typ.Tptr (typ, Typ.Pk_reference)
+      Typ.Tptr (typ, Typ.Pk_rvalue_reference)
+  | LValueReferenceType (_, qual_type) ->
+      let typ = qual_type_to_sil_type translate_decl tenv qual_type in
+      Typ.Tptr (typ, Typ.Pk_lvalue_reference)
   | AttributedType (type_info, attr_info) ->
       (* TODO desugar to qualtyp *)
       type_desc_of_attr_type translate_decl tenv type_info attr_info
@@ -251,7 +254,14 @@ and type_ptr_to_type_desc translate_decl tenv type_ptr : Typ.desc =
       Typ.Tptr (sil_typ, Pk_pointer)
   | Clang_ast_extend.ReferenceOf typ ->
       let sil_typ = qual_type_to_sil_type translate_decl tenv typ in
-      Typ.Tptr (sil_typ, Pk_reference)
+      let pk_ref =
+        match CAst_utils.get_desugared_type typ.Clang_ast_t.qt_type_ptr with
+        | Some (Clang_ast_t.RValueReferenceType _) ->
+            Typ.Pk_rvalue_reference
+        | _ ->
+            Typ.Pk_lvalue_reference
+      in
+      Typ.Tptr (sil_typ, pk_ref)
   | Clang_ast_extend.ClassType typename ->
       Typ.Tstruct typename
   | Clang_ast_extend.DeclPtr ptr ->
