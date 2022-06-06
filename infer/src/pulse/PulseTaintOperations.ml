@@ -309,6 +309,24 @@ let check_policies ~sink ~source ~sanitizer_opt =
 
 let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
   let check_immediate policy_violations_reported v astate =
+    let source_expr = Decompiler.find v astate in
+    let mk_reportable_error diagnostic = ReportableError {astate; diagnostic} in
+    let _ =
+      L.d_printfln "Checking for allocations flowing from %a to sink %a" AbstractValue.pp v Taint.pp
+        sink
+    in
+    let* () =
+      match AbductiveDomain.AddressAttributes.get_allocation v astate with
+      | None ->
+          Ok ()
+      | Some (allocator, history) ->
+          L.d_printfln "Found allocation %a" Attribute.pp (Attribute.Allocated (allocator, history)) ;
+          Recoverable
+            ( ()
+            , [ mk_reportable_error
+                  (FlowToTaintSink
+                     {source= (source_expr, history); location; sink= (sink, sink_trace)} ) ] )
+    in
     L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
     match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer v astate with
     | None ->
@@ -324,33 +342,20 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
              only that id. *)
           if List.mem ~equal:phys_equal reported_so_far violated_policy then Ok reported_so_far
           else
-            let tainted = Decompiler.find v astate in
             Recoverable
               ( violated_policy :: reported_so_far
-              , [ ReportableError
-                    { astate
-                    ; diagnostic=
-                        TaintFlow
-                          { tainted
-                          ; location
-                          ; source= ({source with kinds= [source_kind]}, source_hist)
-                          ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } }
-                ; ReportableError
-                    { astate
-                    ; diagnostic=
-                        FlowFromTaintSource
-                          { tainted
-                          ; location
-                          ; source= ({source with kinds= [source_kind]}, source_hist)
-                          ; destination= ({sink with kinds= [sink_kind]}, sink_trace) } }
-                ; ReportableError
-                    { astate
-                    ; diagnostic=
-                        FlowToTaintSink
-                          { expr= tainted
-                          ; location
-                          ; source= ({source with kinds= [source_kind]}, source_hist)
-                          ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } } ] )
+              , [ mk_reportable_error
+                    (TaintFlow
+                       { tainted= source_expr
+                       ; location
+                       ; source= ({source with kinds= [source_kind]}, source_hist)
+                       ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } )
+                ; mk_reportable_error
+                    (FlowFromTaintSource
+                       { tainted= source_expr
+                       ; location
+                       ; source= ({source with kinds= [source_kind]}, source_hist)
+                       ; destination= ({sink with kinds= [sink_kind]}, sink_trace) } ) ] )
         in
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
           ~f:report_policy_violation

@@ -27,11 +27,12 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
     let extras =
       let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
       let taint_source, taint_sink =
+        let proc_name_of_taint Taint.{proc_name} = Format.asprintf "%a" Procname.pp proc_name in
         match diagnostic with
-        | FlowFromTaintSource {source= source, _; destination= sink, _}
-        | FlowToTaintSink {source= source, _; sink= sink, _} ->
-            let proc_name_of_taint Taint.{proc_name} = Format.asprintf "%a" Procname.pp proc_name in
+        | FlowFromTaintSource {source= source, _; destination= sink, _} ->
             (Some (proc_name_of_taint source), Some (proc_name_of_taint sink))
+        | FlowToTaintSink {sink= sink, _} ->
+            (None, Some (proc_name_of_taint sink))
         | _ ->
             (None, None)
       in

@@ -31,6 +31,7 @@
     ],
     "pulse-taint-sinks": [
         { "procedure": "inferSensitiveSink" },
+        { "procedure": "__infer_taint_sink", "kinds": ["SimpleSink"] },
         { "class_names": ["InferTaint"],
           "method_names": ["sink:"],
           "kinds": ["SimpleSink"],

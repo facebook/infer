@@ -70,10 +70,7 @@ type t =
       ; destination: Taint.t * Trace.t
       ; location: Location.t }
   | FlowToTaintSink of
-      { expr: Decompiler.expr
-      ; source: Taint.t * ValueHistory.t
-      ; sink: Taint.t * Trace.t
-      ; location: Location.t }
+      {source: Decompiler.expr * Trace.t; sink: Taint.t * Trace.t; location: Location.t}
   | UnnecessaryCopy of
       { variable: Var.t
       ; typ: Typ.t
@@ -358,9 +355,8 @@ let get_message diagnostic =
   | FlowFromTaintSource {tainted; source= source, _; destination= destination, _} ->
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Taint.pp destination
-  | FlowToTaintSink {expr; source= source, _; sink= sink, _} ->
-      F.asprintf "`%a` flows from %a to taint sink %a" Decompiler.pp_expr expr Taint.pp source
-        Taint.pp sink
+  | FlowToTaintSink {source= expr, _; sink= sink, _} ->
+      F.asprintf "`%a` flows to taint sink %a" Decompiler.pp_expr expr Taint.pp sink
   | UnnecessaryCopy {variable; typ; location; from} ->
       let suppression_msg =
         "If this copy was intentional, consider adding the word `copy` into the variable name to \
@@ -536,11 +532,10 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt destination)
            destination_trace
       @@ []
-  | FlowToTaintSink {source= _, source_history; sink= sink, sink_trace} ->
-      ValueHistory.add_to_errlog ~nesting:0 source_history
-      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
-           ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
-           sink_trace
+  | FlowToTaintSink {source= _, history; sink= sink, sink_trace} ->
+      let add_to_errlog = Trace.add_to_errlog ~include_value_history:false ~nesting:0 in
+      add_to_errlog history ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocated here")
+      @@ add_to_errlog sink_trace ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
       @@ []
   | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
