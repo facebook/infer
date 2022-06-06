@@ -116,8 +116,9 @@ module LineageGraph = struct
         Format.fprintf fmt "DynamicCallModule"
 
 
-  let pp_flow fmt {source; target; kind} =
-    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a)]@]@;" pp_data source pp_data target pp_flow_kind kind
+  let pp_flow fmt {source; target; kind; node} =
+    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" pp_data source pp_data target pp_flow_kind
+      kind PPNode.pp node
 
 
   let pp fmt flows =
