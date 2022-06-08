@@ -110,8 +110,9 @@ let check_xcpretty () =
 
 let capture ~changed_files mode =
   if not (List.is_empty Config.merge_infer_out) then (
+    let expanded_args = Utils.inline_argument_files Config.merge_infer_out in
     let infer_deps_file = ResultsDir.get_path CaptureDependencies in
-    List.map Config.merge_infer_out ~f:(fun dir -> Printf.sprintf "-\t-\t%s" dir)
+    List.map expanded_args ~f:(fun dir -> Printf.sprintf "-\t-\t%s" dir)
     |> Out_channel.write_lines infer_deps_file ;
     () )
   else

@@ -381,28 +381,8 @@ let split_buck_command buck_cmd =
         accepted_buck_commands
 
 
-(** Given a list of arguments return the extended list of arguments where the args in a file have
-    been extracted *)
-let inline_argument_files buck_args =
-  let expand_buck_arg buck_arg =
-    if String.is_prefix ~prefix:"@" buck_arg then
-      let file_name = String.chop_prefix_exn ~prefix:"@" buck_arg in
-      if not (ISys.file_exists file_name) then [buck_arg]
-        (* Arguments that start with @ could mean something different than an arguments file in buck. *)
-      else
-        let expanded_args =
-          try Utils.with_file_in file_name ~f:In_channel.input_lines
-          with exn ->
-            Logging.die UserError "Could not read from file '%s': %a@\n" file_name Exn.pp exn
-        in
-        expanded_args
-    else [buck_arg]
-  in
-  List.concat_map ~f:expand_buck_arg buck_args
-
-
 let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
-  let expanded_buck_args = inline_argument_files original_buck_args in
+  let expanded_buck_args = Utils.inline_argument_files original_buck_args in
   let command, args = split_buck_command expanded_buck_args in
   let buck_targets_block_list_regexp =
     if List.is_empty Config.buck_targets_block_list then None
