@@ -162,7 +162,7 @@ module LockDomain = struct
 end
 
 module ThreadsDomain = struct
-  type t = NoThread | AnyThreadButSelf | AnyThread [@@deriving compare]
+  type t = NoThread | AnyThreadButSelf | AnyThread [@@deriving compare, equal]
 
   let bottom = NoThread
 
@@ -180,7 +180,7 @@ module ThreadsDomain = struct
     | AnyThread, _ ->
         false
     | _ ->
-        Int.equal 0 (compare lhs rhs)
+        equal lhs rhs
 
 
   let join astate1 astate2 =
@@ -511,9 +511,12 @@ module AttributeMapDomain = struct
     add lhs_access_expression rhs_attribute attribute_map
 end
 
+module NeverReturns = AbstractDomain.BooleanAnd
+
 type t =
   { threads: ThreadsDomain.t
   ; locks: LockDomain.t
+  ; never_returns: NeverReturns.t
   ; accesses: AccessDomain.t
   ; ownership: OwnershipDomain.t
   ; attribute_map: AttributeMapDomain.t }
@@ -521,10 +524,11 @@ type t =
 let initial =
   let threads = ThreadsDomain.bottom in
   let locks = LockDomain.bottom in
+  let never_returns = false in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
-  {threads; locks; accesses; ownership; attribute_map}
+  {threads; locks; never_returns; accesses; ownership; attribute_map}
 
 
 let leq ~lhs ~rhs =
@@ -532,6 +536,7 @@ let leq ~lhs ~rhs =
   else
     ThreadsDomain.leq ~lhs:lhs.threads ~rhs:rhs.threads
     && LockDomain.leq ~lhs:lhs.locks ~rhs:rhs.locks
+    && NeverReturns.leq ~lhs:lhs.never_returns ~rhs:rhs.never_returns
     && AccessDomain.leq ~lhs:lhs.accesses ~rhs:rhs.accesses
     && OwnershipDomain.leq ~lhs:lhs.ownership ~rhs:rhs.ownership
     && AttributeMapDomain.leq ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
@@ -542,10 +547,11 @@ let join astate1 astate2 =
   else
     let threads = ThreadsDomain.join astate1.threads astate2.threads in
     let locks = LockDomain.join astate1.locks astate2.locks in
+    let never_returns = NeverReturns.join astate1.never_returns astate2.never_returns in
     let accesses = AccessDomain.join astate1.accesses astate2.accesses in
     let ownership = OwnershipDomain.join astate1.ownership astate2.ownership in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    {threads; locks; accesses; ownership; attribute_map}
+    {threads; locks; never_returns; accesses; ownership; attribute_map}
 
 
 let widen ~prev ~next ~num_iters =
@@ -553,17 +559,21 @@ let widen ~prev ~next ~num_iters =
   else
     let threads = ThreadsDomain.widen ~prev:prev.threads ~next:next.threads ~num_iters in
     let locks = LockDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
+    let never_returns =
+      NeverReturns.widen ~prev:prev.never_returns ~next:next.never_returns ~num_iters
+    in
     let accesses = AccessDomain.widen ~prev:prev.accesses ~next:next.accesses ~num_iters in
     let ownership = OwnershipDomain.widen ~prev:prev.ownership ~next:next.ownership ~num_iters in
     let attribute_map =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters
     in
-    {threads; locks; accesses; ownership; attribute_map}
+    {threads; locks; never_returns; accesses; ownership; attribute_map}
 
 
 type summary =
   { threads: ThreadsDomain.t
   ; locks: LockDomain.t
+  ; never_returns: NeverReturns.t
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t
@@ -572,28 +582,32 @@ type summary =
 let empty_summary =
   { threads= ThreadsDomain.bottom
   ; locks= LockDomain.bottom
+  ; never_returns= false
   ; accesses= AccessDomain.bottom
   ; return_ownership= OwnershipAbstractValue.unowned
   ; return_attribute= Attribute.top
   ; attributes= AttributeMapDomain.top }
 
 
-let pp_summary fmt {threads; locks; accesses; return_ownership; return_attribute; attributes} =
+let pp_summary fmt
+    {threads; locks; never_returns; accesses; return_ownership; return_attribute; attributes} =
   F.fprintf fmt
     "@\n\
-     Threads: %a, Locks: %a @\n\
+     Threads: %a, Locks: %a, NeverReturns: %a @\n\
      Accesses %a @\n\
      Ownership: %a @\n\
      Return Attribute: %a @\n\
      Attributes: %a @\n"
-    ThreadsDomain.pp threads LockDomain.pp locks AccessDomain.pp accesses OwnershipAbstractValue.pp
-    return_ownership Attribute.pp return_attribute AttributeMapDomain.pp attributes
+    ThreadsDomain.pp threads LockDomain.pp locks NeverReturns.pp never_returns AccessDomain.pp
+    accesses OwnershipAbstractValue.pp return_ownership Attribute.pp return_attribute
+    AttributeMapDomain.pp attributes
 
 
-let pp fmt {threads; locks; accesses; ownership; attribute_map} =
-  F.fprintf fmt "Threads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nAttributes: %a @\n"
-    ThreadsDomain.pp threads LockDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
-    ownership AttributeMapDomain.pp attribute_map
+let pp fmt {threads; locks; never_returns; accesses; ownership; attribute_map} =
+  F.fprintf fmt
+    "Threads: %a, Locks: %a, NeverReturns: %a @\nAccesses %a @\nOwnership: %a @\nAttributes: %a @\n"
+    ThreadsDomain.pp threads LockDomain.pp locks NeverReturns.pp never_returns AccessDomain.pp
+    accesses OwnershipDomain.pp ownership AttributeMapDomain.pp attribute_map
 
 
 let add_unannotated_call_access formals pname actuals loc (astate : t) =
@@ -606,7 +620,8 @@ let add_unannotated_call_access formals pname actuals loc (astate : t) =
       {astate with accesses= AccessDomain.add_opt access_opt astate.accesses} )
 
 
-let astate_to_summary proc_desc formals {threads; locks; accesses; ownership; attribute_map} =
+let astate_to_summary proc_desc formals
+    {threads; locks; never_returns; accesses; ownership; attribute_map} =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let return_var_exp =
     AccessExpression.base
@@ -629,7 +644,7 @@ let astate_to_summary proc_desc formals {threads; locks; accesses; ownership; at
         attribute_map
     else AttributeMapDomain.top
   in
-  {threads; locks; accesses; return_ownership; return_attribute; attributes}
+  {threads; locks; never_returns; accesses; return_ownership; return_attribute; attributes}
 
 
 let add_access tenv formals loc ~is_write (astate : t) exp =
@@ -704,23 +719,42 @@ let add_callee_accesses ~caller_formals ~callee_formals ~callee_accesses callee_
   {caller_astate with accesses}
 
 
+let branch_never_returns () =
+  (* Since this branch never returns but the successor node is the exit node as per [preanal.ml],
+     we want to avoid changing the post at the exit node. Here we set all components to the appropriate
+     identity element, except from those about not returning. *)
+  { threads= ThreadsDomain.bottom
+  ; locks= LockDomain.bottom
+  ; never_returns= true
+  ; accesses= AccessDomain.bottom
+  ; ownership= OwnershipDomain.empty
+  ; attribute_map=
+      (* this is incorrect, as there is no identity element for an inverted set *)
+      AttributeMapDomain.empty }
+
+
 let integrate_summary formals ~callee_proc_desc summary ret_access_exp callee_pname actuals loc
     astate =
-  let callee_formals = FormalMap.make callee_proc_desc in
-  let {threads; locks; return_ownership; return_attribute} = summary in
-  let astate =
-    add_callee_accesses ~caller_formals:formals ~callee_formals ~callee_accesses:summary.accesses
-      callee_pname actuals loc astate
-  in
-  let locks = LockDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks in
-  let ownership =
-    OwnershipDomain.propagate_return ret_access_exp return_ownership actuals astate.ownership
-  in
-  let attribute_map = AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map in
-  let threads =
-    ThreadsDomain.integrate_summary ~caller_astate:astate.threads ~callee_astate:threads
-  in
-  {astate with locks; threads; ownership; attribute_map}
+  let {threads; locks; never_returns; return_ownership; return_attribute} = summary in
+  if never_returns then branch_never_returns ()
+  else
+    let callee_formals = FormalMap.make callee_proc_desc in
+    let astate =
+      add_callee_accesses ~caller_formals:formals ~callee_formals ~callee_accesses:summary.accesses
+        callee_pname actuals loc astate
+    in
+    let locks = LockDomain.integrate_summary ~caller_astate:astate.locks ~callee_astate:locks in
+    (* no treatment of [never_returns] as the callee's is [false] *)
+    let ownership =
+      OwnershipDomain.propagate_return ret_access_exp return_ownership actuals astate.ownership
+    in
+    let attribute_map =
+      AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map
+    in
+    let threads =
+      ThreadsDomain.integrate_summary ~caller_astate:astate.threads ~callee_astate:threads
+    in
+    {astate with locks; never_returns; threads; ownership; attribute_map}
 
 
 let acquire_lock (astate : t) =

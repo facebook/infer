@@ -131,9 +131,13 @@ module AttributeMapDomain : sig
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
 end
 
+module NeverReturns : AbstractDomain.S
+
 type t =
   { threads: ThreadsDomain.t  (** current thread: main, background, or unknown *)
   ; locks: LockDomain.t  (** boolean that is true if a lock must currently be held *)
+  ; never_returns: NeverReturns.t
+        (** boolean which is true if a [noreturn] call is always reached *)
   ; accesses: AccessDomain.t
         (** read and writes accesses performed without ownership permissions *)
   ; ownership: OwnershipDomain.t  (** map of access paths to ownership predicates *)
@@ -152,6 +156,7 @@ val add_unannotated_call_access : FormalMap.t -> Procname.t -> HilExp.t list -> 
 type summary =
   { threads: ThreadsDomain.t
   ; locks: LockDomain.t
+  ; never_returns: NeverReturns.t
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t
@@ -194,3 +199,5 @@ val acquire_lock : t -> t
 val release_lock : t -> t
 
 val lock_if_true : HilExp.access_expression -> t -> t
+
+val branch_never_returns : unit -> t
