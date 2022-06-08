@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_lists).
+-include("../../common.hrl").
 
 -export([
     test_nil_Ok/0,
@@ -59,9 +60,6 @@
     test_listforeach_returnvalue_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 test_nil_Ok() ->
     Nil = [],
     case Nil of
@@ -116,302 +114,176 @@ test_cons2_Bad() ->
 
 test_reverse0_Ok() ->
     L = lists:reverse([]),
-    case L of
-        [] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([], L).
 
 test_reverse0_Bad() ->
     L = lists:reverse([]),
-    case L of
-        [] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([], L).
 
 test_reverse1_Ok() ->
     L = lists:reverse([1234]),
-    case L of
-        [1234] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1234], L).
 
 test_reverse1_Bad() ->
     L = lists:reverse([1234]),
-    case L of
-        [1234] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1234], L).
 
 test_reverse2_Ok() ->
     L = lists:reverse([1234, 567]),
-    case L of
-        [567, 1234] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([567, 1234], L).
 
 test_reverse2_Bad() ->
     L = lists:reverse([1234, 567]),
-    case L of
-        [567, 1234] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([567, 1234], L).
 
 test_reverse3_Ok() ->
     L = lists:reverse([1234, 567, 89]),
-    case L of
-        [89, 567, 1234] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([89, 567, 1234], L).
 
 test_reverse3_Bad() ->
     L = lists:reverse([1234, 567, 89]),
-    case L of
-        [89, 567, 1234] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([89, 567, 1234], L).
 
 test_reverse4_Ok() ->
     L = lists:reverse([1234, 567, 89, 0]),
-    case L of
-        [0, 89, 567, 1234] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([0, 89, 567, 1234], L).
 
 % Known false negative (list too long)
 fn_test_reverse4_Bad() ->
     L = lists:reverse([1234, 567, 89, 0]),
-    case L of
-        [0, 89, 567, 1234] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([0, 89, 567, 1234], L).
 
 test_listadd0_Ok() ->
     L = [] ++ [1, 2],
-    case L of
-        [1, 2] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2], L).
 
 test_listadd0_Bad() ->
     L = [] ++ [1, 2],
-    case L of
-        [1, 2] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2], L).
 
 test_listadd0a_Ok() ->
     L = [] ++ [],
-    case L of
-        [] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([], L).
 
 test_listadd0a_Bad() ->
     L = [] ++ [],
-    case L of
-        [] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([], L).
 
 test_listadd1_Ok() ->
     L = [1] ++ [2, 3],
-    case L of
-        [1, 2, 3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2, 3], L).
 
 test_listadd1_Bad() ->
     L = [1] ++ [2, 3],
-    case L of
-        [1, 2, 3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2, 3], L).
 
 test_listadd2_Ok() ->
     L = [1, 2] ++ [3],
-    case L of
-        [1, 2, 3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2, 3], L).
 
 test_listadd2_Bad() ->
     L = [1, 2] ++ [3],
-    case L of
-        [1, 2, 3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2, 3], L).
 
 test_listadd2a_Ok() ->
     L = [1, 2] ++ [],
-    case L of
-        [1, 2] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2], L).
 
 test_listadd2a_Bad() ->
     L = [1, 2] ++ [],
-    case L of
-        [1, 2] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2], L).
 
 test_listadd3_Ok() ->
     L = [1, 2, 3] ++ [4, 5],
-    case L of
-        [1, 2, 3, 4, 5] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2, 3, 4, 5], L).
 
 test_listadd3_Bad() ->
     L = [1, 2, 3] ++ [4, 5],
-    case L of
-        [1, 2, 3, 4, 5] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2, 3, 4, 5], L).
 
 test_listadd4_Ok() ->
     L = [1, 2, 3, 4] ++ [5],
-    case L of
-        [1, 2, 3, 4, 5] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2, 3, 4, 5], L).
 
 % Known false negative (list too long)
 fn_test_listadd4_Bad() ->
     L = [1, 2, 3, 4] ++ [5],
-    case L of
-        [1, 2, 3, 4, 5] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2, 3, 4, 5], L).
 
 test_listappend0_Ok() ->
     L = lists:append([], [1, 2]),
-    case L of
-        [1, 2] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2], L).
 
 test_listappend0_Bad() ->
     L = lists:append([], [1, 2]),
-    case L of
-        [1, 2] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2], L).
 
 test_listappend0a_Ok() ->
     L = lists:append([], []),
-    case L of
-        [] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([], L).
 
 test_listappend0a_Bad() ->
     L = lists:append([], []),
-    case L of
-        [] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([], L).
 
 test_listappend1_Ok() ->
     L = lists:append([1], [2, 3]),
-    case L of
-        [1, 2, 3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2, 3], L).
 
 test_listappend1_Bad() ->
     L = lists:append([1], [2, 3]),
-    case L of
-        [1, 2, 3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2, 3], L).
 
 test_listappend2_Ok() ->
     L = lists:append([1, 2], [3]),
-    case L of
-        [1, 2, 3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2, 3], L).
 
 test_listappend2_Bad() ->
     L = lists:append([1, 2], [3]),
-    case L of
-        [1, 2, 3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2, 3], L).
 
 test_listappend2a_Ok() ->
     L = lists:append([1, 2], []),
-    case L of
-        [1, 2] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2], L).
 
 test_listappend2a_Bad() ->
     L = lists:append([1, 2], []),
-    case L of
-        [1, 2] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2], L).
 
 test_listappend3_Ok() ->
     L = lists:append([1, 2, 3], [4, 5]),
-    case L of
-        [1, 2, 3, 4, 5] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2, 3, 4, 5], L).
 
 test_listappend3_Bad() ->
     L = lists:append([1, 2, 3], [4, 5]),
-    case L of
-        [1, 2, 3, 4, 5] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2, 3, 4, 5], L).
 
 test_listappend4_Ok() ->
     L = lists:append([1, 2, 3, 4], [5]),
-    case L of
-        [1, 2, 3, 4, 5] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 2, 3, 4, 5], L).
 
 % Known false negative (list too long)
 fn_test_listappend4_Bad() ->
     L = lists:append([1, 2, 3, 4], [5]),
-    case L of
-        [1, 2, 3, 4, 5] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 2, 3, 4, 5], L).
 
 % Not yet supported
 fp_test_listsub1_Ok() ->
     L = [1, 2, 3] -- [2],
-    case L of
-        [1, 3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 3], L).
 
 % Not yet supported
 fp_test_listsub2_Ok() ->
     L = lists:subtract([1, 2, 3], [2]),
-    case L of
-        [1, 3] -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL([1, 3], L).
 
 test_listsub3_Bad() ->
     L = [1, 2, 3] -- [2],
-    case L of
-        [1, 3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 3], L).
 
 test_listsub4_Bad() ->
     L = lists:subtract([1, 2, 3], [2]),
-    case L of
-        [1, 3] -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL([1, 3], L).
 
 one() -> 1.
 
@@ -421,13 +293,9 @@ fn_test_listappend5_Bad() ->
     one() ++ "?".
 
 test_listforeach_returnvalue_Ok() ->
-    case lists:foreach(fun(X) -> X end, [1, 2, 3]) of
-        ok -> ok;
-        _ -> warn(1)
-    end.
+    Y = lists:foreach(fun(X) -> X end, [1, 2, 3]),
+    ?ASSERT_EQUAL(ok, Y).
 
 test_listforeach_returnvalue_Bad() ->
-    case lists:foreach(fun(X) -> X end, [1, 2, 3]) of
-        ok -> warn(1);
-        _ -> ok
-    end.
+    Y = lists:foreach(fun(X) -> X end, [1, 2, 3]),
+    ?CRASH_IF_EQUAL(ok, Y).

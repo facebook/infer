@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_trycatch).
+-include("../../common.hrl").
 
 -export([
     test_with_after_Ok/0,
@@ -19,21 +20,15 @@
     test_with_case_and_catch_and_after_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 test_with_catch_Ok() ->
     X = 1,
     Y =
         try
             X
         catch
-            _ -> warn(1)
+            _ -> ?EXPECTED_CRASH
         end,
-    case Y of
-        1 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(1, Y).
 
 test_with_catch_Bad() ->
     X = 1,
@@ -43,10 +38,7 @@ test_with_catch_Bad() ->
         catch
             _ -> ok
         end,
-    case Y of
-        1 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(1, Y).
 
 test_with_after_Ok() ->
     X = 1,
@@ -56,25 +48,22 @@ test_with_after_Ok() ->
         after
             ok
         end,
-    case Y of
-        1 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(1, Y).
 
 test_with_after_Bad() ->
     X = 1,
-    Y =
+    _ =
         try
             X
         after
-            warn(1)
+            ?EXPECTED_CRASH
         end.
 
 test_with_case_and_after1_Ok() ->
     X = 1,
     try X of
         1 -> ok;
-        _ -> warn(1)
+        _ -> ?EXPECTED_CRASH
     after
         ok
     end.
@@ -82,7 +71,7 @@ test_with_case_and_after1_Ok() ->
 test_with_case_and_after2_Bad() ->
     X = 1,
     try X of
-        1 -> warn(1);
+        1 -> ?EXPECTED_CRASH;
         _ -> ok
     after
         ok
@@ -94,22 +83,22 @@ test_with_case_and_after3_Bad() ->
         1 -> ok;
         _ -> ok
     after
-        warn(1)
+        ?EXPECTED_CRASH
     end.
 
 test_with_case_and_catch_Ok() ->
     X = 1,
     try X of
         1 -> ok;
-        _ -> warn(1)
+        _ -> ?EXPECTED_CRASH
     catch
-        _ -> warn(1)
+        _ -> ?EXPECTED_CRASH
     end.
 
 test_with_case_and_catch_Bad() ->
     X = 1,
     try X of
-        1 -> warn(1);
+        1 -> ?EXPECTED_CRASH;
         _ -> ok
     catch
         _ -> ok
@@ -119,9 +108,9 @@ test_with_case_and_catch_and_after_Ok() ->
     X = 1,
     try X of
         1 -> ok;
-        _ -> warn(1)
+        _ -> ?EXPECTED_CRASH
     catch
-        _ -> warn(1)
+        _ -> ?EXPECTED_CRASH
     after
         ok
     end.
@@ -134,5 +123,5 @@ test_with_case_and_catch_and_after_Bad() ->
     catch
         _ -> ok
     after
-        warn(1)
+        ?EXPECTED_CRASH
     end.

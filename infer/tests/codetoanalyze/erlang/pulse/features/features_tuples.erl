@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_tuples).
+-include("../../common.hrl").
 
 -export([
     test_first_Ok/0,
@@ -16,57 +17,38 @@
     test_nested_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 first({X, _, _}) -> X.
 second({_, Y, _}) -> Y.
 third({_, _, Z}) -> Z.
 
 test_first_Ok() ->
     N = first({1, 2, 3}),
-    case N of
-        1 -> ok
-    end.
+    ?ASSERT_EQUAL(1, N).
 
 test_first_Bad() ->
     N = first({1, 2, 3}),
-    case N of
-        1 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(1, N).
 
 test_second_Ok() ->
     N = second({1, 2, 3}),
-    case N of
-        2 -> ok
-    end.
+    ?ASSERT_EQUAL(2, N).
 
 test_second_Bad() ->
     N = second({1, 2, 3}),
-    case N of
-        2 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(2, N).
 
 test_third_Ok() ->
     N = third({1, 2, 3}),
-    case N of
-        3 -> ok
-    end.
+    ?ASSERT_EQUAL(3, N).
 
 test_third_Bad() ->
     N = third({1, 2, 3}),
-    case N of
-        3 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(3, N).
 
 test_nested_Ok() ->
     N = first(second({1, {2, 3, 4}, 5})),
-    case N of
-        2 -> ok
-    end.
+    ?ASSERT_EQUAL(2, N).
 
 test_nested_Bad() ->
     N = first(second({1, {2, 3, 4}, 5})),
-    case N of
-        2 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(2, N).

@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_lambdas).
+-include("../../common.hrl").
 
 -export([
     test_nested_capture_Bad/0,
@@ -28,24 +29,15 @@
     test_no_nullptr_Ok/1
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 test_lambda_within_function_Ok() ->
     F = fun(X) -> X + 1 end,
     Y = F(1),
-    case Y of
-        2 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(2, Y).
 
 test_lambda_within_function_Bad() ->
     F = fun(X) -> X + 1 end,
     Y = F(1),
-    case Y of
-        2 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(2, Y).
 
 test_lambda_within_function_nested_Ok() ->
     F = fun(X) ->
@@ -53,10 +45,7 @@ test_lambda_within_function_nested_Ok() ->
         G(X)
     end,
     Y = F(1),
-    case Y of
-        2 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(2, Y).
 
 test_lambda_within_function_nested_Bad() ->
     F = fun(X) ->
@@ -64,10 +53,7 @@ test_lambda_within_function_nested_Bad() ->
         G(X)
     end,
     Y = F(1),
-    case Y of
-        2 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(2, Y).
 
 apply_fun(F, X) ->
     F(X).
@@ -75,35 +61,23 @@ apply_fun(F, X) ->
 % TODO: T104352372
 fp_test_apply_fun_Ok() ->
     Y = apply_fun(fun(X) -> X + 1 end, 1),
-    case Y of
-        2 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(2, Y).
 
 test_apply_fun_Bad() ->
     Y = apply_fun(fun(X) -> X + 1 end, 1),
-    case Y of
-        2 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(2, Y).
 
 test_lambda_capture_Ok() ->
     N = 5,
     F = fun() -> N + 1 end,
     Y = F(),
-    case Y of
-        6 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(Y, 6).
 
 test_lambda_capture_Bad() ->
     N = 5,
     F = fun() -> N + 1 end,
     Y = F(),
-    case Y of
-        6 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(6, Y).
 
 test_scopes1_Ok(1) ->
     X = 1;
@@ -175,10 +149,7 @@ test_nested_capture_Ok() ->
         G = fun() -> C end,
         G()
     end,
-    case F() of
-        1 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(1, F()).
 
 test_nested_capture_Bad() ->
     C = 1,
@@ -186,10 +157,7 @@ test_nested_capture_Bad() ->
         G = fun() -> C end,
         G()
     end,
-    case F() of
-        1 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(1, F()).
 
 test_no_nullptr_Ok(X) ->
     F = fun(_) -> X end,

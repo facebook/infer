@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_fun).
+-include("../../common.hrl").
 
 -export([
     one/0,
@@ -18,27 +19,19 @@ one() -> 1.
 
 test_fun_Ok() ->
     F = fun features_fun:one/0,
-    case F() of
-        1 -> ok
-    end.
+    ?ASSERT_EQUAL(1, F()).
 
 test_fun_Bad() ->
     F = fun features_fun:one/0,
-    case F() of
-        0 -> ok
-    end.
+    ?CRASH_IF_EQUAL(1, F()).
 
 test_fun_nomodule_Ok() ->
     F = fun one/0,
-    case F() of
-        1 -> ok
-    end.
+    ?ASSERT_EQUAL(1, F()).
 
 test_fun_nomodule_Bad() ->
     F = fun one/0,
-    case F() of
-        0 -> ok
-    end.
+    ?CRASH_IF_EQUAL(1, F()).
 
 fn_test_fun_notexists_Bad() ->
     F = fun features_fun:notexists/0,
