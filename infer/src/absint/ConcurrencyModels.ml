@@ -190,7 +190,11 @@ end = struct
     ; (* only unlock *)
       "folly::SharedMutex::ReadHolder"
     ; (* only unlock *)
+      "folly::SharedMutexImpl::ReadHolder"
+    ; (* only unlock *)
       "folly::SharedMutex::WriteHolder"
+    ; (* only unlock *)
+      "folly::SharedMutexImpl::WriteHolder"
     ; (* read/write locks under operator() etc *)
       "folly::LockedPtr"
     ; (* no lock/unlock *)
