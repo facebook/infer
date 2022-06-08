@@ -17,12 +17,16 @@ let get_modeled_as_returning_copy_opt proc_name =
 
 
 let add_copies path location call_exp actuals astates astate_non_disj =
+  let is_ptr_to_trivially_copyable typ =
+    Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals
+  in
   let aux (copy_check_fn, args_map_fn) init astates =
     List.fold_map astates ~init ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
         match (exec_state, (call_exp : Exp.t), args_map_fn actuals) with
         | ( ContinueProgram disjunct
           , (Const (Cfun procname) | Closure {name= procname})
-          , (Exp.Lvar copy_pvar, copy_type) :: rest_args ) ->
+          , (Exp.Lvar copy_pvar, copy_type) :: rest_args )
+          when not (is_ptr_to_trivially_copyable copy_type) ->
             let default = (astate_non_disj, exec_state) in
             copy_check_fn procname
             |> Option.value_map ~default ~f:(fun from ->

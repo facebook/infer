@@ -10,6 +10,7 @@
 
 struct Arr {
   int arr[2];
+  std::vector<int> vec;
 };
 
 Arr& get_a_ref() {
@@ -31,7 +32,8 @@ int source_mod_ok() {
   return cpy.arr[0];
 }
 
-int source_mod_param_ok(Arr source) {
+// FP is due to incorrect frontend translation of Arr's copy constructor.
+int source_mod_param_ok_FP(Arr source) {
   auto cpy = source;
   source.arr[0] = 9; // source is modified, so copy is not unnecessary as we
                      // can't just add &
@@ -270,6 +272,7 @@ int iterator_ptr_modified_ok(const std::vector<int>& numbers) {
 
 struct SimpleS {
   int a;
+  std::vector<int> vec;
 };
 
 struct SwapSimple {
@@ -330,4 +333,14 @@ void get_rvalue_ref(std::set<int>&& x) {}
 void copy_and_move_ok(std::set<int> source) {
   std::set<int> c = source;
   get_rvalue_ref(std::move(c));
+}
+
+struct TriviallyCopyable {
+  int a;
+  float f;
+  int* p;
+};
+
+void copy_trivially_copyable_ok(TriviallyCopyable source) {
+  TriviallyCopyable c = source;
 }
