@@ -35,7 +35,7 @@ void callSinkDirectBad() {
   [InferTaint sink:source];
 }
 
-void callSinkOnNonSourceOk() {
+void callSinkOnNonSourceBad() {
   NSObject* source = [NSObject new];
   [InferTaint sink:source];
 }
