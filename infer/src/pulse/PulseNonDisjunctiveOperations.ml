@@ -31,7 +31,7 @@ let add_copies path location call_exp actuals astates astate_non_disj =
             copy_check_fn procname
             |> Option.value_map ~default ~f:(fun from ->
                    let copied_var = Var.of_pvar copy_pvar in
-                   if Var.appears_in_source_code copied_var then
+                   if Var.appears_in_source_code copied_var && not (Var.is_global copied_var) then
                      let heap = (disjunct.post :> BaseDomain.t).heap in
                      let copied =
                        NonDisjDomain.Copied {heap; typ= Typ.strip_ptr copy_type; location; from}

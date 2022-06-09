@@ -18,6 +18,8 @@ Arr& get_a_ref() {
   return a;
 }
 
+auto global = get_a_ref();
+
 int copy_decl_bad() {
   auto a = get_a_ref(); // unnecessary copy, use a ref
   // call to copy constructor Arr::Arr(a, n$0)
