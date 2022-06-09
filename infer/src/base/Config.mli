@@ -322,7 +322,7 @@ val eradicate_verbose : bool
 
 val erlang_ast_dir : string option
 
-val erlang_skip_rebar3 : bool
+val erlang_skip_compile : bool
 
 val erlang_with_otp_specs : bool
 

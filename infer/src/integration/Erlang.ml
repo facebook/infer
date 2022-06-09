@@ -66,7 +66,7 @@ let parse_translate_store result_dir =
 
 let capture ~command ~args =
   Option.iter ~f:parse_translate_store Config.erlang_ast_dir ;
-  if not Config.erlang_skip_rebar3 then (
+  if not Config.erlang_skip_compile then (
     let in_dir = ResultsDir.get_path Temporary in
     let result_dir = Filename.temp_dir ~in_dir (command ^ "infer") "" in
     run_compile Config.erlang_with_otp_specs command result_dir args ;

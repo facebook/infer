@@ -667,10 +667,11 @@ OPTIONS
        --erlang-list-unfold-depth int
            Unfold Erlang lists up to depth int           See also infer-analyze(1).
 
-       --erlang-skip-rebar3
-           Activates: Skip running rebar, to save time. It is useful together
-           with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)       
-    See also infer-capture(1).
+       --erlang-skip-compile
+           Activates: Skip running compiler (erlc/rebar3), to save time. The
+           build command is basically ignored in this case. To be used
+           together with --erlang-ast-dir. (Conversely:
+           --no-erlang-skip-compile)           See also infer-capture(1).
 
        --erlang-with-otp-specs
            Activates: [EXPERIMENTAL] Use type specs from OTP (available in

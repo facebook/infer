@@ -160,10 +160,10 @@ let capture ~changed_files mode =
         NdkBuild.capture ~build_cmd
     | Rebar3 {args} ->
         L.progress "Capturing in rebar3 mode...@." ;
-        Rebar3.capture ~command:"rebar3" ~args
+        Erlang.capture ~command:"rebar3" ~args
     | Erlc {args} ->
         L.progress "Capturing in erlc mode...@." ;
-        Rebar3.capture ~command:"erlc" ~args
+        Erlang.capture ~command:"erlc" ~args
     | XcodeBuild {prog; args} ->
         L.progress "Capturing in xcodebuild mode...@." ;
         XcodeBuild.capture ~prog ~args

@@ -1496,10 +1496,11 @@ and erlang_ast_dir =
      previous run with $(b,--debug)."
 
 
-and erlang_skip_rebar3 =
-  CLOpt.mk_bool ~long:"erlang-skip-rebar3"
+and erlang_skip_compile =
+  CLOpt.mk_bool ~long:"erlang-skip-compile"
     ~in_help:InferCommand.[(Capture, manual_erlang)]
-    "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
+    "Skip running compiler (erlc/rebar3), to save time. The build command is basically ignored in \
+     this case. To be used together with $(b,--erlang-ast-dir)."
 
 
 and erlang_with_otp_specs =
@@ -3419,7 +3420,7 @@ and eradicate_verbose = !eradicate_verbose
 
 and erlang_ast_dir = !erlang_ast_dir
 
-and erlang_skip_rebar3 = !erlang_skip_rebar3
+and erlang_skip_compile = !erlang_skip_compile
 
 and erlang_with_otp_specs = !erlang_with_otp_specs
 
