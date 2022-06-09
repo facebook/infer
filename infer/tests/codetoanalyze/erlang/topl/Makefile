@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # NOTE: If you wish to deactivate a Topl test, simply remove it from this list
-SUBDIRS = taint file
+SUBDIRS = taint file process
 
 test-%:
 	$(MAKE) -C $* test

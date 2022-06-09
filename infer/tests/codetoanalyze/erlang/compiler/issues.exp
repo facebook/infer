@@ -678,6 +678,11 @@ m:test_c_Bad/0: topl_error
 m:test_d_Ok/0: ok
 m:test_e_Bad/0: topl_error
 
+----- topl_process -----
+topl_process:fp_test3_Ok/0: ok
+topl_process:test1_Ok/0: ok
+topl_process:test2_Bad/0: expected_crash
+
 ----- topl_taint -----
 topl_taint:test_a_Bad/0: taint_error
 topl_taint:test_b_Ok/0: ok
