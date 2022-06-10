@@ -23,6 +23,7 @@ type allocator =
   | CppNew
   | CppNewArray
   | JavaResource of JavaClassName.t
+  | CSharpResource of CSharpClassName.t
   | ObjCAlloc
 [@@deriving equal]
 
