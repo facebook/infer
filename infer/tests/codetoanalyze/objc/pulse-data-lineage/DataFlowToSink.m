@@ -12,30 +12,39 @@
 
 @implementation DataFlowToSink
 
-NSObject* might_be_a_source() { return [NSObject new]; }
+- (NSObject*)might_be_a_source {
+  return [NSObject new];
+}
 
-void __infer_taint_sink(NSObject* obj) {}
+- (void)__infer_taint_sink:(NSObject*)obj {
+}
 
-NSObject* create_taint() { return might_be_a_source(); }
+- (NSObject*)create_taint {
+  return self.might_be_a_source;
+}
 
-NSObject* identity(NSObject* obj) { return obj; }
+- (NSObject*)mutate:(NSObject*)obj {
+  return obj;
+}
 
-NSObject* create_then_mutate() {
-  NSObject* source = create_taint();
-  source = identity(source);
+- (NSObject*)create_then_mutate {
+  NSObject* source = self.create_taint;
+  source = [self mutate:source];
   return source;
 }
 
-void consume(NSObject* obj) { __infer_taint_sink(obj); }
-
-void mutate_then_consume(NSObject* obj) {
-  obj = identity(obj);
-  consume(obj);
+- (void)consume:(NSObject*)obj {
+  [self __infer_taint_sink:obj];
 }
 
-void test() {
-  NSObject* start = create_then_mutate();
-  mutate_then_consume(start);
+- (void)mutate_then_consume:(NSObject*)obj {
+  obj = [self mutate:obj];
+  [self consume:obj];
+}
+
+- (void)test {
+  NSObject* start = self.create_then_mutate;
+  [self mutate_then_consume:start];
 }
 
 @end
