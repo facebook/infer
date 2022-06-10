@@ -40,7 +40,7 @@ void callSinkOnNonSourceBad() {
   [InferTaint sink:source];
 }
 
-void callNonSinkOnSourceOk() {
+void callNonSinkOnSourceBad() {
   NSObject* source = [InferTaint source];
   [InferTaint notASink:source];
 }

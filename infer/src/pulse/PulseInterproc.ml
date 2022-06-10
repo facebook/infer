@@ -803,22 +803,38 @@ let check_all_taint_valid path callee_proc_name call_location pre_post astate ca
   AddressMap.fold
     (fun addr_pre (addr_caller, hist_caller) astate_result ->
       let* astate = astate_result in
-      match
-        BaseAddressAttributes.get_must_not_be_tainted addr_pre
-          (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
-      with
+      let* astate =
+        match
+          BaseAddressAttributes.get_must_not_be_tainted addr_pre
+            (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
+        with
+        | None ->
+            Ok astate
+        | Some (_timestamp, sink, sink_trace) ->
+            let sink_trace =
+              Trace.ViaCall
+                { in_call= sink_trace
+                ; f= Call callee_proc_name
+                ; location= call_location
+                ; history= hist_caller }
+            in
+            PulseTaintOperations.check_not_tainted_wrt_sink path call_location (sink, sink_trace)
+              addr_caller astate
+      in
+      match AddressAttributes.get_taint_source_and_sanitizer addr_caller astate with
       | None ->
           Ok astate
-      | Some (_timestamp, sink, sink_trace) ->
-          let sink_trace =
-            Trace.ViaCall
-              { in_call= sink_trace
-              ; f= Call callee_proc_name
-              ; location= call_location
-              ; history= hist_caller }
-          in
-          PulseTaintOperations.check_not_tainted_wrt_sink path call_location (sink, sink_trace)
-            addr_caller astate )
+      | Some ((source, source_history, _), _) ->
+          Recoverable
+            ( astate
+            , [ PulseOperations.ReportableError
+                  { astate
+                  ; diagnostic=
+                      FlowFromTaintSource
+                        { tainted= Decompiler.find addr_pre astate
+                        ; source= (source, source_history)
+                        ; destination= callee_proc_name
+                        ; location= call_location } } ] ) )
     call_state_subst (Ok astate)
 
 

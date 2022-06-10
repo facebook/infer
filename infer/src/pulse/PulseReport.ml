@@ -29,8 +29,8 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
       let taint_source, taint_sink =
         let proc_name_of_taint Taint.{proc_name} = Format.asprintf "%a" Procname.pp proc_name in
         match diagnostic with
-        | FlowFromTaintSource {source= source, _; destination= sink, _} ->
-            (Some (proc_name_of_taint source), Some (proc_name_of_taint sink))
+        | FlowFromTaintSource {source= source, _} ->
+            (Some (proc_name_of_taint source), None)
         | FlowToTaintSink {sink= sink, _} ->
             (None, Some (proc_name_of_taint sink))
         | _ ->

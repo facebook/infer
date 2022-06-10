@@ -67,7 +67,7 @@ type t =
   | FlowFromTaintSource of
       { tainted: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
-      ; destination: Taint.t * Trace.t
+      ; destination: Procname.t
       ; location: Location.t }
   | FlowToTaintSink of
       {source: Decompiler.expr * Trace.t; sink: Taint.t * Trace.t; location: Location.t}
@@ -352,9 +352,9 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Taint.pp sink
-  | FlowFromTaintSource {tainted; source= source, _; destination= destination, _} ->
+  | FlowFromTaintSource {tainted; source= source, _; destination} ->
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
-        Taint.pp destination
+        Procname.pp destination
   | FlowToTaintSink {source= expr, _; sink= sink, _} ->
       F.asprintf "`%a` flows to taint sink %a" Decompiler.pp_expr expr Taint.pp sink
   | UnnecessaryCopy {variable; typ; location; from} ->
@@ -526,12 +526,8 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
-  | FlowFromTaintSource {source= _, source_history; destination= destination, destination_trace} ->
-      ValueHistory.add_to_errlog ~nesting:0 source_history
-      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
-           ~pp_immediate:(fun fmt -> Taint.pp fmt destination)
-           destination_trace
-      @@ []
+  | FlowFromTaintSource {source= _, source_history} ->
+      ValueHistory.add_to_errlog ~nesting:0 source_history @@ []
   | FlowToTaintSink {source= _, history; sink= sink, sink_trace} ->
       let add_to_errlog = Trace.add_to_errlog ~include_value_history:false ~nesting:0 in
       add_to_errlog history ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocated here")

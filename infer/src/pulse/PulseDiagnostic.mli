@@ -73,7 +73,7 @@ type t =
   | FlowFromTaintSource of
       { tainted: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
-      ; destination: Taint.t * Trace.t
+      ; destination: Procname.t
       ; location: Location.t }
   | FlowToTaintSink of
       {source: Decompiler.expr * Trace.t; sink: Taint.t * Trace.t; location: Location.t}

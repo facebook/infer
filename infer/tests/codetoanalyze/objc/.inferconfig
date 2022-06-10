@@ -20,6 +20,7 @@
           "method_names": ["source"],
           "kinds": ["SimpleSource"]
         },
+        { "procedure": "__infer_taint_source", "kinds": ["SimpleSource"] },
         { "class_names": ["MailboxTaint"],
           "method_names": ["source"],
           "kinds": ["SimpleSource"] },
