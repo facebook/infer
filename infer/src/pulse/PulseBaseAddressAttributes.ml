@@ -203,7 +203,14 @@ let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
 let get_copied_var = get_attribute Attributes.get_copied_var
 
-let get_source_origin_of_copy = get_attribute Attributes.get_source_origin_of_copy
+let get_source_origin_of_copy address attrs =
+  get_attribute Attributes.get_source_origin_of_copy address attrs |> Option.map ~f:fst
+
+
+let is_copied_from_const_ref address attrs =
+  get_attribute Attributes.get_source_origin_of_copy address attrs
+  |> Option.exists ~f:(fun (_, is_const_ref) -> is_const_ref)
+
 
 let get_invalid = get_attribute Attributes.get_invalid
 

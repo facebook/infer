@@ -333,6 +333,8 @@ val is_reference : t -> bool
 
 val is_rvalue_reference : t -> bool [@@warning "-32"]
 
+val is_const_reference : t -> bool
+
 val is_struct : t -> bool
 
 val is_int : t -> bool

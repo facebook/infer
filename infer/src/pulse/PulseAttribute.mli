@@ -46,7 +46,7 @@ type t =
   | JavaResourceReleased
   | PropagateTaintFrom of taint_in list
   | RefCounted
-  | SourceOriginOfCopy of PulseAbstractValue.t
+  | SourceOriginOfCopy of {source: PulseAbstractValue.t; is_const_ref: bool}
       (** records the source value for a given copy to lookup the appropriate heap in non-disj
           domain *)
   | StdMoved
@@ -83,7 +83,7 @@ module Attributes : sig
 
   val get_copied_var : t -> Var.t option
 
-  val get_source_origin_of_copy : t -> PulseAbstractValue.t option
+  val get_source_origin_of_copy : t -> (PulseAbstractValue.t * bool) option
 
   val get_allocation : t -> (allocator * Trace.t) option
 

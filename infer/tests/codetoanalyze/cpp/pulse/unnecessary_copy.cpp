@@ -332,7 +332,12 @@ void move_assignment_ok(std::set<int> source) {
 
 void get_rvalue_ref(std::set<int>&& x) {}
 
-void copy_and_move_ok(std::set<int> source) {
+void copy_and_move_bad(std::set<int> source) {
+  std::set<int> c = source;
+  get_rvalue_ref(std::move(c)); // We can move source without copy.
+}
+
+void copy_and_move_const_ref_ok(const std::set<int>& source) {
   std::set<int> c = source;
   get_rvalue_ref(std::move(c));
 }

@@ -69,7 +69,7 @@ module Attribute = struct
                                              retain [v1] to [vn], in fact they should be collected
                                              when they become unreachable *)
     | RefCounted
-    | SourceOriginOfCopy of AbstractValue.t
+    | SourceOriginOfCopy of {source: AbstractValue.t; is_const_ref: bool}
     | StdMoved
     | StdVectorReserve
     | Tainted of {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
@@ -203,8 +203,9 @@ module Attribute = struct
         F.fprintf f "PropagateTaintFrom([%a])" (Pp.seq ~sep:";" pp_taint_in) taints_in
     | RefCounted ->
         F.fprintf f "RefCounted"
-    | SourceOriginOfCopy source ->
-        F.fprintf f "copied of source %a" AbstractValue.pp source
+    | SourceOriginOfCopy {source; is_const_ref} ->
+        F.fprintf f "copied of source %a" AbstractValue.pp source ;
+        if is_const_ref then F.pp_print_string f " (const&)"
     | StdMoved ->
         F.pp_print_string f "std::move()"
     | StdVectorReserve ->
@@ -453,7 +454,7 @@ module Attributes = struct
 
   let get_source_origin_of_copy =
     get_by_rank Attribute.copy_origin_rank ~dest:(function [@warning "-8"]
-        | SourceOriginOfCopy source -> source )
+        | SourceOriginOfCopy {source; is_const_ref} -> (source, is_const_ref) )
 
 
   let get_address_of_stack_variable =

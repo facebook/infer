@@ -680,6 +680,10 @@ let is_rvalue_reference typ =
   match typ.desc with Tptr (_, Pk_rvalue_reference) -> true | _ -> false
 
 
+let is_const_reference typ =
+  match typ.desc with Tptr ({quals}, Pk_lvalue_reference) -> is_const quals | _ -> false
+
+
 let is_struct typ = match typ.desc with Tstruct _ -> true | _ -> false
 
 let is_pointer_to_cpp_class typ = match typ.desc with Tptr (t, _) -> is_cpp_class t | _ -> false

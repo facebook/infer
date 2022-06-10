@@ -36,12 +36,12 @@ let add_copies path location call_exp actuals astates astate_non_disj =
                      let copied =
                        NonDisjDomain.Copied {heap; typ= Typ.strip_ptr copy_type; location; from}
                      in
-                     let disjunct, source_addr_opt =
+                     let disjunct, source_addr_typ_opt =
                        match rest_args with
-                       | (source_arg, _) :: _ -> (
+                       | (source_arg, source_typ) :: _ -> (
                          match PulseOperations.eval path NoAccess location source_arg disjunct with
                          | Ok (disjunct, (source_addr, _)) ->
-                             (disjunct, Some source_addr)
+                             (disjunct, Some (source_addr, source_typ))
                          | Recoverable _ | FatalError _ ->
                              (disjunct, None) )
                        | _ ->
@@ -49,11 +49,17 @@ let add_copies path location call_exp actuals astates astate_non_disj =
                      in
                      let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
                      let disjunct' =
-                       Option.value_map source_addr_opt ~default:disjunct ~f:(fun source_addr ->
+                       Option.value_map source_addr_typ_opt ~default:disjunct
+                         ~f:(fun (source_addr, source_typ) ->
                            AddressAttributes.add_one source_addr (CopiedVar copied_var) disjunct
-                           |> AddressAttributes.add_one copy_addr (SourceOriginOfCopy source_addr) )
+                           |> AddressAttributes.add_one copy_addr
+                                (SourceOriginOfCopy
+                                   { source= source_addr
+                                   ; is_const_ref= Typ.is_const_reference source_typ } ) )
                      in
-                     ( NonDisjDomain.add copied_var ~source_addr_opt copied astate_non_disj
+                     ( NonDisjDomain.add copied_var
+                         ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst)
+                         copied astate_non_disj
                      , ExecutionDomain.continue disjunct' )
                    else default )
         | ExceptionRaised _, _, _
@@ -128,7 +134,8 @@ let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
               |> Option.value_map ~default:true ~f:(fun matching_addr_list ->
                      aux ~addr_to_explore:(matching_addr_list @ addr_to_explore) ~visited ) )
   in
-  BaseAddressAttributes.is_std_moved addr current_attrs
+  BaseAddressAttributes.is_copied_from_const_ref addr current_attrs
+  && BaseAddressAttributes.is_std_moved addr current_attrs
   || aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
 
 
