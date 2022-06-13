@@ -55,13 +55,13 @@ let pp_var_data fmt {name; typ; modify_in_block; is_declared_unused} =
 type specialized_with_aliasing_info = {orig_proc: Procname.t; aliases: Pvar.t list list}
 [@@deriving compare]
 
-type 'captured_var passed_block =
-  | Block of (Procname.t * 'captured_var list)
-  | Fields of 'captured_var passed_block Fieldname.Map.t
+type 'captured_var passed_closure =
+  | Closure of (Procname.t * 'captured_var list)
+  | Fields of 'captured_var passed_closure Fieldname.Map.t
 [@@deriving compare, equal]
 
-type specialized_with_blocks_info =
-  {orig_proc: Procname.t; formals_to_blocks: CapturedVar.t passed_block Pvar.Map.t}
+type specialized_with_closures_info =
+  {orig_proc: Procname.t; formals_to_closures: CapturedVar.t passed_closure Pvar.Map.t}
 [@@deriving compare]
 
 type t =
@@ -86,7 +86,7 @@ type t =
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
   ; specialized_with_aliasing_info: specialized_with_aliasing_info option
-  ; specialized_with_blocks_info: specialized_with_blocks_info option
+  ; specialized_with_closures_info: specialized_with_closures_info option
         (** the procedure is a clone specialized with calls to concrete closures, with link to the
             original procedure, and a map that links the original formals to the elements of the
             closure used to specialize the procedure. *)
@@ -133,7 +133,7 @@ let default translation_unit proc_name =
   ; is_objc_arc_on= false
   ; is_specialized= false
   ; specialized_with_aliasing_info= None
-  ; specialized_with_blocks_info= None
+  ; specialized_with_closures_info= None
   ; is_synthetic_method= false
   ; is_variadic= false
   ; sentinel_attr= None
@@ -163,18 +163,18 @@ let pp_specialized_with_aliasing_info fmt (info : specialized_with_aliasing_info
   F.fprintf fmt "orig_procname=%a, aliases=%a" Procname.pp info.orig_proc pp_aliases info.aliases
 
 
-let pp_specialized_with_blocks_info fmt info =
-  let rec pp_passed_block fmt passed_block =
-    match passed_block with
-    | Block block ->
+let pp_specialized_with_closures_info fmt info =
+  let rec pp_passed_closure fmt passed_closure =
+    match passed_closure with
+    | Closure closure ->
         let pp_captured_vars = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp in
-        Pp.pair ~fst:Procname.pp ~snd:pp_captured_vars fmt block
-    | Fields field_to_block_map ->
-        Fieldname.Map.pp ~pp_value:pp_passed_block fmt field_to_block_map
+        Pp.pair ~fst:Procname.pp ~snd:pp_captured_vars fmt closure
+    | Fields field_to_function_map ->
+        Fieldname.Map.pp ~pp_value:pp_passed_closure fmt field_to_function_map
   in
-  F.fprintf fmt "orig_procname=%a, formals_to_blocks=%a" Procname.pp info.orig_proc
-    (Pvar.Map.pp ~pp_value:pp_passed_block)
-    info.formals_to_blocks
+  F.fprintf fmt "orig_procname=%a, formals_to_closures=%a" Procname.pp info.orig_proc
+    (Pvar.Map.pp ~pp_value:pp_passed_closure)
+    info.formals_to_closures
 
 
 let pp_captured = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp
@@ -196,7 +196,7 @@ let pp f
      ; is_objc_arc_on
      ; is_specialized
      ; specialized_with_aliasing_info
-     ; specialized_with_blocks_info
+     ; specialized_with_closures_info
      ; is_synthetic_method
      ; is_variadic
      ; sentinel_attr
@@ -259,12 +259,12 @@ let pp f
       specialized_with_aliasing_info ;
   if
     not
-      ([%compare.equal: specialized_with_blocks_info option] default.specialized_with_blocks_info
-         specialized_with_blocks_info )
+      ([%compare.equal: specialized_with_closures_info option]
+         default.specialized_with_closures_info specialized_with_closures_info )
   then
-    F.fprintf f "; specialized_with_blocks_info %a@,"
-      (Pp.option pp_specialized_with_blocks_info)
-      specialized_with_blocks_info ;
+    F.fprintf f "; specialized_with_closures_info %a@,"
+      (Pp.option pp_specialized_with_closures_info)
+      specialized_with_closures_info ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;
   pp_bool_default ~default:default.is_variadic "is_variadic" is_variadic f () ;

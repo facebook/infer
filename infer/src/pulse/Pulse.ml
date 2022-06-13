@@ -159,20 +159,20 @@ module PulseTransferFunctions = struct
         in
         let maybe_call_specialization callee_pname call_exp ((res, _) as call_res) =
           if (not needed_specialization) && need_specialization res then (
-            L.d_printfln "Trying to block-specialize %a" Exp.pp call_exp ;
+            L.d_printfln "Trying to closure-specialize %a" Exp.pp call_exp ;
             match
-              PulseBlockSpecialization.make_specialized_call_exp analysis_data func_args
+              PulseClosureSpecialization.make_specialized_call_exp analysis_data func_args
                 callee_pname (call_kind_of call_exp) path call_loc astate
             with
             | Some (callee_pname, call_exp, astate) ->
-                L.d_printfln "Succesfully block-specialized %a@\n" Exp.pp call_exp ;
+                L.d_printfln "Succesfully closure-specialized %a@\n" Exp.pp call_exp ;
                 let formals_opt = get_pvar_formals callee_pname in
                 let callee_data = analyze_dependency callee_pname in
                 PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
                   callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
                 |> maybe_call_with_alias callee_pname call_exp
             | None ->
-                L.d_printfln "Failed to block-specialize %a@\n" Exp.pp call_exp ;
+                L.d_printfln "Failed to closure-specialize %a@\n" Exp.pp call_exp ;
                 (callee_pname, call_exp, call_res) )
           else (callee_pname, call_exp, call_res)
         in

@@ -218,14 +218,14 @@ module Erlang : sig
   type t = private {module_name: string; function_name: string; arity: int}
 end
 
-module FunPtrParameters : sig
+module FunctionParameters : sig
   type t = private FunPtr of C.t | Block of Block.t
 end
 
-(** Type of procedure names. WithBlockParameters is used for creating an instantiation of a method
-    that contains block parameters and it's called with concrete blocks. For example:
+(** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a
+    method that contains function parameters and it's called with concrete functions. For example:
     [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
-    [foo_my_block() {my_block(); }] where foo_my_block is created with WithBlockParameters (foo,
+    [foo_my_block() {my_block(); }] where foo_my_block is created with WithFunctionParameters (foo,
     [my_block]) *)
 type t =
   | CSharp of CSharp.t
@@ -236,15 +236,15 @@ type t =
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
   | WithAliasingParameters of t * Mangled.t list list
-  | WithBlockParameters of t * FunPtrParameters.t list
+  | WithFunctionParameters of t * FunctionParameters.t list
 [@@deriving compare, yojson_of]
 
 val base_of : t -> t
 (** if a procedure has been specialised, return the original one, otherwise itself *)
 
-val of_funptr_parameter : FunPtrParameters.t -> t
+val of_function_parameter : FunctionParameters.t -> t
 
-val to_funptr_parameter : t -> FunPtrParameters.t
+val to_function_parameter : t -> FunctionParameters.t
 
 val equal : t -> t -> bool
 
@@ -359,8 +359,8 @@ val get_method : t -> string
 val is_objc_block : t -> bool
 (** Return whether the procname is a block procname. *)
 
-val is_specialized : t -> bool
-(** Return whether the procname is a specialized with blocks procname. *)
+val is_specialized_with_function_parameters : t -> bool
+(** Return whether the procname is a specialized with functions procname. *)
 
 val is_cpp_lambda : t -> bool
 (** Return whether the procname is a cpp lambda procname. *)
@@ -390,9 +390,9 @@ val with_aliasing_parameters : t -> Mangled.t list list -> t
 (** Create a procedure name instantiated with aliasing parameters from a base procedure name and a
     list aliases. *)
 
-val with_block_parameters : t -> FunPtrParameters.t list -> t
-(** Create a procedure name instantiated with block parameters from a base procedure name and a list
-    of block procedures. *)
+val with_function_parameters : t -> FunctionParameters.t list -> t
+(** Create a procedure name instantiated with function parameters from a base procedure name and a
+    list of function procedures. *)
 
 val objc_cpp_replace_method_name : t -> string -> t
 

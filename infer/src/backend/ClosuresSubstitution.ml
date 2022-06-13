@@ -101,7 +101,8 @@ let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.inst
               L.d_printfln "replaced by call %a " (Sil.pp_instr Pp.text ~print_types:true) new_instr ;
               new_instr )
       | Call (ret_id_typ, Const (Cfun pname), actual_params, loc, call_flags)
-        when Procname.is_objc_block pname || Procname.is_specialized pname ->
+        when Procname.is_objc_block pname || Procname.is_specialized_with_function_parameters pname
+        ->
           L.d_printfln "call  %a " (Sil.pp_instr Pp.text ~print_types:true) instr ;
           let captured_by_args =
             List.concat_map actual_params ~f:(function

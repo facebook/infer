@@ -371,7 +371,7 @@ let is_android_lifecycle_method tenv pname =
     | Block _
     | ObjC_Cpp _
     | CSharp _
-    | WithBlockParameters _ ->
+    | WithFunctionParameters _ ->
         false
     | WithAliasingParameters (base, _) ->
         test_pname base

@@ -33,13 +33,13 @@ type specialized_with_aliasing_info =
             and [a] and [b] as well *) }
 [@@deriving compare]
 
-type 'captured_var passed_block =
-  | Block of (Procname.t * 'captured_var list)
-  | Fields of 'captured_var passed_block Fieldname.Map.t
+type 'captured_var passed_closure =
+  | Closure of (Procname.t * 'captured_var list)
+  | Fields of 'captured_var passed_closure Fieldname.Map.t
 [@@deriving compare, equal]
 
-type specialized_with_blocks_info =
-  {orig_proc: Procname.t; formals_to_blocks: CapturedVar.t passed_block Pvar.Map.t}
+type specialized_with_closures_info =
+  {orig_proc: Procname.t; formals_to_closures: CapturedVar.t passed_closure Pvar.Map.t}
 [@@deriving compare]
 
 type t =
@@ -69,7 +69,7 @@ type t =
         (** the procedure is a clone specialized with captured variables and paramaters sharing
             memory, with link to the original procedure, and a list of variables aliasing each
             other. *)
-  ; specialized_with_blocks_info: specialized_with_blocks_info option
+  ; specialized_with_closures_info: specialized_with_closures_info option
         (** the procedure is a clone specialized with calls to concrete closures, with link to the
             original procedure, and a map that links the original formals to the elements of the
             closure used to specialize the procedure. *)

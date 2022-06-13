@@ -239,7 +239,7 @@ let rec is_container_read tenv pn =
       (not (is_cpp_container_write pn)) && is_cpp_container_read pn
   | WithAliasingParameters (base, _) ->
       is_container_read tenv base
-  | Erlang _ | Linters_dummy_method | Block _ | WithBlockParameters _ ->
+  | Erlang _ | Linters_dummy_method | Block _ | WithFunctionParameters _ ->
       false
 
 

@@ -420,7 +420,7 @@ let is_java_main_method (pname : Procname.t) =
     | Block _
     | ObjC_Cpp _
     | CSharp _
-    | WithBlockParameters _ ->
+    | WithFunctionParameters _ ->
         false
     | WithAliasingParameters (base, _) ->
         test_pname base

@@ -34,16 +34,16 @@ let get_procname_and_captured value ({InterproceduralAnalysis.analyze_dependency
   (procname, captured_vars)
 
 
-let get_caller_values_to_blocks {InterproceduralAnalysis.proc_desc} path call_loc astate =
+let get_caller_values_to_closures {InterproceduralAnalysis.proc_desc} path call_loc astate =
   let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
   let caller_attributes = Procdesc.get_attributes proc_desc in
   let caller_pname = Procdesc.get_proc_name proc_desc in
-  match caller_attributes.ProcAttributes.specialized_with_blocks_info with
+  match caller_attributes.ProcAttributes.specialized_with_closures_info with
   | None ->
       AbstractValue.Map.empty
-  | Some {formals_to_blocks} ->
+  | Some {formals_to_closures} ->
       Pvar.Map.fold
-        (fun pvar passed_block map ->
+        (fun pvar passed_closure map ->
           let pvar = Pvar.specialize_pvar pvar caller_pname in
           match PulseResult.ok (PulseOperations.eval path Read call_loc (Exp.Lvar pvar) astate) with
           | Some (_, (value, _)) ->
@@ -56,10 +56,10 @@ let get_caller_values_to_blocks {InterproceduralAnalysis.proc_desc} path call_lo
                       ~f:(fun value (access, (accessed_value, _)) ->
                         match access with Dereference -> get_deepest accessed_value | _ -> value )
               in
-              AbstractValue.Map.add (get_deepest value) passed_block map
+              AbstractValue.Map.add (get_deepest value) passed_closure map
           | None ->
               map )
-        formals_to_blocks AbstractValue.Map.empty
+        formals_to_closures AbstractValue.Map.empty
 
 
 let captured_vars_of_captured caller_pname captured path call_loc astate =
@@ -100,7 +100,7 @@ let captured_vars_of_captured_and_exp caller_proc_desc captured exp path call_lo
   let caller_pname = Procdesc.get_proc_name caller_proc_desc in
   (* Test if the captured variables exist in the current context (they are
      either local or captured). If not, they will be accessed using Exp.Lfield.
-     This is necessary in case the block was created via a function call
+     This is necessary in case the closure was created via a function call
      because its captured variables only exist as the fields in current context
      so using their pvars would create whole new variables different from the fields
   *)
@@ -128,7 +128,7 @@ let captured_vars_of_captured_and_exp caller_proc_desc captured exp path call_lo
 
 
 let captured_by_actuals ({InterproceduralAnalysis.proc_desc} as analysis_data) func_actuals
-    caller_values_to_blocks path call_loc astate =
+    caller_values_to_closures path call_loc astate =
   let caller_pname = Procdesc.get_proc_name proc_desc in
   let seen = ref AbstractValue.Set.empty in
   let rec captured_vars_of value exp astate =
@@ -141,10 +141,10 @@ let captured_by_actuals ({InterproceduralAnalysis.proc_desc} as analysis_data) f
           |> IOption.if_none_eval ~f:(fun () -> (astate, []))
       | None ->
           let astate_captured_vars =
-            match AbstractValue.Map.find_opt value caller_values_to_blocks with
-            | Some passed_block ->
+            match AbstractValue.Map.find_opt value caller_values_to_closures with
+            | Some passed_closure ->
                 let captured =
-                  BlockSpecialization.get_captured [Some passed_block]
+                  ClosureSpecialization.get_captured [Some passed_closure]
                   |> specialize_captured_vars analysis_data
                 in
                 captured_vars_of_captured caller_pname captured path call_loc astate
@@ -184,7 +184,7 @@ let captured_by_actuals ({InterproceduralAnalysis.proc_desc} as analysis_data) f
   (astate, List.rev captured_vars |> List.concat)
 
 
-let actuals_of_func analysis_data func_actuals caller_values_to_blocks astate =
+let actuals_of_func analysis_data func_actuals caller_values_to_closures astate =
   let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
   let actual_of value =
     let rec actual_of value seen =
@@ -194,9 +194,9 @@ let actuals_of_func analysis_data func_actuals caller_values_to_blocks astate =
         match get_procname_and_captured value analysis_data astate with
         | Some (pname, captured) ->
             let captured = specialize_captured_vars analysis_data captured in
-            Some (ProcAttributes.Block (pname, captured))
+            Some (ProcAttributes.Closure (pname, captured))
         | None -> (
-            let default = AbstractValue.Map.find_opt value caller_values_to_blocks in
+            let default = AbstractValue.Map.find_opt value caller_values_to_closures in
             match BaseMemory.find_opt value post.heap with
             | None ->
                 default
@@ -206,15 +206,16 @@ let actuals_of_func analysis_data func_actuals caller_values_to_blocks astate =
                     match access with
                     | FieldAccess fieldname -> (
                       match actual_of accessed_value seen with
-                      | Some passed_block -> (
+                      | Some passed_closure -> (
                         match res with
                         | None ->
                             Some
                               (ProcAttributes.Fields
-                                 (Fieldname.Map.singleton fieldname passed_block) )
+                                 (Fieldname.Map.singleton fieldname passed_closure) )
                         | Some (ProcAttributes.Fields map) ->
                             Some
-                              (ProcAttributes.Fields (Fieldname.Map.add fieldname passed_block map))
+                              (ProcAttributes.Fields
+                                 (Fieldname.Map.add fieldname passed_closure map) )
                         | Some _ ->
                             res )
                       | None ->
@@ -229,21 +230,21 @@ let actuals_of_func analysis_data func_actuals caller_values_to_blocks astate =
   List.map func_actuals ~f:(fun {FuncArg.arg_payload= value, _} -> actual_of value)
 
 
-let deep_formals_to_blocks_of_captured_vars ({InterproceduralAnalysis.proc_desc} as analysis_data)
-    captured_vars caller_values_to_blocks path call_loc astate =
-  (* Notation: using dftb as an alias for deep_formals_to_blocks in the rest of this function *)
+let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_desc} as analysis_data)
+    captured_vars caller_values_to_closures path call_loc astate =
+  (* Notation: using dftb as an alias for deep_formals_to_closures in the rest of this function *)
   let rec dftb_of_captured_var (exp, pvar, _, _) map astate seen =
     if Pvar.Map.mem pvar map then Ok (astate, map)
     else
       let open PulseResult.Let_syntax in
       let+ astate', (value, _) = PulseOperations.eval path Read call_loc exp astate in
-      match dftb_and_passed_block_of_value value exp map astate' seen with
+      match dftb_and_passed_closure_of_value value exp map astate' seen with
       | _, _, None ->
           (astate, map)
-      | astate, map, Some passed_block ->
-          let map = Pvar.Map.add pvar passed_block map in
+      | astate, map, Some passed_closure ->
+          let map = Pvar.Map.add pvar passed_closure map in
           (astate, map)
-  and dftb_and_passed_block_of_block (block_name, captured) ?exp map astate seen =
+  and dftb_and_passed_closure_of_closure (pname, captured) ?exp map astate seen =
     let astate_captured_vars =
       captured_vars_of_captured_and_exp proc_desc captured exp path call_loc astate
     in
@@ -259,57 +260,57 @@ let deep_formals_to_blocks_of_captured_vars ({InterproceduralAnalysis.proc_desc}
         in
         match PulseResult.ok astate_map with
         | Some (astate, map) ->
-            (astate, map, Some (ProcAttributes.Block (block_name, captured_vars)))
+            (astate, map, Some (ProcAttributes.Closure (pname, captured_vars)))
         | None ->
-            (astate, map, Some (ProcAttributes.Block (block_name, captured_vars))) )
-  and dftb_and_passed_block_of_value value exp map astate seen =
+            (astate, map, Some (ProcAttributes.Closure (pname, captured_vars))) )
+  and dftb_and_passed_closure_of_value value exp map astate seen =
     if AbstractValue.Set.mem value seen then (* cycles not handled yet *) (astate, map, None)
     else
       let seen = AbstractValue.Set.add value seen in
       match get_procname_and_captured value analysis_data astate with
-      | Some (block_name, captured) ->
-          dftb_and_passed_block_of_block (block_name, captured) ~exp map astate seen
+      | Some (pname, captured) ->
+          dftb_and_passed_closure_of_closure (pname, captured) ~exp map astate seen
       | None -> (
-          (* If we already have a passed_block associated with the current value, we want
-             to keep it and build the new passed_block over it because the information it
-             holds may not exist in memory. E.g. if a caller's captured var is a block and
+          (* If we already have a passed_closure associated with the current value, we want
+             to keep it and build the new passed_closure over it because the information it
+             holds may not exist in memory. E.g. if a caller's captured var is a closure and
              is just passing through down to the callee, then all the relevant information
-             about this block's captured variables only exist in the passed_block *)
-          let astate_map_passed_block =
+             about this closure's captured variables only exist in the passed_closure *)
+          let astate_map_passed_closure =
             let open IOption.Let_syntax in
-            let+ passed_block = AbstractValue.Map.find_opt value caller_values_to_blocks in
-            let rec get_block passed_block map astate =
+            let+ passed_closure = AbstractValue.Map.find_opt value caller_values_to_closures in
+            let rec get_closure passed_closure map astate =
               let open ProcAttributes in
-              match passed_block with
-              | Block (block_name, captured) ->
+              match passed_closure with
+              | Closure (pname, captured) ->
                   let captured = specialize_captured_vars analysis_data captured in
-                  dftb_and_passed_block_of_block (block_name, captured) map astate seen
-              | Fields passed_blocks ->
+                  dftb_and_passed_closure_of_closure (pname, captured) map astate seen
+              | Fields passed_closures ->
                   let astate, map, fields =
                     Fieldname.Map.fold
-                      (fun fieldname passed_block (astate, map, fields) ->
+                      (fun fieldname passed_closure (astate, map, fields) ->
                         match fields with
                         | None ->
                             (astate, map, None)
                         | Some fields -> (
-                          match get_block passed_block map astate with
+                          match get_closure passed_closure map astate with
                           | _, _, None ->
                               (astate, map, None)
-                          | astate, map, Some passed_block ->
-                              let fields = Fieldname.Map.add fieldname passed_block fields in
+                          | astate, map, Some passed_closure ->
+                              let fields = Fieldname.Map.add fieldname passed_closure fields in
                               (astate, map, Some fields) ) )
-                      passed_blocks
+                      passed_closures
                       (astate, map, Some Fieldname.Map.empty)
                   in
                   let fields = Option.map fields ~f:(fun fields -> Fields fields) in
                   (astate, map, fields)
             in
-            get_block passed_block map astate
+            get_closure passed_closure map astate
           in
           let default =
-            match astate_map_passed_block with
-            | Some astate_map_passed_block ->
-                astate_map_passed_block
+            match astate_map_passed_closure with
+            | Some astate_map_passed_closure ->
+                astate_map_passed_closure
             | None ->
                 (astate, map, None)
           in
@@ -325,31 +326,33 @@ let deep_formals_to_blocks_of_captured_vars ({InterproceduralAnalysis.proc_desc}
                       let id = Ident.create_fresh Ident.knormal in
                       let astate' = PulseOperations.write_id id addr_hist astate in
                       match
-                        dftb_and_passed_block_of_value accessed_value (Exp.Var id) map astate' seen
+                        dftb_and_passed_closure_of_value accessed_value (Exp.Var id) map astate'
+                          seen
                       with
                       | _, _, None ->
                           (astate, map, res)
-                      | astate, map, Some passed_block -> (
+                      | astate, map, Some passed_closure -> (
                         match res with
                         | None ->
                             ( astate
                             , map
                             , Some
                                 (ProcAttributes.Fields
-                                   (Fieldname.Map.singleton fieldname passed_block) ) )
+                                   (Fieldname.Map.singleton fieldname passed_closure) ) )
                         | Some (ProcAttributes.Fields fields) ->
                             ( astate
                             , map
                             , Some
                                 (ProcAttributes.Fields
-                                   (Fieldname.Map.add fieldname passed_block fields) ) )
+                                   (Fieldname.Map.add fieldname passed_closure fields) ) )
                         | Some _ ->
                             (astate, map, res) ) )
                   | Dereference -> (
                       let id = Ident.create_fresh Ident.knormal in
                       let astate' = PulseOperations.write_id id addr_hist astate in
                       match
-                        dftb_and_passed_block_of_value accessed_value (Exp.Var id) map astate' seen
+                        dftb_and_passed_closure_of_value accessed_value (Exp.Var id) map astate'
+                          seen
                       with
                       | _, _, None ->
                           (astate, map, res)
@@ -368,12 +371,12 @@ let get_orig_captured_vars analysis_data callee_pname call_kind =
   | `Closure captured_vars ->
       (* If the current callee is specialized, we want to get rid of the variables captured
          by the specialization to only keep the ones of the unspecialized version because we
-         always do a full specialization. (See BlockSpecializaiton.create_specialized_procdesc)
+         always do a full specialization. (See ClosureSpecialization.create_specialized_procdesc)
       *)
       let captured =
         let attributes =
           Option.bind (IRAttributes.load callee_pname) ~f:(fun attributes ->
-              match attributes.ProcAttributes.specialized_with_blocks_info with
+              match attributes.ProcAttributes.specialized_with_closures_info with
               | None ->
                   Some attributes
               | Some {orig_proc} ->
@@ -397,18 +400,18 @@ let get_orig_captured_vars analysis_data callee_pname call_kind =
       []
 
 
-let prepend_captured_vars analysis_data ~func_captured_vars ~func_args caller_values_to_blocks path
-    call_loc astate orig_captured_vars =
+let prepend_captured_vars analysis_data ~func_captured_vars ~func_args caller_values_to_closures
+    path call_loc astate orig_captured_vars =
   let astate, captured_vars_by_captured_vars =
-    captured_by_actuals analysis_data func_captured_vars caller_values_to_blocks path call_loc
+    captured_by_actuals analysis_data func_captured_vars caller_values_to_closures path call_loc
       astate
   in
   let astate, captured_vars_by_args =
-    captured_by_actuals analysis_data func_args caller_values_to_blocks path call_loc astate
+    captured_by_actuals analysis_data func_args caller_values_to_closures path call_loc astate
   in
   (* Order matters:
      the new captured are added at the start of the new procdesc's captured list
-     (see BlockSpecialization.create_specialized_procdesc):
+     (see ClosureSpecialization.create_specialized_procdesc):
       1. captured vars' always come first
       2. then the args'
       3. finally, the previously existing captured
@@ -416,29 +419,29 @@ let prepend_captured_vars analysis_data ~func_captured_vars ~func_args caller_va
   (astate, List.concat [captured_vars_by_captured_vars; captured_vars_by_args; orig_captured_vars])
 
 
-let get_deep_formals_to_blocks analysis_data captured_vars caller_values_to_blocks path call_loc
+let get_deep_formals_to_closures analysis_data captured_vars caller_values_to_closures path call_loc
     astate =
   let res =
-    deep_formals_to_blocks_of_captured_vars analysis_data captured_vars caller_values_to_blocks path
-      call_loc astate
+    deep_formals_to_closures_of_captured_vars analysis_data captured_vars caller_values_to_closures
+      path call_loc astate
   in
   PulseResult.ok res
 
 
-let prepend_deep_captured_vars deep_formals_to_blocks captured_vars =
+let prepend_deep_captured_vars deep_formals_to_closures captured_vars =
   let deep_captured_vars =
-    let rec get_captured_vars_in_passed_block captured_vars_acc = function
-      | ProcAttributes.Block (_, captured_vars) ->
+    let rec get_captured_vars_in_passed_closure captured_vars_acc = function
+      | ProcAttributes.Closure (_, captured_vars) ->
           captured_vars :: captured_vars_acc
-      | ProcAttributes.Fields passed_blocks ->
+      | ProcAttributes.Fields passed_closures ->
           Fieldname.Map.fold
             (fun _ actual captured_vars_acc ->
-              get_captured_vars_in_passed_block captured_vars_acc actual )
-            passed_blocks captured_vars_acc
+              get_captured_vars_in_passed_closure captured_vars_acc actual )
+            passed_closures captured_vars_acc
     in
     Pvar.Map.fold
-      (fun _ actual captured_vars -> get_captured_vars_in_passed_block captured_vars actual)
-      deep_formals_to_blocks []
+      (fun _ actual captured_vars -> get_captured_vars_in_passed_closure captured_vars actual)
+      deep_formals_to_closures []
     |> List.concat
   in
   (* Order matters:
@@ -460,35 +463,37 @@ let make_specialized_call_exp analysis_data func_args callee_pname call_kind pat
   in
   let* astate, rev_func_captured_vars = PulseResult.ok rev_func_captured_vars in
   let func_captured_vars = List.rev rev_func_captured_vars in
-  let caller_values_to_blocks = get_caller_values_to_blocks analysis_data path call_loc astate in
-  let astate, captured_vars =
-    prepend_captured_vars analysis_data ~func_captured_vars ~func_args caller_values_to_blocks path
-      call_loc astate orig_captured_vars
+  let caller_values_to_closures =
+    get_caller_values_to_closures analysis_data path call_loc astate
   in
-  let* astate, deep_formals_to_blocks =
-    get_deep_formals_to_blocks analysis_data captured_vars caller_values_to_blocks path call_loc
+  let astate, captured_vars =
+    prepend_captured_vars analysis_data ~func_captured_vars ~func_args caller_values_to_closures
+      path call_loc astate orig_captured_vars
+  in
+  let* astate, deep_formals_to_closures =
+    get_deep_formals_to_closures analysis_data captured_vars caller_values_to_closures path call_loc
       astate
   in
-  let extra_formals_to_blocks =
+  let extra_formals_to_closures =
     let rec convert = function
-      | ProcAttributes.Block (pname, captured_vars) ->
-          ProcAttributes.Block
+      | ProcAttributes.Closure (pname, captured_vars) ->
+          ProcAttributes.Closure
             ( pname
             , List.map captured_vars ~f:(fun (_, pvar, typ, capture_mode) ->
                   CapturedVar.{pvar; typ; capture_mode} ) )
       | ProcAttributes.Fields fields ->
           ProcAttributes.Fields (Fieldname.Map.map convert fields)
     in
-    Pvar.Map.map convert deep_formals_to_blocks
+    Pvar.Map.map convert deep_formals_to_closures
   in
   let captured_actuals =
-    actuals_of_func analysis_data func_captured_vars caller_values_to_blocks astate
+    actuals_of_func analysis_data func_captured_vars caller_values_to_closures astate
   in
-  let arg_actuals = actuals_of_func analysis_data func_args caller_values_to_blocks astate in
+  let arg_actuals = actuals_of_func analysis_data func_args caller_values_to_closures astate in
   let+ specialized_pname =
-    BlockSpecialization.create_specialized_procdesc callee_pname ~extra_formals_to_blocks
+    ClosureSpecialization.create_specialized_procdesc callee_pname ~extra_formals_to_closures
       ~captured_actuals ~arg_actuals
   in
-  let captured_vars = prepend_deep_captured_vars deep_formals_to_blocks captured_vars in
+  let captured_vars = prepend_deep_captured_vars deep_formals_to_closures captured_vars in
   let specialized_exp = Exp.Closure {name= specialized_pname; captured_vars} in
   (specialized_pname, specialized_exp, astate)

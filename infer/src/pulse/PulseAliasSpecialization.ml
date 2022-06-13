@@ -134,25 +134,26 @@ let create_specialized_procdesc callee_pname callee_pdesc aliases =
     in
     let new_attributes =
       let attributes = Procdesc.get_attributes callee_pdesc in
-      let specialized_with_blocks_info =
+      let specialized_with_closures_info =
         (* because we relocalized the pvars in the instructions we need to relocalize
            those in the attributes as well to ensure they still match *)
-        match attributes.specialized_with_blocks_info with
+        match attributes.specialized_with_closures_info with
         | None ->
             None
-        | Some specialized_with_blocks_info ->
+        | Some specialized_with_closures_info ->
             Some
-              { specialized_with_blocks_info with
-                formals_to_blocks=
+              { specialized_with_closures_info with
+                formals_to_closures=
                   Pvar.Map.fold
-                    (fun pvar passed_block map ->
-                      Pvar.Map.add (Pvar.specialize_pvar pvar specialized_pname) passed_block map )
-                    specialized_with_blocks_info.formals_to_blocks Pvar.Map.empty }
+                    (fun pvar passed_closure map ->
+                      Pvar.Map.add (Pvar.specialize_pvar pvar specialized_pname) passed_closure map
+                      )
+                    specialized_with_closures_info.formals_to_closures Pvar.Map.empty }
       in
       ProcAttributes.
         { attributes with
           specialized_with_aliasing_info= Some {orig_proc= callee_pname; aliases}
-        ; specialized_with_blocks_info
+        ; specialized_with_closures_info
         ; proc_name= specialized_pname
         ; captured=
             List.map attributes.captured ~f:(fun (CapturedVar.{pvar} as captured_var) ->

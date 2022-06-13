@@ -8,13 +8,13 @@
 open! IStd
 
 (* same representation for both args and captured variables *)
-type actual = CapturedVar.t ProcAttributes.passed_block option
+type actual = CapturedVar.t ProcAttributes.passed_closure option
 
 val get_captured : actual list -> CapturedVar.t list
 
 val create_specialized_procdesc :
      Procname.t
-  -> extra_formals_to_blocks:CapturedVar.t ProcAttributes.passed_block Pvar.Map.t
+  -> extra_formals_to_closures:CapturedVar.t ProcAttributes.passed_closure Pvar.Map.t
   -> captured_actuals:actual list
   -> arg_actuals:actual list
   -> Procname.t option

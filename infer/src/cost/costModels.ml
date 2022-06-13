@@ -228,8 +228,8 @@ module NSAttributedString = struct
             str cost_model_env ~ret inferbo_mem
         in
         match pname with
-        | WithBlockParameters (_, [block_name]) -> (
-            let pname = Procname.of_funptr_parameter block_name in
+        | WithFunctionParameters (_, [function_parameter]) -> (
+            let pname = Procname.of_function_parameter function_parameter in
             match get_summary pname with
             | Some {CostDomain.post= callee_summary} ->
                 let {BasicCostWithReason.cost= callee_cost} =
@@ -268,8 +268,8 @@ module NSCollection = struct
             array cost_model_env ~ret inferbo_mem
         in
         match pname with
-        | WithBlockParameters (_, [block_name]) -> (
-            let pname = Procname.of_funptr_parameter block_name in
+        | WithFunctionParameters (_, [function_parameter]) -> (
+            let pname = Procname.of_function_parameter function_parameter in
             match get_summary pname with
             | Some {CostDomain.post= callee_summary} ->
                 let {BasicCostWithReason.cost= callee_cost} =

@@ -812,7 +812,8 @@ type call_kind =
 
 let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
   if
-    Procname.is_objc_block procname || Procname.is_specialized procname
+    Procname.is_objc_block procname
+    || Procname.is_specialized_with_function_parameters procname
     || Procname.is_erlang procname
   then
     match call_kind with
