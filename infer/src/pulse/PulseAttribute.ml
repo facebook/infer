@@ -50,13 +50,23 @@ module Attribute = struct
 
   let pp_taint_in fmt {v} = F.fprintf fmt "{@[v= %a@]}" AbstractValue.pp v
 
+  module CopiedInto = struct
+    type t = IntoVar of Var.t | IntoField of Fieldname.t [@@deriving compare, equal]
+
+    let pp fmt = function
+      | IntoVar var ->
+          Var.pp fmt var
+      | IntoField field ->
+          Fieldname.pp fmt field
+  end
+
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of allocator * Trace.t
     | AlwaysReachable
     | Closure of Procname.t
-    | CopiedVar of Var.t
+    | CopiedInto of CopiedInto.t
     | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
@@ -94,7 +104,7 @@ module Attribute = struct
 
   let closure_rank = Variants.closure.rank
 
-  let copied_var_rank = Variants.copiedvar.rank
+  let copied_into_rank = Variants.copiedinto.rank
 
   let copy_origin_rank = Variants.sourceoriginofcopy.rank
 
@@ -170,8 +180,8 @@ module Attribute = struct
         F.pp_print_string f "AlwaysReachable"
     | Closure pname ->
         Procname.pp f pname
-    | CopiedVar var ->
-        Var.pp f var
+    | CopiedInto copied_into ->
+        CopiedInto.pp f copied_into
     | DynamicType typ ->
         F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
@@ -233,7 +243,7 @@ module Attribute = struct
     | AddressOfStackVariable _
     | AlwaysReachable
     | Closure _
-    | CopiedVar _
+    | CopiedInto _
     | DynamicType _
     | EndOfCollection
     | JavaResourceReleased
@@ -258,7 +268,7 @@ module Attribute = struct
     | Allocated _
     | AlwaysReachable
     | Closure _
-    | CopiedVar _
+    | CopiedInto _
     | DynamicType _
     | EndOfCollection
     | ISLAbduced _
@@ -279,7 +289,7 @@ module Attribute = struct
 
   let is_suitable_for_summary attr =
     match attr with
-    | CopiedVar _ | SourceOriginOfCopy _ ->
+    | CopiedInto _ | SourceOriginOfCopy _ ->
         false
     | Tainted {intra_procedural_only} ->
         not intra_procedural_only
@@ -336,7 +346,7 @@ module Attribute = struct
         UnknownEffect (call, add_call_to_history hist)
     | WrittenTo trace ->
         WrittenTo (add_call_to_trace trace)
-    | CopiedVar _ | SourceOriginOfCopy _ | Tainted {intra_procedural_only= true} ->
+    | CopiedInto _ | SourceOriginOfCopy _ | Tainted {intra_procedural_only= true} ->
         L.die InternalError "Unexpected attribute %a in the summary of %a" pp attr Procname.pp
           proc_name
     | ( AddressOfCppTemporary _
@@ -377,7 +387,7 @@ module Attribute = struct
       | Allocated _
       | AlwaysReachable
       | Closure _
-      | CopiedVar _
+      | CopiedInto _
       | DynamicType _
       | EndOfCollection
       | Invalid _
@@ -448,8 +458,9 @@ module Attributes = struct
         proc_name )
 
 
-  let get_copied_var =
-    get_by_rank Attribute.copied_var_rank ~dest:(function [@warning "-8"] CopiedVar var -> var)
+  let get_copied_into =
+    get_by_rank Attribute.copied_into_rank ~dest:(function [@warning "-8"]
+        | CopiedInto copied_into -> copied_into )
 
 
   let get_source_origin_of_copy =

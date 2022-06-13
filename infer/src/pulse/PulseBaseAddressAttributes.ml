@@ -201,7 +201,7 @@ let get_allocation = get_attribute Attributes.get_allocation
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
-let get_copied_var = get_attribute Attributes.get_copied_var
+let get_copied_into = get_attribute Attributes.get_copied_into
 
 let get_source_origin_of_copy address attrs =
   get_attribute Attributes.get_source_origin_of_copy address attrs |> Option.map ~f:fst

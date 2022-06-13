@@ -351,3 +351,33 @@ struct TriviallyCopyable {
 void copy_trivially_copyable_ok(TriviallyCopyable source) {
   TriviallyCopyable c = source;
 }
+
+class WrapperArr {
+
+  explicit WrapperArr(const Arr& internal_arr) : hidden_arr_(internal_arr) {}
+
+  // unnecessary copy into hidden_arr_, it should be moved
+  explicit WrapperArr(Arr&& internal_arr) : hidden_arr_(internal_arr) {}
+
+  const Arr getArr() const { return hidden_arr_; }
+
+ private:
+  Arr hidden_arr_;
+
+  void unnecessary_copy_moveable_bad(Arr&& a) {
+    hidden_arr_ = a;
+    hidden_arr_.arr[0] = 9; // it is ok that the copy is modified since it has
+                            // the ownership of the object.
+  }
+
+  void unnecessary_copy_moveable_source_mod_ok(Arr&& a) {
+    hidden_arr_ = a;
+    a.arr[0] = 9; // we cannot suggest move above as source is modified
+  }
+
+  void unnecessary_copy_moveable_copy_mod_bad(Arr&& a) {
+    hidden_arr_ = a;
+    hidden_arr_.arr[0] = 9; // copy can be modified since it will have the
+                            // ownership of the object.
+  }
+};

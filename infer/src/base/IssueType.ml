@@ -1064,6 +1064,12 @@ let unnecessary_copy_assignment_pulse =
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
+let unnecessary_copy_movable_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_MOVABLE" Error Pulse
+    ~hum:"Unnecessary Copy Movable"
+    ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY_MOVABLE.md"]
+
+
 let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
 
 let use_after_delete =

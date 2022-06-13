@@ -592,6 +592,7 @@ OPTIONS
              PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),
              PULSE_UNNECESSARY_COPY (disabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
+             PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              REGEX_OP_ON_UI_THREAD (enabled by default),

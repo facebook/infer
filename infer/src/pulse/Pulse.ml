@@ -29,13 +29,13 @@ let report_topl_errors proc_desc err_log summary =
 
 let report_unnecessary_copies proc_desc err_log non_disj_astate =
   PulseNonDisjunctiveDomain.get_copied non_disj_astate
-  |> List.iter ~f:(fun (var, typ, location, from) ->
-         let var_name = Format.asprintf "%a" Var.pp var in
-         let diagnostic = Diagnostic.UnnecessaryCopy {variable= var; typ; location; from} in
+  |> List.iter ~f:(fun (copied_into, typ, location, from) ->
+         let copy_name = Format.asprintf "%a" Attribute.CopiedInto.pp copied_into in
+         let diagnostic = Diagnostic.UnnecessaryCopy {copied_into; typ; location; from} in
          PulseReport.report
            ~is_suppressed:
-             ( String.is_substring var_name ~substring:"copy"
-             || String.is_substring var_name ~substring:"Copy" )
+             ( String.is_substring copy_name ~substring:"copy"
+             || String.is_substring copy_name ~substring:"Copy" )
            ~latent:false proc_desc err_log diagnostic )
 
 

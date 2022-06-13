@@ -72,7 +72,7 @@ type t =
   | FlowToTaintSink of
       {source: Decompiler.expr * Trace.t; sink: Taint.t * Trace.t; location: Location.t}
   | UnnecessaryCopy of
-      { variable: Var.t
+      { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
       ; location: Location.t
       ; from: PulseNonDisjunctiveDomain.CopyOrigin.t }
@@ -357,23 +357,31 @@ let get_message diagnostic =
         Procname.pp destination
   | FlowToTaintSink {source= expr, _; sink= sink, _} ->
       F.asprintf "`%a` flows to taint sink %a" Decompiler.pp_expr expr Taint.pp sink
-  | UnnecessaryCopy {variable; typ; location; from} ->
+  | UnnecessaryCopy {copied_into; typ; location; from} -> (
+      let open PulseNonDisjunctiveDomain in
       let suppression_msg =
         "If this copy was intentional, consider adding the word `copy` into the variable name to \
          suppress this warning"
       in
       let suggestion_msg =
         match from with
-        | PulseNonDisjunctiveDomain.CopyOrigin.CopyCtor ->
+        | CopyOrigin.CopyCtor ->
             "try using a reference `&`"
-        | PulseNonDisjunctiveDomain.CopyOrigin.CopyAssignment ->
+        | CopyOrigin.CopyAssignment ->
             "try getting a reference to it or move it if possible"
       in
-      F.asprintf
-        "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid the \
-         copy, %s. %s."
-        PulseNonDisjunctiveDomain.CopyOrigin.pp from Var.pp variable (Typ.pp_full Pp.text) typ
-        Location.pp_line location suggestion_msg suppression_msg
+      match copied_into with
+      | IntoVar _ ->
+          F.asprintf
+            "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid \
+             the copy, %s. %s."
+            CopyOrigin.pp from PulseAttribute.CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ
+            Location.pp_line location suggestion_msg suppression_msg
+      | IntoField fname ->
+          F.asprintf
+            "Field `%a` with type `%a` is copied into from an rvalue-ref here but is not modified \
+             afterwards. Rather than copying into it, try moving into it instead."
+            Fieldname.pp fname (Typ.pp_full Pp.text) typ )
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -557,6 +565,8 @@ let get_issue_type ~latent issue_type =
       IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
+  | UnnecessaryCopy {copied_into= PulseAttribute.CopiedInto.IntoField _}, false ->
+      IssueType.unnecessary_copy_movable_pulse
   | UnnecessaryCopy {from= PulseNonDisjunctiveDomain.CopyOrigin.CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
   | UnnecessaryCopy {from= PulseNonDisjunctiveDomain.CopyOrigin.CopyAssignment}, false ->

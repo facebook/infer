@@ -69,15 +69,16 @@ module CopySpec = struct
 end
 
 module CopyVar = struct
-  type t = {copied_var: Var.t; source_addr_opt: PulseAbstractValue.t option} [@@deriving compare]
+  type t = {copied_into: PulseAttribute.CopiedInto.t; source_addr_opt: PulseAbstractValue.t option}
+  [@@deriving compare]
 
-  let pp fmt {copied_var; source_addr_opt} =
+  let pp fmt {copied_into; source_addr_opt} =
     match source_addr_opt with
     | Some source_addr ->
-        Format.fprintf fmt "%a copied with source_addr %a" Var.pp copied_var PulseAbstractValue.pp
-          source_addr
+        Format.fprintf fmt "%a copied with source_addr %a" PulseAttribute.CopiedInto.pp copied_into
+          PulseAbstractValue.pp source_addr
     | None ->
-        Format.fprintf fmt "%a copied" Var.pp copied_var
+        Format.fprintf fmt "%a copied" PulseAttribute.CopiedInto.pp copied_into
 end
 
 module DestructorChecked = AbstractDomain.FiniteSet (Var)
@@ -126,8 +127,8 @@ let is_bottom {copy_map; destructor_checked; captured} =
   && Captured.is_bottom captured
 
 
-let mark_copy_as_modified ~is_modified ~copied_var ~source_addr_opt ({copy_map} as astate) =
-  let copy_var = CopyVar.{copied_var; source_addr_opt} in
+let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate) =
+  let copy_var = CopyVar.{copied_into; source_addr_opt} in
   let copy_map =
     match CopyMap.find_opt copy_var copy_map with
     | Some (Copied {heap= copy_heap}) when is_modified copy_heap ->
@@ -143,29 +144,42 @@ let checked_via_dtor var astate =
   {astate with destructor_checked= DestructorChecked.add var astate.destructor_checked}
 
 
+module CopiedSet = PrettyPrintable.MakePPSet (PulseAttribute.CopiedInto)
+
 let get_copied {copy_map; captured} =
   let modified =
     CopyMap.fold
-      (fun CopyVar.{copied_var} (copy_spec : CopySpec.t) acc ->
-        match copy_spec with Modified -> Var.Set.add copied_var acc | Copied _ -> acc )
-      copy_map Var.Set.empty
+      (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
+        match copy_spec with Modified -> CopiedSet.add copied_into acc | Copied _ -> acc )
+      copy_map CopiedSet.empty
   in
-  let is_captured var =
-    match (var : Var.t) with ProgramVar pvar -> Captured.mem pvar captured | LogicalVar _ -> false
+  let is_captured copy_into =
+    match (copy_into : PulseAttribute.CopiedInto.t) with
+    | IntoVar (ProgramVar pvar) ->
+        Captured.mem pvar captured
+    | _ ->
+        false
   in
   CopyMap.fold
-    (fun CopyVar.{copied_var} (copy_spec : CopySpec.t) acc ->
+    (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
       match copy_spec with
       | Modified ->
           acc
       | Copied {location; typ= copied_typ; from} ->
-          if Var.Set.mem copied_var modified || is_captured copied_var then acc
-          else (copied_var, copied_typ, location, from) :: acc )
+          if CopiedSet.mem copied_into modified || is_captured copied_into then acc
+          else (copied_into, copied_typ, location, from) :: acc )
     copy_map []
 
 
-let add copied_var ~source_addr_opt (res : copy_spec_t) astate =
-  {astate with copy_map= CopyMap.add {copied_var; source_addr_opt} res astate.copy_map}
+let add_var copied_var ~source_addr_opt (res : copy_spec_t) astate =
+  { astate with
+    copy_map= CopyMap.add {copied_into= IntoVar copied_var; source_addr_opt} res astate.copy_map }
+
+
+let add_field copied_field ~source_addr_opt (res : copy_spec_t) astate =
+  { astate with
+    copy_map= CopyMap.add {copied_into= IntoField copied_field; source_addr_opt} res astate.copy_map
+  }
 
 
 let is_checked_via_dtor var {destructor_checked} = DestructorChecked.mem var destructor_checked

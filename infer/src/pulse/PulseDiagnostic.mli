@@ -78,7 +78,7 @@ type t =
   | FlowToTaintSink of
       {source: Decompiler.expr * Trace.t; sink: Taint.t * Trace.t; location: Location.t}
   | UnnecessaryCopy of
-      { variable: Var.t
+      { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
       ; location: Location.t
       ; from: PulseNonDisjunctiveDomain.CopyOrigin.t }

@@ -340,8 +340,8 @@ module AddressAttributes = struct
     BaseAddressAttributes.get_allocation addr (astate.post :> base_domain).attrs
 
 
-  let get_copied_var addr astate =
-    BaseAddressAttributes.get_copied_var addr (astate.post :> base_domain).attrs
+  let get_copied_into addr astate =
+    BaseAddressAttributes.get_copied_into addr (astate.post :> base_domain).attrs
 
 
   let get_source_origin_of_copy addr astate =

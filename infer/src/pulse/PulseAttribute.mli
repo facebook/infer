@@ -29,13 +29,19 @@ val pp_allocator : F.formatter -> allocator -> unit
 
 type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
 
+module CopiedInto : sig
+  type t = IntoVar of Var.t | IntoField of Fieldname.t [@@deriving compare, equal]
+
+  val pp : F.formatter -> t -> unit
+end
+
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Allocated of allocator * Trace.t
   | AlwaysReachable
   | Closure of Procname.t
-  | CopiedVar of Var.t  (** records the copied var for each source address *)
+  | CopiedInto of CopiedInto.t  (** records the copied var/field for each source address *)
   | DynamicType of Typ.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
@@ -81,7 +87,7 @@ module Attributes : sig
 
   val get_closure_proc_name : t -> Procname.t option
 
-  val get_copied_var : t -> Var.t option
+  val get_copied_into : t -> CopiedInto.t option
 
   val get_source_origin_of_copy : t -> (PulseAbstractValue.t * bool) option
 
