@@ -202,7 +202,20 @@ module PulseTransferFunctions = struct
                let astate = AbductiveDomain.set_need_specialization astate in
                PulseOperations.eval_deref path ~must_be_valid_reason:BlockCall call_loc call_exp
                  astate
-             else PulseOperations.eval_deref path call_loc call_exp astate
+             else
+               let astate =
+                 if
+                   (* this condition may need refining to check that the function comes
+                      from the function's parameters or captured variables.
+                      The function_pointer_specialization option is there to compensate
+                      this / control the specialization's agressivity *)
+                   Config.function_pointer_specialization
+                   && Language.equal Language.Clang
+                        (Procname.get_language (Procdesc.get_proc_name proc_desc))
+                 then AbductiveDomain.set_need_specialization astate
+                 else astate
+               in
+               PulseOperations.eval_deref path call_loc call_exp astate
            in
            L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
            let astate =

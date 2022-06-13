@@ -13,8 +13,8 @@ type actual = CapturedVar.t ProcAttributes.passed_block option
 (* name for the specialized method instantiated with closure arguments and captured vars *)
 let pname_with_closure_actuals callee_pname formals_to_blocks =
   let rec get_pnames pnames = function
-    | ProcAttributes.Block (pname, _) when Procname.is_objc_block pname ->
-        Procname.block_of_procname pname :: pnames
+    | ProcAttributes.Block (pname, _) when Procname.is_objc_block pname || Procname.is_c pname ->
+        Procname.to_funptr_parameter pname :: pnames
     | ProcAttributes.Fields passed_blocks ->
         Fieldname.Map.fold
           (fun _ passed_block pnames -> get_pnames pnames passed_block)

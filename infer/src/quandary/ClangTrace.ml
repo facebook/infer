@@ -66,7 +66,7 @@ module SourceKind = struct
 
   let get ~caller_pname:_ pname actuals tenv =
     let return = None in
-    match pname with
+    match Procname.base_of pname with
     | Procname.ObjC_Cpp cpp_name -> (
         let qualified_pname = Procname.get_qualifiers pname in
         match
@@ -295,7 +295,7 @@ module SinkKind = struct
       || String.is_substring ~substring:"array" typename
       || String.is_substring ~substring:"string" typename
     in
-    match pname with
+    match Procname.base_of pname with
     | Procname.ObjC_Cpp cpp_name -> (
       match
         ( QualifiedCppName.to_list

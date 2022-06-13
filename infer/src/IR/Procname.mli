@@ -218,6 +218,10 @@ module Erlang : sig
   type t = private {module_name: string; function_name: string; arity: int}
 end
 
+module FunPtrParameters : sig
+  type t = private FunPtr of C.t | Block of Block.t
+end
+
 (** Type of procedure names. WithBlockParameters is used for creating an instantiation of a method
     that contains block parameters and it's called with concrete blocks. For example:
     [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
@@ -232,13 +236,15 @@ type t =
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
   | WithAliasingParameters of t * Mangled.t list list
-  | WithBlockParameters of t * Block.t list
+  | WithBlockParameters of t * FunPtrParameters.t list
 [@@deriving compare, yojson_of]
 
 val base_of : t -> t
 (** if a procedure has been specialised, return the original one, otherwise itself *)
 
-val block_of_procname : t -> Block.t
+val of_funptr_parameter : FunPtrParameters.t -> t
+
+val to_funptr_parameter : t -> FunPtrParameters.t
 
 val equal : t -> t -> bool
 
@@ -384,7 +390,7 @@ val with_aliasing_parameters : t -> Mangled.t list list -> t
 (** Create a procedure name instantiated with aliasing parameters from a base procedure name and a
     list aliases. *)
 
-val with_block_parameters : t -> Block.t list -> t
+val with_block_parameters : t -> FunPtrParameters.t list -> t
 (** Create a procedure name instantiated with block parameters from a base procedure name and a list
     of block procedures. *)
 
@@ -452,6 +458,8 @@ val pp_name_only : F.formatter -> t -> unit
     - In C++: "<ClassName>::<ProcName>"
     - In Java, ObjC, C#: "<ClassName>.<ProcName>"
     - In C/Erlang: "<ProcName>" *)
+
+val is_c : t -> bool
 
 val patterns_match : Re.Str.regexp list -> t -> bool
 (** Test whether a proc name matches to one of the regular expressions. *)

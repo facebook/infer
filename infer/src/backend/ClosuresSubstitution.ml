@@ -35,6 +35,8 @@ let rec eval_expr (astate : Domain.t) (expr : Exp.t) =
   match expr with
   | Var id ->
       get_var astate (Var.of_id id)
+  | Const (Cfun pname) when Config.function_pointer_specialization && Procname.is_c pname ->
+      VDom.v Exp.{name= pname; captured_vars= []}
   | Closure c when Exp.is_objc_block_closure expr ->
       VDom.v c
   | Closure _ (* TODO: implement for C++ lambdas *) ->

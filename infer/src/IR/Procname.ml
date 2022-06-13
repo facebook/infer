@@ -609,6 +609,16 @@ module Block = struct
   let get_class_name block = get_class_type_name block |> Option.map ~f:Typ.Name.name
 end
 
+module FunPtrParameters = struct
+  type t = FunPtr of C.t | Block of Block.t [@@deriving compare, yojson_of]
+
+  let pp verbose f = function
+    | FunPtr c ->
+        C.pp verbose f c
+    | Block block ->
+        Block.pp verbose f block
+end
+
 (** Type of procedure names. *)
 type t =
   | CSharp of CSharp.t
@@ -619,8 +629,17 @@ type t =
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
   | WithAliasingParameters of t * Mangled.t list list
-  | WithBlockParameters of t * Block.t list
+  | WithBlockParameters of t * FunPtrParameters.t list
 [@@deriving compare, yojson_of]
+
+let rec is_c = function
+  | C _ ->
+      true
+  | WithAliasingParameters (base, _) | WithBlockParameters (base, _) ->
+      is_c base
+  | _ ->
+      false
+
 
 let is_erlang_unsupported name =
   match name with
@@ -802,12 +821,21 @@ let is_objc_instance_method =
   is_objc_helper ~f:(function {kind= ObjCInstanceMethod} -> true | _ -> false)
 
 
-let block_of_procname procname =
+let of_funptr_parameter = function
+  | FunPtrParameters.Block block ->
+      Block block
+  | FunPtrParameters.FunPtr c ->
+      C c
+
+
+let to_funptr_parameter procname =
   match procname with
   | Block block ->
-      block
+      FunPtrParameters.Block block
+  | C c ->
+      FunPtrParameters.FunPtr c
   | _ ->
-      Logging.die InternalError "Only to be called with Objective-C block names"
+      Logging.die InternalError "Only to be called with Objective-C block names or C function names"
 
 
 let empty_block = Block (Block.make_surrounding None "" [])
@@ -1018,7 +1046,7 @@ let pp_with_block_parameters verbose pp fmt base blocks =
   | Non_verbose | Simple | NameOnly ->
       F.pp_print_string fmt "specialized with blocks"
   | Verbose ->
-      Pp.seq ~sep:"^" (Block.pp verbose) fmt blocks ) ;
+      Pp.seq ~sep:"^" (FunPtrParameters.pp verbose) fmt blocks ) ;
   F.pp_print_string fmt "]"
 
 

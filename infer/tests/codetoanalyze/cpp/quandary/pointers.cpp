@@ -74,7 +74,7 @@ void funptr_helper_bad1(void (*sink)(std::string)) {
   sink(*(__infer_taint_source()));
 }
 
-void funptr_bad1_FN() {
+void funptr_bad1() {
   auto f = __infer_taint_sink;
   funptr_helper_bad1(f);
 }

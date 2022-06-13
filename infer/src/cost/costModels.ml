@@ -229,14 +229,15 @@ module NSAttributedString = struct
         in
         match pname with
         | WithBlockParameters (_, [block_name]) -> (
-          match get_summary (Procname.Block block_name) with
-          | Some {CostDomain.post= callee_summary} ->
-              let {BasicCostWithReason.cost= callee_cost} =
-                CostDomain.get_cost_kind OperationCost callee_summary
-              in
-              BasicCost.mult_loop ~iter:length ~body:callee_cost
-          | None ->
-              length )
+            let pname = Procname.of_funptr_parameter block_name in
+            match get_summary pname with
+            | Some {CostDomain.post= callee_summary} ->
+                let {BasicCostWithReason.cost= callee_cost} =
+                  CostDomain.get_cost_kind OperationCost callee_summary
+                in
+                BasicCost.mult_loop ~iter:length ~body:callee_cost
+            | None ->
+                length )
         | _ ->
             length )
     | _ ->
@@ -268,14 +269,15 @@ module NSCollection = struct
         in
         match pname with
         | WithBlockParameters (_, [block_name]) -> (
-          match get_summary (Procname.Block block_name) with
-          | Some {CostDomain.post= callee_summary} ->
-              let {BasicCostWithReason.cost= callee_cost} =
-                CostDomain.get_cost_kind OperationCost callee_summary
-              in
-              BasicCost.mult_loop ~iter:length ~body:callee_cost
-          | None ->
-              length )
+            let pname = Procname.of_funptr_parameter block_name in
+            match get_summary pname with
+            | Some {CostDomain.post= callee_summary} ->
+                let {BasicCostWithReason.cost= callee_cost} =
+                  CostDomain.get_cost_kind OperationCost callee_summary
+                in
+                BasicCost.mult_loop ~iter:length ~body:callee_cost
+            | None ->
+                length )
         | _ ->
             length )
     | _ ->

@@ -1601,7 +1601,7 @@ and frontend_stats =
 
 and function_pointer_specialization =
   CLOpt.mk_bool ~long:"function-pointer-specialization" ~default:false
-    "Do function pointer preprocessing (clang only)."
+    "Apply function specialization to higher-order functions taking function pointers."
 
 
 and generated_classes =
