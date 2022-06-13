@@ -253,7 +253,8 @@ val summary_of_post :
   -> Location.t
   -> t
   -> ( summary
-     , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
+     , [> `JavaResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
+       | `CSharpResourceLeak of summary * CSharpClassName.t * Trace.t * Location.t
        | `RetainCycle of summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of

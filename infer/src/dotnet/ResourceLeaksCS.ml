@@ -62,7 +62,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match instr with
     | Call (_return, Direct callee_procname, HilExp.AccessExpression allocated :: _, _, _loc)
-      when acquires_resource tenv callee_procname && is_not_enumerable ->
+      when acquires_resource tenv callee_procname && is_not_enumerable->
         let typename =
           match callee_procname with
           | Procname.CSharp csharp_procname ->

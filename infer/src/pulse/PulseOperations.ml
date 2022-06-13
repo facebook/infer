@@ -403,6 +403,7 @@ let allocate allocator location addr astate =
   AddressAttributes.allocate allocator addr location astate
 
 
+  (* what does this have to do with java? *)
 let java_resource_release ~recursive address astate =
   let if_valid_access_then_eval addr access astate =
     Option.map (Memory.find_edge_opt addr access astate) ~f:fst

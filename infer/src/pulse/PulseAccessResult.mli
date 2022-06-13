@@ -72,7 +72,8 @@ val of_summary : 'a summary -> 'a t
 val ignore_leaks :
      ( AbductiveDomain.summary
      , [< `MemoryLeak of AbductiveDomain.summary * Attribute.allocator * Trace.t * Location.t
-       | `ResourceLeak of AbductiveDomain.summary * JavaClassName.t * Trace.t * Location.t
+       | `JavaResourceLeak of AbductiveDomain.summary * JavaClassName.t * Trace.t * Location.t
+       | `CSharpResourceLeak of AbductiveDomain.summary * CSharpClassName.t * Trace.t * Location.t
        | `RetainCycle of
          AbductiveDomain.summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
        | abductive_summary_error ] )
