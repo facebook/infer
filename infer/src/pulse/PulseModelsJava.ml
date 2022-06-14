@@ -61,6 +61,7 @@ let call_may_throw_exception (exn : JavaClassName.t) : model =
   let astate, ref = PulseOperations.eval_var path location ret_var astate in
   let obj = (ret_addr, ret_alloc_hist) in
   let<*> astate = PulseOperations.write_deref path location ~ref ~obj astate in
+  Printf.printf "hello java call_may_throw_exception\n";
   [Ok (ExceptionRaised astate)]
 
 
@@ -163,8 +164,9 @@ module Resource = struct
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
           call_may_throw_exception (JavaClassName.from_string cn) model_data astate )
     in
-    Printf.printf "\nhi java resource 2\n";
-    delegated_state @ exn_state
+    let ret = delegated_state @ exn_state in
+    Printf.printf "\nhi java resource 2 (%i)\n" (List.length ret);
+    ret
 
 
   let allocate ?exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None

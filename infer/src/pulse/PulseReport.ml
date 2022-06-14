@@ -94,10 +94,10 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
 let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t) =
   match diagnostic with
   | ConstRefableParameter _
+  | JavaResourceLeak _ -> Printf.printf "\nhello report java\n"; false
+  | CSharpResourceLeak _ -> Printf.printf "\nhello report csharp\n"; false
   | ErlangError _
   | MemoryLeak _
-  | JavaResourceLeak _
-  | CSharpResourceLeak _
   | RetainCycle _
   | ReadUninitializedValue _
   | StackVariableAddressEscape _
