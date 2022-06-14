@@ -118,10 +118,8 @@ features_catch_expr:test_catch_throw_Bad/0: function_clause
 
 ----- features_comparison -----
 features_comparison:fp_test_equal2_Ok/0: ok
-features_comparison:fp_test_equal_atom_Ok/0: ok
 features_comparison:fp_test_equal_in_fun_call_Ok/0: ok
 features_comparison:fp_test_exactly_not_equal2_Ok/0: ok
-features_comparison:fp_test_neg_equal_atom_Ok/0: ok
 features_comparison:fp_test_neg_equal_in_fun_call_Ok/0: ok
 features_comparison:test_atleast2_Ok/0: ok
 features_comparison:test_atleast_Bad/0: expected_crash
@@ -132,6 +130,7 @@ features_comparison:test_atmost_Ok/0: ok
 features_comparison:test_equal_Bad/0: expected_crash
 features_comparison:test_equal_Ok/0: ok
 features_comparison:test_equal_atom_Bad/0: expected_crash
+features_comparison:test_equal_atom_Ok/0: ok
 features_comparison:test_equal_int_atom_Bad/0: expected_crash
 features_comparison:test_exactly_equal2_Bad/0: expected_crash
 features_comparison:test_exactly_equal_Bad/0: expected_crash
@@ -147,6 +146,7 @@ features_comparison:test_less_Ok/0: ok
 features_comparison:test_neg_equal_Bad/0: expected_crash
 features_comparison:test_neg_equal_Ok/0: ok
 features_comparison:test_neg_equal_atom_Bad/0: expected_crash
+features_comparison:test_neg_equal_atom_Ok/0: ok
 features_comparison:test_neg_equal_int_atom_Ok/0: ok
 features_comparison:test_not_equal2_Bad/0: expected_crash
 features_comparison:test_not_equal_Bad/0: expected_crash

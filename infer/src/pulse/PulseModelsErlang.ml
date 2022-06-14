@@ -296,7 +296,11 @@ module Comparison = struct
         let* astate, result = cmp#integer location path x y astate in
         let hist = Hist.single_alloc path location "integer_comparison" in
         Ok (astate, (result, hist))
-    | Any, _ | _, Any | Atom, Atom | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
+    | Atom, Atom ->
+        let* astate, result = cmp#atom location path x y astate in
+        let hist = Hist.single_alloc path location "atom_comparison" in
+        Ok (astate, (result, hist))
+    | Any, _ | _, Any | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
         let* astate, result = cmp#unsupported location path x y astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
         Ok (astate, (result, hist))
@@ -398,6 +402,8 @@ module Comparison = struct
 
         method integer = self#unsupported
 
+        method atom = self#unsupported
+
         method incompatible = self#unsupported
       end
 
@@ -406,6 +412,8 @@ module Comparison = struct
         inherit default
 
         method integer = from_fields Binop.Eq Integers.value_field
+
+        method atom = from_fields Binop.Eq Atoms.hash_field
 
         method incompatible = const_false
       end

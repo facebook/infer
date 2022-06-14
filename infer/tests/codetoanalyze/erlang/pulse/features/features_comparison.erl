@@ -15,9 +15,9 @@
     fp_test_neg_equal_in_fun_call_Ok/0,
     test_equal_int_atom_Bad/0,
     test_neg_equal_int_atom_Ok/0,
-    fp_test_equal_atom_Ok/0,
+    test_equal_atom_Ok/0,
     test_equal_atom_Bad/0,
-    fp_test_neg_equal_atom_Ok/0,
+    test_neg_equal_atom_Ok/0,
     test_neg_equal_atom_Bad/0,
     test_exactly_equal_Ok/0,
     test_exactly_equal_Bad/0,
@@ -88,7 +88,7 @@ test_neg_equal_int_atom_Ok() ->
     Y = 0,
     ?ASSERT_EQUAL(true, not (X == Y)).
 
-fp_test_equal_atom_Ok() ->
+test_equal_atom_Ok() ->
     X = foo,
     Y = foo,
     ?ASSERT_EQUAL(true, X == Y).
@@ -98,7 +98,7 @@ test_equal_atom_Bad() ->
     Y = bar,
     ?CRASH_IF_EQUAL(false, X == Y).
 
-fp_test_neg_equal_atom_Ok() ->
+test_neg_equal_atom_Ok() ->
     X = foo,
     Y = bar,
     ?ASSERT_EQUAL(true, not (X == Y)).
