@@ -119,8 +119,10 @@ features_catch_expr:test_catch_throw_Bad/0: function_clause
 ----- features_comparison -----
 features_comparison:fp_test_equal2_Ok/0: ok
 features_comparison:fp_test_equal_atom_Ok/0: ok
+features_comparison:fp_test_equal_in_fun_call_Ok/0: ok
 features_comparison:fp_test_exactly_not_equal2_Ok/0: ok
 features_comparison:fp_test_neg_equal_atom_Ok/0: ok
+features_comparison:fp_test_neg_equal_in_fun_call_Ok/0: ok
 features_comparison:test_atleast2_Ok/0: ok
 features_comparison:test_atleast_Bad/0: expected_crash
 features_comparison:test_atleast_Ok/0: ok
@@ -545,7 +547,8 @@ nonmatch_lists:test_tail3_Bad/0: function_clause
 nonmatch_maps:fn_test_create_multiple_elements_Bad/0: function_clause
 nonmatch_maps:fn_test_key_match3_Bad/0: function_clause
 nonmatch_maps:fn_test_key_value_match4_Bad/0: function_clause
-nonmatch_maps:fn_test_update_old_value_Bad/0: function_clause
+nonmatch_maps:fn_test_update_old_value_Bad/0: case_clause
+nonmatch_maps:fp_test_update_match_in_function_Ok/0: ok
 nonmatch_maps:test_create_multiple_elements_Ok/0: ok
 nonmatch_maps:test_key_match1_Ok/0: ok
 nonmatch_maps:test_key_match2_Bad/0: function_clause
@@ -563,6 +566,7 @@ nonmatch_maps:test_update_badmap_Bad/0: badmap
 nonmatch_maps:test_update_exact_Bad/0: function_clause
 nonmatch_maps:test_update_exact_Ok/0: ok
 nonmatch_maps:test_update_exact_badkey_Bad/0: badkey
+nonmatch_maps:test_update_match_in_function_Bad/0: function_clause
 nonmatch_maps:test_update_old_value_Ok/0: ok
 
 ----- nonmatch_match_expr -----

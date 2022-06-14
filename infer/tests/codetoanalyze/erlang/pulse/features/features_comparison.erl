@@ -11,6 +11,8 @@
     test_equal_Bad/0,
     test_neg_equal_Ok/0,
     test_neg_equal_Bad/0,
+    fp_test_equal_in_fun_call_Ok/0,
+    fp_test_neg_equal_in_fun_call_Ok/0,
     test_equal_int_atom_Bad/0,
     test_neg_equal_int_atom_Ok/0,
     fp_test_equal_atom_Ok/0,
@@ -65,6 +67,16 @@ test_neg_equal_Bad() ->
     X = 0,
     Y = 0,
     ?CRASH_IF_EQUAL(false, not (X == Y)).
+
+is_zero(X) -> X == 0.
+
+% FP due to imprecise function summary because of absent type information
+fp_test_equal_in_fun_call_Ok() ->
+    ?ASSERT_EQUAL(true, is_zero(0)).
+
+% FP due to imprecise function summary because of absent type information
+fp_test_neg_equal_in_fun_call_Ok() ->
+    ?ASSERT_EQUAL(false, is_zero(1)).
 
 test_equal_int_atom_Bad() ->
     X = zero,

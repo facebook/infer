@@ -336,6 +336,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.java_resource_release address)
 
 
+  let get_dynamic_type addr astate =
+    BaseAddressAttributes.get_dynamic_type (astate.post :> base_domain).attrs addr
+
+
   let get_allocation addr astate =
     BaseAddressAttributes.get_allocation addr (astate.post :> base_domain).attrs
 

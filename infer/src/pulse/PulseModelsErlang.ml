@@ -29,6 +29,19 @@ let write_field_and_deref path location ~struct_addr ~field_addr ~field_val fiel
   PulseOperations.write_deref path location ~ref:field_addr ~obj:field_val astate
 
 
+(** Returns the erlang type of an abstract value, extracted from its dynamic type (pulse) attribute.
+    Returns [Any] if the value has no dynamic type, or if no erlang type can be extracted from it.
+    Note that it may be the case for some encoded Erlang values (such as strings, floats or closures
+    at the first implementation time). *)
+let get_erlang_type_or_any val_ astate =
+  let open IOption.Let_syntax in
+  let typename =
+    let* typ_ = AbductiveDomain.AddressAttributes.get_dynamic_type val_ astate in
+    Typ.name typ_
+  in
+  match typename with Some (Typ.ErlangType erlang_type) -> erlang_type | _ -> ErlangTypeName.Any
+
+
 let write_dynamic_type_and_return (addr_val, hist) typ ret_id astate =
   let typ = Typ.mk_struct (ErlangType typ) in
   let astate = PulseOperations.add_dynamic_type typ addr_val astate in
@@ -238,7 +251,7 @@ end
 
 module Comparison = struct
   (** Makes an abstract value holding the comparison result of two parameters. We perform a case
-      analysis of the type of these parameters.
+      analysis of the dynamic type of these parameters.
 
       See the documentation of {!Comparator} objects for the meaning of the [cmp] parameter. It will
       be given as an argument by specific comparisons functions and should define a few methods that
@@ -249,20 +262,23 @@ module Comparison = struct
       defined even on differently-typed values:
       {:https://www.erlang.org/doc/reference_manual/expressions.html#term-comparisons}.
 
-      Currently, the final result is built as follows:
+      We say that two values have an "unsupported" type if they both share a type on which we don't
+      do any precise comparison. Not that two values of *distinct* unsupported types are still
+      incompatible, and therefore might be precisely compared.
 
-      - If the parameters are both integers, then we compare them as integers (the [cmp#integer]
-        method will then typically compare their value fields).
-      - If one of the parameters is an integer and the other one is not, then we return the result
-        of a comparison of incompatible types (eg. equality would be false, and difference would be
-        true).
-      - If both parameters are not integers, then the comparison is unsupported and we use the
-        [cmp#unsupported] method (that could for instance return an - overapproximating -
+      Current supported types are integers and atoms.
+
+      The final result is computed as follows:
+
+      - If the parameters are both of a supported type, integers, then we compare them accordingly
+        (eg. the [cmp#integer] method will then typically compare their value fields).
+      - If the parameters have incompatible types, then we return the result of a comparison of
+        incompatible types (eg. equality would be false, and inequality would be true).
+      - If both parameters have the same unsupported type, then the comparison is unsupported and we
+        use the [cmp#unsupported] method (that could for instance return an - overapproximating -
         unconstrained result).
-
-      The final result is a disjunction of all these cases, built as a [LOr] tree (rather than a
-      dijunct list) to avoid the multiplication of cases that quickly leads to major precision
-      losses.
+      - If at least one parameter has no known dynamic type (or, equivalently, its type is [Any]),
+        then the comparison is also unsupported.
 
       Note that, on supported types (eg. integers), it is important that the [cmp] methods decide
       themselves if they should compare some specific fields or not, instead of getting these fields
@@ -273,54 +289,21 @@ module Comparison = struct
       lexicographically ordered strings. *)
   let make_raw cmp location path ((x_val, _) as x) ((y_val, _) as y) : maker =
    fun astate ->
-    let* astate, x_is_integer = has_erlang_type x_val Integer astate in
-    let* astate, y_is_integer = has_erlang_type y_val Integer astate in
-    let* astate, x_is_not_integer =
-      eval_into_fresh PulseArithmetic.eval_unop Unop.LNot x_is_integer astate
-    in
-    let* astate, y_is_not_integer =
-      eval_into_fresh PulseArithmetic.eval_unop Unop.LNot y_is_integer astate
-    in
-    let* astate, are_integers =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd x_is_integer y_is_integer astate
-    in
-    let* astate, are_incompatible_1 =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd x_is_integer y_is_not_integer astate
-    in
-    let* astate, are_incompatible_2 =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd x_is_not_integer y_is_integer astate
-    in
-    let* astate, are_incompatible =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LOr are_incompatible_1 are_incompatible_2
-        astate
-    in
-    let* astate, are_unsupported =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd x_is_not_integer y_is_not_integer
-        astate
-    in
-    let* astate, int_comparison = cmp#integer location path x y astate in
-    let* astate, int_comparison =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_integers int_comparison astate
-    in
-    let* astate, incompatible_comparison = cmp#incompatible location path x y astate in
-    let* astate, incompatible_comparison =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_incompatible
-        incompatible_comparison astate
-    in
-    let* astate, unsupported_comparison = cmp#unsupported location path x y astate in
-    let* astate, unsupported_comparison =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_unsupported
-        unsupported_comparison astate
-    in
-    let* astate, comparison =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LOr unsupported_comparison
-        incompatible_comparison astate
-    in
-    let* astate, comparison =
-      eval_into_fresh PulseArithmetic.eval_binop_av Binop.LOr comparison int_comparison astate
-    in
-    let hist = Hist.single_alloc path location "comparison" in
-    Ok (astate, (comparison, hist))
+    let x_typ = get_erlang_type_or_any x_val astate in
+    let y_typ = get_erlang_type_or_any y_val astate in
+    match (x_typ, y_typ) with
+    | Integer, Integer ->
+        let* astate, result = cmp#integer location path x y astate in
+        let hist = Hist.single_alloc path location "integer_comparison" in
+        Ok (astate, (result, hist))
+    | Any, _ | _, Any | Atom, Atom | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
+        let* astate, result = cmp#unsupported location path x y astate in
+        let hist = Hist.single_alloc path location "unsupported_comparison" in
+        Ok (astate, (result, hist))
+    | _ ->
+        let* astate, result = cmp#incompatible location path x y astate in
+        let hist = Hist.single_alloc path location "incompatible_comparison" in
+        Ok (astate, (result, hist))
 
 
   (** A model of comparison operators where we store in the destination the result of comparing two

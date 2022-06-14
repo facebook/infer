@@ -156,6 +156,8 @@ module AddressAttributes : sig
 
   val remove_taint_attrs : AbstractValue.t -> t -> t
 
+  val get_dynamic_type : AbstractValue.t -> t -> Typ.t option
+
   val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
