@@ -66,11 +66,11 @@ depends: [
   "mmap" {= "1.2.0" & with-test}
   "mtime" {= "1.4.0"}
   "num" {= "1.4"}
-  "ocaml" {= "4.13.1"}
+  "ocaml" {= "4.14.0"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-config" {= "2"}
   "ocaml-option-flambda" {= "1"}
-  "ocaml-variants" {= "4.13.1+options"}
+  "ocaml-variants" {= "4.14.0+options"}
   "ocamlbuild" {= "0.14.1"}
   "ocamlfind" {= "1.9.3"}
   "ocamlgraph" {= "2.0.0"}
@@ -133,7 +133,7 @@ depends: [
   "topkg" {= "1.0.5"}
   "trie" {= "1.0.0" & with-test}
   "typerep" {= "v0.14.0"}
-  "utop" {= "2.9.0" & with-test}
+  "utop" {= "2.9.1" & with-test}
   "variantslib" {= "v0.14.0"}
   "xmlm" {= "1.4.0"}
   "yojson" {= "1.7.0"}

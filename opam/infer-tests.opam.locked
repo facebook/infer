@@ -66,11 +66,11 @@ depends: [
   "mmap" {= "1.2.0"}
   "mtime" {= "1.4.0"}
   "num" {= "1.4"}
-  "ocaml" {= "4.13.1"}
+  "ocaml" {= "4.14.0"}
   "ocaml-compiler-libs" {= "v0.12.4"}
   "ocaml-config" {= "2"}
   "ocaml-option-flambda" {= "1"}
-  "ocaml-variants" {= "4.13.1+options"}
+  "ocaml-variants" {= "4.14.0+options"}
   "ocamlbuild" {= "0.14.1"}
   "ocamlfind" {= "1.9.3"}
   "ocamlgraph" {= "2.0.0"}
