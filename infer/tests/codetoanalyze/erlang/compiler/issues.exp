@@ -522,6 +522,16 @@ nonmatch_if_expr:test_accepts_positive_Bad/0: if_clause
 nonmatch_if_expr:test_accepts_positive_Ok/0: ok
 
 ----- nonmatch_integers -----
+nonmatch_integers:test_binop_pattern_add_Bad/0: function_clause
+nonmatch_integers:test_binop_pattern_add_Ok/0: ok
+nonmatch_integers:test_binop_pattern_div_Bad/0: function_clause
+nonmatch_integers:test_binop_pattern_div_Ok/0: ok
+nonmatch_integers:test_binop_pattern_mul_Bad/0: function_clause
+nonmatch_integers:test_binop_pattern_mul_Ok/0: ok
+nonmatch_integers:test_binop_pattern_rem_Bad/0: function_clause
+nonmatch_integers:test_binop_pattern_rem_Ok/0: ok
+nonmatch_integers:test_binop_pattern_sub_Bad/0: function_clause
+nonmatch_integers:test_binop_pattern_sub_Ok/0: ok
 nonmatch_integers:test_match1_Ok/0: ok
 nonmatch_integers:test_match2_Bad/0: function_clause
 nonmatch_integers:test_match3_Bad/0: function_clause
@@ -628,7 +638,10 @@ nonmatch_records:test_type_Ok/0: ok
 ----- nonmatch_strings -----
 nonmatch_strings:fn_test_match2_Bad/0: function_clause
 nonmatch_strings:fn_test_match3_Bad/0: function_clause
+nonmatch_strings:fn_test_match5_Bad/0: function_clause
+nonmatch_strings:fn_test_match6_Bad/0: function_clause
 nonmatch_strings:test_match1_Ok/0: ok
+nonmatch_strings:test_match4_Ok/0: ok
 
 ----- nonmatch_trycatch -----
 nonmatch_trycatch:test_try_simple1_Ok/0: ok

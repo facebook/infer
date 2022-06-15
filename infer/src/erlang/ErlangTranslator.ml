@@ -26,6 +26,9 @@ let lists_reverse = Procname.make_erlang ~module_name:"lists" ~function_name:"re
 
 let erlang_send2 = Procname.make_erlang ~module_name:"erlang" ~function_name:"send" ~arity:2
 
+(* TODO: add Pulse model T93361792 *)
+let string_concat = Procname.make_erlang ~module_name:"string" ~function_name:"concat" ~arity:2
+
 let mangled_arg (n : int) : Mangled.t = Mangled.from_string (Printf.sprintf "$arg%d" n)
 
 let any_typ = Env.ptr_typ_of_name Any
@@ -173,6 +176,10 @@ let unbox_integer env expr : Exp.t * Block.t =
 let rec translate_pattern env (value : Ident.t) {Ast.location; simple_expression} : Block.t =
   let env = update_location location env in
   match simple_expression with
+  | BinaryOperator (expr1, ListAdd, expr2) ->
+      translate_pattern_string_concat env value expr1 expr2
+  | BinaryOperator _ ->
+      translate_pattern_number_expression env value location simple_expression
   | Cons {head; tail} ->
       translate_pattern_cons env value head tail
   | Literal (Atom atom) ->
@@ -194,7 +201,7 @@ let rec translate_pattern env (value : Ident.t) {Ast.location; simple_expression
   | Tuple exprs ->
       translate_pattern_tuple env value exprs
   | UnaryOperator _ ->
-      translate_pattern_unary_expression env value location simple_expression
+      translate_pattern_number_expression env value location simple_expression
   | Variable {vname; scope} ->
       translate_pattern_variable env value vname scope
   | e ->
@@ -269,9 +276,7 @@ and translate_pattern_literal_integer (env : (_, _) Env.t) value i : Block.t =
   translate_pattern_integer env value (Exp.Const (Cint (IntLit.of_string i)))
 
 
-and translate_pattern_literal_string (env : (_, _) Env.t) value s : Block.t =
-  let expected_id = mk_fresh_id () in
-  let expected_block : Block.t = translate_expression_literal_string env expected_id s in
+and translate_pattern_string (env : (_, _) Env.t) value expected_id expected_block : Block.t =
   let equals_id = mk_fresh_id () in
   (* TODO: add Pulse model for this function T93361792 *)
   let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_str_equal) in
@@ -282,6 +287,22 @@ and translate_pattern_literal_string (env : (_, _) Env.t) value s : Block.t =
   in
   let checker_block = Block.make_branch env (Var equals_id) in
   Block.all env [expected_block; call_block; checker_block]
+
+
+and translate_pattern_literal_string (env : (_, _) Env.t) value s : Block.t =
+  let expected_id = mk_fresh_id () in
+  let expected_block : Block.t = translate_expression_literal_string env expected_id s in
+  translate_pattern_string env value expected_id expected_block
+
+
+and translate_pattern_string_concat (env : (_, _) Env.t) value expr1 expr2 : Block.t =
+  let id1, block1 = translate_expression_to_fresh_id env expr1 in
+  let id2, block2 = translate_expression_to_fresh_id env expr2 in
+  let args : Exp.t list = [Var id1; Var id2] in
+  let expected_id = mk_fresh_id () in
+  let call_instr = builtin_call env expected_id string_concat args in
+  let expected_block = Block.all env [block1; block2; Block.make_instruction env [call_instr]] in
+  translate_pattern_string env value expected_id expected_block
 
 
 and translate_pattern_nil env value : Block.t = check_type env value Nil
@@ -413,9 +434,10 @@ and translate_pattern_tuple env value exprs : Block.t =
   {start= type_checker.start; exit_success= submatcher.exit_success; exit_failure}
 
 
-and translate_pattern_unary_expression (env : (_, _) Env.t) value location simple_expression :
+and translate_pattern_number_expression (env : (_, _) Env.t) value location simple_expression :
     Block.t =
   (* Unary op pattern must evaluate to number, so just delegate to expression translation *)
+  (* TODO: handle floats? *)
   let id, expr_block = translate_expression_to_fresh_id env {Ast.location; simple_expression} in
   let expected_integer, unbox_pattern = unbox_integer env (Var id) in
   let branch_block = translate_pattern_integer env value expected_integer in
