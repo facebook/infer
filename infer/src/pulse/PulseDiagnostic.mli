@@ -76,7 +76,10 @@ type t =
       ; destination: Procname.t
       ; location: Location.t }
   | FlowToTaintSink of
-      {source: Decompiler.expr * Trace.t; sink: Taint.t * Trace.t; location: Location.t}
+      { source: Decompiler.expr * Trace.t
+      ; sanitizer: (Taint.t * Trace.t) option
+      ; sink: Taint.t * Trace.t
+      ; location: Location.t }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t

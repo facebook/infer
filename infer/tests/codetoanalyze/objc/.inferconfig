@@ -35,7 +35,8 @@
         { "class_names": ["InferTaint"],
           "method_names": ["sanitizer:"],
           "kinds": ["SimpleSanitizer"]
-        }
+        },
+        { "procedure": "__infer_taint_sanitizer", "kinds": ["SimpleSanitizer"] }
     ],
     "pulse-taint-sinks": [
         { "procedure": "inferSensitiveSink" },

@@ -19,6 +19,15 @@
 - (void)__infer_taint_sink:(NSObject*)obj {
 }
 
+- (NSObject*)__infer_taint_sanitizer:(NSObject*)obj {
+  return obj;
+}
+
+- (NSObject*)sanitize:(NSObject*)obj {
+  NSObject* sanitized = [self __infer_taint_sanitizer:obj];
+  return sanitized;
+}
+
 - (NSObject*)create_taint {
   return self.might_be_a_source;
 }
@@ -42,9 +51,15 @@
   [self consume:obj];
 }
 
-- (void)test {
+- (void)test_simple {
   NSObject* start = self.create_then_mutate;
   [self mutate_then_consume:start];
+}
+
+- (void)test_through_sanitizer {
+  NSObject* obj = self.create_then_mutate;
+  obj = [self sanitize:obj];
+  [self mutate_then_consume:obj];
 }
 
 @end

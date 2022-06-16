@@ -315,21 +315,40 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
   let check_immediate policy_violations_reported v astate =
     let source_expr = Decompiler.find v astate in
     let mk_reportable_error diagnostic = [ReportableError {astate; diagnostic}] in
-    let _ =
-      L.d_printfln "Checking for allocations flowing from %a to sink %a" AbstractValue.pp v Taint.pp
-        sink
-    in
+    L.d_printfln "Checking for allocations flowing from %a to sink %a" AbstractValue.pp v Taint.pp
+      sink ;
     let* () =
       match AbductiveDomain.AddressAttributes.get_allocation v astate with
       | None ->
           Ok ()
       | Some (allocator, history) ->
           L.d_printfln "Found allocation %a" Attribute.pp (Attribute.Allocated (allocator, history)) ;
+          let sink_can_be_sanitized_by sink_kind ~sanitizer =
+            let policies = Hashtbl.find_exn sink_policies sink_kind in
+            List.exists policies ~f:(fun {sanitizer_kinds} ->
+                List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
+                    List.mem sanitizer_kinds sanitizer_kind ~equal:Taint.Kind.equal ) )
+          in
+          let sanitizer_opt =
+            match AbductiveDomain.AddressAttributes.get_taint_sanitizer v astate with
+            | None ->
+                None
+            | Some (sanitizer, sanitizer_trace) ->
+                if List.exists sink.Taint.kinds ~f:(sink_can_be_sanitized_by ~sanitizer) then (
+                  L.d_printfln "...but may be sanitized by %a"
+                    (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer))
+                    sanitizer_trace ;
+                  Some (sanitizer, sanitizer_trace) )
+                else None
+          in
           Recoverable
             ( ()
             , mk_reportable_error
-                (FlowToTaintSink {source= (source_expr, history); location; sink= (sink, sink_trace)}
-                ) )
+                (FlowToTaintSink
+                   { source= (source_expr, history)
+                   ; sanitizer= sanitizer_opt
+                   ; sink= (sink, sink_trace)
+                   ; location } ) )
     in
     L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
     match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer v astate with

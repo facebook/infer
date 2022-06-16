@@ -70,7 +70,10 @@ type t =
       ; destination: Procname.t
       ; location: Location.t }
   | FlowToTaintSink of
-      {source: Decompiler.expr * Trace.t; sink: Taint.t * Trace.t; location: Location.t}
+      { source: Decompiler.expr * Trace.t
+      ; sanitizer: (Taint.t * Trace.t) option
+      ; sink: Taint.t * Trace.t
+      ; location: Location.t }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
@@ -355,8 +358,13 @@ let get_message diagnostic =
   | FlowFromTaintSource {tainted; source= source, _; destination} ->
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Procname.pp destination
-  | FlowToTaintSink {source= expr, _; sink= sink, _} ->
-      F.asprintf "`%a` flows to taint sink %a" Decompiler.pp_expr expr Taint.pp sink
+  | FlowToTaintSink {source= expr, _; sanitizer; sink= sink, _} ->
+      let pp_sanitizer f sanitizer =
+        Option.iter sanitizer ~f:(fun (sanitizer, _) ->
+            F.fprintf f ", and might be sanitized by %a" Taint.pp sanitizer )
+      in
+      F.asprintf "`%a` flows to taint sink %a%a" Decompiler.pp_expr expr Taint.pp sink pp_sanitizer
+        sanitizer
   | UnnecessaryCopy {copied_into; typ; location; from} -> (
       let open PulseNonDisjunctiveDomain in
       let suppression_msg =
@@ -536,11 +544,19 @@ let get_trace = function
       @@ []
   | FlowFromTaintSource {source= _, source_history} ->
       ValueHistory.add_to_errlog ~nesting:0 source_history @@ []
-  | FlowToTaintSink {source= _, history; sink= sink, sink_trace} ->
+  | FlowToTaintSink {source= _, history; sanitizer; sink= sink, sink_trace} -> (
       let add_to_errlog = Trace.add_to_errlog ~include_value_history:false ~nesting:0 in
       add_to_errlog history ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocated here")
       @@ add_to_errlog sink_trace ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
-      @@ []
+      @@
+      match sanitizer with
+      | None ->
+          []
+      | Some (sanitizer, sanitizer_trace) ->
+          let trace_start_location = Trace.get_start_location sanitizer_trace in
+          [Errlog.make_trace_element 0 trace_start_location "But potentially sanitized:" []]
+          @ add_to_errlog sanitizer_trace ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer)
+          @@ [] )
   | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location

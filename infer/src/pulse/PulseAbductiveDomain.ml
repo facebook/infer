@@ -285,6 +285,13 @@ module AddressAttributes = struct
     abduce_attribute addr (MustNotBeTainted (path.PathContext.timestamp, sink, trace)) astate
 
 
+  let get_taint_sanitizer addr astate =
+    let attrs = (astate.post :> base_domain).attrs in
+    let open IOption.Let_syntax in
+    let* addr_attrs = BaseAddressAttributes.find_opt addr attrs in
+    Attribute.Attributes.get_taint_sanitized addr_attrs
+
+
   let get_taint_source_and_sanitizer addr astate =
     let attrs = (astate.post :> base_domain).attrs in
     let open IOption.Let_syntax in
