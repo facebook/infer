@@ -167,7 +167,7 @@ module AddressAttributes : sig
   val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
   val get_taint_source_and_sanitizer :
-    AbstractValue.t -> t -> ((Taint.t * ValueHistory.t * bool) * Taint.t option) option
+    AbstractValue.t -> t -> ((Taint.t * ValueHistory.t * bool) * (Taint.t * Trace.t) option) option
 
   val get_propagate_taint_from : AbstractValue.t -> t -> Attribute.taint_in list option
 

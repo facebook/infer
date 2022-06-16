@@ -83,7 +83,7 @@ module Attribute = struct
     | StdMoved
     | StdVectorReserve
     | Tainted of {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
-    | TaintSanitized of Taint.t
+    | TaintSanitized of Taint.t * Trace.t
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
@@ -222,8 +222,10 @@ module Attribute = struct
         F.pp_print_string f "std::vector::reserve()"
     | Tainted {source; hist; intra_procedural_only} ->
         F.fprintf f "Tainted(%a,%a,%b)" Taint.pp source ValueHistory.pp hist intra_procedural_only
-    | TaintSanitized sanitizer ->
-        F.fprintf f "TaintSanitized(%a)" Taint.pp sanitizer
+    | TaintSanitized (sanitizer, trace) ->
+        F.fprintf f "TaintSanitized(%a)"
+          (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer))
+          trace
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
     | UnknownEffect (call, hist) ->
@@ -342,6 +344,8 @@ module Attribute = struct
         PropagateTaintFrom (List.map taints_in ~f:(fun {v} -> {v= subst v}))
     | Tainted {source; hist; intra_procedural_only= false} ->
         Tainted {source; hist= add_call_to_history hist; intra_procedural_only= false}
+    | TaintSanitized (sanitizer, trace) ->
+        TaintSanitized (sanitizer, add_call_to_trace trace)
     | UnknownEffect (call, hist) ->
         UnknownEffect (call, add_call_to_history hist)
     | WrittenTo trace ->
@@ -359,7 +363,6 @@ module Attribute = struct
       | RefCounted
       | StdMoved
       | StdVectorReserve
-      | TaintSanitized _
       | UnreachableAt _
       | Uninitialized ) as attr ->
         attr
@@ -433,7 +436,7 @@ module Attributes = struct
 
   let get_taint_sanitized =
     get_by_rank Attribute.taint_sanitized_rank ~dest:(function [@warning "-8"]
-        | TaintSanitized sanitizer -> sanitizer )
+        | TaintSanitized (sanitizer, trace) -> (sanitizer, trace) )
 
 
   let is_java_resource_released = mem_by_rank Attribute.java_resource_released_rank

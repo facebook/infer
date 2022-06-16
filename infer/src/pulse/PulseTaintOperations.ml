@@ -272,13 +272,16 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
   (astate, not (List.is_empty tainted))
 
 
-let taint_sanitizers tenv return ~has_added_return_param proc_name actuals astate =
+let taint_sanitizers tenv return ~has_added_return_param ~location proc_name actuals astate =
   let tainted =
     get_tainted tenv sanitizer_matchers return ~has_added_return_param proc_name actuals astate
   in
   let astate =
-    List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, _), _)) ->
-        AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate )
+    List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _)) ->
+        let sanitizer_trace = Trace.Immediate {location; history} in
+        AbductiveDomain.AddressAttributes.add_one v
+          (TaintSanitized (sanitizer, sanitizer_trace))
+          astate )
   in
   astate
 
@@ -293,18 +296,19 @@ let check_policies ~sink ~source ~sanitizer_opt =
           with
           | None ->
               acc
-          | Some suspicious_source ->
+          | Some suspicious_source -> (
               L.d_printfln ~color:Red "TAINTED: %a -> %a" Taint.Kind.pp suspicious_source
                 Taint.Kind.pp sink_kind ;
-              if
-                Option.exists sanitizer_opt ~f:(fun sanitizer ->
-                    List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
-                        List.mem ~equal:Taint.Kind.equal sanitizer_kinds sanitizer_kind ) )
-              then (
-                L.d_printfln ~color:Green "...but sanitized by %a" Taint.pp
-                  (Option.value_exn sanitizer_opt) ;
-                acc )
-              else (suspicious_source, sink_kind, policy) :: acc ) )
+              match sanitizer_opt with
+              | Some (sanitizer, trace)
+                when List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
+                         List.mem ~equal:Taint.Kind.equal sanitizer_kinds sanitizer_kind ) ->
+                  L.d_printfln ~color:Green "...but sanitized by %a"
+                    (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer))
+                    trace ;
+                  acc
+              | _ ->
+                  (suspicious_source, sink_kind, policy) :: acc ) ) )
 
 
 let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
@@ -489,9 +493,14 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
                 (Tainted {source; hist; intra_procedural_only})
                 astate
             in
-            Option.fold sanitizer_opt ~init:astate ~f:(fun astate sanitizer ->
+            Option.fold sanitizer_opt ~init:astate ~f:(fun astate (sanitizer, trace) ->
                 L.d_printfln "registering %a as sanitizer" AbstractValue.pp v ;
-                AbductiveDomain.AddressAttributes.add_one v (TaintSanitized sanitizer) astate ) )
+                let trace =
+                  Trace.ViaCall {f= call; location; history= ValueHistory.epoch; in_call= trace}
+                in
+                AbductiveDomain.AddressAttributes.add_one v
+                  (TaintSanitized (sanitizer, trace))
+                  astate ) )
   in
   let astate =
     match actuals with
@@ -565,7 +574,8 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
             false
       in
       let astate =
-        taint_sanitizers tenv (Some return) ~has_added_return_param proc_name actuals astate
+        taint_sanitizers tenv (Some return) ~has_added_return_param ~location proc_name actuals
+          astate
       in
       let astate, found_source_model =
         taint_sources tenv path location ~intra_procedural_only:false (Some return)

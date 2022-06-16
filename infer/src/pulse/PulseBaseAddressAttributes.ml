@@ -150,8 +150,8 @@ let remove_tainted address memory =
 
 let remove_taint_sanitizer address memory =
   match get_attribute Attributes.get_taint_sanitized address memory with
-  | Some sanitized ->
-      remove_one address (Attribute.TaintSanitized sanitized) memory
+  | Some (sanitized, trace) ->
+      remove_one address (Attribute.TaintSanitized (sanitized, trace)) memory
   | None ->
       memory
 
