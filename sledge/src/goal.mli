@@ -17,13 +17,13 @@ module type S = sig
   val pp : t pp
 
   val reached : t -> bool
-  (** true iff the goal has been reached and there is no more work to do *)
+  (** True iff the goal has been reached and there is no more work to do. *)
 
   val update_after_call : Llair.Function.t -> t -> t
-  (** update the goal, having called the given Llair function. *)
+  (** Update the goal, having called the given Llair function. *)
 
   val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit
-  (** perform any upfront metadata computation and decorate [pgm] with it *)
+  (** Perform any upfront metadata computation and decorate [pgm] with it. *)
 end
 
 module Undirected : S with type t = unit
@@ -35,8 +35,8 @@ module Sparse_trace : sig
       any function in the given [Llair.program] *)
   exception Failed_lookup of string
 
-  val of_file_exn : string -> Llair.program -> t
-  (** parse a file of function names (one per line) to a sparse trace over
-      the given [Llair.program] IR. Raises [Failed_lookup] if a function
-      name is encountered that is not in the IR. *)
+  val of_fns_exn : string list -> Llair.program -> t
+  (** Convert a list of function names to a sparse trace over the given
+      [Llair.program] IR. Raises [Failed_lookup] if a function name is
+      encountered that is not in the IR. *)
 end

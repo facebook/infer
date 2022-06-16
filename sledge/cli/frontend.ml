@@ -1629,13 +1629,29 @@ let backpatch_calls x func_tbl =
           in
           backpatch ~callee )
 
-let transform ~internalize ~opt_level ~size_level : Llvm.llmodule -> unit =
+(** add [attr] to each function in a [llmodule] satisfying [pred] *)
+let add_function_attr ~attr ~pred =
+  Llvm.iter_functions (fun fn ->
+      if pred (Llvm.value_name fn) then
+        Llvm.add_function_attr fn attr Llvm.AttrIndex.Function )
+
+let transform ~internalize ~preserve_fns ~opt_level ~size_level :
+    Llvm.llmodule -> unit =
  fun llmodule ->
   let pm = Llvm.PassManager.create () in
-  let entry_points = Config.find_list "entry-points" in
+  let should_preserve_fn =
+    let fns = Config.find_list "entry-points" @ preserve_fns in
+    fun x -> List.exists ~f:(String.equal x) fns
+  in
+  (* Apply "noinline" attribute to each function marked for preservation in
+     [preserve_fns], suppressing optimizations that inline the function at
+     its callsites.
+     (https://clang.llvm.org/docs/AttributeReference.html#noinline) *)
+  add_function_attr
+    ~attr:Llvm.(create_enum_attr (module_context llmodule) "noinline" 0L)
+    ~pred:should_preserve_fn llmodule ;
   if internalize then
-    Llvm_ipo.add_internalize_predicate pm (fun fn ->
-        List.exists entry_points ~f:(String.equal fn) ) ;
+    Llvm_ipo.add_internalize_predicate pm should_preserve_fn ;
   Llvm_scalar_opts.add_memory_to_register_promotion pm ;
   Llvm_scalar_opts.add_scalarizer pm ;
   let pmb = Llvm_passmgr_builder.create () in
@@ -1704,8 +1720,8 @@ let cleanup llmodule llcontext =
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
 
-let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
-    string -> Llair.program =
+let translate ~internalize ~preserve_fns ~opt_level ~size_level
+    ?dump_bitcode : string -> Llair.program =
  fun input ->
   [%Dbg.call fun {pf} -> pf "@ %s" input]
   ;
@@ -1714,7 +1730,7 @@ let translate ~internalize ~opt_level ~size_level ?dump_bitcode :
   let llmodule = read_and_parse llcontext input in
   assert (
     Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm ) ;
-  transform ~internalize ~opt_level ~size_level llmodule ;
+  transform ~internalize ~preserve_fns ~opt_level ~size_level llmodule ;
   Option.for_all
     ~f:(Llvm_bitwriter.write_bitcode_file llmodule)
     dump_bitcode
