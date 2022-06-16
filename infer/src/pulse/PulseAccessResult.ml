@@ -76,10 +76,8 @@ type abductive_summary_error =
 let ignore_leaks = function
   | Ok astate
   | Error (`MemoryLeak (astate, _, _, _))
-  | Error (`JavaResourceLeak (astate, _, _, _)) ->
-          Printf.printf "\nhello access result java\n"; Ok astate
-  | Error (`CSharpResourceLeak (astate, _, _, _)) ->
-          Printf.printf "\nhello access result csharp\n"; Ok astate
+  | Error (`JavaResourceLeak (astate, _, _, _))
+  | Error (`CSharpResourceLeak (astate, _, _, _))
   | Error (`RetainCycle (astate, _, _, _, _)) ->
       Ok astate
   | Error #abductive_summary_error as result ->

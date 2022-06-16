@@ -196,9 +196,9 @@ let get_location = function
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
   | ConstRefableParameter {location}
-  | JavaResourceLeak {location} -> F.printf "diagnostic java get_location\n"; location
-  | CSharpResourceLeak {location} -> F.printf "diagnostic csharp get_location\n"; location
   | MemoryLeak {location}
+  | JavaResourceLeak {location}
+  | CSharpResourceLeak {location}
   | RetainCycle {location}
   | ErlangError (Badarg {location})
   | ErlangError (Badkey {location})
@@ -235,9 +235,9 @@ let aborts_execution = function
          abort! *)
       true
   | ConstRefableParameter _
-  | JavaResourceLeak _ -> F.printf "diagnostic java aborts_execution\n"; false
-  | CSharpResourceLeak _ -> F.printf "diagnostic csharp aborts_execution\n"; false
   | MemoryLeak _
+  | JavaResourceLeak _
+  | CSharpResourceLeak _
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
@@ -389,7 +389,6 @@ let get_message diagnostic =
         pp_allocation_trace allocation_trace Location.pp location
   | JavaResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
-          F.printf "diagnostic java get_message\n";
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
         line
@@ -406,7 +405,6 @@ let get_message diagnostic =
       F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
   | CSharpResourceLeak {class_name; location; allocation_trace} ->
-          F.printf "diagnostic csharp get_message\n";
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
@@ -613,7 +611,6 @@ let get_trace = function
       [Errlog.make_trace_element nesting location (F.asprintf "Parameter %a" Var.pp param) []]
   | JavaResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
-          Printf.printf "Diagnostic java get_trace\n";
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
         access_start_location
@@ -623,7 +620,6 @@ let get_trace = function
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | CSharpResourceLeak {class_name; location; allocation_trace} ->
-          Printf.printf "Diagnostic csharp get_trace\n";
       (* NOTE: this is very similar to the MemoryLeak case *)
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
@@ -719,7 +715,6 @@ let get_issue_type ~latent issue_type =
           "Memory leaks should not have a Java resource, C sharp, or Objective-C alloc as allocator" )
   | JavaResourceLeak _, false
   | CSharpResourceLeak _, false ->
-          F.printf "diagnostic get_issue_type\n";
       IssueType.pulse_resource_leak
   | RetainCycle _, false ->
       IssueType.retain_cycle

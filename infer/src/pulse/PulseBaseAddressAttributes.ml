@@ -158,7 +158,6 @@ let allocate allocator address location memory =
 
 
 let java_resource_release address memory =
-    Printf.printf "baseaddr is_java_resource_released\n";
     add_one address Attribute.CSharpResourceReleased memory
 
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
@@ -299,7 +298,6 @@ let is_end_of_collection address attrs =
 
 
 let is_java_resource_released adress attrs =
-    Printf.printf "baseaddr is_java_resource_released\n";
   Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_java_resource_released
 
 

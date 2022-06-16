@@ -104,9 +104,9 @@ let is_manifest (astate : AbductiveDomain.summary) =
 let should_report (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
   match diagnostic with
   | ConstRefableParameter _
-  | JavaResourceLeak _ -> Printf.printf "\nhello java latent\n"; `ReportNow
-  | CSharpResourceLeak _ -> Printf.printf "\nhello csharp latent\n"; `ReportNow
   | MemoryLeak _
+  | JavaResourceLeak _
+  | CSharpResourceLeak _
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _

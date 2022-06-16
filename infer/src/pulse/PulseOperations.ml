@@ -400,13 +400,10 @@ let havoc_deref_field path location addr_trace field trace_obj astate =
 let always_reachable address astate = AddressAttributes.always_reachable address astate
 
 let allocate allocator location addr astate =
-    Format.printf "operations Allocater (%a)\n" Attribute.pp_allocator allocator;
   AddressAttributes.allocate allocator addr location astate
 
 
-  (* what does this have to do with java? *)
 let java_resource_release ~recursive address astate =
-    Printf.printf "\nhello operations java_resource_release\n";
   let if_valid_access_then_eval addr access astate =
     Option.map (Memory.find_edge_opt addr access astate) ~f:fst
   in

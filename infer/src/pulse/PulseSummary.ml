@@ -48,13 +48,11 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
                {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}} )
           |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
       | Error (`JavaResourceLeak (astate, class_name, allocation_trace, location)) ->
-              Printf.printf "\nsummary java\n";
           PulseReport.report_summary_error tenv proc_desc err_log
             (ReportableErrorSummary
                {astate; diagnostic= JavaResourceLeak {class_name; allocation_trace; location}} )
           |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
       | Error (`CSharpResourceLeak (astate, class_name, allocation_trace, location)) ->
-              Printf.printf "\nsummary csharp\n";
           PulseReport.report_summary_error tenv proc_desc err_log
             (ReportableErrorSummary
                {astate; diagnostic= CSharpResourceLeak {class_name; allocation_trace; location}} )
