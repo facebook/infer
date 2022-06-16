@@ -84,7 +84,9 @@ type jump = private {mutable dst: block; mutable retreating: bool}
 
 and callee =
   | Direct of func  (** Statically resolved function *)
-  | Indirect of Exp.t  (** Dynamically resolved function-pointer *)
+  | Indirect of {ptr: Exp.t; candidates: func iarray}
+      (** Dynamically resolved function-pointer, along with an array of
+          candidate callees overapproximating the possible call targets *)
   | Intrinsic of Intrinsic.t
       (** Intrinsic implemented in analyzer rather than source code *)
 
@@ -217,7 +219,7 @@ module Term : sig
     -> return:jump
     -> throw:jump option
     -> loc:Loc.t
-    -> t * (callee:func -> unit)
+    -> term * (callee:func -> unit)
 
   val icall :
        callee:Exp.t
@@ -227,7 +229,7 @@ module Term : sig
     -> return:jump
     -> throw:jump option
     -> loc:Loc.t
-    -> term
+    -> term * (candidates:func iarray -> unit)
 
   val intrinsic :
        callee:Intrinsic.t

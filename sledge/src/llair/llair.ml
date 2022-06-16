@@ -64,7 +64,10 @@ type label = string [@@deriving compare, equal, sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
 
-and callee = Direct of func | Indirect of Exp.t | Intrinsic of Intrinsic.t
+and callee =
+  | Direct of func
+  | Indirect of {ptr: Exp.t; candidates: func iarray}
+  | Intrinsic of Intrinsic.t
 
 and 'a call =
   { mutable callee: 'a
@@ -127,7 +130,7 @@ with type jump := jump
 
   type nonrec callee = callee =
     | Direct of func
-    | Indirect of Exp.t
+    | Indirect of {ptr: Exp.t; candidates: func iarray}
     | Intrinsic of Intrinsic.t
   [@@deriving compare, equal]
 
@@ -170,7 +173,8 @@ let sexp_of_jump {dst; retreating} =
 
 let sexp_of_callee = function
   | Direct func -> sexp_ctor "Direct" [%sexp (func.name : Function.t)]
-  | Indirect exp -> sexp_ctor "Indirect" [%sexp (exp : Exp.t)]
+  | Indirect {ptr; candidates= _} ->
+      sexp_ctor "Indirect" [%sexp (ptr : Exp.t)]
   | Intrinsic intr -> sexp_ctor "Intrinsic" [%sexp (intr : Intrinsic.t)]
 
 let sexp_of_call
@@ -268,7 +272,7 @@ let pp_jump fs {dst; retreating} =
 
 let pp_callee fs = function
   | Direct f -> Function.pp fs f.name
-  | Indirect f -> Exp.pp fs f
+  | Indirect {ptr; candidates= _} -> Exp.pp fs ptr
   | Intrinsic i -> Intrinsic.pp fs i
 
 let pp_call fs
@@ -481,8 +485,8 @@ module Term = struct
     (k |> check invariant, fun ~callee -> cal.callee <- Direct callee)
 
   let icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
-    Call
-      { callee= Indirect callee
+    let cal =
+      { callee= Indirect {ptr= callee; candidates= IArray.empty}
       ; typ
       ; actuals
       ; areturn
@@ -490,7 +494,10 @@ module Term = struct
       ; throw
       ; recursive= false
       ; loc }
-    |> check invariant
+    in
+    let k = Call cal in
+    ( k |> check invariant
+    , fun ~candidates -> cal.callee <- Indirect {ptr= callee; candidates} )
 
   let intrinsic ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
     Call
@@ -913,12 +920,13 @@ module Program = struct
             IArray.iter tbl ~f:(snd >> jump) ;
             jump els
         | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
-        | Call ({callee; return; _} as call) -> (
+        | Call {callee; return; _} -> (
           match callee with
-          | Direct f when not call.recursive ->
-              visit_target f.entry (return.dst :: stack)
+          | Direct f -> visit_target f.entry (return.dst :: stack)
           | Intrinsic _ -> jump return
-          | Direct _ | Indirect _ -> () )
+          | Indirect {candidates; _} ->
+              IArray.iter candidates ~f:(fun f ->
+                  visit_target f.entry (return.dst :: stack) ) )
         | Return _ -> (
           match stack with
           | ret :: stack -> visit_target ret stack
@@ -942,7 +950,7 @@ module Program = struct
         let dists = reachable_dists curr next_entry in
         [%Dbg.info
           "distances to %a from locations reachable from %a: %a"
-            Block.pp_ident entry Block.pp_ident curr
+            Block.pp_ident next_entry Block.pp_ident curr
             (Block.Map.pp Block.pp_ident Int.pp)
             dists] ;
         Block.Map.iteri dists ~f:(fun ~key:blk ~data ->

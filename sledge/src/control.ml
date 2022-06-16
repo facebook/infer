@@ -1132,11 +1132,19 @@ struct
               jump ams wl )
     | Call ({callee= Direct callee} as call) ->
         exec_call {call with callee} ams wl
-    | Call ({callee= Indirect callee; areturn; return} as call) -> (
+    | Call
+        ( {callee= Indirect {ptr= callee; candidates}; areturn; return} as
+        call ) -> (
       match resolve_callee pgm tid callee state with
       | [] -> exec_skip_func areturn return ams wl
       | callees ->
           List.fold callees wl ~f:(fun callee wl ->
+              assert (
+                IArray.mem callee candidates ~eq:Llair.Func.equal
+                ||
+                ( warn "unexpected call target %a at indirect callsite %a"
+                    Llair.Func.pp callee Llair.Term.pp term () ;
+                  true ) ) ;
               exec_call {call with callee} ams wl ) )
     | Call {callee= Intrinsic callee; actuals; areturn; return} -> (
       match (callee, IArray.to_array actuals) with

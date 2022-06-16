@@ -460,6 +460,15 @@ let convert_to_siz =
         else arg
     | _ -> fail "convert_to_siz: %a" Typ.pp typ ()
 
+type backpatch =
+  | DirectBP of
+      {typ: Typ.t; llcallee: Llvm.llvalue; backpatch: callee:func -> unit}
+  | IndirectBP of {typ: Typ.t; backpatch: candidates:func iarray -> unit}
+
+let calls_to_backpatch : backpatch list ref = ref []
+let rval_fns : Function.t list Typ.Tbl.t = Typ.Tbl.create ()
+let func_tbl : Func.t String.Tbl.t = String.Tbl.create ()
+
 let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
  fun x typ arg -> Exp.convert typ ~to_:(i32 x) arg
 
@@ -501,11 +510,10 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
      |Argument ->
         ([], Exp.reg (xlate_name x llv))
     | Function ->
-        ( []
-        , Exp.function_
-            (Function.mk
-               (xlate_type x (Llvm.type_of llv))
-               (fst (find_name llv)) ) )
+        let typ = xlate_type x (Llvm.type_of llv) in
+        let fn = Function.mk typ (fst (find_name llv)) in
+        Typ.Tbl.add_multi rval_fns ~key:typ ~data:fn ;
+        ([], Exp.function_ fn)
     | GlobalVariable -> ([], Exp.global (xlate_global x llv).name)
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> ([], xlate_int x llv)
@@ -1069,8 +1077,6 @@ let xlate_builtin_inst emit_inst x name_segs instr num_actuals loc =
     | None -> None )
   | _ -> None
 
-let calls_to_backpatch = ref []
-
 let term_call x llcallee name ~typ ~actuals ~areturn ~return ~throw ~loc =
   match Intrinsic.of_name name with
   | Some callee ->
@@ -1085,12 +1091,16 @@ let term_call x llcallee name ~typ ~actuals ~areturn ~return ~throw ~loc =
           Term.call ~name ~typ ~actuals ~areturn ~return ~throw ~loc
         in
         calls_to_backpatch :=
-          (llcallee, typ, backpatch) :: !calls_to_backpatch ;
+          DirectBP {llcallee; typ; backpatch} :: !calls_to_backpatch ;
         ([], call)
     | _ ->
         let prefix, callee = xlate_value x llcallee in
-        ( prefix
-        , Term.icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc ) )
+        let icall, backpatch =
+          Term.icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc
+        in
+        calls_to_backpatch :=
+          IndirectBP {typ; backpatch} :: !calls_to_backpatch ;
+        (prefix, icall) )
 
 let xlate_instr :
        pop_thunk
@@ -1617,17 +1627,28 @@ let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
   |>
   [%Dbg.retn fun {pf} -> pf "@\n%a" Func.pp]
 
-let backpatch_calls x func_tbl =
-  List.iter !calls_to_backpatch ~f:(fun (llfunc, typ, backpatch) ->
-      match LlvalueTbl.find func_tbl llfunc with
+let backpatch_calls x =
+  List.iter !calls_to_backpatch ~f:(function
+    | DirectBP {llcallee; typ; backpatch} -> (
+      match String.Tbl.find func_tbl (Llvm.value_name llcallee) with
       | Some callee -> backpatch ~callee
       | None ->
-          xlate_function_decl x llfunc typ
+          xlate_function_decl x llcallee typ
           @@ fun ~name ~formals ~freturn ~fthrow ~loc ->
           let callee =
             Func.mk_undefined ~name ~formals ~freturn ~fthrow ~loc
           in
           backpatch ~callee )
+    | IndirectBP {typ; backpatch} ->
+        let resolve_func = Function.name >> String.Tbl.find_exn func_tbl in
+        let candidates =
+          Typ.Tbl.fold rval_fns Iter.empty ~f:(fun ~key ~data acc ->
+              if Typ.compatible_fnptr key typ then
+                Iter.(map ~f:resolve_func (of_list data) <+> acc)
+              else acc )
+          |> IArray.of_iter
+        in
+        backpatch ~candidates )
 
 (** add [attr] to each function in a [llmodule] satisfying [pred] *)
 let add_function_attr ~attr ~pred =
@@ -1716,6 +1737,8 @@ let cleanup llmodule llcontext =
   GlobTbl.clear memo_global ;
   ValTbl.clear memo_value ;
   calls_to_backpatch := [] ;
+  Typ.Tbl.clear rval_fns ;
+  String.Tbl.clear func_tbl ;
   Gc.full_major () ;
   Llvm.dispose_module llmodule ;
   Llvm.dispose_context llcontext
@@ -1751,7 +1774,6 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
         else xlate_global x llg :: globals )
       [] llmodule
   in
-  let func_tbl : Func.t LlvalueTbl.t = LlvalueTbl.create () in
   let functions =
     Llvm.fold_left_functions
       (fun functions llf ->
@@ -1770,11 +1792,11 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
               xlate_function_decl x llf typ Func.mk_undefined
               $> Report.unimplemented feature
           in
-          LlvalueTbl.set func_tbl ~key:llf ~data:func ;
+          String.Tbl.set func_tbl ~key:(Function.name func.name) ~data:func ;
           func :: functions )
       [] llmodule
   in
-  backpatch_calls x func_tbl ;
+  backpatch_calls x ;
   cleanup llmodule llcontext ;
   Llair.Program.mk ~globals ~functions
   |>

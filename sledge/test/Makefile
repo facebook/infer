@@ -66,7 +66,7 @@ llair_intrinsics_h:=$(CURDIR)/../model/llair_intrinsics.h
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	clang++ -g -c -emit-llvm $(CXX_FLAGS) $(CLANG_ARGS) -o $@ $<
+	clang++ -g -c -emit-llvm $(CXX_FLAGS) -include $(llair_intrinsics_h) $(CLANG_ARGS) -o $@ $<
 
 # disassemble bitcode to llvm assembly
 %.ll : %.bc
