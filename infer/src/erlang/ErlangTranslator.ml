@@ -24,7 +24,13 @@ let lists_subtract = Procname.make_erlang ~module_name:"lists" ~function_name:"s
 
 let lists_reverse = Procname.make_erlang ~module_name:"lists" ~function_name:"reverse" ~arity:1
 
-let erlang_send2 = Procname.make_erlang ~module_name:"erlang" ~function_name:"send" ~arity:2
+let erlang_ns = ErlangTypeName.erlang_namespace
+
+let erlang_equal = Procname.make_erlang ~module_name:erlang_ns ~function_name:"==" ~arity:2
+
+let erlang_ex_equal = Procname.make_erlang ~module_name:erlang_ns ~function_name:"=:=" ~arity:2
+
+let erlang_send2 = Procname.make_erlang ~module_name:erlang_ns ~function_name:"send" ~arity:2
 
 (* TODO: add Pulse model T93361792 *)
 let string_concat = Procname.make_erlang ~module_name:"string" ~function_name:"concat" ~arity:2
@@ -663,10 +669,10 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       make_simple_eager_arith Shiftrt
   | BXor ->
       make_simple_eager_arith BXor
-  (* TODO: proper modeling of equal vs exactly equal T95767672 *)
-  | Equal | ExactlyEqual ->
-      make_builtin_call BuiltinDecl.__erlang_equal
-  (* TODO: proper modeling of not equal vs exactly not equal T95767672 *)
+  | Equal ->
+      make_builtin_call erlang_equal
+  | ExactlyEqual ->
+      make_builtin_call erlang_ex_equal
   | ExactlyNotEqual | NotEqual ->
       make_simple_eager_comparison Ne
   | Greater ->

@@ -928,7 +928,6 @@ let matchers : matcher list =
     ; +BuiltinDecl.(match_builtin __erlang_make_integer) <>$ arg $--> Integers.make
     ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
     ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
-    ; +BuiltinDecl.(match_builtin __erlang_equal) <>$ arg $+ arg $--> Comparison.equal
     ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
     ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach
     ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse
@@ -938,6 +937,9 @@ let matchers : matcher list =
     ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
     ; -"maps" &:: "new" <>$$--> Maps.new_
     ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
+    ; -erlang_ns &:: "==" <>$ arg $+ arg $--> Comparison.equal
+      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+    ; -erlang_ns &:: "=:=" <>$ arg $+ arg $--> Comparison.equal
     ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
     ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
     ; -erlang_ns &:: "is_integer" <>$ arg $--> BIF.is_integer
