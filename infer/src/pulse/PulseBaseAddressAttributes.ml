@@ -63,13 +63,65 @@ let empty = Graph.empty
 
 let filter = Graph.filter
 
+(* for an abstract value v, where f_keep(v) == false, find an abstract value v_keep, where
+   f_keep(v_keep) == true and where v_keep has taint propagated from v *)
+let mk_transitive_taint_from_subst f_keep memory =
+  (* construct map v -> [v1,...,vn], where taint is propagated from v1,...,vn to v *)
+  let taints_from_map =
+    fold
+      (fun addr attrs taint_from_map ->
+        match Attributes.get_propagate_taint_from attrs with
+        | None ->
+            taint_from_map
+        | Some taints_in ->
+            List.fold ~init:taint_from_map
+              ~f:(fun acc {Attribute.v= from} ->
+                match AbstractValue.Map.find_opt addr acc with
+                | None ->
+                    AbstractValue.Map.add addr [from] acc
+                | Some taint_from ->
+                    AbstractValue.Map.add addr (from :: taint_from) acc )
+              taints_in )
+      memory AbstractValue.Map.empty
+  in
+  let rec find_live_and_subst subst addr =
+    match AbstractValue.Map.find_opt addr subst with
+    | None -> (
+        if f_keep addr then subst
+        else
+          (* to avoid cycles *)
+          let subst = AbstractValue.Map.add addr AbstractValue.Set.empty subst in
+          match AbstractValue.Map.find_opt addr taints_from_map with
+          | None ->
+              subst
+          | Some taints_from ->
+              let subst =
+                List.fold taints_from
+                  ~f:(fun subst addr -> find_live_and_subst subst addr)
+                  ~init:subst
+              in
+              let new_taints_from =
+                List.fold taints_from ~init:AbstractValue.Set.empty ~f:(fun acc addr ->
+                    if f_keep addr then AbstractValue.Set.add addr acc
+                    else AbstractValue.Set.union (AbstractValue.Map.find addr subst) acc )
+              in
+              AbstractValue.Map.add addr new_taints_from subst )
+    | Some _ ->
+        subst
+  in
+  AbstractValue.Map.fold
+    (fun addr _taint_from subst -> find_live_and_subst subst addr)
+    taints_from_map AbstractValue.Map.empty
+
+
 let filter_with_discarded_addrs f_keep memory =
+  let taint_from_subst = mk_transitive_taint_from_subst f_keep memory in
   fold
     (fun addr attrs ((memory, discarded) as acc) ->
       if f_keep addr then
         let attrs' =
           Attributes.fold attrs ~init:attrs ~f:(fun attrs' attr ->
-              match Attribute.filter_unreachable f_keep attr with
+              match Attribute.filter_unreachable taint_from_subst f_keep attr with
               | None ->
                   Attributes.remove attr attrs'
               | Some attr' ->

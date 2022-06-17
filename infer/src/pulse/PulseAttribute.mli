@@ -76,7 +76,8 @@ val is_suitable_for_pre : t -> bool
 
 val is_suitable_for_post : t -> bool
 
-val filter_unreachable : (AbstractValue.t -> bool) -> t -> t option
+val filter_unreachable :
+  AbstractValue.Set.t AbstractValue.Map.t -> (AbstractValue.t -> bool) -> t -> t option
 (** update an attribute to get rid of abstract values that do not satisfy the given predicate; the
     result is [None] if the attribute becomes meaningless as a result *)
 

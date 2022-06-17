@@ -381,10 +381,21 @@ module Attribute = struct
         false
 
 
-  let filter_unreachable f_keep = function
+  let filter_unreachable subst f_keep = function
     | PropagateTaintFrom taints_in ->
-        let taints_in' = List.filter taints_in ~f:(fun {v} -> f_keep v) in
-        if List.is_empty taints_in' then None else Some (PropagateTaintFrom taints_in')
+        let taints_in' =
+          List.fold taints_in ~init:AbstractValue.Set.empty ~f:(fun acc {v} ->
+              if f_keep v then AbstractValue.Set.add v acc
+              else
+                AbstractValue.Set.union
+                  (Option.value ~default:AbstractValue.Set.empty
+                     (AbstractValue.Map.find_opt v subst) )
+                  acc )
+        in
+        if AbstractValue.Set.is_empty taints_in' then None
+        else
+          let taints_in' = AbstractValue.Set.fold (fun v list -> {v} :: list) taints_in' [] in
+          Some (PropagateTaintFrom taints_in')
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Allocated _
