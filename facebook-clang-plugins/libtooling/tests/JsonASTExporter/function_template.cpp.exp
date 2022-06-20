@@ -300,6 +300,10 @@
                     "is_trivially_copyable" : true
                   }]
                 ]
+              },
+              "point_of_instantiation" : {
+                "line" : 20,
+                "column" : 17
               }
             }
           ]],
@@ -468,6 +472,10 @@
                     "is_trivially_copyable" : true
                   }]
                 ]
+              },
+              "point_of_instantiation" : {
+                "line" : 25,
+                "column" : 7
               }
             }
           ]],
@@ -636,6 +644,10 @@
                     "is_trivially_copyable" : true
                   }]
                 ]
+              },
+              "point_of_instantiation" : {
+                "line" : 26,
+                "column" : 7
               }
             }
           ]]

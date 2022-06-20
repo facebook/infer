@@ -75,6 +75,7 @@ type t =
             closure used to specialize the procedure. *)
   ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
+  ; loc_instantiated: Location.t option  (** location of this procedure is possibly instantiated *)
   ; translation_unit: SourceFile.t  (** source file where the procedure was captured *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)

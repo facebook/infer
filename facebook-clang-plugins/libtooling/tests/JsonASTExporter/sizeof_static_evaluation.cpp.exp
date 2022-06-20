@@ -357,6 +357,8 @@
       },
       "",
       {
+      },
+      {
         "template_decl" : 7,
         "specialization_args" : [
           ["Type" , {

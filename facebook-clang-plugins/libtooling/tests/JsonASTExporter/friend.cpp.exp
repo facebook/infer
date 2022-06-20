@@ -171,6 +171,8 @@
             },
             "",
             {
+            },
+            {
               "template_decl" : 7,
               "specialization_args" : [
                 ["Type" , {
@@ -508,6 +510,10 @@
             },
             "",
             {
+              "line" : 18,
+              "column" : 8
+            },
+            {
               "template_decl" : 11,
               "specialization_args" : [
                 ["Type" , {
@@ -525,7 +531,6 @@
         "pointer" : 31,
         "source_range" : [
           {
-            "line" : 18,
             "column" : 1
           },
           {

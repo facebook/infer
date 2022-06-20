@@ -521,6 +521,10 @@
                     "is_trivially_copyable" : true
                   }]
                 ]
+              },
+              "point_of_instantiation" : {
+                "line" : 17,
+                "column" : 10
               }
             }
           ]],
@@ -616,6 +620,10 @@
                     "type_ptr" : 8
                   }]
                 ]
+              },
+              "point_of_instantiation" : {
+                "line" : 18,
+                "column" : 10
               }
             }
           ]]

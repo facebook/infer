@@ -223,8 +223,8 @@ let get_struct_decls decl =
   let open Clang_ast_t in
   match decl with
   | CapturedDecl (_, decl_list, _)
-  | ClassTemplatePartialSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
-  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | ClassTemplatePartialSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _, _)
   | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
   | EnumDecl (_, _, _, decl_list, _, _, _)
   | LinkageSpecDecl (_, decl_list, _)
@@ -337,7 +337,7 @@ let get_superclass_decls decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info)
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info, _, _) ->
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info, _, _, _) ->
       (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
       let get_decl_or_fail typ_ptr =
@@ -379,7 +379,7 @@ let get_translate_as_friend_decl decl_list =
   match get_friend_decl_opt (List.find_exn ~f:is_translate_as_friend_decl decl_list) with
   | Some
       (Clang_ast_t.ClassTemplateSpecializationDecl
-        (_, _, _, _, _, _, _, _, _, {tsi_specialization_args= [`Type t_ptr]}) ) ->
+        (_, _, _, _, _, _, _, _, _, _, {tsi_specialization_args= [`Type t_ptr]}) ) ->
       Some t_ptr
   | _ ->
       None
@@ -391,7 +391,7 @@ let get_record_definition decl =
   let open Clang_ast_t in
   match decl with
   | ClassTemplateSpecializationDecl
-      (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _, _, _)
+      (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _, _, _, _)
   | CXXRecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _)
   | RecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr})
     when (not rdi_is_complete_definition) && rdi_definition_ptr <> 0 ->
@@ -460,7 +460,7 @@ and get_record_declaration_type tenv decl =
 and get_record_friend_decl_type tenv definition_decl =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _, _)
   | CXXRecordDecl (_, _, _, decl_list, _, _, _, _) ->
       Option.map ~f:(qual_type_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _ ->
@@ -477,8 +477,8 @@ and get_record_typename ?tenv decl =
   match (decl, tenv) with
   | RecordDecl (_, name_info, _, _, _, tag_kind, _), _ ->
       CAst_utils.get_qualified_name ~linters_mode name_info |> create_c_record_typename tag_kind
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, tag_kind, _, _, mangling, spec_info), Some tenv
-    ->
+  | ( ClassTemplateSpecializationDecl (_, _, _, _, _, tag_kind, _, _, mangling, _, spec_info)
+    , Some tenv ) ->
       let tname =
         match CAst_utils.get_decl spec_info.tsi_template_decl with
         | Some dec ->
@@ -494,8 +494,8 @@ and get_record_typename ?tenv decl =
   | CXXRecordDecl (_, name_info, _, _, _, `TTK_Union, _, _), _ ->
       Typ.CUnion (CAst_utils.get_qualified_name ~linters_mode name_info)
   | CXXRecordDecl (_, name_info, _, _, _, tag_kind, _, _), _
-  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _), _
-  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _), _ ->
+  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _, _), _
+  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _, _), _ ->
       (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
       Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:(is_union_tag tag_kind)
@@ -741,7 +741,7 @@ and get_struct_methods struct_decl tenv =
 and get_record_struct_type tenv definition_decl : Typ.desc =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _, _)
   | CXXRecordDecl (_, _, type_ptr, _, _, _, record_decl_info, _)
   | RecordDecl (_, _, type_ptr, _, _, _, record_decl_info) -> (
       let sil_typename = get_record_typename ~tenv definition_decl in

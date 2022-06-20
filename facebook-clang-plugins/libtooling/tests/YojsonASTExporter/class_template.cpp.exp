@@ -507,6 +507,10 @@
                 },
                 "",
                 {
+                  "line" : 24,
+                  "column" : 15
+                },
+                {
                   "template_decl" : 8,
                   "specialization_args" : [
                     <"Type" : {
@@ -621,6 +625,8 @@
           {
           },
           "",
+          {
+          },
           {
             "template_decl" : 8,
             "specialization_args" : [
@@ -1377,6 +1383,8 @@
             }
           },
           "",
+          {
+          },
           {
             "template_decl" : 8,
             "specialization_args" : [

@@ -92,6 +92,21 @@ let get_method_body method_decl =
       raise CFrontend_errors.Invalid_declaration
 
 
+let get_point_of_instantiation method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | FunctionDecl (_, _, _, function_decl_info)
+  | CXXMethodDecl (_, _, _, function_decl_info, _)
+  | CXXConstructorDecl (_, _, _, function_decl_info, _)
+  | CXXConversionDecl (_, _, _, function_decl_info, _)
+  | CXXDestructorDecl (_, _, _, function_decl_info, _) ->
+      function_decl_info.fdi_point_of_instantiation
+  | ObjCMethodDecl _ | BlockDecl _ ->
+      None
+  | _ ->
+      raise CFrontend_errors.Invalid_declaration
+
+
 let is_cpp_lambda_call_operator meth_decl =
   let open Clang_ast_t in
   match meth_decl with

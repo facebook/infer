@@ -25,7 +25,8 @@ val should_create_procdesc :
     [set_objc_accessor_attr] represents if the function is a getter/setter in Obj-C. *)
 
 val create_local_procdesc :
-     ?set_objc_accessor_attr:bool
+     ?loc_instantiated:Location.t
+  -> ?set_objc_accessor_attr:bool
   -> ?record_lambda_captured:bool
   -> ?is_cpp_lambda_call_operator:bool
   -> CFrontend_config.translation_unit_context

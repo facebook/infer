@@ -92,6 +92,7 @@ type t =
             closure used to specialize the procedure. *)
   ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
+  ; loc_instantiated: Location.t option  (** location of this procedure is possibly instantiated *)
   ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
@@ -139,6 +140,7 @@ let default translation_unit proc_name =
   ; sentinel_attr= None
   ; clang_method_kind= ClangMethodKind.C_FUNCTION
   ; loc= Location.dummy
+  ; loc_instantiated= None
   ; translation_unit
   ; locals= []
   ; has_added_return_param= false
@@ -202,6 +204,7 @@ let pp f
      ; sentinel_attr
      ; clang_method_kind
      ; loc
+     ; loc_instantiated
      ; translation_unit
      ; locals
      ; has_added_return_param
@@ -277,6 +280,8 @@ let pp f
       (Pp.of_string ~f:ClangMethodKind.to_string)
       clang_method_kind ;
   if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp_file_pos loc ;
+  Option.iter loc_instantiated ~f:(fun loc_instantiated ->
+      F.fprintf f "; loc_instantiated= %a@," Location.pp_file_pos loc_instantiated ) ;
   F.fprintf f "; locals= [@[%a@]]@," (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data) locals ;
   pp_bool_default ~default:default.has_added_return_param "has_added_return_param"
     has_added_return_param f () ;

@@ -171,6 +171,8 @@
             },
             "",
             {
+            },
+            {
               "template_decl" : 7,
               "specialization_args" : [
                 <"Pack" : [
@@ -427,6 +429,10 @@
             },
             "",
             {
+              "line" : 10,
+              "column" : 19
+            },
+            {
               "template_decl" : 7,
               "specialization_args" : [
                 <"Pack" : [
@@ -445,7 +451,6 @@
         "pointer" : 25,
         "source_range" : (
           {
-            "line" : 10,
             "column" : 1
           },
           {
@@ -795,6 +800,10 @@
             },
             "",
             {
+              "line" : 16,
+              "column" : 26
+            },
+            {
               "template_decl" : 30,
               "specialization_args" : [
                 <"NullPtr">
@@ -809,7 +818,6 @@
         "pointer" : 44,
         "source_range" : (
           {
-            "line" : 16,
             "column" : 1
           },
           {
@@ -1135,6 +1143,10 @@
             },
             "",
             {
+              "line" : 26,
+              "column" : 16
+            },
+            {
               "template_decl" : 47,
               "specialization_args" : [
                 <"Integral" : "0">
@@ -1411,6 +1423,10 @@
             },
             "",
             {
+              "line" : 27,
+              "column" : 19
+            },
+            {
               "template_decl" : 61,
               "specialization_args" : [
                 <"Integral" : "99">
@@ -1686,6 +1702,10 @@
               "is_pod" : true
             },
             "",
+            {
+              "line" : 28,
+              "column" : 29
+            },
             {
               "template_decl" : 75,
               "specialization_args" : [
@@ -2154,6 +2174,10 @@
               "is_pod" : true
             },
             "",
+            {
+              "line" : 47,
+              "column" : 7
+            },
             {
               "template_decl" : 98,
               "specialization_args" : [
@@ -2704,6 +2728,10 @@
             },
             "",
             {
+              "line" : 48,
+              "column" : 6
+            },
+            {
               "template_decl" : 127,
               "specialization_args" : [
                 <"Declaration" : 141>
@@ -3045,6 +3073,10 @@
               "is_pod" : true
             },
             "",
+            {
+              "line" : 49,
+              "column" : 6
+            },
             {
               "template_decl" : 143,
               "specialization_args" : [
@@ -3407,6 +3439,10 @@
               "is_pod" : true
             },
             "",
+            {
+              "line" : 50,
+              "column" : 7
+            },
             {
               "template_decl" : 162,
               "specialization_args" : [

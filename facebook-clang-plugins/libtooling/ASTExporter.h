@@ -1540,7 +1540,8 @@ int ASTExporter<ATDWriter>::FunctionDeclTupleSize() {
 //@atd   ~parameters : decl list;
 //@atd   ?decl_ptr_with_body : pointer option;
 //@atd   ?body : stmt option;
-//@atd   ?template_specialization : template_specialization_info option
+//@atd   ?template_specialization : template_specialization_info option;
+//@atd   ?point_of_instantiation : source_location option
 //@atd } <ocaml field_prefix="fdi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
@@ -1573,10 +1574,13 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   }
   bool HasDeclarationBody = D->doesThisDeclarationHaveABody();
   FunctionTemplateDecl *TemplateDecl = D->getPrimaryTemplate();
+  SourceLocation PointOfInstantiation = D->getPointOfInstantiation();
+  bool IsValidPointOfInstantiation = PointOfInstantiation.isValid();
   int size = ShouldMangleName + IsCpp + IsInlineSpecified + IsModulePrivate +
              IsPure + IsDeletedAsWritten + IsNoReturn + IsConstexpr +
              IsVariadic + IsStatic + HasParameters + (bool)DeclWithBody +
-             HasDeclarationBody + (bool)TemplateDecl;
+             HasDeclarationBody + (bool)TemplateDecl +
+             IsValidPointOfInstantiation;
   ObjectScope Scope(OF, size);
 
   if (ShouldMangleName) {
@@ -1656,6 +1660,10 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
     OF.emitTag("template_specialization");
     dumpTemplateSpecialization(TemplateDecl,
                                *D->getTemplateSpecializationArgs());
+  }
+  if (IsValidPointOfInstantiation) {
+    OF.emitTag("point_of_instantiation");
+    dumpSourceLocation(PointOfInstantiation);
   }
 }
 
@@ -2076,10 +2084,10 @@ void ASTExporter<ATDWriter>::dumpTemplateSpecialization(
 
 template <class ATDWriter>
 int ASTExporter<ATDWriter>::ClassTemplateSpecializationDeclTupleSize() {
-  return CXXRecordDeclTupleSize() + 2;
+  return CXXRecordDeclTupleSize() + 3;
 }
 
-//@atd #define class_template_specialization_decl_tuple cxx_record_decl_tuple * string * template_specialization_info
+//@atd #define class_template_specialization_decl_tuple cxx_record_decl_tuple * string * source_location * template_specialization_info
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
     const ClassTemplateSpecializationDecl *D) {
@@ -2095,6 +2103,7 @@ void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
   } else {
     OF.emitString("");
   }
+  dumpSourceLocation(D->getPointOfInstantiation());
   dumpTemplateSpecialization(D->getSpecializedTemplate(), D->getTemplateArgs());
 }
 

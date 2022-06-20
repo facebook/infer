@@ -186,8 +186,9 @@ let find_sentinel_attribute attrs =
 
 
 (** Creates a procedure description. *)
-let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_captured = false)
-    ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv ms fbody captured =
+let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
+    ?(record_lambda_captured = false) ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv
+    ms fbody captured =
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
   let clang_method_kind = ms.CMethodSignature.method_kind in
@@ -265,6 +266,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ; is_variadic= ms.CMethodSignature.is_variadic
         ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
         ; loc= loc_start
+        ; loc_instantiated
         ; clang_method_kind
         ; objc_accessor= objc_property_accessor
         ; ret_type
