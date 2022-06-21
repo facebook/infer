@@ -250,12 +250,90 @@ module Integers = struct
 end
 
 module Comparison = struct
+  module Comparator = struct
+    (** Records that define how to compare values according to their types.
+
+        These records define a few functions that correspond to a comparison on values that have a
+        specific type. For instance, the [integer] function can assume that both compared values are
+        indeed of the integer type, and that function will be called by the global comparison
+        function on these cases.
+
+        Comparators must also define an [unsupported] function, that the dispatching function will
+        call on types that it does not support or cannot determine, and an [incompatible] function
+        that will be called when both compared values are known to be of a different type. *)
+
+    (** {1 Helper functions} *)
+
+    (** These functions are provided as helpers to define the comparator functions. *)
+
+    (** Compares two objects by comparing one specific field. No type checking is made and the user
+        should take care that the field is indeed a valid one for both arguments. *)
+    let from_fields sil_op field location path x y : value_maker =
+     fun astate ->
+      let astate, _addr, (x_field, _) = load_field path field location x astate in
+      let astate, _addr, (y_field, _) = load_field path field location y astate in
+      eval_into_fresh PulseArithmetic.eval_binop_av sil_op x_field y_field astate
+
+
+    (** A trivial comparison that is always false. Can be used eg. for equality on incompatible
+        types. *)
+    let const_false _location _path _x _y : value_maker =
+     fun astate ->
+      let const_false = AbstractValue.mk_fresh () in
+      let+ astate = PulseArithmetic.prune_eq_zero const_false astate in
+      (astate, const_false)
+
+
+    (** A trivial comparison that is always true. Can be used eg. for inequality on incompatible
+        types. *)
+    let _const_true _location _path _x _y : value_maker =
+     (* TODO T116009383: this is currently unused. Remove the leading underscore and this comment
+        when it becomes useful (probably when extending this model for inequality). *)
+     fun astate ->
+      let const_true = AbstractValue.mk_fresh () in
+      let+ astate = PulseArithmetic.prune_positive const_true astate in
+      (astate, const_true)
+
+
+    (** Returns an unconstrained value. Can be used eg. for overapproximation or for unsupported
+        comparisons. Note that, as an over-approximation, it can lead to some false positives. *)
+    let unknown _location _path _x _y : value_maker =
+     fun astate ->
+      let result = AbstractValue.mk_fresh () in
+      Ok (astate, result)
+
+
+    (** {1 Comparators as records of functions} *)
+
+    (** The type of the functions that compare two values based on a specific type combination. They
+        take the two values as parameters and build the abstract result that holds the comparison
+        value. *)
+    type typed_comparison =
+         Location.t
+      -> PathContext.t
+      -> AbstractValue.t * ValueHistory.t
+      -> AbstractValue.t * ValueHistory.t
+      -> value_maker
+
+    type t =
+      { unsupported: typed_comparison
+      ; incompatible: typed_comparison
+      ; integer: typed_comparison
+      ; atom: typed_comparison }
+
+    let eq =
+      { unsupported= unknown
+      ; incompatible= const_false
+      ; integer= from_fields Binop.Eq Integers.value_field
+      ; atom= from_fields Binop.Eq Atoms.hash_field }
+  end
+
   (** Makes an abstract value holding the comparison result of two parameters. We perform a case
       analysis of the dynamic type of these parameters.
 
-      See the documentation of {!Comparator} objects for the meaning of the [cmp] parameter. It will
-      be given as an argument by specific comparisons functions and should define a few methods that
-      return a result for comparisons on specific types.
+      See the documentation of {!Comparator} values for the meaning of the [cmp] parameter. It will
+      be given as an argument by specific comparisons functions and should define a few functions
+      that return a result for comparisons on specific types.
 
       Note that we here say that two values are "incompatible" if they have separate types. That
       does not mean that the comparison is invalid, as in erlang all comparisons are properly
@@ -271,41 +349,41 @@ module Comparison = struct
       The final result is computed as follows:
 
       - If the parameters are both of a supported type, integers, then we compare them accordingly
-        (eg. the [cmp#integer] method will then typically compare their value fields).
+        (eg. the [cmp.integer] function will then typically compare their value fields).
       - If the parameters have incompatible types, then we return the result of a comparison of
         incompatible types (eg. equality would be false, and inequality would be true).
       - If both parameters have the same unsupported type, then the comparison is unsupported and we
-        use the [cmp#unsupported] method (that could for instance return an - overapproximating -
+        use the [cmp.unsupported] function (that could for instance return an - overapproximating -
         unconstrained result).
       - If at least one parameter has no known dynamic type (or, equivalently, its type is [Any]),
         then the comparison is also unsupported.
 
-      Note that, on supported types (eg. integers), it is important that the [cmp] methods decide
+      Note that, on supported types (eg. integers), it is important that the [cmp] functions decide
       themselves if they should compare some specific fields or not, instead of getting these fields
       in the global function and have the methods work on the field values. This is because, when we
       extend this code to work on other more complex types, which field is used or not may depend on
       the actual comparison operator that we're computing. For instance the equality of atoms can be
       decided on their hash, but their relative ordering should check their names as
       lexicographically ordered strings. *)
-  let make_raw cmp location path ((x_val, _) as x) ((y_val, _) as y) : maker =
+  let make_raw (cmp : Comparator.t) location path ((x_val, _) as x) ((y_val, _) as y) : maker =
    fun astate ->
     let x_typ = get_erlang_type_or_any x_val astate in
     let y_typ = get_erlang_type_or_any y_val astate in
     match (x_typ, y_typ) with
     | Integer, Integer ->
-        let* astate, result = cmp#integer location path x y astate in
+        let* astate, result = cmp.integer location path x y astate in
         let hist = Hist.single_alloc path location "integer_comparison" in
         Ok (astate, (result, hist))
     | Atom, Atom ->
-        let* astate, result = cmp#atom location path x y astate in
+        let* astate, result = cmp.atom location path x y astate in
         let hist = Hist.single_alloc path location "atom_comparison" in
         Ok (astate, (result, hist))
     | Any, _ | _, Any | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
-        let* astate, result = cmp#unsupported location path x y astate in
+        let* astate, result = cmp.unsupported location path x y astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
         Ok (astate, (result, hist))
     | _ ->
-        let* astate, result = cmp#incompatible location path x y astate in
+        let* astate, result = cmp.incompatible location path x y astate in
         let hist = Hist.single_alloc path location "incompatible_comparison" in
         Ok (astate, (result, hist))
 
@@ -323,101 +401,6 @@ module Comparison = struct
     let* astate, (comparison, _hist) = make_raw cmp location path x y astate in
     PulseArithmetic.prune_positive comparison astate
 
-
-  module Comparator = struct
-    (** Objects that define how to compare values according to their types.
-
-        We use objects as "tuples with names" to avoid defining a cumbersome record type.
-
-        These objects define a few methods, each one corresponding to a comparison on values that
-        have a specific type. For instance, the [integer] method can assume that both compared
-        values are indeed of the integer type, and that method will be called by the global
-        comparison function on these cases.
-
-        Comparators must also define an [unsupported] method, that the dispatching function will
-        call on types that it does not support, and an [incompatible] method that will be called
-        when both compared values are known to be of a different type. *)
-
-    (** {1 Helper functions} *)
-
-    (** These functions are provided as helpers to define the comparator methods. *)
-
-    (** Compares two objects by comparing one specific field. No type checking is make and the user
-        should take care that the field is indeed a valid one for both arguments. *)
-    let from_fields sil_op field location path x y : value_maker =
-     fun astate ->
-      let astate, _addr, (x_field, _) = load_field path field location x astate in
-      let astate, _addr, (y_field, _) = load_field path field location y astate in
-      eval_into_fresh PulseArithmetic.eval_binop_av sil_op x_field y_field astate
-
-
-    (** A trivial comparison that is always false. Can be used eg. for equality on incompatible
-        types. *)
-    let const_false _location _path _x _y : value_maker =
-     fun astate ->
-      let const_result = AbstractValue.mk_fresh () in
-      let+ astate = PulseArithmetic.prune_eq_zero const_result astate in
-      (astate, const_result)
-
-
-    (** A trivial comparison that is always true. Can be used eg. for inequality on incompatible
-        types. *)
-    let _const_true _location _path _x _y : value_maker =
-     (* TODO T116009383: this is currently unused. Remove the leading underscore and this comment
-        when it becomes useful (probably when extending this model for inequality). *)
-     fun astate ->
-      let const_result = AbstractValue.mk_fresh () in
-      let+ astate = PulseArithmetic.prune_positive const_result astate in
-      (astate, const_result)
-
-
-    (** Returns an unconstrained value. Can be used eg. for overapproximation or for unsupported
-        comparisons. Note that, as an over-approximation, it can lead to some false positives. *)
-    let unknown _location _path _x _y : value_maker =
-     fun astate ->
-      let result = AbstractValue.mk_fresh () in
-      Ok (astate, result)
-
-
-    (** {1 Comparators as objects} *)
-
-    (** The type of the methods that compare two values based on a specific type combination. They
-        take the two values as parameters and build the abstract result that holds the comparison
-        value. We define this type explicitly to force monomorphism on class method definition. *)
-    type typed_comparison =
-         Location.t
-      -> PathContext.t
-      -> AbstractValue.t * ValueHistory.t
-      -> AbstractValue.t * ValueHistory.t
-      -> value_maker
-
-    class virtual default =
-      object (self)
-
-        (** Default objects with unsupported comparisons that return an unknown result and all other
-            cases that default on the unsupported one. Specific comparators can inherit this and
-            redefine supported operations. *)
-
-        method unsupported : typed_comparison = unknown
-
-        method integer = self#unsupported
-
-        method atom = self#unsupported
-
-        method incompatible = self#unsupported
-      end
-
-    let eq =
-      object
-        inherit default
-
-        method integer = from_fields Binop.Eq Integers.value_field
-
-        method atom = from_fields Binop.Eq Atoms.hash_field
-
-        method incompatible = const_false
-      end
-  end
 
   (** {1 Specific comparison operators} *)
 
