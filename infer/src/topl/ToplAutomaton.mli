@@ -24,7 +24,7 @@ open! IStd
 type t
 
 (** from 0 to vcount()-1, inclusive *)
-type vindex = int [@@deriving compare]
+type vindex = int [@@deriving compare, equal]
 
 (** from 0 to tcount()-1, inclusive *)
 type tindex = int

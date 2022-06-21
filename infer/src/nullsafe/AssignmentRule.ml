@@ -6,7 +6,8 @@
  *)
 open! IStd
 
-type violation = {lhs: AnnotatedNullability.t; rhs: InferredNullability.t} [@@deriving compare]
+type violation = {lhs: AnnotatedNullability.t; rhs: InferredNullability.t}
+[@@deriving compare, equal]
 
 module ProvisionalViolation = struct
   type t =
@@ -38,7 +39,7 @@ module ReportableViolation = struct
     | PassingParamToFunction of function_info
     | AssigningToField of Fieldname.t
     | ReturningFromFunction of Procname.Java.t
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   and function_info =
     { param_signature: AnnotatedSignature.param_signature

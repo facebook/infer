@@ -8,7 +8,8 @@
 open! IStd
 
 (* TODO: Add other types as they are needed by translation (otherwise it's dead code). *)
-type t = Any | Atom | Integer | Cons | Nil | Tuple of int | Map [@@deriving compare, yojson_of]
+type t = Any | Atom | Integer | Cons | Nil | Tuple of int | Map
+[@@deriving compare, equal, yojson_of]
 
 let pp f = function
   | Any ->

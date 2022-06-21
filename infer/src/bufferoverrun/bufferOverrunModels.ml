@@ -280,7 +280,7 @@ let placement_new size_exp {exp= src_exp1; typ= t1} src_arg2_opt =
   | Tint _, None | Tint _, Some {typ= {Typ.desc= Tint _}} ->
       malloc ~can_be_zero:true (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
   | Tstruct (CppClass {name}), None
-    when [%compare.equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
+    when [%equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
       malloc ~can_be_zero:true size_exp
   | _, _ ->
       let exec {integer_type_widths} ~ret:(id, _) mem =

@@ -429,7 +429,7 @@ module Term = struct
     | IsInt of t
   [@@deriving compare, equal, yojson_of]
 
-  let equal_syntax = [%compare.equal: t]
+  let equal_syntax = equal
 
   let needs_paren = function
     | Const c when Q.geq c Q.zero && Z.equal (Q.den c) Z.one ->

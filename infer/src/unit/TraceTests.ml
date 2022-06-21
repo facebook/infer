@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module MockTraceElem = struct
-  type t = Kind1 | Kind2 [@@deriving compare]
+  type t = Kind1 | Kind2 [@@deriving compare, equal]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -27,7 +27,7 @@ module MockTraceElem = struct
 
 
   module Kind = struct
-    type nonrec t = t [@@deriving compare]
+    type nonrec t = t [@@deriving compare, equal]
 
     let matches = matches
 
@@ -53,8 +53,6 @@ module MockSource = struct
 
     let get_tainted_formals _ = assert false
   end)
-
-  let equal = [%compare.equal: t]
 end
 
 module MockSink = struct
@@ -63,8 +61,6 @@ module MockSink = struct
   let get _ = assert false
 
   let indexes _ = IntSet.empty
-
-  let equal = [%compare.equal: t]
 end
 
 module MockTrace = TaintTrace.Make (struct
@@ -73,7 +69,7 @@ module MockTrace = TaintTrace.Make (struct
   module Sanitizer = Sanitizer.Dummy
 
   let get_report source sink _ =
-    if [%compare.equal: MockTraceElem.t] (Source.kind source) (Sink.kind sink) then
+    if MockTraceElem.equal (Source.kind source) (Sink.kind sink) then
       Some IssueType.quandary_taint_error
     else None
 end)

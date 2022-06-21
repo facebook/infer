@@ -89,7 +89,7 @@ type report_issue_type = NotIssue | Issue of IssueType.t | SymbolicIssue
 type checked_condition = {report_issue_type: report_issue_type; propagate: bool}
 
 module AllocSizeCondition = struct
-  type t = {length: ItvPure.t; can_be_zero: bool} [@@deriving compare]
+  type t = {length: ItvPure.t; can_be_zero: bool} [@@deriving compare, equal]
 
   let get_symbols {length} = ItvPure.get_symbols length
 
@@ -184,7 +184,7 @@ end
 
 module ArrayAccessCondition = struct
   type t = {offset: ItvPure.t; idx: ItvPure.t; size: ItvPure.t; last_included: bool; void_ptr: bool}
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let get_symbols c =
     Symb.SymbolSet.union3 (ItvPure.get_symbols c.offset) (ItvPure.get_symbols c.idx)
@@ -398,7 +398,7 @@ module BinaryOperationCondition = struct
     ; lhs: ItvPure.t
     ; rhs: ItvPure.t
     ; pname: Procname.t }
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let get_symbols c = Symb.SymbolSet.union (ItvPure.get_symbols c.lhs) (ItvPure.get_symbols c.rhs)
 
@@ -566,9 +566,7 @@ module Condition = struct
     | AllocSize of AllocSizeCondition.t
     | ArrayAccess of ArrayAccessCondition.t
     | BinaryOperation of BinaryOperationCondition.t
-  [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  [@@deriving compare, equal]
 
   let make_alloc_size = Option.map ~f:(fun c -> AllocSize c)
 
@@ -659,11 +657,9 @@ module Condition = struct
 end
 
 module Reported = struct
-  type t = IssueType.t [@@deriving compare]
+  type t = IssueType.t [@@deriving compare, equal]
 
   let make issue_type = issue_type
-
-  let equal = [%compare.equal: t]
 end
 
 module ConditionWithTrace = struct

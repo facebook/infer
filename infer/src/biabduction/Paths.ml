@@ -544,7 +544,7 @@ end = struct
     in
     iter_shortest_sequence g pos_opt path ;
     let equal lt1 lt2 =
-      [%compare.equal: int * Location.t]
+      [%equal: int * Location.t]
         (lt1.Errlog.lt_level, lt1.Errlog.lt_loc)
         (lt2.Errlog.lt_level, lt2.Errlog.lt_loc)
     in

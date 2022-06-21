@@ -14,7 +14,7 @@ open! IStd
 module type NodeCommonS = sig
   type t
 
-  type id
+  type id [@@deriving compare, equal]
 
   val kind : t -> Procdesc.Node.nodekind
 
@@ -27,8 +27,6 @@ module type NodeCommonS = sig
   val underlying_node : t -> Procdesc.Node.t
 
   val of_underlying_node : Procdesc.Node.t -> t
-
-  val compare_id : id -> id -> int
 
   val pp_id : Format.formatter -> id -> unit
 

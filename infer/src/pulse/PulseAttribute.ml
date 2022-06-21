@@ -119,9 +119,7 @@ module Attribute = struct
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
     | WrittenTo of Trace.t
-  [@@deriving compare, variants]
-
-  let equal = [%compare.equal: t]
+  [@@deriving compare, equal, variants]
 
   type rank = int
 

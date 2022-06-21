@@ -21,9 +21,7 @@ type atom =
   | Aneq of Exp.t * Exp.t  (** disequality *)
   | Apred of PredSymb.t * Exp.t list  (** predicate symbol applied to exps *)
   | Anpred of PredSymb.t * Exp.t list  (** negated predicate symbol applied to exps *)
-[@@deriving compare]
-
-let equal_atom = [%compare.equal: atom]
+[@@deriving compare, equal]
 
 let atom_has_local_addr a =
   match a with
@@ -40,10 +38,10 @@ type lseg_kind =
 [@@deriving compare, equal]
 
 (** The boolean is true when the pointer was dereferenced without testing for zero. *)
-type zero_flag = bool option [@@deriving compare]
+type zero_flag = bool option [@@deriving compare, equal]
 
 (** True when the value was obtained by doing case analysis on null in a procedure call. *)
-type null_case_flag = bool [@@deriving compare]
+type null_case_flag = bool [@@deriving compare, equal]
 
 (** instrumentation of heap values *)
 type inst =
@@ -59,9 +57,7 @@ type inst =
   | Itaint
   | Iupdate of zero_flag * null_case_flag * int * PredSymb.path_pos
   | Ireturn_from_call of int
-[@@deriving compare]
-
-let equal_inst = [%compare.equal: inst]
+[@@deriving compare, equal]
 
 (** structured expressions represent a value of structured type, such as an array or a struct. *)
 type 'inst strexp0 =
@@ -805,15 +801,13 @@ let hpara_dll_shallow_free_vars h = Sequence.Generator.run (hpara_dll_shallow_ge
 (** {2 Functions for Substitution} *)
 
 (** substitution *)
-type ident_exp = Ident.t * Exp.t [@@deriving compare]
+type ident_exp = Ident.t * Exp.t [@@deriving compare, equal]
 
 let compare_ident_exp_ids (id1, _) (id2, _) = Ident.compare id1 id2
 
-type subst = ident_exp list [@@deriving compare]
+type subst = ident_exp list [@@deriving compare, equal]
 
 type subst_fun = Ident.t -> Exp.t
-
-let equal_subst = [%compare.equal: subst]
 
 let sub_no_duplicated_ids sub = not (List.contains_dup ~compare:compare_ident_exp_ids sub)
 
@@ -926,7 +920,7 @@ let rec exp_sub_ids (f : subst_fun) exp =
       if phys_equal e' e then exp else Exp.Exn e'
   | Closure c ->
       let captured_vars =
-        IList.map_changed ~equal:[%compare.equal: Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode]
+        IList.map_changed ~equal:[%equal: Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode]
           ~f:(fun ((e, pvar, typ, mode) as captured) ->
             let e' = exp_sub_ids f e in
             if phys_equal e' e then captured else (e', pvar, typ, mode) )
@@ -990,7 +984,7 @@ let instr_sub_ids ~sub_id_binders f (instr : Sil.instr) : Sil.instr =
       in
       let fun_exp' = exp_sub_ids f fun_exp in
       let actuals' =
-        IList.map_changed ~equal:[%compare.equal: Exp.t * Typ.t]
+        IList.map_changed ~equal:[%equal: Exp.t * Typ.t]
           ~f:(fun ((actual, typ) as actual_pair) ->
             let actual' = exp_sub_ids f actual in
             if phys_equal actual' actual then actual_pair else (actual', typ) )

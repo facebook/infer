@@ -28,7 +28,7 @@ module SourceKind = struct
     | Other  (** for testing or uncategorized sources *)
     | UserControlledEndpoint of (Mangled.t * Typ.desc)
         (** source originating from formal of an endpoint that is known to hold user-controlled data *)
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -202,7 +202,7 @@ module SinkKind = struct
     | StackAllocation  (** stack memory allocation *)
     | URL  (** URL creation *)
     | Other  (** for testing or uncategorized sinks *)
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 

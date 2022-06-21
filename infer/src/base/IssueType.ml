@@ -111,10 +111,9 @@ end = struct
       ; mutable hum: string
       ; mutable doc_url: string option
       ; mutable linters_def_file: string option }
+    [@@deriving equal]
 
     let compare {unique_id= id1} {unique_id= id2} = String.compare id1 id2
-
-    let equal = [%compare.equal: t]
 
     type rank = string
 

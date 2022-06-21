@@ -23,7 +23,7 @@ module Allocsite = struct
         ; represents_multiple_values: bool
         ; path: Symb.SymbolPath.partial option }
     | LiteralString of string
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let eq as1 as2 =
     match (as1, as2) with
@@ -36,7 +36,7 @@ module Allocsite = struct
     | Known {path= Some _}, Known {path= None} | Known {path= None}, Known {path= Some _} ->
         Boolean.False
     | Known {path= None}, Known {path= None} ->
-        Boolean.of_bool ([%compare.equal: t] as1 as2)
+        Boolean.of_bool (equal as1 as2)
     | LiteralString s1, LiteralString s2 ->
         Boolean.of_bool (String.equal s1 s2)
     | _, _ ->
@@ -126,9 +126,9 @@ module Allocsite = struct
 end
 
 module Loc = struct
-  type prim = Var of Var.t | Allocsite of Allocsite.t [@@deriving compare]
+  type prim = Var of Var.t | Allocsite of Allocsite.t [@@deriving compare, equal]
 
-  type t = prim BoField.t [@@deriving compare]
+  type t = prim BoField.t [@@deriving compare, equal]
 
   let of_var v = BoField.Prim (Var v)
 
@@ -151,8 +151,6 @@ module Loc = struct
   let append_field = BoField.mk_append_field ~prim_append_field ~prim_append_star_field
 
   let append_star_field = BoField.mk_append_star_field ~prim_append_star_field
-
-  let equal = [%compare.equal: t]
 
   let eq l1 l2 =
     match (l1, l2) with

@@ -44,7 +44,7 @@ module Java : sig
         (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
     | Static  (** in Java, procedures called with invokestatic *)
 
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   val to_simplified_string : ?withclass:bool -> t -> string
 

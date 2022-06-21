@@ -25,7 +25,7 @@ val pp_with_pp_var : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
   [@@warning "-32"]
 (** only used for unit tests *)
 
-type function_symbol = Unknown of Var.t | Procname of Procname.t [@@deriving compare]
+type function_symbol = Unknown of Var.t | Procname of Procname.t [@@deriving compare, equal]
 
 type operand =
   | AbstractValueOperand of Var.t

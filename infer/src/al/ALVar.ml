@@ -9,19 +9,16 @@ module L = Logging
 
 type keyword = Doc_url | Message | Mode | Name | Report_when | Severity | Suggestion
 
-type formula_id = Formula_id of string [@@deriving compare]
+type formula_id = Formula_id of string [@@deriving compare, equal]
 
 (** a regexp and its cached compiled version *)
-type cached_regexp = {string: string; regexp: Str.regexp Lazy.t}
-
-let compare_cached_regexp {string= s1} {string= s2} = String.compare s1 s2
+type cached_regexp = {string: string; regexp: Str.regexp Lazy.t [@ignore]}
+[@@deriving compare, equal]
 
 type alexp = Const of string | Regexp of cached_regexp | Var of string | FId of formula_id
-[@@deriving compare]
+[@@deriving compare, equal]
 
-type t = alexp [@@deriving compare]
-
-let equal = [%compare.equal: t]
+type t = alexp [@@deriving compare, equal]
 
 let formula_id_to_string fid = match fid with Formula_id s -> s
 

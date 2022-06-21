@@ -913,13 +913,11 @@ module AliasTarget = struct
     | IteratorHasNext of {java_tmp: Loc.t option}
     | IteratorNextObject of {objc_tmp: AbsLoc.Loc.t option}
     | Top
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let top = Top
 
   let is_top = function Top -> true | _ -> false
-
-  let equal = [%compare.equal: t]
 
   let pp_with_key ~pp_lhs ~pp_rhs =
     let pp_intlit fmt i =

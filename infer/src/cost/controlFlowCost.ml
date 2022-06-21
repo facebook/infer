@@ -11,7 +11,7 @@ module BasicCost = CostDomain.BasicCost
 module Node = ProcCfg.DefaultNode
 
 module Item = struct
-  type t = [`Node of Node.id | `Edge of Node.id * Node.id]
+  type t = [`Node of Node.id | `Edge of Node.id * Node.id] [@@deriving equal]
 
   let compare : t -> t -> int =
    fun x y ->
@@ -26,8 +26,6 @@ module Item = struct
         [%compare: Node.id * Node.id] (f1, t1) (f2, t2)
 
 
-  let equal = [%compare.equal: t]
-
   let pp : F.formatter -> t -> unit =
    fun fmt -> function
     | `Node id ->
@@ -41,18 +39,14 @@ module Item = struct
 end
 
 module Sum = struct
-  type 'a set = (* non-empty sorted list *) 'a list
+  type 'a set = (* non-empty sorted list *) 'a list [@@deriving compare, equal]
 
-  type t = [`Sum of int * Item.t set]
+  type t = [`Sum of int * Item.t set] [@@deriving compare, equal]
 
   let of_list l =
     let length = List.length l in
     let set = List.sort ~compare:Item.compare l in
     `Sum (length, set)
-
-
-  let compare : t -> t -> int =
-   fun (`Sum (l1, s1)) (`Sum (l2, s2)) -> [%compare: int * Item.t list] (l1, s1) (l2, s2)
 
 
   let pp : F.formatter -> t -> unit = fun fmt (`Sum (_, set)) -> Pp.seq ~sep:" + " Item.pp fmt set
@@ -86,7 +80,7 @@ module Sum = struct
     List.fold l ~init:BasicCost.zero ~f:(fun cost item -> BasicCost.plus cost (of_item item))
 end
 
-type t = [Item.t | Sum.t]
+type t = [Item.t | Sum.t] [@@deriving equal]
 
 let compare : t -> t -> int =
  fun x y ->
@@ -114,7 +108,7 @@ let pp : F.formatter -> t -> unit =
 let sum : Item.t list -> t = function [] -> assert false | [e] -> (e :> t) | l -> Sum.of_list l
 
 module Set = struct
-  type elt = t [@@deriving compare]
+  type elt = t [@@deriving compare, equal]
 
   type t =
     { mutable size: int

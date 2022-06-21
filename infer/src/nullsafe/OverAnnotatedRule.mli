@@ -16,7 +16,7 @@ open! IStd
     expected that some signatures were annotated with [@Nullable] defensively, so surfacing such
     cases can improve API and make migration smooth. *)
 
-type violation [@@deriving compare]
+type violation [@@deriving compare, equal]
 
 val check : what:Nullability.t -> by_rhs_upper_bound:Nullability.t -> (unit, violation) result
 (** Checks if the declared type for `what` can be narrowed, based on the information about all
@@ -27,6 +27,6 @@ val check : what:Nullability.t -> by_rhs_upper_bound:Nullability.t -> (unit, vio
 type violation_type =
   | FieldOverAnnoted of Fieldname.t
   | ReturnOverAnnotated of Procname.Java.t  (** Return value of a method can be made non-nullable *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 val violation_description : violation -> violation_type -> string

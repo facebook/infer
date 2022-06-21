@@ -69,15 +69,11 @@ let is_cpp_vector_elem fn = String.equal (Fieldname.get_field_name fn) cpp_vecto
 
 (** Field domain constructor *)
 
-type field_typ = Typ.t option
-
-let compare_field_typ _ _ = 0
-
 type 'prim t =
   | Prim of 'prim
-  | Field of {prefix: 'prim t; fn: Fieldname.t; typ: field_typ}
+  | Field of {prefix: 'prim t; fn: Fieldname.t; typ: Typ.t option [@ignore]}
   | StarField of {prefix: 'prim t; last_field: Fieldname.t}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let is_field_depth_beyond_limit =
   match Config.bo_field_depth_limit with

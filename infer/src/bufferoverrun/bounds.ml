@@ -14,10 +14,10 @@ exception Not_One_Symbol
 
 open Ints
 
-type sign = Plus | Minus [@@deriving compare]
+type sign = Plus | Minus [@@deriving compare, equal]
 
 module Sign = struct
-  type t = sign [@@deriving compare]
+  type t = sign [@@deriving compare, equal]
 
   let neg = function Plus -> Minus | Minus -> Plus
 
@@ -38,7 +38,7 @@ module SymLinear = struct
 
   (** Map from symbols to integer coefficients. [{ x -> 2, y -> 5 }] represents the value
       [2 * x + 5 * y] *)
-  type t = NonZeroInt.t M.t [@@deriving compare]
+  type t = NonZeroInt.t M.t [@@deriving compare, equal]
 
   let empty : t = M.empty
 
@@ -225,10 +225,10 @@ module SymLinear = struct
 end
 
 module Bound = struct
-  type min_max = Min | Max [@@deriving compare]
+  type min_max = Min | Max [@@deriving compare, equal]
 
   module MinMax = struct
-    type t = min_max [@@deriving compare]
+    type t = min_max [@@deriving compare, equal]
 
     let neg = function Min -> Max | Max -> Min
 
@@ -249,11 +249,9 @@ module Bound = struct
         (** [MultB] represents a multiplication of two bounds. For example, [MultB (1, x, y)]
             represents [1 + x × y]. *)
     | PInf  (** +oo *)
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   type eval_sym = t Symb.Symbol.eval
-
-  let equal = [%compare.equal: t]
 
   let mask_min_max_constant b =
     match b with

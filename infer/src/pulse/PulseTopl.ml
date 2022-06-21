@@ -9,12 +9,12 @@ open! IStd
 open PulseBasicInterface
 module L = Logging
 
-type value = AbstractValue.t [@@deriving compare]
+type value = AbstractValue.t [@@deriving compare, equal]
 
 type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
   | Call of {return: value option; arguments: value list; procname: Procname.t}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
 
@@ -27,11 +27,11 @@ let pp_event f = function
         (pp_comma_seq AbstractValue.pp) arguments
 
 
-type vertex = ToplAutomaton.vindex [@@deriving compare]
+type vertex = ToplAutomaton.vindex [@@deriving compare, equal]
 
-type register = ToplAst.register_name [@@deriving compare]
+type register = ToplAst.register_name [@@deriving compare, equal]
 
-type configuration = {vertex: vertex; memory: (register * value) list} [@@deriving compare]
+type configuration = {vertex: vertex; memory: (register * value) list} [@@deriving compare, equal]
 
 type substitution = (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
 
@@ -60,7 +60,7 @@ let sub_list : 'a substitutor -> 'a list substitutor =
 module Constraint : sig
   type predicate
 
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   type operand = PathCondition.operand
 
@@ -90,9 +90,10 @@ module Constraint : sig
 
   val pp : Format.formatter -> t -> unit
 end = struct
-  type predicate = Binop.t * PathCondition.operand * PathCondition.operand [@@deriving compare]
+  type predicate = Binop.t * PathCondition.operand * PathCondition.operand
+  [@@deriving compare, equal]
 
-  type t = predicate list [@@deriving compare]
+  type t = predicate list [@@deriving compare, equal]
 
   type operand = PathCondition.operand
 
@@ -203,10 +204,8 @@ and simple_state =
   { pre: configuration  (** at the start of the procedure *)
   ; post: configuration  (** at the current program point *)
   ; pruned: Constraint.t  (** path-condition for the automaton *)
-  ; last_step: step option [@compare.ignore]  (** for trace error reporting *) }
-[@@deriving compare]
-
-let equal_simple_state = [%compare.equal: simple_state]
+  ; last_step: step option [@ignore]  (** for trace error reporting *) }
+[@@deriving compare, equal]
 
 (* TODO: include a hash of the automaton in a summary to avoid caching problems. *)
 (* TODO: limit the number of simple_states to some configurable number (default ~5) *)

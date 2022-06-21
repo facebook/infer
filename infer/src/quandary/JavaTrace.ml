@@ -20,7 +20,7 @@ module SourceKind = struct
     | PrivateData  (** private user or device-specific data *)
     | UserControlledString  (** data read from a text box or the clipboard service *)
     | UserControlledURI  (** resource locator originating from the browser bar *)
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let is_exposed ~caller_pname =
     match caller_pname with
@@ -299,7 +299,7 @@ module SinkKind = struct
     | StartComponent  (** sink that launches an Activity, Service, etc. *)
     | StartComponentForInsecureIntentHandling
     | Other  (** for testing or uncategorized sinks *)
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 

@@ -9,7 +9,7 @@
 open! IStd
 module F = Format
 
-type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare]
+type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal]
 
 type fields = field list
 

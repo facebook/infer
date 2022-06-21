@@ -27,13 +27,9 @@ type exposed
 (** kind for sorted props *)
 type sorted
 
-type pi = Predicates.atom list [@@deriving compare]
+type pi = Predicates.atom list [@@deriving compare, equal]
 
-type sigma = Predicates.hpred list [@@deriving compare]
-
-let equal_pi = [%compare.equal: pi]
-
-let equal_sigma = [%compare.equal: sigma]
+type sigma = Predicates.hpred list [@@deriving compare, equal]
 
 module Core : sig
   (** the kind 'a should range over [normal] and [exposed] *)
@@ -1325,7 +1321,7 @@ module Normalize = struct
           se
       | _ :: _ ->
           let fld_cnts' =
-            IList.map_changed fld_cnts ~equal:[%compare.equal: Fieldname.t * Predicates.strexp]
+            IList.map_changed fld_cnts ~equal:[%equal: Fieldname.t * Predicates.strexp]
               ~f:(fun ((fld, cnt) as x) ->
                 let cnt' = strexp_normalize tenv sub cnt in
                 if phys_equal cnt cnt' then x else (fld, cnt') )
@@ -1346,7 +1342,7 @@ module Normalize = struct
             if Exp.equal len len' then se else Earray (len', idx_cnts, inst)
         | _ :: _ ->
             let idx_cnts' =
-              IList.map_changed idx_cnts ~equal:[%compare.equal: Exp.t * Predicates.strexp]
+              IList.map_changed idx_cnts ~equal:[%equal: Exp.t * Predicates.strexp]
                 ~f:(fun ((idx, cnt) as x) ->
                   let idx' = exp_normalize tenv sub idx in
                   let cnt' = strexp_normalize tenv sub cnt in
@@ -2550,7 +2546,7 @@ let rec strexp_gc_fields (se : Predicates.strexp) =
         let fselo' = List.filter ~f:(function _, Some _ -> true | _ -> false) fselo in
         List.map ~f:(function f, seo -> (f, Option.value_exn seo)) fselo'
       in
-      if [%compare.equal: (Fieldname.t * Predicates.strexp) list] fsel fsel' then Some se
+      if [%equal: (Fieldname.t * Predicates.strexp) list] fsel fsel' then Some se
       else Some (Predicates.Estruct (fsel', inst))
   | Earray _ ->
       Some se

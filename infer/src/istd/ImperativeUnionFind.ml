@@ -8,7 +8,7 @@
 open! IStd
 
 module type Set = sig
-  type elt [@@deriving compare]
+  type elt [@@deriving compare, equal]
 
   type t
 
@@ -41,9 +41,7 @@ module Make (Set : Set) = struct
 
     val is_simpler_than : t -> t -> bool
   end = struct
-    type t = Set.elt [@@deriving compare]
-
-    let equal = [%compare.equal: t]
+    type t = Set.elt [@@deriving compare, equal]
 
     let of_elt e = e
 

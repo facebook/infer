@@ -9,6 +9,6 @@ open! IStd
 
 (** Formal type in program together with its nullability information. *)
 
-type t = {nullability: AnnotatedNullability.t; typ: Typ.t} [@@deriving compare]
+type t = {nullability: AnnotatedNullability.t; typ: Typ.t} [@@deriving compare, equal]
 
 val pp : Format.formatter -> t -> unit

@@ -109,7 +109,7 @@ let error_desc_hash desc = Hashtbl.hash (desc_get_comparable desc)
 
 (** equality for error_desc *)
 let error_desc_equal desc1 desc2 =
-  [%compare.equal: string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
+  [%equal: string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
 
 
 let line_tag_ tags tag loc =

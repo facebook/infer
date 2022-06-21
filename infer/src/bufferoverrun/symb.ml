@@ -20,19 +20,18 @@ end
 module SymbolPath = struct
   type deref_kind = Deref_ArrayIndex | Deref_COneValuePointer | Deref_CPointer | Deref_JavaPointer
 
-  let compare_deref_kind _ _ = 0
-
   type callsite = CallSite.t
 
   let compare_callsite x y = Procname.compare (CallSite.pname x) (CallSite.pname y)
 
+  let equal_callsite x y = Procname.equal (CallSite.pname x) (CallSite.pname y)
+
   type prim =
     | Pvar of Pvar.t
-    | Deref of deref_kind * partial
-    | Callsite of {ret_typ: Typ.t; cs: callsite; obj_path: partial option [@compare.ignore]}
-  [@@deriving compare]
+    | Deref of (deref_kind[@ignore]) * partial
+    | Callsite of {ret_typ: Typ.t; cs: callsite; obj_path: partial option [@ignore]}
 
-  and partial = prim BoField.t [@@deriving compare]
+  and partial = prim BoField.t [@@deriving compare, equal]
 
   let of_pvar pvar = BoField.Prim (Pvar pvar)
 
@@ -63,11 +62,7 @@ module SymbolPath = struct
     | Offset of {p: partial; is_void: bool}
     | Length of {p: partial; is_void: bool}
     | Modeled of partial
-  [@@deriving compare]
-
-  let equal = [%compare.equal: t]
-
-  let equal_partial = [%compare.equal: partial]
+  [@@deriving compare, equal]
 
   let normal p = Normal p
 
@@ -240,18 +235,17 @@ module SymbolPath = struct
 end
 
 module Symbol = struct
-  type extra_bool = bool
-
-  let compare_extra_bool _ _ = 0
-
   (* NOTE: non_int represents the symbols that are not integer type,
      so that their ranges are not used in the cost checker. *)
   type t =
     | ForeignVariable of {id: int}
-    | OneValue of {unsigned: extra_bool; non_int: extra_bool; path: SymbolPath.t}
+    | OneValue of {unsigned: bool [@ignore]; non_int: bool [@ignore]; path: SymbolPath.t}
     | BoundEnd of
-        {unsigned: extra_bool; non_int: extra_bool; path: SymbolPath.t; bound_end: BoundEnd.t}
-  [@@deriving compare]
+        { unsigned: bool [@ignore]
+        ; non_int: bool [@ignore]
+        ; path: SymbolPath.t
+        ; bound_end: BoundEnd.t }
+  [@@deriving compare, equal]
 
   let pp : F.formatter -> t -> unit =
    fun fmt s ->
@@ -293,8 +287,6 @@ module Symbol = struct
 
 
   type 'res eval = t -> BoundEnd.t -> 'res AbstractDomain.Types.bottom_lifted
-
-  let equal = [%compare.equal: t]
 
   let paths_equal s1 s2 =
     match (s1, s2) with

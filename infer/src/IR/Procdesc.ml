@@ -36,7 +36,7 @@ module Node = struct
     | DestrScope
     | DestrTemporariesCleanup
     | DestrVirtualBase
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let string_of_destruction_kind = function
     | DestrBreakStmt ->
@@ -108,7 +108,7 @@ module Node = struct
     | Throw
     | ThrowNPE
     | UnaryOperator
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   type prune_node_kind =
     | PruneNodeKind_ExceptionHandler
@@ -118,7 +118,7 @@ module Node = struct
     | PruneNodeKind_MethodBody
     | PruneNodeKind_NotNull
     | PruneNodeKind_TrueBranch
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   type nodekind =
     | Start_node
@@ -128,9 +128,7 @@ module Node = struct
     | Prune_node of bool * Sil.if_kind * prune_node_kind
         (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
-  [@@deriving compare]
-
-  let equal_nodekind = [%compare.equal: nodekind]
+  [@@deriving compare, equal]
 
   (** a node *)
   type t =

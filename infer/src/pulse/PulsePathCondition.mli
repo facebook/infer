@@ -60,7 +60,7 @@ type operand = PulseFormula.operand =
   | AbstractValueOperand of AbstractValue.t
   | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 val and_equal : operand -> operand -> t -> t * new_eqs
 

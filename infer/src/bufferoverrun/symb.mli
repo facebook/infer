@@ -16,7 +16,6 @@ end
 
 module SymbolPath : sig
   type deref_kind = Deref_ArrayIndex | Deref_COneValuePointer | Deref_CPointer | Deref_JavaPointer
-  [@@deriving compare]
 
   type prim =
     | Pvar of Pvar.t

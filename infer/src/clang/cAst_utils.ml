@@ -273,8 +273,7 @@ let get_function_decl_with_body decl_ptr =
     | _ ->
         Some decl_ptr
   in
-  if [%compare.equal: int option] decl_ptr' (Some decl_ptr) then decl_opt
-  else get_decl_opt decl_ptr'
+  if [%equal: int option] decl_ptr' (Some decl_ptr) then decl_opt else get_decl_opt decl_ptr'
 
 
 let get_info_from_decl_ref decl_ref =
@@ -434,7 +433,7 @@ let return_type_matches_class_type result_type interface_decl =
   if is_instance_type result_type then true
   else
     let return_type_decl_opt = qual_type_to_objc_interface result_type in
-    [%compare.equal: int option]
+    [%equal: int option]
       (if_decl_to_di_pointer_opt interface_decl)
       (if_decl_to_di_pointer_opt return_type_decl_opt)
 

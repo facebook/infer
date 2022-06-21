@@ -14,11 +14,10 @@ type base = Var.t * Typ.t [@@deriving compare]
 type access =
   | ArrayAccess of Typ.t * t list  (** array element type with list of access paths in index *)
   | FieldAccess of Fieldname.t  (** field name *)
-[@@deriving compare, equal]
 
 (** root var, and a list of accesses. closest to the root var is first that is, x.f.g is represented
     as (x, [f; g]) *)
-and t = base * access list [@@deriving compare]
+and t = base * access list [@@deriving compare, equal]
 
 val get_typ : t -> Tenv.t -> Typ.t option
 (** get the typ of the last access in the list of accesses if the list is non-empty, or the base if

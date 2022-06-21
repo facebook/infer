@@ -13,7 +13,7 @@ module F = Format
 
 module IntegerWidths : sig
   type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   val java : t
 
@@ -70,7 +70,7 @@ type ptr_kind =
 
 val equal_ptr_kind : ptr_kind -> ptr_kind -> bool
 
-type type_quals [@@deriving compare]
+type type_quals [@@deriving compare, equal]
 
 val mk_type_quals :
      ?default:type_quals
@@ -90,7 +90,7 @@ val is_trivially_copyable : type_quals -> bool
 val is_volatile : type_quals -> bool
 
 (** types for sil (structured) expressions *)
-type t = {desc: desc; quals: type_quals} [@@deriving compare, yojson_of]
+type t = {desc: desc; quals: type_quals} [@@deriving compare, equal, yojson_of]
 
 and desc =
   | Tint of ikind  (** integer type *)
@@ -267,8 +267,6 @@ val equal : t -> t -> bool
 val equal_desc : desc -> desc -> bool
 
 val equal_name : name -> name -> bool
-
-val equal_quals : type_quals -> type_quals -> bool
 
 val equal_ignore_quals : t -> t -> bool
 (** Equality for types, but ignoring quals in it. *)

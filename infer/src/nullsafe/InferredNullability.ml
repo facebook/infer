@@ -10,7 +10,7 @@ open! IStd
 type t =
   { nullability: Nullability.t
   ; origins: TypeOrigin.t list  (** Origins responsible for this nullability type *) }
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let rec sanitize_origin = function
   (* Collapse consecutive chains of InferredNonnull to get rid of infinite chains in loops and

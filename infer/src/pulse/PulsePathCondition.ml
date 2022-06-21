@@ -68,7 +68,7 @@ type operand = Formula.operand =
   | AbstractValueOperand of AbstractValue.t
   | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: Formula.function_symbol; actuals: AbstractValue.t list}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let literal_zero = ConstOperand (Const.Cint IntLit.zero)
 

@@ -36,9 +36,7 @@ end
 
 (** Per-node instruction reference. *)
 module InstrRef : InstrRefT = struct
-  type t = Procdesc.Node.t * int [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t = Procdesc.Node.t * int [@@deriving compare, equal]
 
   type generator = Procdesc.Node.t * int ref
 
@@ -85,7 +83,7 @@ type err_instance =
       { assignment_violation: AssignmentRule.violation
       ; assignment_location: Location.t
       ; assignment_type: AssignmentRule.ReportableViolation.assignment_type }
-[@@deriving compare]
+[@@deriving compare, equal]
 
 (** Returns whether we can be certain that an [err_instance] is related to synthetic code,
     autogen/codegen).
@@ -132,9 +130,7 @@ let pp_err_instance fmt err_instance =
 
 
 module H = Hashtbl.Make (struct
-  type t = err_instance * InstrRef.t option [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t = err_instance * InstrRef.t option [@@deriving compare, equal]
 
   let hash = Hashtbl.hash
 end

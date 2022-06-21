@@ -14,7 +14,7 @@ module F = Format
 module L = Logging
 
 (* reverse the natural order on Var *)
-type ident_ = Ident.t
+type ident_ = Ident.t [@@deriving equal]
 
 let compare_ident_ x y = Ident.compare y x
 
@@ -47,9 +47,7 @@ and t =
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
-[@@deriving compare]
-
-let equal = [%compare.equal: t]
+[@@deriving compare, equal]
 
 let hash = Hashtbl.hash
 
