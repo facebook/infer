@@ -701,6 +701,7 @@ topl_process:test1_Ok/0: ok
 topl_process:test2_Bad/0: expected_crash
 
 ----- topl_taint -----
+topl_taint:fp_test_c2_Ok/0: ok
 topl_taint:test_a_Bad/0: taint_error
 topl_taint:test_b_Ok/0: ok
 topl_taint:test_c_Bad/0: taint_error
