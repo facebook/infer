@@ -282,23 +282,22 @@ module AddressAttributes = struct
 
 
   let add_taint_sink path sink trace addr astate =
-    abduce_attribute addr (MustNotBeTainted (path.PathContext.timestamp, sink, trace)) astate
+    let must_not_be_tainted =
+      Attribute.MustNotBeTainted.{time= path.PathContext.timestamp; sink; trace}
+    in
+    abduce_attribute addr
+      (MustNotBeTainted (Attribute.MustNotBeTaintedSet.singleton must_not_be_tainted))
+      astate
 
 
-  let get_taint_sanitizer addr astate =
+  let get_taint_sources_and_sanitizers addr astate =
     let attrs = (astate.post :> base_domain).attrs in
-    let open IOption.Let_syntax in
-    let* addr_attrs = BaseAddressAttributes.find_opt addr attrs in
-    Attribute.Attributes.get_taint_sanitized addr_attrs
-
-
-  let get_taint_source_and_sanitizer addr astate =
-    let attrs = (astate.post :> base_domain).attrs in
-    let open IOption.Let_syntax in
-    let* addr_attrs = BaseAddressAttributes.find_opt addr attrs in
-    let+ source = Attribute.Attributes.get_tainted addr_attrs in
-    let sanitizer_opt = Attribute.Attributes.get_taint_sanitized addr_attrs in
-    (source, sanitizer_opt)
+    match BaseAddressAttributes.find_opt addr attrs with
+    | None ->
+        (Attribute.TaintedSet.empty, Attribute.TaintSanitizedSet.empty)
+    | Some addr_attrs ->
+        ( Attribute.Attributes.get_tainted addr_attrs
+        , Attribute.Attributes.get_taint_sanitized addr_attrs )
 
 
   let get_propagate_taint_from addr astate =

@@ -265,8 +265,9 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
         let hist =
           ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
         in
+        let tainted = Attribute.Tainted.{source; hist; intra_procedural_only} in
         AbductiveDomain.AddressAttributes.add_one v
-          (Tainted {source; hist; intra_procedural_only})
+          (Tainted (Attribute.TaintedSet.singleton tainted))
           astate )
   in
   (astate, not (List.is_empty tainted))
@@ -278,15 +279,16 @@ let taint_sanitizers tenv return ~has_added_return_param ~location proc_name act
   in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _)) ->
-        let sanitizer_trace = Trace.Immediate {location; history} in
+        let trace = Trace.Immediate {location; history} in
+        let taint_sanitized = Attribute.TaintSanitized.{sanitizer; trace} in
         AbductiveDomain.AddressAttributes.add_one v
-          (TaintSanitized (sanitizer, sanitizer_trace))
+          (TaintSanitized (Attribute.TaintSanitizedSet.singleton taint_sanitized))
           astate )
   in
   astate
 
 
-let check_policies ~sink ~source ~sanitizer_opt =
+let check_policies ~sink ~source ~sanitizers =
   List.fold sink.Taint.kinds ~init:[] ~f:(fun acc sink_kind ->
       let policies = Hashtbl.find_exn sink_policies sink_kind in
       List.fold policies ~init:acc ~f:(fun acc ({source_kinds; sanitizer_kinds} as policy) ->
@@ -296,19 +298,22 @@ let check_policies ~sink ~source ~sanitizer_opt =
           with
           | None ->
               acc
-          | Some suspicious_source -> (
+          | Some suspicious_source ->
               L.d_printfln ~color:Red "TAINTED: %a -> %a" Taint.Kind.pp suspicious_source
                 Taint.Kind.pp sink_kind ;
-              match sanitizer_opt with
-              | Some (sanitizer, trace)
-                when List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
-                         List.mem ~equal:Taint.Kind.equal sanitizer_kinds sanitizer_kind ) ->
-                  L.d_printfln ~color:Green "...but sanitized by %a"
-                    (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer))
-                    trace ;
-                  acc
-              | _ ->
-                  (suspicious_source, sink_kind, policy) :: acc ) ) )
+              let matching_sanitizers =
+                Attribute.TaintSanitizedSet.filter
+                  (fun {sanitizer} ->
+                    List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
+                        List.mem ~equal:Taint.Kind.equal sanitizer_kinds sanitizer_kind ) )
+                  sanitizers
+              in
+              if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
+                (suspicious_source, sink_kind, policy) :: acc
+              else (
+                L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
+                  matching_sanitizers ;
+                acc ) ) )
 
 
 let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
@@ -329,34 +334,34 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
                 List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
                     List.mem sanitizer_kinds sanitizer_kind ~equal:Taint.Kind.equal ) )
           in
-          let sanitizer_opt =
-            match AbductiveDomain.AddressAttributes.get_taint_sanitizer v astate with
-            | None ->
-                None
-            | Some (sanitizer, sanitizer_trace) ->
-                if List.exists sink.Taint.kinds ~f:(sink_can_be_sanitized_by ~sanitizer) then (
-                  L.d_printfln "...but may be sanitized by %a"
-                    (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer))
-                    sanitizer_trace ;
-                  Some (sanitizer, sanitizer_trace) )
-                else None
+          let sanitizers =
+            let _, potential_sanitizers =
+              AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers v astate
+            in
+            Attribute.TaintSanitizedSet.filter
+              (fun {sanitizer} ->
+                List.exists sink.Taint.kinds ~f:(sink_can_be_sanitized_by ~sanitizer) )
+              potential_sanitizers
           in
+          if not (Attribute.TaintSanitizedSet.is_empty sanitizers) then
+            L.d_printfln ~color:Green "...but may be sanitized by %a" Attribute.TaintSanitizedSet.pp
+              sanitizers ;
           Recoverable
             ( ()
             , mk_reportable_error
                 (FlowToTaintSink
-                   { source= (source_expr, history)
-                   ; sanitizer= sanitizer_opt
-                   ; sink= (sink, sink_trace)
-                   ; location } ) )
+                   {source= (source_expr, history); sanitizers; sink= (sink, sink_trace); location}
+                ) )
     in
     L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
-    match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer v astate with
-    | None ->
-        Ok policy_violations_reported
-    | Some ((source, source_hist, _), sanitizer_opt) ->
+    let sources, sanitizers =
+      AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers v astate
+    in
+    Attribute.TaintedSet.fold
+      (fun {source; hist= source_hist} policy_violations_reported_result ->
+        let* policy_violations_reported = policy_violations_reported_result in
         L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
-        let potential_policy_violations = check_policies ~sink ~source ~sanitizer_opt in
+        let potential_policy_violations = check_policies ~sink ~source ~sanitizers in
         let report_policy_violation reported_so_far (source_kind, sink_kind, violated_policy) =
           (* HACK: compare by pointer as policies are fixed throughout execution and each policy
              record is different from all other policies; we could optimise this check by keeping
@@ -375,7 +380,8 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
                      ; sink= ({sink with kinds= [sink_kind]}, sink_trace) } ) )
         in
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
-          ~f:report_policy_violation
+          ~f:report_policy_violation )
+      sources (Ok policy_violations_reported)
   in
   let rec check_dependencies policy_violations_reported visited v astate =
     let* astate =
@@ -431,8 +437,7 @@ let taint_sinks tenv path location return ~has_added_return_param proc_name actu
   (astate, not (List.is_empty tainted))
 
 
-(* merge all taint from actuals into the return value; NOTE: currently only one source and one
-   sanitizer per value is supported so this may overwrite taint information *)
+(* merge all taint from actuals into the return value *)
 let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
     ~has_added_return_param call proc_name_opt actuals astate =
   L.d_printfln "propagating all taint for unknown call" ;
@@ -493,33 +498,44 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
     in
     List.fold values ~init:astate
       ~f:(fun astate {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
-        match AbductiveDomain.AddressAttributes.get_taint_source_and_sanitizer actual astate with
-        | None ->
-            astate
-        | Some ((source, source_hist, intra_procedural_only), sanitizer_opt) ->
-            let hist =
-              ValueHistory.sequence ~context:path.PathContext.conditions
-                (Call
-                   { f= call
-                   ; location
-                   ; timestamp= path.PathContext.timestamp
-                   ; in_call= ValueHistory.epoch } )
-                source_hist
-            in
-            L.d_printfln "tainting %a as source" AbstractValue.pp v ;
-            let astate =
-              AbductiveDomain.AddressAttributes.add_one v
-                (Tainted {source; hist; intra_procedural_only})
-                astate
-            in
-            Option.fold sanitizer_opt ~init:astate ~f:(fun astate (sanitizer, trace) ->
-                L.d_printfln "registering %a as sanitizer" AbstractValue.pp v ;
+        let sources, sanitizers =
+          AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers actual astate
+        in
+        if not (Attribute.TaintedSet.is_empty sources) then
+          L.d_printfln "tainting %a as source" AbstractValue.pp v ;
+        let astate =
+          let tainted =
+            Attribute.TaintedSet.map
+              (fun {source; hist= source_hist; intra_procedural_only} ->
+                let hist =
+                  ValueHistory.sequence ~context:path.PathContext.conditions
+                    (Call
+                       { f= call
+                       ; location
+                       ; timestamp= path.PathContext.timestamp
+                       ; in_call= ValueHistory.epoch } )
+                    source_hist
+                in
+                {source; hist; intra_procedural_only} )
+              sources
+          in
+          AbductiveDomain.AddressAttributes.add_one v (Tainted tainted) astate
+        in
+        if not (Attribute.TaintSanitizedSet.is_empty sanitizers) then
+          L.d_printfln "registering %a as sanitizer" AbstractValue.pp v ;
+        let astate =
+          let taint_sanitized =
+            Attribute.TaintSanitizedSet.map
+              (fun {sanitizer; trace} ->
                 let trace =
                   Trace.ViaCall {f= call; location; history= ValueHistory.epoch; in_call= trace}
                 in
-                AbductiveDomain.AddressAttributes.add_one v
-                  (TaintSanitized (sanitizer, trace))
-                  astate ) )
+                {sanitizer; trace} )
+              sanitizers
+          in
+          AbductiveDomain.AddressAttributes.add_one v (TaintSanitized taint_sanitized) astate
+        in
+        astate )
   in
   let astate =
     match actuals with

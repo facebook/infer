@@ -193,19 +193,11 @@ let remove_allocation_attr address memory =
 
 
 let remove_tainted address memory =
-  match get_attribute Attributes.get_tainted address memory with
-  | Some (source, hist, intra_procedural_only) ->
-      remove_one address (Attribute.Tainted {source; hist; intra_procedural_only}) memory
-  | None ->
-      memory
+  remove_one address (Attribute.Tainted Attribute.TaintedSet.empty) memory
 
 
 let remove_taint_sanitizer address memory =
-  match get_attribute Attributes.get_taint_sanitized address memory with
-  | Some (sanitized, trace) ->
-      remove_one address (Attribute.TaintSanitized (sanitized, trace)) memory
-  | None ->
-      memory
+  remove_one address (Attribute.TaintSanitized Attribute.TaintSanitizedSet.empty) memory
 
 
 let remove_propagate_taint_from address memory =
@@ -268,7 +260,13 @@ let get_invalid = get_attribute Attributes.get_invalid
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
-let get_must_not_be_tainted = get_attribute Attributes.get_must_not_be_tainted
+let get_must_not_be_tainted address memory =
+  match Graph.find_opt address memory with
+  | None ->
+      Attribute.MustNotBeTaintedSet.empty
+  | Some attrs ->
+      Attributes.get_must_not_be_tainted attrs
+
 
 let is_must_be_valid_or_allocated_isl address attrs =
   Option.is_some (get_must_be_valid address attrs)

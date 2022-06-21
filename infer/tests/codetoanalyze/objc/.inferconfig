@@ -5,6 +5,9 @@
         { "source_kinds": ["SimpleSource"],
           "sanitizer_kinds": ["SimpleSanitizer"],
           "sink_kinds": ["SimpleSink","SecondSimpleSink"]
+        },
+        { "source_kinds": ["SecondSimpleSource"],
+          "sink_kinds": ["SecondSimpleSink"]
         }
       ]
      },
@@ -20,6 +23,11 @@
         { "class_names": ["InferTaint"],
           "method_names": ["source"],
           "kinds": ["SimpleSource"]
+        },
+        { "class_names": ["InferTaint"],
+          "method_names": ["taintsArg:"],
+          "kinds": ["SecondSimpleSource"],
+          "taint_target": ["ArgumentPositions", [0]]
         },
         { "procedure": "__infer_taint_source", "kinds": ["SimpleSource"] },
         { "class_names": ["MailboxTaint"],

@@ -77,7 +77,7 @@ type t =
       ; location: Location.t }
   | FlowToTaintSink of
       { source: Decompiler.expr * Trace.t
-      ; sanitizer: (Taint.t * Trace.t) option
+      ; sanitizers: Attribute.TaintSanitizedSet.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t }
   | UnnecessaryCopy of

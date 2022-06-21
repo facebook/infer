@@ -804,27 +804,28 @@ let check_all_taint_valid path callee_proc_name call_location pre_post astate ca
     (fun addr_pre (addr_caller, hist_caller) astate_result ->
       let* astate = astate_result in
       let* astate =
-        match
+        let sinks =
           BaseAddressAttributes.get_must_not_be_tainted addr_pre
             (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
-        with
-        | None ->
-            Ok astate
-        | Some (_timestamp, sink, sink_trace) ->
+        in
+        Attribute.MustNotBeTaintedSet.fold
+          (fun Attribute.MustNotBeTainted.{sink; trace} astate_result ->
+            let* astate = astate_result in
             let sink_trace =
               Trace.ViaCall
-                { in_call= sink_trace
+                { in_call= trace
                 ; f= Call callee_proc_name
                 ; location= call_location
                 ; history= hist_caller }
             in
             PulseTaintOperations.check_not_tainted_wrt_sink path call_location (sink, sink_trace)
-              addr_caller astate
+              addr_caller astate )
+          sinks (Ok astate)
       in
-      match AddressAttributes.get_taint_source_and_sanitizer addr_caller astate with
-      | None ->
-          Ok astate
-      | Some ((source, source_history, _), _) ->
+      let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers addr_caller astate in
+      Attribute.TaintedSet.fold
+        (fun {source; hist} astate_result ->
+          let* astate = astate_result in
           Recoverable
             ( astate
             , [ PulseOperations.ReportableError
@@ -832,9 +833,10 @@ let check_all_taint_valid path callee_proc_name call_location pre_post astate ca
                   ; diagnostic=
                       FlowFromTaintSource
                         { tainted= Decompiler.find addr_pre astate
-                        ; source= (source, source_history)
+                        ; source= (source, hist)
                         ; destination= callee_proc_name
                         ; location= call_location } } ] ) )
+        sources (Ok astate) )
     call_state_subst (Ok astate)
 
 

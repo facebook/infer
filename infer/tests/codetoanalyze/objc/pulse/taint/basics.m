@@ -10,12 +10,13 @@
 @interface InferTaint : NSObject
 
 + (NSObject*)source;
++ (void)taintsArg:(NSObject*)param;
 + (void)sink:(NSObject*)param;
 + (NSObject*)sanitizer:(NSObject*)param;
 + (void)sanitizeThenSink:(NSObject*)param;
++ (void)twoSinks:(NSObject*)param;
 + (void)twoKindSink:(NSObject*)param;
 + (void)notASink:(NSObject*)param;
-
 + (void)call_block:(void (^)(InferTaint*))completion;
 @end
 
@@ -24,6 +25,9 @@
 + (NSObject*)source {
   return [NSObject new];
 };
+
++ (void)taintsArg:(NSObject*)param {
+}
 
 + (void)sink:(NSObject*)param {
 }
@@ -35,6 +39,11 @@
 + (void)sanitizeThenSink:(NSObject*)param {
   NSObject* sanitized = [InferTaint sanitizer:param];
   [InferTaint sink:sanitized];
+}
+
++ (void)twoSinks:(NSObject*)param {
+  [InferTaint sink:param];
+  [InferTaint twoKindSink:param];
 }
 
 + (void)twoKindSink:(NSObject*)param {
@@ -53,6 +62,17 @@ void callSinkDirectBad() {
 void callTwoKindSinkDirectBad() {
   NSObject* source = [InferTaint source];
   [InferTaint twoKindSink:source];
+}
+
+void callTwoKindSinkOnTwiceTaintedDirectBad() {
+  NSObject* source = [InferTaint source];
+  [InferTaint taintsArg:source];
+  [InferTaint twoKindSink:source];
+}
+
+void callTwoSinksIndirectBad() {
+  NSObject* source = [InferTaint source];
+  [InferTaint twoSinks:source];
 }
 
 void callSinkOnNonSourceOk() {
