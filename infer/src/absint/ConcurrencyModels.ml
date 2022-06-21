@@ -201,6 +201,7 @@ end = struct
       "folly::SpinLockGuard"
     ; (* no lock/unlock *)
       "std::lock_guard"
+    ; "std::scoped_lock"
     ; (* everything *)
       "std::shared_lock"
     ; (* everything *)
