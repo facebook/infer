@@ -326,6 +326,32 @@ module Comparison = struct
       ; incompatible= const_false
       ; integer= from_fields Binop.Eq Integers.value_field
       ; atom= from_fields Binop.Eq Atoms.hash_field }
+
+
+    (** Given an [are_compatible] abstract value that indicates if the types of [x] and [y] are both
+        integers, builds the disjunction of the integer comparison of [x] and [y] and their
+        comparison as incompatible values. *)
+    let any_with_integer_split cmp location path ~are_compatible x y : maker =
+     fun astate ->
+      let* astate, are_incompatible =
+        eval_into_fresh PulseArithmetic.eval_unop Unop.LNot are_compatible astate
+      in
+      let* astate, int_comparison = cmp.integer location path x y astate in
+      let* astate, int_comparison =
+        eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_compatible int_comparison
+          astate
+      in
+      let* astate, incompatible_comparison = cmp.incompatible location path x y astate in
+      let* astate, incompatible_comparison =
+        eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_incompatible
+          incompatible_comparison astate
+      in
+      let* astate, comparison =
+        eval_into_fresh PulseArithmetic.eval_binop_av Binop.LOr int_comparison
+          incompatible_comparison astate
+      in
+      let hist = Hist.single_alloc path location "any_comparison" in
+      Ok (astate, (comparison, hist))
   end
 
   (** Makes an abstract value holding the comparison result of two parameters. We perform a case
@@ -378,7 +404,13 @@ module Comparison = struct
         let* astate, result = cmp.atom location path x y astate in
         let hist = Hist.single_alloc path location "atom_comparison" in
         Ok (astate, (result, hist))
-    | Any, _ | _, Any | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
+    | Integer, Any ->
+        let* astate, are_compatible = has_erlang_type y_val Integer astate in
+        Comparator.any_with_integer_split cmp location path ~are_compatible x y astate
+    | Any, Integer ->
+        let* astate, are_compatible = has_erlang_type x_val Integer astate in
+        Comparator.any_with_integer_split cmp location path ~are_compatible x y astate
+    | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
         let* astate, result = cmp.unsupported location path x y astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
         Ok (astate, (result, hist))

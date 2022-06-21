@@ -24,8 +24,8 @@
     test_update_exact_Bad/0,
     test_update_arrow_Ok/0,
     test_update_arrow_Bad/0,
-    fp_test_update_match_in_function_Ok/0,
-    test_update_match_in_function_Bad/0,
+    test_update_match_in_function_Ok/0,
+    fn_test_update_match_in_function_Bad/0,
     test_update_old_value_Ok/0,
     fn_test_update_old_value_Bad/0,
     test_create_multiple_elements_Ok/0,
@@ -116,14 +116,14 @@ test_update_arrow_Bad() ->
 
 % FP due to function call losing type information needed for equality test.
 % See test_update_old_value_Ok
-fp_test_update_match_in_function_Ok() ->
+test_update_match_in_function_Ok() ->
     M = #{1 => 2},
     M1 = M#{2 => 3},
     accepts_map_with_key_one_value_two(M1).
 
 % Should be a false negative due to approximation.
 % See fn_test_update_old_value_Bad
-test_update_match_in_function_Bad() ->
+fn_test_update_match_in_function_Bad() ->
     M = #{1 => 3},
     M1 = M#{2 => 3},
     accepts_map_with_key_one_value_two(M1).

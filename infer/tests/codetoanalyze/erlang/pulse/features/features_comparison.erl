@@ -11,8 +11,8 @@
     test_equal_Bad/0,
     test_neg_equal_Ok/0,
     test_neg_equal_Bad/0,
-    fp_test_equal_in_fun_call_Ok/0,
-    fp_test_neg_equal_in_fun_call_Ok/0,
+    test_equal_in_fun_call_Ok/0,
+    test_neg_equal_in_fun_call_Ok/0,
     test_equal_int_atom_Bad/0,
     test_neg_equal_int_atom_Ok/0,
     test_equal_atom_Ok/0,
@@ -70,12 +70,14 @@ test_neg_equal_Bad() ->
 
 is_zero(X) -> X == 0.
 
-% FP due to imprecise function summary because of absent type information
-fp_test_equal_in_fun_call_Ok() ->
+% Used to be FP due to imprecise function summary because of absent type information
+% Now a regression test on this behaviour
+test_equal_in_fun_call_Ok() ->
     ?ASSERT_EQUAL(true, is_zero(0)).
 
-% FP due to imprecise function summary because of absent type information
-fp_test_neg_equal_in_fun_call_Ok() ->
+% Used to be FP due to imprecise function summary because of absent type information
+% Now a regression test on this behaviour
+test_neg_equal_in_fun_call_Ok() ->
     ?ASSERT_EQUAL(false, is_zero(1)).
 
 test_equal_int_atom_Bad() ->
