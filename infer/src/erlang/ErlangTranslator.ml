@@ -284,11 +284,12 @@ and translate_pattern_literal_integer (env : (_, _) Env.t) value i : Block.t =
 
 and translate_pattern_string (env : (_, _) Env.t) value expected_id expected_block : Block.t =
   let equals_id = mk_fresh_id () in
-  (* TODO: add Pulse model for this function T93361792 *)
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_str_equal) in
   let call_block =
-    let args = [(Exp.Var value, any_typ); (Exp.Var expected_id, any_typ)] in
-    let instr = Sil.Call ((equals_id, any_typ), fun_exp, args, env.location, CallFlags.default) in
+    (* TODO: add Pulse model for this function T93361792 *)
+    let instr =
+      builtin_call_2 env equals_id BuiltinDecl.__erlang_str_equal (Exp.Var value)
+        (Exp.Var expected_id)
+    in
     Block.make_instruction env [instr]
   in
   let checker_block = Block.make_branch env (Var equals_id) in
@@ -789,10 +790,8 @@ and translate_expression_case (env : (_, _) Env.t) expression cases : Block.t =
 and translate_expression_cons (env : (_, _) Env.t) ret_var head tail : Block.t =
   let head_var, head_block = translate_expression_to_fresh_id env head in
   let tail_var, tail_block = translate_expression_to_fresh_id env tail in
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_cons) in
-  let args : (Exp.t * Typ.t) list = [(Var head_var, any_typ); (Var tail_var, any_typ)] in
   let call_instruction =
-    Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default)
+    builtin_call_2 env ret_var BuiltinDecl.__erlang_make_cons (Var head_var) (Var tail_var)
   in
   Block.all env [head_block; tail_block; Block.make_instruction env [call_instruction]]
 
@@ -866,10 +865,8 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
     (* Compute result of the expression *)
     let expr_id, expr_block = translate_expression_to_fresh_id env expression in
     (* Prepend to list *)
-    let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_cons) in
-    let args : (Exp.t * Typ.t) list = [(Var expr_id, any_typ); (Var list_var, any_typ)] in
     let call_instr =
-      Sil.Call ((list_var, any_typ), fun_exp, args, env.location, CallFlags.default)
+      builtin_call_2 env list_var BuiltinDecl.__erlang_make_cons (Var expr_id) (Var list_var)
     in
     Block.all env [expr_block; Block.make_instruction env [call_instr]]
   in
@@ -958,12 +955,7 @@ and translate_expression_literal_integer (env : (_, _) Env.t) ret_var int =
 
 and translate_expression_literal_string (env : (_, _) Env.t) ret_var s =
   (* TODO: add Pulse model for this function T93361792 *)
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_str_const) in
-  let args =
-    let value = Exp.Const (Cstr s) in
-    [(value, any_typ)]
-  in
-  let instr = Sil.Call ((ret_var, any_typ), fun_exp, args, env.location, CallFlags.default) in
+  let instr = builtin_call_1 env ret_var BuiltinDecl.__erlang_make_str_const (Exp.Const (Cstr s)) in
   Block.make_instruction env [instr]
 
 
@@ -975,13 +967,8 @@ and translate_expression_map_create (env : (_, _) Env.t) ret_var updates : Block
     let translate_one_expr (one_expr, one_id) = translate_expression_to_id env one_id one_expr in
     List.map ~f:translate_one_expr exprs_with_ids
   in
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_map) in
-  let exprs_ids_and_types =
-    List.map ~f:(function _, id -> (Exp.Var id, any_typ)) exprs_with_ids
-  in
-  let call_instruction =
-    Sil.Call ((ret_var, any_typ), fun_exp, exprs_ids_and_types, env.location, CallFlags.default)
-  in
+  let exprs_ids = List.map ~f:(function _, id -> Exp.Var id) exprs_with_ids in
+  let call_instruction = builtin_call env ret_var BuiltinDecl.__erlang_make_map exprs_ids in
   let call_block = Block.make_instruction env [call_instruction] in
   Block.all env (expr_blocks @ [call_block])
 
@@ -1049,15 +1036,12 @@ and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block
 
 
 and translate_expression_nil (env : (_, _) Env.t) ret_var : Block.t =
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_nil) in
-  let instruction = Sil.Call ((ret_var, any_typ), fun_exp, [], env.location, CallFlags.default) in
-  Block.make_instruction env [instruction]
+  Block.make_instruction env [builtin_call env ret_var BuiltinDecl.__erlang_make_nil []]
 
 
 and translate_expression_receive (env : (_, _) Env.t) cases timeout : Block.t =
   let id = mk_fresh_id () in
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_receive) in
-  let call_instr = Sil.Call ((id, any_typ), fun_exp, [], env.location, CallFlags.default) in
+  let call_instr = builtin_call env id BuiltinDecl.__erlang_receive [] in
   let call_receive_block = Block.make_instruction env [call_instr] in
   let cases_block = Block.any env (List.map ~f:(translate_case_clause env [id]) cases) in
   (* We don't have a crash node if all cases fail because we would report an error for every
@@ -1181,14 +1165,10 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
   let field_names = record_info.field_names in
   let field_ids = List.map ~f:(function _ -> mk_fresh_id ()) field_names in
   let field_blocks = List.map ~f:translate_one_field (List.zip_exn field_names field_ids) in
-  let field_ids_and_types = List.map ~f:(fun id -> (Exp.Var id, any_typ)) field_ids in
   let name_atom = mk_fresh_id () in
   let mk_name_block = translate_expression_literal_atom env name_atom name in
-  let args_and_types = (Exp.Var name_atom, any_typ) :: field_ids_and_types in
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_tuple) in
-  let call_instruction =
-    Sil.Call ((ret_var, any_typ), fun_exp, args_and_types, env.location, CallFlags.default)
-  in
+  let args = Exp.Var name_atom :: List.map ~f:(function id -> Exp.Var id) field_ids in
+  let call_instruction = builtin_call env ret_var BuiltinDecl.__erlang_make_tuple args in
   let call_block = Block.make_instruction env [call_instruction] in
   Block.all env (record_block @ field_blocks @ [mk_name_block; call_block])
 
@@ -1222,13 +1202,8 @@ and translate_expression_tuple (env : (_, _) Env.t) ret_var exprs : Block.t =
     let f (one_expr, one_id) = translate_expression_to_id env one_id one_expr in
     List.map ~f exprs_with_ids
   in
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_make_tuple) in
-  let exprs_ids_and_types =
-    List.map ~f:(function _, id -> (Exp.Var id, any_typ)) exprs_with_ids
-  in
-  let call_instruction =
-    Sil.Call ((ret_var, any_typ), fun_exp, exprs_ids_and_types, env.location, CallFlags.default)
-  in
+  let exprs_ids = List.map ~f:(function _, id -> Exp.Var id) exprs_with_ids in
+  let call_instruction = builtin_call env ret_var BuiltinDecl.__erlang_make_tuple exprs_ids in
   let call_block = Block.make_instruction env [call_instruction] in
   Block.all env (expr_blocks @ [call_block])
 
