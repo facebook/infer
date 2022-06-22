@@ -131,18 +131,11 @@ let matchers : matcher list =
     $--> string_is_null_or_whitespace ~desc:"String.IsNullOrEmpty"
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Diagnostics.Debug")
     &:: "Assert" <>$ capt_arg $--> Basic.assert_
-  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.FileStream")
-    &:: ".ctor" <>$ capt_arg_payload
-    $+...$--> Resource.allocate ~exn_class_name:"System.IO.FileStream"
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
     &:: ".ctor" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"System.IDisposable"
-  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.FileStream")
-    &:: "close" <>$ capt_arg_payload $--> Resource.release
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
     &:: "close" <>$ capt_arg_payload $--> Resource.release
-  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.FileStream")
-    &:: "dispose" <>$ capt_arg_payload $--> Resource.release
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
     &:: "dispose" <>$ capt_arg_payload $--> Resource.release
     ]
