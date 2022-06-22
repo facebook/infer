@@ -696,9 +696,9 @@ m:test_d_Ok/0: ok
 m:test_e_Bad/0: topl_error
 
 ----- topl_process -----
-topl_process:fp_test3_Ok/0: ok
-topl_process:test1_Ok/0: ok
-topl_process:test2_Bad/0: expected_crash
+topl_process:fp_test_3_Ok/0: ok
+topl_process:test_1_Ok/0: ok
+topl_process:test_2_Bad/0: expected_crash
 
 ----- topl_taint -----
 topl_taint:fp_test_c2_Ok/0: ok

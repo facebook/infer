@@ -6,9 +6,9 @@
 -module(topl_process).
 
 -export([
-    test1_Ok/0,
-    test2_Bad/0,
-    fp_test3_Ok/0
+    test_1_Ok/0,
+    test_2_Bad/0,
+    fp_test_3_Ok/0
 ]).
 
 f() -> ok.
@@ -17,12 +17,12 @@ spawn() -> erlang:spawn(fun f/0).
 message(Pid) -> Pid ! hey.
 kill(Pid) -> erlang:exit(Pid, die).
 
-test1_Ok() ->
+test_1_Ok() ->
     P = spawn(),
     message(P),
     kill(P).
 
-test2_Bad() ->
+test_2_Bad() ->
     P = spawn(),
     kill(P),
     message(P),
@@ -31,7 +31,7 @@ test2_Bad() ->
 
 % Pulse/topl doesn't know that each spawn is unique,
 % we will need a model similar to 'new' in Java
-fp_test3_Ok() ->
+fp_test_3_Ok() ->
     P1 = spawn(),
     P2 = spawn(),
     message(P1),
