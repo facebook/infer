@@ -940,8 +940,6 @@ ifeq ($(OPAM_PIN_OCAMLFORMAT),yes)
 endif
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
 	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes user-setup $(OPAM_DEV_DEPS))
-	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2
-	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); OPAMYES=1; $(OPAM) user-setup install
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
 	  echo '$(TERM_INFO)*** Installing GNU sed$(TERM_RESET)' >&2; \
 	  brew install gnu-sed; \
