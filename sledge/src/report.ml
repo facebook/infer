@@ -37,16 +37,16 @@ let alarm alrm ~dp_witness =
   Stop.on_alarm alrm
 
 let unknown_call call =
-  [%Dbg.kprintf
-    Stop.on_unknown_call
-      "@\n@[<v 2>%a Unknown function call %a@;<1 2>@[%a@]@]@."
+  [%Dbg.printf
+    "@\n@[<v 2>%a Unknown function call %a@;<1 2>@[%a@]@]@."
       (fun fs call -> Llair.Loc.pp fs (Llair.Term.loc call))
       call
       (fun fs (call : Llair.Term.t) ->
         match call with
         | Call {callee} -> Llair.Term.pp_callee fs callee
         | _ -> () )
-      call Llair.Term.pp call]
+      call Llair.Term.pp call] ;
+  Stop.on_unknown_call ()
 
 let reached_goal ~dp_goal ~dp_witness =
   [%Dbg.printf "@\n@[<v 2> %t@ %t@]@." dp_witness dp_goal] ;
