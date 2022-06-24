@@ -229,7 +229,7 @@ struct
     include S0
 
     (** hide S0.trm and S0.trms that ignore the embedding, shadowed below *)
-    let[@warning "-32"] trm, trms = ((), ())
+    let[@warning "-unused-value-declaration"] trm, trms = ((), ())
 
     let pp = ppx Trm.pp
 

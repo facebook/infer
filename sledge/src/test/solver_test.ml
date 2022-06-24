@@ -18,7 +18,7 @@ let%test_module _ =
      *     ~config:(Dbg.parse "+Solver.infer_frame+Solver.excise")
      *     () *)
 
-    [@@@warning "-32"]
+    [@@@warning "-unused-value-declaration"]
 
     let infer_frame p xs q =
       Solver.infer_frame p (Var.Set.of_list xs) q |> ignore

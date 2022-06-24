@@ -9,7 +9,7 @@ open Fol
 module T = Term
 module F = Formula
 
-(* [@@@warning "-32"] *)
+(* [@@@warning "-unused-value-declaration"] *)
 
 let%test_module _ =
   ( module struct

@@ -7,7 +7,7 @@
 
 (** LLAIR (Low-Level Analysis Internal Representation) *)
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 module Loc = Loc
 module Typ = Typ

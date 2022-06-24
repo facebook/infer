@@ -732,7 +732,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
           | _ -> fail "xlate_value: %a" pp_llvalue llv ()
         in
         let update_or_return elt ret =
-          match[@warning "p"] opcode with
+          match[@warning "-partial-match"] opcode with
           | InsertValue ->
               let pre, elt = Lazy.force elt in
               (pre0 @ pre, upd ~elt)
@@ -1602,7 +1602,7 @@ let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
   ( match Llvm.block_begin llf with
   | Before entry_blk ->
       let pop = pop_stack_frame_of_function x llf entry_blk in
-      let[@warning "p"] (entry_block :: entry_blocks) =
+      let[@warning "-partial-match"] (entry_block :: entry_blocks) =
         xlate_block pop x entry_blk
       in
       let entry =

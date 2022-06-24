@@ -6,8 +6,12 @@
 (env
  (debug
   (flags
-   (-w +a-4-9-18-30-40-42-44-48@50-66-70 -strict-formats -strict-sequence
-     -short-paths -bin-annot -keep-locs -keep-docs -g))
+   (-strict-formats -strict-sequence -short-paths -bin-annot -keep-locs
+     -keep-docs -g -w +a -w @unexpected-docstring -w -fragile-match -w
+     -missing-record-field-pattern -w -not-principal -w
+     -duplicate-definitions -w -name-out-of-scope -w -disambiguated-name -w
+     -open-shadow-identifier -w -eliminated-optional-arguments -w
+     -unused-open-bang -w -missing-mli))
   (ocamlopt_flags (-O3))
   (env-vars
    (PPX_DBG_ENABLED 1))
@@ -104,7 +108,7 @@
     llvm.linker llvm.passmgr_builder llvm.scalar_opts llvm.target memtrace
     shexp.process yojson nonstdlib sledge smtlib-utils)
   (flags
-   (:standard -w -58 -open NS -open Sledge))
+   (:standard -w -no-cmx-file -open NS -open Sledge))
   (preprocess
    (pps ppx_sledge ppx_dbg))))
 

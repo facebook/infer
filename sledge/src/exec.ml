@@ -9,7 +9,7 @@
 
 open Fol
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 module Fresh : sig
   (** Monad to manage generation of fresh variables. A value of type ['a t]

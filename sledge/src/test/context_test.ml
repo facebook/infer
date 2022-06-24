@@ -20,7 +20,7 @@ let%test_module _ =
      *          "+Context-Context.canon-Context.canon_f-Context.norm-Context.find_extend_" )
      *     () *)
 
-    [@@@warning "-32"]
+    [@@@warning "-unused-value-declaration"]
 
     let printf pp = Format.printf "@\n%a@." pp
     let pp = printf Context.pp_raw

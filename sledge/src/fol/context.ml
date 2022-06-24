@@ -1438,7 +1438,7 @@ let report ~name ~elapsed ~aggregate ~count =
 
 let dump_threshold = ref 1000.
 
-let[@warning "-32"] wrap tmr f call =
+let[@warning "-unused-value-declaration"] wrap tmr f call =
   let f () =
     Timer.start tmr ;
     let r = f () in

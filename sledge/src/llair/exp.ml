@@ -7,7 +7,7 @@
 
 (** Expressions *)
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 module T = struct
   type op1 =
@@ -142,7 +142,7 @@ module T = struct
     | Ap3 (Conditional, _, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
     | ApN (Record, _, elts) -> pf "{%a}" pp_record elts
-    [@@warning "-9"]
+    [@@warning "-missing-record-field-pattern"]
 
   and pp_record fs elts =
     match
@@ -246,7 +246,7 @@ let rec invariant exp =
           IArray.for_all2_exn elts args ~f:(fun (_, typ) arg ->
               Typ.castable typ (typ_of arg) ) )
     | _ -> assert false )
-  [@@warning "-9"]
+  [@@warning "-missing-record-field-pattern"]
 
 (** Type query *)
 
@@ -277,7 +277,7 @@ and typ_of exp =
    |Ap3 (Conditional, typ, _, _, _)
    |ApN (Record, typ, _) ->
       typ
-  [@@warning "-9"]
+  [@@warning "-missing-record-field-pattern"]
 
 (** Registers are the expressions constructed by [Reg] *)
 module Reg = struct

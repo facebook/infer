@@ -12,7 +12,7 @@ open Fol
 (** enable stronger unsat checking during normalization *)
 let strong_unsat = false
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 type seg = {loc: Term.t; bas: Term.t; len: Term.t; siz: Term.t; cnt: Term.t}
 [@@deriving compare, equal, sexp]

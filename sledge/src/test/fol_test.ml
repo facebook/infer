@@ -21,7 +21,7 @@ let%test_module _ =
      *          "+Fol+Context-Context.canon-Context.canon_f-Context.norm" )
      *     () *)
 
-    [@@@warning "-32"]
+    [@@@warning "-unused-value-declaration"]
 
     let printf pp = Format.printf "@\n%a@." pp
     let pp_raw = printf pp_raw
