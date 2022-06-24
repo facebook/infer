@@ -206,6 +206,8 @@ val capture : bool
 
 val capture_block_list : string option
 
+val capture_textual_sil : string option
+
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val cfg_json : string option

@@ -1,0 +1,52 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+// 
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// 
+
+type Basic = {}
+
+define return_int(n: int) : int {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_3:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    n0:int = load &n
+    ret n0
+    .handlers node_3
+
+}
+
+define <init>(this: *Basic) : void {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_4:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    n0:*Basic = load &this
+    n1 = <init>(n0)
+    jmp node_3
+    .handlers node_4
+
+#node_3:
+    jmp node_1
+    .handlers node_4
+
+}
+

@@ -13,6 +13,12 @@
  (preprocess
   (pps ppx_compare ppx_yojson_conv)))
 
+(ocamllex TextualLexer)
+
+(menhir
+ (modules TextualMenhir)
+ (flags --explain))
+
 (documentation
  (package infer)
  (mld_files IR))

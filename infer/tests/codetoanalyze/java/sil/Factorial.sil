@@ -1,0 +1,193 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+// 
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// 
+
+type java::lang::String = {count: int; hash: int; offset: int; value: *int[]}
+
+type Factorial = {}
+
+type java::lang::StringBuilder = {count: int; value: *int[]}
+
+type java::io::PrintStream = {out: *java::io::OutputStream; autoFlush: int; charOut: *java::io::OutputStreamWriter; closing: int; formatter: *java::util::Formatter; textOut: *java::io::BufferedWriter; trouble: int}
+
+global java::lang::System
+
+define main(args: *(*java::lang::String)[]) : void {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_4:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    store &n <- 5:int
+    jmp node_13
+    .handlers node_4
+
+#node_13:
+    n0:*java::io::PrintStream = load &java::lang::System.out
+    store &$irvar0 <- n0:*java::io::PrintStream
+    jmp node_12
+    .handlers node_4
+
+#node_12:
+    n1 = __sil_allocate()
+    n2 = <init>(n1)
+    store &$irvar1 <- n1:*java::lang::StringBuilder
+    jmp node_11
+    .handlers node_4
+
+#node_11:
+    n3:*java::lang::StringBuilder = load &$irvar1
+    n4:*java::lang::StringBuilder = load n3
+    n5 = append(n3, "Factorial of ")
+    store &$irvar2 <- n5:*java::lang::StringBuilder
+    jmp node_10
+    .handlers node_4
+
+#node_10:
+    n6:*java::lang::StringBuilder = load &$irvar2
+    n7:*java::lang::StringBuilder = load n6
+    n8:int = load &n
+    n9 = append(n6, n8)
+    store &$irvar3 <- n9:*java::lang::StringBuilder
+    jmp node_9
+    .handlers node_4
+
+#node_9:
+    n10:*java::lang::StringBuilder = load &$irvar3
+    n11:*java::lang::StringBuilder = load n10
+    n12 = append(n10, " is: ")
+    store &$irvar4 <- n12:*java::lang::StringBuilder
+    jmp node_8
+    .handlers node_4
+
+#node_8:
+    n13:int = load &n
+    n14 = fact(n13)
+    store &$irvar5 <- n14:int
+    jmp node_7
+    .handlers node_4
+
+#node_7:
+    n15:*java::lang::StringBuilder = load &$irvar4
+    n16:*java::lang::StringBuilder = load n15
+    n17:int = load &$irvar5
+    n18 = append(n15, n17)
+    store &$irvar6 <- n18:*java::lang::StringBuilder
+    jmp node_6
+    .handlers node_4
+
+#node_6:
+    n19:*java::lang::StringBuilder = load &$irvar6
+    n20:*java::lang::StringBuilder = load n19
+    n21 = toString(n19)
+    store &$irvar7 <- n21:*java::lang::String
+    jmp node_5
+    .handlers node_4
+
+#node_5:
+    n22:*java::io::PrintStream = load &$irvar0
+    n23:*java::io::PrintStream = load n22
+    n24:*java::lang::String = load &$irvar7
+    n25 = println(n22, n24)
+    jmp node_3
+    .handlers node_4
+
+#node_3:
+    jmp node_1
+    .handlers node_4
+
+}
+
+define fact(n: int) : int {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_4:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    store &fact <- 1:int
+    jmp node_10
+    .handlers node_4
+
+#node_10:
+    store &i <- 1:int
+    jmp node_6
+    .handlers node_4
+
+#node_8:
+    n0:int = load &i
+    n1:int = load &n
+    prune __sil_lnot(__sil_gt(n0, n1))
+    jmp node_7
+    .handlers node_4
+
+#node_9:
+    n0:int = load &i
+    n1:int = load &n
+    prune __sil_gt(n0, n1)
+    jmp node_3
+    .handlers node_4
+
+#node_6:
+    jmp node_8, node_9
+
+#node_7:
+    n2:int = load &fact
+    n3:int = load &i
+    store &fact <- __sil_mult(n2, n3):int
+    jmp node_5
+    .handlers node_4
+
+#node_5:
+    n4:int = load &i
+    store &i <- __sil_plusa(n4, 1):int
+    jmp node_6
+    .handlers node_4
+
+#node_3:
+    n5:int = load &fact
+    ret n5
+    .handlers node_4
+
+}
+
+define <init>(this: *Factorial) : void {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_4:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    n0:*Factorial = load &this
+    n1 = <init>(n0)
+    jmp node_3
+    .handlers node_4
+
+#node_3:
+    jmp node_1
+    .handlers node_4
+
+}
+

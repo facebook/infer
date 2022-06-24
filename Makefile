@@ -212,10 +212,12 @@ DIRECT_TESTS += \
   java_purity \
   java_quandary \
   java_racerd \
+  java_sil \
   java_starvation \
   java_starvation-dedup \
   java_starvation-whole-program \
   java_topl \
+  sil_parsing \
 
 ifneq ($(KOTLINC), no)
 DIRECT_TESTS += \

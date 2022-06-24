@@ -1,0 +1,22 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+// 
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// 
+
+define f(x: int, y: int) : void {
+  #entry:
+    n0:int = load &y
+    n1:int = load &x
+    jmp lab1, lab2
+  #lab1:
+    n2 = __sil_plusA(n0, n1)
+    jmp lab3(n2)
+  #lab2:
+    n3 = __sil_mult(n0, n1)
+    jmp lab3(n3)
+  #lab3(n4):
+    ret n4
+
+}
