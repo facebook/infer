@@ -613,6 +613,8 @@ val quandary_sources : Yojson.Basic.t
 
 val quiet : bool
 
+val racerd_always_report_java : bool
+
 val racerd_guardedby : bool
 
 val racerd_ignore_classes : String.Set.t

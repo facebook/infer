@@ -434,6 +434,8 @@ let get_current_class_and_threadsafe_superclasses tenv pname =
 
 
 let is_thread_safe_method pname tenv =
+  Config.racerd_always_report_java
+  ||
   match find_override_or_superclass_annotated is_thread_safe tenv pname with
   | Some (DirectlyAnnotated | Override _) ->
       true

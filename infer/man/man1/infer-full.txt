@@ -1255,6 +1255,11 @@ OPTIONS
            Deactivates: checker racerd: Thread safety analysis. (Conversely:
            --racerd)           See also infer-analyze(1).
 
+       --racerd-always-report-java
+           Activates: Every Java class analysed is treated as if it were
+           annotated as @ThreadSafe. (Conversely:
+           --no-racerd-always-report-java)           See also infer-analyze(1).
+
        --racerd-guardedby
            Activates: Check @GuardedBy annotations with RacerD (Conversely:
            --no-racerd-guardedby)           See also infer-analyze(1).

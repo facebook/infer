@@ -615,6 +615,11 @@ QUANDARY CHECKER OPTIONS
        --quandary-sources json
            Specify custom sources for Quandary
 RACERD CHECKER OPTIONS
+       --racerd-always-report-java
+           Activates: Every Java class analysed is treated as if it were
+           annotated as @ThreadSafe. (Conversely:
+           --no-racerd-always-report-java)
+
        --racerd-guardedby
            Activates: Check @GuardedBy annotations with RacerD (Conversely:
            --no-racerd-guardedby)

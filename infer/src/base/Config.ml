@@ -2414,6 +2414,12 @@ and quiet =
     "Do not print anything on standard output."
 
 
+and racerd_always_report_java =
+  CLOpt.mk_bool ~long:"racerd-always-report-java"
+    ~in_help:InferCommand.[(Analyze, manual_racerd)]
+    "Every Java class analysed is treated as if it were annotated as @ThreadSafe."
+
+
 and racerd_guardedby =
   CLOpt.mk_bool ~long:"racerd-guardedby" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
@@ -3771,6 +3777,8 @@ and quandary_sources = !quandary_sources
 and quandary_sinks = !quandary_sinks
 
 and quiet = !quiet
+
+and racerd_always_report_java = !racerd_always_report_java
 
 and racerd_guardedby = !racerd_guardedby
 
