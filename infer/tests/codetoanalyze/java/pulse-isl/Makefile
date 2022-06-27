@@ -10,4 +10,4 @@ default: compile
 
 .PHONY: print replace test clean
 print replace test clean:
-	$(QUIET)INFER_ARGS=--pulse-isl^--pulse-max-disjuncts^50 $(MAKE) -C ../pulse TEST_SUFFIX=-isl TEST_RESULT_SUFFIX=-isl $@
+	$(QUIET)INFER_ARGS=--pulse-isl^--pulse-max-disjuncts^50 $(MAKE) -C ../pulse TEST_SUFFIX=-isl TEST_RESULT_SUFFIX=-isl ROOT_REL_SUFFIX=-isl $@
