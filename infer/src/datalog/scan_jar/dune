@@ -1,0 +1,3 @@
+(executable
+ (name scan_jar)
+ (libraries unix zip str javalib sawja))
