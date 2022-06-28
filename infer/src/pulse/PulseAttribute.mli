@@ -30,7 +30,8 @@ val pp_allocator : F.formatter -> allocator -> unit
 type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
 
 module Tainted : sig
-  type t = {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
+  type t =
+    {source: Taint.t; time_trace: Timestamp.trace; hist: ValueHistory.t; intra_procedural_only: bool}
   [@@deriving compare, equal]
 end
 
@@ -43,7 +44,8 @@ end
 module MustNotBeTaintedSet : PrettyPrintable.PPSet with type elt = MustNotBeTainted.t
 
 module TaintSanitized : sig
-  type t = {sanitizer: Taint.t; trace: Trace.t} [@@deriving compare, equal]
+  type t = {sanitizer: Taint.t; time_trace: Timestamp.trace; trace: Trace.t}
+  [@@deriving compare, equal]
 end
 
 module TaintSanitizedSet : PrettyPrintable.PPSet with type elt = TaintSanitized.t

@@ -265,7 +265,13 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
         let hist =
           ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
         in
-        let tainted = Attribute.Tainted.{source; hist; intra_procedural_only} in
+        let tainted =
+          Attribute.Tainted.
+            { source
+            ; hist
+            ; time_trace= Timestamp.trace0 path.PathContext.timestamp
+            ; intra_procedural_only }
+        in
         AbductiveDomain.AddressAttributes.add_one v
           (Tainted (Attribute.TaintedSet.singleton tainted))
           astate )
@@ -273,14 +279,17 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
   (astate, not (List.is_empty tainted))
 
 
-let taint_sanitizers tenv return ~has_added_return_param ~location proc_name actuals astate =
+let taint_sanitizers tenv path return ~has_added_return_param ~location proc_name actuals astate =
   let tainted =
     get_tainted tenv sanitizer_matchers return ~has_added_return_param proc_name actuals astate
   in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _)) ->
         let trace = Trace.Immediate {location; history} in
-        let taint_sanitized = Attribute.TaintSanitized.{sanitizer; trace} in
+        let taint_sanitized =
+          Attribute.TaintSanitized.
+            {sanitizer; time_trace= Timestamp.trace0 path.PathContext.timestamp; trace}
+        in
         AbductiveDomain.AddressAttributes.add_one v
           (TaintSanitized (Attribute.TaintSanitizedSet.singleton taint_sanitized))
           astate )
@@ -288,7 +297,7 @@ let taint_sanitizers tenv return ~has_added_return_param ~location proc_name act
   astate
 
 
-let check_policies ~sink ~source ~sanitizers =
+let check_policies ~sink ~source ~source_times ~sanitizers =
   List.fold sink.Taint.kinds ~init:[] ~f:(fun acc sink_kind ->
       let policies = Hashtbl.find_exn sink_policies sink_kind in
       List.fold policies ~init:acc ~f:(fun acc ({source_kinds; sanitizer_kinds} as policy) ->
@@ -303,9 +312,10 @@ let check_policies ~sink ~source ~sanitizers =
                 Taint.Kind.pp sink_kind ;
               let matching_sanitizers =
                 Attribute.TaintSanitizedSet.filter
-                  (fun {sanitizer} ->
-                    List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
-                        List.mem ~equal:Taint.Kind.equal sanitizer_kinds sanitizer_kind ) )
+                  (fun {sanitizer; time_trace= sanitizer_times} ->
+                    Timestamp.compare_trace source_times sanitizer_times <= 0
+                    && List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
+                           List.mem ~equal:Taint.Kind.equal sanitizer_kinds sanitizer_kind ) )
                   sanitizers
               in
               if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
@@ -358,10 +368,10 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
       AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers v astate
     in
     Attribute.TaintedSet.fold
-      (fun {source; hist= source_hist} policy_violations_reported_result ->
+      (fun {source; time_trace= source_times; hist= source_hist} policy_violations_reported_result ->
         let* policy_violations_reported = policy_violations_reported_result in
         L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
-        let potential_policy_violations = check_policies ~sink ~source ~sanitizers in
+        let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
         let report_policy_violation reported_so_far (source_kind, sink_kind, violated_policy) =
           (* HACK: compare by pointer as policies are fixed throughout execution and each policy
              record is different from all other policies; we could optimise this check by keeping
@@ -506,7 +516,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
         let astate =
           let tainted =
             Attribute.TaintedSet.map
-              (fun {source; hist= source_hist; intra_procedural_only} ->
+              (fun {source; time_trace; hist= source_hist; intra_procedural_only} ->
                 let hist =
                   ValueHistory.sequence ~context:path.PathContext.conditions
                     (Call
@@ -516,7 +526,10 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
                        ; in_call= ValueHistory.epoch } )
                     source_hist
                 in
-                {source; hist; intra_procedural_only} )
+                { source
+                ; time_trace= Timestamp.add_to_trace time_trace path.PathContext.timestamp
+                ; hist
+                ; intra_procedural_only } )
               sources
           in
           AbductiveDomain.AddressAttributes.add_one v (Tainted tainted) astate
@@ -526,11 +539,13 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
         let astate =
           let taint_sanitized =
             Attribute.TaintSanitizedSet.map
-              (fun {sanitizer; trace} ->
+              (fun {sanitizer; time_trace; trace} ->
                 let trace =
                   Trace.ViaCall {f= call; location; history= ValueHistory.epoch; in_call= trace}
                 in
-                {sanitizer; trace} )
+                { sanitizer
+                ; time_trace= Timestamp.add_to_trace time_trace path.PathContext.timestamp
+                ; trace } )
               sanitizers
           in
           AbductiveDomain.AddressAttributes.add_one v (TaintSanitized taint_sanitized) astate
@@ -609,7 +624,7 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
             false
       in
       let astate =
-        taint_sanitizers tenv (Some return) ~has_added_return_param ~location proc_name actuals
+        taint_sanitizers tenv path (Some return) ~has_added_return_param ~location proc_name actuals
           astate
       in
       let astate, found_source_model =

@@ -51,11 +51,16 @@ module Attribute = struct
   let pp_taint_in fmt {v} = F.fprintf fmt "{@[v= %a@]}" AbstractValue.pp v
 
   module Tainted = struct
-    type t = {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
+    type t =
+      { source: Taint.t
+      ; time_trace: Timestamp.trace
+      ; hist: ValueHistory.t
+      ; intra_procedural_only: bool }
     [@@deriving compare, equal]
 
-    let pp fmt {source; hist; intra_procedural_only} =
-      F.fprintf fmt "(%a,%a,%b)" Taint.pp source ValueHistory.pp hist intra_procedural_only
+    let pp fmt {source; hist; time_trace; intra_procedural_only} =
+      F.fprintf fmt "(%a, %a, %b, t=%a)" Taint.pp source ValueHistory.pp hist intra_procedural_only
+        Timestamp.pp_trace time_trace
   end
 
   module TaintedSet = PrettyPrintable.MakePPSet (Tainted)
@@ -73,10 +78,13 @@ module Attribute = struct
   module MustNotBeTaintedSet = PrettyPrintable.MakePPSet (MustNotBeTainted)
 
   module TaintSanitized = struct
-    type t = {sanitizer: Taint.t; trace: Trace.t} [@@deriving compare, equal]
+    type t = {sanitizer: Taint.t; time_trace: Timestamp.trace; trace: Trace.t}
+    [@@deriving compare, equal]
 
-    let pp fmt {sanitizer; trace} =
-      F.fprintf fmt "%a" (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer)) trace
+    let pp fmt {sanitizer; time_trace; trace} =
+      F.fprintf fmt "(%a, t=%a)"
+        (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer))
+        trace Timestamp.pp_trace time_trace
   end
 
   module TaintSanitizedSet = PrettyPrintable.MakePPSet (TaintSanitized)
@@ -374,16 +382,24 @@ module Attribute = struct
     | PropagateTaintFrom taints_in ->
         PropagateTaintFrom (List.map taints_in ~f:(fun {v} -> {v= subst v}))
     | Tainted tainted ->
-        let add_call_to_tainted Tainted.{source; hist; intra_procedural_only} =
+        let add_call_to_tainted Tainted.{source; time_trace; hist; intra_procedural_only} =
           if intra_procedural_only then
             L.die InternalError "Unexpected attribute %a in the summary of %a" pp attr Procname.pp
               proc_name
-          else Tainted.{source; hist= add_call_to_history hist; intra_procedural_only}
+          else
+            Tainted.
+              { source
+              ; time_trace= Timestamp.add_to_trace time_trace timestamp
+              ; hist= add_call_to_history hist
+              ; intra_procedural_only }
         in
         Tainted (TaintedSet.map add_call_to_tainted tainted)
     | TaintSanitized taint_sanitized ->
-        let add_call_to_taint_sanitized TaintSanitized.{sanitizer; trace} =
-          TaintSanitized.{sanitizer; trace= add_call_to_trace trace}
+        let add_call_to_taint_sanitized TaintSanitized.{sanitizer; time_trace; trace} =
+          TaintSanitized.
+            { sanitizer
+            ; time_trace= Timestamp.add_to_trace time_trace timestamp
+            ; trace= add_call_to_trace trace }
         in
         TaintSanitized (TaintSanitizedSet.map add_call_to_taint_sanitized taint_sanitized)
     | UnknownEffect (call, hist) ->

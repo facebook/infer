@@ -7,6 +7,7 @@
           "sink_kinds": ["SimpleSink","SecondSimpleSink"]
         },
         { "source_kinds": ["SecondSimpleSource"],
+          "sanitizer_kinds": ["SimpleSanitizer"],
           "sink_kinds": ["SecondSimpleSink"]
         }
       ]

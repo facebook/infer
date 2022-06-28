@@ -14,6 +14,7 @@
 + (void)sink:(NSObject*)param;
 + (NSObject*)sanitizer:(NSObject*)param;
 + (void)sanitizeThenSink:(NSObject*)param;
++ (NSObject*)sanitizeThenTaint:(NSObject*)param;
 + (void)twoSinks:(NSObject*)param;
 + (void)twoKindSink:(NSObject*)param;
 + (void)notASink:(NSObject*)param;
@@ -39,6 +40,12 @@
 + (void)sanitizeThenSink:(NSObject*)param {
   NSObject* sanitized = [InferTaint sanitizer:param];
   [InferTaint sink:sanitized];
+}
+
++ (NSObject*)sanitizeThenTaint:(NSObject*)param {
+  NSObject* sanitized = [InferTaint sanitizer:param];
+  [InferTaint taintsArg:sanitized];
+  return sanitized;
 }
 
 + (void)twoSinks:(NSObject*)param {
@@ -96,4 +103,17 @@ void taintSourceParameterBlockBad() {
 void viaSanitizerOk() {
   NSObject* source = [InferTaint source];
   [InferTaint sanitizeThenSink:source];
+}
+
+void sanitizerThenTaintDirectBad() {
+  NSObject* obj = [NSObject new];
+  obj = [InferTaint sanitizer:obj];
+  [InferTaint taintsArg:obj];
+  [InferTaint twoKindSink:obj];
+}
+
+void sanitizerThenTaintInterprocBad() {
+  NSObject* obj = [NSObject new];
+  [InferTaint sanitizeThenTaint:obj];
+  [InferTaint twoKindSink:obj];
 }
