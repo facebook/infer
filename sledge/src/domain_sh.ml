@@ -312,9 +312,12 @@ let move_term_code tid reg code q =
   | None -> q
 
 let resolve_callee lookup tid ptr (q : Sh.t) =
-  Context.class_of q.ctx (X.term tid ptr)
-  |> List.find_map ~f:(X.lookup_func lookup)
-  |> Option.to_list
+  let ptr_var, _ = Var.fresh "callee" ~wrt:(Var.Set.union q.us q.xs) in
+  let q = Sh.and_ (Formula.eq (X.term tid ptr) (Term.var ptr_var)) q in
+  Iter.fold (Sh.iter_dnf q) [] ~f:(fun disj ->
+      Context.class_of disj.ctx (Term.var ptr_var)
+      |> List.filter_map ~f:(X.lookup_func lookup)
+      |> List.append )
 
 let recursion_beyond_bound = `prune
 

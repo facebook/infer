@@ -161,6 +161,8 @@ val fold_dnf :
 val dnf : t -> disjunction
 (** Convert to disjunctive-normal form. *)
 
+val iter_dnf : t -> t iter
+
 (**/**)
 
 val dump_simplify : int ref

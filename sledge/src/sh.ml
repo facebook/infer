@@ -732,6 +732,8 @@ let dnf q =
   |>
   [%Dbg.retn fun {pf} -> pf "%a" pp_djn]
 
+let iter_dnf q f = Set.iter (dnf q) ~f
+
 (** Logical query *)
 
 (** first-order approximation of heap constraints *)
