@@ -34,6 +34,7 @@ let call_may_throw_exception (exn : CSharpClassName.t) : model =
   let<*> astate = PulseOperations.write_deref path location ~ref ~obj astate in
   [Ok (ExceptionRaised astate)]
 
+(* let throw : model = fun _ astate -> [Ok (ExceptionRaised astate)] *)
 
 
 module Resource = struct
@@ -63,7 +64,7 @@ module Resource = struct
 
   let allocate ?exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
 
-  let _allocate_with_delegation ?exn_class_name () this_arg delegation : model =
+  let allocate_with_delegation ?exn_class_name () this_arg delegation : model =
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
@@ -77,9 +78,13 @@ module Resource = struct
       Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
 
 
-  let release this : model =
-   fun _ astate ->
-    PulseOperations.java_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
+  let release ?exn_class_name this : model =
+   fun model_data astate ->
+    let exn_state =
+      Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
+          call_may_throw_exception (CSharpClassName.from_string cn) model_data astate )
+    in
+    (PulseOperations.java_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue) @ exn_state
 
 
   let _release_this_only this : model =
@@ -119,6 +124,14 @@ let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model =
   in
   astate_null @ astate_not_null
 
+let allocate_log log allocate_arg = Printf.printf log; Resource.allocate ~exn_class_name:"System.IO.FileNotFoundException" allocate_arg
+
+let allocate_with_delegation_log log allocate_arg delegation_arg = Printf.printf log; Resource.allocate_with_delegation ~exn_class_name:"System.ArgumentException" () allocate_arg delegation_arg
+
+let iDisposablesIgnore = 
+    [ "System.IO.MemoryStream"
+    ; "System.IO.StringReader"
+    ; "System.IO.StringWriter" ]
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
@@ -131,9 +144,37 @@ let matchers : matcher list =
     $--> string_is_null_or_whitespace ~desc:"String.IsNullOrEmpty"
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Diagnostics.Debug")
     &:: "Assert" <>$ capt_arg $--> Basic.assert_
-  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
+  (* IDisposables that take care of passed resource (stream), and may throw exception *)
+  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of
+      [ "System.IO.StreamReader"
+      ; "System.IO.StreamWriter"
+      ; "System.IO.BinaryReader"
+      ; "System.IO.BinaryWriter"
+        ])
+    &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
+    $+...$--> Resource.allocate_with_delegation ~exn_class_name:"System.ArgumentException" ()
+  (* Things that take care of the passed resource (stream) *)
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.BufferedStream")
+    (* BufferedStream can throw an ArgumentNullException *)
+    &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
+    $+...$--> Resource.allocate_with_delegation ()
+  (* Things that may throw an exception *)
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.FileStream")
     &:: ".ctor" <>$ capt_arg_payload
-    $+...$--> Resource.allocate ~exn_class_name:"System.IDisposable"
+    $+...$--> Resource.allocate ~exn_class_name:"System.IO.FileNotFoundException"
+    (* Usages of Disposables that throw exceptions *)
+  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of ["System.IO.StreamWriter"])
+    &:: "dispose" <>$ capt_arg_payload $+...$--> Resource.release ~exn_class_name:"EncoderFallbackException"
+  (* Some IDisposables that don't _need_ to be disposed, so don't track *)
+  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
+    &:: ".ctor" <>$ any_arg $+...$--> Basic.skip
+  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
+    &:: "close" <>$ any_arg $+...$--> Basic.skip
+  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
+    &:: "dispose" <>$ any_arg $+...$--> Basic.skip
+    (* Base case for IDisposables *)
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
+    &:: ".ctor" <>$ capt_arg_payload $+...$--> Resource.allocate
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
     &:: "close" <>$ capt_arg_payload $--> Resource.release
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
