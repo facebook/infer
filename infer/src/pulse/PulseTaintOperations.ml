@@ -447,54 +447,106 @@ let taint_sinks tenv path location return ~has_added_return_param proc_name actu
   (astate, not (List.is_empty tainted))
 
 
+let is_cpp_assignment_operator proc_name_opt =
+  Option.exists proc_name_opt ~f:Procname.is_cpp_assignment_operator
+
+
+(* returns boolean triple (propagate_to_return, propagate_to_receiver, propagate_to_last_actual) *)
+let compute_taint_propagation_for_unknown_calls_generic tenv proc_name_opt return_typ actuals
+    has_added_return_param =
+  let is_static =
+    Option.exists proc_name_opt ~f:(fun proc_name ->
+        Option.value ~default:true (Procname.is_static proc_name) )
+  in
+  match (proc_name_opt, return_typ, actuals) with
+  | Some proc_name, _, _ when Procname.is_constructor proc_name ->
+      L.d_printfln "unknown constructor, propagating taint to receiver" ;
+      (false, true, false)
+  | _, {Typ.desc= Tvoid}, _ when has_added_return_param ->
+      (false, false, true)
+  | _, {Typ.desc= Tint _ | Tfloat _ | Tvoid}, _ when not is_static ->
+      (* for instance methods with a non-Object return value, propagate the taint to the
+             receiver *)
+      L.d_printfln "non-object return type, propagating taint to receiver" ;
+      (false, true, false)
+  | ( Some proc_name
+    , {Typ.desc= Tptr ({desc= Tstruct return_typename}, _)}
+    , {ProcnameDispatcher.Call.FuncArg.typ= {desc= Tptr ({desc= Tstruct receiver_typename}, _)}}
+      :: _ )
+    when (not is_static)
+         && Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_typename ->
+                Typ.Name.equal return_typename class_typename
+                && PatternMatch.supertype_exists tenv
+                     (fun type_name _struct -> Typ.Name.equal class_typename type_name)
+                     receiver_typename ) ->
+      (* if the receiver and return type are the same, propagate to both. we're assuming the call
+         is one of the common "builder-style" methods that both updates and returns the
+         receiver *)
+      L.d_printfln "chainable call, propagating taint to both return and receiver" ;
+      (true, true, false)
+  | _, {Typ.desc= Tptr _ | Tstruct _}, _ when is_cpp_assignment_operator proc_name_opt ->
+      L.d_printfln "cpp operator=, propagating to receiver" ;
+      (false, true, false)
+  | _, {Typ.desc= Tptr _ | Tstruct _}, _ ->
+      L.d_printfln "object return type, propagating taint to return" ;
+      (true, false, false)
+  | _, _, _ ->
+      L.d_printfln "not propagating taint" ;
+      (false, false, false)
+
+
+let is_procname_from_std_namespace proc_name =
+  match QualifiedCppName.to_list (Procname.get_qualifiers proc_name) with
+  | "std" :: _ ->
+      true
+  | _ ->
+      false
+
+
+(* returns boolean triple (propagate_to_return, propagate_to_receiver, propagate_to_last_actual) *)
+let compute_taint_propagation_for_unknown_calls tenv proc_name_opt return_typ actuals
+    has_added_return_param =
+  match proc_name_opt with
+  | Some proc_name when Language.equal Language.Clang (Procname.get_language proc_name) -> (
+    match Procname.get_method proc_name with
+    | "operator+="
+    | "operator-="
+    | "operator*="
+    | "operator/="
+    | "operator%="
+    | "operator<<="
+    | "operator>>="
+    | "operator&="
+    | "operator^="
+    | "operator|="
+    | "memcpy"
+    | "memmove"
+    | "strcpy"
+    | "strncpy" ->
+        (true, true, false)
+    | "swap" when is_procname_from_std_namespace proc_name ->
+        (* A special case for std::.*::swap as it is marked as static
+           and does not propagate to receiver as expected in the generic
+           case for unknown functions *)
+        (false, true, false)
+    | "sprintf" ->
+        (false, true, false)
+    | _ ->
+        compute_taint_propagation_for_unknown_calls_generic tenv proc_name_opt return_typ actuals
+          has_added_return_param )
+  | _ ->
+      compute_taint_propagation_for_unknown_calls_generic tenv proc_name_opt return_typ actuals
+        has_added_return_param
+
+
 (* merge all taint from actuals into the return value *)
 let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
     ~has_added_return_param call proc_name_opt actuals astate =
   L.d_printfln "propagating all taint for unknown call" ;
   let return = Var.of_id return in
-  let is_cpp_assignment_operator =
-    Option.value_map proc_name_opt ~default:false ~f:Procname.is_cpp_assignment_operator
-  in
   let propagate_to_return, propagate_to_receiver, propagate_to_last_actual =
-    let is_static =
-      Option.exists proc_name_opt ~f:(fun proc_name ->
-          Option.value ~default:true (Procname.is_static proc_name) )
-    in
-    match (proc_name_opt, return_typ, actuals) with
-    | Some proc_name, _, _ when Procname.is_constructor proc_name ->
-        L.d_printfln "unknown constructor, propagating taint to receiver" ;
-        (false, true, false)
-    | _, {Typ.desc= Tvoid}, _ when has_added_return_param ->
-        (false, false, true)
-    | _, {Typ.desc= Tint _ | Tfloat _ | Tvoid}, _ when not is_static ->
-        (* for instance methods with a non-Object return value, propagate the taint to the
-               receiver *)
-        L.d_printfln "non-object return type, propagating taint to receiver" ;
-        (false, true, false)
-    | ( Some proc_name
-      , {Typ.desc= Tptr ({desc= Tstruct return_typename}, _)}
-      , {ProcnameDispatcher.Call.FuncArg.typ= {desc= Tptr ({desc= Tstruct receiver_typename}, _)}}
-        :: _ )
-      when (not is_static)
-           && Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_typename ->
-                  Typ.Name.equal return_typename class_typename
-                  && PatternMatch.supertype_exists tenv
-                       (fun type_name _struct -> Typ.Name.equal class_typename type_name)
-                       receiver_typename ) ->
-        (* if the receiver and return type are the same, propagate to both. we're assuming the call
-           is one of the common "builder-style" methods that both updates and returns the
-           receiver *)
-        L.d_printfln "chainable call, propagating taint to both return and receiver" ;
-        (true, true, false)
-    | _, {Typ.desc= Tptr _ | Tstruct _}, _ when is_cpp_assignment_operator ->
-        L.d_printfln "cpp operator=, propagating to receiver" ;
-        (false, true, false)
-    | _, {Typ.desc= Tptr _ | Tstruct _}, _ ->
-        L.d_printfln "object return type, propagating taint to return" ;
-        (true, false, false)
-    | _, _, _ ->
-        L.d_printfln "not propagating taint" ;
-        (false, false, false)
+    compute_taint_propagation_for_unknown_calls tenv proc_name_opt return_typ actuals
+      has_added_return_param
   in
   let propagate_to v values astate =
     let astate =
@@ -555,7 +607,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
   let astate =
     match actuals with
     | {ProcnameDispatcher.Call.FuncArg.arg_payload= this, _hist} :: _
-      when is_cpp_assignment_operator ->
+      when is_cpp_assignment_operator proc_name_opt ->
         L.d_printfln "remove taint info of %a for cpp operator=" AbstractValue.pp this ;
         AddressAttributes.remove_taint_attrs this astate
     | _ ->
