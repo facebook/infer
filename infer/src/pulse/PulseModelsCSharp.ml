@@ -68,11 +68,8 @@ module Resource = struct
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
-  let _input_resource_usage_modeled =
-    StringSet.of_list ["available"; "mark"; "markSupported"; "read"; "reset"; "skip"]
-
-
-  let _use ~exn_class_name : model =
+    (* only adds on that the function can throw exceptions *)
+  let use ~exn_class_name : model =
     let exn = CSharpClassName.from_string exn_class_name in
     fun model_data astate ->
       Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
@@ -162,16 +159,20 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.FileStream")
     &:: ".ctor" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"System.IO.FileNotFoundException"
-    (* Usages of Disposables that throw exceptions *)
+    (* Disposal of IDisposables that throw exceptions *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of ["System.IO.StreamWriter"])
     &:: "dispose" <>$ capt_arg_payload $+...$--> Resource.release ~exn_class_name:"EncoderFallbackException"
+    (* Usage of IDisposables *)
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.Stream")
+    &:: "WriteByte" <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"System.NotSupportedException"
   (* Some IDisposables that don't _need_ to be disposed, so don't track *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
     &:: ".ctor" <>$ any_arg $+...$--> Basic.skip
-  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
-    &:: "close" <>$ any_arg $+...$--> Basic.skip
-  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
-    &:: "dispose" <>$ any_arg $+...$--> Basic.skip
+  (* ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore) *)
+  (*   &:: "close" <>$ any_arg $+...$--> Basic.skip *)
+  (* ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore) *)
+  (*   &:: "dispose" <>$ any_arg $+...$--> Basic.skip *)
     (* Base case for IDisposables *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
     &:: ".ctor" <>$ capt_arg_payload $+...$--> Resource.allocate
