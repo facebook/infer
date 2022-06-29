@@ -1175,11 +1175,9 @@ let typecheck_sil_call_function
             let is_callee_in_trust_list =
               let caller_nullsafe_mode = NullsafeMode.of_procname tenv curr_pname in
               let callee_class = Procname.get_class_type_name callee_pname in
-              Option.value_map callee_class
-                ~f:(fun class_name ->
+              Option.exists callee_class ~f:(fun class_name ->
                   Typ.Name.Java.get_java_class_name_exn class_name
                   |> NullsafeMode.is_in_trust_list caller_nullsafe_mode )
-                ~default:false
             in
             Models.get_modelled_annotated_signature ~is_callee_in_trust_list tenv callee_attributes
       in

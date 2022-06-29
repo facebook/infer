@@ -100,7 +100,7 @@ let get_var_name_mangled decl_info name_info var_decl_info =
 let is_type_pod qt =
   let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
   let is_reference =
-    Option.value_map ~default:false desugared_type ~f:(function
+    Option.exists desugared_type ~f:(function
       | Clang_ast_t.LValueReferenceType _ | Clang_ast_t.RValueReferenceType _ ->
           true
       | _ ->

@@ -14,7 +14,7 @@ open PulseOperations.Import
 type t = AbductiveDomain.t
 
 let is_ptr_to_const formal_typ_opt =
-  Option.value_map formal_typ_opt ~default:false ~f:(fun (formal_typ : Typ.t) ->
+  Option.exists formal_typ_opt ~f:(fun (formal_typ : Typ.t) ->
       match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
 
 
@@ -54,7 +54,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         |> AddressAttributes.add_attrs actual (Attributes.singleton (UnknownEffect (reason, hist)))
       in
       if
-        Option.value_map callee_pname_opt ~default:false ~f:(fun p ->
+        Option.exists callee_pname_opt ~f:(fun p ->
             Procname.is_constructor p || Procname.is_copy_assignment p )
       then astate
       else

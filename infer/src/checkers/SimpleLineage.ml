@@ -1021,9 +1021,7 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_size = Procdesc.size proc_desc in
   let too_big =
-    Option.value_map ~default:false
-      ~f:(fun limit -> proc_size > limit)
-      Config.simple_lineage_max_cfg_size
+    Option.exists ~f:(fun limit -> proc_size > limit) Config.simple_lineage_max_cfg_size
   in
   let is_synthetic =
     (* Ignore bodies synthesized by frontend for spec-only functions. *)

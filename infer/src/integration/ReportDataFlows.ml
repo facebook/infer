@@ -23,9 +23,7 @@ let jsonbug_filter (jsonbug : Jsonbug_t.jsonbug) ~procname ~flow_type =
     in
     Option.bind jsonbug.extras ~f:extract_field
   in
-  let procname_matches =
-    Option.value_map procname_from_jsonbug ~f:(String.equal procname) ~default:false
-  in
+  let procname_matches = Option.exists procname_from_jsonbug ~f:(String.equal procname) in
   let issue_type_matches =
     let expected_issue_type = issue_type_of_flow_type flow_type in
     String.equal jsonbug.bug_type expected_issue_type.unique_id

@@ -64,7 +64,7 @@ let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~t
   let equal_header_of_current_source maybe_header =
     (* SourceFile.of_header will cache calls to filesystem *)
     let source_of_header_opt = SourceFile.of_header maybe_header in
-    Option.value_map ~f:equal_current_source ~default:false source_of_header_opt
+    Option.exists ~f:equal_current_source source_of_header_opt
   in
   let file_in_project =
     map_file_of source_file_in_project loc_end || map_file_of source_file_in_project loc_start
@@ -86,9 +86,7 @@ let should_translate_lib translation_unit source_range decl_trans_context ~trans
 
 
 let is_file_block_listed file =
-  Option.value_map
-    ~f:(fun re -> Str.string_match re file 0)
-    ~default:false Config.skip_analysis_in_path
+  Option.exists ~f:(fun re -> Str.string_match re file 0) Config.skip_analysis_in_path
 
 
 let location_of_source_range ?(pick_location = `Start) default_source_file source_range =

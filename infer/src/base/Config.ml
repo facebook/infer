@@ -1261,7 +1261,7 @@ and ( biabduction_write_dotty
       "Debug level for the test determinator. See $(b,--debug-level) for accepted values."
   and developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
-      ~default:(Option.value_map ~default:false ~f:InferCommand.(equal Report) initial_command)
+      ~default:(Option.exists ~f:InferCommand.(equal Report) initial_command)
       "Show internal exceptions"
   and filtering =
     CLOpt.mk_bool ~deprecated_no:["nf"] ~long:"filtering" ~short:'f' ~default:true

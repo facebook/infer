@@ -1554,7 +1554,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* we cannot translate the arguments of __builtin_object_size because preprocessing copies
        them verbatim from a call to a different function, and they might be side-effecting *)
     let should_translate_args =
-      not (Option.value_map ~f:CTrans_models.is_builtin_object_size ~default:false callee_pname_opt)
+      not (Option.exists ~f:CTrans_models.is_builtin_object_size callee_pname_opt)
     in
     let params_stmt = if should_translate_args then params_stmt else [] in
     (* As we may have nodes coming from different parameters we need to  *)

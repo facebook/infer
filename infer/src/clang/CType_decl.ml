@@ -372,7 +372,7 @@ let get_translate_as_friend_decl decl_list =
     match get_friend_decl_opt decl with
     | Some decl ->
         let named_decl_tuple_opt = Clang_ast_proj.get_named_decl_tuple decl in
-        Option.value_map ~f:is_translate_as_friend_name ~default:false named_decl_tuple_opt
+        Option.exists ~f:is_translate_as_friend_name named_decl_tuple_opt
     | None ->
         false
   in

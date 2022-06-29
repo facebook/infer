@@ -113,7 +113,7 @@ module Allocsite = struct
         Symb.SymbolPath.represents_multiple_values path
     | Known {path; represents_multiple_values} ->
         represents_multiple_values
-        || Option.value_map path ~default:false ~f:Symb.SymbolPath.represents_multiple_values
+        || Option.exists path ~f:Symb.SymbolPath.represents_multiple_values
     | LiteralString _ ->
         true
 

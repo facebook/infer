@@ -193,7 +193,7 @@ module OverridesMatcher = struct
     let is_matching = function
       | Method_pattern (language, mp) ->
           is_subtype mp.class_name
-          && Option.value_map ~f:(match_method language proc_name) ~default:false mp.method_name
+          && Option.exists ~f:(match_method language proc_name) mp.method_name
       | _ ->
           L.(die UserError) "Expecting method pattern"
     in
