@@ -13,7 +13,7 @@ open PulseBasicInterface
 let get_modeled_as_returning_copy_opt proc_name =
   Option.value_map ~default:None Config.pulse_model_returns_copy_pattern ~f:(fun r ->
       let s = Procname.to_string proc_name in
-      if Str.string_match r s 0 then Some PulseNonDisjunctiveDomain.CopyOrigin.CopyCtor else None )
+      if Str.string_match r s 0 then Some Attribute.CopyOrigin.CopyCtor else None )
 
 
 let get_copied_and_source copy_type path rest_args location from (disjunct : AbductiveDomain.t) =
@@ -84,13 +84,14 @@ let add_copies path location call_exp actuals astates astate_non_disj =
                          Option.value_map source_addr_typ_opt ~default:disjunct
                            ~f:(fun (source_addr, _) ->
                              AddressAttributes.add_one source_addr
-                               (CopiedInto (Attribute.CopiedInto.IntoField field)) disjunct
+                               (CopiedInto (Attribute.CopiedInto.IntoField {field; from}))
+                               disjunct
                              |> AddressAttributes.add_one copy_addr
                                   (SourceOriginOfCopy
                                      { source= source_addr
                                      ; is_const_ref= Typ.is_const_reference source_typ } ) )
                        in
-                       ( NonDisjDomain.add_field field
+                       ( NonDisjDomain.add_field field from
                            ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst)
                            copied astate_non_disj
                        , ExecutionDomain.continue disjunct' )
@@ -106,9 +107,9 @@ let add_copies path location call_exp actuals astates astate_non_disj =
             (astate_non_disj, exec_state) )
   in
   let copy_from_fn pname =
-    let open PulseNonDisjunctiveDomain in
-    if Procname.is_copy_ctor pname then Some CopyOrigin.CopyCtor
-    else if Procname.is_copy_assignment pname then Some CopyOrigin.CopyAssignment
+    let open Attribute.CopyOrigin in
+    if Procname.is_copy_ctor pname then Some CopyCtor
+    else if Procname.is_copy_assignment pname then Some CopyAssignment
     else None
   in
   let astate_n, astates = aux (copy_from_fn, Fn.id) astate_non_disj astates in

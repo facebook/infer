@@ -50,8 +50,15 @@ end
 
 module TaintSanitizedSet : PrettyPrintable.PPSet with type elt = TaintSanitized.t
 
+module CopyOrigin : sig
+  type t = CopyCtor | CopyAssignment [@@deriving compare, equal]
+
+  val pp : Formatter.t -> t -> unit
+end
+
 module CopiedInto : sig
-  type t = IntoVar of Var.t | IntoField of Fieldname.t [@@deriving compare, equal]
+  type t = IntoVar of Var.t | IntoField of {field: Fieldname.t; from: CopyOrigin.t}
+  [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 end

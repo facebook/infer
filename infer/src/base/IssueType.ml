@@ -1063,6 +1063,12 @@ let unnecessary_copy_assignment_pulse =
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
+let unnecessary_copy_assignment_movable_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE" Error Pulse
+    ~hum:"Unnecessary Copy Assignment Movable"
+    ~user_documentation:"See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable)."
+
+
 let unnecessary_copy_movable_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_MOVABLE" Error Pulse
     ~hum:"Unnecessary Copy Movable"

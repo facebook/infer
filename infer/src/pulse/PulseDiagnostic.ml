@@ -78,7 +78,7 @@ type t =
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
       ; location: Location.t
-      ; from: PulseNonDisjunctiveDomain.CopyOrigin.t }
+      ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
 let get_location = function
@@ -367,16 +367,16 @@ let get_message diagnostic =
       F.asprintf "`%a` flows to taint sink %a%a" Decompiler.pp_expr expr Taint.pp sink pp_sanitizers
         sanitizers
   | UnnecessaryCopy {copied_into; typ; location; from} -> (
-      let open PulseNonDisjunctiveDomain in
+      let open PulseAttribute in
       let suppression_msg =
         "If this copy was intentional, consider adding the word `copy` into the variable name to \
          suppress this warning"
       in
       let suggestion_msg =
-        match from with
-        | CopyOrigin.CopyCtor ->
+        match (from : CopyOrigin.t) with
+        | CopyCtor ->
             "try using a reference `&`"
-        | CopyOrigin.CopyAssignment ->
+        | CopyAssignment ->
             "try getting a reference to it or move it if possible"
       in
       match copied_into with
@@ -384,13 +384,13 @@ let get_message diagnostic =
           F.asprintf
             "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid \
              the copy, %s. %s."
-            CopyOrigin.pp from PulseAttribute.CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ
-            Location.pp_line location suggestion_msg suppression_msg
-      | IntoField fname ->
+            CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
+            location suggestion_msg suppression_msg
+      | IntoField {field; from} ->
           F.asprintf
-            "Field `%a` with type `%a` is copied into from an rvalue-ref here but is not modified \
+            "Field `%a` with type `%a` is %a into from an rvalue-ref here but is not modified \
              afterwards. Rather than copying into it, try moving into it instead."
-            Fieldname.pp fname (Typ.pp_full Pp.text) typ )
+            Fieldname.pp field (Typ.pp_full Pp.text) typ CopyOrigin.pp from )
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -559,7 +559,7 @@ let get_trace = function
   | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location
-          (F.asprintf "%a here" PulseNonDisjunctiveDomain.CopyOrigin.pp from)
+          (F.asprintf "%a here" PulseAttribute.CopyOrigin.pp from)
           [] ]
 
 
@@ -580,11 +580,13 @@ let get_issue_type ~latent issue_type =
       IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
-  | UnnecessaryCopy {copied_into= PulseAttribute.CopiedInto.IntoField _}, false ->
+  | UnnecessaryCopy {copied_into= IntoField {from= CopyAssignment}}, false ->
+      IssueType.unnecessary_copy_assignment_movable_pulse
+  | UnnecessaryCopy {copied_into= IntoField {from= CopyCtor}}, false ->
       IssueType.unnecessary_copy_movable_pulse
-  | UnnecessaryCopy {from= PulseNonDisjunctiveDomain.CopyOrigin.CopyCtor}, false ->
+  | UnnecessaryCopy {from= CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
-  | UnnecessaryCopy {from= PulseNonDisjunctiveDomain.CopyOrigin.CopyAssignment}, false ->
+  | UnnecessaryCopy {from= CopyAssignment}, false ->
       IssueType.unnecessary_copy_assignment_pulse
   | ( ( MemoryLeak _
       | ResourceLeak _

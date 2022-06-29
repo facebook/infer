@@ -84,7 +84,7 @@ type t =
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
       ; location: Location.t
-      ; from: PulseNonDisjunctiveDomain.CopyOrigin.t }
+      ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
 val aborts_execution : t -> bool

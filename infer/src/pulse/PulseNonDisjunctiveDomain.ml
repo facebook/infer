@@ -26,18 +26,9 @@ module BaseMemory = PulseBaseMemory
 
     Then we compare the snapshot heap with the current heap (see {!PulseNonDisjunctiveOperations}.) *)
 
-module CopyOrigin = struct
-  type t = CopyCtor | CopyAssignment [@@deriving compare, equal]
-
-  let pp fmt = function
-    | CopyCtor ->
-        F.fprintf fmt "copied"
-    | CopyAssignment ->
-        F.fprintf fmt "copy assigned"
-end
-
 type copy_spec_t =
-  | Copied of {typ: Typ.t; location: Location.t; heap: BaseMemory.t; from: CopyOrigin.t}
+  | Copied of
+      {typ: Typ.t; location: Location.t; heap: BaseMemory.t; from: PulseAttribute.CopyOrigin.t}
   | Modified
 [@@deriving equal]
 
@@ -62,8 +53,8 @@ module CopySpec = struct
 
   let pp fmt = function
     | Copied {typ; heap; location; from} ->
-        Format.fprintf fmt " %a (%a) at %a with heap= %a" CopyOrigin.pp from pp_typ typ Location.pp
-          location BaseMemory.pp heap
+        Format.fprintf fmt " %a (%a) at %a with heap= %a" PulseAttribute.CopyOrigin.pp from pp_typ
+          typ Location.pp location BaseMemory.pp heap
     | Modified ->
         Format.fprintf fmt "modified"
 end
@@ -176,10 +167,12 @@ let add_var copied_var ~source_addr_opt (res : copy_spec_t) astate =
     copy_map= CopyMap.add {copied_into= IntoVar copied_var; source_addr_opt} res astate.copy_map }
 
 
-let add_field copied_field ~source_addr_opt (res : copy_spec_t) astate =
+let add_field copied_field from ~source_addr_opt (res : copy_spec_t) astate =
   { astate with
-    copy_map= CopyMap.add {copied_into= IntoField copied_field; source_addr_opt} res astate.copy_map
-  }
+    copy_map=
+      CopyMap.add
+        {copied_into= IntoField {field= copied_field; from}; source_addr_opt}
+        res astate.copy_map }
 
 
 let is_checked_via_dtor var {destructor_checked} = DestructorChecked.mem var destructor_checked

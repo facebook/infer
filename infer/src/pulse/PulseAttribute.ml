@@ -89,13 +89,24 @@ module Attribute = struct
 
   module TaintSanitizedSet = PrettyPrintable.MakePPSet (TaintSanitized)
 
+  module CopyOrigin = struct
+    type t = CopyCtor | CopyAssignment [@@deriving compare, equal]
+
+    let pp fmt = function
+      | CopyCtor ->
+          F.fprintf fmt "copied"
+      | CopyAssignment ->
+          F.fprintf fmt "copy assigned"
+  end
+
   module CopiedInto = struct
-    type t = IntoVar of Var.t | IntoField of Fieldname.t [@@deriving compare, equal]
+    type t = IntoVar of Var.t | IntoField of {field: Fieldname.t; from: CopyOrigin.t}
+    [@@deriving compare, equal]
 
     let pp fmt = function
       | IntoVar var ->
           Var.pp fmt var
-      | IntoField field ->
+      | IntoField {field} ->
           Fieldname.pp fmt field
   end
 
