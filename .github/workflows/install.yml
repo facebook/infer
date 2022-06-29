@@ -55,8 +55,8 @@ jobs:
         os:
           - macOS-latest
           - ubuntu-latest
-        ocaml-version:
-          - 4.12.0
+        ocaml-compiler:
+          - ocaml-variants.4.14.0+options,ocaml-option-flambda
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -65,7 +65,7 @@ jobs:
 
       - name: Install Required Apt Packages for Ubuntu
         run: |
-          sudo apt install libmpfr-dev libsqlite3-dev ninja-build
+          sudo apt install clang libmpfr-dev libsqlite3-dev ninja-build
           sudo apt clean
         if: runner.os == 'Linux'
 
@@ -76,6 +76,20 @@ jobs:
       - name: Get OS version
         uses: sersoft-gmbh/os-version-action@v1
         id: os-version
+
+      - name: Force the use of test dependencies
+        run: cp opam/infer-tests.opam.locked opam/infer.opam.locked
+
+      - name: Attempt to get opam tree from the cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.opam
+          key: opam-${{ matrix.os }}-${{steps.os-version.outputs.version}}-${{ hashFiles('opam/infer.opam.locked', 'opam/ocamlformat') }}
+
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Compute hash of clang installation
         id: clang-hash
@@ -97,21 +111,7 @@ jobs:
         if: steps.cache-clang.outputs.cache-hit != 'true'
         run: |
           ./facebook-clang-plugins/clang/src/prepare_clang_src.sh
-          ./facebook-clang-plugins/clang/setup.sh --ninja --sequential-link
-
-      - name: Force the use of test dependencies
-        run: cp opam/infer-tests.opam.locked opam/infer.opam.locked
-
-      - name: Attempt to get opam tree from the cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.opam
-          key: opam-${{ matrix.os }}-${{steps.os-version.outputs.version}}-${{ hashFiles('opam/infer.opam.locked', 'opam/ocamlformat') }}
-
-      - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: avsm/setup-ocaml@v1
-        with:
-          ocaml-version: ${{ matrix.ocaml-version }}
+          CC=clang CXX=clang++ ./facebook-clang-plugins/clang/setup.sh --ninja --sequential-link
 
       - run: ./build-infer.sh --yes all
 
@@ -122,6 +122,7 @@ jobs:
         run: |
           opam pin `cat opam/ocamlformat` --no-action
           opam install ocamlformat
+          opam exec -- ocamlformat --version
 
       - name: Test infer
         run: make test -k NDKBUILD=no
