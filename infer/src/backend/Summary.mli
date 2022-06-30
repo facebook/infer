@@ -22,17 +22,11 @@ module Stats : sig
   val update : ?add_symops:int -> ?failure_kind:Exception.failure_kind -> t -> t
 end
 
-module Status : sig
-  (** Analysis status of the procedure *)
-  type t
-end
-
 (** summary of a procedure name *)
 type t =
   { payloads: Payloads.t
   ; mutable sessions: int  (** Session number: how many nodes went through symbolic execution *)
   ; stats: Stats.t
-  ; status: Status.t
   ; proc_desc: Procdesc.t
   ; err_log: Errlog.t
         (** Those are issues that are detected for this procedure after per-procedure analysis. In
@@ -65,7 +59,7 @@ module OnDisk : sig
   val reset : Procdesc.t -> t
   (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 
-  val store_analyzed : t -> unit
+  val store : t -> unit
   (** Save summary for the procedure into the spec database *)
 
   val reset_all : filter:Filtering.procedures_filter -> unit -> unit

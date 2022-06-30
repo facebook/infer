@@ -41,16 +41,6 @@ module Stats = struct
     F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt failure_kind symops
 end
 
-module Status = struct
-  type t =
-    | Pending  (** the summary has been created by the procedure has not been analyzed yet *)
-    | Analyzed  (** the analysis of the procedure is finished *)
-
-  let to_string = function Pending -> "Pending" | Analyzed -> "Analyzed"
-
-  let pp fmt status = F.pp_print_string fmt (to_string status)
-end
-
 include struct
   (* ignore dead modules added by @@deriving fields *)
   [@@@warning "-60"]
@@ -59,7 +49,6 @@ include struct
     { payloads: Payloads.t
     ; mutable sessions: int
     ; stats: Stats.t
-    ; status: Status.t
     ; proc_desc: Procdesc.t
     ; err_log: Errlog.t
     ; mutable callee_pnames: Procname.Set.t }
@@ -97,10 +86,7 @@ let pp_signature fmt summary =
     (get_proc_name summary) (Pp.seq ~sep:", " pp_formal) (get_formals summary)
 
 
-let pp_no_stats_specs fmt summary =
-  F.fprintf fmt "%a@\n" pp_signature summary ;
-  F.fprintf fmt "%a@\n" Status.pp summary.status
-
+let pp_no_stats_specs fmt summary = F.fprintf fmt "%a@\n" pp_signature summary
 
 let pp_text fmt summary =
   pp_no_stats_specs fmt summary ;
@@ -148,7 +134,6 @@ module AnalysisSummary = struct
       { payloads: Payloads.t
       ; mutable sessions: int
       ; stats: Stats.t
-      ; status: Status.t
       ; proc_desc: Procdesc.t
       ; mutable callee_pnames: Procname.Set.t }
     [@@deriving fields]
@@ -158,7 +143,6 @@ module AnalysisSummary = struct
     { payloads= f.payloads
     ; sessions= f.sessions
     ; stats= f.stats
-    ; status= f.status
     ; proc_desc= f.proc_desc
     ; callee_pnames= f.callee_pnames }
 
@@ -173,7 +157,6 @@ let mk_full_summary (report_summary : ReportSummary.t) (analysis_summary : Analy
   { payloads= analysis_summary.payloads
   ; sessions= analysis_summary.sessions
   ; stats= analysis_summary.stats
-  ; status= analysis_summary.status
   ; proc_desc= analysis_summary.proc_desc
   ; callee_pnames= analysis_summary.callee_pnames
   ; err_log= report_summary.err_log }
@@ -277,14 +260,11 @@ module OnDisk = struct
       ~report_summary:(ReportSummary.SQLite.serialize report_summary)
 
 
-  let store_analyzed summary = store {summary with status= Status.Analyzed}
-
   let reset proc_desc =
     let summary =
       { sessions= 0
       ; payloads= Payloads.empty
       ; stats= Stats.empty
-      ; status= Status.Pending
       ; proc_desc
       ; err_log= Errlog.empty ()
       ; callee_pnames= Procname.Set.empty }
