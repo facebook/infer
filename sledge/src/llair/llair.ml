@@ -880,6 +880,14 @@ module Program = struct
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 
   let reachable_dists prev next =
+    [%dbg]
+      ~call:(fun {pf} ->
+        pf "from %a to %a" Block.pp_ident prev Block.pp_ident next )
+      ~retn:(fun {pf} dists ->
+        pf "@[<v 2>%t@]" (fun ppf ->
+            let pp = Format.fprintf ppf "@ %a (%i)" Block.pp_ident in
+            Block.Map.iteri dists ~f:(fun ~key ~data -> pp key data) ) )
+    @@ fun () ->
     (* [intermediate_dists] maps [dst] blocks to [src] blocks to integers,
        such that [intermediate_dists(dst)(src)] is the distance from src to
        dst *)
@@ -942,17 +950,16 @@ module Program = struct
     |> Option.value ~default:Block.Map.empty
 
   let compute_distances ~entry ~trace pgm =
+    [%dbg]
+      ~call:(fun {pf} ->
+        pf "wrt trace: [%a]"
+          (IArray.pp " -> " (fun ppf -> Function.name >> String.pp ppf))
+          trace )
+      ~retn:(fun {pf} _ -> pf "")
+    @@ fun () ->
     IArray.fold trace entry ~f:(fun next curr ->
-        let next_entry =
-          Function.Map.find_exn next pgm.functions
-          |> fun {entry; _} -> entry
-        in
+        let next_entry = (Function.Map.find_exn next pgm.functions).entry in
         let dists = reachable_dists curr next_entry in
-        [%Dbg.info
-          "distances to %a from locations reachable from %a: %a"
-            Block.pp_ident next_entry Block.pp_ident curr
-            (Block.Map.pp Block.pp_ident Int.pp)
-            dists] ;
         Block.Map.iteri dists ~f:(fun ~key:blk ~data ->
             blk.checkpoint_dists <-
               Function.Map.add blk.checkpoint_dists ~key:next ~data ) ;
