@@ -502,8 +502,7 @@ module PulseTransferFunctions = struct
                   Option.value ~default:[default_astate] astates )
         in
         (astates, !ret_vars) )
-      ref_counts
-      ([ContinueProgram astate], [])
+      ref_counts ([ContinueProgram astate], [])
 
 
   (* In the case of variables that point to Objective-C classes for which we have a dynamic type, we

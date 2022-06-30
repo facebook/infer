@@ -2079,7 +2079,7 @@ module DynamicTypes = struct
     let both = {phi.both with term_eqs= Term.VarMap.empty; atoms= Atom.Set.empty} in
     let* both, new_eqs =
       let f t v acc_both =
-        let* acc_both = acc_both in
+        let* acc_both in
         let t = simplify_term t in
         Formula.Normalizer.and_var_term v t acc_both
       in
@@ -2087,7 +2087,7 @@ module DynamicTypes = struct
     in
     let+ both, new_eqs =
       let f atom acc_both =
-        let* acc_both = acc_both in
+        let* acc_both in
         let atom = simplify_atom atom in
         Formula.Normalizer.and_atom atom acc_both
       in

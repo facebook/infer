@@ -125,9 +125,10 @@ module Attribute = struct
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | MustNotBeTainted of MustNotBeTaintedSet.t
     | JavaResourceReleased
-    | PropagateTaintFrom of taint_in list (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
-                                             retain [v1] to [vn], in fact they should be collected
-                                             when they become unreachable *)
+    | PropagateTaintFrom of taint_in list
+      (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
+         retain [v1] to [vn], in fact they should be collected
+         when they become unreachable *)
     | RefCounted
     | SourceOriginOfCopy of {source: AbstractValue.t; is_const_ref: bool}
     | StdMoved

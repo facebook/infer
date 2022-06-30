@@ -100,8 +100,7 @@ let%test_module _ =
       let minued = Sh.star common seg1 in
       let subtrahend =
         Sh.and_ (Formula.eq m n)
-          (Sh.exists
-             (Var.Set.of_list [m_])
+          (Sh.exists (Var.Set.of_list [m_])
              (Sh.extend_us (Var.Set.of_list [m_]) common) )
       in
       infer_frame minued [n_; m_] subtrahend ;

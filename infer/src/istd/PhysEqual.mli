@@ -21,7 +21,9 @@ open! IStd
 
     Simply write
 
-    {[ PhysEqual.optim2 ~res:(construct (f a b)) a0 b0 ]} *)
+    {[
+      PhysEqual.optim2 ~res:(construct (f a b)) a0 b0
+    ]} *)
 
 val optim1 : res:'a -> 'a -> 'a
 

@@ -1956,8 +1956,7 @@ and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
 
 and nullsafe_optimistic_third_party_in_default_mode =
   CLOpt.mk_bool
-    ~long:
-      "nullsafe-optimistic-third-party-in-default-mode"
+    ~long:"nullsafe-optimistic-third-party-in-default-mode"
       (* Turned on for compatibility reasons
        *)
     ~default:true
@@ -2963,8 +2962,7 @@ and xcpretty =
 
 let javac_classes_out =
   CLOpt.mk_string ~parse_mode:CLOpt.Javac ~deprecated:["classes_out"] ~long:""
-    ~short:
-      'd'
+    ~short:'d'
       (* Ensure that some form of "-d ..." is passed to javac. It's unclear whether this is strictly
          needed but the tests break without this for now. See discussion in D4397716. *)
     ~default:CLOpt.init_work_dir

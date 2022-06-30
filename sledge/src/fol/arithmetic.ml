@@ -473,7 +473,7 @@ struct
           match get_mono for_poly with
           | Some m ->
               let c, p = Sum.find_and_remove m a in
-              let* c = c in
+              let* c in
               solve_for_mono Sum.empty c m p
           | _ -> None )
   end

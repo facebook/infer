@@ -186,7 +186,8 @@ module Basic = struct
           L.d_printfln "Found destructor for class %a@\n" Typ.Name.pp class_name ;
           PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
             ~callee_data:(analyze_dependency destructor) location destructor ~ret
-            ~actuals:[(deleted_access, typ)] ~formals_opt:None ~call_kind:`ResolvedProcname astate
+            ~actuals:[(deleted_access, typ)]
+            ~formals_opt:None ~call_kind:`ResolvedProcname astate
           |> fst )
     | _ ->
         L.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"

@@ -562,7 +562,8 @@ let eradicate_field_not_nullable =
 (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
 let eradicate_field_over_annotated =
   register ~id:"ERADICATE_FIELD_OVER_ANNOTATED" ~hum:"Field Over Annotated" Advice
-    Eradicate (* TODO *) ~user_documentation:""
+    Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_inconsistent_subclass_parameter_annotation =
@@ -581,7 +582,8 @@ let eradicate_inconsistent_subclass_return_annotation =
 
 let eradicate_redundant_nested_class_annotation =
   register ~id:"ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION"
-    ~hum:"@Nullsafe annotation is redundant" Advice Eradicate (* TODO *) ~user_documentation:""
+    ~hum:"@Nullsafe annotation is redundant" Advice Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_bad_nested_class_annotation =
@@ -592,7 +594,8 @@ let eradicate_bad_nested_class_annotation =
 
 let eradicate_nullable_dereference =
   register ~id:"ERADICATE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference" Warning
-    Eradicate (* TODO *) ~user_documentation:""
+    Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_parameter_not_nullable =
@@ -630,7 +633,8 @@ let eradicate_meta_class_is_nullsafe =
   register ~id:"ERADICATE_META_CLASS_IS_NULLSAFE"
     ~hum:
       "Class is marked @Nullsafe and has 0 issues" (* Should be enabled for special integrations *)
-    ~enabled:false Info Eradicate (* TODO *) ~user_documentation:""
+    ~enabled:false Info Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_meta_class_needs_improvement =
@@ -644,9 +648,9 @@ let eradicate_meta_class_needs_improvement =
 
 let eradicate_meta_class_can_be_nullsafe =
   register ~id:"ERADICATE_META_CLASS_CAN_BE_NULLSAFE"
-    ~hum:
-      "Class has 0 issues and can be marked @Nullsafe"
-      (* Should be enabled for special integrations *) ~enabled:false Advice Eradicate (* TODO *)
+    ~hum:"Class has 0 issues and can be marked @Nullsafe"
+      (* Should be enabled for special integrations *)
+    ~enabled:false Advice Eradicate (* TODO *)
     ~user_documentation:""
 
 

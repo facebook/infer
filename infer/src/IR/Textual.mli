@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type name (* textual name *)
+(** textual name *)
+type name
 
 val name_of_string : string -> name
 

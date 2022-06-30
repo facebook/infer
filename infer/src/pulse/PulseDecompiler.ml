@@ -202,7 +202,7 @@ let find v decompiler =
 
 
 let add_var_source v var decompiler =
-  let+ decompiler = decompiler in
+  let+ decompiler in
   if Var.appears_in_source_code var then
     let[@warning "-8"] (Var.ProgramVar pvar) = var in
     Map.add v (PVar pvar, []) decompiler
@@ -270,7 +270,7 @@ let replace_getter_call_with_property_access procname v call actuals decompiler 
 
 
 let add_call_source v (call : CallEvent.t) actuals decompiler =
-  let+ decompiler = decompiler in
+  let+ decompiler in
   match call with
   | CallEvent.Call procname | SkippedKnownCall procname -> (
     match Attributes.load procname with

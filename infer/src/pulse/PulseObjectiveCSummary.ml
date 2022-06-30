@@ -27,7 +27,7 @@ let init_fields_zero tenv path location ~zero addr typ astate =
     match get_fields typ with
     | Some fields ->
         List.fold fields ~init:(Ok astate) ~f:(fun acc (field, field_typ, _) ->
-            let* acc = acc in
+            let* acc in
             let acc, field_addr = Memory.eval_edge addr (FieldAccess field) acc in
             init_fields_zero_helper field_addr field_typ acc )
     | None ->
