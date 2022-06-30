@@ -68,7 +68,6 @@ module Resource = struct
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
-    (* only adds on that the function can throw exceptions *)
   let use ~exn_class_name : model =
     let exn = CSharpClassName.from_string exn_class_name in
     fun model_data astate ->
@@ -121,14 +120,14 @@ let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model =
   in
   astate_null @ astate_not_null
 
-let allocate_log log allocate_arg = Printf.printf log; Resource.allocate ~exn_class_name:"System.IO.FileNotFoundException" allocate_arg
-
-let allocate_with_delegation_log log allocate_arg delegation_arg = Printf.printf log; Resource.allocate_with_delegation ~exn_class_name:"System.ArgumentException" () allocate_arg delegation_arg
-
 let iDisposablesIgnore = 
     [ "System.IO.MemoryStream"
     ; "System.IO.StringReader"
     ; "System.IO.StringWriter" ]
+
+
+let input_resource_usage_modeled =
+    StringSet.of_list [ "WriteByte"; "Write"; "Read" ]
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
@@ -150,29 +149,24 @@ let matchers : matcher list =
         ])
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:"System.ArgumentException" ()
-  (* Things that take care of the passed resource (stream) *)
-  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.BufferedStream")
-    (* BufferedStream can throw an ArgumentNullException *)
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.Net.Sockets.NetworkStream")
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
-    $+...$--> Resource.allocate_with_delegation ()
+    $+...$--> Resource.allocate_with_delegation ~exn_class_name:"System.IO.IOException" ()
+  (* Things that take care of the passed resource (stream) *)
   (* Things that may throw an exception *)
-  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.FileStream")
+  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of
+      [ "System.IO.FileStream"
+      ; "System.IO.IsolatedStorage.IsolatedStorageFileStream"
+      ])
     &:: ".ctor" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"System.IO.FileNotFoundException"
-    (* Disposal of IDisposables that throw exceptions *)
-  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of ["System.IO.StreamWriter"])
-    &:: "dispose" <>$ capt_arg_payload $+...$--> Resource.release ~exn_class_name:"EncoderFallbackException"
     (* Usage of IDisposables *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.Stream")
-    &:: "WriteByte" <>$ any_arg
-    $+...$--> Resource.use ~exn_class_name:"System.NotSupportedException"
+  &::+ (fun _ str -> StringSet.mem str input_resource_usage_modeled)
+    <>$ any_arg $+...$--> Resource.use ~exn_class_name:"System.IO.IOException"
   (* Some IDisposables that don't _need_ to be disposed, so don't track *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
     &:: ".ctor" <>$ any_arg $+...$--> Basic.skip
-  (* ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore) *)
-  (*   &:: "close" <>$ any_arg $+...$--> Basic.skip *)
-  (* ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore) *)
-  (*   &:: "dispose" <>$ any_arg $+...$--> Basic.skip *)
     (* Base case for IDisposables *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
     &:: ".ctor" <>$ capt_arg_payload $+...$--> Resource.allocate
