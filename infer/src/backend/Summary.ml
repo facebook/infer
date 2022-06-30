@@ -49,8 +49,6 @@ module Status = struct
   let to_string = function Pending -> "Pending" | Analyzed -> "Analyzed"
 
   let pp fmt status = F.pp_print_string fmt (to_string status)
-
-  let is_analyzed = function Analyzed -> true | _ -> false
 end
 
 include struct
@@ -73,8 +71,6 @@ let yojson_of_t {proc_desc; payloads} =
 
 
 type full_summary = t
-
-let get_status summary = summary.status
 
 let get_proc_desc summary = summary.proc_desc
 

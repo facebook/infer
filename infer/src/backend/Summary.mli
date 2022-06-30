@@ -25,8 +25,6 @@ end
 module Status : sig
   (** Analysis status of the procedure *)
   type t
-
-  val is_analyzed : t -> bool
 end
 
 (** summary of a procedure name *)
@@ -50,9 +48,6 @@ val get_proc_name : t -> Procname.t
 val get_proc_desc : t -> Procdesc.t
 
 val get_err_log : t -> Errlog.t
-
-val get_status : t -> Status.t
-(** Return the status (active v.s. inactive) of a procedure summary *)
 
 val pp_html : SourceFile.t -> Format.formatter -> t -> unit
 (** Print the summary in html format *)

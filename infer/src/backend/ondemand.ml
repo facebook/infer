@@ -53,27 +53,9 @@ let is_active, add_active, remove_active, clear_actives =
   (is_active, add_active, remove_active, clear_actives)
 
 
-let already_analyzed proc_name =
-  match Summary.OnDisk.get proc_name with
-  | Some summary ->
-      Summary.(Status.is_analyzed (get_status summary))
-  | None ->
-      false
-
-
-let should_be_analyzed proc_attributes =
-  proc_attributes.ProcAttributes.is_defined
-  &&
-  let proc_name = proc_attributes.ProcAttributes.proc_name in
-  (not (is_active proc_name)) (* avoid infinite loops *) && not (already_analyzed proc_name)
-
-
 let procedure_should_be_analyzed proc_name =
-  match Attributes.load proc_name with
-  | Some proc_attributes ->
-      should_be_analyzed proc_attributes
-  | None ->
-      false
+  Attributes.load proc_name
+  |> Option.exists ~f:(fun proc_attributes -> proc_attributes.ProcAttributes.is_defined)
 
 
 type global_state =
@@ -315,20 +297,22 @@ let analyze_callee exe_env ?caller_summary callee_pname =
         callee_summary_option
     | None ->
         let summ_opt =
-          if procedure_should_be_analyzed callee_pname then
-            match get_proc_desc callee_pname with
-            | Some callee_pdesc ->
-                RestartScheduler.lock_exn callee_pname ;
-                let callee_summary =
-                  run_proc_analysis exe_env
-                    ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-                    callee_pdesc
-                in
-                RestartScheduler.unlock callee_pname ;
-                Some callee_summary
-            | None ->
-                Summary.OnDisk.get callee_pname
-          else Summary.OnDisk.get callee_pname
+          match Summary.OnDisk.get callee_pname with
+          | Some _ as summ_opt ->
+              summ_opt
+          | None when procedure_should_be_analyzed callee_pname ->
+              get_proc_desc callee_pname
+              |> Option.map ~f:(fun callee_pdesc ->
+                     RestartScheduler.lock_exn callee_pname ;
+                     let callee_summary =
+                       run_proc_analysis exe_env
+                         ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
+                         callee_pdesc
+                     in
+                     RestartScheduler.unlock callee_pname ;
+                     callee_summary )
+          | _ ->
+              None
         in
         LocalCache.add callee_pname summ_opt ;
         summ_opt
