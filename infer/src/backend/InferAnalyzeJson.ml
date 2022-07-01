@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Function module for the json analysis after the capture phase *)
+(** Function modules for the json analysis after the capture phase *)
 
 open! IStd
 open Yojson
