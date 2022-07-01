@@ -9,7 +9,6 @@ open Core
 (* NOTE: All variants must be also added to [command_to_string] below *)
 type t =
   | Analyze
-  | AnalyzeJson
   | Capture
   | Compile
   | Debug
@@ -22,7 +21,6 @@ type t =
 
 let command_to_string =
   [ (Analyze, "analyze")
-  ; (AnalyzeJson, "analyzejson")
   ; (Capture, "capture")
   ; (Compile, "compile")
   ; (Debug, "debug")

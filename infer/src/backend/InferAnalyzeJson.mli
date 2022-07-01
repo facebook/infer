@@ -7,6 +7,8 @@
 
 open! IStd
 
-(** Main module for the analyzejson analysis after the capture phase *)
+(** Main module for the analysis after the capture phase *)
 
-val analyze_json : string -> string -> changed_files:IBase.SourceFile.Set.t option -> unit
+val parse_tenv : Yojson.Safe.t -> Tenv.t
+
+val parse_cfg : Yojson.Safe.t -> Cfg.t

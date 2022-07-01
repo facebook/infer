@@ -14,7 +14,6 @@ module F = Format
 (* based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
-  | AnalyzeJson
   | Ant of {prog: string; args: string list}
   | Buck2 of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
@@ -25,6 +24,7 @@ type mode =
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
+  | JsonSIL of {json_cfg: string; json_tenv: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Rebar3 of {args: string list}
@@ -37,8 +37,6 @@ let is_analyze_mode = function Analyze -> true | _ -> false
 let pp_mode fmt = function
   | Analyze ->
       F.fprintf fmt "Analyze driver mode"
-  | AnalyzeJson ->
-      F.fprintf fmt "Analyze json mode"
   | Ant {prog; args} ->
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Buck2 {build_cmd} ->
@@ -60,6 +58,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Gradle driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Javac {prog; args} ->
       F.fprintf fmt "Javac driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
+  | JsonSIL {json_cfg; json_tenv} ->
+      F.fprintf fmt "Analyze json mode"
   | Maven {prog; args} ->
       F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | NdkBuild {build_cmd} ->
@@ -117,7 +117,7 @@ let capture ~changed_files mode =
     () )
   else
     match mode with
-    | Analyze | AnalyzeJson ->
+    | Analyze ->
         ()
     | Ant {prog; args} ->
         L.progress "Capturing in ant mode...@." ;
@@ -152,6 +152,9 @@ let capture ~changed_files mode =
     | Javac {compiler; prog; args} ->
         if Config.is_originator then L.progress "Capturing in javac mode...@." ;
         Javac.capture compiler ~prog ~args
+    | JsonSIL {json_cfg; json_tenv} ->
+        L.progress "Capturing using JSON mode...@." ;
+        CaptureSILJson.capture ~changed_files ~json_cfg ~json_tenv  
     | Maven {prog; args} ->
         L.progress "Capturing in maven mode...@." ;
         Maven.capture ~prog ~args
@@ -193,17 +196,6 @@ let execute_analyze ~changed_files =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"analyze" ())) ;
   InferAnalyze.main ~changed_files ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
-
-
-let execute_analyze_json ~changed_files =
-  match (Config.cfg_json, Config.tenv_json) with
-  | Some cfg_json, Some tenv_json ->
-      InferAnalyzeJson.analyze_json cfg_json tenv_json ~changed_files
-  | _, _ ->
-      L.user_warning
-        "** Missing cfg or tenv json files. Provide them as arguments throught '--cfg-json' and \
-         '--tenv-json' **\n" ;
-      ()
 
 
 let report ?(suppress_console = false) () =
@@ -269,7 +261,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
         (false, false)
     | (Capture | Compile | Debug | Explore | Help | Report | ReportDiff), _ ->
         (false, false)
-    | (Analyze | AnalyzeJson | Run), _ ->
+    | (Analyze | Run), _ ->
         (true, true)
   in
   let should_analyze = should_analyze && Config.capture in
@@ -283,18 +275,16 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | _ ->
         false
   in
-  let analyze_json = match mode with AnalyzeJson -> true | _ -> false in
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     MergeCapture.merge_captured_targets () ;
     ResultsDir.RunState.set_merge_capture false ) ;
   if should_analyze then
-    if analyze_json then execute_analyze_json ~changed_files
-    else if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
+    if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else (
       execute_analyze ~changed_files ;
       if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ) ;
-  if should_report && Config.report then report ?suppress_console:suppress_console_report ()
+  if (should_report || Language.curr_language_is Language.CIL) && Config.report then report ?suppress_console:suppress_console_report ()
 
 
 let analyze_and_report ?suppress_console_report ~changed_files mode =
@@ -390,7 +380,12 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       if not (List.is_empty Config.clang_compilation_dbs) then (
         assert_supported_mode `Clang "clang compilation database" ;
         ClangCompilationDB {db_files= Config.clang_compilation_dbs} )
-      else Analyze
+      else (
+        match (Config.cfg_json, Config.tenv_json) with
+        | Some cfg_json, Some tenv_json ->
+            JsonSIL {json_cfg= cfg_json; json_tenv= tenv_json}
+        | _, _ ->
+            Analyze )
   | prog :: args -> (
       let build_system =
         match Config.force_integration with
