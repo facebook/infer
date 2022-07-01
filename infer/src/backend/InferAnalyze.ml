@@ -48,7 +48,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
         try
-          Ondemand.analyze_file exe_env source_file None;
+          Ondemand.analyze_file exe_env source_file ;
           if Config.write_html then Printer.write_all_html_files source_file ;
           None
         with RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->

@@ -340,17 +340,8 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
 
 
 (** Invoke all procedure-level and file-level callbacks on a given environment. *)
-let analyze_file exe_env source_file procname_list =
-  let procs_to_analyze = 
-    match procname_list with
-    | Some proc_list ->
-      if List.length proc_list > 0 then
-        proc_list
-      else
-        SourceFiles.proc_names_of_source source_file
-    | None ->
-      SourceFiles.proc_names_of_source source_file 
-  in
+let analyze_file exe_env source_file =
+  let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
   analyze_procedures exe_env procs_to_analyze (Some source_file)
 
 
