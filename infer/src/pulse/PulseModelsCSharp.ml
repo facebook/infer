@@ -42,7 +42,6 @@ let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model =
   in
   astate_null :: astate_not_null
 
-
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let map_context_tenv f (x, _) = f x in
@@ -51,4 +50,6 @@ let matchers : matcher list =
     $--> string_is_null_or_whitespace ~desc:"String.IsNullOrWhiteSpace"
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.String")
     &:: "IsNullOrEmpty" <>$ capt_arg_payload
-    $--> string_is_null_or_whitespace ~desc:"String.IsNullOrEmpty" ]
+    $--> string_is_null_or_whitespace ~desc:"String.IsNullOrEmpty"
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.Diagnostics.Debug") 
+    &:: "Assert" <>$ capt_arg $--> Basic.assert_ ]
