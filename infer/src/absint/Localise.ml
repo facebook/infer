@@ -25,12 +25,6 @@ module Tags = struct
   (** string describing a C value, e.g. "x.date" *)
   let value = "value"
 
-  (** describes a NPE that comes from parameter not nullable *)
-  let parameter_not_null_checked = "parameter_not_null_checked"
-
-  (** describes a NPE that comes from field not nullable *)
-  let field_not_null_checked = "field_not_null_checked"
-
   (** [@Nullable]-annoted field/param/retval that causes a warning *)
   let nullable_src = "nullable_src"
 
@@ -92,8 +86,7 @@ let error_desc_set_bucket err_desc bucket =
 let error_desc_is_reportable_bucket err_desc =
   let issue_bucket = error_desc_get_bucket err_desc in
   let high_buckets = BucketLevel.[b1; b2] in
-  Option.value_map issue_bucket ~default:false ~f:(fun b ->
-      List.mem ~equal:String.equal high_buckets b )
+  Option.exists issue_bucket ~f:(fun b -> List.mem ~equal:String.equal high_buckets b)
 
 
 (** get the value tag, if any *)
@@ -115,7 +108,7 @@ let error_desc_hash desc = Hashtbl.hash (desc_get_comparable desc)
 
 (** equality for error_desc *)
 let error_desc_equal desc1 desc2 =
-  [%compare.equal: string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
+  [%equal: string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
 
 
 let line_tag_ tags tag loc =
@@ -351,52 +344,9 @@ let dereference_string proc_name deref_str value_str access_opt loc =
   {no_desc with descriptions= (value_desc :: access_desc) @ problem_desc; tags= !tags}
 
 
-let parameter_field_not_null_checked_desc (desc : error_desc) exp =
-  let parameter_not_nullable_desc var =
-    let var_s = Pvar.to_string var in
-    let param_not_null_desc =
-      "Parameter " ^ MF.monospaced_to_string var_s
-      ^ " is not checked for null, there could be a null pointer dereference:"
-    in
-    { desc with
-      descriptions= param_not_null_desc :: desc.descriptions
-    ; tags= (Tags.parameter_not_null_checked, var_s) :: desc.tags }
-  in
-  let field_not_nullable_desc exp =
-    let rec exp_to_string exp =
-      match exp with
-      | Exp.Lfield (exp', field, _) ->
-          exp_to_string exp' ^ " -> " ^ Fieldname.to_string field
-      | Exp.Lvar pvar ->
-          Mangled.to_string (Pvar.get_name pvar)
-      | _ ->
-          ""
-    in
-    let var_s = exp_to_string exp in
-    let field_not_null_desc =
-      "Instance variable " ^ MF.monospaced_to_string var_s
-      ^ " is not checked for null, there could be a null pointer dereference:"
-    in
-    { desc with
-      descriptions= field_not_null_desc :: desc.descriptions
-    ; tags= (Tags.field_not_null_checked, var_s) :: desc.tags }
-  in
-  match exp with
-  | Exp.Lvar var ->
-      parameter_not_nullable_desc var
-  | Exp.Lfield _ ->
-      field_not_nullable_desc exp
-  | _ ->
-      desc
-
-
 let has_tag (desc : error_desc) tag =
   List.exists ~f:(fun (tag', _) -> String.equal tag tag') desc.tags
 
-
-let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_null_checked
-
-let is_field_not_null_checked_desc desc = has_tag desc Tags.field_not_null_checked
 
 let desc_condition_always_true_false i cond_str_opt loc =
   let tags = Tags.create () in

@@ -6,32 +6,36 @@
 (env
  (debug
   (flags
-   (-w +a-4-9-18-30-40-42-44-48@50-66-70 -strict-formats -strict-sequence
-     -short-paths -bin-annot -keep-locs -keep-docs -g))
+   (-strict-formats -strict-sequence -short-paths -bin-annot -keep-locs
+     -keep-docs -g -w +a -w @unexpected-docstring -w -fragile-match -w
+     -missing-record-field-pattern -w -not-principal -w
+     -duplicate-definitions -w -name-out-of-scope -w -disambiguated-name -w
+     -open-shadow-identifier -w -eliminated-optional-arguments -w
+     -unused-open-bang -w -missing-mli))
   (ocamlopt_flags (-O3))
   (env-vars
-   (PPX_TRACE_ENABLED 1))
+   (PPX_DBG_ENABLED 1))
   (inline_tests enabled))
  (trace
   (flags
    (-w -a -noassert -unboxed-types -g))
   (ocamlopt_flags (-O3))
   (env-vars
-   (PPX_TRACE_ENABLED 1))
+   (PPX_DBG_ENABLED 1))
   (inline_tests disabled))
  (_ ; release, dev, default,...
   (flags
    (-w -a -noassert -unboxed-types))
   (ocamlopt_flags (-O3))
   (env-vars
-   (PPX_TRACE_ENABLED 0))
+   (PPX_DBG_ENABLED 0))
   (inline_tests disabled)))
 
 (library
  (name ppx_sledge)
  (kind ppx_rewriter)
  (libraries ppx_compare ppx_enumerate ppx_expect ppx_here ppx_inline_test
-   ppx_let ppx_sexp_conv ppx_sexp_value ppx_variants_conv)
+   ppx_let ppx_sexp_conv ppx_sexp_value)
  (preprocess no_preprocessing))
 
 (subdir
@@ -43,7 +47,7 @@
   (flags
    (:standard -open NS))
   (preprocess
-   (pps ppx_sledge ppx_trace))
+   (pps ppx_sledge ppx_dbg))
   (inline_tests)))
 
 (subdir
@@ -55,7 +59,7 @@
   (flags
    (:standard -open NS))
   (preprocess
-   (pps ppx_sledge ppx_trace))
+   (pps ppx_sledge ppx_dbg))
   (inline_tests)))
 
 (subdir
@@ -63,11 +67,11 @@
  (library
   (name sledge)
   (public_name sledge)
-  (libraries mtime mtime.clock.os nonstdlib llair fol)
+  (libraries mtime mtime.clock.os psq nonstdlib llair fol)
   (flags
    (:standard -open NS))
   (preprocess
-   (pps ppx_sledge ppx_trace))
+   (pps ppx_sledge ppx_dbg))
   (inline_tests)))
 
 (subdir
@@ -80,7 +84,7 @@
   (flags
    (:standard -open NS -open Sledge))
   (preprocess
-   (pps ppx_sledge ppx_trace))))
+   (pps ppx_sledge ppx_dbg))))
 
 (subdir
  src/test
@@ -90,7 +94,7 @@
   (flags
    (:standard -open NS))
   (preprocess
-   (pps ppx_sledge ppx_trace))
+   (pps ppx_sledge ppx_dbg))
   (inline_tests)))
 
 (subdir
@@ -99,14 +103,14 @@
   (name sledge_cli)
   (public_name sledge)
   (package sledge)
-  (libraries apron apron.boxMPQ core ctypes ctypes.foreign dune-build-info
-    llvm llvm.analysis llvm.bitwriter llvm.ipo llvm.irreader llvm.linker
-    llvm.passmgr_builder llvm.scalar_opts llvm.target memtrace shexp.process
-    yojson trace nonstdlib sledge smtlib-utils)
+  (libraries apron apron.boxMPQ core ctypes ctypes.foreign dbg
+    dune-build-info llvm llvm.analysis llvm.bitwriter llvm.ipo llvm.irreader
+    llvm.linker llvm.passmgr_builder llvm.scalar_opts llvm.target memtrace
+    shexp.process yojson nonstdlib sledge smtlib-utils)
   (flags
-   (:standard -w -58 -open NS -open Sledge))
+   (:standard -w -no-cmx-file -open NS -open Sledge))
   (preprocess
-   (pps ppx_sledge ppx_trace))))
+   (pps ppx_sledge ppx_dbg))))
 
 (dirs :standard \ test)
 

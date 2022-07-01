@@ -4,22 +4,25 @@
 % This source code is licensed under the MIT license found in the
 % LICENSE file in the root directory of this source tree.
 
+-define(OPTIONS, ["with_otp_specs"]).
+
 usage() ->
     Usage =
         "Usage:\n"
-        "    erlang.escript <ast_out_dir> -- rebar3 [args ...]\n"
-        "    erlang.escript <ast_out_dir> -- erlc [args ...]\n"
+        "    erlang.escript [--with_otp_specs] <ast_out_dir> -- rebar3 [args ...]\n"
+        "    erlang.escript [--with_otp_specs] <ast_out_dir> -- erlc [args ...]\n"
         "\n"
         "This script produces a bash command that makes rebar3 or erlc\n"
         "to execute with [args ...], and in addition to write in \n"
-        "<ast_out_dir> the Erlang AST in JSON format for each file compiled\n",
+        "<ast_out_dir> the Erlang AST in JSON format for each file compiled\n"
+        "Option flag `--with_otp_specs` is to include specs from OTP modules.\n",
     io:format("~s", [Usage]),
     halt(1).
 
 main([]) ->
     usage();
 main(Args) ->
-    {SArgs, Cmd} = split_args(Args),
+    {Options, SArgs, Cmd} = split_args(Args),
     OutDir =
         case SArgs of
             [Dir] -> Dir;
@@ -27,24 +30,7 @@ main(Args) ->
         end,
     ScriptDir = filename:dirname(escript:script_name()),
     ParseTransformDir = filename:join(ScriptDir, "infer_parse_transform"),
-    case run("rebar3 compile", ParseTransformDir) of
-        {0, _} ->
-            ok;
-        {ExitStatus, Output} ->
-            io:format(
-                standard_error,
-                "error: `rebar3 compile` in `~s` returned exit code ~p.~n Output was~n",
-                [
-                    ParseTransformDir,
-                    ExitStatus
-                ]
-            ),
-            lists:foreach(
-                fun(Line) -> io:format(standard_error, "~s", [Line]) end,
-                Output
-            ),
-            halt(1)
-    end,
+    run_expect_zero("rebar3 compile", ParseTransformDir),
     CompiledListPath = mktemp(".list"),
     OutputCmd =
         case Cmd of
@@ -57,9 +43,19 @@ main(Args) ->
                 halt(1)
         end,
     LibPath = filename:join(ParseTransformDir, "_build/default/lib"),
+    MaybeOTPCmd =
+        case lists:member(with_otp_specs, Options) of
+            true ->
+                OTPBeamListPath = get_otp_beam_list(),
+                io_lib:format(
+                    "&& ~s/extract.escript --specs_only ~s ~s", [ScriptDir, OTPBeamListPath, OutDir]
+                );
+            _ ->
+                []
+        end,
     io:format(
-        "export ERL_LIBS=\"~s:$ERL_LIBS\"; ~s && ~s/extract.escript ~s ~s~n",
-        [LibPath, OutputCmd, ScriptDir, CompiledListPath, OutDir]
+        "export ERL_LIBS=\"~s:$ERL_LIBS\"; ~s && ~s/extract.escript ~s ~s ~s~n",
+        [LibPath, OutputCmd, ScriptDir, CompiledListPath, OutDir, MaybeOTPCmd]
     ).
 
 load_config_from_list([]) ->
@@ -88,13 +84,50 @@ load_config(_) ->
 
 split_args(Args) ->
     try
-        split_args_rec(Args, [])
+        split_args_rec(Args, [], [])
     catch
         _:_ -> usage()
     end.
 
-split_args_rec(["--" | RebarCmd], Args) -> {Args, RebarCmd};
-split_args_rec([H | T], Args) -> split_args_rec(T, Args ++ [H]).
+split_args_rec(["--" | RebarCmd], Options, Args) ->
+    {Options, Args, RebarCmd};
+split_args_rec([[$-, $- | Option] | T], Options, Args) ->
+    case lists:member(Option, ?OPTIONS) of
+        true ->
+            split_args_rec(T, [list_to_atom(Option) | Options], Args);
+        _ ->
+            io:fwrite("Unrecognized option `--~s`~n~n", [Option]),
+            usage()
+    end;
+split_args_rec([H | T], Options, Args) ->
+    split_args_rec(T, Options, [H | Args]).
+
+get_otp_beam_list() ->
+    {ok, CWD} = file:get_cwd(),
+    OTPDir = string:trim(
+        run_expect_zero("erl -eval 'io:format(\"~s~n\",[code:root_dir()]), halt().' -noshell", CWD)
+    ),
+    OTPBeamListPath = mktemp(".list"),
+    file:write_file(OTPBeamListPath, run_expect_zero("ls \"$PWD\"/lib/*/ebin/*.beam", OTPDir)),
+    OTPBeamListPath.
+
+run_expect_zero(Command, Dir) ->
+    case run(Command, Dir) of
+        {0, Output} ->
+            Output;
+        {ExitStatus, Output} ->
+            io:format(
+                standard_error,
+                "error: `~s` in `~s` returned exit code ~p. Output was~n~s~n",
+                [
+                    Command,
+                    Dir,
+                    ExitStatus,
+                    Output
+                ]
+            ),
+            halt(1)
+    end.
 
 run(Command, Dir) ->
     Port = erlang:open_port(
@@ -106,7 +139,7 @@ run(Command, Dir) ->
 run_manager(Port, Output) ->
     receive
         {Port, {data, Line}} -> run_manager(Port, [Line | Output]);
-        {Port, {exit_status, Status}} -> {Status, lists:reverse(Output)}
+        {Port, {exit_status, Status}} -> {Status, lists:flatten(lists:reverse(Output))}
     end.
 
 mktemp(Suffix) ->

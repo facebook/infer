@@ -132,7 +132,7 @@ class ArrayListTest {
     int j = a.get(b.size() + 1);
   }
 
-  void remove_in_loop_iterator_good_FP(ArrayList<Integer> b) {
+  void remove_in_loop_iterator_good(ArrayList<Integer> b) {
     ArrayList<Integer> a = new ArrayList<>();
     for (Integer i : b) {
       a.add(i);
@@ -140,11 +140,8 @@ class ArrayListTest {
     for (Integer i : b) {
       a.remove(i);
     }
-    /* a.size should be 0, but it is analyzed to [-oo, b.size] for now.
-    - array smashing: It abstracts all members as one abstract value, so cannot precisely analyze
-      the set of members in the array.
-    - imprecise remove model: Even with the array smashing, it should have been able to analyze
-      as [0, b.size], if the semantics of the model was preciser. */
+    /* a.size is analyzed to 0, but it is coincidence.  Since it abstracts all members as one
+    abstract value (array smashing), it cannot follow the added/removed elements precisely. */
     if (a.size() < 0) {
       int j = b.get(b.size());
     }

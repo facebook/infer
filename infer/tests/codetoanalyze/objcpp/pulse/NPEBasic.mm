@@ -10,6 +10,8 @@
 
 @interface AnotherObject : NSObject
 - (int)someMethod:(int)param1;
+
+- (NSObject*)unknown_function;
 @end
 
 @implementation AnotherObject
@@ -239,4 +241,29 @@ void nilMessagingToFunctionWithBlockParamOk() {
   Mutator* const mutator = nil;
   NSObject* const initial = [mutator setCallback:^(){
   }];
+}
+
+void unrelated_invalidation(SomeObject* obj) {
+  AnotherObject* ao = obj.anotherObject;
+  int y = 0; /* unrelated invalidation */
+  NSArray<NSObject*>* const constraints = @[ [ao unknown_function] ];
+  return 0;
+}
+
+@interface Result
+- (const std::shared_ptr<int>&)shared_ptr_of_int_ref;
+@end
+
+@interface Builder : NSObject
+- (Result*)getResult;
+@end
+
+@implementation Builder : NSObject
+- (Result*)getResult {
+  return nil;
+}
+@end
+
+const std::shared_ptr<int>& nilMessagingSharedPtrRefBad(Builder* builder) {
+  return [[builder getResult] shared_ptr_of_int_ref];
 }

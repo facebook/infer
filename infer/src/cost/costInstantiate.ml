@@ -13,6 +13,7 @@ module Call = struct
     ; pname: Procname.t
     ; node: ProcCfg.InstrNode.t
     ; args: (Exp.t * Typ.t) list
+    ; captured_vars: (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
     ; ret: Ident.t * Typ.t }
   [@@deriving compare]
 
@@ -40,7 +41,7 @@ let get_instantiated_cost
     ; get_callee_cost_summary_and_formals
     ; inferbo_invariant_map
     ; inferbo_get_summary
-    ; call= Call.{pname; node; ret; args} } =
+    ; call= Call.{pname; node; ret; args; captured_vars} } =
   let inferbo_mem =
     Option.value_exn
       (BufferOverrunAnalysis.extract_pre (ProcCfg.InstrNode.id node) inferbo_invariant_map)
@@ -53,8 +54,8 @@ let get_instantiated_cost
       let callee_cost = CostDomain.get_operation_cost cost_record in
       if CostDomain.BasicCost.is_symbolic callee_cost.cost then
         (Cost.instantiate_cost ~default_closure_cost:Ints.NonNegativeInt.one integer_type_widths
-           ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args ~callee_cost
-           ~loc )
+           ~inferbo_caller_mem:inferbo_mem ~callee_pname:pname ~callee_formals ~args ~captured_vars
+           ~callee_cost ~loc )
           .cost |> get_symbolic
       else Cheap
   | None ->
@@ -74,17 +75,17 @@ let get_instantiated_cost
 
 let prepare_call_args
     ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as analysis_data) call =
+  let open IOption.Let_syntax in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_proc_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
-  let inferbo_invariant_map =
+  let+ inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
       (InterproceduralAnalysis.bind_payload ~f:fst3 analysis_data)
   in
-  let open IOption.Let_syntax in
   let get_callee_cost_summary_and_formals callee_pname =
     let* callee_pdesc, (_inferbo, _, callee_costs_summary) = analyze_dependency callee_pname in
-    let+ callee_costs_summary = callee_costs_summary in
+    let+ callee_costs_summary in
     (callee_costs_summary, Procdesc.get_pvar_formals callee_pdesc)
   in
   let inferbo_get_summary callee_pname =
@@ -102,12 +103,12 @@ let prepare_call_args
 
 
 let get_cost_if_expensive analysis_data call =
-  match prepare_call_args analysis_data call |> get_instantiated_cost with
-  | Symbolic cost ->
-      Some cost
-  | Cheap | NoModel ->
-      None
+  let open IOption.Let_syntax in
+  let* call_args = prepare_call_args analysis_data call in
+  match get_instantiated_cost call_args with Symbolic cost -> Some cost | Cheap | NoModel -> None
 
 
 let get_instantiated_cost analysis_data call =
-  prepare_call_args analysis_data call |> get_instantiated_cost
+  let open IOption.Let_syntax in
+  let+ call_args = prepare_call_args analysis_data call in
+  get_instantiated_cost call_args

@@ -65,7 +65,7 @@ type instr_metadata =
   | TryEntry of {try_id: int; loc: Location.t}  (** entry of C++ try block *)
   | TryExit of {try_id: int; loc: Location.t}  (** exit of C++ try block *)
   | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t  (** stack variable declared *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 (** An instruction. *)
 type instr =
@@ -103,9 +103,7 @@ type instr =
   | Metadata of instr_metadata
       (** hints about the program that are not strictly needed to understand its semantics, for
           instance information about its original syntactic structure *)
-[@@deriving compare]
-
-let equal_instr = [%compare.equal: instr]
+[@@deriving compare, equal]
 
 let skip_instr = Metadata Skip
 

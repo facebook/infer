@@ -139,6 +139,48 @@ and catch_clause = catch_pattern clause [@@deriving sexp_of]
 and catch_pattern = {exception_: exception_; pattern: pattern; variable: string}
 [@@deriving sexp_of]
 
+(** {2 S8.7 Types} *)
+
+(** See also https://www.erlang.org/doc/reference_manual/typespec.html *)
+
+type atom_type = Any | Literal of string [@@deriving sexp_of]
+
+type integer_type = Any | Literal of int | Range of {low: int; high: int} | Neg | NonNeg | Pos
+[@@deriving sexp_of]
+
+type type_ =
+  | Any
+  | Atom of atom_type
+  | BitString of {start_size: int; segment_size: int}
+  | Integer of integer_type
+  | List of list_type
+  | Map (* TODO: associations *)
+  | Nil
+  | None
+  | Pid
+  | Port
+  | Record of string (* TODO: fields*)
+  | Reference
+  | Remote of {module_: string; type_: string} (* TODO: arguments *)
+  | String (* TODO: replace this with [char()] when we model strings as lists. *)
+  | Tuple of tuple_type
+  | Union of type_ list
+  | UserDefined of string (* TODO: arguments *)
+  | Var of string
+  | Unsupported (* If we don't support parsing some type, we can use this *)
+[@@deriving sexp_of]
+
+and list_type = Proper of type_
+
+and tuple_type = AnySize | FixedSize of type_ list [@@deriving sexp_of]
+
+(* Function specs can be overloaded, forming disjunctions.
+   Currently the only kind of constraints are "subtype of" which we track in a map. *)
+type spec_disjunct = {arguments: type_ list; return: type_; constraints: type_ String.Map.t}
+[@@deriving sexp_of]
+
+type spec = spec_disjunct list [@@deriving sexp_of]
+
 (** {2 S8.1: Module declarations and forms} *)
 
 (* TODO: Add types, and specs. *)
@@ -151,6 +193,8 @@ type simple_form =
   | File of {path: string}
   | Function of {function_: function_; clauses: case_clause list}
   | Record of {name: string; fields: record_field list}
+  | Spec of {function_: function_; spec: spec}
+  | Type of {name: string; type_: type_} (* TODO: arguments*)
 [@@deriving sexp_of]
 
 type form = {location: location; simple_form: simple_form} [@@deriving sexp_of]

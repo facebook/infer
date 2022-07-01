@@ -23,7 +23,7 @@ let is_synchronized_library_call =
 let should_skip_analysis =
   let matcher = MethodMatcher.of_json Config.starvation_skip_analysis in
   fun tenv pname actuals ->
-    match pname with
+    match Procname.base_of pname with
     | Procname.Java java_pname
       when Procname.Java.is_static java_pname
            && String.equal "getInstance" (Procname.get_method pname) ->
@@ -351,7 +351,7 @@ let get_returned_executor tenv callee actuals =
              | _ ->
                  false ) )
   in
-  match (callee, actuals) with
+  match (Procname.base_of callee, actuals) with
   | Procname.Java java_pname, [] -> (
     match Procname.Java.get_method java_pname with
     | ("getForegroundExecutor" | "getBackgroundExecutor") when Lazy.force type_check ->
@@ -412,15 +412,25 @@ let is_java_main_method (pname : Procname.t) =
   let check_main_args args =
     match args with [arg] -> Typ.equal pointer_to_array_of_java_lang_string arg | _ -> false
   in
-  match pname with
-  | C _ | Erlang _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | WithBlockParameters _
-    ->
-      false
-  | Java java_pname ->
-      Procname.Java.is_static java_pname
-      && String.equal "main" (Procname.get_method pname)
-      && Typ.equal StdTyp.void (Procname.Java.get_return_typ java_pname)
-      && check_main_args (Procname.Java.get_parameters java_pname)
+  let rec test_pname pname =
+    match (pname : Procname.t) with
+    | C _
+    | Erlang _
+    | Linters_dummy_method
+    | Block _
+    | ObjC_Cpp _
+    | CSharp _
+    | WithFunctionParameters _ ->
+        false
+    | WithAliasingParameters (base, _) ->
+        test_pname base
+    | Java java_pname ->
+        Procname.Java.is_static java_pname
+        && String.equal "main" (Procname.get_method pname)
+        && Typ.equal StdTyp.void (Procname.Java.get_return_typ java_pname)
+        && check_main_args (Procname.Java.get_parameters java_pname)
+  in
+  test_pname pname
 
 
 let may_execute_arbitrary_code =

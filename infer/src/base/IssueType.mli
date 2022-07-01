@@ -17,7 +17,7 @@ type visibility =
 val string_of_visibility : visibility -> string
 
 (** severity of the report *)
-type severity = Like | Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
+type severity = Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
 val string_of_severity : severity -> string
 
@@ -147,6 +147,8 @@ val config_impact_analysis : t
 
 val config_impact_analysis_strict : t
 
+val config_impact_analysis_strict_beta : t
+
 val constant_address_dereference : latent:bool -> t
 
 val create_intent_from_uri : t
@@ -156,6 +158,8 @@ val cross_site_scripting : t
 val dangling_pointer_dereference : t
 
 val dangling_pointer_dereference_maybe : t
+
+val data_flow_to_sink : t
 
 val dead_store : t
 
@@ -209,8 +213,6 @@ val exposed_insecure_intent_handling : t
 val expensive_cost_call : kind:CostKind.t -> t
 
 val failure_exe : t
-
-val field_not_null_checked : t
 
 val guardedby_violation : t
 
@@ -306,15 +308,15 @@ val nullptr_dereference : latent:bool -> t
 
 val optional_empty_access : latent:bool -> t
 
-val parameter_not_null_checked : t
-
 val precondition_not_found : t
 
 val precondition_not_met : t
 
 val premature_nil_termination : t
 
-val pulse_memory_leak : t
+val pulse_memory_leak_c : t
+
+val pulse_memory_leak_cpp : t
 
 val pulse_resource_leak : t
 
@@ -327,6 +329,8 @@ val regex_op_on_ui_thread : t
 val resource_leak : t
 
 val retain_cycle : t
+
+val sensitive_data_flow : t
 
 val skip_function : t
 
@@ -350,6 +354,8 @@ val strong_self_not_checked : t
 
 val symexec_memory_error : t
 
+val taint_error : t
+
 val thread_safety_violation : t
 
 val topl_error : t
@@ -359,6 +365,12 @@ val uninitialized_value : t
 val uninitialized_value_pulse : latent:bool -> t
 
 val unnecessary_copy_pulse : t
+
+val unnecessary_copy_assignment_pulse : t
+
+val unnecessary_copy_assignment_movable_pulse : t
+
+val unnecessary_copy_movable_pulse : t
 
 val unreachable_code_after : t
 

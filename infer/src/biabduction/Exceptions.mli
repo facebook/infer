@@ -36,8 +36,6 @@ exception
 
 exception Divide_by_zero of Localise.error_desc * Logging.ocaml_pos
 
-exception Field_not_null_checked of Localise.error_desc * Logging.ocaml_pos
-
 exception Empty_vector_access of Localise.error_desc * Logging.ocaml_pos
 
 exception Inherently_dangerous_function of Localise.error_desc
@@ -57,8 +55,6 @@ exception Missing_fld of Fieldname.t * Logging.ocaml_pos
 exception Premature_nil_termination of Localise.error_desc * Logging.ocaml_pos
 
 exception Null_dereference of Localise.error_desc * Logging.ocaml_pos
-
-exception Parameter_not_null_checked of Localise.error_desc * Logging.ocaml_pos
 
 exception Precondition_not_found of Localise.error_desc * Logging.ocaml_pos
 

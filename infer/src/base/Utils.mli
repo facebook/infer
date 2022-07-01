@@ -150,6 +150,10 @@ val iter_infer_deps : project_root:string -> f:(string -> unit) -> string -> uni
 (** Parse each line of the given infer_deps.txt file (split on tabs, assume 3 elements per line) and
     run [f] on the third element. [project_root] is an argument to avoid dependency cycles. *)
 
+val inline_argument_files : string list -> string list
+(** Given a list of arguments return the extended list of arguments where the args in a file have
+    been extracted *)
+
 val numcores : int
 (** - On Linux return the number of physical cores (sockets * cores per socket).
     - On Darwin and Windows returns half of the number of CPUs since most processors have 2 hardware

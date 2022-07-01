@@ -471,11 +471,11 @@ throws:
 
 exception_type_list:
   | separated_nonempty_list(COMMA, exception_type)
-    { [] }
+    { [] : string list }
 
 exception_type:
   | unann_class_or_interface_type // WE DROP ANNOTS
-    { [] }
+    { [] : string list }
 
 constant_declaration:
   | unann_type variable_declarator_list SEMICOLON

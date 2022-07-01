@@ -20,9 +20,7 @@ let rec swap_elements_list l =
 
 
 let append_no_duplicates_annotations =
-  let cmp (annot1, _) (annot2, _) =
-    String.compare annot1.Annot.class_name annot2.Annot.class_name
-  in
+  let cmp annot1 annot2 = String.compare annot1.Annot.class_name annot2.Annot.class_name in
   Staged.unstage (IList.append_no_duplicates ~cmp)
 
 
@@ -101,16 +99,26 @@ let get_var_name_mangled decl_info name_info var_decl_info =
 
 let is_type_pod qt =
   let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
-  Option.bind desugared_type ~f:(function
-    | Clang_ast_t.RecordType (_, decl_ptr) ->
-        CAst_utils.get_decl decl_ptr
-    | _ ->
-        None )
-  |> Option.value_map ~default:true ~f:(function
-       | Clang_ast_t.(
-           ( CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
-           | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _)
-           | ClassTemplatePartialSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _) )) ->
-           xrdi_is_pod
-       | _ ->
-           true )
+  let is_reference =
+    Option.exists desugared_type ~f:(function
+      | Clang_ast_t.LValueReferenceType _ | Clang_ast_t.RValueReferenceType _ ->
+          true
+      | _ ->
+          false )
+  in
+  if is_reference then false
+  else
+    Option.bind desugared_type ~f:(function
+      | Clang_ast_t.RecordType (_, decl_ptr) ->
+          CAst_utils.get_decl decl_ptr
+      | _ ->
+          None )
+    |> Option.value_map ~default:true ~f:(function
+         | Clang_ast_t.(
+             ( CXXRecordDecl (_, _, _, _, _, _, _, {xrdi_is_pod})
+             | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _, _)
+             | ClassTemplatePartialSpecializationDecl (_, _, _, _, _, _, _, {xrdi_is_pod}, _, _, _)
+               )) ->
+             xrdi_is_pod
+         | _ ->
+             true )

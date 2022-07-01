@@ -17,13 +17,13 @@ module M = Caml.Map.Make (struct
   let compare = Exp.compare
 end)
 
-type range = Typ.t * InferredNullability.t [@@deriving compare]
+type range = Typ.t * InferredNullability.t [@@deriving compare, equal]
 
 let pp_range fmt (typ, nullability) =
   F.fprintf fmt "Typ: %s; Nullability: %a" (Typ.to_string typ) InferredNullability.pp nullability
 
 
-type t = range M.t [@@deriving compare]
+type t = range M.t [@@deriving compare, equal]
 
 let equal = [%compare.equal: t]
 

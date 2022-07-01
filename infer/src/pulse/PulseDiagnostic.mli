@@ -8,7 +8,9 @@
 open! IStd
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
+module Decompiler = PulseDecompiler
 module Invalidation = PulseInvalidation
+module Taint = PulseTaint
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -19,6 +21,7 @@ type access_to_invalid_address =
         (** the list of function calls leading to the issue being realised, in
             outermost-to-innermost order, which is an additional common prefix to the traces in the
             record *)
+  ; invalid_address: Decompiler.expr
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to [invalidation] without
@@ -53,12 +56,35 @@ type read_uninitialized_value =
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
-  | RetainCycle of {assignment_trace: Trace.t; location: Location.t}
+  | RetainCycle of
+      { assignment_traces: Trace.t list
+      ; value: Decompiler.expr
+      ; path: Decompiler.expr
+      ; location: Location.t }
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
-  | UnnecessaryCopy of {variable: Var.t; location: Location.t}
+  | TaintFlow of
+      { tainted: Decompiler.expr
+      ; source: Taint.t * ValueHistory.t
+      ; sink: Taint.t * Trace.t
+      ; location: Location.t }
+  | FlowFromTaintSource of
+      { tainted: Decompiler.expr
+      ; source: Taint.t * ValueHistory.t
+      ; destination: Procname.t
+      ; location: Location.t }
+  | FlowToTaintSink of
+      { source: Decompiler.expr * Trace.t
+      ; sanitizers: Attribute.TaintSanitizedSet.t
+      ; sink: Taint.t * Trace.t
+      ; location: Location.t }
+  | UnnecessaryCopy of
+      { copied_into: PulseAttribute.CopiedInto.t
+      ; typ: Typ.t
+      ; location: Location.t
+      ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
 val aborts_execution : t -> bool
@@ -67,6 +93,8 @@ val aborts_execution : t -> bool
 val get_message : t -> string
 
 val get_location : t -> Location.t
+
+val get_copy_type : t -> Typ.t option
 
 val get_issue_type : latent:bool -> t -> IssueType.t
 

@@ -1,0 +1,8 @@
+translate/address_of_label.bc:	Ok
+translate/cond_alloca.bc:	Ok
+translate/destructor_bases.bc:	Ok
+translate/exceptions.bc:	Ok
+translate/rethrow.bc:	Ok
+translate/struct.bc:	Ok
+translate/vector.bc:	Ok
+translate/virtual.bc:	Ok

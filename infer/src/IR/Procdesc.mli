@@ -290,6 +290,8 @@ val get_start_node : t -> Node.t
 val get_static_callees : t -> Procname.t list
 (** get a list of unique static callees excluding self *)
 
+val get_specialized_with_aliasing_info : t -> ProcAttributes.specialized_with_aliasing_info option
+
 val is_defined : t -> bool
 (** Return [true] iff the procedure is defined, and not just declared *)
 
@@ -357,6 +359,8 @@ val pp_local : Format.formatter -> ProcAttributes.var_data -> unit
 
 val is_specialized : t -> bool
 
+val is_kotlin : t -> bool
+
 val is_captured_pvar : t -> Pvar.t -> bool
 (** true if pvar is a captured variable of a cpp lambda or obcj block *)
 
@@ -370,6 +374,10 @@ val deep_copy_code_from_pdesc : orig_pdesc:t -> dest_pdesc:t -> unit
 val size : t -> int
 (** Return number of nodes, plus number of instructions (in nodes), plus number of edges (between
     nodes). *)
+
+val is_too_big : Checker.t -> max_cfg_size:int -> t -> bool
+(** Check if the CFG of the procedure is too big to analyze. If it is too big, it logs an internal
+    error and returns true. *)
 
 (** per-procedure CFGs are stored in the SQLite "procedures" table as NULL if the procedure has no
     CFG *)

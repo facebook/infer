@@ -35,6 +35,8 @@ let rec eval_expr (astate : Domain.t) (expr : Exp.t) =
   match expr with
   | Var id ->
       get_var astate (Var.of_id id)
+  | Const (Cfun pname) when Config.function_pointer_specialization && Procname.is_c pname ->
+      VDom.v Exp.{name= pname; captured_vars= []}
   | Closure c when Exp.is_objc_block_closure expr ->
       VDom.v c
   | Closure _ (* TODO: implement for C++ lambdas *) ->
@@ -93,15 +95,37 @@ let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.inst
               instr
           | Some c ->
               L.d_printfln "found closure %a for variable %a\n" Exp.pp (Exp.Closure c) Ident.pp id ;
-              let captured_values =
-                List.map ~f:(fun (id_exp, _, typ, _) -> (id_exp, typ)) c.captured_vars
-              in
-              let actual_params = captured_values @ actual_params in
               let new_instr =
-                Sil.Call (ret_id_typ, Const (Cfun c.name), actual_params, loc, call_flags)
+                Sil.Call (ret_id_typ, Exp.Closure c, actual_params, loc, call_flags)
               in
               L.d_printfln "replaced by call %a " (Sil.pp_instr Pp.text ~print_types:true) new_instr ;
               new_instr )
+      | Call (ret_id_typ, Const (Cfun pname), actual_params, loc, call_flags)
+        when Procname.is_objc_block pname || Procname.is_specialized_with_function_parameters pname
+        ->
+          L.d_printfln "call  %a " (Sil.pp_instr Pp.text ~print_types:true) instr ;
+          let captured_by_args =
+            List.concat_map actual_params ~f:(function
+              | Exp.Closure c, _ ->
+                  L.d_printfln "found closure %a in arguments\n" Exp.pp (Exp.Closure c) ;
+                  c.captured_vars
+              | _ ->
+                  [] )
+          in
+          if List.is_empty captured_by_args then (
+            L.d_printfln "(no closure found)" ;
+            instr )
+          else
+            let new_instr =
+              Sil.Call
+                ( ret_id_typ
+                , Exp.Closure {name= pname; captured_vars= captured_by_args}
+                , actual_params
+                , loc
+                , call_flags )
+            in
+            L.d_printfln "replaced by call %a " (Sil.pp_instr Pp.text ~print_types:true) new_instr ;
+            new_instr
       | _ ->
           instr )
 

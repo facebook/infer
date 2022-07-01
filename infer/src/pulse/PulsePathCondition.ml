@@ -68,7 +68,7 @@ type operand = Formula.operand =
   | AbstractValueOperand of AbstractValue.t
   | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: Formula.function_symbol; actuals: AbstractValue.t list}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let literal_zero = ConstOperand (Const.Cint IntLit.zero)
 
@@ -146,7 +146,7 @@ let subst_find_or_new subst addr_callee =
       let addr_caller = AbstractValue.mk_fresh_same_kind addr_callee in
       L.d_printfln "new subst %a <-> %a (fresh)" AbstractValue.pp addr_callee AbstractValue.pp
         addr_caller ;
-      let addr_hist_fresh = (addr_caller, ValueHistory.Epoch) in
+      let addr_hist_fresh = (addr_caller, ValueHistory.epoch) in
       (AbstractValue.Map.add addr_callee addr_hist_fresh subst, fst addr_hist_fresh)
   | Some addr_hist_caller ->
       (subst, fst addr_hist_caller)
@@ -159,7 +159,7 @@ let eval_sym_of_subst bo_itvs subst s bound_end =
       Itv.ItvPure.get_bound (BoItvs.find_or_default v' bo_itvs) bound_end
   | None ->
       let v' = AbstractValue.mk_fresh () in
-      subst := AbstractValue.Map.add v (v', ValueHistory.Epoch) !subst ;
+      subst := AbstractValue.Map.add v (v', ValueHistory.epoch) !subst ;
       Bounds.Bound.of_foreign_id (v' :> int)
 
 
@@ -315,6 +315,10 @@ let eval_binop binop_addr binop op_lhs op_rhs phi =
   , new_eqs )
 
 
+let eval_binop_av binop_addr binop av_lhs av_rhs phi =
+  eval_binop binop_addr binop (AbstractValueOperand av_lhs) (AbstractValueOperand av_rhs) phi
+
+
 let eval_citv_unop unop_addr unop operand_addr citvs =
   match CItvs.find_opt operand_addr citvs |> Option.bind ~f:(fun a -> CItv.unop unop a) with
   | None ->
@@ -457,6 +461,7 @@ let is_unsat_expensive tenv ~get_dynamic_type phi =
   else
     match Formula.normalize tenv ~get_dynamic_type phi.formula with
     | Unsat ->
+        L.d_printfln "path condition is UNSAT" ;
         (false_, true, [])
     | Sat (formula, new_eqs) ->
         ({phi with formula}, false, new_eqs)

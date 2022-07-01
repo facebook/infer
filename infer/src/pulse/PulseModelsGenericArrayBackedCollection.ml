@@ -72,13 +72,14 @@ module Iterator = struct
     let is_minus_minus = match step with Some `MinusMinus -> true | _ -> false in
     let* astate =
       if AddressAttributes.is_end_of_collection (fst pointer) astate && not is_minus_minus then
-        let invalidation_trace = Trace.Immediate {location; history= Epoch} in
+        let invalidation_trace = Trace.Immediate {location; history= ValueHistory.epoch} in
         let access_trace = Trace.Immediate {location; history= snd pointer} in
         FatalError
           ( ReportableError
               { diagnostic=
                   Diagnostic.AccessToInvalidAddress
                     { calling_context= []
+                    ; invalid_address= Decompiler.find (fst pointer) astate
                     ; invalidation= EndIterator
                     ; invalidation_trace
                     ; access_trace

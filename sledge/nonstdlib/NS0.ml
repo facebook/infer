@@ -143,14 +143,7 @@ type 'a zero_one_many = Zero | One of 'a | Many
 type ('a, 'b) zero_one_many2 = Zero2 | One2 of 'a * 'b | Many2
 
 module Pair = Containers.Pair
-module Bijection = CCBijection [@@warning "-49"]
-
-module FHeap = struct
-  include Fheap
-
-  let remove_top_exn h = snd (pop_exn h)
-end
-
+module Bijection = CCBijection [@@warning "-no-cmi-file"]
 module HashQueue = Core_kernel.Hash_queue
 
 (** Input / Output *)
@@ -212,11 +205,11 @@ register_sexp_of_exn
         Sexp.List [Atom "Replay"; sexp_of_exn exn; payload]
     | exn -> Sexp.Atom (Printexc.to_string exn) )
 
-let fail = Trace.fail
+let fail = Dbg.fail
 
 exception Unimplemented of string
 
-let todo fmt = Trace.raisef (fun msg -> Unimplemented msg) fmt
+let todo fmt = Dbg.raisef (fun msg -> Unimplemented msg) fmt
 
 let warn fmt =
   let fs = Format.std_formatter in

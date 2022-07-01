@@ -640,4 +640,67 @@ public class NullPointerExceptions {
     ImmutableList.Builder<Object> listBuilder = ImmutableList.builder();
     listBuilder.add(getObject());
   }
+
+  void incr_deref(A a1, A a2) {
+    a1.x++;
+    a2.x++;
+  }
+
+  void call_incr_deref_with_alias_bad() {
+    A a = new A();
+    a.x = 0;
+    incr_deref(a, a);
+    if (a.x == 2) {
+      a = null;
+    }
+    a.x = 0;
+  }
+
+  void call_incr_deref_with_alias_good() {
+    A a = new A();
+    a.x = 0;
+    incr_deref(a, a);
+    if (a.x != 2) {
+      a = null;
+    }
+    a.x = 0;
+  }
+
+  interface AFunction {
+    void run(A a);
+  }
+
+  // FN because incr_deref.run(a) results in an unknown call
+  void test_capture_alias_bad_FN() {
+    A a = new A();
+    a.x = 0;
+    AFunction incr_deref =
+        (a2) -> {
+          a.x++;
+          a2.x++;
+        };
+    incr_deref.run(a);
+    A b = a;
+    if (a.x == 2) {
+      b = null;
+    }
+    b.x = 0;
+  }
+
+  // FP because incr_deref.run(a) results in an unknown call
+  void test_capture_alias_good_FP() {
+    A a = new A();
+    a.x = 0;
+    AFunction incr_deref =
+        (a2) -> {
+          a.x++;
+          a2.x++;
+        };
+    incr_deref.run(a);
+    A b = a;
+    if (a.x != 2) {
+      b = null;
+    }
+    b.x = 0;
+  }
 }

@@ -2,7 +2,7 @@
   "README":
     "This is a @generated file, run `make doc-publish` from the root of the infer repository to generate it",
   "doc_entries": [
-    "all-issue-types", "checker-annotation-reachability",
+    "all-checkers", "all-issue-types", "checker-annotation-reachability",
     "checker-biabduction", "checker-bufferoverrun",
     "checker-config-impact-analysis", "checker-cost", "checker-eradicate",
     "checker-fragment-retains-view", "checker-immutable-cast",

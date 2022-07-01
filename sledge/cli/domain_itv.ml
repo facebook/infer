@@ -27,7 +27,7 @@ module T = struct
     let vars =
       Environment.vars box.box1_env |> fun (i, r) -> Array.append i r
     in
-    Array.combine_exn vars box.interval_array
+    Array.combine vars box.interval_array
 
   let sexp_of_t (itv : t) =
     let sexps =
@@ -144,7 +144,7 @@ let rec apron_texpr_of_llair_exp exp q =
       None
 
 let assign reg exp q =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ {%a}@\n%a := %a" pp q Llair.Reg.pp reg Llair.Exp.pp exp]
   ;
   let lval = apron_var_of_reg reg in
@@ -165,7 +165,7 @@ let assign reg exp q =
       Abstract1.assign_texpr man q lval (Texpr1.of_expr new_env e) None
   | _ -> q )
   |>
-  [%Trace.retn fun {pf} r -> pf "{%a}" pp r]
+  [%Dbg.retn fun {pf} r -> pf "{%a}" pp r]
 
 let resolve_int _ _ _ = []
 
@@ -208,17 +208,10 @@ let exec_inst tid i q =
   | Load {reg; ptr; len= _; loc= _} -> Ok (assign reg ptr q)
   | Nondet {reg= Some reg; msg= _; loc= _} -> Ok (exec_kill tid reg q)
   | Nondet {reg= None; msg= _; loc= _} | Alloc _ | Free _ -> Ok q
-  | AtomicRMW {reg; _}
-   |AtomicCmpXchg {reg; _}
-   |Intrinsic {reg= Some reg; _} ->
+  | AtomicRMW {reg; _} | AtomicCmpXchg {reg; _} | Builtin {reg= Some reg; _}
+    ->
       Ok (exec_kill tid reg q)
-  | Intrinsic {reg= None; _} -> Ok q
-  | Abort {loc} ->
-      Error
-        { Alarm.kind= Abort
-        ; loc
-        ; pp_action= Fun.flip Llair.Inst.pp i
-        ; pp_state= Fun.flip pp q }
+  | Builtin {reg= None; _} -> Ok q
 
 let enter_scope _ _ q = q
 
@@ -279,7 +272,7 @@ let call ~summaries _ ?child:_ ~globals:_ ~actuals ~areturn ~formals
     let mangle r =
       Llair.Reg.mk (Llair.Reg.typ r) 0 ("__tmp__" ^ Llair.Reg.name r)
     in
-    let args = IArray.combine_exn formals actuals in
+    let args = IArray.combine formals actuals in
     let q' =
       IArray.fold ~f:(fun (f, a) q -> assign (mangle f) a q) args q
     in

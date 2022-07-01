@@ -70,7 +70,7 @@ module ItvPure : sig
 
   val has_void_ptr_symb : t -> bool
 
-  val make_positive : t -> t
+  val make_non_negative : t -> t
 
   val join : t -> t -> t
 
@@ -180,6 +180,8 @@ val get_bound : t -> Symb.BoundEnd.t -> Bound.t bottom_lifted
 val is_false : t -> bool
 
 val decr : t -> t
+
+val decr_length : t -> t
 
 val incr : t -> t
 

@@ -11,7 +11,7 @@ open! IStd
 
 module L = Logging
 
-type field_type = Fieldname.t * Typ.t * (Annot.t * bool) list
+type field_type = Fieldname.t * Typ.t * Annot.Item.t
 
 let rec get_fields_super_classes tenv super_class =
   L.(debug Capture Verbose)
@@ -59,9 +59,9 @@ let build_sil_field qual_type_to_sil_type tenv class_tname ni_name qual_type pro
   let item_annotations =
     match prop_atts with
     | [] ->
-        ({Annot.class_name= Config.ivar_attributes; parameters= annotation_from_type typ}, true)
+        {Annot.class_name= Config.ivar_attributes; parameters= annotation_from_type typ}
     | _ ->
-        ({Annot.class_name= Config.property_attributes; parameters= prop_atts}, true)
+        {Annot.class_name= Config.property_attributes; parameters= prop_atts}
   in
   let item_annotations = item_annotations :: CAst_utils.sil_annot_of_type qual_type in
   (fname, typ, item_annotations)

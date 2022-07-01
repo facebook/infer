@@ -18,4 +18,6 @@ val compute_and_emit_relevant_methods :
   -> source_file:SourceFile.t
   -> unit
 
+val merge_changed_functions_results : unit -> unit
+
 val merge_test_determinator_results : unit -> unit

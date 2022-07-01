@@ -281,6 +281,9 @@ OPTIONS
            be used on pathologically large procedures to prevent too-big
            states from being produced.
 
+       --pulse-max-cfg-size int
+           Larger CFGs than the max size are skipped in Pulse.
+
        --pulse-model-abort +string
            Methods that should be modelled as abort in Pulse
 
@@ -316,6 +319,10 @@ OPTIONS
            Regex of methods that should be modelled as returning non-null in
            Pulse
 
+       --pulse-model-returns-copy-pattern string
+           Regex of methods that should be modelled as creating copies in
+           Pulse
+
        --pulse-model-skip-pattern string
            Regex of methods that should be modelled as "skip" in Pulse
 
@@ -323,18 +330,12 @@ OPTIONS
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method
 
+       --pulse-models-for-erlang json
+           Provide custom models for Erlang code using a DSL.
+
        --pulse-only
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)
-
-       --pulse-prune-unsupported-arithmetic
-           Activates: The arithmetic engine in Pulse sometimes does not
-           detect that the collection of conditions on the path makes it
-           infeasible, especially outside the well-supported linear
-           arithmetic fragment. To avoid false positives, Pulse tries to
-           detect when there is a possibility of imprecise arithmetic
-           treatment and if so pessimistically assumes the path is
-           infeasible. (Conversely: --no-pulse-prune-unsupported-arithmetic)
 
        --pulse-report-ignore-unknown-java-methods-patterns +string
            On Java, issues that are found on program paths that contain calls
@@ -346,6 +347,40 @@ OPTIONS
 
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.
+
+       --pulse-taint-policies json
+           A description of which taint flows should be reported, following
+           this JSON format:             { "short_description": "<a short description of the issue>",
+               "taint_flows": [{ "source_kinds": [<matchers>],
+                                 "sink_kinds": [<matchers>],
+                                 "sanitizer_kinds": [<matchers>]}]
+             }
+           where <matchers> are in the same format as --pulse-taint-sources;
+           the field "sanitizer_kinds" is optional (assumed to be empty), and
+           a policy may have several taint flows in the form of a list.
+
+       --pulse-taint-sanitizers json
+           Quick way to specify simple sanitizers as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.
+
+       --pulse-taint-sinks json
+           Quick way to specify simple sinks as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.
+
+       --pulse-taint-sources json
+           Together with --pulse-taint-sanitizers, --pulse-taint-sinks, and
+           --pulse-taint-specifications, specify taint properties. The JSON
+           format of sources also applies to sinks and sanitizers. It
+           consists of a list of objects with the following fields, for
+           example '[{"procedure": "mySimpleSink", "formals": [{"index":
+           1}]}]':             - "procedure" to match a substring of the function or method
+           name, or "procedure_regex" to specify an OCaml regex
+             - "formals" is a list of objects with one or two fields:
+               - "index" is the index of the formal that is tainted,
+           starting at 0. For methods, index 0 is this, other arguments start
+           at index 1
+               - "type_name" is optional string; only arguments whose type
+           contains this substring match
 
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
@@ -449,6 +484,10 @@ OPTIONS
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)
 
+       --top-longest-proc-duration-size int
+           Number of procedures for which we track longest analysis duration
+           info.
+
        --topl
            Activates: checker topl: Detect errors based on user-provided
            state machines describing temporal properties over multiple
@@ -491,6 +530,10 @@ BUFFER OVERRUN OPTIONS
        --bo-field-depth-limit int
            Limit of field depth of abstract location in buffer-overrun
            checker
+
+       --bo-max-cfg-size int
+           Larger CFGs than the max size are skipped in buffer overrun
+           analysis.
 CLANG OPTIONS
        --annotation-reachability-cxx json
            Specify annotation reachability analyses to be performed on
@@ -572,6 +615,11 @@ QUANDARY CHECKER OPTIONS
        --quandary-sources json
            Specify custom sources for Quandary
 RACERD CHECKER OPTIONS
+       --racerd-always-report-java
+           Activates: Every Java class analysed is treated as if it were
+           annotated as @ThreadSafe. (Conversely:
+           --no-racerd-always-report-java)
+
        --racerd-guardedby
            Activates: Check @GuardedBy annotations with RacerD (Conversely:
            --no-racerd-guardedby)

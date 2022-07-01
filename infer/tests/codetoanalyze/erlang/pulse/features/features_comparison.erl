@@ -2,202 +2,216 @@
 %
 % This source code is licensed under the MIT license found in the
 % LICENSE file in the root directory of this source tree.
-
 -module(features_comparison).
+-include("../../common.hrl").
 
 -export([
     test_equal_Ok/0,
-    fp_test_equal_Ok2/0,
+    fp_test_equal2_Ok/0,
     test_equal_Bad/0,
+    test_neg_equal_Ok/0,
+    test_neg_equal_Bad/0,
+    test_equal_in_fun_call_Ok/0,
+    test_neg_equal_in_fun_call_Ok/0,
+    test_equal_int_atom_Bad/0,
+    test_neg_equal_int_atom_Ok/0,
+    test_equal_atom_Ok/0,
+    test_equal_atom_Bad/0,
+    test_neg_equal_atom_Ok/0,
+    test_neg_equal_atom_Bad/0,
     test_exactly_equal_Ok/0,
     test_exactly_equal_Bad/0,
-    test_exactly_equal_Bad2/0,
+    test_exactly_equal2_Bad/0,
     test_not_equal_Ok/0,
     test_not_equal_Bad/0,
-    test_not_equal_Bad2/0,
+    test_not_equal2_Bad/0,
     test_exactly_not_equal_Ok/0,
-    fp_test_exactly_not_equal_Ok2/0,
+    fp_test_exactly_not_equal2_Ok/0,
     test_exactly_not_equal_Bad/0,
     test_greater_Ok/0,
     test_greater_Bad/0,
-    test_greater_Bad2/0,
+    test_greater2_Bad/0,
     test_less_Ok/0,
     test_less_Bad/0,
-    test_less_Bad2/0,
+    test_less2_Bad/0,
     test_atleast_Ok/0,
-    test_atleast_Ok2/0,
+    test_atleast2_Ok/0,
     test_atleast_Bad/0,
     test_atmost_Ok/0,
-    test_atmost_Ok2/0,
+    test_atmost2_Ok/0,
     test_atmost_Bad/0
 ]).
 
 test_equal_Ok() ->
     X = 2,
     Y = 2,
-    if
-        X == Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X == Y).
 
 % FP (T95767672)
-fp_test_equal_Ok2() ->
+fp_test_equal2_Ok() ->
     X = 2,
     Y = 2.0,
-    if
-        X == Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X == Y).
 
 test_equal_Bad() ->
     X = 2,
     Y = 3,
-    if
-        X == Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X == Y).
+
+test_neg_equal_Ok() ->
+    X = 0,
+    Y = 42,
+    ?ASSERT_EQUAL(true, not (X == Y)).
+
+test_neg_equal_Bad() ->
+    X = 0,
+    Y = 0,
+    ?CRASH_IF_EQUAL(false, not (X == Y)).
+
+is_zero(X) -> X == 0.
+
+% Used to be FP due to imprecise function summary because of absent type information
+% Now a regression test on this behaviour
+test_equal_in_fun_call_Ok() ->
+    ?ASSERT_EQUAL(true, is_zero(0)).
+
+% Used to be FP due to imprecise function summary because of absent type information
+% Now a regression test on this behaviour
+test_neg_equal_in_fun_call_Ok() ->
+    ?ASSERT_EQUAL(false, is_zero(1)).
+
+test_equal_int_atom_Bad() ->
+    X = zero,
+    Y = 0,
+    ?CRASH_IF_EQUAL(false, X == Y).
+
+test_neg_equal_int_atom_Ok() ->
+    X = zero,
+    Y = 0,
+    ?ASSERT_EQUAL(true, not (X == Y)).
+
+test_equal_atom_Ok() ->
+    X = foo,
+    Y = foo,
+    ?ASSERT_EQUAL(true, X == Y).
+
+test_equal_atom_Bad() ->
+    X = foo,
+    Y = bar,
+    ?CRASH_IF_EQUAL(false, X == Y).
+
+test_neg_equal_atom_Ok() ->
+    X = foo,
+    Y = bar,
+    ?ASSERT_EQUAL(true, not (X == Y)).
+
+test_neg_equal_atom_Bad() ->
+    X = foo,
+    Y = foo,
+    ?CRASH_IF_EQUAL(false, not (X == Y)).
 
 test_exactly_equal_Ok() ->
     X = 2,
     Y = 2,
-    if
-        X =:= Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X =:= Y).
 
 test_exactly_equal_Bad() ->
     X = 2,
     Y = 3,
-    if
-        X =:= Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X =:= Y).
 
-test_exactly_equal_Bad2() ->
+test_exactly_equal2_Bad() ->
     X = 2,
     Y = 2.0,
-    if
-        X =:= Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X =:= Y).
 
 test_not_equal_Ok() ->
     X = 2,
     Y = 3,
-    if
-        X /= Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X /= Y).
 
 test_not_equal_Bad() ->
     X = 2,
     Y = 2,
-    if
-        X /= Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X /= Y).
 
-test_not_equal_Bad2() ->
+test_not_equal2_Bad() ->
     X = 2,
     Y = 2.0,
-    if
-        X /= Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X /= Y).
 
 test_exactly_not_equal_Ok() ->
     X = 2,
     Y = 3,
-    if
-        X =/= Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X =/= Y).
 
 % FP (T95767672)
-fp_test_exactly_not_equal_Ok2() ->
+fp_test_exactly_not_equal2_Ok() ->
     X = 2,
     Y = 2.0,
-    if
-        X =/= Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X =/= Y).
 
 test_exactly_not_equal_Bad() ->
     X = 2,
     Y = 2,
-    if
-        X =/= Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X =/= Y).
 
 test_greater_Ok() ->
     X = 3,
     Y = 2,
-    if
-        X > Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X > Y).
 
 test_greater_Bad() ->
     X = 2,
     Y = 3,
-    if
-        X > Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X > Y).
 
-test_greater_Bad2() ->
+test_greater2_Bad() ->
     X = 2,
     Y = 2,
-    if
-        X > Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X > Y).
 
 test_less_Ok() ->
     X = 2,
     Y = 3,
-    if
-        X < Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X < Y).
 
 test_less_Bad() ->
     X = 3,
     Y = 2,
-    if
-        X < Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X < Y).
 
-test_less_Bad2() ->
+test_less2_Bad() ->
     X = 2,
     Y = 2,
-    if
-        X < Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X < Y).
 
 test_atleast_Ok() ->
     X = 2,
     Y = 2,
-    if
-        X >= Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X >= Y).
 
-test_atleast_Ok2() ->
+test_atleast2_Ok() ->
     X = 3,
     Y = 2,
-    if
-        X >= Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X >= Y).
 
 test_atleast_Bad() ->
     X = 2,
     Y = 3,
-    if
-        X >= Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X >= Y).
 
 test_atmost_Ok() ->
     X = 2,
     Y = 2,
-    if
-        X =< Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X =< Y).
 
-test_atmost_Ok2() ->
+test_atmost2_Ok() ->
     X = 2,
     Y = 3,
-    if
-        X =< Y -> ok
-    end.
+    ?ASSERT_EQUAL(true, X =< Y).
 
 test_atmost_Bad() ->
     X = 3,
     Y = 2,
-    if
-        X =< Y -> ok
-    end.
+    ?CRASH_IF_EQUAL(false, X =< Y).

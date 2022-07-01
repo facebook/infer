@@ -64,6 +64,7 @@ DIRECT_TESTS += \
   cpp_bufferoverrun \
   cpp_conflicts \
   cpp_frontend \
+  cpp_frontend-17 \
   cpp_impurity \
   cpp_linters \
   cpp_linters-for-test-only \
@@ -124,6 +125,7 @@ DIRECT_TESTS += \
   objc_parameter-not-null-checked \
   objc_performance \
   objc_pulse \
+  objc_pulse-data-lineage \
   objc_quandary \
   objc_self-in-block \
   objc_uninit \
@@ -142,7 +144,9 @@ BUILD_SYSTEMS_TESTS += \
   fb_differential_of_config_impact_strict_objc \
 
 DIRECT_TESTS += \
-  objc_fb-config-impact
+  objc_fb-config-impact \
+  objc_fb-config-impact-strict \
+
 endif
 
 
@@ -159,6 +163,7 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
   erlang_pulse \
+  erlang_pulse-otp \
   erlang_topl \
   erlang_compiler \
 
@@ -179,7 +184,8 @@ BUILD_SYSTEMS_TESTS += \
   java_test_determinator \
   javac \
   resource_leak_exception_lines \
-  racerd_dedup
+  racerd_dedup \
+  merge-infer-out \
 
 COST_TESTS += \
   java_hoistingExpensive \
@@ -206,15 +212,23 @@ DIRECT_TESTS += \
   java_purity \
   java_quandary \
   java_racerd \
+  java_sil \
   java_starvation \
   java_starvation-dedup \
   java_starvation-whole-program \
   java_topl \
+  sil_parsing \
 
 ifneq ($(KOTLINC), no)
 DIRECT_TESTS += \
-	kotlin_racerd \
+  kotlin_racerd \
+  kotlin_resources \
 
+ifeq ($(IS_FACEBOOK_TREE),yes)
+DIRECT_TESTS += \
+  kotlin_fb-config-impact-strict \
+
+endif
 endif
 
 # javac has trouble running in parallel on the same files
@@ -231,6 +245,7 @@ DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-config-impact-paths \
   java_fb-config-impact-strict \
+  java_fb-config-impact-strict-beta-paths \
   java_fb-immutability \
   java_fb-performance
 endif
@@ -457,8 +472,7 @@ clang_plugin: clang_setup
 	  SDKPATH=$(XCODE_ISYSROOT) \
 	)
 	$(QUIET)$(call silent_on_success,Building clang plugin OCaml interface,\
-	$(MAKE) -C $(FCP_DIR)/clang-ocaml all \
-          build/clang_ast_proj.ml build/clang_ast_proj.mli \
+	$(MAKE) -C $(FCP_DIR)/clang-ocaml build/clang_ast_proj.ml build/clang_ast_proj.mli \
 	  CC=$(CC) CXX=$(CXX) \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
@@ -920,12 +934,13 @@ endif
 .PHONY: devsetup
 devsetup: Makefile.autoconf
 	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
+ifeq ($(OPAM_PIN_OCAMLFORMAT),yes)
 	$(QUIET)$(call silent_on_success,pinning ocamlformat,\
-	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) pin ocamlformat 'git+https://github.com/ocaml-ppx/ocamlformat#nebuchadnezzar' --yes)
+	  OPAMSWITCH=$(OPAMSWITCH); \
+	  $(OPAM) pin add ocamlformat.0.19.0 'git+https://github.com/ocaml-ppx/ocamlformat#nebuchadnezzar' --yes)
+endif
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
-	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-checksum user-setup $(OPAM_DEV_DEPS))
-	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2
-	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); OPAMYES=1; $(OPAM) user-setup install
+	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-depext user-setup $(OPAM_DEV_DEPS))
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
 	  echo '$(TERM_INFO)*** Installing GNU sed$(TERM_RESET)' >&2; \
 	  brew install gnu-sed; \

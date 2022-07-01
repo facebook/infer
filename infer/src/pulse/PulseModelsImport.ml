@@ -38,26 +38,32 @@ module Hist = struct
 
   let call_event {PathContext.timestamp} location ?more model_desc =
     let desc = mk_desc ?more model_desc in
-    ValueHistory.Call {f= Model desc; location; in_call= Epoch; timestamp}
+    ValueHistory.Call {f= Model desc; location; in_call= ValueHistory.epoch; timestamp}
 
 
-  let add_event path event hist = PathContext.with_context path (Sequence (event, hist))
+  let add_event path event hist =
+    ValueHistory.sequence ~context:path.PathContext.conditions event hist
 
-  let single_event path event = add_event path event Epoch
+
+  let single_event path event = add_event path event ValueHistory.epoch
 
   let add_call path location model_desc ?more hist =
     add_event path (call_event path location ?more model_desc) hist
 
 
-  let single_call path location ?more model_desc = add_call path location model_desc ?more Epoch
+  let single_call path location ?more model_desc =
+    add_call path location model_desc ?more ValueHistory.epoch
+
 
   let single_alloc path location ?more model_desc =
     alloc_event path location ?more model_desc |> single_event path
 
 
-  let binop path bop hist1 hist2 = PathContext.with_context path (BinaryOp (bop, hist1, hist2))
+  let binop path bop hist1 hist2 =
+    ValueHistory.in_context path.PathContext.conditions (ValueHistory.binary_op bop hist1 hist2)
 
-  let hist path hist = PathContext.with_context path hist
+
+  let hist path hist = ValueHistory.in_context path.PathContext.conditions hist
 end
 
 module Basic = struct
@@ -98,10 +104,9 @@ module Basic = struct
    fun {analysis_data= {tenv; proc_desc}; location} astate ->
     let open SatUnsat.Import in
     match
-      ( AbductiveDomain.summary_of_post tenv proc_desc location astate
-        >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_result
-        :> (AbductiveDomain.summary, AbductiveDomain.t AccessResult.error) PulseResult.t SatUnsat.t
-        )
+      AbductiveDomain.summary_of_post tenv proc_desc location astate
+      >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+      >>| AccessResult.of_summary
     with
     | Unsat ->
         []
@@ -145,10 +150,12 @@ module Basic = struct
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
           (actual, typ) )
     in
-    let formals_opt = IRAttributes.load callee_procname |> Option.map ~f:Pvar.get_pvar_formals in
+    let formals_opt =
+      IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
+    in
     let<+> astate =
-      PulseCallOperations.unknown_call path location (Model skip_reason) ~ret ~actuals ~formals_opt
-        astate
+      PulseCallOperations.unknown_call path location (Model skip_reason) (Some callee_procname) ~ret
+        ~actuals ~formals_opt astate
     in
     astate
 
@@ -157,6 +164,8 @@ module Basic = struct
    fun {path; location; ret= ret_id, _} astate ->
     PulseOperations.havoc_id ret_id (Hist.single_call path location desc) astate |> ok_continue
 
+
+  let skip : model = fun _ astate -> ok_continue astate
 
   let id_first_arg ~desc (arg_value, arg_history) : model =
    fun {path; location; ret= ret_id, _} astate ->
@@ -177,7 +186,9 @@ module Basic = struct
           L.d_printfln "Found destructor for class %a@\n" Typ.Name.pp class_name ;
           PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
             ~callee_data:(analyze_dependency destructor) location destructor ~ret
-            ~actuals:[(deleted_access, typ)] ~formals_opt:None astate )
+            ~actuals:[(deleted_access, typ)]
+            ~formals_opt:None ~call_kind:`ResolvedProcname astate
+          |> fst )
     | _ ->
         L.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
           (Typ.pp_desc (Pp.html Black))

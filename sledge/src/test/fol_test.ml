@@ -12,17 +12,16 @@ let%test_module _ =
     open Fol
     open Context
 
-    let () = Trace.init ~margin:68 ()
+    let () = Dbg.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160
+     *   Dbg.init ~margin:160
      *     ~config:
-     *       (Result.get_ok
-     *          (Trace.parse
-     *             "+Fol+Context-Context.canon-Context.canon_f-Context.norm"))
+     *       (Dbg.parse
+     *          "+Fol+Context-Context.canon-Context.canon_f-Context.norm" )
      *     () *)
 
-    [@@@warning "-32"]
+    [@@@warning "-unused-value-declaration"]
 
     let printf pp = Format.printf "@\n%a@." pp
     let pp_raw = printf pp_raw

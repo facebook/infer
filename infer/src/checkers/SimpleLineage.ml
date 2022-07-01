@@ -32,21 +32,39 @@ module LineageGraph = struct
   type data =
     | Local of ((local * PPNode.t)[@sexp.opaque])
     | Argument of int
-    | Return
     | ArgumentOf of int * (Procname.t[@sexp.opaque])
+    | Captured of int
+    | CapturedBy of int * (Procname.t[@sexp.opaque])
+    | Return
     | ReturnOf of (Procname.t[@sexp.opaque])
+    | Self
+    | Function of (Procname.t[@sexp.opaque])
   [@@deriving compare, sexp]
 
-  type flow_kind =
-    | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
-    | Summary  (** Summarizes the effect of a procedure call *)
+  module FlowKind = struct
+    module T = struct
+      (** Order is important: see how [compare_flow_kind] is used. *)
+      type t =
+        | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
+        | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
+        | Summary  (** Summarizes the effect of a procedure call *)
+        | DynamicCallFunction
+        | DynamicCallModule
+      [@@deriving compare, sexp, variants]
+    end
+
+    include T
+    include Comparable.Make (T)
+  end
+
+  type flow_kind = FlowKind.t [@@deriving compare, sexp]
+
+  let rank_of_flow_kind = FlowKind.Variants.to_rank
+
+  type flow = {source: data; target: data; kind: flow_kind; node: (PPNode.t[@sexp.opaque])}
   [@@deriving compare, sexp]
 
-  let max_flow_kind flow_a flow_b = if compare_flow_kind flow_a flow_b > 0 then flow_a else flow_b
-
-  type flow = {source: data; target: data; kind: flow_kind} [@@deriving compare, sexp]
-
-  let flow ?(kind = Direct) ~source ~target () = {source; target; kind}
+  let flow ?(kind = FlowKind.Direct) ~node ~source ~target () = {source; target; kind; node}
 
   type t = flow list
 
@@ -68,24 +86,39 @@ module LineageGraph = struct
         Format.fprintf fmt "%a@@%a" pp_local local PPNode.pp node
     | Argument index ->
         Format.fprintf fmt "arg%d" index
+    | Captured index ->
+        Format.fprintf fmt "cap%d" index
     | Return ->
         Format.fprintf fmt "ret"
+    | CapturedBy (index, proc_name) ->
+        Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
     | ArgumentOf (index, proc_name) ->
         Format.fprintf fmt "%a.arg%d" Procname.pp proc_name index
     | ReturnOf proc_name ->
         Format.fprintf fmt "%a.ret" Procname.pp proc_name
+    | Function proc_name ->
+        Format.fprintf fmt "%a.fun" Procname.pp proc_name
+    | Self ->
+        Format.fprintf fmt "self"
 
 
   let pp_flow_kind fmt kind =
-    match kind with
+    match (kind : flow_kind) with
+    | Capture ->
+        Format.fprintf fmt "Capture"
     | Direct ->
         Format.fprintf fmt "Direct"
     | Summary ->
         Format.fprintf fmt "Summary"
+    | DynamicCallFunction ->
+        Format.fprintf fmt "DynamicCallFunction"
+    | DynamicCallModule ->
+        Format.fprintf fmt "DynamicCallModule"
 
 
-  let pp_flow fmt {source; target; kind} =
-    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a)]@]@;" pp_data source pp_data target pp_flow_kind kind
+  let pp_flow fmt {source; target; kind; node} =
+    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" pp_data source pp_data target pp_flow_kind
+      kind PPNode.pp node
 
 
   let pp fmt flows =
@@ -124,6 +157,7 @@ module LineageGraph = struct
           | ConstantString
           | Argument
           | Return
+          | Function
         [@@deriving variants]
       end
 
@@ -147,6 +181,8 @@ module LineageGraph = struct
             `String "Argument"
         | Return ->
             `String "Return"
+        | Function ->
+            `String "Function"
 
 
       type term =
@@ -159,13 +195,24 @@ module LineageGraph = struct
 
       type node = {node: _node} [@@deriving yojson_of]
 
-      type edge_type = Copy | Derive
+      type edge_type = Capture | Copy | Derive | DynamicCallFunction | DynamicCallModule
 
       let yojson_of_edge_type typ =
-        match typ with Copy -> `String "Copy" | Derive -> `String "Derive"
+        match typ with
+        | Capture ->
+            `String "Capture"
+        | Copy ->
+            `String "Copy"
+        | Derive ->
+            `String "Derive"
+        | DynamicCallFunction ->
+            `String "DynamicCallFunction"
+        | DynamicCallModule ->
+            `String "DynamicCallModule"
 
 
-      type _edge = {source: node_id; target: node_id; edge_type: edge_type} [@@deriving yojson_of]
+      type _edge = {source: node_id; target: node_id; edge_type: edge_type; location: location_id}
+      [@@deriving yojson_of]
 
       type edge = {edge: _edge} [@@deriving yojson_of]
 
@@ -201,7 +248,7 @@ module LineageGraph = struct
 
     (** Like [LineageGraph.data], but without the ability to refer to other procedures, which makes
         it "local". *)
-    type data_local = Argument of int | Return | Normal of local
+    type data_local = Argument of int | Captured of int | Return | Normal of local | Function
 
     module Id = struct
       (** Internal representation of an Id. *)
@@ -262,7 +309,7 @@ module LineageGraph = struct
         of_list [of_string term_data; of_term_type term_type]
 
 
-      let of_kind (kind : flow_kind) : t = match kind with Direct -> zero | Summary -> one
+      let of_kind (kind : flow_kind) : t = Z.of_int (rank_of_flow_kind kind)
 
       (** Converts the internal representation to an [int64], as used by the [Out] module. *)
       let out id : int64 =
@@ -274,16 +321,20 @@ module LineageGraph = struct
         match data with
         | Argument index ->
             Printf.sprintf "$arg%d" index
+        | Captured index ->
+            Printf.sprintf "$cap%d" index
         | Return ->
             "$ret"
         | Normal (Variable x) ->
             Format.asprintf "%a" Var.pp x
         | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
             x
+        | Function ->
+            "$fun"
       in
       let term_type : Json.term_type =
         match data with
-        | Argument _ ->
+        | Argument _ | Captured _ ->
             Argument
         | Return ->
             Return
@@ -295,6 +346,8 @@ module LineageGraph = struct
             ConstantInt
         | Normal (ConstantString _) ->
             ConstantString
+        | Function ->
+            Function
       in
       {Json.term_data; term_type}
 
@@ -327,7 +380,7 @@ module LineageGraph = struct
       let procname_id = Id.of_procname procname in
       let state_local_id = Id.of_state_local state_local in
       let location_id = Id.of_list [procname_id; state_local_id] in
-      if write then (
+      ( if write then
         let location =
           match state_local with
           | Start location | Exit location ->
@@ -335,10 +388,11 @@ module LineageGraph = struct
           | Normal node ->
               PPNode.loc node
         in
-        if Location.equal location Location.dummy then
-          L.die InternalError "Source file name should always be available" ;
         let function_ = Procname.hashable_name procname in
-        let file = SourceFile.to_rel_path location.Location.file in
+        let file =
+          if Location.equal Location.dummy location then "unknown"
+          else SourceFile.to_rel_path location.Location.file
+        in
         let line = if location.Location.line < 0 then None else Some location.Location.line in
         write_json Location location_id
           (Json.yojson_of_location {location= {id= Id.out location_id; function_; file; line}}) ) ;
@@ -363,33 +417,59 @@ module LineageGraph = struct
             (Json.yojson_of_node {node= {id= Id.out node_id; state= Id.out state_id; term}}) ;
         node_id
       in
+      let procname = Procdesc.get_proc_name proc_desc in
+      let start = Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)) in
+      let exit = Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc)) in
       match data with
       | Local (var, node) ->
-          let procname = Procdesc.get_proc_name proc_desc in
           save procname (Normal node) (Normal var)
       | Argument index ->
-          let procname = Procdesc.get_proc_name proc_desc in
-          save procname
-            (Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)))
-            (Argument index)
-      | Return ->
-          let procname = Procdesc.get_proc_name proc_desc in
-          save procname (Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc))) Return
+          save procname start (Argument index)
       | ArgumentOf (index, callee_procname) ->
-          save ~write:false callee_procname (Start Location.dummy) (Argument index)
+          save callee_procname (Start Location.dummy) (Argument index)
+      | Captured index ->
+          save procname start (Captured index)
+      | CapturedBy (index, lambda_procname) ->
+          save ~write:false lambda_procname (Start Location.dummy) (Captured index)
+      | Return ->
+          save procname exit Return
       | ReturnOf callee_procname ->
-          save ~write:false callee_procname (Exit Location.dummy) Return
+          save callee_procname (Exit Location.dummy) Return
+      | Self ->
+          save procname start Function
+      | Function procname ->
+          save ~write:false procname (Start Location.dummy) Function
 
 
-    let save_edge proc_desc {source; target; kind} =
+    let save_edge proc_desc {source; target; kind; node} =
       let source_id = save_node proc_desc source in
       let target_id = save_node proc_desc target in
       let kind_id = Id.of_kind kind in
       let edge_id = Id.of_list [source_id; target_id; kind_id] in
-      let edge_type = match kind with Direct -> Json.Copy | Summary -> Json.Derive in
+      let edge_type =
+        match kind with
+        | Capture ->
+            Json.Capture
+        | Direct ->
+            Json.Copy
+        | Summary ->
+            Json.Derive
+        | DynamicCallFunction ->
+            Json.DynamicCallFunction
+        | DynamicCallModule ->
+            Json.DynamicCallModule
+      in
+      let location_id =
+        let procname = Procdesc.get_proc_name proc_desc in
+        save_location ~write:true procname (Normal node)
+      in
       write_json Edge edge_id
         (Json.yojson_of_edge
-           {edge= {source= Id.out source_id; target= Id.out target_id; edge_type}} ) ;
+           { edge=
+               { source= Id.out source_id
+               ; target= Id.out target_id
+               ; edge_type
+               ; location= Id.out location_id } } ) ;
       edge_id
 
 
@@ -399,6 +479,7 @@ module LineageGraph = struct
       write_json Function fun_id
         (Json.yojson_of_function_
            {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
+      let _fun_id = save_node proc_desc Self in
       let record_flow flow = ignore (save_edge proc_desc flow) in
       List.iter ~f:record_flow flows ;
       Out_channel.flush (channel ()) ;
@@ -410,9 +491,14 @@ end
 
 (** Helper function. *)
 let get_formals proc_desc : Var.t list =
-  let pname = Procdesc.get_proc_name proc_desc in
-  let f (var, _typ, _annot) = Var.of_pvar (Pvar.mk var pname) in
-  List.map ~f (Procdesc.get_formals proc_desc)
+  let f (pvar, _typ) = Var.of_pvar pvar in
+  List.map ~f (Procdesc.get_pvar_formals proc_desc)
+
+
+(** Helper function. *)
+let get_captured proc_desc : Var.t list =
+  let f {CapturedVar.pvar} = Var.of_pvar pvar in
+  List.map ~f (Procdesc.get_captured proc_desc)
 
 
 module Summary = struct
@@ -490,12 +576,13 @@ module Summary = struct
       not appear in source or a formal parameter or the return variable. The returned graph has an
       edge X0->Xn of type T between interesting vertices X0 and Xn iff the input graph has a path
       X0->X1->...->Xn with X1,...,X(n-1) being uninteresting and T is the maximum of the types of
-      the edges in the path. *)
+      the edges in the path. The location of the X0->Xn edge is the location of the first edge of
+      type T in the path X0->X1->...->Xn. *)
   let remove_temporaries proc_desc graph =
     (* Build adjacency list representation, to make DFS easy. *)
     let children =
-      let add_flow g {LineageGraph.source; target; kind} =
-        Map.add_multi ~key:source ~data:(target, kind) g
+      let add_flow g {LineageGraph.source; target; kind; node} =
+        Map.add_multi ~key:source ~data:(target, kind, node) g
       in
       List.fold ~init:Vertex.Map.empty ~f:add_flow graph
     in
@@ -509,21 +596,26 @@ module Summary = struct
       match data with
       | Local (Variable var, _node) ->
           Var.appears_in_source_code var && not (Var.Set.mem var special_variables)
-      | Argument _ | Return | ArgumentOf _ | ReturnOf _ ->
+      | Argument _ | Captured _ | Return | CapturedBy _ | ArgumentOf _ | ReturnOf _ ->
           true
       | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
           true
+      | Function _ | Self ->
+          true
     in
     (* Do a DFS and produce edges. *)
-    let rec dfs (seen, result_graph) ({LineageGraph.source; target; kind} as state) =
+    let rec dfs (seen, result_graph) ({LineageGraph.source; target; kind; node} as state) =
       if not (is_interesting source) then L.die InternalError "INV broken" ;
       if not (Set.mem seen state) then
         let seen = Set.add seen state in
         if is_interesting target then (seen, state :: result_graph)
         else
-          let f (seen, result_graph) (target, edge_kind) =
-            let kind = LineageGraph.max_flow_kind kind edge_kind in
-            dfs (seen, result_graph) {LineageGraph.source; target; kind}
+          let f (seen, result_graph) (target, edge_kind, edge_node) =
+            let kind, node =
+              if LineageGraph.compare_flow_kind kind edge_kind > 0 then (kind, node)
+              else (edge_kind, edge_node)
+            in
+            dfs (seen, result_graph) (LineageGraph.flow ~kind ~node ~source ~target ())
           in
           List.fold ~init:(seen, result_graph) ~f (Map.find_multi children target)
       else (seen, result_graph)
@@ -611,61 +703,127 @@ module TransferFunctions = struct
     include Comparable.Make (T)
   end
 
-  let locals_of_exp (e : Exp.t) : Local.Set.t =
-    let variables =
-      Var.get_all_vars_in_exp e |> Sequence.map ~f:(fun v -> LineageGraph.Variable v)
+  (** Return constants and free variables that occur in [e]. *)
+  let free_locals_of_exp (e : Exp.t) : Local.Set.t =
+    let rec gather locals (e : Exp.t) =
+      match e with
+      | Lvar pvar ->
+          Local.Set.add locals (Variable (Var.of_pvar pvar))
+      | Var id ->
+          Local.Set.add locals (Variable (Var.of_id id))
+      | Const (Cint x) ->
+          Local.Set.add locals (ConstantInt (IntLit.to_string x))
+      | Const (Cstr x) ->
+          Local.Set.add locals (ConstantString x)
+      | Const (Cfun _) | Const (Cfloat _) | Const (Cclass _) ->
+          locals
+      | Closure _ ->
+          locals
+      | UnOp (_, e1, _) | Exn e1 | Cast (_, e1) | Lfield (e1, _, _) ->
+          gather locals e1
+      | Sizeof {dynamic_length= Some e1} ->
+          gather locals e1
+      | Sizeof {dynamic_length= None} ->
+          locals
+      | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+          gather (gather locals e1) e2
     in
-    let local_of_constant (const : Const.t) : LineageGraph.local option =
-      match const with
-      | Cint x ->
-          Some (ConstantInt (IntLit.to_string x))
-      | Cstr x ->
-          Some (ConstantString x)
-      | Cfun _ | Cfloat _ | Cclass _ ->
-          (* T106652349 *) None
+    gather Local.Set.empty e
+
+
+  (** Return variables that are captured by the closures occurring in [e]. *)
+  let captured_locals_of_exp (e : Exp.t) : Local.Set.t =
+    let add locals {Exp.captured_vars} =
+      List.fold captured_vars ~init:locals ~f:(fun locals (_exp, pvar, _typ, _mode) ->
+          Local.Set.add locals (Variable (Var.of_pvar pvar)) )
     in
-    let constants = Exp.constants e |> Sequence.filter_map ~f:local_of_constant in
-    let locals = Sequence.append variables constants in
-    locals |> Sequence.to_list |> Local.Set.of_list
+    Sequence.fold ~init:Local.Set.empty ~f:add (Exp.closures e)
 
 
-  let locals_of_exp_list (es : Exp.t list) : Local.Set.t =
-    Local.Set.union_list (List.rev_map ~f:locals_of_exp es)
+  let lambdas_of_exp (e : Exp.t) : Procname.Set.t =
+    let add procnames {Exp.name} = Procname.Set.add name procnames in
+    Sequence.fold ~init:Procname.Set.empty ~f:add (Exp.closures e)
 
 
-  let get_read_set (instr : Sil.instr) : Local.Set.t =
+  let free_locals_of_exp_list (es : Exp.t list) : Local.Set.t =
+    Local.Set.union_list (List.rev_map ~f:free_locals_of_exp es)
+
+
+  type read_set =
+    { free_locals: Local.Set.t (* constants and free variables *)
+    ; captured_locals: Local.Set.t (* captured variables *)
+    ; lambdas: Procname.Set.t (* names of closures *) }
+
+  let get_read_set (instr : Sil.instr) : read_set =
+    let of_exp e =
+      { free_locals= free_locals_of_exp e
+      ; captured_locals= captured_locals_of_exp e
+      ; lambdas= lambdas_of_exp e }
+    in
     match instr with
     | Load {e} ->
-        locals_of_exp e
+        of_exp e
     | Store {e2} ->
-        locals_of_exp e2
+        of_exp e2
     | Prune (e, _location, _true, _kind) ->
-        locals_of_exp e
+        of_exp e
     | Call _ ->
         L.die InternalError "exec_instr should special-case this"
     | Metadata _ ->
-        Local.Set.empty
+        let dummy = Exp.bool false in
+        of_exp dummy
 
 
   let procname_of_exp (e : Exp.t) : Procname.t option =
     match e with Closure {name} | Const (Cfun name) -> Some name | _ -> None
 
 
+  let sources_of_local here last_writes (local : Local.t) : LineageGraph.data list =
+    match local with
+    | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
+        [LineageGraph.Local (local, here)]
+    | Variable variable ->
+        let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
+        List.map ~f:(fun node -> LineageGraph.Local (local, node)) source_nodes
+
+
+  (** For all closures in [instr], record capture flows. *)
+  let add_cap_flows node (instr : Sil.instr) (astate : Domain.t) : Domain.t =
+    let rec one_exp astate (exp : Exp.t) =
+      match exp with
+      | Var _ | Const _ | Lvar _ | Sizeof _ ->
+          astate
+      | UnOp (_, e, _) | Exn e | Cast (_, e) | Lfield (e, _, _) ->
+          one_exp astate e
+      | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+          one_exp (one_exp astate e1) e2
+      | Closure c ->
+          closure astate c
+    and closure astate ({name; captured_vars} : Exp.closure) =
+      let one_var index ((last_writes, has_unsupported_features), local_edges)
+          (_exp, pvar, _typ, _mode) =
+        let local : Local.t = Variable (Var.of_pvar pvar) in
+        let source_list = sources_of_local node last_writes local in
+        let add_one_flow local_edges source =
+          LineageGraph.flow ~node ~source ~target:(CapturedBy (index, name)) () :: local_edges
+        in
+        let local_edges = List.fold source_list ~f:add_one_flow ~init:local_edges in
+        ((last_writes, has_unsupported_features), local_edges)
+      in
+      List.foldi ~init:astate ~f:one_var captured_vars
+    in
+    List.fold ~init:astate ~f:one_exp (Sil.exps_of_instr instr)
+
+
   let add_arg_flows (call_node : PPNode.t) (callee_pname : Procname.t) (argument_list : Exp.t list)
       (astate : Domain.t) : Domain.t =
     let add_flows_all_to_arg index ((last_writes, has_unsupported_features), local_edges) arg =
-      let read_set = locals_of_exp arg in
+      let read_set = free_locals_of_exp arg in
       let add_flows_local_to_arg local_edges (local : Local.t) =
-        let sources =
-          match local with
-          | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-              [LineageGraph.Local (local, call_node)]
-          | Variable variable ->
-              let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
-              List.map ~f:(fun node -> LineageGraph.Local (local, node)) source_nodes
-        in
+        let sources = sources_of_local call_node last_writes local in
         let add_one_flow local_edges source =
-          LineageGraph.flow ~source ~target:(ArgumentOf (index, callee_pname)) () :: local_edges
+          LineageGraph.flow ~node:call_node ~source ~target:(ArgumentOf (index, callee_pname)) ()
+          :: local_edges
         in
         List.fold sources ~f:add_one_flow ~init:local_edges
       in
@@ -679,7 +837,7 @@ module TransferFunctions = struct
       Domain.t =
     let last_writes, local_edges = astate in
     let local_edges =
-      LineageGraph.flow ~source:(ReturnOf callee_pname)
+      LineageGraph.flow ~node ~source:(ReturnOf callee_pname)
         ~target:(Local (Variable (Var.of_id ret_id), node))
         ()
       :: local_edges
@@ -687,9 +845,8 @@ module TransferFunctions = struct
     (last_writes, local_edges)
 
 
-  let update_write (kind : LineageGraph.flow_kind) ((write_var, write_node) : Var.t * PPNode.t)
-      (read_set : Local.Set.t) (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
-      Domain.t =
+  let update_write kind ((write_var, write_node) : Var.t * PPNode.t) (read_set : Local.Set.t)
+      (((last_writes, has_unsupported_features), local_edges) : Domain.t) : Domain.t =
     let target = LineageGraph.Local (Variable write_var, write_node) in
     let add_read local_edges (read_local : Local.t) =
       let sources =
@@ -700,7 +857,9 @@ module TransferFunctions = struct
             let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
             List.map ~f:(fun node -> LineageGraph.Local (read_local, node)) source_nodes
       in
-      let add_edge local_edges source = LineageGraph.flow ~kind ~source ~target () :: local_edges in
+      let add_edge local_edges source =
+        LineageGraph.flow ~node:write_node ~kind ~source ~target () :: local_edges
+      in
       let local_edges = List.fold ~init:local_edges ~f:add_edge sources in
       local_edges
     in
@@ -718,9 +877,9 @@ module TransferFunctions = struct
           ~f:(fun index arg -> if IntSet.mem index tito_arguments then Some arg else None)
           argument_list
       in
-      locals_of_exp_list tito_exps
+      free_locals_of_exp_list tito_exps
     in
-    update_write LineageGraph.Summary (Var.of_id ret_id, node) tito_locals astate
+    update_write LineageGraph.FlowKind.Summary (Var.of_id ret_id, node) tito_locals astate
 
 
   let add_tito_all (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) :
@@ -741,25 +900,9 @@ module TransferFunctions = struct
   let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
       Domain.t =
     let has_unsupported_features =
-      has_unsupported_features || Procname.equal BuiltinDecl.__erlang_missing_translation name
+      has_unsupported_features || Procname.is_erlang_unsupported name
     in
     ((last_writes, has_unsupported_features), local_edges)
-
-
-  let custom_call_models =
-    let make_atom astate node _analyze_dependency ret_id _procname (args : Exp.t list) =
-      let atom_name =
-        match args with
-        | Const (Cstr atom_name) :: _ ->
-            atom_name
-        | _ ->
-            L.die InternalError "Expecting first argument of 'make_atom' to be its name"
-      in
-      let sources = Local.Set.singleton (LineageGraph.ConstantAtom atom_name) in
-      update_write LineageGraph.Direct (Var.of_id ret_id, node) sources astate
-    in
-    let pairs = [(BuiltinDecl.__erlang_make_atom, make_atom)] in
-    Stdlib.List.to_seq pairs |> Procname.Map.of_seq
 
 
   let generic_call_model astate node analyze_dependency ret_id procname args =
@@ -768,34 +911,101 @@ module TransferFunctions = struct
     |> add_summary_flows (analyze_dependency procname) args ret_id node
 
 
-  let exec_call (astate : Domain.t) node analyze_dependency ret_id fun_name args : Domain.t =
-    let callee_pname = procname_of_exp fun_name in
+  module CustomModel = struct
+    let call_unqualified astate node analyze_dependency ret_id procname args =
+      match args with
+      | fun_ :: _ ->
+          generic_call_model astate node analyze_dependency ret_id procname args
+          |> update_write DynamicCallFunction (Var.of_id ret_id, node) (free_locals_of_exp fun_)
+      | _ ->
+          L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
+
+
+    let call_qualified astate node analyze_dependency ret_id procname args =
+      match args with
+      | module_ :: fun_ :: _ ->
+          generic_call_model astate node analyze_dependency ret_id procname args
+          |> update_write DynamicCallFunction (Var.of_id ret_id, node) (free_locals_of_exp fun_)
+          |> update_write DynamicCallModule (Var.of_id ret_id, node) (free_locals_of_exp module_)
+      | _ ->
+          L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
+
+
+    let make_atom astate node _analyze_dependency ret_id _procname (args : Exp.t list) =
+      let atom_name =
+        match args with
+        | Const (Cstr atom_name) :: _ ->
+            atom_name
+        | _ ->
+            L.die InternalError "Expecting first argument of 'make_atom' to be its name"
+      in
+      let sources = Local.Set.singleton (ConstantAtom atom_name) in
+      update_write LineageGraph.FlowKind.Direct (Var.of_id ret_id, node) sources astate
+
+
+    let custom_call_models =
+      let apply arity =
+        Procname.make_erlang ~module_name:ErlangTypeName.erlang_namespace ~function_name:"apply"
+          ~arity
+      in
+      let pairs =
+        [ (BuiltinDecl.__erlang_make_atom, make_atom)
+        ; (apply 2, call_unqualified)
+        ; (apply 3, call_qualified) ]
+      in
+      Stdlib.List.to_seq pairs |> Procname.Map.of_seq
+
+
+    let get name =
+      if Procname.is_erlang_call_unqualified name then Some call_unqualified
+      else if Procname.is_erlang_call_qualified name then Some call_qualified
+      else Procname.Map.find_opt name custom_call_models
+  end
+
+  let exec_named_call (astate : Domain.t) node analyze_dependency ret_id name args : Domain.t =
+    let model = CustomModel.get name |> Option.value ~default:generic_call_model in
+    model astate node analyze_dependency ret_id name args
+
+
+  let exec_call (astate : Domain.t) node analyze_dependency ret_id fun_exp args : Domain.t =
+    let callee_pname = procname_of_exp fun_exp in
     let args = List.map ~f:fst args in
     match callee_pname with
     | None ->
-        add_tito_all args ret_id node astate
+        let arity = List.length args in
+        let erlang_call_name = Procname.erlang_call_unqualified ~arity in
+        exec_named_call astate node analyze_dependency ret_id erlang_call_name (fun_exp :: args)
     | Some name ->
-        let model =
-          Procname.Map.find_opt name custom_call_models |> Option.value ~default:generic_call_model
-        in
-        model astate node analyze_dependency ret_id name args
+        exec_named_call astate node analyze_dependency ret_id name args
+
+
+  let add_lambda_edges (write_var, write_node) lambdas (real_state, local_edges) =
+    let target = LineageGraph.Local (Variable write_var, write_node) in
+    let add_one_lambda one_lambda local_edges =
+      LineageGraph.flow ~node:write_node ~source:(Function one_lambda) ~target () :: local_edges
+    in
+    let local_edges = Procname.Set.fold add_one_lambda lambdas local_edges in
+    (real_state, local_edges)
 
 
   let exec_noncall astate node instr =
     let written_var = get_written_var instr in
-    let read_set = get_read_set instr in
+    let {free_locals; captured_locals; lambdas} = get_read_set instr in
     match written_var with
     | None ->
         astate
     | Some written_var ->
-        update_write LineageGraph.Direct (written_var, node) read_set astate
+        astate
+        |> update_write LineageGraph.FlowKind.Direct (written_var, node) free_locals
+        |> update_write LineageGraph.FlowKind.Capture (written_var, node) captured_locals
+        |> add_lambda_edges (written_var, node) lambdas
 
 
   let exec_instr astate {InterproceduralAnalysis.analyze_dependency} node instr_index
       (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "SimpleLineage: INV broken: CFGs should be single instruction@\n" ;
-    let astate = (fst astate, [ (* don't repeat edges*) ]) in
+    let astate = add_cap_flows node instr (fst astate, [ (* don't repeat edges*) ]) in
     match instr with
     | Call ((ret_id, _ret_typ), name, args, _location, _flags) ->
         exec_call astate node analyze_dependency ret_id name args
@@ -811,11 +1021,14 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_size = Procdesc.size proc_desc in
   let too_big =
-    Option.value_map ~default:false
-      ~f:(fun limit -> proc_size > limit)
-      Config.simple_lineage_max_cfg_size
+    Option.exists ~f:(fun limit -> proc_size > limit) Config.simple_lineage_max_cfg_size
   in
-  if too_big then (
+  let is_synthetic =
+    (* Ignore bodies synthesized by frontend for spec-only functions. *)
+    (Procdesc.get_attributes proc_desc).ProcAttributes.is_synthetic_method
+  in
+  if is_synthetic then None
+  else if too_big then (
     L.user_warning "Skipped large (%d) procedure (%a)@." proc_size Procname.pp
       (Procdesc.get_proc_name proc_desc) ;
     None )
@@ -823,14 +1036,25 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
     let cfg = CFG.from_pdesc proc_desc in
     let initial =
       let formals = get_formals proc_desc in
+      let captured = get_captured proc_desc in
       let start_node = CFG.start_node cfg in
       let add_arg last_writes arg = Domain.Real.LastWrites.add arg start_node last_writes in
-      let last_writes = List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg formals in
+      let last_writes =
+        List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg (captured @ formals)
+      in
       let local_edges =
         List.mapi
           ~f:(fun i var ->
-            LineageGraph.flow ~source:(Argument i) ~target:(Local (Variable var, start_node)) () )
+            LineageGraph.flow ~node:start_node ~source:(Argument i)
+              ~target:(Local (Variable var, start_node))
+              () )
           formals
+        @ List.mapi
+            ~f:(fun i var ->
+              LineageGraph.flow ~node:start_node ~source:(Captured i)
+                ~target:(Local (Variable var, start_node))
+                () )
+            captured
       in
       let has_unsupported_features = false in
       ((last_writes, has_unsupported_features), local_edges)
@@ -850,7 +1074,9 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       in
       let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
       let mk_ret_edge ret_node =
-        LineageGraph.flow ~source:(Local (Variable ret_var, ret_node)) ~target:Return ()
+        LineageGraph.flow ~node:ret_node
+          ~source:(Local (Variable ret_var, ret_node))
+          ~target:Return ()
       in
       List.map ~f:mk_ret_edge (Domain.Real.LastWrites.get_all ret_var exit_last_writes)
       @ (Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat)

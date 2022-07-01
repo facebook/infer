@@ -15,7 +15,7 @@ module F = Format
 module type NodeCommonS = sig
   type t
 
-  type id
+  type id [@@deriving compare, equal]
 
   val kind : t -> Procdesc.Node.nodekind
 
@@ -28,8 +28,6 @@ module type NodeCommonS = sig
   val underlying_node : t -> Procdesc.Node.t
 
   val of_underlying_node : Procdesc.Node.t -> t
-
-  val compare_id : id -> id -> int
 
   val pp_id : F.formatter -> id -> unit
 
@@ -50,11 +48,11 @@ module InstrNode : sig
 
   val to_instr : instr_index -> t -> t
 end = struct
-  type instr_index = int [@@deriving compare]
+  type instr_index = int [@@deriving compare, equal]
 
   type t = Procdesc.Node.t * instr_index [@@deriving compare]
 
-  type id = Procdesc.Node.id * instr_index [@@deriving compare]
+  type id = Procdesc.Node.id * instr_index [@@deriving compare, equal]
 
   let kind (t, _) = Procdesc.Node.get_kind t
 
@@ -91,7 +89,7 @@ end
 module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.Node.id = struct
   type t = Procdesc.Node.t
 
-  type id = Procdesc.Node.id
+  type id = Procdesc.Node.id [@@deriving compare, equal]
 
   let kind = Procdesc.Node.get_kind
 
@@ -104,8 +102,6 @@ module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.N
   let underlying_node t = t
 
   let of_underlying_node t = t
-
-  let compare_id = Procdesc.Node.compare_id
 
   let pp_id = Procdesc.Node.pp_id
 

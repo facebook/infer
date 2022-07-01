@@ -37,3 +37,5 @@ val to_int64 : t -> int64 option
 val to_bigint : t -> Z.t option
 
 val to_nativeint : t -> nativeint option
+
+val is_rational : t -> bool

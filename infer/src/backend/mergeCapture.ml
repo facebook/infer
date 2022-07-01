@@ -7,8 +7,6 @@
 
 open! IStd
 module L = Logging
-module YB = Yojson.Basic
-module YBU = Yojson.Basic.Util
 
 (** Module to merge the results of capture for different buck targets. *)
 
@@ -54,33 +52,25 @@ module TenvMerger = struct
         ()
 end
 
-let merge_json_results infer_out_src json_entry =
-  let main_changed_fs_file = ResultsDir.get_path json_entry in
-  let changed_fs_file = ResultsDirEntryName.get_path ~results_dir:infer_out_src json_entry in
-  let main_json = try YB.from_file main_changed_fs_file |> YBU.to_list with Sys_error _ -> [] in
-  let changed_json = try YB.from_file changed_fs_file |> YBU.to_list with Sys_error _ -> [] in
-  let all_fs =
-    `List
-      (List.dedup_and_sort
-         ~compare:(fun s1 s2 ->
-           match (s1, s2) with `String s1, `String s2 -> String.compare s1 s2 | _ -> 0 )
-         (List.append main_json changed_json) )
-  in
-  YB.to_file main_changed_fs_file all_fs
-
-
-let merge_all_json_results merge_results results_json_str =
-  L.progress "Merging %s files...@." results_json_str ;
-  let infer_deps_file = ResultsDir.get_path CaptureDependencies in
-  Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_results infer_deps_file ;
-  L.progress "Done merging %s files@." results_json_str
-
-
 let merge_changed_functions () =
-  let merge_changed_functions_json infer_out_src =
-    merge_json_results infer_out_src ChangedFunctions
-  in
-  merge_all_json_results merge_changed_functions_json "changed functions"
+  L.progress "Merging changed functions files...@." ;
+  let tgt_dir = ResultsDir.get_path ChangedFunctionsTempResults in
+  let infer_deps_file = ResultsDir.get_path CaptureDependencies in
+  Utils.iter_infer_deps infer_deps_file ~project_root:Config.project_root ~f:(fun infer_out_src ->
+      let src_dir =
+        ResultsDirEntryName.get_path ~results_dir:infer_out_src ChangedFunctionsTempResults
+      in
+      match Sys.is_directory src_dir with
+      | `Yes ->
+          Utils.create_dir tgt_dir ;
+          Utils.directory_iter
+            (fun src ->
+              let data = In_channel.read_all src in
+              Out_channel.write_all (tgt_dir ^/ Filename.basename src) ~data )
+            src_dir
+      | `No | `Unknown ->
+          () ) ;
+  L.progress "Done merging changed functions files@."
 
 
 let merge_captured_targets () =

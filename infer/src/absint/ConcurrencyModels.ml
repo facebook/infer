@@ -190,13 +190,18 @@ end = struct
     ; (* only unlock *)
       "folly::SharedMutex::ReadHolder"
     ; (* only unlock *)
+      "folly::SharedMutexImpl::ReadHolder"
+    ; (* only unlock *)
       "folly::SharedMutex::WriteHolder"
+    ; (* only unlock *)
+      "folly::SharedMutexImpl::WriteHolder"
     ; (* read/write locks under operator() etc *)
       "folly::LockedPtr"
     ; (* no lock/unlock *)
       "folly::SpinLockGuard"
     ; (* no lock/unlock *)
       "std::lock_guard"
+    ; "std::scoped_lock"
     ; (* everything *)
       "std::shared_lock"
     ; (* everything *)
@@ -359,14 +364,24 @@ let is_android_lifecycle_method tenv pname =
     | _ ->
         false
   in
-  match (pname : Procname.t) with
-  | C _ | Erlang _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | WithBlockParameters _
-    ->
-      false
-  | Java _ ->
-      method_starts_with_on pname
-      && (not (is_allow_listed pname))
-      && overrides_android_method tenv pname
+  let rec test_pname pname =
+    match (pname : Procname.t) with
+    | C _
+    | Erlang _
+    | Linters_dummy_method
+    | Block _
+    | ObjC_Cpp _
+    | CSharp _
+    | WithFunctionParameters _ ->
+        false
+    | WithAliasingParameters (base, _) ->
+        test_pname base
+    | Java _ ->
+        method_starts_with_on pname
+        && (not (is_allow_listed pname))
+        && overrides_android_method tenv pname
+  in
+  test_pname pname
 
 
 type annotation_trail = DirectlyAnnotated | Override of Procname.t | SuperClass of Typ.name

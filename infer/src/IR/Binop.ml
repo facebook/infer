@@ -10,18 +10,14 @@
 
 open! IStd
 
-type ikind_option_for_binop = Typ.ikind option
-
-let compare_ikind_option_for_binop _ _ = 0
-
 (** Binary operations *)
 type t =
-  | PlusA of ikind_option_for_binop  (** arithmetic + *)
+  | PlusA of Typ.ikind option [@ignore]  (** arithmetic + *)
   | PlusPI  (** pointer + integer *)
-  | MinusA of ikind_option_for_binop  (** arithmetic - *)
+  | MinusA of Typ.ikind option [@ignore]  (** arithmetic - *)
   | MinusPI  (** pointer - integer *)
   | MinusPP  (** pointer - pointer *)
-  | Mult of ikind_option_for_binop  (** * *)
+  | Mult of Typ.ikind option [@ignore]  (** * *)
   | DivI  (** / for integers *)
   | DivF  (** / for floats *)
   | Mod  (** % *)
@@ -38,9 +34,7 @@ type t =
   | BOr  (** inclusive-or *)
   | LAnd  (** logical and. Does not always evaluate both operands. *)
   | LOr  (** logical or. Does not always evaluate both operands. *)
-[@@deriving compare]
-
-let equal = [%compare.equal: t]
+[@@deriving compare, equal]
 
 (** This function returns true if the operation is injective wrt. each argument: op(e,-) and op(-,
     e) is injective for all e. The return value false means "don't know". *)

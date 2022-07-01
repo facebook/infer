@@ -80,6 +80,8 @@ module Basic : sig
 
   val nondet : desc:string -> model
 
+  val skip : model
+
   val id_first_arg : desc:string -> AbstractValue.t * ValueHistory.t -> model
 
   val free_or_delete :

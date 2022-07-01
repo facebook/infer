@@ -131,10 +131,9 @@ let should_create_procdesc cfg procname ~defined ~set_objc_accessor_attr =
       true
 
 
-(** Returns a list of the indices of expressions in [args] which point to const-typed values. Each
-    index is offset by [shift]. *)
-let get_const_params_indices ~shift params =
-  let i = ref shift in
+(** Returns a list of the indices of expressions in [args] which point to const-typed values *)
+let get_const_params_indices params =
+  let i = ref 0 in
   let rec aux result = function
     | [] ->
         List.rev result
@@ -187,8 +186,9 @@ let find_sentinel_attribute attrs =
 
 
 (** Creates a procedure description. *)
-let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_captured = false)
-    ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv ms fbody captured =
+let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
+    ?(record_lambda_captured = false) ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv
+    ms fbody captured =
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
   let clang_method_kind = ms.CMethodSignature.method_kind in
@@ -205,7 +205,11 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
   in
   let captured_mangled =
     List.map
-      ~f:(fun (var, typ, capture_mode) -> {CapturedVar.name= Pvar.get_name var; typ; capture_mode})
+      ~f:(fun (pvar, typ, capture_mode) ->
+        let pvar =
+          if is_cpp_lambda_call_operator then Pvar.mk (Pvar.get_name pvar) proc_name else pvar
+        in
+        {CapturedVar.pvar; typ; capture_mode} )
       captured
   in
   (* Retrieve captured variables from procdesc created when translating captured variables in lambda expression *)
@@ -227,16 +231,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ~f:(fun ({name; typ; annot} : CMethodSignature.param_type) -> (name, typ, annot))
         all_params
     in
-    (* Captured variables for blocks are treated as parameters, but not for cpp lambdas *)
-    let captured_as_formals =
-      if is_cpp_lambda_call_operator then []
-      else
-        List.map ~f:(fun {CapturedVar.name; typ} -> (name, typ, Annot.Item.empty)) captured_mangled
-    in
-    let formals = captured_as_formals @ formals in
-    let const_formals =
-      get_const_params_indices ~shift:(List.length captured_as_formals) all_params
-    in
+    let const_formals = get_const_params_indices all_params in
     let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose)
       "@\nCreating a new procdesc for function: '%a'@\n@." Procname.pp proc_name ;
@@ -271,6 +266,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ; is_variadic= ms.CMethodSignature.is_variadic
         ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
         ; loc= loc_start
+        ; loc_instantiated
         ; clang_method_kind
         ; objc_accessor= objc_property_accessor
         ; ret_type
@@ -323,13 +319,14 @@ let create_external_procdesc trans_unit_ctx cfg proc_name clang_method_kind type
     ignore (Cfg.create_proc_desc cfg proc_attributes)
 
 
-let create_procdesc_with_pointer ?(captured_vars = []) context pointer class_name_opt name =
+let create_procdesc_with_pointer ?(is_cpp_lambda_call_operator = false) ?(captured_vars = [])
+    context pointer class_name_opt name =
   let open CContext in
   match method_signature_of_pointer context.tenv pointer with
   | Some callee_ms ->
       ignore
         (create_local_procdesc context.translation_unit_context context.cfg context.tenv callee_ms
-           [] captured_vars
+           [] captured_vars ~is_cpp_lambda_call_operator
            ~record_lambda_captured:(not (List.is_empty captured_vars)) ) ;
       callee_ms.CMethodSignature.name
   | None ->
@@ -353,7 +350,8 @@ let get_procname_from_cpp_lambda context dec captured_vars =
     match cxx_rdi.xrdi_lambda_call_operator with
     | Some dr ->
         let name_info, decl_ptr, _ = CAst_utils.get_info_from_decl_ref dr in
-        create_procdesc_with_pointer context decl_ptr None name_info.ni_name ~captured_vars
+        create_procdesc_with_pointer ~is_cpp_lambda_call_operator:true context decl_ptr None
+          name_info.ni_name ~captured_vars
     | _ ->
         assert false )
   | _ ->

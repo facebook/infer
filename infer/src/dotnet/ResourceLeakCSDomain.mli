@@ -11,19 +11,7 @@ include AbstractDomain.S
 
 val initial : t
 
-module LeakList : sig
-  include module type of Base.List
-
-  val append_one : 'a list -> 'a -> 'a list
-end
-
-val check_count : AccessPath.t -> t -> bool
-
-val get_type_map : (AccessPath.t, string) Caml.Hashtbl.t
-
-val reset_type_map : unit
-
-val acquire_resource : AccessPath.t -> string -> t -> t
+val acquire_resource : AccessPath.t -> Typ.Name.t -> t -> t
 
 val release_resource : AccessPath.t -> t -> t
 
@@ -36,11 +24,11 @@ type summary
 module Summary : sig
   val apply : callee:summary -> return:AccessPath.base -> actuals:HilExp.t list -> t -> t
 
-  val reset_interface_type_map : unit
-
   val make : FormalMap.t -> t -> summary
 
   val pp : Format.formatter -> summary -> unit
+
+  val resource_and_type_to_str : t -> bool -> string
 
   type t = summary
 end

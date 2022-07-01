@@ -33,20 +33,20 @@ class PurityModeled {
     for (int i = 0; i < array.length; i++) {}
   }
 
-  void write_impure() {
+  void FN_write_impure() {
     byte[] temp = new byte[4];
     System.out.write(temp, 0, 4);
   }
 
-  void call_write_impure() {
-    write_impure();
+  void FN_call_write_impure() {
+    FN_write_impure();
   }
 
   int math_random_in_loop_impure(int x) {
     int p = 0;
     for (int i = 0; i < x; i++) {
       p += Math.random();
-      call_write_impure();
+      FN_call_write_impure();
     }
 
     return p;

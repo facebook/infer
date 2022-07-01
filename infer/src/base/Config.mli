@@ -16,6 +16,7 @@ type os_type = Unix | Win32 | Cygwin
 type build_system =
   | BAnt
   | BBuck
+  | BBuck2
   | BClang
   | BGradle
   | BJava
@@ -165,9 +166,15 @@ val bo_debug : int
 
 val bo_field_depth_limit : int option
 
+val bo_max_cfg_size : int
+
 val bootclasspath : string option
 
 val buck : bool
+
+val buck2_build_args : string list
+
+val buck2_build_args_no_inline : string list
 
 val buck_block_list : string list
 
@@ -198,6 +205,8 @@ val buck_targets_block_list : string list
 val capture : bool
 
 val capture_block_list : string option
+
+val capture_textual_sil : string option
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
@@ -231,6 +240,12 @@ val classpath : string option
 
 val command : InferCommand.t
 
+val config_impact_config_field_patterns : Re.Str.regexp list
+
+val config_impact_config_function_patterns : Re.Str.regexp list
+
+val config_impact_config_param_patterns : Re.Str.regexp list
+
 val config_impact_current : string option
 
 val config_impact_data_file : string option
@@ -244,6 +259,10 @@ val config_impact_previous : string option
 val config_impact_strict_mode : bool
 
 val config_impact_strict_mode_paths : Str.regexp list
+
+val config_impact_strict_beta_mode_paths : Str.regexp list
+
+val config_impact_test_paths : Str.regexp list
 
 val continue_analysis : bool
 
@@ -305,7 +324,9 @@ val eradicate_verbose : bool
 
 val erlang_ast_dir : string option
 
-val erlang_skip_rebar3 : bool
+val erlang_skip_compile : bool
+
+val erlang_with_otp_specs : bool
 
 val erlang_list_unfold_depth : int
 
@@ -430,6 +451,8 @@ val memtrace_sampling_rate : float
 
 val merge : bool
 
+val merge_infer_out : string list
+
 val merge_report : string list
 
 val method_decls_info : string option
@@ -482,6 +505,8 @@ val procedures : bool
 
 val procedures_attributes : bool
 
+val procedures_call_graph : bool
+
 val procedures_cfg : bool
 
 val procedures_definedness : bool
@@ -506,13 +531,19 @@ val project_root : string
 
 val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
+val pulse_inline_global_init_func_pointer : bool
+
 val pulse_intraprocedural_only : bool
 
 val pulse_isl : bool
 
 val pulse_manifest_emp : bool
 
+val pulse_max_cfg_size : int
+
 val pulse_max_disjuncts : int
+
+val pulse_max_heap : int option
 
 val pulse_model_abort : string list
 
@@ -526,15 +557,21 @@ val pulse_model_realloc_pattern : Str.regexp option
 
 val pulse_model_release_pattern : Str.regexp option
 
+val pulse_model_returns_copy_pattern : Str.regexp option
+
 val pulse_model_return_first_arg : Str.regexp option
 
 val pulse_model_return_nonnull : Str.regexp option
 
 val pulse_model_skip_pattern : Str.regexp option
 
-val pulse_prune_unsupported_arithmetic : bool
+val pulse_models_for_erlang : Yojson.Basic.t
 
 val pulse_report_ignore_unknown_java_methods_patterns : Str.regexp option
+
+val pulse_report_flows_from_taint_source : string option
+
+val pulse_report_flows_to_taint_sink : string option
 
 val pulse_model_transfer_ownership_namespace : (string * string) list
 
@@ -542,11 +579,21 @@ val pulse_model_transfer_ownership : string list
 
 val pulse_report_latent_issues : bool
 
+val pulse_report_issues_for_tests : bool
+
 val pulse_recency_limit : int
 
 val pulse_scuba_logging : bool
 
 val pulse_skip_procedures : Str.regexp option
+
+val pulse_taint_policies : Yojson.Basic.t
+
+val pulse_taint_sanitizers : Yojson.Basic.t
+
+val pulse_taint_sinks : Yojson.Basic.t
+
+val pulse_taint_sources : Yojson.Basic.t
 
 val pulse_widen_threshold : int
 
@@ -565,6 +612,8 @@ val quandary_sinks : Yojson.Basic.t
 val quandary_sources : Yojson.Basic.t
 
 val quiet : bool
+
+val racerd_always_report_java : bool
 
 val racerd_guardedby : bool
 
@@ -646,6 +695,10 @@ val skip_translation_headers : string list
 
 val source_files : bool
 
+val source_files_call_graph : bool
+
+val source_files_call_graph_partition : int option
+
 val source_files_cfg : bool
 
 val source_files_filter : string option
@@ -667,8 +720,6 @@ val sqlite_cache_size : int
 val sqlite_page_size : int
 
 val sqlite_lock_timeout : int
-
-val sqlite_vacuum : bool
 
 val sqlite_vfs : string option
 
@@ -693,6 +744,8 @@ val export_changed_functions : bool
 val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Basic.t
+
+val top_longest_proc_duration_size : int option
 
 val topl_max_conjuncts : int
 

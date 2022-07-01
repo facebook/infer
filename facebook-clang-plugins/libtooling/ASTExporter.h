@@ -605,6 +605,7 @@ void ASTExporter<ATDWriter>::dumpSourceRange(SourceRange R) {
 //@atd   type_ptr : type_ptr;
 //@atd   ~is_const : bool;
 //@atd   ~is_restrict : bool;
+//@atd   ~is_trivially_copyable : bool;
 //@atd   ~is_volatile : bool;
 //@atd } <ocaml field_prefix="qt_">
 template <class ATDWriter>
@@ -613,12 +614,16 @@ void ASTExporter<ATDWriter>::dumpQualType(const QualType &qt) {
       qt.isNull() ? clang::Qualifiers() : qt.getQualifiers();
   bool isConst = Quals.hasConst();
   bool isRestrict = Quals.hasRestrict();
+  bool isTriviallyCopyable =
+      qt.isNull() ? false : qt.isTriviallyCopyableType(Context);
   bool isVolatile = Quals.hasVolatile();
-  ObjectScope oScope(OF, 1 + isConst + isVolatile + isRestrict);
+  ObjectScope oScope(
+      OF, 1 + isConst + isRestrict + isTriviallyCopyable + isVolatile);
   OF.emitTag("type_ptr");
   dumpQualTypeNoQuals(qt);
   OF.emitFlag("is_const", isConst);
   OF.emitFlag("is_restrict", isRestrict);
+  OF.emitFlag("is_trivially_copyable", isTriviallyCopyable);
   OF.emitFlag("is_volatile", isVolatile);
 }
 
@@ -1323,6 +1328,9 @@ void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
   case Language::OpenCL:
     OF.emitSimpleVariant("IK_OpenCL");
     break;
+  case Language::OpenCLCXX:
+    OF.emitSimpleVariant("IK_OpenCLCXX");
+    break;
   case Language::CUDA:
     OF.emitSimpleVariant("IK_CUDA");
     break;
@@ -1532,7 +1540,8 @@ int ASTExporter<ATDWriter>::FunctionDeclTupleSize() {
 //@atd   ~parameters : decl list;
 //@atd   ?decl_ptr_with_body : pointer option;
 //@atd   ?body : stmt option;
-//@atd   ?template_specialization : template_specialization_info option
+//@atd   ?template_specialization : template_specialization_info option;
+//@atd   ?point_of_instantiation : source_location option
 //@atd } <ocaml field_prefix="fdi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
@@ -1565,10 +1574,13 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   }
   bool HasDeclarationBody = D->doesThisDeclarationHaveABody();
   FunctionTemplateDecl *TemplateDecl = D->getPrimaryTemplate();
+  SourceLocation PointOfInstantiation = D->getPointOfInstantiation();
+  bool IsValidPointOfInstantiation = PointOfInstantiation.isValid();
   int size = ShouldMangleName + IsCpp + IsInlineSpecified + IsModulePrivate +
              IsPure + IsDeletedAsWritten + IsNoReturn + IsConstexpr +
              IsVariadic + IsStatic + HasParameters + (bool)DeclWithBody +
-             HasDeclarationBody + (bool)TemplateDecl;
+             HasDeclarationBody + (bool)TemplateDecl +
+             IsValidPointOfInstantiation;
   ObjectScope Scope(OF, size);
 
   if (ShouldMangleName) {
@@ -1648,6 +1660,10 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
     OF.emitTag("template_specialization");
     dumpTemplateSpecialization(TemplateDecl,
                                *D->getTemplateSpecializationArgs());
+  }
+  if (IsValidPointOfInstantiation) {
+    OF.emitTag("point_of_instantiation");
+    dumpSourceLocation(PointOfInstantiation);
   }
 }
 
@@ -2015,7 +2031,9 @@ void ASTExporter<ATDWriter>::dumpTemplateArgument(const TemplateArgument &Arg) {
     break;
   case TemplateArgument::Integral: {
     VariantScope Scope(OF, "Integral");
-    OF.emitString(Arg.getAsIntegral().toString(10));
+    llvm::SmallString<64> buf;
+    Arg.getAsIntegral().toString(buf, 10);
+    OF.emitString(buf.str().str());
     break;
   }
   case TemplateArgument::Template: {
@@ -2066,10 +2084,10 @@ void ASTExporter<ATDWriter>::dumpTemplateSpecialization(
 
 template <class ATDWriter>
 int ASTExporter<ATDWriter>::ClassTemplateSpecializationDeclTupleSize() {
-  return CXXRecordDeclTupleSize() + 2;
+  return CXXRecordDeclTupleSize() + 3;
 }
 
-//@atd #define class_template_specialization_decl_tuple cxx_record_decl_tuple * string * template_specialization_info
+//@atd #define class_template_specialization_decl_tuple cxx_record_decl_tuple * string * source_location * template_specialization_info
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
     const ClassTemplateSpecializationDecl *D) {
@@ -2085,6 +2103,7 @@ void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
   } else {
     OF.emitString("");
   }
+  dumpSourceLocation(D->getPointOfInstantiation());
   dumpTemplateSpecialization(D->getSpecializedTemplate(), D->getTemplateArgs());
 }
 
@@ -2096,6 +2115,8 @@ int ASTExporter<ATDWriter>::CXXMethodDeclTupleSize() {
 //@atd type cxx_method_decl_info = {
 //@atd   ~is_virtual : bool;
 //@atd   ~is_static : bool;
+//@atd   ~is_const : bool;
+//@atd   ~is_copy_assignment : bool;
 //@atd   ~is_copy_constructor : bool;
 //@atd   ~cxx_ctor_initializers : cxx_ctor_initializer list;
 //@atd   ~overriden_methods : decl_ref list;
@@ -2105,17 +2126,21 @@ void ASTExporter<ATDWriter>::VisitCXXMethodDecl(const CXXMethodDecl *D) {
   VisitFunctionDecl(D);
   bool IsVirtual = D->isVirtual();
   bool IsStatic = D->isStatic();
+  bool isCopyAssignment = D->isCopyAssignmentOperator();
   const CXXConstructorDecl *C = dyn_cast<CXXConstructorDecl>(D);
   bool isCopyConstructor = C && C->isCopyConstructor();
+  bool isConst = D->isConst();
   bool HasCtorInitializers = C && C->init_begin() != C->init_end();
   auto OB = D->begin_overridden_methods();
   auto OE = D->end_overridden_methods();
-  ObjectScope Scope(
-      OF,
-                    IsVirtual + IsStatic + isCopyConstructor +
-                        HasCtorInitializers + (OB != OE));
+  ObjectScope Scope(OF,
+                    IsVirtual + IsStatic + isConst + isCopyAssignment +
+                        isCopyConstructor + HasCtorInitializers + (OB != OE));
+
   OF.emitFlag("is_virtual", IsVirtual);
   OF.emitFlag("is_static", IsStatic);
+  OF.emitFlag("is_const", isConst);
+  OF.emitFlag("is_copy_assignment", isCopyAssignment);
   OF.emitFlag("is_copy_constructor", isCopyConstructor);
   if (HasCtorInitializers) {
     OF.emitTag("cxx_ctor_initializers");
@@ -3191,13 +3216,15 @@ int ASTExporter<ATDWriter>::SwitchStmtTupleSize() {
 //@atd   ?cond_var : stmt option;
 //@atd   cond : pointer;
 //@atd   body : pointer;
+//@atd   ~is_all_enum_cases_covered : bool;
 //@atd } <ocaml field_prefix="ssi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitSwitchStmt(const SwitchStmt *Node) {
   VisitStmt(Node);
   const Stmt *Init = Node->getInit();
   const DeclStmt *CondVar = Node->getConditionVariableDeclStmt();
-  ObjectScope Scope(OF, 2 + (bool)Init + (bool)CondVar);
+  const bool IsAllEnumCasesCovered = Node->isAllEnumCasesCovered();
+  ObjectScope Scope(OF, 2 + (bool)Init + (bool)CondVar + IsAllEnumCasesCovered);
   if (Init) {
     OF.emitTag("init");
     dumpPointer(Init);
@@ -3210,6 +3237,7 @@ void ASTExporter<ATDWriter>::VisitSwitchStmt(const SwitchStmt *Node) {
   dumpPointer(Node->getCond());
   OF.emitTag("body");
   dumpPointer(Node->getBody());
+  OF.emitFlag("is_all_enum_cases_covered", IsAllEnumCasesCovered);
 }
 
 template <class ATDWriter>
@@ -3300,7 +3328,7 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
   VisitStmt(Node);
 
   ExprValueKind VK = Node->getValueKind();
-  bool HasNonDefaultValueKind = VK != VK_RValue;
+  bool HasNonDefaultValueKind = VK != VK_PRValue;
   ExprObjectKind OK = Node->getObjectKind();
   bool HasNonDefaultObjectKind = OK != OK_Ordinary;
   ObjectScope Scope(OF, 1 + HasNonDefaultValueKind + HasNonDefaultObjectKind);
@@ -3317,7 +3345,7 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
     case VK_XValue:
       OF.emitSimpleVariant("XValue");
       break;
-    case VK_RValue:
+    case VK_PRValue:
       llvm_unreachable("unreachable");
       break;
     }
@@ -3629,7 +3657,9 @@ void ASTExporter<ATDWriter>::emitAPInt(bool isSigned,
   OF.emitTag("bitwidth");
   OF.emitInteger(value.getBitWidth());
   OF.emitTag("value");
-  OF.emitString(value.toString(10, isSigned));
+  llvm::SmallString<64> buf;
+  value.toString(buf, 10, isSigned);
+  OF.emitString(buf.str().str());
 }
 
 template <class ATDWriter>

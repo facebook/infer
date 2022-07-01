@@ -9,7 +9,8 @@
 
 struct B {
   B() { printf("  Base default constructor, this=%p\n", this); }
-  B(const B& other) {
+  B(const B& other)
+  {
     printf("  Base copy-constructor, this=%p from that=%p\n", this, &other);
   }
   virtual ~B() { printf("  Base destructor, this=%p\n", this); }
@@ -17,18 +18,23 @@ struct B {
 
 struct D : public B {
   D() { printf("  Derived default constructor, this=%p\n", this); }
-  D(const D& other) {
+  D(const D& other)
+  {
     printf("  Derived copy-constructor, this=%p from that=%p\n", this, &other);
   }
   virtual ~D() { printf("  Derived destructor, this=%p\n", this); }
 };
 
-void f() {
+void
+f()
+{
   D e;
   throw e;
 }
 
-int main() {
+int
+main()
+{
   try {
     try {
       f();

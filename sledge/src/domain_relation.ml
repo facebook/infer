@@ -34,7 +34,7 @@ module Make (State_domain : State_domain_sig) = struct
   let embed b = (b, b)
 
   let pp_entry fs entry =
-    [%Trace.fprintf fs "entry: %a@ current: " State_domain.pp entry]
+    [%Dbg.fprintf fs "entry: %a@ current: " State_domain.pp entry]
 
   let pp fs (entry, curr) =
     Format.fprintf fs "@[%a%a@]" pp_entry entry State_domain.pp curr
@@ -82,7 +82,7 @@ module Make (State_domain : State_domain_sig) = struct
 
   let call ~summaries tid ?child ~globals ~actuals ~areturn ~formals
       ~freturn ~locals (entry, current) =
-    [%Trace.call fun {pf} ->
+    [%Dbg.call fun {pf} ->
       pf
         "@ @[<v>@[actuals: (@[%a@])@ formals: (@[%a@])@]@ locals: \
          {@[%a@]}@ globals: {@[%a@]}@ current: %a@]"
@@ -99,23 +99,23 @@ module Make (State_domain : State_domain_sig) = struct
     ( (caller_current, caller_current)
     , {state_from_call; caller_entry= entry} )
     |>
-    [%Trace.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
+    [%Dbg.retn fun {pf} (reln, _) -> pf "@,%a" pp reln]
 
   let post tid locals {state_from_call; caller_entry} (_, current) =
-    [%Trace.call fun {pf} -> pf "@ locals: %a" Llair.Reg.Set.pp locals]
+    [%Dbg.call fun {pf} -> pf "@ locals: %a" Llair.Reg.Set.pp locals]
     ;
     (caller_entry, State_domain.post tid locals state_from_call current)
     |>
-    [%Trace.retn fun {pf} -> pf "%a" pp]
+    [%Dbg.retn fun {pf} -> pf "%a" pp]
 
   let retn tid formals freturn {caller_entry; state_from_call} (_, current)
       =
-    [%Trace.call fun {pf} -> pf "@ %a" State_domain.pp current]
+    [%Dbg.call fun {pf} -> pf "@ %a" State_domain.pp current]
     ;
     ( caller_entry
     , State_domain.retn tid formals freturn state_from_call current )
     |>
-    [%Trace.retn fun {pf} -> pf "%a" pp]
+    [%Dbg.retn fun {pf} -> pf "%a" pp]
 
   type term_code = State_domain.term_code [@@deriving compare, sexp_of]
 

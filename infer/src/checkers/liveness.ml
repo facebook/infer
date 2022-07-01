@@ -24,9 +24,8 @@ end
 module ExtendedDomain = struct
   type t = {normal: VarSet.t; exn: Exn.t}
 
-  let pp f {normal; exn= c_exn, _} =
-    F.fprintf f "@[@[normal:%a@],@ @[exn:%a@]@]" VarSet.pp normal Exn.CExn.pp c_exn
-
+  (* We only pretty-print the normal component of the abstract state *)
+  let pp f {normal; exn= _} = F.fprintf f "@[normal:%a@]" VarSet.pp normal
 
   let leq ~lhs ~rhs =
     VarSet.leq ~lhs:lhs.normal ~rhs:rhs.normal && Exn.leq ~lhs:lhs.exn ~rhs:rhs.exn
@@ -43,9 +42,13 @@ module ExtendedDomain = struct
 
   let filter_exceptional {exn= _, j_exn} = {normal= VarSet.bottom; exn= (Exn.CExn.bottom, j_exn)}
 
-  let normal_to_exceptional {normal} = {normal= VarSet.bottom; exn= (Exn.CExn.bottom, normal)}
+  let normal_to_exceptional {normal; exn} =
+    {normal= VarSet.bottom; exn= Exn.join exn (Exn.CExn.bottom, normal)}
 
-  let exceptional_to_normal {exn= _, j_exn} = {normal= j_exn; exn= Exn.bottom}
+
+  let exceptional_to_normal {exn= c_exn, j_exn} =
+    {normal= Exn.CExn.fold (fun _ -> VarSet.join) c_exn j_exn; exn= Exn.bottom}
+
 
   let bottom = {normal= VarSet.bottom; exn= Exn.bottom}
 
@@ -227,20 +230,20 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
         astate
 
 
-  let exec_instr astate proc_dec _ _ instr =
+  let exec_instr astate proc_desc _ _ instr =
     (* A variable is live before [instr] if it is:
        - live after instr and not set by [instr]
        - or it used by [instr]
        - or it is live before an exceptional successor node *)
-    let astate_exn = Domain.filter_exceptional astate in
-    Domain.join (exec_instr_normal astate proc_dec instr) (Domain.exceptional_to_normal astate_exn)
+    let astate_normal = exec_instr_normal astate proc_desc instr in
+    Domain.(filter_exceptional astate |> exceptional_to_normal |> join astate_normal)
 
 
-  let filter_normal astate = Domain.filter_normal astate
+  let filter_normal = Domain.filter_normal
 
-  let filter_exceptional astate = Domain.filter_exceptional astate
+  let filter_exceptional = Domain.filter_exceptional
 
-  let transform_on_exceptional_edge astate = Domain.normal_to_exceptional astate
+  let transform_on_exceptional_edge = Domain.normal_to_exceptional
 
   let pp_session_name node fmt = F.fprintf fmt "liveness %a" CFG.Node.pp_id (CFG.Node.id node)
 end

@@ -7,9 +7,9 @@
 
 open! IStd
 
-let log_lock_time = BackendStats.add_to_proc_locker_lock_time
+let log_lock_time = Stats.add_to_proc_locker_lock_time
 
-let log_unlock_time = BackendStats.add_to_proc_locker_unlock_time
+let log_unlock_time = Stats.add_to_proc_locker_unlock_time
 
 let record_time_of ~f ~log_f =
   let ExecutionDuration.{result; execution_duration} = ExecutionDuration.timed_evaluate ~f in

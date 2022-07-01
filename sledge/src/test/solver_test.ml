@@ -11,17 +11,14 @@ open Fol
 let%test_module _ =
   ( module struct
     let () =
-      Trace.init ~margin:68
-        ~config:(Result.get_ok (Trace.parse "+Solver.infer_frame"))
-        ()
+      Dbg.init ~margin:68 ~config:(Dbg.parse "+Solver.infer_frame") ()
 
     (* let () =
-     *   Trace.init ~margin:160
-     *     ~config:
-     *       (Result.get_ok (Trace.parse "+Solver.infer_frame+Solver.excise"))
+     *   Dbg.init ~margin:160
+     *     ~config:(Dbg.parse "+Solver.infer_frame+Solver.excise")
      *     () *)
 
-    [@@@warning "-32"]
+    [@@@warning "-unused-value-declaration"]
 
     let infer_frame p xs q =
       Solver.infer_frame p (Var.Set.of_list xs) q |> ignore
@@ -103,8 +100,7 @@ let%test_module _ =
       let minued = Sh.star common seg1 in
       let subtrahend =
         Sh.and_ (Formula.eq m n)
-          (Sh.exists
-             (Var.Set.of_list [m_])
+          (Sh.exists (Var.Set.of_list [m_])
              (Sh.extend_us (Var.Set.of_list [m_]) common) )
       in
       infer_frame minued [n_; m_] subtrahend ;

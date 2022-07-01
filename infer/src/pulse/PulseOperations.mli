@@ -30,23 +30,27 @@ module Import : sig
     | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
     | LatentInvalidAccess of
         { astate: AbductiveDomain.summary
-        ; address: AbstractValue.t
+        ; address: Decompiler.expr
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
         ; calling_context: (CallEvent.t * Location.t) list }
     | ISLLatentMemoryError of AbductiveDomain.summary
 
-  type 'astate base_error = 'astate AccessResult.error =
-    | PotentialInvalidAccess of
-        { astate: 'astate
-        ; address: AbstractValue.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
+  type base_summary_error = AccessResult.summary_error =
     | PotentialInvalidAccessSummary of
         { astate: AbductiveDomain.summary
-        ; address: AbstractValue.t
+        ; address: Decompiler.expr
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | ReportableError of {astate: 'astate; diagnostic: Diagnostic.t}
     | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
-    | ISLError of 'astate
+    | ISLErrorSummary of {astate: AbductiveDomain.summary}
+
+  type base_error = AccessResult.error =
+    | PotentialInvalidAccess of
+        { astate: AbductiveDomain.t
+        ; address: Decompiler.expr
+        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
+    | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
+    | ISLError of {astate: AbductiveDomain.t}
+    | Summary of base_summary_error
 
   (** {2 Monadic syntax} *)
 
@@ -96,6 +100,9 @@ module ModeledField : sig
 
   val internal_ref_count : Fieldname.t
   (** Modeled field for reference_counting *)
+
+  val delegated_release : Fieldname.t
+  (** Modeled field for resource release delegation *)
 end
 
 val eval :
@@ -110,6 +117,9 @@ val eval :
 
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
+
+val eval_var : PathContext.t -> Location.t -> Pvar.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+(** Similar to eval but for pvar only. Always succeeds. *)
 
 val eval_structure_isl :
      PathContext.t
@@ -263,9 +273,13 @@ val invalidate_biad_isl :
 (** record that the address is invalid. If the address has not been allocated, abduce ISL specs for
     both invalid (null, free, unint) and allocated heap. *)
 
+val always_reachable : AbstractValue.t -> t -> t
+
 val allocate : Attribute.allocator -> Location.t -> AbstractValue.t -> t -> t
 
-val java_resource_release : JavaClassName.t -> AbstractValue.t -> t -> t
+val java_resource_release : recursive:bool -> AbstractValue.t -> t -> t
+(** releases the resource of the argument, and recursively calls itself on the delegated resource if
+    [recursive==true] *)
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
@@ -321,10 +335,17 @@ val remove_vars : Var.t list -> Location.t -> t -> t
 val check_address_escape :
   Location.t -> Procdesc.t -> AbstractValue.t -> ValueHistory.t -> t -> t AccessResult.t
 
+type call_kind =
+  [ `Closure of (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  | `Var of Ident.t
+  | `ResolvedProcname ]
+
 val get_captured_actuals :
-     PathContext.t
+     Procname.t
+  -> PathContext.t
   -> Location.t
-  -> captured_vars:(Var.t * CapturedVar.capture_mode * Typ.t) list
-  -> actual_closure:AbstractValue.t * ValueHistory.t
+  -> captured_formals:(Var.t * CapturedVar.capture_mode * Typ.t) list
+  -> call_kind:call_kind
+  -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> t
-  -> (t * (Var.t * ((AbstractValue.t * ValueHistory.t) * Typ.t)) list) AccessResult.t
+  -> (t * ((AbstractValue.t * ValueHistory.t) * Typ.t) list) AccessResult.t

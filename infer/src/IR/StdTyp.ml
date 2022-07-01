@@ -59,6 +59,8 @@ module Name = struct
     open Typ.Name.Objc
 
     let ns_enumerator = from_string "NSEnumerator"
+
+    let ns_object = from_string "NSObject"
   end
 end
 

@@ -12,7 +12,7 @@ module F = Format
 module MockNode = struct
   type t = int
 
-  type id = int
+  type id = int [@@deriving equal]
 
   let hash = Hashtbl.hash
 

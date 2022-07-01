@@ -5,16 +5,20 @@
  * LICENSE file in the root directory of this source tree.
  */
 #include <vector>
+#include <set>
 #include <string>
 
 struct Arr {
   int arr[2];
+  std::vector<int> vec;
 };
 
 Arr& get_a_ref() {
   static Arr a;
   return a;
 }
+
+auto global = get_a_ref();
 
 int copy_decl_bad() {
   auto a = get_a_ref(); // unnecessary copy, use a ref
@@ -24,47 +28,48 @@ int copy_decl_bad() {
 
 int source_mod_ok() {
   Arr source;
-  auto copy = source;
+  auto cpy = source;
   source.arr[0] = 9; // source is modified, so copy is not unnecessary as we
                      // can't just add &
-  return copy.arr[0];
+  return cpy.arr[0];
 }
 
-int source_mod_param_ok(Arr source) {
-  auto copy = source;
+// FP is due to incorrect frontend translation of Arr's copy constructor.
+int source_mod_param_ok_FP(Arr source) {
+  auto cpy = source;
   source.arr[0] = 9; // source is modified, so copy is not unnecessary as we
                      // can't just add &
-  return copy.arr[0];
+  return cpy.arr[0];
 }
 
 void copy_in_branch_bad(bool b) {
   if (b) {
     Arr a;
-    auto copy = a;
+    auto cpy = a;
   }
 }
 
 void copy_in_branch_mod_ok(bool b) {
   if (b) {
     Arr a;
-    auto copy = a;
-    copy.arr[0] = 8;
+    auto cpy = a;
+    cpy.arr[0] = 8;
   }
 }
 
 void copy_outside_branch_mod_ok(bool b) {
   Arr a;
-  auto copy = a;
+  auto cpy = a;
   if (b) {
-    copy.arr[0] = 8;
+    cpy.arr[0] = 8;
   }
 }
 
 void multiple_copies_bad(bool b) {
   Arr a;
-  auto copy1 = a; // unnecessary copy
+  auto cpy1 = a; // unnecessary copy
   if (b) {
-    auto copy2 = copy1; // unnecessary copy
+    auto cpy2 = cpy1; // unnecessary copy
   }
 }
 
@@ -84,8 +89,8 @@ int get_first_elem(Arr a) { return a.arr[0]; }
 
 void copy_via_constructor_read_bad() {
   auto my_arr = Arr{{1, 2}}; // call to constructor
-  auto copy_arr = my_arr; // copy
-  get_first_elem(copy_arr);
+  auto cpy_arr = my_arr; // copy
+  get_first_elem(cpy_arr);
 }
 
 Arr get_a() {
@@ -100,11 +105,11 @@ void modified_interproc_copy_decl_ok() {
   set_to_zero(a.arr); // copy modified here by callee, it is not unnecessary
 }
 
-void copy_vec_bad(std::vector<int> vec) { auto copy_vec = vec; }
+void copy_vec_bad(std::vector<int> vec) { auto cpy_vec = vec; }
 
 void copy_vec_mod_ok(std::vector<int> vec) {
-  auto copy_vec = vec;
-  copy_vec.push_back(0);
+  auto cpy_vec = vec;
+  cpy_vec.push_back(0);
 }
 
 class Vec {
@@ -112,22 +117,20 @@ class Vec {
  public:
   std::vector<int> vec;
   Vec() {
-    for (int i = 1; i <= 3; i) {
+    for (int i = 1; i <= 3; i++) {
       vec.push_back(i);
     }
   }
 
   Vec(const Vec& v) {
-    for (int i = 1; i < 3; i)
+    for (int i = 1; i <= 3; i++)
       vec.push_back(v.get(i));
   }
 
   int get(int i) const { return vec[i]; }
 };
 
-// Although underlying vectors are the same for the copy and the source,
-// __end_cap_,__begin__, and __end__ are different. TODO: investigate
-void copy_own_vec_bad_FN() {
+void copy_own_vec_bad() {
   Vec vec;
   auto copied_own_vec = vec; // copy
 }
@@ -145,3 +148,236 @@ void loop_no_copy_ok(std::vector<std::string>& namesOfTheEntirePopulation) {
   for (const auto& name : namesOfTheEntirePopulation) {
   }
 }
+
+Arr& get_cond_arr_ref(Arr& arr1, Arr& arr2, bool cond) {
+  if (cond) {
+    return arr1;
+  } else {
+    return arr2;
+  }
+}
+
+void copy_in_both_cases_bad(bool cond) {
+  Arr arr1;
+  Arr arr2;
+  auto cpy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+}
+
+// We can't detect this case because we only keep track of one source
+// (arr's abstract value) but in two brances they point to two
+// different addresses, making us think that one of them is modified
+void copy_in_both_cases_aliasing_bad_FN(bool cond) {
+  Arr arr;
+  auto cpy = get_cond_arr_ref(arr, arr, cond); // call to copy ctor
+}
+
+void copy_in_both_cases_mod_ok(bool cond) {
+  Arr arr1;
+  Arr arr2;
+  auto cpy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+  cpy.arr[0] = 9;
+}
+
+void copy_in_both_cases_source_mod_ok(bool cond) {
+  Arr arr1;
+  Arr arr2;
+  auto cpy = get_cond_arr_ref(arr1, arr2, cond); // call to copy ctor
+  arr1.arr[0] = 9;
+}
+
+void copy_in_both_cases_branch_bad(bool cond) {
+  Arr arr1;
+  Arr arr2;
+  auto cpy = get_cond_arr_ref(arr1, arr2, true); // call to copy ctor
+}
+
+void copy_modified_after_abort_ok_FP(std::vector<int> source_vec) {
+  auto cpy = source_vec;
+  std::vector<int> vec(2);
+  int* elt = &vec[1];
+  vec.push_back(0);
+  int temp = *elt; // abort: vector invalidation
+  cpy.push_back(0); // copy modified, but we propagate Abort state without
+                     // executing the rest of the stmts
+}
+
+namespace ns {
+
+template <typename X>
+X creates_copy(X a) {
+  // ....
+}
+} // namespace ns
+
+int copy_via_model_bad(Arr arr) {
+  auto cpy = ns::creates_copy(arr); // creates copy (via model)
+}
+
+void source_modified_before_lib_destructor_ok(std::vector<int>& source_vec) {
+  auto cpy = source_vec;
+  source_vec[0] = 0;
+}
+
+void copy_modified_before_lib_destructor_ok(std::vector<int>& source_vec) {
+  auto cpy = source_vec;
+  cpy[0] = 0;
+}
+
+class String {
+ private:
+  char* text;
+  int size;
+
+ public:
+  int x;
+  ~String() { delete[] text; } // destructor
+  void set_size(int new_size) { size = new_size; }
+};
+
+void check_before_custom_destructor_bad(String s) { auto cpy = s; }
+
+void modified_before_custom_destructor_ok(String s) {
+  auto cpy = s;
+  cpy.set_size(10);
+}
+
+void copy_vec_name_contains_copy_ok(std::vector<int> vec) {
+  auto copy_vec = vec;
+} // variable contains "copy", hence warning should be suppressed
+
+void set_erase_ok(std::set<int> source) {
+  auto cpy = source;
+  cpy.erase(3); // unmodeled call assumes all non-const ptr args are modified
+}
+
+void source_const_fcn_bad(std::set<int> source) {
+  auto cpy = source;
+  int count =
+      source.count(3); // count is a const function which doesn't modify this*
+}
+
+void source_dispatch_const_fcn_bad(const std::set<int>& source) {
+  auto cpy = source;
+  auto it = source.find(3); // const find is dispatched since argument is const
+}
+
+void source_dispatch_non_const_fcn_bad_FN(std::set<int> source) {
+  auto cpy = source;
+  auto it = source.find(3); // non-const version is dispatched, but find doesn't
+                            // actually change this*
+}
+
+int iterator_ptr_modified_ok(const std::vector<int>& numbers) {
+  auto lDataValues = numbers;
+  std::sort(lDataValues.begin(), lDataValues.end());
+}
+
+struct SimpleS {
+  int a;
+  std::vector<int> vec;
+};
+
+struct SwapSimple {
+  SimpleS v;
+  void swap_ok(SwapSimple& x) {
+    const auto temp = v;
+    v = x.v;
+    x.v = temp;
+  }
+};
+
+struct SwapVector {
+  std::vector<int> v;
+  void swap_ok(SwapVector& x) {
+    const auto temp = v;
+    v = x.v;
+    x.v = temp;
+  }
+};
+
+void capture_by_value_ok(SimpleS arg) {
+  auto f = [c = arg]() mutable { c.a = 19; };
+}
+
+// NOTE: Currently we do not support unnecessary capture-by-value in lambda.
+void capture_by_value_bad_FN(SimpleS arg) {
+  auto f = [c = arg]() { int n = c.a; };
+}
+
+void constructor_bad() {
+  std::vector<int> source;
+  auto cpy = source;
+}
+
+// We can't detect this due to aliasing problem when we analyze the source code
+// of shared ptr copy ctor
+void shared_ptr_bad_FN(std::shared_ptr<Arr> source) { auto c = source; }
+
+void copy_assignment_bad(std::set<int> source) {
+  std::set<int> init_set; // default constructor is called
+  init_set = source; // copy assignment operator is called
+}
+
+void copy_assignment_ok(std::set<int> source) {
+  std::set<int> init_set; // default constructor is called
+  init_set = source; // copy assignment operator is called
+  source.insert(1); // source modified
+}
+
+void move_assignment_ok(std::set<int> source) {
+  std::set<int> init_set; // default constructor is called
+  init_set =
+      std::move(source); // move assignment operator is called, no copy created
+}
+
+void get_rvalue_ref(std::set<int>&& x) {}
+
+void copy_and_move_bad(std::set<int> source) {
+  std::set<int> c = source;
+  get_rvalue_ref(std::move(c)); // We can move source without copy.
+}
+
+void copy_and_move_const_ref_ok(const std::set<int>& source) {
+  std::set<int> c = source;
+  get_rvalue_ref(std::move(c));
+}
+
+struct TriviallyCopyable {
+  int a;
+  float f;
+  int* p;
+};
+
+void copy_trivially_copyable_ok(TriviallyCopyable source) {
+  TriviallyCopyable c = source;
+}
+
+class WrapperArr {
+
+  explicit WrapperArr(const Arr& internal_arr) : hidden_arr_(internal_arr) {}
+
+  // unnecessary copy into hidden_arr_, it should be moved
+  explicit WrapperArr(Arr&& internal_arr) : hidden_arr_(internal_arr) {}
+
+  const Arr getArr() const { return hidden_arr_; }
+
+ private:
+  Arr hidden_arr_;
+
+  void unnecessary_copy_moveable_bad(Arr&& a) {
+    hidden_arr_ = a;
+    hidden_arr_.arr[0] = 9; // it is ok that the copy is modified since it has
+                            // the ownership of the object.
+  }
+
+  void unnecessary_copy_moveable_source_mod_ok(Arr&& a) {
+    hidden_arr_ = a;
+    a.arr[0] = 9; // we cannot suggest move above as source is modified
+  }
+
+  void unnecessary_copy_moveable_copy_mod_bad(Arr&& a) {
+    hidden_arr_ = a;
+    hidden_arr_.arr[0] = 9; // copy can be modified since it will have the
+                            // ownership of the object.
+  }
+};

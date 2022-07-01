@@ -86,8 +86,6 @@ integration with LLVM
 
   sledge llvm SUBCOMMAND
 
-Code can be provided by one or more LLVM bitcode files.
-
 === subcommands ===
 
   analyze      analyze LLVM bitcode
@@ -102,7 +100,7 @@ analyze LLVM bitcode
 
   sledge llvm analyze <input>
 
-Analyze code in one or more LLVM bitcode files. This is a convenience wrapper for the sequence `sledge llvm translate`; `sledge analyze`.
+Analyze LLVM bitcode. This is a convenience wrapper for the sequence `sledge llvm translate`; `sledge analyze`.
 
 === flags ===
 
@@ -122,6 +120,12 @@ Analyze code in one or more LLVM bitcode files. This is a convenience wrapper fo
   [-dump-query <int>]     dump solver query <int> and halt
   [-dump-simplify <int>]  dump simplify query <int> and halt
   [-function-summaries]   use function summaries (in development)
+  [-goal-trace <file>]    specify a trace to try to explore, in the form of a
+                          file containing one LLVM function name per line. If
+                          provided, translation avoids inlining traced functions
+                          and analysis prioritizes trace progress. When an
+                          execution is found that visits each function in order,
+                          terminate if "Stop.on_reached_goal" is being traced.
   [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
                           a negative bound is never hit and leads to unbounded
                           exploration
@@ -153,7 +157,7 @@ translate LLVM bitcode to LLAIR
 
   sledge llvm translate <input>
 
-Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be either: an LLVM bitcode file, in binary (.bc) or textual (.ll) form; or of the form @<argsfile>, where <argsfile> names a file containing one <input> per line.
+Translate LLVM bitcode to LLAIR. The <input> file must contain LLVM bitcode in either binary (.bc) or textual (.ll) form.
 
 === flags ===
 
@@ -166,6 +170,12 @@ Translate one or more LLVM bitcode files to LLAIR. Each <input> filename may be 
   [-append-report]        append to report file
   [-colors]               enable printing in colors
   [-dump-bitcode <file>]  write transformed LLVM bitcode to <file>
+  [-goal-trace <file>]    specify a trace to try to explore, in the form of a
+                          file containing one LLVM function name per line. If
+                          provided, translation avoids inlining traced functions
+                          and analysis prioritizes trace progress. When an
+                          execution is found that visits each function in order,
+                          terminate if "Stop.on_reached_goal" is being traced.
   [-margin <cols>]        wrap debug tracing at <cols> columns
   [-no-internalize]       do not internalize all functions except the entry
                           points specified in the config file
@@ -196,6 +206,12 @@ The <input> file must be LLVM bitcode.
   [-append-report]        append to report file
   [-colors]               enable printing in colors
   [-dump-bitcode <file>]  write transformed LLVM bitcode to <file>
+  [-goal-trace <file>]    specify a trace to try to explore, in the form of a
+                          file containing one LLVM function name per line. If
+                          provided, translation avoids inlining traced functions
+                          and analysis prioritizes trace progress. When an
+                          execution is found that visits each function in order,
+                          terminate if "Stop.on_reached_goal" is being traced.
   [-llair-output <file>]  write generated textual LLAIR to <file>, or to
                           standard output if omitted
   [-margin <cols>]        wrap debug tracing at <cols> columns
@@ -228,6 +244,12 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
   [-dump-query <int>]     dump solver query <int> and halt
   [-dump-simplify <int>]  dump simplify query <int> and halt
   [-function-summaries]   use function summaries (in development)
+  [-goal-trace <file>]    specify a trace to try to explore, in the form of a
+                          file containing one LLVM function name per line. If
+                          provided, translation avoids inlining traced functions
+                          and analysis prioritizes trace progress. When an
+                          execution is found that visits each function in order,
+                          terminate if "Stop.on_reached_goal" is being traced.
   [-loop-bound <int>]     limit execution exploration to <int> loop iterations,
                           a negative bound is never hit and leads to unbounded
                           exploration

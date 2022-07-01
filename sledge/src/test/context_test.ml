@@ -11,17 +11,16 @@ let%test_module _ =
   ( module struct
     open Context
 
-    let () = Trace.init ~margin:68 ()
+    let () = Dbg.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160
+     *   Dbg.init ~margin:160
      *     ~config:
-     *       (Result.get_ok
-     *          (Trace.parse
-     *             "+Context-Context.canon-Context.canon_f-Context.norm-Context.find_extend_"))
+     *       (Dbg.parse
+     *          "+Context-Context.canon-Context.canon_f-Context.norm-Context.find_extend_" )
      *     () *)
 
-    [@@@warning "-32"]
+    [@@@warning "-unused-value-declaration"]
 
     let printf pp = Format.printf "@\n%a@." pp
     let pp = printf Context.pp_raw

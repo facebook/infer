@@ -19,7 +19,7 @@ typedef void (^MyHandler)(NSString* name);
 
 @implementation SharedView
 
-- (void)sharedInstanceRetainCycleBad_FN {
+- (void)sharedInstanceRetainCycle {
   static dispatch_once_t once;
   static SharedView* sharedInstance;
   dispatch_once(&once, ^{
@@ -33,3 +33,11 @@ typedef void (^MyHandler)(NSString* name);
 }
 
 @end
+
+int test_sharedInstanceRetainCycleBad() {
+  SharedView* a = [SharedView new];
+  [a sharedInstanceRetainCycle];
+  SharedView* b = [SharedView new];
+  [b sharedInstanceRetainCycle];
+  return 0;
+}

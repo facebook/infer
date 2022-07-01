@@ -16,6 +16,7 @@ type id =
   | CaptureDBWal
   | CaptureDependencies
   | ChangedFunctions
+  | ChangedFunctionsTempResults
   | Debug
   | Differential
   | DuplicateFunctions
@@ -85,6 +86,11 @@ let of_id = function
   | ChangedFunctions ->
       { rel_path= "changed_functions.json"
       ; kind= File
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Keep }
+  | ChangedFunctionsTempResults ->
+      { rel_path= "changed_functions_results"
+      ; kind= Directory
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Keep }
   | Debug ->

@@ -226,7 +226,7 @@ let is_container_write tenv pn =
       false
 
 
-let is_container_read tenv pn =
+let rec is_container_read tenv pn =
   match (pn : Procname.t) with
   | CSharp _ ->
       is_csharp_container_read tenv pn []
@@ -237,7 +237,9 @@ let is_container_read tenv pn =
      treatment between std::map::operator[] and all other operator[]. *)
   | ObjC_Cpp _ | C _ ->
       (not (is_cpp_container_write pn)) && is_cpp_container_read pn
-  | Erlang _ | Linters_dummy_method | Block _ | WithBlockParameters _ ->
+  | WithAliasingParameters (base, _) ->
+      is_container_read tenv base
+  | Erlang _ | Linters_dummy_method | Block _ | WithFunctionParameters _ ->
       false
 
 
@@ -358,7 +360,7 @@ let threadsafe_annotations =
 (* returns true if the annotation is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
    as an alias of @ThreadSafe in a .inferconfig file. *)
 let is_thread_safe item_annot =
-  let f ((annot : Annot.t), _) =
+  let f (annot : Annot.t) =
     List.exists ~f:(Annotations.annot_ends_with annot) threadsafe_annotations
     &&
     match annot.Annot.parameters with
@@ -372,7 +374,7 @@ let is_thread_safe item_annot =
 
 (* returns true if the annotation is @ThreadSafe(enableChecks = false) *)
 let is_assumed_thread_safe item_annot =
-  let f (annot, _) =
+  let f annot =
     Annotations.annot_ends_with annot Annotations.thread_safe
     &&
     match annot.Annot.parameters with
@@ -432,6 +434,8 @@ let get_current_class_and_threadsafe_superclasses tenv pname =
 
 
 let is_thread_safe_method pname tenv =
+  Config.racerd_always_report_java
+  ||
   match find_override_or_superclass_annotated is_thread_safe tenv pname with
   | Some (DirectlyAnnotated | Override _) ->
       true
@@ -598,7 +602,7 @@ let is_initializer tenv proc_name =
 
 
 let get_current_class_and_superclasses_satisfying_attr_check check tenv pname =
-  match pname with
+  match Procname.base_of pname with
   | Procname.Java java_pname ->
       let current_class = Procname.Java.get_class_type_name java_pname in
       let satisfying_classes =

@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module NonZeroInt : sig
-  type t = private Z.t [@@deriving compare]
+  type t = private Z.t [@@deriving compare, equal]
 
   exception DivisionNotExact
 

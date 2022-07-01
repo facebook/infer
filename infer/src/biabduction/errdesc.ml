@@ -76,17 +76,6 @@ let find_struct_by_value_assignment node pvar =
   else None
 
 
-(** Find a program variable assignment to id in the current node or predecessors. *)
-let find_ident_assignment node id : (Procdesc.Node.t * Exp.t) option =
-  let find_instr node = function
-    | Sil.Load {id= id_; e} when Ident.equal id_ id ->
-        Some (node, e)
-    | _ ->
-        None
-  in
-  Procdesc.Node.find_in_node_or_preds node ~f:find_instr
-
-
 (** Find the Load instruction used to declare normal variable [id], and return the expression
     dereferenced to initialize [id] *)
 let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t option =
@@ -802,7 +791,7 @@ let explain_dereference_access outermost_array is_nullable de_opt_ prop =
 
 
 (** Create a description of a dereference operation *)
-let create_dereference_desc proc_name tenv ?(use_buckets = false) ?(outermost_array = false)
+let create_dereference_desc proc_name _ ?(use_buckets = false) ?(outermost_array = false)
     ?(is_nullable = false) ?(is_premature_nil = false) de_opt deref_str prop loc =
   let value_str, access_opt = explain_dereference_access outermost_array is_nullable de_opt prop in
   let access_opt' =
@@ -816,12 +805,6 @@ let create_dereference_desc proc_name tenv ?(use_buckets = false) ?(outermost_ar
   let desc =
     if Language.curr_language_is Clang && not is_premature_nil then
       match de_opt with
-      | Some (DExp.Dpvar pvar) | Some (DExp.Dpvaraddr pvar) -> (
-        match Attribute.get_objc_null tenv prop (Exp.Lvar pvar) with
-        | Some (Apred (Aobjc_null, [_; vfs])) ->
-            Localise.parameter_field_not_null_checked_desc desc vfs
-        | _ ->
-            desc )
       | Some (DExp.Dretcall (Dconst (Cfun pname), this_dexp :: _, loc, _)) ->
           if is_vector_method pname then
             Localise.desc_empty_vector_access (Some pname) (DExp.to_string this_dexp) loc

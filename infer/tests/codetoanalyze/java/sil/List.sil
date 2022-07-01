@@ -1,0 +1,139 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+// 
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// 
+
+type List$Node = {elt: int; next: *List$Node}
+
+type List = {head: *List$Node}
+
+define push(this: *List, elt: int) : void {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_4:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    n0 = __sil_allocate()
+    n1:int = load &elt
+    n2:*List = load &this
+    n3:*List$Node = load n2.head
+    n4 = <init>(n0, n1, n3)
+    store &$irvar0 <- n0:*List$Node
+    jmp node_5
+    .handlers node_4
+
+#node_5:
+    n5:*List = load &this
+    n6:*List$Node = load &$irvar0
+    store n5.head <- n6:*List$Node
+    jmp node_3
+    .handlers node_4
+
+#node_3:
+    jmp node_1
+    .handlers node_4
+
+}
+
+define <init>(this: *List$Node, elt: int, next: *List$Node) : void {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_4:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    n0:*List$Node = load &this
+    n1 = <init>(n0)
+    jmp node_6
+    .handlers node_4
+
+#node_6:
+    n2:*List$Node = load &this
+    n3:int = load &elt
+    store n2.elt <- n3:int
+    jmp node_5
+    .handlers node_4
+
+#node_5:
+    n4:*List$Node = load &this
+    n5:*List$Node = load &next
+    store n4.next <- n5:*List$Node
+    jmp node_3
+    .handlers node_4
+
+#node_3:
+    jmp node_1
+    .handlers node_4
+
+}
+
+define <init>(this: *List$Node, elt: int) : void {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_4:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    n0:*List$Node = load &this
+    n1 = <init>(n0)
+    jmp node_5
+    .handlers node_4
+
+#node_5:
+    n2:*List$Node = load &this
+    n3:int = load &elt
+    store n2.elt <- n3:int
+    jmp node_3
+    .handlers node_4
+
+#node_3:
+    jmp node_1
+    .handlers node_4
+
+}
+
+define <init>(this: *List) : void {
+#node_0:
+    jmp node_2
+    .handlers node_1
+
+#node_1:
+    jmp 
+
+#node_4:
+    jmp node_1
+    .handlers node_1
+
+#node_2:
+    n0:*List = load &this
+    n1 = <init>(n0)
+    jmp node_3
+    .handlers node_4
+
+#node_3:
+    jmp node_1
+    .handlers node_4
+
+}
+

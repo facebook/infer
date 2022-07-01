@@ -106,7 +106,7 @@ module ErrLogHash = struct
     let hash key = Hashtbl.hash (key.severity, key.issue_type, Localise.error_desc_hash key.err_desc)
 
     let equal key1 key2 =
-      [%compare.equal: IssueType.severity * IssueType.t] (key1.severity, key1.issue_type)
+      [%equal: IssueType.severity * IssueType.t] (key1.severity, key1.issue_type)
         (key2.severity, key2.issue_type)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
   end
@@ -268,7 +268,7 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_f
               L.d_error
           | Warning ->
               L.d_warning
-          | Info | Advice | Like ->
+          | Info | Advice ->
               L.d_info
         in
         d warn_str ;

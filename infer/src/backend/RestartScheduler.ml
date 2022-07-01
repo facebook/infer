@@ -21,13 +21,12 @@ let of_queue content : ('a, string) ProcessPool.TaskGenerator.t =
         Queue.enqueue content {work; dependency_filename_opt}
   in
   let work_if_dependency_allows w =
-    Some w.work
-    (* match w.dependency_filename_opt with
-       | Some dependency_filename when ProcLocker.is_locked ~proc_filename:dependency_filename ->
-           Queue.enqueue content w ;
-           None
-       | None | Some _ ->
-           Some w.work *)
+    match w.dependency_filename_opt with
+    | Some dependency_filename when ProcLocker.is_locked ~proc_filename:dependency_filename ->
+        Queue.enqueue content w ;
+        None
+    | None | Some _ ->
+        Some w.work
   in
   let next () = Option.bind (Queue.dequeue content) ~f:(fun w -> work_if_dependency_allows w) in
   {remaining_tasks; is_empty; finished; next}
@@ -75,15 +74,15 @@ let record_locked_proc (pname : Procname.t) =
 
 
 let add_to_useful_time from =
-  BackendStats.add_to_restart_scheduler_useful_time (ExecutionDuration.since from)
+  Stats.add_to_restart_scheduler_useful_time (ExecutionDuration.since from)
 
 
 let add_to_useful_exe_duration exe_duration =
-  BackendStats.add_to_restart_scheduler_useful_time exe_duration
+  Stats.add_to_restart_scheduler_useful_time exe_duration
 
 
 let add_to_total_time from =
-  BackendStats.add_to_restart_scheduler_total_time (ExecutionDuration.since from)
+  Stats.add_to_restart_scheduler_total_time (ExecutionDuration.since from)
 
 
 let unlock_all () =

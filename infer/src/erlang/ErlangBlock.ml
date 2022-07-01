@@ -89,16 +89,3 @@ let make_branch env condition =
   let exit_failure = Node.make_if env false condition in
   start |~~> [exit_success; exit_failure] ;
   {start; exit_success; exit_failure}
-
-
-let make_unsupported (env : (Procdesc.t Env.present, _) Env.t) =
-  let fun_exp = Exp.Const (Cfun BuiltinDecl.__erlang_missing_translation) in
-  let call_instruction =
-    Sil.Call
-      ( (Ident.create_fresh Ident.knormal, Env.ptr_typ_of_name Any)
-      , fun_exp
-      , []
-      , env.location
-      , CallFlags.default )
-  in
-  make_instruction env [call_instruction]

@@ -19,11 +19,6 @@ val check_dereference_error :
   Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Exp.t -> Location.t -> unit
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 
-val check_call_to_objc_block_error :
-  Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Exp.t -> Location.t -> unit
-(** Check that an expression representing an objc block can be null and raise a [B1] null exception.
-    It's used to check that we don't call possibly null blocks *)
-
 val rearrange :
      ?report_deref_errors:bool
   -> BiabductionSummary.t InterproceduralAnalysis.t

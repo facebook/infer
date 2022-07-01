@@ -1,0 +1,3 @@
+hello.cpp, test0, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test0()]
+hello.cpp, test1, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test1(),start of procedure deref1()]
+lib3.h, test, 0, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test(),start of procedure deref3()]

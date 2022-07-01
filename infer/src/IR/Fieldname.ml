@@ -13,11 +13,65 @@ type 'typ_name t_ = {class_name: 'typ_name; field_name: string}
 
 type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of]
 
+let pp f fld = F.pp_print_string f fld.field_name
+
 let loose_compare = compare_t_ Typ.Name.loose_compare
 
 let compare_name = compare_t_ Typ.Name.compare_name
 
 let make class_name field_name = {class_name; field_name}
+
+let fake_capture_field_prefix = "__capture_"
+
+let fake_capture_field_weak_prefix = fake_capture_field_prefix ^ "weak_"
+
+let string_of_capture_mode = function
+  | CapturedVar.ByReference ->
+      "by_ref_"
+  | CapturedVar.ByValue ->
+      "by_value_"
+
+
+let prefix_of_typ typ =
+  match typ.Typ.desc with
+  | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
+      fake_capture_field_weak_prefix
+  | _ ->
+      fake_capture_field_prefix
+
+
+let mk_fake_capture_field ~id typ mode =
+  make
+    (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
+    (Printf.sprintf "%s%s%d" (prefix_of_typ typ) (string_of_capture_mode mode) id)
+
+
+let is_fake_capture_field {field_name} =
+  String.is_prefix ~prefix:fake_capture_field_prefix field_name
+
+
+let is_fake_capture_field_weak {field_name} =
+  String.is_prefix ~prefix:fake_capture_field_weak_prefix field_name
+
+
+let is_fake_capture_field_by_ref {field_name} =
+  let capture_by_ref_str = string_of_capture_mode ByReference in
+  let fake_capture_field_by_ref_prefix =
+    Printf.sprintf "%s%s" fake_capture_field_prefix capture_by_ref_str
+  in
+  let fake_capture_field_weak_by_ref_prefix =
+    Printf.sprintf "%s%s" fake_capture_field_weak_prefix capture_by_ref_str
+  in
+  String.is_prefix ~prefix:fake_capture_field_by_ref_prefix field_name
+  || String.is_prefix ~prefix:fake_capture_field_weak_by_ref_prefix field_name
+
+
+let get_capture_field_position ({field_name} as field) =
+  if is_fake_capture_field field then
+    String.rsplit2 field_name ~on:'_'
+    |> Option.bind ~f:(fun (_, str_pos) -> int_of_string_opt str_pos)
+  else None
+
 
 let get_class_name {class_name} = class_name
 
@@ -35,10 +89,12 @@ let is_internal {field_name} =
 
 module T = struct
   type nonrec t = t [@@deriving compare]
+
+  let pp = pp
 end
 
 module Set = Caml.Set.Make (T)
-module Map = Caml.Map.Make (T)
+module Map = PrettyPrintable.MakePPMap (T)
 
 let join ~sep c f = String.concat ~sep [c; f]
 
@@ -50,19 +106,37 @@ let to_string fld =
   if is_java fld then dot_join (Typ.Name.name fld.class_name) fld.field_name else fld.field_name
 
 
-let to_simplified_string fld =
-  if is_java fld then
-    Typ.Name.name fld.class_name |> String.rsplit2 ~on:'.'
-    |> Option.value_map ~default:fld.field_name ~f:(fun (_, class_only) ->
-           String.concat ~sep:"." [class_only; fld.field_name] )
-  else fld.field_name
+(** Convert a fieldname to a simplified string with at most one-level path. For example,
+
+    - In C++: "<ClassName>::<FieldName>"
+    - In Java, ObjC, C#: "<ClassName>.<FieldName>"
+    - In C: "<StructName>.<FieldName>" or "<UnionName>.<FieldName>"
+    - In Erlang: "<FieldName>" *)
+let to_simplified_string ({class_name; field_name} : t) =
+  let last_class_name =
+    match class_name with
+    | CStruct name | CUnion name | CppClass {name} | ObjcClass name | ObjcProtocol name ->
+        QualifiedCppName.extract_last name |> Option.map ~f:fst
+    | CSharpClass name ->
+        Some (CSharpClassName.classname name)
+    | ErlangType _ ->
+        None
+    | JavaClass name ->
+        Some (JavaClassName.classname name)
+  in
+  Option.value_map last_class_name ~default:field_name ~f:(fun last_class_name ->
+      let sep = match class_name with CppClass _ -> "::" | _ -> "." in
+      String.concat ~sep [last_class_name; field_name] )
 
 
 let to_full_string fld =
   (if is_java fld then dot_join else cc_join) (Typ.Name.name fld.class_name) fld.field_name
 
 
-let pp f fld = F.pp_print_string f fld.field_name
+let patterns_match patterns fld =
+  let s = to_simplified_string fld in
+  List.exists patterns ~f:(fun pattern -> Re.Str.string_match pattern s 0)
+
 
 let is_java_outer_instance ({field_name} as field) =
   is_java field

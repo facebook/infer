@@ -166,8 +166,6 @@ let string_to_severity = function
       IssueType.Info
   | "ADVICE" ->
       IssueType.Advice
-  | "LIKE" ->
-      IssueType.Like
   | s ->
       L.die InternalError "Severity %s does not exist" s
 

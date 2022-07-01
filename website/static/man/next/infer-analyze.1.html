@@ -505,6 +505,12 @@ pulse will only explore one path. Can be used on
 pathologically large procedures to prevent too-big states
 from being produced.</p>
 
+<p style="margin-left:11%;"><b>--pulse-max-cfg-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Larger CFGs than the max size
+are skipped in Pulse.</p>
+
 <p style="margin-left:11%;"><b>--pulse-model-abort</b>
 <i>+string</i></p>
 
@@ -572,6 +578,13 @@ modelled as returning the first argument in Pulse</p>
 modelled as returning non-null in Pulse</p>
 
 
+<p style="margin-left:11%;"><b>--pulse-model-returns-copy-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as creating copies in Pulse</p>
+
+
 <p style="margin-left:11%;"><b>--pulse-model-skip-pattern</b>
 <i>string</i></p>
 
@@ -585,6 +598,13 @@ modelled as &quot;skip&quot; in Pulse</p>
 <p style="margin-left:17%;">Methods that should be modelled
 as transfering memory ownership in Pulse. Accepted formats
 are method or namespace::method</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-models-for-erlang</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Provide custom models for
+Erlang code using a DSL.</p>
 
 <p style="margin-left:11%;"><b>--pulse-only</b></p>
 
@@ -785,6 +805,13 @@ progress is being made because of concurrency errors.
 and disable all other checkers (Conversely:
 <b>--no-starvation-only</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--top-longest-proc-duration-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Number of procedures for which
+we track longest analysis duration info.</p>
+
 <p style="margin-left:11%;"><b>--topl</b></p>
 
 <p style="margin-left:17%;">Activates: checker topl: Detect
@@ -862,6 +889,12 @@ checker (0-4)</p>
 
 <p style="margin-left:17%;">Limit of field depth of
 abstract location in buffer-overrun checker</p>
+
+<p style="margin-left:11%;"><b>--bo-max-cfg-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Larger CFGs than the max size
+are skipped in buffer overrun analysis.</p>
 
 <h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>

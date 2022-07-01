@@ -38,14 +38,26 @@
 
 @implementation MyCustomViewController
 
-- (void)loadViewNoRetainCycleGood {
+- (void)loadViewNoRetainCycle {
   MyCustomView* _myView = [[MyCustomView alloc] initWithDelegate:self];
   self.view = _myView;
 }
 
-- (void)loadViewRetainCycleBad_FN {
+- (void)loadViewRetainCycle {
   MyCustomView* _myView = [[MyCustomView alloc] initWithStrongDelegate:self];
   self.view = _myView;
 }
 
 @end
+
+int test_loadViewNoRetainCycle_good() {
+  MyCustomViewController* a = [MyCustomViewController new];
+  [a loadViewNoRetainCycle];
+  return 0;
+}
+
+int test_loadViewRetainCycle_bad() {
+  MyCustomViewController* a = [MyCustomViewController new];
+  [a loadViewRetainCycle];
+  return 0;
+}

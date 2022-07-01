@@ -376,3 +376,28 @@ id stringConstValueOK(NSMutableDictionary* dict, NSString* key) {
   }
   return value;
 }
+
+NSString* get_object_from_array(NSArray<NSString*>* array) {
+  if (array.count == 0) {
+    return nil;
+  }
+
+  return [array objectAtIndex:0];
+}
+
+// missing models for collections
+void pass_non_empty_array_ok_FP(NSMutableArray<NSString*>* mArray) {
+  NSString* object = get_object_from_array(@[ @"element" ]);
+  [mArray addObject:object];
+}
+
+void dictionaryInsertZeroNilBad(NSString* s) {
+  NSDictionary* dict = @{
+    @"key" : s ?: 0
+  }; // 0 here is equivalent to nil (id(0)) as we expect an object to be
+     // inserted into collection
+}
+
+void dictionaryInsertZeroLiteralOk(NSString* s) {
+  NSDictionary* dict = @{@"key" : s ?: @0};
+}

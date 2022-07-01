@@ -144,3 +144,17 @@
  (deps clang_profiler_samples.atd)
  (action
   (run atdgen -t %{deps})))
+
+; ATD for pulse_config
+
+(rule
+ (targets pulse_config_j.ml pulse_config_j.mli)
+ (deps pulse_config.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets pulse_config_t.ml pulse_config_t.mli)
+ (deps pulse_config.atd)
+ (action
+  (run atdgen -t %{deps})))

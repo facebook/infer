@@ -13,7 +13,7 @@ type visibility = User | Developer | Silent [@@deriving compare, equal]
 
 let string_of_visibility = function User -> "User" | Developer -> "Developer" | Silent -> "Silent"
 
-type severity = Like | Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
+type severity = Info | Advice | Warning | Error [@@deriving compare, equal, enumerate]
 
 let string_of_severity = function
   | Advice ->
@@ -22,8 +22,6 @@ let string_of_severity = function
       "ERROR"
   | Info ->
       "INFO"
-  | Like ->
-      "LIKE"
   | Warning ->
       "WARNING"
 
@@ -113,10 +111,9 @@ end = struct
       ; mutable hum: string
       ; mutable doc_url: string option
       ; mutable linters_def_file: string option }
+    [@@deriving equal]
 
     let compare {unique_id= id1} {unique_id= id2} = String.compare id1 id2
-
-    let equal = [%compare.equal: t]
 
     type rank = string
 
@@ -271,7 +268,7 @@ end = struct
     let user_documentation =
       Printf.sprintf
         "A latent [%s](#%s). See the [documentation on Pulse latent \
-         issues](checker-pulse#latent-issues)."
+         issues](/docs/next/checker-pulse#latent-issues)."
         id (String.lowercase id)
     in
     let latent_issue =
@@ -467,6 +464,11 @@ let config_impact_analysis_strict =
     ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT.md"]
 
 
+let config_impact_analysis_strict_beta =
+  register ~enabled:false ~id:"CONFIG_IMPACT_STRICT_BETA" Advice ConfigImpactAnalysis
+    ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
+
+
 let constant_address_dereference =
   register_with_latent ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
@@ -560,7 +562,8 @@ let eradicate_field_not_nullable =
 (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
 let eradicate_field_over_annotated =
   register ~id:"ERADICATE_FIELD_OVER_ANNOTATED" ~hum:"Field Over Annotated" Advice
-    Eradicate (* TODO *) ~user_documentation:""
+    Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_inconsistent_subclass_parameter_annotation =
@@ -579,7 +582,8 @@ let eradicate_inconsistent_subclass_return_annotation =
 
 let eradicate_redundant_nested_class_annotation =
   register ~id:"ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION"
-    ~hum:"@Nullsafe annotation is redundant" Advice Eradicate (* TODO *) ~user_documentation:""
+    ~hum:"@Nullsafe annotation is redundant" Advice Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_bad_nested_class_annotation =
@@ -590,7 +594,8 @@ let eradicate_bad_nested_class_annotation =
 
 let eradicate_nullable_dereference =
   register ~id:"ERADICATE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference" Warning
-    Eradicate (* TODO *) ~user_documentation:""
+    Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_parameter_not_nullable =
@@ -628,7 +633,8 @@ let eradicate_meta_class_is_nullsafe =
   register ~id:"ERADICATE_META_CLASS_IS_NULLSAFE"
     ~hum:
       "Class is marked @Nullsafe and has 0 issues" (* Should be enabled for special integrations *)
-    ~enabled:false Info Eradicate (* TODO *) ~user_documentation:""
+    ~enabled:false Info Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_meta_class_needs_improvement =
@@ -642,9 +648,9 @@ let eradicate_meta_class_needs_improvement =
 
 let eradicate_meta_class_can_be_nullsafe =
   register ~id:"ERADICATE_META_CLASS_CAN_BE_NULLSAFE"
-    ~hum:
-      "Class has 0 issues and can be marked @Nullsafe"
-      (* Should be enabled for special integrations *) ~enabled:false Advice Eradicate (* TODO *)
+    ~hum:"Class has 0 issues and can be marked @Nullsafe"
+      (* Should be enabled for special integrations *)
+    ~enabled:false Advice Eradicate (* TODO *)
     ~user_documentation:""
 
 
@@ -655,11 +661,6 @@ let exposed_insecure_intent_handling =
 let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kind
 
 let failure_exe = register_hidden ~is_silent:true ~id:"Failure_exe" Info Biabduction
-
-let field_not_null_checked =
-  register ~id:"IVAR_NOT_NULL_CHECKED" Warning Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/IVAR_NOT_NULL_CHECKED.md"]
-
 
 (* from AL default linters *)
 let _global_variable_initialized_with_function_or_method_call =
@@ -854,6 +855,7 @@ let nil_block_call =
 
 let nil_insertion_into_collection =
   register_with_latent ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
+    ~hum:"Nil Insertion Into Collection"
     ~user_documentation:[%blob "../../documentation/issues/NIL_INSERTION_INTO_COLLECTION.md"]
 
 
@@ -902,11 +904,6 @@ let optional_empty_access =
     ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
-let parameter_not_null_checked =
-  register ~id:"PARAMETER_NOT_NULL_CHECKED" Warning Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/PARAMETER_NOT_NULL_CHECKED.md"]
-
-
 let _pointer_to_const_objc_class =
   register ~id:"POINTER_TO_CONST_OBJC_CLASS" Warning Linters
     ~user_documentation:[%blob "../../documentation/issues/POINTER_TO_CONST_OBJC_CLASS.md"]
@@ -921,9 +918,14 @@ let premature_nil_termination =
     ~user_documentation:[%blob "../../documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
-let pulse_memory_leak =
-  register ~id:"MEMORY_LEAK" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK.md"]
+let pulse_memory_leak_c =
+  register ~id:"MEMORY_LEAK_C" ~hum:"Memory Leak" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK_C.md"]
+
+
+let pulse_memory_leak_cpp =
+  register ~id:"MEMORY_LEAK_CPP" ~hum:"Memory Leak" ~enabled:false Error Pulse
+    ~user_documentation:"See [MEMORY_LEAK_C](#memory_leak_c)"
 
 
 let pulse_resource_leak =
@@ -939,6 +941,21 @@ let pure_function =
 let quandary_taint_error =
   register ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary
     ~user_documentation:"Generic taint error when nothing else fits."
+
+
+let taint_error =
+  register ~enabled:false ~hum:"Taint Error" ~id:"TAINT_ERROR" Error Pulse
+    ~user_documentation:"A taint flow was detected from a source to a sink"
+
+
+let sensitive_data_flow =
+  register ~enabled:false ~hum:"Sensitive Data Flow" ~id:"SENSITIVE_DATA_FLOW" Advice Pulse
+    ~user_documentation:"A flow of sensitive data was detected from a source."
+
+
+let data_flow_to_sink =
+  register ~enabled:false ~hum:"Data Flow to Sink" ~id:"DATA_FLOW_TO_SINK" Advice Pulse
+    ~user_documentation:"A flow of data was detected to a sink."
 
 
 let regex_op_on_ui_thread =
@@ -1042,6 +1059,24 @@ let uninitialized_value_pulse =
 let unnecessary_copy_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY" Error Pulse ~hum:"Unnecessary Copy"
     ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
+
+
+let unnecessary_copy_assignment_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT" Error Pulse
+    ~hum:"Unnecessary Copy Assignment"
+    ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
+
+
+let unnecessary_copy_assignment_movable_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE" Error Pulse
+    ~hum:"Unnecessary Copy Assignment Movable"
+    ~user_documentation:"See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable)."
+
+
+let unnecessary_copy_movable_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_MOVABLE" Error Pulse
+    ~hum:"Unnecessary Copy Movable"
+    ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY_MOVABLE.md"]
 
 
 let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker

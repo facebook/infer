@@ -132,14 +132,14 @@ let x_context {asserts; var_env} =
   Context.dnf (Formula.andN (List.map ~f:(x_fml var_env) asserts))
 
 let check_unsat (_, asserts, ctx) =
-  [%Trace.call fun {pf} ->
+  [%Dbg.call fun {pf} ->
     pf "@ %a@ %a@ %a" Formula.pp asserts Context.pp ctx Context.pp_raw ctx]
   ;
   ( Context.is_unsat ctx
   || Formula.equal Formula.ff
        (Formula.map_terms ~f:(Context.normalize ctx) asserts) )
   |>
-  [%Trace.retn fun {pf} -> pf "%b"]
+  [%Dbg.retn fun {pf} -> pf "%b"]
 
 exception Unsound
 exception Incomplete

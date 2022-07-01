@@ -18,3 +18,5 @@ type t =
 val pp : F.formatter -> t -> unit
 
 val describe : F.formatter -> t -> unit
+
+val pp_name_only : F.formatter -> t -> unit

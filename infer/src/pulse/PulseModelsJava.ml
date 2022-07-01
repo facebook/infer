@@ -48,6 +48,25 @@ let instance_of (argv, hist) typeexpr : model =
       astate |> Basic.ok_continue
 
 
+let call_may_throw_exception (exn : JavaClassName.t) : model =
+ fun {location; path; analysis_data} astate ->
+  let ret_addr = AbstractValue.mk_fresh () in
+  let exn_name = JavaClassName.to_string exn in
+  let desc = Printf.sprintf "throw_%s" exn_name in
+  let ret_alloc_hist = Hist.single_alloc path location desc in
+  let typ = Typ.mk_struct (Typ.JavaClass exn) in
+  let astate = PulseOperations.add_dynamic_type typ ret_addr astate in
+  let ret_var = Procdesc.get_ret_var analysis_data.proc_desc in
+  let astate, ref = PulseOperations.eval_var path location ret_var astate in
+  let obj = (ret_addr, ret_alloc_hist) in
+  let<*> astate = PulseOperations.write_deref path location ~ref ~obj astate in
+  [Ok (ExceptionRaised astate)]
+
+
+let throw : model = fun _ astate -> [Ok (ExceptionRaised astate)]
+(* Note that the Java frontend should have inserted an assignment of the
+   thrown object to the `ret` variable just before this instruction. *)
+
 module Object = struct
   (* naively modeled as shallow copy. *)
   let clone src_pointer_hist : model =
@@ -118,26 +137,52 @@ module Iterator = struct
 end
 
 module Resource = struct
-  let init_FileOutputStream (this, _) _ : model =
-   fun {location; callee_procname} astate ->
+  let allocate_aux ~exn_class_name ((this, _) as this_obj) delegation_opt : model =
+   fun ({location; callee_procname; path} as model_data) astate ->
     let[@warning "-8"] (Some (Typ.JavaClass class_name)) =
       Procname.get_class_type_name callee_procname
     in
     let allocator = Attribute.JavaResource class_name in
     let post = PulseOperations.allocate allocator location this astate in
-    [Ok (ContinueProgram post); Ok (ExceptionRaised astate)]
-
-
-  let write_FileOutputStream _ _ : model =
-   fun _ astate -> [Ok (ContinueProgram astate); Ok (ExceptionRaised astate)]
-
-
-  let close_FileOutputStream (this, _) : model =
-   fun {callee_procname} astate ->
-    let[@warning "-8"] (Some (Typ.JavaClass class_name)) =
-      Procname.get_class_type_name callee_procname
+    let delegated_state =
+      let<+> post =
+        Option.value_map delegation_opt ~default:(Ok post) ~f:(fun obj ->
+            write_field path PulseOperations.ModeledField.delegated_release obj location this_obj
+              post )
+      in
+      post
     in
-    PulseOperations.java_resource_release class_name this astate |> Basic.ok_continue
+    let exn_state =
+      Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
+          call_may_throw_exception (JavaClassName.from_string cn) model_data astate )
+    in
+    delegated_state @ exn_state
+
+
+  let allocate ?exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
+
+  let allocate_with_delegation ?exn_class_name () this_arg delegation : model =
+    allocate_aux ~exn_class_name this_arg (Some delegation)
+
+
+  let input_resource_usage_modeled =
+    StringSet.of_list ["available"; "mark"; "markSupported"; "read"; "reset"; "skip"]
+
+
+  let use ~exn_class_name : model =
+    let exn = JavaClassName.from_string exn_class_name in
+    fun model_data astate ->
+      Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
+
+
+  let release this : model =
+   fun _ astate ->
+    PulseOperations.java_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
+
+
+  let release_this_only this : model =
+   fun _ astate ->
+    PulseOperations.java_resource_release ~recursive:false (fst this) astate |> Basic.ok_continue
 end
 
 module Collection = struct
@@ -182,12 +227,21 @@ module Collection = struct
     astate |> Basic.ok_continue
 
 
-  let add ~desc coll new_elem : model =
+  let add_common ~desc coll new_elem ?new_val : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let ret_value = AbstractValue.mk_fresh () in
     let<*> astate, coll_val =
       PulseOperations.eval_access path Read location coll Dereference astate
+    in
+    (* reads fst_field from collection *)
+    let<*> astate, _, (fst_val, _) = load_field path fst_field location coll_val astate in
+    (* mark the remove element as always reachable *)
+    let astate = PulseOperations.always_reachable fst_val astate in
+    (* in maps, every new value is marked as always reachable *)
+    let astate =
+      Option.value_map new_val ~default:astate ~f:(fun (obj, _) ->
+          PulseOperations.always_reachable obj astate )
     in
     (* reads snd_field from collection *)
     let<*> astate, snd_addr, snd_val = load_field path snd_field location coll_val astate in
@@ -215,6 +269,10 @@ module Collection = struct
       in
       astate |> Basic.ok_continue
 
+
+  let add ~desc coll new_elem : model = add_common ~desc coll new_elem
+
+  let put ~desc coll new_elem new_val : model = add_common ~desc coll new_elem ~new_val
 
   let update path coll new_val new_val_hist event location ret_id astate =
     (* case0: element not present in collection *)
@@ -258,7 +316,7 @@ module Collection = struct
     let event = Hist.call_event path location desc in
     let new_val = AbstractValue.mk_fresh () in
     let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
-    update path coll new_val Epoch event location ret_id astate
+    update path coll new_val ValueHistory.epoch event location ret_id astate
 
 
   (* Auxiliary function that updates the state by:
@@ -506,6 +564,10 @@ module Preconditions = struct
     astate
 end
 
+let non_static_method name1 (_, procname) name2 =
+  (not (Procname.is_java_static_method procname)) && String.equal name1 name2
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let pushback_modeled =
@@ -513,12 +575,67 @@ let matchers : matcher list =
       ["add"; "addAll"; "append"; "delete"; "remove"; "replace"; "poll"; "put"; "putAll"]
   in
   let map_context_tenv f (x, _) = f x in
-  [ +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
-    &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload $--> Resource.init_FileOutputStream
-  ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
-    &:: "write" <>$ capt_arg_payload $+ capt_arg_payload $--> Resource.write_FileOutputStream
-  ; +map_context_tenv (PatternMatch.Java.implements "java.io.FileOutputStream")
-    &:: "close" <>$ capt_arg_payload $--> Resource.close_FileOutputStream
+  [ +BuiltinDecl.(match_builtin __java_throw) <>--> throw
+  ; +BuiltinDecl.(match_builtin __unwrap_exception)
+    <>$ capt_arg_payload
+    $--> Basic.id_first_arg ~desc:"unwrap_exception"
+  ; +BuiltinDecl.(match_builtin __set_file_attribute) <>$ any_arg $--> Basic.skip
+  ; +BuiltinDecl.(match_builtin __set_mem_attribute) <>$ any_arg $--> Basic.skip
+  ; +map_context_tenv
+       (PatternMatch.Java.implements_one_of
+          ["java.io.FileInputStream"; "java.io.FileOutputStream"] )
+    &:: "<init>" <>$ capt_arg_payload
+    $+...$--> Resource.allocate ~exn_class_name:"java.io.FileNotFoundException"
+  ; +map_context_tenv
+       (PatternMatch.Java.implements_one_of
+          [ "java.io.ObjectInputStream"
+          ; "java.io.ObjectOutputStream"
+          ; "java.util.jar.JarInputStream"
+          ; "java.util.jar.JarOutputStream"
+          ; "java.util.zip.GZIPInputStream"
+          ; "java.util.zip.GZIPOutputStream" ] )
+    &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload
+    $+...$--> Resource.allocate_with_delegation ~exn_class_name:"java.io.IOException" ()
+  ; +map_context_tenv (* <init> that does not throw exceptions *)
+       (PatternMatch.Java.implements_one_of
+          [ "java.io.BufferedInputStream"
+          ; "java.io.BufferedOutputStream"
+          ; "java.io.DataInputStream"
+          ; "java.io.DataOutputStream"
+          ; "java.io.FilterInputStream"
+          ; "java.io.FilterOutputStream"
+          ; "java.io.PushbackInputStream"
+          ; "java.security.DigestInputStream"
+          ; "java.security.DigestOutputStream"
+          ; "java.util.Scanner"
+          ; "java.util.zip.CheckedInputStream"
+          ; "java.util.zip.CheckedOutputStream"
+          ; "java.util.zip.DeflaterInputStream"
+          ; "java.util.zip.DeflaterOutputStream"
+          ; "java.util.zip.InflaterInputStream"
+          ; "java.util.zip.InflaterOutputStream"
+          ; "javax.crypto.CipherInputStream"
+          ; "javax.crypto.CipherOutputStream" ] )
+    &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload
+    $+...$--> Resource.allocate_with_delegation ()
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.OutputStream")
+    &::+ non_static_method "write" <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.OutputStream")
+    &:: "flush" <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.InputStream")
+    &::+ (fun _ str -> StringSet.mem str Resource.input_resource_usage_modeled)
+    <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.Closeable")
+    &:: "close" <>$ capt_arg_payload $--> Resource.release
+  ; +map_context_tenv (PatternMatch.Java.implements "com.google.common.io.Closeables")
+    &:: "close" <>$ capt_arg_payload $+...$--> Resource.release
+  ; +map_context_tenv (PatternMatch.Java.implements "com.google.common.io.Closeables")
+    &:: "closeQuietly" <>$ capt_arg_payload $+...$--> Resource.release
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.DeflaterOutputStream")
+    &:: "finish" <>$ capt_arg_payload $+...$--> Resource.release_this_only
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
     &:: "clone" $ capt_arg_payload $--> Object.clone
   ; ( +map_context_tenv (PatternMatch.Java.implements_lang "System")
@@ -550,7 +667,8 @@ let matchers : matcher list =
     &:: "<init>" <>$ capt_arg_payload
     $--> Collection.init ~desc:"Map.init()"
   ; +map_context_tenv PatternMatch.Java.implements_map
-    &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+...$--> Collection.add ~desc:"Map.put()"
+    &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> Collection.put ~desc:"Map.put()"
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "remove"
     &++> Collection.remove ~desc:"Map.remove()"

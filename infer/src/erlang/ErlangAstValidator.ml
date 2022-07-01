@@ -314,6 +314,7 @@ let validate_form env (form : Ast.form) =
   match form.simple_form with
   | Function {function_; clauses} ->
       validate_function env function_ clauses
+  (* TODO: validate other forms, e.g., type constraints *)
   | _ ->
       true
 

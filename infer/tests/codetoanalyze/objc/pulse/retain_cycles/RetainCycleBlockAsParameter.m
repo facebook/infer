@@ -41,7 +41,7 @@ typedef void (^MyHandler)(NSData* newData);
   _data = data;
 }
 
-- (void)fetchNewData_bad_FN {
+- (void)fetchNewData {
   // We retain fetcher
   _fetcher = [[Fetcher alloc] initWithCompletionBlock:^(NSData* newData) {
     // fetcher retains us
@@ -50,3 +50,9 @@ typedef void (^MyHandler)(NSData* newData);
 }
 
 @end
+
+int test_fetchNewData_bad() {
+  FBSomeDataManager* a = [FBSomeDataManager new];
+  [a fetchNewData];
+  return 0;
+}

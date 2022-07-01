@@ -64,6 +64,8 @@ let parse_cil_procname (json : Safe.t) : Procname.t =
       BuiltinDecl.__delete_locked_attribute
   | "__instanceof" ->
       BuiltinDecl.__instanceof
+  | "__cast" ->
+      BuiltinDecl.__cast
   | "__unwrap_exception" ->
       BuiltinDecl.__unwrap_exception
   | _ ->
@@ -110,7 +112,8 @@ let parse_fkind (json : Safe.t) =
 let parse_ptr_kind (json : Safe.t) =
   let ptr_kind_map =
     [ ("Pk_pointer", Typ.Pk_pointer)
-    ; ("Pk_reference", Typ.Pk_reference)
+    ; ("Pk_lvalue_reference", Typ.Pk_lvalue_reference)
+    ; ("Pk_rvalue_reference", Typ.Pk_rvalue_reference)
     ; ("Pk_objc_weak", Typ.Pk_objc_weak)
     ; ("Pk_objc_unsafe_unretained", Typ.Pk_objc_unsafe_unretained)
     ; ("Pk_objc_autoreleasing", Typ.Pk_objc_autoreleasing) ]
@@ -298,6 +301,8 @@ and parse_exp (json : Safe.t) =
         Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
     | "instof" ->
         Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof}
+    | "cast" ->
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_cast}
     | _ ->
         Logging.die InternalError "Subtype in Sizeof instruction is not supported."
   else Logging.die InternalError "Unknown expression kind %s" ekind
@@ -348,8 +353,7 @@ and parse_item_annotation (json : Safe.t) : Annot.Item.t =
   parse_list
     (fun j ->
       let a = member "annotation" j in
-      let v = member "visible" j in
-      (parse_annotation a, to_bool v) )
+      parse_annotation a )
     (member "annotations" json)
 
 
@@ -367,9 +371,9 @@ let parse_ret_annot (json : Safe.t) : Annot.Item.t =
 
 
 let parse_captured_var (json : Safe.t) =
-  let n = to_string (member "name" json) in
-  let t = parse_sil_type_name (member "type" json) in
-  CapturedVar.make ~name:(Mangled.from_string n) ~typ:t ~capture_mode:ByValue
+  let pvar = parse_pvar (member "name" json) in
+  let typ = parse_sil_type_name (member "type" json) in
+  {CapturedVar.pvar; typ; capture_mode= ByValue}
 
 
 let parse_proc_attributes_var (json : Safe.t) =

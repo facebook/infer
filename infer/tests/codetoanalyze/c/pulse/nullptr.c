@@ -33,7 +33,7 @@ void call_create_null_path_then_deref_unconditionally_ok(int* p) {
   *p = 52;
 }
 
-void create_null_path2_latent(int* p) {
+void create_null_path2_latent_FN(int* p) {
   int* q = NULL;
   if (p) {
     *p = 32;
@@ -45,7 +45,7 @@ void create_null_path2_latent(int* p) {
 }
 
 // combine several of the difficulties above
-void malloc_then_call_create_null_path_then_deref_unconditionally_latent(
+void malloc_then_call_create_null_path_then_deref_unconditionally_latent_FN(
     int* p) {
   int* x = (int*)malloc(sizeof(int));
   if (p) {
@@ -197,4 +197,44 @@ void arithmetic_weakness_ok() {
     int* p = NULL;
     *p = 42;
   }
+}
+
+int* unknown_int_pointer();
+
+/* This report is currently suppressed because there is no evidence
+that p can be NULL, but since it is compared to NULL *in the same
+function* it may be worth reporting this. */
+void FNsuppressed_no_invalidation_compare_to_NULL_bad() {
+  int* p = unknown_int_pointer();
+  int x;
+  int* q = &x;
+  if (p == NULL) {
+    q = p;
+  }
+  *q = 42;
+}
+
+void incr_deref(int* x, int* y) {
+  (*x)++;
+  (*y)++;
+}
+
+void call_incr_deref_with_alias_bad(void) {
+  int x = 0;
+  int* ptr = &x;
+  incr_deref(ptr, ptr);
+  if (x == 2) {
+    ptr = NULL;
+  }
+  x = *ptr;
+}
+
+void call_incr_deref_with_alias_good(void) {
+  int x = 0;
+  int* ptr = &x;
+  incr_deref(ptr, ptr);
+  if (x != 2) {
+    ptr = NULL;
+  }
+  x = *ptr;
 }

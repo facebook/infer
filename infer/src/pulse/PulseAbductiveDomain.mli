@@ -10,6 +10,7 @@ open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
+module Decompiler = PulseDecompiler
 module PathContext = PulsePathContext
 
 (** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
@@ -42,8 +43,11 @@ type t = private
   ; path_condition: PathCondition.t
         (** arithmetic facts true along the path (holding for both [pre] and [post] since abstract
             values are immutable) *)
+  ; decompiler: Decompiler.t
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
+  ; need_specialization: bool
+        (** a call that could be resolved via analysis-time specialization has been skipped *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -130,11 +134,17 @@ module AddressAttributes : sig
 
   val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
+  val add_taint_sink : PathContext.t -> Taint.t -> Trace.t -> AbstractValue.t -> t -> t
+
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
+
+  val always_reachable : AbstractValue.t -> t -> t
 
   val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
 
-  val java_resource_release : JavaClassName.t -> AbstractValue.t -> t -> t
+  val java_resource_release : AbstractValue.t -> t -> t
+
+  val is_java_resource_released : AbstractValue.t -> t -> bool
 
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
@@ -144,9 +154,22 @@ module AddressAttributes : sig
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
+  val remove_taint_attrs : AbstractValue.t -> t -> t
+
+  val get_dynamic_type : AbstractValue.t -> t -> Typ.t option
+
   val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
+
+  val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
+
+  val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
+
+  val get_taint_sources_and_sanitizers :
+    AbstractValue.t -> t -> Attribute.TaintedSet.t * Attribute.TaintSanitizedSet.t
+
+  val get_propagate_taint_from : AbstractValue.t -> t -> Attribute.taint_in list option
 
   val is_end_of_collection : AbstractValue.t -> t -> bool
 
@@ -166,7 +189,10 @@ module AddressAttributes : sig
     -> AbstractValue.t
     -> ?null_noop:bool
     -> t
-    -> (t, [> `ISLError of t | `InvalidAccess of Invalidation.t * Trace.t * t]) result list
+    -> ( t
+       , [> `ISLError of t | `InvalidAccess of AbstractValue.t * Invalidation.t * Trace.t * t] )
+       result
+       list
 end
 
 val apply_unknown_effect :
@@ -186,11 +212,20 @@ val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)
 
+val get_reachable : t -> AbstractValue.Set.t
+(** Return the addresses reachable from pre or post. *)
+
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val set_path_condition : PathCondition.t -> t -> t
+
+val set_need_specialization : t -> t
+
+val unset_need_specialization : t -> t
+
+val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
 
 val is_isl_without_allocation : t -> bool
 
@@ -201,6 +236,8 @@ type summary = private t [@@deriving compare, equal, yojson_of]
 
 val skipped_calls_match_pattern : summary -> bool
 
+val summary_with_need_specialization : summary -> summary
+
 val summary_of_post :
      Tenv.t
   -> Procdesc.t
@@ -208,10 +245,10 @@ val summary_of_post :
   -> t
   -> ( summary
      , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
-       | `RetainCycle of summary * Trace.t * Location.t
+       | `RetainCycle of summary * Trace.t list * Decompiler.expr * Decompiler.expr * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
-         summary * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+         summary * Decompiler.expr * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
      SatUnsat.t
 (** Trim the state down to just the procedure's interface (formals and globals), and simplify and
@@ -254,13 +291,14 @@ val set_uninitialized :
 (** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
 
 module Topl : sig
-  val small_step : Location.t -> PulseTopl.event -> t -> t
+  val small_step : Location.t -> keep:AbstractValue.Set.t -> PulseTopl.event -> t -> t
 
   val large_step :
        call_location:Location.t
     -> callee_proc_name:Procname.t
     -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
-    -> ?condition:PathCondition.t
+    -> keep:AbstractValue.Set.t
+    -> path_condition:PathCondition.t
     -> callee_prepost:PulseTopl.state
     -> t
     -> t

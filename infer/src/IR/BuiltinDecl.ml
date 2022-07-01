@@ -100,13 +100,15 @@ let __erlang_make_nil = create_procname "__erlang_make_nil"
 
 let __erlang_make_atom = create_procname "__erlang_make_atom"
 
+let __erlang_make_integer = create_procname "__erlang_make_integer"
+
 let __erlang_make_tuple = create_procname "__erlang_make_tuple"
 
 let __erlang_make_str_const = create_procname "__erlang_make_str_const"
 
-let __erlang_str_equal = create_procname "__erlang_str_equal"
+let __erlang_receive = create_procname "__erlang_receive"
 
-let __erlang_missing_translation = create_procname "__erlang_missing_translation"
+let __erlang_str_equal = create_procname "__erlang_str_equal"
 
 let __exit = create_procname "_exit"
 
@@ -135,6 +137,8 @@ let __infer_skip_function = Procname.from_string_c_fun "__infer_skip_function"
 let __infer_skip_gcc_asm_stmt = Procname.from_string_c_fun "__infer_skip_gcc_asm_stmt"
 
 let __instanceof = create_procname "__instanceof"
+
+let __java_throw = create_procname "__java_throw"
 
 let __method_set_ignore_attribute = create_procname "__method_set_ignore_attribute"
 

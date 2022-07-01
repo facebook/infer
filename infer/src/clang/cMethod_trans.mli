@@ -25,7 +25,8 @@ val should_create_procdesc :
     [set_objc_accessor_attr] represents if the function is a getter/setter in Obj-C. *)
 
 val create_local_procdesc :
-     ?set_objc_accessor_attr:bool
+     ?loc_instantiated:Location.t
+  -> ?set_objc_accessor_attr:bool
   -> ?record_lambda_captured:bool
   -> ?is_cpp_lambda_call_operator:bool
   -> CFrontend_config.translation_unit_context
@@ -57,7 +58,8 @@ val method_signature_of_pointer : Tenv.t -> Clang_ast_t.pointer -> CMethodSignat
 val get_method_name_from_clang : Tenv.t -> CMethodSignature.t option -> Procname.t option
 
 val create_procdesc_with_pointer :
-     ?captured_vars:(Pvar.t * Typ.t * CapturedVar.capture_mode) list
+     ?is_cpp_lambda_call_operator:bool
+  -> ?captured_vars:(Pvar.t * Typ.t * CapturedVar.capture_mode) list
   -> CContext.t
   -> Clang_ast_t.pointer
   -> Typ.Name.t option

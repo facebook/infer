@@ -126,15 +126,16 @@ module TransferFunctions = struct
       -> (Pvar.t * Typ.t) list
       -> Procname.t
       -> (Exp.t * Typ.t) list
+      -> (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
       -> Dom.Mem.t
       -> BufferOverrunAnalysisSummary.t
       -> Location.t
       -> Dom.Mem.t =
-   fun ~is_args_ref integer_type_widths ret_id callee_formals callee_pname args caller_mem
-       callee_exit_mem location ->
+   fun ~is_args_ref integer_type_widths ret_id callee_formals callee_pname args captured_vars
+       caller_mem callee_exit_mem location ->
     let eval_sym_trace =
-      Sem.mk_eval_sym_trace ~is_args_ref integer_type_widths callee_formals args caller_mem
-        ~mode:Sem.EvalNormal
+      Sem.mk_eval_sym_trace ~is_args_ref integer_type_widths callee_formals args captured_vars
+        caller_mem ~mode:Sem.EvalNormal
     in
     let mem =
       instantiate_mem_reachable ret_id callee_formals callee_pname ~callee_exit_mem eval_sym_trace
@@ -279,7 +280,7 @@ module TransferFunctions = struct
 
 
   let call {interproc= {tenv}; get_summary; get_formals; oenv= {integer_type_widths}} node location
-      ((id, _) as ret) callee_pname args mem =
+      ((id, _) as ret) callee_pname args captured_vars mem =
     let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
     let fun_arg_list =
       List.map args ~f:(fun (exp, typ) ->
@@ -299,8 +300,8 @@ module TransferFunctions = struct
         in
         match (get_summary callee_pname, get_formals callee_pname) with
         | Some callee_exit_mem, Some callee_formals ->
-            instantiate_mem ~is_args_ref integer_type_widths id callee_formals callee_pname args mem
-              callee_exit_mem location
+            instantiate_mem ~is_args_ref integer_type_widths id callee_formals callee_pname args
+              captured_vars mem callee_exit_mem location
         | _, _ ->
             (* This may happen for procedures with a biabduction model too. *)
             L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp_without_templates
@@ -413,19 +414,21 @@ module TransferFunctions = struct
         mem
     | Prune (exp, location, _, _) ->
         Sem.Prune.prune location integer_type_widths exp mem
-    | Call ((id, _), Const (Cfun callee_pname), _, _, _) when is_java_enum_values tenv callee_pname
-      ->
+    | Call ((id, _), (Const (Cfun callee_pname) | Closure {name= callee_pname}), _, _, _)
+      when is_java_enum_values tenv callee_pname ->
         let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
         assign_java_enum_values get_summary id
           ~caller_pname:(Procdesc.get_proc_name proc_desc)
           ~callee_pname mem
     | Call (ret, Const (Cfun callee_pname), args, location, _) ->
-        call analysis_data node location ret callee_pname args mem
+        call analysis_data node location ret callee_pname args [] mem
+    | Call (ret, Closure {name= callee_pname; captured_vars}, args, location, _) ->
+        call analysis_data node location ret callee_pname args captured_vars mem
     | Call (ret, fun_exp, args, location, _) -> (
         let func_ptrs = Sem.eval integer_type_widths fun_exp mem |> Dom.Val.get_func_ptrs in
         match FuncPtr.Set.is_singleton_or_more func_ptrs with
-        | Singleton (Closure {name= callee_pname}) ->
-            call analysis_data node location ret callee_pname args mem
+        | Singleton (Closure {name= callee_pname; captured_vars}) ->
+            call analysis_data node location ret callee_pname args captured_vars mem
         | More ->
             L.d_printfln_escaped "/!\\ Call to multiple functions %a" Exp.pp fun_exp ;
             unknown_call location ret mem
@@ -478,7 +481,9 @@ let compute_invariant_map :
     let proc_name = Procdesc.get_proc_name proc_desc in
     let open IOption.Let_syntax in
     let get_summary proc_name = analyze_dependency proc_name >>| snd in
-    let get_formals callee_pname = Attributes.load callee_pname >>| Pvar.get_pvar_formals in
+    let get_formals callee_pname =
+      Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
+    in
     let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
     let oenv = OndemandEnv.mk proc_desc tenv integer_type_widths in
     {interproc; get_summary; get_formals; oenv}
@@ -487,17 +492,26 @@ let compute_invariant_map :
   Analyzer.exec_pdesc ~do_narrowing:true ~initial analysis_data proc_desc
 
 
+type cached_invariant_map = Analyzed of invariant_map | Skipped
+
 let cached_compute_invariant_map =
   let cache_get, cache_set = Procname.UnitCache.create () in
   fun ({InterproceduralAnalysis.proc_desc} as analysis_data) ->
     let pname = Procdesc.get_proc_name proc_desc in
     match cache_get pname with
-    | Some inv_map ->
-        inv_map
+    | Some (Analyzed inv_map) ->
+        Some inv_map
+    | Some Skipped ->
+        None
+    | None
+      when Procdesc.is_too_big BufferOverrunAnalysis ~max_cfg_size:Config.bo_max_cfg_size proc_desc
+      ->
+        cache_set pname Skipped ;
+        None
     | None ->
         let inv_map = compute_invariant_map analysis_data in
-        cache_set pname inv_map ;
-        inv_map
+        cache_set pname (Analyzed inv_map) ;
+        Some inv_map
 
 
 let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_summary =
@@ -511,7 +525,8 @@ let compute_summary : (Pvar.t * Typ.t) list -> CFG.t -> invariant_map -> memory_
 
 
 let analyze_procedure ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  let inv_map = cached_compute_invariant_map analysis_data in
+  let open IOption.Let_syntax in
+  let+ inv_map = cached_compute_invariant_map analysis_data in
   let formals = Procdesc.get_pvar_formals proc_desc in
   let cfg = CFG.from_pdesc proc_desc in
-  Some (compute_summary formals cfg inv_map)
+  compute_summary formals cfg inv_map

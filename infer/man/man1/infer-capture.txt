@@ -62,8 +62,8 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, gradle, gradlew, java, javac, cc, clang, gcc,
-           clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
+           values: ant, buck, buck2, gradle, gradlew, java, javac, cc, clang,
+           gcc, clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
            ndk-build, rebar3, erlc, xcodebuild.
 
        --help
@@ -81,6 +81,12 @@ OPTIONS
        --load-average,-l float
            Do not start new parallel jobs if the load average is greater than
            that specified (Buck and make only)
+
+       --merge-infer-out +string
+           Specifies an Infer results directory. The files and procedures
+           captured in it will be merged together into the results directory
+           specified with -o. Relative paths are interpreted as relative to
+           project-root/buck-out.
 
        --print-logs
            Activates: Also log messages to stdout and stderr (Conversely:
@@ -111,10 +117,6 @@ OPTIONS
        --sqlite-page-size int
            SQLite page size in bytes, must be a power of two between 512 and
            65536.
-
-       --sqlite-vacuum
-           Activates: VACUUM the SQLite DB after performing capture.
-           (Conversely: --no-sqlite-vacuum)
 
        --workspace path
            Specifies the root of the workspace, which is a directory
@@ -189,6 +191,15 @@ BUCK OPTIONS
 
        --Xbuck-no-inline +string
            Pass values as command-line arguments to invocations of `buck
+           build`, don't inline any args starting with '@'. Only valid for
+           --buck-clang.
+
+       --Xbuck2 +string
+           Pass values as command-line arguments to invocations of `buck2
+           build`. Only valid for --buck-clang.
+
+       --Xbuck2-no-inline +string
+           Pass values as command-line arguments to invocations of `buck2
            build`, don't inline any args starting with '@'. Only valid for
            --buck-clang.
 
@@ -301,9 +312,16 @@ ERLANG OPTIONS
            Also load AST from all .json files in the given path. These .json
            files usually come from a previous run with --debug.
 
-       --erlang-skip-rebar3
-           Activates: Skip running rebar, to save time. It is useful together
-           with --erlang-ast-dir. (Conversely: --no-erlang-skip-rebar3)
+       --erlang-skip-compile
+           Activates: Skip running compiler (erlc/rebar3), to save time. The
+           build command is basically ignored in this case. To be used
+           together with --erlang-ast-dir. (Conversely:
+           --no-erlang-skip-compile)
+
+       --erlang-with-otp-specs
+           Activates: [EXPERIMENTAL] Use type specs from OTP (available in
+           the system) to generate more precise Pulse summaries for unknown
+           library functions. (Conversely: --no-erlang-with-otp-specs)
 JAVA OPTIONS
        --bootclasspath string
            Specify the Java bootclasspath

@@ -6,6 +6,8 @@
 -module(features_logic).
 
 -export([
+    test_false2_Bad/0,
+    test_true2_Ok/0,
     test_true_Ok/0,
     test_true_Bad/0,
     test_false_Ok/0,

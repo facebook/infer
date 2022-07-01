@@ -7,9 +7,7 @@
 
 open! IStd
 
-type labeled_profiler_sample = string * Procname.Set.t [@@deriving compare]
-
-let equal_labeled_profiler_sample = [%compare.equal: labeled_profiler_sample]
+type labeled_profiler_sample = string * Procname.Set.t [@@deriving compare, equal]
 
 let from_java_profiler_samples j ~use_signature =
   let process_methods methods =

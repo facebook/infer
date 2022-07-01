@@ -1111,8 +1111,8 @@ let rec sym_exec
               Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
           | Exp.Const (Const.Cfun callee_pname) when ObjCDispatchModels.is_model callee_pname -> (
             match ObjCDispatchModels.get_dispatch_closure_opt par with
-            | Some (cname, args) ->
-                Sil.Call (ret, Exp.Const (Const.Cfun cname), args, loc, call_flags)
+            | Some (_cname, closure_exp, args) ->
+                Sil.Call (ret, closure_exp, args, loc, call_flags)
             | None ->
                 Sil.Call (ret, exp', par, loc, call_flags) )
           | _ ->
@@ -1296,13 +1296,9 @@ let rec sym_exec
                   (call_args prop resolved_pname n_actual_params ret_id_typ loc)
           in
           List.concat_map ~f:do_call sentinel_result ) )
-  | Sil.Call (ret_id_typ, fun_exp, actual_params, loc, call_flags) ->
+  | Sil.Call (ret_id_typ, fun_exp, actual_params, loc, _) ->
       (* Call via function pointer *)
       let prop_r, n_actual_params = normalize_params analysis_data prop_ actual_params in
-      if
-        call_flags.CallFlags.cf_is_objc_block
-        && not (Rearrange.is_only_pt_by_fld_or_param_nonnull current_pdesc tenv prop_r fun_exp)
-      then Rearrange.check_call_to_objc_block_error tenv current_pdesc prop_r fun_exp loc ;
       Rearrange.check_dereference_error tenv current_pdesc prop_r fun_exp loc ;
       L.d_str "Unknown function pointer " ;
       Exp.d_exp fun_exp ;

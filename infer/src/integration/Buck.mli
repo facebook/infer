@@ -18,7 +18,11 @@ module Target : sig
 end
 
 val wrap_buck_call :
-  ?extend_env:(string * string) list -> label:string -> string list -> string list
+     ?extend_env:(string * string) list
+  -> ?buck_mode:BuckMode.t
+  -> label:string
+  -> string list
+  -> string list
 (** Wrap a call to buck while (i) logging standard error to our standard error in real time; (ii)
     redirecting standard out to a file, the contents of which are returned; (iii) protect the child
     process from [SIGQUIT].

@@ -31,7 +31,7 @@ module Access = struct
 
   let is_strong_access tenv (access : t) =
     let has_weak_or_unretained_or_assign annotations =
-      List.exists annotations ~f:(fun ((ann : Annot.t), _) ->
+      List.exists annotations ~f:(fun (ann : Annot.t) ->
           ( String.equal ann.class_name Config.property_attributes
           || String.equal ann.class_name Config.ivar_attributes )
           && List.exists
@@ -44,7 +44,15 @@ module Access = struct
     match access with
     | FieldAccess fieldname -> (
         let classname = Fieldname.get_class_name fieldname in
+        let is_fake_capture_field_strong fieldname =
+          (* a strongly referencing capture field is a capture field that is not weak *)
+          Fieldname.is_fake_capture_field fieldname
+          && not (Fieldname.is_fake_capture_field_weak fieldname)
+        in
         match Tenv.lookup tenv classname with
+        | None when is_fake_capture_field_strong fieldname ->
+            (* Strongly referencing captures *)
+            true
         | None ->
             (* Can't tell if we have a strong reference. To avoid FP on retain cycles,
                assume weak reference by default *)

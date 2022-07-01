@@ -6,6 +6,7 @@
 TESTS_DIR = ../..
 
 INFERPRINT_OPTIONS = --issues-tests
+TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 
 MVN_DIRS = app_with_submodules  simple_app  app_with_infer_profile  app_with_profiles
 

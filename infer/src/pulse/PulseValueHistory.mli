@@ -7,6 +7,7 @@
 open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
+module Taint = PulseTaint
 module Timestamp = PulseTimestamp
 
 type event =
@@ -26,10 +27,11 @@ type event =
   | NilMessaging of Location.t * Timestamp.t
   | Returned of Location.t * Timestamp.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t * Timestamp.t
+  | TaintSource of Taint.t * Location.t * Timestamp.t
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
-and t =
+and t = private
   | Epoch  (** start of time *)
   | Sequence of event * t
       (** [Sequence \[event, hist\]] represents an event [event] occurring *after* [hist].
@@ -40,6 +42,14 @@ and t =
       ; context: t list  (** contextual traces, eg conditionals that the path is under *) }
   | BinaryOp of Binop.t * t * t  (** branch history due to a binop *)
 [@@deriving compare, equal, yojson_of]
+
+val epoch : t
+
+val sequence : ?context:t list -> event -> t -> t
+
+val in_context : t list -> t -> t
+
+val binary_op : Binop.t -> t -> t -> t
 
 val pp : F.formatter -> t -> unit
 

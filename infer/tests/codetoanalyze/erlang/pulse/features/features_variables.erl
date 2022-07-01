@@ -4,56 +4,41 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_variables).
+-include("../../common.hrl").
+
 -export([
-    test1_Ok/0,
-    test2_Bad/0,
-    test3_Bad/0,
-    test4_Ok/0,
-    test5_Bad/0
+    test_vars1_Ok/0,
+    test_vars2_Bad/0,
+    test_vars3_Bad/0,
+    test_vars4_Ok/0,
+    test_vars5_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
-test1_Ok() ->
+test_vars1_Ok() ->
     X = 2,
     Y = X,
     Z = 3,
-    case Y of
-        2 -> ok
-    end,
-    case Z of
-        3 -> ok
-    end.
+    ?ASSERT_EQUAL(2, Y),
+    ?ASSERT_EQUAL(3, Z).
 
-test2_Bad() ->
+test_vars2_Bad() ->
     X = 2,
     Y = X,
     Z = 3,
-    case Y of
-        2 -> warn(1)
-    end,
-    case Z of
-        3 -> ok
-    end.
+    ?CRASH_IF_EQUAL(2, Y),
+    ?ASSERT_EQUAL(3, Z).
 
-test3_Bad() ->
+test_vars3_Bad() ->
     X = 2,
     Y = X,
     Z = 3,
-    case Y of
-        2 -> ok
-    end,
-    case Z of
-        3 -> warn(1)
-    end.
+    ?ASSERT_EQUAL(2, Y),
+    ?CRASH_IF_EQUAL(3, Z).
 
-test4_Ok() ->
+test_vars4_Ok() ->
     X = 2,
-    2 = X,
-    ok.
+    2 = X.
 
-test5_Bad() ->
+test_vars5_Bad() ->
     X = 2,
-    3 = X,
-    ok.
+    3 = X.

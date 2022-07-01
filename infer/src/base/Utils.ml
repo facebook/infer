@@ -467,6 +467,24 @@ let iter_infer_deps ~project_root ~f infer_deps_file =
       Die.die InternalError "Couldn't read deps file '%s': %s" infer_deps_file error
 
 
+let inline_argument_files args =
+  let expand_arg arg =
+    if String.is_prefix ~prefix:"@" arg then
+      let file_name = String.chop_prefix_exn ~prefix:"@" arg in
+      if not (ISys.file_exists file_name) then [arg]
+        (* Arguments that start with @ could mean something different than an arguments file *)
+      else
+        let expanded_args =
+          try with_file_in file_name ~f:In_channel.input_lines
+          with exn ->
+            Die.die UserError "Could not read from file '%s': %a@\n" file_name Exn.pp exn
+        in
+        expanded_args
+    else [arg]
+  in
+  List.concat_map ~f:expand_arg args
+
+
 let physical_cores () =
   with_file_in "/proc/cpuinfo" ~f:(fun ic ->
       let physical_or_core_regxp =

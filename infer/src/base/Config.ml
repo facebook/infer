@@ -33,6 +33,7 @@ type os_type = Unix | Win32 | Cygwin
 type build_system =
   | BAnt
   | BBuck
+  | BBuck2
   | BClang
   | BGradle
   | BJava
@@ -53,6 +54,7 @@ type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 let build_system_exe_assoc =
   [ (BAnt, "ant")
   ; (BBuck, "buck")
+  ; (BBuck2, "buck2")
   ; (BGradle, "gradle")
   ; (BGradle, "gradlew")
   ; (BJava, "java")
@@ -761,6 +763,12 @@ and bo_field_depth_limit =
     "Limit of field depth of abstract location in buffer-overrun checker"
 
 
+and bo_max_cfg_size =
+  CLOpt.mk_int ~default:15000 ~long:"bo-max-cfg-size"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Larger CFGs than the max size are skipped in buffer overrun analysis."
+
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -769,6 +777,20 @@ and bootclasspath =
 
 (** Automatically set when running from within Buck *)
 and buck = CLOpt.mk_bool ~long:"buck" ""
+
+and buck2_build_args =
+  CLOpt.mk_string_list ~long:"Xbuck2"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Pass values as command-line arguments to invocations of $(i,`buck2 build`). Only valid for \
+     $(b,--buck-clang)."
+
+
+and buck2_build_args_no_inline_rev =
+  CLOpt.mk_string_list ~long:"Xbuck2-no-inline"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Pass values as command-line arguments to invocations of $(i,`buck2 build`), don't inline any \
+     args starting with '@'. Only valid for $(b,--buck-clang)."
+
 
 and buck_block_list =
   CLOpt.mk_string_list
@@ -891,6 +913,11 @@ and capture_block_list =
     ~meta:"regex"
     "Skip capture of files matched by the specified OCaml regular expression (only supported by \
      the javac integration for now)."
+
+
+and capture_textual_sil =
+  CLOpt.mk_path_opt ~long:"capture-textual-sil" ~meta:"path"
+    "Generate a SIL program from a textual representation given in a .sil file."
 
 
 and cfg_json =
@@ -1029,6 +1056,27 @@ and compilation_database_escaped =
      from Xcode (can be specified multiple times)"
 
 
+and config_impact_config_field_patterns =
+  CLOpt.mk_string_list ~long:"config-impact-config-field-patterns" ~meta:"regex"
+    "Register known config fields that have a config value.  The matched name contains class and \
+     field names, without package names and namespaces, for example, $(b,Class.field) in Java/ObjC \
+     and $(b,Class::field) in C++."
+
+
+and config_impact_config_function_patterns =
+  CLOpt.mk_string_list ~long:"config-impact-config-function-patterns" ~meta:"regex"
+    "Register known config functions that return a config value.  The matched name contains class \
+     and method names, without package names and parameters, for example, $(b,Class.method) in \
+     Java/ObjC and $(b,Class::method) in C++."
+
+
+and config_impact_config_param_patterns =
+  CLOpt.mk_string_list ~long:"config-impact-config-param-patterns" ~meta:"regex"
+    "Register known config parameters that have a config value.  The matched name contains a \
+     method name and a parameter name, separated by a space, for example, $(b,Class.method param) \
+     in Java/ObjC and $(b,Class::method param) in C++."
+
+
 and config_impact_current =
   CLOpt.mk_path_opt ~long:"config-impact-current"
     ~in_help:InferCommand.[(ReportDiff, manual_generic)]
@@ -1073,6 +1121,17 @@ and config_impact_strict_mode_paths =
      $(b,--config-impact-strict-mode-paths) is not given, the behavior depends on the \
      $(b,--config-impact-strict-mode) option: if $(b,--config-impact-strict-mode) is not given, it \
      runs as non-strict mode; otherwise, it runs as strict mode, but for all paths."
+
+
+and config_impact_strict_beta_mode_paths =
+  CLOpt.mk_string_list ~long:"config-impact-strict-beta-mode-paths" ~meta:"path_regex"
+    "Similar to $(b,--config-impact-strict-mode-paths), but the paths are used only for beta \
+     testing."
+
+
+and config_impact_test_paths =
+  CLOpt.mk_string_list ~long:"config-impact-test-paths" ~meta:"path_regex"
+    "Ignore code changes under the given test paths."
 
 
 (** Continue the capture for reactive mode: If a procedure was changed beforehand, keep the changed
@@ -1202,7 +1261,7 @@ and ( biabduction_write_dotty
       "Debug level for the test determinator. See $(b,--debug-level) for accepted values."
   and developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
-      ~default:(Option.value_map ~default:false ~f:InferCommand.(equal Report) initial_command)
+      ~default:(Option.exists ~f:InferCommand.(equal Report) initial_command)
       "Show internal exceptions"
   and filtering =
     CLOpt.mk_bool ~deprecated_no:["nf"] ~long:"filtering" ~short:'f' ~default:true
@@ -1442,10 +1501,18 @@ and erlang_ast_dir =
      previous run with $(b,--debug)."
 
 
-and erlang_skip_rebar3 =
-  CLOpt.mk_bool ~long:"erlang-skip-rebar3"
+and erlang_skip_compile =
+  CLOpt.mk_bool ~long:"erlang-skip-compile"
     ~in_help:InferCommand.[(Capture, manual_erlang)]
-    "Skip running rebar, to save time. It is useful together with $(b,--erlang-ast-dir)."
+    "Skip running compiler (erlc/rebar3), to save time. The build command is basically ignored in \
+     this case. To be used together with $(b,--erlang-ast-dir)."
+
+
+and erlang_with_otp_specs =
+  CLOpt.mk_bool ~long:"erlang-with-otp-specs"
+    ~in_help:InferCommand.[(Capture, manual_erlang)]
+    "[EXPERIMENTAL] Use type specs from OTP (available in the system) to generate more precise \
+     Pulse summaries for unknown library functions."
 
 
 and erlang_list_unfold_depth =
@@ -1539,7 +1606,7 @@ and frontend_stats =
 
 and function_pointer_specialization =
   CLOpt.mk_bool ~long:"function-pointer-specialization" ~default:false
-    "Do function pointer preprocessing (clang only)."
+    "Apply function specialization to higher-order functions taking function pointers."
 
 
 and generated_classes =
@@ -1632,6 +1699,20 @@ and incremental_analysis =
   CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
     "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
      $(b,--reanalyze) and $(b,--continue-analysis)."
+
+
+and _inferconfig_path =
+  (* This is a no-op argument ensuring a meaningful message in case of error, as well as to
+     silently consume the argument which is parsed specially. *)
+  CLOpt.mk_path ~long:CLOpt.inferconfig_path_arg ~default:""
+    CommandDoc.(
+      Printf.sprintf
+        "Path to the $(b, %s) file, overriding the effects of the $(b, %s) environment variable as \
+         well as the filesystem search in the current working directory and its ancestors.\n\n\
+         NB: This option is parsed in a special pass over the command line, so it is always set \
+         (and the corresponding $(b, %s) file is read) first. In addition, this option will not \
+         function properly if used inside a $(b, %s) file."
+        inferconfig_file inferconfig_env_var inferconfig_file inferconfig_file)
 
 
 and issues_tests_fields =
@@ -1823,6 +1904,14 @@ and merge =
     "Merge the captured results directories specified in the dependency file."
 
 
+and merge_infer_out =
+  CLOpt.mk_string_list ~long:"merge-infer-out"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "Specifies an Infer results directory. The files and procedures captured in it will be merged \
+     together into the results directory specified with $(b, -o). Relative paths are interpreted \
+     as relative to $(b, project-root/buck-out)."
+
+
 and merge_report =
   CLOpt.mk_string_list ~long:"merge-report"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -1867,8 +1956,7 @@ and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
 
 and nullsafe_optimistic_third_party_in_default_mode =
   CLOpt.mk_bool
-    ~long:
-      "nullsafe-optimistic-third-party-in-default-mode"
+    ~long:"nullsafe-optimistic-third-party-in-default-mode"
       (* Turned on for compatibility reasons
        *)
     ~default:true
@@ -1970,6 +2058,16 @@ and procedures_attributes =
     "Print the attributes of each procedure in the output of $(b,--procedures)"
 
 
+and procedures_call_graph =
+  CLOpt.mk_bool ~long:"procedures-call-graph"
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    (Printf.sprintf
+       "Output a dotty file in %s/syntactic-call-graph.dot. The graph is the syntactic call graph \
+        reachable from either all captured procedures or those determined by the option $(b, \
+        --changed-files-index). "
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
+
+
 and procedures_cfg =
   CLOpt.mk_bool ~long:"procedures-cfg"
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
@@ -2064,6 +2162,11 @@ and pulse_cut_to_one_path_procedures_pattern =
      large procedures to prevent too-big states from being produced."
 
 
+and pulse_inline_global_init_func_pointer =
+  CLOpt.mk_bool ~long:"pulse-inline-global-init-func-pointer" ~default:false
+    "Inline the initializer of global variables that are of type function pointer in Pulse."
+
+
 and pulse_intraprocedural_only =
   CLOpt.mk_bool ~long:"pulse-intraprocedural-only"
     "Disable inter-procedural analysis in Pulse. Used for experimentations only."
@@ -2080,9 +2183,21 @@ and pulse_manifest_emp =
     "[Pulse] manifest errors with postive heaps in pre. For experiments only."
 
 
+and pulse_max_cfg_size =
+  CLOpt.mk_int ~default:15000 ~long:"pulse-max-cfg-size"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Larger CFGs than the max size are skipped in Pulse."
+
+
 and pulse_max_disjuncts =
   CLOpt.mk_int ~long:"pulse-max-disjuncts" ~default:20
     "Under-approximate after $(i,int) disjunctions in the domain"
+
+
+and pulse_max_heap =
+  CLOpt.mk_int_opt ~long:"pulse-max-heap" ~meta:"int"
+    "Give up analysing a procedure if the number of words in the heap exceeds this limit. Intended \
+     use: avoid OutOfMemory crashes."
 
 
 and pulse_model_abort =
@@ -2128,6 +2243,12 @@ and pulse_model_release_pattern =
     "Regex of methods that should be modelled as release in Pulse"
 
 
+and pulse_model_returns_copy_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-model-returns-copy-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as creating copies in Pulse"
+
+
 and pulse_model_return_nonnull =
   CLOpt.mk_string_opt ~long:"pulse-model-return-nonnull"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2146,24 +2267,10 @@ and pulse_model_skip_pattern =
     "Regex of methods that should be modelled as \"skip\" in Pulse"
 
 
-and pulse_prune_unsupported_arithmetic =
-  CLOpt.mk_bool ~long:"pulse-prune-unsupported-arithmetic" ~default:false
+and pulse_models_for_erlang =
+  CLOpt.mk_json ~long:"pulse-models-for-erlang"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "The arithmetic engine in Pulse sometimes does not detect that the collection of conditions on \
-     the path makes it infeasible, especially outside the well-supported linear arithmetic \
-     fragment. To avoid false positives, Pulse tries to detect when there is a possibility of \
-     imprecise arithmetic treatment and if so pessimistically assumes the path is infeasible."
-
-
-and pulse_report_ignore_unknown_java_methods_patterns =
-  CLOpt.mk_string_list ~default:[".*<init>.*"]
-    ~long:"pulse-report-ignore-unknown-java-methods-patterns"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "On Java, issues that are found on program paths that contain calls to unknown methods (those \
-     without implementation) are not reported unless all the unknown method names match this \
-     pattern. If the empty list is provided with \
-     $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset), all issues will be reported \
-     regardless the presence of unknown code"
+    "Provide custom models for Erlang code using a DSL."
 
 
 and pulse_model_transfer_ownership =
@@ -2179,16 +2286,80 @@ and pulse_recency_limit =
      address."
 
 
+and pulse_report_ignore_unknown_java_methods_patterns =
+  CLOpt.mk_string_list ~default:[".*<init>.*"]
+    ~long:"pulse-report-ignore-unknown-java-methods-patterns"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "On Java, issues that are found on program paths that contain calls to unknown methods (those \
+     without implementation) are not reported unless all the unknown method names match this \
+     pattern. If the empty list is provided with \
+     $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset), all issues will be reported \
+     regardless the presence of unknown code"
+
+
+and pulse_report_flows_from_taint_source =
+  CLOpt.mk_string_opt ~long:"pulse-report-flows-from-taint-source"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    ~meta:"procname" "Report data flows which originate at taint source $(b,procname)"
+
+
+and pulse_report_flows_to_taint_sink =
+  CLOpt.mk_string_opt ~long:"pulse-report-flows-to-taint-sink"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    ~meta:"procname" "Report data flows which pass through taint sink $(b,procname)"
+
+
 and pulse_report_latent_issues =
   CLOpt.mk_bool ~long:"pulse-report-latent-issues" ~default:true
     "Report latent issues instead of waiting for them to become manifest, when the latent issue \
      itself is enabled."
 
 
+and pulse_report_issues_for_tests =
+  CLOpt.mk_bool ~long:"pulse-report-issues-for-tests" ~default:false
+    "Do not supress any of the issues found by Pulse."
+
+
 and pulse_skip_procedures =
   CLOpt.mk_string_opt ~long:"pulse-skip-procedures"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
+
+
+and pulse_taint_policies =
+  CLOpt.mk_json ~long:"pulse-taint-policies"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    {|A description of which taint flows should be reported, following this JSON format:
+  { "short_description": "<a short description of the issue>",
+    "taint_flows": [{ "source_kinds": [<matchers>],
+                      "sink_kinds": [<matchers>],
+                      "sanitizer_kinds": [<matchers>]}]
+  }
+where <matchers> are in the same format as $(b,--pulse-taint-sources); the field "sanitizer_kinds" is optional (assumed to be empty), and a policy may have several taint flows in the form of a list.|}
+
+
+and pulse_taint_sanitizers =
+  CLOpt.mk_json ~long:"pulse-taint-sanitizers"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple sanitizers as a JSON objects. See $(b,--pulse-taint-sources) for \
+     the fields format documentation."
+
+
+and pulse_taint_sinks =
+  CLOpt.mk_json ~long:"pulse-taint-sinks"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple sinks as a JSON objects. See $(b,--pulse-taint-sources) for the \
+     fields format documentation."
+
+
+and pulse_taint_sources =
+  CLOpt.mk_json ~long:"pulse-taint-sources"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), and $(b,--pulse-taint-specifications), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects with the following fields, for example '[{"procedure": "mySimpleSink", "formals": [{"index": 1}]}]':
+  - "procedure" to match a substring of the function or method name, or "procedure_regex" to specify an OCaml regex
+  - "formals" is a list of objects with one or two fields:
+    - "index" is the index of the formal that is tainted, starting at 0. For methods, index 0 is $(i,this), other arguments start at index 1
+    - "type_name" is optional string; only arguments whose type contains this substring match|}
 
 
 and pulse_widen_threshold =
@@ -2240,6 +2411,12 @@ and quiet =
   CLOpt.mk_bool ~long:"quiet" ~short:'q' ~default:false
     ~in_help:InferCommand.[(Analyze, manual_generic); (Report, manual_generic)]
     "Do not print anything on standard output."
+
+
+and racerd_always_report_java =
+  CLOpt.mk_bool ~long:"racerd-always-report-java"
+    ~in_help:InferCommand.[(Analyze, manual_racerd)]
+    "Every Java class analysed is treated as if it were annotated as @ThreadSafe."
 
 
 and racerd_guardedby =
@@ -2523,6 +2700,25 @@ and source_files =
     "Print source files discovered by infer"
 
 
+and source_files_call_graph =
+  CLOpt.mk_bool ~long:"source-files-call-graph"
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
+    (Printf.sprintf
+       "Output a dotty file in %s/file-call-graph.dot. The graph is the file-based syntactic call \
+        graph of all captured procedures (with known translation units). "
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
+
+
+and source_files_call_graph_partition =
+  CLOpt.mk_int_opt ~long:"source-files-call-graph-partition"
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
+    (Printf.sprintf
+       "The number of partitions to divide the set of captured source files, using static call \
+        graph information. The generated file lists are found under %s/workerXX.idx. Not setting \
+        this option skips partitioning. This is used for distributed analysis."
+       (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
+
+
 and source_files_cfg =
   CLOpt.mk_bool ~long:"source-files-cfg"
     ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
@@ -2606,18 +2802,7 @@ and sqlite_lock_timeout =
     "Timeout for SQLite results database operations, in milliseconds."
 
 
-and sqlite_vacuum =
-  CLOpt.mk_bool ~long:"sqlite-vacuum" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_generic)]
-    "$(b,VACUUM) the SQLite DB after performing capture."
-
-
 and sqlite_vfs = CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
-
-and (_ : bool ref) =
-  CLOpt.mk_bool ~default:false "[DEPRECATED][DOES NOTHING] option does not exist any more"
-    ~deprecated:["-sqlite-write-daemon"] ~deprecated_no:["-no-sqlite-write-daemon"] ~long:""
-
 
 and subtype_multirange =
   CLOpt.mk_bool ~deprecated:["subtype_multirange"] ~long:"subtype-multirange" ~default:true
@@ -2637,7 +2822,7 @@ and test_determinator =
 
 and topl_max_conjuncts =
   CLOpt.mk_int ~long:"topl-max-conjuncts" ~default:20
-    "Stop tracking states that reach have at least $(i,int) conjuncts"
+    "Stop tracking states that have at least $(i,int) conjuncts"
 
 
 and topl_max_disjuncts =
@@ -2678,6 +2863,12 @@ and threadsafe_aliases =
   CLOpt.mk_json ~long:"threadsafe-aliases"
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
     "Specify custom annotations that should be considered aliases of @ThreadSafe"
+
+
+and top_longest_proc_duration_size =
+  CLOpt.mk_int_opt ~long:"top-longest-proc-duration-size" ~default:10
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Number of procedures for which we track longest analysis duration info."
 
 
 and trace_events =
@@ -2771,8 +2962,7 @@ and xcpretty =
 
 let javac_classes_out =
   CLOpt.mk_string ~parse_mode:CLOpt.Javac ~deprecated:["classes_out"] ~long:""
-    ~short:
-      'd'
+    ~short:'d'
       (* Ensure that some form of "-d ..." is passed to javac. It's unclear whether this is strictly
          needed but the tests break without this for now. See discussion in D4397716. *)
     ~default:CLOpt.init_work_dir
@@ -2807,12 +2997,26 @@ let inferconfig_dir =
   find (Sys.getcwd ())
 
 
+let parse_inferconfig_path_arg () =
+  let full_arg = "--" ^ CLOpt.inferconfig_path_arg in
+  let argv = Sys.get_argv () |> Array.copy in
+  (* reverse in order to find last occurrence of [--inferconfig-path] *)
+  Array.rev_inplace argv ;
+  Array.findi argv ~f:(fun _ arg -> String.equal full_arg arg)
+  |> Option.bind ~f:(fun (index, _) ->
+         if index > 0 then Some (Array.get argv (index - 1)) else None )
+
+
 let inferconfig_file =
-  match Sys.getenv CommandDoc.inferconfig_env_var with
-  | Some _ as env_path ->
-      env_path
-  | None ->
-      Option.map inferconfig_dir ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
+  match parse_inferconfig_path_arg () with
+  | Some _ as some_inferconfig ->
+      some_inferconfig
+  | None -> (
+    match Sys.getenv CommandDoc.inferconfig_env_var with
+    | Some _ as env_path ->
+        env_path
+    | None ->
+        Option.map inferconfig_dir ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file) )
 
 
 let post_parsing_initialization command_opt =
@@ -3030,7 +3234,13 @@ and bo_debug = !bo_debug
 
 and bo_field_depth_limit = !bo_field_depth_limit
 
+and bo_max_cfg_size = !bo_max_cfg_size
+
 and buck = !buck
+
+and buck2_build_args = RevList.to_list !buck2_build_args
+
+and buck2_build_args_no_inline = RevList.to_list !buck2_build_args_no_inline_rev
 
 and buck_block_list = RevList.to_list !buck_block_list
 
@@ -3069,6 +3279,8 @@ and buck_mode : BuckMode.t option =
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and capture = !capture
+
+and capture_textual_sil = !capture_textual_sil
 
 and capture_block_list = !capture_block_list
 
@@ -3127,6 +3339,18 @@ and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_r
 
 and classpath = !classpath
 
+and config_impact_config_field_patterns =
+  RevList.rev_map !config_impact_config_field_patterns ~f:Re.Str.regexp
+
+
+and config_impact_config_function_patterns =
+  RevList.rev_map !config_impact_config_function_patterns ~f:Re.Str.regexp
+
+
+and config_impact_config_param_patterns =
+  RevList.rev_map !config_impact_config_param_patterns ~f:Re.Str.regexp
+
+
 and config_impact_current = !config_impact_current
 
 and config_impact_data_file = !config_impact_data_file
@@ -3140,6 +3364,12 @@ and config_impact_previous = !config_impact_previous
 and config_impact_strict_mode = !config_impact_strict_mode
 
 and config_impact_strict_mode_paths = RevList.rev_map !config_impact_strict_mode_paths ~f:Str.regexp
+
+and config_impact_strict_beta_mode_paths =
+  RevList.rev_map !config_impact_strict_beta_mode_paths ~f:Str.regexp
+
+
+and config_impact_test_paths = RevList.rev_map !config_impact_test_paths ~f:Str.regexp
 
 and continue_analysis = !continue_analysis
 
@@ -3201,7 +3431,9 @@ and eradicate_verbose = !eradicate_verbose
 
 and erlang_ast_dir = !erlang_ast_dir
 
-and erlang_skip_rebar3 = !erlang_skip_rebar3
+and erlang_skip_compile = !erlang_skip_compile
+
+and erlang_with_otp_specs = !erlang_with_otp_specs
 
 and erlang_list_unfold_depth = !erlang_list_unfold_depth
 
@@ -3343,6 +3575,8 @@ and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
 
 and merge = !merge
 
+and merge_infer_out = RevList.to_list !merge_infer_out
+
 and merge_report = RevList.to_list !merge_report
 
 and method_decls_info = !method_decls_info
@@ -3401,6 +3635,8 @@ and procedures = !procedures
 
 and procedures_attributes = !procedures_attributes
 
+and procedures_call_graph = !procedures_call_graph
+
 and procedures_cfg = !procedures_cfg
 
 and procedures_definedness = !procedures_definedness
@@ -3435,13 +3671,19 @@ and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
 
+and pulse_inline_global_init_func_pointer = !pulse_inline_global_init_func_pointer
+
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
 and pulse_isl = !pulse_isl
 
 and pulse_manifest_emp = !pulse_manifest_emp
 
+and pulse_max_cfg_size = !pulse_max_cfg_size
+
 and pulse_max_disjuncts = !pulse_max_disjuncts
+
+and pulse_max_heap = !pulse_max_heap
 
 and pulse_model_abort = RevList.to_list !pulse_model_abort
 
@@ -3455,21 +3697,13 @@ and pulse_model_realloc_pattern = Option.map ~f:Str.regexp !pulse_model_realloc_
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
 
+and pulse_model_returns_copy_pattern = Option.map ~f:Str.regexp !pulse_model_returns_copy_pattern
+
 and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_first_arg
 
 and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_nonnull
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
-
-and pulse_prune_unsupported_arithmetic = !pulse_prune_unsupported_arithmetic
-
-and pulse_report_ignore_unknown_java_methods_patterns =
-  match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
-  | [] ->
-      None
-  | patts ->
-      Some (Str.regexp (String.concat ~sep:"\\|" patts))
-
 
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =
@@ -3492,17 +3726,41 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   RevList.rev_partition_map ~f:aux models
 
 
+and pulse_models_for_erlang = !pulse_models_for_erlang
+
+and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+
 and pulse_recency_limit = !pulse_recency_limit
+
+and pulse_report_ignore_unknown_java_methods_patterns =
+  match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
+  | [] ->
+      None
+  | patts ->
+      Some (Str.regexp (String.concat ~sep:"\\|" patts))
+
+
+and pulse_report_flows_from_taint_source = !pulse_report_flows_from_taint_source
+
+and pulse_report_flows_to_taint_sink = !pulse_report_flows_to_taint_sink
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
-and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
+and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
 and pulse_scuba_logging = !pulse_scuba_logging
 
-and pulse_widen_threshold = !pulse_widen_threshold
+and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 
-and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+and pulse_taint_policies = !pulse_taint_policies
+
+and pulse_taint_sanitizers = !pulse_taint_sanitizers
+
+and pulse_taint_sinks = !pulse_taint_sinks
+
+and pulse_taint_sources = !pulse_taint_sources
+
+and pulse_widen_threshold = !pulse_widen_threshold
 
 and pure_by_default = !pure_by_default
 
@@ -3517,6 +3775,8 @@ and quandary_sources = !quandary_sources
 and quandary_sinks = !quandary_sinks
 
 and quiet = !quiet
+
+and racerd_always_report_java = !racerd_always_report_java
 
 and racerd_guardedby = !racerd_guardedby
 
@@ -3614,6 +3874,10 @@ and source_preview = !source_preview
 
 and source_files = !source_files
 
+and source_files_call_graph = !source_files_call_graph
+
+and source_files_call_graph_partition = !source_files_call_graph_partition
+
 and source_files_cfg = !source_files_cfg
 
 and source_files_filter = !source_files_filter
@@ -3633,8 +3897,6 @@ and sqlite_cache_size = !sqlite_cache_size
 and sqlite_page_size = !sqlite_page_size
 
 and sqlite_lock_timeout = !sqlite_lock_timeout
-
-and sqlite_vacuum = !sqlite_vacuum
 
 and sqlite_vfs = !sqlite_vfs
 
@@ -3676,6 +3938,8 @@ and profiler_samples = !profiler_samples
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
+
+and top_longest_proc_duration_size = !top_longest_proc_duration_size
 
 and topl_max_conjuncts = !topl_max_conjuncts
 

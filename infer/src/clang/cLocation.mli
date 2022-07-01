@@ -20,6 +20,8 @@ val should_do_frontend_check : SourceFile.t -> Clang_ast_t.source_range -> bool
 
 val is_file_block_listed : string -> bool
 
+val clang_to_sil_location : SourceFile.t -> Clang_ast_t.source_location -> Location.t
+
 val location_of_source_range :
   ?pick_location:[`Start | `End] -> SourceFile.t -> Clang_ast_t.source_range -> Location.t
 (** picks the start of the source range by default *)

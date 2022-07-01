@@ -12,17 +12,16 @@ let%test_module _ =
   ( module struct
     open Sh
 
-    let () = Trace.init ~margin:68 ()
+    let () = Dbg.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160
+     *   Dbg.init ~margin:160
      *     ~config:
-     *       (Result.get_ok
-     *          (Trace.parse
-     *             "+Sh.simplify+Sh.simplify_+Sh.norm+Sh.and_subst+Context.solve_and_elim+Context.partition_valid+Context.solve_for_vars+Context.apply_and_elim+Context.apply_subst+Context.elim"))
+     *       (Dbg.parse
+     *          "+Sh.simplify+Sh.simplify_+Sh.norm+Sh.and_subst+Context.solve_and_elim+Context.partition_valid+Context.solve_for_vars+Context.apply_and_elim+Context.apply_subst+Context.elim" )
      *     () *)
 
-    [@@@warning "-32"]
+    [@@@warning "-unused-value-declaration"]
 
     let pp = Format.printf "@\n%a@." pp
     let pp_raw = Format.printf "@\n%a@." pp_raw
@@ -90,8 +89,7 @@ let%test_module _ =
       let q =
         or_
           (pure (x = !0))
-          (exists
-             ~$[x_]
+          (exists ~$[x_]
              (or_
                 (and_ (x = !1) (pure (y = !1)))
                 (exists ~$[x_] (pure (x = !2))) ) )
@@ -109,12 +107,10 @@ let%test_module _ =
 
     let%expect_test _ =
       let q =
-        exists
-          ~$[x_]
+        exists ~$[x_]
           (or_
              (pure (x = !0))
-             (exists
-                ~$[x_]
+             (exists ~$[x_]
                 (or_
                    (and_ (x = !1) (pure (y = !1)))
                    (exists ~$[x_] (pure (x = !2))) ) ) )
@@ -134,12 +130,10 @@ let%test_module _ =
 
     let%expect_test _ =
       let q =
-        exists
-          ~$[x_]
+        exists ~$[x_]
           (or_
              (pure (x = !0))
-             (exists
-                ~$[x_]
+             (exists ~$[x_]
                 (or_
                    (and_ (x = !1) (pure (y = !1)))
                    (exists ~$[x_] (pure (x = !2))) ) ) )
@@ -174,8 +168,7 @@ let%test_module _ =
              (pure (eq_concat (!16, e) [|(!8, a); (!8, d)|]))
              (or_
                 (pure (Formula.dq x !0))
-                (exists
-                   (Var.Set.of_list [b_])
+                (exists (Var.Set.of_list [b_])
                    (pure (eq_concat (!8, a) [|(!4, c); (!4, b)|])) ) ) )
       in
       pp_raw q ;

@@ -189,7 +189,7 @@ module AtomicInteger = struct
     in
     let astate =
       AddressAttributes.add_one (fst this_address)
-        (WrittenTo (Trace.Immediate {location; history= Epoch}))
+        (WrittenTo (Trace.Immediate {location; history= ValueHistory.epoch}))
         astate
     in
     let* astate, int_field =
@@ -232,6 +232,18 @@ module BasicString = struct
 
 
   (* constructor from constant string *)
+  let constructor_from_constant (this, hist) exp : model =
+   fun {path; location} astate ->
+    let event = Hist.call_event path location "std::basic_string::basic_string()" in
+    let<*> astate, init_hist = PulseOperations.eval path Read location exp astate in
+    let<+> astate =
+      PulseOperations.write_field path location
+        ~ref:(this, Hist.add_event path event hist)
+        PulseOperations.ModeledField.internal_string ~obj:init_hist astate
+    in
+    astate
+
+
   let constructor this_hist init_hist : model =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::basic_string::basic_string()" in
@@ -330,7 +342,9 @@ module Function = struct
         in
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
           ~callee_data:(analyze_dependency callee_proc_name)
-          location callee_proc_name ~ret ~actuals ~formals_opt:None astate
+          location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
+          astate
+        |> fst
 
 
   let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
@@ -346,7 +360,7 @@ module Function = struct
       PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
     else
       match src_typ.Typ.desc with
-      | Tptr (_, Pk_reference) ->
+      | Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
           Basic.shallow_copy path location event ret_id dest src astate
       | _ ->
           Basic.shallow_copy_value path location event ret_id dest src astate
@@ -377,6 +391,15 @@ module Vector = struct
     astate
 
 
+  let init_copy_constructor this init_vector : model =
+   fun ({path; location} as model_data) astate ->
+    let<*> astate, init_list =
+      PulseOperations.eval_deref_access path Read location init_vector
+        (FieldAccess GenericArrayBackedCollection.field) astate
+    in
+    init_list_constructor this init_list model_data astate
+
+
   let invalidate_references vector_f vector : model =
    fun {path; location} astate ->
     let event =
@@ -387,6 +410,12 @@ module Vector = struct
       reallocate_internal_array path (Hist.single_event path event) vector vector_f location astate
     in
     astate
+
+
+  let invalidate_references_with_ret vector_f vector : model =
+   fun ({ret= ret_id, _} as model_data) astate ->
+    PulseOperations.write_id ret_id vector astate
+    |> invalidate_references vector_f vector model_data
 
 
   let at ~desc vector index : model =
@@ -454,15 +483,19 @@ module Vector = struct
 
 
   let push_back vector : model =
-   fun {path; location} astate ->
-    let hist = Hist.single_call path location "std::vector::push_back()" in
-    if AddressAttributes.is_std_vector_reserved (fst vector) astate then
-      (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
-         (a perfect analysis would also make sure we don't exceed the reserved size) *)
-      Basic.ok_continue astate
-    else
-      (* simulate a re-allocation of the underlying array every time an element is added *)
-      let<+> astate = reallocate_internal_array path hist vector PushBack location astate in
+   fun {path; location; ret= ret_id, _} astate ->
+    let<+> astate =
+      let hist = Hist.single_call path location "std::vector::push_back()" in
+      if AddressAttributes.is_std_vector_reserved (fst vector) astate then
+        (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
+           (a perfect analysis would also make sure we don't exceed the reserved size) *)
+        Ok astate
+      else
+        (* simulate a re-allocation of the underlying array every time an element is added *)
+        reallocate_internal_array path hist vector PushBack location astate
+    in
+    PulseOperations.write_id ret_id
+      (fst vector, Hist.add_call path location "std::vector::push_back()" (snd vector))
       astate
 
 
@@ -499,6 +532,9 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
   ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
   ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
+  ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
+    $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
+    $--> BasicString.constructor_from_constant
   ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
     $--> BasicString.constructor
   ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> BasicString.data
@@ -540,6 +576,9 @@ let matchers : matcher list =
   ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
     $+...$--> Vector.init_list_constructor
+  ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
+    $+ capt_arg_payload_of_typ (-"std" &:: "vector")
+    $+...$--> Vector.init_copy_constructor
   ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
     $+...$--> Vector.invalidate_references Assign
   ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
@@ -554,6 +593,8 @@ let matchers : matcher list =
     $+...$--> Vector.invalidate_references EmplaceBack
   ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
     $+...$--> Vector.invalidate_references Insert
+  ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
+    $+...$--> Vector.invalidate_references_with_ret Assign
   ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vector.at ~desc:"std::vector::at()"
   ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload

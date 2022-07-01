@@ -63,15 +63,9 @@ let is_released tenv astate addr non_retaining_addrs =
           false
       | Some edges ->
           BaseMemory.Edges.exists edges ~f:(fun (access, (accessed_addr, _)) ->
-              let is_retained access =
-                match access with
-                | HilExp.Access.FieldAccess _ ->
-                    is_retained_by accessed_addr (src_addr :: seen)
-                | _ ->
-                    AbstractValue.equal accessed_addr addr
-                    || is_retained_by accessed_addr (src_addr :: seen)
-              in
-              BaseMemory.Access.is_strong_access tenv access && is_retained access )
+              BaseMemory.Access.is_strong_access tenv access
+              && ( AbstractValue.equal accessed_addr addr
+                 || is_retained_by accessed_addr (src_addr :: seen) ) )
   in
   BaseStack.exists
     (fun _var (src_addr, _) ->

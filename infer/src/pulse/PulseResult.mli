@@ -24,6 +24,8 @@ val ok_exn : ('ok, _) t -> 'ok
 
 val map : ('ok, 'err) t -> f:('ok -> 'okk) -> ('okk, 'err) t
 
+val map_error : ('ok, 'err) t -> f:('err -> 'err') -> ('ok, 'err') t
+
 val bind : ('ok, 'err) t -> f:('ok -> ('okk, 'err) t) -> ('okk, 'err) t
 
 val join : (('ok, 'err) t, 'err) t -> ('ok, 'err) t
@@ -49,6 +51,8 @@ val list_fold2 :
   -> init:'ok
   -> f:('ok -> 'a -> 'b -> ('ok, 'err) t)
   -> ('ok, 'err) t List.Or_unequal_lengths.t
+
+val list_foldi : init:'acc -> f:(int -> 'acc -> 'a -> ('acc, 'err) t) -> 'a list -> ('acc, 'err) t
 
 val container_fold :
      fold:('t, 'a, ('accum, 'err) t) Container.fold

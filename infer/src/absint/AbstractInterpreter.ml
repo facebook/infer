@@ -267,13 +267,11 @@ struct
     (List.map ~f:T.DisjDomain.exceptional_to_normal l, nd)
 
 
-  (** the number of remaining disjuncts taking into account disjuncts already recorded in the post
-      of a node (and therefore that will stay there) *)
-  let remaining_disjuncts = ref None
-
   let exec_instr (pre_disjuncts, non_disj) analysis_data node _ instr =
-    (* always called from [exec_node_instrs] so [remaining_disjuncts] should always be [Some _] *)
-    let limit = Option.value_exn !remaining_disjuncts in
+    (* [remaining_disjuncts] is the number of remaining disjuncts taking into account disjuncts
+       already recorded in the post of a node (and therefore that will stay there).  It is always
+       set from [exec_node_instrs], so [remaining_disjuncts] should always be [Some _]. *)
+    let limit = Option.value_exn (AnalysisState.get_remaining_disjuncts ()) in
     let (disjuncts, non_disj_astates), _ =
       List.foldi (List.rev pre_disjuncts)
         ~init:(([], []), 0)
@@ -315,7 +313,7 @@ struct
       List.foldi (List.rev pre) ~init:current_post_n
         ~f:(fun i (((post, non_disj_astates) as post_astate), n_disjuncts) pre_disjunct ->
           let limit = disjunct_limit - n_disjuncts in
-          remaining_disjuncts := Some limit ;
+          AnalysisState.set_remaining_disjuncts limit ;
           if limit <= 0 then (
             L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" limit ;
             (post_astate, n_disjuncts) )
@@ -600,8 +598,6 @@ end
 module MakeRPONode (T : NodeTransferFunctions) =
   MakeWithScheduler (Scheduler.ReversePostorder (T.CFG)) (T)
 module MakeRPO (T : TransferFunctions.SIL) = MakeRPONode (SimpleNodeTransferFunctions (T))
-module MakeBackwardRPO (T : TransferFunctionsWithExceptions) =
-  MakeRPONode (BackwardNodeTransferFunction (T))
 
 module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
   include AbstractInterpreterCommon (TransferFunctions)
@@ -728,3 +724,11 @@ module MakeDisjunctive
     (T : TransferFunctions.DisjReady)
     (DConfig : TransferFunctions.DisjunctiveConfig) =
   MakeWTONode (MakeDisjunctiveTransferFunctions (T) (DConfig))
+
+module type MakeExceptional = functor (T : TransferFunctionsWithExceptions) ->
+  S with module TransferFunctions = T
+
+module MakeBackwardRPO (T : TransferFunctionsWithExceptions) =
+  MakeRPONode (BackwardNodeTransferFunction (T))
+module MakeBackwardWTO (T : TransferFunctionsWithExceptions) =
+  MakeWTONode (BackwardNodeTransferFunction (T))

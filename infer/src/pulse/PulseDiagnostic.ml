@@ -10,7 +10,9 @@ module F = Format
 module L = Logging
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
+module Decompiler = PulseDecompiler
 module Invalidation = PulseInvalidation
+module Taint = PulseTaint
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -18,6 +20,7 @@ type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equa
 
 type access_to_invalid_address =
   { calling_context: calling_context
+  ; invalid_address: Decompiler.expr
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
   ; access_trace: Trace.t
@@ -47,12 +50,35 @@ let yojson_of_read_uninitialized_value = [%yojson_of: _]
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
-  | RetainCycle of {assignment_trace: Trace.t; location: Location.t}
+  | RetainCycle of
+      { assignment_traces: Trace.t list
+      ; value: Decompiler.expr
+      ; path: Decompiler.expr
+      ; location: Location.t }
   | ErlangError of erlang_error
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
-  | UnnecessaryCopy of {variable: Var.t; location: Location.t}
+  | TaintFlow of
+      { tainted: Decompiler.expr
+      ; source: Taint.t * ValueHistory.t
+      ; sink: Taint.t * Trace.t
+      ; location: Location.t }
+  | FlowFromTaintSource of
+      { tainted: Decompiler.expr
+      ; source: Taint.t * ValueHistory.t
+      ; destination: Procname.t
+      ; location: Location.t }
+  | FlowToTaintSink of
+      { source: Decompiler.expr * Trace.t
+      ; sanitizers: Attribute.TaintSanitizedSet.t
+      ; sink: Taint.t * Trace.t
+      ; location: Location.t }
+  | UnnecessaryCopy of
+      { copied_into: PulseAttribute.CopiedInto.t
+      ; typ: Typ.t
+      ; location: Location.t
+      ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
 let get_location = function
@@ -74,9 +100,14 @@ let get_location = function
   | ErlangError (If_clause {location})
   | ErlangError (Try_clause {location})
   | StackVariableAddressEscape {location}
+  | TaintFlow {location}
+  | FlowFromTaintSource {location}
+  | FlowToTaintSink {location}
   | UnnecessaryCopy {location} ->
       location
 
+
+let get_copy_type = function UnnecessaryCopy {typ} -> Some typ | _ -> None
 
 let aborts_execution = function
   | AccessToInvalidAddress _
@@ -88,17 +119,20 @@ let aborts_execution = function
       | Case_clause _
       | Function_clause _
       | If_clause _
-      | Try_clause _ ) ->
+      | Try_clause _ )
+  | ReadUninitializedValue _ ->
       (* these errors either abort the whole program or, if they are false positives, mean that
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       true
-  | ReadUninitializedValue _
-  | StackVariableAddressEscape _
-  | UnnecessaryCopy _
-  | RetainCycle _
   | MemoryLeak _
-  | ResourceLeak _ ->
+  | ResourceLeak _
+  | RetainCycle _
+  | StackVariableAddressEscape _
+  | TaintFlow _
+  | FlowFromTaintSource _
+  | FlowToTaintSink _
+  | UnnecessaryCopy _ ->
       false
 
 
@@ -111,41 +145,37 @@ let immediate_or_first_call calling_context (trace : Trace.t) =
       `Call f
 
 
-let pulse_start_msg = "Pulse found a potential"
-
-let pp_context_message pp_if_no_context issue_kind_str calling_context fmt =
+let pp_calling_context_prefix fmt calling_context =
   match calling_context with
   | [] ->
-      pp_if_no_context fmt
-  | (call_event, _) :: _ ->
-      F.fprintf fmt "The call to %a may indirectly trigger %s" CallEvent.pp call_event
-        issue_kind_str
+      ()
+  | [(call_event, _)] ->
+      F.fprintf fmt "The call to %a may trigger the following issue: " CallEvent.pp call_event
+  | [(call_event1, _); (call_event2, _)] ->
+      F.fprintf fmt "The call to %a in turn calls %a and may trigger the following issue: "
+        CallEvent.pp call_event1 CallEvent.pp call_event2
+  | (call_event, _) :: _ :: _ :: _ ->
+      let in_between_calls = List.length calling_context - 2 in
+      F.fprintf fmt
+        "The call to %a ends up calling %a (after %d more call%s) and may trigger the following \
+         issue: "
+        CallEvent.pp call_event CallEvent.pp
+        (List.last_exn calling_context |> fst)
+        in_between_calls
+        (if in_between_calls > 1 then "s" else "")
 
 
 let get_message diagnostic =
   match diagnostic with
   | AccessToInvalidAddress
-      {calling_context; invalidation; invalidation_trace; access_trace; must_be_valid_reason} -> (
+      { calling_context
+      ; invalid_address
+      ; invalidation
+      ; invalidation_trace
+      ; access_trace
+      ; must_be_valid_reason } -> (
     match invalidation with
-    (* Special error message for nullptr dereference *)
     | ConstantDereference i when IntLit.equal i IntLit.zero ->
-        let issue_kind_str, null_str =
-          match must_be_valid_reason with
-          | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
-              ( F.asprintf
-                  "undefined behaviour caused by nil messaging of a C++ method with a non-POD \
-                   return type `%a`"
-                  (Typ.pp_full Pp.text) non_pod_typ
-              , "nil receiver" )
-          | Some InsertionIntoCollectionKey ->
-              ("nil key insertion into collection", "nil key")
-          | Some InsertionIntoCollectionValue ->
-              ("nil object insertion into collection", "nil value")
-          | Some BlockCall ->
-              ("nil block call", "nil block")
-          | None ->
-              ("null pointer dereference", "null")
-        in
         let pp_access_trace fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
           | `Immediate ->
@@ -156,40 +186,50 @@ let get_message diagnostic =
         let pp_invalidation_trace line fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
           | `Immediate ->
-              F.fprintf fmt "%s (%s assigned on line %d)" issue_kind_str null_str line
+              F.fprintf fmt "(last assigned on line %d)" line
           | `Call f ->
-              F.fprintf fmt "%s (%s value coming from the call to %a on line %d)" issue_kind_str
-                null_str CallEvent.describe f line
+              F.fprintf fmt "(from the call to %a on line %d)" CallEvent.describe f line
         in
         let invalidation_line =
           let {Location.line; _} = Trace.get_outer_location invalidation_trace in
           line
         in
-        F.asprintf "%t"
-          (pp_context_message
-             (fun fmt ->
-               F.fprintf fmt "%s %a%a." pulse_start_msg
-                 (pp_invalidation_trace invalidation_line)
-                 invalidation_trace pp_access_trace access_trace )
-             ("a " ^ issue_kind_str) calling_context )
+        let pp_must_be_valid_reason fmt expr =
+          let pp_prefix fmt null_nil_block =
+            if Decompiler.is_unknown expr then
+              F.fprintf fmt "%s %a" null_nil_block
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace
+            else
+              F.fprintf fmt "`%a` could be %s %a and" Decompiler.pp_expr expr null_nil_block
+                (pp_invalidation_trace invalidation_line)
+                invalidation_trace
+          in
+          match must_be_valid_reason with
+          | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
+              F.fprintf fmt
+                "%a is used to call a C++ method with a non-POD return type `%a`%a; nil messaging \
+                 such methods is undefined behaviour"
+                pp_prefix "nil" (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
+          | Some (InsertionIntoCollectionKey | InsertionIntoCollectionValue) ->
+              F.fprintf fmt
+                "%a is used as a %s when inserting into a collection%a, potentially causing a crash"
+                pp_prefix "nil"
+                ( match[@warning "-8"] must_be_valid_reason with
+                | Some InsertionIntoCollectionKey ->
+                    "key"
+                | Some InsertionIntoCollectionValue ->
+                    "value" )
+                pp_access_trace access_trace
+          | Some BlockCall ->
+              F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block" pp_access_trace
+                access_trace
+          | None ->
+              F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
+        in
+        F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
+          invalid_address
     | _ ->
-        (* The goal is to get one of the following messages depending on the scenario:
-
-           42: delete x; return x->f
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x`"
-
-           42: bar(x); return x->f
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete` on `x` in call to `bar`"
-
-           42: bar(x); foo(x);
-           "call to `foo` eventually accesses `x->f` but `x` was invalidated at line 42 by `delete` on `x` in call to `bar`"
-
-           If we don't have "x->f" but instead some non-user-visible expression, then
-           "access to `x`, which was invalidated at line 42 by `delete` on `x`"
-
-           Likewise if we don't have "x" in the second part but instead some non-user-visible expression, then
-           "`x->f` accesses `x`, which was invalidated at line 42 by `delete`"
-        *)
         let pp_access_trace fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
           | `Immediate ->
@@ -210,13 +250,9 @@ let get_message diagnostic =
           let {Location.line; _} = Trace.get_outer_location invalidation_trace in
           line
         in
-        F.asprintf "%t"
-          (pp_context_message
-             (fun fmt ->
-               F.fprintf fmt "%a%a" pp_access_trace access_trace
-                 (pp_invalidation_trace invalidation_line invalidation)
-                 invalidation_trace )
-             "an invalid access" calling_context ) )
+        F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
+          (pp_invalidation_trace invalidation_line invalidation)
+          invalidation_trace )
   | MemoryLeak {allocator; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
@@ -230,9 +266,8 @@ let get_message diagnostic =
             F.fprintf fmt "by `%a`, indirectly via call to %a on line %d" Attribute.pp_allocator
               allocator CallEvent.describe f allocation_line
       in
-      F.asprintf
-        "%s memory leak. Memory dynamically allocated %a is not freed after the last access at %a"
-        pulse_start_msg pp_allocation_trace allocation_trace Location.pp location
+      F.asprintf "Memory dynamically allocated %a is not freed after the last access at %a"
+        pp_allocation_trace allocation_trace Location.pp location
   | ResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -248,39 +283,34 @@ let get_message diagnostic =
             F.fprintf fmt "by constructor %a(), indirectly via call to %a on line %d"
               JavaClassName.pp class_name CallEvent.describe f allocation_line
       in
+      F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
+        pp_allocation_trace allocation_trace Location.pp location
+  | RetainCycle {location; value; path} ->
       F.asprintf
-        "%s resource leak. Resource dynamically allocated %a is not closed after the last access \
-         at %a"
-        pulse_start_msg pp_allocation_trace allocation_trace Location.pp location
-  | RetainCycle {location} ->
-      F.asprintf
-        "%s retain cycle. Memory managed via reference counting is locked in a retain cycle at %a"
-        pulse_start_msg Location.pp location
+        "Memory managed via reference counting is locked in a retain cycle at %a: `%a` retains \
+         itself via `%a`"
+        Location.pp location Decompiler.pp_expr value Decompiler.pp_expr path
   | ErlangError (Badkey {calling_context= _; location}) ->
-      F.asprintf "%s bad key at %a" pulse_start_msg Location.pp location
+      F.asprintf "bad key at %a" Location.pp location
   | ErlangError (Badmap {calling_context= _; location}) ->
-      F.asprintf "%s bad map at %a" pulse_start_msg Location.pp location
+      F.asprintf "bad map at %a" Location.pp location
   | ErlangError (Badmatch {calling_context= _; location}) ->
-      F.asprintf "%s no match of RHS at %a" pulse_start_msg Location.pp location
+      F.asprintf "no match of RHS at %a" Location.pp location
   | ErlangError (Badrecord {calling_context= _; location}) ->
-      F.asprintf "%s bad record at %a" pulse_start_msg Location.pp location
+      F.asprintf "bad record at %a" Location.pp location
   | ErlangError (Case_clause {calling_context= _; location}) ->
-      F.asprintf "%s no matching case clause at %a" pulse_start_msg Location.pp location
+      F.asprintf "no matching case clause at %a" Location.pp location
   | ErlangError (Function_clause {calling_context= _; location}) ->
-      F.asprintf "%s no matching function clause at %a" pulse_start_msg Location.pp location
+      F.asprintf "no matching function clause at %a" Location.pp location
   | ErlangError (If_clause {calling_context= _; location}) ->
-      F.asprintf "%s no true branch in if expression at %a" pulse_start_msg Location.pp location
+      F.asprintf "no true branch in if expression at %a" Location.pp location
   | ErlangError (Try_clause {calling_context= _; location}) ->
-      F.asprintf "%s no matching branch in try at %a" pulse_start_msg Location.pp location
+      F.asprintf "no matching branch in try at %a" Location.pp location
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
-        PulseTrace.find_map trace ~f:(function
-          | VariableDeclared (pvar, _, _) ->
-              Some pvar
-          | _ ->
-              None )
+        Trace.find_map trace ~f:(function VariableDeclared (pvar, _, _) -> Some pvar | _ -> None)
         |> IOption.if_none_evalopt ~f:(fun () ->
-               PulseTrace.find_map trace ~f:(function
+               Trace.find_map trace ~f:(function
                  | FormalDeclared (pvar, _, _) ->
                      Some pvar
                  | _ ->
@@ -288,7 +318,7 @@ let get_message diagnostic =
         |> Option.map ~f:(F.asprintf "%a" Pvar.pp_value_non_verbose)
       in
       let declared_fields =
-        PulseTrace.find_map trace ~f:(function
+        Trace.find_map trace ~f:(function
           | StructFieldAddressCreated (fields, _, _) ->
               Some fields
           | _ ->
@@ -308,27 +338,59 @@ let get_message diagnostic =
       in
       let pp_access_path fmt = Option.iter access_path ~f:(F.fprintf fmt " `%s`") in
       let pp_location fmt =
-        let {Location.line} = Trace.get_outer_location trace in
         match immediate_or_first_call calling_context trace with
         | `Immediate ->
-            F.fprintf fmt "on line %d" line
+            ()
         | `Call f ->
-            F.fprintf fmt "during the call to %a on line %d" CallEvent.describe f line
+            F.fprintf fmt " during the call to %a" CallEvent.describe f
       in
-      F.asprintf "%s uninitialized value%t being read on %t" pulse_start_msg pp_access_path
-        pp_location
+      F.asprintf "%t is read without initialization%t" pp_access_path pp_location
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
-      F.asprintf "%s stack variable address escape. Address of %a is returned by the function"
-        pulse_start_msg pp_var variable
-  | UnnecessaryCopy {variable; location} ->
-      F.asprintf
-        "%s unnecessary copy: copied variable `%a` is not modified since it is copied in %a. \
-         Consider using a reference to it in order to avoid unnecessary copy"
-        pulse_start_msg Var.pp variable Location.pp location
+      F.asprintf "Address of %a is returned by the function" pp_var variable
+  | TaintFlow {tainted; source= source, _; sink= sink, _} ->
+      (* TODO: say what line the source happened in the current function *)
+      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
+        Taint.pp sink
+  | FlowFromTaintSource {tainted; source= source, _; destination} ->
+      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
+        Procname.pp destination
+  | FlowToTaintSink {source= expr, _; sanitizers; sink= sink, _} ->
+      let pp_sanitizers fmt sanitizers =
+        if Attribute.TaintSanitizedSet.is_empty sanitizers then ()
+        else
+          F.fprintf fmt ", and might be sanitized by %a" Attribute.TaintSanitizedSet.pp sanitizers
+      in
+      F.asprintf "`%a` flows to taint sink %a%a" Decompiler.pp_expr expr Taint.pp sink pp_sanitizers
+        sanitizers
+  | UnnecessaryCopy {copied_into; typ; location; from} -> (
+      let open PulseAttribute in
+      let suppression_msg =
+        "If this copy was intentional, consider adding the word `copy` into the variable name to \
+         suppress this warning"
+      in
+      let suggestion_msg =
+        match (from : CopyOrigin.t) with
+        | CopyCtor ->
+            "try using a reference `&`"
+        | CopyAssignment ->
+            "try getting a reference to it or move it if possible"
+      in
+      match copied_into with
+      | IntoVar _ ->
+          F.asprintf
+            "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid \
+             the copy, %s. %s."
+            CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
+            location suggestion_msg suppression_msg
+      | IntoField {field; from} ->
+          F.asprintf
+            "Field `%a` with type `%a` is %a into from an rvalue-ref here but is not modified \
+             afterwards. Rather than copying into it, try moving into it instead."
+            Fieldname.pp field (Typ.pp_full Pp.text) typ CopyOrigin.pp from )
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -427,11 +489,13 @@ let get_trace = function
              F.fprintf fmt "allocated by `%a` here" Attribute.pp_allocator allocator )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
-  | RetainCycle {assignment_trace; location} ->
-      Trace.add_to_errlog ~nesting:1
-        ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
-        assignment_trace
-      @@ [Errlog.make_trace_element 0 location "retain cycle here" []]
+  | RetainCycle {assignment_traces; location} ->
+      List.fold_right assignment_traces
+        ~init:[Errlog.make_trace_element 0 location "retain cycle here" []]
+        ~f:(fun assignment_trace errlog ->
+          Trace.add_to_errlog ~nesting:1
+            ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
+            assignment_trace errlog )
   | ErlangError (Badkey {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad key here" []]
@@ -467,23 +531,63 @@ let get_trace = function
       @@
       let nesting = 0 in
       [Errlog.make_trace_element nesting location "returned here" []]
-  | UnnecessaryCopy {location; _} ->
+  | TaintFlow {source= _, source_history; sink= sink, sink_trace} ->
+      (* TODO: the sink trace includes the history for the source in its own value history,
+         creating duplicate information in the trace if we don't pass
+         [include_value_history:false]. The history in the sink can also go further into source
+         code than we want if the source is a function that we analyze. Ideally we would cut just
+         the overlapping histories from [sink_trace] instead of not including value histories
+         altogether. *)
+      ValueHistory.add_to_errlog ~nesting:0 source_history
+      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
+           ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
+           sink_trace
+      @@ []
+  | FlowFromTaintSource {source= _, source_history} ->
+      ValueHistory.add_to_errlog ~nesting:0 source_history @@ []
+  | FlowToTaintSink {source= _, history; sanitizers; sink= sink, sink_trace} ->
+      let add_to_errlog = Trace.add_to_errlog ~include_value_history:false ~nesting:0 in
+      add_to_errlog history ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocated here")
+      @@ add_to_errlog sink_trace ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
+      @@
+      let prepend_sanitizer_to_errlog Attribute.TaintSanitized.{sanitizer; trace} errlog =
+        let trace_start_location = Trace.get_start_location trace in
+        [Errlog.make_trace_element 0 trace_start_location "But potentially sanitized:" []]
+        @ add_to_errlog trace ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer) errlog
+      in
+      Attribute.TaintSanitizedSet.fold prepend_sanitizer_to_errlog sanitizers []
+  | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
-      [Errlog.make_trace_element nesting location "copied here" []]
+      [ Errlog.make_trace_element nesting location
+          (F.asprintf "%a here" PulseAttribute.CopyOrigin.pp from)
+          [] ]
 
 
 let get_issue_type ~latent issue_type =
   match (issue_type, latent) with
-  | MemoryLeak _, false ->
-      IssueType.pulse_memory_leak
+  | MemoryLeak {allocator}, false -> (
+    match allocator with
+    | CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _ ->
+        IssueType.pulse_memory_leak_c
+    | CppNew | CppNewArray ->
+        IssueType.pulse_memory_leak_cpp
+    | JavaResource _ | ObjCAlloc ->
+        L.die InternalError
+          "Memory leaks should not have a Java resource or Objective-C alloc as allocator" )
   | ResourceLeak _, false ->
       IssueType.pulse_resource_leak
   | RetainCycle _, false ->
       IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
-  | UnnecessaryCopy _, false ->
+  | UnnecessaryCopy {copied_into= IntoField {from= CopyAssignment}}, false ->
+      IssueType.unnecessary_copy_assignment_movable_pulse
+  | UnnecessaryCopy {copied_into= IntoField {from= CopyCtor}}, false ->
+      IssueType.unnecessary_copy_movable_pulse
+  | UnnecessaryCopy {from= CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
+  | UnnecessaryCopy {from= CopyAssignment}, false ->
+      IssueType.unnecessary_copy_assignment_pulse
   | ( ( MemoryLeak _
       | ResourceLeak _
       | RetainCycle _
@@ -511,3 +615,9 @@ let get_issue_type ~latent issue_type =
       IssueType.no_matching_branch_in_try ~latent
   | ReadUninitializedValue _, _ ->
       IssueType.uninitialized_value_pulse ~latent
+  | TaintFlow _, _ ->
+      IssueType.taint_error
+  | FlowFromTaintSource _, _ ->
+      IssueType.sensitive_data_flow
+  | FlowToTaintSink _, _ ->
+      IssueType.data_flow_to_sink

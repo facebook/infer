@@ -122,7 +122,7 @@ let volatile = "volatile"
 let worker_thread = "WorkerThread"
 
 let ia_has_annotation_with (ia : Annot.Item.t) (predicate : Annot.t -> bool) : bool =
-  List.exists ~f:(fun (a, _) -> predicate a) ia
+  List.exists ~f:predicate ia
 
 
 let method_has_annotation_with (ret_annot : Annot.Item.t) (params : Annot.Item.t list)
@@ -144,11 +144,11 @@ let annot_ends_with ({class_name} : Annot.t) ann_name =
   Int.is_negative dot_pos || Char.equal '.' class_name.[dot_pos]
 
 
-let class_name_matches s ((annot : Annot.t), _) = String.equal s annot.class_name
+let class_name_matches s (annot : Annot.t) = String.equal s annot.class_name
 
-let ia_ends_with ia ann_name = List.exists ~f:(fun (a, _) -> annot_ends_with a ann_name) ia
+let ia_ends_with ia ann_name = List.exists ~f:(fun a -> annot_ends_with a ann_name) ia
 
-let find_ia_ends_with ia ann_name = List.find ~f:(fun (a, _) -> annot_ends_with a ann_name) ia
+let find_ia_ends_with ia ann_name = List.find ~f:(fun a -> annot_ends_with a ann_name) ia
 
 let ia_contains ia ann_name = List.exists ~f:(class_name_matches ann_name) ia
 
@@ -207,7 +207,7 @@ let ia_is_nonnull ia =
 
 let ia_is_nullsafe_strict ia = ia_ends_with ia nullsafe_strict
 
-let ia_find_nullsafe ia = Option.map (find_ia_ends_with ia nullsafe) ~f:fst
+let ia_find_nullsafe ia = find_ia_ends_with ia nullsafe
 
 let ia_is_false_on_null ia = ia_ends_with ia false_on_null
 

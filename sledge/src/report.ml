@@ -5,29 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Issue reporting *)
-
-let alarm_count = ref 0
-
-let alarm alrm =
-  Int.incr alarm_count ;
-  Format.printf "@\n@[<v 2>%a@]@." Alarm.pp alrm ;
-  [%Trace.printf "@\n@[<v 2>%a@]@." Alarm.pp_trace alrm] ;
-  Stop.on_alarm ()
-
-let unknown_call call =
-  [%Trace.kprintf
-    Stop.on_unknown_call
-      "@\n@[<v 2>%a Unknown function call %a@;<1 2>@[%a@]@]@."
-      (fun fs call -> Llair.Loc.pp fs (Llair.Term.loc call))
-      call
-      (fun fs (call : Llair.Term.t) ->
-        match call with
-        | Call {callee} -> Llair.Function.pp fs callee.name
-        | ICall {callee} -> Llair.Exp.pp fs callee
-        | _ -> () )
-      call Llair.Term.pp call]
-
 (** Functional statistics *)
 
 let solver_steps = ref 0
@@ -49,11 +26,44 @@ let hit_loop_bound n = bound := n
 let switches = ref (-1)
 let hit_switch_bound n = switches := n
 
+(** Issue reporting *)
+
+let alarm_count = ref 0
+
+let alarm alrm ~dp_witness =
+  Int.incr alarm_count ;
+  Format.printf "@\n@[<v 2>%a@]@." Alarm.pp alrm ;
+  [%Dbg.printf "@\n@[<v 2> %t@ %a@]@." dp_witness Alarm.pp_trace alrm] ;
+  Stop.on_alarm alrm
+
+let unknown_call call =
+  [%Dbg.printf
+    "@\n@[<v 2>%a Unknown function call %a@;<1 2>@[%a@]@]@."
+      (fun fs call -> Llair.Loc.pp fs (Llair.Term.loc call))
+      call
+      (fun fs (call : Llair.Term.t) ->
+        match call with
+        | Call {callee} -> Llair.Term.pp_callee fs callee
+        | _ -> () )
+      call Llair.Term.pp call] ;
+  Stop.on_unknown_call ()
+
+let reached_goal ~dp_goal ~dp_witness =
+  [%Dbg.printf "@\n@[<v 2> %t@ %t@]@." dp_witness dp_goal] ;
+  Stop.on_reached_goal ~dp_witness !steps ()
+
+let unimplemented feature fn =
+  let open Llair in
+  [%Dbg.printf
+    "@\n@[<v 2>%s unimplemented in %a@]@." feature Function.pp fn.name] ;
+  Stop.on_unimplemented feature fn
+
 (** Status reporting *)
 
 type status =
   | Safe of {bound: int; switches: int}
   | Unsafe of {alarms: int; bound: int; switches: int}
+  | Reached_goal of {steps: int}
   | Ok
   | Unsound
   | Incomplete
@@ -81,6 +91,7 @@ let pp_status ppf stat =
       pf "Unsafe: %i (_,%i)" alarms bound
   | Unsafe {alarms; bound; switches} ->
       pf "Unsafe: %i (%i,%i)" alarms switches bound
+  | Reached_goal {steps} -> pf "Reached goal in %i steps" steps
   | Ok -> pf "Ok"
   | Unsound -> pf "Unsound"
   | Incomplete -> pf "Incomplete"
@@ -92,6 +103,13 @@ let pp_status ppf stat =
   | Abort -> pf "Abort"
   | Assert msg -> pf "Assert: %s" msg
   | UnknownError msg -> pf "Unknown error: %s" msg
+
+let pp_status_coarse ppf stat =
+  let pf fmt = Format.fprintf ppf fmt in
+  match stat with
+  | InvalidInput _ -> pf "Invalid input"
+  | Abort | Unimplemented _ | UnknownError _ -> pf "Error"
+  | _ -> pp_status ppf stat
 
 let safe_or_unsafe () =
   if !alarm_count = 0 then Safe {bound= !bound; switches= !switches}

@@ -95,9 +95,7 @@ module DiffConstr : sig
 
   val saturate : t list -> bool * t list
 end = struct
-  type t = Exp.t * Exp.t * IntLit.t [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t = Exp.t * Exp.t * IntLit.t [@@deriving compare, equal]
 
   let to_leq (e1, e2, n) = (Exp.BinOp (Binop.MinusA None, e1, e2), Exp.int n)
 
@@ -156,7 +154,7 @@ end = struct
 
   let sort_then_remove_redundancy constraints =
     let constraints_sorted = List.sort ~compare constraints in
-    let have_same_key (e1, e2, _) (f1, f2, _) = [%compare.equal: Exp.t * Exp.t] (e1, e2) (f1, f2) in
+    let have_same_key (e1, e2, _) (f1, f2, _) = [%equal: Exp.t * Exp.t] (e1, e2) (f1, f2) in
     remove_redundancy have_same_key [] constraints_sorted
 
 
@@ -1841,8 +1839,7 @@ let texp_equal_modulo_subtype_flag texp1 texp2 =
   match (texp1, texp2) with
   | ( Exp.Sizeof {typ= t1; dynamic_length= len1; subtype= st1}
     , Exp.Sizeof {typ= t2; dynamic_length= len2; subtype= st2} ) ->
-      [%compare.equal: Typ.t * Exp.t option] (t1, len1) (t2, len2)
-      && Subtype.equal_modulo_flag st1 st2
+      [%equal: Typ.t * Exp.t option] (t1, len1) (t2, len2) && Subtype.equal_modulo_flag st1 st2
   | _ ->
       Exp.equal texp1 texp2
 

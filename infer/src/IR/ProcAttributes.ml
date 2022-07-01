@@ -26,7 +26,7 @@ let string_of_access = function
 
 (** Type for ObjC accessors *)
 type objc_accessor_type = Objc_getter of Struct.field | Objc_setter of Struct.field
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let kind_of_objc_accessor_type accessor =
   match accessor with Objc_getter _ -> "getter" | Objc_setter _ -> "setter"
@@ -39,7 +39,7 @@ let pp_objc_accessor_type fmt objc_accessor_type =
   F.fprintf fmt "%s<%a:%a@,[%a]>"
     (kind_of_objc_accessor_type objc_accessor_type)
     Fieldname.pp fieldname (Typ.pp Pp.text) typ
-    (Pp.semicolon_seq ~print_env:Pp.text_break (Pp.pair ~fst:Annot.pp ~snd:F.pp_print_bool))
+    (Pp.semicolon_seq ~print_env:Pp.text_break Annot.pp)
     annots
 
 
@@ -52,10 +52,17 @@ let pp_var_data fmt {name; typ; modify_in_block; is_declared_unused} =
     Mangled.pp name (Typ.pp_full Pp.text) typ modify_in_block is_declared_unused
 
 
-type specialized_with_blocks_info =
-  { orig_proc: Procname.t
-  ; formals_to_procs_and_new_formals: (Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t }
-[@@deriving compare]
+type specialized_with_aliasing_info = {orig_proc: Procname.t; aliases: Pvar.t list list}
+[@@deriving compare, equal]
+
+type 'captured_var passed_closure =
+  | Closure of (Procname.t * 'captured_var list)
+  | Fields of 'captured_var passed_closure Fieldname.Map.t
+[@@deriving compare, equal]
+
+type specialized_with_closures_info =
+  {orig_proc: Procname.t; formals_to_closures: CapturedVar.t passed_closure Pvar.Map.t}
+[@@deriving compare, equal]
 
 type t =
   { access: access  (** visibility access *)
@@ -78,12 +85,14 @@ type t =
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
-  ; specialized_with_blocks_info: specialized_with_blocks_info option
+  ; specialized_with_aliasing_info: specialized_with_aliasing_info option
+  ; specialized_with_closures_info: specialized_with_closures_info option
         (** the procedure is a clone specialized with calls to concrete closures, with link to the
             original procedure, and a map that links the original formals to the elements of the
             closure used to specialize the procedure. *)
   ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
+  ; loc_instantiated: Location.t option  (** location of this procedure is possibly instantiated *)
   ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
@@ -98,6 +107,11 @@ type t =
 let get_access attributes = attributes.access
 
 let get_formals attributes = attributes.formals
+
+let get_pvar_formals attributes =
+  let pname = attributes.proc_name in
+  List.map attributes.formals ~f:(fun (name, typ, _) -> (Pvar.mk name pname, typ))
+
 
 let get_proc_name attributes = attributes.proc_name
 
@@ -119,12 +133,14 @@ let default translation_unit proc_name =
   ; is_no_return= false
   ; is_objc_arc_on= false
   ; is_specialized= false
-  ; specialized_with_blocks_info= None
+  ; specialized_with_aliasing_info= None
+  ; specialized_with_closures_info= None
   ; is_synthetic_method= false
   ; is_variadic= false
   ; sentinel_attr= None
   ; clang_method_kind= ClangMethodKind.C_FUNCTION
   ; loc= Location.dummy
+  ; loc_instantiated= None
   ; translation_unit
   ; locals= []
   ; has_added_return_param= false
@@ -141,14 +157,26 @@ let pp_parameters =
       Pp.pair ~fst:Mangled.pp ~snd:(Typ.pp_full Pp.text) f (mangled, typ) )
 
 
-let pp_specialized_with_blocks_info fmt info =
-  let pp_new_formal fmt el =
-    F.fprintf fmt "%a:%a" Mangled.pp (fst el) (Typ.pp_full Pp.text) (snd el)
+let pp_specialized_with_aliasing_info fmt (info : specialized_with_aliasing_info) =
+  let pp_aliases fmt aliases =
+    let pp_alias fmt alias = Pp.seq ~sep:"=" Pvar.pp_value fmt alias in
+    PrettyPrintable.pp_collection ~pp_item:pp_alias fmt aliases
   in
-  let pp_new_formals = Pp.semicolon_seq ~print_env:Pp.text_break pp_new_formal in
-  F.fprintf fmt "orig_procname=%a, formals_to_procs_and_new_formals=%a" Procname.pp info.orig_proc
-    (Mangled.Map.pp ~pp_value:(Pp.pair ~fst:Procname.pp ~snd:pp_new_formals))
-    info.formals_to_procs_and_new_formals
+  F.fprintf fmt "orig_procname=%a, aliases=%a" Procname.pp info.orig_proc pp_aliases info.aliases
+
+
+let pp_specialized_with_closures_info fmt info =
+  let rec pp_passed_closure fmt passed_closure =
+    match passed_closure with
+    | Closure closure ->
+        let pp_captured_vars = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp in
+        Pp.pair ~fst:Procname.pp ~snd:pp_captured_vars fmt closure
+    | Fields field_to_function_map ->
+        Fieldname.Map.pp ~pp_value:pp_passed_closure fmt field_to_function_map
+  in
+  F.fprintf fmt "orig_procname=%a, formals_to_closures=%a" Procname.pp info.orig_proc
+    (Pvar.Map.pp ~pp_value:pp_passed_closure)
+    info.formals_to_closures
 
 
 let pp_captured = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp
@@ -169,12 +197,14 @@ let pp f
      ; is_no_return
      ; is_objc_arc_on
      ; is_specialized
-     ; specialized_with_blocks_info
+     ; specialized_with_aliasing_info
+     ; specialized_with_closures_info
      ; is_synthetic_method
      ; is_variadic
      ; sentinel_attr
      ; clang_method_kind
      ; loc
+     ; loc_instantiated
      ; translation_unit
      ; locals
      ; has_added_return_param
@@ -192,15 +222,15 @@ let pp f
     translation_unit ;
   if not (equal_access default.access access) then
     F.fprintf f "; access= %a@," (Pp.of_string ~f:string_of_access) access ;
-  if not ([%compare.equal: CapturedVar.t list] default.captured captured) then
+  if not ([%equal: CapturedVar.t list] default.captured captured) then
     F.fprintf f "; captured= [@[%a@]]@," pp_captured captured ;
-  if not ([%compare.equal: string list] default.exceptions exceptions) then
+  if not ([%equal: string list] default.exceptions exceptions) then
     F.fprintf f "; exceptions= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_string)
       exceptions ;
   (* always print formals *)
   F.fprintf f "; formals= [@[%a@]]@," pp_parameters formals ;
-  if not ([%compare.equal: int list] default.const_formals const_formals) then
+  if not ([%equal: int list] default.const_formals const_formals) then
     F.fprintf f "; const_formals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
       const_formals ;
@@ -214,8 +244,7 @@ let pp f
     is_csharp_synchronized_method f () ;
   if
     not
-      ([%compare.equal: Procname.t option] default.passed_as_noescape_block_to
-         passed_as_noescape_block_to )
+      ([%equal: Procname.t option] default.passed_as_noescape_block_to passed_as_noescape_block_to)
   then
     F.fprintf f "; passed_as_noescape_block_to %a" (Pp.option Procname.pp)
       passed_as_noescape_block_to ;
@@ -224,16 +253,24 @@ let pp f
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;
   if
     not
-      ([%compare.equal: specialized_with_blocks_info option] default.specialized_with_blocks_info
-         specialized_with_blocks_info )
+      ([%equal: specialized_with_aliasing_info option] default.specialized_with_aliasing_info
+         specialized_with_aliasing_info )
   then
-    F.fprintf f "; specialized_with_blocks_info %a@,"
-      (Pp.option pp_specialized_with_blocks_info)
-      specialized_with_blocks_info ;
+    F.fprintf f "; specialized_with_aliasing_info %a@,"
+      (Pp.option pp_specialized_with_aliasing_info)
+      specialized_with_aliasing_info ;
+  if
+    not
+      ([%equal: specialized_with_closures_info option] default.specialized_with_closures_info
+         specialized_with_closures_info )
+  then
+    F.fprintf f "; specialized_with_closures_info %a@,"
+      (Pp.option pp_specialized_with_closures_info)
+      specialized_with_closures_info ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;
   pp_bool_default ~default:default.is_variadic "is_variadic" is_variadic f () ;
-  if not ([%compare.equal: (int * int) option] default.sentinel_attr sentinel_attr) then
+  if not ([%equal: (int * int) option] default.sentinel_attr sentinel_attr) then
     F.fprintf f "; sentinel_attr= %a@,"
       (Pp.option (Pp.pair ~fst:F.pp_print_int ~snd:F.pp_print_int))
       sentinel_attr ;
@@ -242,10 +279,12 @@ let pp f
       (Pp.of_string ~f:ClangMethodKind.to_string)
       clang_method_kind ;
   if not (Location.equal default.loc loc) then F.fprintf f "; loc= %a@," Location.pp_file_pos loc ;
+  Option.iter loc_instantiated ~f:(fun loc_instantiated ->
+      F.fprintf f "; loc_instantiated= %a@," Location.pp_file_pos loc_instantiated ) ;
   F.fprintf f "; locals= [@[%a@]]@," (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data) locals ;
   pp_bool_default ~default:default.has_added_return_param "has_added_return_param"
     has_added_return_param f () ;
-  if not ([%compare.equal: objc_accessor_type option] default.objc_accessor objc_accessor) then
+  if not ([%equal: objc_accessor_type option] default.objc_accessor objc_accessor) then
     F.fprintf f "; objc_accessor= %a@," (Pp.option pp_objc_accessor_type) objc_accessor ;
   (* always print ret type *)
   F.fprintf f "; ret_type= %a @," (Typ.pp_full Pp.text) ret_type ;

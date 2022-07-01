@@ -22,3 +22,6 @@ val load : Procname.t -> ProcAttributes.t option
 val is_no_return : Procname.t -> bool
 
 val pp_attributes_kind : Format.formatter -> attributes_kind -> unit
+
+val clear_cache : unit -> unit
+(** clear attribute cache *)

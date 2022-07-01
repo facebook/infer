@@ -122,7 +122,7 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       annotate_expression_list env lambda_cntr scopes exprs
   | UnaryOperator (_, e) ->
       annotate_expression env lambda_cntr scopes e
-  | Lambda lambda ->
+  | Lambda lambda -> (
       let arity =
         match lambda.cases with
         | c :: _ ->
@@ -138,7 +138,12 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
       let scopes = annotate_clauses env lambda_cntr scopes lambda.cases in
       let popped, scopes = pop_scope scopes in
       lambda.captured <- Some popped.captured ;
-      scopes
+      (* Propagate captured to current scope. *)
+      match scopes with
+      | hd :: tl ->
+          {hd with captured= Pvar.Set.union popped.captured hd.captured} :: tl
+      | [] ->
+          L.die InternalError "No scope found during lambda annotation." )
   | Variable v -> (
     match scopes with
     | hd :: tl -> (
@@ -255,9 +260,12 @@ and annotate_one_catch_clause (env : (_, _) Env.t) lambda_cntr (scopes : scope l
 
 let annotate_one_function (env : (_, _) Env.t) function_ clauses =
   let _, name = Env.func_procname env function_ in
+  let funcname =
+    Procname.to_string name |> String.substr_replace_all ~pattern:"/" ~with_:"#"
+    (* / confuses debug output *)
+  in
   let scopes : scope list = push_scope [] name in
-  (* We use [to_filename] to avoid / in the name, which messes debug output. *)
-  let lambda_cntr = {funcname= Procname.to_filename name; counter= 0} in
+  let lambda_cntr = {funcname; counter= 0} in
   (* Process each clause independently *)
   List.iter
     ~f:(fun clause ->

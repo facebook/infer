@@ -9,7 +9,7 @@ open! IStd
 
 type property_name = string [@@deriving compare, hash, sexp]
 
-type register_name = string [@@deriving compare]
+type register_name = string [@@deriving compare, equal]
 
 type variable_name = string
 

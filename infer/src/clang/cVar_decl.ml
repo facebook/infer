@@ -100,11 +100,21 @@ let sil_var_of_decl_ref context source_range decl_ref procname =
   let name =
     match decl_ref.Clang_ast_t.dr_name with Some name_info -> name_info | None -> assert false
   in
+  let get_orig_pvar local_pvar =
+    match
+      List.find (Procdesc.get_captured context.CContext.procdesc) ~f:(fun {CapturedVar.pvar} ->
+          Mangled.equal (Pvar.get_name pvar) (Pvar.get_name local_pvar) )
+    with
+    | Some {CapturedVar.pvar} when Procname.is_objc_block procname ->
+        pvar
+    | _ ->
+        local_pvar
+  in
   match decl_ref.Clang_ast_t.dr_kind with
   | `ImplicitParam ->
       let outer_procname = CContext.get_outer_procname context in
       let trans_unit_ctx = context.CContext.translation_unit_context in
-      mk_sil_var trans_unit_ctx name None procname outer_procname
+      mk_sil_var trans_unit_ctx name None procname outer_procname |> get_orig_pvar
   | _ -> (
       let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
       if is_custom_var_pointer pointer then
@@ -112,7 +122,7 @@ let sil_var_of_decl_ref context source_range decl_ref procname =
       else
         match CAst_utils.get_decl pointer with
         | Some var_decl ->
-            sil_var_of_decl context var_decl procname
+            sil_var_of_decl context var_decl procname |> get_orig_pvar
         | None ->
             (* FIXME(t21762295) *)
             CFrontend_errors.incorrect_assumption __POS__ source_range

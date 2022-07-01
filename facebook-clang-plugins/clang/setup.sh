@@ -12,20 +12,13 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLANG_RELATIVE_SRC="src/download/llvm-project/llvm"
 CLANG_SRC="${CLANG_SRC:-$SCRIPT_DIR/$CLANG_RELATIVE_SRC}"
-CLANG_PREBUILD_PATCHES=(
-    "$SCRIPT_DIR/src/err_ret_local_block.patch"
-    "$SCRIPT_DIR/src/mangle_suppress_errors.patch"
-    "$SCRIPT_DIR/src/AArch64SVEACLETypes.patch"
-    "$SCRIPT_DIR/src/benchmark_register.patch"
-    "$SCRIPT_DIR/src/nsattributedstring.patch"
-)
 CLANG_PREFIX="$SCRIPT_DIR/install"
 CLANG_INSTALLED_VERSION_FILE="$SCRIPT_DIR/installed.version"
-PATCH=${PATCH:-patch}
 PATCHELF=${PATCHELF:-patchelf}
 PLATFORM_ENV=${PLATFORM_ENV:-}
 STRIP=${STRIP:-strip}
 CMAKE=${CMAKE:-cmake}
+ZLIB=${ZLIB:-$CLANG_SRC}
 
 NCPUS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)"
 JOBS="${JOBS:-$(($NCPUS>=8?$NCPUS/4:2))}"
@@ -178,7 +171,6 @@ CMAKE_ARGS=(
   -DLLVM_BUILD_TOOLS=Off
   -DLLVM_ENABLE_ASSERTIONS=Off
   -DLLVM_ENABLE_EH=On
-  -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp"
   -DLLVM_ENABLE_RTTI=On
   -DLLVM_INCLUDE_DOCS=Off
   -DLLVM_INCLUDE_EXAMPLES=Off
@@ -196,6 +188,17 @@ else
     CMAKE_ARGS+=(
       -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS $CMAKE_SHARED_LINKER_FLAGS -lstdc++ -fPIC"
     )
+fi
+
+if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
+    # Please note that this case only applies to infer/master platform builds
+    # Prevent CMAKE from adding -isystem /usr/include for platform builds
+    CMAKE_ARGS+=(
+        -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi"
+        -DZLIB_INCLUDE_DIR="$ZLIB/include"
+    )
+else
+    CMAKE_ARGS+=(-DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp")
 fi
 
 if [ "$USE_NINJA" = "yes" ]; then
@@ -227,15 +230,6 @@ fi
 if [ ! -d "$CLANG_SRC" ]; then
     echo "Clang src (${CLANG_SRC}) missing, please run src/prepare_clang_src.sh"
     exit 1
-fi
-
-if [ "$SKIP_PATCH" != "yes" ]; then
-    # apply prebuild patch
-    pushd "${SCRIPT_DIR}/src/download"
-    for PATCH_FILE in ${CLANG_PREBUILD_PATCHES[*]}; do
-        "$PATCH" --force -p 1 < "$PATCH_FILE"
-    done
-    popd
 fi
 
 if [ -n "$CLANG_TMP_DIR" ]; then

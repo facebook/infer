@@ -41,6 +41,16 @@ let map x ~f =
       err
 
 
+let map_error x ~f =
+  match x with
+  | Ok _ as x ->
+      x
+  | Recoverable (x', errors) ->
+      Recoverable (x', List.map ~f errors)
+  | FatalError (fatal, errors) ->
+      FatalError (f fatal, List.map ~f errors)
+
+
 let bind x ~f =
   match x with
   | Ok x' ->
@@ -123,6 +133,12 @@ let list_fold2 l1 l2 ~init ~f =
   List.fold2 l1 l2 ~init:(Ok init) ~f:(fun result x1 x2 ->
       let* acc = result in
       f acc x1 x2 )
+
+
+let list_foldi ~init ~f l =
+  List.foldi l ~init:(Ok init) ~f:(fun i result x ->
+      let* acc = result in
+      f i acc x )
 
 
 let container_fold :

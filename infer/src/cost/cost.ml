@@ -26,9 +26,9 @@ type extras_WorstCaseCost =
   ; get_proc_desc: Procname.t -> Procdesc.t option }
 
 let instantiate_cost ?get_closure_callee_cost ~default_closure_cost integer_type_widths
-    ~inferbo_caller_mem ~callee_pname ~callee_formals ~args ~callee_cost ~loc =
+    ~inferbo_caller_mem ~callee_pname ~callee_formals ~args ~captured_vars ~callee_cost ~loc =
   let {BufferOverrunDomain.eval_sym; eval_func_ptrs} =
-    BufferOverrunSemantics.mk_eval_sym_cost integer_type_widths callee_formals args
+    BufferOverrunSemantics.mk_eval_sym_cost integer_type_widths callee_formals args captured_vars
       inferbo_caller_mem
   in
   let get_closure_callee_cost pname =
@@ -140,69 +140,69 @@ module InstrBasicCostWithReason = struct
     |> Option.value ~default:CostDomain.unit_cost_atomic_operation
 
 
+  let get_call_cost_record tenv
+      ( {inferbo_invariant_map; integer_type_widths; inferbo_get_summary; get_summary; get_formals}
+      as extras ) cfg instr_node callee_pname ret args captured_vars location =
+    let fun_arg_list =
+      List.map args ~f:(fun (exp, typ) ->
+          ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+    in
+    let inferbo_mem_opt =
+      BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
+    in
+    let model_env =
+      lazy
+        (let node_hash = InstrCFG.Node.hash instr_node in
+         BufferOverrunUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
+           integer_type_widths inferbo_get_summary )
+    in
+    let get_callee_cost_opt kind inferbo_mem =
+      let default_closure_cost =
+        match (kind : CostKind.t) with
+        | OperationCost ->
+            Ints.NonNegativeInt.one
+        | AllocationCost | AutoreleasepoolSize ->
+            Ints.NonNegativeInt.zero
+      in
+      match (get_summary callee_pname, get_formals callee_pname) with
+      | Some {CostDomain.post= callee_cost_record}, Some callee_formals ->
+          CostDomain.find_opt kind callee_cost_record
+          |> Option.map ~f:(fun callee_cost ->
+                 let get_closure_callee_cost pname =
+                   get_summary pname
+                   |> Option.map ~f:(fun {CostDomain.post} -> CostDomain.get_cost_kind kind post)
+                 in
+                 instantiate_cost ~get_closure_callee_cost ~default_closure_cost integer_type_widths
+                   ~inferbo_caller_mem:inferbo_mem ~callee_pname ~callee_formals ~args
+                   ~captured_vars ~callee_cost ~loc:location )
+      | _ ->
+          None
+    in
+    match inferbo_mem_opt with
+    | None ->
+        CostDomain.unit_cost_atomic_operation
+    | Some inferbo_mem ->
+        CostDomain.construct ~f:(fun kind ->
+            let callee_cost_opt = get_callee_cost_opt kind inferbo_mem in
+            match kind with
+            | OperationCost ->
+                dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list get_summary
+                  model_env ret inferbo_mem
+            | AllocationCost ->
+                dispatch_allocation tenv callee_pname callee_cost_opt
+            | AutoreleasepoolSize ->
+                dispatch_autoreleasepool tenv callee_pname callee_cost_opt fun_arg_list extras
+                  model_env ret cfg location inferbo_mem )
+
+
   let get_instr_cost_record tenv extras cfg instr_node instr =
     match instr with
-    | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), args, location, _)
-      when Config.inclusive_cost -> (
-        let { inferbo_invariant_map
-            ; integer_type_widths
-            ; inferbo_get_summary
-            ; get_summary
-            ; get_formals } =
-          extras
-        in
-        let fun_arg_list =
-          List.map args ~f:(fun (exp, typ) ->
-              ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
-        in
-        let inferbo_mem_opt =
-          BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
-        in
-        let model_env =
-          lazy
-            (let node_hash = InstrCFG.Node.hash instr_node in
-             BufferOverrunUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv
-               integer_type_widths inferbo_get_summary )
-        in
-        let get_callee_cost_opt kind inferbo_mem =
-          let default_closure_cost =
-            match (kind : CostKind.t) with
-            | OperationCost ->
-                Ints.NonNegativeInt.one
-            | AllocationCost | AutoreleasepoolSize ->
-                Ints.NonNegativeInt.zero
-          in
-          match (get_summary callee_pname, get_formals callee_pname) with
-          | Some {CostDomain.post= callee_cost_record}, Some callee_formals ->
-              CostDomain.find_opt kind callee_cost_record
-              |> Option.map ~f:(fun callee_cost ->
-                     let get_closure_callee_cost pname =
-                       get_summary pname
-                       |> Option.map ~f:(fun {CostDomain.post} ->
-                              CostDomain.get_cost_kind kind post )
-                     in
-                     instantiate_cost ~get_closure_callee_cost ~default_closure_cost
-                       integer_type_widths ~inferbo_caller_mem:inferbo_mem ~callee_pname
-                       ~callee_formals ~args ~callee_cost ~loc:location )
-          | _ ->
-              None
-        in
-        match inferbo_mem_opt with
-        | None ->
-            CostDomain.unit_cost_atomic_operation
-        | Some inferbo_mem ->
-            CostDomain.construct ~f:(fun kind ->
-                let callee_cost_opt = get_callee_cost_opt kind inferbo_mem in
-                match kind with
-                | OperationCost ->
-                    dispatch_operation tenv callee_pname callee_cost_opt fun_arg_list
-                      extras.get_summary model_env ret inferbo_mem
-                | AllocationCost ->
-                    dispatch_allocation tenv callee_pname callee_cost_opt
-                | AutoreleasepoolSize ->
-                    dispatch_autoreleasepool tenv callee_pname callee_cost_opt fun_arg_list extras
-                      model_env ret cfg location inferbo_mem ) )
-    | Sil.Call (_, Exp.Const (Const.Cfun _), _, _, _) ->
+    | Sil.Call (ret, Const (Cfun callee_pname), args, location, _) when Config.inclusive_cost ->
+        get_call_cost_record tenv extras cfg instr_node callee_pname ret args [] location
+    | Sil.Call (ret, Closure {name= callee_pname; captured_vars}, args, location, _)
+      when Config.inclusive_cost ->
+        get_call_cost_record tenv extras cfg instr_node callee_pname ret args captured_vars location
+    | Sil.Call (_, (Const (Cfun _) | Closure _), _, _, _) ->
         CostDomain.zero_record
     | Sil.Call (_, fun_exp, _, location, _) ->
         dispatch_func_ptr_call extras instr_node fun_exp location
@@ -251,9 +251,13 @@ module InstrBasicCostWithReason = struct
 end
 
 let compute_errlog_extras cost =
-  { Jsonbug_t.cost_polynomial= Some (Format.asprintf "%a" BasicCostWithReason.pp_hum cost)
-  ; cost_degree= BasicCostWithReason.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
-  ; nullsafe_extra= None }
+  Jsonbug_t.
+    { cost_polynomial= Some (Format.asprintf "%a" BasicCostWithReason.pp_hum cost)
+    ; cost_degree= BasicCostWithReason.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
+    ; nullsafe_extra= None
+    ; copy_type= None
+    ; taint_source= None
+    ; taint_sink= None }
 
 
 (** Calculate the final Worst Case Cost of the cfg. It is the dot product of the symbolic cost of
@@ -408,10 +412,11 @@ let just_throws_exception proc_desc =
 
 
 let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as analysis_data) =
+  let open IOption.Let_syntax in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_proc_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
-  let inferbo_invariant_map =
+  let+ inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map
       (InterproceduralAnalysis.bind_payload ~f:snd3 analysis_data)
   in
@@ -425,7 +430,6 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
   in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
-    let open IOption.Let_syntax in
     let get_summary_common callee_pname =
       let+ _, summaries = analyze_dependency callee_pname in
       summaries
@@ -438,7 +442,9 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       let* _cost_summary, inferbo_summary, _ = get_summary_common callee_pname in
       inferbo_summary
     in
-    let get_formals callee_pname = Attributes.load callee_pname >>| Pvar.get_pvar_formals in
+    let get_formals callee_pname =
+      Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
+    in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let extras =
       { inferbo_invariant_map
@@ -466,4 +472,4 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
     if just_throws_exception proc_desc then CostDomain.set_operation_cost_zero astate else astate
   in
   Check.check_and_report analysis_data astate ;
-  Some (get_cost_summary ~is_on_ui_thread astate)
+  get_cost_summary ~is_on_ui_thread astate

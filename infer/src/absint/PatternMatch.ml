@@ -103,10 +103,20 @@ let get_field_type_name tenv (typ : Typ.t) (fieldname : Fieldname.t) : string op
       None
 
 
+module CSharp = struct
+  let implements interface tenv typename =
+    let is_interface s _ = String.equal interface (Typ.Name.name s) in
+    supertype_exists tenv is_interface (Typ.Name.CSharp.from_string typename)
+end
+
 module Java = struct
   let implements interface tenv typename =
     let is_interface s _ = String.equal interface (Typ.Name.name s) in
     supertype_exists tenv is_interface (Typ.Name.Java.from_string typename)
+
+
+  let implements_one_of interfaces tenv typename =
+    List.exists interfaces ~f:(fun interface -> implements interface tenv typename)
 
 
   let implements_lang class_name = implements ("java.lang." ^ class_name)
@@ -195,6 +205,8 @@ module Java = struct
   let implements_view_group = implements "android.view.ViewGroup"
 
   let implements_view_parent = implements "android.view.ViewParent"
+
+  let implements_kotlin_intrinsics = implements "kotlin.jvm.internal.Intrinsics"
 
   let initializer_classes =
     List.map ~f:Typ.Name.Java.from_string

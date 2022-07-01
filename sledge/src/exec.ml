@@ -9,7 +9,7 @@
 
 open Fol
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 module Fresh : sig
   (** Monad to manage generation of fresh variables. A value of type ['a t]
@@ -656,7 +656,7 @@ let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
 (* execute a command with given explicitly-quantified spec from
    explicitly-quantified pre *)
 let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
-  ([%Trace.call fun {pf} ->
+  ([%Dbg.call fun {pf} ->
      pf "@ @[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Sh.pp
        pre Sh.pp_us gs Sh.pp foot
        (fun fs sub ->
@@ -688,7 +688,7 @@ let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
   Sh.exists (Var.Set.union xs gs)
     (Sh.star post (Sh.exists ms (Sh.rename sub frame))) )
   |>
-  [%Trace.retn fun {pf} r ->
+  [%Dbg.retn fun {pf} r ->
     pf "%a" pp r ;
     assert (Option.for_all ~f:(check_preserve_us (Sh.exists xs pre)) r)]
 
@@ -716,11 +716,11 @@ let exec_specs pre =
   exec_specs_ (xs, pre)
 
 let exec_specs pre specs =
-  [%Trace.call fun _ -> ()]
+  [%Dbg.call fun _ -> ()]
   ;
   exec_specs pre specs
   |>
-  [%Trace.retn fun _ r ->
+  [%Dbg.retn fun _ r ->
     assert (Option.for_all ~f:(check_preserve_us pre) r)]
 
 (*
@@ -728,7 +728,7 @@ let exec_specs pre specs =
  *)
 
 let assume pre cnd =
-  [%trace]
+  [%dbg]
     ~call:(fun {pf} -> pf "@ %a" Formula.pp cnd)
     ~retn:(fun {pf} -> pf "%a" Sh.pp)
   @@ fun () ->
@@ -756,14 +756,11 @@ let alloc pre ~reg ~num ~len = exec_spec pre (alloc_spec reg num len)
 let free pre ~ptr = exec_spec pre (free_spec ptr)
 let nondet pre = function Some reg -> kill pre reg | None -> pre
 
-let intrinsic :
-       Sh.t
-    -> Var.t option
-    -> Llair.Intrinsic.t
-    -> Term.t iarray
-    -> Sh.t option =
- fun pre areturn intrinsic actuals ->
-  match (areturn, intrinsic, IArray.to_array actuals) with
+let builtin :
+    Sh.t -> Var.t option -> Llair.Builtin.t -> Term.t iarray -> Sh.t option
+    =
+ fun pre areturn builtin actuals ->
+  match (areturn, builtin, IArray.to_array actuals) with
   (*
    * llvm intrinsics
    *)
@@ -852,7 +849,6 @@ let intrinsic :
       | `mallctl | `mallctlnametomib | `mallctlbymib | `strlen
       | `_ZN5folly13usingJEMallocEv | `cct_point )
     , _ ) ->
-      fail "%aintrinsic %a%a;"
+      fail "%abuiltin %a%a;"
         (Option.pp "%a := " Var.pp)
-        areturn Llair.Intrinsic.pp intrinsic (IArray.pp "@ " Term.pp)
-        actuals ()
+        areturn Llair.Builtin.pp builtin (IArray.pp "@ " Term.pp) actuals ()

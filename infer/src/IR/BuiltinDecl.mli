@@ -31,6 +31,8 @@ val __erlang_error_try_clause : Procname.t
 
 val __erlang_make_atom : Procname.t
 
+val __erlang_make_integer : Procname.t
+
 val __erlang_make_cons : Procname.t
 
 val __erlang_make_nil : Procname.t
@@ -41,7 +43,7 @@ val __erlang_make_map : Procname.t
 
 val __erlang_make_str_const : Procname.t
 
-val __erlang_missing_translation : Procname.t
+val __erlang_receive : Procname.t
 
 val __erlang_str_equal : Procname.t
 

@@ -32,7 +32,7 @@
 
 typedef NS_ENUM(NSUInteger, SomeEnum) { ValueA, ValueB };
 
-CGColorRef FP_switch_ok(SomeEnum e, CGColorRef defaultcolor) {
+CGColorRef switch_ok(SomeEnum e, CGColorRef defaultcolor) {
   CGColorRef color;
 
   switch (e) {

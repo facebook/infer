@@ -17,7 +17,18 @@ A& get_a_ref() {
 }
 
 std::vector<int> copy_decl_bad() {
-  auto copy = get_a_ref(); // unnecessary copy, use a ref
+  auto cpy = get_a_ref(); // unnecessary copy, use a ref
   // call to copy constructor A::A(a, n$0)
-  return copy.vec;
+  return cpy.vec;
 }
+
+void copy_assignment_bad(A source) {
+  A c; // default constructor is called
+  c = source; // copy assignment operator is called
+}
+
+class Test {
+  A mem_a;
+
+  void unnecessary_copy_moveable_bad(A&& a) { mem_a = a; }
+};

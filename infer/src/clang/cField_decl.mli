@@ -9,7 +9,7 @@ open! IStd
 
 (** Utility module to retrieve fields of structs of classes *)
 
-type field_type = Fieldname.t * Typ.t * (Annot.t * bool) list
+type field_type = Fieldname.t * Typ.t * Annot.Item.t
 
 val get_fields :
      implements_remodel_class:bool

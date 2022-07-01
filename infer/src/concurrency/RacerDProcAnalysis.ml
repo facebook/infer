@@ -83,21 +83,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let process_lock_effect_or_summary analyze_dependency tenv formals ret_access_exp callee_pname
       actuals loc (astate : Domain.t) =
-    let open Domain in
     match ConcurrencyModels.get_lock_effect callee_pname actuals with
     | Lock _ | GuardLock _ | GuardConstruct {acquire_now= true} ->
-        { astate with
-          locks= LockDomain.acquire_lock astate.locks
-        ; threads= ThreadsDomain.update_for_lock_use astate.threads }
+        Domain.acquire_lock astate
     | Unlock _ | GuardDestroy _ | GuardUnlock _ ->
-        { astate with
-          locks= LockDomain.release_lock astate.locks
-        ; threads= ThreadsDomain.update_for_lock_use astate.threads }
+        Domain.release_lock astate
     | LockedIfTrue _ | GuardLockedIfTrue _ ->
-        let attribute_map =
-          AttributeMapDomain.add ret_access_exp Attribute.LockHeld astate.attribute_map
-        in
-        {astate with attribute_map; threads= ThreadsDomain.update_for_lock_use astate.threads}
+        Domain.lock_if_true ret_access_exp astate
     | GuardConstruct {acquire_now= false} ->
         astate
     | NoEffect when RacerDModels.proc_is_ignored_by_racerd callee_pname ->
@@ -124,6 +116,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else astate
 
 
+  let process_for_noreturn callee_pname (astate : Domain.t) =
+    if Attributes.is_no_return callee_pname then Domain.branch_never_returns () else astate
+
+
   let do_proc_call ret_base callee_pname actuals call_flags loc
       {interproc= {tenv; analyze_dependency}; formals} (astate : Domain.t) =
     let ret_access_exp = AccessExpression.base ret_base in
@@ -133,6 +129,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
          actuals loc
     |> process_for_functional_values tenv ret_access_exp callee_pname
     |> process_for_onwership_acquisition tenv ret_access_exp callee_pname
+    |> process_for_noreturn callee_pname
 
 
   let do_assignment lhs_access_exp rhs_exp loc {interproc= {tenv}; formals} (astate : Domain.t) =
@@ -269,7 +266,7 @@ let set_constructor_attributes ({InterproceduralAnalysis.proc_desc} as interproc
 
 let set_initial_attributes ({InterproceduralAnalysis.proc_desc} as interproc) astate =
   let procname = Procdesc.get_proc_name proc_desc in
-  match procname with
+  match Procname.base_of procname with
   | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
       (* we are analyzing the class initializer, don't go through on-demand again *)
       astate
@@ -345,7 +342,7 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
                add_owned_formal acc base
              else add_conditionally_owned_formal acc base index )
     in
-    let initial = set_initial_attributes interproc {bottom with ownership; threads; locks} in
+    let initial = set_initial_attributes interproc {initial with ownership; threads; locks} in
     let formals = FormalMap.make proc_desc in
     let analysis_data = {interproc; formals} in
     Analyzer.compute_post analysis_data ~initial proc_desc

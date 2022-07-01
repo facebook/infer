@@ -27,7 +27,7 @@ let init_fields_zero tenv path location ~zero addr typ astate =
     match get_fields typ with
     | Some fields ->
         List.fold fields ~init:(Ok astate) ~f:(fun acc (field, field_typ, _) ->
-            let* acc = acc in
+            let* acc in
             let acc, field_addr = Memory.eval_edge addr (FieldAccess field) acc in
             init_fields_zero_helper field_addr field_typ acc )
     | None ->
@@ -52,7 +52,7 @@ let mk_nil_messaging_summary_aux tenv proc_desc =
   in
   let astate = PulseArithmetic.prune_eq_zero self_value astate |> PulseResult.ok_exn in
   let event = ValueHistory.NilMessaging (location, t0) in
-  let updated_self_value_hist = (self_value, ValueHistory.Sequence (event, self_history)) in
+  let updated_self_value_hist = (self_value, ValueHistory.sequence event self_history) in
   match List.last (Procdesc.get_formals proc_desc) with
   | Some (last_formal, {desc= Tptr (typ, _)}, _) when Mangled.is_return_param last_formal ->
       let ret_param_var = Procdesc.get_ret_param_var proc_desc in
@@ -81,15 +81,15 @@ let mk_latent_non_POD_nil_messaging tenv proc_desc =
   let astate, (self_value, _self_history) =
     PulseOperations.eval_deref path location (Lvar self) astate |> PulseResult.ok_exn
   in
-  let trace = Trace.Immediate {location; history= Epoch} in
+  let trace = Trace.Immediate {location; history= ValueHistory.epoch} in
   let astate = PulseArithmetic.prune_eq_zero self_value astate |> PulseResult.ok_exn in
   match AbductiveDomain.summary_of_post tenv proc_desc location astate with
   | Unsat | Sat (Error _) ->
       assert false
-  | Sat (Ok astate) ->
+  | Sat (Ok summary) ->
       ExecutionDomain.LatentInvalidAccess
-        { astate
-        ; address= self_value
+        { astate= summary
+        ; address= Decompiler.find self_value astate
         ; must_be_valid=
             (trace, Some (SelfOfNonPODReturnMethod (Procdesc.get_ret_type_from_signature proc_desc)))
         ; calling_context= [] }
@@ -112,11 +112,10 @@ let mk_nil_messaging_summary tenv proc_desc =
   else None
 
 
-let mk_initial_with_positive_self tenv proc_desc =
+let initial_with_positive_self proc_desc initial_astate =
   let location = Procdesc.get_loc proc_desc in
   let self = mk_objc_self_pvar proc_desc in
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let initial_astate = AbductiveDomain.mk_initial tenv proc_desc in
   (* same HACK as above with respect to [PulseResult.ok_exn] *)
   if Procname.is_objc_instance_method proc_name then
     let astate, value =

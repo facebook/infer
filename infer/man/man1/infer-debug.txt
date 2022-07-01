@@ -50,6 +50,13 @@ DEBUG PROCEDURES
            Activates: Print the attributes of each procedure in the output of
            --procedures (Conversely: --no-procedures-attributes)
 
+       --procedures-call-graph
+           Activates: Output a dotty file in
+           infer-out/captured/syntactic-call-graph.dot. The graph is the
+           syntactic call graph reachable from either all captured procedures
+           or those determined by the option --changed-files-index.
+           (Conversely: --no-procedures-call-graph)
+
        --procedures-cfg
            Activates: Output a dotty file in
            infer-out/captured/<file_name>/<proc_name>.dot for each procedure
@@ -89,6 +96,20 @@ DEBUG SOURCE FILES
        --source-files
            Activates: Print source files discovered by infer (Conversely:
            --no-source-files)
+
+       --source-files-call-graph
+           Activates: Output a dotty file in
+           infer-out/captured/file-call-graph.dot. The graph is the
+           file-based syntactic call graph of all captured procedures (with
+           known translation units). (Conversely:
+           --no-source-files-call-graph)
+
+       --source-files-call-graph-partition int
+           The number of partitions to divide the set of captured source
+           files, using static call graph information. The generated file
+           lists are found under infer-out/captured/workerXX.idx. Not setting
+           this option skips partitioning. This is used for distributed
+           analysis.
 
        --source-files-cfg
            Activates: Output a dotty file in infer-out/captured for each

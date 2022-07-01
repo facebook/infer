@@ -36,7 +36,7 @@ module Node = struct
     | DestrScope
     | DestrTemporariesCleanup
     | DestrVirtualBase
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let string_of_destruction_kind = function
     | DestrBreakStmt ->
@@ -108,7 +108,7 @@ module Node = struct
     | Throw
     | ThrowNPE
     | UnaryOperator
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   type prune_node_kind =
     | PruneNodeKind_ExceptionHandler
@@ -118,7 +118,7 @@ module Node = struct
     | PruneNodeKind_MethodBody
     | PruneNodeKind_NotNull
     | PruneNodeKind_TrueBranch
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   type nodekind =
     | Start_node
@@ -128,9 +128,7 @@ module Node = struct
     | Prune_node of bool * Sil.if_kind * prune_node_kind
         (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
-  [@@deriving compare]
-
-  let equal_nodekind = [%compare.equal: nodekind]
+  [@@deriving compare, equal]
 
   (** a node *)
   type t =
@@ -534,7 +532,7 @@ let get_proc_name pdesc = pdesc.attributes.proc_name
 (** Return name and type of formal parameters *)
 let get_formals pdesc = pdesc.attributes.formals
 
-let get_pvar_formals pdesc = Pvar.get_pvar_formals pdesc.attributes
+let get_pvar_formals pdesc = ProcAttributes.get_pvar_formals pdesc.attributes
 
 let get_loc pdesc = pdesc.attributes.loc
 
@@ -613,6 +611,8 @@ let get_static_callees pdesc =
   in
   Procname.Set.remove (get_proc_name pdesc) callees |> Procname.Set.elements
 
+
+let get_specialized_with_aliasing_info pdesc = pdesc.attributes.specialized_with_aliasing_info
 
 let find_map_nodes pdesc ~f = List.find_map ~f (get_nodes pdesc)
 
@@ -734,7 +734,7 @@ let deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc =
         L.die InternalError
           "Trying to deep copy pdesc from %a to %a. Node %a is not part of origin pdesc's nodes. \
            Origin pdesc might be empty or misconstructed"
-          Node.pp node Procname.pp node.Node.pname Procname.pp pname
+          Procname.pp node.Node.pname Procname.pp pname Node.pp node
     | Some node' ->
         node'
   in
@@ -848,10 +848,10 @@ let pp_variable_list fmt etl =
 
 let pp_captured_list fmt etl =
   List.iter
-    ~f:(fun {CapturedVar.name; typ; capture_mode} ->
+    ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
       Format.fprintf fmt " [%s] %a:%a"
         (CapturedVar.string_of_capture_mode capture_mode)
-        Mangled.pp name (Typ.pp_full Pp.text) typ )
+        (Pvar.pp Pp.text) pvar (Typ.pp_full Pp.text) typ )
     etl
 
 
@@ -886,6 +886,12 @@ let is_specialized pdesc =
   attributes.ProcAttributes.is_specialized
 
 
+let is_kotlin pdesc =
+  let attributes = get_attributes pdesc in
+  let source = attributes.ProcAttributes.translation_unit in
+  SourceFile.has_extension ~ext:Config.kotlin_source_extension source
+
+
 (* true if pvar is a captured variable of a cpp lambda or objc block *)
 let is_captured_pvar procdesc pvar =
   let procname = get_proc_name procdesc in
@@ -901,13 +907,15 @@ let is_captured_pvar procdesc pvar =
          ( List.exists ~f:pvar_local_matches (get_locals procdesc)
          || List.exists ~f:pvar_matches (get_formals procdesc) )
   in
-  let pvar_matches_in_captured {CapturedVar.name} = Mangled.equal name pvar_name in
-  let is_captured_var_objc_block =
-    (* var is captured if the procedure is a objc block and the var is in the captured *)
-    Procname.is_objc_block procname
+  let pvar_matches_in_captured {CapturedVar.pvar= captured} =
+    Mangled.equal (Pvar.get_name captured) pvar_name
+  in
+  let is_captured_var_objc_block_erlang =
+    (* var is captured if the procedure is a objc block / erlang and the var is in the captured *)
+    (Procname.is_objc_block procname || Procname.is_erlang procname)
     && List.exists ~f:pvar_matches_in_captured (get_captured procdesc)
   in
-  is_captured_var_cpp_lambda || is_captured_var_objc_block
+  is_captured_var_cpp_lambda || is_captured_var_objc_block_erlang
 
 
 let is_captured_var procdesc var =
@@ -927,6 +935,15 @@ let size pdesc =
     size + 1 + List.length (Node.get_succs node) + Instrs.count (Node.get_instrs node)
   in
   fold_nodes pdesc ~init:0 ~f
+
+
+let is_too_big checker ~max_cfg_size pdesc =
+  let proc_size = size pdesc in
+  if proc_size > max_cfg_size then (
+    L.internal_error "Skipped large procedure (%a, size:%d) in %s.@\n" Procname.pp
+      (get_proc_name pdesc) proc_size (Checker.get_id checker) ;
+    true )
+  else false
 
 
 module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct

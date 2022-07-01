@@ -167,17 +167,10 @@ val is_local_to_procedure : Procname.t -> t -> bool
 val get_initializer_pname : t -> Procname.t option
 (** Get the procname of the initializer function for the given global variable *)
 
-val build_formal_from_pvar : t -> Mangled.t
-(** [build_formal_from_pvar var] Return a name that is composed of the name of var (and the name of
-    the procname in case of locals) *)
-
 val materialized_cpp_temporary : string
 
-val swap_proc_in_local_pvar : t -> Procname.t -> t
+val specialize_pvar : t -> Procname.t -> t
 
 module Set : PrettyPrintable.PPSet with type elt = t
 
 module Map : PrettyPrintable.PPMap with type key = t
-
-val get_pvar_formals : ProcAttributes.t -> (t * Typ.t) list
-(** Return pvar and type of formal parameters *)

@@ -58,6 +58,7 @@ duplicates.txt
 /infer/tests/build_systems/java_source_parser/*.test
 /infer/tests/codetoanalyze/dotnet/*/*.json
 /infer/tests/codetoanalyze/erlang/**/_build
+/infer/src/datalog/**/_build
 /_release
 /infer-source
 META-INF
@@ -144,6 +145,7 @@ buck-out/
 /infer/lib/specs/clean_models
 /infer/etc/clang_ast.dict
 /infer/src/toplevel.mlpack
+/infer/src/datalog/**/*.jar
 
 /external_repo
 

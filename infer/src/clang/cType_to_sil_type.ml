@@ -94,9 +94,9 @@ let pointer_attribute_of_objc_attribute attr_info =
 let add_protocols_to_desc tenv desc protocol_desc_list =
   let rec add_nonempty_protocol desc =
     match (desc : Typ.desc) with
-    | Tstruct (CStruct nm | ObjcClass (nm, _)) ->
+    | Tstruct (CStruct nm | ObjcClass nm) ->
         let objc_protocols = List.map ~f:CType.objc_classname_of_desc protocol_desc_list in
-        let name = Typ.ObjcClass (nm, objc_protocols) in
+        let name = Typ.ObjcClass nm in
         ignore (Tenv.mk_struct tenv name ~objc_protocols) ;
         let desc = Typ.Tstruct name in
         Logging.(debug Analysis Verbose)
@@ -183,9 +183,12 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
         Typ.Tvoid )
   | ObjCInterfaceType (_, pointer) ->
       decl_ptr_to_type_desc translate_decl tenv pointer
-  | RValueReferenceType (_, qual_type) | LValueReferenceType (_, qual_type) ->
+  | RValueReferenceType (_, qual_type) ->
       let typ = qual_type_to_sil_type translate_decl tenv qual_type in
-      Typ.Tptr (typ, Typ.Pk_reference)
+      Typ.Tptr (typ, Typ.Pk_rvalue_reference)
+  | LValueReferenceType (_, qual_type) ->
+      let typ = qual_type_to_sil_type translate_decl tenv qual_type in
+      Typ.Tptr (typ, Typ.Pk_lvalue_reference)
   | AttributedType (type_info, attr_info) ->
       (* TODO desugar to qualtyp *)
       type_desc_of_attr_type translate_decl tenv type_info attr_info
@@ -251,7 +254,14 @@ and type_ptr_to_type_desc translate_decl tenv type_ptr : Typ.desc =
       Typ.Tptr (sil_typ, Pk_pointer)
   | Clang_ast_extend.ReferenceOf typ ->
       let sil_typ = qual_type_to_sil_type translate_decl tenv typ in
-      Typ.Tptr (sil_typ, Pk_reference)
+      let pk_ref =
+        match CAst_utils.get_desugared_type typ.Clang_ast_t.qt_type_ptr with
+        | Some (Clang_ast_t.RValueReferenceType _) ->
+            Typ.Pk_rvalue_reference
+        | _ ->
+            Typ.Pk_lvalue_reference
+      in
+      Typ.Tptr (sil_typ, pk_ref)
   | Clang_ast_extend.ClassType typename ->
       Typ.Tstruct typename
   | Clang_ast_extend.DeclPtr ptr ->
@@ -264,5 +274,8 @@ and type_ptr_to_type_desc translate_decl tenv type_ptr : Typ.desc =
 
 and qual_type_to_sil_type translate_decl tenv qual_type =
   let desc = type_ptr_to_type_desc translate_decl tenv qual_type.Clang_ast_t.qt_type_ptr in
-  let quals = Typ.mk_type_quals ~is_const:qual_type.Clang_ast_t.qt_is_const () in
+  let quals =
+    Typ.mk_type_quals ~is_const:qual_type.Clang_ast_t.qt_is_const
+      ~is_trivially_copyable:qual_type.Clang_ast_t.qt_is_trivially_copyable ()
+  in
   Typ.mk ~quals desc

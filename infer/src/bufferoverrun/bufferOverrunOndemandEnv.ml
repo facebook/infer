@@ -20,9 +20,13 @@ type t =
   ; class_name: Typ.name option }
 
 let mk pdesc =
+  let pname = Procdesc.get_proc_name pdesc in
   let formal_typs =
     List.fold (Procdesc.get_pvar_formals pdesc) ~init:FormalTyps.empty ~f:(fun acc (formal, typ) ->
         FormalTyps.add formal typ acc )
+    |> fun init ->
+    List.fold (Procdesc.get_captured pdesc) ~init ~f:(fun acc {CapturedVar.pvar; typ} ->
+        FormalTyps.add pvar typ acc )
   in
   fun tenv integer_type_widths ->
     let rec typ_of_param_path = function
@@ -71,8 +75,7 @@ let mk pdesc =
           Some ret_typ
     in
     let is_last_field fn (fields : Struct.field list) =
-      Option.value_map (List.last fields) ~default:false ~f:(fun (last_fn, _, _) ->
-          Fieldname.equal fn last_fn )
+      Option.exists (List.last fields) ~f:(fun (last_fn, _, _) -> Fieldname.equal fn last_fn)
     in
     let rec may_last_field = function
       | BoField.Prim (SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _) ->
@@ -83,11 +86,10 @@ let mk pdesc =
                  match parent_typ.Typ.desc with
                  | Tstruct typename ->
                      let opt_struct = Tenv.lookup tenv typename in
-                     Option.value_map opt_struct ~default:false ~f:(fun str ->
-                         is_last_field fn str.Struct.fields )
+                     Option.exists opt_struct ~f:(fun str -> is_last_field fn str.Struct.fields)
                  | _ ->
                      true )
     in
     let entry_location = Procdesc.Node.get_loc (Procdesc.get_start_node pdesc) in
-    let class_name = Procname.get_class_type_name (Procdesc.get_proc_name pdesc) in
+    let class_name = Procname.get_class_type_name pname in
     {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths; class_name}

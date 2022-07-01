@@ -24,6 +24,16 @@ val get_class_name : t -> Typ.Name.t
 
 val get_field_name : t -> string
 
+val mk_fake_capture_field : id:int -> Typ.t -> CapturedVar.capture_mode -> t
+
+val is_fake_capture_field : t -> bool
+
+val is_fake_capture_field_weak : t -> bool
+
+val is_fake_capture_field_by_ref : t -> bool
+
+val get_capture_field_position : t -> int option
+
 val is_java : t -> bool
 
 val is_java_synthetic : t -> bool
@@ -36,7 +46,7 @@ val is_internal : t -> bool
 module Set : Caml.Set.S with type elt = t
 
 (** Map for fieldnames *)
-module Map : Caml.Map.S with type key = t
+module Map : PrettyPrintable.PPMap with type key = t
 
 val is_java_outer_instance : t -> bool
 (** Check if the field is the synthetic this$n of a nested class, used to access the n-th outer
@@ -48,7 +58,15 @@ val to_string : t -> string
 val to_full_string : t -> string
 
 val to_simplified_string : t -> string
-(** Convert a fieldname to a simplified string with at most one-level path. *)
+(** Convert a fieldname to a simplified string with at most one-level path. For example,
+
+    - In C++: "<ClassName>::<FieldName>"
+    - In Java, ObjC, C#: "<ClassName>.<FieldName>"
+    - In C: "<StructName>.<FieldName>" or "<UnionName>.<FieldName>"
+    - In Erlang: "<FieldName>" *)
+
+val patterns_match : Re.Str.regexp list -> t -> bool
+(** Test whether a field full string matches to one of the regular expressions. *)
 
 val pp : F.formatter -> t -> unit
 (** Pretty print a field name. *)

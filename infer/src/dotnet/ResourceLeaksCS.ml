@@ -8,11 +8,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module Hashtbl = Caml.Hashtbl
-
-let leak_list = ref []
-
-let type_map = ref (Hashtbl.create 100)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -22,21 +17,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_closeable_typename tenv typename =
     let is_closable_interface typename _ =
-      match Typ.Name.name typename with
-      | "java.io.AutoCloseable" | "java.io.Closeable" ->
-          true
-      | "System.IDisposable" ->
-          true
-      | _ ->
-          false
+      match Typ.Name.name typename with "System.IDisposable" -> true | _ -> false
     in
     PatternMatch.supertype_exists tenv is_closable_interface typename
 
 
   let is_closeable_procname tenv procname =
     match procname with
-    | Procname.Java java_procname ->
-        is_closeable_typename tenv (Procname.Java.get_class_type_name java_procname)
     | Procname.CSharp csharp_procname ->
         is_closeable_typename tenv (Procname.CSharp.get_class_type_name csharp_procname)
     | _ ->
@@ -62,8 +49,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   (** Take an abstract state and instruction, produce a new abstract state *)
   let exec_instr (astate : ResourceLeakCSDomain.t)
       {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency; _} _ _ (instr : HilInstr.t) =
-    let assign_type_map = type_map := ResourceLeakCSDomain.get_type_map in
-    assign_type_map ;
     let is_not_enumerable =
       let contains s1 s2 =
         let re = Str.regexp_string s2 in
@@ -78,18 +63,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match instr with
     | Call (_return, Direct callee_procname, HilExp.AccessExpression allocated :: _, _, _loc)
       when acquires_resource tenv callee_procname && is_not_enumerable ->
-        let get_class_name =
+        let typename =
           match callee_procname with
-          | Procname.Java java_procname ->
-              Procname.Java.get_class_name java_procname
           | Procname.CSharp csharp_procname ->
-              Procname.CSharp.get_class_name csharp_procname
+              Procname.CSharp.get_class_type_name csharp_procname
           | _ ->
-              L.die InternalError "Unsupported procname kind! Only Java and .NET is supported"
+              L.die InternalError "Unsupported procname kind! Only .NET is supported"
         in
         ResourceLeakCSDomain.acquire_resource
           (HilExp.AccessExpression.to_access_path allocated)
-          get_class_name astate
+          typename astate
     | Call (_, Direct callee_procname, [actual], _, _loc)
       when releases_resource tenv callee_procname -> (
       match actual with
@@ -148,7 +131,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | _ ->
             astate )
     | Call (_, Indirect _, _, _, _) ->
-        (* This should never happen in Java. Fail if it does. *)
+        (* This should never happen in .NET. Fail if it does. *)
         L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
     | Metadata _ ->
         astate
@@ -166,29 +149,15 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
 
 (** Report an error when we have acquired more resources than we have released *)
 let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} formal_map post =
-  if ResourceLeakCSDomain.has_leak formal_map post then (
+  if ResourceLeakCSDomain.has_leak formal_map post then
     let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc) in
     let proc_name = Procdesc.get_proc_name proc_desc in
-    let message =
-      let concat_types =
-        Hashtbl.iter
-          (fun x y ->
-            if ResourceLeakCSDomain.check_count x post then
-              leak_list := ResourceLeakCSDomain.LeakList.append_one !leak_list y )
-          !type_map
-      in
-      concat_types ;
-      let concat_leak_list = String.concat ~sep:", " !leak_list in
-      F.asprintf "Leaked %a resource(s) in method \"%a\" at type(s) %s" ResourceLeakCSDomain.pp post
-        Procname.pp proc_name concat_leak_list
+    let resouces_and_type =
+      ResourceLeakCSDomain.Summary.resource_and_type_to_str post Config.debug_mode
     in
-    ResourceLeakCSDomain.reset_type_map ;
-    ResourceLeakCSDomain.Summary.reset_interface_type_map ;
-    leak_list := [] ;
+    let message = F.asprintf "%s in method \"%a\"" resouces_and_type Procname.pp proc_name in
     Reporting.log_issue proc_desc err_log ~loc:last_loc DOTNETResourceLeaks
-      IssueType.dotnet_resource_leak message )
-  else ResourceLeakCSDomain.reset_type_map ;
-  ResourceLeakCSDomain.Summary.reset_interface_type_map
+      IssueType.dotnet_resource_leak message
 
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)

@@ -196,11 +196,10 @@ let get_decl_from_typ_ptr typ_ptr =
 
 
 let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
-  let default_visibility = true in
   let mk_annot annot_name_opt =
     match annot_name_opt with
     | Some annot_name ->
-        [({Annot.class_name= annot_name; parameters= []}, default_visibility)]
+        [{Annot.class_name= annot_name; parameters= []}]
     | None ->
         Annot.Item.empty
   in
@@ -238,6 +237,7 @@ let qual_type_of_decl_ptr decl_ptr =
     Clang_ast_t.qt_type_ptr= Clang_ast_extend.DeclPtr decl_ptr
   ; qt_is_const= false
   ; qt_is_volatile= false
+  ; qt_is_trivially_copyable= false
   ; qt_is_restrict= false }
 
 
@@ -273,8 +273,7 @@ let get_function_decl_with_body decl_ptr =
     | _ ->
         Some decl_ptr
   in
-  if [%compare.equal: int option] decl_ptr' (Some decl_ptr) then decl_opt
-  else get_decl_opt decl_ptr'
+  if [%equal: int option] decl_ptr' (Some decl_ptr) then decl_opt else get_decl_opt decl_ptr'
 
 
 let get_info_from_decl_ref decl_ref =
@@ -434,7 +433,7 @@ let return_type_matches_class_type result_type interface_decl =
   if is_instance_type result_type then true
   else
     let return_type_decl_opt = qual_type_to_objc_interface result_type in
-    [%compare.equal: int option]
+    [%equal: int option]
       (if_decl_to_di_pointer_opt interface_decl)
       (if_decl_to_di_pointer_opt return_type_decl_opt)
 
@@ -459,8 +458,8 @@ let type_of_decl decl =
   | EnumDecl (_, _, type_ptr, _, _, _, _)
   | RecordDecl (_, _, type_ptr, _, _, _, _)
   | CXXRecordDecl (_, _, type_ptr, _, _, _, _, _)
-  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, _, _, _, _)
-  | ClassTemplatePartialSpecializationDecl (_, _, type_ptr, _, _, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, _, _, _, _, _)
+  | ClassTemplatePartialSpecializationDecl (_, _, type_ptr, _, _, _, _, _, _, _, _)
   | TemplateTypeParmDecl (_, _, type_ptr)
   | ObjCTypeParamDecl (_, _, type_ptr)
   | TypeAliasDecl (_, _, type_ptr)
@@ -497,7 +496,7 @@ let type_of_decl decl =
 let get_record_fields decl =
   let open Clang_ast_t in
   match decl with
-  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _, _)
   | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
   | RecordDecl (_, _, _, decl_list, _, _, _) ->
       List.filter ~f:(function FieldDecl _ -> true | _ -> false) decl_list
@@ -509,7 +508,7 @@ let get_cxx_base_classes decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info)
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _) ->
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _, _) ->
       cxx_record_info.xrdi_bases
   | _ ->
       []
@@ -519,7 +518,7 @@ let get_cxx_virtual_base_classes decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info)
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _) ->
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _, _) ->
       cxx_record_info.xrdi_transitive_vbases
   | _ ->
       []

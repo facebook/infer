@@ -11,6 +11,13 @@
 
 void get_closure(std::function<int()> closure);
 
+enum my_enum {
+  my_enum_1 = 0,
+  my_enum_2 = 1,
+};
+
+extern my_enum get_my_enum();
+
 class Uninit {
   void closure_call_ok() {
     auto closure = [this]() { return 5; };
@@ -33,6 +40,67 @@ class Uninit {
     MyClass x;
     init_by_store(&x);
     int y = x.i;
+  }
+
+  MyClass get_MyClass() {
+    switch (get_my_enum()) {
+      case (my_enum_1):
+        return MyClass{1, 2};
+        break;
+      case (my_enum_2):
+        return MyClass{1, 2};
+        break;
+    }
+  }
+
+  void call_get_MyClass_ok() { int x = get_MyClass().i; }
+
+  MyClass get_MyClass_param(my_enum my_enum) {
+    switch (my_enum) {
+      case (my_enum_1):
+        return MyClass{1, 2};
+        break;
+      case (my_enum_2):
+        return MyClass{1, 2};
+        break;
+    }
+  }
+
+  void call_get_MyClass_param_ok(my_enum my_enum) {
+    int x = get_MyClass_param(my_enum).i;
+  }
+
+  MyClass get_MyClass_infeasible_default() {
+    switch (get_my_enum()) {
+      case (my_enum_1):
+        return MyClass{1, 2};
+        break;
+      case (my_enum_2):
+        return MyClass{1, 2};
+        break;
+      default:
+        // infeasible
+        break;
+    }
+  }
+
+  void call_get_MyClass_infeasible_default_ok() {
+    int x = get_MyClass_infeasible_default().i;
+  }
+
+  MyClass get_MyClass_feasible_default() {
+    switch (get_my_enum()) {
+      case (my_enum_1):
+        return MyClass{1, 2};
+        break;
+      default:
+        // feasible
+        break;
+    }
+  }
+
+  void call_get_MyClass_feasible_default_bad() {
+    int x = get_MyClass_feasible_default().i;
   }
 };
 

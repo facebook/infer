@@ -89,7 +89,7 @@ type report_issue_type = NotIssue | Issue of IssueType.t | SymbolicIssue
 type checked_condition = {report_issue_type: report_issue_type; propagate: bool}
 
 module AllocSizeCondition = struct
-  type t = {length: ItvPure.t; can_be_zero: bool} [@@deriving compare]
+  type t = {length: ItvPure.t; can_be_zero: bool} [@@deriving compare, equal]
 
   let get_symbols {length} = ItvPure.get_symbols length
 
@@ -184,7 +184,7 @@ end
 
 module ArrayAccessCondition = struct
   type t = {offset: ItvPure.t; idx: ItvPure.t; size: ItvPure.t; last_included: bool; void_ptr: bool}
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let get_symbols c =
     Symb.SymbolSet.union3 (ItvPure.get_symbols c.offset) (ItvPure.get_symbols c.idx)
@@ -198,7 +198,7 @@ module ArrayAccessCondition = struct
     in
     let cmp = if c.last_included then "<=" else "<" in
     F.fprintf fmt "%t%a %s %a" pp_offset ItvPure.pp c.idx cmp ItvPure.pp
-      (ItvPure.make_positive c.size)
+      (ItvPure.make_non_negative c.size)
 
 
   let pp_description : markup:bool -> F.formatter -> t -> unit =
@@ -213,7 +213,8 @@ module ArrayAccessCondition = struct
     in
     F.fprintf fmt "Offset%s: %t Size: %a"
       (if c.last_included then " added" else "")
-      pp_offset (ItvPure.pp_mark ~markup) (ItvPure.make_positive c.size)
+      pp_offset (ItvPure.pp_mark ~markup)
+      (ItvPure.make_non_negative c.size)
 
 
   let make : offset:ItvPure.t -> idx:ItvPure.t -> size:ItvPure.t -> last_included:bool -> t option =
@@ -330,8 +331,8 @@ module ArrayAccessCondition = struct
        For adding into collections : we want to check that 0 <= idx <= size *)
     let real_idx = ItvPure.plus c.offset c.idx in
     let size =
-      let size_pos = ItvPure.make_positive c.size in
-      if c.last_included then ItvPure.succ size_pos else size_pos
+      let size_nonneg = ItvPure.make_non_negative c.size in
+      if c.last_included then ItvPure.succ size_nonneg else size_nonneg
     in
     (* if sl < 0, use sl' = 0 *)
     let not_overrun = ItvPure.lt_sem real_idx size in
@@ -397,7 +398,7 @@ module BinaryOperationCondition = struct
     ; lhs: ItvPure.t
     ; rhs: ItvPure.t
     ; pname: Procname.t }
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let get_symbols c = Symb.SymbolSet.union (ItvPure.get_symbols c.lhs) (ItvPure.get_symbols c.rhs)
 
@@ -565,9 +566,7 @@ module Condition = struct
     | AllocSize of AllocSizeCondition.t
     | ArrayAccess of ArrayAccessCondition.t
     | BinaryOperation of BinaryOperationCondition.t
-  [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  [@@deriving compare, equal]
 
   let make_alloc_size = Option.map ~f:(fun c -> AllocSize c)
 
@@ -658,11 +657,9 @@ module Condition = struct
 end
 
 module Reported = struct
-  type t = IssueType.t [@@deriving compare]
+  type t = IssueType.t [@@deriving compare, equal]
 
   let make issue_type = issue_type
-
-  let equal = [%compare.equal: t]
 end
 
 module ConditionWithTrace = struct

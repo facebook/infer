@@ -443,7 +443,7 @@ digraph cfg {
 	
 
 	 "~X#X#continue_scope#(15469534718766326333).9fa422dd939a9f30f1c5eb6a7ca025e6_3" -> "~X#X#continue_scope#(15469534718766326333).9fa422dd939a9f30f1c5eb6a7ca025e6_2" ;
-"operator*#iterator#continue_scope(class continue_scope::X)#(10976315504449545146).6f0a140275409bbf42ae1dbc8842f6af_1" [label="1: Start continue_scope::iterator::operator*\nFormals:  this:continue_scope::iterator* __return_param:continue_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X const  \n  " color=yellow style=filled]
+"operator*#iterator#continue_scope(class continue_scope::X)#(10976315504449545146).6f0a140275409bbf42ae1dbc8842f6af_1" [label="1: Start continue_scope::iterator::operator*\nFormals:  this:continue_scope::iterator const * __return_param:continue_scope::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::X const  \n  " color=yellow style=filled]
 	
 
 	 "operator*#iterator#continue_scope(class continue_scope::X)#(10976315504449545146).6f0a140275409bbf42ae1dbc8842f6af_1" -> "operator*#iterator#continue_scope(class continue_scope::X)#(10976315504449545146).6f0a140275409bbf42ae1dbc8842f6af_5" ;
@@ -571,7 +571,7 @@ digraph cfg {
 	
 
 	 "iterator#iterator#continue_scope#{[copy_ctor]}14404461323337206352.22b1ed1a7fe4bbe907fa541be49b80c5_6" -> "iterator#iterator#continue_scope#{[copy_ctor]}14404461323337206352.22b1ed1a7fe4bbe907fa541be49b80c5_3" ;
-"iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_1" [label="1: Start continue_scope::iterator::iterator\nFormals:  this:continue_scope::iterator* __param_0:continue_scope::iterator&\nLocals:  \n  " color=yellow style=filled]
+"iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_1" [label="1: Start continue_scope::iterator::iterator\nFormals:  this:continue_scope::iterator* __param_0:continue_scope::iterator&&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_1" -> "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_5" ;
@@ -582,7 +582,7 @@ digraph cfg {
 	
 
 	 "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_3" -> "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_4" ;
-"iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_4" [label="4:  Constructor Init \n   n$2=*&__param_0:continue_scope::iterator& [line 16, column 8]\n  n$3=*n$2.vector:continue_scope::vec const * [line 16, column 8]\n  *n$1.vector:continue_scope::vec const *=n$3 [line 16, column 8]\n " shape="box"]
+"iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_4" [label="4:  Constructor Init \n   n$2=*&__param_0:continue_scope::iterator&& [line 16, column 8]\n  n$3=*n$2.vector:continue_scope::vec const * [line 16, column 8]\n  *n$1.vector:continue_scope::vec const *=n$3 [line 16, column 8]\n " shape="box"]
 	
 
 	 "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_4" -> "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_2" ;
@@ -590,7 +590,7 @@ digraph cfg {
 	
 
 	 "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_5" -> "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_6" ;
-"iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_6" [label="6:  Constructor Init \n   n$5=*&__param_0:continue_scope::iterator& [line 16, column 8]\n  n$6=*n$5.position:int [line 16, column 8]\n  *n$4.position:int=n$6 [line 16, column 8]\n " shape="box"]
+"iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_6" [label="6:  Constructor Init \n   n$5=*&__param_0:continue_scope::iterator&& [line 16, column 8]\n  n$6=*n$5.position:int [line 16, column 8]\n  *n$4.position:int=n$6 [line 16, column 8]\n " shape="box"]
 	
 
 	 "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_6" -> "iterator#iterator#continue_scope#{}45454584545775676.cf9361bbc44f4673fab070981c44827e_3" ;
@@ -617,7 +617,7 @@ digraph cfg {
 	
 
 	 "begin#vec#continue_scope(class continue_scope::iterator)#(10867355481694456603).8c0551e386b9f2c25bf3629672b303c4_6" -> "begin#vec#continue_scope(class continue_scope::iterator)#(10867355481694456603).8c0551e386b9f2c25bf3629672b303c4_2" ;
-"get#vec#continue_scope(class continue_scope::X)#(13898317495016814620).3829388c237a09b0f1feeaf1c583e486_1" [label="1: Start continue_scope::vec::get\nFormals:  this:continue_scope::vec* pos:int __return_param:continue_scope::X*\nLocals:  \n  " color=yellow style=filled]
+"get#vec#continue_scope(class continue_scope::X)#(13898317495016814620).3829388c237a09b0f1feeaf1c583e486_1" [label="1: Start continue_scope::vec::get\nFormals:  this:continue_scope::vec const * pos:int __return_param:continue_scope::X*\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "get#vec#continue_scope(class continue_scope::X)#(13898317495016814620).3829388c237a09b0f1feeaf1c583e486_1" -> "get#vec#continue_scope(class continue_scope::X)#(13898317495016814620).3829388c237a09b0f1feeaf1c583e486_3" ;

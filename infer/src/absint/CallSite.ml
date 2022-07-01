@@ -8,9 +8,7 @@
 open! IStd
 module F = Format
 
-type t = {pname: Procname.t; loc: Location.t} [@@deriving compare]
-
-let equal = [%compare.equal: t]
+type t = {pname: Procname.t; loc: Location.t} [@@deriving compare, equal]
 
 let pname t = t.pname
 

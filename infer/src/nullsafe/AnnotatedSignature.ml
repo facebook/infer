@@ -26,7 +26,7 @@ and param_signature =
   { param_annotation_deprecated: Annot.Item.t
   ; mangled: Mangled.t
   ; param_annotated_type: AnnotatedType.t }
-[@@deriving compare]
+[@@deriving compare, equal]
 
 and kind = FirstParty | ThirdParty of third_party_model_source [@deriving compare]
 
@@ -192,7 +192,7 @@ let pp proc_name fmt annotated_signature =
 let mk_ann_str s = {Annot.class_name= s; parameters= []}
 
 let mk_ia_nullable ia =
-  if Annotations.ia_is_nullable ia then ia else (mk_ann_str Annotations.nullable, true) :: ia
+  if Annotations.ia_is_nullable ia then ia else mk_ann_str Annotations.nullable :: ia
 
 
 let mark_ia_nullability ia x = if x then mk_ia_nullable ia else ia

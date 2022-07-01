@@ -21,7 +21,9 @@
     test_match_in_pattern_f_Bad/0,
     test_match_nested1_Ok/0,
     test_match_nested2_Bad/0,
-    test_match_nested3_Bad/0
+    test_match_nested3_Bad/0,
+    test_match_eager_Ok/0,
+    test_match_eager_Bad/0
 ]).
 
 tail([_ | Xs]) -> Xs.
@@ -100,6 +102,15 @@ test_match_nested2_Bad() ->
 
 test_match_nested3_Bad() ->
     (2 = _X) = 1.
+
+no_op(_) -> ok.
+
+test_match_eager_Ok() ->
+    no_op(1 = 1).
+
+test_match_eager_Bad() ->
+    % Even though the argument is not used, it is still evaluated (causing crash).
+    no_op(1 = 2).
 
 %% internal
 %% These functions are used to fool the compiler, which would warn if these were inlined.

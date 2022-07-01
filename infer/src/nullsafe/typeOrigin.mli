@@ -45,7 +45,7 @@ type t =
           non-actionable false positives. Ideally we should not see these instances. They should be
           either processed gracefully (and a dedicated type constructor should be added), or fixed.
           T54687014 tracks unsoundness issues caused by this type. *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 val get_nullability : t -> Nullability.t
 

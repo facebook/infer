@@ -25,8 +25,8 @@ module LocalCache = struct
 
   let get proc_name =
     let summ_opt_opt = Procname.LRUHash.find_opt (Lazy.force results) proc_name in
-    if Option.is_some summ_opt_opt then BackendStats.incr_ondemand_local_cache_hits ()
-    else BackendStats.incr_ondemand_local_cache_misses () ;
+    if Option.is_some summ_opt_opt then Stats.incr_ondemand_local_cache_hits ()
+    else Stats.incr_ondemand_local_cache_misses () ;
     summ_opt_opt
 
 
@@ -53,27 +53,9 @@ let is_active, add_active, remove_active, clear_actives =
   (is_active, add_active, remove_active, clear_actives)
 
 
-let already_analyzed proc_name =
-  match Summary.OnDisk.get proc_name with
-  | Some summary ->
-      Summary.(Status.is_analyzed (get_status summary))
-  | None ->
-      false
-
-
-let should_be_analyzed proc_attributes =
-  proc_attributes.ProcAttributes.is_defined
-  &&
-  let proc_name = proc_attributes.ProcAttributes.proc_name in
-  (not (is_active proc_name)) (* avoid infinite loops *) && not (already_analyzed proc_name)
-
-
 let procedure_should_be_analyzed proc_name =
-  match Attributes.load proc_name with
-  | Some proc_attributes ->
-      should_be_analyzed proc_attributes
-  | None ->
-      false
+  Attributes.load proc_name
+  |> Option.exists ~f:(fun proc_attributes -> proc_attributes.ProcAttributes.is_defined)
 
 
 type global_state =
@@ -153,7 +135,7 @@ let update_taskbar callee_pdesc =
 
 let analyze exe_env callee_summary =
   let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary in
-  BackendStats.incr_ondemand_procs_analyzed () ;
+  Stats.incr_ondemand_procs_analyzed () ;
   summary
 
 
@@ -162,9 +144,11 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in
     fun () ->
+      let elapsed = Mtime_clock.count start_time in
+      let duration = Mtime.Span.to_ms elapsed |> Float.to_int in
+      Stats.add_proc_duration (Procname.to_string callee_pname) duration ;
       L.(debug Analysis Medium)
-        "Elapsed analysis time: %a: %a@\n" Procname.pp callee_pname Mtime.Span.pp
-        (Mtime_clock.count start_time)
+        "Elapsed analysis time: %a: %a@\n" Procname.pp callee_pname Mtime.Span.pp elapsed
   in
   if Config.trace_ondemand then
     L.progress "[%d] run_proc_analysis %a -> %a@." !nesting (Pp.option Procname.pp)
@@ -183,7 +167,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   in
   let postprocess summary =
     decr nesting ;
-    Summary.OnDisk.store_analyzed summary ;
+    Summary.OnDisk.store summary ;
     remove_active callee_pname ;
     Printer.write_proc_html callee_pdesc ;
     log_elapsed_time () ;
@@ -200,7 +184,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
       {summary.payloads with biabduction}
     in
     let new_summary = {summary with stats; payloads} in
-    Summary.OnDisk.store_analyzed new_summary ;
+    Summary.OnDisk.store new_summary ;
     remove_active callee_pname ;
     log_elapsed_time () ;
     new_summary
@@ -313,20 +297,22 @@ let analyze_callee exe_env ?caller_summary callee_pname =
         callee_summary_option
     | None ->
         let summ_opt =
-          if procedure_should_be_analyzed callee_pname then
-            match get_proc_desc callee_pname with
-            | Some callee_pdesc ->
-                RestartScheduler.lock_exn callee_pname ;
-                let callee_summary =
-                  run_proc_analysis exe_env
-                    ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-                    callee_pdesc
-                in
-                RestartScheduler.unlock callee_pname ;
-                Some callee_summary
-            | None ->
-                Summary.OnDisk.get callee_pname
-          else Summary.OnDisk.get callee_pname
+          match Summary.OnDisk.get callee_pname with
+          | Some _ as summ_opt ->
+              summ_opt
+          | None when procedure_should_be_analyzed callee_pname ->
+              get_proc_desc callee_pname
+              |> Option.map ~f:(fun callee_pdesc ->
+                     RestartScheduler.lock_exn callee_pname ;
+                     let callee_summary =
+                       run_proc_analysis exe_env
+                         ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
+                         callee_pdesc
+                     in
+                     RestartScheduler.unlock callee_pname ;
+                     callee_summary )
+          | _ ->
+              None
         in
         LocalCache.add callee_pname summ_opt ;
         summ_opt

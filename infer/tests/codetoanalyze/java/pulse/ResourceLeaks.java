@@ -39,6 +39,10 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -58,7 +62,6 @@ public class ResourceLeaks {
     FileOutputStream fis = new FileOutputStream("file.txt");
   }
 
-  /* Commented to make infer-smoke-build-macosx CI happy
   public void fileOutputStreamNotClosedAfterWriteNoTryBad() throws IOException {
     byte[] arr = {1, 2, 3};
     FileOutputStream fis = new FileOutputStream("file.txt");
@@ -77,7 +80,7 @@ public class ResourceLeaks {
     }
   }
 
-  public void FP_fileOutputStreamClosedAfterWriteAlmostOk() throws IOException {
+  public void fileOutputStreamClosedAfterWriteAlmostOk() throws IOException {
     byte[] arr = {1, 2, 3};
     FileOutputStream fis = null;
     try {
@@ -90,7 +93,6 @@ public class ResourceLeaks {
       // ignore this case and mark this method as Ok.
     }
   }
-  */
 
   public void fileOutputStreamClosedAfterWriteOk() throws IOException {
     byte[] arr = {1, 2, 3};
@@ -230,14 +232,14 @@ public class ResourceLeaks {
 
   // BufferedInputStream does not throw exception, and its close
   // closes the FileInputStream as well
-  public void nestedGood() throws IOException {
+  public void nestedOk() throws IOException {
     BufferedInputStream b = new BufferedInputStream(new FileInputStream("file.txt"));
     b.close();
   }
 
   // GZipInputStream can throw IO Exception
   // in which case the new FileInputStream will be dangling
-  public void FN_nestedBad1() throws IOException {
+  public void nestedBad1() throws IOException {
     GZIPInputStream g = new GZIPInputStream(new FileInputStream("file.txt"));
     g.close();
   }
@@ -248,7 +250,7 @@ public class ResourceLeaks {
   }
 
   /* Fixed versions of this are below with ObjectInputStream tests */
-  public void FN_objectInputStreamClosedNestedBad() throws IOException {
+  public void objectInputStreamClosedNestedBad() throws IOException {
     ObjectInputStream oin = null;
     try {
       oin = new ObjectInputStream(new FileInputStream("file.txt"));
@@ -323,7 +325,7 @@ public class ResourceLeaks {
 
   // FileInputStream tests
 
-  public void FN_fileInputStreamNotClosedAfterReadBad() {
+  public void fileInputStreamNotClosedAfterReadBad() {
     FileInputStream fis;
     try {
       fis = new FileInputStream("file.txt");
@@ -412,13 +414,17 @@ public class ResourceLeaks {
       oout.flush();
     } catch (IOException e) {
     } finally {
-      fis.close();
+      if (oout != null) {
+        oout.close();
+      } else {
+        fis.close();
+      }
     }
   }
 
   // ObjectInputStream tests
 
-  public void FN_objectInputStreamNotClosedAfterReadBad() {
+  public void objectInputStreamNotClosedAfterReadBad() {
     ObjectInputStream oin;
     try {
       oin = new ObjectInputStream(new FileInputStream("file.txt"));
@@ -444,7 +450,7 @@ public class ResourceLeaks {
     }
   }
 
-  public void objectInputStreamClosedOk2() throws IOException {
+  public void objectInputStreamNotClosedBad() throws IOException {
     ObjectInputStream oin = null;
     FileInputStream fis = new FileInputStream("file.txt");
     try {
@@ -468,7 +474,7 @@ public class ResourceLeaks {
     }
   }
 
-  public static void FN_jarInputStreamLeakBad() throws IOException {
+  public static void jarInputStreamLeakBad() throws IOException {
     FileInputStream fos = new FileInputStream("");
     try {
       JarInputStream g = new JarInputStream(fos); //  Testing exceptional condition in constructor
@@ -478,14 +484,14 @@ public class ResourceLeaks {
     }
   }
 
-  public static void FN_nestedJarInputStreamBad(File file) throws IOException {
+  public static void nestedJarInputStreamBad(File file) throws IOException {
     JarInputStream g = new JarInputStream(new FileInputStream(file));
     g.close();
   }
 
   // JarOutputStream tests
 
-  public static void FP_jarOutputStreamNoLeakOk() throws IOException {
+  public static void jarOutputStreamNoLeakOk() throws IOException {
     FileOutputStream fos = new FileOutputStream("");
     try {
       JarOutputStream g = new JarOutputStream(fos);
@@ -595,7 +601,7 @@ public class ResourceLeaks {
 
   // HttpURLConnection
 
-  public void openHttpURLConnectionDisconnectedOk() throws IOException {
+  public void FP_openHttpURLConnectionDisconnectedOk() throws IOException {
     String content = "TEXT";
     DataOutputStream outputStream = null;
     HttpURLConnection connection = null;
@@ -611,7 +617,7 @@ public class ResourceLeaks {
     }
   }
 
-  public void FN_openHttpURLConnectionNotDisconnectedBad() throws IOException {
+  public void openHttpURLConnectionNotDisconnectedBad() throws IOException {
     String content = "TEXT";
     DataOutputStream outputStream = null;
     HttpURLConnection connection = null;
@@ -742,7 +748,7 @@ public class ResourceLeaks {
   // for several reasons, so this test is just to make sure it remains
   // banished forever
 
-  private String readInstallationFileGoodOk(File installation) throws IOException {
+  private String readInstallationFileOk(File installation) throws IOException {
     RandomAccessFile f = new RandomAccessFile(installation, "r");
     try {
       byte[] bytes = new byte[(int) f.length()];
@@ -844,7 +850,7 @@ public class ResourceLeaks {
     }
   }
 
-  void copyFileCloseOk(File src, File dst) throws IOException {
+  void FP_copyFileCloseOk(File src, File dst) throws IOException {
     FileChannel inChannel = new FileInputStream(src).getChannel();
     try {
       ignore(inChannel);
@@ -866,7 +872,7 @@ public class ResourceLeaks {
     return 0;
   }
 
-  void FN_scannerNotClosedBad() throws IOException {
+  void scannerNotClosedBad() throws IOException {
     Scanner scanner = new Scanner(new FileInputStream("file.txt"));
   }
 
@@ -925,7 +931,7 @@ public class ResourceLeaks {
     }
   }
 
-  public int FN_tryWithResourceBad() {
+  public int tryWithResourceOk() {
     try (FileInputStream inputStream = new FileInputStream("paf.txt")) {
       return inputStream.read();
     } catch (IOException e) {
@@ -980,5 +986,56 @@ public class ResourceLeaks {
     InputStream stream = new FileInputStream(f);
     Preconditions.checkState(x > 0);
     stream.close();
+  }
+
+  static class RessourceInMap {
+    final Map<String, InputStream> map;
+
+    public RessourceInMap() {
+      map = new HashMap();
+    }
+
+    public void allocateOk(List<String> filenames) throws IOException {
+      for (String filename : filenames) map.put(filename, new FileInputStream(new File(filename)));
+    }
+
+    public void releaseAll() {
+      for (InputStream is : map.values())
+        try {
+          is.close();
+        } catch (IOException e) {
+
+        }
+    }
+  }
+
+  // to test reachability from a collection
+  static class Obj {
+    InputStream content;
+  }
+
+  static class RessourceInList {
+    final List<Obj> list;
+
+    public RessourceInList() {
+      list = new ArrayList();
+    }
+
+    public void allocateOk(List<String> filenames) throws IOException {
+      for (String filename : filenames) {
+        Obj o = new Obj();
+        o.content = new FileInputStream(new File(filename));
+        list.add(o);
+      }
+    }
+
+    public void releaseAll() {
+      for (Obj o : list)
+        try {
+          o.content.close();
+        } catch (IOException e) {
+
+        }
+    }
   }
 }

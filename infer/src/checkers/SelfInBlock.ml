@@ -227,31 +227,33 @@ module Mem = struct
     {astate with vars}
 
 
+  let pvar_same_name a b = Mangled.equal (Pvar.get_name a) (Pvar.get_name b)
+
   let is_captured_self attributes pvar =
-    let pvar_name = Pvar.get_name pvar in
     Pvar.is_self pvar
     && List.exists
-         ~f:(fun {CapturedVar.name= captured; typ} ->
-           Mangled.equal captured pvar_name && Typ.is_strong_pointer typ )
+         ~f:(fun {CapturedVar.pvar= captured; typ} ->
+           pvar_same_name captured pvar && Typ.is_strong_pointer typ )
          attributes.ProcAttributes.captured
 
+
+  let lowercase_name pvar = String.lowercase (Mangled.to_string (Pvar.get_name pvar))
 
   (* The variable is captured in the block, contains self in the name, is not self, and it's strong. *)
   let is_captured_strong_self attributes pvar =
     (not (Pvar.is_self pvar))
     && List.exists
-         ~f:(fun {CapturedVar.name= captured; typ} ->
-           Typ.is_strong_pointer typ
-           && Mangled.equal captured (Pvar.get_name pvar)
-           && String.is_suffix ~suffix:"self" (String.lowercase (Mangled.to_string captured)) )
+         ~f:(fun {CapturedVar.pvar= captured; typ} ->
+           Typ.is_strong_pointer typ && pvar_same_name captured pvar
+           && String.is_suffix ~suffix:"self" (lowercase_name captured) )
          attributes.ProcAttributes.captured
 
 
   let is_captured_weak_self attributes pvar =
     List.exists
-      ~f:(fun {CapturedVar.name= captured; typ} ->
-        Mangled.equal captured (Pvar.get_name pvar)
-        && String.is_substring ~substring:"self" (String.lowercase (Mangled.to_string captured))
+      ~f:(fun {CapturedVar.pvar= captured; typ} ->
+        pvar_same_name captured pvar
+        && String.is_substring ~substring:"self" (lowercase_name captured)
         && Typ.is_weak_pointer typ )
       attributes.ProcAttributes.captured
 

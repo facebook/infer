@@ -25,9 +25,21 @@ type var_data =
   ; is_constexpr: bool
   ; is_declared_unused: bool  (** variable declared with attribute [unused] *) }
 
-type specialized_with_blocks_info =
+type specialized_with_aliasing_info =
   { orig_proc: Procname.t
-  ; formals_to_procs_and_new_formals: (Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t }
+  ; aliases: Pvar.t list list
+        (** all the pvars in a same list are aliasing each other. e.g.
+            [aliases = \[\[x; y; z\]; \[a; b\]\]] indicates that [x], [y] and [z] alias each other
+            and [a] and [b] as well *) }
+[@@deriving compare]
+
+type 'captured_var passed_closure =
+  | Closure of (Procname.t * 'captured_var list)
+  | Fields of 'captured_var passed_closure Fieldname.Map.t
+[@@deriving compare, equal]
+
+type specialized_with_closures_info =
+  {orig_proc: Procname.t; formals_to_closures: CapturedVar.t passed_closure Pvar.Map.t}
 [@@deriving compare]
 
 type t =
@@ -53,12 +65,17 @@ type t =
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
-  ; specialized_with_blocks_info: specialized_with_blocks_info option
+  ; specialized_with_aliasing_info: specialized_with_aliasing_info option
+        (** the procedure is a clone specialized with captured variables and paramaters sharing
+            memory, with link to the original procedure, and a list of variables aliasing each
+            other. *)
+  ; specialized_with_closures_info: specialized_with_closures_info option
         (** the procedure is a clone specialized with calls to concrete closures, with link to the
             original procedure, and a map that links the original formals to the elements of the
             closure used to specialize the procedure. *)
   ; clang_method_kind: ClangMethodKind.t  (** the kind of method the procedure is *)
   ; loc: Location.t  (** location of this procedure in the source code *)
+  ; loc_instantiated: Location.t option  (** location of this procedure is possibly instantiated *)
   ; translation_unit: SourceFile.t  (** source file where the procedure was captured *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
@@ -85,5 +102,8 @@ val get_loc : t -> Location.t
 (** Return loc information for the procedure *)
 
 val get_proc_name : t -> Procname.t
+
+val get_pvar_formals : t -> (Pvar.t * Typ.t) list
+(** Return pvar and type of formal parameters *)
 
 module SQLite : SqliteUtils.Data with type t = t

@@ -7,24 +7,13 @@
 open! IStd
 module F = Format
 module L = Logging
+module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 module Invalidation = PulseInvalidation
+module Taint = PulseTaint
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
-
-(** Make sure we don't depend on {!AbstractValue} to avoid attributes depending on values. Otherwise
-    they become a pain to handle when comparing memory states.
-
-    If you find you need to make attributes depend on {!AbstractValue} then remember to modify graph
-    operations of {!PulseDomain} and the interprocedural operations in {!PulseAbductiveDomain} *)
-include struct
-  [@@@warning "-60"]
-
-  module AbstractValue = struct end
-
-  module PulseAbstractValue = struct end
-end
 
 module Attribute = struct
   type allocator =
@@ -35,6 +24,7 @@ module Attribute = struct
     | CppNew
     | CppNewArray
     | JavaResource of JavaClassName.t
+    | ObjCAlloc
   [@@deriving compare, equal]
 
   let pp_allocator fmt = function
@@ -52,68 +42,156 @@ module Attribute = struct
         F.fprintf fmt "new[]"
     | JavaResource class_name ->
         F.fprintf fmt "resource %a" JavaClassName.pp class_name
+    | ObjCAlloc ->
+        F.fprintf fmt "alloc"
 
+
+  type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
+
+  let pp_taint_in fmt {v} = F.fprintf fmt "{@[v= %a@]}" AbstractValue.pp v
+
+  module Tainted = struct
+    type t =
+      { source: Taint.t
+      ; time_trace: Timestamp.trace
+      ; hist: ValueHistory.t
+      ; intra_procedural_only: bool }
+    [@@deriving compare, equal]
+
+    let pp fmt {source; hist; time_trace; intra_procedural_only} =
+      F.fprintf fmt "(%a, %a, %b, t=%a)" Taint.pp source ValueHistory.pp hist intra_procedural_only
+        Timestamp.pp_trace time_trace
+  end
+
+  module TaintedSet = PrettyPrintable.MakePPSet (Tainted)
+
+  module MustNotBeTainted = struct
+    type t = {sink: Taint.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
+
+    let pp fmt {time; sink; trace} =
+      F.fprintf fmt "(%a, t=%d)"
+        (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sink))
+        trace
+        (time :> int)
+  end
+
+  module MustNotBeTaintedSet = PrettyPrintable.MakePPSet (MustNotBeTainted)
+
+  module TaintSanitized = struct
+    type t = {sanitizer: Taint.t; time_trace: Timestamp.trace; trace: Trace.t}
+    [@@deriving compare, equal]
+
+    let pp fmt {sanitizer; time_trace; trace} =
+      F.fprintf fmt "(%a, t=%a)"
+        (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer))
+        trace Timestamp.pp_trace time_trace
+  end
+
+  module TaintSanitizedSet = PrettyPrintable.MakePPSet (TaintSanitized)
+
+  module CopyOrigin = struct
+    type t = CopyCtor | CopyAssignment [@@deriving compare, equal]
+
+    let pp fmt = function
+      | CopyCtor ->
+          F.fprintf fmt "copied"
+      | CopyAssignment ->
+          F.fprintf fmt "copy assigned"
+  end
+
+  module CopiedInto = struct
+    type t = IntoVar of Var.t | IntoField of {field: Fieldname.t; from: CopyOrigin.t}
+    [@@deriving compare, equal]
+
+    let pp fmt = function
+      | IntoVar var ->
+          Var.pp fmt var
+      | IntoField {field} ->
+          Fieldname.pp fmt field
+  end
 
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of allocator * Trace.t
+    | AlwaysReachable
     | Closure of Procname.t
+    | CopiedInto of CopiedInto.t
     | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
     | ISLAbduced of Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-    | JavaResourceReleased of JavaClassName.t
+    | MustNotBeTainted of MustNotBeTaintedSet.t
+    | JavaResourceReleased
+    | PropagateTaintFrom of taint_in list
+      (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
+         retain [v1] to [vn], in fact they should be collected
+         when they become unreachable *)
     | RefCounted
+    | SourceOriginOfCopy of {source: AbstractValue.t; is_const_ref: bool}
+    | StdMoved
     | StdVectorReserve
+    | Tainted of TaintedSet.t
+    | TaintSanitized of TaintSanitizedSet.t
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
     | WrittenTo of Trace.t
-  [@@deriving compare, variants]
-
-  let equal = [%compare.equal: t]
+  [@@deriving compare, equal, variants]
 
   type rank = int
 
   let to_rank = Variants.to_rank
 
-  let dummy_trace = Trace.Immediate {location= Location.dummy; history= Epoch}
+  let address_of_stack_variable_rank = Variants.addressofstackvariable.rank
 
-  let closure_rank = Variants.to_rank (Closure (Procname.from_string_c_fun ""))
+  let allocated_rank = Variants.allocated.rank
 
-  let written_to_rank = Variants.to_rank (WrittenTo dummy_trace)
+  let always_reachable_rank = Variants.alwaysreachable.rank
 
-  let address_of_stack_variable_rank =
-    let pname = Procname.from_string_c_fun "" in
-    let var = Var.of_pvar (Pvar.mk (Mangled.from_string "") pname) in
-    let location = Location.dummy in
-    Variants.to_rank (AddressOfStackVariable (var, location, Epoch))
+  let closure_rank = Variants.closure.rank
 
+  let copied_into_rank = Variants.copiedinto.rank
 
-  let invalid_rank =
-    Variants.to_rank (Invalid (Invalidation.ConstantDereference IntLit.zero, dummy_trace))
+  let copy_origin_rank = Variants.sourceoriginofcopy.rank
 
+  let dynamic_type_rank = Variants.dynamictype.rank
 
-  let java_resource_released_rank =
-    Variants.to_rank (JavaResourceReleased (JavaClassName.from_string ""))
+  let end_of_collection_rank = Variants.endofcollection.rank
 
+  let invalid_rank = Variants.invalid.rank
 
-  let must_be_valid_rank = Variants.to_rank (MustBeValid (Timestamp.t0, dummy_trace, None))
+  let isl_abduced_rank = Variants.islabduced.rank
 
-  let std_vector_reserve_rank = Variants.to_rank StdVectorReserve
+  let java_resource_released_rank = Variants.javaresourcereleased.rank
 
-  let allocated_rank = Variants.to_rank (Allocated (CMalloc, dummy_trace))
+  let must_be_initialized_rank = Variants.mustbeinitialized.rank
 
-  let ref_counted_rank = Variants.to_rank RefCounted
+  let must_be_valid_rank = Variants.mustbevalid.rank
 
-  let dynamic_type_rank = Variants.to_rank (DynamicType StdTyp.void)
+  let must_not_be_tainted_rank = Variants.mustnotbetainted.rank
 
-  let end_of_collection_rank = Variants.to_rank EndOfCollection
+  let propagate_taint_from_rank = Variants.propagatetaintfrom.rank
 
-  let isl_abduced_rank = Variants.to_rank (ISLAbduced dummy_trace)
+  let ref_counted_rank = Variants.refcounted.rank
+
+  let std_moved_rank = Variants.stdmoved.rank
+
+  let std_vector_reserve_rank = Variants.stdvectorreserve.rank
+
+  let taint_sanitized_rank = Variants.taintsanitized.rank
+
+  let tainted_rank = Variants.tainted.rank
+
+  let uninitialized_rank = Variants.uninitialized.rank
+
+  let unknown_effect_rank = Variants.unknowneffect.rank
+
+  let unreachable_at_rank = Variants.unreachableat.rank
+
+  let written_to_rank = Variants.writtento.rank
 
   let isl_subset attr1 attr2 =
     match (attr1, attr2) with
@@ -134,14 +212,6 @@ module Attribute = struct
         true
 
 
-  let uninitialized_rank = Variants.to_rank Uninitialized
-
-  let unknown_effect_rank = Variants.to_rank (UnknownEffect (Model "", Epoch))
-
-  let unreachable_at_rank = Variants.to_rank (UnreachableAt Location.dummy)
-
-  let must_be_initialized_rank = Variants.to_rank (MustBeInitialized (Timestamp.t0, dummy_trace))
-
   let pp f attribute =
     let pp_string_if_debug string fmt =
       if Config.debug_level_analysis >= 3 then F.pp_print_string fmt string
@@ -155,8 +225,12 @@ module Attribute = struct
         F.fprintf f "Allocated%a"
           (Trace.pp ~pp_immediate:(pp_string_if_debug (F.asprintf "(%a)" pp_allocator allocator)))
           trace
+    | AlwaysReachable ->
+        F.pp_print_string f "AlwaysReachable"
     | Closure pname ->
         Procname.pp f pname
+    | CopiedInto copied_into ->
+        CopiedInto.pp f copied_into
     | DynamicType typ ->
         F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
@@ -177,12 +251,25 @@ module Attribute = struct
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
           trace Invalidation.pp_must_be_valid_reason reason
           (timestamp :> int)
-    | JavaResourceReleased class_name ->
-        F.fprintf f "Released(%a)" JavaClassName.pp class_name
+    | MustNotBeTainted must_not_be_tainted ->
+        F.fprintf f "MustNotBeTainted{%a}" MustNotBeTaintedSet.pp must_not_be_tainted
+    | JavaResourceReleased ->
+        F.pp_print_string f "Released"
+    | PropagateTaintFrom taints_in ->
+        F.fprintf f "PropagateTaintFrom([%a])" (Pp.seq ~sep:";" pp_taint_in) taints_in
     | RefCounted ->
         F.fprintf f "RefCounted"
+    | SourceOriginOfCopy {source; is_const_ref} ->
+        F.fprintf f "copied of source %a" AbstractValue.pp source ;
+        if is_const_ref then F.pp_print_string f " (const&)"
+    | StdMoved ->
+        F.pp_print_string f "std::move()"
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
+    | Tainted tainted ->
+        F.fprintf f "Tainted{%a}" TaintedSet.pp tainted
+    | TaintSanitized taint_sanitized ->
+        F.fprintf f "TaintedSanitized{%a}" TaintSanitizedSet.pp taint_sanitized
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
     | UnknownEffect (call, hist) ->
@@ -194,17 +281,24 @@ module Attribute = struct
 
 
   let is_suitable_for_pre = function
-    | MustBeValid _ | MustBeInitialized _ | RefCounted ->
+    | MustBeValid _ | MustBeInitialized _ | MustNotBeTainted _ | RefCounted ->
         true
     | Invalid _ | Allocated _ | ISLAbduced _ ->
         Config.pulse_isl
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
+    | AlwaysReachable
     | Closure _
+    | CopiedInto _
     | DynamicType _
     | EndOfCollection
-    | JavaResourceReleased _
+    | JavaResourceReleased
+    | PropagateTaintFrom _
+    | SourceOriginOfCopy _
+    | StdMoved
     | StdVectorReserve
+    | Tainted _
+    | TaintSanitized _
     | Uninitialized
     | UnknownEffect _
     | UnreachableAt _
@@ -213,28 +307,72 @@ module Attribute = struct
 
 
   let is_suitable_for_post = function
-    | MustBeInitialized _ | MustBeValid _ | UnreachableAt _ ->
+    | MustBeInitialized _ | MustBeValid _ | MustNotBeTainted _ | UnreachableAt _ ->
         false
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | Allocated _
+    | AlwaysReachable
     | Closure _
+    | CopiedInto _
     | DynamicType _
     | EndOfCollection
     | ISLAbduced _
     | Invalid _
-    | JavaResourceReleased _
+    | JavaResourceReleased
+    | PropagateTaintFrom _
     | RefCounted
+    | SourceOriginOfCopy _
+    | StdMoved
     | StdVectorReserve
+    | Tainted _
+    | TaintSanitized _
     | Uninitialized
     | UnknownEffect _
     | WrittenTo _ ->
         true
 
 
-  let add_call timestamp proc_name call_location caller_history attr =
+  let make_suitable_for_summary attr =
+    match attr with
+    | CopiedInto _ | SourceOriginOfCopy _ ->
+        None
+    | Tainted tainted ->
+        let tainted' =
+          TaintedSet.filter (fun {intra_procedural_only} -> not intra_procedural_only) tainted
+        in
+        if TaintedSet.is_empty tainted' then None else Some (Tainted tainted')
+    | AddressOfCppTemporary _
+    | AddressOfStackVariable _
+    | Allocated _
+    | AlwaysReachable
+    | Closure _
+    | DynamicType _
+    | EndOfCollection
+    | Invalid _
+    | ISLAbduced _
+    | MustBeInitialized _
+    | MustBeValid _
+    | MustNotBeTainted _
+    | JavaResourceReleased
+    | PropagateTaintFrom _
+    | RefCounted
+    | StdMoved
+    | StdVectorReserve
+    | TaintSanitized _
+    | Uninitialized
+    | UnknownEffect _
+    | UnreachableAt _
+    | WrittenTo _ ->
+        Some attr
+
+
+  let add_call_and_subst subst timestamp proc_name call_location caller_history attr =
     let add_call_to_trace in_call =
       Trace.ViaCall {f= Call proc_name; location= call_location; history= caller_history; in_call}
+    in
+    let add_call_to_history in_call =
+      ValueHistory.singleton (Call {f= Call proc_name; location= call_location; in_call; timestamp})
     in
     match attr with
     | Allocated (proc_name, trace) ->
@@ -247,143 +385,260 @@ module Attribute = struct
         MustBeValid (timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized (_timestamp, trace) ->
         MustBeInitialized (timestamp, add_call_to_trace trace)
+    | MustNotBeTainted must_not_be_tainted ->
+        let add_call_to_must_not_be_tainted MustNotBeTainted.{sink; trace} =
+          MustNotBeTainted.{time= timestamp; sink; trace= add_call_to_trace trace}
+        in
+        MustNotBeTainted
+          (MustNotBeTaintedSet.map add_call_to_must_not_be_tainted must_not_be_tainted)
+    | PropagateTaintFrom taints_in ->
+        PropagateTaintFrom (List.map taints_in ~f:(fun {v} -> {v= subst v}))
+    | Tainted tainted ->
+        let add_call_to_tainted Tainted.{source; time_trace; hist; intra_procedural_only} =
+          if intra_procedural_only then
+            L.die InternalError "Unexpected attribute %a in the summary of %a" pp attr Procname.pp
+              proc_name
+          else
+            Tainted.
+              { source
+              ; time_trace= Timestamp.add_to_trace time_trace timestamp
+              ; hist= add_call_to_history hist
+              ; intra_procedural_only }
+        in
+        Tainted (TaintedSet.map add_call_to_tainted tainted)
+    | TaintSanitized taint_sanitized ->
+        let add_call_to_taint_sanitized TaintSanitized.{sanitizer; time_trace; trace} =
+          TaintSanitized.
+            { sanitizer
+            ; time_trace= Timestamp.add_to_trace time_trace timestamp
+            ; trace= add_call_to_trace trace }
+        in
+        TaintSanitized (TaintSanitizedSet.map add_call_to_taint_sanitized taint_sanitized)
     | UnknownEffect (call, hist) ->
-        UnknownEffect
-          ( call
-          , ValueHistory.singleton
-              (Call {f= Call proc_name; location= call_location; in_call= hist; timestamp}) )
+        UnknownEffect (call, add_call_to_history hist)
     | WrittenTo trace ->
         WrittenTo (add_call_to_trace trace)
+    | CopiedInto _ | SourceOriginOfCopy _ ->
+        L.die InternalError "Unexpected attribute %a in the summary of %a" pp attr Procname.pp
+          proc_name
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
+      | AlwaysReachable
       | Closure _
       | DynamicType _
       | EndOfCollection
-      | JavaResourceReleased _
+      | JavaResourceReleased
       | RefCounted
+      | StdMoved
       | StdVectorReserve
       | UnreachableAt _
       | Uninitialized ) as attr ->
         attr
 
 
-  let alloc_free_match allocator (invalidation : (Invalidation.t * Trace.t) option) released =
-    match (allocator, invalidation, released) with
-    | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), Some ((CFree | CustomFree _), _), _
-    | CppNew, Some (CppDelete, _), _
-    | CppNewArray, Some (CppDeleteArray, _), _ ->
+  let alloc_free_match allocator (invalidation : (Invalidation.t * Trace.t) option) is_released =
+    match (allocator, invalidation) with
+    | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), Some ((CFree | CustomFree _), _)
+    | CppNew, Some (CppDelete, _)
+    | CppNewArray, Some (CppDeleteArray, _)
+    | ObjCAlloc, _ ->
         true
-    | JavaResource allocated_class_name, _, Some released_class_name ->
-        if not (JavaClassName.equal allocated_class_name released_class_name) then
-          L.internal_error "Unexpected mismatch between allocated/released resources" ;
-        true
+    | JavaResource _, _ ->
+        is_released
     | _ ->
         false
+
+
+  let filter_unreachable subst f_keep attr =
+    match attr with
+    | PropagateTaintFrom taints_in ->
+        let taints_in' =
+          List.fold taints_in ~init:AbstractValue.Set.empty ~f:(fun acc {v} ->
+              if f_keep v then AbstractValue.Set.add v acc
+              else
+                AbstractValue.Set.union
+                  (Option.value ~default:AbstractValue.Set.empty
+                     (AbstractValue.Map.find_opt v subst) )
+                  acc )
+        in
+        if AbstractValue.Set.is_empty taints_in' then None
+        else
+          let taints_in' = AbstractValue.Set.fold (fun v list -> {v} :: list) taints_in' [] in
+          Some (PropagateTaintFrom taints_in')
+    | MustNotBeTainted set when MustNotBeTaintedSet.is_empty set ->
+        L.die InternalError "Unexpected attribute %a." pp attr
+    | Tainted set when TaintedSet.is_empty set ->
+        L.die InternalError "Unexpected attribute %a." pp attr
+    | TaintSanitized set when TaintSanitizedSet.is_empty set ->
+        L.die InternalError "Unexpected attribute %a." pp attr
+    | ( AddressOfCppTemporary _
+      | AddressOfStackVariable _
+      | Allocated _
+      | AlwaysReachable
+      | Closure _
+      | CopiedInto _
+      | DynamicType _
+      | EndOfCollection
+      | Invalid _
+      | ISLAbduced _
+      | MustBeInitialized _
+      | MustBeValid _
+      | MustNotBeTainted _
+      | JavaResourceReleased
+      | RefCounted
+      | SourceOriginOfCopy _
+      | StdMoved
+      | StdVectorReserve
+      | Tainted _
+      | TaintSanitized _
+      | Uninitialized
+      | UnknownEffect _
+      | UnreachableAt _
+      | WrittenTo _ ) as attr ->
+        Some attr
 end
 
 module Attributes = struct
-  module Set = PrettyPrintable.MakePPUniqRankSet (Int) (Attribute)
+  module Set = struct
+    include PrettyPrintable.MakePPUniqRankSet (Int) (Attribute)
 
-  let get_invalid attrs =
-    Set.find_rank attrs Attribute.invalid_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Invalid (invalidation, trace)) = attr in
-           (invalidation, trace) )
+    let get_by_rank rank ~dest attrs = find_rank attrs rank |> Option.map ~f:dest
 
-
-  let get_java_resource_released attrs =
-    Set.find_rank attrs Attribute.java_resource_released_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.JavaResourceReleased class_name) = attr in
-           class_name )
+    let get_tainted attrs =
+      get_by_rank Attribute.tainted_rank
+        ~dest:(function[@warning "-8"] Tainted tainted -> tainted)
+        attrs
+      |> Option.value ~default:Attribute.TaintedSet.empty
 
 
-  let get_must_be_valid attrs =
-    Set.find_rank attrs Attribute.must_be_valid_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.MustBeValid (timestamp, trace, reason)) = attr in
-           (timestamp, trace, reason) )
+    let get_taint_sanitized attrs =
+      get_by_rank Attribute.taint_sanitized_rank
+        ~dest:(function[@warning "-8"] TaintSanitized taint_sanitized -> taint_sanitized)
+        attrs
+      |> Option.value ~default:Attribute.TaintSanitizedSet.empty
 
 
-  let get_written_to attrs =
-    Set.find_rank attrs Attribute.written_to_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.WrittenTo action) = attr in
-           action )
+    let get_must_not_be_tainted attrs =
+      get_by_rank Attribute.must_not_be_tainted_rank
+        ~dest:(function[@warning "-8"] MustNotBeTainted must_not_be_tainted -> must_not_be_tainted)
+        attrs
+      |> Option.value ~default:Attribute.MustNotBeTaintedSet.empty
 
 
-  let get_closure_proc_name attrs =
-    Set.find_rank attrs Attribute.closure_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Closure proc_name) = attr in
-           proc_name )
+    let add attrs value =
+      let open Attribute in
+      match value with
+      | Tainted new_set ->
+          if TaintedSet.is_empty new_set then attrs
+          else
+            let existing_set = get_tainted attrs in
+            update (Tainted (TaintedSet.union new_set existing_set)) attrs
+      | TaintSanitized new_set ->
+          if TaintSanitizedSet.is_empty new_set then attrs
+          else
+            let existing_set = get_taint_sanitized attrs in
+            update (TaintSanitized (TaintSanitizedSet.union new_set existing_set)) attrs
+      | MustNotBeTainted new_set ->
+          if MustNotBeTaintedSet.is_empty new_set then attrs
+          else
+            let existing_set = get_must_not_be_tainted attrs in
+            update (MustNotBeTainted (MustNotBeTaintedSet.union new_set existing_set)) attrs
+      | _ ->
+          add attrs value
+  end
+
+  let get_by_rank = Set.get_by_rank
+
+  let mem_by_rank rank attrs = Set.find_rank attrs rank |> Option.is_some
+
+  let get_invalid =
+    get_by_rank Attribute.invalid_rank ~dest:(function [@warning "-8"]
+        | Invalid (invalidation, trace) -> (invalidation, trace) )
 
 
-  let get_address_of_stack_variable attrs =
-    Set.find_rank attrs Attribute.address_of_stack_variable_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.AddressOfStackVariable (var, loc, history)) = attr in
-           (var, loc, history) )
+  let get_propagate_taint_from =
+    get_by_rank Attribute.propagate_taint_from_rank ~dest:(function [@warning "-8"]
+        | PropagateTaintFrom taints_in -> taints_in )
 
 
-  let is_end_of_collection attrs =
-    Set.find_rank attrs Attribute.end_of_collection_rank |> Option.is_some
+  let is_java_resource_released = mem_by_rank Attribute.java_resource_released_rank
+
+  let get_must_be_valid =
+    get_by_rank Attribute.must_be_valid_rank ~dest:(function [@warning "-8"]
+        | Attribute.MustBeValid (timestamp, trace, reason) -> (timestamp, trace, reason) )
 
 
-  let is_std_vector_reserved attrs =
-    Set.find_rank attrs Attribute.std_vector_reserve_rank |> Option.is_some
+  let get_written_to =
+    get_by_rank Attribute.written_to_rank ~dest:(function [@warning "-8"] WrittenTo action ->
+        action )
 
+
+  let get_closure_proc_name =
+    get_by_rank Attribute.closure_rank ~dest:(function [@warning "-8"] Closure proc_name ->
+        proc_name )
+
+
+  let get_copied_into =
+    get_by_rank Attribute.copied_into_rank ~dest:(function [@warning "-8"]
+        | CopiedInto copied_into -> copied_into )
+
+
+  let get_source_origin_of_copy =
+    get_by_rank Attribute.copy_origin_rank ~dest:(function [@warning "-8"]
+        | SourceOriginOfCopy {source; is_const_ref} -> (source, is_const_ref) )
+
+
+  let get_address_of_stack_variable =
+    get_by_rank Attribute.address_of_stack_variable_rank ~dest:(function [@warning "-8"]
+        | AddressOfStackVariable (var, loc, history) -> (var, loc, history) )
+
+
+  let is_end_of_collection = mem_by_rank Attribute.end_of_collection_rank
+
+  let is_std_moved = mem_by_rank Attribute.std_moved_rank
+
+  let is_std_vector_reserved = mem_by_rank Attribute.std_vector_reserve_rank
 
   let is_modified attrs =
-    Option.is_some (Set.find_rank attrs Attribute.written_to_rank)
-    || Option.is_some (Set.find_rank attrs Attribute.invalid_rank)
-    || Option.is_some (Set.find_rank attrs Attribute.unknown_effect_rank)
+    mem_by_rank Attribute.written_to_rank attrs
+    || mem_by_rank Attribute.invalid_rank attrs
+    || mem_by_rank Attribute.unknown_effect_rank attrs
+    || mem_by_rank Attribute.java_resource_released_rank attrs
 
 
-  let is_uninitialized attrs = Set.find_rank attrs Attribute.uninitialized_rank |> Option.is_some
+  let is_always_reachable = mem_by_rank Attribute.always_reachable_rank
 
-  let is_ref_counted attrs = Set.find_rank attrs Attribute.ref_counted_rank |> Option.is_some
+  let is_uninitialized = mem_by_rank Attribute.uninitialized_rank
 
-  let get_allocation attrs =
-    Set.find_rank attrs Attribute.allocated_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.Allocated (allocator, trace)) = attr in
-           (allocator, trace) )
+  let is_ref_counted = mem_by_rank Attribute.ref_counted_rank
 
-
-  let get_isl_abduced attrs =
-    Set.find_rank attrs Attribute.isl_abduced_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.ISLAbduced trace) = attr in
-           trace )
+  let get_allocation =
+    get_by_rank Attribute.allocated_rank ~dest:(function [@warning "-8"]
+        | Allocated (allocator, trace) -> (allocator, trace) )
 
 
-  let get_unknown_effect attrs =
-    Set.find_rank attrs Attribute.unknown_effect_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.UnknownEffect (call, hist)) = attr in
-           (call, hist) )
+  let get_isl_abduced =
+    get_by_rank Attribute.isl_abduced_rank ~dest:(function [@warning "-8"] ISLAbduced trace ->
+        trace )
 
 
-  let get_dynamic_type attrs =
-    Set.find_rank attrs Attribute.dynamic_type_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.DynamicType typ) = attr in
-           typ )
+  let get_unknown_effect =
+    get_by_rank Attribute.unknown_effect_rank ~dest:(function [@warning "-8"]
+        | UnknownEffect (call, hist) -> (call, hist) )
 
 
-  let get_must_be_initialized attrs =
-    Set.find_rank attrs Attribute.must_be_initialized_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.MustBeInitialized (timestamp, trace)) = attr in
-           (timestamp, trace) )
+  let get_dynamic_type =
+    get_by_rank Attribute.dynamic_type_rank ~dest:(function [@warning "-8"] DynamicType typ -> typ)
 
 
-  let get_unreachable_at attrs =
-    Set.find_rank attrs Attribute.unreachable_at_rank
-    |> Option.map ~f:(fun attr ->
-           let[@warning "-8"] (Attribute.UnreachableAt location) = attr in
-           location )
+  let get_must_be_initialized =
+    get_by_rank Attribute.must_be_initialized_rank ~dest:(function [@warning "-8"]
+        | MustBeInitialized (timestamp, trace) -> (timestamp, trace) )
+
+
+  let get_unreachable_at =
+    get_by_rank Attribute.unreachable_at_rank ~dest:(function [@warning "-8"]
+        | UnreachableAt location -> location )
 
 
   let isl_subset callee_attrs caller_attrs =
@@ -419,18 +674,21 @@ module Attributes = struct
         Set.add acc attr1 )
 
 
-  let add_call timestamp proc_name call_location caller_history attrs =
+  let add_call_and_subst subst timestamp proc_name call_location caller_history attrs =
     Set.map attrs ~f:(fun attr ->
-        Attribute.add_call timestamp proc_name call_location caller_history attr )
+        Attribute.add_call_and_subst subst timestamp proc_name call_location caller_history attr )
 
 
   let get_allocated_not_freed attributes =
     let allocated_opt = get_allocation attributes in
     Option.value_map ~default:None allocated_opt ~f:(fun (allocator, _) ->
         let invalidation = get_invalid attributes in
-        let released = get_java_resource_released attributes in
-        if Attribute.alloc_free_match allocator invalidation released then None else allocated_opt )
+        let is_released = is_java_resource_released attributes in
+        if Attribute.alloc_free_match allocator invalidation is_released then None
+        else allocated_opt )
 
+
+  let remove_unsuitable_for_summary = Set.filter_map ~f:Attribute.make_suitable_for_summary
 
   include Set
 end

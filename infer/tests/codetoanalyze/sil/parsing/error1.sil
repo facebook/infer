@@ -1,0 +1,23 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+// 
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// 
+
+global I
+
+type node = { val: int; next: *node }
+
+define f(x: int, y: float, n: *node) : void {
+  #entry:
+    x: int = load y
+    x: int = load n[1]
+    jmp lab1
+  #lab1:
+    store x <- y:int
+    store x[1] <- y:int
+    x = f()
+    ret x
+
+}

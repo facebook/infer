@@ -102,8 +102,7 @@ let resolve_method tenv class_name proc_name =
   Tenv.resolve_method ~method_exists tenv class_name proc_name
 
 
-let process summary tenv =
-  let pdesc = Summary.get_proc_desc summary in
+let process pdesc tenv =
   let node_cfg = CFG.from_pdesc pdesc in
   let all_params = Procdesc.get_pvar_formals pdesc in
   let initial =

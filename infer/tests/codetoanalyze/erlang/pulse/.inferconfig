@@ -1,0 +1,238 @@
+{
+  "pulse-models-for-erlang": [
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_true",
+          "arity": 0
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "Atom",
+          "true"
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_one",
+          "arity": 0
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "IntLit",
+          "1"
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_pair_true_nondet",
+          "arity": 0
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "Tuple",
+          [
+            [
+              "Atom",
+              "true"
+            ],
+            null
+          ]
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_nondet_atom",
+          "arity": 0
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "Atom",
+          null
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_nested",
+          "arity": 0
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "Tuple",
+          [
+            [
+              "IntLit",
+              "12345678901234567890"
+            ],
+            [
+              "List",
+              []
+            ],
+            [
+              "List",
+              [
+                null
+              ]
+            ],
+            [
+              "List",
+              [
+                [
+                  "Atom",
+                  "one"
+                ],
+                [
+                  "IntLit",
+                  "2"
+                ],
+                [
+                  "Tuple",
+                  [
+                    [
+                      "Tuple",
+                      []
+                    ],
+                    [
+                      "IntLit",
+                      "-3"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_arity",
+          "arity": 0
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "IntLit",
+          "0"
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_arity",
+          "arity": 1
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "IntLit",
+          "1"
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_arity",
+          "arity": 2
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "IntLit",
+          "2"
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_arity",
+          "arity": 3
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "IntLit",
+          "3"
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_arity",
+          "arity": 4
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "IntLit",
+          "4"
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_return_value",
+          "function": "get_arity",
+          "arity": 5
+        }
+      ],
+      "behavior": [
+        "ReturnValue",
+        [
+          "IntLit",
+          "5"
+        ]
+      ]
+    }
+  ]
+}

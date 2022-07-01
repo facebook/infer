@@ -58,11 +58,9 @@ val objc_iterator_offset : Fieldname.t
 
 (** {2 Field domain constructor} *)
 
-type field_typ = Typ.t option
-
 type 'prim t =
   | Prim of 'prim
-  | Field of {prefix: 'prim t; fn: Fieldname.t; typ: field_typ}
+  | Field of {prefix: 'prim t; fn: Fieldname.t; typ: Typ.t option}
   | StarField of {prefix: 'prim t; last_field: Fieldname.t}
       (** Represents a path starting with [prefix] and ending with the field [last_field], the
           middle can be anything. Invariants:
@@ -70,7 +68,7 @@ type 'prim t =
           - There is at most one StarField
           - StarField excluded, there are no duplicate fieldnames
           - StarField can only be followed by Deref elements *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 val mk_append_field :
      prim_append_field:

@@ -9,7 +9,6 @@
 
 (* include the open-source modules only in open-source build modes, otherwise this library is empty *)
 
-;;
 Jbuild_plugin.V1.send
   (Format.sprintf {|
 (library

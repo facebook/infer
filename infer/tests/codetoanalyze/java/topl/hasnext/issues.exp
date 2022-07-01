@@ -1,3 +1,2 @@
 codetoanalyze/java/topl/hasnext/Iterators.java, Iterators.hasNextBad(java.util.List):void, 0, TOPL_ERROR, no_bucket, ERROR, [call to Iterator List.iterator(),call to Object Iterator.next()]
 codetoanalyze/java/topl/hasnext/Iterators.java, Iterators.hasNextInterproceduralBad(java.util.List):void, 0, TOPL_ERROR, no_bucket, ERROR, [call to Iterator List.iterator(),call to void Iterators.getSingleElementOk(Iterator),call to Object Iterator.next()]
-codetoanalyze/java/topl/hasnext/ScannerFail.java, ScannerFail.readBad():void, 0, TOPL_ERROR, no_bucket, ERROR, [call to Scanner ScannerFail.getScanner(),call to Scanner.<init>(InputStream),call to String Scanner.next()]

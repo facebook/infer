@@ -16,9 +16,33 @@ type 'a param = 'a Command.Param.t
 let ( |*> ) : 'a param -> ('a -> 'b) param -> 'b param =
  fun x f -> x |> Command.Param.apply f
 
-(* function composition in the Command.Param applicative *)
-let ( >*> ) : ('a -> 'b) param -> ('b -> 'c) param -> ('a -> 'c) param =
- fun f' g' -> Command.Param.both f' g' >>| fun (f, g) -> f >> g
+(* reverse partial application *)
+let ( |**> ) : 'a param -> ('b -> 'a -> 'c) param -> ('b -> 'c) param =
+  Command.Param.map2 ~f:(fun a f b -> f b a)
+
+(* composition under one common arg *)
+let ( *>> ) :
+       ('common -> 'a -> 'b) param
+    -> ('common -> 'b -> 'c) param
+    -> ('common -> 'a -> 'c) param =
+  Command.Param.map2 ~f:(fun f g a -> f a >> g a)
+
+(* reverse application under one common arg *)
+let ( *|> ) :
+       ('common -> 'a) param
+    -> ('common -> 'a -> 'b) param
+    -> ('common -> 'b) param =
+  Command.Param.map2 ~f:(fun f g a -> f a |> g a)
+
+;;
+register_sexp_of_exn (Dbg.Parse_failure "") (function
+  | Dbg.Parse_failure msg -> Sexplib0.Sexp.Atom msg
+  | _ -> assert false )
+
+;;
+register_sexp_of_exn (Goal.Sparse_trace.Failed_lookup "") (function
+  | Goal.Sparse_trace.Failed_lookup msg -> Sexplib0.Sexp.Atom msg
+  | _ -> assert false )
 
 (* define a command, with trace flag, and with action wrapped in
    reporting *)
@@ -26,8 +50,7 @@ let command ~summary ?readme param =
   let trace =
     let%map_open config =
       flag "trace" ~doc:"<spec> enable debug tracing"
-        (optional_with_default Trace.none
-           (Arg_type.create (fun s -> Trace.parse s |> Result.get_ok)) )
+        (optional_with_default Dbg.none (Arg_type.create Dbg.parse))
     and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
@@ -40,11 +63,11 @@ let command ~summary ?readme param =
     and append_report =
       flag "append-report" no_arg ~doc:"append to report file"
     in
-    Trace.init ~colors ?margin ~config () ;
+    Dbg.init ~colors ?margin ~config () ;
     Option.iter ~f:(Report.init ~append:append_report) report
   in
-  Llair.Loc.root := Some (Core.Filename.realpath (Sys.getcwd ())) ;
-  let flush main () = Fun.protect main ~finally:Trace.flush in
+  Llair.Loc.root := Some (Unix.realpath (Sys.getcwd ())) ;
+  let flush main () = Fun.protect main ~finally:Dbg.flush in
   let report main () =
     try main () |> Report.status
     with exn ->
@@ -58,6 +81,7 @@ let command ~summary ?readme param =
             Report.InternalError (Sexp.to_string_hum (sexp_of_exn exn))
         | Failure msg -> Report.InternalError msg
         | Stop.Stop -> Report.safe_or_unsafe ()
+        | Stop.Reached_goal {steps} -> Report.Reached_goal {steps}
         | exn -> Report.UnknownError (Printexc.to_string exn)
       in
       Report.status (status_of_exn exn) ;
@@ -94,6 +118,22 @@ let used_globals pgm entry_points preanalyze =
     UG.Declared
       (Llair.Global.Set.of_iter
          (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)) )
+
+type common = {goal_trace: string list option}
+
+let common : common param =
+  let%map_open goal_trace =
+    flag "goal-trace"
+      (optional (Arg_type.create In_channel.read_lines))
+      ~doc:
+        "<file> specify a trace to try to explore, in the form of a file \
+         containing one LLVM function name per line. If provided, \
+         translation avoids inlining traced functions and analysis \
+         prioritizes trace progress. When an execution is found that \
+         visits each function in order, terminate if \
+         \"Stop.on_reached_goal\" is being traced."
+  in
+  {goal_trace}
 
 let analyze =
   let%map_open loop_bound =
@@ -148,7 +188,7 @@ let analyze =
     flag "dump-simplify" (optional int)
       ~doc:"<int> dump simplify query <int> and halt"
   in
-  fun program () ->
+  fun {goal_trace} program () ->
     Timer.enabled := stats ;
     let pgm = program () in
     let globals = used_globals pgm entry_points preanalyze_globals in
@@ -175,7 +215,6 @@ let analyze =
       else (module Control.PriorityQueue)
     in
     let module Queue = (val queue) in
-    let module Analysis = Control.Make (Config) (Domain) (Queue) in
     (match seed with None -> Random.self_init () | Some n -> Random.init n) ;
     Llair.cct_schedule_points := cct_schedule_points ;
     Sh.do_normalize := normalize_states ;
@@ -183,7 +222,16 @@ let analyze =
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     Option.iter dump_simplify ~f:(fun n -> Sh.dump_simplify := n) ;
     at_exit (fun () -> Report.coverage pgm) ;
-    Analysis.exec_pgm pgm ;
+    ( match goal_trace with
+    | None ->
+        let module Analysis = Control.Make (Config) (Domain) (Queue) in
+        Analysis.exec_pgm pgm
+    | Some fns ->
+        let module Analysis =
+          Control.MakeDirected (Config) (Domain) (Queue) (Goal.Sparse_trace)
+        in
+        let goal = Goal.Sparse_trace.of_fns_exn fns pgm in
+        Analysis.exec_pgm pgm goal ) ;
     Report.safe_or_unsafe ()
 
 let analyze_cmd =
@@ -193,7 +241,8 @@ let analyze_cmd =
      translate`."
   in
   let param =
-    Command.Param.(anon ("<input>" %: string) >>| unmarshal |*> analyze)
+    let open Command.Param in
+    anon ("<input>" %: string) >>| unmarshal |*> (common |*> analyze)
   in
   command ~summary ~readme param
 
@@ -221,11 +270,12 @@ let disassemble_cmd =
      translate`."
   in
   let param =
-    Command.Param.(anon ("<input>" %: string) >>| unmarshal |*> disassemble)
+    let open Command.Param in
+    anon ("<input>" %: string) >>| unmarshal |*> disassemble
   in
   command ~summary ~readme param
 
-let translate =
+let translate : (common -> string -> unit -> Llair.program) param =
   let%map_open dump_bitcode =
     flag "dump-bitcode" (optional string)
       ~doc:"<file> write transformed LLVM bitcode to <file>"
@@ -251,29 +301,27 @@ let translate =
         "do not internalize all functions except the entry points \
          specified in the config file"
   in
-  fun bitcode_input () ->
+  fun {goal_trace} bitcode_input () ->
+    let preserve_fns = Option.value ~default:[] goal_trace in
     let program =
-      Frontend.translate ~internalize:(not no_internalize) ~opt_level
-        ~size_level bitcode_input ?dump_bitcode
+      Frontend.translate ~internalize:(not no_internalize) ~preserve_fns
+        ~opt_level ~size_level bitcode_input ?dump_bitcode
     in
     Option.iter ~f:(marshal program) output ;
     program
 
 let llvm_grp =
-  let translate_input =
-    Command.Param.(anon ("<input>" %: string) |*> translate)
+  let translate_input : (common -> unit -> Llair.program) param =
+    Command.Param.(anon ("<input>" %: string) |**> translate)
   in
   let translate_cmd =
     let summary = "translate LLVM bitcode to LLAIR" in
     let readme () =
-      "Translate one or more LLVM bitcode files to LLAIR. Each <input> \
-       filename may be either: an LLVM bitcode file, in binary (.bc) or \
-       textual (.ll) form; or of the form @<argsfile>, where <argsfile> \
-       names a file containing one <input> per line."
+      "Translate LLVM bitcode to LLAIR. The <input> file must contain LLVM \
+       bitcode in either binary (.bc) or textual (.ll) form."
     in
-    let param =
-      translate_input >*> Command.Param.return (fun _ -> Report.Ok)
-    in
+    let return_ok = Command.Param.return (fun _ _ -> Report.Ok) in
+    let param = common |*> translate_input *>> return_ok in
     command ~summary ~readme param
   in
   let disassemble_cmd =
@@ -281,24 +329,20 @@ let llvm_grp =
       "translate LLVM bitcode to LLAIR and print in textual form"
     in
     let readme () = "The <input> file must be LLVM bitcode." in
-    let param = translate_input |*> disassemble in
+    let param = common |*> translate_input |*> disassemble in
     command ~summary ~readme param
   in
   let analyze_cmd =
     let summary = "analyze LLVM bitcode" in
     let readme () =
-      "Analyze code in one or more LLVM bitcode files. This is a \
-       convenience wrapper for the sequence `sledge llvm translate`; \
-       `sledge analyze`."
+      "Analyze LLVM bitcode. This is a convenience wrapper for the \
+       sequence `sledge llvm translate`; `sledge analyze`."
     in
-    let param = translate_input |*> analyze in
+    let param = common |*> translate_input *|> analyze in
     command ~summary ~readme param
   in
   let summary = "integration with LLVM" in
-  let readme () =
-    "Code can be provided by one or more LLVM bitcode files."
-  in
-  Command.group ~summary ~readme ~preserve_subcommand_order:()
+  Command.group ~summary ~preserve_subcommand_order:()
     [ ("analyze", analyze_cmd)
     ; ("translate", translate_cmd)
     ; ("disassemble", disassemble_cmd) ]

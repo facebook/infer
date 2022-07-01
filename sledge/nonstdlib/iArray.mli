@@ -50,8 +50,7 @@ val map_endo : 'a t -> f:('a -> 'a) -> 'a t
 
 val reduce_adjacent : 'a t -> f:('a -> 'a -> 'a option) -> 'a t
 val split : ('a * 'b) t -> 'a t * 'b t
-val combine : 'a t -> 'b t -> ('a * 'b) t option
-val combine_exn : 'a t -> 'b t -> ('a * 'b) t
+val combine : 'a t -> 'b t -> ('a * 'b) t
 val is_empty : 'a t -> bool
 val length : 'a t -> int
 val get : 'a t -> int -> 'a
@@ -59,6 +58,7 @@ val to_iter : 'a t -> 'a iter
 val iter : 'a t -> f:('a -> unit) -> unit
 val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool
+val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool
 val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's
