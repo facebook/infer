@@ -7,7 +7,7 @@
 
 open! IStd
 
-(** Function modules for the json analysis after the capture phase *)
+(** Function modules for the json analysis in the capture phase *)
 
 val parse_tenv : Yojson.Safe.t -> Tenv.t
 

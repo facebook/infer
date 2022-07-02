@@ -75,7 +75,7 @@ $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,make)/$(b,clang)/$(b,gcc) $(i
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,mvn)/$(b,mvnw) $(i,...)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,ndk-build) $(i,...)
 $(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) $(b,xcodebuild) $(i,...)|
-$(b,infer) $(b,--cfg-json) $(b,--tenv-json) $(i,[options])|}
+$(b,infer) $(b,analyzejson) $(b,--debug) $(b,--cfg-json) $(i,[options]) $(b,--tenv-json) $(i,[options]))|}
     ~description:
       [ `P
           "Capture the build command or compilation database or cfg/tenv json files specified on the command line: infer \
