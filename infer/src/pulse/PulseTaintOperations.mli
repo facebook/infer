@@ -21,6 +21,8 @@ val call :
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
 
+val should_ignore_sensitive_data_flows_to : Procname.t -> bool
+
 val gather_taint_dependencies : AbstractValue.t -> AbductiveDomain.t -> AbstractValue.t list
 (** Preorder traversal of the tree formed by taint dependencies of [v] in [astate] *)
 
