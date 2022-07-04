@@ -687,6 +687,14 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
         taint_sinks tenv path location (Some return) ~has_added_return_param proc_name actuals
           astate
       in
+      let astate =
+        List.foldi actuals ~init:astate
+          ~f:(fun index astate ProcnameDispatcher.Call.FuncArg.{arg_payload= v, history} ->
+            let origin = Taint.Argument {index} in
+            let trace = Trace.Immediate {location; history} in
+            AbductiveDomain.AddressAttributes.add_taint_procedure path origin proc_name trace v
+              astate )
+      in
       (* NOTE: we don't care about sanitizers because we want to propagate taint source and sink
          information even if a procedure also happens to sanitize *some* of the sources *)
       if call_was_unknown && (not found_source_model) && not found_sink_model then

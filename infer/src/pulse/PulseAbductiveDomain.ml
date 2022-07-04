@@ -282,11 +282,22 @@ module AddressAttributes = struct
 
 
   let add_taint_sink path sink trace addr astate =
-    let must_not_be_tainted =
-      Attribute.MustNotBeTainted.{time= path.PathContext.timestamp; sink; trace}
+    let taint_sink = Attribute.TaintSink.{time= path.PathContext.timestamp; sink; trace} in
+    abduce_attribute addr
+      (MustNotBeTainted
+         { sinks= Attribute.TaintSinkSet.singleton taint_sink
+         ; procedures= Attribute.TaintProcedureSet.empty } )
+      astate
+
+
+  let add_taint_procedure path origin proc_name trace addr astate =
+    let taint_procedure =
+      Attribute.TaintProcedure.{time= path.PathContext.timestamp; origin; proc_name; trace}
     in
     abduce_attribute addr
-      (MustNotBeTainted (Attribute.MustNotBeTaintedSet.singleton must_not_be_tainted))
+      (MustNotBeTainted
+         { sinks= Attribute.TaintSinkSet.empty
+         ; procedures= Attribute.TaintProcedureSet.singleton taint_procedure } )
       astate
 
 

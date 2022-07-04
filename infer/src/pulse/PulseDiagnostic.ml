@@ -67,7 +67,7 @@ type t =
   | FlowFromTaintSource of
       { tainted: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
-      ; destination: Procname.t
+      ; destination: Taint.origin * Procname.t * Trace.t
       ; location: Location.t }
   | FlowToTaintSink of
       { source: Decompiler.expr * Trace.t
@@ -355,9 +355,9 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Taint.pp sink
-  | FlowFromTaintSource {tainted; source= source, _; destination} ->
-      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
-        Procname.pp destination
+  | FlowFromTaintSource {tainted; source= source, _; destination= origin, proc_name, _} ->
+      F.asprintf "`%a` is tainted by %a and flows to %a %a" Decompiler.pp_expr tainted Taint.pp
+        source Taint.pp_origin origin Procname.pp proc_name
   | FlowToTaintSink {source= expr, _; sanitizers; sink= sink, _} ->
       let pp_sanitizers fmt sanitizers =
         if Attribute.TaintSanitizedSet.is_empty sanitizers then ()
@@ -543,8 +543,13 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
-  | FlowFromTaintSource {source= _, source_history} ->
-      ValueHistory.add_to_errlog ~nesting:0 source_history @@ []
+  | FlowFromTaintSource
+      {source= _, source_history; destination= origin, proc_name, destination_trace} ->
+      ValueHistory.add_to_errlog ~nesting:0 source_history
+      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0 destination_trace
+           ~pp_immediate:(fun fmt ->
+             F.fprintf fmt "%a %a" Taint.pp_origin origin Procname.pp proc_name )
+      @@ []
   | FlowToTaintSink {source= _, history; sanitizers; sink= sink, sink_trace} ->
       let add_to_errlog = Trace.add_to_errlog ~include_value_history:false ~nesting:0 in
       add_to_errlog history ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocated here")

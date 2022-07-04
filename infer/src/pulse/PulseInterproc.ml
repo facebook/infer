@@ -798,46 +798,69 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                       ; astate } ) )
 
 
-let check_all_taint_valid path callee_proc_name call_location pre_post astate call_state_subst =
+let check_all_taint_valid path callee_proc_name call_location actuals pre_post astate call_state =
   let open PulseResult.Let_syntax in
-  AddressMap.fold
-    (fun addr_pre (addr_caller, hist_caller) astate_result ->
-      let* astate = astate_result in
-      let* astate =
-        let sinks =
+  let mk_flow_from_taint_source ~source ~destination ~taint_v astate result =
+    let* result = result in
+    Recoverable
+      ( result
+      , [ PulseOperations.ReportableError
+            { astate
+            ; diagnostic=
+                FlowFromTaintSource
+                  { tainted= Decompiler.find taint_v astate
+                  ; source
+                  ; destination
+                  ; location= call_location } } ] )
+  in
+  let* astate =
+    AddressMap.fold
+      (fun addr_pre (addr_caller, hist_caller) astate_result ->
+        let sinks, procedures =
           BaseAddressAttributes.get_must_not_be_tainted addr_pre
             (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
         in
-        Attribute.MustNotBeTaintedSet.fold
-          (fun Attribute.MustNotBeTainted.{sink; trace} astate_result ->
-            let* astate = astate_result in
-            let sink_trace =
-              Trace.ViaCall
-                { in_call= trace
-                ; f= Call callee_proc_name
-                ; location= call_location
-                ; history= hist_caller }
-            in
-            PulseTaintOperations.check_not_tainted_wrt_sink path call_location (sink, sink_trace)
-              addr_caller astate )
-          sinks (Ok astate)
+        let trace_via_call trace =
+          Trace.ViaCall
+            {in_call= trace; f= Call callee_proc_name; location= call_location; history= hist_caller}
+        in
+        (* Check taint flows to known/specified sinks *)
+        let* astate =
+          Attribute.TaintSinkSet.fold
+            (fun Attribute.TaintSink.{sink; trace} astate_result ->
+              let* astate = astate_result in
+              let sink_and_trace = (sink, trace_via_call trace) in
+              PulseTaintOperations.check_not_tainted_wrt_sink path call_location sink_and_trace
+                addr_caller astate )
+            sinks astate_result
+        in
+        (* Report taint flows to procedures used within the callee, i.e. flows *via* the callee *)
+        let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers addr_caller astate in
+        Attribute.TaintedSet.fold
+          (fun {source; hist} ->
+            Attribute.TaintProcedureSet.fold
+              (fun {origin; proc_name; trace} ->
+                mk_flow_from_taint_source ~source:(source, hist)
+                  ~destination:(origin, proc_name, trace_via_call trace)
+                  ~taint_v:addr_pre astate )
+              procedures )
+          sources (Ok astate) )
+      call_state.subst (Ok astate)
+  in
+  (* Add callee itself as a taint procedure, and report taint flows to callee actuals *)
+  PulseResult.list_foldi actuals ~init:astate ~f:(fun index astate ((v, history), _) ->
+      let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers v call_state.astate in
+      let origin = Taint.Argument {index} in
+      let trace = Trace.Immediate {location= call_location; history} in
+      let astate =
+        AbductiveDomain.AddressAttributes.add_taint_procedure path origin callee_proc_name trace v
+          astate
       in
-      let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers addr_caller astate in
       Attribute.TaintedSet.fold
-        (fun {source; hist} astate_result ->
-          let* astate = astate_result in
-          Recoverable
-            ( astate
-            , [ PulseOperations.ReportableError
-                  { astate
-                  ; diagnostic=
-                      FlowFromTaintSource
-                        { tainted= Decompiler.find addr_pre astate
-                        ; source= (source, hist)
-                        ; destination= callee_proc_name
-                        ; location= call_location } } ] ) )
+        (fun {source; hist} ->
+          mk_flow_from_taint_source ~source:(source, hist)
+            ~destination:(origin, callee_proc_name, trace) ~taint_v:v call_state.astate )
         sources (Ok astate) )
-    call_state_subst (Ok astate)
 
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
@@ -958,8 +981,8 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
             (* This has to happen after the post has been applied so that we are aware of any
                sanitizers applied to tainted values too, otherwise we'll report false positives if
                the callee both taints and sanitizes a value *)
-            check_all_taint_valid path callee_proc_name call_location pre_post astate
-              call_state.subst
+            check_all_taint_valid path callee_proc_name call_location actuals pre_post astate
+              call_state
         in
         (astate, return_caller, call_state.subst)
       in
