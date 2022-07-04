@@ -44,7 +44,9 @@ module Sparse_trace = struct
     if
       cursor < IArray.length trace
       && Llair.Function.equal fn (IArray.get trace cursor)
-    then {goal with cursor= cursor + 1}
+    then (
+      [%Dbg.info "reached %a in %a" Llair.Function.pp fn pp goal] ;
+      {goal with cursor= cursor + 1} )
     else goal
 
   exception Failed_lookup of string
