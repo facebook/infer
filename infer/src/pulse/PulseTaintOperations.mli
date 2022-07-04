@@ -21,7 +21,7 @@ val call :
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
 
-val check_not_tainted_wrt_sink :
+val check_flows_wrt_sink :
      PathContext.t
   -> Location.t
   -> Taint.t * Trace.t

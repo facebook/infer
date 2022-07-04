@@ -830,7 +830,7 @@ let check_all_taint_valid path callee_proc_name call_location actuals pre_post a
             (fun Attribute.TaintSink.{sink; trace} astate_result ->
               let* astate = astate_result in
               let sink_and_trace = (sink, trace_via_call trace) in
-              PulseTaintOperations.check_not_tainted_wrt_sink path call_location sink_and_trace
+              PulseTaintOperations.check_flows_wrt_sink path call_location sink_and_trace
                 addr_caller astate )
             sinks astate_result
         in

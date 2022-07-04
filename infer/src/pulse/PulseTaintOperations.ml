@@ -326,43 +326,86 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
                 acc ) ) )
 
 
-let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
-  let check_immediate policy_violations_reported v astate =
-    let source_expr = Decompiler.find v astate in
-    let mk_reportable_error diagnostic = [ReportableError {astate; diagnostic}] in
+(** Preorder traversal of the tree formed by taint dependencies of [v] in [astate] *)
+let gather_taint_dependencies v astate =
+  let visited = ref AbstractValue.Set.empty in
+  let rec gather_taint_dependencies_aux acc v =
+    if AbstractValue.Set.mem v !visited then acc
+    else (
+      visited := AbstractValue.Set.add v !visited ;
+      let acc =
+        match AbductiveDomain.AddressAttributes.get_propagate_taint_from v astate with
+        | None ->
+            acc
+        | Some taints_in ->
+            let acc =
+              List.fold taints_in ~init:acc ~f:(fun acc {Attribute.v= v'} ->
+                  gather_taint_dependencies_aux acc v' )
+            in
+            List.fold taints_in ~init:acc ~f:(fun acc {Attribute.v} -> v :: acc)
+      in
+      let acc =
+        (* if the value is an array we propagate the check to the array elements *)
+        (* NOTE: we could do the same for field accesses or really all accesses if we want the taint
+            analysis to consider that the insides of objects are tainted whenever the object is. This
+            might not be a very efficient way to do this though? *)
+        match AbductiveDomain.Memory.find_opt v astate with
+        | None ->
+            acc
+        | Some edges ->
+            BaseMemory.Edges.fold edges ~init:acc ~f:(fun acc (access, (dest, _)) ->
+                match access with
+                | FieldAccess _ | TakeAddress | Dereference ->
+                    acc
+                | ArrayAccess _ -> (
+                  match AbductiveDomain.Memory.find_edge_opt dest Dereference astate with
+                  | None ->
+                      acc
+                  | Some (dest_value, _) ->
+                      dest_value :: gather_taint_dependencies_aux acc dest_value ) )
+      in
+      v :: acc )
+  in
+  gather_taint_dependencies_aux [] v
+
+
+let check_flows_wrt_sink path location (sink, sink_trace) v astate =
+  let source_expr = Decompiler.find v astate in
+  let mk_reportable_error diagnostic = [ReportableError {astate; diagnostic}] in
+  let check_flows_to_taint_sink v astate =
     L.d_printfln "Checking for allocations flowing from %a to sink %a" AbstractValue.pp v Taint.pp
       sink ;
-    let* () =
-      match AbductiveDomain.AddressAttributes.get_allocation v astate with
-      | None ->
-          Ok ()
-      | Some (allocator, history) ->
-          L.d_printfln "Found allocation %a" Attribute.pp (Attribute.Allocated (allocator, history)) ;
-          let sink_can_be_sanitized_by sink_kind ~sanitizer =
-            let policies = Hashtbl.find_exn sink_policies sink_kind in
-            List.exists policies ~f:(fun {sanitizer_kinds} ->
-                List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
-                    List.mem sanitizer_kinds sanitizer_kind ~equal:Taint.Kind.equal ) )
+    match AbductiveDomain.AddressAttributes.get_allocation v astate with
+    | None ->
+        Ok ()
+    | Some (allocator, history) ->
+        L.d_printfln "Found allocation %a" Attribute.pp (Attribute.Allocated (allocator, history)) ;
+        let sink_can_be_sanitized_by sink_kind ~sanitizer =
+          let policies = Hashtbl.find_exn sink_policies sink_kind in
+          List.exists policies ~f:(fun {sanitizer_kinds} ->
+              List.exists sanitizer.Taint.kinds ~f:(fun sanitizer_kind ->
+                  List.mem sanitizer_kinds sanitizer_kind ~equal:Taint.Kind.equal ) )
+        in
+        let sanitizers =
+          let _, potential_sanitizers =
+            AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers v astate
           in
-          let sanitizers =
-            let _, potential_sanitizers =
-              AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers v astate
-            in
-            Attribute.TaintSanitizedSet.filter
-              (fun {sanitizer} ->
-                List.exists sink.Taint.kinds ~f:(sink_can_be_sanitized_by ~sanitizer) )
-              potential_sanitizers
-          in
-          if not (Attribute.TaintSanitizedSet.is_empty sanitizers) then
-            L.d_printfln ~color:Green "...but may be sanitized by %a" Attribute.TaintSanitizedSet.pp
-              sanitizers ;
-          Recoverable
-            ( ()
-            , mk_reportable_error
-                (FlowToTaintSink
-                   {source= (source_expr, history); sanitizers; sink= (sink, sink_trace); location}
-                ) )
-    in
+          Attribute.TaintSanitizedSet.filter
+            (fun {sanitizer} ->
+              List.exists sink.Taint.kinds ~f:(sink_can_be_sanitized_by ~sanitizer) )
+            potential_sanitizers
+        in
+        if not (Attribute.TaintSanitizedSet.is_empty sanitizers) then
+          L.d_printfln ~color:Green "...but may be sanitized by %a" Attribute.TaintSanitizedSet.pp
+            sanitizers ;
+        Recoverable
+          ( ()
+          , mk_reportable_error
+              (FlowToTaintSink
+                 {source= (source_expr, history); sanitizers; sink= (sink, sink_trace); location} )
+          )
+  in
+  let check_tainted_flows policy_violations_reported v astate =
     L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
     let sources, sanitizers =
       AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers v astate
@@ -393,43 +436,18 @@ let check_not_tainted_wrt_sink path location (sink, sink_trace) v astate =
           ~f:report_policy_violation )
       sources (Ok policy_violations_reported)
   in
-  let rec check_dependencies policy_violations_reported visited v astate =
-    let* astate =
-      match AbductiveDomain.AddressAttributes.get_propagate_taint_from v astate with
-      | None ->
-          Ok astate
-      | Some taints_in ->
-          PulseResult.list_fold taints_in ~init:astate ~f:(fun astate {Attribute.v= v'} ->
-              check policy_violations_reported visited v' astate )
-    in
-    (* if the value is an array we propagate the check to the array elements *)
-    (* NOTE: we could do the same for field accesses or really all accesses if we want the taint
-       analysis to consider that the insides of objects are tainted whenever the object is. This
-       might not be a very efficient way to do this though? *)
-    match AbductiveDomain.Memory.find_opt v astate with
-    | None ->
-        Ok astate
-    | Some edges ->
-        BaseMemory.Edges.fold edges ~init:(Ok astate) ~f:(fun astate_result (access, (dest, _)) ->
-            match (access : _ HilExp.Access.t) with
-            | ArrayAccess _ -> (
-              match AbductiveDomain.Memory.find_edge_opt dest Dereference astate with
-              | None ->
-                  astate_result
-              | Some (dest_value, _) ->
-                  let* astate = astate_result in
-                  check policy_violations_reported visited dest_value astate )
-            | FieldAccess _ | TakeAddress | Dereference ->
-                astate_result )
-  and check policy_violations_reported visited v astate =
-    if AbstractValue.Set.mem v visited then Ok astate
-    else
-      let visited = AbstractValue.Set.add v visited in
-      let astate = AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate in
-      let* policy_violations_reported = check_immediate policy_violations_reported v astate in
-      check_dependencies policy_violations_reported visited v astate
+  let taint_dependencies = gather_taint_dependencies v astate in
+  let+ _, astate =
+    PulseResult.list_fold taint_dependencies ~init:([], astate)
+      ~f:(fun (policy_violations_reported, astate) v ->
+        let astate =
+          AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
+        in
+        let* () = check_flows_to_taint_sink v astate in
+        let+ policy_violations_reported = check_tainted_flows policy_violations_reported v astate in
+        (policy_violations_reported, astate) )
   in
-  check [] AbstractValue.Set.empty v astate
+  astate
 
 
 let taint_sinks tenv path location return ~has_added_return_param proc_name actuals astate =
@@ -442,7 +460,7 @@ let taint_sinks tenv path location return ~has_added_return_param proc_name actu
         let astate =
           AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
         in
-        check_not_tainted_wrt_sink path location (sink, sink_trace) v astate )
+        check_flows_wrt_sink path location (sink, sink_trace) v astate )
   in
   (astate, not (List.is_empty tainted))
 
