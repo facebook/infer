@@ -47,4 +47,15 @@
   [self mutate_then_consume:start];
 }
 
+NSObject* unknown(NSObject*);
+
+- (NSObject*)propagate_taint:(NSObject*)obj {
+  return unknown(obj);
+}
+
+- (void)test_unknown {
+  NSObject* obj = self.__infer_taint_source;
+  NSObject* ret = [self propagate_taint:obj];
+  [self might_be_a_sink:ret];
+}
 @end

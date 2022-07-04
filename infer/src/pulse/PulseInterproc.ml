@@ -835,32 +835,38 @@ let check_all_taint_valid path callee_proc_name call_location actuals pre_post a
             sinks astate_result
         in
         (* Report taint flows to procedures used within the callee, i.e. flows *via* the callee *)
-        let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers addr_caller astate in
-        Attribute.TaintedSet.fold
-          (fun {source; hist} ->
-            Attribute.TaintProcedureSet.fold
-              (fun {origin; proc_name; trace} ->
-                mk_flow_from_taint_source ~source:(source, hist)
-                  ~destination:(origin, proc_name, trace_via_call trace)
-                  ~taint_v:addr_pre astate )
-              procedures )
-          sources (Ok astate) )
+        let taint_dependencies =
+          PulseTaintOperations.gather_taint_dependencies addr_caller astate
+        in
+        PulseResult.list_fold taint_dependencies ~init:astate ~f:(fun astate v ->
+            let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers v astate in
+            Attribute.TaintedSet.fold
+              (fun {source; hist} ->
+                Attribute.TaintProcedureSet.fold
+                  (fun {origin; proc_name; trace} ->
+                    mk_flow_from_taint_source ~source:(source, hist)
+                      ~destination:(origin, proc_name, trace_via_call trace)
+                      ~taint_v:addr_pre astate )
+                  procedures )
+              sources (Ok astate) ) )
       call_state.subst (Ok astate)
   in
   (* Add callee itself as a taint procedure, and report taint flows to callee actuals *)
   PulseResult.list_foldi actuals ~init:astate ~f:(fun index astate ((v, history), _) ->
-      let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers v call_state.astate in
       let origin = Taint.Argument {index} in
       let trace = Trace.Immediate {location= call_location; history} in
       let astate =
         AbductiveDomain.AddressAttributes.add_taint_procedure path origin callee_proc_name trace v
           astate
       in
-      Attribute.TaintedSet.fold
-        (fun {source; hist} ->
-          mk_flow_from_taint_source ~source:(source, hist)
-            ~destination:(origin, callee_proc_name, trace) ~taint_v:v call_state.astate )
-        sources (Ok astate) )
+      let taint_dependencies = PulseTaintOperations.gather_taint_dependencies v astate in
+      PulseResult.list_fold taint_dependencies ~init:astate ~f:(fun astate v ->
+          let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers v call_state.astate in
+          Attribute.TaintedSet.fold
+            (fun {source; hist} ->
+              mk_flow_from_taint_source ~source:(source, hist)
+                ~destination:(origin, callee_proc_name, trace) ~taint_v:v call_state.astate )
+            sources (Ok astate) ) )
 
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
