@@ -148,11 +148,10 @@ let matchers : matcher list =
       ; "System.IO.BinaryWriter"
         ])
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
-    $+...$--> Resource.allocate_with_delegation ~exn_class_name:"System.ArgumentException" ()
+    $+...$--> Resource.allocate_with_delegation (*~exn_class_name:"System.ArgumentException"*) ()
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Net.Sockets.NetworkStream")
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:"System.IO.IOException" ()
-  (* Things that take care of the passed resource (stream) *)
   (* Things that may throw an exception *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of
       [ "System.IO.FileStream"
