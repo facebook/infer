@@ -18,6 +18,10 @@ open PulseModelsImport
 type maker =
   AbductiveDomain.t -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
+(** Similar to {!maker} but can return a disjunction of results. *)
+type disjunction_maker =
+  AbductiveDomain.t -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t list
+
 (** A type similar to {!maker} for transfer functions that only return an abstract value without any
     history attached to it. *)
 type value_maker = AbductiveDomain.t -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t
@@ -331,27 +335,18 @@ module Comparison = struct
     (** Given an [are_compatible] abstract value that indicates if the types of [x] and [y] are both
         integers, builds the disjunction of the integer comparison of [x] and [y] and their
         comparison as incompatible values. *)
-    let any_with_integer_split cmp location path ~are_compatible x y : maker =
+    let any_with_integer_split cmp location path ~are_compatible x y : disjunction_maker =
      fun astate ->
-      let* astate, are_incompatible =
-        eval_into_fresh PulseArithmetic.eval_unop Unop.LNot are_compatible astate
+      let<*> astate_int = PulseArithmetic.prune_positive are_compatible astate in
+      let<*> astate_incompatible = PulseArithmetic.prune_eq_zero are_compatible astate in
+      let<*> astate_int, int_comparison = cmp.integer location path x y astate_int in
+      let<*> astate_incompatible, incompatible_comparison =
+        cmp.incompatible location path x y astate_incompatible
       in
-      let* astate, int_comparison = cmp.integer location path x y astate in
-      let* astate, int_comparison =
-        eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_compatible int_comparison
-          astate
-      in
-      let* astate, incompatible_comparison = cmp.incompatible location path x y astate in
-      let* astate, incompatible_comparison =
-        eval_into_fresh PulseArithmetic.eval_binop_av Binop.LAnd are_incompatible
-          incompatible_comparison astate
-      in
-      let* astate, comparison =
-        eval_into_fresh PulseArithmetic.eval_binop_av Binop.LOr int_comparison
-          incompatible_comparison astate
-      in
-      let hist = Hist.single_alloc path location "any_comparison" in
-      Ok (astate, (comparison, hist))
+      let int_hist = Hist.single_alloc path location "any_int_comparison" in
+      let incompatible_hist = Hist.single_alloc path location "any_incompatible_comparison" in
+      [ Ok (astate_int, (int_comparison, int_hist))
+      ; Ok (astate_incompatible, (incompatible_comparison, incompatible_hist)) ]
   end
 
   (** Makes an abstract value holding the comparison result of two parameters. We perform a case
@@ -391,47 +386,48 @@ module Comparison = struct
       the actual comparison operator that we're computing. For instance the equality of atoms can be
       decided on their hash, but their relative ordering should check their names as
       lexicographically ordered strings. *)
-  let make_raw (cmp : Comparator.t) location path ((x_val, _) as x) ((y_val, _) as y) : maker =
+  let make_raw (cmp : Comparator.t) location path ((x_val, _) as x) ((y_val, _) as y) :
+      disjunction_maker =
    fun astate ->
     let x_typ = get_erlang_type_or_any x_val astate in
     let y_typ = get_erlang_type_or_any y_val astate in
     match (x_typ, y_typ) with
     | Integer, Integer ->
-        let* astate, result = cmp.integer location path x y astate in
+        let<*> astate, result = cmp.integer location path x y astate in
         let hist = Hist.single_alloc path location "integer_comparison" in
-        Ok (astate, (result, hist))
+        [Ok (astate, (result, hist))]
     | Atom, Atom ->
-        let* astate, result = cmp.atom location path x y astate in
+        let<*> astate, result = cmp.atom location path x y astate in
         let hist = Hist.single_alloc path location "atom_comparison" in
-        Ok (astate, (result, hist))
+        [Ok (astate, (result, hist))]
     | Integer, Any ->
-        let* astate, are_compatible = has_erlang_type y_val Integer astate in
+        let<*> astate, are_compatible = has_erlang_type y_val Integer astate in
         Comparator.any_with_integer_split cmp location path ~are_compatible x y astate
     | Any, Integer ->
-        let* astate, are_compatible = has_erlang_type x_val Integer astate in
+        let<*> astate, are_compatible = has_erlang_type x_val Integer astate in
         Comparator.any_with_integer_split cmp location path ~are_compatible x y astate
     | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
-        let* astate, result = cmp.unsupported location path x y astate in
+        let<*> astate, result = cmp.unsupported location path x y astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
-        Ok (astate, (result, hist))
+        [Ok (astate, (result, hist))]
     | _ ->
-        let* astate, result = cmp.incompatible location path x y astate in
+        let<*> astate, result = cmp.incompatible location path x y astate in
         let hist = Hist.single_alloc path location "incompatible_comparison" in
-        Ok (astate, (result, hist))
+        [Ok (astate, (result, hist))]
 
 
   (** A model of comparison operators where we store in the destination the result of comparing two
       parameters. *)
   let make cmp x y : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let<*> astate, (result, _hist) = make_raw cmp location path x y astate in
+    let> astate, (result, _hist) = make_raw cmp location path x y astate in
     Atoms.write_return_from_bool path location result ret_id astate
 
 
   (** Returns an abstract state that has been pruned on the comparison result being true. *)
-  let prune cmp location path x y astate : AbductiveDomain.t AccessResult.t =
-    let* astate, (comparison, _hist) = make_raw cmp location path x y astate in
-    PulseArithmetic.prune_positive comparison astate
+  let prune cmp location path x y astate : AbductiveDomain.t AccessResult.t list =
+    let> astate, (comparison, _hist) = make_raw cmp location path x y astate in
+    [PulseArithmetic.prune_positive comparison astate]
 
 
   (** {1 Specific comparison operators} *)
@@ -667,7 +663,7 @@ module Maps = struct
       in
       let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
       let astate, _key_addr, tracked_key = load_field path key_field location map astate in
-      let<*> astate = Comparison.prune_equal location path key tracked_key astate in
+      let> astate = Comparison.prune_equal location path key tracked_key astate in
       let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
       Atoms.write_return_from_bool path location ret_val_true ret_id astate
     in
@@ -689,7 +685,7 @@ module Maps = struct
       in
       let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
       let astate, _key_addr, tracked_key = load_field path key_field location map astate in
-      let<*> astate = Comparison.prune_equal location path (key, key_history) tracked_key astate in
+      let> astate = Comparison.prune_equal location path (key, key_history) tracked_key astate in
       let astate, _value_addr, tracked_value = load_field path value_field location map astate in
       [Ok (PulseOperations.write_id ret_id tracked_value astate)]
     in
