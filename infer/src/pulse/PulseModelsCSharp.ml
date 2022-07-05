@@ -62,9 +62,9 @@ module Resource = struct
     ret
 
 
-  let allocate ?exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
+  let allocate ~exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
 
-  let allocate_with_delegation ?exn_class_name () this_arg delegation : model =
+  let allocate_with_delegation ~exn_class_name () this_arg delegation : model =
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
@@ -74,7 +74,7 @@ module Resource = struct
       Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
 
 
-  let release ?exn_class_name this : model =
+  let release ~exn_class_name this : model =
    fun model_data astate ->
     let exn_state =
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
@@ -148,17 +148,17 @@ let matchers : matcher list =
       ; "System.IO.BinaryWriter"
         ])
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
-    $+...$--> Resource.allocate_with_delegation (*~exn_class_name:"System.ArgumentException"*) ()
+    $+...$--> Resource.allocate_with_delegation ~exn_class_name:None ()
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Net.Sockets.NetworkStream")
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
-    $+...$--> Resource.allocate_with_delegation ~exn_class_name:"System.IO.IOException" ()
+    $+...$--> Resource.allocate_with_delegation ~exn_class_name:(Some "System.IO.IOException") ()
   (* Things that may throw an exception *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of
       [ "System.IO.FileStream"
       ; "System.IO.IsolatedStorage.IsolatedStorageFileStream"
       ])
     &:: ".ctor" <>$ capt_arg_payload
-    $+...$--> Resource.allocate ~exn_class_name:"System.IO.FileNotFoundException"
+    $+...$--> Resource.allocate ~exn_class_name:(Some "System.IO.FileNotFoundException")
     (* Usage of IDisposables *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.Stream")
   &::+ (fun _ str -> StringSet.mem str input_resource_usage_modeled)
@@ -168,9 +168,9 @@ let matchers : matcher list =
     &:: ".ctor" <>$ any_arg $+...$--> Basic.skip
     (* Base case for IDisposables *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
-    &:: ".ctor" <>$ capt_arg_payload $+...$--> Resource.allocate
+    &:: ".ctor" <>$ capt_arg_payload $+...$--> Resource.allocate ~exn_class_name:None 
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
-    &:: "close" <>$ capt_arg_payload $--> Resource.release
+    &:: "close" <>$ capt_arg_payload $--> Resource.release ~exn_class_name:None 
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
-    &:: "dispose" <>$ capt_arg_payload $--> Resource.release
+    &:: "dispose" <>$ capt_arg_payload $--> Resource.release ~exn_class_name:None 
     ]
