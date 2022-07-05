@@ -801,7 +801,7 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
 let check_all_taint_valid path callee_proc_name call_location actuals pre_post astate call_state =
   let open PulseResult.Let_syntax in
   let mk_flow_from_taint_source ~source ~destination ~taint_v astate result =
-    let* result = result in
+    let* result in
     Recoverable
       ( result
       , [ PulseOperations.ReportableError
