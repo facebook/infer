@@ -445,7 +445,11 @@ module LineageGraph = struct
       let source_id = save_node proc_desc source in
       let target_id = save_node proc_desc target in
       let kind_id = Id.of_kind kind in
-      let edge_id = Id.of_list [source_id; target_id; kind_id] in
+      let location_id =
+        let procname = Procdesc.get_proc_name proc_desc in
+        save_location ~write:true procname (Normal node)
+      in
+      let edge_id = Id.of_list [source_id; target_id; kind_id; location_id] in
       let edge_type =
         match kind with
         | Capture ->
@@ -458,10 +462,6 @@ module LineageGraph = struct
             Json.DynamicCallFunction
         | DynamicCallModule ->
             Json.DynamicCallModule
-      in
-      let location_id =
-        let procname = Procdesc.get_proc_name proc_desc in
-        save_location ~write:true procname (Normal node)
       in
       write_json Edge edge_id
         (Json.yojson_of_edge
