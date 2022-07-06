@@ -600,6 +600,12 @@ module Name = struct
     let pp = pp
   end)
 
+  module Hash = Hashtbl.Make (struct
+    type nonrec t = t [@@deriving equal]
+
+    let hash = hash
+  end)
+
   module Normalizer = HashNormalizer.Make (struct
     type nonrec t = t [@@deriving equal]
 

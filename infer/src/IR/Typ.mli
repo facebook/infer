@@ -258,6 +258,8 @@ module Name : sig
 
   module Map : PrettyPrintable.PPMap with type key = t
 
+  module Hash : Caml.Hashtbl.S with type key = t
+
   module Normalizer : HashNormalizer.S with type t = t
 end
 
