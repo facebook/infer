@@ -269,9 +269,24 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
             ; time_trace= Timestamp.trace0 path.PathContext.timestamp
             ; intra_procedural_only }
         in
-        AbductiveDomain.AddressAttributes.add_one v
-          (Tainted (Attribute.TaintedSet.singleton tainted))
-          astate )
+        let visited = ref AbstractValue.Set.empty in
+        let rec mark_tainted v astate =
+          if AbstractValue.Set.mem v !visited then astate
+          else (
+            visited := AbstractValue.Set.add v !visited ;
+            let astate =
+              AbductiveDomain.AddressAttributes.add_one v
+                (Tainted (Attribute.TaintedSet.singleton tainted))
+                astate
+            in
+            match AbductiveDomain.Memory.find_opt v astate with
+            | None ->
+                astate
+            | Some edges ->
+                BaseMemory.Edges.fold edges ~init:astate ~f:(fun astate (_, (v, _)) ->
+                    mark_tainted v astate ) )
+        in
+        mark_tainted v astate )
   in
   (astate, not (List.is_empty tainted))
 
