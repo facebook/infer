@@ -273,8 +273,6 @@ val get_proc_name : t -> Procname.t
 val get_ret_type : t -> Typ.t
 (** Return the return type of the procedure and type string *)
 
-val has_added_return_param : t -> bool
-
 val is_ret_type_pod : t -> bool
 
 val get_ret_var : t -> Pvar.t
