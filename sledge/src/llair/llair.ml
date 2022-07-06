@@ -960,6 +960,11 @@ module Program = struct
     IArray.fold trace entry ~f:(fun next curr ->
         let next_entry = (Function.Map.find_exn next pgm.functions).entry in
         let dists = reachable_dists curr next_entry in
+        if Block.Map.is_empty dists then
+          warn
+            "@[<v 2>unreachable goal: couldn't find a path@ from: %a@ \
+             to:   %a@]"
+            Block.pp_ident curr Block.pp_ident next_entry () ;
         Block.Map.iteri dists ~f:(fun ~key:blk ~data ->
             blk.checkpoint_dists <-
               Function.Map.add blk.checkpoint_dists ~key:next ~data ) ;
