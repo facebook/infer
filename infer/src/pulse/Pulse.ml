@@ -849,7 +849,11 @@ let with_html_debug_node node ~desc ~f =
 let initial tenv proc_desc =
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_desc
-    |> (fun init -> PulseObjectiveCSummary.initial_with_positive_self proc_desc init)
+    |> (fun init ->
+         PulseObjectiveCSummary.initial_with_positive_self
+           (Procdesc.get_proc_name proc_desc)
+           (Procdesc.get_attributes proc_desc)
+           init )
     |> fun init -> PulseTaintOperations.taint_initial tenv proc_desc init
   in
   [(ContinueProgram initial_astate, PathContext.initial)]

@@ -10,10 +10,7 @@ open PulseDomainInterface
 open PulseOperations.Import
 open PulseBasicInterface
 
-let mk_objc_self_pvar proc_desc =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  Pvar.mk Mangled.self proc_name
-
+let mk_objc_self_pvar proc_name = Pvar.mk Mangled.self proc_name
 
 let init_fields_zero tenv path location ~zero addr typ astate =
   let get_fields typ =
@@ -42,7 +39,7 @@ let mk_nil_messaging_summary_aux tenv proc_desc =
   let path = PathContext.initial in
   let t0 = path.PathContext.timestamp in
   let location = Procdesc.get_loc proc_desc in
-  let self = mk_objc_self_pvar proc_desc in
+  let self = mk_objc_self_pvar (Procdesc.get_proc_name proc_desc) in
   let astate = AbductiveDomain.mk_initial tenv proc_desc in
   (* HACK: we are operating on an "empty" initial state and do not expect to create any alarms
      (nothing is Invalid in the initial state) or unsatisfiability (we won't create arithmetic
@@ -75,7 +72,7 @@ let mk_nil_messaging_summary_aux tenv proc_desc =
 let mk_latent_non_POD_nil_messaging tenv proc_desc =
   let path = PathContext.initial in
   let location = Procdesc.get_loc proc_desc in
-  let self = mk_objc_self_pvar proc_desc in
+  let self = mk_objc_self_pvar (Procdesc.get_proc_name proc_desc) in
   let astate = AbductiveDomain.mk_initial tenv proc_desc in
   (* same HACK as above with respect to [PulseResult.ok_exn] *)
   let astate, (self_value, _self_history) =
@@ -112,14 +109,12 @@ let mk_nil_messaging_summary tenv proc_desc =
   else None
 
 
-let initial_with_positive_self proc_desc initial_astate =
-  let location = Procdesc.get_loc proc_desc in
-  let self = mk_objc_self_pvar proc_desc in
-  let proc_name = Procdesc.get_proc_name proc_desc in
+let initial_with_positive_self proc_name (proc_attrs : ProcAttributes.t) initial_astate =
+  let self = mk_objc_self_pvar proc_name in
   (* same HACK as above with respect to [PulseResult.ok_exn] *)
   if Procname.is_objc_instance_method proc_name then
     let astate, value =
-      PulseOperations.eval_deref PathContext.initial location (Lvar self) initial_astate
+      PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar self) initial_astate
       |> PulseResult.ok_exn
     in
     PulseArithmetic.and_positive (fst value) astate |> PulseResult.ok_exn
