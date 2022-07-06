@@ -59,7 +59,7 @@ type sink_policy =
 let sink_policies = Hashtbl.create (module Taint.Kind)
 
 let fill_policies_from_config () =
-  Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string Config.pulse_taint_policies)
+  Config.pulse_taint_config.policies
   |> List.iter ~f:(function {Pulse_config_j.short_description= description; taint_flows} ->
          List.iter taint_flows ~f:(fun {Pulse_config_j.source_kinds; sanitizer_kinds; sink_kinds} ->
              let source_kinds = List.map source_kinds ~f:Taint.Kind.of_string in
@@ -95,10 +95,7 @@ let kinds_of_strings_opt = function
       List.map kinds ~f:Taint.Kind.of_string
 
 
-let matcher_of_config ~default_taint_target ~option_name config =
-  (* TODO: write our own json handling using [Yojson] directly as atdgen generated parsers ignore
-     extra fields, meaning we won't report errors to users when they spell things wrong. *)
-  let matchers = Pulse_config_j.matchers_of_string config in
+let matcher_of_config ~default_taint_target ~option_name matchers =
   List.map matchers ~f:(fun (matcher : Pulse_config_j.matcher) ->
       let procedure_matcher =
         match matcher with
@@ -149,17 +146,17 @@ let matcher_of_config ~default_taint_target ~option_name config =
 
 let source_matchers =
   matcher_of_config ~default_taint_target:`ReturnValue ~option_name:"--pulse-taint-sources"
-    (Yojson.Basic.to_string Config.pulse_taint_sources)
+    Config.pulse_taint_config.sources
 
 
 let sink_matchers =
   matcher_of_config ~default_taint_target:`AllArguments ~option_name:"--pulse-taint-sinks"
-    (Yojson.Basic.to_string Config.pulse_taint_sinks)
+    Config.pulse_taint_config.sinks
 
 
 let sanitizer_matchers =
   matcher_of_config ~default_taint_target:`AllArguments ~option_name:"--pulse-taint-sanitizers"
-    (Yojson.Basic.to_string Config.pulse_taint_sanitizers)
+    Config.pulse_taint_config.sanitizers
 
 
 let procedure_matches tenv matchers proc_name actuals =

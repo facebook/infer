@@ -587,13 +587,13 @@ val pulse_scuba_logging : bool
 
 val pulse_skip_procedures : Str.regexp option
 
-val pulse_taint_policies : Yojson.Basic.t
+type pulse_taint_config =
+  { sources: Pulse_config_t.matchers
+  ; sanitizers: Pulse_config_t.matchers
+  ; sinks: Pulse_config_t.matchers
+  ; policies: Pulse_config_t.taint_policies }
 
-val pulse_taint_sanitizers : Yojson.Basic.t
-
-val pulse_taint_sinks : Yojson.Basic.t
-
-val pulse_taint_sources : Yojson.Basic.t
+val pulse_taint_config : pulse_taint_config
 
 val pulse_widen_threshold : int
 

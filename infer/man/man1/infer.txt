@@ -1179,6 +1179,11 @@ OPTIONS
            Regex of procedures that should not be analyzed by Pulse.       
     See also infer-analyze(1).
 
+       --pulse-taint-config +path
+           Path to a taint analysis configuration file. This file can define
+           --pulse-taint-sources, --pulse-taint-sanitizers,
+           --pulse-taint-sinks, and --pulse-taint-policies.           See also infer-analyze(1).
+
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
            this JSON format:             { "short_description": "<a short description of the issue>",

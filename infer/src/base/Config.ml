@@ -48,6 +48,12 @@ type build_system =
 
 type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 
+type pulse_taint_config =
+  { sources: Pulse_config_t.matchers
+  ; sanitizers: Pulse_config_t.matchers
+  ; sinks: Pulse_config_t.matchers
+  ; policies: Pulse_config_t.taint_policies }
+
 (* List of ([build system], [executable name]). Several executables may map to the same build
    system. In that case, the first one in the list will be used for printing, eg, in which mode
    infer is running. *)
@@ -2362,6 +2368,13 @@ and pulse_taint_sources =
     - "type_name" is optional string; only arguments whose type contains this substring match|}
 
 
+and pulse_taint_config =
+  CLOpt.mk_path_list ~long:"pulse-taint-config"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Path to a taint analysis configuration file. This file can define $(b,--pulse-taint-sources), \
+     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), and $(b,--pulse-taint-policies)."
+
+
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     "Under-approximate after $(i,int) loop iterations"
@@ -3752,13 +3765,45 @@ and pulse_scuba_logging = !pulse_scuba_logging
 
 and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 
-and pulse_taint_policies = !pulse_taint_policies
+and pulse_taint_config =
+  (* TODO: write our own json handling using [Yojson] directly as atdgen generated parsers ignore
+     extra fields, meaning we won't report errors to users when they spell things wrong. *)
+  let base_taint_config =
+    let mk_matchers json_ref =
+      Pulse_config_j.matchers_of_string (Yojson.Basic.to_string !json_ref)
+    in
+    { sources= mk_matchers pulse_taint_sources
+    ; sanitizers= mk_matchers pulse_taint_sanitizers
+    ; sinks= mk_matchers pulse_taint_sinks
+    ; policies=
+        Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies) }
+  in
+  List.fold (RevList.to_list !pulse_taint_config) ~init:base_taint_config
+    ~f:(fun taint_config filepath ->
+      let json_list =
+        match Utils.read_json_file filepath with
+        | Ok json ->
+            Yojson.Basic.Util.to_assoc json
+        | Error msg ->
+            L.die ExternalError "Could not read or parse Infer Pulse JSON config in %s:@\n%s@."
+              filepath msg
+      in
+      let combine_fields parser fieldname old_entries =
+        match List.find json_list ~f:(fun (key, _) -> String.equal fieldname key) with
+        | None ->
+            old_entries
+        | Some (_, taint_json) ->
+            let new_entries = parser (Yojson.Basic.to_string taint_json) in
+            new_entries @ old_entries
+      in
+      let combine_matchers = combine_fields Pulse_config_j.matchers_of_string in
+      { sources= combine_matchers "pulse-taint-sources" taint_config.sources
+      ; sanitizers= combine_matchers "pulse-taint-sanitizers" taint_config.sanitizers
+      ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
+      ; policies=
+          combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"
+            taint_config.policies } )
 
-and pulse_taint_sanitizers = !pulse_taint_sanitizers
-
-and pulse_taint_sinks = !pulse_taint_sinks
-
-and pulse_taint_sources = !pulse_taint_sources
 
 and pulse_widen_threshold = !pulse_widen_threshold
 
