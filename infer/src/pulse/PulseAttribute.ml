@@ -581,16 +581,6 @@ module Attributes = struct
         | PropagateTaintFrom taints_in -> taints_in )
 
 
-  let get_tainted =
-    get_by_rank Attribute.tainted_rank ~dest:(function [@warning "-8"]
-        | Tainted {source; hist; intra_procedural_only} -> (source, hist, intra_procedural_only) )
-
-
-  let get_taint_sanitized =
-    get_by_rank Attribute.taint_sanitized_rank ~dest:(function [@warning "-8"]
-        | TaintSanitized sanitizer -> sanitizer )
-
-
   let is_java_resource_released = mem_by_rank Attribute.csharp_resource_released_rank
 
   let get_must_be_valid =

@@ -162,8 +162,7 @@ module Resource = struct
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
           call_may_throw_exception (JavaClassName.from_string cn) model_data astate )
     in
-    let ret = delegated_state @ exn_state in
-    ret
+    delegated_state @ exn_state
 
 
   let allocate ?exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
