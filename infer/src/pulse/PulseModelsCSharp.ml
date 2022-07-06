@@ -56,10 +56,7 @@ module Resource = struct
     let exn_state =
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
           call_may_throw_exception (CSharpClassName.from_string cn) model_data astate )
-    in
-    let ret = delegated_state @ exn_state
-    in
-    ret
+    in delegated_state @ exn_state
 
 
   let allocate ~exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
@@ -76,11 +73,13 @@ module Resource = struct
 
   let release ~exn_class_name this : model =
    fun model_data astate ->
+    let ok_state =
+        PulseOperations.java_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
+    in
     let exn_state =
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
           call_may_throw_exception (CSharpClassName.from_string cn) model_data astate )
-    in
-    (PulseOperations.java_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue) @ exn_state
+    in ok_state @ exn_state
 
 
   let _release_this_only this : model =
