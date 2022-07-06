@@ -883,66 +883,82 @@ let check_retain_cycles ~dead_addresses tenv astate =
     | Some attributes ->
         Attributes.get_written_to attributes
   in
-  let compare_locs trace1 trace2 =
+  let compare_traces trace1 trace2 =
     let loc1 = Trace.get_outer_location trace1 in
     let loc2 = Trace.get_outer_location trace2 in
-    Location.compare loc2 loc1
+    let compared_locs = Location.compare loc2 loc1 in
+    if Int.equal compared_locs 0 then Trace.compare trace1 trace2 else compared_locs
   in
   (* remember explored adresses to avoid reexploring path without retain cycles *)
   let checked = ref [] in
   let check_retain_cycle src_addr =
-    (* [assignment_traces] tracks the assignments met in the retain cycle
-       [seen] tracks addresses met in the current path
-       [addr] is the address to explore
-    *)
-    let rec contains_cycle decompiler assignment_traces seen addr =
+    let rec contains_cycle decompiler assignment_traces seen addr cycle_addr =
+      (* [decompiler] is a decompiler filled during the look out for a cycle
+         [assignment_traces] tracks the assignments met in the retain cycle
+         [seen] tracks addresses met in the current path
+         [addr] is the address to explore
+      *)
       if List.exists ~f:(AbstractValue.equal addr) !checked then Ok ()
-      else if List.exists ~f:(AbstractValue.equal addr) seen then
-        let assignment_traces = List.sort ~compare:compare_locs assignment_traces in
-        match assignment_traces with
-        | [] ->
-            Ok ()
-        | most_recent_trace :: _ ->
-            let location = Trace.get_outer_location most_recent_trace in
-            let value = Decompiler.find addr astate.decompiler in
-            let path = Decompiler.find addr decompiler in
-            Error (List.rev assignment_traces, value, path, location)
       else
-        let res =
-          match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
-          | None ->
+        let value = Decompiler.find addr astate.decompiler in
+        let is_known = not (Decompiler.is_unknown value) in
+        let is_seen = List.exists ~f:(AbstractValue.equal addr) seen in
+        if
+          is_known && is_seen
+          && Option.value_map ~default:false
+               (AddressAttributes.find_opt addr astate)
+               ~f:Attributes.is_ref_counted
+        then
+          let assignment_traces = List.dedup_and_sort ~compare:compare_traces assignment_traces in
+          match assignment_traces with
+          | [] ->
               Ok ()
-          | Some edges_pre ->
-              BaseMemory.Edges.fold ~init:(Ok ()) edges_pre
-                ~f:(fun acc (access, (accessed_addr, _)) ->
-                  match acc with
-                  | Error _ ->
-                      acc
-                  | Ok () ->
-                      if BaseMemory.Access.is_strong_access tenv access then
-                        let assignment_traces =
-                          match access with
-                          | HilExp.Access.FieldAccess _ -> (
-                            match get_assignment_trace accessed_addr with
-                            | None ->
+          | most_recent_trace :: _ ->
+              let location = Trace.get_outer_location most_recent_trace in
+              let path = Decompiler.find addr decompiler in
+              Error (assignment_traces, value, path, location)
+        else (
+          if (not is_known) && is_seen then
+            (* add the `UNKNOWN` address at which we have found a cycle to the [checked]
+               list in case we would have a cycle of `UNKNOWN` addresses, to avoid
+               looping forever *)
+            checked := addr :: !checked ;
+          let res =
+            match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
+            | None ->
+                Ok ()
+            | Some edges_pre ->
+                BaseMemory.Edges.fold ~init:(Ok ()) edges_pre
+                  ~f:(fun acc (access, (accessed_addr, _)) ->
+                    match acc with
+                    | Error _ ->
+                        acc
+                    | Ok () ->
+                        if BaseMemory.Access.is_strong_access tenv access then
+                          let assignment_traces =
+                            match access with
+                            | HilExp.Access.FieldAccess _ -> (
+                              match get_assignment_trace accessed_addr with
+                              | None ->
+                                  assignment_traces
+                              | Some assignment_trace ->
+                                  assignment_trace :: assignment_traces )
+                            | _ ->
                                 assignment_traces
-                            | Some assignment_trace ->
-                                assignment_trace :: assignment_traces )
-                          | _ ->
-                              assignment_traces
-                        in
-                        let decompiler =
-                          Decompiler.add_access_source accessed_addr access ~src:addr
-                            (astate.post :> base_domain).attrs decompiler
-                        in
-                        contains_cycle decompiler assignment_traces (addr :: seen) accessed_addr
-                      else Ok () )
-        in
-        (* all paths down [addr] have been explored *)
-        checked := addr :: !checked ;
-        res
+                          in
+                          let decompiler =
+                            Decompiler.add_access_source ~allow_cycle:true accessed_addr access
+                              ~src:addr (astate.post :> base_domain).attrs decompiler
+                          in
+                          contains_cycle decompiler assignment_traces (addr :: seen) accessed_addr
+                            cycle_addr
+                        else Ok () )
+          in
+          (* all paths down [addr] have been explored *)
+          checked := addr :: !checked ;
+          res )
     in
-    contains_cycle astate.decompiler [] [] src_addr
+    contains_cycle astate.decompiler [] [] src_addr None
   in
   List.fold_result dead_addresses ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with

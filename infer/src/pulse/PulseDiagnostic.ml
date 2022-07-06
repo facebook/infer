@@ -490,12 +490,10 @@ let get_trace = function
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | RetainCycle {assignment_traces; location} ->
-      List.fold_right assignment_traces
-        ~init:[Errlog.make_trace_element 0 location "retain cycle here" []]
-        ~f:(fun assignment_trace errlog ->
-          Trace.add_to_errlog ~nesting:1
-            ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
-            assignment_trace errlog )
+      let errlog = [Errlog.make_trace_element 0 location "retain cycle here" []] in
+      Trace.synchronous_add_to_errlog ~nesting:1
+        ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
+        assignment_traces errlog
   | ErlangError (Badkey {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad key here" []]
