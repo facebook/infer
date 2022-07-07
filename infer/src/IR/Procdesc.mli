@@ -273,22 +273,12 @@ val get_proc_name : t -> Procname.t
 val get_ret_type : t -> Typ.t
 (** Return the return type of the procedure and type string *)
 
-val is_ret_type_pod : t -> bool
-
 val get_ret_var : t -> Pvar.t
-
-val get_ret_param_var : t -> Pvar.t
-
-val get_ret_type_from_signature : t -> Typ.t
-(** Return the return type from method signature: if the procedure has added return parameter,
-    return its type *)
 
 val get_start_node : t -> Node.t
 
 val get_static_callees : t -> Procname.t list
 (** get a list of unique static callees excluding self *)
-
-val get_specialized_with_aliasing_info : t -> ProcAttributes.specialized_with_aliasing_info option
 
 val is_defined : t -> bool
 (** Return [true] iff the procedure is defined, and not just declared *)

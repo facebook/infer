@@ -739,17 +739,16 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
       else astate
 
 
-let taint_initial tenv proc_desc astate =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  let location = Procdesc.get_loc proc_desc in
+let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate =
   let astate, actuals =
-    List.fold_map (Procdesc.get_pvar_formals proc_desc) ~init:astate ~f:(fun astate (pvar, typ) ->
+    List.fold_map (ProcAttributes.get_pvar_formals proc_attrs) ~init:astate
+      ~f:(fun astate (pvar, typ) ->
         let astate, actual_value =
-          PulseOperations.eval_deref PathContext.initial location (Lvar pvar) astate
+          PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar pvar) astate
           |> PulseResult.ok_exn
         in
         (astate, {ProcnameDispatcher.Call.FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value}) )
   in
-  taint_sources tenv PathContext.initial location ~intra_procedural_only:true None
+  taint_sources tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
     ~has_added_return_param:false proc_name actuals astate
   |> fst

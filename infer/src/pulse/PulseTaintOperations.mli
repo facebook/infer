@@ -34,4 +34,5 @@ val check_flows_wrt_sink :
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 
-val taint_initial : Tenv.t -> Procdesc.t -> AbductiveDomain.t -> AbductiveDomain.t
+val taint_initial :
+  Tenv.t -> Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t

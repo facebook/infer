@@ -56,7 +56,7 @@ val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val mk_initial : Tenv.t -> Procdesc.t -> t
+val mk_initial : Tenv.t -> Procname.t -> ProcAttributes.t -> t
 
 val get_pre : t -> BaseDomain.t
 
@@ -243,7 +243,8 @@ val summary_with_need_specialization : summary -> summary
 
 val summary_of_post :
      Tenv.t
-  -> Procdesc.t
+  -> Procname.t
+  -> ProcAttributes.t
   -> Location.t
   -> t
   -> ( summary

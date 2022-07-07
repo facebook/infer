@@ -846,15 +846,11 @@ let with_html_debug_node node ~desc ~f =
     ~f
 
 
-let initial tenv proc_desc =
+let initial tenv proc_name proc_attrs =
   let initial_astate =
-    AbductiveDomain.mk_initial tenv proc_desc
-    |> (fun init ->
-         PulseObjectiveCSummary.initial_with_positive_self
-           (Procdesc.get_proc_name proc_desc)
-           (Procdesc.get_attributes proc_desc)
-           init )
-    |> fun init -> PulseTaintOperations.taint_initial tenv proc_desc init
+    AbductiveDomain.mk_initial tenv proc_name proc_attrs
+    |> PulseObjectiveCSummary.initial_with_positive_self proc_name proc_attrs
+    |> PulseTaintOperations.taint_initial tenv proc_name proc_attrs
   in
   [(ContinueProgram initial_astate, PathContext.initial)]
 
@@ -899,9 +895,11 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
   if should_analyze proc_desc then (
     AbstractValue.State.reset () ;
     PulseTopl.Debug.dropped_disjuncts_count := 0 ;
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    let proc_attrs = Procdesc.get_attributes proc_desc in
     let initial =
       with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
-        ~f:(fun () -> (initial tenv proc_desc, NonDisjDomain.bottom))
+        ~f:(fun () -> (initial tenv proc_name proc_attrs, NonDisjDomain.bottom))
     in
     match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
     | Some (posts, non_disj_astate) ->
@@ -913,7 +911,9 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
                  Forget path contexts on the way, we don't propagate them across functions *)
               exit_function analysis_data exit_location posts non_disj_astate
             in
-            let objc_nil_summary = PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_desc in
+            let objc_nil_summary =
+              PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_name proc_attrs
+            in
             let summary =
               PulseSummary.of_posts tenv proc_desc err_log exit_location
                 (Option.to_list objc_nil_summary @ posts)

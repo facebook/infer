@@ -624,30 +624,28 @@ let set_uninitialized tenv {PathContext.timestamp} src typ location x =
   {x with post= set_uninitialized_post tenv timestamp src typ location x.post}
 
 
-let mk_initial tenv proc_desc =
+let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  let location = Procdesc.get_loc proc_desc in
   let formals_and_captured =
     let init_var formal_or_captured pvar typ =
       let event =
         match formal_or_captured with
         | `Formal ->
-            ValueHistory.FormalDeclared (pvar, location, Timestamp.t0)
+            ValueHistory.FormalDeclared (pvar, proc_attrs.loc, Timestamp.t0)
         | `Captured mode ->
-            ValueHistory.Capture {captured_as= pvar; mode; location; timestamp= Timestamp.t0}
+            ValueHistory.Capture
+              {captured_as= pvar; mode; location= proc_attrs.loc; timestamp= Timestamp.t0}
       in
       (Var.of_pvar pvar, typ, (AbstractValue.mk_fresh (), ValueHistory.singleton event))
     in
     let formals =
-      Procdesc.get_formals proc_desc
-      |> List.map ~f:(fun (mangled, typ, _) -> init_var `Formal (Pvar.mk mangled proc_name) typ)
+      List.map proc_attrs.formals ~f:(fun (mangled, typ, _) ->
+          init_var `Formal (Pvar.mk mangled proc_name) typ )
     in
     let captured =
-      Procdesc.get_captured proc_desc
-      |> List.map ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
-             init_var (`Captured capture_mode) pvar typ )
+      List.map proc_attrs.captured ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
+          init_var (`Captured capture_mode) pvar typ )
     in
     captured @ formals
   in
@@ -675,7 +673,10 @@ let mk_initial tenv proc_desc =
       List.fold formals_and_captured ~init:(PreDomain.empty :> base_domain).attrs
         ~f:(fun attrs (_, _, (addr, _)) ->
           BaseAddressAttributes.add_one addr
-            (MustBeValid (Timestamp.t0, Immediate {location; history= ValueHistory.epoch}, None))
+            (MustBeValid
+               ( Timestamp.t0
+               , Immediate {location= proc_attrs.loc; history= ValueHistory.epoch}
+               , None ) )
             attrs )
     else BaseDomain.empty.attrs
   in
@@ -689,15 +690,14 @@ let mk_initial tenv proc_desc =
   let post =
     PostDomain.update ~stack:initial_stack ~heap:initial_heap ~attrs:initial_attrs PostDomain.empty
   in
-  let locals = Procdesc.get_locals proc_desc in
   let post =
-    List.fold locals ~init:post
+    List.fold proc_attrs.locals ~init:post
       ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr} ->
         if modify_in_block || is_constexpr then acc
         else
           set_uninitialized_post tenv Timestamp.t0
             (`LocalDecl (Pvar.mk name proc_name, None))
-            typ location acc )
+            typ proc_attrs.loc acc )
   in
   let astate =
     { pre
@@ -719,7 +719,7 @@ let mk_initial tenv proc_desc =
          mem  ={ v1 -> { * -> v3 }, v2 -> { * -> v3 }, v3 -> { } };
          attrs={ };
     *)
-    match Procdesc.get_specialized_with_aliasing_info proc_desc with
+    match proc_attrs.specialized_with_aliasing_info with
     | None ->
         astate
     | Some {aliases} ->
@@ -1147,7 +1147,7 @@ let add_out_of_scope_attribute addr pvar location history heap typ =
 
 
 (** invalidate local variables going out of scope *)
-let invalidate_locals pdesc astate : t =
+let invalidate_locals locals astate : t =
   let attrs : BaseAddressAttributes.t = (astate.post :> BaseDomain.t).attrs in
   let attrs' =
     BaseAddressAttributes.fold
@@ -1155,11 +1155,10 @@ let invalidate_locals pdesc astate : t =
         Attributes.get_address_of_stack_variable attrs
         |> Option.value_map ~default:acc ~f:(fun (var, location, history) ->
                let get_local_typ_opt pvar =
-                 Procdesc.get_locals pdesc
-                 |> List.find_map ~f:(fun ProcAttributes.{name; typ; modify_in_block} ->
-                        if (not modify_in_block) && Mangled.equal name (Pvar.get_name pvar) then
-                          Some typ
-                        else None )
+                 List.find_map locals ~f:(fun ProcAttributes.{name; typ; modify_in_block} ->
+                     if (not modify_in_block) && Mangled.equal name (Pvar.get_name pvar) then
+                       Some typ
+                     else None )
                in
                match var with
                | Var.ProgramVar pvar ->
@@ -1342,7 +1341,7 @@ let filter_for_summary tenv proc_name astate0 =
   , new_eqs )
 
 
-let summary_of_post tenv pdesc location astate0 =
+let summary_of_post tenv proc_name (proc_attrs : ProcAttributes.t) location astate0 =
   let open SatUnsat.Import in
   (* do not store the decompiler in the summary and make sure we only use the original one by
      marking it invalid *)
@@ -1359,9 +1358,7 @@ let summary_of_post tenv pdesc location astate0 =
   let astate = {astate with path_condition} in
   let* astate, error = incorporate_new_eqs ~for_summary:true astate new_eqs in
   let astate_before_filter = astate in
-  let* astate, live_addresses, dead_addresses, new_eqs =
-    filter_for_summary tenv (Procdesc.get_proc_name pdesc) astate
-  in
+  let* astate, live_addresses, dead_addresses, new_eqs = filter_for_summary tenv proc_name astate in
   let+ astate, error =
     match error with
     | None ->
@@ -1386,7 +1383,7 @@ let summary_of_post tenv pdesc location astate0 =
           astate_before_filter
       with
       | Ok () ->
-          Ok (invalidate_locals pdesc astate)
+          Ok (invalidate_locals proc_attrs.locals astate)
       | Error (unreachable_location, JavaResource class_name, trace) ->
           Error
             (`ResourceLeak

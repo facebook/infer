@@ -10,7 +10,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 
 val append_objc_actual_self_positive :
-     Procdesc.t
+     Procname.t
   -> ((AbstractValue.t * ValueHistory.t) * Typ.t) option
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
@@ -20,4 +20,4 @@ val initial_with_positive_self :
 (** The initial state of the analysis, with the additional path condition [self > 0] for Objective-C
     instance methods. *)
 
-val mk_nil_messaging_summary : Tenv.t -> Procdesc.t -> ExecutionDomain.t option
+val mk_nil_messaging_summary : Tenv.t -> Procname.t -> ProcAttributes.t -> ExecutionDomain.t option

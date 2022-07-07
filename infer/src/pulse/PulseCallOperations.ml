@@ -7,6 +7,7 @@
 
 open! IStd
 module L = Logging
+module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperations.Import
@@ -174,7 +175,10 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         ~f:(fun subst astate_post_call ->
           let* (astate_summary : AbductiveDomain.summary) =
             let open SatUnsat.Import in
-            AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate_post_call
+            AbductiveDomain.summary_of_post tenv
+              (Procdesc.get_proc_name caller_proc_desc)
+              (Procdesc.get_attributes caller_proc_desc)
+              call_loc astate_post_call
             >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
             >>| AccessResult.of_summary
           in
@@ -254,7 +258,10 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         (astate :> AbductiveDomain.t)
         ~f:(fun _subst astate ->
           let open SatUnsat.Import in
-          AbductiveDomain.summary_of_post tenv caller_proc_desc call_loc astate
+          AbductiveDomain.summary_of_post tenv
+            (Procdesc.get_proc_name caller_proc_desc)
+            (Procdesc.get_attributes caller_proc_desc)
+            call_loc astate
           >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
           >>| AccessResult.of_summary
           >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
@@ -279,16 +286,15 @@ let ( let<*> ) x f =
       (res, contradiction)
 
 
-let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind callee_proc_desc
-    exec_states (astate : AbductiveDomain.t) =
+let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+    (callee_proc_attrs : ProcAttributes.t) exec_states (astate : AbductiveDomain.t) =
   let formals =
-    Procdesc.get_formals callee_proc_desc
-    |> List.map ~f:(fun (mangled, typ, _) -> (Pvar.mk mangled callee_pname |> Var.of_pvar, typ))
+    List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
+        (Pvar.mk mangled callee_pname |> Var.of_pvar, typ) )
   in
   let captured_formals =
-    Procdesc.get_captured callee_proc_desc
-    |> List.map ~f:(fun {CapturedVar.pvar; capture_mode; typ} ->
-           (Var.of_pvar pvar, capture_mode, typ) )
+    List.map callee_proc_attrs.captured ~f:(fun {CapturedVar.pvar; capture_mode; typ} ->
+        (Var.of_pvar pvar, capture_mode, typ) )
   in
   let<*> astate, captured_actuals =
     PulseOperations.get_captured_actuals callee_pname path call_loc ~captured_formals ~call_kind
@@ -330,26 +336,26 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
 let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
     callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
   (* a special case for objc nil messaging *)
-  let unknown_objc_nil_messaging astate_unknown procdesc =
+  let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
       let<+> astate_unknown =
-        PulseObjectiveCSummary.append_objc_actual_self_positive procdesc (List.hd actuals)
+        PulseObjectiveCSummary.append_objc_actual_self_positive proc_name (List.hd actuals)
           astate_unknown
       in
       astate_unknown
     in
     let result_unknown_nil, contradiction =
-      PulseObjectiveCSummary.mk_nil_messaging_summary tenv procdesc
+      PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_name proc_attrs
       |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
              call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-               procdesc [nil_summary] astate )
+               proc_attrs [nil_summary] astate )
     in
     (result_unknown @ result_unknown_nil, contradiction)
   in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-        callee_proc_desc
+        (Procdesc.get_attributes callee_proc_desc)
         (exec_states :> ExecutionDomain.t list)
         astate
   | None ->
@@ -365,7 +371,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
         ~message:
           (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates
              callee_pname ) ;
-      let callee_procdesc_opt = Procdesc.load callee_pname in
-      Option.value_map callee_procdesc_opt
-        ~default:([Ok (ContinueProgram astate_unknown)], None)
-        ~f:(unknown_objc_nil_messaging astate_unknown)
+      IRAttributes.load callee_pname
+      |> Option.value_map
+           ~default:([Ok (ContinueProgram astate_unknown)], None)
+           ~f:(unknown_objc_nil_messaging astate_unknown callee_pname)
