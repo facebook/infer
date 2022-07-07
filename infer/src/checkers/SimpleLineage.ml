@@ -240,12 +240,21 @@ module LineageGraph = struct
 
       type node = {node: _node} [@@deriving yojson_of]
 
-      type edge_type = Capture | Copy | Derive | DynamicCallFunction | DynamicCallModule
+      type edge_type =
+        | Call
+        | Capture
+        | Copy
+        | Derive
+        | DynamicCallFunction
+        | DynamicCallModule
+        | Return
 
       let yojson_of_edge_type typ =
         match typ with
         | Capture ->
             `String "Capture"
+        | Call ->
+            `String "Call"
         | Copy ->
             `String "Copy"
         | Derive ->
@@ -254,6 +263,8 @@ module LineageGraph = struct
             `String "DynamicCallFunction"
         | DynamicCallModule ->
             `String "DynamicCallModule"
+        | Return ->
+            `String "Return"
 
 
       type _edge = {source: node_id; target: node_id; edge_type: edge_type; location: location_id}
@@ -497,9 +508,11 @@ module LineageGraph = struct
       let edge_id = Id.of_list [source_id; target_id; kind_id; location_id] in
       let edge_type =
         match kind with
+        | Call ->
+            Json.Call
         | Capture ->
             Json.Capture
-        | Direct | Call | Return ->
+        | Direct ->
             Json.Copy
         | Summary ->
             Json.Derive
@@ -507,6 +520,8 @@ module LineageGraph = struct
             Json.DynamicCallFunction
         | DynamicCallModule ->
             Json.DynamicCallModule
+        | Return ->
+            Json.Return
       in
       write_json Edge edge_id
         (Json.yojson_of_edge
