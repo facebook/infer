@@ -75,8 +75,7 @@ let mk pdesc =
           Some ret_typ
     in
     let is_last_field fn (fields : Struct.field list) =
-      Option.value_map (List.last fields) ~default:false ~f:(fun (last_fn, _, _) ->
-          Fieldname.equal fn last_fn )
+      Option.exists (List.last fields) ~f:(fun (last_fn, _, _) -> Fieldname.equal fn last_fn)
     in
     let rec may_last_field = function
       | BoField.Prim (SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _) ->
@@ -87,8 +86,7 @@ let mk pdesc =
                  match parent_typ.Typ.desc with
                  | Tstruct typename ->
                      let opt_struct = Tenv.lookup tenv typename in
-                     Option.value_map opt_struct ~default:false ~f:(fun str ->
-                         is_last_field fn str.Struct.fields )
+                     Option.exists opt_struct ~f:(fun str -> is_last_field fn str.Struct.fields)
                  | _ ->
                      true )
     in

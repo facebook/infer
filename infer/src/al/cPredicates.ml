@@ -1523,10 +1523,10 @@ let call_cxx_method an name =
 
 
 let source_file_matches src_file path_re =
-  Option.value_map
+  Option.exists
     ~f:(fun sf ->
       ALVar.compare_str_with_alexp (SourceFile.to_rel_path (SourceFile.create sf)) path_re )
-    ~default:false src_file
+    src_file
 
 
 let is_in_source_file an path_re = source_file_matches (Ctl_parser_types.get_source_file an) path_re

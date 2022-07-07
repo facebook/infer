@@ -27,42 +27,42 @@ int empty_ptr_access() {
   return 0;
 }
 
-int empty_ptr_deref_bad() {
+int FN_empty_ptr_deref_bad() {
   std::unique_ptr<int> x;
   return *x;
 }
 
-int empty_array_ptr_deref_bad() {
+int FN_empty_array_ptr_deref_bad() {
   std::unique_ptr<int[]> x;
   return x[0];
 }
 
-int nullptr_ptr_deref_bad() {
+int FN_nullptr_ptr_deref_bad() {
   std::unique_ptr<int> x(nullptr);
   return *x;
 }
 
-int nullptr_array_ptr_deref_bad() {
+int FN_nullptr_array_ptr_deref_bad() {
   std::unique_ptr<int[]> x(nullptr);
   return x[2];
 }
 
-int empty_ptr_field_deref_bad() {
+int FN_empty_ptr_field_deref_bad() {
   std::unique_ptr<X> x;
   return x.get()->field;
 }
 
-int empty_ptr_field_deref2_bad() {
+int FN_empty_ptr_field_deref2_bad() {
   std::unique_ptr<X> x;
   return x->field;
 }
 
-int empty_ptr_method_deref_bad() {
+int FN_empty_ptr_method_deref_bad() {
   std::unique_ptr<X> x;
   return x->get();
 }
 
-int unique_ptr_create_use_ok() {
+int FP_unique_ptr_create_use_ok() {
   std::unique_ptr<X> x(new X());
   return x->get();
 }
@@ -99,7 +99,7 @@ int reset_ptr_deref2_ok() {
   return *x;
 }
 
-int unique_ptr_copy_null_deref_bad() {
+int FN_unique_ptr_copy_null_deref_bad() {
   std::unique_ptr<int> p1;
   std::unique_ptr<int> p2 = std::move(p1);
   return *p2;
@@ -112,13 +112,13 @@ int unique_ptr_assign_null_deref_bad() {
   return *p1;
 }
 
-int unique_ptr_move_deref_ok() {
+int FP_unique_ptr_move_deref_ok() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p2;
 }
 
-int unique_ptr_assign_deref_ok() {
+int FP_unique_ptr_assign_deref_ok() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2;
   p2 = std::move(p1);

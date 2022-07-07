@@ -33,7 +33,7 @@ let get_start_location_heuristics =
       if String.is_prefix line ~prefix:name then Some 0
       else String.substr_index ~pos:0 line ~pattern:(" " ^ name) |> Option.map ~f:(( + ) 1)
     in
-    Option.value_map found_idx ~default:false ~f:(fun i ->
+    Option.exists found_idx ~f:(fun i ->
         let next_char_idx = i + String.length name in
         if next_char_idx < String.length line then
           match line.[next_char_idx] with ' ' | '<' | '(' -> true | _ -> false

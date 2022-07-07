@@ -1,0 +1,52 @@
+{
+  "pulse-taint-policies": [
+    { "short_description": "Simple Test",
+      "taint_flows": [
+        { "source_kinds": ["SecondSimpleSource"],
+          "sanitizer_kinds": ["SimpleSanitizer"],
+          "sink_kinds": ["SecondSimpleSink"]
+        }
+      ]
+    },
+    { "short_description": "Input Create to Handler",
+      "taint_flows": [
+        { "source_kinds": ["InputCreate"],
+          "sink_kinds": ["Handler"]
+        }
+      ]
+    }
+  ],
+  "pulse-taint-sources": [
+      { "class_names": ["InferTaint"],
+        "method_names": ["taintsArg:"],
+        "kinds": ["SecondSimpleSource"],
+        "taint_target": ["ArgumentPositions", [0]]
+      },
+      { "class_names": ["MailboxTaint"],
+        "method_names": ["source"],
+        "kinds": ["SimpleSource"] },
+      {"procedure": "AttributedStringProviderInputCreate", "kinds": ["InputCreate"]},
+      {"procedure": "StringProviderInputCreate", "kinds": ["InputCreate"]},
+      {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]}
+  ],
+  "pulse-taint-sinks": [
+      { "class_names": ["InferTaint"],
+        "method_names": ["twoKindSink:"],
+        "kinds": ["SimpleSink","SecondSimpleSink"],
+        "taint_target": ["ArgumentPositions", [0]]
+      },
+      { "procedure": "HandleIntentForKey",
+        "kinds": ["Handler"],
+        "taint_target": ["ArgumentPositions", [2]] },
+      { "procedure": "HandleIntent",
+        "kinds": ["Handler"],
+        "taint_target": ["ArgumentPositions", [2]] },
+      { "procedure": "VaultOpenAppleMapForAddress",
+        "kinds": ["Handler"],
+        "taint_target": ["ArgumentPositions", [0]] },
+      { "class_names": ["MailboxTaint"],
+        "method_names": ["sink:"],
+        "kinds": ["SimpleSink"],
+        "taint_target": ["ArgumentPositions", [0]] }
+  ]
+}

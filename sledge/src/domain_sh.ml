@@ -294,7 +294,7 @@ let retn tid formals freturn {areturn; unshadow; frame} q =
 type term_code = Term.t option [@@deriving compare, sexp_of]
 
 let term tid formals freturn q =
-  let* freturn = freturn in
+  let* freturn in
   let formals =
     Var.Set.of_iter (Iter.map ~f:(X.reg tid) (IArray.to_iter formals))
   in

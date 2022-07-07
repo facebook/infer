@@ -349,8 +349,7 @@ module Bound = struct
 
   let is_path_of ~f = function
     | Linear (n, se) when Z.(equal n zero) ->
-        Option.value_map (SymLinear.get_one_symbol_opt se) ~default:false ~f:(fun s ->
-            f (Symb.Symbol.path s) )
+        Option.exists (SymLinear.get_one_symbol_opt se) ~f:(fun s -> f (Symb.Symbol.path s))
     | _ ->
         false
 
@@ -499,9 +498,9 @@ module Bound = struct
         false
 
 
-  let le_opt1 le opt_n m = Option.value_map opt_n ~default:false ~f:(fun n -> le n m)
+  let le_opt1 le opt_n m = Option.exists opt_n ~f:(fun n -> le n m)
 
-  let le_opt2 le n opt_m = Option.value_map opt_m ~default:false ~f:(fun m -> le n m)
+  let le_opt2 le n opt_m = Option.exists opt_m ~f:(fun m -> le n m)
 
   let rec le : t -> t -> bool =
    fun x y ->

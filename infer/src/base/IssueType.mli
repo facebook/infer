@@ -302,6 +302,8 @@ val no_true_branch_in_if : latent:bool -> t
 
 val no_matching_branch_in_try : latent:bool -> t
 
+val null_argument : latent:bool -> t
+
 val null_dereference : t
 
 val nullptr_dereference : latent:bool -> t
@@ -367,6 +369,8 @@ val uninitialized_value_pulse : latent:bool -> t
 val unnecessary_copy_pulse : t
 
 val unnecessary_copy_assignment_pulse : t
+
+val unnecessary_copy_assignment_movable_pulse : t
 
 val unnecessary_copy_movable_pulse : t
 

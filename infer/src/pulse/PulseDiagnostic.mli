@@ -73,7 +73,10 @@ type t =
   | FlowFromTaintSource of
       { tainted: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
-      ; destination: Procname.t
+      ; destination: Taint.origin * Procname.t * Trace.t
+            (** The end point `(origin, procname, trace)` of the discovered flow, i.e. where tainted
+                data is passed as the argument `origin` to the procedure `proc_name`. The `trace`
+                records how to reach `proc_name` from the call which introduces the flow. *)
       ; location: Location.t }
   | FlowToTaintSink of
       { source: Decompiler.expr * Trace.t
@@ -84,7 +87,7 @@ type t =
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
       ; location: Location.t
-      ; from: PulseNonDisjunctiveDomain.CopyOrigin.t }
+      ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
 val aborts_execution : t -> bool

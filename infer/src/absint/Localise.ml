@@ -86,8 +86,7 @@ let error_desc_set_bucket err_desc bucket =
 let error_desc_is_reportable_bucket err_desc =
   let issue_bucket = error_desc_get_bucket err_desc in
   let high_buckets = BucketLevel.[b1; b2] in
-  Option.value_map issue_bucket ~default:false ~f:(fun b ->
-      List.mem ~equal:String.equal high_buckets b )
+  Option.exists issue_bucket ~f:(fun b -> List.mem ~equal:String.equal high_buckets b)
 
 
 (** get the value tag, if any *)

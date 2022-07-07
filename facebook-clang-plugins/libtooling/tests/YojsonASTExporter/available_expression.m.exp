@@ -788,259 +788,245 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
         {
           "pointer" : 49
         },
-        <"Float16">
+        <"Ibm128">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 50
         },
-        <"ShortAccum">
+        <"Float16">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 51
         },
-        <"Accum">
+        <"ShortAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 52
         },
-        <"LongAccum">
+        <"Accum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 53
         },
-        <"UShortAccum">
+        <"LongAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 54
         },
-        <"UAccum">
+        <"UShortAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 55
         },
-        <"ULongAccum">
+        <"UAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 56
         },
-        <"ShortFract">
+        <"ULongAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 57
         },
-        <"Fract">
+        <"ShortFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 58
         },
-        <"LongFract">
+        <"Fract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 59
         },
-        <"UShortFract">
+        <"LongFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 60
         },
-        <"UFract">
+        <"UShortFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 61
         },
-        <"ULongFract">
+        <"UFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 62
         },
-        <"SatShortAccum">
+        <"ULongFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 63
         },
-        <"SatAccum">
+        <"SatShortAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 64
         },
-        <"SatLongAccum">
+        <"SatAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 65
         },
-        <"SatUShortAccum">
+        <"SatLongAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 66
         },
-        <"SatUAccum">
+        <"SatUShortAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 67
         },
-        <"SatULongAccum">
+        <"SatUAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 68
         },
-        <"SatShortFract">
+        <"SatULongAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 69
         },
-        <"SatFract">
+        <"SatShortFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 70
         },
-        <"SatLongFract">
+        <"SatFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 71
         },
-        <"SatUShortFract">
+        <"SatLongFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 72
         },
-        <"SatUFract">
+        <"SatUShortFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 73
         },
-        <"SatULongFract">
+        <"SatUFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 74
         },
-        <"Int128">
+        <"SatULongFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 75
         },
-        <"UInt128">
+        <"Int128">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 76
         },
-        <"WChar_S">
+        <"UInt128">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 77
         },
-        <"Char8">
+        <"WChar_S">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 78
         },
-        <"Dependent">
+        <"Char8">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 79
         },
-        <"Overload">
+        <"Dependent">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 80
         },
-        <"BoundMember">
+        <"Overload">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 81
         },
-        <"PseudoObject">
+        <"BoundMember">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 82
         },
-        <"UnknownAny">
+        <"PseudoObject">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 83
         },
-        <"ARCUnbridgedCast">
+        <"UnknownAny">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 84
         },
-        <"BuiltinFn">
-      )>,
-      <"ComplexType" : (
-        {
-          "pointer" : 85
-        }
-      )>,
-      <"ComplexType" : (
-        {
-          "pointer" : 86
-        }
-      )>,
-      <"ComplexType" : (
-        {
-          "pointer" : 87
-        }
-      )>,
-      <"ComplexType" : (
-        {
-          "pointer" : 88
-        }
+        <"ARCUnbridgedCast">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 89
+          "pointer" : 85
+        },
+        <"BuiltinFn">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 86
         },
         <"ObjCId">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 90
+          "pointer" : 87
         },
         <"ObjCClass">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 91
+          "pointer" : 88
         },
         <"ObjCSel">
       )>,
       <"PointerType" : (
         {
-          "pointer" : 92
+          "pointer" : 89
         },
         {
           "type_ptr" : 18
@@ -1048,77 +1034,77 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 93
+          "pointer" : 90
         },
         <"NullPtr">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 94
+          "pointer" : 91
         },
         <"Half">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 95
+          "pointer" : 92
         },
         <"BFloat16">
       )>,
       <"PointerType" : (
         {
-          "pointer" : 96
+          "pointer" : 93
         },
         {
-          "type_ptr" : 91
+          "type_ptr" : 88
         }
       )>,
       <"ObjCObjectType" : (
+        {
+          "pointer" : 94
+        },
+        {
+          "base_type" : 86
+        }
+      )>,
+      <"ObjCObjectPointerType" : (
+        {
+          "pointer" : 95
+        },
+        {
+          "type_ptr" : 94
+        }
+      )>,
+      <"ObjCObjectType" : (
+        {
+          "pointer" : 96
+        },
+        {
+          "base_type" : 87
+        }
+      )>,
+      <"ObjCObjectPointerType" : (
         {
           "pointer" : 97
         },
         {
-          "base_type" : 89
-        }
-      )>,
-      <"ObjCObjectPointerType" : (
-        {
-          "pointer" : 98
-        },
-        {
-          "type_ptr" : 97
-        }
-      )>,
-      <"ObjCObjectType" : (
-        {
-          "pointer" : 99
-        },
-        {
-          "base_type" : 90
-        }
-      )>,
-      <"ObjCObjectPointerType" : (
-        {
-          "pointer" : 100
-        },
-        {
-          "type_ptr" : 99
+          "type_ptr" : 96
         }
       )>,
       <"ObjCInterfaceType" : (
         {
-          "pointer" : 101
+          "pointer" : 98
         },
         9
       )>,
       <"RecordType" : (
         {
-          "pointer" : 102
+          "pointer" : 99
         },
-        103
+        100
       )>,
       <"PointerType" : (
         {
-          "pointer" : 104
+          "pointer" : 101
         },
         {
           "type_ptr" : 20,
@@ -1128,7 +1114,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
       )>,
       <"PointerType" : (
         {
-          "pointer" : 105
+          "pointer" : 102
         },
         {
           "type_ptr" : 35,
@@ -1138,7 +1124,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
       )>,
       <"PointerType" : (
         {
-          "pointer" : 106
+          "pointer" : 103
         },
         {
           "type_ptr" : 35,
@@ -1147,17 +1133,17 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
       )>,
       <"RecordType" : (
         {
-          "pointer" : 107
+          "pointer" : 104
         },
-        108
+        105
       )>,
       <"ConstantArrayType" : (
         {
-          "pointer" : 109
+          "pointer" : 106
         },
         {
           "element_type" : {
-            "type_ptr" : 107,
+            "type_ptr" : 104,
             "is_trivially_copyable" : true
           },
           "stride" : 24
@@ -1166,13 +1152,13 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
       )>,
       <"ObjCInterfaceType" : (
         {
-          "pointer" : 110
+          "pointer" : 107
         },
         13
       )>,
       <"ObjCInterfaceType" : (
         {
-          "pointer" : 111
+          "pointer" : 108
         },
         15
       )>,
@@ -1181,17 +1167,17 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
           "pointer" : 22
         },
         {
-          "type_ptr" : 111
+          "type_ptr" : 108
         }
       )>,
       <"TypedefType" : (
         {
           "pointer" : 7,
-          "desugared_type" : 98
+          "desugared_type" : 95
         },
         {
           "child_type" : {
-            "type_ptr" : 98,
+            "type_ptr" : 95,
             "is_trivially_copyable" : true
           },
           "decl_ptr" : 6
@@ -1200,7 +1186,7 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
       <"TypedefType" : (
         {
           "pointer" : 34,
-          "desugared_type" : 98
+          "desugared_type" : 95
         },
         {
           "child_type" : {
@@ -1213,11 +1199,11 @@ tests/available_expression.m:8:20: note: add a super class to fix this problem
       <"TypedefType" : (
         {
           "pointer" : 5,
-          "desugared_type" : 96
+          "desugared_type" : 93
         },
         {
           "child_type" : {
-            "type_ptr" : 96,
+            "type_ptr" : 93,
             "is_trivially_copyable" : true
           },
           "decl_ptr" : 4

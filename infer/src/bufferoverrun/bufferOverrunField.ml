@@ -49,20 +49,22 @@ let cpp_collection_internal_array = mk "cpp.container.elements" Typ.(mk_array St
 
 let cpp_vector_elem_str = "cpp.vector_elem"
 
+let unknown_cpp_vector_elem_field = mk "unknown.cpp.vector" StdTyp.uint
+
 let cpp_vector_elem ~vec_typ =
-  let classname =
-    match vec_typ.Typ.desc with
-    | Typ.Tptr (vec_typ, _) -> (
-      match Typ.name vec_typ with
-      | None ->
-          L.(die InternalError) "Unknown class name of vector `%a`" (Typ.pp_full Pp.text) vec_typ
-      | Some t ->
-          t )
-    | _ ->
-        L.(die InternalError) "First parameter of constructor should be a pointer."
-  in
-  (* Note: Avoid calling [mk] that has side-effects introducing non-deterministic results *)
-  Fieldname.make classname cpp_vector_elem_str
+  match vec_typ.Typ.desc with
+  | Tptr (vec_typ, _) -> (
+    match Typ.name vec_typ with
+    | None ->
+        L.(debug BufferOverrun Verbose)
+          "Unknown class name of vector `%a`@\n" (Typ.pp_full Pp.text) vec_typ ;
+        unknown_cpp_vector_elem_field
+    | Some classname ->
+        (* Note: Avoid calling [mk] that has side-effects introducing non-deterministic results *)
+        Fieldname.make classname cpp_vector_elem_str )
+  | _ ->
+      L.(debug BufferOverrun Verbose) "First parameter of constructor should be a pointer.@\n" ;
+      unknown_cpp_vector_elem_field
 
 
 let is_cpp_vector_elem fn = String.equal (Fieldname.get_field_name fn) cpp_vector_elem_str

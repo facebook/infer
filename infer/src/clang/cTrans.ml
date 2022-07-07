@@ -1127,23 +1127,35 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     match atomic_expr_info.Clang_ast_t.aei_kind with
     | `AO__atomic_add_fetch
-    | `AO__atomic_sub_fetch
-    | `AO__atomic_or_fetch
-    | `AO__atomic_xor_fetch
     | `AO__atomic_and_fetch
     | `AO__atomic_fetch_add
-    | `AO__atomic_fetch_sub
-    | `AO__atomic_fetch_or
-    | `AO__atomic_fetch_xor
     | `AO__atomic_fetch_and
+    | `AO__atomic_fetch_or
+    | `AO__atomic_fetch_sub
+    | `AO__atomic_fetch_xor
+    | `AO__atomic_or_fetch
+    | `AO__atomic_sub_fetch
+    | `AO__atomic_xor_fetch
     | `AO__c11_atomic_fetch_add
-    | `AO__c11_atomic_fetch_sub
-    | `AO__c11_atomic_fetch_or
-    | `AO__c11_atomic_fetch_xor
     | `AO__c11_atomic_fetch_and
+    | `AO__c11_atomic_fetch_nand
+    | `AO__c11_atomic_fetch_or
+    | `AO__c11_atomic_fetch_sub
+    | `AO__c11_atomic_fetch_xor
+    | `AO__hip_atomic_compare_exchange_strong
+    | `AO__hip_atomic_compare_exchange_weak
+    | `AO__hip_atomic_exchange
+    | `AO__hip_atomic_fetch_add
+    | `AO__hip_atomic_fetch_and
+    | `AO__hip_atomic_fetch_max
+    | `AO__hip_atomic_fetch_min
+    | `AO__hip_atomic_fetch_or
+    | `AO__hip_atomic_fetch_xor
+    | `AO__hip_atomic_load
+    | `AO__hip_atomic_store
     | `AO__opencl_atomic_fetch_add
-    | `AO__opencl_atomic_fetch_sub
     | `AO__opencl_atomic_fetch_or
+    | `AO__opencl_atomic_fetch_sub
     | `AO__opencl_atomic_fetch_xor
     | `AO__opencl_atomic_fetch_and ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -1554,7 +1566,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* we cannot translate the arguments of __builtin_object_size because preprocessing copies
        them verbatim from a call to a different function, and they might be side-effecting *)
     let should_translate_args =
-      not (Option.value_map ~f:CTrans_models.is_builtin_object_size ~default:false callee_pname_opt)
+      not (Option.exists ~f:CTrans_models.is_builtin_object_size callee_pname_opt)
     in
     let params_stmt = if should_translate_args then params_stmt else [] in
     (* As we may have nodes coming from different parameters we need to  *)
@@ -5127,12 +5139,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPFlushDirective _
     | OMPForDirective _
     | OMPForSimdDirective _
+    | OMPGenericLoopDirective _
     | OMPInteropDirective _
     | OMPIteratorExpr _
     | OMPMaskedDirective _
     | OMPMasterDirective _
     | OMPMasterTaskLoopDirective _
     | OMPMasterTaskLoopSimdDirective _
+    | OMPMetaDirective _
     | OMPOrderedDirective _
     | OMPParallelDirective _
     | OMPParallelForDirective _

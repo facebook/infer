@@ -244,6 +244,7 @@ $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	  -e "s|@INFER_MAN_LAST_MODIFIED[@]|$(INFER_MAN_LAST_MODIFIED)|g" \
 	  $@.in > "$$TMPFILE"; \
 	cat "$$TMPFILE" > $@; \
+	echo -e "\n;;" >> $@; \
 	$(REMOVE) "$$TMPFILE"
 dune.common: dune.common.in
 ../dune-workspace: ../dune-workspace.in

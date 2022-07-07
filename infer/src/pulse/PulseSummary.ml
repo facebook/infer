@@ -28,7 +28,12 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
       Unsat (* we do not propagate exception interproceduraly yet *)
   | ContinueProgram astate -> (
       let open SatUnsat.Import in
-      let+ summary_result = AbductiveDomain.summary_of_post tenv proc_desc location astate in
+      let+ summary_result =
+        AbductiveDomain.summary_of_post tenv
+          (Procdesc.get_proc_name proc_desc)
+          (Procdesc.get_attributes proc_desc)
+          location astate
+      in
       match (summary_result : _ result) with
       | Ok astate ->
           continue_program astate

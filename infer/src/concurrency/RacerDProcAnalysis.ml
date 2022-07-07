@@ -223,66 +223,6 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
-(** Compute the attributes (of static variables) set up by the class initializer. *)
-let set_class_init_attributes interproc (astate : RacerDDomain.t) =
-  let open RacerDDomain in
-  let attribute_map =
-    ConcurrencyUtils.get_java_class_initializer_summary_of interproc
-    |> Option.value_map ~default:AttributeMapDomain.top ~f:(fun summary -> summary.attributes)
-  in
-  ({astate with attribute_map} : t)
-
-
-(** Compute the attributes of instance variables that all constructors agree on. *)
-let set_constructor_attributes ({InterproceduralAnalysis.proc_desc} as interproc)
-    (astate : RacerDDomain.t) =
-  let open RacerDDomain in
-  let procname = Procdesc.get_proc_name proc_desc in
-  (* make a local [this] variable, for replacing all constructor attribute map keys' roots *)
-  let local_this = Pvar.mk Mangled.this procname |> Var.of_pvar in
-  let make_local exp =
-    (* contract here matches that of [StarvationDomain.summary_of_astate] *)
-    let var, typ = HilExp.AccessExpression.get_base exp in
-    if Var.is_global var then
-      (* let expressions rooted at globals unchanged, these are probably from class initialiser *)
-      exp
-    else (
-      assert (Var.is_this var) ;
-      HilExp.AccessExpression.replace_base ~remove_deref_after_base:false (local_this, typ) exp )
-  in
-  let localize_attrs attributes =
-    AttributeMapDomain.(fold (fun exp attr acc -> add (make_local exp) attr acc) attributes empty)
-  in
-  let attribute_map =
-    ConcurrencyUtils.get_java_constructor_summaries_of interproc
-    (* make instances of [this] local to the current procedure and select only the attributes *)
-    |> List.map ~f:(fun (summary : summary) -> localize_attrs summary.attributes)
-    (* join all the attribute maps together *)
-    |> List.reduce ~f:AttributeMapDomain.join
-    |> Option.value ~default:AttributeMapDomain.top
-  in
-  {astate with attribute_map}
-
-
-let set_initial_attributes ({InterproceduralAnalysis.proc_desc} as interproc) astate =
-  let procname = Procdesc.get_proc_name proc_desc in
-  match Procname.base_of procname with
-  | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
-      (* we are analyzing the class initializer, don't go through on-demand again *)
-      astate
-  | Procname.Java java_pname when Procname.Java.(is_constructor java_pname || is_static java_pname)
-    ->
-      (* analyzing a constructor or static method, so we need the attributes established by the
-         class initializer *)
-      set_class_init_attributes interproc astate
-  | Procname.Java _ ->
-      (* we are analyzing an instance method, so we need constructor-established attributes
-         which will include those by the class initializer *)
-      set_constructor_attributes interproc astate
-  | _ ->
-      astate
-
-
 let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
   let open RacerDDomain in
   let proc_name = Procdesc.get_proc_name proc_desc in
@@ -342,7 +282,7 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
                add_owned_formal acc base
              else add_conditionally_owned_formal acc base index )
     in
-    let initial = set_initial_attributes interproc {initial with ownership; threads; locks} in
+    let initial = {initial with ownership; threads; locks} in
     let formals = FormalMap.make proc_desc in
     let analysis_data = {interproc; formals} in
     Analyzer.compute_post analysis_data ~initial proc_desc

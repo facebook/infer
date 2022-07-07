@@ -20,7 +20,9 @@ module Kind : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-type origin = Argument of {index: int} | ReturnValue
+type origin = Argument of {index: int} | ReturnValue [@@deriving compare, equal]
+
+val pp_origin : F.formatter -> origin -> unit
 
 type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
 

@@ -580,6 +580,8 @@ OPTIONS
              NO_TRUE_BRANCH_IN_IF_LATENT (disabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
              NULLPTR_DEREFERENCE_LATENT (disabled by default),
+             NULL_ARGUMENT (enabled by default),
+             NULL_ARGUMENT_LATENT (disabled by default),
              NULL_DEREFERENCE (enabled by default),
              OPTIONAL_EMPTY_ACCESS (enabled by default),
              OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default),
@@ -592,6 +594,8 @@ OPTIONS
              PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),
              PULSE_UNNECESSARY_COPY (disabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
+             PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by
+           default),
              PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
@@ -1176,6 +1180,11 @@ OPTIONS
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.       
     See also infer-analyze(1).
+
+       --pulse-taint-config +path
+           Path to a taint analysis configuration file. This file can define
+           --pulse-taint-sources, --pulse-taint-sanitizers,
+           --pulse-taint-sinks, and --pulse-taint-policies.           See also infer-analyze(1).
 
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
@@ -2350,6 +2359,9 @@ INTERNAL OPTIONS
 
        --pulse-skip-procedures-reset
            Cancel the effect of --pulse-skip-procedures.
+
+       --pulse-taint-config-reset
+           Set --pulse-taint-config to the empty list.
 
        --pulse-widen-threshold int
            Under-approximate after int loop iterations

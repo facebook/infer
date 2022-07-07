@@ -69,6 +69,23 @@
 %type <node_label list> opt_handlers
 %type <Node.t> block
 %type <Terminator.node_call> node_call
+%type <name * Ident.t list> label
+%type <Module.decl list> list(declaration)
+%type <Instr.t list> list(instruction)
+%type <name list> loption(separated_nonempty_list(COMMA,IDENT))
+%type <Exp.t list> loption(separated_nonempty_list(COMMA,expression))
+%type <Terminator.node_call list> loption(separated_nonempty_list(COMMA,node_call))
+%type <Typ.t list> loption(separated_nonempty_list(COMMA,typ))
+%type <(Typ.t * name) list> loption(separated_nonempty_list(COMMA,typed_param))
+%type <(Typ.t * name) list> loption(separated_nonempty_list(SEMICOLON,typed_param))
+%type <Node.t list> nonempty_list(block)
+%type <name list> separated_nonempty_list(COMMA,IDENT)
+%type <int list> separated_nonempty_list(COMMA,LOCAL)
+%type <Exp.t list> separated_nonempty_list(COMMA,expression)
+%type <Terminator.node_call list> separated_nonempty_list(COMMA,node_call)
+%type <Typ.t list> separated_nonempty_list(COMMA,typ)
+%type <(Typ.t * name) list> separated_nonempty_list(COMMA,typed_param)
+%type <(Typ.t * name) list> separated_nonempty_list(SEMICOLON,typed_param)
 
 %%
 

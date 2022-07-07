@@ -3968,7 +3968,7 @@
                                         ]
                                       },
                                       {
-                                        "type_ptr" : 25
+                                        "type_ptr" : 97
                                       },
                                       {
                                         "mangled_name" : "8151698240653651715",
@@ -4078,7 +4078,7 @@
                                     )>,
                                     <"FieldDecl" : (
                                       {
-                                        "pointer" : 97,
+                                        "pointer" : 98,
                                         "parent_pointer" : 95,
                                         "source_range" : (
                                           {
@@ -4109,7 +4109,7 @@
                                     )>,
                                     <"CXXDestructorDecl" : (
                                       {
-                                        "pointer" : 98,
+                                        "pointer" : 99,
                                         "parent_pointer" : 95,
                                         "source_range" : (
                                           {
@@ -4144,7 +4144,7 @@
                                     )>,
                                     <"CXXConstructorDecl" : (
                                       {
-                                        "pointer" : 99,
+                                        "pointer" : 100,
                                         "parent_pointer" : 95,
                                         "source_range" : (
                                           {
@@ -4166,7 +4166,7 @@
                                         ]
                                       },
                                       {
-                                        "type_ptr" : 100
+                                        "type_ptr" : 101
                                       },
                                       {
                                         "mangled_name" : "7938324828555278899",
@@ -4176,7 +4176,7 @@
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
-                                              "pointer" : 101,
+                                              "pointer" : 102,
                                               "source_range" : (
                                                 {
                                                   "column" : 23
@@ -4193,7 +4193,7 @@
                                               ]
                                             },
                                             {
-                                              "type_ptr" : 102
+                                              "type_ptr" : 103
                                             },
                                             {
                                               "parm_index_in_function" : 0
@@ -4207,7 +4207,7 @@
                                     )>,
                                     <"CXXConstructorDecl" : (
                                       {
-                                        "pointer" : 103,
+                                        "pointer" : 104,
                                         "parent_pointer" : 95,
                                         "source_range" : (
                                           {
@@ -4231,7 +4231,7 @@
                                         ]
                                       },
                                       {
-                                        "type_ptr" : 104
+                                        "type_ptr" : 105
                                       },
                                       {
                                         "mangled_name" : "4960955440766632321",
@@ -4241,7 +4241,7 @@
                                         "parameters" : [
                                           <"ParmVarDecl" : (
                                             {
-                                              "pointer" : 105,
+                                              "pointer" : 106,
                                               "source_range" : (
                                                 {
                                                   "column" : 23
@@ -4260,17 +4260,17 @@
                                               ]
                                             },
                                             {
-                                              "type_ptr" : 106
+                                              "type_ptr" : 107
                                             },
                                             {
                                               "parm_index_in_function" : 0
                                             }
                                           )>
                                         ],
-                                        "decl_ptr_with_body" : 103,
+                                        "decl_ptr_with_body" : 104,
                                         "body" : <"CompoundStmt" : (
                                           {
-                                            "pointer" : 107,
+                                            "pointer" : 108,
                                             "source_range" : (
                                               {
                                                 "column" : 23
@@ -4289,7 +4289,7 @@
                                           {
                                             "subject" : <"Member" : {
                                               "kind" : <"Field">,
-                                              "decl_pointer" : 97,
+                                              "decl_pointer" : 98,
                                               "name" : {
                                                 "name" : "__anon_field_0",
                                                 "qual_name" : [
@@ -4313,7 +4313,7 @@
                                             ),
                                             "init_expr" : <"ImplicitCastExpr" : (
                                               {
-                                                "pointer" : 108,
+                                                "pointer" : 109,
                                                 "source_range" : (
                                                   {
                                                     "column" : 23
@@ -4326,7 +4326,7 @@
                                               [
                                                 <"MemberExpr" : (
                                                   {
-                                                    "pointer" : 109,
+                                                    "pointer" : 110,
                                                     "source_range" : (
                                                       {
                                                         "column" : 23
@@ -4339,7 +4339,7 @@
                                                   [
                                                     <"CXXStaticCastExpr" : (
                                                       {
-                                                        "pointer" : 110,
+                                                        "pointer" : 111,
                                                         "source_range" : (
                                                           {
                                                             "column" : 23
@@ -4352,7 +4352,7 @@
                                                       [
                                                         <"DeclRefExpr" : (
                                                           {
-                                                            "pointer" : 111,
+                                                            "pointer" : 112,
                                                             "source_range" : (
                                                               {
                                                                 "column" : 23
@@ -4374,7 +4374,7 @@
                                                           {
                                                             "decl_ref" : {
                                                               "kind" : <"ParmVar">,
-                                                              "decl_pointer" : 105,
+                                                              "decl_pointer" : 106,
                                                               "name" : {
                                                                 "name" : "",
                                                                 "qual_name" : [
@@ -4382,7 +4382,7 @@
                                                                 ]
                                                               },
                                                               "qual_type" : {
-                                                                "type_ptr" : 106
+                                                                "type_ptr" : 107
                                                               }
                                                             }
                                                           }
@@ -4401,7 +4401,7 @@
                                                         ]
                                                       },
                                                       {
-                                                        "type_ptr" : 106
+                                                        "type_ptr" : 107
                                                       },
                                                       "static_cast"
                                                     )>
@@ -4425,7 +4425,7 @@
                                                     },
                                                     "decl_ref" : {
                                                       "kind" : <"Field">,
-                                                      "decl_pointer" : 97,
+                                                      "decl_pointer" : 98,
                                                       "name" : {
                                                         "name" : "__anon_field_0",
                                                         "qual_name" : [
@@ -4470,7 +4470,7 @@
                                   {
                                     "destructor" : {
                                       "kind" : <"CXXDestructor">,
-                                      "decl_pointer" : 98,
+                                      "decl_pointer" : 99,
                                       "name" : {
                                         "name" : "~",
                                         "qual_name" : [
@@ -4495,7 +4495,7 @@
                                         ]
                                       },
                                       "qual_type" : {
-                                        "type_ptr" : 25
+                                        "type_ptr" : 97
                                       }
                                     },
                                     "lambda_captures" : [
@@ -4598,14 +4598,14 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 112,
+                          "type_ptr" : 113,
                           "is_trivially_copyable" : true
                         }
                       },
                       {
                         "decl_ref" : {
                           "kind" : <"CXXConstructor">,
-                          "decl_pointer" : 103,
+                          "decl_pointer" : 104,
                           "name" : {
                             "name" : "",
                             "qual_name" : [
@@ -4615,7 +4615,7 @@
                             ]
                           },
                           "qual_type" : {
-                            "type_ptr" : 104
+                            "type_ptr" : 105
                           }
                         },
                         "is_elidable" : true
@@ -4624,7 +4624,7 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 112,
+                      "type_ptr" : 113,
                       "is_trivially_copyable" : true
                     }
                   },
@@ -4635,7 +4635,7 @@
               [
                 <"VarDecl" : (
                   {
-                    "pointer" : 113,
+                    "pointer" : 114,
                     "source_range" : (
                       {
                         "column" : 3
@@ -4652,7 +4652,7 @@
                     ]
                   },
                   {
-                    "type_ptr" : 112,
+                    "type_ptr" : 113,
                     "is_trivially_copyable" : true
                   },
                   {
@@ -4884,7 +4884,7 @@
                                             ]
                                           },
                                           {
-                                            "type_ptr" : 25
+                                            "type_ptr" : 97
                                           },
                                           {
                                             "mangled_name" : "8151698240653651715",
@@ -4994,7 +4994,7 @@
                                         )>,
                                         <"FieldDecl" : (
                                           {
-                                            "pointer" : 97,
+                                            "pointer" : 98,
                                             "parent_pointer" : 95,
                                             "source_range" : (
                                               {
@@ -5025,7 +5025,7 @@
                                         )>,
                                         <"CXXDestructorDecl" : (
                                           {
-                                            "pointer" : 98,
+                                            "pointer" : 99,
                                             "parent_pointer" : 95,
                                             "source_range" : (
                                               {
@@ -5060,7 +5060,7 @@
                                         )>,
                                         <"CXXConstructorDecl" : (
                                           {
-                                            "pointer" : 99,
+                                            "pointer" : 100,
                                             "parent_pointer" : 95,
                                             "source_range" : (
                                               {
@@ -5082,7 +5082,7 @@
                                             ]
                                           },
                                           {
-                                            "type_ptr" : 100
+                                            "type_ptr" : 101
                                           },
                                           {
                                             "mangled_name" : "7938324828555278899",
@@ -5092,7 +5092,7 @@
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
-                                                  "pointer" : 101,
+                                                  "pointer" : 102,
                                                   "source_range" : (
                                                     {
                                                       "column" : 23
@@ -5109,7 +5109,7 @@
                                                   ]
                                                 },
                                                 {
-                                                  "type_ptr" : 102
+                                                  "type_ptr" : 103
                                                 },
                                                 {
                                                   "parm_index_in_function" : 0
@@ -5123,7 +5123,7 @@
                                         )>,
                                         <"CXXConstructorDecl" : (
                                           {
-                                            "pointer" : 103,
+                                            "pointer" : 104,
                                             "parent_pointer" : 95,
                                             "source_range" : (
                                               {
@@ -5147,7 +5147,7 @@
                                             ]
                                           },
                                           {
-                                            "type_ptr" : 104
+                                            "type_ptr" : 105
                                           },
                                           {
                                             "mangled_name" : "4960955440766632321",
@@ -5157,7 +5157,7 @@
                                             "parameters" : [
                                               <"ParmVarDecl" : (
                                                 {
-                                                  "pointer" : 105,
+                                                  "pointer" : 106,
                                                   "source_range" : (
                                                     {
                                                       "column" : 23
@@ -5176,17 +5176,17 @@
                                                   ]
                                                 },
                                                 {
-                                                  "type_ptr" : 106
+                                                  "type_ptr" : 107
                                                 },
                                                 {
                                                   "parm_index_in_function" : 0
                                                 }
                                               )>
                                             ],
-                                            "decl_ptr_with_body" : 103,
+                                            "decl_ptr_with_body" : 104,
                                             "body" : <"CompoundStmt" : (
                                               {
-                                                "pointer" : 107,
+                                                "pointer" : 108,
                                                 "source_range" : (
                                                   {
                                                     "column" : 23
@@ -5205,7 +5205,7 @@
                                               {
                                                 "subject" : <"Member" : {
                                                   "kind" : <"Field">,
-                                                  "decl_pointer" : 97,
+                                                  "decl_pointer" : 98,
                                                   "name" : {
                                                     "name" : "__anon_field_0",
                                                     "qual_name" : [
@@ -5229,7 +5229,7 @@
                                                 ),
                                                 "init_expr" : <"ImplicitCastExpr" : (
                                                   {
-                                                    "pointer" : 108,
+                                                    "pointer" : 109,
                                                     "source_range" : (
                                                       {
                                                         "column" : 23
@@ -5242,7 +5242,7 @@
                                                   [
                                                     <"MemberExpr" : (
                                                       {
-                                                        "pointer" : 109,
+                                                        "pointer" : 110,
                                                         "source_range" : (
                                                           {
                                                             "column" : 23
@@ -5255,7 +5255,7 @@
                                                       [
                                                         <"CXXStaticCastExpr" : (
                                                           {
-                                                            "pointer" : 110,
+                                                            "pointer" : 111,
                                                             "source_range" : (
                                                               {
                                                                 "column" : 23
@@ -5268,7 +5268,7 @@
                                                           [
                                                             <"DeclRefExpr" : (
                                                               {
-                                                                "pointer" : 111,
+                                                                "pointer" : 112,
                                                                 "source_range" : (
                                                                   {
                                                                     "column" : 23
@@ -5290,7 +5290,7 @@
                                                               {
                                                                 "decl_ref" : {
                                                                   "kind" : <"ParmVar">,
-                                                                  "decl_pointer" : 105,
+                                                                  "decl_pointer" : 106,
                                                                   "name" : {
                                                                     "name" : "",
                                                                     "qual_name" : [
@@ -5298,7 +5298,7 @@
                                                                     ]
                                                                   },
                                                                   "qual_type" : {
-                                                                    "type_ptr" : 106
+                                                                    "type_ptr" : 107
                                                                   }
                                                                 }
                                                               }
@@ -5317,7 +5317,7 @@
                                                             ]
                                                           },
                                                           {
-                                                            "type_ptr" : 106
+                                                            "type_ptr" : 107
                                                           },
                                                           "static_cast"
                                                         )>
@@ -5341,7 +5341,7 @@
                                                         },
                                                         "decl_ref" : {
                                                           "kind" : <"Field">,
-                                                          "decl_pointer" : 97,
+                                                          "decl_pointer" : 98,
                                                           "name" : {
                                                             "name" : "__anon_field_0",
                                                             "qual_name" : [
@@ -5386,7 +5386,7 @@
                                       {
                                         "destructor" : {
                                           "kind" : <"CXXDestructor">,
-                                          "decl_pointer" : 98,
+                                          "decl_pointer" : 99,
                                           "name" : {
                                             "name" : "~",
                                             "qual_name" : [
@@ -5411,7 +5411,7 @@
                                             ]
                                           },
                                           "qual_type" : {
-                                            "type_ptr" : 25
+                                            "type_ptr" : 97
                                           }
                                         },
                                         "lambda_captures" : [
@@ -5514,14 +5514,14 @@
                           ],
                           {
                             "qual_type" : {
-                              "type_ptr" : 112,
+                              "type_ptr" : 113,
                               "is_trivially_copyable" : true
                             }
                           },
                           {
                             "decl_ref" : {
                               "kind" : <"CXXConstructor">,
-                              "decl_pointer" : 103,
+                              "decl_pointer" : 104,
                               "name" : {
                                 "name" : "",
                                 "qual_name" : [
@@ -5531,7 +5531,7 @@
                                 ]
                               },
                               "qual_type" : {
-                                "type_ptr" : 104
+                                "type_ptr" : 105
                               }
                             },
                             "is_elidable" : true
@@ -5540,7 +5540,7 @@
                       ],
                       {
                         "qual_type" : {
-                          "type_ptr" : 112,
+                          "type_ptr" : 113,
                           "is_trivially_copyable" : true
                         }
                       },
@@ -5553,7 +5553,7 @@
             )>,
             <"ReturnStmt" : (
               {
-                "pointer" : 114,
+                "pointer" : 115,
                 "source_range" : (
                   {
                     "line" : 16,
@@ -5567,7 +5567,7 @@
               [
                 <"IntegerLiteral" : (
                   {
-                    "pointer" : 115,
+                    "pointer" : 116,
                     "source_range" : (
                       {
                         "column" : 10
@@ -5599,7 +5599,7 @@
     )>,
     <"TypedefDecl" : (
       {
-        "pointer" : 116,
+        "pointer" : 117,
         "source_range" : (
           {
           },
@@ -5614,7 +5614,7 @@
           "instancetype"
         ]
       },
-      117,
+      118,
       {
       }
     )>
@@ -5634,31 +5634,31 @@
     "types" : [
       <"BuiltinType" : (
         {
-          "pointer" : 118
+          "pointer" : 119
         },
         <"Void">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 119
+          "pointer" : 120
         },
         <"Bool">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 120
+          "pointer" : 121
         },
         <"Char_S">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 121
+          "pointer" : 122
         },
         <"SChar">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 122
+          "pointer" : 123
         },
         <"Short">
       )>,
@@ -5670,371 +5670,357 @@
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 123
+          "pointer" : 124
         },
         <"Long">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 124
+          "pointer" : 125
         },
         <"LongLong">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 125
+          "pointer" : 126
         },
         <"UChar">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 126
+          "pointer" : 127
         },
         <"UShort">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 127
+          "pointer" : 128
         },
         <"UInt">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 128
+          "pointer" : 129
         },
         <"ULong">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 129
+          "pointer" : 130
         },
         <"ULongLong">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 130
+          "pointer" : 131
         },
         <"Float">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 131
+          "pointer" : 132
         },
         <"Double">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 132
+          "pointer" : 133
         },
         <"LongDouble">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 133
+          "pointer" : 134
         },
         <"Float128">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 134
-        },
-        <"Float16">
-      )>,
-      <"BuiltinType" : (
-        {
           "pointer" : 135
         },
-        <"ShortAccum">
+        <"Ibm128">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 136
         },
-        <"Accum">
+        <"Float16">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 137
         },
-        <"LongAccum">
+        <"ShortAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 138
         },
-        <"UShortAccum">
+        <"Accum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 139
         },
-        <"UAccum">
+        <"LongAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 140
         },
-        <"ULongAccum">
+        <"UShortAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 141
         },
-        <"ShortFract">
+        <"UAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 142
         },
-        <"Fract">
+        <"ULongAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 143
         },
-        <"LongFract">
+        <"ShortFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 144
         },
-        <"UShortFract">
+        <"Fract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 145
         },
-        <"UFract">
+        <"LongFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 146
         },
-        <"ULongFract">
+        <"UShortFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 147
         },
-        <"SatShortAccum">
+        <"UFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 148
         },
-        <"SatAccum">
+        <"ULongFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 149
         },
-        <"SatLongAccum">
+        <"SatShortAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 150
         },
-        <"SatUShortAccum">
+        <"SatAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 151
         },
-        <"SatUAccum">
+        <"SatLongAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 152
         },
-        <"SatULongAccum">
+        <"SatUShortAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 153
         },
-        <"SatShortFract">
+        <"SatUAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 154
         },
-        <"SatFract">
+        <"SatULongAccum">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 155
         },
-        <"SatLongFract">
+        <"SatShortFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 156
         },
-        <"SatUShortFract">
+        <"SatFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 157
         },
-        <"SatUFract">
+        <"SatLongFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 158
         },
-        <"SatULongFract">
+        <"SatUShortFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 159
         },
-        <"Int128">
+        <"SatUFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 160
         },
-        <"UInt128">
+        <"SatULongFract">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 161
         },
-        <"WChar_S">
+        <"Int128">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 162
         },
-        <"Char8">
+        <"UInt128">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 163
         },
-        <"Char16">
+        <"WChar_S">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 164
         },
-        <"Char32">
+        <"Char8">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 165
         },
-        <"Dependent">
+        <"Char16">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 166
         },
-        <"Overload">
+        <"Char32">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 167
         },
-        <"BoundMember">
+        <"Dependent">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 168
         },
-        <"PseudoObject">
+        <"Overload">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 169
         },
-        <"UnknownAny">
+        <"BoundMember">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 170
         },
-        <"ARCUnbridgedCast">
+        <"PseudoObject">
       )>,
       <"BuiltinType" : (
         {
           "pointer" : 171
         },
-        <"BuiltinFn">
-      )>,
-      <"ComplexType" : (
-        {
-          "pointer" : 172
-        }
-      )>,
-      <"ComplexType" : (
-        {
-          "pointer" : 173
-        }
-      )>,
-      <"ComplexType" : (
-        {
-          "pointer" : 174
-        }
-      )>,
-      <"ComplexType" : (
-        {
-          "pointer" : 175
-        }
+        <"UnknownAny">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 176
+          "pointer" : 172
+        },
+        <"ARCUnbridgedCast">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 173
+        },
+        <"BuiltinFn">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 174
         },
         <"ObjCId">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 177
+          "pointer" : 175
         },
         <"ObjCClass">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 178
+          "pointer" : 176
         },
         <"ObjCSel">
       )>,
       <"PointerType" : (
         {
-          "pointer" : 179
+          "pointer" : 177
         },
         {
-          "type_ptr" : 118
+          "type_ptr" : 119
         }
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 180
+          "pointer" : 178
         },
         <"NullPtr">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 181
+          "pointer" : 179
         },
         <"Half">
       )>,
       <"BuiltinType" : (
         {
-          "pointer" : 182
+          "pointer" : 180
         },
         <"BFloat16">
       )>,
       <"RecordType" : (
         {
-          "pointer" : 183
+          "pointer" : 181
         },
-        184
+        182
       )>,
       <"PointerType" : (
         {
-          "pointer" : 185
+          "pointer" : 183
         },
         {
           "type_ptr" : 12,
@@ -6044,36 +6030,36 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 186
+          "pointer" : 184
         },
         {
-          "type_ptr" : 120,
+          "type_ptr" : 121,
           "is_const" : true,
           "is_trivially_copyable" : true
         }
       )>,
       <"PointerType" : (
         {
-          "pointer" : 187
+          "pointer" : 185
         },
         {
-          "type_ptr" : 120,
+          "type_ptr" : 121,
           "is_trivially_copyable" : true
         }
       )>,
       <"RecordType" : (
         {
-          "pointer" : 188
+          "pointer" : 186
         },
-        189
+        187
       )>,
       <"ConstantArrayType" : (
         {
-          "pointer" : 190
+          "pointer" : 188
         },
         {
           "element_type" : {
-            "type_ptr" : 188,
+            "type_ptr" : 186,
             "is_trivially_copyable" : true
           },
           "stride" : 24
@@ -6095,20 +6081,20 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 191
+          "pointer" : 189
         },
         {
-          "type_ptr" : 187,
+          "type_ptr" : 185,
           "is_trivially_copyable" : true
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 192
+          "pointer" : 190
         },
         {
           "return_type" : {
-            "type_ptr" : 193
+            "type_ptr" : 191
           }
         },
         {
@@ -6122,12 +6108,18 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 194
+          "pointer" : 192
         }
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 195
+          "pointer" : 193
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 194,
+          "desugared_type" : 193
         }
       )>,
       <"AutoType" : (
@@ -6138,7 +6130,7 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 196
+          "pointer" : 195
         },
         {
           "return_type" : {
@@ -6177,7 +6169,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 197
+          "pointer" : 196
         },
         {
           "type_ptr" : 8
@@ -6185,7 +6177,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 198
+          "pointer" : 197
         },
         {
           "type_ptr" : 29
@@ -6193,11 +6185,11 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 199
+          "pointer" : 198
         },
         {
           "return_type" : {
-            "type_ptr" : 197,
+            "type_ptr" : 196,
             "is_trivially_copyable" : true
           }
         },
@@ -6210,8 +6202,20 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 198,
+            "type_ptr" : 197,
             "is_trivially_copyable" : true
+          }
+        },
+        {
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 199
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 119
           }
         },
         {
@@ -6223,19 +6227,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
-          }
-        },
-        {
-        }
-      )>,
-      <"FunctionProtoType" : (
-        {
-          "pointer" : 201
-        },
-        {
-          "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6247,7 +6239,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6255,7 +6247,13 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 202
+          "pointer" : 201
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 202,
+          "desugared_type" : 201
         }
       )>,
       <"AutoType" : (
@@ -6280,7 +6278,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6297,7 +6295,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6323,7 +6321,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6340,7 +6338,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6375,7 +6373,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6392,7 +6390,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 193
+            "type_ptr" : 191
           }
         },
         {
@@ -6424,9 +6422,15 @@
           "pointer" : 209
         }
       )>,
+      <"AutoType" : (
+        {
+          "pointer" : 210,
+          "desugared_type" : 209
+        }
+      )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 210
+          "pointer" : 211
         },
         {
           "return_type" : {
@@ -6464,11 +6468,11 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 211
+          "pointer" : 212
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6476,7 +6480,13 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 212
+          "pointer" : 213
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 214,
+          "desugared_type" : 213
         }
       )>,
       <"AutoType" : (
@@ -6497,11 +6507,11 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 213
+          "pointer" : 215
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6518,7 +6528,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6540,11 +6550,11 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 214
+          "pointer" : 216
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6557,11 +6567,11 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 215
+          "pointer" : 217
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6574,7 +6584,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 216
+          "pointer" : 218
         },
         {
           "type_ptr" : 55,
@@ -6583,7 +6593,7 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 217
+          "pointer" : 219
         },
         {
           "type_ptr" : 80,
@@ -6596,7 +6606,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
@@ -6609,7 +6619,13 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 218
+          "pointer" : 220
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 221,
+          "desugared_type" : 220
         }
       )>,
       <"RecordType" : (
@@ -6620,16 +6636,41 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 219
+          "pointer" : 222
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 223,
+          "desugared_type" : 222
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 224,
+          "desugared_type" : 12
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 220
+          "pointer" : 97
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 224,
+            "is_trivially_copyable" : true
+          }
+        },
+        {
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 225
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 119
           }
         },
         {
@@ -6637,18 +6678,24 @@
       )>,
       <"TemplateTypeParmType" : (
         {
-          "pointer" : 221
+          "pointer" : 226
         }
       )>,
       <"AutoType" : (
         {
-          "pointer" : 112,
+          "pointer" : 227,
+          "desugared_type" : 226
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 113,
           "desugared_type" : 94
         }
       )>,
       <"LValueReferenceType" : (
         {
-          "pointer" : 102
+          "pointer" : 103
         },
         {
           "type_ptr" : 94,
@@ -6658,41 +6705,41 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 222
+          "pointer" : 228
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 102
+              "type_ptr" : 103
             }
           ]
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 100
+          "pointer" : 101
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 102
+              "type_ptr" : 103
             }
           ]
         }
       )>,
       <"RValueReferenceType" : (
         {
-          "pointer" : 106
+          "pointer" : 107
         },
         {
           "type_ptr" : 94,
@@ -6701,41 +6748,41 @@
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 223
+          "pointer" : 229
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 106
+              "type_ptr" : 107
             }
           ]
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 224
+          "pointer" : 230
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 106
+              "type_ptr" : 107
             }
           ]
         }
       )>,
       <"PointerType" : (
         {
-          "pointer" : 225
+          "pointer" : 231
         },
         {
           "type_ptr" : 94,
@@ -6744,70 +6791,70 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 226
+          "pointer" : 232
         },
         {
-          "type_ptr" : 112,
+          "type_ptr" : 113,
           "is_trivially_copyable" : true
         }
       )>,
       <"FunctionProtoType" : (
         {
-          "pointer" : 104
+          "pointer" : 105
         },
         {
           "return_type" : {
-            "type_ptr" : 118
+            "type_ptr" : 119
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 106
+              "type_ptr" : 107
             }
           ]
         }
       )>,
       <"ObjCObjectType" : (
         {
-          "pointer" : 227
+          "pointer" : 233
         },
         {
-          "base_type" : 176
+          "base_type" : 174
         }
       )>,
       <"ObjCObjectPointerType" : (
         {
-          "pointer" : 228
+          "pointer" : 234
         },
         {
-          "type_ptr" : 227
+          "type_ptr" : 233
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 229,
-          "desugared_type" : 228
+          "pointer" : 235,
+          "desugared_type" : 234
         },
         {
           "child_type" : {
-            "type_ptr" : 228,
+            "type_ptr" : 234,
             "is_trivially_copyable" : true
           },
-          "decl_ptr" : 230
+          "decl_ptr" : 236
         }
       )>,
       <"TypedefType" : (
         {
-          "pointer" : 117,
-          "desugared_type" : 228
+          "pointer" : 118,
+          "desugared_type" : 234
         },
         {
           "child_type" : {
-            "type_ptr" : 229,
+            "type_ptr" : 235,
             "is_trivially_copyable" : true
           },
-          "decl_ptr" : 116
+          "decl_ptr" : 117
         }
       )>,
       <"NoneType" : (

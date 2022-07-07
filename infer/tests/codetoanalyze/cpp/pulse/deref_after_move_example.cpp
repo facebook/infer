@@ -7,9 +7,10 @@
 
 #include <memory>
 
-namespace deref_after_mode_example {
+namespace deref_after_move_example {
 
 struct Person {
+  // NOTE: the implicit constructor has a mem leak FP
   std::unique_ptr<int> age{new int(35)};
   std::unique_ptr<int> move_age() { return std::move(age); }
   int access_age() { return *age; }

@@ -9,6 +9,8 @@
 
 @interface InferTaint : NSObject
 
+@property(nonatomic, assign) NSObject* obj;
+
 + (NSObject*)source;
 + (void)taintsArg:(NSObject*)param;
 + (void)sink:(NSObject*)param;
@@ -24,7 +26,9 @@
 @implementation InferTaint
 
 + (NSObject*)source {
-  return [NSObject new];
+  InferTaint* result = [InferTaint new];
+  result.obj = [NSObject new];
+  return result;
 };
 
 + (void)taintsArg:(NSObject*)param {
@@ -116,4 +120,10 @@ void sanitizerThenTaintInterprocBad() {
   NSObject* obj = [NSObject new];
   [InferTaint sanitizeThenTaint:obj];
   [InferTaint twoKindSink:obj];
+}
+
+void fieldAccessBad() {
+  InferTaint* source = [InferTaint source];
+  NSObject* obj = source.obj;
+  [InferTaint sink:obj];
 }

@@ -166,7 +166,8 @@ let check_arg_not_nil (value, value_hist) ~desc : model =
  fun {path; location; ret= ret_id, _} astate ->
   let event = Hist.call_event path location desc in
   let<*> astate, _ =
-    PulseOperations.eval_access path Read location
+    PulseOperations.eval_access path ~must_be_valid_reason:(NullArgumentWhereNonNullExpected desc)
+      Read location
       (value, Hist.add_event path event value_hist)
       Dereference astate
   in

@@ -56,7 +56,7 @@ val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val mk_initial : Tenv.t -> Procdesc.t -> t
+val mk_initial : Tenv.t -> Procname.t -> ProcAttributes.t -> t
 
 val get_pre : t -> BaseDomain.t
 
@@ -135,6 +135,9 @@ module AddressAttributes : sig
   val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
   val add_taint_sink : PathContext.t -> Taint.t -> Trace.t -> AbstractValue.t -> t -> t
+
+  val add_taint_procedure :
+    PathContext.t -> Taint.origin -> Procname.t -> Trace.t -> AbstractValue.t -> t -> t
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
@@ -240,7 +243,8 @@ val summary_with_need_specialization : summary -> summary
 
 val summary_of_post :
      Tenv.t
-  -> Procdesc.t
+  -> Procname.t
+  -> ProcAttributes.t
   -> Location.t
   -> t
   -> ( summary

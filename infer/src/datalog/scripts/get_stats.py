@@ -13,5 +13,5 @@ print()
 print("*** Program stats ***")
 
 for jar in jar_paths:
-    out = os.popen("./" + SCAN_JAR_PATH + " " + jar).read().strip()
+    out = os.popen("./" + SCAN_JAR_PATH + " " + jar).read()
     print(out)

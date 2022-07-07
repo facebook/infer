@@ -17,7 +17,8 @@
 
 (menhir
  (modules TextualMenhir)
- (flags --explain))
+ (flags --explain)
+ (infer false))
 
 (documentation
  (package infer)

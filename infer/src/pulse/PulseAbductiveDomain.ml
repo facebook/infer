@@ -282,11 +282,22 @@ module AddressAttributes = struct
 
 
   let add_taint_sink path sink trace addr astate =
-    let must_not_be_tainted =
-      Attribute.MustNotBeTainted.{time= path.PathContext.timestamp; sink; trace}
+    let taint_sink = Attribute.TaintSink.{time= path.PathContext.timestamp; sink; trace} in
+    abduce_attribute addr
+      (MustNotBeTainted
+         { sinks= Attribute.TaintSinkSet.singleton taint_sink
+         ; procedures= Attribute.TaintProcedureSet.empty } )
+      astate
+
+
+  let add_taint_procedure path origin proc_name trace addr astate =
+    let taint_procedure =
+      Attribute.TaintProcedure.{time= path.PathContext.timestamp; origin; proc_name; trace}
     in
     abduce_attribute addr
-      (MustNotBeTainted (Attribute.MustNotBeTaintedSet.singleton must_not_be_tainted))
+      (MustNotBeTainted
+         { sinks= Attribute.TaintSinkSet.empty
+         ; procedures= Attribute.TaintProcedureSet.singleton taint_procedure } )
       astate
 
 
@@ -613,30 +624,28 @@ let set_uninitialized tenv {PathContext.timestamp} src typ location x =
   {x with post= set_uninitialized_post tenv timestamp src typ location x.post}
 
 
-let mk_initial tenv proc_desc =
+let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  let location = Procdesc.get_loc proc_desc in
   let formals_and_captured =
     let init_var formal_or_captured pvar typ =
       let event =
         match formal_or_captured with
         | `Formal ->
-            ValueHistory.FormalDeclared (pvar, location, Timestamp.t0)
+            ValueHistory.FormalDeclared (pvar, proc_attrs.loc, Timestamp.t0)
         | `Captured mode ->
-            ValueHistory.Capture {captured_as= pvar; mode; location; timestamp= Timestamp.t0}
+            ValueHistory.Capture
+              {captured_as= pvar; mode; location= proc_attrs.loc; timestamp= Timestamp.t0}
       in
       (Var.of_pvar pvar, typ, (AbstractValue.mk_fresh (), ValueHistory.singleton event))
     in
     let formals =
-      Procdesc.get_formals proc_desc
-      |> List.map ~f:(fun (mangled, typ, _) -> init_var `Formal (Pvar.mk mangled proc_name) typ)
+      List.map proc_attrs.formals ~f:(fun (mangled, typ, _) ->
+          init_var `Formal (Pvar.mk mangled proc_name) typ )
     in
     let captured =
-      Procdesc.get_captured proc_desc
-      |> List.map ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
-             init_var (`Captured capture_mode) pvar typ )
+      List.map proc_attrs.captured ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
+          init_var (`Captured capture_mode) pvar typ )
     in
     captured @ formals
   in
@@ -664,7 +673,10 @@ let mk_initial tenv proc_desc =
       List.fold formals_and_captured ~init:(PreDomain.empty :> base_domain).attrs
         ~f:(fun attrs (_, _, (addr, _)) ->
           BaseAddressAttributes.add_one addr
-            (MustBeValid (Timestamp.t0, Immediate {location; history= ValueHistory.epoch}, None))
+            (MustBeValid
+               ( Timestamp.t0
+               , Immediate {location= proc_attrs.loc; history= ValueHistory.epoch}
+               , None ) )
             attrs )
     else BaseDomain.empty.attrs
   in
@@ -678,15 +690,14 @@ let mk_initial tenv proc_desc =
   let post =
     PostDomain.update ~stack:initial_stack ~heap:initial_heap ~attrs:initial_attrs PostDomain.empty
   in
-  let locals = Procdesc.get_locals proc_desc in
   let post =
-    List.fold locals ~init:post
+    List.fold proc_attrs.locals ~init:post
       ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr} ->
         if modify_in_block || is_constexpr then acc
         else
           set_uninitialized_post tenv Timestamp.t0
             (`LocalDecl (Pvar.mk name proc_name, None))
-            typ location acc )
+            typ proc_attrs.loc acc )
   in
   let astate =
     { pre
@@ -708,7 +719,7 @@ let mk_initial tenv proc_desc =
          mem  ={ v1 -> { * -> v3 }, v2 -> { * -> v3 }, v3 -> { } };
          attrs={ };
     *)
-    match Procdesc.get_specialized_with_aliasing_info proc_desc with
+    match proc_attrs.specialized_with_aliasing_info with
     | None ->
         astate
     | Some {aliases} ->
@@ -872,66 +883,82 @@ let check_retain_cycles ~dead_addresses tenv astate =
     | Some attributes ->
         Attributes.get_written_to attributes
   in
-  let compare_locs trace1 trace2 =
+  let compare_traces trace1 trace2 =
     let loc1 = Trace.get_outer_location trace1 in
     let loc2 = Trace.get_outer_location trace2 in
-    Location.compare loc2 loc1
+    let compared_locs = Location.compare loc2 loc1 in
+    if Int.equal compared_locs 0 then Trace.compare trace1 trace2 else compared_locs
   in
   (* remember explored adresses to avoid reexploring path without retain cycles *)
   let checked = ref [] in
   let check_retain_cycle src_addr =
-    (* [assignment_traces] tracks the assignments met in the retain cycle
-       [seen] tracks addresses met in the current path
-       [addr] is the address to explore
-    *)
-    let rec contains_cycle decompiler assignment_traces seen addr =
+    let rec contains_cycle decompiler assignment_traces seen addr cycle_addr =
+      (* [decompiler] is a decompiler filled during the look out for a cycle
+         [assignment_traces] tracks the assignments met in the retain cycle
+         [seen] tracks addresses met in the current path
+         [addr] is the address to explore
+      *)
       if List.exists ~f:(AbstractValue.equal addr) !checked then Ok ()
-      else if List.exists ~f:(AbstractValue.equal addr) seen then
-        let assignment_traces = List.sort ~compare:compare_locs assignment_traces in
-        match assignment_traces with
-        | [] ->
-            Ok ()
-        | most_recent_trace :: _ ->
-            let location = Trace.get_outer_location most_recent_trace in
-            let value = Decompiler.find addr astate.decompiler in
-            let path = Decompiler.find addr decompiler in
-            Error (List.rev assignment_traces, value, path, location)
       else
-        let res =
-          match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
-          | None ->
+        let value = Decompiler.find addr astate.decompiler in
+        let is_known = not (Decompiler.is_unknown value) in
+        let is_seen = List.exists ~f:(AbstractValue.equal addr) seen in
+        if
+          is_known && is_seen
+          && Option.value_map ~default:false
+               (AddressAttributes.find_opt addr astate)
+               ~f:Attributes.is_ref_counted
+        then
+          let assignment_traces = List.dedup_and_sort ~compare:compare_traces assignment_traces in
+          match assignment_traces with
+          | [] ->
               Ok ()
-          | Some edges_pre ->
-              BaseMemory.Edges.fold ~init:(Ok ()) edges_pre
-                ~f:(fun acc (access, (accessed_addr, _)) ->
-                  match acc with
-                  | Error _ ->
-                      acc
-                  | Ok () ->
-                      if BaseMemory.Access.is_strong_access tenv access then
-                        let assignment_traces =
-                          match access with
-                          | HilExp.Access.FieldAccess _ -> (
-                            match get_assignment_trace accessed_addr with
-                            | None ->
+          | most_recent_trace :: _ ->
+              let location = Trace.get_outer_location most_recent_trace in
+              let path = Decompiler.find addr decompiler in
+              Error (assignment_traces, value, path, location)
+        else (
+          if (not is_known) && is_seen then
+            (* add the `UNKNOWN` address at which we have found a cycle to the [checked]
+               list in case we would have a cycle of `UNKNOWN` addresses, to avoid
+               looping forever *)
+            checked := addr :: !checked ;
+          let res =
+            match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
+            | None ->
+                Ok ()
+            | Some edges_pre ->
+                BaseMemory.Edges.fold ~init:(Ok ()) edges_pre
+                  ~f:(fun acc (access, (accessed_addr, _)) ->
+                    match acc with
+                    | Error _ ->
+                        acc
+                    | Ok () ->
+                        if BaseMemory.Access.is_strong_access tenv access then
+                          let assignment_traces =
+                            match access with
+                            | HilExp.Access.FieldAccess _ -> (
+                              match get_assignment_trace accessed_addr with
+                              | None ->
+                                  assignment_traces
+                              | Some assignment_trace ->
+                                  assignment_trace :: assignment_traces )
+                            | _ ->
                                 assignment_traces
-                            | Some assignment_trace ->
-                                assignment_trace :: assignment_traces )
-                          | _ ->
-                              assignment_traces
-                        in
-                        let decompiler =
-                          Decompiler.add_access_source accessed_addr access ~src:addr
-                            (astate.post :> base_domain).attrs decompiler
-                        in
-                        contains_cycle decompiler assignment_traces (addr :: seen) accessed_addr
-                      else Ok () )
-        in
-        (* all paths down [addr] have been explored *)
-        checked := addr :: !checked ;
-        res
+                          in
+                          let decompiler =
+                            Decompiler.add_access_source ~allow_cycle:true accessed_addr access
+                              ~src:addr (astate.post :> base_domain).attrs decompiler
+                          in
+                          contains_cycle decompiler assignment_traces (addr :: seen) accessed_addr
+                            cycle_addr
+                        else Ok () )
+          in
+          (* all paths down [addr] have been explored *)
+          checked := addr :: !checked ;
+          res )
     in
-    contains_cycle astate.decompiler [] [] src_addr
+    contains_cycle astate.decompiler [] [] src_addr None
   in
   List.fold_result dead_addresses ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with
@@ -1120,7 +1147,7 @@ let add_out_of_scope_attribute addr pvar location history heap typ =
 
 
 (** invalidate local variables going out of scope *)
-let invalidate_locals pdesc astate : t =
+let invalidate_locals locals astate : t =
   let attrs : BaseAddressAttributes.t = (astate.post :> BaseDomain.t).attrs in
   let attrs' =
     BaseAddressAttributes.fold
@@ -1128,11 +1155,10 @@ let invalidate_locals pdesc astate : t =
         Attributes.get_address_of_stack_variable attrs
         |> Option.value_map ~default:acc ~f:(fun (var, location, history) ->
                let get_local_typ_opt pvar =
-                 Procdesc.get_locals pdesc
-                 |> List.find_map ~f:(fun ProcAttributes.{name; typ; modify_in_block} ->
-                        if (not modify_in_block) && Mangled.equal name (Pvar.get_name pvar) then
-                          Some typ
-                        else None )
+                 List.find_map locals ~f:(fun ProcAttributes.{name; typ; modify_in_block} ->
+                     if (not modify_in_block) && Mangled.equal name (Pvar.get_name pvar) then
+                       Some typ
+                     else None )
                in
                match var with
                | Var.ProgramVar pvar ->
@@ -1315,7 +1341,7 @@ let filter_for_summary tenv proc_name astate0 =
   , new_eqs )
 
 
-let summary_of_post tenv pdesc location astate0 =
+let summary_of_post tenv proc_name (proc_attrs : ProcAttributes.t) location astate0 =
   let open SatUnsat.Import in
   (* do not store the decompiler in the summary and make sure we only use the original one by
      marking it invalid *)
@@ -1332,9 +1358,7 @@ let summary_of_post tenv pdesc location astate0 =
   let astate = {astate with path_condition} in
   let* astate, error = incorporate_new_eqs ~for_summary:true astate new_eqs in
   let astate_before_filter = astate in
-  let* astate, live_addresses, dead_addresses, new_eqs =
-    filter_for_summary tenv (Procdesc.get_proc_name pdesc) astate
-  in
+  let* astate, live_addresses, dead_addresses, new_eqs = filter_for_summary tenv proc_name astate in
   let+ astate, error =
     match error with
     | None ->
@@ -1359,7 +1383,7 @@ let summary_of_post tenv pdesc location astate0 =
           astate_before_filter
       with
       | Ok () ->
-          Ok (invalidate_locals pdesc astate)
+          Ok (invalidate_locals proc_attrs.locals astate)
       | Error (unreachable_location, JavaResource class_name, trace) ->
           Error
             (`ResourceLeak

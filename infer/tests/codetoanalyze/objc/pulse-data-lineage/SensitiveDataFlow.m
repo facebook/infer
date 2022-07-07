@@ -7,6 +7,15 @@
 
 #import <Foundation/NSObject.h>
 
+@interface TaintedObject : NSObject
+@end
+
+@implementation TaintedObject
++ (TaintedObject*)__infer_taint_source {
+  return [TaintedObject new];
+}
+@end
+
 @interface SensitiveDataFlow : NSObject
 @end
 
@@ -45,6 +54,23 @@
 - (void)test {
   NSObject* start = self.create_then_mutate;
   [self mutate_then_consume:start];
+}
+
+NSObject* unknown(NSObject*);
+
+- (NSObject*)propagate_taint:(NSObject*)obj {
+  return unknown(obj);
+}
+
+- (void)test_unknown {
+  NSObject* obj = self.__infer_taint_source;
+  NSObject* ret = [self propagate_taint:obj];
+  [self might_be_a_sink:ret];
+}
+
+- (void)test_ignored_calls {
+  TaintedObject* tainted = TaintedObject.__infer_taint_source;
+  [self might_be_a_sink:tainted];
 }
 
 @end
