@@ -26,6 +26,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
   in
   let ret_val = AbstractValue.mk_fresh () in
   let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
+  let astate = Decompiler.add_call_source ret_val reason actuals astate in
   (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the
      same value for the same inputs *)
   let is_functional = ref true in
