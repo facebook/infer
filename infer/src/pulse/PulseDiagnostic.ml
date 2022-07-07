@@ -181,7 +181,7 @@ let get_message diagnostic =
           | `Immediate ->
               ()
           | `Call f ->
-              F.fprintf fmt " in call to %a" CallEvent.describe f
+              F.fprintf fmt " in the call to %a" CallEvent.describe f
         in
         let pp_invalidation_trace line fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
@@ -224,6 +224,10 @@ let get_message diagnostic =
           | Some BlockCall ->
               F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block" pp_access_trace
                 access_trace
+          | Some (NullArgumentWhereNonNullExpected procname) ->
+              F.fprintf fmt
+                "%a is passed as argument to %s; this function requires a non-nil argument"
+                pp_prefix "nil" procname
           | None ->
               F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
         in

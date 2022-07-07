@@ -889,6 +889,11 @@ let no_matching_branch_in_try =
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
 
 
+let null_argument =
+  register_with_latent ~id:"NULL_ARGUMENT" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NULL_ARGUMENT.md"]
+
+
 let null_dereference =
   register ~id:"NULL_DEREFERENCE" Error Biabduction
     ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
