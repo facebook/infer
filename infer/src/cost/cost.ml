@@ -22,8 +22,7 @@ type extras_WorstCaseCost =
   ; inferbo_get_summary: BufferOverrunAnalysisSummary.get_summary
   ; get_node_nb_exec: Node.t -> BasicCost.t
   ; get_summary: Procname.t -> CostDomain.summary option
-  ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option
-  ; get_proc_desc: Procname.t -> Procdesc.t option }
+  ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option }
 
 let instantiate_cost ?get_closure_callee_cost ~default_closure_cost integer_type_widths
     ~inferbo_caller_mem ~callee_pname ~callee_formals ~args ~captured_vars ~callee_cost ~loc =
@@ -54,11 +53,11 @@ module InstrBasicCostWithReason = struct
       List.exists prefixes ~f:(fun prefix -> String.is_prefix method_name ~prefix)
 
 
-  let is_objc_call_from_no_arc_to_arc {get_proc_desc} caller_pdesc callee_pname =
-    Option.exists (get_proc_desc callee_pname) ~f:(fun callee_pdesc ->
-        Procdesc.is_defined callee_pdesc
+  let is_objc_call_from_no_arc_to_arc caller_pdesc callee_pname =
+    Option.exists (Attributes.load callee_pname) ~f:(fun (callee_attrs : ProcAttributes.t) ->
+        callee_attrs.is_defined
         && (not (Procdesc.is_objc_arc_on caller_pdesc))
-        && Procdesc.is_objc_arc_on callee_pdesc )
+        && callee_attrs.is_objc_arc_on )
 
 
   let get_modeled_cost_unless_top ~default modeled_cost =
@@ -89,12 +88,11 @@ module InstrBasicCostWithReason = struct
           BasicCostWithReason.one () )
 
 
-  let dispatch_autoreleasepool tenv callee_pname callee_cost_opt fun_arg_list
-      ({get_summary} as extras) model_env ((_, ret_typ) as ret) cfg loc inferbo_mem :
-      BasicCostWithReason.t =
+  let dispatch_autoreleasepool tenv callee_pname callee_cost_opt fun_arg_list {get_summary}
+      model_env ((_, ret_typ) as ret) cfg loc inferbo_mem : BasicCostWithReason.t =
     let fun_cost =
       if
-        is_objc_call_from_no_arc_to_arc extras cfg callee_pname
+        is_objc_call_from_no_arc_to_arc cfg callee_pname
         && Typ.is_pointer_to_objc_non_tagged_class ret_typ
         && not (return_object_owned_by_caller callee_pname)
       then
@@ -452,8 +450,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       ; integer_type_widths
       ; get_node_nb_exec
       ; get_summary
-      ; get_formals
-      ; get_proc_desc= Procdesc.load }
+      ; get_formals }
     in
     AnalysisCallbacks.html_debug_new_node_session (NodeCFG.start_node node_cfg)
       ~pp_name:(fun f -> F.pp_print_string f "cost(worst-case)")
