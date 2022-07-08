@@ -800,7 +800,7 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
 
 let check_all_taint_valid path callee_proc_name call_location actuals pre_post astate call_state =
   let open PulseResult.Let_syntax in
-  let mk_flow_from_taint_source ~source ~destination ~taint_v astate result =
+  let mk_flow_from_taint_source ~source ~destination v astate result =
     let* result in
     Recoverable
       ( result
@@ -808,10 +808,8 @@ let check_all_taint_valid path callee_proc_name call_location actuals pre_post a
             { astate
             ; diagnostic=
                 FlowFromTaintSource
-                  { tainted= Decompiler.find taint_v astate
-                  ; source
-                  ; destination
-                  ; location= call_location } } ] )
+                  {tainted= Decompiler.find v astate; source; destination; location= call_location}
+            } ] )
   in
   let* astate =
     AddressMap.fold
@@ -846,7 +844,7 @@ let check_all_taint_valid path callee_proc_name call_location actuals pre_post a
                   (fun {origin; proc_name; trace} ->
                     mk_flow_from_taint_source ~source:(source, hist)
                       ~destination:(origin, proc_name, trace_via_call trace)
-                      ~taint_v:addr_pre astate )
+                      v astate )
                   procedures )
               sources (Ok astate) ) )
       call_state.subst (Ok astate)
@@ -869,7 +867,7 @@ let check_all_taint_valid path callee_proc_name call_location actuals pre_post a
             Attribute.TaintedSet.fold
               (fun {source; hist} ->
                 mk_flow_from_taint_source ~source:(source, hist)
-                  ~destination:(origin, callee_proc_name, trace) ~taint_v:v call_state.astate )
+                  ~destination:(origin, callee_proc_name, trace) v call_state.astate )
               sources (Ok astate) ) )
 
 
