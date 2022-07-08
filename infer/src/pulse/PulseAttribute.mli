@@ -135,6 +135,8 @@ module Attributes : sig
 
   val is_java_resource_released : t -> bool
 
+  val is_csharp_resource_released : t -> bool
+
   val is_end_of_collection : t -> bool
 
   val get_invalid : t -> (Invalidation.t * Trace.t) option

@@ -458,8 +458,7 @@ module Attribute = struct
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _ ->
         true
-    | JavaResource _, _ ->
-        is_released
+    | JavaResource _, _
     | CSharpResource _, _ ->
         is_released
     | _ ->
@@ -581,7 +580,9 @@ module Attributes = struct
         | PropagateTaintFrom taints_in -> taints_in )
 
 
-  let is_java_resource_released = mem_by_rank Attribute.csharp_resource_released_rank
+  let is_java_resource_released = mem_by_rank Attribute.java_resource_released_rank
+
+  let is_csharp_resource_released = mem_by_rank Attribute.csharp_resource_released_rank
 
   let get_must_be_valid =
     get_by_rank Attribute.must_be_valid_rank ~dest:(function [@warning "-8"]
@@ -704,7 +705,8 @@ module Attributes = struct
     let allocated_opt = get_allocation attributes in
     Option.value_map ~default:None allocated_opt ~f:(fun (allocator, _) ->
         let invalidation = get_invalid attributes in
-        let is_released = is_java_resource_released attributes in
+        let is_released =
+            is_java_resource_released attributes || is_csharp_resource_released attributes in
         if Attribute.alloc_free_match allocator invalidation is_released then None
         else allocated_opt )
 
