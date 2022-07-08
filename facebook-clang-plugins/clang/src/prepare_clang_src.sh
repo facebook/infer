@@ -26,6 +26,11 @@ CLANG_PREBUILD_PATCHES=(
 mkdir -p "${SCRIPT_DIR}/download"
 pushd "${SCRIPT_DIR}/download" >/dev/null
 
+if ! echo "${LLVM_SHA}  ${LLVM_FILE}" | $SHASUM -c ; then
+  echo "wrong checksum for $LLVM_FILE, downloading it again"
+  rm -f "$LLVM_FILE"
+fi
+
 if [ ! -f "${LLVM_FILE}" ]; then
     curl -L "${LLVM_URL}" --output "${LLVM_FILE}"
 fi
