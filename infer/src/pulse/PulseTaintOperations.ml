@@ -692,6 +692,38 @@ let should_ignore_sensitive_data_flows_to proc_name =
   Procname.is_objc_dealloc proc_name || BuiltinDecl.is_declared proc_name
 
 
+(** Add callee as a taint procedure and report taint flows to callee actuals *)
+let report_flows_to_callee path call_location callee_proc_name actuals caller_astate astate =
+  if should_ignore_sensitive_data_flows_to callee_proc_name then Ok astate
+  else
+    let mk_flow_from_taint_source ~source ~destination v astate result =
+      let* result in
+      Recoverable
+        ( result
+        , [ PulseOperations.ReportableError
+              { astate
+              ; diagnostic=
+                  FlowFromTaintSource
+                    {tainted= Decompiler.find v astate; source; destination; location= call_location}
+              } ] )
+    in
+    PulseResult.list_foldi actuals ~init:astate ~f:(fun index astate ((v, history), _) ->
+        let origin = Taint.Argument {index} in
+        let trace = Trace.Immediate {location= call_location; history} in
+        let astate =
+          AbductiveDomain.AddressAttributes.add_taint_procedure path origin callee_proc_name trace v
+            astate
+        in
+        let taint_dependencies = gather_taint_dependencies v astate in
+        PulseResult.list_fold taint_dependencies ~init:astate ~f:(fun astate v ->
+            let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers v caller_astate in
+            Attribute.TaintedSet.fold
+              (fun {source; hist} ->
+                mk_flow_from_taint_source ~source:(source, hist)
+                  ~destination:(origin, callee_proc_name, trace) v caller_astate )
+              sources (Ok astate) ) )
+
+
 let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
   match call with
   | First call_exp ->
@@ -717,19 +749,18 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
         taint_sources tenv path location ~intra_procedural_only:false (Some return)
           ~has_added_return_param proc_name actuals astate
       in
-      let+ astate, found_sink_model =
+      let* astate, found_sink_model =
         taint_sinks tenv path location (Some return) ~has_added_return_param proc_name actuals
           astate
       in
-      let astate =
-        if should_ignore_sensitive_data_flows_to proc_name then astate
-        else
-          List.foldi actuals ~init:astate
-            ~f:(fun index astate ProcnameDispatcher.Call.FuncArg.{arg_payload= v, history} ->
-              let origin = Taint.Argument {index} in
-              let trace = Trace.Immediate {location; history} in
-              AbductiveDomain.AddressAttributes.add_taint_procedure path origin proc_name trace v
-                astate )
+      let+ astate =
+        if call_was_unknown then
+          let actuals =
+            List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+                (arg_payload, typ) )
+          in
+          report_flows_to_callee path location proc_name actuals astate astate
+        else Ok astate
       in
       (* NOTE: we don't care about sanitizers because we want to propagate taint source and sink
          information even if a procedure also happens to sanitize *some* of the sources *)

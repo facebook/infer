@@ -62,7 +62,12 @@ NSObject* unknown(NSObject*);
   return unknown(obj);
 }
 
-- (void)test_unknown {
+- (void)test_flow_to_unknown {
+  NSObject* obj = self.__infer_taint_source;
+  unknown(obj);
+}
+
+- (void)test_taint_propagation {
   NSObject* obj = self.__infer_taint_source;
   NSObject* ret = [self propagate_taint:obj];
   [self might_be_a_sink:ret];
