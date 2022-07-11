@@ -695,50 +695,51 @@ module Summary = struct
       match Set.choose todo with
       | None ->
           (parents, children)
-      | Some data -> (
+      | Some data ->
           if is_interesting_data data then L.die InternalError "Shouldn't happen" ;
           let todo = Set.remove todo data in
           let before = Map.find_multi parents data in
           let after = Map.find_multi children data in
           let before_interesting = List.exists ~f:is_interesting_flow before in
           let after_interesting = List.exists ~f:is_interesting_flow after in
-          match (before, after) with
-          | ([_], _ | _, [_]) when not (before_interesting && after_interesting) ->
-              let pairs = List.cartesian_product before after in
-              (* (A) remove old edges *)
-              let parents, children = List.fold ~init:(parents, children) ~f:remove_flow before in
-              let parents, children = List.fold ~init:(parents, children) ~f:remove_flow after in
-              let do_pair (todo, (parents, children))
-                  ((flow_ab : LineageGraph.flow), (flow_bc : LineageGraph.flow)) =
-                let keep = if is_interesting_flow flow_bc then flow_bc else flow_ab in
-                let keep : LineageGraph.flow =
-                  {keep with LineageGraph.source= flow_ab.source; target= flow_bc.target}
-                in
-                if Int.equal 0 (LineageGraph.compare_data keep.source keep.target) then
-                  L.die InternalError "OOPS: I don't work with loops." ;
-                (* (B) add new edges *)
-                let parents = Map.add_multi ~key:keep.target ~data:keep parents in
-                let children = Map.add_multi ~key:keep.source ~data:keep children in
-                (* The following two lines insert at most 1 vertex into [todo] for each [flow_ab]/
-                 * [flow_bc] edge that gets removed from the graph, in step (A) above. This is where
-                 * the earlier claim that at most m insertions happen in the main loop. However,
-                 * this claim is invalidated if one of the [flow_ab]/[flow_bc] edges gets re-added
-                 * to the graph in step (B) above, which may happen if there is an (isolated) loop
-                 * in the graph. *)
-                let todo =
-                  if is_interesting_data keep.source then todo else Set.add todo keep.source
-                in
-                let todo =
-                  if is_interesting_data keep.target then todo else Set.add todo keep.target
-                in
-                (todo, (parents, children))
+          let short list = match list with [] | [_] -> true | _ -> false in
+          let before_short = short before in
+          let after_short = short after in
+          if (before_short || after_short) && not (before_interesting && after_interesting) then
+            let pairs = List.cartesian_product before after in
+            (* (A) remove old edges *)
+            let parents, children = List.fold ~init:(parents, children) ~f:remove_flow before in
+            let parents, children = List.fold ~init:(parents, children) ~f:remove_flow after in
+            let do_pair (todo, (parents, children))
+                ((flow_ab : LineageGraph.flow), (flow_bc : LineageGraph.flow)) =
+              let keep = if is_interesting_flow flow_bc then flow_bc else flow_ab in
+              let keep : LineageGraph.flow =
+                {keep with LineageGraph.source= flow_ab.source; target= flow_bc.target}
               in
-              let todo, (parents, children) =
-                List.fold ~init:(todo, (parents, children)) ~f:do_pair pairs
+              if Int.equal 0 (LineageGraph.compare_data keep.source keep.target) then
+                L.die InternalError "OOPS: I don't work with loops." ;
+              (* (B) add new edges *)
+              let parents = Map.add_multi ~key:keep.target ~data:keep parents in
+              let children = Map.add_multi ~key:keep.source ~data:keep children in
+              (* The following two lines insert at most 1 vertex into [todo] for each [flow_ab]/
+               * [flow_bc] edge that gets removed from the graph, in step (A) above. This is where
+               * the earlier claim that at most m insertions happen in the main loop. However,
+               * this claim is invalidated if one of the [flow_ab]/[flow_bc] edges gets re-added
+               * to the graph in step (B) above, which may happen if there is an (isolated) loop
+               * in the graph. *)
+              let todo =
+                if is_interesting_data keep.source then todo else Set.add todo keep.source
               in
-              simplify todo parents children
-          | _ ->
-              simplify todo parents children )
+              let todo =
+                if is_interesting_data keep.target then todo else Set.add todo keep.target
+              in
+              (todo, (parents, children))
+            in
+            let todo, (parents, children) =
+              List.fold ~init:(todo, (parents, children)) ~f:do_pair pairs
+            in
+            simplify todo parents children
+          else simplify todo parents children
     in
     let parents, _children = simplify todo parents children in
     (* Simplified graph: from adjacency list to edge list representation.*)
