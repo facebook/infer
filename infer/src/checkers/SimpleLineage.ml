@@ -1027,8 +1027,14 @@ module TransferFunctions = struct
 
 
   let generic_call_model astate node analyze_dependency ret_id procname args =
-    astate |> record_supported procname |> add_arg_flows node procname args
-    |> add_ret_flows procname ret_id node
+    let maybe =
+      if (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname then
+        fun _transform state -> state
+      else fun transform state -> transform state
+    in
+    astate |> record_supported procname
+    |> maybe (add_arg_flows node procname args)
+    |> maybe (add_ret_flows procname ret_id node)
     |> add_summary_flows (analyze_dependency procname) args ret_id node
 
 

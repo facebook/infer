@@ -669,6 +669,8 @@ val select : [`All | `Select of int] option
 
 val show_buckets : bool
 
+val simple_lineage_include_builtins : bool
+
 val simple_lineage_json_report : bool
 
 val simple_lineage_keep_temporaries : bool

@@ -2615,6 +2615,13 @@ and scuba_tags =
      <name>=(<value>,<value>,<value>|NONE)"
 
 
+and simple_lineage_include_builtins =
+  CLOpt.mk_bool ~long:"simple-lineage-include-builtins"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "Include call/return edges to/from procedures that model primitive Erlang operations, such as \
+     constructing a list."
+
+
 and simple_lineage_max_cfg_size =
   CLOpt.mk_int_opt ~long:"simple-lineage-max-cfg-size"
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
@@ -3884,6 +3891,8 @@ and select =
 
 
 and show_buckets = !print_buckets
+
+and simple_lineage_include_builtins = !simple_lineage_include_builtins
 
 and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
 
