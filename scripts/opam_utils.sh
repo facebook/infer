@@ -52,15 +52,17 @@ opam_switch_create_if_needed () {
     local switch=$1
     local options=$2
     local switch_exists=no
+    printf "looking if switch %s exists in this list:\n" "$switch";
+    opam switch list --short
     for installed_switch in $(opam switch list --short); do
         if [ "$installed_switch" == "$switch" ]; then
             switch_exists=yes
             break
         fi
     done
-    opam_root="${OPAMROOT:-}"
+    printf "verdict: %s\n" $switch_exists;
     if [ "$switch_exists" = "no" ]; then
-        if [ -n "$opam_root" ]; then
+        if [ -e "$(opam var root)/$switch" ] ; then
             rm -rf "$opam_root/$switch" || true
         fi
         opam switch create "$switch" "$options"
