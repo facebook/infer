@@ -746,7 +746,6 @@ module Xsh = struct
 
   let pp fs q = pp_ ~var_strength:(var_strength q) Context.empty fs q
   let pp_raw fs q = pp_ ?var_strength:None Context.empty fs q
-  let pp_diff_eq ctx fs q = pp_ ctx fs q
 
   (** Set of existential symbolic heaps *)
 

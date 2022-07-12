@@ -167,17 +167,21 @@ let localize_entry tid globals actuals formals freturn locals shadow pre
   let function_summary_pre = garbage_collect entry ~wrt in
   [%Dbg.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Xsh.exists formals_set function_summary_pre in
-  let (xs, foot), vx = Xsh.name_exists (Xsh.extend_voc (Xsh.us pre) foot) in
-  let foot = Var.Fresh.gen_ vx (Xsh.qf foot) in
-  let frame =
-    try Option.get_exn (Solver.infer_frame pre xs foot)
-    with _ ->
-      fail "Solver couldn't infer frame of a garbage-collected pre" ()
-  in
-  let q'' =
-    Xsh.extend_voc freturn_locals (and_eqs shadow formals actuals foot)
-  in
-  (q'', frame)
+  let (xs, foot), _ = Xsh.name_exists foot in
+  let (xs_pre, pre), vx = Xsh.name_exists pre in
+  assert (Var.Set.is_empty xs_pre) ;
+  Var.Fresh.gen_ vx (fun vx ->
+      let frame = Solver.infer_frame pre xs foot vx in
+      let frame =
+        try Option.get_exn frame
+        with _ ->
+          fail "Solver couldn't infer frame of a garbage-collected pre" ()
+      in
+      let foot = Xsh.qf foot vx in
+      let q'' =
+        Xsh.extend_voc freturn_locals (and_eqs shadow formals actuals foot)
+      in
+      (q'', frame) )
 
 type from_call = {areturn: Var.t option; unshadow: Var.Subst.t; frame: Xsh.t}
 [@@deriving compare, equal, sexp]
@@ -383,7 +387,12 @@ let apply_summary q ({xs; foot; post} as fs) =
     else (q, Var.Set.empty)
   in
   let frame =
-    if Var.Set.is_empty xs_in_fv_q then Solver.infer_frame q xs foot
+    if Var.Set.is_empty xs_in_fv_q then (
+      let (xs_q, q), _ = Xsh.name_exists q in
+      assert (Var.Set.is_empty xs_q) ;
+      let (xs_foot, foot), vx = Xsh.name_exists foot in
+      assert (Var.Set.is_empty xs_foot) ;
+      Var.Fresh.gen_ vx (Solver.infer_frame q xs foot) )
     else None
   in
   [%Dbg.info "frame %a" (Option.pp "%a" pp) frame] ;

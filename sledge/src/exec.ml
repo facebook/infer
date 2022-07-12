@@ -648,9 +648,7 @@ let exec_spec_ :
         ms Sh.pp post )
     ~retn:(fun {pf} -> pf "%a" pp)
   @@ fun () ->
-  let pre = Xsh.qf pre vx in
-  let foot = Xsh.qf foot vx in
-  let+ frame = Solver.infer_frame pre gs foot in
+  let+ frame = Solver.infer_frame pre gs foot vx in
   let post = Xsh.qf post vx in
   Xsh.exists (Var.Set.union xs gs)
     (Xsh.star post (Xsh.exists ms (Xsh.rename sub frame)))

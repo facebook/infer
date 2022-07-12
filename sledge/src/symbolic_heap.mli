@@ -143,7 +143,6 @@ module Xsh : sig
 
   val pp : t pp
   val pp_raw : t pp
-  val pp_diff_eq : Context.t -> t pp
 
   (** Access *)
 

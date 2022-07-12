@@ -10,10 +10,9 @@
 open Fol
 open Symbolic_heap
 
-val infer_frame : Xsh.t -> Var.Set.t -> Xsh.t -> Xsh.t option
-(** If [infer_frame p xs q] is [Some r], then [p ⊢ ∃xs. q * r]. The
-    vocabulary of [r] is the vocabulary of [q] union [xs]. A goal is for [r]
-    to be strong enough that for every model of [r], there exists an
+val infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Xsh.t option Var.Fresh.m
+(** If [infer_frame p xs q] is [Some r], then [p ⊢ ∃xs. q * r]. A goal is
+    for [r] to be strong enough that for every model of [r], there exists an
     extension of it satisfying [q], such that the combination (with [xs]
     projected out) satisfies [p]. *)
 
