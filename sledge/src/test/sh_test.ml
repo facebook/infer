@@ -27,7 +27,7 @@ let%test_module _ =
     let pp_raw = Format.printf "@\n%a@." pp_raw
     let pp_djn = Format.printf "@\n%a@." pp_djn
     let ( ~$ ) = Var.Set.of_list
-    let ( ! ) i = Term.integer (Z.of_int i)
+    let i n = Term.integer (Z.of_int n)
     let ( + ) = Term.add
     let ( - ) = Term.sub
     let ( = ) = Formula.eq
@@ -66,14 +66,14 @@ let%test_module _ =
     let%expect_test _ =
       pp
         (star
-           (seg {loc= x; bas= x; len= !16; siz= !8; cnt= a})
-           (seg {loc= x + !8; bas= x; len= !16; siz= !8; cnt= b}) ) ;
+           (seg {loc= x; bas= x; len= i 16; siz= i 8; cnt= a})
+           (seg {loc= x + i 8; bas= x; len= i 16; siz= i 8; cnt= b}) ) ;
       [%expect {|
           %x_7 -[)-> ⟨8,%a_1⟩^⟨8,%b_2⟩ |}]
 
     let%expect_test _ =
       let p = exists ~$[x_] (extend_us ~$[x_] emp) in
-      let q = pure (x = !0) in
+      let q = pure (x = i 0) in
       pp p ;
       pp q ;
       pp (star p q) ;
@@ -88,11 +88,11 @@ let%test_module _ =
     let%expect_test _ =
       let q =
         or_
-          (pure (x = !0))
+          (pure (x = i 0))
           (exists ~$[x_]
              (or_
-                (and_ (x = !1) (pure (y = !1)))
-                (exists ~$[x_] (pure (x = !2))) ) )
+                (and_ (x = i 1) (pure (y = i 1)))
+                (exists ~$[x_] (pure (x = i 2))) ) )
       in
       pp q ;
       pp_djn (dnf q) ;
@@ -109,11 +109,11 @@ let%test_module _ =
       let q =
         exists ~$[x_]
           (or_
-             (pure (x = !0))
+             (pure (x = i 0))
              (exists ~$[x_]
                 (or_
-                   (and_ (x = !1) (pure (y = !1)))
-                   (exists ~$[x_] (pure (x = !2))) ) ) )
+                   (and_ (x = i 1) (pure (y = i 1)))
+                   (exists ~$[x_] (pure (x = i 2))) ) ) )
       in
       pp q ;
       pp_djn (dnf q) ;
@@ -132,11 +132,11 @@ let%test_module _ =
       let q =
         exists ~$[x_]
           (or_
-             (pure (x = !0))
+             (pure (x = i 0))
              (exists ~$[x_]
                 (or_
-                   (and_ (x = !1) (pure (y = !1)))
-                   (exists ~$[x_] (pure (x = !2))) ) ) )
+                   (and_ (x = i 1) (pure (y = i 1)))
+                   (exists ~$[x_] (pure (x = i 2))) ) ) )
       in
       pp q ;
       pp (simplify q) ;
@@ -147,7 +147,7 @@ let%test_module _ =
         ( (  emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) ) |}]
 
     let%expect_test _ =
-      let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - !1)]) in
+      let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - i 1)]) in
       pp q ;
       let q' = simplify q in
       pp_raw q' ;
@@ -165,11 +165,11 @@ let%test_module _ =
         exists
           ~$[a_; c_; d_; e_]
           (star
-             (pure (eq_concat (!16, e) [|(!8, a); (!8, d)|]))
+             (pure (eq_concat (i 16, e) [|(i 8, a); (i 8, d)|]))
              (or_
-                (pure (Formula.dq x !0))
+                (pure (Formula.dq x (i 0)))
                 (exists (Var.Set.of_list [b_])
-                   (pure (eq_concat (!8, a) [|(!4, c); (!4, b)|])) ) ) )
+                   (pure (eq_concat (i 8, a) [|(i 4, c); (i 4, b)|])) ) ) )
       in
       pp_raw q ;
       let q' = simplify q in
@@ -197,7 +197,7 @@ let%test_module _ =
         exists
           ~$[b_; m_]
           (star
-             (seg {loc= x; bas= b; len= m; siz= !8; cnt= !0})
+             (seg {loc= x; bas= b; len= m; siz= i 8; cnt= i 0})
              (or_ (of_eqs [(b, y); (m, c)]) (of_eqs [(b, z); (m, c)])) )
       in
       pp_raw q ;

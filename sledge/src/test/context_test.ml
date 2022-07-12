@@ -25,7 +25,7 @@ let%test_module _ =
     let printf pp = Format.printf "@\n%a@." pp
     let pp = printf Context.pp_raw
     let pp_classes = Format.printf "@\n@[<hv>  %a@]@." Context.pp
-    let ( ! ) i = Term.integer (Z.of_int i)
+    let i n = Term.integer (Z.of_int n)
     let g x y = Term.apply (Uninterp "g") [|x; y|]
     let wrt = Var.Set.empty
     let t_, wrt = Var.fresh "t" ~wrt
@@ -53,8 +53,8 @@ let%test_module _ =
 
     (* tests *)
 
-    let b = Formula.inject (Formula.dq x !0)
-    let r15 = of_eqs [(b, b); (x, !1)]
+    let b = Formula.inject (Formula.dq x (i 0))
+    let r15 = of_eqs [(b, b); (x, i 1)]
 
     let%expect_test _ =
       pp r15 ;
@@ -62,8 +62,8 @@ let%test_module _ =
         {|
           { sat= true; rep= [[%x_5 ↦ 1]]; cls= [[1 ↦ {%x_5}]]; use= [] } |}]
 
-    let%test _ = implies_eq r15 (Term.neg b) (Term.apply (Signed 1) [|!1|])
-    let%test _ = implies_eq r15 (Term.apply (Unsigned 1) [|b|]) !1
+    let%test _ = implies_eq r15 (Term.neg b) (Term.apply (Signed 1) [|i 1|])
+    let%test _ = implies_eq r15 (Term.apply (Unsigned 1) [|b|]) (i 1)
 
     (* let%expect_test _ =
      *   replay
