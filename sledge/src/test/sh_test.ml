@@ -94,16 +94,9 @@ let%test_module _ =
       pp_djn (Xsh.Set.of_iter (dnf q)) ;
       [%expect
         {|
-        ∃ %x_9, %x_10 .
-          ( (  0 = %x_7 ∧ emp)
-          ∨ (  2 = %x_9 ∧ emp)
-          ∨ (  1 = %y_8 = %x_10 ∧ emp)
-          )
+          ( (  0 = %x_7 ∧ emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) )
 
-        ( (  0 = %x_7 ∧ emp)
-        ∨ (∃ %x_9 .   2 = %x_9 ∧ emp)
-        ∨ (∃ %x_10 .   1 = %y_8 = %x_10 ∧ emp)
-        ) |}]
+        ( (  0 = %x_7 ∧ emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) ) |}]
 
     let%expect_test _ =
       let q =
@@ -119,16 +112,9 @@ let%test_module _ =
       pp_djn (Xsh.Set.of_iter (dnf q)) ;
       [%expect
         {|
-        ∃ %x_7, %x_9, %x_10 .
-          ( (  0 = %x_7 ∧ emp)
-          ∨ (  2 = %x_9 ∧ emp)
-          ∨ (  1 = %y_8 = %x_10 ∧ emp)
-          )
+          ( (  emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) )
 
-        ( (∃ %x_7 .   0 = %x_7 ∧ emp)
-        ∨ (∃ %x_9 .   2 = %x_9 ∧ emp)
-        ∨ (∃ %x_10 .   1 = %y_8 = %x_10 ∧ emp)
-        ) |}]
+        ( (  emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) ) |}]
 
     let%expect_test _ =
       let q =
@@ -144,17 +130,9 @@ let%test_module _ =
       pp (simplify q) ;
       [%expect
         {|
-        ∃ %x_7, %x_9, %x_10 .
-          ( (  0 = %x_7 ∧ emp)
-          ∨ (  2 = %x_9 ∧ emp)
-          ∨ (  1 = %y_8 = %x_10 ∧ emp)
-          )
+        ( (  emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) )
 
-        ∃ %x_7, %x_9, %x_10 .
-          ( (  0 = %x_7 ∧ emp)
-          ∨ (  2 = %x_9 ∧ emp)
-          ∨ (  1 = %y_8 = %x_10 ∧ emp)
-          ) |}]
+        ( (  emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) ) |}]
 
     let%expect_test _ =
       let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - i 1)]) in
@@ -233,6 +211,7 @@ let%test_module _ =
           ∨ (  %b_2 = %z_9 ∧ (%b_2 = %z_9) ∧ emp)
           )
     
-          %x_7 -[ _, %c_3 )-> ⟨8,0⟩
-        * ( (  _ = %y_8 ∧ emp) ∨ (  _ = %z_9 ∧ emp) ) |}]
+        ∃ %b_2 .
+          %x_7 -[ %b_2, %c_3 )-> ⟨8,0⟩
+        * ( (  %b_2 = %y_8 ∧ emp) ∨ (  %b_2 = %z_9 ∧ emp) ) |}]
   end )

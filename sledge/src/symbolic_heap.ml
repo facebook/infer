@@ -133,26 +133,28 @@ module Sh = struct
   let fold_vars_seg seg s ~f =
     fold_terms_seg ~f:(Iter.fold ~f << Term.vars) seg s
 
-  let fold_vars_stem ?ignore_ctx ?ignore_pure {ctx; pure; heap; djns= _} s
+  let fold_vars_stem ~ignore_ctx ~ignore_pure {ctx; pure; heap; djns= _} s
       ~f =
-    let unless flag f s = if Option.is_some flag then s else f s in
+    let unless flag f s = if flag then s else f s in
     Segs.fold ~f:(fold_vars_seg ~f) heap s
     |> unless ignore_pure (Iter.fold ~f (Formula.vars pure))
     |> unless ignore_ctx (Iter.fold ~f (Context.vars ctx))
 
-  let fold_vars ?ignore_ctx ?ignore_pure fold_vars q s ~f =
-    fold_vars_stem ?ignore_ctx ?ignore_pure ~f q s
-    |> List.fold ~f:(Set.fold ~f:fold_vars) q.djns
+  let fold_vars ~ignore_ctx ~ignore_pure q s ~f =
+    let rec fold_vars_ q s =
+      fold_vars_stem ~ignore_ctx ~ignore_pure ~f q s
+      |> List.fold ~f:(Set.fold ~f:fold_vars_) q.djns
+    in
+    fold_vars_ q s
 
   (** Free variables *)
 
   let fv_seg seg = fold_vars_seg ~f:Var.Set.add seg Var.Set.empty
 
   let fv ?ignore_ctx ?ignore_pure q =
-    let rec fv_union q s =
-      fold_vars ?ignore_ctx ?ignore_pure fv_union ~f:Var.Set.add q s
-    in
-    fv_union q Var.Set.empty
+    let ignore_ctx = Poly.(ignore_ctx = Some ()) in
+    let ignore_pure = Poly.(ignore_pure = Some ()) in
+    fold_vars ~ignore_ctx ~ignore_pure ~f:Var.Set.add q Var.Set.empty
 
   (** Pretty-printing *)
 

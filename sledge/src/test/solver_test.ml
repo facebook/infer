@@ -138,8 +138,7 @@ let%test_module _ =
         {|
         ( Solver.infer_frame: 7
             %l_6 -[)-> ⟨8,%a_1⟩^⟨8,%a_2⟩ \- ∃ %a_3 .   %l_6 -[)-> ⟨16,%a_3⟩
-        ) Solver.infer_frame:
-          ∃ %a1_7 .   %a_2 = %a1_7 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+        ) Solver.infer_frame:   (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -155,8 +154,7 @@ let%test_module _ =
           \- ∃ %a_3, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨16,%a_3⟩
         ) Solver.infer_frame:
-          ∃ %a1_9 .
-            %a_2 = %a1_9 ∧ 16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+            16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -172,8 +170,7 @@ let%test_module _ =
           \- ∃ %a_3, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_3⟩
         ) Solver.infer_frame:
-          ∃ %a1_9 .
-            %a_2 = %a1_9 ∧ 16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+            16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -191,11 +188,11 @@ let%test_module _ =
           \- ∃ %a_2, %m_8, %n_9 .
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
         ) Solver.infer_frame:
-          ∃ %a0_10 .
+          ∃ %a0_10, %a1_11 .
             %a_2 = %a0_10
           ∧ 16 = %m_8 = %n_9
-          ∧ (⟨16,%a_2⟩^⟨16,_⟩) = %a_1
-          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,_⟩ |}]
+          ∧ (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
+          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
 
     let%expect_test _ =
       infer_frame
@@ -213,11 +210,11 @@ let%test_module _ =
           \- ∃ %a_2, %m_8, %n_9 .
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
         ) Solver.infer_frame:
-          ∃ %a0_10 .
+          ∃ %a0_10, %a1_11 .
             %a_2 = %a0_10
           ∧ 16 = %m_8 = %n_9
-          ∧ (⟨16,%a_2⟩^⟨16,_⟩) = %a_1
-          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,_⟩ |}]
+          ∧ (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
+          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
 
     let seg_split_symbolically =
       Xsh.star
@@ -247,12 +244,7 @@ let%test_module _ =
           \- ∃ %a_1, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
         ) Solver.infer_frame:
-          ∃ %a1_10 .
-            ( (  %a_3 = %a1_10
-               ∧ 1 = %n_9
-               ∧ 16 = %m_8
-               ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1
-               ∧ emp)
+            ( (  1 = %n_9 ∧ 16 = %m_8 ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1 ∧ emp)
             ∨ (  %a_1 = %a_2
                ∧ 2 = %n_9
                ∧ 16 = %m_8
