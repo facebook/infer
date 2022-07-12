@@ -14,4 +14,6 @@
   (pps ppx_sledge ppx_dbg))
  (inline_tests))
 
+(dirs :standard \ iter)
+
 (include_subdirs unqualified)
