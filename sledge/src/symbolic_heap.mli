@@ -22,9 +22,8 @@ end
 (** (Existentially-Quantified) Symbolic Heap Formulas *)
 module Xsh : sig
   type t [@@deriving compare, equal, sexp]
-  type disjunction
 
-  module Set : Set.S with type elt := t and type t = disjunction
+  module Set : Set.S with type elt := t
 
   (** Pretty-print *)
 
@@ -33,7 +32,7 @@ module Xsh : sig
   val pp : t pp
   val pp_raw : t pp
   val pp_diff_eq : ?us:Var.Set.t -> ?xs:Var.Set.t -> Context.t -> t pp
-  val pp_djn : disjunction pp
+  val pp_djn : Set.t pp
 
   (** Access *)
 
@@ -49,7 +48,7 @@ module Xsh : sig
   val heap : t -> Sh.seg iter
   (** Star-conjunction of segment atomic formulas *)
 
-  val djns : t -> disjunction list
+  val djns : t -> Set.t list
   (** Star-conjunction of disjunctions *)
 
   val fv : ?ignore_ctx:unit -> ?ignore_pure:unit -> t -> Var.Set.t
@@ -74,7 +73,7 @@ module Xsh : sig
   (** Disjoin formulas, extending to a common vocabulary, and avoiding
       capturing existentials. *)
 
-  val orN : disjunction -> t
+  val orN : Set.t -> t
   (** Disjoin formulas, extending to a common vocabulary, and avoiding
       capturing existentials. *)
 
@@ -164,7 +163,7 @@ module Xsh : sig
   (** Enumerate the cubes and clauses of a disjunctive-normal form
       expansion. *)
 
-  val dnf : t -> disjunction
+  val dnf : t -> Set.t
   (** Convert to disjunctive-normal form. *)
 
   val iter_dnf : t -> t iter
