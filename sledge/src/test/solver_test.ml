@@ -20,6 +20,13 @@ let%test_module _ =
 
     [@@@warning "-unused-value-declaration"]
 
+    let vx = ref Var.Set.empty
+
+    let var name =
+      let x_, wrt = Var.fresh name ~wrt:!vx in
+      vx := wrt ;
+      (x_, Term.var x_)
+
     let infer_frame p xs q =
       Solver.infer_frame p (Var.Set.of_list xs) q |> ignore
 
@@ -31,25 +38,15 @@ let%test_module _ =
     let ( + ) = Term.add
     let ( - ) = Term.sub
     let ( * ) i e = Term.mulq (Q.of_int i) e
-    let wrt = Var.Set.empty
-    let a_, wrt = Var.fresh "a" ~wrt
-    let a2_, wrt = Var.fresh "a" ~wrt
-    let a3_, wrt = Var.fresh "a" ~wrt
-    let b_, wrt = Var.fresh "b" ~wrt
-    let k_, wrt = Var.fresh "k" ~wrt
-    let l_, wrt = Var.fresh "l" ~wrt
-    let l2_, wrt = Var.fresh "l" ~wrt
-    let m_, wrt = Var.fresh "m" ~wrt
-    let n_, _ = Var.fresh "n" ~wrt
-    let a = Term.var a_
-    let a2 = Term.var a2_
-    let a3 = Term.var a3_
-    let b = Term.var b_
-    let k = Term.var k_
-    let l = Term.var l_
-    let l2 = Term.var l2_
-    let m = Term.var m_
-    let n = Term.var n_
+    let a_, a = var "a"
+    let a2_, a2 = var "a"
+    let a3_, a3 = var "a"
+    let b_, b = var "b"
+    let k_, k = var "k"
+    let l_, l = var "l"
+    let l2_, l2 = var "l"
+    let m_, m = var "m"
+    let n_, n = var "n"
 
     let%expect_test _ =
       check_frame Sh.emp [] Sh.emp ;

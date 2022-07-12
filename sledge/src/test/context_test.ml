@@ -22,34 +22,24 @@ let%test_module _ =
 
     [@@@warning "-unused-value-declaration"]
 
-    let printf pp = Format.printf "@\n%a@." pp
-    let pp = printf Context.pp_raw
-    let pp_classes = Format.printf "@\n@[<hv>  %a@]@." Context.pp
-    let i n = Term.integer (Z.of_int n)
-    let g x y = Term.apply (Uninterp "g") [|x; y|]
-    let wrt = Var.Set.empty
-    let t_, wrt = Var.fresh "t" ~wrt
-    let u_, wrt = Var.fresh "u" ~wrt
-    let v_, wrt = Var.fresh "v" ~wrt
-    let w_, wrt = Var.fresh "w" ~wrt
-    let x_, wrt = Var.fresh "x" ~wrt
-    let y_, wrt = Var.fresh "y" ~wrt
-    let z_, wrt = Var.fresh "z" ~wrt
-    let t = Term.var t_
-    let u = Term.var u_
-    let v = Term.var v_
-    let w = Term.var w_
-    let x = Term.var x_
-    let y = Term.var y_
-    let z = Term.var z_
+    let vx = ref Var.Set.empty
+
+    let var name =
+      let x_, wrt = Var.fresh name ~wrt:!vx in
+      vx := wrt ;
+      (x_, Term.var x_)
 
     let of_eqs l =
       List.fold
         ~f:(fun (a, b) (us, r) -> add us (Formula.eq a b) r)
-        l (wrt, empty)
+        l (!vx, empty)
       |> snd
 
     let implies_eq r a b = implies r (Formula.eq a b)
+    let printf pp = Format.printf "@\n%a@." pp
+    let pp = printf Context.pp_raw
+    let i n = Term.integer (Z.of_int n)
+    let x_, x = var "x"
 
     (* tests *)
 
@@ -60,7 +50,7 @@ let%test_module _ =
       pp r15 ;
       [%expect
         {|
-          { sat= true; rep= [[%x_5 ↦ 1]]; cls= [[1 ↦ {%x_5}]]; use= [] } |}]
+          { sat= true; rep= [[%x_1 ↦ 1]]; cls= [[1 ↦ {%x_1}]]; use= [] } |}]
 
     let%test _ = implies_eq r15 (Term.neg b) (Term.apply (Signed 1) [|i 1|])
     let%test _ = implies_eq r15 (Term.apply (Unsigned 1) [|b|]) (i 1)

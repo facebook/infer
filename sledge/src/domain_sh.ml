@@ -392,47 +392,48 @@ let%test_module _ =
   ( module struct
     let () = Dbg.init ~margin:68 ()
     let pp = Format.printf "@.%a@." Sh.pp
-    let wrt = Var.Set.empty
-    let main_, wrt = Var.fresh "main" ~wrt
-    let a_, wrt = Var.fresh "a" ~wrt
-    let n_, wrt = Var.fresh "n" ~wrt
-    let b_, wrt = Var.fresh "b" ~wrt
-    let end_, _ = Var.fresh "end" ~wrt
-    let a = Term.var a_
-    let main = Term.var main_
-    let b = Term.var b_
-    let n = Term.var n_
-    let endV = Term.var end_
-    let seg_main = Sh.seg {loc= main; bas= b; len= n; siz= n; cnt= a}
-    let seg_a = Sh.seg {loc= a; bas= b; len= n; siz= n; cnt= endV}
-    let seg_cycle = Sh.seg {loc= a; bas= b; len= n; siz= n; cnt= main}
+    let vx = ref Var.Set.empty
+
+    let var name =
+      let x_, wrt = Var.fresh name ~wrt:!vx in
+      vx := wrt ;
+      (x_, Term.var x_)
+
+    let _, head = var "head"
+    let _, a = var "a"
+    let _, n = var "n"
+    let _, b = var "b"
+    let _, tail = var "tail"
+    let seg_head = Sh.seg {loc= head; bas= b; len= n; siz= n; cnt= a}
+    let seg_a = Sh.seg {loc= a; bas= b; len= n; siz= n; cnt= tail}
+    let seg_cycle = Sh.seg {loc= a; bas= b; len= n; siz= n; cnt= head}
 
     let%expect_test _ =
-      pp (garbage_collect seg_main ~wrt:(Term.Set.of_list [])) ;
+      pp (garbage_collect seg_head ~wrt:(Term.Set.of_list [])) ;
       [%expect {| emp |}]
 
     let%expect_test _ =
       pp
-        (garbage_collect (Sh.star seg_a seg_main)
+        (garbage_collect (Sh.star seg_a seg_head)
            ~wrt:(Term.Set.of_list [a]) ) ;
-      [%expect {| %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%end_5⟩ |}]
+      [%expect {| %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%tail_5⟩ |}]
 
     let%expect_test _ =
       pp
-        (garbage_collect (Sh.star seg_a seg_main)
-           ~wrt:(Term.Set.of_list [main]) ) ;
+        (garbage_collect (Sh.star seg_a seg_head)
+           ~wrt:(Term.Set.of_list [head]) ) ;
       [%expect
         {|
-          %main_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
-        * %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%end_5⟩ |}]
+          %head_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
+        * %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%tail_5⟩ |}]
 
     let%expect_test _ =
       pp
         (garbage_collect
-           (Sh.star seg_cycle seg_main)
+           (Sh.star seg_cycle seg_head)
            ~wrt:(Term.Set.of_list [a]) ) ;
       [%expect
         {|
-          %main_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
-        * %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%main_1⟩ |}]
+          %head_1 -[ %b_4, %n_3 )-> ⟨%n_3,%a_2⟩
+        * %a_2 -[ %b_4, %n_3 )-> ⟨%n_3,%head_1⟩ |}]
   end )

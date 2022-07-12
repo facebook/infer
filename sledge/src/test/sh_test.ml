@@ -32,26 +32,22 @@ let%test_module _ =
     let ( - ) = Term.sub
     let ( = ) = Formula.eq
     let f x = Term.apply (Uninterp "f") [|x|]
-    let wrt = Var.Set.empty
-    let a_, wrt = Var.fresh "a" ~wrt
-    let b_, wrt = Var.fresh "b" ~wrt
-    let c_, wrt = Var.fresh "c" ~wrt
-    let d_, wrt = Var.fresh "d" ~wrt
-    let e_, wrt = Var.fresh "e" ~wrt
-    let m_, wrt = Var.fresh "m" ~wrt
-    let x_, wrt = Var.fresh "x" ~wrt
-    let y_, wrt = Var.fresh "y" ~wrt
-    let z_, wrt = Var.fresh "z" ~wrt
-    let _ = wrt
-    let a = Term.var a_
-    let b = Term.var b_
-    let c = Term.var c_
-    let d = Term.var d_
-    let e = Term.var e_
-    let m = Term.var m_
-    let x = Term.var x_
-    let y = Term.var y_
-    let z = Term.var z_
+    let vx = ref Var.Set.empty
+
+    let var name =
+      let x_, wrt = Var.fresh name ~wrt:!vx in
+      vx := wrt ;
+      (x_, Term.var x_)
+
+    let a_, a = var "a"
+    let b_, b = var "b"
+    let c_, c = var "c"
+    let d_, d = var "d"
+    let e_, e = var "e"
+    let m_, m = var "m"
+    let x_, x = var "x"
+    let y_, y = var "y"
+    let z_, z = var "z"
 
     let eq_concat (siz, seq) xs =
       let ys, len =

@@ -23,6 +23,27 @@ let%test_module _ =
 
     [@@@warning "-unused-value-declaration"]
 
+    let vx = ref Var.Set.empty
+
+    let var name =
+      let x_, wrt = Var.fresh name ~wrt:!vx in
+      vx := wrt ;
+      (x_, Term.var x_)
+
+    let of_eqs l =
+      List.fold
+        ~f:(fun (a, b) (us, r) -> add us (Formula.eq a b) r)
+        l (!vx, empty)
+      |> snd
+
+    let add_eq a b r = add !vx (Formula.eq a b) r |> snd
+    let union r s = union !vx r s |> snd
+
+    let inter r s =
+      interN !vx [(Var.Set.empty, r); (Var.Set.empty, s)] |> snd
+
+    let implies_eq r a b = implies r (Formula.eq a b)
+    let difference x e f = Term.get_z (normalize x (Term.sub e f))
     let printf pp = Format.printf "@\n%a@." pp
     let pp_raw = printf pp_raw
     let pp = Format.printf "@\n@[<hv>  %a@]@." pp
@@ -30,38 +51,15 @@ let%test_module _ =
     let ( + ) = Term.add
     let ( - ) = Term.sub
     let ( * ) i e = Term.mulq (Q.of_int i) e
-    let wrt = Var.Set.empty
-    let t_, wrt = Var.fresh "t" ~wrt
-    let u_, wrt = Var.fresh "u" ~wrt
-    let v_, wrt = Var.fresh "v" ~wrt
-    let w_, wrt = Var.fresh "w" ~wrt
-    let x_, wrt = Var.fresh "x" ~wrt
-    let y_, wrt = Var.fresh "y" ~wrt
-    let z_, wrt = Var.fresh "z" ~wrt
-    let t = Term.var t_
-    let u = Term.var u_
-    let v = Term.var v_
-    let w = Term.var w_
-    let x = Term.var x_
-    let y = Term.var y_
-    let z = Term.var z_
+    let t_, t = var "t"
+    let u_, u = var "u"
+    let v_, v = var "v"
+    let w_, w = var "w"
+    let x_, x = var "x"
+    let y_, y = var "y"
+    let z_, z = var "z"
     let f x = Term.apply (Uninterp "f") [|x|]
     let g x y = Term.apply (Uninterp "g") [|x; y|]
-
-    let of_eqs l =
-      List.fold
-        ~f:(fun (a, b) (us, r) -> add us (Formula.eq a b) r)
-        l (wrt, empty)
-      |> snd
-
-    let add_eq a b r = add wrt (Formula.eq a b) r |> snd
-    let union r s = union wrt r s |> snd
-
-    let inter r s =
-      interN wrt [(Var.Set.empty, r); (Var.Set.empty, s)] |> snd
-
-    let implies_eq r a b = implies r (Formula.eq a b)
-    let difference x e f = Term.get_z (normalize x (Term.sub e f))
 
     (** tests *)
 

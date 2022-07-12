@@ -30,11 +30,15 @@ let%test_module _ =
     let ( && ) = F.and_
     let ( || ) = F.or_
     let ( ~~ ) = F.not_
-    let wrt = Var.Set.empty
-    let y_, wrt = Var.fresh "y" ~wrt
-    let z_, _ = Var.fresh "z" ~wrt
-    let y = T.var y_
-    let z = T.var z_
+    let vx = ref Var.Set.empty
+
+    let var name =
+      let x_, wrt = Var.fresh name ~wrt:!vx in
+      vx := wrt ;
+      (x_, Term.var x_)
+
+    let _, y = var "y"
+    let _, z = var "z"
 
     let%test "booleans distinct" = F.equal F.ff (F.iff F.tt F.ff)
     let%test "u1 values distinct" = F.equal F.ff (T.one = T.zero)
