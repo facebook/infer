@@ -17,6 +17,10 @@
     otherwise [\[%dbg\] ~call ~retn ~rais] is rewritten to
     [(fun k -> k ())].
 
+    Similarly, it rewrites [\[%dbgs\] ~call ~retn ~rais] to a call
+    [Dbg.dbgs ~call ~retn ~rais fun_name]. This is only done in debug mode,
+    otherwise [\[%dbgs\] ~call ~retn ~rais] is rewritten to [(fun x -> x)].
+
     Similarly, [\[%Dbg.info\]], [\[%Dbg.infok\]], [\[%Dbg.printf\]],
     [\[%Dbg.fprintf\]], [\[%Dbg.kprintf\]], and [\[%Dbg.call\]] are
     rewritten to their analogues in the [Dbg] module, or [()]; and
@@ -125,6 +129,28 @@ let mapper =
             pexp_apply ~loc:exp.pexp_loc (evar ~loc "Dbg.dbg")
               (append_here_args
                  (dbg_args @ [(Nolabel, self#expression arg)]) )
+      (* [%dbgs] dbg_args @@ body *)
+      | Pexp_apply
+          ( {pexp_desc= Pexp_ident {txt= Lident "@@"}}
+          , [ ( Nolabel
+              , { pexp_desc=
+                    Pexp_apply
+                      ( { pexp_desc=
+                            Pexp_extension ({txt= "dbgs"; loc}, PStr []) }
+                      , dbg_args ) } )
+            ; (Nolabel, body) ] )
+      (* [%dbgs] dbg_args body *)
+       |Pexp_apply
+          ( { pexp_desc=
+                Pexp_apply
+                  ( {pexp_desc= Pexp_extension ({txt= "dbgs"; loc}, PStr [])}
+                  , dbg_args ) }
+          , [(Nolabel, body)] ) ->
+          if not !debug then self#expression body
+          else
+            pexp_apply ~loc:exp.pexp_loc (evar ~loc "Dbg.dbgs")
+              (append_here_args
+                 (dbg_args @ [(Nolabel, self#expression body)]) )
       | Pexp_extension
           ( { txt=
                 ( "Dbg.info" | "Dbg.infok" | "Dbg.printf" | "Dbg.fprintf"

@@ -237,6 +237,34 @@ let retn mod_fun_name k result =
   k {pf= (fun fmt -> decf mod_fun_name fmt)} result ;
   result
 
+let dbgs :
+       (('s -> 'r * 's) -> 'n)
+    -> ('m -> 's -> 'r * 's)
+    -> ?call:(pf -> unit)
+    -> ?retn:(pf -> 'r * ('s * 's) -> unit)
+    -> ?rais:(pf -> 's -> exn -> Printexc.raw_backtrace -> unit)
+    -> string
+    -> 'm
+    -> 'n =
+ fun thunk force ?call ?retn ?rais mod_fun_name m ->
+  thunk
+  @@ fun s ->
+  let call = Option.value call ~default:(fun {pf} -> pf "") in
+  let retn = Option.value retn ~default:(fun {pf} _ -> pf "") in
+  let rais =
+    Option.value rais ~default:(fun {pf} _ exc _ ->
+        pf "%s" (Printexc.to_string exc) )
+  in
+  call {pf= (fun fmt -> incf mod_fun_name fmt)} ;
+  match force m s with
+  | result, s' ->
+      retn {pf= (fun fmt -> decf mod_fun_name fmt)} (result, (s, s')) ;
+      (result, s')
+  | exception exc ->
+      let bt = Printexc.get_raw_backtrace () in
+      rais {pf= (fun fmt -> decf mod_fun_name fmt)} s exc bt ;
+      Printexc.raise_with_backtrace exc bt
+
 let dbg :
        ?call:(pf -> unit)
     -> ?retn:(pf -> 'a -> unit)
@@ -245,21 +273,13 @@ let dbg :
     -> (unit -> 'a)
     -> 'a =
  fun ?call ?retn ?rais mod_fun_name k ->
-  let call = Option.value call ~default:(fun {pf} -> pf "") in
-  let retn = Option.value retn ~default:(fun {pf} _ -> pf "") in
-  let rais =
-    Option.value rais ~default:(fun {pf} exc _ ->
-        pf "%s" (Printexc.to_string exc) )
-  in
-  call {pf= (fun fmt -> incf mod_fun_name fmt)} ;
-  match k () with
-  | result ->
-      retn {pf= (fun fmt -> decf mod_fun_name fmt)} result ;
-      result
-  | exception exc ->
-      let bt = Printexc.get_raw_backtrace () in
-      rais {pf= (fun fmt -> decf mod_fun_name fmt)} exc bt ;
-      Printexc.raise_with_backtrace exc bt
+  let call = Option.map (fun call pf -> call pf) call in
+  let retn = Option.map (fun retn pf (r, _) -> retn pf r) retn in
+  let rais = Option.map (fun rais pf _ -> rais pf) rais in
+  dbgs
+    (fun k -> fst (k ()))
+    (fun k () -> (k (), ()))
+    ?call ?retn ?rais mod_fun_name k
 
 let raisef ?margin exn fmt =
   let fs = Format.str_formatter in

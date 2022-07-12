@@ -57,11 +57,26 @@ val dbg :
   -> string
   -> (unit -> 'a)
   -> 'a
-(** [dbg ~call ~retn ~rais function_name k] either simply invokes [k ()],
-    when not enabled, or else increases the indentation level and emits the
-    [call] message, then invokes [k ()], then decreases the indentation
-    level and either emits the [retn] or [rais] message, depending on
-    whether [k ()] returned normally or exceptionally. *)
+(** [dbg ~call ~retn ~rais function_name k] increases the indentation level
+    and emits the [call] message, then invokes [k ()], then decreases the
+    indentation level and either emits the [retn] or [rais] message,
+    depending on whether [k ()] returned normally or exceptionally. If
+    tracing [function_name] is not enabled, nothing is printed, but the
+    [call], [retn], and [rais] functions are still executed. *)
+
+val dbgs :
+     (('s -> 'r * 's) -> 'n)
+  -> ('m -> 's -> 'r * 's)
+  -> ?call:(pf -> unit)
+  -> ?retn:(pf -> 'r * ('s * 's) -> unit)
+  -> ?rais:(pf -> 's -> exn -> Printexc.raw_backtrace -> unit)
+  -> string
+  -> 'm
+  -> 'n
+(** [dbgs thunk force] is similar to [dbg] but parameterized by a
+    decomposition of a function ['m -> 'n] into and intermediate
+    state-passing form using [force : 'm -> ('s -> 'r * 's)] and
+    [thunk : ('s -> 'r * 's) -> 'n]. *)
 
 val flush : unit -> unit
 (** Flush the internal buffers. *)
