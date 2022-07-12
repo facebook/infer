@@ -99,17 +99,6 @@ module Sh = struct
   let ctx q = q.ctx
   let heap q = Segs.to_iter q.heap
 
-  (** Basic values *)
-
-  let emp =
-    {ctx= Context.empty; pure= Formula.tt; heap= Segs.empty; djns= []}
-
-  let false_ =
-    { ctx= Context.unsat
-    ; pure= Formula.ff
-    ; heap= Segs.empty
-    ; djns= [Set.empty] }
-
   (** Traversals *)
 
   let map_seg ~f h =
@@ -291,7 +280,7 @@ module Sh = struct
             assert (Set.cardinal djn > 1) ;
             Set.iter ~f:invariant djn )
 
-  (** Query *)
+  (** Syntactic Query *)
 
   (** syntactically empty: empty heap and no pure constraints *)
   let is_emp q =
@@ -308,7 +297,16 @@ module Sh = struct
   let is_false q =
     match q.djns with [djn] -> Set.is_empty djn | _ -> false
 
-  (** Transformation *)
+  (** Construct *)
+
+  let emp =
+    {ctx= Context.empty; pure= Formula.tt; heap= Segs.empty; djns= []}
+
+  let false_ =
+    { ctx= Context.unsat
+    ; pure= Formula.ff
+    ; heap= Segs.empty
+    ; djns= [Set.empty] }
 
   let star q1 q2 =
     [%dbgs]
@@ -334,57 +332,6 @@ module Sh = struct
             else
               let djns = List.append d1 d2 in
               {ctx; pure; heap; djns}
-
-  let rec map ~f_ctx ~f_trm ~f_fml ({ctx; pure; heap; djns} as q) vx =
-    let pure = f_fml pure in
-    if Formula.equal Formula.ff pure then false_
-    else
-      let ctx = f_ctx ctx vx in
-      if Context.is_unsat ctx then false_
-      else
-        match Segs.map heap ~f:(map_seg ~f:f_trm) with
-        | None -> false_
-        | Some heap ->
-            let djns, hoisted =
-              List.partition_map_endo djns ~f:(fun djn ->
-                  let djn' =
-                    Set.filter_map djn ~f:(fun sjn ->
-                        let sjn' = map ~f_ctx ~f_trm ~f_fml sjn vx in
-                        if is_false sjn' then None else Some sjn' )
-                  in
-                  match Set.classify djn' with
-                  | One dj -> Right dj
-                  | _ -> Left djn' )
-            in
-            if
-              ctx == q.ctx
-              && pure == q.pure
-              && heap == q.heap
-              && djns == q.djns
-            then q
-            else if List.exists ~f:Set.is_empty djns then false_
-            else
-              List.fold hoisted {ctx; pure; heap; djns} ~f:(fun q1 q2 ->
-                  star q1 q2 vx )
-
-  (** primitive application of a substitution, ignores us and xs, may
-      violate invariant *)
-  let rename sub q =
-    [%dbgs]
-      ~call:(fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q)
-      ~retn:(fun {pf} (q', vxd) ->
-        pf "%a%a" Var.Context.pp_diff vxd pp q' ;
-        invariant q' ;
-        assert (Var.Set.disjoint (fv q') (Var.Subst.domain sub)) )
-    @@ fun vx ->
-    if Var.Subst.is_empty sub then q
-    else
-      let f_ctx x _ = Context.rename x sub in
-      let f_trm = Term.rename sub in
-      let f_fml = Formula.rename sub in
-      map ~f_ctx ~f_trm ~f_fml q vx
-
-  (** Construct *)
 
   let starN qs vx =
     match qs with
@@ -454,6 +401,57 @@ module Sh = struct
   let rem_seg seg q = {q with heap= Segs.remove seg q.heap}
   let filter_heap ~f q = {q with heap= Segs.filter q.heap ~f}
 
+  (** Transform *)
+
+  let rec map ~f_ctx ~f_trm ~f_fml ({ctx; pure; heap; djns} as q) vx =
+    let pure = f_fml pure in
+    if Formula.equal Formula.ff pure then false_
+    else
+      let ctx = f_ctx ctx vx in
+      if Context.is_unsat ctx then false_
+      else
+        match Segs.map heap ~f:(map_seg ~f:f_trm) with
+        | None -> false_
+        | Some heap ->
+            let djns, hoisted =
+              List.partition_map_endo djns ~f:(fun djn ->
+                  let djn' =
+                    Set.filter_map djn ~f:(fun sjn ->
+                        let sjn' = map ~f_ctx ~f_trm ~f_fml sjn vx in
+                        if is_false sjn' then None else Some sjn' )
+                  in
+                  match Set.classify djn' with
+                  | One dj -> Right dj
+                  | _ -> Left djn' )
+            in
+            if
+              ctx == q.ctx
+              && pure == q.pure
+              && heap == q.heap
+              && djns == q.djns
+            then q
+            else if List.exists ~f:Set.is_empty djns then false_
+            else
+              List.fold hoisted {ctx; pure; heap; djns} ~f:(fun q1 q2 ->
+                  star q1 q2 vx )
+
+  (** primitive application of a substitution, ignores us and xs, may
+      violate invariant *)
+  let rename sub q =
+    [%dbgs]
+      ~call:(fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q)
+      ~retn:(fun {pf} (q', vxd) ->
+        pf "%a%a" Var.Context.pp_diff vxd pp q' ;
+        invariant q' ;
+        assert (Var.Set.disjoint (fv q') (Var.Subst.domain sub)) )
+    @@ fun vx ->
+    if Var.Subst.is_empty sub then q
+    else
+      let f_ctx x _ = Context.rename x sub in
+      let f_trm = Term.rename sub in
+      let f_fml = Formula.rename sub in
+      map ~f_ctx ~f_trm ~f_fml q vx
+
   (** Disjunctive-Normal Form *)
 
   (** Lazily enumerate the cubes and clauses of a disjunctive-normal form
@@ -496,7 +494,7 @@ module Sh = struct
   let dnf q vx =
     Var.Fresh.fold_iter ~f:Set.add (dnf_iter ~conj:star q emp) Set.empty vx
 
-  (** Logical query *)
+  (** Logical Query *)
 
   (** first-order approximation of heap constraints *)
   let rec pure_approx q =
@@ -680,11 +678,6 @@ module Xsh = struct
   type call = Extend_voc of Var.Set.t * t | Simplify of t
   [@@deriving sexp]
 
-  (** Basic values *)
-
-  let emp = (Sh.emp, Var.Context.empty)
-  let false_ = (Sh.false_, Var.Context.empty)
-
   (** Free variables *)
 
   let fv ?ignore_ctx ?ignore_pure (q, vx) =
@@ -785,7 +778,7 @@ module Xsh = struct
       [%Dbg.info " %a" pp_raw xq] ;
       Printexc.raise_with_backtrace exc bt
 
-  (** Query *)
+  (** Syntactic Query *)
 
   let is_empty (q, _) = Sh.is_empty q
   let is_false (q, _) = Sh.is_false q
@@ -957,6 +950,9 @@ module Xsh = struct
 
   (** Construct *)
 
+  let emp = (Sh.emp, Var.Context.empty)
+  let false_ = (Sh.false_, Var.Context.empty)
+
   let star xq1 xq2 =
     [%Dbg.call fun {pf} -> pf "@ (%a)@ (%a)" pp_raw xq1 pp_raw xq2]
     ;
@@ -1052,7 +1048,7 @@ module Xsh = struct
             let s' = Set.add xq s in
             if s' == s then (None, s) else (Some xq, s') ) )
 
-  (** Logical query *)
+  (** Logical Query *)
 
   let pure_approx ((q, _) as xq) =
     [%Dbg.call fun {pf} -> pf "@ %a" pp xq]
