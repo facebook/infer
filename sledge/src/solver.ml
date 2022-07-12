@@ -738,7 +738,6 @@ let infer_frame : Xsh.t -> Var.Set.t -> Xsh.t -> Xsh.t option =
             Var.Set.is_empty lost || fail "lost: %a" Var.Set.pp lost () ) )
       )
   @@ fun () ->
-  assert (Var.Set.disjoint (Xsh.us minuend) xs) ;
   assert (Var.Set.subset xs ~of_:(Xsh.us subtrahend)) ;
   excise_dnf minuend xs subtrahend
 
