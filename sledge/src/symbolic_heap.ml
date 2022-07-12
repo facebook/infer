@@ -686,22 +686,6 @@ module Sh = struct
       pf "%a" pp q ;
       invariant q]
 
-  let subst sub q =
-    [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q]
-    ;
-    let dom, eqs =
-      Var.Subst.fold sub (Var.Set.empty, Formula.tt)
-        ~f:(fun var trm (dom, eqs) ->
-          ( Var.Set.add var dom
-          , Formula.and_ (Formula.eq (Term.var var) (Term.var trm)) eqs ) )
-    in
-    exists dom (and_ eqs q)
-    |>
-    [%Dbg.retn fun {pf} q' ->
-      pf "%a" pp q' ;
-      invariant q' ;
-      assert (Var.Set.disjoint q'.us (Var.Subst.domain sub))]
-
   let seg pt =
     let us = fv_seg pt in
     if Term.equal Term.zero pt.loc then false_ us

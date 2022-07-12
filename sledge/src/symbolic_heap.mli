@@ -118,10 +118,6 @@ module Sh : sig
   (** Apply a substitution, remove its domain from vocabulary and add its
       range. *)
 
-  val subst : Var.Subst.t -> t -> t
-  (** Apply a substitution, remove its domain from vocabulary and add its
-      range. *)
-
   val freshen : t -> wrt:Var.Set.t -> t * Var.Subst.t
   (** Freshen free variables with respect to [wrt], and extend vocabulary
       with [wrt], renaming bound variables as needed. *)
