@@ -56,7 +56,7 @@ let joinN qs =
 let dnf = Sh.dnf
 
 let resolve_int tid q e =
-  match Term.get_z (Context.normalize q.Sh.ctx (X.term tid e)) with
+  match Term.get_z (Context.normalize (Sh.ctx q) (X.term tid e)) with
   | Some z -> [Z.to_int z]
   | None -> []
 
@@ -117,18 +117,23 @@ let value_determined_by ctx us a =
   List.exists (Context.class_of ctx a) ~f:(fun b ->
       Term.Set.subset (Term.Set.of_iter (Term.atoms b)) ~of_:us )
 
-let garbage_collect (q : Sh.t) ~wrt =
+let garbage_collect q ~wrt =
   [%Dbg.call fun {pf} -> pf "@ %a" pp q]
   ;
   (* only support DNF for now *)
-  assert (List.is_empty q.djns) ;
-  let rec all_reachable_vars previous current (q : t) =
+  assert (List.is_empty (Sh.djns q)) ;
+  let rec all_reachable_vars previous current q =
     if Term.Set.equal previous current then current
     else
       let new_set =
-        Iter.fold (Sh.Segs.to_iter q.heap) current ~f:(fun seg current ->
-            if value_determined_by q.ctx current seg.loc then
-              List.fold (Context.class_of q.ctx seg.cnt) current
+        Iter.fold
+          (Sh.Segs.to_iter (Sh.heap q))
+          current
+          ~f:(fun seg current ->
+            if value_determined_by (Sh.ctx q) current seg.loc then
+              List.fold
+                (Context.class_of (Sh.ctx q) seg.cnt)
+                current
                 ~f:(fun e c ->
                   Term.Set.union c (Term.Set.of_iter (Term.atoms e)) )
             else current )
@@ -136,7 +141,8 @@ let garbage_collect (q : Sh.t) ~wrt =
       all_reachable_vars current new_set q
   in
   let r_vars = all_reachable_vars Term.Set.empty wrt q in
-  Sh.filter_heap q ~f:(fun seg -> value_determined_by q.ctx r_vars seg.loc)
+  Sh.filter_heap q ~f:(fun seg ->
+      value_determined_by (Sh.ctx q) r_vars seg.loc )
   |>
   [%Dbg.retn fun {pf} -> pf "%a" pp]
 
@@ -164,7 +170,7 @@ let localize_entry tid globals actuals formals freturn locals shadow pre
   let function_summary_pre = garbage_collect entry ~wrt in
   [%Dbg.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Sh.exists formals_set function_summary_pre in
-  let xs, foot = Sh.bind_exists ~wrt:pre.Sh.us foot in
+  let xs, foot = Sh.bind_exists ~wrt:(Sh.us pre) foot in
   let frame =
     try Option.get_exn (Solver.infer_frame pre xs foot)
     with _ ->
@@ -218,7 +224,7 @@ let call ~summaries tid ?(child = tid) ~globals ~actuals ~areturn ~formals
   (* pass arguments by conjoining equations between formals and actuals *)
   let entry = and_eqs shadow formals actuals q in
   (* note: locals and formals are in scope *)
-  assert (Var.Set.subset formals_freturn_locals ~of_:entry.us) ;
+  assert (Var.Set.subset formals_freturn_locals ~of_:(Sh.us entry)) ;
   (* simplify *)
   let entry = simplify entry in
   ( if not summaries then (entry, {areturn; unshadow; frame= Sh.emp})
@@ -298,7 +304,7 @@ let term tid formals freturn q =
   let xs, q = Sh.bind_exists q ~wrt:Var.Set.empty in
   let outscoped = Var.Set.union formals (Var.Set.of_ freturn) in
   let xs = Var.Set.union xs outscoped in
-  let retn_val_cls = Context.class_of q.ctx (Term.var freturn) in
+  let retn_val_cls = Context.class_of (Sh.ctx q) (Term.var freturn) in
   List.find retn_val_cls ~f:(fun retn_val ->
       Var.Set.disjoint xs (Term.fv retn_val) )
 
@@ -307,11 +313,13 @@ let move_term_code tid reg code q =
   | Some retn_val -> Exec.move q (IArray.of_ (X.reg tid reg, retn_val))
   | None -> q
 
-let resolve_callee lookup tid ptr (q : Sh.t) =
-  let ptr_var, _ = Var.fresh "callee" ~wrt:(Var.Set.union q.us q.xs) in
+let resolve_callee lookup tid ptr q =
+  let ptr_var, _ =
+    Var.fresh "callee" ~wrt:(Var.Set.union (Sh.us q) (Sh.xs q))
+  in
   let q = Sh.and_ (Formula.eq (X.term tid ptr) (Term.var ptr_var)) q in
   Iter.fold (Sh.iter_dnf q) [] ~f:(fun disj ->
-      Context.class_of disj.ctx (Term.var ptr_var)
+      Context.class_of (Sh.ctx disj) (Term.var ptr_var)
       |> List.filter_map ~f:(X.lookup_func lookup)
       |> List.append )
 
@@ -323,7 +331,7 @@ let pp_summary fs {xs; foot; post} =
   Format.fprintf fs "@[<v>xs: @[%a@]@ foot: %a@ post: %a @]" Var.Set.pp xs
     pp foot pp post
 
-let create_summary tid ~locals ~formals ~entry ~current:(post : Sh.t) =
+let create_summary tid ~locals ~formals ~entry ~current:post =
   [%Dbg.call fun {pf} ->
     pf "@ formals %a@ entry: %a@ current: %a"
       (IArray.pp ",@ " Llair.Reg.pp)
@@ -334,7 +342,9 @@ let create_summary tid ~locals ~formals ~entry ~current:(post : Sh.t) =
   in
   let locals = X.regs tid locals in
   let foot = Sh.exists locals entry in
-  let foot, subst = Sh.freshen ~wrt:(Var.Set.union foot.us post.us) foot in
+  let foot, subst =
+    Sh.freshen ~wrt:(Var.Set.union (Sh.us foot) (Sh.us post)) foot
+  in
   let restore_formals q =
     Var.Set.fold formals q ~f:(fun var q ->
         let var = Term.var var in
@@ -349,8 +359,8 @@ let create_summary tid ~locals ~formals ~entry ~current:(post : Sh.t) =
   let xs = Var.Set.inter (Sh.fv foot) (Sh.fv post) in
   let xs = Var.Set.diff xs formals in
   let xs_and_formals = Var.Set.union xs formals in
-  let foot = Sh.exists (Var.Set.diff foot.us xs_and_formals) foot in
-  let post = Sh.exists (Var.Set.diff post.us xs_and_formals) post in
+  let foot = Sh.exists (Var.Set.diff (Sh.us foot) xs_and_formals) foot in
+  let post = Sh.exists (Var.Set.diff (Sh.us post) xs_and_formals) post in
   let current = Sh.extend_us xs post in
   ({xs; foot; post}, current)
   |>
@@ -359,7 +369,7 @@ let create_summary tid ~locals ~formals ~entry ~current:(post : Sh.t) =
 let apply_summary q ({xs; foot; post} as fs) =
   [%Dbg.call fun {pf} -> pf "@ fs: %a@ q: %a" pp_summary fs pp q]
   ;
-  let xs_in_q = Var.Set.inter xs q.Sh.us in
+  let xs_in_q = Var.Set.inter xs (Sh.us q) in
   let xs_in_fv_q = Var.Set.inter xs (Sh.fv q) in
   (* Between creation of a summary and its use, the vocabulary of q (q.us)
      might have been extended. That means infer_frame would fail, because q

@@ -62,12 +62,13 @@ module Sh = struct
     type compare [@@deriving compare, equal, sexp]
 
     type starjunction =
-      { heap: Segs.t
-      ; djns: disjunction list
-      ; pure: Formula.t
-      ; xs: Var.Set.t
-      ; us: Var.Set.t
-      ; ctx: Context.t [@ignore] }
+      { heap: Segs.t  (** star-conjunction of segment atomic formulas *)
+      ; djns: disjunction list  (** star-conjunction of disjunctions *)
+      ; pure: Formula.t  (** pure boolean constraints *)
+      ; xs: Var.Set.t  (** existentially-bound variables *)
+      ; us: Var.Set.t  (** vocabulary / variable context of formula *)
+      ; ctx: Context.t [@ignore]
+            (** first-order logical context induced by rest of formula *) }
 
     and disjunction = (starjunction, compare) Set.t
     [@@deriving compare, equal, sexp]
@@ -86,6 +87,14 @@ module Sh = struct
   end
 
   include T
+
+  (** Accessors *)
+
+  let us q = q.us
+  let xs q = q.xs
+  let ctx q = q.ctx
+  let heap q = q.heap
+  let djns q = q.djns
 
   (** Replay debugging *)
 

@@ -24,14 +24,7 @@ module Sh : sig
     val to_iter : t -> seg iter
   end
 
-  type starjunction = private
-    { heap: Segs.t  (** star-conjunction of segment atomic formulas *)
-    ; djns: disjunction list  (** star-conjunction of disjunctions *)
-    ; pure: Formula.t  (** pure boolean constraints *)
-    ; xs: Var.Set.t  (** existentially-bound variables *)
-    ; us: Var.Set.t  (** vocabulary / variable context of formula *)
-    ; ctx: Context.t
-          (** first-order logical context induced by rest of formula *) }
+  type starjunction
 
   and disjunction
 
@@ -47,7 +40,22 @@ module Sh : sig
   val pp_djn : disjunction pp
   val simplify : t -> t
 
-  include Invariant.S with type t := t
+  (** Access *)
+
+  val us : t -> Var.Set.t
+  (** Vocabulary / variable context of formula *)
+
+  val xs : t -> Var.Set.t
+  (** Existentially-bound variables of formula *)
+
+  val ctx : t -> Context.t
+  (** First-order logical context induced by rest of formula. *)
+
+  val heap : t -> Segs.t
+  (** Star-conjunction of segment atomic formulas *)
+
+  val djns : t -> disjunction list
+  (** Star-conjunction of disjunctions *)
 
   (** Construct *)
 

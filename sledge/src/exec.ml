@@ -79,7 +79,9 @@ type spec = {foot: Sh.t; sub: Var.Subst.t; ms: Var.Set.t; post: Sh.t}
 
 let gen_spec us specm =
   let xs, spec = Fresh.gen ~wrt:us specm in
-  let us = Var.Set.union xs (Var.Set.union spec.foot.us spec.post.us) in
+  let us =
+    Var.Set.union xs (Var.Set.union (Sh.us spec.foot) (Sh.us spec.post))
+  in
   let foot = Sh.extend_us us spec.foot in
   let post = Sh.extend_us us spec.post in
   (xs, {spec with foot; post})
@@ -119,7 +121,7 @@ let move_spec reg_exps =
 let load_spec reg ptr len =
   let* seg = Fresh.seg ptr ~siz:len in
   let foot = Sh.seg seg in
-  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:(Sh.us foot) in
   let post =
     Sh.and_ (Formula.eq (Term.var reg) seg.cnt) (Sh.rename sub foot)
   in
@@ -142,7 +144,7 @@ let store_spec ptr exp len =
 let atomic_rmw_spec reg ptr exp len =
   let* seg = Fresh.seg ptr ~siz:len in
   let foot = Sh.seg seg in
-  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:(Sh.us foot) in
   let post =
     Sh.and_
       (Formula.eq (Term.var reg) seg.cnt)
@@ -162,7 +164,7 @@ let atomic_rmw_spec reg ptr exp len =
 let atomic_cmpxchg_spec reg ptr cmp exp len len1 =
   let* foot_seg = Fresh.seg ptr ~siz:len in
   let foot = Sh.seg foot_seg in
-  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:(Sh.us foot) in
   let a = foot_seg.cnt in
   let l_a = {Term.siz= Term.rename sub len; seq= a} in
   let len1' = Term.rename sub len1 in
@@ -377,7 +379,7 @@ let posix_memalign_spec reg ptr siz =
   let foot = Sh.seg pseg in
   let* sub, ms =
     Fresh.assign ~ws:(Var.Set.of_ reg)
-      ~rs:(Var.Set.union foot.us (Term.fv siz))
+      ~rs:(Var.Set.union (Sh.us foot) (Term.fv siz))
   in
   let* q = Fresh.var "q" in
   let pseg' = {pseg with cnt= q} in
@@ -415,7 +417,7 @@ let realloc_spec reg ptr siz =
   let foot = Sh.or_ (null_eq ptr) (Sh.seg pseg) in
   let* sub, ms =
     Fresh.assign ~ws:(Var.Set.of_ reg)
-      ~rs:(Var.Set.union foot.us (Term.fv siz))
+      ~rs:(Var.Set.union (Sh.us foot) (Term.fv siz))
   in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
@@ -443,7 +445,7 @@ let rallocx_spec reg ptr siz =
   let* pseg = Fresh.seg ptr ~bas:ptr ~len ~siz:len in
   let pheap = Sh.seg pseg in
   let foot = Sh.and_ (Formula.dq0 siz) pheap in
-  let* sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let* sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:(Sh.us foot) in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let* rseg = Fresh.seg loc ~bas:loc ~len:siz ~siz in
@@ -470,7 +472,7 @@ let xallocx_spec reg ptr siz ext =
   let foot = Sh.and_ (Formula.dq0 siz) (Sh.seg seg) in
   let* sub, ms =
     Fresh.assign ~ws:(Var.Set.of_ reg)
-      ~rs:Var.Set.(union foot.us (union (Term.fv siz) (Term.fv ext)))
+      ~rs:Var.Set.(union (Sh.us foot) (union (Term.fv siz) (Term.fv ext)))
   in
   let reg = Term.var reg in
   let ptr = Term.rename sub ptr in
@@ -497,7 +499,7 @@ let sallocx_spec reg ptr =
   let* len = Fresh.var "m" in
   let* seg = Fresh.seg ptr ~bas:ptr ~len ~siz:len in
   let foot = Sh.seg seg in
-  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:(Sh.us foot) in
   let post = Sh.and_ (Formula.eq (Term.var reg) len) (Sh.rename sub foot) in
   {foot; sub; ms; post}
 
@@ -509,7 +511,7 @@ let malloc_usable_size_spec reg ptr =
   let* len = Fresh.var "m" in
   let* seg = Fresh.seg ptr ~bas:ptr ~len ~siz:len in
   let foot = Sh.seg seg in
-  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:(Sh.us foot) in
   let post = Sh.and_ (Formula.le len (Term.var reg)) (Sh.rename sub foot) in
   {foot; sub; ms; post}
 
@@ -519,7 +521,7 @@ let malloc_usable_size_spec reg ptr =
  *)
 let nallocx_spec reg siz =
   let foot = Sh.pure (Formula.dq0 siz) in
-  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:(Sh.us foot) in
   let loc = Term.var reg in
   let siz = Term.rename sub siz in
   let post = Sh.or_ (null_eq loc) (Sh.pure (Formula.eq loc siz)) in
@@ -623,7 +625,7 @@ let mallctlnametomib_spec p o =
 let strlen_spec reg ptr =
   let* seg = Fresh.seg ptr in
   let foot = Sh.seg seg in
-  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:foot.us in
+  let+ sub, ms = Fresh.assign ~ws:(Var.Set.of_ reg) ~rs:(Sh.us foot) in
   let {Sh.loc= p; bas= b; len= m; _} = seg in
   let ret = Term.sub (Term.sub (Term.add b m) p) Term.one in
   let post =
@@ -641,9 +643,9 @@ open Option.Import
 
 let pp ppf q = Sh.pp ppf (Option.value q ~default:(Sh.false_ Var.Set.empty))
 
-let check_preserve_us (q0 : Sh.t) (q1 : Sh.t) =
-  let gain_us = Var.Set.diff q1.us q0.us in
-  let lose_us = Var.Set.diff q0.us q1.us in
+let check_preserve_us q0 q1 =
+  let gain_us = Var.Set.diff (Sh.us q1) (Sh.us q0) in
+  let lose_us = Var.Set.diff (Sh.us q0) (Sh.us q1) in
   (Var.Set.is_empty gain_us || fail "gain us: %a" Var.Set.pp gain_us ())
   && (Var.Set.is_empty lose_us || fail "lose us: %a" Var.Set.pp lose_us ())
 
@@ -663,19 +665,23 @@ let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
        ms Sh.pp post ;
      (* gs contains all vars in spec not in pre.us *)
      assert (
-       let vs = Var.Set.(diff (diff foot.us gs) pre.us) in
+       let vs = Var.Set.(diff (diff (Sh.us foot) gs) (Sh.us pre)) in
        Var.Set.is_empty vs || fail "unbound foot: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.(diff (diff ms gs) pre.us) in
+       let vs = Var.Set.(diff (diff ms gs) (Sh.us pre)) in
        Var.Set.is_empty vs || fail "unbound modif: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.(diff (diff (Var.Subst.domain sub) gs) pre.us) in
+       let vs =
+         Var.Set.(diff (diff (Var.Subst.domain sub) gs) (Sh.us pre))
+       in
        Var.Set.is_empty vs || fail "unbound write: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.(diff (diff (Var.Subst.range sub) gs) pre.us) in
+       let vs =
+         Var.Set.(diff (diff (Var.Subst.range sub) gs) (Sh.us pre))
+       in
        Var.Set.is_empty vs || fail "unbound ghost: {%a}" Var.Set.pp vs () ) ;
      assert (
-       let vs = Var.Set.(diff (diff post.us gs) pre.us) in
+       let vs = Var.Set.(diff (diff (Sh.us post) gs) (Sh.us pre)) in
        Var.Set.is_empty vs || fail "unbound post: {%a}" Var.Set.pp vs () )]
   ;
   let+ frame = Solver.infer_frame pre gs foot in
@@ -689,7 +695,7 @@ let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
 (* execute a command with given spec from pre *)
 let exec_spec pre specm =
   let xs, pre = Sh.bind_exists pre ~wrt:Var.Set.empty in
-  exec_spec_ (xs, pre) (gen_spec pre.us specm)
+  exec_spec_ (xs, pre) (gen_spec (Sh.us pre) specm)
 
 (* execute a multiple-spec command, where the disjunction of the specs
    preconditions are known to be tautologous *)
@@ -697,10 +703,10 @@ let exec_specs pre =
   let xs, pre = Sh.bind_exists pre ~wrt:Var.Set.empty in
   let rec exec_specs_ (xs, pre) = function
     | specm :: specs ->
-        let gs, spec = gen_spec pre.Sh.us specm in
+        let gs, spec = gen_spec (Sh.us pre) specm in
         let pure = Sh.pure (Sh.pure_approx spec.foot) in
         let pre_pure =
-          Sh.star (Sh.exists (Var.Set.inter gs pure.us) pure) pre
+          Sh.star (Sh.exists (Var.Set.inter gs (Sh.us pure)) pure) pre
         in
         let* post = exec_spec_ (xs, pre_pure) (gs, spec) in
         let+ posts = exec_specs_ (xs, pre) specs in
@@ -727,7 +733,7 @@ let assume pre cnd =
     ~retn:(fun {pf} -> pf "%a" Sh.pp)
   @@ fun () ->
   let post = Sh.and_ cnd pre in
-  if Sh.is_unsat post then Sh.false_ post.us else post
+  if Sh.is_unsat post then Sh.false_ (Sh.us post) else post
 
 let kill pre reg =
   let ms = Var.Set.of_ reg in
