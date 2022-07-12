@@ -66,7 +66,7 @@ module Trm3 = struct
              | {siz= Z o; seq= Z c} when Z.equal Z.one o ->
                  Char.of_int_exn (Z.to_int c)
              | _ -> raise_notrace Not_a_string ) )
-    with _ -> None
+    with Not_a_string | Z.Overflow | Invalid_argument _ -> None
 
   let rec ppx strength fs trm =
     let rec pp fs trm =
