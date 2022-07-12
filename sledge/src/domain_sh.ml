@@ -316,9 +316,7 @@ let move_term_code tid reg code q =
   | None -> q
 
 let resolve_callee lookup tid ptr q =
-  let ptr_var, _ =
-    Var.fresh "callee" ~wrt:(Var.Set.union (Xsh.us q) (Xsh.xs q))
-  in
+  let ptr_var = Var.Fresh.gen_ (Xsh.vx q) (Var.Fresh.var "callee") in
   let q = Xsh.and_ (Formula.eq (X.term tid ptr) (Term.var ptr_var)) q in
   Iter.fold (Xsh.dnf q) [] ~f:(fun disj ->
       Context.class_of (Xsh.ctx disj) (Term.var ptr_var)
