@@ -1341,35 +1341,36 @@ let solve_for xs ?(not_ito = Var.Set.empty) r vx =
 (* Replay debugging ======================================================*)
 
 type call =
-  | Add of Var.Context.t * Formula.t * t
-  | Union of Var.Context.t * t * t
-  | Inter of Var.Context.t * t * t
+  | Add of Formula.t * t * Var.Context.t
+  | Union of t * t * Var.Context.t
+  | Inter of t * t * Var.Context.t
   | Rename of t * Var.Subst.t
   | Is_unsat of t
   | Implies of t * Formula.t
   | Refutes of t * Formula.t
   | Normalize of t * Term.t
-  | Apply_subst of Var.Context.t * Subst.t * t
-  | Solve_for of Var.Context.t * Var.Set.t * Var.Set.t * t
-  | Apply_and_elim of Var.Context.t * Var.Set.t * Subst.t * t
+  | Apply_subst of Subst.t * t * Var.Context.t
+  | Solve_for of Var.Set.t * Var.Set.t * t * Var.Context.t
+  | Apply_and_elim of Var.Set.t * Subst.t * t * Var.Context.t
 [@@deriving sexp]
 
 let replay c =
   match call_of_sexp (Sexp.of_string c) with
-  | Add (vx, e, r) -> Var.Fresh.gen_ vx (add e r) |> ignore
-  | Union (vx, r, s) -> Var.Fresh.gen_ vx (union r s) |> ignore
-  | Inter (vx, r, s) -> Var.Fresh.gen_ vx (inter r s) |> ignore
+  | Add (e, r, vx) -> Var.Fresh.gen_ vx (add e r) |> ignore
+  | Union (r, s, vx) -> Var.Fresh.gen_ vx (union r s) |> ignore
+  | Inter (r, s, vx) -> Var.Fresh.gen_ vx (inter r s) |> ignore
   | Rename (r, s) -> rename r s |> ignore
   | Is_unsat r -> is_unsat r |> ignore
   | Implies (r, f) -> implies r f |> ignore
   | Refutes (r, f) -> refutes r f |> ignore
   | Normalize (r, e) -> normalize r e |> ignore
-  | Apply_subst (vx, s, r) -> Var.Fresh.gen_ vx (apply_subst s r) |> ignore
-  | Solve_for (vx, xs, not_ito, r) ->
+  | Apply_subst (s, r, vx) -> Var.Fresh.gen_ vx (apply_subst s r) |> ignore
+  | Solve_for (xs, not_ito, r, vx) ->
       Var.Fresh.gen_ vx (solve_for xs ~not_ito r) |> ignore
-  | Apply_and_elim (vx, xs, s, r) ->
+  | Apply_and_elim (xs, s, r, vx) ->
       Var.Fresh.gen_ vx (apply_and_elim xs s r) |> ignore
 
+(*=
 (* Debug wrappers *)
 
 let report ~name ~elapsed ~aggregate ~count =
@@ -1378,7 +1379,8 @@ let report ~name ~elapsed ~aggregate ~count =
 
 let dump_threshold = ref 1000.
 
-let[@warning "-unused-value-declaration"] wrap tmr f call =
+let[@warning "-unused-value-declaration"] wrap name f call =
+  let tmr = Timer.create name ~at_exit:report in
   let f () =
     Timer.start tmr ;
     let r = f () in
@@ -1401,53 +1403,41 @@ let[@warning "-32"] mwrap tmr f call vx =
   let vx0 = !vx in
   wrap tmr f (fun () -> call vx0) vx
 
-let wrap _ f _ = f ()
-let mwrap _ f _ = f ()
-let add_tmr = Timer.create "add" ~at_exit:report
-let union_tmr = Timer.create "union" ~at_exit:report
-let inter_tmr = Timer.create "inter" ~at_exit:report
-let rename_tmr = Timer.create "rename" ~at_exit:report
-let is_unsat_tmr = Timer.create "is_unsat" ~at_exit:report
-let implies_tmr = Timer.create "implies" ~at_exit:report
-let refutes_tmr = Timer.create "refutes" ~at_exit:report
-let normalize_tmr = Timer.create "normalize" ~at_exit:report
-let apply_subst_tmr = Timer.create "apply_subst" ~at_exit:report
-let solve_for_tmr = Timer.create "solve_for" ~at_exit:report
-let apply_and_elim_tmr = Timer.create "apply_and_elim" ~at_exit:report
-let add e r = mwrap add_tmr (fun () -> add e r) (fun vx -> Add (vx, e, r))
+let add e r = mwrap "add" (fun () -> add e r) (fun vx -> Add (e, r, vx))
 
 let union r s =
-  mwrap union_tmr (fun () -> union r s) (fun vx -> Union (vx, r, s))
+  mwrap "union" (fun () -> union r s) (fun vx -> Union (r, s, vx))
 
 let inter r s =
-  mwrap inter_tmr (fun () -> inter r s) (fun vx -> Inter (vx, r, s))
+  mwrap "inter" (fun () -> inter r s) (fun vx -> Inter (r, s, vx))
 
 let rename r s =
-  wrap rename_tmr (fun () -> rename r s) (fun () -> Rename (r, s))
+  wrap "rename" (fun () -> rename r s) (fun () -> Rename (r, s))
 
 let is_unsat r =
-  wrap is_unsat_tmr (fun () -> is_unsat r) (fun () -> Is_unsat r)
+  wrap "is_unsat" (fun () -> is_unsat r) (fun () -> Is_unsat r)
 
 let implies r f =
-  wrap implies_tmr (fun () -> implies r f) (fun () -> Implies (r, f))
+  wrap "implies" (fun () -> implies r f) (fun () -> Implies (r, f))
 
 let refutes r f =
-  wrap refutes_tmr (fun () -> refutes r f) (fun () -> Refutes (r, f))
+  wrap "refutes" (fun () -> refutes r f) (fun () -> Refutes (r, f))
 
 let normalize r e =
-  wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
+  wrap "normalize" (fun () -> normalize r e) (fun () -> Normalize (r, e))
 
 let apply_subst s r =
-  mwrap apply_subst_tmr
+  mwrap "apply_subst"
     (fun () -> apply_subst s r)
-    (fun vx -> Apply_subst (vx, s, r))
+    (fun vx -> Apply_subst (s, r, vx))
 
 let solve_for xs ?(not_ito = Var.Set.empty) r =
-  mwrap solve_for_tmr
+  mwrap "solve_for"
     (fun () -> solve_for xs ~not_ito r)
-    (fun vx -> Solve_for (vx, xs, not_ito, r))
+    (fun vx -> Solve_for (xs, not_ito, r, vx))
 
 let apply_and_elim xs s r =
-  mwrap apply_and_elim_tmr
+  mwrap "apply_and_elim"
     (fun () -> apply_and_elim xs s r)
-    (fun vx -> Apply_and_elim (vx, xs, s, r))
+    (fun vx -> Apply_and_elim (xs, s, r, vx))
+*)
