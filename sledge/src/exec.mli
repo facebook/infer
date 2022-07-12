@@ -10,28 +10,33 @@
 open Fol
 open Symbolic_heap
 
-val assume : Sh.t -> Formula.t -> Sh.t
-val kill : Sh.t -> Var.t -> Sh.t
-val move : Sh.t -> (Var.t * Term.t) iarray -> Sh.t
-val load : Sh.t -> reg:Var.t -> ptr:Term.t -> len:Term.t -> Sh.t option
-val store : Sh.t -> ptr:Term.t -> exp:Term.t -> len:Term.t -> Sh.t option
+val assume : Xsh.t -> Formula.t -> Xsh.t
+val kill : Xsh.t -> Var.t -> Xsh.t
+val move : Xsh.t -> (Var.t * Term.t) iarray -> Xsh.t
+val load : Xsh.t -> reg:Var.t -> ptr:Term.t -> len:Term.t -> Xsh.t option
+val store : Xsh.t -> ptr:Term.t -> exp:Term.t -> len:Term.t -> Xsh.t option
 
 val atomic_rmw :
-  Sh.t -> reg:Var.t -> ptr:Term.t -> exp:Term.t -> len:Term.t -> Sh.t option
+     Xsh.t
+  -> reg:Var.t
+  -> ptr:Term.t
+  -> exp:Term.t
+  -> len:Term.t
+  -> Xsh.t option
 
 val atomic_cmpxchg :
-     Sh.t
+     Xsh.t
   -> reg:Var.t
   -> ptr:Term.t
   -> cmp:Term.t
   -> exp:Term.t
   -> len:Term.t
   -> len1:Term.t
-  -> Sh.t option
+  -> Xsh.t option
 
-val alloc : Sh.t -> reg:Var.t -> num:Term.t -> len:int -> Sh.t option
-val free : Sh.t -> ptr:Term.t -> Sh.t option
-val nondet : Sh.t -> Var.t option -> Sh.t
+val alloc : Xsh.t -> reg:Var.t -> num:Term.t -> len:int -> Xsh.t option
+val free : Xsh.t -> ptr:Term.t -> Xsh.t option
+val nondet : Xsh.t -> Var.t option -> Xsh.t
 
 val builtin :
-  Sh.t -> Var.t option -> Llair.Builtin.t -> Term.t iarray -> Sh.t option
+  Xsh.t -> Var.t option -> Llair.Builtin.t -> Term.t iarray -> Xsh.t option

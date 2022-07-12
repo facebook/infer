@@ -11,7 +11,7 @@ open Symbolic_heap
 
 let%test_module _ =
   ( module struct
-    open Sh
+    open Xsh
 
     let () = Dbg.init ~margin:68 ()
 

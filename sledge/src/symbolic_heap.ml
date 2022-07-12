@@ -57,6 +57,10 @@ module Sh = struct
       List.fold ys (Some s) ~f:(fun y -> function
         | Some s -> add y s | None -> None )
   end
+end
+
+module Xsh = struct
+  open Sh
 
   module T0 = struct
     type compare [@@deriving compare, equal, sexp]

@@ -23,19 +23,23 @@ module Sh : sig
 
     val to_iter : t -> seg iter
   end
+end
 
-  type disjunction
+(** (Existentially-Quantified) Symbolic Heap Formulas *)
+module Xsh : sig
   type t [@@deriving compare, equal, sexp]
+  type disjunction
 
   module Set : Set.S with type elt := t and type t = disjunction
 
-  val pp_seg_norm : Context.t -> seg pp
+  (** Pretty-print *)
+
+  val pp_seg_norm : Context.t -> Sh.seg pp
   val pp_us : Var.Set.t pp
   val pp : t pp
   val pp_raw : t pp
   val pp_diff_eq : ?us:Var.Set.t -> ?xs:Var.Set.t -> Context.t -> t pp
   val pp_djn : disjunction pp
-  val simplify : t -> t
 
   (** Access *)
 
@@ -46,13 +50,16 @@ module Sh : sig
   (** Existentially-bound variables of formula *)
 
   val ctx : t -> Context.t
-  (** First-order logical context induced by rest of formula. *)
+  (** First-order logical context induced by rest of formula *)
 
-  val heap : t -> Segs.t
+  val heap : t -> Sh.Segs.t
   (** Star-conjunction of segment atomic formulas *)
 
   val djns : t -> disjunction list
   (** Star-conjunction of disjunctions *)
+
+  val fv : ?ignore_ctx:unit -> ?ignore_pure:unit -> t -> Var.Set.t
+  (** Free variables, a subset of vocabulary. *)
 
   (** Construct *)
 
@@ -62,7 +69,7 @@ module Sh : sig
   val false_ : Var.Set.t -> t
   (** Inconsistent formula with given vocabulary. *)
 
-  val seg : seg -> t
+  val seg : Sh.seg -> t
   (** Atomic segment formula. *)
 
   val star : t -> t -> t
@@ -96,20 +103,19 @@ module Sh : sig
 
   (** Update *)
 
-  val rem_seg : seg -> t -> t
+  val rem_seg : Sh.seg -> t -> t
   (** [star (seg s) (rem_seg s q)] is equivalent to [q], assuming that [s]
       is (physically equal to) one of the elements of [q.heap]. Raises if
       [s] is not an element of [q.heap]. *)
 
-  val filter_heap : f:(seg -> bool) -> t -> t
+  val filter_heap : f:(Sh.seg -> bool) -> t -> t
   (** [filter_heap q f] Remove all segments in [q] for which [f] returns
       false *)
 
-  val norm : Context.Subst.t -> t -> t
-  (** [norm s q] is [q] where subterms have been normalized with a
-      substitution. *)
-
   (** Quantification and Vocabulary *)
+
+  val extend_us : Var.Set.t -> t -> t
+  (** Extend vocabulary, renaming existentials as needed. *)
 
   val exists : Var.Set.t -> t -> t
   (** Existential quantification, binding variables thereby removing them
@@ -119,16 +125,22 @@ module Sh : sig
   (** Bind existentials, freshened with respect to [wrt], extends
       vocabulary. *)
 
-  val rename : Var.Subst.t -> t -> t
-  (** Apply a substitution, remove its domain from vocabulary and add its
-      range. *)
-
   val freshen : t -> wrt:Var.Set.t -> t * Var.Subst.t
   (** Freshen free variables with respect to [wrt], and extend vocabulary
       with [wrt], renaming bound variables as needed. *)
 
-  val extend_us : Var.Set.t -> t -> t
-  (** Extend vocabulary, renaming existentials as needed. *)
+  val rename : Var.Subst.t -> t -> t
+  (** Apply a substitution, remove its domain from vocabulary and add its
+      range. *)
+
+  (** Simplify *)
+
+  val norm : Context.Subst.t -> t -> t
+  (** [norm s q] is [q] where subterms have been normalized with a
+      substitution. *)
+
+  val simplify : t -> t
+  (** Transform a formula to an equivalent but simpler form. *)
 
   (** Query *)
 
@@ -147,9 +159,6 @@ module Sh : sig
   (** [pure_approx q] is inconsistent only if [q] is inconsistent. If
       [is_empty q], then [pure_approx q] is equivalent to
       [pure (pure_approx q)]. *)
-
-  val fv : ?ignore_ctx:unit -> ?ignore_pure:unit -> t -> Var.Set.t
-  (** Free variables, a subset of vocabulary. *)
 
   val fold_dnf :
        conj:(t -> 'conjuncts -> 'conjuncts)
