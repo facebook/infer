@@ -79,16 +79,8 @@ let debug_rule = Context_free.Rule.extension debug_extension
 ;;
 Driver.register_transformation ~rules:[debug_rule] "debug"
 
-(* (fun x -> x) *)
-let fun_id loc = pexp_fun ~loc Nolabel None (pvar ~loc "x") (evar ~loc "x")
-
-(* (fun k -> k ()) *)
-let fun_go loc =
-  pexp_fun ~loc Nolabel None (pvar ~loc "k")
-    (eapply ~loc (evar ~loc "k") [eunit ~loc])
-
 let mapper =
-  object
+  object (self)
     inherit Ast_traverse.map as super
 
     method! expression exp =
@@ -97,14 +89,42 @@ let mapper =
         (Nolabel, fun_name) :: args
       in
       match exp.pexp_desc with
+      (* [%dbg] dbg_args @@ fun () -> body *)
       | Pexp_apply
-          ( { pexp_desc= Pexp_extension ({txt= "dbg"; loc}, PStr [])
-            ; pexp_loc }
-          , args ) ->
-          if not !debug then fun_go pexp_loc
+          ( {pexp_desc= Pexp_ident {txt= Lident "@@"}}
+          , [ ( Nolabel
+              , { pexp_desc=
+                    Pexp_apply
+                      ( { pexp_desc=
+                            Pexp_extension ({txt= "dbg"; loc}, PStr []) }
+                      , dbg_args ) } )
+            ; ( Nolabel
+              , ( { pexp_desc=
+                      Pexp_fun
+                        ( Nolabel
+                        , None
+                        , { ppat_desc=
+                              Ppat_construct ({txt= Lident "()"}, None) }
+                        , body ) } as arg ) ) ] )
+      (* [%dbg] dbg_args (fun () -> body) *)
+       |Pexp_apply
+          ( { pexp_desc=
+                Pexp_apply
+                  ( {pexp_desc= Pexp_extension ({txt= "dbg"; loc}, PStr [])}
+                  , dbg_args ) }
+          , [ ( Nolabel
+              , ( { pexp_desc=
+                      Pexp_fun
+                        ( Nolabel
+                        , None
+                        , { ppat_desc=
+                              Ppat_construct ({txt= Lident "()"}, None) }
+                        , body ) } as arg ) ) ] ) ->
+          if not !debug then self#expression body
           else
             pexp_apply ~loc:exp.pexp_loc (evar ~loc "Dbg.dbg")
-              (append_here_args args)
+              (append_here_args
+                 (dbg_args @ [(Nolabel, self#expression arg)]) )
       | Pexp_extension
           ( { txt=
                 ( "Dbg.info" | "Dbg.infok" | "Dbg.printf" | "Dbg.fprintf"
@@ -121,21 +141,34 @@ let mapper =
             pexp_apply ~loc:exp.pexp_loc (evar ~loc txt)
               (append_here_args args)
       | Pexp_extension
-          ( {txt= "Dbg.call"; loc= call_loc}
+          ( {txt= "Dbg.call"; loc}
           , PStr [{pstr_desc= Pstr_eval (call_fun, []); _}] ) ->
           if not !debug then eunit ~loc:exp.pexp_loc
           else
-            pexp_apply ~loc:exp.pexp_loc
-              (evar ~loc:call_loc "Dbg.call")
+            pexp_apply ~loc:exp.pexp_loc (evar ~loc "Dbg.call")
               (append_here_args [(Nolabel, call_fun)])
-      | Pexp_extension
-          ( {txt= "Dbg.retn"; loc= retn_loc}
-          , PStr [{pstr_desc= Pstr_eval (retn_fun, []); _}] ) ->
-          if not !debug then fun_id exp.pexp_loc
+      (* body |> [%Dbg.retn retn_fun] *)
+      | Pexp_apply
+          ( {pexp_desc= Pexp_ident {txt= Lident "|>"}}
+          , [ (Nolabel, body)
+            ; ( Nolabel
+              , { pexp_desc=
+                    Pexp_extension
+                      ( {txt= "Dbg.retn"; loc}
+                      , PStr [{pstr_desc= Pstr_eval (retn_fun, [])}] ) } )
+            ] )
+      (* [%Dbg.retn retn_fun] body *)
+       |Pexp_apply
+          ( { pexp_desc=
+                Pexp_extension
+                  ( {txt= "Dbg.retn"; loc}
+                  , PStr [{pstr_desc= Pstr_eval (retn_fun, [])}] ) }
+          , [(Nolabel, body)] ) ->
+          if not !debug then self#expression body
           else
-            pexp_apply ~loc:exp.pexp_loc
-              (evar ~loc:retn_loc "Dbg.retn")
-              (append_here_args [(Nolabel, retn_fun)])
+            pexp_apply ~loc:exp.pexp_loc (evar ~loc "Dbg.retn")
+              (append_here_args
+                 [(Nolabel, retn_fun); (Nolabel, self#expression body)] )
       | _ -> super#expression exp
   end
 
