@@ -139,6 +139,18 @@ module Sh = struct
     fold_vars_stem ?ignore_ctx ?ignore_pure ~f q s
     |> List.fold ~f:(Set.fold ~f:fold_vars) q.djns
 
+  (** Free variables *)
+
+  let fv_seg seg = fold_vars_seg ~f:Var.Set.add seg Var.Set.empty
+
+  let fv ?ignore_ctx ?ignore_pure q =
+    let rec fv_union q s =
+      Var.Set.diff
+        (fold_vars ?ignore_ctx ?ignore_pure fv_union ~f:Var.Set.add q s)
+        q.xs
+    in
+    fv_union q Var.Set.empty
+
   (** Pretty-printing *)
 
   let rec var_strength_ xs m q =
@@ -331,15 +343,7 @@ module Sh = struct
   let pp_raw fs q =
     pp_ ?var_strength:None ?vs:None Var.Set.empty Context.empty fs q
 
-  let fv_seg seg = fold_vars_seg ~f:Var.Set.add seg Var.Set.empty
-
-  let fv ?ignore_ctx ?ignore_pure q =
-    let rec fv_union q s =
-      Var.Set.diff
-        (fold_vars ?ignore_ctx ?ignore_pure fv_union ~f:Var.Set.add q s)
-        q.xs
-    in
-    fv_union q Var.Set.empty
+  (** Invariants *)
 
   let rec invariant q =
     let@ () = Invariant.invariant [%here] q [%sexp_of: t] in
@@ -424,7 +428,104 @@ module Sh = struct
     assert (Var.Set.disjoint xs q.us) ;
     {q with us= Var.Set.union q.us xs; xs= Var.Set.diff q.xs xs}
 
-  let rec map ~f_sjn ~f_ctx ~f_trm ~f_fml
+  (** freshen existentials, preserving vocabulary *)
+  let rec freshen_xs q ~wrt =
+    try
+      [%Dbg.call fun {pf} ->
+        pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q ;
+        assert (Var.Set.subset q.us ~of_:wrt)]
+      ;
+      let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen q.xs ~wrt in
+      ( if Var.Subst.is_empty sub then q
+      else
+        let q' = apply_subst sub q in
+        let xs = Var.Set.union (Var.Set.diff q'.xs dom) rng in
+        if q' == q && xs == q.xs then q
+        else
+          let us = Var.Set.diff q'.us xs in
+          {q' with us; xs} )
+      |>
+      [%Dbg.retn fun {pf} q' ->
+        pf "%a@ %a" Var.Subst.pp sub pp q' ;
+        assert (Var.Set.equal q'.us q.us) ;
+        assert (Var.Set.disjoint q'.xs (Var.Subst.domain sub)) ;
+        assert (Var.Set.disjoint q'.xs (Var.Set.inter q.xs wrt)) ;
+        invariant q']
+    with exc ->
+      let bt = Printexc.get_raw_backtrace () in
+      Format.eprintf "@\n%a@." Sexp.pp_hum
+        (sexp_of_call (Freshen_xs (q, wrt))) ;
+      Printexc.raise_with_backtrace exc bt
+
+  and extend_us us q =
+    let us = Var.Set.union us q.us in
+    (if us == q.us then q else {(freshen_xs q ~wrt:us) with us})
+    |> check invariant
+
+  and freshen q ~wrt =
+    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
+    ;
+    let xsub, _ = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
+    let q' = extend_us wrt (rename_ xsub q) in
+    (q', xsub.sub)
+    |>
+    [%Dbg.retn fun {pf} (q', _) ->
+      pf "%a" pp q' ;
+      invariant q' ;
+      assert (Var.Set.subset wrt ~of_:q'.us) ;
+      assert (Var.Set.disjoint wrt (fv q'))]
+
+  and bind_exists q ~wrt =
+    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
+    ;
+    let q' =
+      if Var.Set.is_empty wrt then q
+      else freshen_xs q ~wrt:(Var.Set.union q.us wrt)
+    in
+    (q'.xs, {q' with us= Var.Set.union q'.us q'.xs; xs= Var.Set.empty})
+    |>
+    [%Dbg.retn fun {pf} (_, q') -> pf "%a" pp q']
+
+  (** Transformation *)
+
+  and star q1 q2 =
+    [%dbg]
+      ~call:(fun {pf} -> pf "@ (%a)@ (%a)" pp q1 pp q2)
+      ~retn:(fun {pf} q ->
+        pf "%a" pp q ;
+        invariant q ;
+        assert (Var.Set.equal q.us (Var.Set.union q1.us q2.us)) )
+    @@ fun () ->
+    if is_false q1 || is_false q2 then false_ (Var.Set.union q1.us q2.us)
+    else if is_emp q1 then extend_us q1.us q2
+    else if is_emp q2 then extend_us q2.us q1
+    else
+      let us = Var.Set.union q1.us q2.us in
+      let q1 = freshen_xs q1 ~wrt:(Var.Set.union us q2.xs) in
+      let q2 = freshen_xs q2 ~wrt:(Var.Set.union us q1.xs) in
+      let {us= us1; xs= xs1; ctx= c1; pure= p1; heap= h1; djns= d1} = q1 in
+      let {us= us2; xs= xs2; ctx= c2; pure= p2; heap= h2; djns= d2} = q2 in
+      assert (Var.Set.equal us (Var.Set.union us1 us2)) ;
+      match Segs.union h1 h2 with
+      | None -> false_ us
+      | Some heap ->
+          let xs, ctx =
+            Context.union (Var.Set.union us (Var.Set.union xs1 xs2)) c1 c2
+          in
+          if Context.is_unsat ctx then false_ us
+          else
+            let pure = Formula.and_ p1 p2 in
+            if Formula.equal Formula.ff pure then false_ us
+            else
+              exists_fresh xs
+                { us
+                ; xs= Var.Set.union xs1 xs2
+                ; ctx
+                ; pure
+                ; heap
+                ; djns= List.append d1 d2 }
+
+  and map ~f_sjn ~f_ctx ~f_trm ~f_fml
       ({us; xs= _; ctx; pure; heap; djns} as q) =
     let pure = f_fml pure in
     if Formula.equal Formula.ff pure then false_ us
@@ -495,77 +596,6 @@ module Sh = struct
       invariant q' ;
       assert (Var.Set.disjoint q'.us (Var.Subst.domain sub))]
 
-  (** freshen existentials, preserving vocabulary *)
-  and freshen_xs q ~wrt =
-    try
-      [%Dbg.call fun {pf} ->
-        pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q ;
-        assert (Var.Set.subset q.us ~of_:wrt)]
-      ;
-      let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen q.xs ~wrt in
-      ( if Var.Subst.is_empty sub then q
-      else
-        let q' = apply_subst sub q in
-        let xs = Var.Set.union (Var.Set.diff q'.xs dom) rng in
-        if q' == q && xs == q.xs then q
-        else
-          let us = Var.Set.diff q'.us xs in
-          {q' with us; xs} )
-      |>
-      [%Dbg.retn fun {pf} q' ->
-        pf "%a@ %a" Var.Subst.pp sub pp q' ;
-        assert (Var.Set.equal q'.us q.us) ;
-        assert (Var.Set.disjoint q'.xs (Var.Subst.domain sub)) ;
-        assert (Var.Set.disjoint q'.xs (Var.Set.inter q.xs wrt)) ;
-        invariant q']
-    with exc ->
-      let bt = Printexc.get_raw_backtrace () in
-      Format.eprintf "@\n%a@." Sexp.pp_hum
-        (sexp_of_call (Freshen_xs (q, wrt))) ;
-      Printexc.raise_with_backtrace exc bt
-
-  and extend_us us q =
-    let us = Var.Set.union us q.us in
-    (if us == q.us then q else {(freshen_xs q ~wrt:us) with us})
-    |> check invariant
-
-  and star q1 q2 =
-    [%dbg]
-      ~call:(fun {pf} -> pf "@ (%a)@ (%a)" pp q1 pp q2)
-      ~retn:(fun {pf} q ->
-        pf "%a" pp q ;
-        invariant q ;
-        assert (Var.Set.equal q.us (Var.Set.union q1.us q2.us)) )
-    @@ fun () ->
-    if is_false q1 || is_false q2 then false_ (Var.Set.union q1.us q2.us)
-    else if is_emp q1 then extend_us q1.us q2
-    else if is_emp q2 then extend_us q2.us q1
-    else
-      let us = Var.Set.union q1.us q2.us in
-      let q1 = freshen_xs q1 ~wrt:(Var.Set.union us q2.xs) in
-      let q2 = freshen_xs q2 ~wrt:(Var.Set.union us q1.xs) in
-      let {us= us1; xs= xs1; ctx= c1; pure= p1; heap= h1; djns= d1} = q1 in
-      let {us= us2; xs= xs2; ctx= c2; pure= p2; heap= h2; djns= d2} = q2 in
-      assert (Var.Set.equal us (Var.Set.union us1 us2)) ;
-      match Segs.union h1 h2 with
-      | None -> false_ us
-      | Some heap ->
-          let xs, ctx =
-            Context.union (Var.Set.union us (Var.Set.union xs1 xs2)) c1 c2
-          in
-          if Context.is_unsat ctx then false_ us
-          else
-            let pure = Formula.and_ p1 p2 in
-            if Formula.equal Formula.ff pure then false_ us
-            else
-              exists_fresh xs
-                { us
-                ; xs= Var.Set.union xs1 xs2
-                ; ctx
-                ; pure
-                ; heap
-                ; djns= List.append d1 d2 }
-
   let starN = function
     | [] -> emp
     | [q] -> q
@@ -607,30 +637,6 @@ module Sh = struct
     match Set.pop djn with
     | None -> false_ Var.Set.empty
     | Some (q, qs) -> Set.fold ~f:or_ qs q
-
-  let freshen q ~wrt =
-    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
-    ;
-    let xsub, _ = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
-    let q' = extend_us wrt (rename_ xsub q) in
-    (q', xsub.sub)
-    |>
-    [%Dbg.retn fun {pf} (q', _) ->
-      pf "%a" pp q' ;
-      invariant q' ;
-      assert (Var.Set.subset wrt ~of_:q'.us) ;
-      assert (Var.Set.disjoint wrt (fv q'))]
-
-  let bind_exists q ~wrt =
-    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
-    ;
-    let q' =
-      if Var.Set.is_empty wrt then q
-      else freshen_xs q ~wrt:(Var.Set.union q.us wrt)
-    in
-    (q'.xs, {q' with us= Var.Set.union q'.us q'.xs; xs= Var.Set.empty})
-    |>
-    [%Dbg.retn fun {pf} (_, q') -> pf "%a" pp q']
 
   (** Construct *)
 
@@ -835,31 +841,6 @@ module Sh = struct
 
   (** Simplify *)
 
-  let rec normalize_ q =
-    [%Dbg.call fun {pf} -> pf "@ %a" pp_raw q]
-    ;
-    let q' =
-      map q ~f_sjn:normalize_
-        ~f_ctx:(fun x -> (Var.Set.empty, x))
-        ~f_trm:(Context.normalize q.ctx)
-        ~f_fml:(Formula.map_terms ~f:(Context.normalize q.ctx))
-    in
-    let pure = Context.fold_eqs ~f:Formula.and_ q.ctx q'.pure in
-    {q' with pure}
-    |>
-    [%Dbg.retn fun {pf} q' ->
-      pf "%a" pp_raw q' ;
-      invariant q']
-
-  let normalize q =
-    [%Dbg.call fun {pf} -> pf "@ %a" pp_raw q]
-    ;
-    (if !do_normalize then normalize_ q else q)
-    |>
-    [%Dbg.retn fun {pf} q' ->
-      pf "%a" pp_raw q' ;
-      invariant q']
-
   let rec norm_ s q =
     [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q]
     ;
@@ -881,6 +862,31 @@ module Sh = struct
         || fail "unbound subst vars: %a" Var.Set.pp unbound () )]
     ;
     (if Context.Subst.is_empty s then q else norm_ s q)
+    |>
+    [%Dbg.retn fun {pf} q' ->
+      pf "%a" pp_raw q' ;
+      invariant q']
+
+  let rec normalize_ q =
+    [%Dbg.call fun {pf} -> pf "@ %a" pp_raw q]
+    ;
+    let q' =
+      map q ~f_sjn:normalize_
+        ~f_ctx:(fun x -> (Var.Set.empty, x))
+        ~f_trm:(Context.normalize q.ctx)
+        ~f_fml:(Formula.map_terms ~f:(Context.normalize q.ctx))
+    in
+    let pure = Context.fold_eqs ~f:Formula.and_ q.ctx q'.pure in
+    {q' with pure}
+    |>
+    [%Dbg.retn fun {pf} q' ->
+      pf "%a" pp_raw q' ;
+      invariant q']
+
+  let normalize q =
+    [%Dbg.call fun {pf} -> pf "@ %a" pp_raw q]
+    ;
+    (if !do_normalize then normalize_ q else q)
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp_raw q' ;
