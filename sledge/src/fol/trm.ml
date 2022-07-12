@@ -162,15 +162,6 @@ module Var = struct
 
     module Map = Map
 
-    let fresh name ~wrt =
-      let max =
-        match Set.max_elt wrt with None -> 0 | Some m -> max 0 (id m)
-      in
-      let x' = make ~id:(max + 1) ~name in
-      (x', Set.add x' wrt)
-
-    let freshen v ~wrt = fresh (name v) ~wrt
-
     let identified ~name ~id =
       assert (id > 0) ;
       make ~id:(id - Int.max_int) ~name
@@ -200,23 +191,6 @@ module Var = struct
 
     let empty = Map.empty
     let is_empty = Map.is_empty
-
-    let freshen vs ~wrt =
-      let dom = Set.inter vs wrt in
-      ( if Set.is_empty dom then
-        ({sub= empty; dom= Set.empty; rng= Set.empty}, wrt)
-      else
-        let wrt = Set.union wrt vs in
-        let sub, rng, wrt =
-          Set.fold dom (empty, Set.empty, wrt) ~f:(fun x (sub, rng, wrt) ->
-              let x', wrt = freshen x ~wrt in
-              let sub = Map.add_exn ~key:x ~data:x' sub in
-              let rng = Set.add x' rng in
-              (sub, rng, wrt) )
-        in
-        ({sub; dom; rng}, wrt) )
-      |> check (fun ({sub; _}, _) -> invariant sub)
-
     let fold sub z ~f = Map.fold ~f:(fun ~key ~data -> f key data) sub z
     let domain sub = Set.of_iter (Map.keys sub)
     let range sub = Set.of_iter (Map.values sub)

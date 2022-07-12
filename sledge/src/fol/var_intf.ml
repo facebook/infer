@@ -31,7 +31,6 @@ module type S = sig
 
   val id : t -> int
   val name : t -> string
-  val fresh : string -> wrt:Set.t -> t * Set.t
 
   val identified : name:string -> id:int -> t
   (** Create a variable identified by [id]. The [id] uniquely identifies the
@@ -45,7 +44,6 @@ module type S = sig
 
     val pp : t pp
     val empty : t
-    val freshen : Set.t -> wrt:Set.t -> x * Set.t
     val invert : t -> t
 
     val restrict_dom : t -> Set.t -> x
