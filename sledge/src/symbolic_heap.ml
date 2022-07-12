@@ -1419,11 +1419,10 @@ module Xsh = struct
   let andN = Sh.andN
   let and_subst = Sh.and_subst
 
-  let rename_ Var.Subst.{sub; dom; rng} xq =
-    [%Dbg.call fun {pf} ->
-      pf "@ @[%a@]@ %a" Var.Subst.pp sub pp xq ;
-      assert (Var.Set.subset dom ~of_:(T.us xq))]
+  let rename sub xq =
+    [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp xq]
     ;
+    let Var.Subst.{sub; dom; rng} = Var.Subst.restrict_dom sub (T.us xq) in
     let xq = extend_us rng xq in
     ( if Var.Subst.is_empty sub then xq
     else
@@ -1431,16 +1430,6 @@ module Xsh = struct
       ( q
       , Var.Context.with_xs (T.xs xq)
           (Var.Context.of_vars (Var.Set.diff (T.us xq) dom)) ) )
-    |>
-    [%Dbg.retn fun {pf} xq' ->
-      pf "%a" pp xq' ;
-      invariant xq' ;
-      assert (Var.Set.disjoint (T.us xq') (Var.Subst.domain sub))]
-
-  let rename sub xq =
-    [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp xq]
-    ;
-    rename_ (Var.Subst.restrict_dom sub (T.us xq)) xq
     |>
     [%Dbg.retn fun {pf} xq' ->
       pf "%a" pp xq' ;
