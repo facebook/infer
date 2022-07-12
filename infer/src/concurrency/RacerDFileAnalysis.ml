@@ -105,6 +105,16 @@ end = struct
     else update reported_access (reported_set, f reported_access issue_log)
 end
 
+module PathModuloThis : Caml.Map.OrderedType with type t = AccessPath.t = struct
+  type t = AccessPath.t
+
+  type var_ = Var.t
+
+  let compare_var_ = Var.compare_modulo_this
+
+  let compare = [%compare: (var_ * Typ.t) * AccessPath.access list]
+end
+
 (** Map containing reported accesses, which groups them in lists, by abstract location. The
     equivalence relation used for grouping them is equality of access paths. This is slightly
     complicated because local variables contain the pname of the function declaring them. Here we
@@ -118,17 +128,9 @@ module ReportMap : sig
   val add : reported_access -> t -> t
 
   val fold : (reported_access list -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val filter_container_accesses : (PathModuloThis.t -> bool) -> t -> t
 end = struct
-  module PathModuloThis : Caml.Map.OrderedType with type t = AccessPath.t = struct
-    type t = AccessPath.t
-
-    type var_ = Var.t
-
-    let compare_var_ = Var.compare_modulo_this
-
-    let compare = [%compare: (var_ * Typ.t) * AccessPath.access list]
-  end
-
   module Key = struct
     type t = Location of PathModuloThis.t | Container of PathModuloThis.t | Call of Procname.t
     [@@deriving compare]
@@ -153,6 +155,10 @@ end = struct
     let access = rep.snapshot.elem.access in
     let k = Key.of_access access in
     M.update k (function None -> Some [rep] | Some reps -> Some (rep :: reps)) map
+
+
+  let filter_container_accesses f map =
+    M.filter (fun k _ -> match k with Container p -> f p | _ -> true) map
 
 
   let fold f map a =
@@ -564,22 +570,6 @@ let report_unsafe_accesses ~issue_log classname aggregated_access_map =
   |> ReportedSet.to_issue_log
 
 
-(* create a map from [abstraction of a memory loc] -> accesses that
-   may touch that memory loc. the abstraction of a location is an access
-   path like x.f.g whose concretization is the set of memory cells
-   that x.f.g may point to during execution *)
-let make_results_table exe_env summaries =
-  let open RacerDDomain in
-  let aggregate_post tenv procname acc {threads; accesses} =
-    AccessDomain.fold
-      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
-      accesses acc
-  in
-  List.fold summaries ~init:ReportMap.empty ~f:(fun acc (procname, summary) ->
-      let tenv = Exe_env.get_proc_tenv exe_env procname in
-      aggregate_post tenv procname acc summary )
-
-
 let should_report_on_proc file_exe_env proc_name =
   Attributes.load proc_name
   |> Option.exists ~f:(fun attrs ->
@@ -609,6 +599,24 @@ let should_report_on_proc file_exe_env proc_name =
              false )
 
 
+(* create a map from [abstraction of a memory loc] -> accesses that
+   may touch that memory loc. the abstraction of a location is an access
+   path like x.f.g whose concretization is the set of memory cells
+   that x.f.g may point to during execution *)
+let make_results_table exe_env summaries =
+  let open RacerDDomain in
+  let aggregate_post tenv procname acc {threads; accesses} =
+    AccessDomain.fold
+      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
+      accesses acc
+  in
+  List.fold summaries ~init:ReportMap.empty ~f:(fun acc (procname, summary) ->
+      if should_report_on_proc exe_env procname then
+        let tenv = Exe_env.get_proc_tenv exe_env procname in
+        aggregate_post tenv procname acc summary
+      else acc )
+
+
 let class_has_concurrent_method class_summaries =
   let open RacerDDomain in
   let method_has_concurrent_context (_, summary) =
@@ -634,12 +642,11 @@ let should_report_on_class (classname : Typ.Name.t) class_summaries =
 
 (** aggregate all of the procedures in the file env by their declaring class. this lets us analyze
     each class individually *)
-let aggregate_by_class {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_dependency} =
+let aggregate_by_class {InterproceduralAnalysis.procedures; analyze_file_dependency} =
   List.fold procedures ~init:Typ.Name.Map.empty ~f:(fun acc procname ->
       Procname.get_class_type_name procname
       |> Option.bind ~f:(fun classname ->
              analyze_file_dependency procname
-             |> Option.filter ~f:(fun _ -> should_report_on_proc file_exe_env procname)
              |> Option.map ~f:(fun summary ->
                     Typ.Name.Map.update classname
                       (fun summaries_opt ->
@@ -649,11 +656,84 @@ let aggregate_by_class {InterproceduralAnalysis.procedures; file_exe_env; analyz
   |> Typ.Name.Map.filter should_report_on_class
 
 
+let get_synchronized_container_fields_of analyze tenv classname =
+  let open RacerDDomain in
+  let last_field_of_access_expression acc_exp =
+    let _, path = HilExp.AccessExpression.to_access_path acc_exp in
+    List.last path
+    |> Option.bind ~f:(function AccessPath.FieldAccess fieldname -> Some fieldname | _ -> None)
+  in
+  let add_synchronized_container_field acc_exp attr acc =
+    match attr with
+    | Attribute.Synchronized ->
+        last_field_of_access_expression acc_exp
+        |> Option.fold ~init:acc ~f:(fun acc fieldname -> Fieldname.Set.add fieldname acc)
+    | _ ->
+        acc
+  in
+  Tenv.lookup tenv classname
+  |> Option.value_map ~default:[] ~f:(fun (tstruct : Struct.t) -> tstruct.methods)
+  |> List.rev_filter ~f:(function
+       | Procname.Java j ->
+           Procname.Java.(is_class_initializer j || is_constructor j)
+       | _ ->
+           false )
+  |> List.rev_filter_map ~f:analyze
+  |> List.rev_map ~f:(fun (summary : summary) -> summary.attributes)
+  |> List.fold ~init:Fieldname.Set.empty ~f:(fun acc attributes ->
+         AttributeMapDomain.fold add_synchronized_container_field attributes acc )
+
+
+let get_synchronized_container_fields_of, clear_sync_container_cache =
+  let cache = Typ.Name.Hash.create 5 in
+  ( (fun analyze tenv classname ->
+      match Typ.Name.Hash.find_opt cache classname with
+      | Some fieldset ->
+          fieldset
+      | None ->
+          let fieldset = get_synchronized_container_fields_of analyze tenv classname in
+          Typ.Name.Hash.add cache classname fieldset ;
+          fieldset )
+  , fun () -> Typ.Name.Hash.clear cache )
+
+
+let should_keep_container_access analyze tenv ((_base, path) : PathModuloThis.t) =
+  let should_keep_access_ending_at_field fieldname =
+    let classname = Fieldname.get_class_name fieldname in
+    let sync_container_fields = get_synchronized_container_fields_of analyze tenv classname in
+    not (Fieldname.Set.mem fieldname sync_container_fields)
+  in
+  let rec should_keep_container_access_inner rev_path =
+    match rev_path with
+    | [] ->
+        true
+    | AccessPath.ArrayAccess _ :: rest ->
+        should_keep_container_access_inner rest
+    | AccessPath.FieldAccess fieldname :: _ ->
+        should_keep_access_ending_at_field fieldname
+  in
+  List.rev path |> should_keep_container_access_inner
+
+
 (** Gathers results by analyzing all the methods in a file, then post-processes the results to check
     an (approximation of) thread safety *)
-let analyze ({InterproceduralAnalysis.file_exe_env} as file_t) =
+let analyze ({InterproceduralAnalysis.file_exe_env; analyze_file_dependency} as file_t) =
+  let synchronized_container_filter = function
+    | Typ.JavaClass _ ->
+        let tenv = Exe_env.load_java_global_tenv file_exe_env in
+        ReportMap.filter_container_accesses
+          (should_keep_container_access analyze_file_dependency tenv)
+    | _ ->
+        Fn.id
+  in
   let class_map = aggregate_by_class file_t in
-  Typ.Name.Map.fold
-    (fun classname methods issue_log ->
-      make_results_table file_exe_env methods |> report_unsafe_accesses ~issue_log classname )
-    class_map IssueLog.empty
+  let result =
+    Typ.Name.Map.fold
+      (fun classname methods issue_log ->
+        make_results_table file_exe_env methods
+        |> synchronized_container_filter classname
+        |> report_unsafe_accesses ~issue_log classname )
+      class_map IssueLog.empty
+  in
+  clear_sync_container_cache () ;
+  result

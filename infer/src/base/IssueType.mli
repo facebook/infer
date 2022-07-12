@@ -302,6 +302,8 @@ val no_true_branch_in_if : latent:bool -> t
 
 val no_matching_branch_in_try : latent:bool -> t
 
+val null_argument : latent:bool -> t
+
 val null_dereference : t
 
 val nullptr_dereference : latent:bool -> t

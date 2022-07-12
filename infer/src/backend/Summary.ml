@@ -273,20 +273,12 @@ module OnDisk = struct
     summary
 
 
-  let reset_all ~filter () =
-    let reset proc_name =
-      spec_of_procname proc_name
-      |> Option.iter ~f:(fun summary ->
-             let blank_summary = reset summary.proc_desc in
-             store blank_summary )
-    in
-    Procedures.get_all ~filter () |> List.iter ~f:reset
-
-
   let delete pname =
     remove_from_cache pname ;
     DBWriter.delete_spec ~proc_uid:(Procname.to_unique_id pname)
 
+
+  let delete_all ~filter () = Procedures.get_all ~filter () |> List.iter ~f:delete
 
   let iter_filtered_specs ~filter ~f =
     let db = ResultsDatabase.get_database () in

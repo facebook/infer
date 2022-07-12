@@ -37,11 +37,18 @@ end
 
 module TaintedSet : PrettyPrintable.PPSet with type elt = Tainted.t
 
-module MustNotBeTainted : sig
+module TaintSink : sig
   type t = {sink: Taint.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
 end
 
-module MustNotBeTaintedSet : PrettyPrintable.PPSet with type elt = MustNotBeTainted.t
+module TaintSinkSet : PrettyPrintable.PPSet with type elt = TaintSink.t
+
+module TaintProcedure : sig
+  type t = {origin: Taint.origin; proc_name: Procname.t; time: Timestamp.t; trace: Trace.t}
+  [@@deriving compare, equal]
+end
+
+module TaintProcedureSet : PrettyPrintable.PPSet with type elt = TaintProcedure.t
 
 module TaintSanitized : sig
   type t = {sanitizer: Taint.t; time_trace: Timestamp.trace; trace: Trace.t}
@@ -76,7 +83,7 @@ type t =
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
   | MustBeInitialized of Timestamp.t * Trace.t
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-  | MustNotBeTainted of MustNotBeTaintedSet.t
+  | MustNotBeTainted of {sinks: TaintSinkSet.t; procedures: TaintProcedureSet.t}
   | JavaResourceReleased
   | PropagateTaintFrom of taint_in list
   | RefCounted
@@ -145,7 +152,7 @@ module Attributes : sig
   val get_must_be_valid :
     t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
-  val get_must_not_be_tainted : t -> MustNotBeTaintedSet.t
+  val get_must_not_be_tainted : t -> TaintSinkSet.t * TaintProcedureSet.t
 
   val get_written_to : t -> Trace.t option
 

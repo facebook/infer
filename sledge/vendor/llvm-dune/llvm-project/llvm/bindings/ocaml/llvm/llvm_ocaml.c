@@ -80,7 +80,7 @@ void llvm_raise(value Prototype, char *Message) {
 static value llvm_fatal_error_handler;
 
 static void llvm_fatal_error_trampoline(const char *Reason) {
-  callback(llvm_fatal_error_handler, caml_copy_string(Reason));
+  caml_callback(llvm_fatal_error_handler, caml_copy_string(Reason));
 }
 
 value llvm_install_fatal_error_handler(value Handler) {
@@ -176,7 +176,7 @@ static void llvm_remove_diagnostic_handler(LLVMContextRef C) {
   if (LLVMContextGetDiagnosticHandler(C) ==
       llvm_diagnostic_handler_trampoline) {
     value *Handler = (value *)LLVMContextGetDiagnosticContext(C);
-    remove_global_root(Handler);
+    caml_remove_global_root(Handler);
     free(Handler);
   }
 }
@@ -694,7 +694,7 @@ value llvm_classify_value(LLVMValueRef Val) {
   DEFINE_CASE(Val, MDString);
   DEFINE_CASE(Val, UndefValue);
   DEFINE_CASE(Val, PoisonValue);
-  failwith("Unknown Value class");
+  caml_failwith("Unknown Value class");
 }
 
 /* llvalue -> string */
@@ -1027,14 +1027,14 @@ LLVMValueRef llvm_const_float_of_string(LLVMTypeRef RealTy, value S) {
 /* llcontext -> string -> llvalue */
 LLVMValueRef llvm_const_string(LLVMContextRef Context, value Str,
                                value NullTerminate) {
-  return LLVMConstStringInContext(Context, String_val(Str), string_length(Str),
+  return LLVMConstStringInContext(Context, String_val(Str), caml_string_length(Str),
                                   1);
 }
 
 /* llcontext -> string -> llvalue */
 LLVMValueRef llvm_const_stringz(LLVMContextRef Context, value Str,
                                 value NullTerminate) {
-  return LLVMConstStringInContext(Context, String_val(Str), string_length(Str),
+  return LLVMConstStringInContext(Context, String_val(Str), caml_string_length(Str),
                                   0);
 }
 
@@ -1569,7 +1569,7 @@ DEFINE_ITERATORS(instr, Instruction, LLVMBasicBlockRef, LLVMValueRef,
 value llvm_instr_get_opcode(LLVMValueRef Inst) {
   LLVMOpcode o;
   if (!LLVMIsAInstruction(Inst))
-    failwith("Not an instruction");
+    caml_failwith("Not an instruction");
   o = LLVMGetInstructionOpcode(Inst);
   assert(o <= LLVMFreeze);
   return Val_int(o);
@@ -1595,7 +1595,7 @@ value llvm_instr_fcmp_predicate(LLVMValueRef Val) {
 value llvm_instr_get_atomicrmw_binop(LLVMValueRef Inst) {
   LLVMAtomicRMWBinOp o;
   if (!LLVMIsAInstruction(Inst))
-    failwith("Not an instruction");
+    caml_failwith("Not an instruction");
   o = LLVMGetAtomicRMWBinOp(Inst);
   assert(o <= LLVMAtomicRMWBinOpFSub);
   return Val_int(o);
@@ -1604,7 +1604,7 @@ value llvm_instr_get_atomicrmw_binop(LLVMValueRef Inst) {
 /* llvalue -> llvalue */
 LLVMValueRef llvm_instr_clone(LLVMValueRef Inst) {
   if (!LLVMIsAInstruction(Inst))
-    failwith("Not an instruction");
+    caml_failwith("Not an instruction");
   return LLVMInstructionClone(Inst);
 }
 
@@ -1767,7 +1767,7 @@ static struct custom_operations builder_ops = {
     custom_compare_ext_default};
 
 static value alloc_builder(LLVMBuilderRef B) {
-  value V = alloc_custom(&builder_ops, sizeof(LLVMBuilderRef), 0, 1);
+  value V = caml_alloc_custom(&builder_ops, sizeof(LLVMBuilderRef), 0, 1);
   Builder_val(V) = B;
   return V;
 }

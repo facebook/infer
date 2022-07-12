@@ -348,6 +348,11 @@ OPTIONS
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.
 
+       --pulse-taint-config +path
+           Path to a taint analysis configuration file. This file can define
+           --pulse-taint-sources, --pulse-taint-sanitizers,
+           --pulse-taint-sinks, and --pulse-taint-policies.
+
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
            this JSON format:             { "short_description": "<a short description of the issue>",
@@ -637,6 +642,11 @@ SIMPLE LINEAGE OPTIONS
            this off is to make hash collisions more visible; that is, cases
            in which distinct entities get assigned the same ID. (Conversely:
            --simple-lineage-dedup)
+
+       --simple-lineage-include-builtins
+           Activates: Include call/return edges to/from procedures that model
+           primitive Erlang operations, such as constructing a list.
+           (Conversely: --no-simple-lineage-include-builtins)
 
        --simple-lineage-json-report
            Activates: Enable simple lineage report in JSON format.

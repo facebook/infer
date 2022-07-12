@@ -7,21 +7,21 @@
 
 (** Theory Solver *)
 
+open Var.Fresh.Import
+
 (* Theory equation solver state ==========================================*)
 
 type oriented_equality = {var: Trm.t; rep: Trm.t}
 
 type t =
-  { wrt: Var.Set.t
-  ; no_fresh: bool
-  ; fresh: Var.Set.t
+  { no_fresh: bool
   ; solved: oriented_equality list option
   ; pending: (Trm.t * Trm.t) list }
 
 let pp ppf = function
   | {solved= None} -> Format.fprintf ppf "unsat"
-  | {solved= Some solved; fresh; pending} ->
-      Format.fprintf ppf "%a%a : %a" Var.Set.pp_xs fresh
+  | {solved= Some solved; pending} ->
+      Format.fprintf ppf "%a : %a"
         (List.pp ";@ " (fun ppf {var; rep} ->
              Format.fprintf ppf "@[%a ↦ %a@]" Trm.pp var Trm.pp rep ) )
         solved
@@ -62,13 +62,6 @@ let add_solved ~var ~rep s =
 
 let add_pending a b s = {s with pending= (a, b) :: s.pending}
 
-let fresh name s =
-  if s.no_fresh then None
-  else
-    let x, wrt = Var.fresh name ~wrt:s.wrt in
-    let fresh = Var.Set.add x s.fresh in
-    Some (Trm.var x, {s with wrt; fresh})
-
 let solve_poly p q s =
   [%dbg]
     ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp p Trm.pp q)
@@ -90,26 +83,29 @@ let solve_poly p q s =
 (* ⟨n,a⟩[o,l) = β ==> l = |β| ∧ a = (⟨n,c⟩[0,o) ^ β ^ ⟨n,c⟩[o+l,n-o-l))
    where c fresh *)
 let solve_extract a n o l b s =
-  [%dbg]
+  [%dbgs]
     ~call:(fun {pf} ->
       pf "@ %a = %a" Trm.pp
         (Trm.extract ~seq:a ~siz:n ~off:o ~len:l)
         Trm.pp b )
-    ~retn:(fun {pf} -> pf "%a" (Option.pp "%a" pp))
-  @@ fun () ->
-  let+ c, s = fresh "c" s in
-  let o_l = Trm.add o l in
-  let n_o_l = Trm.sub n o_l in
-  let x0 = Trm.extract ~seq:c ~siz:n ~off:Trm.zero ~len:o in
-  let c0 = {Trm.seq= x0; siz= o} in
-  let x1 = Trm.extract ~seq:c ~siz:n ~off:o_l ~len:n_o_l in
-  let c1 = {Trm.seq= x1; siz= n_o_l} in
-  let b, s =
-    match Trm.seq_size b with
-    | None -> ({Trm.seq= b; siz= l}, s)
-    | Some m -> ({Trm.seq= b; siz= m}, add_pending l m s)
-  in
-  add_pending a (Trm.concat [|c0; b; c1|]) s
+    ~retn:(fun {pf} (s', vxd) -> pf "%a%a" Var.Context.pp_diff vxd pp s')
+  @@ fun vx ->
+  if s.no_fresh then s
+  else
+    let c = Var.Fresh.var "c" vx in
+    let c = Trm.var c in
+    let o_l = Trm.add o l in
+    let n_o_l = Trm.sub n o_l in
+    let x0 = Trm.extract ~seq:c ~siz:n ~off:Trm.zero ~len:o in
+    let c0 = {Trm.seq= x0; siz= o} in
+    let x1 = Trm.extract ~seq:c ~siz:n ~off:o_l ~len:n_o_l in
+    let c1 = {Trm.seq= x1; siz= n_o_l} in
+    let b, s =
+      match Trm.seq_size b with
+      | None -> ({Trm.seq= b; siz= l}, s)
+      | Some m -> ({Trm.seq= b; siz= m}, add_pending l m s)
+    in
+    add_pending a (Trm.concat [|c0; b; c1|]) s
 
 (* α₀^…^αᵢ^αⱼ^…^αᵥ = β ==> |α₀^…^αᵥ| = |β| ∧ … ∧ αⱼ = β[n₀+…+nᵢ,nⱼ) ∧ …
    where nₓ ≡ |αₓ| and m = |β| *)
@@ -135,10 +131,10 @@ let solve_concat_splat a0V b s =
   @@ fun () -> Array.fold a0V s ~f:(fun {Trm.seq} s -> add_pending seq b s)
 
 let solve d e s =
-  [%dbg]
+  [%dbgs]
     ~call:(fun {pf} -> pf "@ %a = %a" Trm.pp d Trm.pp e)
-    ~retn:(fun {pf} -> pf "%a" pp)
-  @@ fun () ->
+    ~retn:(fun {pf} (s', vxd) -> pf "%a%a" Var.Context.pp_diff vxd pp s')
+  @@ fun vx ->
   match orient d e with
   (* e' = f' ==> true when e' ≡ f' *)
   | None -> s
@@ -176,12 +172,12 @@ let solve d e s =
         add_solved ~var:e ~rep:v s
   (* ⟨n,a⟩[o,l) = β ==> … ∧ ⟨n,a⟩ = _^β^_ *)
   | Some (Extract {seq= a; siz= n; off= o; len= l}, e) ->
-      Option.value (solve_extract a n o l e s) ~default:s
+      solve_extract a n o l e s vx
   (*
    * Splat
    *)
   (* a^ = b^ ==> a = b *)
-  | Some (Splat a, Splat b) -> s |> add_pending a b
+  | Some (Splat a, Splat b) -> add_pending a b s
   (*
    * Arithmetic
    *)

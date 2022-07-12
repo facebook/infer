@@ -1,0 +1,33 @@
+{
+  "pulse-taint-policies": [
+    { "short_description": "Simple Test",
+      "taint_flows": [
+        { "source_kinds": ["SimpleSource"],
+          "sanitizer_kinds": ["SimpleSanitizer"],
+          "sink_kinds": ["SimpleSink","SecondSimpleSink"]
+        }
+      ]
+    }
+  ],
+  "pulse-taint-sources": [
+      { "class_names": ["InferTaint"],
+        "method_names": ["source"],
+        "kinds": ["SimpleSource"]
+      },
+      {"procedure": "objc_blocktaintSourceParameterBlockBad_1", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
+      {"procedure": "taintSourceParameterBad", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]}
+  ],
+  "pulse-taint-sanitizers": [
+    { "class_names": ["InferTaint"],
+      "method_names": ["sanitizer:"],
+      "kinds": ["SimpleSanitizer"]
+    }
+  ],
+  "pulse-taint-sinks": [
+    { "class_names": ["InferTaint"],
+      "method_names": ["sink:"],
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [0]]
+    }
+  ]
+}

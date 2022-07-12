@@ -580,6 +580,8 @@ OPTIONS
              NO_TRUE_BRANCH_IN_IF_LATENT (disabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
              NULLPTR_DEREFERENCE_LATENT (disabled by default),
+             NULL_ARGUMENT (enabled by default),
+             NULL_ARGUMENT_LATENT (disabled by default),
              NULL_DEREFERENCE (enabled by default),
              OPTIONAL_EMPTY_ACCESS (enabled by default),
              OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default),
@@ -1179,6 +1181,11 @@ OPTIONS
            Regex of procedures that should not be analyzed by Pulse.       
     See also infer-analyze(1).
 
+       --pulse-taint-config +path
+           Path to a taint analysis configuration file. This file can define
+           --pulse-taint-sources, --pulse-taint-sanitizers,
+           --pulse-taint-sinks, and --pulse-taint-policies.           See also infer-analyze(1).
+
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
            this JSON format:             { "short_description": "<a short description of the issue>",
@@ -1360,6 +1367,11 @@ OPTIONS
            this off is to make hash collisions more visible; that is, cases
            in which distinct entities get assigned the same ID. (Conversely:
            --simple-lineage-dedup)           See also infer-analyze(1).
+
+       --simple-lineage-include-builtins
+           Activates: Include call/return edges to/from procedures that model
+           primitive Erlang operations, such as constructing a list.
+           (Conversely: --no-simple-lineage-include-builtins)           See also infer-analyze(1).
 
        --simple-lineage-json-report
            Activates: Enable simple lineage report in JSON format.
@@ -2352,6 +2364,9 @@ INTERNAL OPTIONS
 
        --pulse-skip-procedures-reset
            Cancel the effect of --pulse-skip-procedures.
+
+       --pulse-taint-config-reset
+           Set --pulse-taint-config to the empty list.
 
        --pulse-widen-threshold int
            Under-approximate after int loop iterations

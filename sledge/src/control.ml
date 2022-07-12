@@ -24,7 +24,7 @@ module type Elt = sig
 
   val pp : t pp
   val prio : t -> Priority.t
-  val dnf : t -> t list
+  val dnf : t -> t iter
 end
 
 (** Interface of analysis control scheduler "queues". *)
@@ -168,7 +168,7 @@ module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
     ; last= Add_or_pop_frontier }
 
   let add elt q =
-    let add_elt l = List.fold ~f:RAL.cons (Elt.dnf elt) l in
+    let add_elt l = Iter.fold ~f:RAL.cons (Elt.dnf elt) l in
     match q.last with
     | Add_or_pop_frontier ->
         (* elt is a sibling of the elements of recent, so extend recent *)
@@ -693,11 +693,7 @@ struct
             x y
 
       let equal = [%compare.equal: t]
-
-      let dnf x =
-        List.map
-          ~f:(fun state -> {x with state})
-          (D.Set.to_list (D.dnf x.state))
+      let dnf x = Iter.map ~f:(fun state -> {x with state}) (D.dnf x.state)
     end
 
     module Queue = Queue (Elt)
@@ -954,12 +950,13 @@ struct
         ~dp_goal:(fun fs -> Goal.pp fs goal)
         ~dp_witness:(Hist.dump (Hist.extend ip [history])) ;
     let dnf_states =
-      if Config.function_summaries then D.dnf state else D.Set.of_ state
+      if Config.function_summaries then D.dnf state
+      else Iter.singleton state
     in
     let domain_call =
       D.call tid ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
-    D.Set.fold dnf_states wl ~f:(fun state wl ->
+    Iter.fold dnf_states wl ~f:(fun state wl ->
         match
           if not Config.function_summaries then None
           else

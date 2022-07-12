@@ -845,27 +845,33 @@ module Dom = struct
 
   let update_gated_callees ~callee args
       ({condition_checks= config_checks, latent_config_checks; gated_classes} as astate) =
-    match args with
-    | [(Exp.Sizeof {typ= {desc= Tstruct typ_name}}, _)]
-      when Procname.equal callee BuiltinDecl.__objc_alloc_no_fail ->
-        if ConfigChecks.exists (fun _ -> function True -> true | _ -> false) config_checks then
-          (* Gated by true gate condition *)
-          {astate with gated_classes= GatedClasses.add_gated typ_name gated_classes}
+    let update_gated_class_constructor typ_name =
+      if ConfigChecks.exists (fun _ -> function True -> true | _ -> false) config_checks then
+        (* Gated by true gate condition *)
+        {astate with gated_classes= GatedClasses.add_gated typ_name gated_classes}
+      else
+        let cond =
+          LatentConfigChecks.fold
+            (fun latent_config branch acc ->
+              match branch with True -> LatentConfigs.add latent_config acc | _ -> acc )
+            latent_config_checks LatentConfigs.empty
+        in
+        if LatentConfigs.is_empty cond then
+          (* Ungated by any condition *)
+          {astate with gated_classes= GatedClasses.add typ_name Top gated_classes}
         else
-          let cond =
-            LatentConfigChecks.fold
-              (fun latent_config branch acc ->
-                match branch with True -> LatentConfigs.add latent_config acc | _ -> acc )
-              latent_config_checks LatentConfigs.empty
-          in
-          if LatentConfigs.is_empty cond then
-            (* Ungated by any condition *)
-            {astate with gated_classes= GatedClasses.add typ_name Top gated_classes}
-          else
-            (* Gated by latent configs *)
-            {astate with gated_classes= GatedClasses.add_cond typ_name cond gated_classes}
-    | _ ->
-        astate
+          (* Gated by latent configs *)
+          {astate with gated_classes= GatedClasses.add_cond typ_name cond gated_classes}
+    in
+    let typ_name =
+      match args with
+      | [(Exp.Sizeof {typ= {desc= Tstruct typ_name}}, _)]
+        when Procname.equal callee BuiltinDecl.__objc_alloc_no_fail ->
+          Some typ_name
+      | _ ->
+          if Procname.is_constructor callee then Procname.get_class_type_name callee else None
+    in
+    Option.value_map typ_name ~default:astate ~f:update_gated_class_constructor
 
 
   let update_latent_params formals args astate =

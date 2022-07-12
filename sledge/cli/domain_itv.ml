@@ -213,8 +213,6 @@ let exec_inst tid i q =
       Ok (exec_kill tid reg q)
   | Builtin {reg= None; _} -> Ok q
 
-let enter_scope _ _ q = q
-
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
 [@@deriving sexp_of]
 
@@ -296,7 +294,7 @@ let call ~summaries _ ?child:_ ~globals:_ ~actuals ~areturn ~formals
     in
     (q''', {areturn; caller_q= q})
 
-let dnf q = Set.of_ q
+let dnf q = Iter.singleton q
 let resolve_callee _ _ _ _ = []
 
 type summary = t

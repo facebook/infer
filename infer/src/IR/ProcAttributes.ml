@@ -117,6 +117,16 @@ let get_proc_name attributes = attributes.proc_name
 
 let get_loc attributes = attributes.loc
 
+let to_return_type attributes =
+  if attributes.has_added_return_param then
+    match List.last attributes.formals with
+    | Some (_, {Typ.desc= Tptr (t, _)}, _) ->
+        t
+    | _ ->
+        attributes.ret_type
+  else attributes.ret_type
+
+
 let default translation_unit proc_name =
   { access= Default
   ; captured= []

@@ -23,7 +23,6 @@ let exec_assume _ () _ = Some ()
 let exec_kill _ _ () = ()
 let exec_move _ _ () = ()
 let exec_inst _ _ () = Ok ()
-let enter_scope _ _ () = ()
 
 type from_call = unit [@@deriving compare, equal, sexp]
 
@@ -39,7 +38,7 @@ type term_code = unit [@@deriving compare, sexp_of]
 
 let term _ _ _ _ = ()
 let move_term_code _ _ () () = ()
-let dnf () = Set.of_ ()
+let dnf () = Iter.singleton ()
 let resolve_callee _ _ _ _ = []
 
 type summary = unit

@@ -16,7 +16,7 @@ include Ppx_sexp_conv_lib.Conv
 
 (** Iterators *)
 
-module Iter = Iter
+module Iter = IterLabels
 include Iter.Import
 
 (** Specialize polymorphic comparison to int *)
@@ -82,7 +82,7 @@ let ( <$ ) f x =
   f x ;
   x
 
-let ( let@ ) x f = x @@ f
+let ( let@ ) f x = f @@ x
 
 (** Tuple operations *)
 

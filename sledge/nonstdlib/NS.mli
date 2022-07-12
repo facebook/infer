@@ -159,7 +159,7 @@ module String = String
 
 (** Iterators *)
 
-module Iter = Iter
+module Iter = IterLabels
 include module type of Iter.Import
 
 (** Containers *)

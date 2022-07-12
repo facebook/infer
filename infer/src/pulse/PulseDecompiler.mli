@@ -29,7 +29,13 @@ val add_call_source :
   AbstractValue.t -> CallEvent.t -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list -> t -> t
 
 val add_access_source :
-  AbstractValue.t -> BaseMemory.Access.t -> src:AbstractValue.t -> BaseAddressAttributes.t -> t -> t
+     ?allow_cycle:bool
+  -> AbstractValue.t
+  -> BaseMemory.Access.t
+  -> src:AbstractValue.t
+  -> BaseAddressAttributes.t
+  -> t
+  -> t
 
 type expr [@@deriving compare, equal, yojson_of]
 

@@ -59,6 +59,7 @@ type must_be_valid_reason =
   | InsertionIntoCollectionKey
   | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
+  | NullArgumentWhereNonNullExpected of string
 [@@deriving compare, equal]
 
 let pp_must_be_valid_reason f = function
@@ -72,6 +73,8 @@ let pp_must_be_valid_reason f = function
       F.fprintf f "InsertionIntoCollectionValue"
   | Some (SelfOfNonPODReturnMethod _) ->
       F.fprintf f "SelfOfNonPODReturnMethod"
+  | Some (NullArgumentWhereNonNullExpected _) ->
+      F.fprintf f "NonNullExpected"
 
 
 let issue_type_of_cause ~latent invalidation must_be_valid_reason =
@@ -87,7 +90,9 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
     | Some InsertionIntoCollectionKey | Some InsertionIntoCollectionValue ->
         IssueType.nil_insertion_into_collection ~latent
     | Some (SelfOfNonPODReturnMethod _) ->
-        IssueType.nil_messaging_to_non_pod ~latent )
+        IssueType.nil_messaging_to_non_pod ~latent
+    | Some (NullArgumentWhereNonNullExpected _) ->
+        IssueType.null_argument ~latent )
   | ConstantDereference _ ->
       IssueType.constant_address_dereference ~latent
   | CppDelete | CppDeleteArray ->

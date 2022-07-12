@@ -23,7 +23,6 @@ let init globals =
 
 let join l r = Llair.Global.Set.union l r
 let joinN xs = Set.fold ~f:join xs empty
-let enter_scope _ _ state = state
 let recursion_beyond_bound = `skip
 let post _ _ _ state = state
 let retn _ _ _ from_call post = Llair.Global.Set.union from_call post
@@ -32,7 +31,7 @@ type term_code = unit [@@deriving compare, sexp_of]
 
 let term _ _ _ _ = ()
 let move_term_code _ _ () q = q
-let dnf t = Set.of_ t
+let dnf t = Iter.singleton t
 
 let used_globals exp s =
   Llair.Exp.fold_exps exp s ~f:(fun e s ->

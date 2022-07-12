@@ -458,7 +458,7 @@ let write_html ranges rows chan =
             if
               List.exists ss ~f:(fun s ->
                   match (s : Report.status) with
-                  | Safe _ | Unsafe _ | Ok -> false
+                  | Safe _ | Unsafe _ | Reached_goal _ | Ok -> false
                   | _ -> true )
             then Printf.fprintf ppf " class=\"regress\"" ;
             Printf.fprintf ppf ">%s"
@@ -677,7 +677,15 @@ let cmp perf x y =
               |> fun o -> if o <> 0 then o else String.compare x.name y.name
           | Some _, None -> 1
           | None, Some _ -> -1
-          | None, None -> String.compare x.name y.name )
+          | None, None -> (
+            match (x.times, y.times) with
+            | Some xt, Some yt ->
+                -Float.(compare xt.utime yt.utime)
+                |> fun o ->
+                if o <> 0 then o else String.compare x.name y.name
+            | Some _, None -> 1
+            | None, Some _ -> -1
+            | None, None -> String.compare x.name y.name ) )
         | ( Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete)
           , Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete) ) -> (
           match (x.gcs_deltas, y.gcs_deltas) with

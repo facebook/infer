@@ -91,7 +91,7 @@ let pp_status ppf stat =
       pf "Unsafe: %i (_,%i)" alarms bound
   | Unsafe {alarms; bound; switches} ->
       pf "Unsafe: %i (%i,%i)" alarms switches bound
-  | Reached_goal {steps} -> pf "Reached goal in %i steps" steps
+  | Reached_goal {steps} -> pf "Reached: %i" steps
   | Ok -> pf "Ok"
   | Unsound -> pf "Unsound"
   | Incomplete -> pf "Incomplete"

@@ -255,7 +255,7 @@ let main ~changed_files =
   if not Config.continue_analysis then
     if Config.reanalyze then (
       L.progress "Invalidating procedures to be reanalyzed@." ;
-      Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
+      Summary.OnDisk.delete_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
       L.progress "Done@." )
     else if not Config.incremental_analysis then DBWriter.delete_all_specs () ;
   let source_files = lazy (get_source_files_to_analyze ~changed_files) in

@@ -21,7 +21,20 @@ val call :
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
 
-val check_not_tainted_wrt_sink :
+val gather_taint_dependencies : AbstractValue.t -> AbductiveDomain.t -> AbstractValue.t list
+(** Preorder traversal of the tree formed by taint dependencies of [v] in [astate] *)
+
+val report_flows_to_callee :
+     PathContext.t
+  -> Location.t
+  -> Procname.t
+  -> (BaseStack.value * Typ.t) list
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t
+(** Add callee as a taint procedure and report taint flows to callee actuals *)
+
+val check_flows_wrt_sink :
      PathContext.t
   -> Location.t
   -> Taint.t * Trace.t
@@ -29,4 +42,5 @@ val check_not_tainted_wrt_sink :
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 
-val taint_initial : Tenv.t -> Procdesc.t -> AbductiveDomain.t -> AbductiveDomain.t
+val taint_initial :
+  Tenv.t -> Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t

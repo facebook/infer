@@ -147,7 +147,7 @@ void via_passthrough_bad2_FN(Obj* obj) {
   obj->string_sink(laundered_source);
 }
 
-void taint_arg_source_bad_FN() {
+void taint_arg_source_bad() {
   int source = 1;
   Obj::taint_arg_source(&source);
   __infer_taint_sink((void*)source);

@@ -1,0 +1,11 @@
+{
+  "pulse-taint-sources": [
+      { "procedure": "__infer_taint_source", "kinds": ["SimpleSource"] }
+  ],
+  "pulse-taint-sanitizers": [
+      { "procedure": "__infer_taint_sanitizer", "kinds": ["SimpleSanitizer"] }
+  ],
+  "pulse-taint-sinks": [
+      { "procedure": "__infer_taint_sink", "kinds": ["SimpleSink"] }
+  ]
+}

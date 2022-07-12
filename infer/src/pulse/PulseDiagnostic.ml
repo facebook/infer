@@ -67,7 +67,7 @@ type t =
   | FlowFromTaintSource of
       { tainted: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
-      ; destination: Procname.t
+      ; destination: Taint.origin * Procname.t * Trace.t
       ; location: Location.t }
   | FlowToTaintSink of
       { source: Decompiler.expr * Trace.t
@@ -181,7 +181,7 @@ let get_message diagnostic =
           | `Immediate ->
               ()
           | `Call f ->
-              F.fprintf fmt " in call to %a" CallEvent.describe f
+              F.fprintf fmt " in the call to %a" CallEvent.describe f
         in
         let pp_invalidation_trace line fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
@@ -224,6 +224,10 @@ let get_message diagnostic =
           | Some BlockCall ->
               F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block" pp_access_trace
                 access_trace
+          | Some (NullArgumentWhereNonNullExpected procname) ->
+              F.fprintf fmt
+                "%a is passed as argument to %s; this function requires a non-nil argument"
+                pp_prefix "nil" procname
           | None ->
               F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
         in
@@ -355,9 +359,9 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
         Taint.pp sink
-  | FlowFromTaintSource {tainted; source= source, _; destination} ->
-      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
-        Procname.pp destination
+  | FlowFromTaintSource {tainted; source= source, _; destination= origin, proc_name, _} ->
+      F.asprintf "`%a` is tainted by %a and flows to %a %a" Decompiler.pp_expr tainted Taint.pp
+        source Taint.pp_origin origin Procname.pp proc_name
   | FlowToTaintSink {source= expr, _; sanitizers; sink= sink, _} ->
       let pp_sanitizers fmt sanitizers =
         if Attribute.TaintSanitizedSet.is_empty sanitizers then ()
@@ -490,12 +494,10 @@ let get_trace = function
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | RetainCycle {assignment_traces; location} ->
-      List.fold_right assignment_traces
-        ~init:[Errlog.make_trace_element 0 location "retain cycle here" []]
-        ~f:(fun assignment_trace errlog ->
-          Trace.add_to_errlog ~nesting:1
-            ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
-            assignment_trace errlog )
+      let errlog = [Errlog.make_trace_element 0 location "retain cycle here" []] in
+      Trace.synchronous_add_to_errlog ~nesting:1
+        ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
+        assignment_traces errlog
   | ErlangError (Badkey {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad key here" []]
@@ -543,8 +545,13 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
-  | FlowFromTaintSource {source= _, source_history} ->
-      ValueHistory.add_to_errlog ~nesting:0 source_history @@ []
+  | FlowFromTaintSource
+      {source= _, source_history; destination= origin, proc_name, destination_trace} ->
+      ValueHistory.add_to_errlog ~nesting:0 source_history
+      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0 destination_trace
+           ~pp_immediate:(fun fmt ->
+             F.fprintf fmt "%a %a" Taint.pp_origin origin Procname.pp proc_name )
+      @@ []
   | FlowToTaintSink {source= _, history; sanitizers; sink= sink, sink_trace} ->
       let add_to_errlog = Trace.add_to_errlog ~include_value_history:false ~nesting:0 in
       add_to_errlog history ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocated here")
