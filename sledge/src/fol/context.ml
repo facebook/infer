@@ -795,10 +795,14 @@ let propagate1 {Theory.var= v; rep= t} x =
 let solve ~wrt ~xs d e pending =
   [%dbg]
     ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp d Trm.pp e)
-    ~retn:(fun {pf} -> pf "%a" Theory.pp)
+    ~retn:(fun {pf} (s, vx) ->
+      pf "%a%a" Var.Context.pp_diff (Var.Context.empty, vx) Theory.pp s )
   @@ fun () ->
-  Theory.solve d e
-    {wrt; no_fresh= false; fresh= xs; solved= Some []; pending}
+  let vx =
+    Var.Context.with_xs xs (Var.Context.of_vars (Var.Set.union wrt xs))
+  in
+  Var.Fresh.gen vx
+    (Theory.solve d e {no_fresh= false; solved= Some []; pending})
 
 let rec propagate_ ~wrt x =
   match x.pnd with
@@ -810,11 +814,11 @@ let rec propagate_ ~wrt x =
       if Trm.equal a' b' then propagate_ ~wrt {x with pnd}
       else
         match solve ~wrt ~xs:x.xs a' b' pnd with
-        | {solved= Some solved; wrt; fresh; pending} ->
-            let xs = Var.Set.union x.xs fresh in
+        | {solved= Some solved; pending}, vx ->
+            let xs = Var.Context.xs vx in
             let x = {x with xs; pnd= pending} in
             propagate_ ~wrt (List.fold ~f:propagate1 solved x)
-        | {solved= None} -> {x with sat= false; pnd= []} )
+        | {solved= None}, _ -> {x with sat= false; pnd= []} )
 
 let propagate ~wrt x =
   [%dbg]
@@ -1092,21 +1096,23 @@ let solve_poly_eq us p' q' subst =
   [%Dbg.retn fun {pf} subst' ->
     pf "@[%a@]" Subst.pp_diff (subst, Option.value subst' ~default:subst)]
 
-let rec solve_pending (s : Theory.t) soln =
+let rec solve_pending (s : Theory.t) soln vx =
   match s.pending with
   | (a, b) :: pending -> (
       let a' = Subst.norm soln a in
       let b' = Subst.norm soln b in
-      match Theory.solve a' b' {s with pending} with
+      match Theory.solve a' b' {s with pending} vx with
       | {solved= Some solved} as s ->
           solve_pending {s with solved= Some []}
             (List.fold ~f:Subst.compose1 solved soln)
+            vx
       | {solved= None} -> None )
   | [] -> Some soln
 
 let solve_seq_eq us e' f' subst =
   [%Dbg.call fun {pf} -> pf "@ %a = %a" Trm.pp e' Trm.pp f']
   ;
+  let@ vx = Var.Fresh.gen_ (Var.Context.of_vars us) in
   let x_ito_us x u =
     (not (Var.Set.subset (Trm.fv x) ~of_:us))
     && Var.Set.subset (Trm.fv u) ~of_:us
@@ -1117,16 +1123,12 @@ let solve_seq_eq us e' f' subst =
     in
     solve_pending
       (Theory.solve_concat ms a n
-         { wrt= Var.Set.empty
-         ; no_fresh= true
-         ; fresh= Var.Set.empty
-         ; solved= Some []
-         ; pending= [] } )
+         {no_fresh= true; solved= Some []; pending= []} )
       subst
   in
   ( match ((e' : Trm.t), (f' : Trm.t)) with
-  | (Concat ms as c), a when x_ito_us c a -> solve_concat c ms a
-  | a, (Concat ms as c) when x_ito_us c a -> solve_concat c ms a
+  | (Concat ms as c), a when x_ito_us c a -> solve_concat c ms a vx
+  | a, (Concat ms as c) when x_ito_us c a -> solve_concat c ms a vx
   | (Var _ as v), u when x_ito_us v u ->
       Some (Subst.compose1 {var= v; rep= u} subst)
   | u, (Var _ as v) when x_ito_us v u ->
