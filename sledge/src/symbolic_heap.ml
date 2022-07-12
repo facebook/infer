@@ -889,20 +889,6 @@ module Sh = struct
       pf "%a" pp_raw q' ;
       invariant q']
 
-  let norm s xq =
-    [%Dbg.call fun {pf} ->
-      pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw xq ;
-      assert (
-        let unbound = Var.Set.diff (Context.Subst.fv s) (T.us xq) in
-        Var.Set.is_empty unbound
-        || fail "unbound subst vars: %a" Var.Set.pp unbound () )]
-    ;
-    (if Context.Subst.is_empty s then xq else norm s xq)
-    |>
-    [%Dbg.retn fun {pf} q' ->
-      pf "%a" pp_raw q' ;
-      invariant q']
-
   let rec normalize_ ((q, _) as xq) =
     [%Dbg.call fun {pf} -> pf "@ %a" pp_raw xq]
     ;
