@@ -12,7 +12,11 @@
     successively. *)
 type +'a t = ('a -> unit) -> unit
 
-type +'a iter = 'a t
+module Import : sig
+  type +'a iter = 'a t
+end
+
+include module type of Import
 
 (** {b NOTE} Type [('a, 'b) t2 = ('a -> 'b -> unit) -> unit] has been
     removed and subsumed by [('a * 'b) t]
@@ -249,12 +253,12 @@ val keep_some : 'a option t -> 'a t
 
     @since 1.0 *)
 
-val keep_ok : ('a, _) Result.result t -> 'a t
+val keep_ok : ('a, _) result t -> 'a t
 (** [keep_ok l] retains only elements of the form [Ok x].
 
     @since 1.0 *)
 
-val keep_error : (_, 'e) Result.result t -> 'e t
+val keep_error : (_, 'e) result t -> 'e t
 (** [keep_error l] retains only elements of the form [Error x].
 
     @since 1.0 *)
@@ -655,10 +659,27 @@ val bools : bool t
 
     @since 0.9 *)
 
-val of_set : (module Set.S with type elt = 'a and type t = 'b) -> 'b -> 'a t
+module type Iterable = sig
+  type elt
+  type t
+
+  val iter : t -> f:(elt -> unit) -> unit
+end
+
+val of_set :
+  (module Iterable with type elt = 'a and type t = 'b) -> 'b -> 'a t
 (** Convert the given set to an iterator. The set module must be provided. *)
 
-val to_set : (module Set.S with type elt = 'a and type t = 'b) -> 'a t -> 'b
+module type Addable = sig
+  type elt
+  type t
+
+  val empty : t
+  val add : elt -> t -> t
+end
+
+val to_set :
+  (module Addable with type elt = 'a and type t = 'b) -> 'a t -> 'b
 (** Convert the iterator to a set, given the proper set module *)
 
 type 'a gen = unit -> 'a option
@@ -678,7 +699,8 @@ val to_gen : 'a t -> 'a gen
 
 module Set : sig
   module type S = sig
-    include Set.S
+    type elt
+    type t
 
     val of_iter : elt iter -> t
     val to_iter : t -> elt iter
@@ -693,17 +715,23 @@ module Set : sig
   end
 
   (** Create an enriched Set module from the given one *)
-  module Adapt (X : Set.S) : S with type elt = X.elt and type t = X.t
+  module Adapt (X : sig
+    type elt
+    type t
 
-  (** Functor to build an extended Set module from an ordered type *)
-  module Make (X : Set.OrderedType) : S with type elt = X.t
+    val empty : t
+    val add : elt -> t -> t
+    val iter : (elt -> unit) -> t -> unit
+    val elements : t -> elt list
+  end) : S with type elt := X.elt and type t := X.t
 end
 
 (** {3 Maps} *)
 
 module Map : sig
   module type S = sig
-    include Map.S
+    type key
+    type +!'a t
 
     val to_iter : 'a t -> (key * 'a) iter
     val of_iter : (key * 'a) iter -> 'a t
@@ -720,10 +748,15 @@ module Map : sig
   end
 
   (** Adapt a pre-existing Map module to make it iterator-aware *)
-  module Adapt (M : Map.S) : S with type key = M.key and type 'a t = 'a M.t
+  module Adapt (M : sig
+    type key
+    type +!'a t
 
-  (** Create an enriched Map module, with iterator-aware functions *)
-  module Make (V : Map.OrderedType) : S with type key = V.t
+    val empty : 'a t
+    val add : key -> 'a -> 'a t -> 'a t
+    val iter : (key -> 'a -> unit) -> 'a t -> unit
+    val bindings : 'a t -> (key * 'a) list
+  end) : S with type key := M.key and type 'a t := 'a M.t
 end
 
 (** {2 Random iterators} *)

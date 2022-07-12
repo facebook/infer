@@ -3,12 +3,19 @@
 
 (** {1 Simple and Efficient Iterators} *)
 
-open Iter_shims_
+module Array = Stdlib.Array
+module Hashtbl = Stdlib.Hashtbl
+module List = Stdlib.List
+module String = Stdlib.String
 
 (** Iter abstract iterator type *)
 type 'a t = ('a -> unit) -> unit
 
-type 'a iter = 'a t
+module Import = struct
+  type 'a iter = 'a t
+end
+
+include Import
 
 (*$inject
   let pp_ilist = Q.Print.(list int)
@@ -510,7 +517,7 @@ let uniq ?(eq = fun x y -> x = y) seq k =
 *)
 
 let sort_uniq (type elt) ?(cmp = Stdlib.compare) seq =
-  let module S = Set.Make (struct
+  let module S = Stdlib.Set.Make (struct
     type t = elt
 
     let compare = cmp
@@ -1149,12 +1156,27 @@ let bools k =
   k false ;
   k true
 
+module type Iterable = sig
+  type elt
+  type t
+
+  val iter : t -> f:(elt -> unit) -> unit
+end
+
 let of_set (type s v) m set =
-  let module S = (val m : Set.S with type t = s and type elt = v) in
-  fun k -> S.iter k set
+  let module S = (val m : Iterable with type t = s and type elt = v) in
+  fun k -> S.iter ~f:k set
+
+module type Addable = sig
+  type elt
+  type t
+
+  val empty : t
+  val add : elt -> t -> t
+end
 
 let to_set (type s v) m seq =
-  let module S = (val m : Set.S with type t = s and type elt = v) in
+  let module S = (val m : Addable with type t = s and type elt = v) in
   fold (fun set x -> S.add x set) S.empty seq
 
 type 'a gen = unit -> 'a option
@@ -1185,7 +1207,8 @@ let to_gen seq =
 
 module Set = struct
   module type S = sig
-    include Set.S
+    type elt
+    type t
 
     val of_iter : elt iter -> t
     val to_iter : t -> elt iter
@@ -1200,25 +1223,23 @@ module Set = struct
   end
 
   (** Create an enriched Set module from the given one *)
-  module Adapt (X : Set.S) : S with type elt = X.elt and type t = X.t =
-  struct
+  module Adapt (X : sig
+    type elt
+    type t
+
+    val empty : t
+    val add : elt -> t -> t
+    val iter : (elt -> unit) -> t -> unit
+    val elements : t -> elt list
+  end) : S with type elt := X.elt and type t := X.t = struct
     let to_iter_ set k = X.iter k set
     let of_iter_ seq = fold (fun set x -> X.add x set) X.empty seq
-
-    include X
-
     let to_iter = to_iter_
     let of_iter = of_iter_
     let to_seq = to_iter_
     let of_seq = of_iter_
-    let of_list l = List.fold_left (fun set x -> add x set) empty l
-    let to_list = elements
-  end
-
-  (** Functor to build an extended Set module from an ordered type *)
-  module Make (X : Set.OrderedType) = struct
-    module MySet = Set.Make (X)
-    include Adapt (MySet)
+    let of_list l = List.fold_left (fun set x -> X.add x set) X.empty l
+    let to_list = X.elements
   end
 end
 
@@ -1226,7 +1247,8 @@ end
 
 module Map = struct
   module type S = sig
-    include Map.S
+    type key
+    type +!'a t
 
     val to_iter : 'a t -> (key * 'a) iter
     val of_iter : (key * 'a) iter -> 'a t
@@ -1243,26 +1265,23 @@ module Map = struct
   end
 
   (** Adapt a pre-existing Map module to make it iterator-aware *)
-  module Adapt (M : Map.S) = struct
-    let to_iter_ m = from_iter (fun k -> M.iter (fun x y -> k (x, y)) m)
-    let of_iter_ seq = fold (fun m (k, v) -> M.add k v m) M.empty seq
+  module Adapt (M : sig
+    type key
+    type +!'a t
+
+    val empty : 'a t
+    val add : key -> 'a -> 'a t -> 'a t
+    val iter : (key -> 'a -> unit) -> 'a t -> unit
+    val bindings : 'a t -> (key * 'a) list
+  end) : S with type key := M.key and type 'a t := 'a M.t = struct
+    let to_iter m = from_iter (fun k -> M.iter (fun x y -> k (x, y)) m)
+    let of_iter seq = fold (fun m (k, v) -> M.add k v m) M.empty seq
     let keys m = from_iter (fun k -> M.iter (fun x _ -> k x) m)
     let values m = from_iter (fun k -> M.iter (fun _ y -> k y) m)
-    let of_list l = of_iter_ (of_list l)
-    let to_list x = to_list (to_iter_ x)
-
-    include M
-
-    let to_iter = to_iter_
-    let of_iter = of_iter_
-    let to_seq = to_iter_
-    let of_seq = of_iter_
-  end
-
-  (** Create an enriched Map module, with iterator-aware functions *)
-  module Make (V : Map.OrderedType) : S with type key = V.t = struct
-    module M = Map.Make (V)
-    include Adapt (M)
+    let of_list l = of_iter (of_list l)
+    let to_list = M.bindings
+    let to_seq = to_iter
+    let of_seq = of_iter
   end
 end
 
