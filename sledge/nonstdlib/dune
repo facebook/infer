@@ -6,14 +6,11 @@
 (library
  (name NS)
  (public_name nonstdlib)
- (libraries containers containers-data core_kernel iter sexplib stdio zarith
-   dbg)
+ (libraries containers containers-data core_kernel sexplib stdio zarith dbg)
  (flags
   (:standard -w -no-cmx-file))
  (preprocess
   (pps ppx_sledge ppx_dbg))
  (inline_tests))
-
-(dirs :standard \ iter)
 
 (include_subdirs unqualified)

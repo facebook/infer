@@ -16,7 +16,7 @@ include Ppx_sexp_conv_lib.Conv
 
 (** Iterators *)
 
-module Iter = Iter
+module Iter = IterLabels
 include Iter.Import
 
 (** Specialize polymorphic comparison to int *)

@@ -35,6 +35,7 @@ struct
   include M.Provide_equal (Key)
   include M.Provide_sexp_of (Key)
   module Provide_of_sexp = M.Provide_of_sexp
+  include Iter.Map.Adapt (M)
 
   let empty = M.empty
   let singleton = M.singleton
@@ -179,13 +180,6 @@ struct
           | `Stop r -> raise_notrace (Stop r) ) ;
       finish !state
     with Stop r -> r
-
-  let keys m = Iter.from_iter (fun f -> M.iter (fun k _ -> f k) m)
-  let values m = Iter.from_iter (fun f -> M.iter (fun _ v -> f v) m)
-  let to_iter m = Iter.from_iter (fun f -> M.iter (fun k v -> f (k, v)) m)
-  let of_iter s = Iter.fold s M.empty ~f:(fun (k, v) m -> M.add k v m)
-  let to_list = M.bindings
-  let of_list l = List.fold_left l M.empty ~f:(fun m (k, v) -> M.add k v m)
 
   let symmetric_diff l r ~eq =
     let seq = ref Iter.empty in

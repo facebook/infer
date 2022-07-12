@@ -32,6 +32,7 @@ struct
   include S.Provide_equal (Elt)
   include S.Provide_sexp_of (Elt)
   module Provide_of_sexp = S.Provide_of_sexp
+  include Iter.Set.Adapt (S)
 
   let empty = S.empty
   let of_ = S.singleton
@@ -87,11 +88,6 @@ struct
 
   let reduce xs ~f =
     match pop xs with Some (x, xs) -> Some (fold ~f xs x) | None -> None
-
-  let to_list = S.elements
-  let of_list = S.of_list
-  let to_iter s = Iter.from_iter (fun f -> S.iter f s)
-  let of_iter s = Iter.fold ~f:add s S.empty
 
   let pp_full ?pre ?suf ?(sep = (",@ " : (unit, unit) fmt)) pp_elt fs x =
     List.pp ?pre ?suf sep pp_elt fs (S.elements x)

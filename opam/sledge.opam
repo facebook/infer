@@ -22,7 +22,6 @@ depends: [
   "dune" {build & >= "3.0"}
   "dune-build-info" {build}
   "fpath"
-  "iter"
   "memtrace"
   "mtime"
   "ppx_compare"
