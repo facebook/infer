@@ -37,6 +37,25 @@ module type S = sig
   (** Create a variable identified by [id]. The [id] uniquely identifies the
       variable, and must be positive. *)
 
-  (** Variable renaming substitutions *)
-  module Subst : Subst.S with type var := t with type set := Set.t
+  (** Renaming Substitutions: injective maps from variables to variables *)
+  module Subst : sig
+    type var := t
+    type t [@@deriving compare, equal, sexp]
+    type x = {sub: t; dom: Set.t; rng: Set.t}
+
+    val pp : t pp
+    val empty : t
+    val freshen : Set.t -> wrt:Set.t -> x * Set.t
+    val invert : t -> t
+
+    val restrict_dom : t -> Set.t -> x
+    (** restrict the domain of a substitution to a set, and yield the range
+        of the unrestricted substitution *)
+
+    val is_empty : t -> bool
+    val domain : t -> Set.t
+    val range : t -> Set.t
+    val fold : t -> 's -> f:(var -> var -> 's -> 's) -> 's
+    val apply : t -> var -> var
+  end
 end
