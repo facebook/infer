@@ -91,7 +91,7 @@ let%test_module _ =
                 (exists ~$[x_] (pure (x = i 2))) ) )
       in
       pp q ;
-      pp_djn (dnf q) ;
+      pp_djn (Xsh.Set.of_iter (dnf q)) ;
       [%expect
         {|
           ( (  0 = %x_7 ∧ emp) ∨ (  ( (  emp) ∨ (  1 = %y_8 ∧ emp) )) )
@@ -112,7 +112,7 @@ let%test_module _ =
                    (exists ~$[x_] (pure (x = i 2))) ) ) )
       in
       pp q ;
-      pp_djn (dnf q) ;
+      pp_djn (Xsh.Set.of_iter (dnf q)) ;
       [%expect
         {|
           ( (  emp) ∨ (  ( (  emp) ∨ (  1 = %y_8 ∧ emp) )) )

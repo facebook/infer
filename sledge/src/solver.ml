@@ -708,17 +708,11 @@ let excise_dnf : Xsh.t -> Var.Set.t -> Xsh.t -> Xsh.t option =
     let zs, min = Xsh.bind_exists minuend ~wrt:xs in
     let us = Xsh.us min in
     let+ remainder =
-      Iter.find_map
-        ~f:(excise_subtrahend us min zs)
-        (Xsh.Set.to_iter dnf_subtrahend)
+      Iter.find_map ~f:(excise_subtrahend us min zs) dnf_subtrahend
     in
     Xsh.Set.add remainder remainders
   in
-  let+ rs =
-    Iter.fold_opt ~f:from_minuend
-      (Xsh.Set.to_iter dnf_minuend)
-      Xsh.Set.empty
-  in
+  let+ rs = Iter.fold_opt ~f:from_minuend dnf_minuend Xsh.Set.empty in
   Xsh.extend_us (Var.Set.union (Xsh.us minuend) xs) (Xsh.orN rs)
 
 let query_count = ref (-1)

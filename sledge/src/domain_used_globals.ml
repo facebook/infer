@@ -31,7 +31,7 @@ type term_code = unit [@@deriving compare, sexp_of]
 
 let term _ _ _ _ = ()
 let move_term_code _ _ () q = q
-let dnf t = Set.of_ t
+let dnf t = Iter.singleton t
 
 let used_globals exp s =
   Llair.Exp.fold_exps exp s ~f:(fun e s ->

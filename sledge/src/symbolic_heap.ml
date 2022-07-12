@@ -782,17 +782,11 @@ module Xsh = struct
     add_disjunct Iter.empty sjn (xs, conjuncts) disjuncts
 
   let dnf q =
-    [%Dbg.call fun {pf} -> pf "@ %a" pp q]
-    ;
     let conj sjn conjuncts = sjn :: conjuncts in
     let disj (xs, conjuncts) disjuncts =
       Set.add (exists xs (starN conjuncts)) disjuncts
     in
-    fold_dnf ~conj ~disj q (Var.Set.empty, []) Set.empty
-    |>
-    [%Dbg.retn fun {pf} -> pf "%a" pp_djn]
-
-  let iter_dnf q f = Set.iter (dnf q) ~f
+    Set.to_iter (fold_dnf ~conj ~disj q (Var.Set.empty, []) Set.empty)
 
   (** Logical query *)
 

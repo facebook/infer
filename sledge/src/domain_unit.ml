@@ -38,7 +38,7 @@ type term_code = unit [@@deriving compare, sexp_of]
 
 let term _ _ _ _ = ()
 let move_term_code _ _ () () = ()
-let dnf () = Set.of_ ()
+let dnf () = Iter.singleton ()
 let resolve_callee _ _ _ _ = []
 
 type summary = unit

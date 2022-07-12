@@ -15,7 +15,7 @@ module type Domain = sig
   val init : Llair.GlobalDefn.t iarray -> t
   val join : t -> t -> t
   val joinN : Set.t -> t
-  val dnf : t -> Set.t
+  val dnf : t -> t iter
   val exec_assume : ThreadID.t -> t -> Llair.Exp.t -> t option
   val exec_kill : ThreadID.t -> Llair.Reg.t -> t -> t
   val exec_move : ThreadID.t -> (Llair.Reg.t * Llair.Exp.t) iarray -> t -> t

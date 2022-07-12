@@ -294,7 +294,7 @@ let call ~summaries _ ?child:_ ~globals:_ ~actuals ~areturn ~formals
     in
     (q''', {areturn; caller_q= q})
 
-let dnf q = Set.of_ q
+let dnf q = Iter.singleton q
 let resolve_callee _ _ _ _ = []
 
 type summary = t

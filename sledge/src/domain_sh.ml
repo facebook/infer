@@ -121,7 +121,7 @@ let garbage_collect q ~wrt =
   [%Dbg.call fun {pf} -> pf "@ %a" pp q]
   ;
   (* only support DNF for now *)
-  assert (List.is_empty (Xsh.djns q)) ;
+  assert (Iter.length (Xsh.dnf q) = 1) ;
   let rec all_reachable_vars previous current q =
     if Term.Set.equal previous current then current
     else
@@ -315,7 +315,7 @@ let resolve_callee lookup tid ptr q =
     Var.fresh "callee" ~wrt:(Var.Set.union (Xsh.us q) (Xsh.xs q))
   in
   let q = Xsh.and_ (Formula.eq (X.term tid ptr) (Term.var ptr_var)) q in
-  Iter.fold (Xsh.iter_dnf q) [] ~f:(fun disj ->
+  Iter.fold (Xsh.dnf q) [] ~f:(fun disj ->
       Context.class_of (Xsh.ctx disj) (Term.var ptr_var)
       |> List.filter_map ~f:(X.lookup_func lookup)
       |> List.append )

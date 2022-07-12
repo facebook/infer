@@ -163,10 +163,8 @@ module Xsh : sig
   (** Enumerate the cubes and clauses of a disjunctive-normal form
       expansion. *)
 
-  val dnf : t -> Set.t
+  val dnf : t -> t iter
   (** Convert to disjunctive-normal form. *)
-
-  val iter_dnf : t -> t iter
 
   (**/**)
 
