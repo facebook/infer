@@ -23,7 +23,7 @@ analyze/loop.bc:	Safe
 analyze/nested_loop_branch.bc:	Safe (_,5)
 analyze/nonreducible_call_graph.bc:	Safe (_,5)
 analyze/recursion.bc:	Safe (_,5)
-analyze/reverse_negative_sublists.bc:	Timeout
+analyze/reverse_negative_sublists.bc:	Safe (_,5)
 analyze/sll_insertion_sort.bc:	Safe (_,5)
 analyze/sll_interleave.bc:	Safe (_,5)
 analyze/struct_array_copy.bc:	Safe
