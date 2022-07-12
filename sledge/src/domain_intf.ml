@@ -21,7 +21,6 @@ module type Domain = sig
   val exec_move : ThreadID.t -> (Llair.Reg.t * Llair.Exp.t) iarray -> t -> t
   val exec_inst : ThreadID.t -> Llair.inst -> t -> t Or_alarm.t
   val resolve_int : ThreadID.t -> t -> Llair.Exp.t -> int list
-  val enter_scope : ThreadID.t -> Llair.Reg.Set.t -> t -> t
 
   type from_call [@@deriving sexp_of]
 

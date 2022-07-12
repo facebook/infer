@@ -213,8 +213,6 @@ let exec_inst tid i q =
       Ok (exec_kill tid reg q)
   | Builtin {reg= None; _} -> Ok q
 
-let enter_scope _ _ q = q
-
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
 [@@deriving sexp_of]
 

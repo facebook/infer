@@ -71,9 +71,6 @@ module Make (State_domain : State_domain_sig) = struct
     let+ next = State_domain.exec_inst tid inst current in
     (entry, next)
 
-  let enter_scope tid regs (entry, current) =
-    (entry, State_domain.enter_scope tid regs current)
-
   type from_call =
     {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
   [@@deriving sexp_of]

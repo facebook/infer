@@ -23,7 +23,6 @@ let exec_assume _ () _ = Some ()
 let exec_kill _ _ () = ()
 let exec_move _ _ () = ()
 let exec_inst _ _ () = Ok ()
-let enter_scope _ _ () = ()
 
 type from_call = unit [@@deriving compare, equal, sexp]
 

@@ -112,11 +112,6 @@ let exec_inst tid inst pre =
       Exec.builtin pre areturn name actuals |> or_alarm )
   |> Or_alarm.map ~f:simplify
 
-let enter_scope tid regs q =
-  let vars = X.regs tid regs in
-  assert (Var.Set.disjoint vars q.Sh.us) ;
-  Sh.extend_us vars q
-
 let value_determined_by ctx us a =
   List.exists (Context.class_of ctx a) ~f:(fun b ->
       Term.Set.subset (Term.Set.of_iter (Term.atoms b)) ~of_:us )
