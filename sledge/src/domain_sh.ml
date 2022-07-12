@@ -9,6 +9,7 @@
 
 module X = Llair_to_Fol
 open Fol
+open Symbolic_heap
 
 type t = Sh.t [@@deriving compare, equal, sexp]
 

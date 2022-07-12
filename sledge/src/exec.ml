@@ -8,6 +8,7 @@
 (** Symbolic Execution *)
 
 open Fol
+open Symbolic_heap
 
 [@@@warning "+missing-record-field-pattern"]
 

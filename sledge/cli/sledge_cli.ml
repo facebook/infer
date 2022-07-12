@@ -217,10 +217,11 @@ let analyze =
     let module Queue = (val queue) in
     (match seed with None -> Random.self_init () | Some n -> Random.init n) ;
     Llair.cct_schedule_points := cct_schedule_points ;
-    Sh.do_normalize := normalize_states ;
+    Symbolic_heap.do_normalize := normalize_states ;
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
-    Option.iter dump_simplify ~f:(fun n -> Sh.dump_simplify := n) ;
+    Option.iter dump_simplify ~f:(fun n ->
+        Symbolic_heap.Sh.dump_simplify := n ) ;
     at_exit (fun () -> Report.coverage pgm) ;
     ( match goal_trace with
     | None ->

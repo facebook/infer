@@ -7,6 +7,7 @@
 
 open Sledge
 open Fol
+open Symbolic_heap
 
 let%test_module _ =
   ( module struct

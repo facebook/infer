@@ -8,6 +8,7 @@
 (** Frame Inference Solver over Symbolic Heaps *)
 
 open Fol
+open Symbolic_heap
 
 module Goal : sig
   (** Excision judgment

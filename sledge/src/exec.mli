@@ -8,6 +8,7 @@
 (** Symbolic Execution *)
 
 open Fol
+open Symbolic_heap
 
 val assume : Sh.t -> Formula.t -> Sh.t
 val kill : Sh.t -> Var.t -> Sh.t

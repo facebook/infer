@@ -8,6 +8,7 @@
 (** Frame Inference Solver over Symbolic Heaps *)
 
 open Fol
+open Symbolic_heap
 
 val infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option
 (** If [infer_frame p xs q] is [Some r], then [p ⊢ ∃xs. q * r]. The
