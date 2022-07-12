@@ -172,7 +172,6 @@ module Var = struct
 
   module Subst = struct
     type t = V.t Map.t [@@deriving compare, equal, sexp_of]
-    type x = {sub: t; dom: Set.t; rng: Set.t}
 
     let t_of_sexp = Map.t_of_sexp V.t_of_sexp
     let pp = Map.pp V.pp V.pp
@@ -199,21 +198,9 @@ module Var = struct
           Map.add_exn ~key:data ~data:key sub' )
       |> check invariant
 
-    let restrict_dom sub0 vs =
-      Map.fold sub0 {sub= sub0; dom= Set.empty; rng= Set.empty}
-        ~f:(fun ~key ~data z ->
-          let rng = Set.add data z.rng in
-          if not (Set.mem key vs) then {z with dom= Set.add key z.dom; rng}
-          else (
-            assert (
-              (* all substs are injective, so the current mapping is the
-                 only one that can cause [data] to be in [rng] *)
-              (not (Set.mem data (range (Map.remove key sub0))))
-              || violates invariant sub0 ) ;
-            {z with sub= Map.remove key z.sub; rng} ) )
-      |> check (fun {sub; dom; rng} ->
-             assert (Set.equal dom (domain sub)) ;
-             assert (Set.equal rng (range sub0)) )
+    let restrict_dom sub vs =
+      Map.fold sub sub ~f:(fun ~key ~data:_ z ->
+          if not (Set.mem key vs) then z else Map.remove key z )
 
     let apply sub v = Map.find v sub |> Option.value ~default:v
   end

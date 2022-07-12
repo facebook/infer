@@ -1014,8 +1014,9 @@ module Xsh = struct
   let rename sub xq =
     [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp_raw xq]
     ;
-    let xsub = Var.Subst.restrict_dom sub (xs xq) in
-    lift ~wrt:xsub.rng ~f:(Sh.rename xsub.sub) xq
+    let wrt = Var.Subst.range sub in
+    let sub = Var.Subst.restrict_dom sub (xs xq) in
+    lift ~wrt ~f:(Sh.rename sub) xq
     |>
     [%Dbg.retn fun {pf} xq' ->
       pf "%a" pp_raw xq' ;

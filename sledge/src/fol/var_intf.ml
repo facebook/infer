@@ -40,15 +40,13 @@ module type S = sig
   module Subst : sig
     type var := t
     type t [@@deriving compare, equal, sexp]
-    type x = {sub: t; dom: Set.t; rng: Set.t}
 
     val pp : t pp
     val empty : t
     val invert : t -> t
 
-    val restrict_dom : t -> Set.t -> x
-    (** restrict the domain of a substitution to exclude a set, and yield
-        the range of the unrestricted substitution *)
+    val restrict_dom : t -> Set.t -> t
+    (** restrict the domain of a substitution to exclude a set *)
 
     val is_empty : t -> bool
     val domain : t -> Set.t
