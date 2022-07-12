@@ -116,34 +116,42 @@ module Sh = struct
     then h
     else {loc; bas; len; siz; cnt}
 
-  let fold_terms_seg {loc; bas; len; siz; cnt} s ~f =
-    f loc (f bas (f len (f siz (f cnt s))))
+  let iter_terms_seg {loc; bas; len; siz; cnt} ~f =
+    f loc ;
+    f bas ;
+    f len ;
+    f siz ;
+    f cnt
 
-  let fold_vars_seg seg s ~f =
-    fold_terms_seg ~f:(Iter.fold ~f << Term.vars) seg s
+  let iter_vars_seg seg ~f =
+    iter_terms_seg ~f:(fun e -> Iter.iter ~f (Term.vars e)) seg
 
-  let fold_vars_stem ~ignore_ctx ~ignore_pure {ctx; pure; heap; djns= _} s
-      ~f =
-    let unless flag f s = if flag then s else f s in
-    Segs.fold ~f:(fold_vars_seg ~f) heap s
-    |> unless ignore_pure (Iter.fold ~f (Formula.vars pure))
-    |> unless ignore_ctx (Iter.fold ~f (Context.vars ctx))
+  let iter_vars_stem ~ignore_ctx ~ignore_pure q ~f =
+    let {ctx; pure; heap; djns= _} = q in
+    Iter.iter ~f:(iter_vars_seg ~f) (Segs.to_iter heap) ;
+    if not ignore_pure then Iter.iter ~f (Formula.vars pure) ;
+    if not ignore_ctx then Iter.iter ~f (Context.vars ctx)
 
-  let fold_vars ~ignore_ctx ~ignore_pure q s ~f =
-    let rec fold_vars_ q s =
-      fold_vars_stem ~ignore_ctx ~ignore_pure ~f q s
-      |> List.fold ~f:(Set.fold ~f:fold_vars_) q.djns
-    in
-    fold_vars_ q s
+  let rec iter_vars ~ignore_ctx ~ignore_pure q ~f =
+    iter_vars_stem ~ignore_ctx ~ignore_pure ~f q ;
+    List.iter q.djns ~f:(fun djn ->
+        Set.iter djn ~f:(fun djt ->
+            iter_vars ~ignore_ctx ~ignore_pure ~f djt ) )
+
+  let vars_seg seg = Iter.from_labelled_iter (iter_vars_seg seg)
+
+  let vars_stem ~ignore_ctx ~ignore_pure q =
+    Iter.from_labelled_iter (iter_vars_stem ~ignore_ctx ~ignore_pure q)
+
+  let vars ~ignore_ctx ~ignore_pure q =
+    Iter.from_labelled_iter (iter_vars ~ignore_ctx ~ignore_pure q)
 
   (** Free variables *)
 
-  let fv_seg seg = fold_vars_seg ~f:Var.Set.add seg Var.Set.empty
-
-  let fv ?ignore_ctx ?ignore_pure q =
-    let ignore_ctx = Poly.(ignore_ctx = Some ()) in
-    let ignore_pure = Poly.(ignore_pure = Some ()) in
-    fold_vars ~ignore_ctx ~ignore_pure ~f:Var.Set.add q Var.Set.empty
+  let fv ?(ignore_ctx : unit option) ?(ignore_pure : unit option) q =
+    let ignore_ctx = Option.is_some ignore_ctx in
+    let ignore_pure = Option.is_some ignore_pure in
+    Var.Set.of_iter (vars ~ignore_ctx ~ignore_pure q)
 
   (** Pretty-printing *)
 
@@ -687,7 +695,7 @@ module Xsh = struct
 
   let rec var_strength_ xs m q =
     let m_stem =
-      Sh.fold_vars_stem ~ignore_ctx:true ~ignore_pure:false q m
+      Iter.fold (Sh.vars_stem ~ignore_ctx:true ~ignore_pure:false q) m
         ~f:(fun var m ->
           if not (Var.Set.mem var xs) then
             Var.Map.add ~key:var ~data:`Universal m
@@ -1023,7 +1031,7 @@ module Xsh = struct
       assert (Var.Set.disjoint (fv xq') (Var.Subst.domain sub))]
 
   let seg pt =
-    let vx = Var.Context.of_vars (Sh.fv_seg pt) in
+    let vx = Var.Context.of_vars (Var.Set.of_iter (Sh.vars_seg pt)) in
     (Sh.seg pt, vx) |> check invariant
 
   (** Update *)

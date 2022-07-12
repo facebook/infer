@@ -281,17 +281,24 @@ module Term = struct
 
   (** Traverse *)
 
-  let iter e ~f:iter_t =
-    let iter_f f = Iter.flat_map ~f:iter_t (Fml.trms f) in
-    let rec iter_c = function
-      | `Ite (cnd, thn, els) ->
-          Iter.(append (iter_f cnd) (append (iter_c thn) (iter_c els)))
-      | `Trm e -> iter_t e
-    in
-    match e with `Fml f -> iter_f f | #cnd as c -> iter_c c
+  let rec iter_trms_c c ~f =
+    match c with
+    | `Ite (cnd, thn, els) ->
+        Iter.iter ~f (Fml.trms cnd) ;
+        iter_trms_c ~f thn ;
+        iter_trms_c ~f els
+    | `Trm e -> f e
 
-  let vars = iter ~f:Trm.vars
-  let atoms = iter ~f:(fun e -> Iter.map ~f:(fun a -> `Trm a) (Trm.atoms e))
+  let iter_trms e ~f =
+    match e with
+    | `Fml b -> Iter.iter ~f (Fml.trms b)
+    | #cnd as c -> iter_trms_c ~f c
+
+  let trms e = Iter.from_labelled_iter (iter_trms e)
+  let vars e = Iter.flat_map ~f:Trm.vars (trms e)
+
+  let atoms e =
+    Iter.flat_map ~f:(fun t -> Iter.map ~f:of_trm (Trm.atoms t)) (trms e)
 
   (** Transform *)
 
