@@ -962,10 +962,7 @@ module Xsh = struct
       pf "%a" pp_raw xq ;
       invariant xq]
 
-  let starN = function
-    | [] -> emp
-    | [q] -> q
-    | q :: qs -> List.fold ~f:star qs q
+  let starN qs = List.fold ~f:star qs emp
 
   let or_ xq1 xq2 =
     [%Dbg.call fun {pf} -> pf "@ (%a)@ (%a)" pp_raw xq1 pp_raw xq2]
@@ -976,10 +973,7 @@ module Xsh = struct
       pf "%a" pp_raw xq ;
       invariant xq]
 
-  let orN qs =
-    match Set.pop qs with
-    | None -> false_
-    | Some (q, qs) -> Set.fold ~f:or_ qs q
+  let orN qs = Set.fold ~f:or_ qs false_
 
   let and_ctx ctx xq =
     [%Dbg.call fun {pf} -> pf "@ %a@ %a" Context.pp ctx pp xq]
