@@ -1016,7 +1016,7 @@ let dnf f =
     (vs, Fml.and_ p a, x)
   in
   let top = (Var.Set.empty, Fml.tt, empty) in
-  Iter.from_labelled_iter (Fml.iter_dnf ~meet1 ~top f)
+  Fml.dnf ~meet1 ~top f
 
 let rename x sub =
   [%dbg]

@@ -208,4 +208,7 @@ let iter_dnf ~meet1 ~top fml ~f =
   in
   add_disjunct (top, []) fml
 
+let dnf ~meet1 ~top fml =
+  Iter.from_iter (fun f -> iter_dnf ~meet1 ~top fml ~f)
+
 let vars p = Iter.flat_map ~f:Trm.vars (trms p)
