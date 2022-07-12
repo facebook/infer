@@ -12,8 +12,8 @@
  
  val capture :
       changed_files:SourceFile.Set.t option
-   -> json_cfg:string
-   -> json_tenv:string
+   -> cfg_json:string
+   -> tenv_json:string
    -> unit
- (** Run the capture of the files for which we have cfg in [json_cfg], type environment [json_tenv] in and
+ (** Run the capture of the files for which we have cfg in [cfg_json], type environment [tenv_json] in and
      [changed_files], if specified. *)

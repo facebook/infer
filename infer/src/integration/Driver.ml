@@ -24,7 +24,7 @@ type mode =
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
-  | JsonSIL of {json_cfg: string; json_tenv: string}
+  | JsonSIL of {cfg_json: string; tenv_json: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Rebar3 of {args: string list}
@@ -58,8 +58,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Gradle driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Javac {prog; args} ->
       F.fprintf fmt "Javac driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | JsonSIL {json_cfg; json_tenv} ->
-      F.fprintf fmt "Analyze json mode"
+  | JsonSIL {cfg_json; tenv_json} ->
+      F.fprintf fmt "Json driver mode:@\ncfg_json= '%s'@\ntenv_json = %s" cfg_json tenv_json
   | Maven {prog; args} ->
       F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | NdkBuild {build_cmd} ->
@@ -152,9 +152,9 @@ let capture ~changed_files mode =
     | Javac {compiler; prog; args} ->
         if Config.is_originator then L.progress "Capturing in javac mode...@." ;
         Javac.capture compiler ~prog ~args
-    | JsonSIL {json_cfg; json_tenv} ->
+    | JsonSIL {cfg_json; tenv_json} ->
         L.progress "Capturing using JSON mode...@." ;
-        CaptureSILJson.capture ~changed_files ~json_cfg ~json_tenv  
+        CaptureSILJson.capture ~changed_files ~cfg_json ~tenv_json  
     | Maven {prog; args} ->
         L.progress "Capturing in maven mode...@." ;
         Maven.capture ~prog ~args
@@ -284,7 +284,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     else (
       execute_analyze ~changed_files ;
       if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ) ;
-  if (should_report || Language.curr_language_is Language.CIL) && Config.report then report ?suppress_console:suppress_console_report ()
+  if should_report && Config.report then report ?suppress_console:suppress_console_report ()
 
 
 let analyze_and_report ?suppress_console_report ~changed_files mode =
@@ -383,8 +383,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       else (
         match (Config.cfg_json, Config.tenv_json) with
         | Some cfg_json, Some tenv_json ->
-            JsonSIL {json_cfg= cfg_json; json_tenv= tenv_json}
-        | _, _ ->
+            JsonSIL {cfg_json; tenv_json}
+        | _ ->
             Analyze )
   | prog :: args -> (
       let build_system =
