@@ -69,6 +69,7 @@ val find : 'a t -> f:('a -> bool) -> 'a option
 val find_exn : 'a t -> f:('a -> bool) -> 'a
 val find_map : 'a iter -> f:('a -> 'b option) -> 'b option
 val contains_dup : 'a iter -> cmp:('a -> 'a -> int) -> bool
+val iter : 'a t -> f:('a -> unit) -> unit
 val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's
 
 val fold_opt : 'a t -> 's -> f:('a -> 's -> 's option) -> 's option
@@ -78,6 +79,7 @@ val fold_opt : 'a t -> 's -> f:('a -> 's -> 's option) -> 's option
 
 val fold_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 's * 'b t
 val folding_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 'b t
+val fold_filter_map : 'a t -> 's -> f:('a -> 's -> 'b option * 's) -> 'b t
 
 val fold_until :
      'a t

@@ -52,6 +52,8 @@ struct
   let subset s ~of_:t = S.subset s t
   let disjoint = S.disjoint
   let max_elt = S.max_elt_opt
+  let only_elt = S.only_elt
+  let classify = S.classify
   let choose = S.choose_opt
   let choose_exn = S.choose
   let pop = S.pop_opt
@@ -61,8 +63,8 @@ struct
     let min = S.min_elt s in
     (min, S.remove min s)
 
-  let only_elt = S.only_elt
-  let classify = S.classify
+  let split = S.split
+  let find = S.find
   let map s ~f = S.map f s
   let flat_map s ~f = S.fold (fun x s -> S.union (f x) s) s S.empty
   let filter s ~f = S.filter f s
