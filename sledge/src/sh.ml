@@ -736,6 +736,53 @@ let iter_dnf q f = Set.iter (dnf q) ~f
 
 (** Logical query *)
 
+(** rename existentially quantified variables to avoid shadowing, and reduce
+    quantifier scopes by sinking them as low as possible into disjunctions *)
+let rec freshen_nested_xs us q =
+  [%Dbg.call fun {pf} -> pf "@ %a" pp q]
+  ;
+  (* trim xs to those that appear in stem or >1 disjunction and sink rest *)
+  let xs_sink, _ =
+    let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
+    let xs_sink, xs_djns = (Var.Set.diff q.xs fv_stem, Var.Set.empty) in
+    List.fold q.djns (xs_sink, xs_djns) ~f:(fun djn (xs_sink, xs_djns) ->
+        Set.fold djn (xs_sink, xs_djns) ~f:(fun djt (xs_sink, xs_djns) ->
+            let fv_djt = fv djt in
+            let dont_sink = Var.Set.inter xs_djns fv_djt in
+            let xs_sink = Var.Set.diff xs_sink dont_sink in
+            let xs_djns = Var.Set.union xs_djns fv_djt in
+            (xs_sink, xs_djns) ) )
+  in
+  let xs = Var.Set.diff q.xs xs_sink in
+  let us = Var.Set.union us q.us in
+  let djns, hoisted, xs_below =
+    List.fold_partition_map q.djns Var.Set.empty ~f:(fun djn xs_below ->
+        let dj, xs_below =
+          Set.fold_map djn xs_below ~f:(fun dj xs_below ->
+              (* freshen xs that shadow ancestor us *)
+              let us = Var.Set.union us dj.us in
+              let dj = freshen_xs dj ~wrt:us in
+              (* quantify xs not in stem and freshen disjunct *)
+              let dj =
+                freshen_nested_xs us
+                  (exists (Var.Set.inter xs_sink dj.us) dj)
+              in
+              let xs_below = Var.Set.union xs_below dj.xs in
+              (dj, xs_below) )
+        in
+        match Set.classify dj with
+        | One q -> (Right q, xs_below)
+        | _ -> (Left dj, xs_below) )
+  in
+  (* rename xs to miss all xs in subformulas *)
+  freshen_xs
+    (List.fold ~f:star hoisted {q with xs; djns})
+    ~wrt:(Var.Set.union q.us xs_below)
+  |>
+  [%Dbg.retn fun {pf} q' ->
+    pf "%a" pp q' ;
+    invariant q']
+
 (** first-order approximation of heap constraints *)
 let rec pure_approx q =
   Formula.andN
@@ -752,7 +799,7 @@ let rec pure_approx q =
 let pure_approx q =
   [%Dbg.call fun {pf} -> pf "@ %a" pp q]
   ;
-  pure_approx q
+  pure_approx (freshen_nested_xs Var.Set.empty q)
   |>
   [%Dbg.retn fun {pf} -> pf "%a" Formula.pp]
 
@@ -838,53 +885,6 @@ let norm s q =
   |>
   [%Dbg.retn fun {pf} q' ->
     pf "%a" pp_raw q' ;
-    invariant q']
-
-(** rename existentially quantified variables to avoid shadowing, and reduce
-    quantifier scopes by sinking them as low as possible into disjunctions *)
-let rec freshen_nested_xs us q =
-  [%Dbg.call fun {pf} -> pf "@ %a" pp q]
-  ;
-  (* trim xs to those that appear in stem or >1 disjunction and sink rest *)
-  let xs_sink, _ =
-    let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
-    let xs_sink, xs_djns = (Var.Set.diff q.xs fv_stem, Var.Set.empty) in
-    List.fold q.djns (xs_sink, xs_djns) ~f:(fun djn (xs_sink, xs_djns) ->
-        Set.fold djn (xs_sink, xs_djns) ~f:(fun djt (xs_sink, xs_djns) ->
-            let fv_djt = fv djt in
-            let dont_sink = Var.Set.inter xs_djns fv_djt in
-            let xs_sink = Var.Set.diff xs_sink dont_sink in
-            let xs_djns = Var.Set.union xs_djns fv_djt in
-            (xs_sink, xs_djns) ) )
-  in
-  let xs = Var.Set.diff q.xs xs_sink in
-  let us = Var.Set.union us q.us in
-  let djns, hoisted, xs_below =
-    List.fold_partition_map q.djns Var.Set.empty ~f:(fun djn xs_below ->
-        let dj, xs_below =
-          Set.fold_map djn xs_below ~f:(fun dj xs_below ->
-              (* freshen xs that shadow ancestor us *)
-              let us = Var.Set.union us dj.us in
-              let dj = freshen_xs dj ~wrt:us in
-              (* quantify xs not in stem and freshen disjunct *)
-              let dj =
-                freshen_nested_xs us
-                  (exists (Var.Set.inter xs_sink dj.us) dj)
-              in
-              let xs_below = Var.Set.union xs_below dj.xs in
-              (dj, xs_below) )
-        in
-        match Set.classify dj with
-        | One q -> (Right q, xs_below)
-        | _ -> (Left dj, xs_below) )
-  in
-  (* rename xs to miss all xs in subformulas *)
-  freshen_xs
-    (List.fold ~f:star hoisted {q with xs; djns})
-    ~wrt:(Var.Set.union q.us xs_below)
-  |>
-  [%Dbg.retn fun {pf} q' ->
-    pf "%a" pp q' ;
     invariant q']
 
 let rec propagate_context_ ancestor_vs ancestor_ctx q =
