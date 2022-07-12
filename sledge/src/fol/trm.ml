@@ -175,7 +175,6 @@ module Var = struct
       assert (id > 0) ;
       make ~id:(id - Int.max_int) ~name
 
-    let of_ v = v |> check invariant
     let of_trm = function Var _ as v -> Some v | _ -> None
   end
 
@@ -203,7 +202,7 @@ module Trm = struct
 
   let rec iter_vars e ~f =
     match e with
-    | Var _ as v -> f (Var.of_ v)
+    | Var _ as v -> f v
     | Z _ | Q _ -> ()
     | Arith a -> Iter.iter ~f:(iter_vars ~f) (Arith0.trms a)
     | Splat x -> iter_vars ~f x
@@ -587,7 +586,7 @@ let map_sized ({seq; siz} as na) ~f =
 
 let rec map_vars e ~f =
   match e with
-  | Var _ as v -> (f (Var.of_ v) : Var.t :> t)
+  | Var _ as v -> (f v : Var.t :> t)
   | Z _ | Q _ -> e
   | Arith a -> map1 (Arith.map ~f:(map_vars ~f)) e _Arith a
   | Splat x -> map1 (map_vars ~f) e splat x
