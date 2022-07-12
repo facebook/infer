@@ -219,14 +219,8 @@ module Var = struct
   end
 
   module Context = struct
-    type t = {voc: int; xs: Set.t} [@@deriving sexp]
+    type t = {voc: int; xs: Set.t} [@@deriving compare, equal, sexp]
 
-    let compare vx1 vx2 =
-      let open Ord.Infix in
-      if vx1 == vx2 then 0
-      else Set.compare vx1.xs vx2.xs <?> (Int.compare, vx1.voc, vx2.voc)
-
-    let equal = [%compare.equal: t]
     let pp_voc ppf vx = [%Dbg.fprintf ppf "@<2>∀ %i .@ " vx.voc]
     let pp_diff ppf (vx, vx') = Set.pp_xs ppf (Set.diff vx'.xs vx.xs)
 
