@@ -50,7 +50,7 @@ val doubleton : 'a -> 'a -> 'a t
 (** Iterator with exactly two elements *)
 
 val init : f:(int -> 'a) -> 'a t
-(** [init f] is the infinite iterator [f 0; f 1; f 2; …].
+(** [init ~f] is the infinite iterator [f 0; f 1; f 2; …].
 
     @since 0.9 *)
 
@@ -71,10 +71,10 @@ val repeat : 'a -> 'a t
 (** Infinite iterator of the same element. You may want to look at {!take}
     and the likes if you iterate on it. *)
 
-val iterate : ('a -> 'a) -> 'a -> 'a t
-(** [iterate f x] is the infinite iterator [x, f(x), f(f(x)), ...] *)
+val iterate : 'a -> f:('a -> 'a) -> 'a t
+(** [iterate ~f x] is the infinite iterator [x, f(x), f(f(x)), ...] *)
 
-val forever : (unit -> 'b) -> 'b t
+val forever : f:(unit -> 'b) -> 'b t
 (** Iterator that calls the given function to produce elements. The iterator
     may be transient (depending on the function), and definitely is
     infinite. You may want to use {!take} and {!persistent}. *)
@@ -87,101 +87,99 @@ val cycle : 'a t -> 'a t
 
 (** {2 Consumption} *)
 
-val iter : f:('a -> unit) -> 'a t -> unit
+val iter : 'a t -> f:('a -> unit) -> unit
 (** Consume the iterator, passing all its arguments to the function.
-    Basically [iter f seq] is just [seq f]. *)
+    Basically [iter ~f seq] is just [seq f]. *)
 
-val iteri : f:(int -> 'a -> unit) -> 'a t -> unit
+val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 (** Iterate on elements and their index in the iterator *)
 
-val for_each : seq:'a t -> ('a -> unit) -> unit
+val for_each : 'a t -> ('a -> unit) -> unit
 (** Consume the iterator, passing all its arguments to the function.
-    [for_each seq f] is the same as [iter f seq], i.e., [iter] with
+    [for_each seq f] is the same as [iter ~f seq], i.e., [iter] with
     arguments reversed.
 
     @since 1.4 *)
 
-val for_eachi : seq:'a t -> (int -> 'a -> unit) -> unit
+val for_eachi : 'a t -> (int -> 'a -> unit) -> unit
 (** Iterate on elements and their index in the iterator. [for_eachi seq f]
-    is the same as [iteri f seq], i.e., [iteri] with arguments reversed.
+    is the same as [iteri ~f seq], i.e., [iteri] with arguments reversed.
 
     @since 1.4 *)
 
-val fold : f:('a -> 'b -> 'a) -> init:'a -> 'b t -> 'a
+val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's
 (** Fold over elements of the iterator, consuming it *)
 
-val foldi : f:('a -> int -> 'b -> 'a) -> init:'a -> 'b t -> 'a
+val foldi : 'a t -> 's -> f:(int -> 'a -> 's -> 's) -> 's
 (** Fold over elements of the iterator and their index, consuming it *)
 
-val fold_map : f:('acc -> 'a -> 'acc * 'b) -> init:'acc -> 'a t -> 'b t
-(** [fold_map f acc l] is like {!map}, but it carries some state as in
+val fold_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 's * 'b t
+(** [fold_map seq s ~f] is like {!map}, but it carries some state as in
+    {!fold}. The final state is returned. *)
+
+val folding_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 'b t
+(** [folding_map seq s ~f] is like {!map}, but it carries some state as in
     {!fold}. The state is not returned, it is just used to thread some
     information to the map function.
 
     @since 0.9 *)
 
-val fold_filter_map :
-  f:('acc -> 'a -> 'acc * 'b option) -> init:'acc -> 'a t -> 'b t
-(** [fold_filter_map f acc l] is a {!fold_map}-like function, but the
+val fold_filter_map : 'a t -> 's -> f:('a -> 's -> 'b option * 's) -> 'b t
+(** [fold_filter_map seq s ~f] is a {!fold_map}-like function, but the
     function can choose to skip an element by retuning [None].
 
     @since 0.9 *)
 
-val map : f:('a -> 'b) -> 'a t -> 'b t
+val map : 'a t -> f:('a -> 'b) -> 'b t
 (** Map objects of the iterator into other elements, lazily *)
 
-val mapi : f:(int -> 'a -> 'b) -> 'a t -> 'b t
+val mapi : 'a t -> f:(int -> 'a -> 'b) -> 'b t
 (** Map objects, along with their index in the iterator *)
 
-val map_by_2 : f:('a -> 'a -> 'a) -> 'a t -> 'a t
+val map_by_2 : 'a t -> f:('a -> 'a -> 'a) -> 'a t
 (** Map objects two by two. lazily. The last element is kept in the iterator
     if the count is odd.
 
     @since 0.7 *)
 
-val for_all : f:('a -> bool) -> 'a t -> bool
+val for_all : 'a t -> f:('a -> bool) -> bool
 (** Do all elements satisfy the predicate? *)
 
-val exists : f:('a -> bool) -> 'a t -> bool
+val exists : 'a t -> f:('a -> bool) -> bool
 (** Exists there some element satisfying the predicate? *)
 
-val mem : ?eq:('a -> 'a -> bool) -> x:'a -> 'a t -> bool
+val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
 (** Is the value a member of the iterator?
 
-    @param eq the equality predicate to use (default [(=)])
+    @param eq the equality predicate to use
     @since 0.5 *)
 
-val find : ('a -> 'b option) -> 'a t -> 'b option
+val find : 'a t -> f:('a -> bool) -> 'a option
+(** [find seq ~f] finds the first element of [seq] that satisfies [f], or
+    returns [None] if no element satisfies [f]
+
+    @since 0.9 *)
+
+val find_exn : 'a t -> f:('a -> bool) -> 'a
+(** Unsafe version of {!find}
+
+    @raise Not_found if no such element is found
+    @since 0.9 *)
+
+val find_map : 'a t -> f:('a -> 'b option) -> 'b option
 (** Find the first element on which the function doesn't return [None]
-
-    @since 0.5 *)
-
-val find_map : f:('a -> 'b option) -> 'a t -> 'b option
-(** Alias to {!find}
 
     @since 0.10 *)
 
-val findi : f:(int -> 'a -> 'b option) -> 'a t -> 'b option
+val findi : 'a t -> f:(int -> 'a -> bool) -> 'a option
 (** Indexed version of {!find}
 
     @since 0.9 *)
 
-val find_mapi : f:(int -> 'a -> 'b option) -> 'a t -> 'b option
-(** Alias to {!findi}
+val find_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b option
+(** Indexed version of {!find_map}
 
     @since 0.10 *)
-
-val find_pred : f:('a -> bool) -> 'a t -> 'a option
-(** [find_pred p l] finds the first element of [l] that satisfies [p], or
-    returns [None] if no element satisfies [p]
-
-    @since 0.9 *)
-
-val find_pred_exn : f:('a -> bool) -> 'a t -> 'a
-(** Unsafe version of {!find_pred}
-
-    @raise Not_found if no such element is found
-    @since 0.9 *)
 
 val length : 'a t -> int
 (** How long is the iterator? Forces the iterator. *)
@@ -191,7 +189,7 @@ val is_empty : 'a t -> bool
 
 (** {2 Transformation} *)
 
-val filter : f:('a -> bool) -> 'a t -> 'a t
+val filter : 'a t -> f:('a -> bool) -> 'a t
 (** Filter on elements of the iterator *)
 
 val append : 'a t -> 'a t -> 'a t
@@ -210,10 +208,11 @@ val concat : 'a t t -> 'a t
 val flatten : 'a t t -> 'a t
 (** Alias for {!concat} *)
 
-val flat_map : f:('a -> 'b t) -> 'a t -> 'b t
-(** Alias to {!flatMap} with a more explicit name *)
+val flat_map : 'a t -> f:('a -> 'b t) -> 'b t
+(** Monadic bind. Intuitively, it applies the function to every element of
+    the initial sequence, and calls {!concat}. *)
 
-val flat_map_l : f:('a -> 'b list) -> 'a t -> 'b t
+val flat_map_l : 'a t -> f:('a -> 'b list) -> 'b t
 (** Convenience function combining {!flat_map} and {!of_list}
 
     @since 0.9 *)
@@ -225,26 +224,26 @@ val seq_list : 'a t list -> 'a list t
 
     @since 0.11 *)
 
-val seq_list_map : f:('a -> 'b t) -> 'a list -> 'b list t
+val seq_list_map : 'a list -> f:('a -> 'b t) -> 'b list t
 (** [seq_list_map f l] maps [f] over every element of [l], then calls
     {!seq_list}
 
     @since 0.11 *)
 
-val filter_map : f:('a -> 'b option) -> 'a t -> 'b t
+val filter_map : 'a t -> f:('a -> 'b option) -> 'b t
 (** Map and only keep non-[None] elements Formerly [fmap] *)
 
-val filter_mapi : f:(int -> 'a -> 'b option) -> 'a t -> 'b t
+val filter_mapi : 'a t -> f:(int -> 'a -> 'b option) -> 'b t
 (** Map with indices, and only keep non-[None] elements
 
     @since 0.11 *)
 
-val filter_count : f:('a -> bool) -> 'a t -> int
+val filter_count : 'a t -> f:('a -> bool) -> int
 (** Count how many elements satisfy the given predicate
 
     @since 1.0 *)
 
-val intersperse : x:'a -> 'a t -> 'a t
+val intersperse : 'a -> 'a t -> 'a t
 (** Insert the single element between every element of the iterator *)
 
 val keep_some : 'a option t -> 'a t
@@ -284,25 +283,25 @@ val persistent_lazy : 'a t -> 'a t
 
 (** {2 Misc} *)
 
-val sort : ?cmp:('a -> 'a -> int) -> 'a t -> 'a t
+val sort : 'a t -> cmp:('a -> 'a -> int) -> 'a t
 (** Sort the iterator. Eager, O(n) ram and O(n ln(n)) time. It iterates on
     elements of the argument iterator immediately, before it sorts them. *)
 
-val sort_uniq : ?cmp:('a -> 'a -> int) -> 'a t -> 'a t
+val sort_uniq : 'a t -> cmp:('a -> 'a -> int) -> 'a t
 (** Sort the iterator and remove duplicates. Eager, same as [sort] *)
 
-val sorted : ?cmp:('a -> 'a -> int) -> 'a t -> bool
+val sorted : 'a t -> cmp:('a -> 'a -> int) -> bool
 (** Checks whether the iterator is sorted. Eager, same as {!sort}.
 
     @since 0.9 *)
 
-val group_succ_by : ?eq:('a -> 'a -> bool) -> 'a t -> 'a list t
+val group_succ_by : 'a t -> eq:('a -> 'a -> bool) -> 'a list t
 (** Group equal consecutive elements. Formerly synonym to [group].
 
     @since 0.6 *)
 
 val group_by :
-  ?hash:('a -> int) -> ?eq:('a -> 'a -> bool) -> 'a t -> 'a list t
+  'a t -> hash:('a -> int) -> eq:('a -> 'a -> bool) -> 'a list t
 (** Group equal elements, disregarding their order of appearance. The result
     iterator is traversable as many times as required. precondition: for any
     [x] and [y], if [eq x y] then [hash x=hash y] must hold.
@@ -310,15 +309,18 @@ val group_by :
     @since 0.6 *)
 
 val count :
-  ?hash:('a -> int) -> ?eq:('a -> 'a -> bool) -> 'a t -> ('a * int) t
+  'a t -> hash:('a -> int) -> eq:('a -> 'a -> bool) -> ('a * int) t
 (** Map each distinct element to its number of occurrences in the whole seq.
     Similar to [group_by seq |> map (fun l->List.hd l, List.length l)]
 
     @since 0.10 *)
 
-val uniq : ?eq:('a -> 'a -> bool) -> 'a t -> 'a t
+val uniq : 'a t -> eq:('a -> 'a -> bool) -> 'a t
 (** Remove consecutive duplicate elements. Basically this is like
     [fun seq -> map List.hd (group seq)]. *)
+
+val contains_dup : 'a t -> cmp:('a -> 'a -> int) -> bool
+(** Holds if there exist (not necessarily consecutive) duplicate elements. *)
 
 val product : 'a t -> 'b t -> ('a * 'b) t
 (** Cartesian product of the iterators. When calling [product a b], the
@@ -338,21 +340,21 @@ val diagonal : 'a t -> ('a * 'a) t
 
     @since 0.9 *)
 
-val join : join_row:('a -> 'b -> 'c option) -> 'a t -> 'b t -> 'c t
-(** [join ~join_row a b] combines every element of [a] with every element of
-    [b] using [join_row]. If [join_row] returns None, then the two elements
-    do not combine. Assume that [b] allows for multiple iterations. *)
+val join : 'a t -> 'b t -> f:('a -> 'b -> 'c option) -> 'c t
+(** [join ~f:join_row a b] combines every element of [a] with every element
+    of [b] using [join_row]. If [join_row] returns [None], then the two
+    elements do not combine. Assume that [b] allows for multiple iterations. *)
 
 val join_by :
-     ?eq:'key equal
-  -> ?hash:'key hash
-  -> ('a -> 'key)
-  -> ('b -> 'key)
-  -> merge:('key -> 'a -> 'b -> 'c option)
-  -> 'a t
+     'a t
   -> 'b t
+  -> key1:('a -> 'key)
+  -> key2:('b -> 'key)
+  -> eq:'key equal
+  -> hash:'key hash
+  -> f:('key -> 'a -> 'b -> 'c option)
   -> 'c t
-(** [join key1 key2 ~merge] is a binary operation that takes two iterators
+(** [join key1 key2 ~f:merge] is a binary operation that takes two iterators
     [a] and [b], projects their elements resp. with [key1] and [key2], and
     combine values [(x,y)] from [(a,b)] with the same [key] using [merge].
     If [merge] returns [None], the combination of values is discarded.
@@ -362,15 +364,15 @@ val join_by :
     @since 0.10 *)
 
 val join_all_by :
-     ?eq:'key equal
-  -> ?hash:'key hash
-  -> ('a -> 'key)
-  -> ('b -> 'key)
-  -> merge:('key -> 'a list -> 'b list -> 'c option)
-  -> 'a t
+     'a t
   -> 'b t
+  -> key1:('a -> 'key)
+  -> key2:('b -> 'key)
+  -> eq:'key equal
+  -> hash:'key hash
+  -> f:('key -> 'a list -> 'b list -> 'c option)
   -> 'c t
-(** [join_all_by key1 key2 ~merge] is a binary operation that takes two
+(** [join_all_by key1 key2 ~f:merge] is a binary operation that takes two
     iterators [a] and [b], projects their elements resp. with [key1] and
     [key2], and, for each key [k] occurring in at least one of them:
 
@@ -383,13 +385,13 @@ val join_all_by :
     @since 0.10 *)
 
 val group_join_by :
-     ?eq:'a equal
-  -> ?hash:'a hash
-  -> ('b -> 'a)
-  -> 'a t
+     'a t
   -> 'b t
+  -> eq:'a equal
+  -> hash:'a hash
+  -> f:('b -> 'a)
   -> ('a * 'b list) t
-(** [group_join_by key2] associates to every element [x] of the first
+(** [group_join_by ~f:key] associates to every element [x] of the first
     iterator, all the elements [y] of the second iterator such that
     [eq x (key y)]. Elements of the first iterators without corresponding
     values in the second one are mapped to [\[\]] precondition: for any [x]
@@ -397,7 +399,7 @@ val group_join_by :
 
     @since 0.10 *)
 
-val inter : ?eq:'a equal -> ?hash:'a hash -> 'a t -> 'a t -> 'a t
+val inter : eq:'a equal -> hash:'a hash -> 'a t -> 'a t -> 'a t
 (** Intersection of two collections. Each element will occur at most once in
     the result. Eager. precondition: for any [x] and [y], if [eq x y] then
     [hash x=hash y] must hold.
@@ -409,7 +411,7 @@ val inter : ?eq:'a equal -> ?hash:'a hash -> 'a t -> 'a t -> 'a t
   [] (inter (0--5) (6--10) |> to_list)
 *)
 
-val union : ?eq:'a equal -> ?hash:'a hash -> 'a t -> 'a t -> 'a t
+val union : eq:'a equal -> hash:'a hash -> 'a t -> 'a t -> 'a t
 (** Union of two collections. Each element will occur at most once in the
     result. Eager. precondition: for any [x] and [y], if [eq x y] then
     [hash x=hash y] must hold.
@@ -420,7 +422,7 @@ val union : ?eq:'a equal -> ?hash:'a hash -> 'a t -> 'a t -> 'a t
   [2;4;5;6] (union (4--6) (cons 2 (4--5)) |> sort |> to_list)
 *)
 
-val diff : ?eq:'a equal -> ?hash:'a hash -> 'a t -> 'a t -> 'a t
+val diff : eq:'a equal -> hash:'a hash -> 'a t -> 'a t -> 'a t
 (** Set difference. Eager.
 
     @since 0.10 *)
@@ -429,7 +431,7 @@ val diff : ?eq:'a equal -> ?hash:'a hash -> 'a t -> 'a t -> 'a t
   [1;2;8;9;10] (diff (1--10) (3--7) |> to_list)
 *)
 
-val subset : ?eq:'a equal -> ?hash:'a hash -> 'a t -> 'a t -> bool
+val subset : eq:'a equal -> hash:'a hash -> 'a t -> 'a t -> bool
 (** [subset a b] returns [true] if all elements of [a] belong to [b]. Eager.
     precondition: for any [x] and [y], if [eq x y] then [hash x=hash y] must
     hold.
@@ -441,31 +443,31 @@ val subset : ?eq:'a equal -> ?hash:'a hash -> 'a t -> 'a t -> bool
   not (subset (1 -- 4) (2 -- 10))
 *)
 
-val unfoldr : ('b -> ('a * 'b) option) -> 'b -> 'a t
-(** [unfoldr f b] will apply [f] to [b]. If it yields [Some (x,b')] then [x]
-    is returned and unfoldr recurses with [b']. *)
+val unfoldr : 'b -> f:('b -> ('a * 'b) option) -> 'a t
+(** [unfoldr ~f b] will apply [f] to [b]. If it yields [Some (x,b')] then
+    [x] is returned and unfoldr recurses with [b']. *)
 
-val scan : ('b -> 'a -> 'b) -> 'b -> 'a t -> 'b t
+val scan : 'a t -> 'b -> f:('a -> 'b -> 'b) -> 'b t
 (** Iterator of intermediate results *)
 
-val max : ?lt:('a -> 'a -> bool) -> 'a t -> 'a option
+val max : 'a t -> lt:('a -> 'a -> bool) -> 'a option
 (** Max element of the iterator, using the given comparison function.
 
     @return
       None if the iterator is empty, Some [m] where [m] is the maximal
       element otherwise *)
 
-val max_exn : ?lt:('a -> 'a -> bool) -> 'a t -> 'a
+val max_exn : 'a t -> lt:('a -> 'a -> bool) -> 'a
 (** Unsafe version of {!max}
 
     @raise Not_found if the iterator is empty
     @since 0.10 *)
 
-val min : ?lt:('a -> 'a -> bool) -> 'a t -> 'a option
+val min : 'a t -> lt:('a -> 'a -> bool) -> 'a option
 (** Min element of the iterator, using the given comparison function. see
     {!max} for more details. *)
 
-val min_exn : ?lt:('a -> 'a -> bool) -> 'a t -> 'a
+val min_exn : 'a t -> lt:('a -> 'a -> bool) -> 'a
 (** Unsafe version of {!min}
 
     @raise Not_found if the iterator is empty
@@ -492,26 +494,48 @@ val head_exn : 'a t -> 'a
     @raise Invalid_argument if the iterator is empty
     @since 0.5.1 *)
 
+val pop : 'a t -> ('a * 'a t) option
+(** First element and the remainder of the iterator *)
+
 val take : int -> 'a t -> 'a t
 (** Take at most [n] elements from the iterator. Works on infinite
     iterators. *)
 
-val take_while : f:('a -> bool) -> 'a t -> 'a t
+val take_while : 'a t -> f:('a -> bool) -> 'a t
 (** Take elements while they satisfy the predicate, then stops iterating.
     Will work on an infinite iterator [s] if the predicate is false for at
     least one element of [s]. *)
 
 val fold_while :
-  f:('a -> 'b -> 'a * [`Stop | `Continue]) -> init:'a -> 'b t -> 'a
+  'b t -> 'a -> f:('b -> 'a -> [`Stop | `Continue] * 'a) -> 'a
 (** Folds over elements of the iterator, stopping early if the accumulator
     returns [('a, `Stop)]
 
     @since 0.5.5 *)
 
+val fold_opt : 'a t -> 's -> f:('a -> 's -> 's option) -> 's option
+(** Folds over elements of the iterator, stopping early if the accumulator
+    returns [None]. *)
+
+val fold_result :
+  'a t -> 's -> f:('a -> 's -> ('s, 'e) result) -> ('s, 'e) result
+(** Folds over elements of the iterator, stopping early if the accumulator
+    returns [Error]. *)
+
+val fold_until :
+     'a t
+  -> 's
+  -> f:('a -> 's -> [`Continue of 's | `Stop of 'b])
+  -> finish:('s -> 'b)
+  -> 'b
+(** Folds over elements of the iterator, stopping early if the accumulator
+    returns [`Stop b], and using [finish] to transform the final state if
+    the end of the iterator is reached. *)
+
 val drop : int -> 'a t -> 'a t
 (** Drop the [n] first elements of the iterator. Lazy. *)
 
-val drop_while : f:('a -> bool) -> 'a t -> 'a t
+val drop_while : 'a t -> f:('a -> bool) -> 'a t
 (** Predicate version of {!drop} *)
 
 val rev : 'a t -> 'a t
@@ -524,13 +548,13 @@ val zip_i : 'a t -> (int * 'a) t
 
     @since 1.0 Changed type to just give an iterator of pairs *)
 
-val fold2 : f:('c -> 'a -> 'b -> 'c) -> init:'c -> ('a * 'b) t -> 'c
-val iter2 : f:('a -> 'b -> unit) -> ('a * 'b) t -> unit
-val map2 : f:('a -> 'b -> 'c) -> ('a * 'b) t -> 'c t
+val fold2 : ('a * 'b) t -> 'c -> f:('a -> 'b -> 'c -> 'c) -> 'c
+val iter2 : ('a * 'b) t -> f:('a -> 'b -> unit) -> unit
+val map2 : ('a * 'b) t -> f:('a -> 'b -> 'c) -> 'c t
 
 val map2_2 :
-  f:('a -> 'b -> 'c) -> ('a -> 'b -> 'd) -> ('a * 'b) t -> ('c * 'd) t
-(** [map2_2 f g seq2] maps each [x, y] of seq2 into [f x y, g x y] *)
+  ('a * 'b) t -> f:('a -> 'b -> 'c) -> g:('a -> 'b -> 'd) -> ('c * 'd) t
+(** [map2_2 ~f ~g seq2] maps each [x, y] of seq2 into [f x y, g x y] *)
 
 (** {2 Data structures converters} *)
 
@@ -544,7 +568,7 @@ val to_rev_list : 'a t -> 'a list
 
 val of_list : 'a list -> 'a t
 
-val on_list : ('a t -> 'b t) -> 'a list -> 'b list
+val on_list : 'a list -> f:('a t -> 'b t) -> 'b list
 (** [on_list f l] is equivalent to [to_list @@ f @@ of_list l].
 
     @since 0.5.2 *)
@@ -783,7 +807,7 @@ val shuffle : 'a t -> 'a t
 
     @since 0.7 *)
 
-val shuffle_buffer : n:int -> 'a t -> 'a t
+val shuffle_buffer : int -> 'a t -> 'a t
 (** [shuffle_buffer n seq] returns an iterator of element of [seq] in random
     order. The shuffling is not uniform. Uses O(n) memory.
 
@@ -794,7 +818,7 @@ val shuffle_buffer : n:int -> 'a t -> 'a t
 
 (** {3 Sampling} *)
 
-val sample : n:int -> 'a t -> 'a array
+val sample : int -> 'a t -> 'a array
 (** [sample n seq] returns k samples of [seq], with uniform probability. It
     will consume the iterator and use O(n) memory.
 

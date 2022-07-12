@@ -72,7 +72,7 @@ let[@inline] repeat x k =
     (seq |> take 3 |> to_list);
 *)
 
-let init f yield =
+let init ~f yield =
   let rec aux i =
     yield (f i) ;
     aux (i + 1)
@@ -83,33 +83,33 @@ let init f yield =
   [0;1;2;3;4] (init (fun x->x) |> take 5 |> to_list)
 *)
 
-let rec iterate f x k =
+let rec iterate x ~f k =
   k x ;
-  iterate f (f x) k
+  iterate ~f (f x) k
 
-let rec forever f k =
+let rec forever ~f k =
   k (f ()) ;
-  forever f k
+  forever ~f k
 
 let cycle s k =
   while true do
     s k
   done
 
-let[@inline] iter f seq = seq f
+let[@inline] iter seq ~f = seq f
 
-let iteri f seq =
+let iteri seq ~f =
   let r = ref 0 in
   seq (fun x ->
       f !r x ;
       incr r )
 
-let for_each seq f = iter f seq
-let for_eachi seq f = iteri f seq
+let for_each seq f = iter ~f seq
+let for_eachi seq f = iteri ~f seq
 
-let fold f init seq =
+let fold seq init ~f =
   let r = ref init in
-  seq (fun elt -> r := f !r elt) ;
+  seq (fun elt -> r := f elt !r) ;
   !r
 
 (*$R
@@ -118,11 +118,11 @@ let fold f init seq =
   OUnit.assert_equal 55 n;
 *)
 
-let foldi f init seq =
+let foldi seq init ~f =
   let i = ref 0 in
   let r = ref init in
   seq (fun elt ->
-      r := f !r !i elt ;
+      r := f !i elt !r ;
       incr i ) ;
   !r
 
@@ -133,10 +133,10 @@ let foldi f init seq =
   OUnit.assert_equal [1, "world"; 0, "hello"] l;
 *)
 
-let fold_map f init seq yield =
+let folding_map seq init ~f yield =
   let r = ref init in
   seq (fun x ->
-      let acc', y = f !r x in
+      let y, acc' = f x !r in
       r := acc' ;
       yield y )
 
@@ -144,28 +144,28 @@ let fold_map f init seq yield =
   [0;1;3;5] (0--3 |> fold_map (fun prev x -> x,prev+x) 0 |> to_list)
 *)
 
-let fold_filter_map f init seq yield =
+let fold_filter_map seq init ~f yield =
   let r = ref init in
   seq (fun x ->
-      let acc', y = f !r x in
+      let y, acc' = f x !r in
       r := acc' ;
       match y with None -> () | Some y' -> yield y' )
 
-let[@inline] map f seq k = seq (fun x -> k (f x))
+let[@inline] map seq ~f k = seq (fun x -> k (f x))
 
-let[@inline] mapi f seq k =
+let[@inline] mapi seq ~f k =
   let i = ref 0 in
   seq (fun x ->
       k (f !i x) ;
       incr i )
 
-let map_by_2 f seq k =
+let map_by_2 seq ~f k =
   let r = ref None in
   let f y = match !r with None -> r := Some y | Some x -> k (f x y) in
   seq f ;
   match !r with None -> () | Some x -> k x
 
-let[@inline] filter p seq k = seq (fun x -> if p x then k x)
+let[@inline] filter seq ~f k = seq (fun x -> if f x then k x)
 
 let[@inline] append s1 s2 k =
   s1 k ;
@@ -190,7 +190,7 @@ let[@inline] concat s k = s (fun s' -> s' k)
 *)
 
 let flatten = concat
-let[@inline] flat_map f seq k = seq (fun x -> f x k)
+let[@inline] flat_map seq ~f k = seq (fun x -> f x k)
 
 (*$R
   (1 -- 1000)
@@ -199,15 +199,15 @@ let[@inline] flat_map f seq k = seq (fun x -> f x k)
     |> OUnit.assert_equal 2000
 *)
 
-let[@inline] flat_map_l f seq k = seq (fun x -> List.iter k (f x))
+let[@inline] flat_map_l seq ~f k = seq (fun x -> List.iter k (f x))
 
-let[@unroll 2] rec seq_list_map f l k =
+let[@unroll 2] rec seq_list_map l ~f k =
   match l with
   | [] -> k []
   | x :: tail ->
-      f x (fun x' -> seq_list_map f tail (fun tail' -> k (x' :: tail')))
+      f x (fun x' -> seq_list_map ~f tail (fun tail' -> k (x' :: tail')))
 
-let[@inline] seq_list l = seq_list_map (fun x -> x) l
+let[@inline] seq_list l = seq_list_map ~f:(fun x -> x) l
 
 (*$= & ~printer:Q.Print.(list @@ list int)
   [[1;2];[1;3]] (seq_list [singleton 1; doubleton 2 3] |> to_list)
@@ -215,17 +215,17 @@ let[@inline] seq_list l = seq_list_map (fun x -> x) l
   [[1;2;4];[1;3;4]] (seq_list [singleton 1; doubleton 2 3; singleton 4] |> to_list)
 *)
 
-let[@inline] filter_map f seq k =
+let[@inline] filter_map seq ~f k =
   seq (fun x -> match f x with None -> () | Some y -> k y)
 
-let filter_mapi f seq k =
+let filter_mapi seq ~f k =
   let i = ref 0 in
   seq (fun x ->
       let j = !i in
       incr i ;
       match f j x with None -> () | Some y -> k y )
 
-let filter_count f seq =
+let filter_count seq ~f =
   let i = ref 0 in
   seq (fun x -> if f x then incr i) ;
   !i
@@ -400,9 +400,20 @@ let persistent_lazy (seq : 'a t) =
         let seq' = MList.of_iter_with seq k in
         r := LazyCached (MList.to_iter seq')
 
-let sort ?(cmp = Stdlib.compare) seq =
+let fold_map seq s ~f =
+  let r = ref s in
+  let seq' =
+    persistent (fun yield ->
+        seq (fun x ->
+            let y, s = f x !r in
+            r := s ;
+            yield y ) )
+  in
+  (!r, seq')
+
+let sort seq ~cmp =
   (* use an intermediate list, then sort the list *)
-  let l = fold (fun l x -> x :: l) [] seq in
+  let l = fold ~f:(fun x l -> x :: l) seq [] in
   let l = List.fast_sort cmp l in
   fun k -> List.iter k l
 
@@ -416,7 +427,7 @@ let sort ?(cmp = Stdlib.compare) seq =
 
 exception Exit_sorted
 
-let sorted ?(cmp = Stdlib.compare) seq =
+let sorted seq ~cmp =
   let prev = ref None in
   try
     seq (fun x ->
@@ -432,7 +443,7 @@ let sorted ?(cmp = Stdlib.compare) seq =
   sorted empty
 *)
 
-let group_succ_by ?(eq = fun x y -> x = y) seq k =
+let group_succ_by seq ~eq k =
   let cur = ref [] in
   seq (fun x ->
       match !cur with
@@ -452,7 +463,7 @@ let group_succ_by ?(eq = fun x y -> x = y) seq k =
     |> OUnit.assert_equal [[1];[2];[3;3];[2;2];[3];[4]]
 *)
 
-let group_by (type k) ?(hash = Hashtbl.hash) ?(eq = ( = )) seq =
+let group_by (type k) seq ~hash ~eq =
   let module Tbl = Hashtbl.Make (struct
     type t = k
 
@@ -476,7 +487,7 @@ let group_by (type k) ?(hash = Hashtbl.hash) ?(eq = ( = )) seq =
     |> OUnit.assert_equal [[1];[2;2;2];[3;3;3];[4]]
 *)
 
-let count (type k) ?(hash = Hashtbl.hash) ?(eq = ( = )) seq =
+let count (type k) seq ~hash ~eq =
   let module Tbl = Hashtbl.Make (struct
     type t = k
 
@@ -500,7 +511,7 @@ let count (type k) ?(hash = Hashtbl.hash) ?(eq = ( = )) seq =
     |> OUnit.assert_equal [1,1;2,3;3,3;4,1]
 *)
 
-let uniq ?(eq = fun x y -> x = y) seq k =
+let uniq seq ~eq k =
   let has_prev = ref false and prev = ref (Obj.magic 0) in
   (* avoid option type, costly *)
   seq (fun x ->
@@ -516,13 +527,13 @@ let uniq ?(eq = fun x y -> x = y) seq k =
     |> OUnit.assert_equal [1;2;3;4;3]
 *)
 
-let sort_uniq (type elt) ?(cmp = Stdlib.compare) seq =
+let sort_uniq (type elt) seq ~cmp =
   let module S = Stdlib.Set.Make (struct
     type t = elt
 
     let compare = cmp
   end) in
-  let set = fold (fun acc x -> S.add x acc) S.empty seq in
+  let set = fold ~f:(fun x acc -> S.add x acc) seq S.empty in
   fun k -> S.iter k set
 
 (*$R
@@ -532,6 +543,22 @@ let sort_uniq (type elt) ?(cmp = Stdlib.compare) seq =
     |> to_list
     |> OUnit.assert_equal [1;2;3;4;5;42]
 *)
+
+exception Found_dup
+
+let contains_dup (type elt) seq ~cmp =
+  let module S = Stdlib.Set.Make (struct
+    type t = elt
+
+    let compare = cmp
+  end) in
+  try
+    fold seq S.empty ~f:(fun x elts ->
+        let elts' = S.add x elts in
+        if elts' == elts then raise_notrace Found_dup else elts' )
+    |> ignore ;
+    false
+  with Found_dup -> true
 
 let[@inline] product outer inner k =
   outer (fun x -> inner (fun y -> k (x, y)))
@@ -566,7 +593,7 @@ let diagonal seq =
   [0,1; 0,2; 1,2] (of_list [0;1;2] |> diagonal |> to_list)
   *)
 
-let join ~join_row s1 s2 k =
+let join s1 s2 ~f:join_row k =
   s1 (fun a ->
       s2 (fun b -> match join_row a b with None -> () | Some c -> k c) )
 
@@ -580,8 +607,7 @@ let join ~join_row s1 s2 k =
   OUnit.assert_equal ["1 = 1"; "2 = 2"] (to_list s);
 *)
 
-let join_by (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) f1 f2 ~merge c1 c2
-    =
+let join_by (type a) c1 c2 ~key1:f1 ~key2:f2 ~eq ~hash ~f:merge =
   let module Tbl = Hashtbl.Make (struct
     type t = a
 
@@ -606,8 +632,7 @@ let join_by (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) f1 f2 ~merge c1 c2
 type ('a, 'b) join_all_cell =
   {mutable ja_left: 'a list; mutable ja_right: 'b list}
 
-let join_all_by (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) f1 f2 ~merge
-    c1 c2 =
+let join_all_by (type a) c1 c2 ~key1:f1 ~key2:f2 ~eq ~hash ~f:merge =
   let module Tbl = Hashtbl.Make (struct
     type t = a
 
@@ -637,7 +662,7 @@ let join_all_by (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) f1 f2 ~merge
     tbl ;
   fun yield -> List.iter yield !res
 
-let group_join_by (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) f c1 c2 =
+let group_join_by (type a) c1 c2 ~eq ~hash ~f =
   let module Tbl = Hashtbl.Make (struct
     type t = a
 
@@ -666,7 +691,7 @@ let group_join_by (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) f c1 c2 =
   |> sort |> to_list)
 *)
 
-let union (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) c1 c2 =
+let union (type a) ~eq ~hash c1 c2 =
   let module Tbl = Hashtbl.Make (struct
     type t = a
 
@@ -680,7 +705,7 @@ let union (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) c1 c2 =
 
 type inter_status = Inter_left | Inter_both
 
-let inter (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) c1 c2 =
+let inter (type a) ~eq ~hash c1 c2 =
   let module Tbl = Hashtbl.Make (struct
     type t = a
 
@@ -698,7 +723,7 @@ let inter (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) c1 c2 =
       with Not_found -> () ) ;
   fun yield -> Tbl.iter (fun x res -> if res = Inter_both then yield x) tbl
 
-let diff (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) c1 c2 =
+let diff (type a) ~eq ~hash c1 c2 =
   let module Tbl = Hashtbl.Make (struct
     type t = a
 
@@ -711,7 +736,7 @@ let diff (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) c1 c2 =
 
 exception Subset_exit
 
-let subset (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) c1 c2 =
+let subset (type a) ~eq ~hash c1 c2 =
   let module Tbl = Hashtbl.Make (struct
     type t = a
 
@@ -725,12 +750,12 @@ let subset (type a) ?(eq = ( = )) ?(hash = Hashtbl.hash) c1 c2 =
     true
   with Subset_exit -> false
 
-let rec unfoldr f b k =
+let rec unfoldr b ~f k =
   match f b with
   | None -> ()
   | Some (x, b') ->
       k x ;
-      unfoldr f b' k
+      unfoldr ~f b' k
 
 (*$R
   let f x = if x < 5 then Some (string_of_int x,x+1) else None in
@@ -739,11 +764,11 @@ let rec unfoldr f b k =
     |> OUnit.assert_equal ["0"; "1"; "2"; "3"; "4"]
 *)
 
-let scan f acc seq k =
+let scan seq acc ~f k =
   k acc ;
   let acc = ref acc in
   seq (fun elt ->
-      let acc' = f !acc elt in
+      let acc' = f elt !acc in
       k acc' ;
       acc := acc' )
 
@@ -754,7 +779,7 @@ let scan f acc seq k =
     |> OUnit.assert_equal ~printer:pp_ilist [0;1;3;6;10;15]
 *)
 
-let max ?(lt = fun x y -> x < y) seq =
+let max seq ~lt =
   let ret = ref None in
   seq (fun x ->
       match !ret with
@@ -762,10 +787,10 @@ let max ?(lt = fun x y -> x < y) seq =
       | Some y -> if lt y x then ret := Some x ) ;
   !ret
 
-let max_exn ?lt seq =
-  match max ?lt seq with Some x -> x | None -> raise_notrace Not_found
+let max_exn seq ~lt =
+  match max ~lt seq with Some x -> x | None -> raise_notrace Not_found
 
-let min ?(lt = fun x y -> x < y) seq =
+let min seq ~lt =
   let ret = ref None in
   seq (fun x ->
       match !ret with
@@ -773,8 +798,8 @@ let min ?(lt = fun x y -> x < y) seq =
       | Some y -> if lt x y then ret := Some x ) ;
   !ret
 
-let min_exn ?lt seq =
-  match min ?lt seq with Some x -> x | None -> raise Not_found
+let min_exn seq ~lt =
+  match min ~lt seq with Some x -> x | None -> raise Not_found
 
 (*$= & ~printer:string_of_int
   100 (0 -- 100 |> max_exn ?lt:None)
@@ -841,16 +866,16 @@ let take n seq k =
 
 exception ExitTakeWhile
 
-let take_while p seq k =
-  try seq (fun x -> if p x then k x else raise_notrace ExitTakeWhile)
+let take_while seq ~f k =
+  try seq (fun x -> if f x then k x else raise_notrace ExitTakeWhile)
   with ExitTakeWhile -> ()
 
 exception ExitFoldWhile
 
-let fold_while f s seq =
+let fold_while seq s ~f =
   let state = ref s in
   let consume x =
-    let acc, cont = f !state x in
+    let cont, acc = f x !state in
     state := acc ;
     match cont with `Stop -> raise_notrace ExitFoldWhile | `Continue -> ()
   in
@@ -858,11 +883,46 @@ let fold_while f s seq =
     seq consume ;
     !state
   with ExitFoldWhile -> !state
+
 (*$R
   let n = of_list [true;true;false;true]
     |> fold_while (fun acc b -> if b then acc+1, `Continue else acc, `Stop) 0 in
   OUnit.assert_equal 2 n;
 *)
+
+exception Stop_fold_opt
+
+let fold_opt seq s ~f =
+  let state = ref s in
+  try
+    seq (fun x ->
+        match f x !state with
+        | Some s -> state := s
+        | None -> raise_notrace Stop_fold_opt ) ;
+    Some !state
+  with Stop_fold_opt -> None
+
+let fold_result (type s e) seq s ~f =
+  let state = ref s in
+  let exception Stop of (s, e) result in
+  try
+    seq (fun x ->
+        match f x !state with
+        | Ok s -> state := s
+        | Error _ as e -> raise_notrace (Stop e) ) ;
+    Ok !state
+  with Stop e -> e
+
+let fold_until (type res) seq s ~f ~finish =
+  let state = ref s in
+  let exception Stop of res in
+  try
+    seq (fun x ->
+        match f x !state with
+        | `Continue s -> state := s
+        | `Stop r -> raise_notrace (Stop r) ) ;
+    finish !state
+  with Stop r -> r
 
 let drop n seq k =
   let count = ref 0 in
@@ -872,15 +932,18 @@ let drop n seq k =
   (1 -- 5) |> drop 2 |> to_list |> OUnit.assert_equal [3;4;5]
 *)
 
-let drop_while p seq k =
+let drop_while seq ~f k =
   let drop = ref true in
   seq (fun x ->
       if !drop then
-        if p x then ()
+        if f x then ()
         else (
           drop := false ;
           k x )
       else k x )
+
+let pop seq =
+  match head seq with Some x -> Some (x, drop 1 seq) | None -> None
 
 let rev seq =
   let l = MList.of_iter seq in
@@ -892,9 +955,9 @@ let rev seq =
 
 exception ExitForall
 
-let for_all p seq =
+let for_all seq ~f =
   try
-    seq (fun x -> if not (p x) then raise_notrace ExitForall) ;
+    seq (fun x -> if not (f x) then raise_notrace ExitForall) ;
     true
   with ExitForall -> false
 
@@ -911,9 +974,9 @@ let for_all p seq =
 exception ExitExists
 
 (** Exists there some element satisfying the predicate? *)
-let exists p seq =
+let exists seq ~f =
   try
-    seq (fun x -> if p x then raise_notrace ExitExists) ;
+    seq (fun x -> if f x then raise_notrace ExitExists) ;
     false
   with ExitExists -> true
 
@@ -927,11 +990,11 @@ let exists p seq =
     |> OUnit.assert_bool "not exists";
 *)
 
-let mem ?(eq = ( = )) x seq = exists (eq x) seq
+let mem x seq ~eq = exists ~f:(eq x) seq
 
 exception ExitFind
 
-let find_map f seq =
+let find_map seq ~f =
   let r = ref None in
   ( try
       seq (fun x ->
@@ -943,9 +1006,7 @@ let find_map f seq =
     with ExitFind -> () ) ;
   !r
 
-let find = find_map
-
-let find_mapi f seq =
+let find_mapi seq ~f =
   let i = ref 0 in
   let r = ref None in
   ( try
@@ -958,11 +1019,13 @@ let find_mapi f seq =
     with ExitFind -> () ) ;
   !r
 
-let findi = find_mapi
-let find_pred f seq = find_map (fun x -> if f x then Some x else None) seq
+let find seq ~f = find_map ~f:(fun x -> if f x then Some x else None) seq
 
-let find_pred_exn f seq =
-  match find_pred f seq with Some x -> x | None -> raise Not_found
+let findi seq ~f =
+  find_mapi ~f:(fun i x -> if f i x then Some x else None) seq
+
+let find_exn seq ~f =
+  match find ~f seq with Some x -> x | None -> raise Not_found
 
 let[@inline] length seq =
   let r = ref 0 in
@@ -990,21 +1053,21 @@ let[@inline] zip_i seq k =
       incr r ;
       k (n, x) )
 
-let fold2 f acc seq2 =
+let fold2 seq2 acc ~f =
   let acc = ref acc in
-  seq2 (fun (x, y) -> acc := f !acc x y) ;
+  seq2 (fun (x, y) -> acc := f x y !acc) ;
   !acc
 
-let[@inline] iter2 f seq2 = seq2 (fun (x, y) -> f x y)
-let[@inline] map2 f seq2 k = seq2 (fun (x, y) -> k (f x y))
-let[@inline] map2_2 f g seq2 k = seq2 (fun (x, y) -> k (f x y, g x y))
+let[@inline] iter2 seq2 ~f = seq2 (fun (x, y) -> f x y)
+let[@inline] map2 seq2 ~f k = seq2 (fun (x, y) -> k (f x y))
+let[@inline] map2_2 seq2 ~f ~g k = seq2 (fun (x, y) -> k (f x y, g x y))
 
 (** {2 Basic data structures converters} *)
 
-let to_list seq = List.rev (fold (fun y x -> x :: y) [] seq)
-let[@inline] to_rev_list seq = fold (fun y x -> x :: y) [] seq
+let to_list seq = List.rev (fold ~f:(fun x y -> x :: y) seq [])
+let[@inline] to_rev_list seq = fold ~f:(fun x y -> x :: y) seq []
 let[@inline] of_list l k = List.iter k l
-let on_list f l = to_list (f (of_list l))
+let on_list l ~f = to_list (f (of_list l))
 
 let pair_with_idx seq k =
   let r = ref 0 in
@@ -1049,7 +1112,7 @@ let to_seq_persistent seq =
   let l = MList.of_iter seq in
   MList.to_seq l
 
-let[@inline] to_stack s seq = iter (fun x -> Stack.push x s) seq
+let[@inline] to_stack s seq = iter ~f:(fun x -> Stack.push x s) seq
 let[@inline] of_stack s k = Stack.iter k s
 let[@inline] to_queue q seq = seq (fun x -> Queue.push x q)
 let[@inline] of_queue q k = Queue.iter k q
@@ -1078,12 +1141,12 @@ let[@inline] of_str s k = String.iter k s
 
 let to_str seq =
   let b = Buffer.create 64 in
-  iter (fun c -> Buffer.add_char b c) seq ;
+  iter ~f:(fun c -> Buffer.add_char b c) seq ;
   Buffer.contents b
 
 let concat_str seq =
   let b = Buffer.create 64 in
-  iter (Buffer.add_string b) seq ;
+  iter ~f:(Buffer.add_string b) seq ;
   Buffer.contents b
 
 exception OneShotSequence
@@ -1130,7 +1193,7 @@ let int_range_dec ~start ~stop k =
     k i
   done
 
-let int_range_by ~step i j yield =
+let int_range_by ~step ~start:i ~stop:j yield =
   if step = 0 then invalid_arg "int_range_by" ;
   for k = 0 to (j - i) / step do
     yield ((k * step) + i)
@@ -1177,7 +1240,7 @@ end
 
 let to_set (type s v) m seq =
   let module S = (val m : Addable with type t = s and type elt = v) in
-  fold (fun set x -> S.add x set) S.empty seq
+  fold ~f:(fun x set -> S.add x set) seq S.empty
 
 type 'a gen = unit -> 'a option
 
@@ -1233,7 +1296,7 @@ module Set = struct
     val elements : t -> elt list
   end) : S with type elt := X.elt and type t := X.t = struct
     let to_iter_ set k = X.iter k set
-    let of_iter_ seq = fold (fun set x -> X.add x set) X.empty seq
+    let of_iter_ seq = fold ~f:(fun x set -> X.add x set) seq X.empty
     let to_iter = to_iter_
     let of_iter = of_iter_
     let to_seq = to_iter_
@@ -1275,7 +1338,7 @@ module Map = struct
     val bindings : 'a t -> (key * 'a) list
   end) : S with type key := M.key and type 'a t := 'a M.t = struct
     let to_iter m = from_iter (fun k -> M.iter (fun x y -> k (x, y)) m)
-    let of_iter seq = fold (fun m (k, v) -> M.add k v m) M.empty seq
+    let of_iter seq = fold ~f:(fun (k, v) m -> M.add k v m) seq M.empty
     let keys m = from_iter (fun k -> M.iter (fun x _ -> k x) m)
     let values m = from_iter (fun k -> M.iter (fun _ y -> k y) m)
     let of_list l = of_iter (of_list l)
@@ -1287,9 +1350,9 @@ end
 
 (** {2 Infinite iterators of random values} *)
 
-let random_int bound = forever (fun () -> Random.int bound)
-let random_bool = forever Random.bool
-let random_float bound = forever (fun () -> Random.float bound)
+let random_int bound = forever ~f:(fun () -> Random.int bound)
+let random_bool = forever ~f:Random.bool
+let random_float bound = forever ~f:(fun () -> Random.float bound)
 
 let random_array a k =
   assert (Array.length a > 0) ;
@@ -1372,8 +1435,8 @@ let sample k seq =
 module Infix = struct
   let[@inline] ( -- ) i j = int_range ~start:i ~stop:j
   let[@inline] ( --^ ) i j = int_range_dec ~start:i ~stop:j
-  let[@inline] ( >>= ) x f = flat_map f x
-  let[@inline] ( >|= ) x f = map f x
+  let[@inline] ( >>= ) x f = flat_map ~f x
+  let[@inline] ( >|= ) x f = map ~f x
   let[@inline] ( <*> ) funs args k = funs (fun f -> args (fun x -> k (f x)))
   let ( <+> ) = append
 end
@@ -1452,14 +1515,15 @@ module IO = struct
       raise e
 
   let write_to ?mode ?flags filename seq =
-    write_bytes_to ?mode ?flags filename (map Bytes.unsafe_of_string seq)
+    write_bytes_to ?mode ?flags filename (map ~f:Bytes.unsafe_of_string seq)
 
   let write_bytes_lines ?mode ?flags filename seq =
     let ret = Bytes.unsafe_of_string "\n" in
     write_bytes_to ?mode ?flags filename (snoc (intersperse ret seq) ret)
 
   let write_lines ?mode ?flags filename seq =
-    write_bytes_lines ?mode ?flags filename (map Bytes.unsafe_of_string seq)
+    write_bytes_lines ?mode ?flags filename
+      (map ~f:Bytes.unsafe_of_string seq)
 end
 
 (* regression tests *)
