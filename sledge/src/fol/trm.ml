@@ -244,6 +244,117 @@ module Var = struct
 
     let apply sub v = Map.find v sub |> Option.value ~default:v
   end
+
+  module Context = struct
+    type t = {voc: Set.t; xs: Set.t} [@@deriving sexp]
+
+    let compare vx1 vx2 =
+      let open Ord.Infix in
+      if vx1 == vx2 then 0
+      else Set.compare vx1.xs vx2.xs <?> (Set.compare, vx1.voc, vx2.voc)
+
+    let pp_voc ppf {voc} =
+      if not (Set.is_empty voc) then
+        [%Dbg.fprintf ppf "@<2>∀ @[%a@] .@ " Set.pp voc]
+
+    let pp_diff ppf (vx, vx') = Set.pp_xs ppf (Set.diff vx'.xs vx.xs)
+
+    (* Constructors *)
+
+    let empty = {voc= Set.empty; xs= Set.empty}
+    let of_vars voc = {voc; xs= Set.empty}
+    let with_xs xs vx = {vx with xs}
+
+    let merge vx1 vx2 =
+      let {voc= voc1; xs= xs1} = vx1 in
+      let {voc= voc2; xs= xs2} = vx2 in
+      let voc = Set.union voc1 voc2 in
+      let xs = Set.union xs1 xs2 in
+      {voc; xs}
+
+    (* Queries *)
+
+    let voc vx = vx.voc
+    let xs vx = vx.xs
+    let contains {voc} vs = Set.subset vs ~of_:voc
+    let diff_inter vs vx = Set.diff_inter vs vx.voc
+    let diff vs vx = Set.diff vs vx.voc
+    let inter vs vx = Set.inter vs vx.voc
+  end
+
+  module Fresh = struct
+    type 'a m = Context.t ref -> 'a
+
+    let gen s m =
+      let r = ref s in
+      let a = m r in
+      (a, !r)
+
+    let gen_ s m = m (ref s)
+
+    module Import = struct
+      module Dbg = struct
+        include Dbg
+
+        let dbgs ?call =
+          let thunk f r =
+            let a, s = f !r in
+            r := s ;
+            a
+          in
+          let force m s = gen s m in
+          dbgs thunk force ?call
+      end
+    end
+
+    open Import
+
+    (* Actions *)
+
+    let var_ ~existential name r =
+      let {Context.voc; xs} = !r in
+      let max =
+        match Set.max_elt voc with None -> 0 | Some m -> max 0 (id m)
+      in
+      let x' = make ~id:(max + 1) ~name in
+      let xs = if existential then Set.add x' xs else xs in
+      r := {voc= Set.add x' voc; xs} ;
+      x'
+
+    let var name r = var_ ~existential:true name r
+
+    let rename ?(existential = true) x sub r =
+      let x' = var_ ~existential (name x) r in
+      Map.add_exn ~key:x ~data:x' sub
+
+    let subst dom =
+      [%dbgs]
+        ~call:(fun {pf} -> pf "%a" Set.pp dom)
+        ~retn:(fun {pf} (s, vxd) ->
+          pf "%a%a" Context.pp_diff vxd Subst.pp s ;
+          Subst.invariant s )
+      @@ fun r -> Set.fold dom Subst.empty ~f:(fun x sub -> rename x sub r)
+
+    (* Convenience wrappers *)
+
+    let reset_xs r =
+      let vx : Context.t = !r in
+      r := {vx with xs= Set.empty} ;
+      vx
+
+    let extract_xs r =
+      let vx = reset_xs r in
+      vx.xs
+
+    let inter_xs xs r =
+      let vx : Context.t = !r in
+      r := {vx with xs= Set.inter vx.xs xs}
+
+    let fold_iter m init ~f r =
+      Iter.fold (m r) init ~f:(fun (e, vx) z ->
+          r := Context.merge vx !r ;
+          f e z )
+  end
 end
 
 (* Add definitions needed for arithmetic embedding into terms *)
