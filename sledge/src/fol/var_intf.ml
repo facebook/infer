@@ -62,9 +62,6 @@ module type S = sig
   module Context : sig
     type t [@@deriving compare, equal, sexp]
 
-    val voc : t -> Set.t
-    (** [voc vx] is the vocabulary of [vx]. *)
-
     val xs : t -> Set.t
     (** [xs vx] is the quantifier prefix of [vx]. *)
 

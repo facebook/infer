@@ -250,7 +250,6 @@ module Var = struct
 
     (* Queries *)
 
-    let voc vx = vx.voc
     let xs vx = vx.xs
     let contains {voc} vs = Set.subset vs ~of_:voc
     let diff_inter vs vx = Set.diff_inter vs vx.voc

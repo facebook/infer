@@ -667,7 +667,6 @@ module Xsh = struct
     (** Accessors *)
 
     let vx (_, vx) = vx
-    let us (_, vx) = Var.Context.voc vx
     let xs (_, vx) = Var.Context.xs vx
     let qf (q, _) = q
     let ctx xq = Sh.ctx (qf xq)

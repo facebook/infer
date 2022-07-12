@@ -149,12 +149,6 @@ module Xsh : sig
   val vx : t -> Var.Context.t
   (** Variable context of formula *)
 
-  val us : t -> Var.Set.t
-  (** Vocabulary / variable context of formula *)
-
-  val xs : t -> Var.Set.t
-  (** Existentially-bound variables of formula *)
-
   val ctx : t -> Context.t
   (** First-order logical context induced by rest of formula *)
 

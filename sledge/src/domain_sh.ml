@@ -226,7 +226,7 @@ let call ~summaries tid ?(child = tid) ~globals ~actuals ~areturn ~formals
   (* pass arguments by conjoining equations between formals and actuals *)
   let entry = and_eqs shadow formals actuals q in
   (* note: locals and formals are in scope *)
-  assert (Var.Set.subset formals_freturn_locals ~of_:(Xsh.us entry)) ;
+  assert (Var.Context.contains (Xsh.vx entry) formals_freturn_locals) ;
   (* simplify *)
   let entry = simplify entry in
   ( if not summaries then (entry, {areturn; unshadow; frame= Xsh.emp})
@@ -343,7 +343,7 @@ let create_summary tid ~locals ~formals ~entry ~current:post =
   let locals = X.regs tid locals in
   let foot = Xsh.exists locals entry in
   let foot, subst =
-    Xsh.freshen ~wrt:(Var.Set.union (Xsh.us foot) (Xsh.us post)) foot
+    Xsh.freshen ~wrt:(Var.Set.union (Xsh.fv foot) (Xsh.fv post)) foot
   in
   let restore_formals q =
     Var.Set.fold formals q ~f:(fun var q ->
@@ -359,8 +359,8 @@ let create_summary tid ~locals ~formals ~entry ~current:post =
   let xs = Var.Set.inter (Xsh.fv foot) (Xsh.fv post) in
   let xs = Var.Set.diff xs formals in
   let xs_and_formals = Var.Set.union xs formals in
-  let foot = Xsh.exists (Var.Set.diff (Xsh.us foot) xs_and_formals) foot in
-  let post = Xsh.exists (Var.Set.diff (Xsh.us post) xs_and_formals) post in
+  let foot = Xsh.exists (Var.Set.diff (Xsh.fv foot) xs_and_formals) foot in
+  let post = Xsh.exists (Var.Set.diff (Xsh.fv post) xs_and_formals) post in
   let current = Xsh.extend_voc xs post in
   ({xs; foot; post}, current)
   |>
@@ -369,7 +369,7 @@ let create_summary tid ~locals ~formals ~entry ~current:post =
 let apply_summary q ({xs; foot; post} as fs) =
   [%Dbg.call fun {pf} -> pf "@ fs: %a@ q: %a" pp_summary fs pp q]
   ;
-  let xs_in_q = Var.Set.inter xs (Xsh.us q) in
+  let xs_in_q = Var.Context.diff xs (Xsh.vx q) in
   let xs_in_fv_q = Var.Set.inter xs (Xsh.fv q) in
   (* Between creation of a summary and its use, the vocabulary of q (q.us)
      might have been extended. That means infer_frame would fail, because q
