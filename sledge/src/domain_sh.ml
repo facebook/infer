@@ -388,11 +388,10 @@ let%test_module _ =
   ( module struct
     let () = Dbg.init ~margin:68 ()
     let pp = Format.printf "@.%a@." Sh.pp
-    let vx = ref Var.Set.empty
+    let vx = ref Var.Context.empty
 
     let var name =
-      let x_, wrt = Var.fresh name ~wrt:!vx in
-      vx := wrt ;
+      let x_ = Var.Fresh.var name vx in
       (x_, Term.var x_)
 
     let _, head = var "head"

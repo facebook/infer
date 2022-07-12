@@ -30,11 +30,10 @@ let%test_module _ =
     let ( && ) = F.and_
     let ( || ) = F.or_
     let ( ~~ ) = F.not_
-    let vx = ref Var.Set.empty
+    let vx = ref Var.Context.empty
 
     let var name =
-      let x_, wrt = Var.fresh name ~wrt:!vx in
-      vx := wrt ;
+      let x_ = Var.Fresh.var name vx in
       (x_, Term.var x_)
 
     let _, y = var "y"
