@@ -869,10 +869,10 @@ module Sh = struct
 
   (** Simplify *)
 
-  let rec norm_ s xq =
+  let rec norm s xq =
     [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw xq]
     ;
-    let f_sjn = norm_ s in
+    let f_sjn = norm s in
     let f_ctx x =
       let x', vx =
         Var.Fresh.gen
@@ -897,7 +897,7 @@ module Sh = struct
         Var.Set.is_empty unbound
         || fail "unbound subst vars: %a" Var.Set.pp unbound () )]
     ;
-    (if Context.Subst.is_empty s then xq else norm_ s xq)
+    (if Context.Subst.is_empty s then xq else norm s xq)
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp_raw q' ;
@@ -1020,7 +1020,7 @@ module Sh = struct
       in
       List.fold ~f:star hoisted ({q with djns}, Var.Context.with_xs xs vx)
 
-  let rec simplify_ us ancestor_xs rev_xss survived ancestor_subst xq =
+  let rec simplify us ancestor_xs rev_xss survived ancestor_subst xq =
     [%Dbg.call fun {pf} ->
       pf "@ %a@ %a@ %a" pp_vss (List.rev rev_xss) Context.Subst.pp
         ancestor_subst pp_raw xq]
@@ -1067,7 +1067,7 @@ module Sh = struct
           List.rev_partition_map (T.djns xq) ~f:(fun djn ->
               let djn =
                 Set.map
-                  ~f:(simplify_ us union_xss rev_xss survived subst)
+                  ~f:(simplify us union_xss rev_xss survived subst)
                   djn
               in
               match Set.classify djn with
@@ -1499,7 +1499,7 @@ module Xsh = struct
         Var.Set.is_empty unbound
         || fail "unbound subst vars: %a" Var.Set.pp unbound () )]
     ;
-    (if Context.Subst.is_empty s then xq else norm_ s xq)
+    (if Context.Subst.is_empty s then xq else Sh.norm s xq)
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp_raw q' ;
@@ -1516,7 +1516,7 @@ module Xsh = struct
       let q = propagate_context Var.Set.empty Context.empty q in
       if is_false q then false_ (T.us xq)
       else
-        simplify_ (T.us xq) Var.Set.empty [] Var.Set.empty
+        Sh.simplify (T.us xq) Var.Set.empty [] Var.Set.empty
           Context.Subst.empty q )
     |>
     [%Dbg.retn fun {pf} q' ->
