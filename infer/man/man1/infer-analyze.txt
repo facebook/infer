@@ -643,6 +643,11 @@ SIMPLE LINEAGE OPTIONS
            in which distinct entities get assigned the same ID. (Conversely:
            --simple-lineage-dedup)
 
+       --simple-lineage-include-builtins
+           Activates: Include call/return edges to/from procedures that model
+           primitive Erlang operations, such as constructing a list.
+           (Conversely: --no-simple-lineage-include-builtins)
+
        --simple-lineage-json-report
            Activates: Enable simple lineage report in JSON format.
            (Conversely: --no-simple-lineage-json-report)
