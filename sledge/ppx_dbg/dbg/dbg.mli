@@ -14,7 +14,7 @@ val all : config
 
 exception Parse_failure of string
 
-val parse : string -> config
+val parse_exn : string -> config
 (** Parse a trace specification string to a config. May raise
     [Parse_failure]. *)
 

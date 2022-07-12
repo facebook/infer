@@ -16,7 +16,7 @@ let%test_module _ =
     (* let () =
      *   Dbg.init ~margin:160
      *     ~config:
-     *       (Dbg.parse
+     *       (Dbg.parse_exn
      *          "+Context-Context.canon-Context.canon_f-Context.norm-Context.find_extend_" )
      *     () *)
 

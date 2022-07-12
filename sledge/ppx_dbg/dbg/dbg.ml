@@ -51,7 +51,7 @@ let config = ref none
 
 exception Parse_failure of string
 
-let parse s =
+let parse_exn s =
   if String.equal s "*" then all
   else
     let default = Map.empty in

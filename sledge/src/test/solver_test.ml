@@ -11,11 +11,11 @@ open Fol
 let%test_module _ =
   ( module struct
     let () =
-      Dbg.init ~margin:68 ~config:(Dbg.parse "+Solver.infer_frame") ()
+      Dbg.init ~margin:68 ~config:(Dbg.parse_exn "+Solver.infer_frame") ()
 
     (* let () =
      *   Dbg.init ~margin:160
-     *     ~config:(Dbg.parse "+Solver.infer_frame+Solver.excise")
+     *     ~config:(Dbg.parse_exn "+Solver.infer_frame+Solver.excise")
      *     () *)
 
     [@@@warning "-unused-value-declaration"]

@@ -50,7 +50,7 @@ let command ~summary ?readme param =
   let trace =
     let%map_open config =
       flag "trace" ~doc:"<spec> enable debug tracing"
-        (optional_with_default Dbg.none (Arg_type.create Dbg.parse))
+        (optional_with_default Dbg.none (Arg_type.create Dbg.parse_exn))
     and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"

@@ -17,7 +17,7 @@ let%test_module _ =
     (* let () =
      *   Dbg.init ~margin:160
      *     ~config:
-     *       (Dbg.parse
+     *       (Dbg.parse_exn
      *          "+Sh.simplify+Sh.simplify_+Sh.norm+Sh.and_subst+Context.solve_and_elim+Context.partition_valid+Context.solve_for_vars+Context.apply_and_elim+Context.apply_subst+Context.elim" )
      *     () *)
 
