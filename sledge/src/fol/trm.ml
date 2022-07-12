@@ -253,6 +253,8 @@ module Var = struct
       if vx1 == vx2 then 0
       else Set.compare vx1.xs vx2.xs <?> (Set.compare, vx1.voc, vx2.voc)
 
+    let equal = [%compare.equal: t]
+
     let pp_voc ppf {voc} =
       if not (Set.is_empty voc) then
         [%Dbg.fprintf ppf "@<2>∀ @[%a@] .@ " Set.pp voc]

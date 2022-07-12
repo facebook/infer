@@ -24,11 +24,8 @@ module Sh : sig
     val to_iter : t -> seg iter
   end
 
-  type starjunction
-
-  and disjunction
-
-  type t = starjunction [@@deriving compare, equal, sexp]
+  type disjunction
+  type t [@@deriving compare, equal, sexp]
 
   module Set : Set.S with type elt := t and type t = disjunction
 
@@ -155,7 +152,7 @@ module Sh : sig
   (** Free variables, a subset of vocabulary. *)
 
   val fold_dnf :
-       conj:(starjunction -> 'conjuncts -> 'conjuncts)
+       conj:(t -> 'conjuncts -> 'conjuncts)
     -> disj:(Var.Set.t * 'conjuncts -> 'disjuncts -> 'disjuncts)
     -> t
     -> Var.Set.t * 'conjuncts

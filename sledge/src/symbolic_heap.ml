@@ -65,15 +65,23 @@ module Sh = struct
       { heap: Segs.t  (** star-conjunction of segment atomic formulas *)
       ; djns: disjunction list  (** star-conjunction of disjunctions *)
       ; pure: Formula.t  (** pure boolean constraints *)
-      ; xs: Var.Set.t  (** existentially-bound variables *)
-      ; us: Var.Set.t  (** vocabulary / variable context of formula *)
       ; ctx: Context.t [@ignore]
             (** first-order logical context induced by rest of formula *) }
 
-    and disjunction = (starjunction, compare) Set.t
-    [@@deriving compare, equal, sexp]
+    and disjunction = (t, compare) Set.t
 
-    type t = starjunction [@@deriving compare, equal, sexp]
+    and t = starjunction * Var.Context.t [@@deriving compare, equal, sexp]
+
+    (** Accessors *)
+
+    let qf (q, _) = q
+    let vx (_, vx) = vx
+    let us (_, vx) = Var.Context.voc vx
+    let xs (_, vx) = Var.Context.xs vx
+    let ctx (q, _) = q.ctx
+    let pure (q, _) = q.pure
+    let heap (q, _) = q.heap
+    let djns (q, _) = q.djns
   end
 
   module T = struct
@@ -88,14 +96,6 @@ module Sh = struct
 
   include T
 
-  (** Accessors *)
-
-  let us q = q.us
-  let xs q = q.xs
-  let ctx q = q.ctx
-  let heap q = q.heap
-  let djns q = q.djns
-
   (** Replay debugging *)
 
   type call = Freshen_xs of t * Var.Set.t | Simplify of t
@@ -104,15 +104,15 @@ module Sh = struct
   (** Basic values *)
 
   let emp =
-    { us= Var.Set.empty
-    ; xs= Var.Set.empty
-    ; ctx= Context.empty
-    ; pure= Formula.tt
-    ; heap= Segs.empty
-    ; djns= [] }
+    ( {ctx= Context.empty; pure= Formula.tt; heap= Segs.empty; djns= []}
+    , Var.Context.empty )
 
   let false_ us =
-    {emp with us; ctx= Context.unsat; pure= Formula.ff; djns= [Set.empty]}
+    ( { ctx= Context.unsat
+      ; pure= Formula.ff
+      ; heap= Segs.empty
+      ; djns= [Set.empty] }
+    , Var.Context.of_vars us )
 
   (** Traversals *)
 
@@ -137,8 +137,8 @@ module Sh = struct
   let fold_vars_seg seg s ~f =
     fold_terms_seg ~f:(Iter.fold ~f << Term.vars) seg s
 
-  let fold_vars_stem ?ignore_ctx ?ignore_pure
-      {us= _; xs= _; ctx; pure; heap; djns= _} s ~f =
+  let fold_vars_stem ?ignore_ctx ?ignore_pure {ctx; pure; heap; djns= _} s
+      ~f =
     let unless flag f s = if Option.is_some flag then s else f s in
     Segs.fold ~f:(fold_vars_seg ~f) heap s
     |> unless ignore_pure (Iter.fold ~f (Formula.vars pure))
@@ -152,24 +152,24 @@ module Sh = struct
 
   let fv_seg seg = fold_vars_seg ~f:Var.Set.add seg Var.Set.empty
 
-  let fv ?ignore_ctx ?ignore_pure q =
-    let rec fv_union q s =
+  let fv ?ignore_ctx ?ignore_pure xq =
+    let rec fv_union ((q, _) as xq) s =
       Var.Set.diff
         (fold_vars ?ignore_ctx ?ignore_pure fv_union ~f:Var.Set.add q s)
-        q.xs
+        (T.xs xq)
     in
-    fv_union q Var.Set.empty
+    fv_union xq Var.Set.empty
 
   (** Pretty-printing *)
 
-  let rec var_strength_ xs m q =
+  let rec var_strength_ xs m ((q, _) as xq) =
     let add v m =
       Var.Map.update v m ~f:(function
         | None -> Some `Anonymous
         | Some `Anonymous -> Some `Existential
         | o -> o )
     in
-    let xs = Var.Set.union xs q.xs in
+    let xs = Var.Set.union xs (T.xs xq) in
     let m_stem =
       fold_vars_stem ~ignore_ctx:() q m ~f:(fun var m ->
           if not (Var.Set.mem var xs) then
@@ -276,12 +276,12 @@ module Sh = struct
           [%Dbg.fprintf fs "@<2>∀ @[%a@] .@ " Var.Set.pp_diff (vs, us)]
 
   let rec pp_ ?var_strength ?vs ancestor_xs parent_ctx fs
-      {us; xs; ctx; pure; heap; djns} =
+      (({ctx; pure; heap; djns}, _) as xq) =
     Format.pp_open_hvbox fs 0 ;
     let x v =
       Option.bind ~f:(fun (_, m) -> Var.Map.find v m) var_strength
     in
-    pp_us ?vs fs us ;
+    pp_us ?vs fs (T.us xq) ;
     ( match djns with
     | [djn] when Set.is_empty djn && Option.is_some var_strength ->
         Format.fprintf fs "false"
@@ -289,7 +289,8 @@ module Sh = struct
         let vs = Option.value vs ~default:Var.Set.empty in
         let xs_d_vs, xs_i_vs =
           Var.Set.diff_inter
-            (Var.Set.filter xs ~f:(fun v -> Poly.(x v <> Some `Anonymous)))
+            (Var.Set.filter (T.xs xq) ~f:(fun v ->
+                 Poly.(x v <> Some `Anonymous) ) )
             vs
         in
         if not (Var.Set.is_empty xs_i_vs) then (
@@ -312,16 +313,16 @@ module Sh = struct
         else
           pp_heap x
             ~pre:(if first then "  " else "@ @<2>∧ ")
-            (if Option.is_some var_strength then ctx else emp.ctx)
+            (if Option.is_some var_strength then ctx else T.ctx emp)
             fs (Segs.to_list heap) ;
         let first = first && Segs.is_empty heap in
         List.pp
           ~pre:(if first then "  " else "@ * ")
           "@ * "
           (pp_djn ?var_strength
-             (Var.Set.union vs (Var.Set.union us xs))
-             (Var.Set.union ancestor_xs xs)
-             (if Option.is_some var_strength then ctx else emp.ctx) )
+             (Var.Set.union vs (Var.Set.union (T.us xq) (T.xs xq)))
+             (Var.Set.union ancestor_xs (T.xs xq))
+             (if Option.is_some var_strength then ctx else Context.empty) )
           fs djns ) ;
     Format.pp_close_box fs ()
 
@@ -335,7 +336,7 @@ module Sh = struct
                var_strength_ xs var_strength_stem sjn
              in
              Format.fprintf fs "@[<hv 1>(%a)@]"
-               (pp_ ?var_strength ~vs (Var.Set.union xs sjn.xs) ctx)
+               (pp_ ?var_strength ~vs (Var.Set.union xs (T.xs sjn)) ctx)
                sjn ) )
         (Set.to_list djn)
 
@@ -354,18 +355,19 @@ module Sh = struct
 
   (** Invariants *)
 
-  let rec invariant q =
-    let@ () = Invariant.invariant [%here] q [%sexp_of: t] in
-    let {us; xs; ctx; pure; heap; djns} = q in
+  let rec invariant ((q, _) as xq) =
+    let@ () = Invariant.invariant [%here] xq [%sexp_of: t] in
+    let {ctx; pure; heap; djns} = q in
     try
       assert (
-        Var.Set.disjoint us xs
-        || fail "inter: @[%a@]@\nq: @[%a@]" Var.Set.pp (Var.Set.inter us xs)
-             pp q () ) ;
+        Var.Set.disjoint (T.us xq) (T.xs xq)
+        || fail "inter: @[%a@]@\nq: @[%a@]" Var.Set.pp
+             (Var.Set.inter (T.us xq) (T.xs xq))
+             pp xq () ) ;
       assert (
-        Var.Set.subset (fv q) ~of_:us
+        Var.Set.subset (fv xq) ~of_:(T.us xq)
         || fail "unbound but free: %a" Var.Set.pp
-             (Var.Set.diff (fv q) us)
+             (Var.Set.diff (fv xq) (T.us xq))
              () ) ;
       Context.invariant ctx ;
       match djns with
@@ -380,148 +382,169 @@ module Sh = struct
           List.iter djns ~f:(fun djn ->
               assert (Set.cardinal djn > 1) ;
               Set.iter djn ~f:(fun sjn ->
-                  assert (Var.Set.subset sjn.us ~of_:(Var.Set.union us xs)) ;
+                  assert (
+                    Var.Set.subset (T.us sjn)
+                      ~of_:(Var.Set.union (T.us xq) (T.xs xq)) ) ;
                   invariant sjn ) )
     with exc ->
       let bt = Printexc.get_raw_backtrace () in
-      [%Dbg.info " %a" pp_raw q] ;
+      [%Dbg.info " %a" pp_raw xq] ;
       Printexc.raise_with_backtrace exc bt
 
   (** Query *)
 
   (** syntactically empty: empty heap and no pure constraints *)
-  let is_emp q =
+  let is_emp (q, _) =
     Context.is_empty q.ctx
     && Formula.equal Formula.tt q.pure
     && Segs.is_empty q.heap
     && List.is_empty q.djns
 
   (** (incomplete syntactic) test that all satisfying heaps are empty *)
-  let rec is_empty q =
+  let rec is_empty (q, _) =
     Segs.is_empty q.heap && List.for_all ~f:(Set.for_all ~f:is_empty) q.djns
 
-  (** syntactically inconsistent *)
-  let is_false q =
+  (** (incomplete syntactic) test for inconsistency *)
+  let is_false (q, _) =
     match q.djns with [djn] -> Set.is_empty djn | _ -> false
 
   (** Quantification and Vocabulary *)
 
-  let exists_fresh xs q =
+  let exists_fresh xs ((q, vx) as xq) =
     [%Dbg.call fun {pf} ->
-      pf "@ {@[%a@]}@ %a" Var.Set.pp xs pp q ;
+      pf "@ {@[%a@]}@ %a" Var.Set.pp xs pp xq ;
       assert (
-        Var.Set.disjoint xs q.us
+        Var.Set.disjoint xs (T.us xq)
         || fail "Sh.exists_fresh xs ∩ q.us: %a" Var.Set.pp
-             (Var.Set.inter xs q.us) () )]
+             (Var.Set.inter xs (T.us xq))
+             () )]
     ;
-    ( if Var.Set.is_empty xs then q
-    else {q with xs= Var.Set.union q.xs xs} |> check invariant )
+    ( if Var.Set.is_empty xs then xq
+    else
+      (q, Var.Context.with_xs (Var.Set.union (T.xs xq) xs) vx)
+      |> check invariant )
     |>
     [%Dbg.retn fun {pf} -> pf "%a" pp]
 
-  let exists xs q =
-    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp xs pp q]
+  let exists xs ((q, _) as xq) =
+    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp xs pp xq]
     ;
     assert (
-      Var.Set.subset xs ~of_:q.us
-      || fail "Sh.exists xs - q.us: %a" Var.Set.pp (Var.Set.diff xs q.us) () ) ;
-    ( if Var.Set.is_empty xs then q
+      Var.Set.subset xs ~of_:(T.us xq)
+      || fail "Sh.exists xs - q.us: %a" Var.Set.pp
+           (Var.Set.diff xs (T.us xq))
+           () ) ;
+    ( if Var.Set.is_empty xs then xq
     else
-      {q with us= Var.Set.diff q.us xs; xs= Var.Set.union q.xs xs}
+      ( q
+      , Var.Context.with_xs
+          (Var.Set.union (T.xs xq) xs)
+          (Var.Context.of_vars (Var.Set.diff (T.us xq) xs)) )
       |> check invariant )
     |>
     [%Dbg.retn fun {pf} -> pf "%a" pp]
 
   (** remove quantification on variables disjoint from vocabulary *)
-  let elim_exists xs q =
-    assert (Var.Set.disjoint xs q.us) ;
-    {q with us= Var.Set.union q.us xs; xs= Var.Set.diff q.xs xs}
+  let elim_exists xs ((q, _) as xq) =
+    assert (Var.Set.disjoint xs (T.us xq)) ;
+    ( q
+    , Var.Context.with_xs
+        (Var.Set.diff (T.xs xq) xs)
+        (Var.Context.of_vars (Var.Set.union (T.us xq) xs)) )
 
   (** freshen existentials, preserving vocabulary *)
-  let rec freshen_xs q ~wrt =
+  let rec freshen_xs xq ~wrt =
     try
       [%Dbg.call fun {pf} ->
-        pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q ;
-        assert (Var.Set.subset q.us ~of_:wrt)]
+        pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp xq ;
+        assert (Var.Set.subset (T.us xq) ~of_:wrt)]
       ;
-      let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen q.xs ~wrt in
-      ( if Var.Subst.is_empty sub then q
+      let Var.Subst.{sub; dom; rng}, _ = Var.Subst.freshen (T.xs xq) ~wrt in
+      ( if Var.Subst.is_empty sub then xq
       else
-        let q' = apply_subst sub q in
-        let xs = Var.Set.union (Var.Set.diff q'.xs dom) rng in
-        if q' == q && xs == q.xs then q
+        let ((q', _) as xq') = apply_subst sub xq in
+        let xs = Var.Set.union (Var.Set.diff (T.xs xq') dom) rng in
+        if xq' == xq && xs == T.xs xq then xq
         else
-          let us = Var.Set.diff q'.us xs in
-          {q' with us; xs} )
+          let us = Var.Set.diff (T.us xq') xs in
+          (q', Var.Context.with_xs xs (Var.Context.of_vars us)) )
       |>
-      [%Dbg.retn fun {pf} q' ->
-        pf "%a@ %a" Var.Subst.pp sub pp q' ;
-        assert (Var.Set.equal q'.us q.us) ;
-        assert (Var.Set.disjoint q'.xs (Var.Subst.domain sub)) ;
-        assert (Var.Set.disjoint q'.xs (Var.Set.inter q.xs wrt)) ;
-        invariant q']
+      [%Dbg.retn fun {pf} xq' ->
+        pf "%a@ %a" Var.Subst.pp sub pp xq' ;
+        assert (Var.Set.equal (T.us xq') (T.us xq)) ;
+        assert (Var.Set.disjoint (T.xs xq') (Var.Subst.domain sub)) ;
+        assert (Var.Set.disjoint (T.xs xq') (Var.Set.inter (T.xs xq) wrt)) ;
+        invariant xq']
     with exc ->
       let bt = Printexc.get_raw_backtrace () in
       Format.eprintf "@\n%a@." Sexp.pp_hum
-        (sexp_of_call (Freshen_xs (q, wrt))) ;
+        (sexp_of_call (Freshen_xs (xq, wrt))) ;
       Printexc.raise_with_backtrace exc bt
 
-  and extend_us us q =
-    let us = Var.Set.union us q.us in
-    (if us == q.us then q else {(freshen_xs q ~wrt:us) with us})
+  and extend_us us xq =
+    let us = Var.Set.union us (T.us xq) in
+    ( if us == T.us xq then xq
+    else
+      let ((q', _) as xq') = freshen_xs xq ~wrt:us in
+      (q', Var.Context.with_xs (T.xs xq') (Var.Context.of_vars us)) )
     |> check invariant
 
-  and freshen q ~wrt =
-    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
+  and freshen xq ~wrt =
+    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp xq]
     ;
-    let xsub, _ = Var.Subst.freshen q.us ~wrt:(Var.Set.union wrt q.xs) in
-    let q' = extend_us wrt (rename_ xsub q) in
-    (q', xsub.sub)
-    |>
-    [%Dbg.retn fun {pf} (q', _) ->
-      pf "%a" pp q' ;
-      invariant q' ;
-      assert (Var.Set.subset wrt ~of_:q'.us) ;
-      assert (Var.Set.disjoint wrt (fv q'))]
-
-  and bind_exists q ~wrt =
-    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp q]
-    ;
-    let q' =
-      if Var.Set.is_empty wrt then q
-      else freshen_xs q ~wrt:(Var.Set.union q.us wrt)
+    let xsub, _ =
+      Var.Subst.freshen (T.us xq) ~wrt:(Var.Set.union wrt (T.xs xq))
     in
-    (q'.xs, {q' with us= Var.Set.union q'.us q'.xs; xs= Var.Set.empty})
+    let xq' = extend_us wrt (rename_ xsub xq) in
+    (xq', xsub.sub)
+    |>
+    [%Dbg.retn fun {pf} (xq', _) ->
+      pf "%a" pp xq' ;
+      invariant xq' ;
+      assert (Var.Set.subset wrt ~of_:(T.us xq')) ;
+      assert (Var.Set.disjoint wrt (fv xq'))]
+
+  and bind_exists xq ~wrt =
+    [%Dbg.call fun {pf} -> pf "@ {@[%a@]}@ %a" Var.Set.pp wrt pp xq]
+    ;
+    let ((q', _) as xq') =
+      if Var.Set.is_empty wrt then xq
+      else freshen_xs xq ~wrt:(Var.Set.union (T.us xq) wrt)
+    in
+    ( T.xs xq'
+    , (q', Var.Context.of_vars (Var.Set.union (T.us xq') (T.xs xq'))) )
     |>
     [%Dbg.retn fun {pf} (_, q') -> pf "%a" pp q']
 
   (** Transformation *)
 
-  and star q1 q2 =
+  and star xq1 xq2 =
     [%dbg]
-      ~call:(fun {pf} -> pf "@ (%a)@ (%a)" pp q1 pp q2)
-      ~retn:(fun {pf} q ->
-        pf "%a" pp q ;
-        invariant q ;
-        assert (Var.Set.equal q.us (Var.Set.union q1.us q2.us)) )
+      ~call:(fun {pf} -> pf "@ (%a)@ (%a)" pp xq1 pp xq2)
+      ~retn:(fun {pf} xq ->
+        pf "%a" pp xq ;
+        invariant xq ;
+        assert (
+          Var.Set.equal (T.us xq) (Var.Set.union (T.us xq1) (T.us xq2)) ) )
     @@ fun () ->
-    if is_false q1 || is_false q2 then false_ (Var.Set.union q1.us q2.us)
-    else if is_emp q1 then extend_us q1.us q2
-    else if is_emp q2 then extend_us q2.us q1
+    if is_false xq1 || is_false xq2 then
+      false_ (Var.Set.union (T.us xq1) (T.us xq2))
+    else if is_emp xq1 then extend_us (T.us xq1) xq2
+    else if is_emp xq2 then extend_us (T.us xq2) xq1
     else
-      let us = Var.Set.union q1.us q2.us in
-      let q1 = freshen_xs q1 ~wrt:(Var.Set.union us q2.xs) in
-      let q2 = freshen_xs q2 ~wrt:(Var.Set.union us q1.xs) in
-      let {us= us1; xs= xs1; ctx= c1; pure= p1; heap= h1; djns= d1} = q1 in
-      let {us= us2; xs= xs2; ctx= c2; pure= p2; heap= h2; djns= d2} = q2 in
-      assert (Var.Set.equal us (Var.Set.union us1 us2)) ;
+      let us = Var.Set.union (T.us xq1) (T.us xq2) in
+      let xq1 = freshen_xs xq1 ~wrt:(Var.Set.union us (T.xs xq2)) in
+      let xq2 = freshen_xs xq2 ~wrt:(Var.Set.union us (T.xs xq1)) in
+      let {ctx= c1; pure= p1; heap= h1; djns= d1}, _ = xq1 in
+      let {ctx= c2; pure= p2; heap= h2; djns= d2}, _ = xq2 in
+      assert (Var.Set.equal us (Var.Set.union (T.us xq1) (T.us xq2))) ;
       match Segs.union h1 h2 with
       | None -> false_ us
       | Some heap ->
           let ctx, vx =
             Var.Fresh.gen
               (Var.Context.of_vars
-                 (Var.Set.union us (Var.Set.union xs1 xs2)) )
+                 (Var.Set.union us (Var.Set.union (T.xs xq1) (T.xs xq2))) )
               (Context.union c1 c2)
           in
           let xs = Var.Context.xs vx in
@@ -531,23 +554,21 @@ module Sh = struct
             if Formula.equal Formula.ff pure then false_ us
             else
               exists_fresh xs
-                { us
-                ; xs= Var.Set.union xs1 xs2
-                ; ctx
-                ; pure
-                ; heap
-                ; djns= List.append d1 d2 }
+                ( {ctx; pure; heap; djns= List.append d1 d2}
+                , Var.Context.with_xs
+                    (Var.Set.union (T.xs xq1) (T.xs xq2))
+                    (Var.Context.of_vars us) )
 
-  and map ~f_sjn ~f_ctx ~f_trm ~f_fml
-      ({us; xs= _; ctx; pure; heap; djns} as q) =
+  and map ~f_sjn ~f_ctx ~f_trm ~f_fml ((q, vx) as xq) =
+    let {ctx; pure; heap; djns} = q in
     let pure = f_fml pure in
-    if Formula.equal Formula.ff pure then false_ us
+    if Formula.equal Formula.ff pure then false_ (T.us xq)
     else
       let xs, ctx = f_ctx ctx in
-      if Context.is_unsat ctx then false_ us
+      if Context.is_unsat ctx then false_ (T.us xq)
       else
         match Segs.map heap ~f:(map_seg ~f:f_trm) with
-        | None -> false_ us
+        | None -> false_ (T.us xq)
         | Some heap ->
             let djns, hoisted =
               List.partition_map_endo djns ~f:(fun djn ->
@@ -566,11 +587,11 @@ module Sh = struct
               && heap == q.heap
               && djns == q.djns
               && Var.Set.is_empty xs
-            then q
-            else if List.exists ~f:Set.is_empty djns then false_ us
+            then xq
+            else if List.exists ~f:Set.is_empty djns then false_ (T.us xq)
             else
               exists_fresh xs
-                (List.fold ~f:star hoisted {q with ctx; pure; heap; djns})
+                (List.fold ~f:star hoisted ({ctx; pure; heap; djns}, vx))
 
   (** primitive application of a substitution, ignores us and xs, may
       violate invariant *)
@@ -585,66 +606,69 @@ module Sh = struct
     |> check (fun q' ->
            assert (Var.Set.disjoint (fv q') (Var.Subst.domain sub)) )
 
-  and rename_ Var.Subst.{sub; dom; rng} q =
+  and rename_ Var.Subst.{sub; dom; rng} xq =
     [%Dbg.call fun {pf} ->
-      pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q ;
-      assert (Var.Set.subset dom ~of_:q.us)]
+      pf "@ @[%a@]@ %a" Var.Subst.pp sub pp xq ;
+      assert (Var.Set.subset dom ~of_:(T.us xq))]
     ;
-    let q = extend_us rng q in
-    ( if Var.Subst.is_empty sub then q
-    else {(apply_subst sub q) with us= Var.Set.diff q.us dom} )
+    let xq = extend_us rng xq in
+    ( if Var.Subst.is_empty sub then xq
+    else
+      let ((q, _) as xq) = apply_subst sub xq in
+      ( q
+      , Var.Context.with_xs (T.xs xq)
+          (Var.Context.of_vars (Var.Set.diff (T.us xq) dom)) ) )
     |>
-    [%Dbg.retn fun {pf} q' ->
-      pf "%a" pp q' ;
-      invariant q' ;
-      assert (Var.Set.disjoint q'.us (Var.Subst.domain sub))]
+    [%Dbg.retn fun {pf} xq' ->
+      pf "%a" pp xq' ;
+      invariant xq' ;
+      assert (Var.Set.disjoint (T.us xq') (Var.Subst.domain sub))]
 
-  and rename sub q =
-    [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp q]
+  and rename sub xq =
+    [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Var.Subst.pp sub pp xq]
     ;
-    rename_ (Var.Subst.restrict_dom sub q.us) q
+    rename_ (Var.Subst.restrict_dom sub (T.us xq)) xq
     |>
-    [%Dbg.retn fun {pf} q' ->
-      pf "%a" pp q' ;
-      invariant q' ;
-      assert (Var.Set.disjoint q'.us (Var.Subst.domain sub))]
+    [%Dbg.retn fun {pf} xq' ->
+      pf "%a" pp xq' ;
+      invariant xq' ;
+      assert (Var.Set.disjoint (T.us xq') (Var.Subst.domain sub))]
 
   let starN = function
     | [] -> emp
     | [q] -> q
     | q :: qs -> List.fold ~f:star qs q
 
-  let or_ q1 q2 =
-    [%Dbg.call fun {pf} -> pf "@ (%a)@ (%a)" pp_raw q1 pp_raw q2]
+  let or_ xq1 xq2 =
+    [%Dbg.call fun {pf} -> pf "@ (%a)@ (%a)" pp_raw xq1 pp_raw xq2]
     ;
-    ( match (q1, q2) with
-    | _ when is_false q1 -> extend_us q1.us q2
-    | _ when is_false q2 -> extend_us q2.us q1
-    | ( ({djns= []; _} as q)
-      , ({us= _; xs; ctx= _; pure; heap; djns= [djn]} as d) )
-      when Var.Set.is_empty xs
+    ( match (xq1, xq2) with
+    | _ when is_false xq1 -> extend_us (T.us xq1) xq2
+    | _ when is_false xq2 -> extend_us (T.us xq2) xq1
+    | ({djns= []; _}, _), (({ctx= _; pure; heap; djns= [djn]} as d), _)
+      when Var.Set.is_empty (T.xs xq2)
            && Formula.(equal tt pure)
            && Segs.is_empty heap ->
-        {d with us= Var.Set.union q.us d.us; djns= [Set.add q djn]}
-    | ( ({us= _; xs; ctx= _; pure; heap; djns= [djn]} as d)
-      , ({djns= []; _} as q) )
-      when Var.Set.is_empty xs
+        ( {d with djns= [Set.add xq1 djn]}
+        , Var.Context.of_vars (Var.Set.union (T.us xq1) (T.us xq2)) )
+    | (({ctx= _; pure; heap; djns= [djn]} as d), _), ({djns= []; _}, _)
+      when Var.Set.is_empty (T.xs xq1)
            && Formula.(equal tt pure)
            && Segs.is_empty heap ->
-        {d with us= Var.Set.union q.us d.us; djns= [Set.add q djn]}
-    | _ when equal q1 q2 -> q1
+        ( {d with djns= [Set.add xq2 djn]}
+        , Var.Context.of_vars (Var.Set.union (T.us xq1) (T.us xq2)) )
+    | _ when equal xq1 xq2 -> xq1
     | _ ->
-        { us= Var.Set.union q1.us q2.us
-        ; xs= Var.Set.empty
-        ; ctx= Context.empty
-        ; pure= Formula.tt
-        ; heap= Segs.empty
-        ; djns= [Set.add q1 (Set.of_ q2)] } )
+        ( { ctx= Context.empty
+          ; pure= Formula.tt
+          ; heap= Segs.empty
+          ; djns= [Set.add xq1 (Set.of_ xq2)] }
+        , Var.Context.of_vars (Var.Set.union (T.us xq1) (T.us xq2)) ) )
     |>
-    [%Dbg.retn fun {pf} q ->
-      pf "%a" pp_raw q ;
-      invariant q ;
-      assert (Var.Set.equal q.us (Var.Set.union q1.us q2.us))]
+    [%Dbg.retn fun {pf} xq ->
+      pf "%a" pp_raw xq ;
+      invariant xq ;
+      assert (Var.Set.equal (T.us xq) (Var.Set.union (T.us xq1) (T.us xq2)))]
 
   let orN djn =
     match Set.pop djn with
@@ -654,25 +678,26 @@ module Sh = struct
   (** Construct *)
 
   (** conjoin an FOL context assuming vocabulary is compatible *)
-  let and_ctx_ ctx q =
-    assert (Var.Set.subset (Context.fv ctx) ~of_:q.us) ;
-    let ctx, vx =
+  let and_ctx_ ctx ((q, vx) as xq) =
+    assert (Var.Set.subset (Context.fv ctx) ~of_:(T.us xq)) ;
+    let ctx, vx' =
       Var.Fresh.gen
-        (Var.Context.of_vars (Var.Set.union q.us q.xs))
+        (Var.Context.of_vars (Var.Set.union (T.us xq) (T.xs xq)))
         (Context.union q.ctx ctx)
     in
-    let xs = Var.Context.xs vx in
-    if Context.is_unsat ctx then false_ q.us
-    else exists_fresh xs {q with ctx}
+    let xs = Var.Context.xs vx' in
+    if Context.is_unsat ctx then false_ (T.us xq)
+    else exists_fresh xs ({q with ctx}, vx)
 
-  let and_ctx ctx q =
-    [%Dbg.call fun {pf} -> pf "@ %a@ %a" Context.pp ctx pp q]
+  let and_ctx ctx xq =
+    [%Dbg.call fun {pf} -> pf "@ %a@ %a" Context.pp ctx pp xq]
     ;
-    (if is_false q then q else and_ctx_ ctx (extend_us (Context.fv ctx) q))
+    ( if is_false xq then xq
+    else and_ctx_ ctx (extend_us (Context.fv ctx) xq) )
     |>
-    [%Dbg.retn fun {pf} q ->
-      pf "%a" pp q ;
-      invariant q]
+    [%Dbg.retn fun {pf} xq ->
+      pf "%a" pp xq ;
+      invariant xq]
 
   let pure (p : Formula.t) =
     [%Dbg.call fun {pf} -> pf "@ %a" Formula.pp p]
@@ -681,26 +706,29 @@ module Sh = struct
     Iter.fold
       (Var.Fresh.gen_ (Var.Context.of_vars us) (Context.dnf p))
       (false_ Var.Set.empty)
-      ~f:(fun ((pure, ctx), vx) q ->
+      ~f:(fun ((pure, ctx), vx) xq ->
         let xs = Var.Context.xs vx in
         if Context.is_unsat ctx || Formula.equal Formula.ff pure then
-          extend_us us q
-        else or_ q (exists_fresh xs {emp with us; ctx; pure}) )
+          extend_us us xq
+        else
+          or_ xq
+            (exists_fresh xs
+               ({(qf emp) with ctx; pure}, Var.Context.of_vars us) ) )
     |>
     [%Dbg.retn fun {pf} q ->
       pf "%a" pp q ;
       invariant q]
 
-  let and_ b q =
+  let and_ b ((q, _) as xq) =
     [%dbg]
-      ~call:(fun {pf} -> pf "@ (%a)@ (%a)" Formula.pp b pp q)
+      ~call:(fun {pf} -> pf "@ (%a)@ (%a)" Formula.pp b pp xq)
       ~retn:(fun {pf} -> pf "%a" pp)
     @@ fun () ->
     let p = pure (Formula.map_terms ~f:(Context.normalize q.ctx) b) in
-    if is_emp p then q
+    if is_emp p then xq
     else
-      let xs, q = bind_exists q ~wrt:(Formula.fv b) in
-      exists xs (star p q)
+      let xs, xq = bind_exists xq ~wrt:(Formula.fv b) in
+      exists xs (star p xq)
 
   let andN bs q = and_ (Formula.andN bs) q
 
@@ -716,15 +744,17 @@ module Sh = struct
   let seg pt =
     let us = fv_seg pt in
     if Term.equal Term.zero pt.loc then false_ us
-    else {emp with us; heap= Segs.of_ pt} |> check invariant
+    else
+      ({(qf emp) with heap= Segs.of_ pt}, Var.Context.of_vars us)
+      |> check invariant
 
   (** Update *)
 
-  let rem_seg seg q =
-    {q with heap= Segs.remove seg q.heap} |> check invariant
+  let rem_seg seg (q, vx) =
+    ({q with heap= Segs.remove seg q.heap}, vx) |> check invariant
 
-  let filter_heap ~f q =
-    {q with heap= Segs.filter q.heap ~f} |> check invariant
+  let filter_heap ~f (q, vx) =
+    ({q with heap= Segs.filter q.heap ~f}, vx) |> check invariant
 
   (** Disjunctive-Normal Form *)
 
@@ -732,8 +762,8 @@ module Sh = struct
     let rec add_disjunct pending_splits sjn (xs, conjuncts) disjuncts =
       let ys, sjn = bind_exists sjn ~wrt:xs in
       let xs = Var.Set.union ys xs in
-      let djns = sjn.djns in
-      let sjn = {sjn with djns= []} in
+      let djns = T.djns sjn in
+      let sjn = ({(qf sjn) with djns= []}, vx sjn) in
       split_case
         (Iter.append (Iter.of_list djns) pending_splits)
         (xs, conj sjn conjuncts)
@@ -765,14 +795,18 @@ module Sh = struct
   (** rename existentially quantified variables to avoid shadowing, and
       reduce quantifier scopes by sinking them as low as possible into
       disjunctions *)
-  let rec freshen_nested_xs us q =
-    [%Dbg.call fun {pf} -> pf "@ %a" pp q]
+  let rec freshen_nested_xs us ((q, vx) as xq) =
+    [%Dbg.call fun {pf} -> pf "@ %a" pp xq]
     ;
     (* trim xs to those that appear in stem or >1 disjunction and sink
        rest *)
     let xs_sink, _ =
-      let fv_stem = fv {q with xs= Var.Set.empty; djns= []} in
-      let xs_sink, xs_djns = (Var.Set.diff q.xs fv_stem, Var.Set.empty) in
+      let fv_stem =
+        fv ({q with djns= []}, Var.Context.with_xs Var.Set.empty vx)
+      in
+      let xs_sink, xs_djns =
+        (Var.Set.diff (T.xs xq) fv_stem, Var.Set.empty)
+      in
       List.fold q.djns (xs_sink, xs_djns) ~f:(fun djn (xs_sink, xs_djns) ->
           Set.fold djn (xs_sink, xs_djns) ~f:(fun djt (xs_sink, xs_djns) ->
               let fv_djt = fv djt in
@@ -781,21 +815,21 @@ module Sh = struct
               let xs_djns = Var.Set.union xs_djns fv_djt in
               (xs_sink, xs_djns) ) )
     in
-    let xs = Var.Set.diff q.xs xs_sink in
-    let us = Var.Set.union us q.us in
+    let xs = Var.Set.diff (T.xs xq) xs_sink in
+    let us = Var.Set.union us (T.us xq) in
     let djns, hoisted, xs_below =
       List.fold_partition_map q.djns Var.Set.empty ~f:(fun djn xs_below ->
           let dj, xs_below =
             Set.fold_map djn xs_below ~f:(fun dj xs_below ->
                 (* freshen xs that shadow ancestor us *)
-                let us = Var.Set.union us dj.us in
+                let us = Var.Set.union us (T.us dj) in
                 let dj = freshen_xs dj ~wrt:us in
                 (* quantify xs not in stem and freshen disjunct *)
                 let dj =
                   freshen_nested_xs us
-                    (exists (Var.Set.inter xs_sink dj.us) dj)
+                    (exists (Var.Set.inter xs_sink (T.us dj)) dj)
                 in
-                let xs_below = Var.Set.union xs_below dj.xs in
+                let xs_below = Var.Set.union xs_below (T.xs dj) in
                 (dj, xs_below) )
           in
           match Set.classify dj with
@@ -804,15 +838,15 @@ module Sh = struct
     in
     (* rename xs to miss all xs in subformulas *)
     freshen_xs
-      (List.fold ~f:star hoisted {q with xs; djns})
-      ~wrt:(Var.Set.union q.us xs_below)
+      (List.fold ~f:star hoisted ({q with djns}, Var.Context.with_xs xs vx))
+      ~wrt:(Var.Set.union (T.us xq) xs_below)
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp q' ;
       invariant q']
 
   (** first-order approximation of heap constraints *)
-  let rec pure_approx q =
+  let rec pure_approx (q, _) =
     Formula.andN
       ( [ q.pure
         ; Formula.distinct
@@ -834,18 +868,19 @@ module Sh = struct
   (** enumerate a DNF-expansion of a symbolic heap's first-order constraints
       conjoined with a first-order approximation of the heap constraints
       until a branch that is not unsatisfiable is found *)
-  let is_unsat_dnf q =
+  let is_unsat_dnf xq =
     let exception NotUnsat in
     let conj sjn (wrt, ctx, fml) =
-      let wrt = Var.Set.union wrt sjn.xs in
+      let wrt = Var.Set.union wrt (T.xs sjn) in
       let ctx, vx =
-        Var.Fresh.gen (Var.Context.of_vars wrt) (Context.union ctx sjn.ctx)
+        Var.Fresh.gen (Var.Context.of_vars wrt)
+          (Context.union ctx (T.ctx sjn))
       in
       let zs = Var.Context.xs vx in
       let wrt = Var.Set.union wrt zs in
-      let fml = Formula.and_ fml sjn.pure in
+      let fml = Formula.and_ fml (T.pure sjn) in
       let fml =
-        Segs.fold sjn.heap fml ~f:(fun seg ->
+        Segs.fold (T.heap sjn) fml ~f:(fun seg ->
             Formula.and_ (Formula.dq0 seg.loc) )
       in
       (wrt, ctx, fml)
@@ -855,61 +890,63 @@ module Sh = struct
         raise_notrace NotUnsat
     in
     try
-      fold_dnf ~conj ~disj q (Var.Set.empty, (q.us, emp.ctx, emp.pure)) () ;
+      fold_dnf ~conj ~disj xq
+        (Var.Set.empty, (T.us xq, T.ctx emp, T.pure emp))
+        () ;
       true
     with NotUnsat -> false
 
-  let is_unsat q =
-    if strong_unsat then is_unsat_dnf q
-    else Context.refutes q.ctx (pure_approx q)
+  let is_unsat ((q, _) as xq) =
+    if strong_unsat then is_unsat_dnf xq
+    else Context.refutes q.ctx (pure_approx xq)
 
   (** Simplify *)
 
-  let rec norm_ s q =
-    [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q]
+  let rec norm_ s xq =
+    [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw xq]
     ;
     let f_sjn = norm_ s in
     let f_ctx x =
       let x', vx =
         Var.Fresh.gen
-          (Var.Context.of_vars (Var.Set.union q.us q.xs))
+          (Var.Context.of_vars (Var.Set.union (T.us xq) (T.xs xq)))
           (Context.apply_subst s x)
       in
       (Var.Context.xs vx, x')
     in
     let f_trm = Context.Subst.subst s in
     let f_fml = Formula.map_terms ~f:(Context.Subst.subst s) in
-    map q ~f_sjn ~f_ctx ~f_trm ~f_fml
+    map xq ~f_sjn ~f_ctx ~f_trm ~f_fml
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp_raw q' ;
       invariant q']
 
-  let norm s q =
+  let norm s xq =
     [%Dbg.call fun {pf} ->
-      pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q ;
+      pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw xq ;
       assert (
-        let unbound = Var.Set.diff (Context.Subst.fv s) q.us in
+        let unbound = Var.Set.diff (Context.Subst.fv s) (T.us xq) in
         Var.Set.is_empty unbound
         || fail "unbound subst vars: %a" Var.Set.pp unbound () )]
     ;
-    (if Context.Subst.is_empty s then q else norm_ s q)
+    (if Context.Subst.is_empty s then xq else norm_ s xq)
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp_raw q' ;
       invariant q']
 
-  let rec normalize_ q =
-    [%Dbg.call fun {pf} -> pf "@ %a" pp_raw q]
+  let rec normalize_ ((q, _) as xq) =
+    [%Dbg.call fun {pf} -> pf "@ %a" pp_raw xq]
     ;
-    let q' =
-      map q ~f_sjn:normalize_
+    let q', vx =
+      map xq ~f_sjn:normalize_
         ~f_ctx:(fun x -> (Var.Set.empty, x))
         ~f_trm:(Context.normalize q.ctx)
         ~f_fml:(Formula.map_terms ~f:(Context.normalize q.ctx))
     in
     let pure = Context.fold_eqs ~f:Formula.and_ q.ctx q'.pure in
-    {q' with pure}
+    ({q' with pure}, vx)
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp_raw q' ;
@@ -924,43 +961,47 @@ module Sh = struct
       pf "%a" pp_raw q' ;
       invariant q']
 
-  let rec propagate_context_ ancestor_vs ancestor_ctx q =
-    [%Dbg.call fun {pf} -> pf "@ (%a)@ %a" Context.pp ancestor_ctx pp q]
+  let rec propagate_context_ ancestor_vs ancestor_ctx ((q, _) as xq) =
+    [%Dbg.call fun {pf} -> pf "@ (%a)@ %a" Context.pp ancestor_ctx pp xq]
     ;
     (* extend vocabulary with variables in scope above *)
-    let q = {q with us= Var.Set.union ancestor_vs q.us} in
+    let xq =
+      ( q
+      , Var.Context.with_xs (T.xs xq)
+          (Var.Context.of_vars (Var.Set.union ancestor_vs (T.us xq))) )
+    in
     (* strengthen context with that from above *)
-    let q = and_ctx_ ancestor_ctx q in
-    ( if is_false q then false_ q.us
+    let xq = and_ctx_ ancestor_ctx xq in
+    ( if is_false xq then false_ (T.us xq)
     else
       (* decompose formula *)
-      let xs, q = bind_exists q ~wrt:Var.Set.empty in
-      let stem, djns = ({q with djns= emp.djns}, q.djns) in
+      let xs, ((q, vx) as xq) = bind_exists xq ~wrt:Var.Set.empty in
+      let stem, djns = (({q with djns= T.djns emp}, vx), q.djns) in
       (* propagate over disjunctions *)
-      let q' =
-        List.fold djns stem ~f:(fun djn q' ->
+      let xq' =
+        List.fold djns stem ~f:(fun djn xq' ->
             let djn, dj_ctxs =
               Set.fold_map djn [] ~f:(fun dj dj_ctxs ->
-                  let dj = propagate_context_ q.us q.ctx dj in
-                  (dj, (dj.xs, dj.ctx) :: dj_ctxs) )
+                  let dj = propagate_context_ (T.us xq) q.ctx dj in
+                  (dj, (T.xs dj, T.ctx dj) :: dj_ctxs) )
             in
             let djn_ctx, vx =
               Var.Fresh.gen
-                (Var.Context.of_vars q.us)
+                (Var.Context.of_vars (T.us xq))
                 (Context.interN dj_ctxs)
             in
             let new_xs = Var.Context.xs vx in
             (* hoist xs appearing in disjunction's context *)
-            let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
+            let djn_xs = Var.Set.diff (Context.fv djn_ctx) (T.us xq') in
             let djn = Set.map ~f:(elim_exists djn_xs) djn in
             let ctx_djn = and_ctx_ djn_ctx (orN djn) in
             assert (is_false ctx_djn || Var.Set.subset new_xs ~of_:djn_xs) ;
-            star (exists djn_xs ctx_djn) q' )
+            star (exists djn_xs ctx_djn) xq' )
       in
       (* requantify existentials *)
-      let q' = exists xs q' in
+      let xq' = exists xs xq' in
       (* strengthening contexts can reveal inconsistency *)
-      if is_false q' then false_ q'.us else q' )
+      if is_false xq' then false_ (T.us xq') else xq' )
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp q' ;
@@ -981,24 +1022,28 @@ module Sh = struct
            Format.fprintf fs "{@[%a@]}" Var.Set.pp vs ) )
       vss
 
-  let remove_absent_xs ks q =
+  let remove_absent_xs ks ((q, vx) as xq) =
     [%dbg]
-      ~call:(fun {pf} -> pf "@ %a%a" Var.Set.pp_xs ks pp q)
+      ~call:(fun {pf} -> pf "@ %a%a" Var.Set.pp_xs ks pp xq)
       ~retn:(fun {pf} -> pf "%a" pp)
     @@ fun () ->
-    let ks = Var.Set.inter ks q.xs in
-    if Var.Set.is_empty ks then q
+    let ks = Var.Set.inter ks (T.xs xq) in
+    if Var.Set.is_empty ks then xq
     else
-      let xs = Var.Set.diff q.xs ks in
+      let xs = Var.Set.diff (T.xs xq) ks in
       let djns, hoisted =
         let rec trim_ks ks djns =
           List.partition_map_endo djns ~f:(fun djn ->
               let djn =
                 Set.map djn ~f:(fun sjn ->
-                    let us = Var.Set.diff sjn.us ks in
-                    let djns, hoisted = trim_ks ks sjn.djns in
-                    if us == sjn.us && djns == sjn.djns then sjn
-                    else List.fold ~f:star hoisted {sjn with us; djns} )
+                    let us = Var.Set.diff (T.us sjn) ks in
+                    let djns, hoisted = trim_ks ks (T.djns sjn) in
+                    if us == T.us sjn && djns == T.djns sjn then sjn
+                    else
+                      List.fold ~f:star hoisted
+                        ( {(qf sjn) with djns}
+                        , Var.Context.with_xs (T.xs sjn)
+                            (Var.Context.of_vars us) ) )
               in
               match Set.classify djn with
               | One dj -> Right dj
@@ -1006,49 +1051,53 @@ module Sh = struct
         in
         trim_ks ks q.djns
       in
-      List.fold ~f:star hoisted {q with xs; djns}
+      List.fold ~f:star hoisted ({q with djns}, Var.Context.with_xs xs vx)
 
-  let rec simplify_ us ancestor_xs rev_xss survived ancestor_subst q =
+  let rec simplify_ us ancestor_xs rev_xss survived ancestor_subst xq =
     [%Dbg.call fun {pf} ->
       pf "@ %a@ %a@ %a" pp_vss (List.rev rev_xss) Context.Subst.pp
-        ancestor_subst pp_raw q]
+        ancestor_subst pp_raw xq]
     ;
-    assert (not (is_false q)) ;
-    let q0 = q in
+    assert (not (is_false xq)) ;
+    let xq0 = xq in
     (* bind existentials *)
-    let xs, q = bind_exists ~wrt:emp.us q in
+    let xs, xq = bind_exists ~wrt:Var.Set.empty xq in
     let rev_xss = xs :: rev_xss in
     (* try to solve equations in ctx for variables in xss *)
     let stem_subst =
-      Context.solve_for_vars (us :: List.rev rev_xss) q.ctx
+      Context.solve_for_vars (us :: List.rev rev_xss) (T.ctx xq)
     in
     let subst = Context.Subst.compose ancestor_subst stem_subst in
-    ( if Context.Subst.is_empty subst then normalize q0
+    ( if Context.Subst.is_empty subst then normalize xq0
     else
       (* normalize context wrt solutions *)
       let union_xss = Var.Set.union xs ancestor_xs in
       let wrt = Var.Set.union us union_xss in
       let (ctx, removed), vx =
         Var.Fresh.gen (Var.Context.of_vars wrt)
-          (Context.apply_and_elim union_xss subst q.ctx)
+          (Context.apply_and_elim union_xss subst (T.ctx xq))
       in
       let fresh = Var.Context.xs vx in
-      let q = {(extend_us (Var.Set.union fresh ancestor_xs) q) with ctx} in
+      let xq = extend_us (Var.Set.union fresh ancestor_xs) xq in
+      let xq = ({(qf xq) with ctx}, T.vx xq) in
       (* normalize stem wrt its context *)
-      let stem = normalize {q with djns= emp.djns} in
+      let stem = normalize ({(qf xq) with djns= T.djns emp}, snd xq) in
       (* normalize stem wrt both ancestor and current solutions *)
       let stem =
         (* opt: ctx already normalized so just preserve it *)
-        {(norm subst {stem with ctx= emp.ctx}) with ctx= q.ctx}
+        let stem' =
+          norm subst ({(qf stem) with ctx= T.ctx emp}, snd stem)
+        in
+        ({(qf stem') with ctx= T.ctx xq}, snd stem')
       in
-      if strong_unsat && is_unsat stem then false_ stem.us
+      if strong_unsat && is_unsat stem then false_ (T.us stem)
       else
         (* recursively simplify subformulas *)
         let survived =
-          Var.Set.union survived (fv (elim_exists stem.xs stem))
+          Var.Set.union survived (fv (elim_exists (T.xs stem) stem))
         in
         let djns, hoisted =
-          List.rev_partition_map q.djns ~f:(fun djn ->
+          List.rev_partition_map (T.djns xq) ~f:(fun djn ->
               let djn =
                 Set.map
                   ~f:(simplify_ us union_xss rev_xss survived subst)
@@ -1059,12 +1108,12 @@ module Sh = struct
               | _ -> Left (orN djn) )
         in
         let q = List.fold ~f:star hoisted (List.fold ~f:star djns stem) in
-        if is_false q then false_ q.us
+        if is_false q then false_ (T.us xq)
         else
           let removed = Var.Set.diff removed survived in
           let removed =
             if Var.Set.is_empty removed then Var.Set.empty
-            else Var.Set.diff removed (fv (elim_exists q.xs q))
+            else Var.Set.diff removed (fv (elim_exists (T.xs xq) q))
           in
           (* removed may not contain all variables stem_subst has solutions
              for, so the equations in [∃ removed. stem_subst] that are not
@@ -1085,17 +1134,17 @@ module Sh = struct
 
   let count_simplify = ref (-1)
 
-  let simplify q =
-    [%Dbg.call fun {pf} -> pf " %i@ %a" !count_simplify pp_raw q]
+  let simplify xq =
+    [%Dbg.call fun {pf} -> pf " %i@ %a" !count_simplify pp_raw xq]
     ;
-    ( if is_false q then false_ q.us
+    ( if is_false xq then false_ (T.us xq)
     else
-      let q = freshen_nested_xs Var.Set.empty q in
+      let q = freshen_nested_xs Var.Set.empty xq in
       let q = propagate_context Var.Set.empty Context.empty q in
-      if is_false q then false_ q.us
+      if is_false q then false_ (T.us xq)
       else
-        simplify_ q.us Var.Set.empty [] Var.Set.empty Context.Subst.empty q
-    )
+        simplify_ (T.us xq) Var.Set.empty [] Var.Set.empty
+          Context.Subst.empty q )
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp_raw q' ;

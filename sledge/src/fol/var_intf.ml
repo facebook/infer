@@ -62,7 +62,7 @@ module type S = sig
   (** Variable Context: A vocabulary that can serve as a source of fresh
       variable names and an (existential) quantifier prefix *)
   module Context : sig
-    type t [@@deriving compare, sexp]
+    type t [@@deriving compare, equal, sexp]
 
     val voc : t -> Set.t
     (** [voc vx] is the vocabulary of [vx]. *)
