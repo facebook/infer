@@ -23,25 +23,18 @@ let%test_module _ =
 
     [@@@warning "-unused-value-declaration"]
 
-    let vx = ref Var.Set.empty
+    let vx = ref Var.Context.empty
 
     let var name =
-      let x_, wrt = Var.fresh name ~wrt:!vx in
-      vx := wrt ;
+      let x_ = Var.Fresh.var name vx in
       (x_, Term.var x_)
 
     let of_eqs l =
-      List.fold
-        ~f:(fun (a, b) (us, r) -> add us (Formula.eq a b) r)
-        l (!vx, empty)
-      |> snd
+      List.fold l empty ~f:(fun (a, b) r -> add (Formula.eq a b) r vx)
 
-    let add_eq a b r = add !vx (Formula.eq a b) r |> snd
-    let union r s = union !vx r s |> snd
-
-    let inter r s =
-      interN !vx [(Var.Set.empty, r); (Var.Set.empty, s)] |> snd
-
+    let add_eq a b r = add (Formula.eq a b) r vx
+    let union r s = union r s vx
+    let inter r s = interN [(Var.Set.empty, r); (Var.Set.empty, s)] vx
     let implies_eq r a b = implies r (Formula.eq a b)
     let difference x e f = Term.get_z (normalize x (Term.sub e f))
     let printf pp = Format.printf "@\n%a@." pp
@@ -511,7 +504,8 @@ let%test_module _ =
       in
       printf Formula.pp f ;
       printf Formula.pp
-        (Formula.orN (Iter.to_list (Iter.map ~f:snd3 (Context.dnf f)))) ;
+        (Formula.orN
+           (Iter.to_list (Iter.map ~f:(fst >> fst) (Context.dnf f vx))) ) ;
       [%expect
         {|
         ((%x_5 = %y_6) ∧ ((5 = %w_4) ∨ (4 = %w_4))

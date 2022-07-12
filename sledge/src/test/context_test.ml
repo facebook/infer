@@ -22,18 +22,14 @@ let%test_module _ =
 
     [@@@warning "-unused-value-declaration"]
 
-    let vx = ref Var.Set.empty
+    let vx = ref Var.Context.empty
 
     let var name =
-      let x_, wrt = Var.fresh name ~wrt:!vx in
-      vx := wrt ;
+      let x_ = Var.Fresh.var name vx in
       (x_, Term.var x_)
 
     let of_eqs l =
-      List.fold
-        ~f:(fun (a, b) (us, r) -> add us (Formula.eq a b) r)
-        l (!vx, empty)
-      |> snd
+      List.fold l empty ~f:(fun (a, b) r -> add (Formula.eq a b) r vx)
 
     let implies_eq r a b = implies r (Formula.eq a b)
     let printf pp = Format.printf "@\n%a@." pp

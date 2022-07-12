@@ -7,6 +7,7 @@
 
 (** Equality over uninterpreted functions and linear rational arithmetic *)
 
+open Var.Fresh.Import
 open Exp
 
 (* Solution Substitutions ================================================*)
@@ -228,9 +229,7 @@ end
 (** See also {!invariant} which checks many of the representation
     invariants. *)
 type t =
-  { xs: Var.Set.t
-        (** existential variables that did not appear in input formulas *)
-  ; sat: bool  (** [false] only if constraints are inconsistent *)
+  { sat: bool  (** [false] only if constraints are inconsistent *)
   ; rep: Subst.t
         (** Functional set of oriented equations that map solvable terms to
             their representatives: [a ↦ a'] indicates that [x ⊢ a = a'], and
@@ -792,49 +791,46 @@ let propagate1 {Theory.var= v; rep= t} x =
   Iter.fold ~f:(propagate_use x t) (Use.iter_of_opt v_use)
     {x with rep; cls; use}
 
-let solve ~wrt ~xs d e pending =
-  [%dbg]
+let solve d e pending =
+  [%dbgs]
     ~call:(fun {pf} -> pf "@ %a@ %a" Trm.pp d Trm.pp e)
-    ~retn:(fun {pf} (s, vx) ->
-      pf "%a%a" Var.Context.pp_diff (Var.Context.empty, vx) Theory.pp s )
-  @@ fun () ->
-  let vx =
-    Var.Context.with_xs xs (Var.Context.of_vars (Var.Set.union wrt xs))
-  in
-  Var.Fresh.gen vx
-    (Theory.solve d e {no_fresh= false; solved= Some []; pending})
+    ~retn:(fun {pf} (s, vxd) ->
+      pf "%a%a" Var.Context.pp_diff vxd Theory.pp s )
+  @@ fun vx ->
+  Theory.solve d e {no_fresh= false; solved= Some []; pending} vx
 
-let rec propagate_ ~wrt x =
+let rec propagate_ x vx =
   match x.pnd with
   | [] -> x
   | (a, b) :: pnd -> (
       [%Dbg.info "@ %a = %a" Trm.pp a Trm.pp b] ;
       let a' = norm x a in
       let b' = norm x b in
-      if Trm.equal a' b' then propagate_ ~wrt {x with pnd}
+      if Trm.equal a' b' then propagate_ {x with pnd} vx
       else
-        match solve ~wrt ~xs:x.xs a' b' pnd with
-        | {solved= Some solved; pending}, vx ->
-            let xs = Var.Context.xs vx in
-            let x = {x with xs; pnd= pending} in
-            propagate_ ~wrt (List.fold ~f:propagate1 solved x)
-        | {solved= None}, _ -> {x with sat= false; pnd= []} )
+        match solve a' b' pnd vx with
+        | {solved= Some solved; pending} ->
+            propagate_
+              (List.fold ~f:propagate1 solved {x with pnd= pending})
+              vx
+        | {solved= None} -> {x with sat= false; pnd= []} )
 
-let propagate ~wrt x =
-  [%dbg]
+let pp_xs_diff x {Dbg.pf} (x', vxd) =
+  pf "%a%a" Var.Context.pp_diff vxd pp_diff (x, x') ;
+  invariant x'
+
+let propagate x =
+  [%dbgs]
     ~call:(fun {pf} ->
       pf "@ %a" pp_raw x ;
       pre_invariant x )
-    ~retn:(fun {pf} x' ->
-      pf "%a" pp_diff (x, x') ;
-      invariant x' )
-  @@ fun () -> propagate_ ~wrt x
+    ~retn:(pp_xs_diff x)
+  @@ fun vx -> propagate_ x vx
 
 (* Core operations =======================================================*)
 
 let empty =
-  { xs= Var.Set.empty
-  ; sat= true
+  { sat= true
   ; rep= Subst.empty
   ; cls= Trm.Map.empty
   ; use= Trm.Map.empty
@@ -843,30 +839,24 @@ let empty =
 
 let unsat = {empty with sat= false}
 
-let merge ~wrt a b x =
-  [%dbg]
+let merge a b x =
+  [%dbgs]
     ~call:(fun {pf} -> pf " @[%a =@ %a@] |@ %a" Trm.pp a Trm.pp b pp x)
-    ~retn:(fun {pf} x' ->
-      pf "%a" pp_diff (x, x') ;
-      invariant x' )
-  @@ fun () ->
+    ~retn:(pp_xs_diff x)
+  @@ fun vx ->
   let x = {x with pnd= (a, b) :: x.pnd} in
-  propagate ~wrt x
+  propagate x vx
 
-let and_eq ~wrt a b x =
-  [%dbg]
+let and_eq a b x =
+  [%dbgs]
     ~call:(fun {pf} -> pf "@ @[%a = %a@]@ | %a" Trm.pp a Trm.pp b pp x)
-    ~retn:(fun {pf} x' ->
-      pf "%a" pp_diff (x, x') ;
-      invariant x' )
-  @@ fun () ->
+    ~retn:(pp_xs_diff x)
+  @@ fun vx ->
   if not x.sat then x
   else
     let a', x = canon_extend x a in
     let b', x = canon_extend x b in
-    if Trm.equal a' b' then x else merge ~wrt a' b' x
-
-let extract_xs r = (r.xs, {r with xs= Var.Set.empty})
+    if Trm.equal a' b' then x else merge a' b' x vx
 
 (* Exposed interface =====================================================*)
 
@@ -916,48 +906,45 @@ let ppx_diff var_strength fs parent_ctx fml ctx =
     (diff_classes ctx parent_ctx)
     (if Fml.(equal tt fml') then [] else [fml'])
 
-let apply_subst wrt s r =
-  [%Dbg.call fun {pf} -> pf "@ %a@ %a" Subst.pp s pp r]
-  ;
-  ( if Subst.is_empty s then r
+let apply_subst s x =
+  [%dbgs]
+    ~call:(fun {pf} -> pf "@ %a@ %a" Subst.pp s pp x)
+    ~retn:(pp_xs_diff x)
+  @@ fun vx ->
+  if Subst.is_empty s then x
   else
-    Trm.Map.fold r.cls
-      {r with rep= Subst.empty; cls= Trm.Map.empty; use= Trm.Map.empty}
-      ~f:(fun ~key:rep ~data:cls r ->
+    let x0 =
+      {x with rep= Subst.empty; cls= Trm.Map.empty; use= Trm.Map.empty}
+    in
+    Trm.Map.fold x.cls x0 ~f:(fun ~key:rep ~data:cls r ->
         let rep' = Subst.canon s rep in
         Cls.fold cls r ~f:(fun trm r ->
             let trm' = Subst.canon s trm in
-            and_eq ~wrt trm' rep' r ) ) )
-  |> extract_xs
-  |>
-  [%Dbg.retn fun {pf} (xs, r') ->
-    pf "%a%a" Var.Set.pp_xs xs pp_diff (r, r') ;
-    invariant r']
+            and_eq trm' rep' r vx ) )
 
-let union wrt r s =
-  [%Dbg.call fun {pf} -> pf "@ @[<hv 1>   %a@ @<2>∧ %a@]" pp r pp s]
-  ;
-  ( if not r.sat then r
-  else if not s.sat then s
+let union x y =
+  [%dbgs]
+    ~call:(fun {pf} -> pf "@ @[<hv 1>   %a@ @<2>∧ %a@]" pp x pp y)
+    ~retn:(pp_xs_diff x)
+  @@ fun vx ->
+  if not x.sat then x
+  else if not y.sat then y
   else
-    let s, r =
-      if Trm.Map.length s.rep <= Trm.Map.length r.rep then (s, r) else (r, s)
+    let y, x =
+      if Trm.Map.length y.rep <= Trm.Map.length x.rep then (y, x) else (x, y)
     in
-    Trm.Map.fold s.rep r ~f:(fun ~key:e ~data:e' r -> and_eq ~wrt e e' r) )
-  |> extract_xs
-  |>
-  [%Dbg.retn fun {pf} (_, r') ->
-    pf "%a" pp_diff (r, r') ;
-    invariant r']
+    Trm.Map.fold y.rep x ~f:(fun ~key:e ~data:e' x -> and_eq e e' x vx)
 
-let inter wrt (xs, r) (ys, s) =
-  [%Dbg.call fun {pf} ->
-    pf "@ @[  @[<hv 2>{ %a }@]@ @<2>∨ @[<hv 2>{ %a }@]@]" pp r pp s]
-  ;
-  ( if not s.sat then r
+let inter (xs, r) (ys, s) =
+  [%dbgs]
+    ~call:(fun {pf} ->
+      pf "@ @[  @[<hv 2>{ %a }@]@ @<2>∨ @[<hv 2>{ %a }@]@]" pp r pp s )
+    ~retn:(pp_xs_diff r)
+  @@ fun vx ->
+  if not s.sat then r
   else if not r.sat then s
   else
-    let merge_mems wrt (xs, r) (ys, s) i =
+    let merge_mems (xs, r) (ys, s) i =
       let unbound vs = Var.Set.disjoint xs vs && Var.Set.disjoint ys vs in
       Trm.Map.fold s.cls i ~f:(fun ~key:rep ~data:cls i ->
           let reps = if unbound (Trm.fv rep) then [rep] else [] in
@@ -967,55 +954,45 @@ let inter wrt (xs, r) (ys, s) =
                 match
                   List.find ~f:(fun rep -> implies r (Fml.eq exp rep)) reps
                 with
-                | Some rep -> (reps, and_eq ~wrt exp rep i)
+                | Some rep -> (reps, and_eq exp rep i vx)
                 | None -> (exp :: reps, i) )
           |> snd )
     in
     let i = empty in
-    let i = merge_mems wrt (xs, r) (ys, s) i in
-    let i = merge_mems wrt (ys, s) (xs, r) i in
-    i )
-  |>
-  [%Dbg.retn fun {pf} r' ->
-    pf "%a" pp_diff (r, r') ;
-    invariant r']
+    let i = merge_mems (xs, r) (ys, s) i in
+    let i = merge_mems (ys, s) (xs, r) i in
+    i
 
-let interN us xrIN =
-  ( match xrIN with
+let interN xrIN vx =
+  match xrIN with
   | [] -> unsat
   | (xs0, r0) :: xr1N ->
       List.fold xr1N (Var.Set.empty, xs0, r0)
         ~f:(fun (xsK, rK) (xs0I, xsJ, i0J) ->
           let xs0J = Var.Set.union xs0I xsJ in
-          let i0K = inter us (xsK, rK) (xs0J, i0J) in
+          let i0K = inter (xsK, rK) (xs0J, i0J) vx in
           (xs0J, xsK, i0K) )
-      |> trd3 )
-  |> extract_xs
+      |> trd3
 
-let rec add_ wrt b r =
+let rec add_ b r vx =
   match (b : Fml.t) with
   | Tt -> r
   | Not Tt -> unsat
-  | And {pos; neg} -> Fml.fold_pos_neg ~f:(add_ wrt) ~pos ~neg r
-  | Eq (d, e) -> and_eq ~wrt d e r
-  | Eq0 e -> and_eq ~wrt Trm.zero e r
+  | And {pos; neg} ->
+      Fml.fold_pos_neg ~f:(fun b r -> add_ b r vx) ~pos ~neg r
+  | Eq (d, e) -> and_eq d e r vx
+  | Eq0 e -> and_eq Trm.zero e r vx
   | Distinct _ | Pos _ | Not _ | Or _ | Iff _ | Cond _ | Lit _ -> r
 
-let add us b r =
-  [%Dbg.call fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp r]
-  ;
-  add_ us b r |> extract_xs
-  |>
-  [%Dbg.retn fun {pf} (_, r') ->
-    pf "%a" pp_diff (r, r') ;
-    invariant r']
+let add b x =
+  [%dbgs]
+    ~call:(fun {pf} -> pf "@ %a@ | %a" Fml.pp b pp x)
+    ~retn:(pp_xs_diff x)
+  @@ fun vx -> add_ b x vx
 
 let dnf f =
-  let meet1 a (vs, p, x) =
-    let vs, x = add vs a x in
-    (vs, Fml.and_ p a, x)
-  in
-  let top = (Var.Set.empty, Fml.tt, empty) in
+  let meet1 q (p, x) vx = (Fml.and_ p q, add q x vx) in
+  let top = (Fml.tt, empty) in
   Fml.dnf ~meet1 ~top f
 
 let rename x sub =
@@ -1044,22 +1021,20 @@ let rename x sub =
   if rep == x.rep && cls == x.cls && use == x.use then x
   else {x with rep; cls; use}
 
-let apply_and_elim ~wrt xs s r =
-  [%dbg]
-    ~call:(fun {pf} -> pf "@ %a%a@ %a" Var.Set.pp_xs xs Subst.pp s pp_raw r)
-    ~retn:(fun {pf} (zs, r', ks) ->
-      pf "%a@ %a@ %a" Var.Set.pp_xs zs pp_raw r' Var.Set.pp_xs ks ;
-      invariant r' ;
+let apply_and_elim xs s x =
+  [%dbgs]
+    ~call:(fun {pf} -> pf "@ %a%a@ %a" Var.Set.pp_xs xs Subst.pp s pp_raw x)
+    ~retn:(fun {pf} ((x', ks), vxd) ->
+      pf "%a%a@ %a" Var.Context.pp_diff vxd pp_diff (x, x') Var.Set.pp_xs ks ;
+      invariant x' ;
       assert (Var.Set.subset ks ~of_:xs) ;
-      assert (Var.Set.disjoint ks (fv r')) )
-  @@ fun () ->
-  if Subst.is_empty s then (Var.Set.empty, r, Var.Set.empty)
+      assert (Var.Set.disjoint ks (fv x')) )
+  @@ fun vx ->
+  if Subst.is_empty s then (x, Var.Set.empty)
   else
-    let zs, r = apply_subst wrt s r in
-    if is_unsat r then (Var.Set.empty, unsat, Var.Set.empty)
-    else
-      let ks = Var.Set.diff xs (fv r) in
-      (zs, r, ks)
+    let x = apply_subst s x vx in
+    if is_unsat x then (unsat, Var.Set.empty)
+    else (x, Var.Set.diff xs (fv x))
 
 (* Existential Witnessing and Elimination ================================*)
 
@@ -1403,34 +1378,33 @@ let solve_for_vars vss r =
 (* Replay debugging ======================================================*)
 
 type call =
-  | Add of Var.Set.t * Formula.t * t
-  | Union of Var.Set.t * t * t
-  | InterN of Var.Set.t * (Var.Set.t * t) list
-  | Dnf of Formula.t
+  | Add of Var.Context.t * Formula.t * t
+  | Union of Var.Context.t * t * t
+  | InterN of Var.Context.t * (Var.Set.t * t) list
   | Rename of t * Var.Subst.t
   | Is_unsat of t
   | Implies of t * Formula.t
   | Refutes of t * Formula.t
   | Normalize of t * Term.t
-  | Apply_subst of Var.Set.t * Subst.t * t
+  | Apply_subst of Var.Context.t * Subst.t * t
   | Solve_for_vars of Var.Set.t list * t
-  | Apply_and_elim of Var.Set.t * Var.Set.t * Subst.t * t
+  | Apply_and_elim of Var.Context.t * Var.Set.t * Subst.t * t
 [@@deriving sexp]
 
 let replay c =
   match call_of_sexp (Sexp.of_string c) with
-  | Add (us, e, r) -> add us e r |> ignore
-  | Union (us, r, s) -> union us r s |> ignore
-  | InterN (us, xrs) -> interN us xrs |> ignore
-  | Dnf f -> dnf f |> Iter.iter ~f:ignore
+  | Add (vx, e, r) -> Var.Fresh.gen_ vx (add e r) |> ignore
+  | Union (vx, r, s) -> Var.Fresh.gen_ vx (union r s) |> ignore
+  | InterN (vx, rs) -> Var.Fresh.gen_ vx (interN rs) |> ignore
   | Rename (r, s) -> rename r s |> ignore
   | Is_unsat r -> is_unsat r |> ignore
   | Implies (r, f) -> implies r f |> ignore
   | Refutes (r, f) -> refutes r f |> ignore
   | Normalize (r, e) -> normalize r e |> ignore
-  | Apply_subst (us, s, r) -> apply_subst us s r |> ignore
+  | Apply_subst (vx, s, r) -> Var.Fresh.gen_ vx (apply_subst s r) |> ignore
   | Solve_for_vars (vss, r) -> solve_for_vars vss r |> ignore
-  | Apply_and_elim (wrt, xs, s, r) -> apply_and_elim ~wrt xs s r |> ignore
+  | Apply_and_elim (vx, xs, s, r) ->
+      Var.Fresh.gen_ vx (apply_and_elim xs s r) |> ignore
 
 (* Debug wrappers *)
 
@@ -1459,11 +1433,15 @@ let[@warning "-unused-value-declaration"] wrap tmr f call =
       let exn = Replay (exn, sexp_of_call (call ())) in
       Printexc.raise_with_backtrace exn bt
 
+let[@warning "-32"] mwrap tmr f call vx =
+  let vx0 = !vx in
+  wrap tmr f (fun () -> call vx0) vx
+
 let wrap _ f _ = f ()
+let mwrap _ f _ = f ()
 let add_tmr = Timer.create "add" ~at_exit:report
 let union_tmr = Timer.create "union" ~at_exit:report
 let interN_tmr = Timer.create "interN" ~at_exit:report
-let dnf_tmr = Timer.create "dnf" ~at_exit:report
 let rename_tmr = Timer.create "rename" ~at_exit:report
 let is_unsat_tmr = Timer.create "is_unsat" ~at_exit:report
 let implies_tmr = Timer.create "implies" ~at_exit:report
@@ -1472,17 +1450,13 @@ let normalize_tmr = Timer.create "normalize" ~at_exit:report
 let apply_subst_tmr = Timer.create "apply_subst" ~at_exit:report
 let solve_for_vars_tmr = Timer.create "solve_for_vars" ~at_exit:report
 let apply_and_elim_tmr = Timer.create "apply_and_elim" ~at_exit:report
+let add e r = mwrap add_tmr (fun () -> add e r) (fun vx -> Add (vx, e, r))
 
-let add us e r =
-  wrap add_tmr (fun () -> add us e r) (fun () -> Add (us, e, r))
+let union r s =
+  mwrap union_tmr (fun () -> union r s) (fun vx -> Union (vx, r, s))
 
-let union us r s =
-  wrap union_tmr (fun () -> union us r s) (fun () -> Union (us, r, s))
-
-let interN us rs =
-  wrap interN_tmr (fun () -> interN us rs) (fun () -> InterN (us, rs))
-
-let dnf f = wrap dnf_tmr (fun () -> dnf f) (fun () -> Dnf f)
+let interN rs =
+  mwrap interN_tmr (fun () -> interN rs) (fun vx -> InterN (vx, rs))
 
 let rename r s =
   wrap rename_tmr (fun () -> rename r s) (fun () -> Rename (r, s))
@@ -1499,17 +1473,17 @@ let refutes r f =
 let normalize r e =
   wrap normalize_tmr (fun () -> normalize r e) (fun () -> Normalize (r, e))
 
-let apply_subst us s r =
-  wrap apply_subst_tmr
-    (fun () -> apply_subst us s r)
-    (fun () -> Apply_subst (us, s, r))
+let apply_subst s r =
+  mwrap apply_subst_tmr
+    (fun () -> apply_subst s r)
+    (fun vx -> Apply_subst (vx, s, r))
 
 let solve_for_vars vss r =
   wrap solve_for_vars_tmr
     (fun () -> solve_for_vars vss r)
     (fun () -> Solve_for_vars (vss, r))
 
-let apply_and_elim ~wrt xs s r =
-  wrap apply_and_elim_tmr
-    (fun () -> apply_and_elim ~wrt xs s r)
-    (fun () -> Apply_and_elim (wrt, xs, s, r))
+let apply_and_elim xs s r =
+  mwrap apply_and_elim_tmr
+    (fun () -> apply_and_elim xs s r)
+    (fun vx -> Apply_and_elim (vx, xs, s, r))

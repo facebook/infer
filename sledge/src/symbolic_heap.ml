@@ -509,9 +509,13 @@ module Sh = struct
       match Segs.union h1 h2 with
       | None -> false_ us
       | Some heap ->
-          let xs, ctx =
-            Context.union (Var.Set.union us (Var.Set.union xs1 xs2)) c1 c2
+          let ctx, vx =
+            Var.Fresh.gen
+              (Var.Context.of_vars
+                 (Var.Set.union us (Var.Set.union xs1 xs2)) )
+              (Context.union c1 c2)
           in
+          let xs = Var.Context.xs vx in
           if Context.is_unsat ctx then false_ us
           else
             let pure = Formula.and_ p1 p2 in
@@ -643,7 +647,12 @@ module Sh = struct
   (** conjoin an FOL context assuming vocabulary is compatible *)
   let and_ctx_ ctx q =
     assert (Var.Set.subset (Context.fv ctx) ~of_:q.us) ;
-    let xs, ctx = Context.union (Var.Set.union q.us q.xs) q.ctx ctx in
+    let ctx, vx =
+      Var.Fresh.gen
+        (Var.Context.of_vars (Var.Set.union q.us q.xs))
+        (Context.union q.ctx ctx)
+    in
+    let xs = Var.Context.xs vx in
     if Context.is_unsat ctx then false_ q.us
     else exists_fresh xs {q with ctx}
 
@@ -659,9 +668,12 @@ module Sh = struct
   let pure (p : Formula.t) =
     [%Dbg.call fun {pf} -> pf "@ %a" Formula.pp p]
     ;
-    Iter.fold (Context.dnf p) (false_ Var.Set.empty)
-      ~f:(fun (xs, pure, ctx) q ->
-        let us = Formula.fv pure in
+    let us = Formula.fv p in
+    Iter.fold
+      (Var.Fresh.gen_ (Var.Context.of_vars us) (Context.dnf p))
+      (false_ Var.Set.empty)
+      ~f:(fun ((pure, ctx), vx) q ->
+        let xs = Var.Context.xs vx in
         if Context.is_unsat ctx || Formula.equal Formula.ff pure then
           extend_us us q
         else or_ q (exists_fresh xs {emp with us; ctx; pure}) )
@@ -817,7 +829,10 @@ module Sh = struct
     let exception NotUnsat in
     let conj sjn (wrt, ctx, fml) =
       let wrt = Var.Set.union wrt sjn.xs in
-      let zs, ctx = Context.union wrt ctx sjn.ctx in
+      let ctx, vx =
+        Var.Fresh.gen (Var.Context.of_vars wrt) (Context.union ctx sjn.ctx)
+      in
+      let zs = Var.Context.xs vx in
       let wrt = Var.Set.union wrt zs in
       let fml = Formula.and_ fml sjn.pure in
       let fml =
@@ -844,10 +859,18 @@ module Sh = struct
   let rec norm_ s q =
     [%Dbg.call fun {pf} -> pf "@ @[%a@]@ %a" Context.Subst.pp s pp_raw q]
     ;
-    map q ~f_sjn:(norm_ s)
-      ~f_ctx:(Context.apply_subst (Var.Set.union q.us q.xs) s)
-      ~f_trm:(Context.Subst.subst s)
-      ~f_fml:(Formula.map_terms ~f:(Context.Subst.subst s))
+    let f_sjn = norm_ s in
+    let f_ctx x =
+      let x', vx =
+        Var.Fresh.gen
+          (Var.Context.of_vars (Var.Set.union q.us q.xs))
+          (Context.apply_subst s x)
+      in
+      (Var.Context.xs vx, x')
+    in
+    let f_trm = Context.Subst.subst s in
+    let f_fml = Formula.map_terms ~f:(Context.Subst.subst s) in
+    map q ~f_sjn ~f_ctx ~f_trm ~f_fml
     |>
     [%Dbg.retn fun {pf} q' ->
       pf "%a" pp_raw q' ;
@@ -912,7 +935,12 @@ module Sh = struct
                   let dj = propagate_context_ q.us q.ctx dj in
                   (dj, (dj.xs, dj.ctx) :: dj_ctxs) )
             in
-            let new_xs, djn_ctx = Context.interN q.us dj_ctxs in
+            let djn_ctx, vx =
+              Var.Fresh.gen
+                (Var.Context.of_vars q.us)
+                (Context.interN dj_ctxs)
+            in
+            let new_xs = Var.Context.xs vx in
             (* hoist xs appearing in disjunction's context *)
             let djn_xs = Var.Set.diff (Context.fv djn_ctx) q'.us in
             let djn = Set.map ~f:(elim_exists djn_xs) djn in
@@ -991,9 +1019,11 @@ module Sh = struct
       (* normalize context wrt solutions *)
       let union_xss = Var.Set.union xs ancestor_xs in
       let wrt = Var.Set.union us union_xss in
-      let fresh, ctx, removed =
-        Context.apply_and_elim ~wrt union_xss subst q.ctx
+      let (ctx, removed), vx =
+        Var.Fresh.gen (Var.Context.of_vars wrt)
+          (Context.apply_and_elim union_xss subst q.ctx)
       in
+      let fresh = Var.Context.xs vx in
       let q = {(extend_us (Var.Set.union fresh ancestor_xs) q) with ctx} in
       (* normalize stem wrt its context *)
       let stem = normalize {q with djns= emp.djns} in

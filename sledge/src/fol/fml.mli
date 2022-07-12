@@ -74,7 +74,13 @@ val map_or : t -> pos:set -> neg:set -> (t -> t) -> t
 (** Traverse *)
 
 val fold_pos_neg : pos:set -> neg:set -> 'a -> f:(t -> 'a -> 'a) -> 'a
-val dnf : meet1:(t -> 'a -> 'a) -> top:'a -> t -> 'a iter
+
+val dnf :
+     meet1:(t -> 'a -> 'a Var.Fresh.m)
+  -> top:'a
+  -> t
+  -> ('a * Var.Context.t) iter Var.Fresh.m
+
 val vars : t -> Var.t iter
 val trms : t -> Trm.t iter
 
