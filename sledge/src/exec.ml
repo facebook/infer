@@ -219,8 +219,7 @@ let memcpy_dj_spec dst src len =
   let post = Sh.star dst_heap' src_heap in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
-let memcpy_specs dst src len =
-  [memcpy_eq_spec dst src len; memcpy_dj_spec dst src len]
+let memcpy_specs = [memcpy_eq_spec; memcpy_dj_spec]
 
 (* { d=s * d-[b;m)->⟨l,α⟩ }
  *   memmov l d s
@@ -279,11 +278,8 @@ let memmov_up_spec dst src len =
   let post = Sh.seg {loc= src; bas; len; siz; cnt} in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
-let memmov_specs dst src len =
-  [ memmov_eq_spec dst src len
-  ; memmov_dj_spec dst src len
-  ; memmov_dn_spec dst src len
-  ; memmov_up_spec dst src len ]
+let memmov_specs =
+  [memmov_eq_spec; memmov_dj_spec; memmov_dn_spec; memmov_up_spec]
 
 (* { emp }
  *   alloc r [n × l]
@@ -591,11 +587,8 @@ let mallctlbymib_write_spec p l r i w n =
   let foot = Sh.andN [Formula.eq0 r; Formula.eq0 i] post in
   {foot; sub= Var.Subst.empty; ms= Var.Set.empty; post}
 
-let mallctl_specs r i w n =
-  [mallctl_read_spec r i w n; mallctl_write_spec r i w n]
-
-let mallctlbymib_specs p j r i w n =
-  [mallctlbymib_read_spec p j r i w n; mallctlbymib_write_spec p j r i w n]
+let mallctl_specs = [mallctl_read_spec; mallctl_write_spec]
+let mallctlbymib_specs = [mallctlbymib_read_spec; mallctlbymib_write_spec]
 
 (* { p-[_;_)->⟨W×n,α⟩ * o-[_;_)->⟨_,n⟩ }
  *   mallctlnametomib p o
@@ -767,9 +760,9 @@ let builtin :
   | None, `memset, [|dst; byt; len; _isvolatile|] ->
       exec_spec pre (memset_spec dst byt len)
   | None, `memcpy, [|dst; src; len; _isvolatile|] ->
-      exec_specs pre (memcpy_specs dst src len)
+      exec_specs pre (List.map memcpy_specs ~f:(fun fn -> fn dst src len))
   | None, `memmove, [|dst; src; len; _isvolatile|] ->
-      exec_specs pre (memmov_specs dst src len)
+      exec_specs pre (List.map memmov_specs ~f:(fun fn -> fn dst src len))
   (*
    * cstdlib - memory management
    *)
@@ -813,7 +806,8 @@ let builtin :
   (* int mallctl(const char* name, void* oldp, size_t* oldlenp, void* newp,
      size_t newlen) *)
   | Some _, `mallctl, [|_; oldp; oldlenp; newp; newlen|] ->
-      exec_specs pre (mallctl_specs oldp oldlenp newp newlen)
+      exec_specs pre
+        (List.map mallctl_specs ~f:(fun fn -> fn oldp oldlenp newp newlen))
   (* int mallctlnametomib(const char* name, size_t* mibp, size_t*
      miblenp) *)
   | Some _, `mallctlnametomib, [|_; mibp; miblenp|] ->
@@ -822,7 +816,8 @@ let builtin :
      oldlenp, void* newp, size_t newlen); *)
   | Some _, `mallctlbymib, [|mib; miblen; oldp; oldlenp; newp; newlen|] ->
       exec_specs pre
-        (mallctlbymib_specs mib miblen oldp oldlenp newp newlen)
+        (List.map mallctlbymib_specs ~f:(fun fn ->
+             fn mib miblen oldp oldlenp newp newlen ) )
   | _, `malloc_stats_print, _ -> Some pre
   (*
    * cstring
