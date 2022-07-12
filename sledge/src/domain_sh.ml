@@ -44,7 +44,7 @@ let join p q =
   [%Dbg.retn fun {pf} -> pf "%a" pp]
 
 let joinN qs =
-  [%Dbg.call fun {pf} -> pf "@ %a" Xsh.pp_djn qs]
+  [%Dbg.call fun {pf} -> pf "@ %a" Xsh.Set.pp qs]
   ;
   ( match Xsh.Set.classify qs with
   | Zero -> Xsh.orN qs
@@ -167,14 +167,15 @@ let localize_entry tid globals actuals formals freturn locals shadow pre
   let function_summary_pre = garbage_collect entry ~wrt in
   [%Dbg.info "function summary pre %a" pp function_summary_pre] ;
   let foot = Xsh.exists formals_set function_summary_pre in
-  let xs, foot = Xsh.bind_exists ~wrt:(Xsh.us pre) foot in
+  let (xs, foot), vx = Xsh.name_exists (Xsh.extend_voc (Xsh.us pre) foot) in
+  let foot = Var.Fresh.gen_ vx (Xsh.qf foot) in
   let frame =
     try Option.get_exn (Solver.infer_frame pre xs foot)
     with _ ->
       fail "Solver couldn't infer frame of a garbage-collected pre" ()
   in
   let q'' =
-    Xsh.extend_us freturn_locals (and_eqs shadow formals actuals foot)
+    Xsh.extend_voc freturn_locals (and_eqs shadow formals actuals foot)
   in
   (q'', frame)
 
@@ -266,7 +267,7 @@ let retn tid formals freturn {areturn; unshadow; frame} q =
     match areturn with
     | Some areturn -> (
         (* reenter scope of areturn just before exiting scope of formals *)
-        let q = Xsh.extend_us (Var.Set.of_ areturn) q in
+        let q = Xsh.extend_voc (Var.Set.of_ areturn) q in
         (* pass return value *)
         match freturn with
         | Some freturn ->
@@ -298,10 +299,10 @@ let term tid formals freturn q =
     Var.Set.of_iter (Iter.map ~f:(X.reg tid) (IArray.to_iter formals))
   in
   let freturn = X.reg tid freturn in
-  let xs, q = Xsh.bind_exists q ~wrt:Var.Set.empty in
+  let (xs, q), _ = Xsh.name_exists q in
   let outscoped = Var.Set.union formals (Var.Set.of_ freturn) in
   let xs = Var.Set.union xs outscoped in
-  let retn_val_cls = Context.class_of (Xsh.ctx q) (Term.var freturn) in
+  let retn_val_cls = Context.class_of (Sh.ctx q) (Term.var freturn) in
   List.find retn_val_cls ~f:(fun retn_val ->
       Var.Set.disjoint xs (Term.fv retn_val) )
 
@@ -358,7 +359,7 @@ let create_summary tid ~locals ~formals ~entry ~current:post =
   let xs_and_formals = Var.Set.union xs formals in
   let foot = Xsh.exists (Var.Set.diff (Xsh.us foot) xs_and_formals) foot in
   let post = Xsh.exists (Var.Set.diff (Xsh.us post) xs_and_formals) post in
-  let current = Xsh.extend_us xs post in
+  let current = Xsh.extend_voc xs post in
   ({xs; foot; post}, current)
   |>
   [%Dbg.retn fun {pf} (fs, _) -> pf "@,%a" pp_summary fs]
@@ -386,7 +387,7 @@ let apply_summary q ({xs; foot; post} as fs) =
     else None
   in
   [%Dbg.info "frame %a" (Option.pp "%a" pp) frame] ;
-  Option.map ~f:(Xsh.extend_us add_back)
+  Option.map ~f:(Xsh.extend_voc add_back)
     (Option.map ~f:(Xsh.star post) frame)
   |>
   [%Dbg.retn fun {pf} r ->

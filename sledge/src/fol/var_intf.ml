@@ -49,8 +49,8 @@ module type S = sig
     val invert : t -> t
 
     val restrict_dom : t -> Set.t -> x
-    (** restrict the domain of a substitution to a set, and yield the range
-        of the unrestricted substitution *)
+    (** restrict the domain of a substitution to exclude a set, and yield
+        the range of the unrestricted substitution *)
 
     val is_empty : t -> bool
     val domain : t -> Set.t

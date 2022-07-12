@@ -26,7 +26,7 @@ let%test_module _ =
 
     let pp = Format.printf "@\n%a@." pp
     let pp_raw = Format.printf "@\n%a@." pp_raw
-    let pp_djn = Format.printf "@\n%a@." pp_djn
+    let pp_djn = Format.printf "@\n%a@." Set.pp
     let ( ~$ ) = Var.Set.of_list
     let i n = Term.integer (Z.of_int n)
     let ( + ) = Term.add
@@ -68,18 +68,18 @@ let%test_module _ =
           %x_7 -[)-> ⟨8,%a_1⟩^⟨8,%b_2⟩ |}]
 
     let%expect_test _ =
-      let p = exists ~$[x_] (extend_us ~$[x_] emp) in
+      let p = exists ~$[x_] (extend_voc ~$[x_] emp) in
       let q = pure (x = i 0) in
       pp p ;
       pp q ;
       pp (star p q) ;
       [%expect
         {|
-        ∃ %x_7 .   emp
+        emp
     
-          0 = %x_7 ∧ emp
+        0 = %x_7 ∧ emp
     
-          0 = %x_7 ∧ emp |}]
+        0 = %x_7 ∧ emp |}]
 
     let%expect_test _ =
       let q =
@@ -94,11 +94,15 @@ let%test_module _ =
       pp_djn (Xsh.Set.of_iter (dnf q)) ;
       [%expect
         {|
-          ( (  0 = %x_7 ∧ emp) ∨ (  ( (  emp) ∨ (  1 = %y_8 ∧ emp) )) )
-    
-        ( (  0 = %x_7 ∧ (0 = %x_7) ∧ emp)
-        ∨ (∃ %x_7, %x_8 .   2 = %x_8 ∧ (2 = %x_8) ∧ emp)
-        ∨ (∃ %x_7 .   1 = %x_7 = %y_8 ∧ ((1 = %x_7) ∧ (1 = %y_8)) ∧ emp)
+        ∃ %x_9, %x_10 .
+          ( (  0 = %x_7 ∧ emp)
+          ∨ (  2 = %x_9 ∧ emp)
+          ∨ (  1 = %y_8 = %x_10 ∧ emp)
+          )
+
+        ( (  0 = %x_7 ∧ emp)
+        ∨ (∃ %x_9 .   2 = %x_9 ∧ emp)
+        ∨ (∃ %x_10 .   1 = %y_8 = %x_10 ∧ emp)
         ) |}]
 
     let%expect_test _ =
@@ -115,13 +119,15 @@ let%test_module _ =
       pp_djn (Xsh.Set.of_iter (dnf q)) ;
       [%expect
         {|
-          ( (  emp) ∨ (  ( (  emp) ∨ (  1 = %y_8 ∧ emp) )) )
-    
-        ( (∃ %x_7 .   0 = %x_7 ∧ (0 = %x_7) ∧ emp)
-        ∨ (∃ %x_7, %x_9, %x_10 .   2 = %x_10 ∧ (2 = %x_10) ∧ emp)
-        ∨ (∃ %x_7, %x_9 .
-             1 = %y_8 = %x_9 ∧ ((1 = %y_8) ∧ (1 = %x_9))
-           ∧ emp)
+        ∃ %x_7, %x_9, %x_10 .
+          ( (  0 = %x_7 ∧ emp)
+          ∨ (  2 = %x_9 ∧ emp)
+          ∨ (  1 = %y_8 = %x_10 ∧ emp)
+          )
+
+        ( (∃ %x_7 .   0 = %x_7 ∧ emp)
+        ∨ (∃ %x_9 .   2 = %x_9 ∧ emp)
+        ∨ (∃ %x_10 .   1 = %y_8 = %x_10 ∧ emp)
         ) |}]
 
     let%expect_test _ =
@@ -138,9 +144,17 @@ let%test_module _ =
       pp (simplify q) ;
       [%expect
         {|
-        ( (  emp) ∨ (  ( (  emp) ∨ (  1 = %y_8 ∧ emp) )) )
-    
-        ( (  emp) ∨ (  emp) ∨ (  1 = %y_8 ∧ emp) ) |}]
+        ∃ %x_7, %x_9, %x_10 .
+          ( (  0 = %x_7 ∧ emp)
+          ∨ (  2 = %x_9 ∧ emp)
+          ∨ (  1 = %y_8 = %x_10 ∧ emp)
+          )
+
+        ∃ %x_7, %x_9, %x_10 .
+          ( (  0 = %x_7 ∧ emp)
+          ∨ (  2 = %x_9 ∧ emp)
+          ∨ (  1 = %y_8 = %x_10 ∧ emp)
+          ) |}]
 
     let%expect_test _ =
       let q = exists ~$[x_] (of_eqs [(f x, x); (f y, y - i 1)]) in
@@ -173,11 +187,10 @@ let%test_module _ =
       pp q' ;
       [%expect
         {|
-        ∃ %a_1, %c_3, %d_4, %e_5 .
+        ∃ %a_1, %b_2, %c_3, %d_4, %e_5 .
           (⟨8,%a_1⟩^⟨8,%d_4⟩) = %e_5 ∧ (%e_5 = (⟨8,%a_1⟩^⟨8,%d_4⟩))
         ∧ emp
-        * ( (∃ %b_2 .
-               (⟨4,%c_3⟩^⟨4,%b_2⟩) = %a_1 ∧ (%a_1 = (⟨4,%c_3⟩^⟨4,%b_2⟩))
+        * ( (  (⟨4,%c_3⟩^⟨4,%b_2⟩) = %a_1 ∧ (%a_1 = (⟨4,%c_3⟩^⟨4,%b_2⟩))
              ∧ emp)
           ∨ (  tt ∧ (0 ≠ %x_7) ∧ emp)
           )
@@ -220,7 +233,6 @@ let%test_module _ =
           ∨ (  %b_2 = %z_9 ∧ (%b_2 = %z_9) ∧ emp)
           )
     
-        ∃ %b_2 .
-          %x_7 -[ %b_2, %c_3 )-> ⟨8,0⟩
-        * ( (  %b_2 = %y_8 ∧ emp) ∨ (  %b_2 = %z_9 ∧ emp) ) |}]
+          %x_7 -[ _, %c_3 )-> ⟨8,0⟩
+        * ( (  _ = %y_8 ∧ emp) ∨ (  _ = %z_9 ∧ emp) ) |}]
   end )

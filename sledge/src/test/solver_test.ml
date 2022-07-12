@@ -56,7 +56,7 @@ let%test_module _ =
         ) Solver.infer_frame:   emp |}]
 
     let%expect_test _ =
-      check_frame (Xsh.false_ Var.Set.empty) [] Xsh.emp ;
+      check_frame Xsh.false_ [] Xsh.emp ;
       [%expect
         {|
         ( Solver.infer_frame: 1 false \-   emp
@@ -100,7 +100,7 @@ let%test_module _ =
       let subtrahend =
         Xsh.and_ (Formula.eq m n)
           (Xsh.exists (Var.Set.of_list [m_])
-             (Xsh.extend_us (Var.Set.of_list [m_]) common) )
+             (Xsh.extend_voc (Var.Set.of_list [m_]) common) )
       in
       infer_frame minued [n_; m_] subtrahend ;
       [%expect
@@ -108,9 +108,9 @@ let%test_module _ =
         ( Solver.infer_frame: 5
             %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ * %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
           \- ∃ %m_8, %n_9 .
-            ∃ %m_10 .   %m_8 = %n_9 ∧ %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
+              %m_8 = %n_9 ∧ %l_7 -[ %b_4, 10 )-> ⟨10,%a_2⟩
         ) Solver.infer_frame:
-          ∃ %m_10 .   %m_8 = %n_9 ∧ %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ |}]
+            %m_8 = %n_9 ∧ %l_6 -[ %b_4, 10 )-> ⟨10,%a_1⟩ |}]
 
     let%expect_test _ =
       check_frame
@@ -138,7 +138,8 @@ let%test_module _ =
         {|
         ( Solver.infer_frame: 7
             %l_6 -[)-> ⟨8,%a_1⟩^⟨8,%a_2⟩ \- ∃ %a_3 .   %l_6 -[)-> ⟨16,%a_3⟩
-        ) Solver.infer_frame:   (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+        ) Solver.infer_frame:
+          ∃ %a1_7 .   %a_2 = %a1_7 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -154,7 +155,8 @@ let%test_module _ =
           \- ∃ %a_3, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨16,%a_3⟩
         ) Solver.infer_frame:
-            16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+          ∃ %a1_9 .
+            %a_2 = %a1_9 ∧ 16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -170,7 +172,8 @@ let%test_module _ =
           \- ∃ %a_3, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_3⟩
         ) Solver.infer_frame:
-            16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
+          ∃ %a1_9 .
+            %a_2 = %a1_9 ∧ 16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
     let%expect_test _ =
       check_frame
@@ -188,11 +191,11 @@ let%test_module _ =
           \- ∃ %a_2, %m_8, %n_9 .
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
         ) Solver.infer_frame:
-          ∃ %a0_10, %a1_11 .
+          ∃ %a0_10 .
             %a_2 = %a0_10
           ∧ 16 = %m_8 = %n_9
-          ∧ (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
-          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
+          ∧ (⟨16,%a_2⟩^⟨16,_⟩) = %a_1
+          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,_⟩ |}]
 
     let%expect_test _ =
       infer_frame
@@ -210,11 +213,11 @@ let%test_module _ =
           \- ∃ %a_2, %m_8, %n_9 .
               %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
         ) Solver.infer_frame:
-          ∃ %a0_10, %a1_11 .
+          ∃ %a0_10 .
             %a_2 = %a0_10
           ∧ 16 = %m_8 = %n_9
-          ∧ (⟨16,%a_2⟩^⟨16,%a1_11⟩) = %a_1
-          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,%a1_11⟩ |}]
+          ∧ (⟨16,%a_2⟩^⟨16,_⟩) = %a_1
+          ∧ (%k_5 + 16) -[ %k_5, 16 )-> ⟨16,_⟩ |}]
 
     let seg_split_symbolically =
       Xsh.star
@@ -244,7 +247,12 @@ let%test_module _ =
           \- ∃ %a_1, %m_8 .
               %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
         ) Solver.infer_frame:
-            ( (  1 = %n_9 ∧ 16 = %m_8 ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1 ∧ emp)
+          ∃ %a1_10 .
+            ( (  %a_3 = %a1_10
+               ∧ 1 = %n_9
+               ∧ 16 = %m_8
+               ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1
+               ∧ emp)
             ∨ (  %a_1 = %a_2
                ∧ 2 = %n_9
                ∧ 16 = %m_8
@@ -272,7 +280,7 @@ let%test_module _ =
       let subtrahend =
         Xsh.and_ (Formula.eq m a) (Xsh.pure (Formula.dq m (i 0)))
       in
-      let minuend = Xsh.extend_us (Var.Set.of_ a_) Xsh.emp in
+      let minuend = Xsh.extend_voc (Var.Set.of_ a_) Xsh.emp in
       infer_frame minuend [m_] subtrahend ;
       [%expect
         {|

@@ -82,8 +82,8 @@ let gen_spec us specm =
   let us =
     Var.Set.union xs (Var.Set.union (Xsh.us spec.foot) (Xsh.us spec.post))
   in
-  let foot = Xsh.extend_us us spec.foot in
-  let post = Xsh.extend_us us spec.post in
+  let foot = Xsh.extend_voc us spec.foot in
+  let post = Xsh.extend_voc us spec.post in
   (xs, {spec with foot; post})
 
 (*
@@ -645,21 +645,19 @@ let strlen_spec reg ptr =
 
 open Option.Import
 
-let pp ppf q =
-  Xsh.pp ppf (Option.value q ~default:(Xsh.false_ Var.Set.empty))
+let pp ppf q = Xsh.pp ppf (Option.value q ~default:Xsh.false_)
 
 let check_preserve_us q0 q1 =
-  let gain_us = Var.Set.diff (Xsh.us q1) (Xsh.us q0) in
   let lose_us = Var.Set.diff (Xsh.us q0) (Xsh.us q1) in
-  (Var.Set.is_empty gain_us || fail "gain us: %a" Var.Set.pp gain_us ())
-  && (Var.Set.is_empty lose_us || fail "lose us: %a" Var.Set.pp lose_us ())
+  Var.Set.is_empty lose_us || fail "lose us: %a" Var.Set.pp lose_us ()
 
 (* execute a command with given explicitly-quantified spec from
    explicitly-quantified pre *)
 let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
   ([%Dbg.call fun {pf} ->
-     pf "@ @[%a@]@ @[<2>%a@,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]" Xsh.pp
-       pre Xsh.pp_us gs Xsh.pp foot
+     pf
+       "@ @[%a@]@ @[<2>∀ @[%a@] .@ @,@[<hv>{%a  %a}@;<1 -1>%a--@ {%a  }@]@]"
+       Xsh.pp pre Var.Set.pp gs Xsh.pp foot
        (fun fs sub ->
          if not (Var.Subst.is_empty sub) then
            Format.fprintf fs "∧ %a" Var.Subst.pp sub )
@@ -699,13 +697,15 @@ let exec_spec_ (xs, pre) (gs, {foot; sub; ms; post}) =
 
 (* execute a command with given spec from pre *)
 let exec_spec pre specm =
-  let xs, pre = Xsh.bind_exists pre ~wrt:Var.Set.empty in
+  let (xs, pre), vx = Xsh.name_exists pre in
+  let pre = Var.Fresh.gen_ vx (Xsh.qf pre) in
   exec_spec_ (xs, pre) (gen_spec (Xsh.us pre) specm)
 
 (* execute a multiple-spec command, where the disjunction of the specs
    preconditions are known to be tautologous *)
 let exec_specs pre =
-  let xs, pre = Xsh.bind_exists pre ~wrt:Var.Set.empty in
+  let (xs, pre), vx = Xsh.name_exists pre in
+  let pre = Var.Fresh.gen_ vx (Xsh.qf pre) in
   let rec exec_specs_ (xs, pre) = function
     | specm :: specs ->
         let gs, spec = gen_spec (Xsh.us pre) specm in
@@ -716,7 +716,7 @@ let exec_specs pre =
         let* post = exec_spec_ (xs, pre_pure) (gs, spec) in
         let+ posts = exec_specs_ (xs, pre) specs in
         Xsh.or_ post posts
-    | [] -> Some (Xsh.false_ Var.Set.empty)
+    | [] -> Some Xsh.false_
   in
   exec_specs_ (xs, pre)
 
@@ -738,11 +738,11 @@ let assume pre cnd =
     ~retn:(fun {pf} -> pf "%a" Xsh.pp)
   @@ fun () ->
   let post = Xsh.and_ cnd pre in
-  if Xsh.is_unsat post then Xsh.false_ (Xsh.us post) else post
+  if Xsh.is_unsat post then Xsh.false_ else post
 
 let kill pre reg =
   let ms = Var.Set.of_ reg in
-  Xsh.extend_us ms (Xsh.exists ms pre)
+  Xsh.extend_voc ms (Xsh.exists ms pre)
 
 let move pre reg_exps =
   exec_spec pre (move_spec reg_exps)

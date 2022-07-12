@@ -230,7 +230,7 @@ module Var = struct
       Map.fold sub0 {sub= sub0; dom= Set.empty; rng= Set.empty}
         ~f:(fun ~key ~data z ->
           let rng = Set.add data z.rng in
-          if Set.mem key vs then {z with dom= Set.add key z.dom; rng}
+          if not (Set.mem key vs) then {z with dom= Set.add key z.dom; rng}
           else (
             assert (
               (* all substs are injective, so the current mapping is the

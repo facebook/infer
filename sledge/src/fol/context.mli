@@ -38,8 +38,8 @@ val add : Formula.t -> t -> t Var.Fresh.m
 val union : t -> t -> t Var.Fresh.m
 (** Union (that is, conjoin) two contexts of assumptions. *)
 
-val interN : (Var.Set.t * t) list -> t Var.Fresh.m
-(** Intersect contexts of assumptions. Possibly weaker than logical
+val inter : t -> t -> t Var.Fresh.m
+(** Intersect two contexts of assumptions. Possibly weaker than logical
     disjunction. *)
 
 val dnf : Formula.t -> ((Formula.t * t) * Var.Context.t) iter Var.Fresh.m
@@ -100,12 +100,11 @@ module Subst : sig
       maximal where ∃ks. ν is universally valid, xs ⊇ ks and ks ∩ fv(τ) = ∅. *)
 end
 
-val solve_for_vars : Var.Set.t list -> t -> Subst.t
-(** [solve_for_vars vss x] is a solution substitution that is implied by [x]
-    and consists of oriented equalities [v ↦ e] that map terms [v] with free
-    variables contained in (the union of) a prefix [uss] of [vss] to terms
-    [e] with free variables contained in as short a prefix of [uss] as
-    possible. *)
+val solve_for : Var.Set.t -> ?not_ito:Var.Set.t -> t -> Subst.t Var.Fresh.m
+(** [solve_for vs ~not_ito:ws x] is a solution substitution that is implied
+    by [x] and consists of oriented equalities [v ↦ e] that map terms [v]
+    with free variables contained in [vs] to terms [e] with free variables
+    disjoint from [ws]. *)
 
 val apply_subst : Subst.t -> t -> t Var.Fresh.m
 (** Context induced by applying a solution substitution to a set of

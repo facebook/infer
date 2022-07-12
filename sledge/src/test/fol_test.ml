@@ -34,7 +34,7 @@ let%test_module _ =
 
     let add_eq a b r = add (Formula.eq a b) r vx
     let union r s = union r s vx
-    let inter r s = interN [(Var.Set.empty, r); (Var.Set.empty, s)] vx
+    let inter r s = inter r s vx
     let implies_eq r a b = implies r (Formula.eq a b)
     let difference x e f = Term.get_z (normalize x (Term.sub e f))
     let printf pp = Format.printf "@\n%a@." pp
