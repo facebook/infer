@@ -17,12 +17,6 @@ module Sh : sig
     ; len: Term.t  (** length of enclosing allocation-block *)
     ; siz: Term.t  (** size of segment / length of the contents *)
     ; cnt: Term.t  (** contents of segment, a sequence / byte array *) }
-
-  module Segs : sig
-    type t
-
-    val to_iter : t -> seg iter
-  end
 end
 
 (** (Existentially-Quantified) Symbolic Heap Formulas *)
@@ -52,7 +46,7 @@ module Xsh : sig
   val ctx : t -> Context.t
   (** First-order logical context induced by rest of formula *)
 
-  val heap : t -> Sh.Segs.t
+  val heap : t -> Sh.seg iter
   (** Star-conjunction of segment atomic formulas *)
 
   val djns : t -> disjunction list

@@ -84,7 +84,7 @@ module Xsh = struct
     let xs (_, vx) = Var.Context.xs vx
     let ctx (q, _) = q.ctx
     let pure (q, _) = q.pure
-    let heap (q, _) = q.heap
+    let heap (q, _) = Segs.to_iter q.heap
     let djns (q, _) = q.djns
   end
 
@@ -884,7 +884,7 @@ module Xsh = struct
       let wrt = Var.Set.union wrt zs in
       let fml = Formula.and_ fml (T.pure sjn) in
       let fml =
-        Segs.fold (T.heap sjn) fml ~f:(fun seg ->
+        Iter.fold (T.heap sjn) fml ~f:(fun seg ->
             Formula.and_ (Formula.dq0 seg.loc) )
       in
       (wrt, ctx, fml)

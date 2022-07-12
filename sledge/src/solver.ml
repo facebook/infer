@@ -666,12 +666,8 @@ let excise_seg ({sub} as goal) msg ssg =
 let excise_heap ({min; sub} as goal) =
   trace (fun {pf} -> pf "excise_heap:@ %a" pp goal) ;
   match
-    Iter.find_map
-      (Sh.Segs.to_iter (Xsh.heap sub))
-      ~f:(fun ssg ->
-        Iter.find_map
-          (Sh.Segs.to_iter (Xsh.heap min))
-          ~f:(fun msg -> excise_seg goal msg ssg) )
+    Iter.find_map (Xsh.heap sub) ~f:(fun ssg ->
+        Iter.find_map (Xsh.heap min) ~f:(fun msg -> excise_seg goal msg ssg) )
   with
   | Some goal -> Some (goal |> with_ ~pgs:true)
   | None -> Some goal

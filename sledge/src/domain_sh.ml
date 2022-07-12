@@ -126,10 +126,7 @@ let garbage_collect q ~wrt =
     if Term.Set.equal previous current then current
     else
       let new_set =
-        Iter.fold
-          (Sh.Segs.to_iter (Xsh.heap q))
-          current
-          ~f:(fun seg current ->
+        Iter.fold (Xsh.heap q) current ~f:(fun seg current ->
             if value_determined_by (Xsh.ctx q) current seg.loc then
               List.fold
                 (Context.class_of (Xsh.ctx q) seg.cnt)
