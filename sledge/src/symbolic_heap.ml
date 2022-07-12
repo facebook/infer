@@ -432,32 +432,31 @@ module Sh = struct
       let xs, ctx = f_ctx ctx in
       if Context.is_unsat ctx then false_ us
       else
-        let djns, hoisted =
-          List.partition_map_endo djns ~f:(fun djn ->
-              let djn' =
-                Set.filter_map djn ~f:(fun sjn ->
-                    let sjn' = f_sjn sjn in
-                    if is_false sjn' then None else Some sjn' )
-              in
-              match Set.classify djn' with
-              | One dj -> Right dj
-              | _ -> Left djn' )
-        in
-        if List.exists ~f:Set.is_empty djns then false_ us
-        else
-          match Segs.map heap ~f:(map_seg ~f:f_trm) with
-          | None -> false_ us
-          | Some heap ->
-              if
-                ctx == q.ctx
-                && pure == q.pure
-                && heap == q.heap
-                && djns == q.djns
-                && Var.Set.is_empty xs
-              then q
-              else
-                exists_fresh xs
-                  (List.fold ~f:star hoisted {q with ctx; pure; heap; djns})
+        match Segs.map heap ~f:(map_seg ~f:f_trm) with
+        | None -> false_ us
+        | Some heap ->
+            let djns, hoisted =
+              List.partition_map_endo djns ~f:(fun djn ->
+                  let djn' =
+                    Set.filter_map djn ~f:(fun sjn ->
+                        let sjn' = f_sjn sjn in
+                        if is_false sjn' then None else Some sjn' )
+                  in
+                  match Set.classify djn' with
+                  | One dj -> Right dj
+                  | _ -> Left djn' )
+            in
+            if
+              ctx == q.ctx
+              && pure == q.pure
+              && heap == q.heap
+              && djns == q.djns
+              && Var.Set.is_empty xs
+            then q
+            else if List.exists ~f:Set.is_empty djns then false_ us
+            else
+              exists_fresh xs
+                (List.fold ~f:star hoisted {q with ctx; pure; heap; djns})
 
   (** primitive application of a substitution, ignores us and xs, may
       violate invariant *)
