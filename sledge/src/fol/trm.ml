@@ -219,41 +219,53 @@ module Var = struct
   end
 
   module Context = struct
-    type t = {voc: Set.t; xs: Set.t} [@@deriving sexp]
+    type t = {voc: int; xs: Set.t} [@@deriving sexp]
 
     let compare vx1 vx2 =
       let open Ord.Infix in
       if vx1 == vx2 then 0
-      else Set.compare vx1.xs vx2.xs <?> (Set.compare, vx1.voc, vx2.voc)
+      else Set.compare vx1.xs vx2.xs <?> (Int.compare, vx1.voc, vx2.voc)
 
     let equal = [%compare.equal: t]
-
-    let pp_voc ppf {voc} =
-      if not (Set.is_empty voc) then
-        [%Dbg.fprintf ppf "@<2>∀ @[%a@] .@ " Set.pp voc]
-
+    let pp_voc ppf vx = [%Dbg.fprintf ppf "@<2>∀ %i .@ " vx.voc]
     let pp_diff ppf (vx, vx') = Set.pp_xs ppf (Set.diff vx'.xs vx.xs)
 
     (* Constructors *)
 
-    let empty = {voc= Set.empty; xs= Set.empty}
-    let of_vars voc = {voc; xs= Set.empty}
+    let empty = {voc= 0; xs= Set.empty}
+
+    let of_vars vs =
+      let voc = match Set.max_elt vs with None -> 0 | Some v -> id v in
+      {voc; xs= Set.empty}
+
     let with_xs xs vx = {vx with xs}
 
     let merge vx1 vx2 =
       let {voc= voc1; xs= xs1} = vx1 in
       let {voc= voc2; xs= xs2} = vx2 in
-      let voc = Set.union voc1 voc2 in
+      let voc = Int.max voc1 voc2 in
       let xs = Set.union xs1 xs2 in
       {voc; xs}
 
     (* Queries *)
 
     let xs vx = vx.xs
-    let contains {voc} vs = Set.subset vs ~of_:voc
-    let diff_inter vs vx = Set.diff_inter vs vx.voc
-    let diff vs vx = Set.diff vs vx.voc
-    let inter vs vx = Set.inter vs vx.voc
+
+    let contains vx vs =
+      match Set.max_elt vs with None -> true | Some v -> id v <= vx.voc
+
+    let diff_inter vs vx =
+      let var = Var {id= vx.voc; name= ""} in
+      let clash, present, no_clash = Set.split var vs in
+      if not present then (no_clash, clash)
+      else (no_clash, Set.add (Set.find var vs) clash)
+
+    let diff vs vx =
+      let var = Var {id= vx.voc; name= ""} in
+      let _, _, no_clash = Set.split var vs in
+      no_clash
+
+    let inter vs vx = snd (diff_inter vs vx)
   end
 
   module Fresh = struct
@@ -287,12 +299,10 @@ module Var = struct
 
     let var_ ~existential name r =
       let {Context.voc; xs} = !r in
-      let max =
-        match Set.max_elt voc with None -> 0 | Some m -> max 0 (id m)
-      in
-      let x' = make ~id:(max + 1) ~name in
+      let voc = voc + 1 in
+      let x' = make ~id:voc ~name in
       let xs = if existential then Set.add x' xs else xs in
-      r := {voc= Set.add x' voc; xs} ;
+      r := {voc; xs} ;
       x'
 
     let var name r = var_ ~existential:true name r
