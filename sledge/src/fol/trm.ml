@@ -156,8 +156,7 @@ module Var = struct
       let ppx strength vs = pp_full (ppx strength) vs
 
       let pp_xs fs xs =
-        if not (is_empty xs) then
-          Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
+        if not (is_empty xs) then Format.fprintf fs "@<2>∃ @[%a@] .@;" pp xs
     end
 
     module Map = Map

@@ -139,7 +139,7 @@ let%test_module _ =
         ( Solver.infer_frame: 7
             %l_6 -[)-> ⟨8,%a_1⟩^⟨8,%a_2⟩
           \- ∃ %a_3, %m_8 .
-              %l_6 -[ %l_6, %m_8 )-> ⟨16,%a_3⟩
+            %l_6 -[ %l_6, %m_8 )-> ⟨16,%a_3⟩
         ) Solver.infer_frame:
             16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
@@ -155,7 +155,7 @@ let%test_module _ =
         ( Solver.infer_frame: 8
             %l_6 -[)-> ⟨8,%a_1⟩^⟨8,%a_2⟩
           \- ∃ %a_3, %m_8 .
-              %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_3⟩
+            %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_3⟩
         ) Solver.infer_frame:
             16 = %m_8 ∧ (⟨8,%a_1⟩^⟨8,%a_2⟩) = %a_3 ∧ emp |}]
 
@@ -173,7 +173,7 @@ let%test_module _ =
         ( Solver.infer_frame: 9
             %k_5 -[ %k_5, 16 )-> ⟨32,%a_1⟩ * %l_6 -[)-> ⟨8,16⟩
           \- ∃ %a_2, %m_8, %n_9 .
-              %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
+            %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
         ) Solver.infer_frame:
           ∃ %a0_13, %a1_14 .
             %a_2 = %a0_13
@@ -195,7 +195,7 @@ let%test_module _ =
         ( Solver.infer_frame: 10
             %k_5 -[ %k_5, 16 )-> ⟨32,%a_1⟩ * %l_6 -[)-> ⟨8,16⟩
           \- ∃ %a_2, %m_8, %n_9 .
-              %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
+            %k_5 -[ %k_5, %m_8 )-> ⟨%n_9,%a_2⟩ * %l_6 -[)-> ⟨8,%n_9⟩
         ) Solver.infer_frame:
           ∃ %a0_15, %a1_16 .
             %a_2 = %a0_15
@@ -229,7 +229,7 @@ let%test_module _ =
             ∨ (  1 = %n_9 ∧ emp)
             )
           \- ∃ %a_1, %m_8 .
-              %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
+            %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
         ) Solver.infer_frame:
             ( (  1 = %n_9 ∧ 16 = %m_8 ∧ (⟨8,%a_2⟩^⟨8,%a_3⟩) = %a_1 ∧ emp)
             ∨ (  %a_1 = %a_2
@@ -250,7 +250,7 @@ let%test_module _ =
             (2 ≥ %n_9)
           ∧ %l_6 -[ %l_6, 16 )-> ⟨8×%n_9,%a_2⟩^⟨(-8×%n_9 + 16),%a_3⟩
           \- ∃ %a_1, %m_8 .
-              %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
+            %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
         ) Solver.infer_frame: |}]
 
     (* Incompleteness: cannot witness existentials to satisfy non-equality
