@@ -122,9 +122,13 @@ features_comparison:fp_test_exactly_not_equal2_Ok/0: ok
 features_comparison:test_atleast2_Ok/0: ok
 features_comparison:test_atleast_Bad/0: expected_crash
 features_comparison:test_atleast_Ok/0: ok
+features_comparison:test_atleast_int_atom_Bad/0: expected_crash
+features_comparison:test_atleast_int_atom_Ok/0: ok
 features_comparison:test_atmost2_Ok/0: ok
 features_comparison:test_atmost_Bad/0: expected_crash
 features_comparison:test_atmost_Ok/0: ok
+features_comparison:test_atmost_int_atom_Bad/0: expected_crash
+features_comparison:test_atmost_int_atom_Ok/0: ok
 features_comparison:test_equal_Bad/0: expected_crash
 features_comparison:test_equal_Ok/0: ok
 features_comparison:test_equal_atom_Bad/0: expected_crash
@@ -139,9 +143,13 @@ features_comparison:test_exactly_not_equal_Ok/0: ok
 features_comparison:test_greater2_Bad/0: expected_crash
 features_comparison:test_greater_Bad/0: expected_crash
 features_comparison:test_greater_Ok/0: ok
+features_comparison:test_greater_int_atom_Bad/0: expected_crash
+features_comparison:test_greater_int_atom_Ok/0: ok
 features_comparison:test_less2_Bad/0: expected_crash
 features_comparison:test_less_Bad/0: expected_crash
 features_comparison:test_less_Ok/0: ok
+features_comparison:test_less_int_atom_Bad/0: expected_crash
+features_comparison:test_less_int_atom_Ok/0: ok
 features_comparison:test_neg_equal_Bad/0: expected_crash
 features_comparison:test_neg_equal_Ok/0: ok
 features_comparison:test_neg_equal_atom_Bad/0: expected_crash

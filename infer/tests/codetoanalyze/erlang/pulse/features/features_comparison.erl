@@ -31,15 +31,23 @@
     test_greater_Ok/0,
     test_greater_Bad/0,
     test_greater2_Bad/0,
+    test_greater_int_atom_Ok/0,
+    test_greater_int_atom_Bad/0,
     test_less_Ok/0,
     test_less_Bad/0,
     test_less2_Bad/0,
+    test_less_int_atom_Ok/0,
+    test_less_int_atom_Bad/0,
     test_atleast_Ok/0,
     test_atleast2_Ok/0,
     test_atleast_Bad/0,
+    test_atleast_int_atom_Ok/0,
+    test_atleast_int_atom_Bad/0,
     test_atmost_Ok/0,
     test_atmost2_Ok/0,
-    test_atmost_Bad/0
+    test_atmost_Bad/0,
+    test_atmost_int_atom_Ok/0,
+    test_atmost_int_atom_Bad/0
 ]).
 
 test_equal_Ok() ->
@@ -171,6 +179,16 @@ test_greater2_Bad() ->
     Y = 2,
     ?CRASH_IF_EQUAL(false, X > Y).
 
+test_greater_int_atom_Ok() ->
+    X = zero,
+    Y = 0,
+    ?ASSERT_EQUAL(true, X > Y).
+
+test_greater_int_atom_Bad() ->
+    X = 0,
+    Y = zero,
+    ?CRASH_IF_EQUAL(false, X > Y).
+
 test_less_Ok() ->
     X = 2,
     Y = 3,
@@ -179,6 +197,16 @@ test_less_Ok() ->
 test_less_Bad() ->
     X = 3,
     Y = 2,
+    ?CRASH_IF_EQUAL(false, X < Y).
+
+test_less_int_atom_Ok() ->
+    X = 0,
+    Y = zero,
+    ?ASSERT_EQUAL(true, X < Y).
+
+test_less_int_atom_Bad() ->
+    X = zero,
+    Y = 0,
     ?CRASH_IF_EQUAL(false, X < Y).
 
 test_less2_Bad() ->
@@ -201,6 +229,16 @@ test_atleast_Bad() ->
     Y = 3,
     ?CRASH_IF_EQUAL(false, X >= Y).
 
+test_atleast_int_atom_Ok() ->
+    X = zero,
+    Y = 0,
+    ?ASSERT_EQUAL(true, X >= Y).
+
+test_atleast_int_atom_Bad() ->
+    X = 0,
+    Y = zero,
+    ?CRASH_IF_EQUAL(false, X >= Y).
+
 test_atmost_Ok() ->
     X = 2,
     Y = 2,
@@ -214,4 +252,14 @@ test_atmost2_Ok() ->
 test_atmost_Bad() ->
     X = 3,
     Y = 2,
+    ?CRASH_IF_EQUAL(false, X =< Y).
+
+test_atmost_int_atom_Ok() ->
+    X = 0,
+    Y = zero,
+    ?ASSERT_EQUAL(true, X =< Y).
+
+test_atmost_int_atom_Bad() ->
+    X = zero,
+    Y = 0,
     ?CRASH_IF_EQUAL(false, X =< Y).
