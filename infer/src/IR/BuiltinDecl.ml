@@ -80,6 +80,10 @@ let __erlang_equal = create_procname "__erlang_equal"
 
 let __erlang_exactly_equal = create_procname "__erlang_exactly_equal"
 
+let __erlang_not_equal = create_procname "__erlang_not_equal"
+
+let __erlang_exactly_not_equal = create_procname "__erlang_exactly_not_equal"
+
 let __erlang_lesser = create_procname "__erlang_lesser"
 
 let __erlang_lesser_or_equal = create_procname "__erlang_lesser_or_equal"

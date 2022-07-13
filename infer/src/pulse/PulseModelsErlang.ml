@@ -348,6 +348,9 @@ module Comparison = struct
         {!type:t}, {!recfield:t.incompatible}). *)
     let incompatible_eq _ty_x _ty_y = const_false
 
+    (** Cf. {!incompatible_eq} *)
+    let incompatible_exactly_not_eq _ty_x _ty_y = const_true
+
     (** {1 Comparators as records of functions} *)
 
     (** The type of the functions that compare two values based on a specific type combination. They
@@ -373,6 +376,14 @@ module Comparison = struct
       ; incompatible= incompatible_eq
       ; integer= from_fields Binop.Eq Integers.value_field
       ; atom= from_fields Binop.Eq Atoms.hash_field }
+
+
+    let xne =
+      (* exactly_not_equal. *)
+      { unsupported= unknown
+      ; incompatible= incompatible_exactly_not_eq
+      ; integer= from_fields Binop.Ne Integers.value_field
+      ; atom= from_fields Binop.Ne Atoms.hash_field }
 
 
     (** Makes an ordering comparator given an operator to be used for comparing integer values and a
@@ -511,6 +522,8 @@ module Comparison = struct
   let equal = make Comparator.eq
 
   let prune_equal = prune Comparator.eq
+
+  let exactly_not_equal = make Comparator.xne
 
   let greater = make Comparator.gt
 
@@ -1026,6 +1039,11 @@ let matchers : matcher list =
     ; +BuiltinDecl.(match_builtin __erlang_equal) <>$ arg $+ arg $--> Comparison.equal
     ; +BuiltinDecl.(match_builtin __erlang_exactly_equal) <>$ arg $+ arg $--> Comparison.equal
       (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+    ; +BuiltinDecl.(match_builtin __erlang_not_equal)
+      <>$ arg $+ arg $--> Comparison.exactly_not_equal
+      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+    ; +BuiltinDecl.(match_builtin __erlang_exactly_not_equal)
+      <>$ arg $+ arg $--> Comparison.exactly_not_equal
     ; +BuiltinDecl.(match_builtin __erlang_greater) <>$ arg $+ arg $--> Comparison.greater
     ; +BuiltinDecl.(match_builtin __erlang_greater_or_equal)
       <>$ arg $+ arg $--> Comparison.greater_or_equal

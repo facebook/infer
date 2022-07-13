@@ -25,9 +25,15 @@
     test_not_equal_Ok/0,
     test_not_equal_Bad/0,
     test_not_equal2_Bad/0,
+    test_not_equal_atom_Ok/0,
+    test_not_equal_atom_Bad/0,
+    test_not_equal_int_atom_Ok/0,
     test_exactly_not_equal_Ok/0,
     fp_test_exactly_not_equal2_Ok/0,
     test_exactly_not_equal_Bad/0,
+    test_exactly_not_equal_atom_Ok/0,
+    test_exactly_not_equal_atom_Bad/0,
+    test_exactly_not_equal_int_atom_Ok/0,
     test_greater_Ok/0,
     test_greater_Bad/0,
     test_greater2_Bad/0,
@@ -148,6 +154,21 @@ test_not_equal2_Bad() ->
     Y = 2.0,
     ?CRASH_IF_EQUAL(false, X /= Y).
 
+test_not_equal_atom_Ok() ->
+    X = foo,
+    Y = bar,
+    ?ASSERT_EQUAL(true, X /= Y).
+
+test_not_equal_atom_Bad() ->
+    X = foo,
+    Y = foo,
+    ?CRASH_IF_EQUAL(false, X /= Y).
+
+test_not_equal_int_atom_Ok() ->
+    X = zero,
+    Y = 0,
+    ?ASSERT_EQUAL(true, X /= Y).
+
 test_exactly_not_equal_Ok() ->
     X = 2,
     Y = 3,
@@ -163,6 +184,21 @@ test_exactly_not_equal_Bad() ->
     X = 2,
     Y = 2,
     ?CRASH_IF_EQUAL(false, X =/= Y).
+
+test_exactly_not_equal_atom_Ok() ->
+    X = foo,
+    Y = bar,
+    ?ASSERT_EQUAL(true, X =/= Y).
+
+test_exactly_not_equal_atom_Bad() ->
+    X = foo,
+    Y = foo,
+    ?CRASH_IF_EQUAL(false, X =/= Y).
+
+test_exactly_not_equal_int_atom_Ok() ->
+    X = zero,
+    Y = 0,
+    ?ASSERT_EQUAL(true, X =/= Y).
 
 test_greater_Ok() ->
     X = 3,

@@ -140,6 +140,9 @@ features_comparison:test_exactly_equal_Bad/0: expected_crash
 features_comparison:test_exactly_equal_Ok/0: ok
 features_comparison:test_exactly_not_equal_Bad/0: expected_crash
 features_comparison:test_exactly_not_equal_Ok/0: ok
+features_comparison:test_exactly_not_equal_atom_Bad/0: expected_crash
+features_comparison:test_exactly_not_equal_atom_Ok/0: ok
+features_comparison:test_exactly_not_equal_int_atom_Ok/0: ok
 features_comparison:test_greater2_Bad/0: expected_crash
 features_comparison:test_greater_Bad/0: expected_crash
 features_comparison:test_greater_Ok/0: ok
@@ -159,6 +162,9 @@ features_comparison:test_neg_equal_int_atom_Ok/0: ok
 features_comparison:test_not_equal2_Bad/0: expected_crash
 features_comparison:test_not_equal_Bad/0: expected_crash
 features_comparison:test_not_equal_Ok/0: ok
+features_comparison:test_not_equal_atom_Bad/0: expected_crash
+features_comparison:test_not_equal_atom_Ok/0: ok
+features_comparison:test_not_equal_int_atom_Ok/0: ok
 
 ----- features_fun -----
 features_fun:fn_test_fun_notexists_Bad/0: undef

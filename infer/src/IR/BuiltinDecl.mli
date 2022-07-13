@@ -17,6 +17,10 @@ val __erlang_equal : Procname.t
 
 val __erlang_exactly_equal : Procname.t
 
+val __erlang_not_equal : Procname.t
+
+val __erlang_exactly_not_equal : Procname.t
+
 val __erlang_lesser : Procname.t
 
 val __erlang_lesser_or_equal : Procname.t

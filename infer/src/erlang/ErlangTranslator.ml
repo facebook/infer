@@ -621,7 +621,6 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   in
   let make_simple_eager_arith = make_simple_eager unbox_integer box_integer in
   let make_simple_eager_bool = make_simple_eager unbox_bool box_bool in
-  let make_simple_eager_comparison = make_simple_eager unbox_integer box_bool in
   let make_short_circuit_logic ~short_circuit_when_lhs_is =
     let unbox1, unbox_block1 = unbox_bool env (Exp.Var id1) in
     let start = Node.make_nop env in
@@ -670,8 +669,10 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       make_builtin_call BuiltinDecl.__erlang_equal
   | ExactlyEqual ->
       make_builtin_call BuiltinDecl.__erlang_exactly_equal
-  | ExactlyNotEqual | NotEqual ->
-      make_simple_eager_comparison Ne
+  | ExactlyNotEqual ->
+      make_builtin_call BuiltinDecl.__erlang_exactly_not_equal
+  | NotEqual ->
+      make_builtin_call BuiltinDecl.__erlang_not_equal
   | Greater ->
       make_builtin_call BuiltinDecl.__erlang_greater
   | IDiv ->
