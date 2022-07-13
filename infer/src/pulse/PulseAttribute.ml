@@ -282,9 +282,9 @@ module Attribute = struct
     | StdVectorReserve ->
         F.pp_print_string f "std::vector::reserve()"
     | Tainted tainted ->
-        F.fprintf f "Tainted{%a}" TaintedSet.pp tainted
+        F.fprintf f "Tainted%a" TaintedSet.pp tainted
     | TaintSanitized taint_sanitized ->
-        F.fprintf f "TaintedSanitized{%a}" TaintSanitizedSet.pp taint_sanitized
+        F.fprintf f "TaintedSanitized%a" TaintSanitizedSet.pp taint_sanitized
     | Uninitialized ->
         F.pp_print_string f "Uninitialized"
     | UnknownEffect (call, hist) ->
