@@ -718,27 +718,24 @@ struct
         [Joinable] represents the subset of [ams] fields that can be joined
         across several executions that share the same execution history. *)
     module Joinable = struct
-      module T = struct
+      module Elt = struct
         type t = {state: D.t; depths: Depths.t; history: Hist.t [@ignore]}
         [@@deriving compare, equal, sexp_of]
       end
 
-      module M = Map.Make (T)
+      module M = Map.Make (Elt)
 
       type t = Edge.t list M.t
 
       let empty = M.empty
       let is_empty = M.is_empty
+      let add = M.add_multi
 
       let diff =
         M.merge ~f:(fun _ -> function
           | `Left v -> Some v | `Right _ | `Both _ -> None )
 
       let union = M.union ~f:(fun _ v1 v2 -> Some (List.append v1 v2))
-
-      let of_list l =
-        List.fold l M.empty ~f:(fun (key, data) m ->
-            M.add_multi ~key ~data m )
 
       let join m =
         let states, depths, hists, edges =
@@ -826,7 +823,11 @@ struct
       module M = Partition.Map
 
       let empty = M.empty
-      let add = M.add_multi
+
+      let add ~key ~data:(elt, edge) m =
+        M.update key m ~f:(fun data ->
+            let joinable = Option.value data ~default:Joinable.empty in
+            Some (Joinable.add ~key:elt ~data:edge joinable) )
 
       let find_first m ~f =
         let exception Stop in
@@ -863,21 +864,20 @@ struct
                     in
                     Succs.add
                       ~key:(switches, ip, threads, goal)
-                      ~data:(({state; depths; history} : Joinable.T.t), edge)
+                      ~data:({state; depths; history}, edge)
                       succs ) )
       in
       let found, hit_end =
         Succs.find_first succs
           ~f:(fun ~key:(switches, ip, threads, goal) ~data:incoming ->
             let next = (switches, ip, threads, goal) in
-            let curr = Joinable.of_list incoming in
             let+ done_states, next_states =
               match Cursor.find next cursor with
               | Some done_states ->
-                  let next_states = Joinable.diff curr done_states in
+                  let next_states = Joinable.diff incoming done_states in
                   if Joinable.is_empty next_states then None
                   else Some (done_states, next_states)
-              | None -> Some (Joinable.empty, curr)
+              | None -> Some (Joinable.empty, incoming)
             in
             let cursor =
               Cursor.add ~key:next
