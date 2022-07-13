@@ -9,6 +9,7 @@
 
 exception Stop
 exception Reached_goal of {steps: int}
+exception Unreachable_goal
 exception Unimplemented of {feature: string}
 
 let on_unknown_call _ = Dbg.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
@@ -26,6 +27,10 @@ let on_alarm a =
 let on_reached_goal steps ~dp_witness _ =
   [%Dbg.printf "%t" dp_witness] ;
   Dbg.kprintf __FUNCTION__ (fun _ -> raise (Reached_goal {steps})) ""
+
+let on_unreachable_goal ~dp_path =
+  [%Dbg.printf "%t" dp_path] ;
+  Dbg.kprintf __FUNCTION__ (fun _ -> raise Unreachable_goal) ""
 
 let on_unimplemented feature _ =
   Dbg.kprintf __FUNCTION__ (fun _ -> raise (Unimplemented {feature})) ""

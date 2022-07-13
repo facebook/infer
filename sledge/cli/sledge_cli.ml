@@ -40,8 +40,8 @@ register_sexp_of_exn (Dbg.Parse_failure "") (function
   | _ -> assert false )
 
 ;;
-register_sexp_of_exn (Goal.Sparse_trace.Failed_lookup "") (function
-  | Goal.Sparse_trace.Failed_lookup msg -> Sexplib0.Sexp.Atom msg
+register_sexp_of_exn (Goal.Sparse_trace.Invalid_trace "") (function
+  | Goal.Sparse_trace.Invalid_trace msg -> Sexplib0.Sexp.Atom msg
   | _ -> assert false )
 
 (* define a command, with trace flag, and with action wrapped in
@@ -82,6 +82,7 @@ let command ~summary ?readme param =
         | Failure msg -> Report.InternalError msg
         | Stop.Stop -> Report.safe_or_unsafe ()
         | Stop.Reached_goal {steps} -> Report.Reached_goal {steps}
+        | Stop.Unreachable_goal -> Report.Unreachable_goal
         | exn -> Report.UnknownError (Printexc.to_string exn)
       in
       Report.status (status_of_exn exn) ;

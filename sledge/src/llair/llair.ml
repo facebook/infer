@@ -94,7 +94,7 @@ and block =
   ; term: term
   ; mutable parent: func
   ; mutable sort_index: int
-  ; mutable checkpoint_dists: int Function.Map.t }
+  ; mutable checkpoint_dists: int Int.Map.t }
 
 and func =
   { name: Function.t
@@ -211,7 +211,7 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index; checkpoint_dists} =
     ; term: term
     ; parent: Function.t = parent.name
     ; sort_index: int
-    ; checkpoint_dists: int Function.Map.t }]
+    ; checkpoint_dists: int Int.Map.t }]
 
 let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
   [%sexp
@@ -330,7 +330,7 @@ let rec dummy_block =
   ; term= Unreachable
   ; parent= dummy_func
   ; sort_index= 0
-  ; checkpoint_dists= Function.Map.empty }
+  ; checkpoint_dists= Int.Map.empty }
 
 and dummy_func =
   { name=
@@ -879,12 +879,42 @@ module Program = struct
       |> Iter.to_list
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 
-  let reachable_dists prev next =
+  (** An [Abstr_stack.t] abstracts some concrete stack(s) for the CFL
+      reachability problem of the distance computations below. It is
+      conceptually a set of "spare" close parentheses ([Abstr_stack.T.t])
+      corresponding to some unmatched open parentheses, but is implemented
+      as a hash table from functions to sets of return sites (i.e. of calls
+      to that function) to support quick/easy lookup *)
+  module Abstr_stack = struct
+    let empty () : BlockS.t Function.Tbl.t = Function.Tbl.create ()
+
+    let add k callee =
+      Function.Tbl.find_or_add k callee ~default:(fun () -> BlockS.create 0)
+      |> BlockS.insert
+
+    let return_sites k callee =
+      match Function.Tbl.find k callee with
+      | None -> Iter.empty
+      | Some rets -> BlockS.to_iter rets
+  end
+
+  (** Join some [new_dists] map (from blocks to ints) onto an [old_dists]
+      map, if one is given. Note that [merge_endo] is important here,
+      ensuring that [y == join_dists x (Some y)] holds whenever the old
+      distances [y] subsume the new distances [x]. *)
+  let join_dists new_dists old_dists_opt =
+    match old_dists_opt with
+    | None -> new_dists
+    | Some old_dists ->
+        Block.Map.merge_endo old_dists new_dists ~f:(fun _ -> function
+          | `Left d | `Right d -> Some d | `Both (d, d') -> Some (min d d') )
+
+  let reachable_dists ~dp_path ?(preceding_stack = Abstr_stack.empty ())
+      init predicate =
     [%dbg]
-      ~call:(fun {pf} ->
-        pf "from %a to %a" Block.pp_ident prev Block.pp_ident next )
-      ~retn:(fun {pf} dists ->
-        pf "@[<v 2>%t@]" (fun ppf ->
+      ~call:(fun {pf} -> pf "%t" dp_path)
+      ~retn:(fun {pf} (dists, _ctx) ->
+        pf "@[<v 2>%t@]@\n@\n" (fun ppf ->
             let pp = Format.fprintf ppf "@ %a (%i)" Block.pp_ident in
             Block.Map.iteri dists ~f:(fun ~key ~data -> pp key data) ) )
     @@ fun () ->
@@ -892,82 +922,180 @@ module Program = struct
        such that [intermediate_dists(dst)(src)] is the distance from src to
        dst *)
     let intermediate_dists = Block.Tbl.create () in
-    let rec visit ~next_checkpoint ~curr_block dists stack =
-      let changed = ref false in
-      let join_dists new_dists old_dists_opt =
-        match old_dists_opt with
-        | None ->
-            changed := true ;
-            new_dists
-        | Some old_dists ->
-            Block.Map.merge old_dists new_dists ~f:(fun _ -> function
-              | `Left d -> Some d
-              | `Right d ->
-                  changed := true ;
-                  Some d
-              | `Both (d, d') ->
-                  if d <= d' then Some d
-                  else (
-                    changed := true ;
-                    Some d' ) )
-      in
+    let open_calls = Abstr_stack.empty () in
+    let rec visit ~predicate ~curr_block dists stack =
+      let old_dists = Block.Tbl.find intermediate_dists curr_block in
       let new_dists =
         Block.Map.(map ~f:succ dists |> add ~key:curr_block ~data:0)
       in
-      Block.Tbl.update intermediate_dists curr_block
-        ~f:(join_dists new_dists >> Option.some) ;
-      if (not !changed) || Block.equal next_checkpoint curr_block then ()
-      else
-        let dists = Block.Tbl.find_exn intermediate_dists curr_block in
-        let visit_target tgt =
-          visit ~next_checkpoint ~curr_block:tgt dists
-        in
-        let jump jmp = visit_target jmp.dst stack in
-        match curr_block.term with
-        | Switch {tbl; els; _} ->
-            IArray.iter tbl ~f:(snd >> jump) ;
-            jump els
-        | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
-        | Call {callee; return; _} -> (
-          match callee with
-          | Direct f -> visit_target f.entry (return.dst :: stack)
-          | Intrinsic _ -> jump return
-          | Indirect {candidates; _} ->
-              IArray.iter candidates ~f:(fun f ->
-                  visit_target f.entry (return.dst :: stack) ) )
-        | Return _ -> (
-          match stack with
-          | ret :: stack -> visit_target ret stack
-          | [] ->
-              ()
-              (* empty stack indicates we're returning from one checkpoint
-                 function without having reached the next -- no
-                 sparse-trace-compatible executions down that path *) )
-        | Throw _ | Abort _ | Unreachable -> ()
+      let joined_dists = join_dists new_dists old_dists in
+      if Option.exists old_dists ~f:(( == ) joined_dists) then ()
+      else (
+        Block.Tbl.set intermediate_dists ~key:curr_block ~data:joined_dists ;
+        if predicate curr_block then
+          List.iter stack ~f:(fun (return_site, callee) ->
+              Abstr_stack.add open_calls callee return_site )
+          (* search has completed, so we return with an abstract stack
+             containing all as-yet-unmatched call frames on the stack *)
+        else
+          let dists = Block.Tbl.find_exn intermediate_dists curr_block in
+          let visit_target k tgt =
+            visit ~predicate ~curr_block:tgt dists k
+          in
+          let jump jmp = visit_target stack jmp.dst in
+          match curr_block.term with
+          | Switch {tbl; els; _} ->
+              IArray.iter tbl ~f:(snd >> jump) ;
+              jump els
+          | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
+          | Call {callee; return; _} -> (
+            match callee with
+            | Direct f ->
+                visit_target ((return.dst, f.name) :: stack) f.entry
+            | Intrinsic _ -> jump return
+            | Indirect {candidates; _} ->
+                IArray.iter candidates ~f:(fun f ->
+                    visit_target ((return.dst, f.name) :: stack) f.entry ) )
+          | Return _ -> (
+            match stack with
+            | (ret, _) :: stack -> visit_target stack ret
+            | [] ->
+                Abstr_stack.return_sites preceding_stack
+                  curr_block.parent.name (visit_target [])
+                (* empty stack indicates we're returning from one checkpoint
+                   function without having reached the next -- no
+                   sparse-trace-compatible executions down that path *) )
+          | Throw _ | Abort _ | Unreachable -> () )
     in
-    visit ~next_checkpoint:next ~curr_block:prev Block.Map.empty [] ;
-    Block.Tbl.find intermediate_dists next
+    visit ~predicate ~curr_block:init Block.Map.empty [] ;
+    Block.Tbl.fold intermediate_dists None ~f:(fun ~key ~data dists ->
+        if predicate key then Some (join_dists data dists) else dists )
     |> Option.value ~default:Block.Map.empty
+    |> fun x -> (x, open_calls)
 
-  let compute_distances ~entry ~trace pgm =
+  let record_dists ~idx dists ~dp_path =
+    if Block.Map.is_empty dists then Error dp_path
+    else
+      Ok
+        (Block.Map.iteri dists ~f:(fun ~key:blk ~data ->
+             blk.checkpoint_dists <-
+               Int.Map.add blk.checkpoint_dists ~key:idx ~data ) )
+
+  (** Compute and record distances between two blocks. *)
+  let record_block_dists ~idx prev next =
+    let dp_path ppf =
+      Format.fprintf ppf "from %a to %a" Block.pp_ident prev Block.pp_ident
+        next
+    in
+    let dists, stack = reachable_dists ~dp_path prev (Block.equal next) in
+    Result.map (fun _ -> stack) (record_dists ~idx ~dp_path dists)
+
+  (** Compute and record distances between return sites of one function and
+      any location in another. *)
+  let record_fn_dists ~idx ~preceding_stack prev next =
+    let dp_path ppf =
+      Format.fprintf ppf "from retn(%a) to %a" Function.pp prev Function.pp
+        next
+    in
+    Iter.fold (Abstr_stack.return_sites preceding_stack prev) None
+      ~f:(fun ret_site dists ->
+        let pred b = Function.(equal next b.parent.name) in
+        let dists', _ =
+          reachable_dists ~preceding_stack ~dp_path ret_site pred
+        in
+        Some (join_dists dists' dists) )
+    |> Option.value ~default:Block.Map.empty
+    |> record_dists ~dp_path ~idx
+
+  (** Compute and record distances from a block to any return site of that
+      block's procedure *)
+  let record_dists_to_exit ~idx ~preceding_stack block =
+    let dp_path ppf =
+      Format.fprintf ppf "from %a to exit(%a)" Block.pp_ident block
+        Function.pp block.parent.name
+    in
+    let rets =
+      Abstr_stack.return_sites preceding_stack block.parent.name
+      |> IArray.of_iter
+    in
+    let dists, _ =
+      reachable_dists ~preceding_stack ~dp_path block (fun b ->
+          IArray.mem b rets ~eq:Block_label.equal )
+    in
+    record_dists ~idx ~dp_path dists
+
+  (** Compute static distance heuristics for each step along some
+      [src_trace] and [snk_trace], starting from [entry]. Traces are as
+      defined in [Goal.Sparse_trace], so we compute distances between: (1)
+      successive calls along the [src_trace]; (2) the last call of
+      [src_trace] and its exit; (3) successive exits along the [src_trace],
+      in reverse; (4) the last exit of the [src_trace] and the [snk_trace]
+      entry; (5) successive calls along the [snk_trace]. Each step is
+      computed using [reachable_dists], labelled inline by the numbers given
+      here. If [snk_trace] is empty, then only (1) is needed. *)
+  let compute_distances ~entry ~src_trace ~snk_trace pgm =
     [%dbg]
       ~call:(fun {pf} ->
-        pf "wrt trace: [%a]"
-          (IArray.pp " -> " (fun ppf -> Function.name >> String.pp ppf))
-          trace )
+        let pp_trace =
+          IArray.pp "@ -> " (fun ppf -> Function.name >> String.pp ppf)
+        in
+        pf "wrt trace: @[<v 2>src:@ %a@]@\n@[<v 2>sink:@ %a@]" pp_trace
+          src_trace pp_trace snk_trace ;
+        assert (not (IArray.is_empty src_trace)) )
       ~retn:(fun {pf} _ -> pf "")
     @@ fun () ->
-    IArray.fold trace entry ~f:(fun next curr ->
-        let next_entry = (Function.Map.find_exn next pgm.functions).entry in
-        let dists = reachable_dists curr next_entry in
-        if Block.Map.is_empty dists then
-          warn
-            "@[<v 2>unreachable goal: couldn't find a path@ from: %a@ \
-             to:   %a@]"
-            Block.pp_ident curr Block.pp_ident next_entry () ;
-        Block.Map.iteri dists ~f:(fun ~key:blk ~data ->
-            blk.checkpoint_dists <-
-              Function.Map.add blk.checkpoint_dists ~key:next ~data ) ;
-        next_entry )
-    |> ignore
+    let open Containers.Result.Infix in
+    let checkpoint_idx = ref 0 in
+    let ret_idx call_idx = (2 * IArray.length src_trace) - call_idx in
+    let root_to_src_ctx = ref None in
+    let* last_entry, preceding_stack =
+      IArray.fold src_trace
+        (Ok (entry, Abstr_stack.empty ()))
+        ~f:(fun next curr ->
+          let* curr, _ = curr in
+          let next_entry =
+            Function.Map.(find_exn next pgm.functions).entry
+          in
+          let idx = Int.post_incr checkpoint_idx in
+          (* (1): successive calls along [src_trace] *)
+          let* preceding_stack = record_block_dists ~idx curr next_entry in
+          if idx = 1 then
+            root_to_src_ctx := Some (next_entry, preceding_stack) ;
+          let+ () =
+            if idx > 0 && not (IArray.is_empty snk_trace) then
+              (* (3): successive returns along [src_trace] *)
+              record_fn_dists ~idx:(ret_idx idx) ~preceding_stack next
+                curr.parent.name
+            else Ok ()
+          in
+          (next_entry, preceding_stack) )
+    in
+    match Array.to_list (IArray.to_array snk_trace) with
+    | [] -> Ok ()
+    | snk_head :: snk_tail ->
+        (* (2): from the entry to exit of the innermost [src_trace] fn *)
+        let* () =
+          record_dists_to_exit ~idx:(IArray.length src_trace)
+            ~preceding_stack last_entry
+        in
+        let src_trace_root, root_ctx = Option.get_exn !root_to_src_ctx in
+        checkpoint_idx := ret_idx 0 ;
+        (* (4): from exit of [src_trace] to entry of [snk_trace] *)
+        let idx = Int.post_incr checkpoint_idx in
+        let* () =
+          record_fn_dists ~idx ~preceding_stack:root_ctx
+            src_trace_root.parent.name snk_head
+        in
+        List.fold snk_tail
+          (Ok Function.Map.(find_exn snk_head pgm.functions).entry)
+          ~f:(fun next curr_res ->
+            let* curr = curr_res in
+            let next_entry =
+              Function.Map.(find_exn next pgm.functions).entry
+            in
+            let idx = Int.post_incr checkpoint_idx in
+            (* (5): successive calls along [snk_trace] *)
+            let+ _ = record_block_dists ~idx curr next_entry in
+            next_entry )
+        >|= ignore
 end

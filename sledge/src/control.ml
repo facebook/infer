@@ -986,12 +986,17 @@ struct
       let globals = Domain_used_globals.by_function Config.globals name in
       exec_call globals call ams wl
 
-  let exec_return exp ({ctrl= {ip; stk; tid}; state} as ams) wl =
+  let exec_return exp ({ctrl= {ip; stk; tid}; state; history} as ams) wl =
     let block = Llair.IP.block ip in
     let func = block.parent in
     let Llair.{name; formals; freturn; locals} = func in
     [%Dbg.call fun {pf} -> pf " t%i@ from: %a" tid Llair.Function.pp name]
     ;
+    let goal = Goal.update_after_retn name ams.goal in
+    if goal != ams.goal && Goal.reached goal then
+      Report.reached_goal
+        ~dp_goal:(fun fs -> Goal.pp fs goal)
+        ~dp_witness:(Hist.dump (Hist.extend ip [history])) ;
     let summarize post_state =
       if not Config.function_summaries then post_state
       else
@@ -1018,13 +1023,13 @@ struct
         in
         let retn_state = D.retn tid formals freturn from_call post_state in
         exec_jump retn_site
-          {ams with ctrl= {ams.ctrl with stk}; state= retn_state}
+          {ams with ctrl= {ams.ctrl with stk}; state= retn_state; goal}
           wl
     | None ->
         summarize exit_state |> ignore ;
         let tc = D.term tid formals freturn exit_state in
         Work.add ~retreating:false
-          {ams with ctrl= {dst= Terminated (tc, tid); src= block}}
+          {ams with ctrl= {dst= Terminated (tc, tid); src= block}; goal}
           wl )
     |>
     [%Dbg.retn fun {pf} _ -> pf ""]
