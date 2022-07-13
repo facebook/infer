@@ -341,11 +341,7 @@ module Sh = struct
               let djns = List.append d1 d2 in
               {ctx; pure; heap; djns}
 
-  let starN qs vx =
-    match qs with
-    | [] -> emp
-    | [q] -> q
-    | q :: qs -> List.fold ~f:(fun q1 q2 -> star q1 q2 vx) qs q
+  let starN qs vx = List.fold ~f:(fun q1 q2 -> star q1 q2 vx) qs emp
 
   let or_ q1 q2 =
     match (q1, q2) with
@@ -364,10 +360,7 @@ module Sh = struct
         ; heap= Segs.empty
         ; djns= [Set.add q1 (Set.of_ q2)] }
 
-  let orN qs =
-    match Set.pop qs with
-    | None -> false_
-    | Some (q, qs) -> Set.fold ~f:or_ qs q
+  let orN qs = Set.fold ~f:or_ qs false_
 
   let and_ctx ctx q vx =
     let ctx = Context.union ctx q.ctx vx in
