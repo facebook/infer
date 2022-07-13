@@ -76,6 +76,18 @@ let __delete_array = create_procname "__delete_array"
 
 let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
+let __erlang_equal = create_procname "__erlang_equal"
+
+let __erlang_exactly_equal = create_procname "__erlang_exactly_equal"
+
+let __erlang_lesser = create_procname "__erlang_lesser"
+
+let __erlang_lesser_or_equal = create_procname "__erlang_lesser_or_equal"
+
+let __erlang_greater = create_procname "__erlang_greater"
+
+let __erlang_greater_or_equal = create_procname "__erlang_greater_or_equal"
+
 let __erlang_error_badkey = create_procname "__erlang_error_badkey"
 
 let __erlang_error_badmatch = create_procname "__erlang_error_badmatch"
