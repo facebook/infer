@@ -525,6 +525,29 @@ let abort_matchers : matcher list =
   get_cpp_matchers ~model:(fun _ -> Basic.early_exit) Config.pulse_model_abort
 
 
+module Pair = struct
+  let make_pair type1 type2 value1 value2 (return_param, _) : model =
+    let make_pair_field =
+      Fieldname.make
+        (Typ.CppClass
+           { name= QualifiedCppName.of_qual_string "std::pair"
+           ; template_spec_info= Template {mangled= None; args= [TType type1; TType type2]}
+           ; is_union= false } )
+    in
+    let first = make_pair_field "first" in
+    let second = make_pair_field "second" in
+    fun {path; location} astate ->
+      let hist = Hist.single_call path location "std::make_pair()" in
+      let<*> astate =
+        PulseOperations.write_field path location ~ref:(return_param, hist) first ~obj:value1 astate
+      in
+      let<+> astate =
+        PulseOperations.write_field path location ~ref:(return_param, hist) second ~obj:value2
+          astate
+      in
+      astate
+end
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
@@ -573,6 +596,8 @@ let matchers : matcher list =
   ; -"std" &:: "__atomic_base"
     &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
     <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t
+  ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
+    $+ capt_arg_payload $--> Pair.make_pair
   ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
     $+...$--> Vector.init_list_constructor
