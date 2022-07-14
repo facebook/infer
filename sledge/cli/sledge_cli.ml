@@ -114,7 +114,7 @@ let used_globals pgm entry_points preanalyze =
     in
     let summary_table = Analysis.compute_summaries pgm in
     UG.Per_function
-      (Llair.Function.Map.map summary_table ~f:Llair.Global.Set.union_list)
+      (Llair.FuncName.Map.map summary_table ~f:Llair.Global.Set.union_list)
   else
     UG.Declared
       (Llair.Global.Set.of_iter

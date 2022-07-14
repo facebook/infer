@@ -12,7 +12,7 @@ module Loc = Loc
 module Typ = Typ
 module Reg = Reg
 module Exp = Exp
-module Function = Function
+module FuncName = FuncName
 module Global = Global
 module GlobalDefn = GlobalDefn
 
@@ -134,7 +134,7 @@ and block = private
 (** A function is a control-flow graph with distinguished entry block, whose
     parameters are the function parameters. *)
 and func = private
-  { name: Function.t
+  { name: FuncName.t
   ; formals: Reg.t iarray  (** Formal parameters *)
   ; freturn: Reg.t option
   ; fthrow: Reg.t
@@ -143,7 +143,7 @@ and func = private
   ; loc: Loc.t }
 
 type ip
-type functions = func Function.Map.t
+type functions = func FuncName.Map.t
 
 type program = private
   { globals: GlobalDefn.t iarray  (** Global definitions. *)
@@ -282,7 +282,7 @@ module Func : sig
   include Invariant.S with type t := t
 
   val mk :
-       name:Function.t
+       name:FuncName.t
     -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
@@ -292,7 +292,7 @@ module Func : sig
     -> t
 
   val mk_undefined :
-       name:Function.t
+       name:FuncName.t
     -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
@@ -320,8 +320,8 @@ module Program : sig
 
   val compute_distances :
        entry:block
-    -> src_trace:Function.t iarray
-    -> snk_trace:Function.t iarray
+    -> src_trace:FuncName.t iarray
+    -> snk_trace:FuncName.t iarray
     -> t
     -> (unit, Format.formatter -> unit) result
   (** Compute static distance heuristics along the trace defined by

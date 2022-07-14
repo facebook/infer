@@ -592,7 +592,7 @@ struct
       in
       let pp_ip fs ip =
         let open Llair in
-        Format.fprintf fs "%a%a%a" Function.pp (IP.block ip).parent.name
+        Format.fprintf fs "%a%a%a" FuncName.pp (IP.block ip).parent.name
           IP.pp ip Loc.pp (IP.loc ip)
       in
       Format.fprintf fs "@[<v 2>Witness Trace:@ %a@]" (List.pp "@ " pp_ip)
@@ -912,13 +912,13 @@ struct
       | None -> ()
   end
 
-  let summary_table = Llair.Function.Tbl.create ()
+  let summary_table = Llair.FuncName.Tbl.create ()
 
   let pp_st () =
     [%Dbg.printf
       "@[<v>%t@]" (fun fs ->
-          Llair.Function.Tbl.iteri summary_table ~f:(fun ~key ~data ->
-              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Function.pp key
+          Llair.FuncName.Tbl.iteri summary_table ~f:(fun ~key ~data ->
+              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.FuncName.pp key
                 (List.pp "@," D.pp_summary)
                 data ) )]
 
@@ -940,7 +940,7 @@ struct
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Dbg.call fun {pf} ->
       pf " t%i@[<2>@ %a from %a with state@]@;<1 2>%a" tid
-        Llair.Func.pp_call call Llair.Function.pp return.dst.parent.name
+        Llair.Func.pp_call call Llair.FuncName.pp return.dst.parent.name
         D.pp state]
     ;
     let ip = Llair.IP.mk entry in
@@ -961,7 +961,7 @@ struct
           if not Config.function_summaries then None
           else
             let state = fst (domain_call ~summaries:false state) in
-            let* summary = Llair.Function.Tbl.find summary_table name in
+            let* summary = Llair.FuncName.Tbl.find summary_table name in
             List.find_map ~f:(D.apply_summary state) summary
         with
         | None ->
@@ -990,7 +990,7 @@ struct
     let block = Llair.IP.block ip in
     let func = block.parent in
     let Llair.{name; formals; freturn; locals} = func in
-    [%Dbg.call fun {pf} -> pf " t%i@ from: %a" tid Llair.Function.pp name]
+    [%Dbg.call fun {pf} -> pf " t%i@ from: %a" tid Llair.FuncName.pp name]
     ;
     let goal = Goal.update_after_retn name ams.goal in
     if goal != ams.goal && Goal.reached goal then
@@ -1003,7 +1003,7 @@ struct
         let function_summary, post_state =
           D.create_summary tid ~locals ~formals post_state
         in
-        Llair.Function.Tbl.add_multi ~key:name ~data:function_summary
+        Llair.FuncName.Tbl.add_multi ~key:name ~data:function_summary
           summary_table ;
         pp_st () ;
         post_state
@@ -1037,7 +1037,7 @@ struct
   let exec_throw exc ({ctrl= {ip; stk; tid}; state} as ams) wl =
     let func = (Llair.IP.block ip).parent in
     let Llair.{name; formals; freturn; fthrow; locals} = func in
-    [%Dbg.call fun {pf} -> pf "@ from %a" Llair.Function.pp name]
+    [%Dbg.call fun {pf} -> pf "@ from %a" Llair.FuncName.pp name]
     ;
     let unwind formals scope from_call state =
       D.retn tid formals (Some fthrow) from_call
@@ -1129,7 +1129,7 @@ struct
             exec_assume
               (Llair.Exp.eq ptr
                  (Llair.Exp.label
-                    ~parent:(Llair.Function.name jump.dst.parent.name)
+                    ~parent:(Llair.FuncName.name jump.dst.parent.name)
                     ~name:jump.dst.lbl ) )
               jump ams wl )
     | Call ({callee= Direct callee} as call) ->
@@ -1221,11 +1221,11 @@ struct
   let compute_summaries pgm goal =
     assert Config.function_summaries ;
     exec_pgm pgm goal ;
-    Llair.Function.Tbl.fold summary_table Llair.Function.Map.empty
+    Llair.FuncName.Tbl.fold summary_table Llair.FuncName.Map.empty
       ~f:(fun ~key ~data map ->
         match data with
         | [] -> map
-        | _ -> Llair.Function.Map.add ~key ~data map )
+        | _ -> Llair.FuncName.Map.add ~key ~data map )
 end
 [@@inlined]
 

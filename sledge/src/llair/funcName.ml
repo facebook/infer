@@ -7,6 +7,4 @@
 
 (** Function names *)
 
-include module type of struct
-  include Exp.Function
-end
+include Exp.FuncName

@@ -19,7 +19,7 @@ module Make (_ : Config) (Domain : Domain) (_ : Queue) : sig
   val exec_pgm : Llair.program -> unit
 
   val compute_summaries :
-    Llair.program -> Domain.summary list Llair.Function.Map.t
+    Llair.program -> Domain.summary list Llair.FuncName.Map.t
 end
 
 module MakeDirected
@@ -30,5 +30,5 @@ module MakeDirected
   val exec_pgm : Llair.program -> Goal.t -> unit
 
   val compute_summaries :
-    Llair.program -> Goal.t -> Domain.summary list Llair.Function.Map.t
+    Llair.program -> Goal.t -> Domain.summary list Llair.FuncName.Map.t
 end

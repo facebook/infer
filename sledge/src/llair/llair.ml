@@ -13,7 +13,7 @@ module Loc = Loc
 module Typ = Typ
 module Reg = Reg
 module Exp = Exp
-module Function = Function
+module FuncName = FuncName
 module Global = Global
 module GlobalDefn = GlobalDefn
 
@@ -97,7 +97,7 @@ and block =
   ; mutable checkpoint_dists: int Int.Map.t }
 
 and func =
-  { name: Function.t
+  { name: FuncName.t
   ; formals: Reg.t iarray
   ; freturn: Reg.t option
   ; fthrow: Reg.t
@@ -108,8 +108,8 @@ and func =
 (* compare *)
 
 (* functions are uniquely identified by [name] *)
-let compare_func x y = if x == y then 0 else Function.compare x.name y.name
-let equal_func x y = x == y || Function.equal x.name y.name
+let compare_func x y = if x == y then 0 else FuncName.compare x.name y.name
+let equal_func x y = x == y || FuncName.equal x.name y.name
 
 (* blocks in a [t] are uniquely identified by [sort_index] *)
 let compare_block x y =
@@ -172,7 +172,7 @@ let sexp_of_jump {dst; retreating} =
   [%sexp {dst: label = dst.lbl; retreating: bool}]
 
 let sexp_of_callee = function
-  | Direct func -> sexp_ctor "Direct" [%sexp (func.name : Function.t)]
+  | Direct func -> sexp_ctor "Direct" [%sexp (func.name : FuncName.t)]
   | Indirect {ptr; candidates= _} ->
       sexp_ctor "Indirect" [%sexp (ptr : Exp.t)]
   | Intrinsic intr -> sexp_ctor "Intrinsic" [%sexp (intr : Intrinsic.t)]
@@ -209,13 +209,13 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index; checkpoint_dists} =
     { lbl: label
     ; cmnd: cmnd
     ; term: term
-    ; parent: Function.t = parent.name
+    ; parent: FuncName.t = parent.name
     ; sort_index: int
     ; checkpoint_dists: int Int.Map.t }]
 
 let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
   [%sexp
-    { name: Function.t
+    { name: FuncName.t
     ; formals: Reg.t iarray
     ; freturn: Reg.t option
     ; fthrow: Reg.t
@@ -223,7 +223,7 @@ let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
     ; entry: block
     ; loc: Loc.t }]
 
-type functions = func Function.Map.t [@@deriving sexp_of]
+type functions = func FuncName.Map.t [@@deriving sexp_of]
 
 type program = {globals: GlobalDefn.t iarray; functions: functions}
 [@@deriving sexp_of]
@@ -271,7 +271,7 @@ let pp_jump fs {dst; retreating} =
   Format.fprintf fs "@[<2>%s%%%s@]" (if retreating then "↑" else "") dst.lbl
 
 let pp_callee fs = function
-  | Direct f -> Function.pp fs f.name
+  | Direct f -> FuncName.pp fs f.name
   | Indirect {ptr; candidates= _} -> Exp.pp fs ptr
   | Intrinsic i -> Intrinsic.pp fs i
 
@@ -334,7 +334,7 @@ let rec dummy_block =
 
 and dummy_func =
   { name=
-      Function.mk
+      FuncName.mk
         (Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None))
         "dummy"
   ; formals= IArray.empty
@@ -472,7 +472,7 @@ module Term = struct
 
   let call ~name ~typ ~actuals ~areturn ~return ~throw ~loc =
     let cal =
-      { callee= Direct {dummy_func with name= Function.mk typ name}
+      { callee= Direct {dummy_func with name= FuncName.mk typ name}
       ; typ
       ; actuals
       ; areturn
@@ -549,7 +549,7 @@ module Block = struct
   let pp = pp_block
 
   let pp_ident fs b =
-    Format.fprintf fs "%a#%s" Function.pp b.parent.name b.lbl
+    Format.fprintf fs "%a#%s" FuncName.pp b.parent.name b.lbl
 
   let mk ~lbl ~cmnd ~term = {dummy_block with lbl; cmnd; term}
 end
@@ -597,7 +597,7 @@ module IP = struct
       | None -> (
         match ip.block.term with
         | Call {callee= Direct f; _} -> (
-          match Function.name f.name with
+          match FuncName.name f.name with
           | "sledge_thread_join" -> true
           | _ -> false )
         | _ -> false )
@@ -620,11 +620,11 @@ module Block_label = struct
     type t = block [@@deriving sexp_of]
 
     let compare x y =
-      [%compare: string * Function.t] (x.lbl, x.parent.name)
+      [%compare: string * FuncName.t] (x.lbl, x.parent.name)
         (y.lbl, y.parent.name)
 
     let equal x y =
-      [%equal: string * Function.t] (x.lbl, x.parent.name)
+      [%equal: string * FuncName.t] (x.lbl, x.parent.name)
         (y.lbl, y.parent.name)
 
     let hash b = Poly.hash (b.lbl, b.parent.name)
@@ -687,7 +687,7 @@ module Func = struct
     Format.fprintf fs "%a%a(@[%a@])"
       (Option.pp "%a := " pp_arg)
       (Option.map2 (fun a f -> (Exp.reg a, f)) areturn freturn)
-      Function.pp name pp_args (actuals, formals)
+      FuncName.pp name pp_args (actuals, formals)
 
   let pp fs func =
     let {name; formals; freturn; entry; loc; _} = func in
@@ -695,11 +695,11 @@ module Func = struct
     let pp_if cnd str fs = if cnd then Format.fprintf fs str in
     Format.fprintf fs "@[<v>@[<v>%a%a@[<2>%a%a@]%t@]"
       (Option.pp "%a " Typ.pp)
-      ( match Function.typ name with
+      ( match FuncName.typ name with
       | Pointer {elt= Function {return; _}} -> return
       | _ -> None )
       (Option.pp " %a := " Reg.pp)
-      freturn Function.pp name (pp_actuals pp_formal) formals
+      freturn FuncName.pp name (pp_actuals pp_formal) formals
       (fun fs ->
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
         else
@@ -716,7 +716,7 @@ module Func = struct
     assert (func == func.entry.parent) ;
     let@ () = Invariant.invariant [%here] func [%sexp_of: t] in
     try
-      match Function.typ func.name with
+      match FuncName.typ func.name with
       | Pointer {elt= Function {return; _}; _} ->
           assert (
             not
@@ -733,7 +733,7 @@ module Func = struct
       Printexc.raise_with_backtrace exc bt
 
   let find name functions =
-    Function.Map.find (Function.counterfeit name) functions
+    FuncName.Map.find (FuncName.counterfeit name) functions
 
   let lookup cfg lbl =
     Iter.find_exn (IArray.to_iter cfg) ~f:(fun k -> String.equal lbl k.lbl)
@@ -800,9 +800,9 @@ module FuncQ = HashQueue.Make (Func)
 let set_derived_metadata functions =
   let compute_roots functions =
     let roots = FuncQ.create () in
-    Function.Map.iter functions ~f:(fun func ->
+    FuncName.Map.iter functions ~f:(fun func ->
         FuncQ.enqueue_back_exn roots func func ) ;
-    Function.Map.iter functions ~f:(fun func ->
+    FuncName.Map.iter functions ~f:(fun func ->
         Func.iter_term func ~f:(fun term ->
             match term with
             | Call {callee= Direct f; _} -> FuncQ.remove roots f |> ignore
@@ -847,8 +847,8 @@ let set_derived_metadata functions =
         index := !index - 1 )
   in
   let functions =
-    List.fold functions Function.Map.empty ~f:(fun func m ->
-        Function.Map.add_exn ~key:func.name ~data:func m )
+    List.fold functions FuncName.Map.empty ~f:(fun func m ->
+        FuncName.Map.add_exn ~key:func.name ~data:func m )
   in
   let roots = compute_roots functions in
   let tips_to_roots = topsort roots in
@@ -875,7 +875,7 @@ module Program = struct
       (IArray.pp "@\n@\n" GlobalDefn.pp)
       globals
       (List.pp "@\n@\n" Func.pp)
-      ( Function.Map.values functions
+      ( FuncName.Map.values functions
       |> Iter.to_list
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 
@@ -886,14 +886,14 @@ module Program = struct
       as a hash table from functions to sets of return sites (i.e. of calls
       to that function) to support quick/easy lookup *)
   module Abstr_stack = struct
-    let empty () : BlockS.t Function.Tbl.t = Function.Tbl.create ()
+    let empty () : BlockS.t FuncName.Tbl.t = FuncName.Tbl.create ()
 
     let add k callee =
-      Function.Tbl.find_or_add k callee ~default:(fun () -> BlockS.create 0)
+      FuncName.Tbl.find_or_add k callee ~default:(fun () -> BlockS.create 0)
       |> BlockS.insert
 
     let return_sites k callee =
-      match Function.Tbl.find k callee with
+      match FuncName.Tbl.find k callee with
       | None -> Iter.empty
       | Some rets -> BlockS.to_iter rets
   end
@@ -994,12 +994,12 @@ module Program = struct
       any location in another. *)
   let record_fn_dists ~idx ~preceding_stack prev next =
     let dp_path ppf =
-      Format.fprintf ppf "from retn(%a) to %a" Function.pp prev Function.pp
+      Format.fprintf ppf "from retn(%a) to %a" FuncName.pp prev FuncName.pp
         next
     in
     Iter.fold (Abstr_stack.return_sites preceding_stack prev) None
       ~f:(fun ret_site dists ->
-        let pred b = Function.(equal next b.parent.name) in
+        let pred b = FuncName.(equal next b.parent.name) in
         let dists', _ =
           reachable_dists ~preceding_stack ~dp_path ret_site pred
         in
@@ -1012,7 +1012,7 @@ module Program = struct
   let record_dists_to_exit ~idx ~preceding_stack block =
     let dp_path ppf =
       Format.fprintf ppf "from %a to exit(%a)" Block.pp_ident block
-        Function.pp block.parent.name
+        FuncName.pp block.parent.name
     in
     let rets =
       Abstr_stack.return_sites preceding_stack block.parent.name
@@ -1037,7 +1037,7 @@ module Program = struct
     [%dbg]
       ~call:(fun {pf} ->
         let pp_trace =
-          IArray.pp "@ -> " (fun ppf -> Function.name >> String.pp ppf)
+          IArray.pp "@ -> " (fun ppf -> FuncName.name >> String.pp ppf)
         in
         pf "wrt trace: @[<v 2>src:@ %a@]@\n@[<v 2>sink:@ %a@]" pp_trace
           src_trace pp_trace snk_trace ;
@@ -1054,7 +1054,7 @@ module Program = struct
         ~f:(fun next curr ->
           let* curr, _ = curr in
           let next_entry =
-            Function.Map.(find_exn next pgm.functions).entry
+            FuncName.Map.(find_exn next pgm.functions).entry
           in
           let idx = Int.post_incr checkpoint_idx in
           (* (1): successive calls along [src_trace] *)
@@ -1087,11 +1087,11 @@ module Program = struct
             src_trace_root.parent.name snk_head
         in
         List.fold snk_tail
-          (Ok Function.Map.(find_exn snk_head pgm.functions).entry)
+          (Ok FuncName.Map.(find_exn snk_head pgm.functions).entry)
           ~f:(fun next curr_res ->
             let* curr = curr_res in
             let next_entry =
-              Function.Map.(find_exn next pgm.functions).entry
+              FuncName.Map.(find_exn next pgm.functions).entry
             in
             let idx = Int.post_incr checkpoint_idx in
             (* (5): successive calls along [snk_trace] *)

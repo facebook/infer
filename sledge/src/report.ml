@@ -59,7 +59,7 @@ let unreachable_goal ~dp_path =
 let unimplemented feature fn =
   let open Llair in
   [%Dbg.printf
-    "@\n@[<v 2>%s unimplemented in %a@]@." feature Function.pp fn.name] ;
+    "@\n@[<v 2>%s unimplemented in %a@]@." feature FuncName.pp fn.name] ;
   Stop.on_unimplemented feature fn
 
 (** Status reporting *)
@@ -190,7 +190,7 @@ let init ?append filename =
 
 let coverage (pgm : Llair.program) =
   let size =
-    Llair.Function.Map.fold pgm.functions 0 ~f:(fun ~key:_ ~data:func n ->
+    Llair.FuncName.Map.fold pgm.functions 0 ~f:(fun ~key:_ ~data:func n ->
         Llair.Func.fold_cfg func n ~f:(fun blk n ->
             n + IArray.length blk.cmnd + 1 ) )
   in

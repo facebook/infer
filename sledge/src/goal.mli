@@ -19,10 +19,10 @@ module type S = sig
   val reached : t -> bool
   (** True iff the goal has been reached and there is no more work to do. *)
 
-  val update_after_call : Llair.Function.t -> t -> t
+  val update_after_call : Llair.FuncName.t -> t -> t
   (** Update the goal, having called the given Llair function. *)
 
-  val update_after_retn : Llair.Function.t -> t -> t
+  val update_after_retn : Llair.FuncName.t -> t -> t
   (** Update the goal, having returned from the given Llair function. *)
 
   val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit

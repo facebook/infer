@@ -12,8 +12,8 @@ module type S = sig
   val status : t -> Llair.block option -> status
   val pp : t pp
   val reached : t -> bool
-  val update_after_call : Llair.Function.t -> t -> t
-  val update_after_retn : Llair.Function.t -> t -> t
+  val update_after_call : Llair.FuncName.t -> t -> t
+  val update_after_retn : Llair.FuncName.t -> t -> t
   val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit
 end
 
@@ -32,12 +32,12 @@ end
 module Sparse_trace = struct
   type direction = Call | Retn [@@deriving compare, equal, sexp_of]
 
-  type checkpoint = direction * Llair.Function.t
+  type checkpoint = direction * Llair.FuncName.t
   [@@deriving compare, equal, sexp_of]
 
   let pp_checkpoint ppf (dir, fn) =
     let dir_string = match dir with Call -> "" | Retn -> "retn:" in
-    Format.fprintf ppf "%s%a" dir_string Llair.Function.pp fn
+    Format.fprintf ppf "%s%a" dir_string Llair.FuncName.pp fn
 
   let is_call (dir, _) = match dir with Call -> true | Retn -> false
   let is_ret = is_call >> not
@@ -60,10 +60,10 @@ module Sparse_trace = struct
       cursor < IArray.length trace
       &&
       match IArray.get trace cursor with
-      | Call, fn' -> Llair.Function.equal fn fn'
+      | Call, fn' -> Llair.FuncName.equal fn fn'
       | Retn, _ -> false
     then (
-      [%Dbg.info "reached %a in %a" Llair.Function.pp fn pp goal] ;
+      [%Dbg.info "reached %a in %a" Llair.FuncName.pp fn pp goal] ;
       {goal with cursor= cursor + 1} )
     else goal
 
@@ -73,7 +73,7 @@ module Sparse_trace = struct
       &&
       match IArray.get trace cursor with
       | Call, _ -> false
-      | Retn, fn' -> Llair.Function.equal fn fn'
+      | Retn, fn' -> Llair.FuncName.equal fn fn'
     then (
       [%Dbg.info "reached %a in %a" pp_checkpoint (Retn, fn) pp goal] ;
       {goal with cursor= cursor + 1} )

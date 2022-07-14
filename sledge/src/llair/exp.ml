@@ -64,7 +64,7 @@ module T = struct
   type t =
     | Reg of {id: int; name: string; typ: Typ.t}
     | Global of {name: string; typ: Typ.t [@ignore]}
-    | Function of {name: string; typ: Typ.t [@ignore]}
+    | FuncName of {name: string; typ: Typ.t [@ignore]}
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: Typ.t}
     | Float of {data: string; typ: Typ.t}
@@ -121,7 +121,7 @@ module T = struct
     match exp with
     | Reg {name; id} -> pf "%%%s!%i" name id
     | Global {name} -> pf "%@%s%a" name pp_demangled name
-    | Function {name} -> pf "&%s%a" name pp_demangled name
+    | FuncName {name} -> pf "&%s%a" name pp_demangled name
     | Label {name} -> pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data -> pf "null"
     | Integer {data} -> Dbg.pp_styled `Magenta "%a" fs Z.pp data
@@ -175,8 +175,8 @@ let rec invariant exp =
   let@ () = Invariant.invariant [%here] exp [%sexp_of: t] in
   match exp with
   | Reg {typ} | Global {typ} -> assert (Typ.is_sized typ)
-  | Function {typ= Pointer {elt= Function _}} -> ()
-  | Function _ -> assert false
+  | FuncName {typ= Pointer {elt= Function _}} -> ()
+  | FuncName _ -> assert false
   | Integer {data; typ} -> (
     match typ with
     | Integer {bits} ->
@@ -252,7 +252,7 @@ let rec invariant exp =
 
 and typ_of exp =
   match exp with
-  | Reg {typ} | Global {typ} | Function {typ} | Integer {typ} | Float {typ}
+  | Reg {typ} | Global {typ} | FuncName {typ} | Integer {typ} | Float {typ}
     ->
       typ
   | Label _ -> Typ.ptr
@@ -326,22 +326,22 @@ module Global = struct
   let mk typ name = Global {name; typ} |> check invariant
 end
 
-(** Function names are the expressions constructed by [Function] *)
-module Function = struct
+(** Function names are the expressions constructed by [FuncName] *)
+module FuncName = struct
   include T
 
-  let name = function Function x -> x.name | r -> violates invariant r
-  let typ = function Function x -> x.typ | r -> violates invariant r
+  let name = function FuncName x -> x.name | r -> violates invariant r
+  let typ = function FuncName x -> x.typ | r -> violates invariant r
 
   let invariant x =
     let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
-    match x with Function _ -> invariant x | _ -> assert false
+    match x with FuncName _ -> invariant x | _ -> assert false
 
   let of_exp = function
-    | Function _ as e -> Some (e |> check invariant)
+    | FuncName _ as e -> Some (e |> check invariant)
     | _ -> None
 
-  let mk typ name = Function {name; typ} |> check invariant
+  let mk typ name = FuncName {name; typ} |> check invariant
 
   let counterfeit =
     let dummy_function_type =
@@ -361,7 +361,7 @@ let reg x = x
 
 (* constants *)
 
-let function_ f = f
+let funcname f = f
 let global g = g
 let label ~parent ~name = Label {parent; name} |> check invariant
 let integer typ data = Integer {data; typ} |> check invariant

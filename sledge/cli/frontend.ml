@@ -466,7 +466,7 @@ type backpatch =
   | IndirectBP of {typ: Typ.t; backpatch: candidates:func iarray -> unit}
 
 let calls_to_backpatch : backpatch list ref = ref []
-let rval_fns : Function.t list Typ.Tbl.t = Typ.Tbl.create ()
+let rval_fns : FuncName.t list Typ.Tbl.t = Typ.Tbl.create ()
 let func_tbl : Func.t String.Tbl.t = String.Tbl.create ()
 
 let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
@@ -511,9 +511,9 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         ([], Exp.reg (xlate_name x llv))
     | Function ->
         let typ = xlate_type x (Llvm.type_of llv) in
-        let fn = Function.mk typ (fst (find_name llv)) in
+        let fn = FuncName.mk typ (fst (find_name llv)) in
         Typ.Tbl.add_multi rval_fns ~key:typ ~data:fn ;
-        ([], Exp.function_ fn)
+        ([], Exp.funcname fn)
     | GlobalVariable -> ([], Exp.global (xlate_global x llv).name)
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> ([], xlate_int x llv)
@@ -1566,11 +1566,11 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
 
 let report_undefined func name =
   if Option.is_some (Llvm.use_begin func) then
-    [%Dbg.printf "@\n@[undefined function: %a@]" Function.pp name]
+    [%Dbg.printf "@\n@[undefined function: %a@]" FuncName.pp name]
 
 let xlate_function_decl x llfunc typ k =
   let loc = find_loc llfunc in
-  let name = Function.mk typ (fst (find_name llfunc)) in
+  let name = FuncName.mk typ (fst (find_name llfunc)) in
   let formals =
     Iter.from_iter (fun f -> Llvm.iter_params f llfunc)
     |> Iter.map ~f:(xlate_name x)
@@ -1638,7 +1638,7 @@ let backpatch_calls x =
           in
           backpatch ~callee )
     | IndirectBP {typ; backpatch} ->
-        let resolve_func = Function.name >> String.Tbl.find_exn func_tbl in
+        let resolve_func = FuncName.name >> String.Tbl.find_exn func_tbl in
         let candidates =
           Typ.Tbl.fold rval_fns Iter.empty ~f:(fun ~key ~data acc ->
               if Typ.compatible_fnptr key typ then
@@ -1790,7 +1790,7 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
               xlate_function_decl x llf typ Func.mk_undefined
               $> Report.unimplemented feature
           in
-          String.Tbl.set func_tbl ~key:(Function.name func.name) ~data:func ;
+          String.Tbl.set func_tbl ~key:(FuncName.name func.name) ~data:func ;
           func :: functions )
       [] llmodule
   in

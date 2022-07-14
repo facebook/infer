@@ -86,7 +86,7 @@ and term : ThreadID.t -> Llair.Exp.t -> T.t =
            ~neg:(formula tid neg) )
   (* terms *)
   | Reg _ -> T.var (reg tid (Llair.Reg.of_exp e |> Option.get_exn))
-  | Global {name; typ= _} | Function {name; typ= _} -> uconst name
+  | Global {name; typ= _} | FuncName {name; typ= _} -> uconst name
   | Label {parent; name} ->
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))
   | Integer {typ= _; data} -> T.integer data
