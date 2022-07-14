@@ -533,10 +533,13 @@ module Sh = struct
 
   (** Simplify *)
 
-  let norm s q vx =
+  let norm ?(ignore_ctx : unit option) s q vx =
+    let ignore_ctx = Option.is_some ignore_ctx in
     if Context.Subst.is_empty s then q
     else
-      let f_ctx = Context.apply_subst s in
+      let f_ctx x vx =
+        if ignore_ctx then x else Context.apply_subst s x vx
+      in
       let f_trm = Context.Subst.subst s in
       let f_fml = Formula.map_terms ~f:(Context.Subst.subst s) in
       map ~f_ctx ~f_trm ~f_fml q vx

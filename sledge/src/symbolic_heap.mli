@@ -101,7 +101,7 @@ module Sh : sig
 
   (** Simplify *)
 
-  val norm : Context.Subst.t -> t -> u
+  val norm : ?ignore_ctx:unit -> Context.Subst.t -> t -> u
   (** [norm s q] is [q] where subterms have been normalized with a
       substitution. *)
 
