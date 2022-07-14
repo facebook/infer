@@ -120,7 +120,8 @@ jobs:
 
       - name: Install ocamlformat
         run: |
-          opam pin `cat opam/ocamlformat` --no-action
+          opam pin $(cat opam/ocamlformat) --no-action
+          opam install --deps-only --locked opam/ocamlformat.opam.locked
           opam install ocamlformat
           opam exec -- ocamlformat --version
 
