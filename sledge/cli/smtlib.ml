@@ -37,7 +37,7 @@ let id =
     !count
 
 let decl_var name =
-  let v = Term.var (Var.identified ~name ~id:(id ())) in
+  let v = Term.var (Var.identified ~name 0 (id ())) in
   let top = top () in
   top.var_env <- VarEnv.add_exn ~key:name ~data:v top.var_env
 

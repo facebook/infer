@@ -28,8 +28,7 @@ let global g = uconst (Llair.Global.name g)
 let reg tid r =
   RegTbl.find_or_add reg_tbl (r, tid) ~default:(fun () ->
       let name = Llair.Reg.name r in
-      let id = 1 + RegTbl.length reg_tbl in
-      Var.identified ~name ~id )
+      Var.identified ~name tid (Llair.Reg.id r) )
 
 let regs tid rs =
   Var.Set.of_iter (Iter.map ~f:(reg tid) (Llair.Reg.Set.to_iter rs))

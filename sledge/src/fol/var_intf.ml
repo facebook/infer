@@ -32,9 +32,9 @@ module type S = sig
   val id : t -> int
   val name : t -> string
 
-  val identified : name:string -> id:int -> t
-  (** Create a variable identified by [id]. The [id] uniquely identifies the
-      variable, and must be positive. *)
+  val identified : name:string -> int -> int -> t
+  (** Create a variable uniquely identified by a pair of non-negative
+      integers, with a name only for printing. *)
 
   (** Renaming Substitutions: injective maps from variables to variables *)
   module Subst : sig
