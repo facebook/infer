@@ -95,8 +95,8 @@ module Implementation = struct
 
   let merge_procedures_table ~db_file =
     (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
-       sub-table and the main one, and applying the same "more defined" logic as in Attributes in the
-       cases where a proc_name is present in both the sub-table and the main one (main.attr_kind !=
+       sub-table and the main one, and applying the same "more defined" logic as in [replace_attributes] in the
+       cases where a proc_name is present in both the sub-table and the main one (main.proc_uid !=
        NULL). All the rows that pass this filter are inserted/updated into the main table. *)
     ResultsDatabase.get_database ()
     |> SqliteUtils.exec
@@ -117,9 +117,11 @@ module Implementation = struct
                 LEFT OUTER JOIN memdb.procedures AS main
                 ON sub.proc_uid = main.proc_uid )
               WHERE
-                main.attr_kind IS NULL
-                OR main.attr_kind < sub.attr_kind
-                OR (main.attr_kind = sub.attr_kind AND main.source_file < sub.source_file)
+                main.proc_uid IS NULL
+                OR
+                (main.cfg IS NOT NULL) < (sub.cfg IS NOT NULL)
+                OR
+                ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.source_file < sub.source_file)
             |}
 
 
