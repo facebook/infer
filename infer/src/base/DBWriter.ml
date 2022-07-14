@@ -12,35 +12,32 @@ module F = Format
 module Implementation = struct
   let replace_attributes =
     let attribute_replace_statement =
-      (* The innermost SELECT returns either the current attributes_kind and source_file associated with
-         the given proc name, or default values of (-1,""). These default values have the property that
-         they are always "less than" any legit value. More precisely, MAX ensures that some value is
-         returned even if there is no row satisfying WHERE (we'll get NULL in that case, the value in
-         the row otherwise). COALESCE then returns the first non-NULL value, which will be either the
-         value of the row corresponding to that pname in the DB, or the default if no such row exists.
+      (* The innermost SELECT returns 1 iff there is a row with the same procedure uid but which is strictly
+         more defined than the one we are trying to store. This is either because the stored proc has a CFG
+         and ours doesn't, or because the procedures are equally (un)defined but the source file of the stored
+         one is lexicographically smaller. The latter is used purely to impose determinism.
 
-         The next (second-outermost) SELECT filters out that value if it is "more defined" than the ones
-         we would like to insert (which will never be the case if the default values are returned). If
-         not, it returns a trivial row (consisting solely of NULL since we don't use its values) and the
-         INSERT OR REPLACE will proceed and insert or update the values stored into the DB for that
-         pname. *)
+         The outermost operation will insert or replace the given values only if the innermost query returns
+         nothing. *)
       (* TRICK: use the source file to be more deterministic in case the same procedure name is defined
          in several files *)
       (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
-         values so the lexicographic ordering for (:akind, :sfile) is done by hand *)
+         values so the lexicographic ordering for (:cgf, :sfile) is done by hand *)
       ResultsDatabase.register_statement
         {|
           INSERT OR REPLACE INTO procedures
           SELECT :uid, :pname, :akind, :sfile, :pattr, :cfg, :callees
-          FROM (
-            SELECT NULL
-            FROM (
-              SELECT COALESCE(MAX(attr_kind),-1) AS attr_kind,
-                    COALESCE(MAX(source_file),"") AS source_file
-              FROM procedures
-              WHERE proc_uid = :uid )
-            WHERE attr_kind < :akind
-                  OR (attr_kind = :akind AND source_file <= :sfile) )
+          WHERE NOT EXISTS
+          (
+            SELECT 1
+            FROM procedures
+            WHERE proc_uid = :uid
+            AND (
+                  (:cfg IS NOT NULL) < (cfg IS NOT NULL)
+                  OR
+                  ((:cfg IS NOT NULL) = (cfg IS NOT NULL) AND :sfile < source_file)
+            )
+          )
         |}
     in
     fun ~proc_uid ~proc_name ~attr_kind ~source_file ~proc_attributes ~cfg ~callees ->
