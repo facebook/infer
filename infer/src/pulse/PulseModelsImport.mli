@@ -107,6 +107,8 @@ module Basic : sig
     -> AbductiveDomain.t
     -> AbductiveDomain.t AccessResult.t
 
+  val assert_ : (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t -> model
+
   val unknown_call :
     string -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list -> model
 
