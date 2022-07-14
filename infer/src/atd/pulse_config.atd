@@ -26,6 +26,7 @@ type matcher = {
   ~argument_constraints: argument_constraint list;
   ?kinds: string list option; (** default is [Simple] which matches all Simple sources to all Simple sinks provided they haven't been sanitized by a Simple sanitizer *)
   ?taint_target: taint_target option; (** default is all formals for sinks and sanitizers, return value for sources *)
+  ~data_flow_reporting_only <ocaml default="false">: bool; (** whether this matcher should be used for data flow reporting *)
 }
 
 type matchers = matcher list

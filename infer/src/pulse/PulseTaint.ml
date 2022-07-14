@@ -36,9 +36,11 @@ let pp_origin fmt = function
       F.fprintf fmt "value returned from"
 
 
-type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
+type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin; data_flow_only: bool}
+[@@deriving compare, equal]
 
-let pp fmt {kinds; proc_name; origin} =
-  F.fprintf fmt "%a %a with kind%s %a" pp_origin origin Procname.pp proc_name
+let pp fmt {kinds; proc_name; origin; data_flow_only} =
+  F.fprintf fmt "%a %a%s with kind%s %a" pp_origin origin Procname.pp proc_name
+    (if data_flow_only then " (data flows only)" else "")
     (match kinds with [_] -> "" | _ -> "s")
     (Pp.seq ~sep:"," Kind.pp) kinds

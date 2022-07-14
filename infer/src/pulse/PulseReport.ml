@@ -31,7 +31,7 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         match diagnostic with
         | FlowFromTaintSource {source= source, _} ->
             (Some (proc_name_of_taint source), None)
-        | FlowToTaintSink {sink= sink, _} ->
+        | TaintFlow {flow_kind= FlowToSink; sink= sink, _} ->
             (None, Some (proc_name_of_taint sink))
         | _ ->
             (None, None)
@@ -93,7 +93,6 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | StackVariableAddressEscape _
   | TaintFlow _
   | FlowFromTaintSource _
-  | FlowToTaintSink _
   | UnnecessaryCopy _ ->
       false
   | AccessToInvalidAddress {invalidation; access_trace} ->

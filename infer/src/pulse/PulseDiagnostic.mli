@@ -52,6 +52,8 @@ type read_uninitialized_value =
             value *) }
 [@@deriving compare, equal, yojson_of]
 
+type flow_kind = TaintedFlow | FlowToSink [@@deriving equal]
+
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
@@ -66,10 +68,11 @@ type t =
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
-      { tainted: Decompiler.expr
+      { expr: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
-      ; location: Location.t }
+      ; location: Location.t
+      ; flow_kind: flow_kind }
   | FlowFromTaintSource of
       { tainted: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
@@ -77,11 +80,6 @@ type t =
             (** The end point `(origin, procname, trace)` of the discovered flow, i.e. where tainted
                 data is passed as the argument `origin` to the procedure `proc_name`. The `trace`
                 records how to reach `proc_name` from the call which introduces the flow. *)
-      ; location: Location.t }
-  | FlowToTaintSink of
-      { source: Decompiler.expr * Trace.t
-      ; sanitizers: Attribute.TaintSanitizedSet.t
-      ; sink: Taint.t * Trace.t
       ; location: Location.t }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t

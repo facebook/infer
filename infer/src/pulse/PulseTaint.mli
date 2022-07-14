@@ -24,6 +24,7 @@ type origin = Argument of {index: int} | ReturnValue [@@deriving compare, equal]
 
 val pp_origin : F.formatter -> origin -> unit
 
-type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
+type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin; data_flow_only: bool}
+[@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit

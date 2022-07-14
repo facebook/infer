@@ -66,7 +66,6 @@ let should_report (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t)
   | StackVariableAddressEscape _
   | TaintFlow _
   | FlowFromTaintSource _
-  | FlowToTaintSink _
   | UnnecessaryCopy _ ->
       (* these issues are reported regardless of the calling context, not sure if that's the right
          decision yet *)

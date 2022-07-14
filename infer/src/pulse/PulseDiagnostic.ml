@@ -47,6 +47,16 @@ let yojson_of_erlang_error = [%yojson_of: _]
 
 let yojson_of_read_uninitialized_value = [%yojson_of: _]
 
+type flow_kind = TaintedFlow | FlowToSink [@@deriving equal]
+
+let pp_flow_kind fmt flow_kind =
+  match flow_kind with
+  | TaintedFlow ->
+      F.fprintf fmt "tainted flow"
+  | FlowToSink ->
+      F.fprintf fmt "flow to a taint sink"
+
+
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
@@ -60,19 +70,15 @@ type t =
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
-      { tainted: Decompiler.expr
+      { expr: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
-      ; location: Location.t }
+      ; location: Location.t
+      ; flow_kind: flow_kind }
   | FlowFromTaintSource of
       { tainted: Decompiler.expr
       ; source: Taint.t * ValueHistory.t
       ; destination: Taint.origin * Procname.t * Trace.t
-      ; location: Location.t }
-  | FlowToTaintSink of
-      { source: Decompiler.expr * Trace.t
-      ; sanitizers: Attribute.TaintSanitizedSet.t
-      ; sink: Taint.t * Trace.t
       ; location: Location.t }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
@@ -102,7 +108,6 @@ let get_location = function
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
   | FlowFromTaintSource {location}
-  | FlowToTaintSink {location}
   | UnnecessaryCopy {location} ->
       location
 
@@ -131,7 +136,6 @@ let aborts_execution = function
   | StackVariableAddressEscape _
   | TaintFlow _
   | FlowFromTaintSource _
-  | FlowToTaintSink _
   | UnnecessaryCopy _ ->
       false
 
@@ -355,21 +359,13 @@ let get_message diagnostic =
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
       F.asprintf "Address of %a is returned by the function" pp_var variable
-  | TaintFlow {tainted; source= source, _; sink= sink, _} ->
+  | TaintFlow {expr; source= source, _; sink= sink, _; flow_kind} ->
       (* TODO: say what line the source happened in the current function *)
-      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
-        Taint.pp sink
+      F.asprintf "`%a` is tainted by %a and flows to %a (%a)" Decompiler.pp_expr expr Taint.pp
+        source Taint.pp sink pp_flow_kind flow_kind
   | FlowFromTaintSource {tainted; source= source, _; destination= origin, proc_name, _} ->
       F.asprintf "`%a` is tainted by %a and flows to %a %a" Decompiler.pp_expr tainted Taint.pp
         source Taint.pp_origin origin Procname.pp proc_name
-  | FlowToTaintSink {source= expr, _; sanitizers; sink= sink, _} ->
-      let pp_sanitizers fmt sanitizers =
-        if Attribute.TaintSanitizedSet.is_empty sanitizers then ()
-        else
-          F.fprintf fmt ", and might be sanitized by %a" Attribute.TaintSanitizedSet.pp sanitizers
-      in
-      F.asprintf "`%a` flows to taint sink %a%a" Decompiler.pp_expr expr Taint.pp sink pp_sanitizers
-        sanitizers
   | UnnecessaryCopy {copied_into; typ; location; from} -> (
       let open PulseAttribute in
       let suppression_msg =
@@ -552,17 +548,6 @@ let get_trace = function
            ~pp_immediate:(fun fmt ->
              F.fprintf fmt "%a %a" Taint.pp_origin origin Procname.pp proc_name )
       @@ []
-  | FlowToTaintSink {source= _, history; sanitizers; sink= sink, sink_trace} ->
-      let add_to_errlog = Trace.add_to_errlog ~include_value_history:false ~nesting:0 in
-      add_to_errlog history ~pp_immediate:(fun fmt -> F.pp_print_string fmt "allocated here")
-      @@ add_to_errlog sink_trace ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
-      @@
-      let prepend_sanitizer_to_errlog Attribute.TaintSanitized.{sanitizer; trace} errlog =
-        let trace_start_location = Trace.get_start_location trace in
-        [Errlog.make_trace_element 0 trace_start_location "But potentially sanitized:" []]
-        @ add_to_errlog trace ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer) errlog
-      in
-      Attribute.TaintSanitizedSet.fold prepend_sanitizer_to_errlog sanitizers []
   | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location
@@ -622,9 +607,9 @@ let get_issue_type ~latent issue_type =
       IssueType.no_matching_branch_in_try ~latent
   | ReadUninitializedValue _, _ ->
       IssueType.uninitialized_value_pulse ~latent
-  | TaintFlow _, _ ->
+  | TaintFlow {flow_kind= TaintedFlow}, _ ->
       IssueType.taint_error
+  | TaintFlow {flow_kind= FlowToSink}, _ ->
+      IssueType.data_flow_to_sink
   | FlowFromTaintSource _, _ ->
       IssueType.sensitive_data_flow
-  | FlowToTaintSink _, _ ->
-      IssueType.data_flow_to_sink

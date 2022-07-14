@@ -839,13 +839,16 @@ let check_all_taint_valid path callee_proc_name call_location actuals pre_post a
         PulseResult.list_fold taint_dependencies ~init:astate ~f:(fun astate v ->
             let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers v astate in
             Attribute.TaintedSet.fold
-              (fun {source; hist} ->
-                Attribute.TaintProcedureSet.fold
-                  (fun {origin; proc_name; trace} ->
-                    mk_flow_from_taint_source ~source:(source, hist)
-                      ~destination:(origin, proc_name, trace_via_call trace)
-                      v astate )
-                  procedures )
+              (fun {source; hist} result ->
+                (* Do not report from data_flow_only sources - these are for reporting flows to sinks *)
+                if source.data_flow_only then result
+                else
+                  Attribute.TaintProcedureSet.fold
+                    (fun {origin; proc_name; trace} ->
+                      mk_flow_from_taint_source ~source:(source, hist)
+                        ~destination:(origin, proc_name, trace_via_call trace)
+                        v astate )
+                    procedures result )
               sources (Ok astate) ) )
       call_state.subst (Ok astate)
   in
