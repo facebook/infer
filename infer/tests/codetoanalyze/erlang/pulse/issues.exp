@@ -137,6 +137,7 @@ features/features_lists.erl, test_listappend1_Bad/0, 2, NO_MATCH_OF_RHS, no_buck
 features/features_lists.erl, test_listappend2_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 features/features_lists.erl, test_listappend2a_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 features/features_lists.erl, test_listappend3_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
+features/features_lists.erl, fp_test_listappend8_Ok/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 features/features_lists.erl, fp_test_listsub1_Ok/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 features/features_lists.erl, fp_test_listsub2_Ok/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 features/features_lists.erl, test_listsub3_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]

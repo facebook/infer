@@ -52,6 +52,14 @@
     test_listappend4_Ok/0,
     fn_test_listappend4_Bad/0,
     fn_test_listappend5_Bad/0,
+    test_listappend6_Ok/0,
+    fn_test_listappend6_Bad/0,
+    test_listappend7_Ok/0,
+    fn_test_listappend7_Bad/0,
+    fp_test_listappend8_Ok/0,
+    fn_test_listappend8_Bad/0,
+    test_listappend9_Ok/0,
+    test_listappend10_Ok/0,
     fp_test_listsub1_Ok/0,
     fp_test_listsub2_Ok/0,
     test_listsub3_Bad/0,
@@ -267,6 +275,40 @@ fn_test_listappend4_Bad() ->
     L = lists:append([1, 2, 3, 4], [5]),
     ?CRASH_IF_EQUAL([1, 2, 3, 4, 5], L).
 
+one() -> 1.
+
+% T102978784
+fn_test_listappend5_Bad() ->
+    % using the function one() makes the Erlang compiler not see the problem
+    one() ++ "?".
+
+test_listappend6_Ok() ->
+    R = [] ++ one(),
+    ?ASSERT_EQUAL(1, R).
+
+fn_test_listappend6_Bad() ->
+    one() ++ [].
+
+test_listappend7_Ok() ->
+    L = "sjhdkjxmcxc" ++ [1,2,3,4,5],
+    ?ASSERT_EQUAL([115,106,104,100,107,106,120,109,99,120,99,1,2,3,4,5], L).
+
+fn_test_listappend7_Bad() -> sjhdkjxmcxc ++ [1,2,3,4,5].
+
+fp_test_listappend8_Ok() ->
+    L = "ok" ++ "hello",
+    ?ASSERT_EQUAL("okhello", L).
+
+fn_test_listappend8_Bad() ->
+    ok ++ hello.
+
+test_listappend9_Ok() ->
+    L = [1,2] ++ atom,
+    ?ASSERT_EQUAL([1,2|atom], L).
+
+test_listappend10_Ok() ->
+    atom_to_list(checker) ++ "_clean".
+
 % Not yet supported
 fp_test_listsub1_Ok() ->
     L = [1, 2, 3] -- [2],
@@ -285,12 +327,6 @@ test_listsub4_Bad() ->
     L = lists:subtract([1, 2, 3], [2]),
     ?CRASH_IF_EQUAL([1, 3], L).
 
-one() -> 1.
-
-% T102978784
-fn_test_listappend5_Bad() ->
-    % using the function one() makes the Erlang compiler not see the problem
-    one() ++ "?".
 
 test_listforeach_returnvalue_Ok() ->
     Y = lists:foreach(fun(X) -> X end, [1, 2, 3]),
