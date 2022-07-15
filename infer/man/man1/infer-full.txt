@@ -2095,6 +2095,10 @@ INTERNAL OPTIONS
        --java-jar-compiler-reset
            Cancel the effect of --java-jar-compiler.
 
+       --java-reflection
+           Activates: Print usages of reflection in the log. (Conversely:
+           --no-java-reflection)
+
        --java-source-parser-experimental
            Activates: The experimental Java source parser for declaration
            locations. (Conversely: --no-java-source-parser-experimental)

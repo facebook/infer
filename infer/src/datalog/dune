@@ -1,0 +1,13 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name Datalog)
+ (public_name infer.Datalog)
+ (flags
+  (:standard -open Core -open IStdlib -open IStd -open IBase))
+ (libraries core javalib sawja IStdlib IBase)
+ (preprocess
+  (pps ppx_compare)))

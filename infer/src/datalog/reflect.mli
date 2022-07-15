@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open! Core
+open! IStd
 open Javalib_pack
 
 (*
@@ -20,6 +20,8 @@ open Javalib_pack
   does not intefere with most of static analyses.
 *)
 
-val get_class_refl_calls : JCode.jcode Javalib.jclass -> (string * string) list
-(** Given a Java class, returns the list of reflexive calls inside the class. A call is represented
-    by (reflective_method_signature, caller_method_signature). *)
+type refl_call = {refl_ms: string; caller_cl: string; caller_ms: string}
+
+val get_method_refl_calls : JCode.jcode Javalib.concrete_method -> refl_call list
+(** Returns the list of reflexive calls inside a concrete method. A call is represented by
+    (reflective_method_signature, caller_class, caller_method_signature) *)

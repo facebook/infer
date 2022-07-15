@@ -93,7 +93,7 @@ let add_edges (context : JContext.t) start_node exn_node exit_nodes method_body_
 
 (** Add a concrete method. *)
 let add_cmethod source_file program icfg cm proc_name =
-  let cn, _ = JBasics.cms_split cm.Javalib.cm_class_method_signature in
+  let cn, ms = JBasics.cms_split cm.Javalib.cm_class_method_signature in
   if
     (not Config.kotlin_capture)
     && SourceFile.has_extension source_file ~ext:Config.kotlin_source_extension
@@ -105,7 +105,14 @@ let add_cmethod source_file program icfg cm proc_name =
     | Some (procdesc, start_node, exit_node, exn_node, jbir_code) ->
         let context = JContext.create_context icfg procdesc jbir_code cn source_file program in
         let method_body_nodes = Array.mapi ~f:(JTrans.instruction context) (JBir.code jbir_code) in
-        add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false
+        add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false ;
+        if Config.java_reflection then
+          let calls = Reflect.get_method_refl_calls cm in
+          if not (List.is_empty calls) then (
+            L.result "Usage(s) of reflection found in %s:%s(): " (JBasics.cn_name cn)
+              (JBasics.ms_name ms) ;
+            List.iter calls ~f:(fun refl_call -> L.result "%s() " refl_call.Reflect.refl_ms) ;
+            L.result "@\n" )
 
 
 let path_of_cached_classname cn =

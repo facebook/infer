@@ -197,6 +197,7 @@ DIRECT_TESTS += \
   java_biabduction \
   java_bufferoverrun \
   java_checkers \
+  java_datalog \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \
