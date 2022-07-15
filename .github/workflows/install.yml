@@ -80,12 +80,6 @@ jobs:
       - name: Force the use of test dependencies
         run: cp opam/infer-tests.opam.locked opam/infer.opam.locked
 
-      - name: Attempt to get opam tree from the cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.opam
-          key: opam-${{ matrix.os }}-${{steps.os-version.outputs.version}}-${{ hashFiles('opam/infer.opam.locked', 'opam/ocamlformat') }}
-
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
@@ -113,7 +107,7 @@ jobs:
           ./facebook-clang-plugins/clang/src/prepare_clang_src.sh
           CC=clang CXX=clang++ ./facebook-clang-plugins/clang/setup.sh --ninja --sequential-link
 
-      - run: ./build-infer.sh --yes all
+      - run: ./build-infer.sh --yes --user-opam-switch all
 
       - run: make install BUILD_MODE=opt
         if: runner.os == 'macOS'
