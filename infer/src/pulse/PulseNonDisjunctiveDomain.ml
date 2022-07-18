@@ -82,43 +82,74 @@ end)
 
 module CopyMap = AbstractDomain.Map (CopyVar) (CopySpec)
 
-type t = {copy_map: CopyMap.t; destructor_checked: DestructorChecked.t; captured: Captured.t}
+type elt = {copy_map: CopyMap.t; destructor_checked: DestructorChecked.t; captured: Captured.t}
 
-let pp f {copy_map; destructor_checked; captured} =
-  F.fprintf f "@[@[copy map: %a@],@ @[destructor checked: %a@],@ @[captured: %a@]@]" CopyMap.pp
-    copy_map DestructorChecked.pp destructor_checked Captured.pp captured
+type t = V of elt | Top
+
+let pp f = function
+  | V {copy_map; destructor_checked; captured} ->
+      F.fprintf f "@[@[copy map: %a@],@ @[destructor checked: %a@],@ @[captured: %a@]@]" CopyMap.pp
+        copy_map DestructorChecked.pp destructor_checked Captured.pp captured
+  | Top ->
+      AbstractDomain.TopLiftedUtils.pp_top f
 
 
 let leq ~lhs ~rhs =
-  CopyMap.leq ~lhs:lhs.copy_map ~rhs:rhs.copy_map
-  && DestructorChecked.leq ~lhs:lhs.destructor_checked ~rhs:rhs.destructor_checked
-  && Captured.leq ~lhs:lhs.captured ~rhs:rhs.captured
+  match (lhs, rhs) with
+  | _, Top ->
+      true
+  | Top, _ ->
+      false
+  | V lhs, V rhs ->
+      CopyMap.leq ~lhs:lhs.copy_map ~rhs:rhs.copy_map
+      && DestructorChecked.leq ~lhs:lhs.destructor_checked ~rhs:rhs.destructor_checked
+      && Captured.leq ~lhs:lhs.captured ~rhs:rhs.captured
 
 
 let join x y =
-  { copy_map= CopyMap.join x.copy_map y.copy_map
-  ; destructor_checked= DestructorChecked.join x.destructor_checked y.destructor_checked
-  ; captured= Captured.join x.captured y.captured }
+  match (x, y) with
+  | _, Top | Top, _ ->
+      Top
+  | V x, V y ->
+      V
+        { copy_map= CopyMap.join x.copy_map y.copy_map
+        ; destructor_checked= DestructorChecked.join x.destructor_checked y.destructor_checked
+        ; captured= Captured.join x.captured y.captured }
 
 
 let widen ~prev ~next ~num_iters =
-  { copy_map= CopyMap.widen ~prev:prev.copy_map ~next:next.copy_map ~num_iters
-  ; destructor_checked=
-      DestructorChecked.widen ~prev:prev.destructor_checked ~next:next.destructor_checked ~num_iters
-  ; captured= Captured.widen ~prev:prev.captured ~next:next.captured ~num_iters }
+  match (prev, next) with
+  | _, Top | Top, _ ->
+      Top
+  | V prev, V next ->
+      V
+        { copy_map= CopyMap.widen ~prev:prev.copy_map ~next:next.copy_map ~num_iters
+        ; destructor_checked=
+            DestructorChecked.widen ~prev:prev.destructor_checked ~next:next.destructor_checked
+              ~num_iters
+        ; captured= Captured.widen ~prev:prev.captured ~next:next.captured ~num_iters }
 
 
 let bottom =
-  {copy_map= CopyMap.empty; destructor_checked= DestructorChecked.empty; captured= Captured.empty}
+  V {copy_map= CopyMap.empty; destructor_checked= DestructorChecked.empty; captured= Captured.empty}
 
 
-let is_bottom {copy_map; destructor_checked; captured} =
-  CopyMap.is_bottom copy_map
-  && DestructorChecked.is_bottom destructor_checked
-  && Captured.is_bottom captured
+let is_bottom = function
+  | Top ->
+      false
+  | V {copy_map; destructor_checked; captured} ->
+      CopyMap.is_bottom copy_map
+      && DestructorChecked.is_bottom destructor_checked
+      && Captured.is_bottom captured
 
 
-let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate) =
+let top = Top
+
+let is_top = function Top -> true | V _ -> false
+
+let map f = function Top -> Top | V astate -> V (f astate)
+
+let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate) =
   let copy_var = CopyVar.{copied_into; source_addr_opt} in
   let copy_map =
     match CopyMap.find_opt copy_var copy_map with
@@ -131,43 +162,54 @@ let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt ({copy_map}
   {astate with copy_map}
 
 
-let checked_via_dtor var astate =
+let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt =
+  map (mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt)
+
+
+let checked_via_dtor_elt var astate =
   {astate with destructor_checked= DestructorChecked.add var astate.destructor_checked}
 
 
+let checked_via_dtor var = map (checked_via_dtor_elt var)
+
 module CopiedSet = PrettyPrintable.MakePPSet (PulseAttribute.CopiedInto)
 
-let get_copied {copy_map; captured} =
-  let modified =
-    CopyMap.fold
-      (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
-        match copy_spec with Modified -> CopiedSet.add copied_into acc | Copied _ -> acc )
-      copy_map CopiedSet.empty
-  in
-  let is_captured copy_into =
-    match (copy_into : PulseAttribute.CopiedInto.t) with
-    | IntoVar (ProgramVar pvar) ->
-        Captured.mem pvar captured
-    | _ ->
-        false
-  in
-  CopyMap.fold
-    (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
-      match copy_spec with
-      | Modified ->
-          acc
-      | Copied {location; typ= copied_typ; from} ->
-          if CopiedSet.mem copied_into modified || is_captured copied_into then acc
-          else (copied_into, copied_typ, location, from) :: acc )
-    copy_map []
+let get_copied = function
+  | Top ->
+      []
+  | V {copy_map; captured} ->
+      let modified =
+        CopyMap.fold
+          (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
+            match copy_spec with Modified -> CopiedSet.add copied_into acc | Copied _ -> acc )
+          copy_map CopiedSet.empty
+      in
+      let is_captured copy_into =
+        match (copy_into : PulseAttribute.CopiedInto.t) with
+        | IntoVar (ProgramVar pvar) ->
+            Captured.mem pvar captured
+        | _ ->
+            false
+      in
+      CopyMap.fold
+        (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
+          match copy_spec with
+          | Modified ->
+              acc
+          | Copied {location; typ= copied_typ; from} ->
+              if CopiedSet.mem copied_into modified || is_captured copied_into then acc
+              else (copied_into, copied_typ, location, from) :: acc )
+        copy_map []
 
 
-let add_var copied_var ~source_addr_opt (res : copy_spec_t) astate =
+let add_var_elt copied_var ~source_addr_opt (res : copy_spec_t) astate =
   { astate with
     copy_map= CopyMap.add {copied_into= IntoVar copied_var; source_addr_opt} res astate.copy_map }
 
 
-let add_field copied_field from ~source_addr_opt (res : copy_spec_t) astate =
+let add_var copied_var ~source_addr_opt res = map (add_var_elt copied_var ~source_addr_opt res)
+
+let add_field_elt copied_field from ~source_addr_opt (res : copy_spec_t) astate =
   { astate with
     copy_map=
       CopyMap.add
@@ -175,12 +217,24 @@ let add_field copied_field from ~source_addr_opt (res : copy_spec_t) astate =
         res astate.copy_map }
 
 
-let is_checked_via_dtor var {destructor_checked} = DestructorChecked.mem var destructor_checked
+let add_field copied_field from ~source_addr_opt res =
+  map (add_field_elt copied_field from ~source_addr_opt res)
 
-let set_captured_variables exp astate =
+
+let is_checked_via_dtor var = function
+  | Top ->
+      true
+  | V {destructor_checked} ->
+      DestructorChecked.mem var destructor_checked
+
+
+let set_captured_variables_elt exp astate =
   match exp with
   | Exp.Closure {captured_vars} ->
       List.fold captured_vars ~init:astate ~f:(fun astate (_, pvar, _, _) ->
           {astate with captured= Captured.add pvar astate.captured} )
   | _ ->
       astate
+
+
+let set_captured_variables exp = map (set_captured_variables_elt exp)

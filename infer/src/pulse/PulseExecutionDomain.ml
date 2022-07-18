@@ -120,6 +120,10 @@ let is_exceptional (exec_state : t) : bool =
   match exec_state with ExceptionRaised _ -> true | _ -> false
 
 
+let is_executable (exec_state : t) : bool =
+  match exec_state with ContinueProgram _ | ExceptionRaised _ -> true | _ -> false
+
+
 let exceptional_to_normal : t -> t = function
   | ExceptionRaised astate ->
       ContinueProgram astate

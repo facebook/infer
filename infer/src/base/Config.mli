@@ -569,6 +569,8 @@ val pulse_model_skip_pattern : Str.regexp option
 
 val pulse_models_for_erlang : Yojson.Basic.t
 
+val pulse_prevent_non_disj_top : bool
+
 val pulse_report_ignore_unknown_java_methods_patterns : Str.regexp option
 
 val pulse_report_flows_from_taint_source : string option

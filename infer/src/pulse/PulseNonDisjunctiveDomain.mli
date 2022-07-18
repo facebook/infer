@@ -13,7 +13,7 @@ type copy_spec_t =
       {typ: Typ.t; location: Location.t; heap: BaseMemory.t; from: PulseAttribute.CopyOrigin.t}
   | Modified
 
-include AbstractDomain.WithBottom
+include AbstractDomain.WithBottomTop
 
 val add_var : Var.t -> source_addr_opt:PulseAbstractValue.t option -> copy_spec_t -> t -> t
 

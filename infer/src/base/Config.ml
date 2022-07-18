@@ -2288,6 +2288,12 @@ and pulse_model_transfer_ownership =
      are method or namespace::method"
 
 
+and pulse_prevent_non_disj_top =
+  CLOpt.mk_bool ~long:"pulse-prevent-non-disj-top" ~default:false
+    "Forcibly prevent non-disjunctive domain value from becoming top. Without this option, \
+     non-disjunctive domain value becomes top when all disjuncts are non-executable."
+
+
 and pulse_recency_limit =
   CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
     "Maximum number of array elements and structure fields to keep track of for a given array \
@@ -3753,6 +3759,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_models_for_erlang = !pulse_models_for_erlang
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+
+and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
 
 and pulse_recency_limit = !pulse_recency_limit
 

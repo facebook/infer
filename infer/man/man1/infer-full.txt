@@ -2339,6 +2339,12 @@ INTERNAL OPTIONS
            Deactivates: [Pulse] Suppress NPE reports on files marked
            @Nullsafe. (Conversely: --pulse-nullsafe-report-npe)
 
+       --pulse-prevent-non-disj-top
+           Activates: Forcibly prevent non-disjunctive domain value from
+           becoming top. Without this option, non-disjunctive domain value
+           becomes top when all disjuncts are non-executable. (Conversely:
+           --no-pulse-prevent-non-disj-top)
+
        --pulse-recency-limit int
            Maximum number of array elements and structure fields to keep
            track of for a given array address.
