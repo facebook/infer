@@ -24,7 +24,7 @@ public class ReaderLeaks {
 
   // Reader  tests
 
-  public void readerNotClosedAfterRead() {
+  public void FN_readerNotClosedAfterReadBad() {
     Reader r;
     try {
       r = new FileReader("testing.txt");
@@ -33,23 +33,22 @@ public class ReaderLeaks {
     } catch (IOException e) {
     }
   }
-  /* This test seems to be flaky in the CI at the moment.
-    We guess it's because of timeouts in the analysis.
-    public void readerClosedOk() throws IOException {
-      Reader r = null;
-      try {
-        r = new FileReader("testing.txt");
-        boolean ready = r.ready();
-        r.close();
-      } catch (IOException e) {
-      } finally {
-        if (r != null) r.close();
-      }
+
+  public void readerClosedOk() throws IOException {
+    Reader r = null;
+    try {
+      r = new FileReader("testing.txt");
+      boolean ready = r.ready();
+      r.close();
+    } catch (IOException e) {
+    } finally {
+      if (r != null) r.close();
     }
-  */
+  }
+
   // BufferedReader  tests
 
-  public void bufferedReaderNotClosedAfterRead() {
+  public void FN_bufferedReaderNotClosedAfterReadBad() {
     BufferedReader reader;
     try {
       reader = new BufferedReader(new FileReader("testing.txt"));
@@ -59,7 +58,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void bufferedReaderClosed() throws IOException {
+  public void bufferedReaderClosedOk() throws IOException {
     BufferedReader reader = null;
     try {
       reader = new BufferedReader(new FileReader("testing.txt"));
@@ -70,16 +69,23 @@ public class ReaderLeaks {
     }
   }
 
-  public void noNeedToCloseBufferReaderWrapperOk(File file) throws IOException {
+  public void tryWithBufferReaderWrapperBad(File file) throws IOException {
     try (InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file))) {
       BufferedReader reader = new BufferedReader(inputStreamReader);
       ignore(reader.readLine());
     }
   }
 
+  public void FP_tryWithBufferReaderWrapperOk(File file) throws IOException {
+    try (InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file));
+        BufferedReader reader = new BufferedReader(inputStreamReader); ) {
+      ignore(reader.readLine());
+    }
+  }
+
   // InputStreamReader  tests
 
-  public void inputStreamReaderNotClosedAfterRead() {
+  public void inputStreamReaderNotClosedAfterReadBad() {
     InputStreamReader reader;
     try {
       reader = new InputStreamReader(new FileInputStream("testing.txt"));
@@ -89,7 +95,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void inputStreamReaderClosed() throws IOException {
+  public void FP_inputStreamReaderClosedOk() throws IOException {
     InputStreamReader reader = null;
     try {
       reader = new InputStreamReader(new FileInputStream("testing.txt"));
@@ -102,7 +108,7 @@ public class ReaderLeaks {
 
   // FileReader  tests
 
-  public void fileReaderNotClosedAfterRead() {
+  public void FN_fileReaderNotClosedAfterReadBad() {
     FileReader reader;
     try {
       reader = new FileReader("testing.txt");
@@ -112,7 +118,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void fileReaderClosed() throws IOException {
+  public void fileReaderClosedOk() throws IOException {
     FileReader reader = null;
     try {
       reader = new FileReader("testing.txt");
@@ -125,7 +131,7 @@ public class ReaderLeaks {
 
   // PushbackReader  tests
 
-  public void pushbackReaderNotClosedAfterRead() {
+  public void pushbackReaderNotClosedAfterReadBad() {
     PushbackReader reader;
     try {
       reader = new PushbackReader(new InputStreamReader(new FileInputStream("testing.txt")));
@@ -135,7 +141,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void pushbackReaderClosed() throws IOException {
+  public void FP_pushbackReaderClosedOk() throws IOException {
     PushbackReader reader = null;
     try {
       reader = new PushbackReader(new InputStreamReader(new FileInputStream("testing.txt")));
@@ -148,7 +154,7 @@ public class ReaderLeaks {
 
   // PipedReader tests
 
-  public void pipedReaderNotClosedAfterConstructedWithWriter() {
+  public void FN_pipedReaderNotClosedAfterConstructedWithWriterBad() {
     PipedReader reader;
     PipedWriter writer;
     try {
@@ -160,7 +166,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void pipedReaderNotClosedAfterConnect(PipedWriter writer) {
+  public void pipedReaderNotClosedAfterConnectOk(PipedWriter writer) {
     PipedReader reader;
     try {
       reader = new PipedReader();
@@ -171,7 +177,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void pipedReaderNotConnected() {
+  public void FN_pipedReaderNotConnectedBad() {
     PipedReader reader;
     try {
       reader = new PipedReader();
@@ -180,7 +186,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void pipedReaderClosed(PipedWriter writer) throws IOException {
+  public void pipedReaderClosedOk(PipedWriter writer) throws IOException {
     PipedReader reader = null;
     try {
       reader = new PipedReader();
@@ -192,15 +198,28 @@ public class ReaderLeaks {
     }
   }
 
-  public void pipedReaderFalsePositive() throws IOException {
-    PipedReader reader;
-    PipedWriter writer = null;
+  public void FN_pipedReaderWriterBad() throws IOException {
+    PipedReader reader = null;
+    PipedWriter writer = new PipedWriter();
     try {
       reader = new PipedReader(writer);
       reader.read();
     } catch (IOException e) {
     } finally {
-      if (writer != null) writer.close();
+      if (reader != null) reader.close();
+    }
+  }
+
+  public void pipedReaderWriterOk() throws IOException {
+    PipedReader reader = null;
+    PipedWriter writer = new PipedWriter();
+    try {
+      reader = new PipedReader(writer);
+      reader.read();
+    } catch (IOException e) {
+    } finally {
+      if (reader != null) reader.close();
+      else writer.close();
     }
   }
 }
