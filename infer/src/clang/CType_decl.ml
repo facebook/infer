@@ -107,9 +107,10 @@ module BuildMethodSignature = struct
             |> qual_type_to_sil_type tenv
           in
           let is_pointer_to_const = CType.is_pointer_to_const qt in
+          let is_reference = CType.is_reference_type qt in
           let is_no_escape_block_arg = CAst_utils.is_no_escape_block_arg par in
           let annot = CAst_utils.sil_annot_of_type qt in
-          CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~annot
+          CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~is_reference ~annot
             ~is_no_escape_block_arg
       | _ ->
           raise CFrontend_errors.Invalid_declaration

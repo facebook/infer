@@ -50,6 +50,7 @@ type t =
   ; formals: (Mangled.t * Typ.t * Annot.Item.t) list
         (** name, type, and annotation of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
+  ; reference_formals: int list  (** list of indices of formals that are passed by reference *)
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)

@@ -70,6 +70,7 @@ type t =
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t * Annot.Item.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
+  ; reference_formals: int list  (** list of indices of formals that are passed by reference *)
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
@@ -133,6 +134,7 @@ let default translation_unit proc_name =
   ; exceptions= []
   ; formals= []
   ; const_formals= []
+  ; reference_formals= []
   ; is_abstract= false
   ; is_biabduction_model= false
   ; is_bridge_method= false
@@ -197,6 +199,7 @@ let pp f
      ; exceptions
      ; formals
      ; const_formals
+     ; reference_formals
      ; is_abstract
      ; is_biabduction_model
      ; is_bridge_method
@@ -244,6 +247,10 @@ let pp f
     F.fprintf f "; const_formals= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
       const_formals ;
+  if not ([%equal: int list] default.reference_formals reference_formals) then
+    F.fprintf f "; reference_formals= [@[%a@]]@,"
+      (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
+      reference_formals ;
   pp_bool_default ~default:default.is_abstract "is_abstract" is_abstract f () ;
   pp_bool_default ~default:default.is_biabduction_model "is_model" is_biabduction_model f () ;
   pp_bool_default ~default:default.is_bridge_method "is_bridge_method" is_bridge_method f () ;
