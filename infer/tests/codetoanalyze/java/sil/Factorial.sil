@@ -3,15 +3,29 @@
 // 
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
-// 
+//
 
-type java::lang::String = {count: int; hash: int; offset: int; value: *int[]}
+declare fact(int) : int
 
-type Factorial = {}
+declare <init>(*java::lang::Object) : void
 
-type java::lang::StringBuilder = {count: int; value: *int[]}
+declare println(*java::io::PrintStream, *java::lang::String) : void
 
-type java::io::PrintStream = {out: *java::io::OutputStream; autoFlush: int; charOut: *java::io::OutputStreamWriter; closing: int; formatter: *java::util::Formatter; textOut: *java::io::BufferedWriter; trouble: int}
+declare __sil_lnot(int) : int
+
+declare __sil_allocate_java::lang::StringBuilder() : *java::lang::StringBuilder
+
+declare append(*java::lang::StringBuilder, int) : *java::lang::StringBuilder
+
+declare __sil_plusa_int(int, int) : int
+
+declare toString(*java::lang::StringBuilder) : *java::lang::String
+
+declare __sil_mult_int(int, int) : int
+
+declare __sil_gt(int, int) : int
+
+type java::lang::System = {cons: *java::io::Console; err: *java::io::PrintStream; in: *java::io::InputStream; lineSeparator: *java::lang::String; out: *java::io::PrintStream; props: *java::util::Properties; security: *java::lang::SecurityManager}
 
 global java::lang::System
 
@@ -33,13 +47,13 @@ define main(args: *(*java::lang::String)[]) : void {
     .handlers node_4
 
 #node_13:
-    n0:*java::io::PrintStream = load &java::lang::System.out
+    n0:*java::io::PrintStream = load &java::lang::System.java::lang::System.out
     store &$irvar0 <- n0:*java::io::PrintStream
     jmp node_12
     .handlers node_4
 
 #node_12:
-    n1 = __sil_allocate()
+    n1 = __sil_allocate_java::lang::StringBuilder()
     n2 = <init>(n1)
     store &$irvar1 <- n1:*java::lang::StringBuilder
     jmp node_11
@@ -150,13 +164,13 @@ define fact(n: int) : int {
 #node_7:
     n2:int = load &fact
     n3:int = load &i
-    store &fact <- __sil_mult(n2, n3):int
+    store &fact <- __sil_mult_int(n2, n3):int
     jmp node_5
     .handlers node_4
 
 #node_5:
     n4:int = load &i
-    store &i <- __sil_plusa(n4, 1):int
+    store &i <- __sil_plusa_int(n4, 1):int
     jmp node_6
     .handlers node_4
 

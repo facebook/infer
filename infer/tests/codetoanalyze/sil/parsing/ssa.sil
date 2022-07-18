@@ -20,3 +20,6 @@ define f(x: int, y: int) : void {
     ret n4
 
 }
+
+declare __sil_plusA(int, int): int
+declare __sil_mult(int, int): int

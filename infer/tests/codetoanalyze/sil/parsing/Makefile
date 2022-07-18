@@ -8,7 +8,6 @@ INFER_OUT ?= infer-out$(TEST_SUFFIX)
 
 include $(TESTS_DIR)/base.make
 
-INFER_OPTIONS = --sil-source-file
 SOURCES = $(sort $(wildcard *.sil))
 
 .PHONY: compile

@@ -1,3 +1,6 @@
 SIL parsing of basic.sil succeeded.
 SIL syntax error in file error1.sil at line 14, column 4.
+SIL consistency error in file error2.sil, line 20, column 9: function g is not declared
+SIL consistency error in file error2.sil, line 19, column 13: field cell.n is not declared
+SIL consistency error in file error2.sil, line 16, column 8: label lab2 is not declared in function f
 SIL parsing of ssa.sil succeeded.

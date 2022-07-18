@@ -11,13 +11,13 @@ type cell = { val: int; next: *cell }
 
 define f(x: int, y: float, n: *cell) : void {
   #entry:
-    x: int = load y
-    x: int = load n[1]
-    jmp lab1
+    n0: int = load &y
+    n0: int = load &I[1]
+    jmp lab2
   #lab1:
-    store x <- y:int
-    store x[1] <- y:int
-    x = f()
-    ret x
+    store &x <- n0:int
+    store &I.cell.n <- n0:int
+    n2 = g()
+    ret n2
 
 }
