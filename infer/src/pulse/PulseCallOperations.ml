@@ -19,8 +19,8 @@ let is_ptr_to_const formal_typ_opt =
       match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
 
 
-let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) callee_pname_opt
-    ~ret ~actuals ~formals_opt ({AbductiveDomain.post} as astate) =
+let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
+    callee_pname_opt ~ret ~actuals ~formals_opt ({AbductiveDomain.post} as astate) =
   let hist =
     ValueHistory.singleton
       (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
@@ -43,7 +43,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
     | _ ->
         false
   in
-  let havoc_actual_if_ptr ((actual, _), actual_typ) formal_typ_opt astate =
+  let havoc_actual_if_ptr (((actual, _) as actual_hist), actual_typ) formal_typ_opt astate =
     (* We should not havoc when the corresponding formal is a pointer to const *)
     if should_havoc actual_typ formal_typ_opt then (
       is_functional := false ;
@@ -60,17 +60,29 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
             Procname.is_constructor p || Procname.is_copy_assignment p )
       then astate
       else
-        (* record the [WrittenTo] attribute for all reachable values
-           starting from actual argument so that we don't assume
-           that they are not modified in the unnecessary copy analysis. *)
+        (* record the [WrittenTo] attribute for all reachable values and uninitialized fields
+           starting from actual argument so that we don't assume that they are not modified in the
+           unnecessary copy analysis. *)
         let reachable_from_arg =
           BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
         in
         let call_trace = Trace.Immediate {location= call_loc; history= hist} in
         let written_attrs = Attributes.singleton (WrittenTo call_trace) in
-        AbstractValue.Set.fold
-          (fun reachable_actual -> AddressAttributes.add_attrs reachable_actual written_attrs)
-          reachable_from_arg astate )
+        let astate =
+          AbstractValue.Set.fold
+            (fun reachable_actual -> AddressAttributes.add_attrs reachable_actual written_attrs)
+            reachable_from_arg astate
+        in
+        match actual_typ.Typ.desc with
+        | Tptr ({desc= Tstruct name}, (Pk_pointer | Pk_lvalue_reference)) ->
+            Option.fold (Tenv.lookup tenv name) ~init:astate ~f:(fun acc {Struct.fields} ->
+                List.fold fields ~init:acc ~f:(fun acc (field, _, _) ->
+                    (* NOTE: We may want to add the [WrittenTo] attribute recursively for nested
+                       structs in the future, but let's keep it simpler as of now. *)
+                    let acc, (field, _) = Memory.eval_edge actual_hist (FieldAccess field) acc in
+                    AddressAttributes.add_attrs field written_attrs acc ) )
+        | _ ->
+            astate )
     else astate
   in
   let add_skipped_proc astate =
@@ -364,7 +376,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let<*> astate_unknown =
         conservatively_initialize_args arg_values astate
-        |> unknown_call path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
+        |> unknown_call tenv path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
              ~actuals ~formals_opt
       in
       ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"

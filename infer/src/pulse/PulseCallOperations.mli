@@ -28,7 +28,8 @@ val call :
     it exists *)
 
 val unknown_call :
-     PathContext.t
+     Tenv.t
+  -> PathContext.t
   -> Location.t
   -> CallEvent.t
   -> Procname.t option
