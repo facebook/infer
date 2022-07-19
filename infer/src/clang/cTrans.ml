@@ -5276,7 +5276,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             else trans_state
           in
           let control_tail_rev, returns_tail_rev =
-            exec_trans_instrs_rev trans_state' trans_stmt_fun_list'
+            (* Note: for assignment, we should keep only the value of the last instruction.
+               This is handled above, and for all other instructions we must discard the value. *)
+            exec_trans_instrs_rev {trans_state' with var_exp_typ= None} trans_stmt_fun_list'
           in
           ( { root_nodes= control_tail_rev.root_nodes
             ; leaf_nodes=

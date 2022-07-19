@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 @interface InferTaint : NSObject
 
@@ -126,4 +126,20 @@ void fieldAccessBad() {
   InferTaint* source = [InferTaint source];
   NSObject* obj = source.obj;
   [InferTaint sink:obj];
+}
+
+void compoundStmtBad() {
+  InferTaint* taint = ({
+    assert(true);
+    InferTaint.source;
+  });
+  [InferTaint sink:taint];
+}
+
+void compoundStmt_taintSourceParameterBad(InferTaint* source) {
+  InferTaint* taint = ({
+    assert(true);
+    source;
+  });
+  [InferTaint sink:taint];
 }

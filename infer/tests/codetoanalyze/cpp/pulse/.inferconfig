@@ -48,6 +48,11 @@
     {
       "procedure": "getenv",
       "kinds": ["SimpleSource"]
+    },
+    {
+      "procedure": "basics::compound_stmt_taint_arg_bad",
+      "kinds": ["SimpleSource"],
+      "taint_target": ["ArgumentPositions", [0]]
     }
     ],
   "pulse-taint-sinks": [

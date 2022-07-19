@@ -8,6 +8,7 @@
 #include <atomic>
 #include <chrono>
 #include <string>
+#include <assert.h>
 
 extern void* __infer_taint_source();
 extern void __infer_taint_sink(void*);
@@ -72,6 +73,22 @@ void object_source_sink_bad(Obj obj) {
 void static_source_sink_bad(Obj obj) {
   void* source = Obj::static_source();
   Obj::static_sink(source);
+}
+
+void compound_stmt_bad() {
+  void* taint = ({
+    assert(true);
+    __infer_taint_source();
+  });
+  __infer_taint_sink(taint);
+}
+
+void compound_stmt_taint_arg_bad(Obj* obj) {
+  Obj* taint = ({
+    assert(true);
+    obj;
+  });
+  __infer_taint_sink(taint);
 }
 
 template <class T>
