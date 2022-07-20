@@ -321,8 +321,12 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
             in
             Typ.struct_ ~name elts ~bits ~byts
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
-      | Vector | X86_amx | ScalableVector ->
-          todo "vector types: %a" pp_lltype llt ()
+      | Vector ->
+          let elt = xlate_type x (Llvm.element_type llt) in
+          let len = Llvm.vector_size llt in
+          Typ.array ~elt ~len ~bits ~byts
+      | X86_amx | ScalableVector ->
+          todo "matrix / scalable vector types: %a" pp_lltype llt ()
       | Void | Label | Metadata | Token -> assert false
     else
       match Llvm.classify_type llt with

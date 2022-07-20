@@ -188,13 +188,11 @@ let rec invariant exp =
   | Float {typ} -> (
     match typ with Float _ -> assert true | _ -> assert false )
   | Label _ -> assert true
-  | Ap1 (Signed {bits}, dst, arg) -> (
+  | Ap1 (Signed {bits}, dst, arg) | Ap1 (Unsigned {bits}, dst, arg) -> (
     match (dst, typ_of arg) with
-    | Integer {bits= dst_bits}, Typ.Integer _ -> assert (bits <= dst_bits)
-    | _ -> assert false )
-  | Ap1 (Unsigned {bits}, dst, arg) -> (
-    match (dst, typ_of arg) with
-    | Integer {bits= dst_bits}, Typ.Integer _ -> assert (bits < dst_bits)
+    | Integer {bits= dst_bits}, Typ.Integer _
+     |Array {bits= dst_bits}, Typ.Array _ ->
+        assert (bits <= dst_bits)
     | _ -> assert false )
   | Ap1 (Convert {src= Integer _}, Integer _, _) -> assert false
   | Ap1 (Convert {src}, dst, arg) ->
@@ -371,12 +369,36 @@ let true_ = bool true
 let false_ = bool false
 let float typ data = Float {data; typ} |> check invariant
 
+(* records (struct / array values) *)
+
+let record typ elts = ApN (Record, typ, elts) |> check invariant
+let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
+
+let update typ ~rcd idx ~elt =
+  Ap2 (Update idx, typ, rcd, elt) |> check invariant
+
 (* type conversions *)
 
-let signed bits x ~to_:typ = Ap1 (Signed {bits}, typ, x) |> check invariant
+let bitcast ~signed src_bits x ~to_:typ =
+  let cast_scalar bits typ x =
+    let conv = if signed then Signed {bits} else Unsigned {bits} in
+    Ap1 (conv, typ, x) |> check invariant
+  in
+  let cast_vector vec_typ len elt_bits elt_typ =
+    let elts =
+      Iter.(0 -- (len - 1))
+      |> Iter.map ~f:(select vec_typ x >> cast_scalar elt_bits elt_typ)
+      |> IArray.of_iter
+    in
+    record typ elts
+  in
+  match (typ_of x, typ) with
+  | (Typ.Array _ as from_typ), Array {elt= Integer i as elt; len; _} ->
+      cast_vector from_typ len i.bits elt
+  | _ -> cast_scalar src_bits typ x
 
-let unsigned bits x ~to_:typ =
-  Ap1 (Unsigned {bits}, typ, x) |> check invariant
+let signed = bitcast ~signed:true
+let unsigned = bitcast ~signed:false
 
 let convert src ~to_:dst exp =
   Ap1 (Convert {src}, dst, exp) |> check invariant
@@ -434,14 +456,6 @@ let conditional typ ~cnd ~thn ~els =
 (* sequences *)
 
 let splat typ byt = Ap1 (Splat, typ, byt) |> check invariant
-
-(* records (struct / array values) *)
-
-let record typ elts = ApN (Record, typ, elts) |> check invariant
-let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
-
-let update typ ~rcd idx ~elt =
-  Ap2 (Update idx, typ, rcd, elt) |> check invariant
 
 (** Traverse *)
 
