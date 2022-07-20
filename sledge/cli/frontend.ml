@@ -1786,7 +1786,7 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
           let func =
             try xlate_function x llf typ
             with Unimplemented feature ->
-              [%Dbg.info "Unimplemented feature %s in %s" feature name] ;
+              warn "Unimplemented feature %s in %s" feature name () ;
               xlate_function_decl x llf typ Func.mk_undefined
               $> Report.unimplemented feature
           in
