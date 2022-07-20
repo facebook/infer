@@ -305,32 +305,9 @@ module PulseTransferFunctions = struct
         astate
 
 
-  let dispatch_call ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret
-      call_exp actuals call_loc flags astate =
-    let<*> astate, callee_pname = PulseOperations.eval_proc_name path call_loc call_exp astate in
-    (* special case for objc dispatch models *)
-    let callee_pname, call_exp, actuals =
-      match callee_pname with
-      | Some callee_pname when ObjCDispatchModels.is_model callee_pname -> (
-        match ObjCDispatchModels.get_dispatch_closure_opt actuals with
-        | Some (block_name, closure_exp, args) ->
-            (Some block_name, closure_exp, args)
-        | None ->
-            (Some callee_pname, call_exp, actuals) )
-      | _ ->
-          (callee_pname, call_exp, actuals)
-    in
-    (* evaluate all actuals *)
-    let<*> astate, rev_func_args =
-      PulseResult.list_fold actuals ~init:(astate, [])
-        ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
-          let+ astate, actual_evaled = PulseOperations.eval path Read call_loc actual_exp astate in
-          ( astate
-          , ProcnameDispatcher.Call.FuncArg.
-              {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
-            :: rev_func_args ) )
-    in
-    let func_args = List.rev rev_func_args in
+  let rec dispatch_call_eval_args
+      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret call_exp
+      actuals func_args call_loc flags astate callee_pname =
     let astate =
       match (callee_pname, func_args) with
       | Some callee_pname, [{PulseAliasSpecialization.FuncArg.arg_payload= arg, _}]
@@ -360,7 +337,15 @@ module PulseTransferFunctions = struct
             in
             PulseCallOperations.conservatively_initialize_args arg_values astate
           in
-          (model {analysis_data; path; callee_procname; location= call_loc; ret} astate, `KnownCall)
+          ( model
+              { analysis_data
+              ; dispatch_call_eval_args
+              ; path
+              ; callee_procname
+              ; location= call_loc
+              ; ret }
+              astate
+          , `KnownCall )
       | None ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let r =
@@ -427,6 +412,35 @@ module PulseTransferFunctions = struct
            |> SatUnsat.sat )
           |> PulseResult.of_some )
     else exec_states_res
+
+
+  let dispatch_call analysis_data path ret call_exp actuals call_loc flags astate =
+    let<*> astate, callee_pname = PulseOperations.eval_proc_name path call_loc call_exp astate in
+    (* special case for objc dispatch models *)
+    let callee_pname, call_exp, actuals =
+      match callee_pname with
+      | Some callee_pname when ObjCDispatchModels.is_model callee_pname -> (
+        match ObjCDispatchModels.get_dispatch_closure_opt actuals with
+        | Some (block_name, closure_exp, args) ->
+            (Some block_name, closure_exp, args)
+        | None ->
+            (Some callee_pname, call_exp, actuals) )
+      | _ ->
+          (callee_pname, call_exp, actuals)
+    in
+    (* evaluate all actuals *)
+    let<*> astate, rev_func_args =
+      PulseResult.list_fold actuals ~init:(astate, [])
+        ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
+          let+ astate, actual_evaled = PulseOperations.eval path Read call_loc actual_exp astate in
+          ( astate
+          , ProcnameDispatcher.Call.FuncArg.
+              {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
+            :: rev_func_args ) )
+    in
+    let func_args = List.rev rev_func_args in
+    dispatch_call_eval_args analysis_data path ret call_exp actuals func_args call_loc flags astate
+      callee_pname
 
 
   (* [get_dealloc_from_dynamic_types vars_types loc] returns a dealloc procname and vars and

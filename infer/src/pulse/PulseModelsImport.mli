@@ -14,6 +14,18 @@ type arg_payload = AbstractValue.t * ValueHistory.t
 
 type model_data =
   { analysis_data: PulseSummary.t InterproceduralAnalysis.t
+  ; dispatch_call_eval_args:
+         PulseSummary.t InterproceduralAnalysis.t
+      -> PathContext.t
+      -> Ident.t * Typ.t
+      -> Exp.t
+      -> (Exp.t * Typ.t) list
+      -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+      -> Location.t
+      -> CallFlags.t
+      -> AbductiveDomain.t
+      -> Procname.t option
+      -> ExecutionDomain.t AccessResult.t list
   ; path: PathContext.t
   ; callee_procname: Procname.t
   ; location: Location.t

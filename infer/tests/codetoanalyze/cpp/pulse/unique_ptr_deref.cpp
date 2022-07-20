@@ -46,7 +46,7 @@ int destructor2_ok() {
   return 0;
 }
 
-int FP_destructor3_ok() {
+int destructor3_ok() {
   auto x = new std::unique_ptr<int>();
   delete x;
   return 0;
