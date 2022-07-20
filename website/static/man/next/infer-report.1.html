@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.4 -->
+<!-- Creator     : groff version 1.19.2 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,17 +7,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-report</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-report</h1>
+<h1 align=center>infer-report</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -31,17 +30,15 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-report -
 compute and manipulate infer reports</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer report
@@ -51,18 +48,16 @@ infer report --config-impact-issues-tests <br>
 infer report --merge-report</b> <i>dir1 ...</i>
 <b>--merge-report</b> <i>dirN</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Write out
 issues in a format suitable for tests, or merge multiple
 JSON reports in one with <b>--merge-report</b>.</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
@@ -201,9 +196,11 @@ have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
-follows: <br>
-ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
-<br>
+follows:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">ARBITRARY_CODE_EXECUTION_UNDER_LOCK
+(enabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
@@ -254,6 +251,7 @@ CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
 CONFIG_IMPACT_STRICT (disabled by default), <br>
+CONFIG_IMPACT_STRICT_BETA (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
 <br>
@@ -265,6 +263,7 @@ Cannot_star (enabled by default), <br>
 DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
 DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
 <br>
+DATA_FLOW_TO_SINK (disabled by default), <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
 DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default), <br>
@@ -374,6 +373,8 @@ NO_TRUE_BRANCH_IN_IF (enabled by default), <br>
 NO_TRUE_BRANCH_IN_IF_LATENT (disabled by default), <br>
 NULLPTR_DEREFERENCE (enabled by default), <br>
 NULLPTR_DEREFERENCE_LATENT (disabled by default), <br>
+NULL_ARGUMENT (enabled by default), <br>
+NULL_ARGUMENT_LATENT (disabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default), <br>
@@ -386,11 +387,17 @@ PULSE_RESOURCE_LEAK (disabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
 PULSE_UNNECESSARY_COPY (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
+<br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by <br>
+default), <br>
+PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (disabled by default), <br>
+SENSITIVE_DATA_FLOW (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
 SHELL_INJECTION_RISK (enabled by default), <br>
 SKIP_FUNCTION (disabled by default), <br>
@@ -521,6 +528,20 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 <p style="margin-left:17%;">Specify the root directory of
 the project</p>
 
+
+<p style="margin-left:11%;"><b>--pulse-report-flows-from-taint-source</b>
+<i>procname</i></p>
+
+<p style="margin-left:17%;">Report data flows which
+originate at taint source <b>procname</b></p>
+
+
+<p style="margin-left:11%;"><b>--pulse-report-flows-to-taint-sink</b>
+<i>procname</i></p>
+
+<p style="margin-left:17%;">Report data flows which pass
+through taint sink <b>procname</b></p>
+
 <p style="margin-left:11%;"><b>--quiet</b>,<b>-q</b></p>
 
 <p style="margin-left:17%;">Activates: Do not print
@@ -586,9 +607,8 @@ files in the specified directory</p>
 (Conversely:
 <b>--no-skip-analysis-in-path-skips-compilation</b>)</p>
 
-<h2>HOISTING OPTIONS
 <a name="HOISTING OPTIONS"></a>
-</h2>
+<h2>HOISTING OPTIONS</h2>
 
 
 
@@ -599,9 +619,8 @@ loop-invariant calls only when the function is expensive,
 i.e. at least linear (Conversely:
 <b>--hoisting-report-only-expensive</b>)</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -611,9 +630,8 @@ i.e. at least linear (Conversely:
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -622,9 +640,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.4 -->
+<!-- Creator     : groff version 1.19.2 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,17 +7,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer</title>
 
 </head>
 <body>
 
-<h1 align="center">infer</h1>
+<h1 align=center>infer</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -30,17 +29,15 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer - static
 analysis for Java and C/C++/Objective-C/Objective-C++</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -57,9 +54,8 @@ infer --compilation-database[-escaped]</b> <i>file
 infer</b> <i>[options]</i> <b>-- compile command <br>
 infer</b> <i>[options]</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Infer is a
@@ -79,9 +75,8 @@ specified via the <b>--</b> option or one of the
 <b>infer</b> behaves as <b>infer-run</b>(1). Otherwise,
 <b>infer</b> behaves as <b>infer-analyze</b>(1).</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Every infer
@@ -171,9 +166,10 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-} <br>
-This will cause us to create a new ISOLATED_REACHING_CONNECT
-<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will cause
+us to create a new ISOLATED_REACHING_CONNECT <br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -767,9 +763,11 @@ have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
-follows: <br>
-ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
-<br>
+follows:</p>
+
+
+<p style="margin-left:11%; margin-top: 1em">ARBITRARY_CODE_EXECUTION_UNDER_LOCK
+(enabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
@@ -820,6 +818,7 @@ CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
 CONFIG_IMPACT_STRICT (disabled by default), <br>
+CONFIG_IMPACT_STRICT_BETA (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
 <br>
@@ -831,6 +830,7 @@ Cannot_star (enabled by default), <br>
 DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
 DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
 <br>
+DATA_FLOW_TO_SINK (disabled by default), <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
 DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default), <br>
@@ -940,6 +940,8 @@ NO_TRUE_BRANCH_IN_IF (enabled by default), <br>
 NO_TRUE_BRANCH_IN_IF_LATENT (disabled by default), <br>
 NULLPTR_DEREFERENCE (enabled by default), <br>
 NULLPTR_DEREFERENCE_LATENT (disabled by default), <br>
+NULL_ARGUMENT (enabled by default), <br>
+NULL_ARGUMENT_LATENT (disabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default), <br>
@@ -952,11 +954,17 @@ PULSE_RESOURCE_LEAK (disabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
 PULSE_UNNECESSARY_COPY (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
+<br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by <br>
+default), <br>
+PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (disabled by default), <br>
+SENSITIVE_DATA_FLOW (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
 SHELL_INJECTION_RISK (enabled by default), <br>
 SKIP_FUNCTION (disabled by default), <br>
@@ -995,8 +1003,10 @@ USE_AFTER_LIFETIME_LATENT (disabled by default), <br>
 VECTOR_INVALIDATION (enabled by default), <br>
 VECTOR_INVALIDATION_LATENT (disabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
-Wrong_argument_number (enabled by default). <br>
-See also <b>infer-report</b>(1). <b><br>
+Wrong_argument_number (enabled by default).</p>
+
+<p style="margin-left:11%; margin-top: 1em">See also
+<b>infer-report</b>(1). <b><br>
 --dump-duplicate-symbols</b></p>
 
 <p style="margin-left:17%;">Activates: Dump all symbols
@@ -1047,12 +1057,22 @@ a previous run with <b>--debug</b>.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---erlang-skip-rebar3</b></p>
+--erlang-skip-compile</b></p>
 
-<p style="margin-left:17%;">Activates: Skip running rebar,
-to save time. It is useful together with
+<p style="margin-left:17%;">Activates: Skip running
+compiler (erlc/rebar3), to save time. The build command is
+basically ignored in this case. To be used together with
 <b>--erlang-ast-dir</b>. (Conversely:
-<b>--no-erlang-skip-rebar3</b>)</p>
+<b>--no-erlang-skip-compile</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
+--erlang-with-otp-specs</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL] Use
+type specs from OTP (available in the system) to generate
+more precise Pulse summaries for unknown library functions.
+(Conversely: <b>--no-erlang-with-otp-specs</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
@@ -1923,20 +1943,21 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---pulse-prune-unsupported-arithmetic</b></p>
+--pulse-report-flows-from-taint-source</b>
+<i>procname</i></p>
 
-<p style="margin-left:17%;">Activates: The arithmetic
-engine in Pulse sometimes does not detect that the
-collection of conditions on the path makes it infeasible,
-especially outside the well-supported linear arithmetic
-fragment. To avoid false positives, Pulse tries to detect
-when there is a possibility of imprecise arithmetic
-treatment and if so pessimistically assumes the path is
-infeasible. (Conversely:
-<b>--no-pulse-prune-unsupported-arithmetic</b>)</p>
+<p style="margin-left:17%;">Report data flows which
+originate at taint source <b>procname</b></p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
+<b>infer-report</b>(1). <b><br>
+--pulse-report-flows-to-taint-sink</b> <i>procname</i></p>
+
+<p style="margin-left:17%;">Report data flows which pass
+through taint sink <b>procname</b></p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
 --pulse-report-ignore-unknown-java-methods-patterns</b>
 <i>+string</i></p>
 
@@ -1958,6 +1979,79 @@ not be analyzed by Pulse.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-taint-config</b> <i>+path</i></p>
+
+<p style="margin-left:17%;">Path to a taint analysis
+configuration file. This file can define
+<b>--pulse-taint-sources</b>,
+<b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
+and <b>--pulse-taint-policies</b>.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-taint-policies</b> <i>json</i></p>
+
+<p style="margin-left:17%;">A description of which taint
+flows should be reported, following this JSON format:</p>
+
+<p style="margin-left:11%;">{
+&quot;short_description&quot;: &quot;&lt;a short description
+of the issue&gt;&quot;, <br>
+&quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
+[&lt;matchers&gt;], <br>
+&quot;sink_kinds&quot;: [&lt;matchers&gt;], <br>
+&quot;sanitizer_kinds&quot;: [&lt;matchers&gt;]}] <br>
+} <br>
+where &lt;matchers&gt; are in the same format as
+<b>--pulse-taint-sources</b>; <br>
+the field &quot;sanitizer_kinds&quot; is optional (assumed
+to be empty), and <br>
+a policy may have several taint flows in the form of a list.
+<br>
+See also <b>infer-analyze</b>(1). <b><br>
+--pulse-taint-sanitizers</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+sanitizers as a JSON objects. See
+<b>--pulse-taint-sources</b> for the fields format
+documentation.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-taint-sinks</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+sinks as a JSON objects. See <b>--pulse-taint-sources</b>
+for the fields format documentation.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-taint-sources</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Together with
+<b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
+and <b>--pulse-taint-specifications</b>, specify taint
+properties. The JSON format of sources also applies to sinks
+and sanitizers. It consists of a list of objects with the
+following fields, for example '[{&quot;procedure&quot;:
+&quot;mySimpleSink&quot;, &quot;formals&quot;:
+[{&quot;index&quot;: 1}]}]':</p>
+
+<p style="margin-left:11%;">- &quot;procedure&quot; to
+match a substring of the function or method <br>
+name, or &quot;procedure_regex&quot; to specify an OCaml
+regex <br>
+- &quot;formals&quot; is a list of objects with one or two
+fields: <br>
+- &quot;index&quot; is the index of the formal that is
+tainted, <br>
+starting at 0. For methods, index 0 is <i>this</i>, other
+arguments start <br>
+at index 1 <br>
+- &quot;type_name&quot; is optional string; only arguments
+whose type <br>
+contains this substring match <br>
+See also <b>infer-analyze</b>(1). <b><br>
 --purity</b></p>
 
 <p style="margin-left:17%;">Activates: checker purity:
@@ -2034,6 +2128,14 @@ anything on standard output. (Conversely: <b>--no-quiet</b>
 
 <p style="margin-left:17%;">Deactivates: checker racerd:
 Thread safety analysis. (Conversely: <b>--racerd</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--racerd-always-report-java</b></p>
+
+<p style="margin-left:17%;">Activates: Every Java class
+analysed is treated as if it were annotated as @ThreadSafe.
+(Conversely: <b>--no-racerd-always-report-java</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2223,6 +2325,15 @@ distinct entities get assigned the same ID. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--simple-lineage-include-builtins</b></p>
+
+<p style="margin-left:17%;">Activates: Include call/return
+edges to/from procedures that model primitive Erlang
+operations, such as constructing a list. (Conversely:
+<b>--no-simple-lineage-include-builtins</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --simple-lineage-json-report</b></p>
 
 <p style="margin-left:17%;">Activates: Enable simple
@@ -2353,6 +2464,27 @@ the string during capture.</p>
 <p style="margin-left:17%;">Activates: Print source files
 discovered by infer (Conversely:
 <b>--no-source-files</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1).
+<b><br>
+--source-files-call-graph</b></p>
+
+<p style="margin-left:17%;">Activates: Output a dotty file
+in infer-out/captured/file-call-graph.dot. The graph is the
+file-based syntactic call graph of all captured procedures
+(with known translation units). (Conversely:
+<b>--no-source-files-call-graph</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1).
+<b><br>
+--source-files-call-graph-partition</b> <i>int</i></p>
+
+<p style="margin-left:17%;">The number of partitions to
+divide the set of captured source files, using static call
+graph information. The generated file lists are found under
+infer-out/captured/workerXX.idx. Not setting this option
+skips partitioning. This is used for distributed
+analysis.</p>
 
 <p style="margin-left:11%;">See also <b>infer-debug</b>(1).
 <b><br>
@@ -2626,28 +2758,27 @@ command&gt;&lsquo;</i>. (Conversely:
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1).</p>
 
-<table width="100%" border="0" rules="none" frame="void"
+<table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p><b>--</b></p></td>
+<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p>Stop argument processing, use remaining arguments as a
-build command</p></td></tr>
+<p style="margin-top: 1em" valign="top">Stop argument
+processing, use remaining arguments as a build command</p></td>
 </table>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1).</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Extra arguments
@@ -2670,9 +2801,8 @@ commands will exit with an error code in some cases when
 otherwise a simple warning would be emitted on stderr, for
 instance if a deprecated form of an option is used.</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -2694,10 +2824,14 @@ relative to the location of the .inferconfig file <br>
 - cumulative options are JSON arrays of the appropriate
 type</p>
 
-<p style="margin-left:11%; margin-top: 1em">Infer will look
-for an <b>.inferconfig</b> file in the current directory,
-then its parent, etc., stopping at the first
-<b>.inferconfig</b> file found.</p>
+<p style="margin-left:11%; margin-top: 1em">If an
+<b>.inferconfig</b> file is specified on the command line
+with <b>--inferconfig-path</b> then Infer will use that.
+Otherwise, Infer will look for an <b>.inferconfig</b> file
+in the environment variable <b>INFERCONFIG</b>. Finally,
+Infer will first look for an <b>.inferconfig</b> file in the
+current directory, then its parent, etc., stopping at the
+first <b>.inferconfig</b> file found.</p>
 
 <p style="margin-left:11%; margin-top: 1em">Example:</p>
 
@@ -2707,9 +2841,8 @@ then its parent, etc., stopping at the first
 [&quot;@gen&quot;,&quot;/* no infer */&quot;] <br>
 }</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 

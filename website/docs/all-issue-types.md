@@ -81,9 +81,12 @@ Bad key in Erlang: Reports an error when trying to access or update a non-existi
 For example, trying to update the key `2` in `M` gives `{badkey,2}` error because `2` is not present as a key in `M`.
 ```erlang
 f() ->
-    M = #{1 => 2},
+    M = #{},
     M#{2 := 3}.
 ```
+
+Note that maps currently use a recency abstraction, meaning that only the most recent key/value is tracked.
+Therefore, if a map is non-empty and we try to access a key other than the one we track, we just assume that it is there to avoid false positives.
 
 ## BAD_KEY_LATENT
 
@@ -140,7 +143,7 @@ For example, accessing `R` as a `person` record gives `{badrecord,person}` error
 
 f() ->
     R = #rabbit{name = "Bunny", color = "Brown"},
-    R#person.name
+    R#person.name.
 ```
 
 ## BAD_RECORD_LATENT
@@ -513,6 +516,13 @@ Reported as "Config Impact Strict" by [config-impact-analysis](/docs/next/checke
 This is similar to [`CONFIG_IMPACT` issue](#config_impact) but the analysis reports **all** ungated
 codes irrespective of whether they are expensive or not.
 
+## CONFIG_IMPACT_STRICT_BETA
+
+Reported as "Config Impact Strict Beta" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
+
+This is similar to [`CONFIG_IMPACT_STRICT` issue](#config_impact_strict) but it is only used for
+beta testing that fine-tunes the checker to analysis targets.
+
 ## CONSTANT_ADDRESS_DEREFERENCE
 
 Reported as "Constant Address Dereference" by [pulse](/docs/next/checker-pulse).
@@ -565,6 +575,11 @@ const int copied_v = v;
 Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
 
 
+## DATA_FLOW_TO_SINK
+
+Reported as "Data Flow to Sink" by [pulse](/docs/next/checker-pulse).
+
+A flow of data was detected to a sink.
 ## DEADLOCK
 
 Reported as "Deadlock" by [starvation](/docs/next/checker-starvation).
@@ -1717,7 +1732,7 @@ that the object passed will never be `nil`, or adding a check for `nil` before c
 
 ## NIL_INSERTION_INTO_COLLECTION_LATENT
 
-Reported as "Nil Insertion Into Collection Latent" by [pulse](/docs/next/checker-pulse).
+Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
 
 A latent [NIL_INSERTION_INTO_COLLECTION](#nil_insertion_into_collection). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NIL_MESSAGING_TO_NON_POD
@@ -1953,6 +1968,30 @@ also have a dedicated issue type for this case:
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
 
 A latent [NULLPTR_DEREFERENCE](#nullptr_dereference). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+## NULL_ARGUMENT
+
+Reported as "Null Argument" by [pulse](/docs/next/checker-pulse).
+
+```objc
+This issue type indicates `nil` being passed as argument where a non-nil value expected.
+
+#import <Foundation/Foundation.h>
+
+// Test (non-nil) returned values of NSString methods against `nil`
+NSString* stringNotNil(NSString* str) {
+  if (!str) {
+        // ERROR: NSString:stringWithString: expects a non-nil value
+	return [NSString stringWithString:nil];
+  }
+  return str;
+}
+```
+
+## NULL_ARGUMENT_LATENT
+
+Reported as "Null Argument Latent" by [pulse](/docs/next/checker-pulse).
+
+A latent [NULL_ARGUMENT](#null_argument). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NULL_DEREFERENCE
 
 Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).
@@ -2085,6 +2124,47 @@ int use_reference_instead(A& x){
   auto& y = x; // copy the ref only
   return y.a;
 }
+```
+## PULSE_UNNECESSARY_COPY_ASSIGNMENT
+
+Reported as "Unnecessary Copy Assignment" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
+## PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE
+
+Reported as "Unnecessary Copy Assignment Movable" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable).
+## PULSE_UNNECESSARY_COPY_MOVABLE
+
+Reported as "Unnecessary Copy Movable" by [pulse](/docs/next/checker-pulse).
+
+This is reported when Infer detects an unnecessary copy into a field where
+- the source is an rvalue-reference
+- the source is not modified before it goes out of scope or is destroyed.
+
+Note that the copy can be modified since it has the ownership of the object.
+
+Fix: Rather than the copying into the field, the source should be moved into it.
+
+For example,
+
+```cpp
+struct A {
+  std::vector<int> vec;
+};
+
+class Test {
+  A mem_a;
+
+  void unnecessary_copy(A&& src) {
+   mem_a = src;
+   // fix is to move as follows
+   // mem_a = std::move(src);
+  }
+
+};
+
 ```
 ## PURE_FUNCTION
 
@@ -2447,6 +2527,11 @@ hierarchy:
 @end
 ```
 
+## SENSITIVE_DATA_FLOW
+
+Reported as "Sensitive Data Flow" by [pulse](/docs/next/checker-pulse).
+
+A flow of sensitive data was detected from a source.
 ## SHELL_INJECTION
 
 Reported as "Shell Injection" by [quandary](/docs/next/checker-quandary).

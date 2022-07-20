@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.22.4 -->
+<!-- Creator     : groff version 1.19.2 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,17 +7,16 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
-       h1      { text-align: center }
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
 </style>
 <title>infer-analyze</title>
 
 </head>
 <body>
 
-<h1 align="center">infer-analyze</h1>
+<h1 align=center>infer-analyze</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -39,35 +38,31 @@
 <hr>
 
 
-<h2>NAME
 <a name="NAME"></a>
-</h2>
+<h2>NAME</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-analyze -
 analyze the files captured by infer</p>
 
-<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-</h2>
+<h2>SYNOPSIS</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
 analyze</b> <i>[options]</i> <b><br>
 infer</b> <i>[options]</i></p>
 
-<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-</h2>
+<h2>DESCRIPTION</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Analyze the
 files captured in the project results directory and
 report.</p>
 
-<h2>OPTIONS
 <a name="OPTIONS"></a>
-</h2>
+<h2>OPTIONS</h2>
 
 
 
@@ -613,19 +608,6 @@ disable all other checkers (Conversely:
 <b>--no-pulse-only</b>)</p>
 
 
-<p style="margin-left:11%;"><b>--pulse-prune-unsupported-arithmetic</b></p>
-
-<p style="margin-left:17%;">Activates: The arithmetic
-engine in Pulse sometimes does not detect that the
-collection of conditions on the path makes it infeasible,
-especially outside the well-supported linear arithmetic
-fragment. To avoid false positives, Pulse tries to detect
-when there is a possibility of imprecise arithmetic
-treatment and if so pessimistically assumes the path is
-infeasible. (Conversely:
-<b>--no-pulse-prune-unsupported-arithmetic</b>)</p>
-
-
 <p style="margin-left:11%;"><b>--pulse-report-ignore-unknown-java-methods-patterns</b>
 <i>+string</i></p>
 
@@ -644,7 +626,76 @@ unknown code</p>
 <p style="margin-left:17%;">Regex of procedures that should
 not be analyzed by Pulse.</p>
 
-<p style="margin-left:11%;"><b>--purity</b></p>
+<p style="margin-left:11%;"><b>--pulse-taint-config</b>
+<i>+path</i></p>
+
+<p style="margin-left:17%;">Path to a taint analysis
+configuration file. This file can define
+<b>--pulse-taint-sources</b>,
+<b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
+and <b>--pulse-taint-policies</b>.</p>
+
+<p style="margin-left:11%;"><b>--pulse-taint-policies</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">A description of which taint
+flows should be reported, following this JSON format:</p>
+
+<p style="margin-left:11%;">{
+&quot;short_description&quot;: &quot;&lt;a short description
+of the issue&gt;&quot;, <br>
+&quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
+[&lt;matchers&gt;], <br>
+&quot;sink_kinds&quot;: [&lt;matchers&gt;], <br>
+&quot;sanitizer_kinds&quot;: [&lt;matchers&gt;]}] <br>
+} <br>
+where &lt;matchers&gt; are in the same format as
+<b>--pulse-taint-sources</b>; <br>
+the field &quot;sanitizer_kinds&quot; is optional (assumed
+to be empty), and <br>
+a policy may have several taint flows in the form of a list.
+<b><br>
+--pulse-taint-sanitizers</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+sanitizers as a JSON objects. See
+<b>--pulse-taint-sources</b> for the fields format
+documentation.</p>
+
+<p style="margin-left:11%;"><b>--pulse-taint-sinks</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+sinks as a JSON objects. See <b>--pulse-taint-sources</b>
+for the fields format documentation.</p>
+
+<p style="margin-left:11%;"><b>--pulse-taint-sources</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Together with
+<b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
+and <b>--pulse-taint-specifications</b>, specify taint
+properties. The JSON format of sources also applies to sinks
+and sanitizers. It consists of a list of objects with the
+following fields, for example '[{&quot;procedure&quot;:
+&quot;mySimpleSink&quot;, &quot;formals&quot;:
+[{&quot;index&quot;: 1}]}]':</p>
+
+<p style="margin-left:11%;">- &quot;procedure&quot; to
+match a substring of the function or method <br>
+name, or &quot;procedure_regex&quot; to specify an OCaml
+regex <br>
+- &quot;formals&quot; is a list of objects with one or two
+fields: <br>
+- &quot;index&quot; is the index of the formal that is
+tainted, <br>
+starting at 0. For methods, index 0 is <i>this</i>, other
+arguments start <br>
+at index 1 <br>
+- &quot;type_name&quot; is optional string; only arguments
+whose type <br>
+contains this substring match <b><br>
+--purity</b></p>
 
 <p style="margin-left:17%;">Activates: checker purity:
 Detects pure (side-effect-free) functions. A different
@@ -860,9 +911,8 @@ node. (Conversely: <b>--no-write-html</b>) <b><br>
 <p style="margin-left:17%;">Specify the suffix of Xcode
 isysroot directory, to avoid absolute paths in tests</p>
 
-<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-</h2>
+<h2>BUCK OPTIONS</h2>
 
 
 
@@ -872,9 +922,8 @@ isysroot directory, to avoid absolute paths in tests</p>
 results directories specified in the dependency file.
 (Conversely: <b>--no-merge</b>)</p>
 
-<h2>BUFFER OVERRUN OPTIONS
 <a name="BUFFER OVERRUN OPTIONS"></a>
-</h2>
+<h2>BUFFER OVERRUN OPTIONS</h2>
 
 
 
@@ -896,9 +945,8 @@ abstract location in buffer-overrun checker</p>
 <p style="margin-left:17%;">Larger CFGs than the max size
 are skipped in buffer overrun analysis.</p>
 
-<h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
-</h2>
+<h2>CLANG OPTIONS</h2>
 
 
 
@@ -931,9 +979,10 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-} <br>
-This will cause us to create a new ISOLATED_REACHING_CONNECT
-<br>
+}</p>
+
+<p style="margin-left:11%; margin-top: 1em">This will cause
+us to create a new ISOLATED_REACHING_CONNECT <br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -981,9 +1030,8 @@ common wrappers around these types such as
 when the variables are not read explicitly by the
 program.</p>
 
-<h2>ERLANG OPTIONS
 <a name="ERLANG OPTIONS"></a>
-</h2>
+<h2>ERLANG OPTIONS</h2>
 
 
 
@@ -993,14 +1041,13 @@ program.</p>
 <p style="margin-left:17%;">Unfold Erlang lists up to depth
 <i>int</i></p>
 
-<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-</h2>
+<h2>JAVA OPTIONS</h2>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><i><b>--annotation-reachability-custom-pairs</b>
-json</i></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability-custom-pairs</b>
+<i>json</i></p>
 
 <p style="margin-left:17%;">Specify custom sources/sink for
 the annotation reachability checker</p>
@@ -1024,9 +1071,8 @@ packages.</p>
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
 
-<h2>QUANDARY CHECKER OPTIONS
 <a name="QUANDARY CHECKER OPTIONS"></a>
-</h2>
+<h2>QUANDARY CHECKER OPTIONS</h2>
 
 
 
@@ -1054,13 +1100,18 @@ Quandary</p>
 <p style="margin-left:17%;">Specify custom sources for
 Quandary</p>
 
-<h2>RACERD CHECKER OPTIONS
 <a name="RACERD CHECKER OPTIONS"></a>
-</h2>
+<h2>RACERD CHECKER OPTIONS</h2>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--racerd-guardedby</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--racerd-always-report-java</b></p>
+
+<p style="margin-left:17%;">Activates: Every Java class
+analysed is treated as if it were annotated as @ThreadSafe.
+(Conversely: <b>--no-racerd-always-report-java</b>)</p>
+
+<p style="margin-left:11%;"><b>--racerd-guardedby</b></p>
 
 <p style="margin-left:17%;">Activates: Check @GuardedBy
 annotations with RacerD (Conversely:
@@ -1078,9 +1129,8 @@ here will be ignored by RacerD.</p>
 <p style="margin-left:17%;">Specify custom annotations that
 should be considered aliases of @ThreadSafe</p>
 
-<h2>SIMPLE LINEAGE OPTIONS
 <a name="SIMPLE LINEAGE OPTIONS"></a>
-</h2>
+<h2>SIMPLE LINEAGE OPTIONS</h2>
 
 
 
@@ -1092,6 +1142,14 @@ default. The only reason you may want to turn this off is to
 make hash collisions more visible; that is, cases in which
 distinct entities get assigned the same ID. (Conversely:
 <b>--simple-lineage-dedup</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--simple-lineage-include-builtins</b></p>
+
+<p style="margin-left:17%;">Activates: Include call/return
+edges to/from procedures that model primitive Erlang
+operations, such as constructing a list. (Conversely:
+<b>--no-simple-lineage-include-builtins</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--simple-lineage-json-report</b></p>
@@ -1128,9 +1186,8 @@ distributed way without communication, we use hashing. If
 you are unlucky and get collisions, you can try a different
 seed.</p>
 
-<h2>SIOF CHECKER OPTIONS
 <a name="SIOF CHECKER OPTIONS"></a>
-</h2>
+<h2>SIOF CHECKER OPTIONS</h2>
 
 
 
@@ -1151,9 +1208,8 @@ recent libstdc++ then it is safe to turn this option on.
 &quot;foo&lt;int&gt;::bar()&quot;, etc. (can be specified
 multiple times)</p>
 
-<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-</h2>
+<h2>ENVIRONMENT</h2>
 
 
 
@@ -1163,9 +1219,8 @@ multiple times)</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
-<h2>FILES
 <a name="FILES"></a>
-</h2>
+<h2>FILES</h2>
 
 
 
@@ -1174,9 +1229,8 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
-<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-</h2>
+<h2>SEE ALSO</h2>
 
 
 
