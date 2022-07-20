@@ -39,6 +39,8 @@ Computes the asymptotic complexity of functions with respect to execution cost o
 
 The eradicate `@Nullable` checker for Java annotations.
 
+**\*\*\*DEPRECATED\*\*\*** Unmaintained and will be removed in the future. Consider using [NullAway](https://github.com/uber/NullAway) as an alternative to Eradicate.
+
 [Visit here for more information.](/docs/next/checker-eradicate)
 
 ## Fragment Retains View

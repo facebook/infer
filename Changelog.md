@@ -1,3 +1,9 @@
+## Next version
+
+### Checkers
+
+- [Eradicate](https://fbinfer.com/docs/checker-eradicate) is now deprecated and will be removed in the future.
+
 ## Version 1.1.0
 
 ### Frontends

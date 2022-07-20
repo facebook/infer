@@ -171,8 +171,12 @@ let config_unsafe checker =
   | Eradicate ->
       { id= "eradicate"
       ; kind=
-          UserFacing
-            {title= "Eradicate"; markdown_body= [%blob "../../documentation/checkers/Eradicate.md"]}
+          UserFacingDeprecated
+            { title= "Eradicate"
+            ; markdown_body= [%blob "../../documentation/checkers/Eradicate.md"]
+            ; deprecation_message=
+                "Unmaintained and will be removed in the future. Consider using \
+                 [NullAway](https://github.com/uber/NullAway) as an alternative to Eradicate." }
       ; support= mk_support_func ~java:Support ()
       ; short_documentation= "The eradicate `@Nullable` checker for Java annotations."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
