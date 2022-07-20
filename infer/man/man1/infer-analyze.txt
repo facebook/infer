@@ -83,6 +83,14 @@ OPTIONS
        --custom-symbols json
            Specify named lists of symbols available to rules
 
+       --datalog
+           Activates: checker datalog: Experimental datalog-based points-to
+           analysis. (Conversely: --no-datalog)
+
+       --datalog-only
+           Activates: Enable datalog and disable all other checkers
+           (Conversely: --no-datalog-only)
+
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,

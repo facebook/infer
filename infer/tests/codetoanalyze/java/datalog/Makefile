@@ -4,8 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 TESTS_DIR = ../../..
-INFER_OPTIONS = --java-reflection
-INFERPRINT_OPTIONS = --issues-tests
+INFER_OPTIONS = --datalog-only
+INFERPRINT_OPTIONS = --issues-tests-fields=file,bug_type,qualifier,procedure --issues-tests
 SOURCES = $(wildcard *.java)
 
 include $(TESTS_DIR)/javac.make

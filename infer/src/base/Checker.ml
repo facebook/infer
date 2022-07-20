@@ -15,6 +15,7 @@ type t =
   | BufferOverrunChecker
   | ConfigImpactAnalysis
   | Cost
+  | Datalog
   | DisjunctiveDemo
   | Eradicate
   | FragmentRetainsView
@@ -160,6 +161,14 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis; PurityAnalysis] }
+  | Datalog ->
+      { id= "datalog"
+      ; kind= Internal
+      ; support= mk_support_func ~java:ExperimentalSupport ()
+      ; short_documentation= "Experimental datalog-based points-to analysis."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= false
+      ; activates= [] }
   | DisjunctiveDemo ->
       { id= "disjunctive-demo"
       ; kind= Internal
