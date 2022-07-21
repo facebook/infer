@@ -990,8 +990,8 @@ module TransferFunctions = struct
     ((last_writes, has_unsupported_features), local_edges)
 
 
-  let add_tito tito_arguments (argument_list : Exp.t list) (ret_id : Ident.t) node
-      (astate : Domain.t) : Domain.t =
+  let add_tito (kind : LineageGraph.FlowKind.t) tito_arguments (argument_list : Exp.t list)
+      (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
     let tito_locals =
       let tito_exps =
         List.filter_mapi
@@ -1000,22 +1000,22 @@ module TransferFunctions = struct
       in
       free_locals_of_exp_list tito_exps
     in
-    update_write LineageGraph.FlowKind.Summary (Var.of_id ret_id, node) tito_locals astate
+    update_write kind (Var.of_id ret_id, node) tito_locals astate
 
 
-  let add_tito_all (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) :
-      Domain.t =
+  let add_tito_all (kind : LineageGraph.FlowKind.t) (argument_list : Exp.t list) (ret_id : Ident.t)
+      node (astate : Domain.t) : Domain.t =
     let all = IntSet.of_list (List.mapi argument_list ~f:(fun index _ -> index)) in
-    add_tito all argument_list ret_id node astate
+    add_tito kind all argument_list ret_id node astate
 
 
-  let add_summary_flows (callee : (Procdesc.t * Summary.t) option) (argument_list : Exp.t list)
-      (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
+  let add_summary_flows (kind : LineageGraph.FlowKind.t) (callee : (Procdesc.t * Summary.t) option)
+      (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
     match callee with
     | None ->
-        add_tito_all argument_list ret_id node astate
+        add_tito_all kind argument_list ret_id node astate
     | Some (_callee_pdesc, {Summary.tito_arguments}) ->
-        add_tito tito_arguments argument_list ret_id node astate
+        add_tito kind tito_arguments argument_list ret_id node astate
 
 
   let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
@@ -1027,15 +1027,15 @@ module TransferFunctions = struct
 
 
   let generic_call_model astate node analyze_dependency ret_id procname args =
-    let maybe =
-      if (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname then
-        fun _transform state -> state
-      else fun transform state -> transform state
+    let rm_builtin =
+      (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname
     in
+    let if_not_builtin transform state = if rm_builtin then state else transform state in
+    let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Direct else Summary in
     astate |> record_supported procname
-    |> maybe (add_arg_flows node procname args)
-    |> maybe (add_ret_flows procname ret_id node)
-    |> add_summary_flows (analyze_dependency procname) args ret_id node
+    |> if_not_builtin (add_arg_flows node procname args)
+    |> if_not_builtin (add_ret_flows procname ret_id node)
+    |> add_summary_flows summary_type (analyze_dependency procname) args ret_id node
 
 
   module CustomModel = struct
