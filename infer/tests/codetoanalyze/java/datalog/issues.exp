@@ -1,3 +1,10 @@
-codetoanalyze/java/datalog/Hello.java, DATALOG_FACT, Reachable Hello.main(java.lang.String[]):void., Hello.main(java.lang.String[]):void
-codetoanalyze/java/datalog/Reflection.java, DATALOG_FACT, Reachable Reflection.main(java.lang.String[]):void., Reflection.main(java.lang.String[]):void
-codetoanalyze/java/datalog/VirtCall.java, DATALOG_FACT, Reachable VirtCall.main(java.lang.String[]):void., VirtCall.main(java.lang.String[]):void
+codetoanalyze/java/datalog/Hello.java, DATALOG_FACT, Extends Hello java.lang.Object.
+codetoanalyze/java/datalog/Hello.java, DATALOG_FACT, Reachable Hello.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Reflection.java, DATALOG_FACT, Extends Reflection java.lang.Object.
+codetoanalyze/java/datalog/Reflection.java, DATALOG_FACT, Reachable Reflection.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, DATALOG_FACT, Extends VirtCall java.lang.Object.
+codetoanalyze/java/datalog/VirtCall.java, DATALOG_FACT, Reachable VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, DATALOG_FACT, Extends A java.lang.Object.
+codetoanalyze/java/datalog/VirtCall.java, DATALOG_FACT, Extends B A.
+codetoanalyze/java/datalog/VirtCall.java, DATALOG_FACT, Extends C A.
+codetoanalyze/java/datalog/VirtCall.java, DATALOG_FACT, Extends D A.
