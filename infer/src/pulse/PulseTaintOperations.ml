@@ -54,20 +54,31 @@ type matcher =
   ; data_flow_only: bool }
 
 type sink_policy =
-  {source_kinds: Taint.Kind.t list; sanitizer_kinds: Taint.Kind.t list; description: string}
+  { source_kinds: Taint.Kind.t list [@ignore]
+  ; sanitizer_kinds: Taint.Kind.t list [@ignore]
+  ; description: string [@ignore]
+  ; policy_id: int }
 [@@deriving equal]
 
 let sink_policies = Hashtbl.create (module Taint.Kind)
 
+let next_policy_id =
+  let policy_id_counter = ref 0 in
+  fun () ->
+    incr policy_id_counter ;
+    !policy_id_counter
+
+
 let fill_policies_from_config () =
   Config.pulse_taint_config.policies
-  |> List.iter ~f:(function {Pulse_config_j.short_description= description; taint_flows} ->
+  |> List.iter ~f:(fun {Pulse_config_j.short_description= description; taint_flows} ->
+         let policy_id = next_policy_id () in
          List.iter taint_flows ~f:(fun {Pulse_config_j.source_kinds; sanitizer_kinds; sink_kinds} ->
              let source_kinds = List.map source_kinds ~f:Taint.Kind.of_string in
              let sanitizer_kinds = List.map sanitizer_kinds ~f:Taint.Kind.of_string in
              List.iter sink_kinds ~f:(fun sink_kind_s ->
                  let sink_kind = Taint.Kind.of_string sink_kind_s in
-                 let flow = {source_kinds; sanitizer_kinds; description} in
+                 let flow = {source_kinds; sanitizer_kinds; description; policy_id} in
                  Hashtbl.update sink_policies sink_kind ~f:(function
                    | None ->
                        [flow]
@@ -84,7 +95,8 @@ let () =
             "Built-in Simple taint kind, matching any Simple source with any Simple sink except if \
              any Simple sanitizer is in the way"
         ; source_kinds= [simple_kind]
-        ; sanitizer_kinds= [simple_kind] } ]
+        ; sanitizer_kinds= [simple_kind]
+        ; policy_id= next_policy_id () } ]
   |> ignore ;
   fill_policies_from_config ()
 
@@ -317,7 +329,7 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location proc_nam
 let check_policies ~sink ~source ~source_times ~sanitizers =
   List.fold sink.Taint.kinds ~init:[] ~f:(fun acc sink_kind ->
       let policies = Hashtbl.find_exn sink_policies sink_kind in
-      List.fold policies ~init:acc ~f:(fun acc ({source_kinds; sanitizer_kinds} as policy) ->
+      List.fold policies ~init:acc ~f:(fun acc {source_kinds; sanitizer_kinds; policy_id} ->
           match
             List.find source.Taint.kinds ~f:(fun source_kind ->
                 List.mem ~equal:Taint.Kind.equal source_kinds source_kind )
@@ -336,7 +348,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
                   sanitizers
               in
               if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
-                (suspicious_source, source.Taint.data_flow_only, sink_kind, policy) :: acc
+                (suspicious_source, source.Taint.data_flow_only, sink_kind, policy_id) :: acc
               else (
                 L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
                   matching_sanitizers ;
@@ -400,16 +412,11 @@ let check_flows_wrt_sink path location (sink, sink_trace) v astate =
         L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
         let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
         let report_policy_violation reported_so_far
-            (source_kind, data_flow_only, sink_kind, violated_policy) =
-          (* HACK: compare by pointer as policies are fixed throughout execution and each policy
-             record is different from all other policies; we could optimise this check by keeping
-             a set of policies around instead of a list, eg assign an integer id to each policy
-             (using a simple incrementing counter when reading the configuration) and comparing
-             only that id. *)
-          if List.mem ~equal:phys_equal reported_so_far violated_policy then Ok reported_so_far
+            (source_kind, data_flow_only, sink_kind, violated_policy_id) =
+          if IntSet.mem violated_policy_id reported_so_far then Ok reported_so_far
           else
             Recoverable
-              ( violated_policy :: reported_so_far
+              ( IntSet.add violated_policy_id reported_so_far
               , mk_reportable_error
                   (TaintFlow
                      { expr= source_expr
@@ -424,7 +431,7 @@ let check_flows_wrt_sink path location (sink, sink_trace) v astate =
   in
   let taint_dependencies = gather_taint_dependencies v astate in
   let+ _, astate =
-    PulseResult.list_fold taint_dependencies ~init:([], astate)
+    PulseResult.list_fold taint_dependencies ~init:(IntSet.empty, astate)
       ~f:(fun (policy_violations_reported, astate) v ->
         let astate =
           AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
