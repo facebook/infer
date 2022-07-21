@@ -145,15 +145,15 @@ declaration:
 
 base_typ:
   | INT
-    { Tint }
+    { Int }
   | FLOAT
-    { Tfloat }
+    { Float }
   | VOID
-    { Tvoid }
+    { Void }
   | name=tname
-    { Tstruct name }
+    { Struct name }
   | typ=base_typ LSBRACKET RSBRACKET
-    { Tarray typ }
+    { Array typ }
   | LPAREN typ=typ RPAREN
     { typ }
 
@@ -161,7 +161,7 @@ typ:
   | typ=base_typ
     { typ }
   | STAR typ=typ
-    { Tptr typ }
+    { Ptr typ }
 
 typed_field:
   | name=fname COLON typ=typ
@@ -189,17 +189,17 @@ label:
 
 const:
   | INTEGER
-    { Cint $1 }
+    { Int $1 }
   | STRING
-    { Cstr $1 }
+    { Str $1 }
   | FLOATINGPOINT
-    { Cfloat $1 }
+    { Float $1 }
   | TRUE
-    { Cint Z.one }
+    { Int Z.one }
   | FALSE
-    { Cint Z.zero }
+    { Int Z.zero }
   | NULL
-    { Cnull }
+    { Null }
 
 instruction:
   | id=LOCAL COLON typ=typ EQ LOAD exp=expression
@@ -210,8 +210,8 @@ instruction:
     { Prune {exp; b= true; loc=location_of_pos $startpos} }
   | PRUNE NOT exp=expression
     { Prune {exp; b= false; loc=location_of_pos $startpos} }
-  | r=LOCAL EQ f=pname LPAREN args=separated_list(COMMA, expression) RPAREN
-    { Call { ret= Ident.of_int r; f; args; loc=location_of_pos $startpos } }
+  | id=LOCAL EQ exp=expression
+    { Let { id= Ident.of_int id; exp; loc=location_of_pos $startpos } }
 
 terminator:
   | RET e=expression
@@ -238,12 +238,12 @@ expression:
   | AMPERSAND name=vname
     { Lvar name }
   | exp=expression DOT tname=tname DOT fname=fname
-    { Lfield {exp; tname; fname} }
+    { Field {exp; tname; fname} }
   | e1=expression LSBRACKET e2=expression RSBRACKET
-    { Lindex (e1, e2) }
+    { Index (e1, e2) }
   | c=const
-    { EConst c }
-  | f=pname LPAREN args=separated_list(COMMA, expression) RPAREN
-    { ECall (f, args) }
+    { Const c }
+  | proc=pname LPAREN args=separated_list(COMMA, expression) RPAREN
+    { Call {proc; args} }
   | LPAREN e=expression COLON t=typ RPAREN
-    { ECast (t, e) }
+    { Cast (t, e) }

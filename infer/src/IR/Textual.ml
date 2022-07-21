@@ -46,7 +46,7 @@ module VarName : COMMON_NAME = Name
 module NodeName : COMMON_NAME = Name
 
 module Typ = struct
-  type t = Tint | Tfloat | Tnull | Tvoid | Tptr of t | Tstruct of TypeName.t | Tarray of t
+  type t = Int | Float | Null | Void | Ptr of t | Struct of TypeName.t | Array of t
 end
 
 module Ident = struct
@@ -56,7 +56,7 @@ module Ident = struct
 end
 
 module Const = struct
-  type t = Cint of Z.t | Cnull | Cstr of string | Cfloat of float
+  type t = Int of Z.t | Null | Str of string | Float of float
 end
 
 module Procname = struct
@@ -146,12 +146,12 @@ module Exp = struct
   type t =
     | Var of Ident.t
     | Lvar of VarName.t
-    | Lfield of {exp: t; tname: TypeName.t; fname: FieldBaseName.t}
-    | Lindex of t * t
+    | Field of {exp: t; tname: TypeName.t; fname: FieldBaseName.t}
+    | Index of t * t
     (*  | Sizeof of sizeof_data *)
-    | EConst of Const.t
-    | ECall of ProcBaseName.t * t list
-    | ECast of Typ.t * t
+    | Const of Const.t
+    | Call of {proc: ProcBaseName.t; args: t list}
+    | Cast of Typ.t * t
 end
 
 module Instr = struct
@@ -159,7 +159,7 @@ module Instr = struct
     | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
     | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
     | Prune of {exp: Exp.t; b: bool; loc: Location.t}
-    | Call of {ret: Ident.t; f: ProcBaseName.t; args: Exp.t list; loc: Location.t}
+    | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}
 end
 
 module Terminator = struct
@@ -247,32 +247,27 @@ module Verification = struct
     in
     let rec verify_exp errors (e : Exp.t) =
       match e with
-      | Var _ | Lvar _ | EConst _ ->
+      | Var _ | Lvar _ | Const _ ->
           errors
-      | Lfield {exp; tname; fname} ->
+      | Field {exp; tname; fname} ->
           let errors = verify_fieldname errors tname fname in
           verify_exp errors exp
-      | Lindex (e1, e2) ->
+      | Index (e1, e2) ->
           let errors = verify_exp errors e1 in
           verify_exp errors e2
-      | ECall (f, l) ->
-          let errors = verify_procname errors f in
-          List.fold ~f:verify_exp ~init:errors l
-      | ECast (_, e) ->
+      | Call {proc; args} ->
+          let errors = verify_procname errors proc in
+          List.fold ~f:verify_exp ~init:errors args
+      | Cast (_, e) ->
           verify_exp errors e
     in
     let verify_instr errors (instr : Instr.t) =
       match instr with
-      | Load {exp} ->
+      | Load {exp} | Prune {exp} | Let {exp} ->
           verify_exp errors exp
       | Store {exp1; exp2} ->
           let errors = verify_exp errors exp1 in
           verify_exp errors exp2
-      | Prune {exp} ->
-          verify_exp errors exp
-      | Call {f; args} ->
-          let errors = verify_procname errors f in
-          List.fold ~f:verify_exp ~init:errors args
     in
     let verify_procdesc errors ({procname; nodes} : Procdesc.t) =
       let verify_label errors = verify_label errors procname.name in

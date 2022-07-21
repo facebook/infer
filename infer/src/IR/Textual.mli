@@ -27,13 +27,13 @@ module TypeName : NAME (* structured value type name *)
 
 module Typ : sig
   type t =
-    | Tint  (** integer type *)
-    | Tfloat  (** float type *)
-    | Tnull
-    | Tvoid  (** void type *)
-    | Tptr of t  (** pointer type *)
-    | Tstruct of TypeName.t  (** structured value type name *)
-    | Tarray of t  (** array type *)
+    | Int  (** integer type *)
+    | Float  (** float type *)
+    | Null
+    | Void  (** void type *)
+    | Ptr of t  (** pointer type *)
+    | Struct of TypeName.t  (** structured value type name *)
+    | Array of t  (** array type *)
 end
 
 module Ident : sig
@@ -44,10 +44,10 @@ end
 
 module Const : sig
   type t =
-    | Cint of Z.t  (** integer constants *)
-    | Cnull
-    | Cstr of string  (** string constants *)
-    | Cfloat of float  (** float constants *)
+    | Int of Z.t  (** integer constants *)
+    | Null
+    | Str of string  (** string constants *)
+    | Float of float  (** float constants *)
 end
 
 module Procname : sig
@@ -76,12 +76,12 @@ module Exp : sig
   type t =
     | Var of Ident.t  (** pure variable: it is not an lvalue *)
     | Lvar of VarName.t  (** the address of a program variable *)
-    | Lfield of {exp: t; tname: TypeName.t; fname: FieldBaseName.t}
+    | Field of {exp: t; tname: TypeName.t; fname: FieldBaseName.t}
         (** field offset, fname must be declared in type tname *)
-    | Lindex of t * t  (** an array index offset: [exp1\[exp2\]] *)
-    | EConst of Const.t
-    | ECall of ProcBaseName.t * t list
-    | ECast of Typ.t * t
+    | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
+    | Const of Const.t
+    | Call of {proc: ProcBaseName.t; args: t list}
+    | Cast of Typ.t * t
 end
 
 module Instr : sig
@@ -91,12 +91,10 @@ module Instr : sig
     | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
         (** *exp1 <- exp2 with exp2:typ *)
     | Prune of {exp: Exp.t; b: bool; loc: Location.t}  (** assume exp==b *)
-    | Call of {ret: Ident.t; f: ProcBaseName.t; args: Exp.t list; loc: Location.t}
-        (** ret <- f(args) *)
-
-  (** Remark that because Sil operations (add, mult...) are calls, we let the Textual programmer put
-      expression in local variables, while SIL forbid that. The to_sil transformation will have to
-      inline these definitions. *)
+    | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}  (** id = exp *)
+  (* Remark that because Sil operations (add, mult...) are calls, we let the Textual programmer put
+     expression in local variables, while SIL forbid that. The to_sil transformation will have to
+     inline these definitions. *)
 end
 
 module Terminator : sig
