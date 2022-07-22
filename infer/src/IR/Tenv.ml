@@ -63,15 +63,45 @@ let add_field tenv class_tn_name field =
       ()
 
 
+let fold_supers tenv name ~init ~f =
+  let rec aux worklist visited result =
+    match worklist with
+    | [] ->
+        (visited, result)
+    | name :: worklist when Typ.Name.Set.mem name visited ->
+        aux worklist visited result
+    | name :: worklist -> (
+        let visited = Typ.Name.Set.add name visited in
+        let struct_opt = lookup tenv name in
+        let result = f name struct_opt result in
+        match struct_opt with
+        | None ->
+            aux worklist visited result
+        | Some {supers} ->
+            let visited, result = aux supers visited result in
+            aux worklist visited result )
+  in
+  aux [name] Typ.Name.Set.empty init |> snd
+
+
+let find_map_supers (type f_result) tenv name ~(f : Typ.Name.t -> Struct.t option -> f_result option)
+    =
+  let exception FOUND of f_result option in
+  try
+    fold_supers tenv name ~init:() ~f:(fun name struct_opt () ->
+        match f name struct_opt with None -> () | Some _ as result -> raise (FOUND result) ) ;
+    None
+  with FOUND result -> result
+
+
+let mem_supers tenv name ~f =
+  find_map_supers tenv name ~f:(fun name struct_opt -> if f name struct_opt then Some () else None)
+  |> Option.is_some
+
+
 let implements_remodel_class tenv name =
   Option.exists Typ.Name.Objc.remodel_class ~f:(fun remodel_class ->
-      let rec implements_remodel_class_helper name =
-        Typ.Name.equal name remodel_class
-        || lookup tenv name
-           |> Option.exists ~f:(fun {Struct.supers} ->
-                  List.exists supers ~f:implements_remodel_class_helper )
-      in
-      implements_remodel_class_helper name )
+      mem_supers tenv name ~f:(fun name _ -> Typ.Name.equal name remodel_class) )
 
 
 type per_file = Global | FileLocal of t
