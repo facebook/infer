@@ -28,6 +28,8 @@ let to_diagnostic = function
 let add_call call_and_loc = function
   | AccessToInvalidAddress access ->
       AccessToInvalidAddress {access with calling_context= call_and_loc :: access.calling_context}
+  | ErlangError (Badarg {calling_context; location}) ->
+      ErlangError (Badarg {calling_context= call_and_loc :: calling_context; location})
   | ErlangError (Badkey {calling_context; location}) ->
       ErlangError (Badkey {calling_context= call_and_loc :: calling_context; location})
   | ErlangError (Badmap {calling_context; location}) ->

@@ -28,6 +28,7 @@ type access_to_invalid_address =
 [@@deriving compare, equal]
 
 type erlang_error =
+  | Badarg of {calling_context: calling_context; location: Location.t}
   | Badkey of {calling_context: calling_context; location: Location.t}
   | Badmap of {calling_context: calling_context; location: Location.t}
   | Badmatch of {calling_context: calling_context; location: Location.t}
@@ -99,6 +100,7 @@ let get_location = function
   | MemoryLeak {location}
   | ResourceLeak {location}
   | RetainCycle {location}
+  | ErlangError (Badarg {location})
   | ErlangError (Badkey {location})
   | ErlangError (Badmap {location})
   | ErlangError (Badmatch {location})
@@ -119,7 +121,8 @@ let get_copy_type = function UnnecessaryCopy {typ} -> Some typ | _ -> None
 let aborts_execution = function
   | AccessToInvalidAddress _
   | ErlangError
-      ( Badkey _
+      ( Badarg _
+      | Badkey _
       | Badmap _
       | Badmatch _
       | Badrecord _
@@ -307,6 +310,8 @@ let get_message diagnostic =
         "Memory managed via reference counting is locked in a retain cycle at %a: `%a` retains \
          itself via `%a`"
         Location.pp location Decompiler.pp_expr value Decompiler.pp_expr path
+  | ErlangError (Badarg {calling_context= _; location}) ->
+      F.asprintf "bad arg at %a" Location.pp location
   | ErlangError (Badkey {calling_context= _; location}) ->
       F.asprintf "bad key at %a" Location.pp location
   | ErlangError (Badmap {calling_context= _; location}) ->
@@ -506,6 +511,9 @@ let get_trace = function
       Trace.synchronous_add_to_errlog ~nesting:1
         ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
         assignment_traces errlog
+  | ErlangError (Badarg {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad arg here" []]
   | ErlangError (Badkey {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad key here" []]
@@ -604,6 +612,8 @@ let get_issue_type ~latent issue_type =
       L.die InternalError "Issue type cannot be latent"
   | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
       Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
+  | ErlangError (Badarg _), _ ->
+      IssueType.bad_arg ~latent
   | ErlangError (Badkey _), _ ->
       IssueType.bad_key ~latent
   | ErlangError (Badmap _), _ ->

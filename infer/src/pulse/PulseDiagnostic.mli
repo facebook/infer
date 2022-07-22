@@ -33,6 +33,7 @@ type access_to_invalid_address =
 [@@deriving compare, equal, yojson_of]
 
 type erlang_error =
+  | Badarg of {calling_context: calling_context; location: Location.t}
   | Badkey of {calling_context: calling_context; location: Location.t}
   | Badmap of {calling_context: calling_context; location: Location.t}
   | Badmatch of {calling_context: calling_context; location: Location.t}

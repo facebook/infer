@@ -269,10 +269,6 @@ features_lc:test_two_gen2_Ok/0: ok
 ----- features_lists -----
 features_lists:fn_test_listadd4_Bad/0: expected_crash
 features_lists:fn_test_listappend4_Bad/0: expected_crash
-features_lists:fn_test_listappend5_Bad/0: badarg
-features_lists:fn_test_listappend6_Bad/0: badarg
-features_lists:fn_test_listappend7_Bad/0: badarg
-features_lists:fn_test_listappend8_Bad/0: badarg
 features_lists:fn_test_reverse4_Bad/0: expected_crash
 features_lists:fp_test_listappend8_Ok/0: ok
 features_lists:fp_test_listsub1_Ok/0: ok
@@ -308,8 +304,12 @@ features_lists:test_listappend2a_Ok/0: ok
 features_lists:test_listappend3_Bad/0: expected_crash
 features_lists:test_listappend3_Ok/0: ok
 features_lists:test_listappend4_Ok/0: ok
+features_lists:test_listappend5_Bad/0: badarg
+features_lists:test_listappend6_Bad/0: badarg
 features_lists:test_listappend6_Ok/0: ok
+features_lists:test_listappend7_Bad/0: badarg
 features_lists:test_listappend7_Ok/0: ok
+features_lists:test_listappend8_Bad/0: badarg
 features_lists:test_listappend9_Ok/0: ok
 features_lists:test_listforeach_returnvalue_Bad/0: expected_crash
 features_lists:test_listforeach_returnvalue_Ok/0: ok

@@ -123,6 +123,10 @@ let load_field path field location obj astate =
 module Errors = struct
   let error err astate = [FatalError (ReportableError {astate; diagnostic= ErlangError err}, [])]
 
+  let badarg : model =
+   fun {location} astate -> error (Badarg {calling_context= []; location}) astate
+
+
   let badkey : model =
    fun {location} astate -> error (Badkey {calling_context= []; location}) astate
 
@@ -607,10 +611,28 @@ module Lists = struct
         [Ok (hd :: elems, astate)]
 
 
+  let make_astate_badarg (list_val, _list_hist) data astate =
+    (* arg is not a list if its type is neither Cons nor Nil *)
+    let typ_cons = Typ.mk_struct (ErlangType Cons) in
+    let typ_nil = Typ.mk_struct (ErlangType Nil) in
+    let instanceof_val_cons = AbstractValue.mk_fresh () in
+    let instanceof_val_nil = AbstractValue.mk_fresh () in
+    let<*> astate =
+      PulseArithmetic.and_equal_instanceof instanceof_val_cons list_val typ_cons astate
+    in
+    let<*> astate =
+      PulseArithmetic.and_equal_instanceof instanceof_val_nil list_val typ_nil astate
+    in
+    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val_cons astate in
+    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val_nil astate in
+    Errors.badarg data astate
+
+
   let append2 ~reverse list1 list2 : model =
-   fun {location; path; ret= ret_id, _} astate ->
+   fun ({location; path; ret= ret_id, _} as data) astate ->
+    let mk_astate_badarg = make_astate_badarg list1 data astate in
     (* Makes an abstract state corresponding to appending to a list of given length *)
-    let mk_astate_concat length =
+    let mk_good_astate_concat length =
       let> elems, astate = assume_and_deconstruct list1 length astate path location in
       let elems = if reverse then elems else List.rev elems in
       let> astate, result_list =
@@ -620,8 +642,9 @@ module Lists = struct
       in
       [Ok (PulseOperations.write_id ret_id result_list astate)]
     in
-    List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_astate_concat)
-    |> List.map ~f:Basic.map_continue
+    mk_astate_badarg
+    @ ( List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_good_astate_concat)
+      |> List.map ~f:Basic.map_continue )
 
 
   let reverse list : model =
@@ -832,6 +855,36 @@ module Maps = struct
     List.map ~f:Basic.map_continue astate_ok @ astate_badmap
 end
 
+module Strings = struct
+  (** This is a temporary solution for strings to avoid false positives. For now, we consider that
+      the type of strings is list and compute this information whenever a string is created. Strings
+      should be fully supported in future. T93361792 **)
+  let value_field = Fieldname.make (ErlangType Integer) ErlangTypeName.cons_tail
+
+  let make_raw location path (value, _) : disjunction_maker =
+   fun astate ->
+    let new_hist = Hist.single_alloc path location "string" in
+    let<*> astate_nil = PulseArithmetic.and_eq_int value IntLit.zero astate in
+    let<*> astate_nil, addr_nil = Lists.make_nil_raw location path astate_nil in
+    let val_not_nil = AbstractValue.mk_fresh () in
+    let<*> astate_not_nil = PulseArithmetic.and_positive value astate in
+    let astate_not_nil =
+      PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) val_not_nil astate_not_nil
+    in
+    let<*> astate_not_nil =
+      write_field_and_deref path location ~struct_addr:(val_not_nil, new_hist)
+        ~field_addr:(AbstractValue.mk_fresh (), new_hist)
+        ~field_val:(value, new_hist) value_field astate_not_nil
+    in
+    [Ok (astate_nil, addr_nil); Ok (astate_not_nil, (val_not_nil, new_hist))]
+
+
+  let make value : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let> astate, (result, _hist) = make_raw location path value astate in
+    PulseOperations.write_id ret_id (result, _hist) astate |> Basic.ok_continue
+end
+
 module BIF = struct
   let has_type (value, _hist) type_ : model =
    fun {location; path; ret= ret_id, _} astate ->
@@ -1036,6 +1089,7 @@ let matchers : matcher list =
     ; +BuiltinDecl.(match_builtin __erlang_make_integer) <>$ arg $--> Integers.make
     ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
     ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
+    ; +BuiltinDecl.(match_builtin __erlang_make_str_const) <>$ arg $--> Strings.make
     ; +BuiltinDecl.(match_builtin __erlang_equal) <>$ arg $+ arg $--> Comparison.equal
     ; +BuiltinDecl.(match_builtin __erlang_exactly_equal) <>$ arg $+ arg $--> Comparison.equal
       (* TODO: proper modeling of equal vs exactly equal T95767672 *)

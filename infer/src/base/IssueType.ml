@@ -324,6 +324,11 @@ let _bad_pointer_comparison =
     ~user_documentation:[%blob "../../documentation/issues/BAD_POINTER_COMPARISON.md"]
 
 
+let bad_arg =
+  register_with_latent ~id:"BAD_ARG" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/BAD_ARG.md"]
+
+
 let bad_key =
   register_with_latent ~id:"BAD_KEY" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_KEY.md"]

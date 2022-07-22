@@ -443,6 +443,8 @@ OPTIONS
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
+             BAD_ARG (enabled by default),
+             BAD_ARG_LATENT (disabled by default),
              BAD_KEY (enabled by default),
              BAD_KEY_LATENT (disabled by default),
              BAD_MAP (enabled by default),
