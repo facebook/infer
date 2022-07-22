@@ -57,6 +57,7 @@ type flow_kind = TaintedFlow | FlowToSink [@@deriving equal]
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
+  | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of
       { assignment_traces: Trace.t list

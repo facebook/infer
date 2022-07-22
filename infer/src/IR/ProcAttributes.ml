@@ -114,6 +114,11 @@ let get_pvar_formals attributes =
   List.map attributes.formals ~f:(fun (name, typ, _) -> (Pvar.mk name pname, typ))
 
 
+let get_passed_by_value_formals attributes =
+  List.filteri (get_pvar_formals attributes) ~f:(fun i _ ->
+      not (List.mem ~equal:Int.equal attributes.reference_formals i) )
+
+
 let get_proc_name attributes = attributes.proc_name
 
 let get_loc attributes = attributes.loc

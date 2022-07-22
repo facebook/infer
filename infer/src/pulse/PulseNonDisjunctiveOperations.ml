@@ -117,6 +117,36 @@ let add_copies path location call_exp actuals astates astate_non_disj =
   aux (get_modeled_as_returning_copy_opt, List.rev) astate_n astates
 
 
+let add_const_refable_parameters procdesc astates astate_non_disj =
+  let proc_parameters = Procdesc.get_passed_by_value_formals procdesc in
+  let location = Procdesc.get_loc procdesc in
+  List.fold astates ~init:astate_non_disj
+    ~f:(fun astate_non_disj ((exec_state : ExecutionDomain.t), _) ->
+      match exec_state with
+      | ContinueProgram disjunct ->
+          List.fold proc_parameters ~init:astate_non_disj ~f:(fun astate_non_disj (pvar, typ) ->
+              let is_ptr_to_trivially_copyable typ =
+                Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals
+              in
+              let var = Var.of_pvar pvar in
+              if
+                Var.appears_in_source_code var && Typ.is_reference typ
+                && not (is_ptr_to_trivially_copyable typ)
+              then
+                NonDisjDomain.add_parameter var
+                  (NonDisjDomain.Unmodified
+                     {heap= (disjunct.post :> BaseDomain.t).heap; typ; location} )
+                  astate_non_disj
+              else astate_non_disj )
+      | ISLLatentMemoryError _
+      | AbortProgram _
+      | ExceptionRaised _
+      | ExitProgram _
+      | LatentAbortProgram _
+      | LatentInvalidAccess _ ->
+          astate_non_disj )
+
+
 let get_matching_dest_addr_opt (edges_curr, attr_curr) edges_orig : AbstractValue.t list option =
   BaseMemory.Edges.fold edges_curr ~init:(Some []) ~f:(fun acc (access_curr, (addr_curr, _)) ->
       match BaseMemory.Edges.find_opt access_curr edges_orig with
@@ -174,31 +204,43 @@ let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
   || aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
 
 
+let is_modified ?(is_source_opt = None) address astate heap =
+  let reachable_addresses_from_copy =
+    BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
+      (astate.AbductiveDomain.post :> BaseDomain.t)
+  in
+  let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
+  let current_attrs = (astate.AbductiveDomain.post :> BaseDomain.t).attrs in
+  let reachable_from heap =
+    BaseMemory.filter
+      (fun address _ -> AbstractValue.Set.mem address reachable_addresses_from_copy)
+      heap
+  in
+  if Config.debug_mode then (
+    L.d_printfln_escaped "Current reachable heap %a" BaseMemory.pp (reachable_from current_heap) ;
+    match is_source_opt with
+    | None ->
+        ()
+    | Some s ->
+        L.d_printfln_escaped "%s reachable heap %a"
+          (if s then "Source" else "Copy")
+          BaseMemory.pp (reachable_from heap) ) ;
+  is_modified_since_copy address ~current_heap ~copy_heap:heap ~current_attrs
+    ~reachable_addresses_from_copy
+
+
 let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) ~copied_into astate
     (astate_n : NonDisjDomain.t) : NonDisjDomain.t =
   NonDisjDomain.mark_copy_as_modified ~copied_into ~source_addr_opt astate_n
-    ~is_modified:(fun copy_heap ->
-      let reachable_addresses_from_copy =
-        BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
-          (astate.AbductiveDomain.post :> BaseDomain.t)
-      in
-      let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
-      let current_attrs = (astate.AbductiveDomain.post :> BaseDomain.t).attrs in
-      let reachable_from heap =
-        BaseMemory.filter
-          (fun address _ -> AbstractValue.Set.mem address reachable_addresses_from_copy)
-          heap
-      in
-      if Config.debug_mode then (
-        L.d_printfln_escaped "Current reachable heap %a" BaseMemory.pp (reachable_from current_heap) ;
-        L.d_printfln_escaped "%s reachable heap %a"
-          (if is_source then "Source" else "Copy")
-          BaseMemory.pp (reachable_from copy_heap) ) ;
-      is_modified_since_copy address ~current_heap ~copy_heap ~current_attrs
-        ~reachable_addresses_from_copy )
+    ~is_modified:(is_modified ~is_source_opt:(Some is_source) address astate)
 
 
-let mark_modified_copies_with vars ~astate astate_n =
+let mark_modified_parameter_at ~address ~var astate (astate_n : NonDisjDomain.t) : NonDisjDomain.t =
+  NonDisjDomain.mark_parameter_as_modified ~var astate_n
+    ~is_modified:(is_modified ~is_source_opt:None address astate)
+
+
+let mark_modified_copies_and_parameters_with vars ~astate astate_n =
   let mark_modified_copy var default =
     Stack.find_opt var astate
     |> Option.value_map ~default ~f:(fun (address, _history) ->
@@ -206,7 +248,13 @@ let mark_modified_copies_with vars ~astate astate_n =
            mark_modified_address_at ~address ~source_addr_opt
              ~copied_into:(Attribute.CopiedInto.IntoVar var) astate default )
   in
+  let mark_modified_parameter var default =
+    Stack.find_opt var astate
+    |> Option.value_map ~default ~f:(fun (address, _history) ->
+           mark_modified_parameter_at ~address ~var astate default )
+  in
   List.fold vars ~init:astate_n ~f:(fun astate_n var ->
+      let astate_n = mark_modified_parameter var astate_n in
       let res_opt =
         let open IOption.Let_syntax in
         let* source_addr, _ = Stack.find_opt var astate in
@@ -217,7 +265,7 @@ let mark_modified_copies_with vars ~astate astate_n =
       match res_opt with Some res -> res | None -> mark_modified_copy var astate_n )
 
 
-let mark_modified_copies vars disjuncts astate_n =
+let mark_modified_copies_and_parameters vars disjuncts astate_n =
   let unchecked_vars =
     List.filter vars ~f:(fun var ->
         not (PulseNonDisjunctiveDomain.is_checked_via_dtor var astate_n) )
@@ -232,4 +280,6 @@ let mark_modified_copies vars disjuncts astate_n =
       | LatentInvalidAccess _ ->
           astate_n
       | ContinueProgram astate ->
-          mark_modified_copies_with unchecked_vars ~astate astate_n )
+          mark_modified_copies_and_parameters_with unchecked_vars ~astate astate_n )
+(* let copy_domain = mark_modified_copies_with unchecked_vars ~astate astate_n in
+   mark_modified_parameters_with unchecked_vars ~astate copy_domain ) *)

@@ -85,6 +85,7 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
 
 let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t) =
   match diagnostic with
+  | ConstRefableParameter _
   | ErlangError _
   | MemoryLeak _
   | ResourceLeak _

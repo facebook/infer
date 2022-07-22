@@ -60,6 +60,7 @@ let is_manifest (astate : AbductiveDomain.summary) =
    not true as calling context cannot possibly influence such conditions *)
 let should_report (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
   match diagnostic with
+  | ConstRefableParameter _
   | MemoryLeak _
   | ResourceLeak _
   | RetainCycle _

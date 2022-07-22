@@ -463,6 +463,11 @@ let config_impact_analysis_strict_beta =
     ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
 
 
+let pulse_const_refable =
+  register ~enabled:false ~id:"PULSE_CONST_REFABLE" Error Pulse ~hum:"Const Refable Parameter"
+    ~user_documentation:[%blob "../../documentation/issues/PULSE_CONST_REFABLE.md"]
+
+
 let constant_address_dereference =
   register_with_latent ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
     ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]

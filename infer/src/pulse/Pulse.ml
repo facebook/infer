@@ -39,6 +39,13 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
            ~latent:false proc_desc err_log diagnostic )
 
 
+let report_const_refable_parameters proc_desc err_log non_disj_astate =
+  PulseNonDisjunctiveDomain.get_const_refable_parameters non_disj_astate
+  |> List.iter ~f:(fun (param, typ, location) ->
+         let diagnostic = Diagnostic.ConstRefableParameter {param; typ; location} in
+         PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic )
+
+
 let heap_size () = (Gc.quick_stat ()).heap_words
 
 module PulseTransferFunctions = struct
@@ -620,7 +627,7 @@ module PulseTransferFunctions = struct
       let vars_to_remove = if List.is_empty ret_vars then vars else List.rev_append vars ret_vars in
       ( remove_vars vars_to_remove location astates
       , path
-      , PulseNonDisjunctiveOperations.mark_modified_copies vars astates astate_n )
+      , PulseNonDisjunctiveOperations.mark_modified_copies_and_parameters vars astates astate_n )
 
 
   let and_is_int_if_integer_type typ v astate =
@@ -632,7 +639,8 @@ module PulseTransferFunctions = struct
     | (Const (Cfun proc_name) | Closure {name= proc_name}), (Exp.Lvar pvar, _) :: _
       when Procname.is_destructor proc_name ->
         let var = Var.of_pvar pvar in
-        PulseNonDisjunctiveOperations.mark_modified_copies_with [var] ~astate astate_n
+        PulseNonDisjunctiveOperations.mark_modified_copies_and_parameters_with [var] ~astate
+          astate_n
         |> NonDisjDomain.checked_via_dtor var
     | _ ->
         astate_n
@@ -911,9 +919,14 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
     PulseTopl.Debug.dropped_disjuncts_count := 0 ;
     let proc_name = Procdesc.get_proc_name proc_desc in
     let proc_attrs = Procdesc.get_attributes proc_desc in
+    let initial_disjuncts = initial tenv proc_name proc_attrs in
+    let initial_non_disj =
+      PulseNonDisjunctiveOperations.add_const_refable_parameters proc_desc initial_disjuncts
+        NonDisjDomain.bottom
+    in
     let initial =
       with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
-        ~f:(fun () -> (initial tenv proc_name proc_attrs, NonDisjDomain.bottom))
+        ~f:(fun () -> (initial_disjuncts, initial_non_disj))
     in
     match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
     | Some (posts, non_disj_astate) ->
@@ -934,6 +947,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             in
             report_topl_errors proc_desc err_log summary ;
             report_unnecessary_copies proc_desc err_log non_disj_astate ;
+            report_const_refable_parameters proc_desc err_log non_disj_astate ;
             if Config.trace_topl then
               L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
                 !PulseTopl.Debug.dropped_disjuncts_count

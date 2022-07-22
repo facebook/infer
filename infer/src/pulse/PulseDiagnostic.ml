@@ -59,6 +59,7 @@ let pp_flow_kind fmt flow_kind =
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
+  | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of
       { assignment_traces: Trace.t list
@@ -94,6 +95,7 @@ let get_location = function
   | AccessToInvalidAddress {calling_context= (_, location) :: _}
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
+  | ConstRefableParameter {location}
   | MemoryLeak {location}
   | ResourceLeak {location}
   | RetainCycle {location}
@@ -130,6 +132,7 @@ let aborts_execution = function
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       true
+  | ConstRefableParameter _
   | MemoryLeak _
   | ResourceLeak _
   | RetainCycle _
@@ -261,6 +264,12 @@ let get_message diagnostic =
         F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
           (pp_invalidation_trace invalidation_line invalidation)
           invalidation_trace )
+  | ConstRefableParameter {param; typ; location} ->
+      F.asprintf
+        "Function parameter `%a` with type `%a` is passed by-value but not modified inside the \
+         function on %a. This might result in an unnecessary copy at the callsite of this \
+         function. Consider changing the type of this function parameter to `const &`."
+        Var.pp param (Typ.pp_full Pp.text) typ Location.pp_line location
   | MemoryLeak {allocator; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
@@ -470,6 +479,9 @@ let get_trace = function
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace
       @@ []
+  | ConstRefableParameter {param; location} ->
+      let nesting = 0 in
+      [Errlog.make_trace_element nesting location (F.asprintf "Parameter %a" Var.pp param) []]
   | ResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let access_start_location = Trace.get_start_location allocation_trace in
@@ -557,6 +569,8 @@ let get_trace = function
 
 let get_issue_type ~latent issue_type =
   match (issue_type, latent) with
+  | ConstRefableParameter _, false ->
+      IssueType.pulse_const_refable
   | MemoryLeak {allocator}, false -> (
     match allocator with
     | CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _ ->
@@ -580,7 +594,8 @@ let get_issue_type ~latent issue_type =
       IssueType.unnecessary_copy_pulse
   | UnnecessaryCopy {from= CopyAssignment}, false ->
       IssueType.unnecessary_copy_assignment_pulse
-  | ( ( MemoryLeak _
+  | ( ( ConstRefableParameter _
+      | MemoryLeak _
       | ResourceLeak _
       | RetainCycle _
       | StackVariableAddressEscape _
