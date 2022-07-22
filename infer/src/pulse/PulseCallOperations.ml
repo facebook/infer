@@ -36,54 +36,65 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
       QualifiedCppName.Match.of_fuzzy_qual_names ["std::__wrap_iter"; "__gnu_cxx::__normal_iterator"]
     in
     match actual_typ.Typ.desc with
-    | Typ.Tstruct (Typ.CppClass {name}) ->
-        QualifiedCppName.Match.match_qualifiers matches_iter name
-    | Tptr _ ->
-        (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt)
+    | Typ.Tstruct (Typ.CppClass {name})
+      when QualifiedCppName.Match.match_qualifiers matches_iter name ->
+        `ShouldHavoc
+    | Tptr _ when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
+        `ShouldHavoc
+    | Tptr _ when Language.curr_language_is Java ->
+        `ShouldOnlyHavocResources
     | _ ->
-        false
+        `DoNotHavoc
   in
   let havoc_actual_if_ptr (((actual, _) as actual_hist), actual_typ) formal_typ_opt astate =
-    (* We should not havoc when the corresponding formal is a pointer to const *)
-    if should_havoc actual_typ formal_typ_opt then (
-      is_functional := false ;
-      (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
-         by [actual] *)
-      let astate =
-        AbductiveDomain.apply_unknown_effect hist actual astate
-        (* record the [UnknownEffect] attribute so callers of the current procedure can apply the
-           above effects too in calling contexts where more is reachable from [actual] than here *)
-        |> AddressAttributes.add_attrs actual (Attributes.singleton (UnknownEffect (reason, hist)))
+    let fold_on_reachable_from_arg astate f =
+      let reachable_from_arg =
+        BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
       in
-      if
-        Option.exists callee_pname_opt ~f:(fun p ->
-            Procname.is_constructor p || Procname.is_copy_assignment p )
-      then astate
-      else
-        (* record the [WrittenTo] attribute for all reachable values and uninitialized fields
-           starting from actual argument so that we don't assume that they are not modified in the
-           unnecessary copy analysis. *)
-        let reachable_from_arg =
-          BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
-        in
-        let call_trace = Trace.Immediate {location= call_loc; history= hist} in
-        let written_attrs = Attributes.singleton (WrittenTo call_trace) in
+      AbstractValue.Set.fold f reachable_from_arg astate
+    in
+    (* We should not havoc when the corresponding formal is a pointer to const *)
+    match should_havoc actual_typ formal_typ_opt with
+    | `ShouldHavoc -> (
+        is_functional := false ;
+        (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
+           by [actual] *)
         let astate =
-          AbstractValue.Set.fold
-            (fun reachable_actual -> AddressAttributes.add_attrs reachable_actual written_attrs)
-            reachable_from_arg astate
+          AbductiveDomain.apply_unknown_effect hist actual astate
+          (* record the [UnknownEffect] attribute so callers of the current procedure can apply the
+             above effects too in calling contexts where more is reachable from [actual] than here *)
+          |> AddressAttributes.add_attrs actual
+               (Attributes.singleton (UnknownEffect (reason, hist)))
         in
-        match actual_typ.Typ.desc with
-        | Tptr ({desc= Tstruct name}, (Pk_pointer | Pk_lvalue_reference)) ->
-            Option.fold (Tenv.lookup tenv name) ~init:astate ~f:(fun acc {Struct.fields} ->
-                List.fold fields ~init:acc ~f:(fun acc (field, _, _) ->
-                    (* NOTE: We may want to add the [WrittenTo] attribute recursively for nested
-                       structs in the future, but let's keep it simpler as of now. *)
-                    let acc, (field, _) = Memory.eval_edge actual_hist (FieldAccess field) acc in
-                    AddressAttributes.add_attrs field written_attrs acc ) )
-        | _ ->
-            astate )
-    else astate
+        if
+          Option.exists callee_pname_opt ~f:(fun p ->
+              Procname.is_constructor p || Procname.is_copy_assignment p )
+        then astate
+        else
+          (* record the [WrittenTo] attribute for all reachable values and uninitialized fields
+             starting from actual argument so that we don't assume that they are not modified in the
+             unnecessary copy analysis. *)
+          let call_trace = Trace.Immediate {location= call_loc; history= hist} in
+          let written_attrs = Attributes.singleton (WrittenTo call_trace) in
+          let astate =
+            fold_on_reachable_from_arg astate (fun reachable_actual ->
+                AddressAttributes.add_attrs reachable_actual written_attrs )
+          in
+          match actual_typ.Typ.desc with
+          | Tptr ({desc= Tstruct name}, (Pk_pointer | Pk_lvalue_reference)) ->
+              Option.fold (Tenv.lookup tenv name) ~init:astate ~f:(fun acc {Struct.fields} ->
+                  List.fold fields ~init:acc ~f:(fun acc (field, _, _) ->
+                      (* NOTE: We may want to add the [WrittenTo] attribute recursively for nested
+                         structs in the future, but let's keep it simpler as of now. *)
+                      let acc, (field, _) = Memory.eval_edge actual_hist (FieldAccess field) acc in
+                      AddressAttributes.add_attrs field written_attrs acc ) )
+          | _ ->
+              astate )
+    | `DoNotHavoc ->
+        astate
+    | `ShouldOnlyHavocResources ->
+        fold_on_reachable_from_arg astate (fun reachable_actual ->
+            AddressAttributes.remove_allocation_attr reachable_actual )
   in
   let add_skipped_proc astate =
     let* astate, f =

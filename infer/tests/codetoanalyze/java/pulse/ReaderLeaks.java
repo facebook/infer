@@ -69,14 +69,14 @@ public class ReaderLeaks {
     }
   }
 
-  public void tryWithBufferReaderWrapperBad(File file) throws IOException {
+  public void FN_tryWithBufferReaderWrapperBad(File file) throws IOException {
     try (InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file))) {
       BufferedReader reader = new BufferedReader(inputStreamReader);
       ignore(reader.readLine());
     }
   }
 
-  public void FP_tryWithBufferReaderWrapperOk(File file) throws IOException {
+  public void tryWithBufferReaderWrapperOk(File file) throws IOException {
     try (InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file));
         BufferedReader reader = new BufferedReader(inputStreamReader); ) {
       ignore(reader.readLine());
@@ -85,7 +85,7 @@ public class ReaderLeaks {
 
   // InputStreamReader  tests
 
-  public void inputStreamReaderNotClosedAfterReadBad() {
+  public void FN_inputStreamReaderNotClosedAfterReadBad() {
     InputStreamReader reader;
     try {
       reader = new InputStreamReader(new FileInputStream("testing.txt"));
@@ -95,7 +95,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void FP_inputStreamReaderClosedOk() throws IOException {
+  public void inputStreamReaderClosedOk() throws IOException {
     InputStreamReader reader = null;
     try {
       reader = new InputStreamReader(new FileInputStream("testing.txt"));
@@ -131,7 +131,7 @@ public class ReaderLeaks {
 
   // PushbackReader  tests
 
-  public void pushbackReaderNotClosedAfterReadBad() {
+  public void FN_pushbackReaderNotClosedAfterReadBad() {
     PushbackReader reader;
     try {
       reader = new PushbackReader(new InputStreamReader(new FileInputStream("testing.txt")));
@@ -141,7 +141,7 @@ public class ReaderLeaks {
     }
   }
 
-  public void FP_pushbackReaderClosedOk() throws IOException {
+  public void pushbackReaderClosedOk() throws IOException {
     PushbackReader reader = null;
     try {
       reader = new PushbackReader(new InputStreamReader(new FileInputStream("testing.txt")));

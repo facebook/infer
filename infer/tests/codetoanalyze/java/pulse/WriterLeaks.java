@@ -92,7 +92,7 @@ public class WriterLeaks {
 
   // OutputStreamWriter tests
 
-  public void outputStreamWriterNotClosedAfterWriteBad() {
+  public void FN_outputStreamWriterNotClosedAfterWriteBad() {
     OutputStreamWriter writer;
     try {
       writer = new OutputStreamWriter(new FileOutputStream("file.txt"));
@@ -102,7 +102,7 @@ public class WriterLeaks {
     }
   }
 
-  public void FP_outputStreamWriterClosedOk() throws IOException {
+  public void outputStreamWriterClosedOk() throws IOException {
     OutputStreamWriter writer = null;
     try {
       writer = new OutputStreamWriter(new FileOutputStream("file.txt"));

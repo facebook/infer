@@ -601,7 +601,7 @@ public class ResourceLeaks {
 
   // HttpURLConnection
 
-  public void FP_openHttpURLConnectionDisconnectedOk() throws IOException {
+  public void openHttpURLConnectionDisconnectedOk() throws IOException {
     String content = "TEXT";
     DataOutputStream outputStream = null;
     HttpURLConnection connection = null;
@@ -617,7 +617,7 @@ public class ResourceLeaks {
     }
   }
 
-  public void openHttpURLConnectionNotDisconnectedBad() throws IOException {
+  public void FN_openHttpURLConnectionNotDisconnectedBad() throws IOException {
     String content = "TEXT";
     DataOutputStream outputStream = null;
     HttpURLConnection connection = null;
@@ -839,7 +839,7 @@ public class ResourceLeaks {
 
   // FileChannel
 
-  void copyFileLeakBad(File src, File dst) throws IOException {
+  void FN_copyFileLeakBad(File src, File dst) throws IOException {
     FileChannel inChannel = new FileInputStream(src).getChannel();
     FileChannel outChannel = new FileOutputStream(dst).getChannel();
     try {
@@ -850,7 +850,7 @@ public class ResourceLeaks {
     }
   }
 
-  void FP_copyFileCloseOk(File src, File dst) throws IOException {
+  void copyFileCloseOk(File src, File dst) throws IOException {
     FileChannel inChannel = new FileInputStream(src).getChannel();
     try {
       ignore(inChannel);
@@ -1037,5 +1037,33 @@ public class ResourceLeaks {
 
         }
     }
+  }
+
+  // interprocedural tests
+
+  class MyResource {
+    FileInputStream fis;
+
+    public MyResource(FileInputStream fis) {
+      this.fis = fis;
+    };
+
+    public native void unknownClose();
+
+    public void indirectCallToUnknownClose() {
+      unknownClose();
+    }
+  }
+
+  public void callUnknownOk() throws FileNotFoundException {
+    MyResource r;
+    r = new MyResource(new FileInputStream("testing.txt"));
+    r.unknownClose();
+  }
+
+  public void FP_indirectCallUnknownOk() throws FileNotFoundException {
+    MyResource r;
+    r = new MyResource(new FileInputStream("testing.txt"));
+    r.indirectCallToUnknownClose();
   }
 }
