@@ -137,8 +137,6 @@ val class_cast_exception : t
 
 val complexity_increase : kind:CostKind.t -> is_on_ui_thread:bool -> t
 
-val component_with_multiple_factory_methods : t
-
 val condition_always_false : t
 
 val condition_always_true : t
@@ -285,8 +283,6 @@ val mixed_self_weakself : t
 val modifies_immutable : t
 
 val multiple_weakself : t
-
-val mutable_local_variable_in_component_file : t
 
 val nil_block_call : latent:bool -> t
 

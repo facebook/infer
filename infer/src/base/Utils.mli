@@ -8,9 +8,6 @@
 
 open! IStd
 
-val find_files : path:string -> extension:string -> string list
-(** recursively traverse a path for files ending with a given extension *)
-
 val fold_folders : init:'acc -> f:('acc -> string -> 'acc) -> path:string -> 'acc
 (** recursively traverse a path for folders, returning resuls by a given fold function *)
 

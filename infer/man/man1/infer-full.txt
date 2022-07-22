@@ -349,9 +349,6 @@ OPTIONS
            Costs report of the base revision to use for comparison       
     See also infer-reportdiff(1).
 
-       --custom-symbols json
-           Specify named lists of symbols available to rules           See also infer-analyze(1).
-
        --no-cxx
            Deactivates: Analyze C++ methods (Conversely: --cxx)       
     See also infer-capture(1).
@@ -416,10 +413,6 @@ OPTIONS
            --dotnet-resource-leak, --siof, --self-in-block, --starvation
            (Conversely: --default-checkers)           See also infer-analyze(1).
 
-       --no-default-linters
-           Deactivates: Use the default linters for the analysis.
-           (Conversely: --default-linters)           See also infer-capture(1).
-
        --dependencies
            Activates: Translate all the dependencies during the capture. The
            classes in the given jar file will be translated. No sources
@@ -478,7 +471,6 @@ OPTIONS
              CHECKERS_IMMUTABLE_CAST (enabled by default),
              CHECKERS_PRINTF_ARGS (enabled by default),
              CLASS_CAST_EXCEPTION (disabled by default),
-             COMPONENT_WITH_MULTIPLE_FACTORY_METHODS (enabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
              CONFIG_IMPACT (disabled by default),
@@ -569,7 +561,6 @@ OPTIONS
              MIXED_SELF_WEAKSELF (enabled by default),
              MODIFIES_IMMUTABLE (enabled by default),
              MULTIPLE_WEAKSELF (enabled by default),
-             MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
              NIL_BLOCK_CALL (enabled by default),
              NIL_BLOCK_CALL_LATENT (disabled by default),
@@ -865,34 +856,9 @@ OPTIONS
            Activates: Enable Kotlin capture (experimental, do not use).
            (Conversely: --no-kotlin-capture)           See also infer-capture(1).
 
-       --linter string
-           From the linters available, only run this one linter. (Useful
-           together with --linters-developer-mode)           See also infer-capture(1).
-
        --no-linters
            Deactivates: checker linters: Declarative linting framework over
            the Clang AST. (Conversely: --linters)           See also infer-analyze(1).
-
-       --linters-def-file +file
-           Specify the file containing linters definition (e.g. 'linters.al')       
-    See also infer-capture(1).
-
-       --linters-def-folder +dir
-           Specify the folder containing linters files with extension .al       
-    See also infer-capture(1).
-
-       --linters-developer-mode
-           Activates: Debug mode for developing new linters. (Sets the
-           analyzer to linters; also sets --debug, --debug-level-linters 2,
-           --developer-mode, and unsets --allowed-failures and
-           --default-linters. (Conversely: --no-linters-developer-mode)       
-    See also infer-capture(1).
-
-       --linters-doc-url +string
-           Specify custom documentation URL for some linter that overrides
-           the default one. Useful if your project has specific ways of
-           fixing a lint error that is not true in general or public info.
-           Format: linter_name:doc_url.           See also infer-capture(1).
 
        --linters-ignore-clang-failures
            Activates: Continue linting files even if some compilation fails.
@@ -901,11 +867,6 @@ OPTIONS
        --linters-only
            Activates: Enable linters and disable all other checkers
            (Conversely: --no-linters-only)           See also infer-analyze(1).
-
-       --linters-validate-syntax-only
-           Activates: Validate syntax of AL files, then emit possible errors
-           in JSON format to stdout (Conversely:
-           --no-linters-validate-syntax-only)           See also infer-capture(1).
 
        --list-checkers
            Activates: Show the list of all available checkers. (Conversely:
@@ -2121,18 +2082,6 @@ INTERNAL OPTIONS
        --job-id-reset
            Cancel the effect of --job-id.
 
-       --linter-reset
-           Cancel the effect of --linter.
-
-       --linters-def-file-reset
-           Set --linters-def-file to the empty list.
-
-       --linters-def-folder-reset
-           Set --linters-def-folder to the empty list.
-
-       --linters-doc-url-reset
-           Set --linters-doc-url to the empty list.
-
        --liveness-ignored-constant-reset
            Set --liveness-ignored-constant to the empty list.
 
@@ -2442,10 +2391,6 @@ INTERNAL OPTIONS
            Activates: Include the location in the Infer source code from
            where reports are generated (Conversely:
            --no-reports-include-ml-loc)
-
-       --reset-linters-def-folder
-           Reset the list of folders containing linters definitions to be
-           empty (see linters-def-folder).
 
        --resource-leak-lab
            Activates: checker resource-leak-lab: Toy checker for the

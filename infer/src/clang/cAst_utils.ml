@@ -136,8 +136,6 @@ let get_decl_opt_with_decl_ref_opt decl_ref_opt =
   Option.bind decl_ref_opt ~f:get_decl_opt_with_decl_ref
 
 
-let get_property_of_ivar decl_ptr = Int.Table.find ClangPointers.ivar_to_property_table decl_ptr
-
 let update_sil_types_map type_ptr sil_type =
   CFrontend_config.sil_types_map :=
     Clang_ast_extend.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
@@ -215,22 +213,6 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
   mk_annot annot_name_opt
 
 
-let name_of_typedef_type_info {Clang_ast_t.tti_decl_ptr} =
-  match get_decl tti_decl_ptr with
-  | Some (TypedefDecl (_, name_decl_info, _, _)) ->
-      get_qualified_name name_decl_info
-  | _ ->
-      QualifiedCppName.empty
-
-
-let name_opt_of_typedef_qual_type qual_type =
-  match get_type qual_type.Clang_ast_t.qt_type_ptr with
-  | Some (Clang_ast_t.TypedefType (_, typedef_type_info)) ->
-      Some (name_of_typedef_type_info typedef_type_info)
-  | _ ->
-      None
-
-
 let qual_type_of_decl_ptr decl_ptr =
   { (* This function needs to be in this module - CAst_utils can't depend on
        Ast_expressions *)
@@ -283,169 +265,6 @@ let get_info_from_decl_ref decl_ref =
     match decl_ref.Clang_ast_t.dr_qual_type with Some tp -> tp | _ -> assert false
   in
   (name_info, decl_ptr, qual_type)
-
-
-(* st |= EF (atomic_pred param) *)
-let rec exists_eventually_st atomic_pred param st =
-  if atomic_pred param st then true
-  else
-    let _, st_list = Clang_ast_proj.get_stmt_tuple st in
-    List.exists ~f:(exists_eventually_st atomic_pred param) st_list
-
-
-let is_syntactically_global_var decl =
-  match decl with
-  | Clang_ast_t.VarDecl (_, _, _, vdi) ->
-      vdi.vdi_is_global && not vdi.vdi_is_static_local
-  | _ ->
-      false
-
-
-let is_static_local_var decl =
-  match decl with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_static_local | _ -> false
-
-
-let is_constexpr_var decl =
-  match decl with Clang_ast_t.VarDecl (_, _, _, vdi) -> vdi.vdi_is_constexpr | _ -> false
-
-
-let full_name_of_decl_opt decl_opt =
-  match decl_opt with
-  | Some decl -> (
-    match Clang_ast_proj.get_named_decl_tuple decl with
-    | Some (_, name_info) ->
-        get_qualified_name name_info
-    | None ->
-        QualifiedCppName.empty )
-  | None ->
-      QualifiedCppName.empty
-
-
-(* Generates a unique number for each variant of a type. *)
-let get_tag ast_item =
-  let item_rep = Obj.repr ast_item in
-  if Obj.is_block item_rep then Obj.tag item_rep else -Obj.obj item_rep
-
-
-(* Generates a key for a statement based on its sub-statements and the statement tag. *)
-let generate_key_stmt stmt =
-  let buffer = Buffer.create 16 in
-  let rec add_stmt stmt =
-    Buffer.add_string buffer (string_of_int (get_tag stmt)) ;
-    let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
-    List.iter ~f:add_stmt stmts
-  in
-  add_stmt stmt ;
-  Buffer.contents buffer
-
-
-(* Generates a key for a declaration based on its name and the declaration tag. *)
-let generate_key_decl decl =
-  let name = full_name_of_decl_opt (Some decl) in
-  Format.sprintf "%d%s" (get_tag decl) (QualifiedCppName.to_qual_string name)
-
-
-let rec get_super_if decl =
-  match decl with
-  | Some (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
-      (* Try getting the super ref through the impl info, and fall back to
-         getting the if decl first and getting the super ref through it. *)
-      let super_ref = get_decl_opt_with_decl_ref_opt impl_decl_info.oidi_super in
-      if Option.is_some super_ref then super_ref
-      else get_super_if (get_decl_opt_with_decl_ref_opt impl_decl_info.oidi_class_interface)
-  | Some (Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, interface_decl_info)) ->
-      get_decl_opt_with_decl_ref_opt interface_decl_info.otdi_super
-  | _ ->
-      None
-
-
-let get_super_ObjCImplementationDecl impl_decl_info =
-  let objc_interface_decl_current =
-    get_decl_opt_with_decl_ref_opt impl_decl_info.Clang_ast_t.oidi_class_interface
-  in
-  let objc_interface_decl_super = get_super_if objc_interface_decl_current in
-  let objc_implementation_decl_super =
-    match objc_interface_decl_super with
-    | Some (ObjCInterfaceDecl (_, _, _, _, interface_decl_info)) ->
-        get_decl_opt_with_decl_ref_opt interface_decl_info.otdi_implementation
-    | _ ->
-        None
-  in
-  objc_implementation_decl_super
-
-
-let get_impl_decl_info dec =
-  match dec with Clang_ast_t.ObjCImplementationDecl (_, _, _, _, idi) -> Some idi | _ -> None
-
-
-let default_block_list = CFrontend_config.[nsobject_cl; nsproxy_cl]
-
-let rec is_objc_if_descendant ?(block_list = default_block_list) if_decl ancestors =
-  (* List of ancestors to check for and list of classes to short-circuit to
-     false can't intersect *)
-  if not String.Set.(is_empty (inter (of_list block_list) (of_list ancestors))) then
-    L.(die InternalError) "Block list and ancestors must be mutually exclusive."
-  else
-    match if_decl with
-    | Some (Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)) ->
-        let in_list some_list = List.mem ~equal:String.equal some_list ndi.Clang_ast_t.ni_name in
-        (not (in_list block_list))
-        && (in_list ancestors || is_objc_if_descendant ~block_list (get_super_if if_decl) ancestors)
-    | _ ->
-        false
-
-
-let rec qual_type_to_objc_interface qual_type =
-  let typ_opt = get_desugared_type qual_type.Clang_ast_t.qt_type_ptr in
-  ctype_to_objc_interface typ_opt
-
-
-and ctype_to_objc_interface typ_opt =
-  match (typ_opt : Clang_ast_t.c_type option) with
-  | Some (ObjCInterfaceType (_, decl_ptr)) ->
-      get_decl decl_ptr
-  | Some (ObjCObjectPointerType (_, (inner_qual_type : Clang_ast_t.qual_type))) ->
-      qual_type_to_objc_interface inner_qual_type
-  | Some (FunctionProtoType (_, function_type_info, _))
-  | Some (FunctionNoProtoType (_, function_type_info)) ->
-      qual_type_to_objc_interface function_type_info.Clang_ast_t.fti_return_type
-  | _ ->
-      None
-
-
-let if_decl_to_di_pointer_opt if_decl =
-  match if_decl with
-  | Some (Clang_ast_t.ObjCInterfaceDecl (if_decl_info, _, _, _, _)) ->
-      Some if_decl_info.di_pointer
-  | _ ->
-      None
-
-
-let is_instance_type qual_type =
-  match name_opt_of_typedef_qual_type qual_type with
-  | Some name ->
-      String.equal (QualifiedCppName.to_qual_string name) "instancetype"
-  | None ->
-      false
-
-
-let return_type_matches_class_type result_type interface_decl =
-  if is_instance_type result_type then true
-  else
-    let return_type_decl_opt = qual_type_to_objc_interface result_type in
-    [%equal: int option]
-      (if_decl_to_di_pointer_opt interface_decl)
-      (if_decl_to_di_pointer_opt return_type_decl_opt)
-
-
-let is_objc_factory_method ~class_decl:interface_decl ~method_decl:meth_decl_opt =
-  let open Clang_ast_t in
-  match meth_decl_opt with
-  | Some (ObjCMethodDecl (_, _, omdi)) ->
-      (not omdi.omdi_is_instance_method)
-      && return_type_matches_class_type omdi.omdi_result_type interface_decl
-  | _ ->
-      false
 
 
 let type_of_decl decl =
@@ -522,29 +341,6 @@ let get_cxx_virtual_base_classes decl =
       cxx_record_info.xrdi_transitive_vbases
   | _ ->
       []
-
-
-let is_std_vector qt =
-  match get_decl_from_typ_ptr qt.Clang_ast_t.qt_type_ptr with
-  | Some decl -> (
-    match Clang_ast_proj.get_named_decl_tuple decl with
-    | Some (_, qual_name) ->
-        String.equal qual_name.ni_name "vector"
-        && List.mem ~equal:String.equal qual_name.ni_qual_name "std"
-    | None ->
-        false )
-  | None ->
-      false
-
-
-let has_block_attribute decl =
-  let open Clang_ast_t in
-  match decl with
-  | VarDecl (decl_info, _, _, _) ->
-      let attributes = decl_info.di_attributes in
-      List.exists ~f:(fun attr -> match attr with `BlocksAttr _ -> true | _ -> false) attributes
-  | _ ->
-      false
 
 
 (* true if a decl has a NS_NOESCAPE attribute *)

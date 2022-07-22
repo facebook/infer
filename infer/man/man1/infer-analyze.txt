@@ -80,9 +80,6 @@ OPTIONS
            Deactivates: Suppress printing function pointers in cost reports
            (Conversely: --cost-suppress-func-ptr)
 
-       --custom-symbols json
-           Specify named lists of symbols available to rules
-
        --datalog
            Activates: checker datalog: Experimental datalog-based points-to
            analysis. (Conversely: --no-datalog)

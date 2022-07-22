@@ -132,13 +132,6 @@ let () =
   (* We specifically want to collect samples only from the main process until
      we figure out what other entries and how we want to collect *)
   if CommandLineOption.is_originator then ScubaLogging.register_global_log_flushing_at_exit () ;
-  ( if Config.linters_validate_syntax_only then
-    match CTLParserHelper.validate_al_files () with
-    | Ok () ->
-        L.exit 0
-    | Error e ->
-        print_endline e ;
-        L.exit 3 ) ;
   ( match Config.check_version with
   | Some check_version ->
       if not (String.equal check_version Version.versionString) then

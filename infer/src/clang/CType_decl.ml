@@ -815,23 +815,6 @@ module CProcname = struct
     let objc_method_of_string_kind class_name method_name method_kind =
       mk_objc_method class_name method_name method_kind []
   end
-
-  let from_decl_for_linters method_decl =
-    let open Clang_ast_t in
-    match method_decl with
-    | ObjCMethodDecl (decl_info, name_info, mdi) ->
-        let method_name =
-          match String.split ~on:':' name_info.Clang_ast_t.ni_name with
-          | hd :: _ ->
-              hd
-          | _ ->
-              name_info.Clang_ast_t.ni_name
-        in
-        objc_method_procname decl_info method_name mdi []
-    | BlockDecl _ ->
-        Procname.Block (Procname.Block.make_surrounding None Config.anonymous_block_prefix [])
-    | _ ->
-        from_decl method_decl
 end
 
 let get_type_from_expr_info ei tenv =

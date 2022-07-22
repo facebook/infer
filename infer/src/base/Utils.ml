@@ -11,26 +11,6 @@ module F = Format
 module Hashtbl = Caml.Hashtbl
 module L = Die
 
-(** recursively traverse a path for files ending with a given extension *)
-let find_files ~path ~extension =
-  let rec traverse_dir_aux init dir_path =
-    let aux base_path files rel_path =
-      let full_path = base_path ^/ rel_path in
-      match (Unix.stat full_path).Unix.st_kind with
-      | Unix.S_REG when String.is_suffix ~suffix:extension full_path ->
-          full_path :: files
-      | Unix.S_DIR ->
-          traverse_dir_aux files full_path
-      | _ ->
-          files
-      | exception Unix.Unix_error (ENOENT, _, _) ->
-          files
-    in
-    Sys.fold_dir ~init ~f:(aux dir_path) dir_path
-  in
-  traverse_dir_aux [] path
-
-
 let fold_folders ~init ~f ~path =
   let rec traverse_dir_aux acc dir_path =
     let aux base_path acc' rel_path =

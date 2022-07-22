@@ -20,7 +20,6 @@ BUILD_SYSTEMS_TESTS += \
   annotation-reachability-sources-override \
   assembly \
   backtrack_level \
-  ck_imports \
   clang_compilation_db_escaped clang_compilation_db_relpath \
   clang_multiple_files \
   clang_translation \
@@ -35,7 +34,6 @@ BUILD_SYSTEMS_TESTS += \
   duplicate_symbols \
   fail_on_issue \
   j1 \
-  linters \
   project_root_rel \
   pulse_messages \
   reactive \
@@ -66,8 +64,6 @@ DIRECT_TESTS += \
   cpp_frontend \
   cpp_frontend-17 \
   cpp_impurity \
-  cpp_linters \
-  cpp_linters-for-test-only \
   cpp_liveness \
   cpp_performance \
   cpp_performance-11 \
@@ -118,9 +114,6 @@ DIRECT_TESTS += \
   objc_bufferoverrun \
   objc_biabduction \
   objc_frontend \
-  objc_linters \
-  objc_linters-def-folder \
-  objc_linters-for-test-only \
   objc_liveness \
   objc_parameter-not-null-checked \
   objc_performance \
@@ -131,8 +124,6 @@ DIRECT_TESTS += \
   objc_uninit \
   objcpp_biabduction \
   objcpp_frontend \
-  objcpp_linters \
-  objcpp_linters-for-test-only \
   objcpp_liveness \
   objcpp_pulse \
   objcpp_racerd \

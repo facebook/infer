@@ -211,40 +211,9 @@ CLANG LINTERS OPTIONS
            Debug level for the linters. See --debug-level for accepted
            values.
 
-       --no-default-linters
-           Deactivates: Use the default linters for the analysis.
-           (Conversely: --default-linters)
-
-       --linter string
-           From the linters available, only run this one linter. (Useful
-           together with --linters-developer-mode)
-
-       --linters-def-file +file
-           Specify the file containing linters definition (e.g. 'linters.al')
-
-       --linters-def-folder +dir
-           Specify the folder containing linters files with extension .al
-
-       --linters-developer-mode
-           Activates: Debug mode for developing new linters. (Sets the
-           analyzer to linters; also sets --debug, --debug-level-linters 2,
-           --developer-mode, and unsets --allowed-failures and
-           --default-linters. (Conversely: --no-linters-developer-mode)
-
-       --linters-doc-url +string
-           Specify custom documentation URL for some linter that overrides
-           the default one. Useful if your project has specific ways of
-           fixing a lint error that is not true in general or public info.
-           Format: linter_name:doc_url.
-
        --linters-ignore-clang-failures
            Activates: Continue linting files even if some compilation fails.
            (Conversely: --no-linters-ignore-clang-failures)
-
-       --linters-validate-syntax-only
-           Activates: Validate syntax of AL files, then emit possible errors
-           in JSON format to stdout (Conversely:
-           --no-linters-validate-syntax-only)
 CLANG OPTIONS
        --clang-biniou-file file
            Specify a file containing the AST of the program, in biniou

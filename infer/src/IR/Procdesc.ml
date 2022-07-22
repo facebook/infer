@@ -19,9 +19,6 @@ module NodeKey = struct
   let compute node ~simple_key ~succs ~preds =
     let v = (simple_key node, List.rev_map ~f:simple_key succs, List.rev_map ~f:simple_key preds) in
     Utils.better_hash v
-
-
-  let of_frontend_node_key = Utils.better_hash
 end
 
 (* =============== START of module Node =============== *)

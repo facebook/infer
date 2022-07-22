@@ -440,12 +440,6 @@ let class_cast_exception =
   register_hidden ~enabled:false ~id:"CLASS_CAST_EXCEPTION" Error Biabduction
 
 
-let component_with_multiple_factory_methods =
-  register ~id:"COMPONENT_WITH_MULTIPLE_FACTORY_METHODS" Advice Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/COMPONENT_WITH_MULTIPLE_FACTORY_METHODS.md"]
-
-
 let condition_always_false =
   register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
 
@@ -840,12 +834,6 @@ let modifies_immutable =
 let multiple_weakself =
   register ~id:"MULTIPLE_WEAKSELF" ~hum:"Multiple WeakSelf Use" Error SelfInBlock
     ~user_documentation:[%blob "../../documentation/issues/MULTIPLE_WEAKSELF.md"]
-
-
-let mutable_local_variable_in_component_file =
-  register ~id:"MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE" Advice Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE.md"]
 
 
 let nil_block_call =
