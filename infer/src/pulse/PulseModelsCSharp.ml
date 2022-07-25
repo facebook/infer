@@ -12,12 +12,24 @@ open PulseOperationResult.Import
 open PulseModelsImport
 module StringSet = Caml.Set.Make (String)
 
+let mk_csharp_field namespace clazz field =
+  Fieldname.make (Typ.CSharpClass (CSharpClassName.make ~namespace:(Some namespace) ~classname:clazz)) field
 
 let write_field path field new_val location addr astate =
   let* astate, field_addr =
     PulseOperations.eval_access path Write location addr (FieldAccess field) astate
   in
   PulseOperations.write_deref path location ~ref:field_addr ~obj:new_val astate
+
+
+let load_field path field location obj astate =
+  let* astate, field_addr =
+    PulseOperations.eval_access path Read location obj (FieldAccess field) astate
+  in
+  let+ astate, field_val =
+    PulseOperations.eval_access path Read location field_addr Dereference astate
+  in
+  (astate, field_addr, field_val)
 
 
 let call_may_throw_exception (exn : CSharpClassName.t) : model =
@@ -36,6 +48,320 @@ let call_may_throw_exception (exn : CSharpClassName.t) : model =
 
 (* let throw : model = fun _ astate -> [Ok (ExceptionRaised astate)] *)
 
+module Collection = struct
+  let namespace_name = "System.Collections.Generic"
+
+  let class_name = "ICollection"
+
+  let fst_field = mk_csharp_field namespace_name class_name "__infer_model_backing_collection_fst"
+
+  let snd_field = mk_csharp_field namespace_name class_name "__infer_model_backing_collection_snd"
+
+  let is_empty_field = mk_csharp_field namespace_name class_name "__infer_model_backing_collection_empty"
+
+  let init ~desc this : model =
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
+    let fresh_val = (AbstractValue.mk_fresh (), Hist.single_event path event) in
+    let is_empty_value = AbstractValue.mk_fresh () in
+    let init_value = AbstractValue.mk_fresh () in
+    (* The two internal fields are initially set to null *)
+    let<*> astate =
+      write_field path fst_field
+        (init_value, Hist.single_event path event)
+        location fresh_val astate
+    in
+    let<*> astate =
+      write_field path snd_field
+        (init_value, Hist.single_event path event)
+        location fresh_val astate
+    in
+    (* The empty field is initially set to true *)
+    let<*> astate =
+      write_field path is_empty_field
+        (is_empty_value, Hist.single_event path event)
+        location fresh_val astate
+    in
+    let<*> astate =
+      PulseOperations.write_deref path location ~ref:this ~obj:fresh_val astate
+      >>= PulseArithmetic.and_eq_int init_value IntLit.zero
+      >>= PulseArithmetic.and_eq_int is_empty_value IntLit.one
+    in
+    astate |> Basic.ok_continue
+
+
+  let add_common ~desc coll new_elem ?new_val : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
+    let ret_value = AbstractValue.mk_fresh () in
+    let<*> astate, coll_val =
+      PulseOperations.eval_access path Read location coll Dereference astate
+    in
+    (* reads fst_field from collection *)
+    let<*> astate, _, (fst_val, _) = load_field path fst_field location coll_val astate in
+    (* mark the remove element as always reachable *)
+    let astate = PulseOperations.always_reachable fst_val astate in
+    (* in maps, every new value is marked as always reachable *)
+    let astate =
+      Option.value_map new_val ~default:astate ~f:(fun (obj, _) ->
+          PulseOperations.always_reachable obj astate )
+    in
+    (* reads snd_field from collection *)
+    let<*> astate, snd_addr, snd_val = load_field path snd_field location coll_val astate in
+    (* fst_field takes value stored in snd_field *)
+    let<*> astate = write_field path fst_field snd_val location coll_val astate in
+    (* snd_field takes new value given *)
+    let<*> astate = PulseOperations.write_deref path location ~ref:snd_addr ~obj:new_elem astate in
+    (* Collection.add returns a boolean, in this case the return always has value one *)
+    let<*> astate =
+      PulseArithmetic.and_eq_int ret_value IntLit.one astate
+      >>| PulseOperations.write_id ret_id (ret_value, Hist.single_event path event)
+    in
+    (* empty field set to false if the collection was empty *)
+    let<*> astate, _, (is_empty_val, hist) =
+      load_field path is_empty_field location coll_val astate
+    in
+    if PulseArithmetic.is_known_zero astate is_empty_val then astate |> Basic.ok_continue
+    else
+      let is_empty_new_val = AbstractValue.mk_fresh () in
+      let<*> astate =
+        write_field path is_empty_field
+          (is_empty_new_val, Hist.add_event path event hist)
+          location coll_val astate
+        >>= PulseArithmetic.and_eq_int is_empty_new_val IntLit.zero
+      in
+      astate |> Basic.ok_continue
+
+
+  let add ~desc coll new_elem : model = add_common ~desc coll new_elem
+
+  let put ~desc coll new_elem new_val : model = add_common ~desc coll new_elem ~new_val
+
+  let update path coll new_val new_val_hist event location ret_id astate =
+    (* case0: element not present in collection *)
+    let<*> astate, coll_val =
+      PulseOperations.eval_access path Read location coll Dereference astate
+    in
+    let<*> astate, _, fst_val = load_field path fst_field location coll_val astate in
+    let<*> astate, _, snd_val = load_field path snd_field location coll_val astate in
+    let is_empty_val = AbstractValue.mk_fresh () in
+    let<*> astate' =
+      write_field path is_empty_field
+        (is_empty_val, Hist.single_event path event)
+        location coll_val astate
+    in
+    (* case1: fst_field is updated *)
+    let astate1 =
+      write_field path fst_field
+        (new_val, Hist.add_event path event new_val_hist)
+        location coll astate'
+      >>| PulseOperations.write_id ret_id fst_val
+      |> Basic.map_continue
+    in
+    (* case2: snd_field is updated *)
+    let astate2 =
+      write_field path snd_field
+        (new_val, Hist.add_event path event new_val_hist)
+        location coll astate'
+      >>| PulseOperations.write_id ret_id snd_val
+      |> Basic.map_continue
+    in
+    [Ok (Basic.continue astate); astate1; astate2]
+
+
+  let _set coll (new_val, new_val_hist) : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "Collection.set()" in
+    update path coll new_val new_val_hist event location ret_id astate
+
+
+  let remove_at path ~desc coll location ret_id astate =
+    let event = Hist.call_event path location desc in
+    let new_val = AbstractValue.mk_fresh () in
+    let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
+    update path coll new_val ValueHistory.epoch event location ret_id astate
+
+
+  (* Auxiliary function that updates the state by:
+     (1) assuming that value to be removed is equal to field value
+     (2) assigning field to null value
+     Collection.remove should return a boolean. In this case, the return val is one *)
+  let remove_elem_found path coll_val elem field_addr field_val ret_id location event astate =
+    let null_val = AbstractValue.mk_fresh () in
+    let ret_val = AbstractValue.mk_fresh () in
+    let is_empty_val = AbstractValue.mk_fresh () in
+    let* astate =
+      write_field path is_empty_field
+        (is_empty_val, Hist.single_event path event)
+        location coll_val astate
+    in
+    let* astate =
+      PulseArithmetic.and_eq_int null_val IntLit.zero astate
+      >>= PulseArithmetic.and_eq_int ret_val IntLit.one
+    in
+    let* astate =
+      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
+        (AbstractValueOperand field_val) astate
+    in
+    let+ astate =
+      PulseOperations.write_deref path location ~ref:field_addr
+        ~obj:(null_val, Hist.single_event path event)
+        astate
+    in
+    PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate
+
+
+  let remove_obj path ~desc coll (elem, _) location ret_id astate =
+    let event = Hist.call_event path location desc in
+    let<*> astate, coll_val =
+      PulseOperations.eval_access path Read location coll Dereference astate
+    in
+    let<*> astate, fst_addr, (fst_val, _) = load_field path fst_field location coll_val astate in
+    let<*> astate, snd_addr, (snd_val, _) = load_field path snd_field location coll_val astate in
+    (* case1: given element is equal to fst_field *)
+    let astate1 =
+      remove_elem_found path coll_val elem fst_addr fst_val ret_id location event astate
+      |> Basic.map_continue
+    in
+    (* case2: given element is equal to snd_field *)
+    let astate2 =
+      remove_elem_found path coll_val elem snd_addr snd_val ret_id location event astate
+      |> Basic.map_continue
+    in
+    (* case 3: given element is not equal to the fst AND not equal to the snd *)
+    let astate3 =
+      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+        (AbstractValueOperand fst_val) astate
+      >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+            (AbstractValueOperand snd_val)
+      |> Basic.map_continue
+    in
+    [astate1; astate2; astate3]
+
+
+  let remove ~desc args : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    match args with
+    | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
+      ; {ProcnameDispatcher.Call.FuncArg.arg_payload= elem_arg; typ} ] -> (
+      match typ.desc with
+      | Tint _ ->
+          (* Case of remove(int index) *)
+          remove_at path ~desc coll_arg location ret_id astate
+      | _ ->
+          (* Case of remove(Object o) *)
+          remove_obj path ~desc coll_arg elem_arg location ret_id astate )
+    | _ ->
+        astate |> Basic.ok_continue
+
+
+  let is_empty ~desc coll : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
+    let<*> astate, coll_val =
+      PulseOperations.eval_access path Read location coll Dereference astate
+    in
+    let<*> astate, _, (is_empty_val, hist) =
+      load_field path is_empty_field location coll_val astate
+    in
+    PulseOperations.write_id ret_id (is_empty_val, Hist.add_event path event hist) astate
+    |> Basic.ok_continue
+
+
+  let clear ~desc coll : model =
+   fun {path; location} astate ->
+    let hist = Hist.single_call path location desc in
+    let null_val = AbstractValue.mk_fresh () in
+    let is_empty_val = AbstractValue.mk_fresh () in
+    let<*> astate, coll_val =
+      PulseOperations.eval_access path Read location coll Dereference astate
+    in
+    let<*> astate = write_field path fst_field (null_val, hist) location coll_val astate in
+    let<*> astate = write_field path snd_field (null_val, hist) location coll_val astate in
+    let<*> astate = write_field path is_empty_field (is_empty_val, hist) location coll_val astate in
+    let<+> astate =
+      PulseArithmetic.and_eq_int null_val IntLit.zero astate
+      >>= PulseArithmetic.and_eq_int is_empty_val IntLit.one
+    in
+    astate
+
+
+  (* Auxiliary function that changes the state by
+     (1) assuming that internal is_empty field has value one
+     (2) in such case we can return 0 *)
+  let get_elem_coll_is_empty path is_empty_val is_empty_expected_val event location ret_id astate =
+    let not_found_val = AbstractValue.mk_fresh () in
+    let* astate =
+      PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand is_empty_val)
+        (AbstractValueOperand is_empty_expected_val) astate
+      >>= PulseArithmetic.and_eq_int not_found_val IntLit.zero
+      >>= PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
+    in
+    let hist = Hist.single_event path event in
+    let astate = PulseOperations.write_id ret_id (not_found_val, hist) astate in
+    PulseOperations.invalidate path
+      (StackAddress (Var.of_id ret_id, hist))
+      location (ConstantDereference IntLit.zero)
+      (not_found_val, Hist.single_event path event)
+      astate
+
+
+  (* Auxiliary function that splits the state into three, considering the case that
+     the internal is_empty field is not known to have value 1 *)
+  let get_elem_coll_not_known_empty elem found_val fst_val snd_val astate =
+    (* case 1: given element is not equal to the fst AND not equal to the snd *)
+    let astate1 =
+      PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
+        (AbstractValueOperand fst_val) astate
+      >>= PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
+            (AbstractValueOperand snd_val)
+      |> Basic.map_continue
+    in
+    (* case 2: given element is equal to fst_field *)
+    let astate2 =
+      PulseArithmetic.and_positive found_val astate
+      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+            (AbstractValueOperand fst_val)
+      |> Basic.map_continue
+    in
+    (* case 3: given element is equal to snd_field *)
+    let astate3 =
+      PulseArithmetic.and_positive found_val astate
+      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+            (AbstractValueOperand snd_val)
+      |> Basic.map_continue
+    in
+    [astate1; astate2; astate3]
+
+
+  let get ~desc coll (elem, _) : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
+    let<*> astate, coll_val =
+      PulseOperations.eval_access path Read location coll Dereference astate
+    in
+    let<*> astate, _, (is_empty_val, _) = load_field path is_empty_field location coll_val astate in
+    (* case 1: collection is empty *)
+    let true_val = AbstractValue.mk_fresh () in
+    let astate1 =
+      get_elem_coll_is_empty path is_empty_val true_val event location ret_id astate
+      |> Basic.map_continue
+    in
+    (* case 2: collection is not known to be empty *)
+    let found_val = AbstractValue.mk_fresh () in
+    let astates2 =
+      let<*> astate2, _, (fst_val, _) = load_field path fst_field location coll_val astate in
+      let<*> astate2, _, (snd_val, _) = load_field path snd_field location coll_val astate2 in
+      let<*> astate2 =
+        PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
+          (AbstractValueOperand true_val) astate2
+        >>= PulseArithmetic.and_eq_int true_val IntLit.one
+        >>| PulseOperations.write_id ret_id (found_val, Hist.single_event path event)
+      in
+      get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2
+    in
+    astate1 :: astates2
+end
 
 module Resource = struct
   let allocate_aux ~exn_class_name ((this, _) as this_obj) delegation_opt : model =
@@ -128,6 +454,18 @@ let iDisposablesIgnore =
 let input_resource_usage_modeled =
     StringSet.of_list [ "WriteByte"; "Write"; "Read" ]
 
+let implements_dictionary tenv name =
+    let collection_type = "System.Collections.IDictionary" in
+    PatternMatch.CSharp.implements collection_type tenv name
+
+let implements_collection tenv name =
+    let collection_type = "System.Collections.Generic.ICollection`1<T>" in
+    PatternMatch.CSharp.implements collection_type tenv name
+
+let implements_disposable_not_enumerator tenv name =
+    PatternMatch.CSharp.implements "System.IDisposable" tenv name &&
+    not (PatternMatch.CSharp.implements "System.Collections.Generic.IEnumerator`1<T>" tenv name)
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let map_context_tenv f (x, _) = f x in
@@ -172,4 +510,29 @@ let matchers : matcher list =
     &:: "close" <>$ capt_arg_payload $--> Resource.release ~exn_class_name:None 
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
     &:: "dispose" <>$ capt_arg_payload $--> Resource.release ~exn_class_name:None 
+
+  ; +map_context_tenv implements_collection
+    &:: ".ctor" $ capt_arg_payload
+    $--> Collection.init ~desc:"Collection..ctor()"
+  ; +map_context_tenv implements_dictionary 
+    &:: "Add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> Collection.put ~desc:"Map.put()"
+  ; +map_context_tenv implements_dictionary
+    &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Collection.get ~desc:"Map.get()"
+  ; +map_context_tenv implements_collection
+    &:: "Add" $ capt_arg_payload $+ capt_arg_payload
+    $--> Collection.add ~desc:"Collection.add"
+  ; +map_context_tenv implements_collection
+    &:: "Remove"
+    &++> Collection.remove ~desc:"Collection.remove"
+  ; +map_context_tenv implements_collection
+    &:: "IsEmpty" <>$ capt_arg_payload
+    $--> Collection.is_empty ~desc:"Collection.isEmpty()"
+  ; +map_context_tenv implements_collection
+    &:: "Clear" $ capt_arg_payload
+    $--> Collection.clear ~desc:"Collection.clear()"
+    (* investigate code for getting more*)
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.Linq.Enumerable")
+    &:: "ElementAt" $ capt_arg_payload $+ capt_arg_payload
+    $--> PulseModelsCpp.Vector.at ~desc:"Collection.get()"
     ]
