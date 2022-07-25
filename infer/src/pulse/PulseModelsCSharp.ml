@@ -364,13 +364,18 @@ module Collection = struct
 end
 
 module Resource = struct
-  let allocate_aux ~exn_class_name ((this, _) as this_obj) delegation_opt : model =
-   fun ({location; callee_procname; path} as model_data) astate ->
+  let allocate_state (this, _) {location; callee_procname} astate : PulseAbductiveDomain.t =
     let[@warning "-8"] (Some (Typ.CSharpClass class_name)) =
       Procname.get_class_type_name callee_procname
     in
     let allocator = Attribute.CSharpResource class_name in
     let post = PulseOperations.allocate allocator location this astate in
+    post
+
+
+  let allocate_aux ~exn_class_name this_obj delegation_opt : model =
+   fun ({location; path} as model_data) astate ->
+    let post = allocate_state this_obj model_data astate in
     let delegated_state =
       let<+> post =
         Option.value_map delegation_opt ~default:(Ok post) ~f:(fun obj ->
@@ -391,21 +396,68 @@ module Resource = struct
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
+  let _update_result_ok_state ~(f : PulseAbductiveDomain.t -> PulseAbductiveDomain.t)
+      (results : PulseExecutionDomain.t PulseAccessResult.t list) :
+          PulseExecutionDomain.t PulseAccessResult.t list =
+              List.map results ~f:(PulseResult.map
+                  ~f:(function
+                      | ContinueProgram astate -> ContinueProgram (f astate)
+                      | result -> result)) (* I think this function needs to match all the cases *)
+
+  let model_with_analysis args
+      {analysis_data= {analyze_dependency; tenv; proc_desc}; path; callee_procname; location; ret}
+          astate = 
+              let actuals = List.map args
+                ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} -> (arg_payload, typ) )
+              in
+              let callee_data = analyze_dependency callee_procname in
+              (* let _ = Printf.printf "analysis occurs here.  Found callee_data for %s? : %b \n" *)
+              (*     (Procname.to_string callee_procname) (Option.is_some callee_data) *)
+              (* in *)
+              match callee_data with
+              | Some _ -> (* if we have what we need for a callee match, use it *)
+                  PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
+                    ~callee_data location callee_procname ~ret ~actuals
+                    ~formals_opt:None ~call_kind:`ResolvedProcname astate
+                  |> fst
+              | None -> Basic.ok_continue astate (* is this too generic? *)
+
+  let allocate_with_analysis 
+      (ProcnameDispatcher.Call.FuncArg.{arg_payload=this_arg_payload} as this_arg) arguments :
+          model =
+      fun model_data astate ->
+          (* this (probably) marks the this_arg as allocated, and is passed to the calls *)
+          let allocated_astate = allocate_state this_arg_payload model_data astate in
+          model_with_analysis (this_arg :: arguments) model_data allocated_astate
+          (* Doesn't use allocate_aux, but given the parameters allocate_aux would have been given,
+             it reduces to the same thing. *)
+    
+
+          (* this doesn't even check if the resource is allocated!? *)
   let use ~exn_class_name : model =
     let exn = CSharpClassName.from_string exn_class_name in
     fun model_data astate ->
       Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
 
 
-  let release ~exn_class_name this : model =
+  let _release ~exn_class_name this : model =
    fun model_data astate ->
     let ok_state =
-        PulseOperations.csharp_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
+        PulseOperations.csharp_resource_release ~recursive:true (fst this) astate
+              |> Basic.ok_continue
     in
     let exn_state =
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
           call_may_throw_exception (CSharpClassName.from_string cn) model_data astate )
     in ok_state @ exn_state
+
+  let release_with_analysis 
+      (ProcnameDispatcher.Call.FuncArg.{arg_payload=this_arg_payload} as this_arg) :
+          model =
+      fun model_data astate ->
+          let released_astate = PulseOperations.csharp_resource_release
+                                  ~recursive:true (fst this_arg_payload) astate in
+          model_with_analysis [ this_arg ] model_data released_astate
 
 
   let _release_this_only this : model =
@@ -496,20 +548,20 @@ let matchers : matcher list =
       ])
     &:: ".ctor" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:(Some "System.IO.FileNotFoundException")
-    (* Usage of IDisposables *)
+  (* Usage of IDisposables *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.Stream")
-  &::+ (fun _ str -> StringSet.mem str input_resource_usage_modeled)
+    &::+ (fun _ str -> StringSet.mem str input_resource_usage_modeled)
     <>$ any_arg $+...$--> Resource.use ~exn_class_name:"System.IO.IOException"
   (* Some IDisposables that don't _need_ to be disposed, so don't track *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
     &:: ".ctor" <>$ any_arg $+...$--> Basic.skip
-    (* Base case for IDisposables *)
+  (* Base case for IDisposables *)
+  ; +map_context_tenv implements_disposable_not_enumerator
+    &:: ".ctor" <>$ capt_arg $++$--> Resource.allocate_with_analysis
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
-    &:: ".ctor" <>$ capt_arg_payload $+...$--> Resource.allocate ~exn_class_name:None 
+    &:: "Close" <>$ capt_arg $--> Resource.release_with_analysis
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
-    &:: "close" <>$ capt_arg_payload $--> Resource.release ~exn_class_name:None 
-  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
-    &:: "dispose" <>$ capt_arg_payload $--> Resource.release ~exn_class_name:None 
+    &:: "Dispose" <>$ capt_arg $--> Resource.release_with_analysis
 
   ; +map_context_tenv implements_collection
     &:: ".ctor" $ capt_arg_payload
@@ -535,4 +587,10 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Linq.Enumerable")
     &:: "ElementAt" $ capt_arg_payload $+ capt_arg_payload
     $--> PulseModelsCpp.Vector.at ~desc:"Collection.get()"
+
+    (* This is needed for constructors that call out to the base constructor for objects. *)
+    (* In particular, it was added for analyzing the constructors of IDisposables,
+       otherwise the allocation of the IDisposable is lost at the call to the Object..ctor *)
+  ; +map_context_tenv (fun _ -> String.equal "System.Object")
+    &:: ".ctor" <>$ any_arg $--> Basic.skip
     ]
