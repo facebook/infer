@@ -361,13 +361,20 @@ OPTIONS
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
            this JSON format:             { "short_description": "<a short description of the issue>",
-               "taint_flows": [{ "source_kinds": [<matchers>],
-                                 "sink_kinds": [<matchers>],
-                                 "sanitizer_kinds": [<matchers>]}]
+               "taint_flows": [{ "source_kinds": [<kinds>],
+                                 "sink_kinds": [<kinds>],
+                                 "sanitizer_kinds": [<kinds>] }]
              }
-           where <matchers> are in the same format as --pulse-taint-sources;
-           the field "sanitizer_kinds" is optional (assumed to be empty), and
-           a policy may have several taint flows in the form of a list.
+           where <kinds> are specified in taint source/sanitizer/sink
+           matchers (see --pulse-taint-sources). The field "sanitizer_kinds"
+           is optional (assumed to be empty), and a single policy can specify
+           several taint flows using a list. The following policy is always
+           enabled:
+           { "short_description": "...",
+             "taint_flows": [{ "source_kinds": ["Simple"],
+                               "sink_kinds": ["Simple"],
+                               "sanitizer_kinds": ["Simple"] }]
+           }
 
        --pulse-taint-sanitizers json
            Quick way to specify simple sanitizers as a JSON objects. See
@@ -379,18 +386,38 @@ OPTIONS
 
        --pulse-taint-sources json
            Together with --pulse-taint-sanitizers, --pulse-taint-sinks, and
-           --pulse-taint-specifications, specify taint properties. The JSON
-           format of sources also applies to sinks and sanitizers. It
-           consists of a list of objects with the following fields, for
-           example '[{"procedure": "mySimpleSink", "formals": [{"index":
-           1}]}]':             - "procedure" to match a substring of the function or method
-           name, or "procedure_regex" to specify an OCaml regex
-             - "formals" is a list of objects with one or two fields:
-               - "index" is the index of the formal that is tainted,
-           starting at 0. For methods, index 0 is this, other arguments start
-           at index 1
-               - "type_name" is optional string; only arguments whose type
-           contains this substring match
+           --pulse-taint-policies, specify taint properties. The JSON format
+           of sources also applies to sinks and sanitizers. It consists of a
+           list of objects, each with one of the following combinations of
+           fields to identify relevant procedures:             - "procedure": match a substring of the procedure name
+             - "procedure_regex": as above, but match using an OCaml regex
+             - "class_names" and "method_names":
+                 match exact uses of methods of particular classes
+             - "overrides_of_class_with_annotation":
+                 match all procedures defined in classes which inherit
+                 from a superclass with the specified annotation
+             - "allocation": (for taint sources only)
+                 match allocations of the exact class name supplied
+           
+             Each object can also optionally specify:
+             - "kinds": the kinds of taint, used in --pulse-taint-policies
+                 to specify flows between sources/sanitizers/sinks
+                 ("Simple" by default).
+             - "taint_target":
+                 where the taint should be applied in the procedure.
+                 - "ReturnValue": (default for taint sources)
+                 - "AllArguments": (default for taint sanitizers and sinks)
+                 - ["ArgumentPositions", [<int list>]]:
+                     argument positions given by index (zero-indexed)
+                 - ["AllArgumentsButPositions", [<int list>]]:
+                     all arguments except given indices (zero-indexed)
+                 - ["ArgumentMatchingTypes", [<type list>]]:
+                     arguments with types containing supplied strings
+               N.B. for methods, index 0 is this/self.
+             - "data_flow_reporting_only": (for taint sources only)
+                 report only data flows from a taint source.
+                 Data flows to sinks will be reported instead of taint
+                 errors for flows from this source.
 
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
