@@ -138,11 +138,16 @@ end
 
 module Resource = struct
   let allocate_aux ~exn_class_name ((this, _) as this_obj) delegation_opt : model =
-   fun ({location; callee_procname; path} as model_data) astate ->
+   fun ({location; callee_procname; path; analysis_data= {tenv}} as model_data) astate ->
     let[@warning "-8"] (Some (Typ.JavaClass class_name)) =
       Procname.get_class_type_name callee_procname
     in
     let allocator = Attribute.JavaResource class_name in
+    let astate =
+      PulseTaintOperations.taint_allocation tenv path location
+        ~typ_desc:(Typ.Tstruct (Typ.JavaClass class_name)) ~alloc_desc:"Java resource"
+        ~allocator:(Some allocator) this astate
+    in
     let post = PulseOperations.allocate allocator location this astate in
     let delegated_state =
       let<+> post =

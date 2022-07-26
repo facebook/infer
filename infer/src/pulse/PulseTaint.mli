@@ -20,7 +20,8 @@ module Kind : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
-type origin = Argument of {index: int} | ReturnValue [@@deriving compare, equal]
+type origin = Argument of {index: int} | ReturnValue | Allocation of {typ: string}
+[@@deriving compare, equal]
 
 val pp_origin : F.formatter -> origin -> unit
 

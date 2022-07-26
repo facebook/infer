@@ -21,6 +21,17 @@ val call :
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
 
+val taint_allocation :
+     Tenv.t
+  -> PathContext.t
+  -> Location.t
+  -> typ_desc:Typ.desc
+  -> alloc_desc:string
+  -> allocator:Attribute.allocator option
+  -> AbstractValue.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t
+
 val gather_taint_dependencies : AbstractValue.t -> AbductiveDomain.t -> AbstractValue.t list
 (** Preorder traversal of the tree formed by taint dependencies of [v] in [astate] *)
 

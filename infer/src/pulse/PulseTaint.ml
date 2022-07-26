@@ -27,13 +27,16 @@ module Kind = struct
   let sexp_of_t = String.sexp_of_t
 end
 
-type origin = Argument of {index: int} | ReturnValue [@@deriving compare, equal]
+type origin = Argument of {index: int} | ReturnValue | Allocation of {typ: string}
+[@@deriving compare, equal]
 
 let pp_origin fmt = function
   | Argument {index} ->
       F.fprintf fmt "passed as argument #%d to" index
   | ReturnValue ->
       F.fprintf fmt "value returned from"
+  | Allocation {typ} ->
+      F.fprintf fmt "allocation of type %s by" typ
 
 
 type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin; data_flow_only: bool}

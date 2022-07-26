@@ -10,7 +10,7 @@
   ],
   "pulse-taint-sources": [
       { "procedure": "__infer_taint_source", "kinds": ["SimpleSource"] },
-      { "procedure": "init", "kinds": ["InitSource"], "data_flow_reporting_only": "true" }
+      { "allocation": "NSObject", "kinds": ["InitSource"], "data_flow_reporting_only": "true" }
   ],
   "pulse-taint-sanitizers": [
       { "procedure": "__infer_taint_sanitizer", "kinds": ["SimpleSanitizer"] }

@@ -265,10 +265,15 @@ module Basic = struct
 
 
   let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
-      {analysis_data= {tenv}; location; path; callee_procname; ret= ret_id, _} astate =
+      {analysis_data= {tenv}; location; path; callee_procname; ret= ret_id, ret_typ} astate =
     let ret_addr = AbstractValue.mk_fresh () in
     let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
     let ret_alloc_hist = Hist.single_alloc path location desc in
+    let astate =
+      let typ = if Typ.is_pointer ret_typ then Typ.strip_ptr ret_typ else ret_typ in
+      PulseTaintOperations.taint_allocation tenv path location ~typ_desc:typ.desc ~alloc_desc:desc
+        ~allocator ret_addr astate
+    in
     let astate =
       match size_exp_opt with
       | Some (Exp.Sizeof {typ}) ->

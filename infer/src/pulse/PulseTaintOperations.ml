@@ -45,6 +45,7 @@ type procedure_matcher =
   | ProcedureNameRegex of {name_regex: Str.regexp}
   | ClassAndMethodNames of {class_names: string list; method_names: string list}
   | OverridesOfClassWithAnnotation of {annotation: string}
+  | Allocation of {class_name: string}
 
 type matcher =
   { procedure_matcher: procedure_matcher
@@ -116,40 +117,53 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; procedure_regex= None
           ; class_names= None
           ; method_names= None
-          ; overrides_of_class_with_annotation= None } ->
+          ; overrides_of_class_with_annotation= None
+          ; allocation= None } ->
             ProcedureName {name}
         | { procedure= None
           ; procedure_regex= Some name_regex
           ; class_names= None
           ; method_names= None
-          ; overrides_of_class_with_annotation= None } ->
+          ; overrides_of_class_with_annotation= None
+          ; allocation= None } ->
             ProcedureNameRegex {name_regex= Str.regexp name_regex}
         | { procedure= None
           ; procedure_regex= None
           ; class_names= Some class_names
           ; method_names= Some method_names
-          ; overrides_of_class_with_annotation= None } ->
+          ; overrides_of_class_with_annotation= None
+          ; allocation= None } ->
             ClassAndMethodNames {class_names; method_names}
         | { procedure= None
           ; procedure_regex= None
           ; class_names= None
           ; method_names= None
-          ; overrides_of_class_with_annotation= Some annotation } ->
+          ; overrides_of_class_with_annotation= Some annotation
+          ; allocation= None } ->
             OverridesOfClassWithAnnotation {annotation}
+        | { procedure= None
+          ; procedure_regex= None
+          ; class_names= None
+          ; method_names= None
+          ; overrides_of_class_with_annotation= None
+          ; allocation= Some class_name } ->
+            Allocation {class_name}
         | _ ->
             L.die UserError
               "When parsing option %s: Unexpected JSON format: Exactly one of \"procedure\", \
-               \"procedure_regex\" must be provided, or else \"class_names\" and \"method_names\" \
-               must be provided, or else \"overrides_of_class_with_annotation\", but got \
-               \"procedure\": %a, \"procedure_regex\": %a, \"class_names\": %a, \"method_names\": \
-               %a, \"overrides_of_class_with_annotation\": %a"
+               \"procedure_regex\", \"allocation\" must be provided, or else \"class_names\" and \
+               \"method_names\" must be provided, or else \"overrides_of_class_with_annotation\", \
+               but got \"procedure\": %a, \"procedure_regex\": %a, \"class_names\": %a, \
+               \"method_names\": %a, \"overrides_of_class_with_annotation\": %a, \"allocation\": \
+               %a"
               option_name (Pp.option F.pp_print_string) matcher.procedure
               (Pp.option F.pp_print_string) matcher.procedure_regex
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.class_names
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.method_names (Pp.option F.pp_print_string)
-              matcher.overrides_of_class_with_annotation
+              matcher.overrides_of_class_with_annotation (Pp.option F.pp_print_string)
+              matcher.allocation
       in
       { procedure_matcher
       ; arguments= matcher.argument_constraints
@@ -158,9 +172,18 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
       ; data_flow_only= matcher.data_flow_reporting_only } )
 
 
-let source_matchers =
-  matcher_of_config ~default_taint_target:`ReturnValue ~option_name:"--pulse-taint-sources"
-    Config.pulse_taint_config.sources
+let allocation_sources, source_matchers =
+  let all_source_matchers =
+    matcher_of_config ~default_taint_target:`ReturnValue ~option_name:"--pulse-taint-sources"
+      Config.pulse_taint_config.sources
+  in
+  List.partition_map all_source_matchers
+    ~f:(fun ({procedure_matcher; kinds; data_flow_only} as matcher) ->
+      match procedure_matcher with
+      | Allocation {class_name} ->
+          Either.First (class_name, kinds, data_flow_only)
+      | _ ->
+          Either.Second matcher )
 
 
 let sink_matchers =
@@ -208,6 +231,8 @@ let procedure_matches tenv matchers proc_name actuals =
                                String.equal (Procname.get_method superclass_pname) method_name )
                              tenv proc_name ) )
                   procedure_class_name )
+        | Allocation _ ->
+            false
       in
       if procedure_name_matches then
         let actuals_match =
@@ -267,6 +292,55 @@ let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actua
               else (
                 L.d_printfln "no match for #%d with type %a" i (Typ.pp_full Pp.text) actual_typ ;
                 tainted ) ) )
+
+
+let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astate =
+  (* Micro-optimisation: do not convert types to strings unless necessary *)
+  if List.is_empty allocation_sources then astate
+  else
+    match typ_desc with
+    | Typ.Tstruct class_name ->
+        let check_type_name type_name =
+          let type_name = Typ.Name.name type_name in
+          let matching_allocations =
+            List.filter allocation_sources ~f:(fun (class_name, _, _) ->
+                String.equal class_name type_name )
+          in
+          (* Micro-optimisation: do not allocate `alloc_desc` when no matching taint sources are found *)
+          if List.is_empty matching_allocations then None
+          else
+            let alloc_desc =
+              Option.value_map allocator ~default:alloc_desc
+                ~f:(Format.asprintf "%a" Attribute.pp_allocator)
+            in
+            let astate =
+              List.fold matching_allocations ~init:astate
+                ~f:(fun astate (_, kinds, data_flow_only) ->
+                  let source =
+                    let proc_name = Procname.from_string_c_fun alloc_desc in
+                    let origin = Taint.Allocation {typ= type_name} in
+                    {Taint.kinds; proc_name; origin; data_flow_only}
+                  in
+                  let hist =
+                    ValueHistory.singleton
+                      (TaintSource (source, location, path.PathContext.timestamp))
+                  in
+                  let tainted =
+                    let time_trace = Timestamp.trace0 path.PathContext.timestamp in
+                    {Attribute.Tainted.source; hist; time_trace; intra_procedural_only= false}
+                  in
+                  AbductiveDomain.AddressAttributes.add_one v
+                    (Tainted (Attribute.TaintedSet.singleton tainted))
+                    astate )
+            in
+            Some astate
+        in
+        L.d_printfln "Checking allocation at %a for taint matching %a" Location.pp location
+          Typ.Name.pp class_name ;
+        let astate_opt = PatternMatch.supertype_find_map_opt tenv check_type_name class_name in
+        Option.value astate_opt ~default:astate
+    | _ ->
+        astate
 
 
 let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param proc_name
