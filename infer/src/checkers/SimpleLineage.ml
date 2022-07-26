@@ -27,7 +27,7 @@ module LineageGraph = struct
     | ConstantInt of string
     | ConstantString of string
     | Variable of (Var.t[@sexp.opaque])
-  [@@deriving compare, sexp]
+  [@@deriving compare, equal, sexp]
 
   type data =
     | Local of ((local * PPNode.t)[@sexp.opaque])
@@ -39,7 +39,7 @@ module LineageGraph = struct
     | ReturnOf of (Procname.t[@sexp.opaque])
     | Self
     | Function of (Procname.t[@sexp.opaque])
-  [@@deriving compare, sexp]
+  [@@deriving compare, equal, sexp]
 
   module FlowKind = struct
     module T = struct
@@ -54,26 +54,26 @@ module LineageGraph = struct
         | Summary  (** Summarizes the effect of a procedure call *)
         | DynamicCallFunction
         | DynamicCallModule
-      [@@deriving compare, sexp, variants]
+      [@@deriving compare, equal, sexp, variants]
     end
 
     include T
     include Comparable.Make (T)
   end
 
-  type flow_kind = FlowKind.t [@@deriving compare, sexp]
+  type flow_kind = FlowKind.t [@@deriving compare, equal, sexp]
 
   let rank_of_flow_kind = FlowKind.Variants.to_rank
 
   type flow = {source: data; target: data; kind: flow_kind; node: (PPNode.t[@sexp.opaque])}
-  [@@deriving compare, sexp]
+  [@@deriving compare, equal, sexp]
 
   type t = flow list
 
   (** Make [data] usable in Maps/Sets. *)
   module Vertex = struct
     module T = struct
-      type t = data [@@deriving compare, sexp]
+      type t = data [@@deriving compare, equal, sexp]
     end
 
     include T
@@ -151,12 +151,12 @@ module LineageGraph = struct
 
   let add_flow ~kind ~node ~source ~target graph =
     let added = {source; target; kind; node} :: graph in
-    match ((kind : FlowKind.t), compare_data target source, target, source) with
-    | Direct, 0, _, _ ->
+    match ((kind : FlowKind.t), equal_data target source, target, source) with
+    | Direct, true, _, _ ->
         graph (* skip Direct loops *)
-    | Summary, 0, _, _ ->
+    | Summary, true, _, _ ->
         graph (* skip Summary loops*)
-    | _, 0, _, _ ->
+    | _, true, _, _ ->
         L.die InternalError "There shall be no fancy (%a) loops!" pp_flow_kind kind
     | Call, _, ArgumentOf _, _ ->
         added
@@ -277,7 +277,7 @@ module LineageGraph = struct
       type function_ = {function_: _function [@key "function"]} [@@deriving yojson_of]
 
       type entity_type = Edge | Function | Location | Node | State
-      [@@deriving compare, hash, sexp]
+      [@@deriving compare, equal, hash, sexp]
     end
 
     let channel_ref = ref None
@@ -410,7 +410,7 @@ module LineageGraph = struct
 
     module JsonCacheKey = struct
       module T = struct
-        type t = Json.entity_type * Int64.t [@@deriving compare, hash, sexp]
+        type t = Json.entity_type * Int64.t [@@deriving compare, equal, hash, sexp]
       end
 
       include T
@@ -683,9 +683,7 @@ module Summary = struct
       let rm map key =
         let flow_list = Map.find_multi map key in
         let flow_list =
-          List.filter
-            ~f:(fun elem -> not (Int.equal (LineageGraph.compare_flow elem flow) 0))
-            flow_list
+          List.filter ~f:(fun elem -> not (LineageGraph.equal_flow elem flow)) flow_list
         in
         Map.set map ~key ~data:flow_list
       in
@@ -716,7 +714,7 @@ module Summary = struct
               let keep : LineageGraph.flow =
                 {keep with LineageGraph.source= flow_ab.source; target= flow_bc.target}
               in
-              if Int.equal 0 (LineageGraph.compare_data keep.source keep.target) then
+              if LineageGraph.equal_data keep.source keep.target then
                 L.die InternalError "OOPS: I don't work with loops." ;
               (* (B) add new edges *)
               let parents = Map.add_multi ~key:keep.target ~data:keep parents in
@@ -815,7 +813,7 @@ module TransferFunctions = struct
   (** Make [LineageGraph.local] usable in Maps/Sets. *)
   module Local = struct
     module T = struct
-      type t = LineageGraph.local [@@deriving compare, sexp]
+      type t = LineageGraph.local [@@deriving compare, equal, sexp]
     end
 
     include T
