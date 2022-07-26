@@ -2541,6 +2541,12 @@ and simple_lineage_include_builtins =
      constructing a list."
 
 
+and simple_lineage_model_fields =
+  CLOpt.mk_bool ~long:"simple-lineage-model-fields"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "[EXPERIMENTAL] Enable field-aware lineage analysis."
+
+
 and simple_lineage_max_cfg_size =
   CLOpt.mk_int_opt ~long:"simple-lineage-max-cfg-size"
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
@@ -3784,6 +3790,8 @@ and select =
 and show_buckets = !print_buckets
 
 and simple_lineage_include_builtins = !simple_lineage_include_builtins
+
+and simple_lineage_model_fields = !simple_lineage_model_fields
 
 and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
 

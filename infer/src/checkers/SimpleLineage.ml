@@ -19,6 +19,11 @@ module PPNode = struct
   let pp fmt node = pp_id fmt (id node)
 end
 
+let () =
+  if Config.simple_lineage_model_fields then
+    Logging.die InternalError "Field support is not implemented yet in lineage"
+
+
 module LineageGraph = struct
   (** INV: Constants occur only as sources of flow. NOTE: Constants are "local" because type [data]
       associates them with a location, in a proc. *)

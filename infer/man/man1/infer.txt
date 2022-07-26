@@ -1361,6 +1361,10 @@ OPTIONS
        --simple-lineage-max-cfg-size int
            If set, larger CFGs are skipped.           See also infer-analyze(1).
 
+       --simple-lineage-model-fields
+           Activates: [EXPERIMENTAL] Enable field-aware lineage analysis.
+           (Conversely: --no-simple-lineage-model-fields)           See also infer-analyze(1).
+
        --simple-lineage-only
            Activates: Enable simple-lineage and disable all other checkers
            (Conversely: --no-simple-lineage-only)           See also infer-analyze(1).
