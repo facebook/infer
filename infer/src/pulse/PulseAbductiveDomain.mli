@@ -198,6 +198,8 @@ module AddressAttributes : sig
        list
 end
 
+val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
+
 val apply_unknown_effect :
      ?havoc_filter:(AbstractValue.t -> BaseMemory.Access.t -> BaseMemory.AddrTrace.t -> bool)
   -> ValueHistory.t

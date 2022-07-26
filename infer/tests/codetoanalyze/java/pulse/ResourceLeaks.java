@@ -1061,7 +1061,7 @@ public class ResourceLeaks {
     r.unknownClose();
   }
 
-  public void FP_indirectCallUnknownOk() throws FileNotFoundException {
+  public void indirectCallUnknownOk() throws FileNotFoundException {
     MyResource r;
     r = new MyResource(new FileInputStream("testing.txt"));
     r.indirectCallToUnknownClose();

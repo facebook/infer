@@ -1030,6 +1030,10 @@ let get_reachable {pre; post} =
   AbstractValue.Set.union pre_keep post_keep
 
 
+let should_havoc_if_unknown () =
+  if Language.curr_language_is Java then `ShouldOnlyHavocResources else `ShouldHavoc
+
+
 let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
   let havoc_accesses hist addr heap =
     match BaseMemory.find_opt addr heap with
@@ -1050,12 +1054,17 @@ let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
     BaseDomain.GraphVisit.fold_from_addresses (Seq.return x) post ~init:(post.heap, post.attrs)
       ~already_visited:AbstractValue.Set.empty
       ~f:(fun (heap, attrs) addr _edges ->
-        let attrs =
-          BaseAddressAttributes.remove_allocation_attr addr attrs
-          |> BaseAddressAttributes.initialize addr
-        in
-        let heap = havoc_accesses hist addr heap in
-        Continue (heap, attrs) )
+        match should_havoc_if_unknown () with
+        | `ShouldHavoc ->
+            let attrs =
+              BaseAddressAttributes.remove_allocation_attr addr attrs
+              |> BaseAddressAttributes.initialize addr
+            in
+            let heap = havoc_accesses hist addr heap in
+            Continue (heap, attrs)
+        | `ShouldOnlyHavocResources ->
+            let attrs = BaseAddressAttributes.remove_allocation_attr addr attrs in
+            Continue (heap, attrs) )
       ~finish:Fn.id
     |> snd
   in

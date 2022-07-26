@@ -39,10 +39,8 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
     | Typ.Tstruct (Typ.CppClass {name})
       when QualifiedCppName.Match.match_qualifiers matches_iter name ->
         `ShouldHavoc
-    | Tptr _ when (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt) ->
-        `ShouldHavoc
-    | Tptr _ when Language.curr_language_is Java ->
-        `ShouldOnlyHavocResources
+    | Tptr _ when not (is_ptr_to_const formal_typ_opt) ->
+        AbductiveDomain.should_havoc_if_unknown ()
     | _ ->
         `DoNotHavoc
   in
@@ -93,6 +91,11 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
     | `DoNotHavoc ->
         astate
     | `ShouldOnlyHavocResources ->
+        let astate =
+          AddressAttributes.add_attrs actual
+            (Attributes.singleton (UnknownEffect (reason, hist)))
+            astate
+        in
         fold_on_reachable_from_arg astate (fun reachable_actual ->
             AddressAttributes.remove_allocation_attr reachable_actual )
   in
