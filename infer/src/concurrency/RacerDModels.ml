@@ -525,6 +525,7 @@ let synchronized_container_classes =
   ; "androidx.core.util.Pools$SynchronizedPool"
   ; "java.util.concurrent.BlockingDeque"
   ; "java.util.concurrent.BlockingQueue"
+  ; "java.util.concurrent.ConcurrentLinkedDeque"
   ; "java.util.concurrent.ConcurrentMap"
   ; "java.util.concurrent.ConcurrentSkipListSet"
   ; "java.util.concurrent.CopyOnWriteArrayList"
