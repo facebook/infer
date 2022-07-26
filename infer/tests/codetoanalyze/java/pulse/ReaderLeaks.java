@@ -24,7 +24,7 @@ public class ReaderLeaks {
 
   // Reader  tests
 
-  public void FN_readerNotClosedAfterReadBad() {
+  public void readerNotClosedAfterReadBad() {
     Reader r;
     try {
       r = new FileReader("testing.txt");
@@ -48,7 +48,7 @@ public class ReaderLeaks {
 
   // BufferedReader  tests
 
-  public void FN_bufferedReaderNotClosedAfterReadBad() {
+  public void bufferedReaderNotClosedAfterReadBad() {
     BufferedReader reader;
     try {
       reader = new BufferedReader(new FileReader("testing.txt"));
@@ -85,7 +85,7 @@ public class ReaderLeaks {
 
   // InputStreamReader  tests
 
-  public void FN_inputStreamReaderNotClosedAfterReadBad() {
+  public void inputStreamReaderNotClosedAfterReadBad() {
     InputStreamReader reader;
     try {
       reader = new InputStreamReader(new FileInputStream("testing.txt"));
@@ -108,7 +108,7 @@ public class ReaderLeaks {
 
   // FileReader  tests
 
-  public void FN_fileReaderNotClosedAfterReadBad() {
+  public void fileReaderNotClosedAfterReadBad() {
     FileReader reader;
     try {
       reader = new FileReader("testing.txt");
@@ -131,7 +131,7 @@ public class ReaderLeaks {
 
   // PushbackReader  tests
 
-  public void FN_pushbackReaderNotClosedAfterReadBad() {
+  public void pushbackReaderNotClosedAfterReadBad() {
     PushbackReader reader;
     try {
       reader = new PushbackReader(new InputStreamReader(new FileInputStream("testing.txt")));
@@ -154,7 +154,7 @@ public class ReaderLeaks {
 
   // PipedReader tests
 
-  public void FN_pipedReaderNotClosedAfterConstructedWithWriterBad() {
+  public void pipedReaderNotClosedAfterConstructedWithWriterBad() {
     PipedReader reader;
     PipedWriter writer;
     try {
@@ -177,10 +177,11 @@ public class ReaderLeaks {
     }
   }
 
-  public void FN_pipedReaderNotConnectedBad() {
+  public void FN_pipedReaderNotConnectedBad(PipedWriter writer) {
     PipedReader reader;
     try {
       reader = new PipedReader();
+      reader.connect(writer);
       reader.close();
     } catch (IOException e) {
     }

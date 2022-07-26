@@ -170,14 +170,34 @@ module Resource = struct
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
-  let input_resource_usage_modeled =
-    StringSet.of_list ["available"; "mark"; "markSupported"; "read"; "reset"; "skip"]
+  let inputstream_resource_usage_modeled_throws_IOException =
+    StringSet.of_list ["available"; "read"; "reset"; "skip"]
 
+
+  let inputstream_resource_usage_modeled_do_not_throws = StringSet.of_list ["mark"; "markSupported"]
+
+  let reader_resource_usage_modeled_throws_IOException =
+    StringSet.of_list ["read"; "ready"; "reset"; "skip"]
+
+
+  let reader_resource_usage_modeled_do_not_throws = StringSet.of_list ["mark"; "markSupported"]
+
+  let writer_resource_usage_modeled = StringSet.of_list ["flush"; "write"]
 
   let use ~exn_class_name : model =
     let exn = JavaClassName.from_string exn_class_name in
     fun model_data astate ->
       Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
+
+
+  let writer_append this : model =
+    let exn = JavaClassName.from_string "java.IO.IOException" in
+    fun model_data astate ->
+      let return_this_state =
+        Basic.id_first_arg ~desc:"java.io.PrintWriter.append" this model_data astate
+      in
+      let throw_IOException_state = call_may_throw_exception exn model_data astate in
+      return_this_state @ throw_IOException_state
 
 
   let release this : model =
@@ -610,6 +630,8 @@ let matchers : matcher list =
           ; "java.io.FilterInputStream"
           ; "java.io.FilterOutputStream"
           ; "java.io.PushbackInputStream"
+          ; "java.io.Reader"
+          ; "java.io.Writer"
           ; "java.security.DigestInputStream"
           ; "java.security.DigestOutputStream"
           ; "java.util.Scanner"
@@ -630,9 +652,30 @@ let matchers : matcher list =
     &:: "flush" <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.InputStream")
-    &::+ (fun _ str -> StringSet.mem str Resource.input_resource_usage_modeled)
+    &::+ (fun _ proc_name_str ->
+           StringSet.mem proc_name_str
+             Resource.inputstream_resource_usage_modeled_throws_IOException )
     <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.InputStream")
+    &::+ (fun _ proc_name_str ->
+           StringSet.mem proc_name_str Resource.inputstream_resource_usage_modeled_do_not_throws )
+    <>$ any_arg $+...$--> Basic.skip
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.Reader")
+    &::+ (fun _ proc_name_str ->
+           StringSet.mem proc_name_str Resource.reader_resource_usage_modeled_throws_IOException )
+    <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.Reader")
+    &::+ (fun _ proc_name_str ->
+           StringSet.mem proc_name_str Resource.reader_resource_usage_modeled_do_not_throws )
+    <>$ any_arg $+...$--> Basic.skip
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.Writer")
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str Resource.writer_resource_usage_modeled)
+    <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.Writer")
+    &:: "append" <>$ capt_arg_payload $+...$--> Resource.writer_append
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.Closeable")
     &:: "close" <>$ capt_arg_payload $--> Resource.release
   ; +map_context_tenv (PatternMatch.Java.implements "com.google.common.io.Closeables")
@@ -666,7 +709,7 @@ let matchers : matcher list =
     &:: "clear" <>$ capt_arg_payload
     $--> Collection.clear ~desc:"Collection.clear()"
   ; +map_context_tenv PatternMatch.Java.implements_collection
-    &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
     <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "<init>" <>$ capt_arg_payload
@@ -689,16 +732,16 @@ let matchers : matcher list =
     &:: "clear" <>$ capt_arg_payload
     $--> Collection.clear ~desc:"Map.clear()"
   ; +map_context_tenv PatternMatch.Java.implements_queue
-    &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
     <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
   ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
-    &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
     <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
   ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
     &:: "setLength" <>$ capt_arg_payload
     $+...$--> Cplusplus.Vector.invalidate_references ShrinkToFit
   ; +map_context_tenv (PatternMatch.Java.implements_lang "String")
-    &::+ (fun _ str -> StringSet.mem str pushback_modeled)
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
     <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
     &:: "<init>" $ capt_arg_payload $+ capt_arg_payload $--> Integer.init
