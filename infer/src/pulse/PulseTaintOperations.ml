@@ -51,8 +51,7 @@ type matcher =
   { procedure_matcher: procedure_matcher
   ; arguments: Pulse_config_t.argument_constraint list
   ; kinds: Taint.Kind.t list
-  ; target: Pulse_config_t.taint_target
-  ; data_flow_only: bool }
+  ; target: Pulse_config_t.taint_target }
 
 type sink_policy =
   { source_kinds: Taint.Kind.t list [@ignore]
@@ -68,6 +67,11 @@ let next_policy_id =
   fun () ->
     incr policy_id_counter ;
     !policy_id_counter
+
+
+let fill_data_flow_kinds_from_config () =
+  Config.pulse_taint_config.data_flow_kinds
+  |> List.iter ~f:(fun kind -> Taint.Kind.of_string kind |> Taint.Kind.mark_data_flow_only)
 
 
 let fill_policies_from_config () =
@@ -99,6 +103,7 @@ let () =
         ; sanitizer_kinds= [simple_kind]
         ; policy_id= next_policy_id () } ]
   |> ignore ;
+  fill_data_flow_kinds_from_config () ;
   fill_policies_from_config ()
 
 
@@ -168,8 +173,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
       { procedure_matcher
       ; arguments= matcher.argument_constraints
       ; kinds= kinds_of_strings_opt matcher.kinds
-      ; target= Option.value ~default:default_taint_target matcher.taint_target
-      ; data_flow_only= matcher.data_flow_reporting_only } )
+      ; target= Option.value ~default:default_taint_target matcher.taint_target } )
 
 
 let allocation_sources, source_matchers =
@@ -177,11 +181,10 @@ let allocation_sources, source_matchers =
     matcher_of_config ~default_taint_target:`ReturnValue ~option_name:"--pulse-taint-sources"
       Config.pulse_taint_config.sources
   in
-  List.partition_map all_source_matchers
-    ~f:(fun ({procedure_matcher; kinds; data_flow_only} as matcher) ->
+  List.partition_map all_source_matchers ~f:(fun ({procedure_matcher; kinds} as matcher) ->
       match procedure_matcher with
       | Allocation {class_name} ->
-          Either.First (class_name, kinds, data_flow_only)
+          Either.First (class_name, kinds)
       | _ ->
           Either.Second matcher )
 
@@ -253,7 +256,7 @@ let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actua
         List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
             (arg_payload, typ) )
       in
-      let {kinds; data_flow_only} = matcher in
+      let {kinds} = matcher in
       match matcher.target with
       | `ReturnValue -> (
           L.d_printf "matching return value... " ;
@@ -266,15 +269,13 @@ let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actua
               let return_as_actual = if has_added_return_param then List.last actuals else None in
               match return_as_actual with
               | Some actual ->
-                  let taint = {Taint.proc_name; origin= ReturnValue; kinds; data_flow_only} in
+                  let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
                   (taint, actual) :: acc
               | None ->
                   let return = Var.of_id return in
                   Stack.find_opt return astate
                   |> Option.fold ~init:acc ~f:(fun tainted return_value ->
-                         let taint =
-                           {Taint.proc_name; origin= ReturnValue; kinds; data_flow_only}
-                         in
+                         let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
                          (taint, (return_value, return_typ)) :: tainted ) ) )
       | ( `AllArguments
         | `ArgumentPositions _
@@ -285,7 +286,7 @@ let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actua
               if taint_target_matches tenv taint_target i actual_typ then (
                 L.d_printfln "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
                   actual_typ ;
-                let taint = {Taint.proc_name; origin= Argument {index= i}; kinds; data_flow_only} in
+                let taint = {Taint.proc_name; origin= Argument {index= i}; kinds} in
                 (taint, actual_hist_and_typ) :: tainted )
               else (
                 L.d_printfln "no match for #%d with type %a" i (Typ.pp_full Pp.text) actual_typ ;
@@ -301,7 +302,7 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astat
         let check_type_name type_name =
           let type_name = Typ.Name.name type_name in
           let matching_allocations =
-            List.filter allocation_sources ~f:(fun (class_name, _, _) ->
+            List.filter allocation_sources ~f:(fun (class_name, _) ->
                 String.equal class_name type_name )
           in
           (* Micro-optimisation: do not allocate `alloc_desc` when no matching taint sources are found *)
@@ -312,12 +313,11 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astat
                 ~f:(Format.asprintf "%a" Attribute.pp_allocator)
             in
             let astate =
-              List.fold matching_allocations ~init:astate
-                ~f:(fun astate (_, kinds, data_flow_only) ->
+              List.fold matching_allocations ~init:astate ~f:(fun astate (_, kinds) ->
                   let source =
                     let proc_name = Procname.from_string_c_fun alloc_desc in
                     let origin = Taint.Allocation {typ= type_name} in
-                    {Taint.kinds; proc_name; origin; data_flow_only}
+                    {Taint.kinds; proc_name; origin}
                   in
                   let hist =
                     ValueHistory.singleton
@@ -420,7 +420,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
                   sanitizers
               in
               if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
-                (suspicious_source, source.Taint.data_flow_only, sink_kind, policy_id) :: acc
+                (suspicious_source, sink_kind, policy_id) :: acc
               else (
                 L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
                   matching_sanitizers ;
@@ -483,8 +483,7 @@ let check_flows_wrt_sink path location (sink, sink_trace) v astate =
         let* policy_violations_reported = policy_violations_reported_result in
         L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
         let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
-        let report_policy_violation reported_so_far
-            (source_kind, data_flow_only, sink_kind, violated_policy_id) =
+        let report_policy_violation reported_so_far (source_kind, sink_kind, violated_policy_id) =
           if IntSet.mem violated_policy_id reported_so_far then Ok reported_so_far
           else
             Recoverable
@@ -495,7 +494,9 @@ let check_flows_wrt_sink path location (sink, sink_trace) v astate =
                      ; location
                      ; source= ({source with kinds= [source_kind]}, source_hist)
                      ; sink= ({sink with kinds= [sink_kind]}, sink_trace)
-                     ; flow_kind= (if data_flow_only then FlowToSink else TaintedFlow) } ) )
+                     ; flow_kind=
+                         ( if Taint.Kind.is_data_flow_only source_kind then FlowToSink
+                         else TaintedFlow ) } ) )
         in
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
           ~f:report_policy_violation )
@@ -723,7 +724,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
 let pulse_models_to_treat_as_unknown_for_taint =
   (* HACK: make a list of matchers just to reuse the matching code below *)
   let dummy_matcher_of_procedure_matcher procedure_matcher =
-    {procedure_matcher; arguments= []; kinds= []; target= `ReturnValue; data_flow_only= false}
+    {procedure_matcher; arguments= []; kinds= []; target= `ReturnValue}
   in
   [ ClassAndMethodNames
       { class_names= ["java.lang.StringBuilder"]
@@ -772,9 +773,13 @@ let report_flows_to_callee path call_location callee_proc_name actuals caller_as
             Attribute.TaintedSet.fold
               (fun {source; hist} result ->
                 (* Do not report from data_flow_only sources - these are for reporting flows to sinks *)
-                if source.data_flow_only then result
+                let kinds =
+                  List.filter ~f:(fun kind -> not (Taint.Kind.is_data_flow_only kind)) source.kinds
+                in
+                if List.is_empty kinds then result
                 else
-                  mk_flow_from_taint_source ~source:(source, hist)
+                  mk_flow_from_taint_source
+                    ~source:({source with kinds}, hist)
                     ~destination:(origin, callee_proc_name, trace) v caller_astate result )
               sources (Ok astate) ) )
 

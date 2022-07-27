@@ -18,6 +18,10 @@ module Kind : sig
   val hash : t -> int
 
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
+  val mark_data_flow_only : t -> unit
+
+  val is_data_flow_only : t -> bool
 end
 
 type origin = Argument of {index: int} | ReturnValue | Allocation of {typ: string}
@@ -25,7 +29,6 @@ type origin = Argument of {index: int} | ReturnValue | Allocation of {typ: strin
 
 val pp_origin : F.formatter -> origin -> unit
 
-type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin; data_flow_only: bool}
-[@@deriving compare, equal]
+type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit

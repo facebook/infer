@@ -841,11 +841,15 @@ let check_all_taint_valid path callee_proc_name call_location actuals pre_post a
             Attribute.TaintedSet.fold
               (fun {source; hist} result ->
                 (* Do not report from data_flow_only sources - these are for reporting flows to sinks *)
-                if source.data_flow_only then result
+                let kinds =
+                  List.filter ~f:(fun kind -> not (Taint.Kind.is_data_flow_only kind)) source.kinds
+                in
+                if List.is_empty kinds then result
                 else
                   Attribute.TaintProcedureSet.fold
                     (fun {origin; proc_name; trace} ->
-                      mk_flow_from_taint_source ~source:(source, hist)
+                      mk_flow_from_taint_source
+                        ~source:({source with kinds}, hist)
                         ~destination:(origin, proc_name, trace_via_call trace)
                         v astate )
                     procedures result )

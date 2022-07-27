@@ -1157,7 +1157,15 @@ OPTIONS
        --pulse-taint-config +path
            Path to a taint analysis configuration file. This file can define
            --pulse-taint-sources, --pulse-taint-sanitizers,
-           --pulse-taint-sinks, and --pulse-taint-policies.           See also infer-analyze(1).
+           --pulse-taint-sinks, --pulse-taint-policies, and
+           --pulse-taint-data-flow-kinds.           See also infer-analyze(1).
+
+       --pulse-taint-data-flow-kinds json
+           Specify which taint kinds should be used for data flow reporting
+           only. If a source has such a kind, only data flows to sinks which
+           originate at the source will be reported. If a sink has such a
+           kind, only sensitive data flows to the sink will be reported.       
+    See also infer-analyze(1).
 
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
@@ -1189,11 +1197,12 @@ OPTIONS
     See also infer-analyze(1).
 
        --pulse-taint-sources json
-           Together with --pulse-taint-sanitizers, --pulse-taint-sinks, and
-           --pulse-taint-policies, specify taint properties. The JSON format
-           of sources also applies to sinks and sanitizers. It consists of a
-           list of objects, each with one of the following combinations of
-           fields to identify relevant procedures:             - "procedure": match a substring of the procedure name
+           Together with --pulse-taint-sanitizers, --pulse-taint-sinks,
+           --pulse-taint-policies, and --pulse-taint-data-flow-kinds, specify
+           taint properties. The JSON format of sources also applies to sinks
+           and sanitizers. It consists of a list of objects, each with one of
+           the following combinations of fields to identify relevant
+           procedures:             - "procedure": match a substring of the procedure name
              - "procedure_regex": as above, but match using an OCaml regex
              - "class_names" and "method_names":
                  match exact uses of methods of particular classes
@@ -1218,10 +1227,6 @@ OPTIONS
                  - ["ArgumentMatchingTypes", [<type list>]]:
                      arguments with types containing supplied strings
                N.B. for methods, index 0 is this/self.
-             - "data_flow_reporting_only": (for taint sources only)
-                 report only data flows from a taint source.
-                 Data flows to sinks will be reported instead of taint
-                 errors for flows from this source.
            See also infer-analyze(1).
 
        --purity

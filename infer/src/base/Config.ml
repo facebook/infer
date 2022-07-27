@@ -52,7 +52,8 @@ type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
-  ; policies: Pulse_config_t.taint_policies }
+  ; policies: Pulse_config_t.taint_policies
+  ; data_flow_kinds: string list }
 
 (* List of ([build system], [executable name]). Several executables may map to the same build
    system. In that case, the first one in the list will be used for printing, eg, in which mode
@@ -2285,7 +2286,7 @@ and pulse_taint_sinks =
 and pulse_taint_sources =
   CLOpt.mk_json ~long:"pulse-taint-sources"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), and $(b,--pulse-taint-policies), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects, each with one of the following combinations of fields to identify relevant procedures:
+    {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects, each with one of the following combinations of fields to identify relevant procedures:
   - "procedure": match a substring of the procedure name
   - "procedure_regex": as above, but match using an OCaml regex
   - "class_names" and "method_names":
@@ -2310,18 +2311,23 @@ and pulse_taint_sources =
           all arguments except given indices (zero-indexed)
       - ["ArgumentMatchingTypes", [<type list>]]:
           arguments with types containing supplied strings
-    $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).
-  - "data_flow_reporting_only": $(i,\(for taint sources only\))
-      report only data flows from a taint source.
-      Data flows to sinks will be reported instead of taint
-      errors for flows from this source.|}
+    $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).|}
+
+
+and pulse_taint_data_flow_kinds =
+  CLOpt.mk_json ~long:"pulse-taint-data-flow-kinds"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Specify which taint kinds should be used for data flow reporting only. If a source has such a \
+     kind, only data flows to sinks which originate at the source will be reported. If a sink has \
+     such a kind, only sensitive data flows to the sink will be reported."
 
 
 and pulse_taint_config =
   CLOpt.mk_path_list ~long:"pulse-taint-config"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Path to a taint analysis configuration file. This file can define $(b,--pulse-taint-sources), \
-     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), and $(b,--pulse-taint-policies)."
+     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
+     $(b,--pulse-taint-data-flow-kinds)."
 
 
 and pulse_widen_threshold =
@@ -3710,7 +3716,10 @@ and pulse_taint_config =
     ; sanitizers= mk_matchers pulse_taint_sanitizers
     ; sinks= mk_matchers pulse_taint_sinks
     ; policies=
-        Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies) }
+        Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies)
+    ; data_flow_kinds=
+        Pulse_config_j.data_flow_kinds_of_string
+          (Yojson.Basic.to_string !pulse_taint_data_flow_kinds) }
   in
   List.fold (RevList.to_list !pulse_taint_config) ~init:base_taint_config
     ~f:(fun taint_config filepath ->
@@ -3736,7 +3745,10 @@ and pulse_taint_config =
       ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
       ; policies=
           combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"
-            taint_config.policies } )
+            taint_config.policies
+      ; data_flow_kinds=
+          combine_fields Pulse_config_j.data_flow_kinds_of_string "pulse-taint-data-flow-kinds"
+            taint_config.data_flow_kinds } )
 
 
 and pulse_widen_threshold = !pulse_widen_threshold
