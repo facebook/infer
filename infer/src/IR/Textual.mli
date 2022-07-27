@@ -126,6 +126,9 @@ module Module : sig
   type decl = Global of Pvar.t | Struct of Struct.t | Procname of Procname.t | Proc of Procdesc.t
 
   type t = {decls: decl list; sourcefile: SourceFile.t}
+
+  val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
+  (** generate a .sil file with name [filename] containing all the functions in the given cfg *)
 end
 
 module Verification : sig

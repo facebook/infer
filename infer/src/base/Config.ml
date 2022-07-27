@@ -1440,6 +1440,11 @@ and dump_duplicate_symbols =
     "Dump all symbols with the same name that are defined in more than one file."
 
 
+and dump_textual =
+  CLOpt.mk_path_opt ~long:"dump-textual" ~meta:"path"
+    "Generate a SIL program from the captured target. The target has to be a single Java file."
+
+
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant" "Condition redundant warnings"
 
@@ -3383,6 +3388,8 @@ and differential_filter_set = !differential_filter_set
 and dotty_cfg_libs = !dotty_cfg_libs
 
 and dump_duplicate_symbols = !dump_duplicate_symbols
+
+and dump_textual = !dump_textual
 
 and eradicate_condition_redundant = !eradicate_condition_redundant
 

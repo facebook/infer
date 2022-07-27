@@ -1976,6 +1976,13 @@ INTERNAL OPTIONS
            Deactivates: Print the cfg of the code coming from the libraries
            (Conversely: --dotty-cfg-libs)
 
+       --dump-textual path
+           Generate a SIL program from the captured target. The target has to
+           be a single Java file.
+
+       --dump-textual-reset
+           Cancel the effect of --dump-textual.
+
        --enable-issue-type-reset
            Set --enable-issue-type to the empty list.
 
