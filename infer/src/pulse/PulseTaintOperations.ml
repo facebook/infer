@@ -197,7 +197,7 @@ let sanitizer_matchers =
 
 
 let procedure_matches tenv matchers proc_name actuals =
-  List.find_map matchers ~f:(fun matcher ->
+  List.filter_map matchers ~f:(fun matcher ->
       let procedure_name_matches =
         match matcher.procedure_matcher with
         | ProcedureName {name} ->
@@ -246,11 +246,9 @@ let procedure_matches tenv matchers proc_name actuals =
 
 
 let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actuals astate =
-  match procedure_matches tenv matchers proc_name actuals with
-  | None ->
-      []
-  | Some matcher -> (
-      L.d_printfln "taint matches" ;
+  let matches = procedure_matches tenv matchers proc_name actuals in
+  if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+  List.fold matches ~init:[] ~f:(fun acc matcher ->
       let actuals =
         List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
             (arg_payload, typ) )
@@ -262,18 +260,18 @@ let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actua
           match return_opt with
           | None ->
               L.d_printfln "no match" ;
-              []
+              acc
           | Some (return, return_typ) -> (
               L.d_printfln "match! tainting return value" ;
               let return_as_actual = if has_added_return_param then List.last actuals else None in
               match return_as_actual with
               | Some actual ->
                   let taint = {Taint.proc_name; origin= ReturnValue; kinds; data_flow_only} in
-                  [(taint, actual)]
+                  (taint, actual) :: acc
               | None ->
                   let return = Var.of_id return in
                   Stack.find_opt return astate
-                  |> Option.fold ~init:[] ~f:(fun tainted return_value ->
+                  |> Option.fold ~init:acc ~f:(fun tainted return_value ->
                          let taint =
                            {Taint.proc_name; origin= ReturnValue; kinds; data_flow_only}
                          in
@@ -283,7 +281,7 @@ let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actua
         | `AllArgumentsButPositions _
         | `ArgumentsMatchingTypes _ ) as taint_target ->
           L.d_printf "matching actuals... " ;
-          List.foldi actuals ~init:[] ~f:(fun i tainted ((_, actual_typ) as actual_hist_and_typ) ->
+          List.foldi actuals ~init:acc ~f:(fun i tainted ((_, actual_typ) as actual_hist_and_typ) ->
               if taint_target_matches tenv taint_target i actual_typ then (
                 L.d_printfln "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
                   actual_typ ;
@@ -739,7 +737,7 @@ let should_treat_as_unknown_for_taint tenv proc_name =
      don't need its full power *)
   Procname.is_implicit_ctor proc_name
   || procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name []
-     |> Option.is_some
+     |> List.is_empty |> not
 
 
 let should_ignore_sensitive_data_flows_to proc_name =
