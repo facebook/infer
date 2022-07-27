@@ -29,7 +29,7 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
       let taint_source, taint_sink =
         let proc_name_of_taint Taint.{proc_name} = Format.asprintf "%a" Procname.pp proc_name in
         match diagnostic with
-        | FlowFromTaintSource {source= source, _} ->
+        | TaintFlow {flow_kind= FlowFromSource; source= source, _} ->
             (Some (proc_name_of_taint source), None)
         | TaintFlow {flow_kind= FlowToSink; sink= sink, _} ->
             (None, Some (proc_name_of_taint sink))
@@ -93,7 +93,6 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ReadUninitializedValue _
   | StackVariableAddressEscape _
   | TaintFlow _
-  | FlowFromTaintSource _
   | UnnecessaryCopy _ ->
       false
   | AccessToInvalidAddress {invalidation; access_trace} ->

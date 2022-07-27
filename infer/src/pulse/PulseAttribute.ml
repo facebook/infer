@@ -77,20 +77,6 @@ module Attribute = struct
 
   module TaintSinkSet = PrettyPrintable.MakePPSet (TaintSink)
 
-  module TaintProcedure = struct
-    type t = {origin: Taint.origin; proc_name: Procname.t; time: Timestamp.t; trace: Trace.t}
-    [@@deriving compare, equal]
-
-    let pp fmt {time; origin; proc_name; trace} =
-      F.fprintf fmt "(%a, t=%d)"
-        (Trace.pp ~pp_immediate:(fun fmt ->
-             F.fprintf fmt "%a %a" Taint.pp_origin origin Procname.pp proc_name ) )
-        trace
-        (time :> int)
-  end
-
-  module TaintProcedureSet = PrettyPrintable.MakePPSet (TaintProcedure)
-
   module TaintSanitized = struct
     type t = {sanitizer: Taint.t; time_trace: Timestamp.trace; trace: Trace.t}
     [@@deriving compare, equal]
@@ -137,7 +123,7 @@ module Attribute = struct
     | ISLAbduced of Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-    | MustNotBeTainted of {sinks: TaintSinkSet.t; procedures: TaintProcedureSet.t}
+    | MustNotBeTainted of TaintSinkSet.t
     | JavaResourceReleased
     | PropagateTaintFrom of taint_in list
       (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
@@ -265,9 +251,8 @@ module Attribute = struct
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
           trace Invalidation.pp_must_be_valid_reason reason
           (timestamp :> int)
-    | MustNotBeTainted {sinks; procedures} ->
-        F.fprintf f "MustNotBeTainted{sinks=%a, procedures=%a}" TaintSinkSet.pp sinks
-          TaintProcedureSet.pp procedures
+    | MustNotBeTainted sinks ->
+        F.fprintf f "MustNotBeTainted%a" TaintSinkSet.pp sinks
     | JavaResourceReleased ->
         F.pp_print_string f "Released"
     | PropagateTaintFrom taints_in ->
@@ -400,16 +385,11 @@ module Attribute = struct
         MustBeValid (timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized (_timestamp, trace) ->
         MustBeInitialized (timestamp, add_call_to_trace trace)
-    | MustNotBeTainted {sinks; procedures} ->
+    | MustNotBeTainted sinks ->
         let add_call_to_sink taint_sink =
           TaintSink.{taint_sink with trace= add_call_to_trace taint_sink.trace}
         in
-        let add_call_to_procedure taint_procedure =
-          TaintProcedure.{taint_procedure with trace= add_call_to_trace taint_procedure.trace}
-        in
-        MustNotBeTainted
-          { sinks= TaintSinkSet.map add_call_to_sink sinks
-          ; procedures= TaintProcedureSet.map add_call_to_procedure procedures }
+        MustNotBeTainted (TaintSinkSet.map add_call_to_sink sinks)
     | PropagateTaintFrom taints_in ->
         PropagateTaintFrom (List.map taints_in ~f:(fun {v} -> {v= subst v}))
     | Tainted tainted ->
@@ -484,8 +464,7 @@ module Attribute = struct
         else
           let taints_in' = AbstractValue.Set.fold (fun v list -> {v} :: list) taints_in' [] in
           Some (PropagateTaintFrom taints_in')
-    | MustNotBeTainted {sinks; procedures}
-      when TaintSinkSet.is_empty sinks && TaintProcedureSet.is_empty procedures ->
+    | MustNotBeTainted sinks when TaintSinkSet.is_empty sinks ->
         L.die InternalError "Unexpected attribute %a." pp attr
     | Tainted set when TaintedSet.is_empty set ->
         L.die InternalError "Unexpected attribute %a." pp attr
@@ -540,9 +519,9 @@ module Attributes = struct
 
     let get_must_not_be_tainted attrs =
       get_by_rank Attribute.must_not_be_tainted_rank
-        ~dest:(function[@warning "-8"] MustNotBeTainted {sinks; procedures} -> (sinks, procedures))
+        ~dest:(function[@warning "-8"] MustNotBeTainted sinks -> sinks)
         attrs
-      |> Option.value ~default:(Attribute.TaintSinkSet.empty, Attribute.TaintProcedureSet.empty)
+      |> Option.value ~default:Attribute.TaintSinkSet.empty
 
 
     let add attrs value =
@@ -558,15 +537,11 @@ module Attributes = struct
           else
             let existing_set = get_taint_sanitized attrs in
             update (TaintSanitized (TaintSanitizedSet.union new_set existing_set)) attrs
-      | MustNotBeTainted {sinks= new_sinks; procedures= new_procedures} ->
-          if TaintSinkSet.is_empty new_sinks && TaintProcedureSet.is_empty new_procedures then attrs
+      | MustNotBeTainted new_sinks ->
+          if TaintSinkSet.is_empty new_sinks then attrs
           else
-            let sinks, procedures = get_must_not_be_tainted attrs in
-            update
-              (MustNotBeTainted
-                 { sinks= TaintSinkSet.union new_sinks sinks
-                 ; procedures= TaintProcedureSet.union new_procedures procedures } )
-              attrs
+            let sinks = get_must_not_be_tainted attrs in
+            update (MustNotBeTainted (TaintSinkSet.union new_sinks sinks)) attrs
       | _ ->
           add attrs value
   end

@@ -798,66 +798,26 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                       ; astate } ) )
 
 
-let check_all_taint_valid path callee_proc_name call_location actuals pre_post astate call_state =
+let check_all_taint_valid path callee_proc_name call_location pre_post astate call_state =
   let open PulseResult.Let_syntax in
-  let mk_flow_from_taint_source ~source ~destination v astate result =
-    let* result in
-    Recoverable
-      ( result
-      , [ PulseOperations.ReportableError
-            { astate
-            ; diagnostic=
-                FlowFromTaintSource
-                  {tainted= Decompiler.find v astate; source; destination; location= call_location}
-            } ] )
-  in
-  let* astate =
-    AddressMap.fold
-      (fun addr_pre (addr_caller, hist_caller) astate_result ->
-        let sinks, procedures =
-          BaseAddressAttributes.get_must_not_be_tainted addr_pre
-            (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
-        in
-        let trace_via_call trace =
-          Trace.ViaCall
-            {in_call= trace; f= Call callee_proc_name; location= call_location; history= hist_caller}
-        in
-        (* Check taint flows to known/specified sinks *)
-        let* astate =
-          Attribute.TaintSinkSet.fold
-            (fun Attribute.TaintSink.{sink; trace} astate_result ->
-              let* astate = astate_result in
-              let sink_and_trace = (sink, trace_via_call trace) in
-              PulseTaintOperations.check_flows_wrt_sink path call_location sink_and_trace
-                addr_caller astate )
-            sinks astate_result
-        in
-        (* Report taint flows to procedures used within the callee, i.e. flows *via* the callee *)
-        let taint_dependencies =
-          PulseTaintOperations.gather_taint_dependencies addr_caller astate
-        in
-        PulseResult.list_fold taint_dependencies ~init:astate ~f:(fun astate v ->
-            let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers v astate in
-            Attribute.TaintedSet.fold
-              (fun {source; hist} result ->
-                (* Do not report from data_flow_only sources - these are for reporting flows to sinks *)
-                let kinds =
-                  List.filter ~f:(fun kind -> not (Taint.Kind.is_data_flow_only kind)) source.kinds
-                in
-                if List.is_empty kinds then result
-                else
-                  Attribute.TaintProcedureSet.fold
-                    (fun {origin; proc_name; trace} ->
-                      mk_flow_from_taint_source
-                        ~source:({source with kinds}, hist)
-                        ~destination:(origin, proc_name, trace_via_call trace)
-                        v astate )
-                    procedures result )
-              sources (Ok astate) ) )
-      call_state.subst (Ok astate)
-  in
-  PulseTaintOperations.report_flows_to_callee path call_location callee_proc_name actuals
-    call_state.astate astate
+  AddressMap.fold
+    (fun addr_pre (addr_caller, hist_caller) astate_result ->
+      let sinks =
+        BaseAddressAttributes.get_must_not_be_tainted addr_pre
+          (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
+      in
+      let trace_via_call trace =
+        Trace.ViaCall
+          {in_call= trace; f= Call callee_proc_name; location= call_location; history= hist_caller}
+      in
+      Attribute.TaintSinkSet.fold
+        (fun Attribute.TaintSink.{sink; trace} astate_result ->
+          let* astate = astate_result in
+          let sink_and_trace = (sink, trace_via_call trace) in
+          PulseTaintOperations.check_flows_wrt_sink path call_location sink_and_trace addr_caller
+            astate )
+        sinks astate_result )
+    call_state.subst (Ok astate)
 
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
@@ -978,8 +938,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
             (* This has to happen after the post has been applied so that we are aware of any
                sanitizers applied to tainted values too, otherwise we'll report false positives if
                the callee both taints and sanitizes a value *)
-            check_all_taint_valid path callee_proc_name call_location actuals pre_post astate
-              call_state
+            check_all_taint_valid path callee_proc_name call_location pre_post astate call_state
         in
         (astate, return_caller, call_state.subst)
       in

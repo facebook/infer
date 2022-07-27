@@ -27,8 +27,6 @@ end
 type origin = Argument of {index: int} | ReturnValue | Allocation of {typ: string}
 [@@deriving compare, equal]
 
-val pp_origin : F.formatter -> origin -> unit
-
 type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit

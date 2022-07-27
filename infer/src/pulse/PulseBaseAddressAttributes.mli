@@ -53,8 +53,7 @@ val get_invalid : AbstractValue.t -> t -> (Invalidation.t * Trace.t) option
 val get_must_be_valid :
   AbstractValue.t -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
-val get_must_not_be_tainted :
-  AbstractValue.t -> t -> Attribute.TaintSinkSet.t * Attribute.TaintProcedureSet.t
+val get_must_not_be_tainted : AbstractValue.t -> t -> Attribute.TaintSinkSet.t
 
 val is_must_be_valid_or_allocated_isl : AbstractValue.t -> t -> bool
 

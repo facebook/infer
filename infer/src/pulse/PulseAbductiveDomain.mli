@@ -136,9 +136,6 @@ module AddressAttributes : sig
 
   val add_taint_sink : PathContext.t -> Taint.t -> Trace.t -> AbstractValue.t -> t -> t
 
-  val add_taint_procedure :
-    PathContext.t -> Taint.origin -> Procname.t -> Trace.t -> AbstractValue.t -> t -> t
-
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val always_reachable : AbstractValue.t -> t -> t

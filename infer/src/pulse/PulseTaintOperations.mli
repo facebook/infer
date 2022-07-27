@@ -32,19 +32,6 @@ val taint_allocation :
   -> AbductiveDomain.t
   -> AbductiveDomain.t
 
-val gather_taint_dependencies : AbstractValue.t -> AbductiveDomain.t -> AbstractValue.t list
-(** Preorder traversal of the tree formed by taint dependencies of [v] in [astate] *)
-
-val report_flows_to_callee :
-     PathContext.t
-  -> Location.t
-  -> Procname.t
-  -> (BaseStack.value * Typ.t) list
-  -> AbductiveDomain.t
-  -> AbductiveDomain.t
-  -> AbductiveDomain.t AccessResult.t
-(** Add callee as a taint procedure and report taint flows to callee actuals *)
-
 val check_flows_wrt_sink :
      PathContext.t
   -> Location.t

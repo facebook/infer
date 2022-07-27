@@ -263,7 +263,7 @@ let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 let get_must_not_be_tainted address memory =
   match Graph.find_opt address memory with
   | None ->
-      (Attribute.TaintSinkSet.empty, Attribute.TaintProcedureSet.empty)
+      Attribute.TaintSinkSet.empty
   | Some attrs ->
       Attributes.get_must_not_be_tainted attrs
 

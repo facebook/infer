@@ -53,7 +53,7 @@ type read_uninitialized_value =
             value *) }
 [@@deriving compare, equal, yojson_of]
 
-type flow_kind = TaintedFlow | FlowToSink [@@deriving equal]
+type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 
 (** an error to report to the user *)
 type t =
@@ -75,14 +75,6 @@ type t =
       ; sink: Taint.t * Trace.t
       ; location: Location.t
       ; flow_kind: flow_kind }
-  | FlowFromTaintSource of
-      { tainted: Decompiler.expr
-      ; source: Taint.t * ValueHistory.t
-      ; destination: Taint.origin * Procname.t * Trace.t
-            (** The end point `(origin, procname, trace)` of the discovered flow, i.e. where tainted
-                data is passed as the argument `origin` to the procedure `proc_name`. The `trace`
-                records how to reach `proc_name` from the call which introduces the flow. *)
-      ; location: Location.t }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t

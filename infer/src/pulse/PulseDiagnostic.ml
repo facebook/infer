@@ -48,7 +48,7 @@ let yojson_of_erlang_error = [%yojson_of: _]
 
 let yojson_of_read_uninitialized_value = [%yojson_of: _]
 
-type flow_kind = TaintedFlow | FlowToSink [@@deriving equal]
+type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 
 let pp_flow_kind fmt flow_kind =
   match flow_kind with
@@ -56,6 +56,8 @@ let pp_flow_kind fmt flow_kind =
       F.fprintf fmt "tainted flow"
   | FlowToSink ->
       F.fprintf fmt "flow to a taint sink"
+  | FlowFromSource ->
+      F.fprintf fmt "flow from a taint source"
 
 
 type t =
@@ -77,11 +79,6 @@ type t =
       ; sink: Taint.t * Trace.t
       ; location: Location.t
       ; flow_kind: flow_kind }
-  | FlowFromTaintSource of
-      { tainted: Decompiler.expr
-      ; source: Taint.t * ValueHistory.t
-      ; destination: Taint.origin * Procname.t * Trace.t
-      ; location: Location.t }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
@@ -111,7 +108,6 @@ let get_location = function
   | ErlangError (Try_clause {location})
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
-  | FlowFromTaintSource {location}
   | UnnecessaryCopy {location} ->
       location
 
@@ -141,7 +137,6 @@ let aborts_execution = function
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
-  | FlowFromTaintSource _
   | UnnecessaryCopy _ ->
       false
 
@@ -377,9 +372,6 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a (%a)" Decompiler.pp_expr expr Taint.pp
         source Taint.pp sink pp_flow_kind flow_kind
-  | FlowFromTaintSource {tainted; source= source, _; destination= origin, proc_name, _} ->
-      F.asprintf "`%a` is tainted by %a and flows to %a %a" Decompiler.pp_expr tainted Taint.pp
-        source Taint.pp_origin origin Procname.pp proc_name
   | UnnecessaryCopy {copied_into; typ; location; from} -> (
       let open PulseAttribute in
       let suppression_msg =
@@ -561,13 +553,6 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
-  | FlowFromTaintSource
-      {source= _, source_history; destination= origin, proc_name, destination_trace} ->
-      ValueHistory.add_to_errlog ~nesting:0 source_history
-      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0 destination_trace
-           ~pp_immediate:(fun fmt ->
-             F.fprintf fmt "%a %a" Taint.pp_origin origin Procname.pp proc_name )
-      @@ []
   | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location
@@ -636,5 +621,5 @@ let get_issue_type ~latent issue_type =
       IssueType.taint_error
   | TaintFlow {flow_kind= FlowToSink}, _ ->
       IssueType.data_flow_to_sink
-  | FlowFromTaintSource _, _ ->
+  | TaintFlow {flow_kind= FlowFromSource}, _ ->
       IssueType.sensitive_data_flow
