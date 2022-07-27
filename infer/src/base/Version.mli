@@ -25,11 +25,13 @@ val versionJson : string
 
 val clang_enabled : bool
 
+val erlang_enabled : bool
+
+val hack_enabled : bool [@@warning "-32"]
+
 val java_enabled : bool
 
 val java_version : int option
-
-val erlang_enabled : bool
 
 val xcode_enabled : bool
 
