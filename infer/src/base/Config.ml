@@ -35,14 +35,15 @@ type build_system =
   | BBuck
   | BBuck2
   | BClang
+  | BErlc
   | BGradle
+  | BHackc
   | BJava
   | BJavac
   | BMake
   | BMvn
   | BNdk
   | BRebar3
-  | BErlc
   | BXcode
 [@@deriving compare, equal]
 
@@ -72,6 +73,7 @@ let build_system_exe_assoc =
   ; (BClang, "clang++")
   ; (BClang, "c++")
   ; (BClang, "g++")
+  ; (BHackc, "hackc")
   ; (BMake, "make")
   ; (BMake, "configure")
   ; (BMake, "cmake")

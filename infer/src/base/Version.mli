@@ -27,7 +27,7 @@ val clang_enabled : bool
 
 val erlang_enabled : bool
 
-val hack_enabled : bool [@@warning "-32"]
+val hack_enabled : bool
 
 val java_enabled : bool
 

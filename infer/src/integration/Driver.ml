@@ -29,6 +29,7 @@ type mode =
   | NdkBuild of {build_cmd: string list}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
+  | Hackc of {args: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -68,6 +69,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | Erlc {args} ->
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
+  | Hackc {args} ->
+      F.fprintf fmt "Hackc driver mode:@\nargs = %a" Pp.cli_args args
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -164,6 +167,9 @@ let capture ~changed_files mode =
     | Erlc {args} ->
         L.progress "Capturing in erlc mode...@." ;
         Erlang.capture ~command:"erlc" ~args
+    | Hackc {args} ->
+        L.progress "Capturing in hackc mode...@." ;
+        Hack.capture ~command:"hackc" ~args
     | XcodeBuild {prog; args} ->
         L.progress "Capturing in xcodebuild mode...@." ;
         XcodeBuild.capture ~prog ~args
@@ -325,6 +331,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
         Version.java_enabled
     | `Erlang ->
         Version.erlang_enabled
+    | `Hack ->
+        Version.hack_enabled
     | `Xcode ->
         Version.clang_enabled && Version.xcode_enabled
   in
@@ -339,6 +347,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "java"
       | `Erlang ->
           "erlang"
+      | `Hack ->
+          "hack"
       | `Xcode ->
           "clang and xcode"
     in
@@ -365,6 +375,8 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Erlang
   | BErlc ->
       Config.string_of_build_system build_system |> assert_supported_mode `Erlang
+  | BHackc ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Hack
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck2 | BBuck ->
@@ -438,6 +450,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Rebar3 {args}
       | BErlc, _ ->
           Erlc {args}
+      | BHackc, _ ->
+          Hackc {args}
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty {prog; args}
       | BXcode, _ ->

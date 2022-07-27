@@ -18,14 +18,15 @@ type build_system =
   | BBuck
   | BBuck2
   | BClang
+  | BErlc
   | BGradle
+  | BHackc
   | BJava
   | BJavac
   | BMake
   | BMvn
   | BNdk
   | BRebar3
-  | BErlc
   | BXcode
 
 type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
