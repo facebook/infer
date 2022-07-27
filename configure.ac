@@ -109,6 +109,14 @@ AC_ARG_ENABLE(erlang-analyzers,
 BUILD_ERLANG_ANALYZERS=$enable_erlang_analyzers
 AC_SUBST([BUILD_ERLANG_ANALYZERS])
 
+AC_ARG_ENABLE(hack-analyzers,
+  AS_HELP_STRING([--disable-hack-analyzers],
+    [do not build the Hack analyzers (default is to build them)]),
+  ,
+  enable_hack_analyzers=yes)
+BUILD_HACK_ANALYZERS=$enable_hack_analyzers
+AC_SUBST([BUILD_HACK_ANALYZERS])
+
 AC_ARG_ENABLE(java-analyzers,
   AS_HELP_STRING([--disable-java-analyzers],
     [do not build the Java analyzers (default is to build them)]),
@@ -291,6 +299,16 @@ if test "x$enable_erlang_analyzers" = "xyes"; then
   AC_CHECK_TOOL([REBAR3], [rebar3], [no])
 fi
 # end if($enable_erlang_analyzers)
+
+if test "x$enable_hack_analyzers" = "xyes"; then
+  if test "x$is_facebook_tree" = "xyes"; then
+    # Look for hackc in $PATH first, then fallback to the bundled version
+    AC_PATH_TOOL([HACKC], [hackc], [no], [$PATH$PATH_SEPARATOR$ac_pwd/facebook/dependencies/bin])
+  else
+    AC_PATH_TOOL([HACKC], [hackc], [no])
+  fi
+fi
+# end if($enable_hack_analyzers)
 
 if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVA], [java], [no])
