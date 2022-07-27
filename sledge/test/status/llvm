@@ -7196,7 +7196,7 @@ llvm/CodeGen/Hexagon/jump-table-g0.ll:	Ok
 llvm/CodeGen/Hexagon/jump-table-isel.ll:	Ok
 llvm/CodeGen/Hexagon/large-number-of-preds.ll:	Ok
 llvm/CodeGen/Hexagon/late-pred.ll:	Ok
-llvm/CodeGen/Hexagon/late_instr.ll:	Internal error: "Assert_failure cli/frontend.ml:1536:52"
+llvm/CodeGen/Hexagon/late_instr.ll:	Internal error: unexpected phi node
 llvm/CodeGen/Hexagon/lcomm.ll:	Ok
 llvm/CodeGen/Hexagon/load-abs.ll:	Ok
 llvm/CodeGen/Hexagon/loadi1-G0.ll:	Error
@@ -7269,7 +7269,7 @@ llvm/CodeGen/Hexagon/mul64-sext.ll:	Ok
 llvm/CodeGen/Hexagon/mul64.ll:	Ok
 llvm/CodeGen/Hexagon/mulh.ll:	Ok
 llvm/CodeGen/Hexagon/mulhs.ll:	Ok
-llvm/CodeGen/Hexagon/multi-cycle.ll:	Internal error: "Assert_failure cli/frontend.ml:1536:52"
+llvm/CodeGen/Hexagon/multi-cycle.ll:	Internal error: unexpected phi node
 llvm/CodeGen/Hexagon/mux-basic.ll:	Error
 llvm/CodeGen/Hexagon/mux-undef.ll:	Ok
 llvm/CodeGen/Hexagon/muxii-bug.ll:	Ok
@@ -7503,7 +7503,7 @@ llvm/CodeGen/Hexagon/swp-epilog-phi2.ll:	Ok
 llvm/CodeGen/Hexagon/swp-epilog-phi4.ll:	Ok
 llvm/CodeGen/Hexagon/swp-epilog-phi5.ll:	Ok
 llvm/CodeGen/Hexagon/swp-epilog-phi6.ll:	Ok
-llvm/CodeGen/Hexagon/swp-epilog-phi7.ll:	Internal error: "Assert_failure cli/frontend.ml:1536:52"
+llvm/CodeGen/Hexagon/swp-epilog-phi7.ll:	Internal error: unexpected phi node
 llvm/CodeGen/Hexagon/swp-epilog-phi8.ll:	Ok
 llvm/CodeGen/Hexagon/swp-epilog-phi9.ll:	Ok
 llvm/CodeGen/Hexagon/swp-epilog-reuse-1.ll:	Ok
@@ -7572,7 +7572,7 @@ llvm/CodeGen/Hexagon/swp-reuse-phi-4.ll:	Ok
 llvm/CodeGen/Hexagon/swp-reuse-phi-5.ll:	Ok
 llvm/CodeGen/Hexagon/swp-reuse-phi-6.ll:	Ok
 llvm/CodeGen/Hexagon/swp-reuse-phi.ll:	Ok
-llvm/CodeGen/Hexagon/swp-sigma.ll:	Internal error: "Assert_failure cli/frontend.ml:1536:52"
+llvm/CodeGen/Hexagon/swp-sigma.ll:	Internal error: unexpected phi node
 llvm/CodeGen/Hexagon/swp-stages.ll:	Ok
 llvm/CodeGen/Hexagon/swp-stages3.ll:	Ok
 llvm/CodeGen/Hexagon/swp-stages4.ll:	Ok

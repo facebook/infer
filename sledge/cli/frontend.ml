@@ -1628,7 +1628,8 @@ let xlate_instr :
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
   | CallBr -> todo "inline asm: %a" pp_llvalue instr ()
-  | PHI | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
+  | PHI -> fail "unexpected phi node" ()
+  | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
 
 let rec xlate_instrs : pop_thunk -> x -> _ Llvm.llpos -> code =
  fun pop x -> function
