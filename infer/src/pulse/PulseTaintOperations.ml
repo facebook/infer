@@ -51,7 +51,8 @@ type matcher =
   { procedure_matcher: procedure_matcher
   ; arguments: Pulse_config_t.argument_constraint list
   ; kinds: Taint.Kind.t list
-  ; target: Pulse_config_t.taint_target }
+  ; target: Pulse_config_t.taint_target
+  ; match_objc_blocks: bool }
 
 type sink_policy =
   { source_kinds: Taint.Kind.t list [@ignore]
@@ -173,7 +174,8 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
       { procedure_matcher
       ; arguments= matcher.argument_constraints
       ; kinds= kinds_of_strings_opt matcher.kinds
-      ; target= Option.value ~default:default_taint_target matcher.taint_target } )
+      ; target= Option.value ~default:default_taint_target matcher.taint_target
+      ; match_objc_blocks= matcher.match_objc_blocks } )
 
 
 let allocation_sources, source_matchers =
@@ -237,7 +239,10 @@ let procedure_matches tenv matchers proc_name actuals =
         | Allocation _ ->
             false
       in
-      if procedure_name_matches then
+      if
+        procedure_name_matches
+        && Bool.equal (Procname.is_objc_block proc_name) matcher.match_objc_blocks
+      then
         let actuals_match =
           List.for_all matcher.arguments ~f:(fun {Pulse_config_t.index; type_matches= types} ->
               List.nth actuals index
@@ -731,7 +736,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
 let pulse_models_to_treat_as_unknown_for_taint =
   (* HACK: make a list of matchers just to reuse the matching code below *)
   let dummy_matcher_of_procedure_matcher procedure_matcher =
-    {procedure_matcher; arguments= []; kinds= []; target= `ReturnValue}
+    {procedure_matcher; arguments= []; kinds= []; target= `ReturnValue; match_objc_blocks= false}
   in
   [ ClassAndMethodNames
       { class_names= ["java.lang.StringBuilder"]

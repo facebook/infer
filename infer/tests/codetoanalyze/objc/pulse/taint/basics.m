@@ -143,3 +143,9 @@ void compoundStmt_taintSourceParameterBad(InferTaint* source) {
   });
   [InferTaint sink:taint];
 }
+
+void clashingBlockNameOk(NSObject* tainted) {
+  ^void(NSObject* obj) {
+    [InferTaint sink:obj];
+  };
+}

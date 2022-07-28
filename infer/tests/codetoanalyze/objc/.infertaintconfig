@@ -14,7 +14,7 @@
         "method_names": ["source"],
         "kinds": ["SimpleSource"]
       },
-      {"procedure": "objc_blocktaintSourceParameterBlockBad_1", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
+      {"procedure": "objc_blocktaintSourceParameterBlockBad_1", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]], "match_objc_blocks": "true"},
       {"procedure": "taintSourceParameterBad", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]}
   ],
   "pulse-taint-sanitizers": [

@@ -25,6 +25,7 @@ type matcher = {
   ?overrides_of_class_with_annotation: string option;
   ?allocation: string option;
   ~argument_constraints: argument_constraint list;
+  ~match_objc_blocks <ocaml default="false">: bool; (** whether this matcher identifies Objective-C blocks or regular procedures *)
   ?kinds: string list option; (** default is [Simple] which matches all Simple sources to all Simple sinks provided they haven't been sanitized by a Simple sanitizer *)
   ?taint_target: taint_target option; (** default is all formals for sinks and sanitizers, return value for sources *)
 }

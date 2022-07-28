@@ -27,7 +27,10 @@
         "kinds": ["SimpleSource"] },
       {"procedure": "AttributedStringProviderInputCreate", "kinds": ["InputCreate"]},
       {"procedure": "StringProviderInputCreate", "kinds": ["InputCreate"]},
-      {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]}
+      {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]},
+      { "procedure": "clashingBlockNameOk",
+        "taint_target": ["ArgumentPositions",[0]],
+        "kinds": ["SimpleSource"] }
   ],
   "pulse-taint-sinks": [
       { "class_names": ["InferTaint"],

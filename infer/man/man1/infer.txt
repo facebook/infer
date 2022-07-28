@@ -1227,6 +1227,8 @@ OPTIONS
                  - ["ArgumentMatchingTypes", [<type list>]]:
                      arguments with types containing supplied strings
                N.B. for methods, index 0 is this/self.
+             - "match_objc_blocks": boolean, "false" by default
+                 "true" if only Objective-C blocks should be matched.
            See also infer-analyze(1).
 
        --purity
