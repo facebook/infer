@@ -296,16 +296,14 @@ let add_var_elt copied_var ~source_addr_opt (res : copy_spec_t) astate =
 
 let add_var copied_var ~source_addr_opt res = map (add_var_elt copied_var ~source_addr_opt res)
 
-let add_field_elt copied_field from ~source_addr_opt (res : copy_spec_t) astate =
+let add_field_elt copied_field ~source_addr_opt (res : copy_spec_t) astate =
   { astate with
-    copy_map=
-      CopyMap.add
-        {copied_into= IntoField {field= copied_field; from}; source_addr_opt}
-        res astate.copy_map }
+    copy_map= CopyMap.add {copied_into= IntoField copied_field; source_addr_opt} res astate.copy_map
+  }
 
 
-let add_field copied_field from ~source_addr_opt res =
-  map (add_field_elt copied_field from ~source_addr_opt res)
+let add_field copied_field ~source_addr_opt res =
+  map (add_field_elt copied_field ~source_addr_opt res)
 
 
 let add_parameter_elt parameter_var (res : parameter_spec_t) astate =

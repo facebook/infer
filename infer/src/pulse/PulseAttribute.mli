@@ -57,8 +57,7 @@ module CopyOrigin : sig
 end
 
 module CopiedInto : sig
-  type t = IntoVar of Var.t | IntoField of {field: Fieldname.t; from: CopyOrigin.t}
-  [@@deriving compare, equal]
+  type t = IntoVar of Var.t | IntoField of Fieldname.t [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 end

@@ -392,7 +392,7 @@ let get_message diagnostic =
              the copy, %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
             location suggestion_msg suppression_msg
-      | IntoField {field; from} ->
+      | IntoField field ->
           F.asprintf
             "Field `%a` with type `%a` is %a into from an rvalue-ref here but is not modified \
              afterwards. Rather than copying into it, try moving into it instead."
@@ -579,9 +579,9 @@ let get_issue_type ~latent issue_type =
       IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
-  | UnnecessaryCopy {copied_into= IntoField {from= CopyAssignment}}, false ->
+  | UnnecessaryCopy {copied_into= IntoField _; from= CopyAssignment}, false ->
       IssueType.unnecessary_copy_assignment_movable_pulse
-  | UnnecessaryCopy {copied_into= IntoField {from= CopyCtor}}, false ->
+  | UnnecessaryCopy {copied_into= IntoField _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_movable_pulse
   | UnnecessaryCopy {from= CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse

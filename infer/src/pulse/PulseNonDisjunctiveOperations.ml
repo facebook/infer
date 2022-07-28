@@ -84,14 +84,13 @@ let add_copies path location call_exp actuals astates astate_non_disj =
                          Option.value_map source_addr_typ_opt ~default:disjunct
                            ~f:(fun (source_addr, _) ->
                              AddressAttributes.add_one source_addr
-                               (CopiedInto (Attribute.CopiedInto.IntoField {field; from}))
-                               disjunct
+                               (CopiedInto (Attribute.CopiedInto.IntoField field)) disjunct
                              |> AddressAttributes.add_one copy_addr
                                   (SourceOriginOfCopy
                                      { source= source_addr
                                      ; is_const_ref= Typ.is_const_reference source_typ } ) )
                        in
-                       ( NonDisjDomain.add_field field from
+                       ( NonDisjDomain.add_field field
                            ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst)
                            copied astate_non_disj
                        , ExecutionDomain.continue disjunct' )
