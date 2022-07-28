@@ -1,168 +1,168 @@
 /* @generated */
 digraph cfg {
-"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_1" [label="1: Start Boxing.dealloc\nFormals:  self:Boxing*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_1" [label="1: Start Boxing.dealloc\nFormals:  self:Boxing*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_1" -> "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_4" ;
-"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_2" [label="2: Exit Boxing.dealloc \n  " color=yellow style=filled]
+	 "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_1" -> "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_4" ;
+"dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_2" [label="2: Exit Boxing.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_3" -> "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_2" ;
-"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_4" [label="4:  Call dealloc \n   n$0=*&self:Boxing* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Boxing*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Boxing*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Boxing*) [line 10, column 1]\n " shape="box"]
+	 "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_3" -> "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_2" ;
+"dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_4" [label="4:  Call dealloc \n   n$0=*&self:Boxing* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Boxing*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Boxing*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Boxing*) [line 10, column 1]\n " shape="box"]
 	
 
-	 "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_4" -> "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_5" ;
-	 "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_4" -> "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_6" ;
-"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_4" -> "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_5" ;
+	 "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_4" -> "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_6" ;
+"dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_5" -> "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_3" ;
-"dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_5" -> "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_3" ;
+"dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_6" -> "dealloc#Boxing#instance.569d9054e725a069b00d4e2aa3ade22c_2" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" [label="1: Start Boxing.getBool\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
+	 "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_6" -> "dealloc#Boxing#[instance].ecddeeb128263449b3d45e405a038396_2" ;
+"getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_1" [label="1: Start Boxing.getBool\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 
-	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_5" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" [label="2: Exit Boxing.getBool \n  " color=yellow style=filled]
+	 "getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_1" -> "getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_5" ;
+"getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_2" [label="2: Exit Boxing.getBool \n  " color=yellow style=filled]
 	
 
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" [label="3:  Return Stmt \n   n$12=_fun_NSNumber.numberWithBool:(1:_Bool) [line 36, column 10]\n " shape="box"]
+"getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_3" [label="3:  Return Stmt \n   n$12=_fun_NSNumber.numberWithBool:(1:_Bool) [line 36, column 10]\n " shape="box"]
 	
 
-	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$12 [line 36, column 3]\n " shape="box"]
+	 "getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_3" -> "getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_4" ;
+"getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$12 [line 36, column 3]\n " shape="box"]
 	
 
-	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" ;
-"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 35, column 3]\n  n$13=_fun_NSNumber.numberWithBool:(1:_Bool) [line 35, column 17]\n  *&n:NSNumber*=n$13 [line 35, column 3]\n " shape="box"]
+	 "getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_4" -> "getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_2" ;
+"getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 35, column 3]\n  n$13=_fun_NSNumber.numberWithBool:(1:_Bool) [line 35, column 17]\n  *&n:NSNumber*=n$13 [line 35, column 3]\n " shape="box"]
 	
 
-	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_5" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" [label="1: Start Boxing.getDouble\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
+	 "getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_5" -> "getBool#Boxing#[instance].a6504cbc3d82569ddabb2fc267515cd2_3" ;
+"getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_1" [label="1: Start Boxing.getDouble\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 
-	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_5" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" [label="2: Exit Boxing.getDouble \n  " color=yellow style=filled]
+	 "getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_1" -> "getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_5" ;
+"getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_2" [label="2: Exit Boxing.getDouble \n  " color=yellow style=filled]
 	
 
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" [label="3:  Return Stmt \n   n$10=_fun_NSNumber.numberWithDouble:(1.5:double) [line 31, column 10]\n " shape="box"]
+"getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_3" [label="3:  Return Stmt \n   n$10=_fun_NSNumber.numberWithDouble:(1.5:double) [line 31, column 10]\n " shape="box"]
 	
 
-	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$10 [line 31, column 3]\n " shape="box"]
+	 "getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_3" -> "getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_4" ;
+"getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$10 [line 31, column 3]\n " shape="box"]
 	
 
-	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" ;
-"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 30, column 3]\n  n$11=_fun_NSNumber.numberWithDouble:(1.5:double) [line 30, column 17]\n  *&n:NSNumber*=n$11 [line 30, column 3]\n " shape="box"]
+	 "getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_4" -> "getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_2" ;
+"getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 30, column 3]\n  n$11=_fun_NSNumber.numberWithDouble:(1.5:double) [line 30, column 17]\n  *&n:NSNumber*=n$11 [line 30, column 3]\n " shape="box"]
 	
 
-	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_5" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" [label="1: Start Boxing.getFloat\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
+	 "getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_5" -> "getDouble#Boxing#[instance].2607c687e4cc8090704c5c3db5fe3611_3" ;
+"getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_1" [label="1: Start Boxing.getFloat\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 
-	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_5" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" [label="2: Exit Boxing.getFloat \n  " color=yellow style=filled]
+	 "getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_1" -> "getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_5" ;
+"getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_2" [label="2: Exit Boxing.getFloat \n  " color=yellow style=filled]
 	
 
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" [label="3:  Return Stmt \n   n$8=_fun_NSNumber.numberWithFloat:(1.5:float) [line 26, column 10]\n " shape="box"]
+"getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_3" [label="3:  Return Stmt \n   n$8=_fun_NSNumber.numberWithFloat:(1.5:float) [line 26, column 10]\n " shape="box"]
 	
 
-	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$8 [line 26, column 3]\n " shape="box"]
+	 "getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_3" -> "getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_4" ;
+"getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$8 [line 26, column 3]\n " shape="box"]
 	
 
-	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" ;
-"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 25, column 3]\n  n$9=_fun_NSNumber.numberWithFloat:(1.5:float) [line 25, column 17]\n  *&n:NSNumber*=n$9 [line 25, column 3]\n " shape="box"]
+	 "getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_4" -> "getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_2" ;
+"getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 25, column 3]\n  n$9=_fun_NSNumber.numberWithFloat:(1.5:float) [line 25, column 17]\n  *&n:NSNumber*=n$9 [line 25, column 3]\n " shape="box"]
 	
 
-	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_5" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" [label="1: Start Boxing.getInt\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
+	 "getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_5" -> "getFloat#Boxing#[instance].10a42eb5a7ce58c5dd5e97ed818d61d5_3" ;
+"getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_1" [label="1: Start Boxing.getInt\nFormals:  self:Boxing*\nLocals:  n:NSNumber* \n  " color=yellow style=filled]
 	
 
-	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_5" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" [label="2: Exit Boxing.getInt \n  " color=yellow style=filled]
+	 "getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_1" -> "getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_5" ;
+"getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_2" [label="2: Exit Boxing.getInt \n  " color=yellow style=filled]
 	
 
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" [label="3:  Return Stmt \n   n$6=_fun_NSNumber.numberWithInt:(5:int) [line 21, column 10]\n " shape="box"]
+"getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_3" [label="3:  Return Stmt \n   n$6=_fun_NSNumber.numberWithInt:(5:int) [line 21, column 10]\n " shape="box"]
 	
 
-	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$6 [line 21, column 3]\n " shape="box"]
+	 "getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_3" -> "getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_4" ;
+"getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$6 [line 21, column 3]\n " shape="box"]
 	
 
-	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" ;
-"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 20, column 3]\n  n$7=_fun_NSNumber.numberWithInt:(5:int) [line 20, column 17]\n  *&n:NSNumber*=n$7 [line 20, column 3]\n " shape="box"]
+	 "getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_4" -> "getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_2" ;
+"getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 20, column 3]\n  n$7=_fun_NSNumber.numberWithInt:(5:int) [line 20, column 17]\n  *&n:NSNumber*=n$7 [line 20, column 3]\n " shape="box"]
 	
 
-	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_5" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" [label="1: Start Boxing.getIntExp\nFormals:  self:Boxing*\nLocals:  n:NSNumber* y:int x:int \n  " color=yellow style=filled]
+	 "getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_5" -> "getInt#Boxing#[instance].5565625a6a4d787ce8885d3da6e0472b_3" ;
+"getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_1" [label="1: Start Boxing.getIntExp\nFormals:  self:Boxing*\nLocals:  n:NSNumber* y:int x:int \n  " color=yellow style=filled]
 	
 
-	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_7" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_2" [label="2: Exit Boxing.getIntExp \n  " color=yellow style=filled]
+	 "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_1" -> "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_7" ;
+"getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_2" [label="2: Exit Boxing.getIntExp \n  " color=yellow style=filled]
 	
 
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 16, column 12]\n  n$1=*&y:int [line 16, column 16]\n  n$2=_fun_NSNumber.numberWithInt:((n$0 + n$1):int) [line 16, column 10]\n " shape="box"]
+"getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 16, column 12]\n  n$1=*&y:int [line 16, column 16]\n  n$2=_fun_NSNumber.numberWithInt:((n$0 + n$1):int) [line 16, column 10]\n " shape="box"]
 	
 
-	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$2 [line 16, column 3]\n " shape="box"]
+	 "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_3" -> "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_4" ;
+"getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_4" [label="4:  Return Stmt \n   *&return:NSNumber*=n$2 [line 16, column 3]\n " shape="box"]
 	
 
-	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_2" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 15, column 3]\n  n$3=*&x:int [line 15, column 41]\n  n$4=*&y:int [line 15, column 45]\n  n$5=_fun_NSNumber.numberWithInt:((n$3 + n$4):int) [line 15, column 17]\n  *&n:NSNumber*=n$5 [line 15, column 3]\n " shape="box"]
+	 "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_4" -> "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_2" ;
+"getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(n:NSNumber*); [line 15, column 3]\n  n$3=*&x:int [line 15, column 41]\n  n$4=*&y:int [line 15, column 45]\n  n$5=_fun_NSNumber.numberWithInt:((n$3 + n$4):int) [line 15, column 17]\n  *&n:NSNumber*=n$5 [line 15, column 3]\n " shape="box"]
 	
 
-	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 14, column 3]\n  *&y:int=5 [line 14, column 3]\n " shape="box"]
+	 "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_5" -> "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_3" ;
+"getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 14, column 3]\n  *&y:int=5 [line 14, column 3]\n " shape="box"]
 	
 
-	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" ;
-"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 13, column 3]\n  *&x:int=4 [line 13, column 3]\n " shape="box"]
+	 "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_6" -> "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_5" ;
+"getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 13, column 3]\n  *&x:int=4 [line 13, column 3]\n " shape="box"]
 	
 
-	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_7" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_1" [label="1: Start Boxing.getS\nFormals:  self:Boxing*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+	 "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_7" -> "getIntExp#Boxing#[instance].3daa535002acbf1c833774dbdaca41a1_6" ;
+"getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_1" [label="1: Start Boxing.getS\nFormals:  self:Boxing*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
-	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_1" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_5" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" [label="2: Exit Boxing.getS \n  " color=yellow style=filled]
+	 "getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_1" -> "getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_5" ;
+"getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_2" [label="2: Exit Boxing.getS \n  " color=yellow style=filled]
 	
 
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" [label="3:  Return Stmt \n   n$15=_fun_NSString.stringWithUTF8String:(\"hello world\":char*) [line 41, column 10]\n " shape="box"]
+"getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_3" [label="3:  Return Stmt \n   n$15=_fun_NSString.stringWithUTF8String:(\"hello world\":char*) [line 41, column 10]\n " shape="box"]
 	
 
-	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" [label="4:  Return Stmt \n   *&return:NSString*=n$15 [line 41, column 3]\n " shape="box"]
+	 "getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_3" -> "getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_4" ;
+"getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_4" [label="4:  Return Stmt \n   *&return:NSString*=n$15 [line 41, column 3]\n " shape="box"]
 	
 
-	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" ;
-"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 40, column 3]\n  n$16=_fun_strdup(\"hello world\":char*) [line 40, column 19]\n  n$17=_fun_NSString.stringWithUTF8String:(n$16:char*) [line 40, column 17]\n  *&s:NSString*=n$17 [line 40, column 3]\n " shape="box"]
+	 "getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_4" -> "getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_2" ;
+"getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 40, column 3]\n  n$16=_fun_strdup(\"hello world\":char*) [line 40, column 19]\n  n$17=_fun_NSString.stringWithUTF8String:(n$16:char*) [line 40, column 17]\n  *&s:NSString*=n$17 [line 40, column 3]\n " shape="box"]
 	
 
-	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_5" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" ;
-"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_1" [label="1: Start Boxing.getString\nFormals:  self:Boxing*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+	 "getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_5" -> "getS#Boxing#[instance].7f6c44e65df14af9d8a698780be22f75_3" ;
+"getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_1" [label="1: Start Boxing.getString\nFormals:  self:Boxing*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
-	 "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_1" -> "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_5" ;
-"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_2" [label="2: Exit Boxing.getString \n  " color=yellow style=filled]
+	 "getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_1" -> "getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_5" ;
+"getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_2" [label="2: Exit Boxing.getString \n  " color=yellow style=filled]
 	
 
-"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_3" [label="3:  Return Stmt \n   n$19=*&s:NSString* [line 47, column 10]\n " shape="box"]
+"getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_3" [label="3:  Return Stmt \n   n$19=*&s:NSString* [line 47, column 10]\n " shape="box"]
 	
 
-	 "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_3" -> "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_4" ;
-"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_4" [label="4:  Return Stmt \n   *&return:NSString*=n$19 [line 47, column 3]\n " shape="box"]
+	 "getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_3" -> "getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_4" ;
+"getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_4" [label="4:  Return Stmt \n   *&return:NSString*=n$19 [line 47, column 3]\n " shape="box"]
 	
 
-	 "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_4" -> "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_2" ;
-"getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 46, column 3]\n  n$20=_fun_NSString.unknownSelector:(\"hello world\":char*) [line 46, column 17]\n  *&s:NSString*=n$20 [line 46, column 3]\n " shape="box"]
+	 "getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_4" -> "getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_2" ;
+"getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 46, column 3]\n  n$20=_fun_NSString.unknownSelector:(\"hello world\":char*) [line 46, column 17]\n  *&s:NSString*=n$20 [line 46, column 3]\n " shape="box"]
 	
 
-	 "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_5" -> "getString#Boxing#instance.0cdd84065923a1c621289a9de4707559_3" ;
+	 "getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_5" -> "getString#Boxing#[instance].b3629fa654667a54c2f01de143540257_3" ;
 }

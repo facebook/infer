@@ -56,124 +56,124 @@ digraph cfg {
 	
 
 	 "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_7" -> "objc_blockMyBlock.array_trans_2(struct objc_object).55e73c34c60839a5c2b8abffd7dcfc46_3" ;
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_1" [label="1: Start MyBlock.array\nFormals:  self:MyBlock*\nLocals:  a:NSArray* \n  " color=yellow style=filled]
+"array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_1" [label="1: Start MyBlock.array\nFormals:  self:MyBlock*\nLocals:  a:NSArray* \n  " color=yellow style=filled]
 	
 
-	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_1" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_4" ;
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_2" [label="2: Exit MyBlock.array \n  " color=yellow style=filled]
+	 "array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_1" -> "array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_4" ;
+"array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_2" [label="2: Exit MyBlock.array \n  " color=yellow style=filled]
 	
 
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" [label="3:  Message Call: enumerateObjectsUsingBlock: \n   n$5=*&a:NSArray* [line 19, column 4]\n  n$6=_fun_NSArray.enumerateObjectsUsingBlock:(n$5:NSArray*,(_fun_objc_blockMyBlock.array_1):_fn_(*)) virtual [line 19, column 3]\n " shape="box"]
+"array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_3" [label="3:  Message Call: enumerateObjectsUsingBlock: \n   n$5=*&a:NSArray* [line 19, column 4]\n  n$6=_fun_NSArray.enumerateObjectsUsingBlock:(n$5:NSArray*,(_fun_objc_blockMyBlock.array_1):_fn_(*)) virtual [line 19, column 3]\n " shape="box"]
 	
 
-	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_2" ;
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:NSArray*); [line 18, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 18, column 17]\n  n$8=_fun_NSArray.init(n$7:NSArray*) virtual [line 18, column 16]\n  *&a:NSArray*=n$8 [line 18, column 3]\n " shape="box"]
+	 "array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_3" -> "array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_2" ;
+"array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(a:NSArray*); [line 18, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 18, column 17]\n  n$8=_fun_NSArray.init(n$7:NSArray*) virtual [line 18, column 16]\n  *&a:NSArray*=n$8 [line 18, column 3]\n " shape="box"]
 	
 
-	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_4" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_3" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_1" [label="1: Start MyBlock.array_trans\nFormals:  self:MyBlock*\nLocals:  idx:unsigned long object:objc_object* stop:_Bool* enumerateObjectsUsingBlock:_fn_(*) objects:NSArray* a:NSArray* \n  " color=yellow style=filled]
+	 "array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_4" -> "array#MyBlock#[instance].452aa168203e40bdfe041a1e0de43bfd_3" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_1" [label="1: Start MyBlock.array_trans\nFormals:  self:MyBlock*\nLocals:  idx:unsigned long object:objc_object* stop:_Bool* enumerateObjectsUsingBlock:_fn_(*) objects:NSArray* a:NSArray* \n  " color=yellow style=filled]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_1" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_2" [label="2: Exit MyBlock.array_trans \n  " color=yellow style=filled]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_1" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_20" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_2" [label="2: Exit MyBlock.array_trans \n  " color=yellow style=filled]
 	
 
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_3" [label="3:  Call _fun_free \n   n$9=*&stop:_Bool* [line 55, column 8]\n  n$10=_fun_free(n$9:void*) [line 55, column 3]\n " shape="box"]
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_3" [label="3:  Call _fun_free \n   n$9=*&stop:_Bool* [line 55, column 8]\n  n$10=_fun_free(n$9:void*) [line 55, column 3]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_3" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_2" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_4" [label="4: + \n  " ]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_3" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_2" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_4" [label="4: + \n  " ]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_4" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_7" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(idx:unsigned long); [line 48, column 8]\n  *&idx:unsigned long=(unsigned long)0 [line 48, column 8]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_4" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_7" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(idx:unsigned long); [line 48, column 8]\n  *&idx:unsigned long=(unsigned long)0 [line 48, column 8]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_4" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_6" [label="6:  UnaryOperator \n   n$11=*&idx:unsigned long [line 48, column 49]\n  *&idx:unsigned long=(n$11 + 1) [line 48, column 49]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_5" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_4" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_6" [label="6:  UnaryOperator \n   n$11=*&idx:unsigned long [line 48, column 49]\n  *&idx:unsigned long=(n$11 + 1) [line 48, column 49]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_6" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_4" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_7" [label="7:  BinaryOperatorStmt: LT \n   n$12=*&idx:unsigned long [line 48, column 28]\n  n$13=*&objects:NSArray* [line 48, column 34]\n  n$14=_fun_NSArray.count(n$13:NSArray*) [line 48, column 42]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_6" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_4" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_7" [label="7:  BinaryOperatorStmt: LT \n   n$12=*&idx:unsigned long [line 48, column 28]\n  n$13=*&objects:NSArray* [line 48, column 34]\n  n$14=_fun_NSArray.count(n$13:NSArray*) [line 48, column 42]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_7" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_8" ;
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_7" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_9" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_8" [label="8: Prune (true branch, for loop) \n   PRUNE((n$12 < n$14), true); [line 48, column 28]\n " shape="invhouse"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_7" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_8" ;
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_7" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_9" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_8" [label="8: Prune (true branch, for loop) \n   PRUNE((n$12 < n$14), true); [line 48, column 28]\n " shape="invhouse"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_8" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_15" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$12 < n$14), false); [line 48, column 28]\n " shape="invhouse"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_8" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_15" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_9" [label="9: Prune (false branch, for loop) \n   PRUNE(!(n$12 < n$14), false); [line 48, column 28]\n " shape="invhouse"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_9" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_3" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" [label="10: + \n   END_BRANCHES\n " ]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_9" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_3" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_10" [label="10: + \n   END_BRANCHES\n " ]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_6" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" [label="11:  BinaryOperatorStmt: EQ \n   n$15=*&stop:_Bool* [line 52, column 10]\n  n$16=*n$15:_Bool [line 52, column 9]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_10" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_6" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_11" [label="11:  BinaryOperatorStmt: EQ \n   n$15=*&stop:_Bool* [line 52, column 10]\n  n$16=*n$15:_Bool [line 52, column 9]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" ;
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" [label="12: Prune (true branch, if (terminated)) \n   PRUNE((n$16 == 1), true); [line 52, column 9]\n " shape="invhouse"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_11" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_12" ;
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_11" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_13" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_12" [label="12: Prune (true branch, if (terminated)) \n   PRUNE((n$16 == 1), true); [line 52, column 9]\n " shape="invhouse"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_12" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_3" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" [label="13: Prune (false branch, if (terminated)) \n   PRUNE(!(n$16 == 1), false); [line 52, column 9]\n " shape="invhouse"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_12" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_3" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_13" [label="13: Prune (false branch, if (terminated)) \n   PRUNE(!(n$16 == 1), false); [line 52, column 9]\n " shape="invhouse"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_13" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_10" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" [label="14:  Call n$20 \n   n$20=*&enumerateObjectsUsingBlock:_fn_(*) [line 51, column 5]\n  n$21=*&object:objc_object* [line 51, column 32]\n  n$22=*&idx:unsigned long [line 51, column 40]\n  n$23=*&stop:_Bool* [line 51, column 45]\n  n$24=n$20(n$21:objc_object*,n$22:unsigned long,n$23:_Bool*) objc_block [line 51, column 5]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_13" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_10" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_14" [label="14:  Call n$20 \n   n$20=*&enumerateObjectsUsingBlock:_fn_(*) [line 51, column 5]\n  n$21=*&object:objc_object* [line 51, column 32]\n  n$22=*&idx:unsigned long [line 51, column 40]\n  n$23=*&stop:_Bool* [line 51, column 45]\n  n$24=n$20(n$21:objc_object*,n$22:unsigned long,n$23:_Bool*) objc_block [line 51, column 5]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_11" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(object:objc_object*); [line 50, column 5]\n  n$26=*&objects:NSArray* [line 50, column 17]\n  n$25=*&idx:unsigned long [line 50, column 25]\n  n$27=_fun_NSArray.objectAtIndexedSubscript:(n$26:NSArray*,n$25:unsigned long) virtual [line 50, column 17]\n  *&object:objc_object*=n$27 [line 50, column 5]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_14" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_11" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(object:objc_object*); [line 50, column 5]\n  n$26=*&objects:NSArray* [line 50, column 17]\n  n$25=*&idx:unsigned long [line 50, column 25]\n  n$27=_fun_NSArray.objectAtIndexedSubscript:(n$26:NSArray*,n$25:unsigned long) virtual [line 50, column 17]\n  *&object:objc_object*=n$27 [line 50, column 5]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_15" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_14" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" [label="16:  BinaryOperatorStmt: Assign \n   n$29=*&stop:_Bool* [line 46, column 4]\n  *n$29:_Bool=0 [line 46, column 3]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_15" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_14" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_16" [label="16:  BinaryOperatorStmt: Assign \n   n$29=*&stop:_Bool* [line 46, column 4]\n  *n$29:_Bool=0 [line 46, column 3]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(stop:_Bool*); [line 45, column 3]\n  n$30=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1):_Bool) [line 45, column 16]\n  *&stop:_Bool*=(_Bool*)n$30 [line 45, column 3]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_16" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_5" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(stop:_Bool*); [line 45, column 3]\n  n$30=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1):_Bool) [line 45, column 16]\n  *&stop:_Bool*=(_Bool*)n$30 [line 45, column 3]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(enumerateObjectsUsingBlock:_fn_(*)); [line 37, column 3]\n  *&enumerateObjectsUsingBlock:_fn_(*)=(_fun_objc_blockMyBlock.array_trans_2) [line 37, column 3]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_17" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_16" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(enumerateObjectsUsingBlock:_fn_(*)); [line 37, column 3]\n  *&enumerateObjectsUsingBlock:_fn_(*)=(_fun_objc_blockMyBlock.array_trans_2) [line 37, column 3]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" [label="19:  DeclStmt \n   VARIABLE_DECLARED(objects:NSArray*); [line 34, column 3]\n  n$36=*&a:NSArray* [line 34, column 22]\n  *&objects:NSArray*=n$36 [line 34, column 3]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_18" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_17" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_19" [label="19:  DeclStmt \n   VARIABLE_DECLARED(objects:NSArray*); [line 34, column 3]\n  n$36=*&a:NSArray* [line 34, column 22]\n  *&objects:NSArray*=n$36 [line 34, column 3]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" [label="20:  DeclStmt \n   VARIABLE_DECLARED(a:NSArray*); [line 32, column 3]\n  n$37=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 32, column 17]\n  n$38=_fun_NSArray.init(n$37:NSArray*) virtual [line 32, column 16]\n  *&a:NSArray*=n$38 [line 32, column 3]\n " shape="box"]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_19" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_18" ;
+"array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_20" [label="20:  DeclStmt \n   VARIABLE_DECLARED(a:NSArray*); [line 32, column 3]\n  n$37=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 32, column 17]\n  n$38=_fun_NSArray.init(n$37:NSArray*) virtual [line 32, column 16]\n  *&a:NSArray*=n$38 [line 32, column 3]\n " shape="box"]
 	
 
-	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" ;
-"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_1" [label="1: Start MyBlock.dealloc\nFormals:  self:MyBlock*\nLocals:  \n  " color=yellow style=filled]
+	 "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_20" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842df2088bcf7ef84d8_19" ;
+"dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_1" [label="1: Start MyBlock.dealloc\nFormals:  self:MyBlock*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_1" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_4" ;
-"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_2" [label="2: Exit MyBlock.dealloc \n  " color=yellow style=filled]
+	 "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_1" -> "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_4" ;
+"dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_2" [label="2: Exit MyBlock.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_2" ;
-"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_4" [label="4:  Call dealloc \n   n$0=*&self:MyBlock* [line 14, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:MyBlock*) [line 14, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:MyBlock*,(n$1 - 1):unsigned int) [line 14, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:MyBlock*) [line 14, column 1]\n " shape="box"]
+	 "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_3" -> "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_2" ;
+"dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_4" [label="4:  Call dealloc \n   n$0=*&self:MyBlock* [line 14, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:MyBlock*) [line 14, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:MyBlock*,(n$1 - 1):unsigned int) [line 14, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:MyBlock*) [line 14, column 1]\n " shape="box"]
 	
 
-	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_4" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_5" ;
-	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_4" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_6" ;
-"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 14, column 1]\n " shape="invhouse"]
+	 "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_4" -> "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_5" ;
+	 "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_4" -> "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_6" ;
+"dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 14, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_5" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_3" ;
-"dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 14, column 1]\n " shape="invhouse"]
+	 "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_5" -> "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_3" ;
+"dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 14, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_6" -> "dealloc#MyBlock#instance.0e3e837931da12de231d46e0429d2d6c_2" ;
+	 "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_6" -> "dealloc#MyBlock#[instance].95f87714c4d69f9bd71c2394c83522e7_2" ;
 }
