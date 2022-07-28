@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 INFER_OPTIONS = --datalog-only
-INFERPRINT_OPTIONS = --issues-tests-fields=file,bug_type,qualifier --issues-tests
+INFERPRINT_OPTIONS = --issues-tests-fields=file,line,bug_type,qualifier --issues-tests
 SOURCES = $(wildcard *.java)
 
 include $(TESTS_DIR)/javac.make

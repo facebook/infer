@@ -7,6 +7,20 @@
 
 open! IStd
 
-type t = Reachable of Procname.t | Extends of Typ.Name.t * Typ.Name.t
+(** In Alloc, the allocation site is uniquely identified by the string
+    "class:line:assigned_variable" *)
+type t =
+  | Reachable of {proc_name: Procname.t}
+  | Extends of {typ: Typ.Name.t; typ_super: Typ.Name.t}
+  | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
+  | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
 
 val to_string : t -> string
+
+val reachable : Procname.t -> t
+
+val extends : Typ.Name.t -> Typ.Name.t -> t
+
+val cast : Procname.t -> Ident.t -> Ident.t -> Typ.t -> t
+
+val alloc : Procname.t -> Ident.t -> Location.t -> Typ.t -> t
