@@ -317,6 +317,7 @@ codetoanalyze/cpp/pulse/unnecessary_copy.cpp, capture_by_value_bad_FN, 0, PULSE_
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, constructor_bad, 2, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_assignment_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter source]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_assignment_bad, 2, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here]
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, move_assignment_ok, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter source]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_and_move_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter source]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_and_move_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, WrapperArr::WrapperArr, 0, PULSE_UNNECESSARY_COPY_MOVABLE, no_bucket, ERROR, [copied here]
