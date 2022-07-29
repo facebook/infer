@@ -41,6 +41,8 @@ type expr [@@deriving compare, equal, yojson_of]
 
 val pp_expr : Format.formatter -> expr -> unit
 
+val pp_expr_with_abstract_value : Format.formatter -> expr -> unit
+
 val find : AbstractValue.t -> t -> expr
 
 val abstract_value_of_expr : expr -> AbstractValue.t

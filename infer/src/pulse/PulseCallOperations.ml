@@ -209,8 +209,10 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               let diagnostic = LatentIssue.to_diagnostic latent_issue in
               match LatentIssue.should_report astate_summary diagnostic with
               | `DelayReport latent_issue ->
+                  L.d_printfln ~color:Orange "issue is still latent, recording a LatentAbortProgram" ;
                   Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
               | `ReportNow ->
+                  L.d_printfln ~color:Red "issue is now manifest, emitting an error" ;
                   Sat
                     (AccessResult.of_error_f
                        (Summary (ReportableErrorSummary {diagnostic; astate= astate_summary}))
@@ -228,6 +230,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
             with
             | None ->
                 (* the address became unreachable so the bug can never be reached; drop it *)
+                L.d_printfln ~color:Orange
+                  "%a seems no longer reachable, dropping the latent invalid access altogether"
+                  Decompiler.pp_expr address_callee ;
                 Unsat
             | Some (invalid_address, caller_history) -> (
                 let access_trace =
@@ -244,14 +249,24 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                 with
                 | None ->
                     (* still no proof that the address is invalid *)
+                    let address_caller = Decompiler.find invalid_address astate_post_call in
+                    L.d_printfln ~color:Orange
+                      "%a in the callee is %a in the caller which is not known to be invalid, \
+                       keeping the latent invalid access"
+                      Decompiler.pp_expr address_callee Decompiler.pp_expr address_caller ;
                     Sat
                       (Ok
                          (LatentInvalidAccess
                             { astate= astate_summary
-                            ; address= Decompiler.find invalid_address astate_post_call
+                            ; address= address_caller
                             ; must_be_valid= (access_trace, must_be_valid_reason)
                             ; calling_context } ) )
                 | Some (invalidation, invalidation_trace) ->
+                    let address_caller = Decompiler.find invalid_address astate_post_call in
+                    L.d_printfln ~color:Red
+                      "%a in the callee is %a in the caller which invalid, reporting the latent \
+                       invalid access as manifest"
+                      Decompiler.pp_expr address_callee Decompiler.pp_expr address_caller ;
                     Sat
                       (FatalError
                          ( Summary
@@ -259,8 +274,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                                 { diagnostic=
                                     AccessToInvalidAddress
                                       { calling_context
-                                      ; invalid_address=
-                                          Decompiler.find invalid_address astate_post_call
+                                      ; invalid_address= address_caller
                                       ; invalidation
                                       ; invalidation_trace
                                       ; access_trace

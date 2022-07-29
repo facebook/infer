@@ -18,6 +18,12 @@ module ValueHistory = PulseValueHistory
 
 type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal]
 
+let pp_calling_context fmt calling_context =
+  F.fprintf fmt "[@[<v1>%a@]]"
+    (Pp.seq ~sep:";@;" (Pp.pair ~fst:CallEvent.pp ~snd:Location.pp))
+    calling_context
+
+
 type access_to_invalid_address =
   { calling_context: calling_context
   ; invalid_address: Decompiler.expr
@@ -27,26 +33,72 @@ type access_to_invalid_address =
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal]
 
-type erlang_error =
-  | Badarg of {calling_context: calling_context; location: Location.t}
-  | Badkey of {calling_context: calling_context; location: Location.t}
-  | Badmap of {calling_context: calling_context; location: Location.t}
-  | Badmatch of {calling_context: calling_context; location: Location.t}
-  | Badrecord of {calling_context: calling_context; location: Location.t}
-  | Case_clause of {calling_context: calling_context; location: Location.t}
-  | Function_clause of {calling_context: calling_context; location: Location.t}
-  | If_clause of {calling_context: calling_context; location: Location.t}
-  | Try_clause of {calling_context: calling_context; location: Location.t}
-[@@deriving compare, equal]
+let yojson_of_access_to_invalid_address = [%yojson_of: _]
+
+let pp_access_to_invalid_address fmt
+    ({ calling_context
+     ; invalid_address
+     ; invalidation
+     ; invalidation_trace
+     ; access_trace
+     ; must_be_valid_reason } [@warning "+9"] ) =
+  let pp_immediate fmt = F.pp_print_string fmt "immediate" in
+  F.fprintf fmt
+    "{@[calling_context=%a;@;\
+     invalid_address=%a;@;\
+     invalidation=%a;@;\
+     invalidation_trace=%a;@;\
+     access_trace=%a;@;\
+     must_be_valid_reason=%a;@;\
+     @]}"
+    pp_calling_context calling_context Decompiler.pp_expr_with_abstract_value invalid_address
+    Invalidation.pp invalidation (Trace.pp ~pp_immediate) invalidation_trace
+    (Trace.pp ~pp_immediate) access_trace Invalidation.pp_must_be_valid_reason must_be_valid_reason
+
+
+module ErlangError = struct
+  type t =
+    | Badarg of {calling_context: calling_context; location: Location.t}
+    | Badkey of {calling_context: calling_context; location: Location.t}
+    | Badmap of {calling_context: calling_context; location: Location.t}
+    | Badmatch of {calling_context: calling_context; location: Location.t}
+    | Badrecord of {calling_context: calling_context; location: Location.t}
+    | Case_clause of {calling_context: calling_context; location: Location.t}
+    | Function_clause of {calling_context: calling_context; location: Location.t}
+    | If_clause of {calling_context: calling_context; location: Location.t}
+    | Try_clause of {calling_context: calling_context; location: Location.t}
+  [@@deriving compare, equal, variants]
+
+  let yojson_of_t = [%yojson_of: _]
+
+  let pp fmt erlang_error =
+    (* this is for debug purposes so if you add another field please remove this warning but make sure
+       to pretty print it too *)
+    let[@warning "+9"] ( Badarg {calling_context; location}
+                       | Badkey {calling_context; location}
+                       | Badmap {calling_context; location}
+                       | Badmatch {calling_context; location}
+                       | Badrecord {calling_context; location}
+                       | Case_clause {calling_context; location}
+                       | Function_clause {calling_context; location}
+                       | If_clause {calling_context; location}
+                       | Try_clause {calling_context; location} ) =
+      erlang_error
+    in
+    F.fprintf fmt "%s{@[location=%a; calling_context=%a@]}" (Variants.to_name erlang_error)
+      Location.pp location pp_calling_context calling_context
+end
 
 type read_uninitialized_value = {calling_context: calling_context; trace: Trace.t}
 [@@deriving compare, equal]
 
-let yojson_of_access_to_invalid_address = [%yojson_of: _]
-
-let yojson_of_erlang_error = [%yojson_of: _]
-
 let yojson_of_read_uninitialized_value = [%yojson_of: _]
+
+let pp_read_uninitialized_value fmt ({calling_context; trace} [@warning "+9"]) =
+  F.fprintf fmt "{@[calling_context=%a;@;trace=%a@]}" pp_calling_context calling_context
+    (Trace.pp ~pp_immediate:(fun fmt -> F.pp_print_string fmt "immediate"))
+    trace
+
 
 type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 
@@ -69,7 +121,7 @@ type t =
       ; value: Decompiler.expr
       ; path: Decompiler.expr
       ; location: Location.t }
-  | ErlangError of erlang_error
+  | ErlangError of ErlangError.t
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
@@ -85,6 +137,52 @@ type t =
       ; location: Location.t
       ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
+
+let pp fmt diagnostic =
+  let pp_immediate fmt = F.pp_print_string fmt "immediate" in
+  match[@warning "+9"] diagnostic with
+  | AccessToInvalidAddress access_to_invalid_address ->
+      F.fprintf fmt "AccessToInvalidAddress %a" pp_access_to_invalid_address
+        access_to_invalid_address
+  | ConstRefableParameter {param; typ; location} ->
+      F.fprintf fmt "ConstRefableParameter {@[param=%a;@;typ=%a;@;location=%a@]}" Var.pp param
+        (Typ.pp_full Pp.text) typ Location.pp location
+  | MemoryLeak {allocator; allocation_trace; location} ->
+      F.fprintf fmt "MemoryLeak {@[allocator=%a;@;allocation_trace=%a;@;location=%a@]}"
+        Attribute.pp_allocator allocator (Trace.pp ~pp_immediate) allocation_trace Location.pp
+        location
+  | RetainCycle {assignment_traces; value; path; location} ->
+      F.fprintf fmt
+        "RetainCycle {@[assignment_traces=[@[<v>%a@]];@;value=%a;@;path=%a;@;location=%a@]}"
+        (Pp.seq ~sep:";@;" (Trace.pp ~pp_immediate))
+        assignment_traces Decompiler.pp_expr_with_abstract_value value Decompiler.pp_expr path
+        Location.pp location
+  | ErlangError erlang_error ->
+      ErlangError.pp fmt erlang_error
+  | ReadUninitializedValue read_uninitialized_value ->
+      F.fprintf fmt "ReadUninitializedValue %a" pp_read_uninitialized_value read_uninitialized_value
+  | ResourceLeak {class_name; allocation_trace; location} ->
+      F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
+        JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
+  | StackVariableAddressEscape {variable; history; location} ->
+      F.fprintf fmt "StackVariableAddressEscape {@[variable=%a;@;history=%a;@;location:%a@]}" Var.pp
+        variable ValueHistory.pp history Location.pp location
+  | TaintFlow {expr; source; sink; location; flow_kind} ->
+      F.fprintf fmt "TaintFlow {@[expr=%a;@;source=%a;@;sink=%a;@;location:%a;@;flow_kind=%a@]}"
+        Decompiler.pp_expr_with_abstract_value expr
+        (Pp.pair ~fst:Taint.pp ~snd:ValueHistory.pp)
+        source
+        (Pp.pair ~fst:Taint.pp ~snd:(Trace.pp ~pp_immediate))
+        sink Location.pp location pp_flow_kind flow_kind
+  | UnnecessaryCopy
+      { copied_into: PulseAttribute.CopiedInto.t
+      ; typ: Typ.t
+      ; location: Location.t
+      ; from: PulseAttribute.CopyOrigin.t } ->
+      F.fprintf fmt "UnnecessaryCopy {@[copied_into=%a;@;typ=%a;@;location:%a;@;from=%a@]}"
+        PulseAttribute.CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp location
+        PulseAttribute.CopyOrigin.pp from
+
 
 let get_location = function
   | AccessToInvalidAddress {calling_context= []; access_trace}

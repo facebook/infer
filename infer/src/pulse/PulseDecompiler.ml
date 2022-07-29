@@ -322,4 +322,8 @@ let yojson_of_expr expr = `String (F.asprintf "%a" pp_expr expr)
 
 let abstract_value_of_expr = function Unknown v | SourceExpr (_, v) -> v
 
+let pp_expr_with_abstract_value fmt decompiled =
+  F.fprintf fmt "%a:%a" AbstractValue.pp (abstract_value_of_expr decompiled) pp_expr decompiled
+
+
 let is_unknown = function Unknown _ -> true | SourceExpr _ -> false

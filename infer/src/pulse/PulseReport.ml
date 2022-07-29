@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -68,19 +69,26 @@ let is_nullsafe_error tenv ~is_nullptr_dereference jn =
    selected as the candidate for the trace, even if it has nothing to do with the error besides
    being equal to the value being dereferenced *)
 let is_constant_deref_without_invalidation (invalidation : Invalidation.t) access_trace =
-  match invalidation with
-  | ConstantDereference _ ->
-      not (Trace.has_invalidation access_trace)
-  | CFree
-  | CustomFree _
-  | CppDelete
-  | CppDeleteArray
-  | EndIterator
-  | GoneOutOfScope _
-  | OptionalEmpty
-  | StdVector _
-  | JavaIterator _ ->
-      false
+  let res =
+    match invalidation with
+    | ConstantDereference _ ->
+        not (Trace.has_invalidation access_trace)
+    | CFree
+    | CustomFree _
+    | CppDelete
+    | CppDeleteArray
+    | EndIterator
+    | GoneOutOfScope _
+    | OptionalEmpty
+    | StdVector _
+    | JavaIterator _ ->
+        false
+  in
+  if res then
+    L.d_printfln "no invalidation in acces trace %a"
+      (Trace.pp ~pp_immediate:(fun fmt -> F.fprintf fmt "immediate"))
+      access_trace ;
+  res
 
 
 let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t) =

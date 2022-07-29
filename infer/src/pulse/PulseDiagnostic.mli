@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
 module Decompiler = PulseDecompiler
@@ -32,17 +33,19 @@ type access_to_invalid_address =
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal, yojson_of]
 
-type erlang_error =
-  | Badarg of {calling_context: calling_context; location: Location.t}
-  | Badkey of {calling_context: calling_context; location: Location.t}
-  | Badmap of {calling_context: calling_context; location: Location.t}
-  | Badmatch of {calling_context: calling_context; location: Location.t}
-  | Badrecord of {calling_context: calling_context; location: Location.t}
-  | Case_clause of {calling_context: calling_context; location: Location.t}
-  | Function_clause of {calling_context: calling_context; location: Location.t}
-  | If_clause of {calling_context: calling_context; location: Location.t}
-  | Try_clause of {calling_context: calling_context; location: Location.t}
-[@@deriving compare, equal, yojson_of]
+module ErlangError : sig
+  type t =
+    | Badarg of {calling_context: calling_context; location: Location.t}
+    | Badkey of {calling_context: calling_context; location: Location.t}
+    | Badmap of {calling_context: calling_context; location: Location.t}
+    | Badmatch of {calling_context: calling_context; location: Location.t}
+    | Badrecord of {calling_context: calling_context; location: Location.t}
+    | Case_clause of {calling_context: calling_context; location: Location.t}
+    | Function_clause of {calling_context: calling_context; location: Location.t}
+    | If_clause of {calling_context: calling_context; location: Location.t}
+    | Try_clause of {calling_context: calling_context; location: Location.t}
+  [@@deriving compare, equal, yojson_of]
+end
 
 type read_uninitialized_value =
   { calling_context: calling_context
@@ -65,7 +68,7 @@ type t =
       ; value: Decompiler.expr
       ; path: Decompiler.expr
       ; location: Location.t }
-  | ErlangError of erlang_error
+  | ErlangError of ErlangError.t
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
@@ -81,6 +84,8 @@ type t =
       ; location: Location.t
       ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
+
+val pp : F.formatter -> t -> unit
 
 val aborts_execution : t -> bool
 (** whether the presence of an error should abort the execution *)

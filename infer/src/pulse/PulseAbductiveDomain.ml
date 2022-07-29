@@ -1218,6 +1218,7 @@ let incorporate_new_eqs ~for_summary astate new_eqs =
   List.fold_until new_eqs ~init:(astate, None)
     ~finish:(fun astate_error -> Sat astate_error)
     ~f:(fun (astate, error) (new_eq : PulseFormula.new_eq) ->
+      L.d_printfln "incorporating new eq: %a" PulseFormula.pp_new_eq new_eq ;
       match new_eq with
       | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
           Continue (astate, error)

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module Diagnostic = PulseDiagnostic
@@ -16,9 +17,11 @@ module Diagnostic = PulseDiagnostic
 
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
-  | ErlangError of Diagnostic.erlang_error
+  | ErlangError of Diagnostic.ErlangError.t
   | ReadUninitializedValue of Diagnostic.read_uninitialized_value
 [@@deriving compare, equal, yojson_of]
+
+val pp : F.formatter -> t -> unit
 
 val to_diagnostic : t -> Diagnostic.t
 

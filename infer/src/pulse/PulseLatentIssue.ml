@@ -6,13 +6,13 @@
  *)
 
 open! IStd
+module F = Format
 module AbductiveDomain = PulseAbductiveDomain
-module Arithmetic = PulseArithmetic
 module Diagnostic = PulseDiagnostic
 
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
-  | ErlangError of Diagnostic.erlang_error
+  | ErlangError of Diagnostic.ErlangError.t
   | ReadUninitializedValue of Diagnostic.read_uninitialized_value
 [@@deriving compare, equal, yojson_of]
 
@@ -24,6 +24,8 @@ let to_diagnostic = function
   | ReadUninitializedValue read_uninitialized_value ->
       Diagnostic.ReadUninitializedValue read_uninitialized_value
 
+
+let pp fmt latent_issue = Diagnostic.pp fmt (to_diagnostic latent_issue)
 
 let add_call call_and_loc = function
   | AccessToInvalidAddress access ->
@@ -51,7 +53,7 @@ let add_call call_and_loc = function
 
 
 let is_manifest (astate : AbductiveDomain.summary) =
-  Arithmetic.has_no_assumptions (astate :> AbductiveDomain.t)
+  PulseArithmetic.has_no_assumptions (astate :> AbductiveDomain.t)
   && ( (not Config.pulse_isl)
      || AbductiveDomain.is_isl_without_allocation (astate :> AbductiveDomain.t)
         && ( (not Config.pulse_manifest_emp)

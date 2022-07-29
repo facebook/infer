@@ -204,22 +204,26 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
   | `AlreadyVisited, call_state ->
       Ok call_state
   | `NotAlreadyVisited, call_state -> (
-    match BaseMemory.find_opt addr_pre pre.BaseDomain.heap with
-    | None ->
-        Ok call_state
-    | Some edges_pre ->
-        PulseResult.container_fold ~fold:Memory.Edges.fold ~init:call_state edges_pre
-          ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
-            (* HACK: we should probably visit the value in the (array) access too, but since it's
-               a value normally it shouldn't appear in the heap anyway so there should be nothing
-               to visit. *)
-            let subst, access_caller = translate_access_to_caller call_state.subst access_callee in
-            let astate, addr_hist_dest_caller =
-              Memory.eval_edge addr_hist_caller access_caller call_state.astate
-            in
-            let call_state = {call_state with astate; subst} in
-            materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:addr_pre_dest
-              ~addr_hist_caller:addr_hist_dest_caller call_state ) )
+      L.d_printfln "visiting from address %a <-> %a" AbstractValue.pp addr_pre AbstractValue.pp
+        (fst addr_hist_caller) ;
+      match BaseMemory.find_opt addr_pre pre.BaseDomain.heap with
+      | None ->
+          Ok call_state
+      | Some edges_pre ->
+          PulseResult.container_fold ~fold:Memory.Edges.fold ~init:call_state edges_pre
+            ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
+              (* HACK: we should probably visit the value in the (array) access too, but since it's
+                 a value normally it shouldn't appear in the heap anyway so there should be nothing
+                 to visit. *)
+              let subst, access_caller =
+                translate_access_to_caller call_state.subst access_callee
+              in
+              let astate, addr_hist_dest_caller =
+                Memory.eval_edge addr_hist_caller access_caller call_state.astate
+              in
+              let call_state = {call_state with astate; subst} in
+              materialize_pre_from_address callee_proc_name call_location ~pre
+                ~addr_pre:addr_pre_dest ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
 
 let deref_non_c_struct addr typ astate =
@@ -890,7 +894,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
   | exception Contradiction reason ->
       (* can't make sense of the pre-condition in the current context: give up on that particular
          pre/post pair *)
-      L.d_printfln "Cannot apply precondition: %a" pp_contradiction reason ;
+      L.d_printfln ~color:Orange "Cannot apply precondition: %a@\n" pp_contradiction reason ;
       log_contradiction reason ;
       (Unsat, Some reason)
   | result -> (

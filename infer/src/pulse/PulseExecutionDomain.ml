@@ -73,8 +73,8 @@ let pp fmt = function
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
       let message = Diagnostic.get_message diagnostic in
       let location = Diagnostic.get_location diagnostic in
-      F.fprintf fmt "{LatentAbortProgram(%a: %s) %a}" Location.pp location message
-        AbductiveDomain.pp
+      F.fprintf fmt "{LatentAbortProgram(%a: %s)@ %a@ %a}" Location.pp location message
+        LatentIssue.pp latent_issue AbductiveDomain.pp
         (astate :> AbductiveDomain.t)
   | LatentInvalidAccess {astate; address; must_be_valid= _} ->
       F.fprintf fmt "{LatentInvalidAccess(%a) %a}" Decompiler.pp_expr address AbductiveDomain.pp
