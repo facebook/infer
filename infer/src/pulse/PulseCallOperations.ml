@@ -205,7 +205,11 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           | ExitProgram _ ->
               Sat (Ok (ExitProgram astate_summary))
           | LatentAbortProgram {latent_issue} -> (
-              let latent_issue = LatentIssue.add_call (Call callee_pname, call_loc) latent_issue in
+              let open SatUnsat.Import in
+              let latent_issue =
+                LatentIssue.add_call (Call callee_pname, call_loc) subst astate_post_call
+                  latent_issue
+              in
               let diagnostic = LatentIssue.to_diagnostic latent_issue in
               match LatentIssue.should_report astate_summary diagnostic with
               | `DelayReport latent_issue ->
@@ -226,7 +230,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
               ; calling_context } -> (
             match
-              AbstractValue.Map.find_opt (Decompiler.abstract_value_of_expr address_callee) subst
+              let open IOption.Let_syntax in
+              let* addr = Decompiler.abstract_value_of_expr address_callee in
+              AbstractValue.Map.find_opt addr subst
             with
             | None ->
                 (* the address became unreachable so the bug can never be reached; drop it *)

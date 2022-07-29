@@ -151,7 +151,9 @@ let rec access_expr_of_source_expr (base, rev_accesses) =
 
 let pp_source_expr fmt source_expr = pp_access_expr fmt (access_expr_of_source_expr source_expr)
 
-type decompiled = SourceExpr of source_expr * AbstractValue.t | Unknown of AbstractValue.t
+type decompiled =
+  | SourceExpr of source_expr * AbstractValue.t option
+  | Unknown of AbstractValue.t option
 [@@deriving compare, equal]
 
 let pp_decompiled_aux fmt = function
@@ -181,9 +183,9 @@ end = struct
   let find v m =
     match AbstractValue.Map.find_opt v m with
     | None ->
-        Unknown v
+        Unknown (Some v)
     | Some source_expr ->
-        SourceExpr (source_expr, v)
+        SourceExpr (source_expr, Some v)
 
 
   let pp fmt m = AbstractValue.Map.pp ~pp_value:pp_source_expr fmt m
@@ -323,7 +325,18 @@ let yojson_of_expr expr = `String (F.asprintf "%a" pp_expr expr)
 let abstract_value_of_expr = function Unknown v | SourceExpr (_, v) -> v
 
 let pp_expr_with_abstract_value fmt decompiled =
-  F.fprintf fmt "%a:%a" AbstractValue.pp (abstract_value_of_expr decompiled) pp_expr decompiled
+  F.fprintf fmt "%a:%a" (Pp.option AbstractValue.pp)
+    (abstract_value_of_expr decompiled)
+    pp_expr decompiled
 
 
 let is_unknown = function Unknown _ -> true | SourceExpr _ -> false
+
+let reset_abstract_value expr =
+  if Option.is_none (abstract_value_of_expr expr) then expr
+  else
+    match expr with
+    | Unknown _ ->
+        Unknown None
+    | SourceExpr (source_expr, _) ->
+        SourceExpr (source_expr, None)

@@ -56,10 +56,10 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           (`PotentialInvalidAccessSummary
             ((astate : AbductiveDomain.summary), address, must_be_valid) ) -> (
         match
-          AbductiveDomain.find_post_cell_opt
-            (Decompiler.abstract_value_of_expr address)
-            (astate :> AbductiveDomain.t)
-          |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
+          let open IOption.Let_syntax in
+          let* addr = Decompiler.abstract_value_of_expr address in
+          let* _, attrs = AbductiveDomain.find_post_cell_opt addr (astate :> AbductiveDomain.t) in
+          Attributes.get_invalid attrs
         with
         | None ->
             ExecutionDomain.LatentInvalidAccess {astate; address; must_be_valid; calling_context= []}

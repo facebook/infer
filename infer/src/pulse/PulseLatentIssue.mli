@@ -27,4 +27,9 @@ val to_diagnostic : t -> Diagnostic.t
 
 val should_report : AbductiveDomain.summary -> Diagnostic.t -> [> `DelayReport of t | `ReportNow]
 
-val add_call : CallEvent.t * Location.t -> t -> t
+val add_call :
+     CallEvent.t * Location.t
+  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+  -> AbductiveDomain.t
+  -> t
+  -> t

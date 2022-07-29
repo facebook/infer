@@ -26,6 +26,10 @@ type expr = Decompiler.expr [@@deriving compare, equal, yojson_of]
 
 val pp_expr : Format.formatter -> expr -> unit
 
+val pp_expr_with_abstract_value : Format.formatter -> expr -> unit
+
 val find : AbstractValue.t -> AbductiveDomain.t -> expr
 
-val abstract_value_of_expr : expr -> AbstractValue.t
+val abstract_value_of_expr : expr -> AbstractValue.t option
+
+val reset_abstract_value : expr -> expr

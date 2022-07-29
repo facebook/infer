@@ -45,6 +45,10 @@ val pp_expr_with_abstract_value : Format.formatter -> expr -> unit
 
 val find : AbstractValue.t -> t -> expr
 
-val abstract_value_of_expr : expr -> AbstractValue.t
+val abstract_value_of_expr : expr -> AbstractValue.t option
+
+val reset_abstract_value : expr -> expr
+(** forget the underlying abstract value in the argument:
+    [abstract_value_of_expr (reset_abstract_value expr)] is [None] *)
 
 val is_unknown : expr -> bool

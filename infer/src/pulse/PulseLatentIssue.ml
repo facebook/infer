@@ -7,8 +7,33 @@
 
 open! IStd
 module F = Format
+open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
+module Decompiler = PulseAbductiveDecompiler
 module Diagnostic = PulseDiagnostic
+module L = Logging
+
+let add_call_to_access_to_invalid_address call_subst astate invalid_access =
+  let expr_callee = invalid_access.Diagnostic.invalid_address in
+  L.d_printfln "adding call to invalid address %a" Decompiler.pp_expr_with_abstract_value
+    expr_callee ;
+  let expr_caller =
+    match
+      let open IOption.Let_syntax in
+      let* addr_callee = Decompiler.abstract_value_of_expr expr_callee in
+      AbstractValue.Map.find_opt addr_callee call_subst
+    with
+    | None ->
+        (* the abstract value doesn't make sense in the caller: forget about it *)
+        Decompiler.reset_abstract_value expr_callee
+    | Some (invalid_address, caller_history) ->
+        let address_caller = Decompiler.find invalid_address astate in
+        L.d_printfln "invalid_address= %a; address_caller= %a; caller_history= %a" AbstractValue.pp
+          invalid_address Decompiler.pp_expr address_caller ValueHistory.pp caller_history ;
+        address_caller
+  in
+  {invalid_access with Diagnostic.invalid_address= expr_caller}
+
 
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
@@ -27,7 +52,7 @@ let to_diagnostic = function
 
 let pp fmt latent_issue = Diagnostic.pp fmt (to_diagnostic latent_issue)
 
-let add_call call_and_loc = function
+let add_call_to_calling_context call_and_loc = function
   | AccessToInvalidAddress access ->
       AccessToInvalidAddress {access with calling_context= call_and_loc :: access.calling_context}
   | ErlangError (Badarg {calling_context; location}) ->
@@ -50,6 +75,20 @@ let add_call call_and_loc = function
       ErlangError (Try_clause {calling_context= call_and_loc :: calling_context; location})
   | ReadUninitializedValue read ->
       ReadUninitializedValue {read with calling_context= call_and_loc :: read.calling_context}
+
+
+let add_call call_and_loc call_subst astate latent_issue =
+  let latent_issue =
+    match latent_issue with
+    | AccessToInvalidAddress invalid_access ->
+        let invalid_access =
+          add_call_to_access_to_invalid_address call_subst astate invalid_access
+        in
+        AccessToInvalidAddress invalid_access
+    | _ ->
+        latent_issue
+  in
+  add_call_to_calling_context call_and_loc latent_issue
 
 
 let is_manifest (astate : AbductiveDomain.summary) =
