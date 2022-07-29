@@ -21,6 +21,12 @@ void latent_use_after_free(int b, int* x) {
 // Filtered out
 void manifest_use_after_free(int* x) { latent_use_after_free(1, x); }
 
+void deref_then_free_then_deref_bad(int* x) {
+  *x = 42;
+  free(x);
+  *x = 42;
+}
+
 // FN because it's flagged only as latent at the moment
 void FN_nonlatent_use_after_free_bad(int b, int* x) {
   // the branch is independent of the issue here, so we should report the issue
