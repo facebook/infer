@@ -37,7 +37,7 @@ int invalidate_node_alias_latent(struct list* head, int cond) {
   return *result;
 }
 
-int invalidate_node_alias_bad(struct list* head) {
+void invalidate_node_alias_bad(struct list* head) {
   invalidate_node_alias_latent(head, true);
 }
 
