@@ -511,12 +511,12 @@ let implements_dictionary tenv name =
     PatternMatch.CSharp.implements collection_type tenv name
 
 let implements_collection tenv name =
-    let collection_type = "System.Collections.Generic.ICollection`1<T>" in
+    let collection_type = "System.Collections.Generic.ICollection`1<T>" in (* should change to <!0> and update the infersharp tenv.json to !0 for ICollections *)
     PatternMatch.CSharp.implements collection_type tenv name
 
 let implements_disposable_not_enumerator tenv name =
     PatternMatch.CSharp.implements "System.IDisposable" tenv name &&
-    not (PatternMatch.CSharp.implements "System.Collections.Generic.IEnumerator`1<T>" tenv name)
+    not (PatternMatch.CSharp.implements "System.Collections.Generic.IEnumerator`1<!0>" tenv name)
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
@@ -535,6 +535,7 @@ let matchers : matcher list =
       ; "System.IO.StreamWriter"
       ; "System.IO.BinaryReader"
       ; "System.IO.BinaryWriter"
+      ; "System.Net.Http.HttpClient"
         ])
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:None ()
