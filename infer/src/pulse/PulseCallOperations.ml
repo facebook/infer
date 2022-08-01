@@ -231,14 +231,14 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               ; calling_context } -> (
             match
               let open IOption.Let_syntax in
-              let* addr = Decompiler.abstract_value_of_expr address_callee in
+              let* addr = DecompilerExpr.abstract_value_of_expr address_callee in
               AbstractValue.Map.find_opt addr subst
             with
             | None ->
                 (* the address became unreachable so the bug can never be reached; drop it *)
                 L.d_printfln ~color:Orange
                   "%a seems no longer reachable, dropping the latent invalid access altogether"
-                  Decompiler.pp_expr address_callee ;
+                  DecompilerExpr.pp address_callee ;
                 Unsat
             | Some (invalid_address, caller_history) -> (
                 let access_trace =
@@ -259,7 +259,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                     L.d_printfln ~color:Orange
                       "%a in the callee is %a in the caller which is not known to be invalid, \
                        keeping the latent invalid access"
-                      Decompiler.pp_expr address_callee Decompiler.pp_expr address_caller ;
+                      DecompilerExpr.pp address_callee DecompilerExpr.pp address_caller ;
                     Sat
                       (Ok
                          (LatentInvalidAccess
@@ -272,7 +272,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                     L.d_printfln ~color:Red
                       "%a in the callee is %a in the caller which invalid, reporting the latent \
                        invalid access as manifest"
-                      Decompiler.pp_expr address_callee Decompiler.pp_expr address_caller ;
+                      DecompilerExpr.pp address_callee DecompilerExpr.pp address_caller ;
                     Sat
                       (FatalError
                          ( Summary

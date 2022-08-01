@@ -10,26 +10,26 @@ module F = Format
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module Decompiler = PulseAbductiveDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module Diagnostic = PulseDiagnostic
 module L = Logging
 
 let add_call_to_access_to_invalid_address call_subst astate invalid_access =
   let expr_callee = invalid_access.Diagnostic.invalid_address in
-  L.d_printfln "adding call to invalid address %a" Decompiler.pp_expr_with_abstract_value
-    expr_callee ;
+  L.d_printfln "adding call to invalid address %a" DecompilerExpr.pp_with_abstract_value expr_callee ;
   let expr_caller =
     match
       let open IOption.Let_syntax in
-      let* addr_callee = Decompiler.abstract_value_of_expr expr_callee in
+      let* addr_callee = DecompilerExpr.abstract_value_of_expr expr_callee in
       AbstractValue.Map.find_opt addr_callee call_subst
     with
     | None ->
         (* the abstract value doesn't make sense in the caller: forget about it *)
-        Decompiler.reset_abstract_value expr_callee
+        DecompilerExpr.reset_abstract_value expr_callee
     | Some (invalid_address, caller_history) ->
         let address_caller = Decompiler.find invalid_address astate in
         L.d_printfln "invalid_address= %a; address_caller= %a; caller_history= %a" AbstractValue.pp
-          invalid_address Decompiler.pp_expr address_caller ValueHistory.pp caller_history ;
+          invalid_address DecompilerExpr.pp address_caller ValueHistory.pp caller_history ;
         address_caller
   in
   {invalid_access with Diagnostic.invalid_address= expr_caller}

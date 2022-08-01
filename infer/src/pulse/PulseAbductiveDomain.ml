@@ -13,6 +13,7 @@ module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
+module DecompilerExpr = PulseDecompilerExpr
 module Decompiler = PulseDecompiler
 module PathContext = PulsePathContext
 module UninitBlocklist = PulseUninitBlocklist
@@ -886,7 +887,7 @@ let check_retain_cycles ~dead_addresses tenv astate =
       if List.exists ~f:(AbstractValue.equal addr) !checked then Ok ()
       else
         let value = Decompiler.find addr astate.decompiler in
-        let is_known = not (Decompiler.is_unknown value) in
+        let is_known = not (DecompilerExpr.is_unknown value) in
         let is_seen = List.exists ~f:(AbstractValue.equal addr) seen in
         if
           is_known && is_seen

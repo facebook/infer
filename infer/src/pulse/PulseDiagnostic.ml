@@ -10,7 +10,7 @@ module F = Format
 module L = Logging
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
-module Decompiler = PulseDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
 module Trace = PulseTrace
@@ -26,7 +26,7 @@ let pp_calling_context fmt calling_context =
 
 type access_to_invalid_address =
   { calling_context: calling_context
-  ; invalid_address: Decompiler.expr
+  ; invalid_address: DecompilerExpr.t
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
   ; access_trace: Trace.t
@@ -51,7 +51,7 @@ let pp_access_to_invalid_address fmt
      access_trace=%a;@;\
      must_be_valid_reason=%a;@;\
      @]}"
-    pp_calling_context calling_context Decompiler.pp_expr_with_abstract_value invalid_address
+    pp_calling_context calling_context DecompilerExpr.pp_with_abstract_value invalid_address
     Invalidation.pp invalidation (Trace.pp ~pp_immediate) invalidation_trace
     (Trace.pp ~pp_immediate) access_trace Invalidation.pp_must_be_valid_reason must_be_valid_reason
 
@@ -118,15 +118,15 @@ type t =
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of
       { assignment_traces: Trace.t list
-      ; value: Decompiler.expr
-      ; path: Decompiler.expr
+      ; value: DecompilerExpr.t
+      ; path: DecompilerExpr.t
       ; location: Location.t }
   | ErlangError of ErlangError.t
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
-      { expr: Decompiler.expr
+      { expr: DecompilerExpr.t
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t
@@ -155,7 +155,7 @@ let pp fmt diagnostic =
       F.fprintf fmt
         "RetainCycle {@[assignment_traces=[@[<v>%a@]];@;value=%a;@;path=%a;@;location=%a@]}"
         (Pp.seq ~sep:";@;" (Trace.pp ~pp_immediate))
-        assignment_traces Decompiler.pp_expr_with_abstract_value value Decompiler.pp_expr path
+        assignment_traces DecompilerExpr.pp_with_abstract_value value DecompilerExpr.pp path
         Location.pp location
   | ErlangError erlang_error ->
       ErlangError.pp fmt erlang_error
@@ -169,7 +169,7 @@ let pp fmt diagnostic =
         variable ValueHistory.pp history Location.pp location
   | TaintFlow {expr; source; sink; location; flow_kind} ->
       F.fprintf fmt "TaintFlow {@[expr=%a;@;source=%a;@;sink=%a;@;location:%a;@;flow_kind=%a@]}"
-        Decompiler.pp_expr_with_abstract_value expr
+        DecompilerExpr.pp_with_abstract_value expr
         (Pp.pair ~fst:Taint.pp ~snd:ValueHistory.pp)
         source
         (Pp.pair ~fst:Taint.pp ~snd:(Trace.pp ~pp_immediate))
@@ -299,12 +299,12 @@ let get_message diagnostic =
         in
         let pp_must_be_valid_reason fmt expr =
           let pp_prefix fmt null_nil_block =
-            if Decompiler.is_unknown expr then
+            if DecompilerExpr.is_unknown expr then
               F.fprintf fmt "%s %a" null_nil_block
                 (pp_invalidation_trace invalidation_line)
                 invalidation_trace
             else
-              F.fprintf fmt "`%a` could be %s %a and" Decompiler.pp_expr expr null_nil_block
+              F.fprintf fmt "`%a` could be %s %a and" DecompilerExpr.pp expr null_nil_block
                 (pp_invalidation_trace invalidation_line)
                 invalidation_trace
           in
@@ -402,7 +402,7 @@ let get_message diagnostic =
       F.asprintf
         "Memory managed via reference counting is locked in a retain cycle at %a: `%a` retains \
          itself via `%a`"
-        Location.pp location Decompiler.pp_expr value Decompiler.pp_expr path
+        Location.pp location DecompilerExpr.pp value DecompilerExpr.pp path
   | ErlangError (Badarg {calling_context= _; location}) ->
       F.asprintf "bad arg at %a" Location.pp location
   | ErlangError (Badkey {calling_context= _; location}) ->
@@ -468,8 +468,8 @@ let get_message diagnostic =
       F.asprintf "Address of %a is returned by the function" pp_var variable
   | TaintFlow {expr; source= source, _; sink= sink, _; flow_kind} ->
       (* TODO: say what line the source happened in the current function *)
-      F.asprintf "`%a` is tainted by %a and flows to %a (%a)" Decompiler.pp_expr expr Taint.pp
-        source Taint.pp sink pp_flow_kind flow_kind
+      F.asprintf "`%a` is tainted by %a and flows to %a (%a)" DecompilerExpr.pp expr Taint.pp source
+        Taint.pp sink pp_flow_kind flow_kind
   | UnnecessaryCopy {copied_into; typ; location; from} -> (
       let open PulseAttribute in
       let suppression_msg =

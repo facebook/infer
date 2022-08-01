@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
-module Decompiler = PulseDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
 module Trace = PulseTrace
@@ -22,7 +22,7 @@ type access_to_invalid_address =
         (** the list of function calls leading to the issue being realised, in
             outermost-to-innermost order, which is an additional common prefix to the traces in the
             record *)
-  ; invalid_address: Decompiler.expr
+  ; invalid_address: DecompilerExpr.t
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to [invalidation] without
@@ -65,15 +65,15 @@ type t =
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of
       { assignment_traces: Trace.t list
-      ; value: Decompiler.expr
-      ; path: Decompiler.expr
+      ; value: DecompilerExpr.t
+      ; path: DecompilerExpr.t
       ; location: Location.t }
   | ErlangError of ErlangError.t
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
-      { expr: Decompiler.expr
+      { expr: DecompilerExpr.t
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t

@@ -11,6 +11,7 @@ module AbstractValue = PulseAbstractValue
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module CallEvent = PulseCallEvent
+module DecompilerExpr = PulseDecompilerExpr
 module ValueHistory = PulseValueHistory
 
 (** {1 Describe abstract values in terms of source code elements} *)
@@ -37,18 +38,4 @@ val add_access_source :
   -> t
   -> t
 
-type expr [@@deriving compare, equal, yojson_of]
-
-val pp_expr : Format.formatter -> expr -> unit
-
-val pp_expr_with_abstract_value : Format.formatter -> expr -> unit
-
-val find : AbstractValue.t -> t -> expr
-
-val abstract_value_of_expr : expr -> AbstractValue.t option
-
-val reset_abstract_value : expr -> expr
-(** forget the underlying abstract value in the argument:
-    [abstract_value_of_expr (reset_abstract_value expr)] is [None] *)
-
-val is_unknown : expr -> bool
+val find : AbstractValue.t -> t -> DecompilerExpr.t

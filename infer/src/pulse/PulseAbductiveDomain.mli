@@ -11,6 +11,7 @@ module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
 module Decompiler = PulseDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module PathContext = PulsePathContext
 
 (** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
@@ -248,10 +249,10 @@ val summary_of_post :
   -> t
   -> ( summary
      , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
-       | `RetainCycle of summary * Trace.t list * Decompiler.expr * Decompiler.expr * Location.t
+       | `RetainCycle of summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
-         summary * Decompiler.expr * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+         summary * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
      SatUnsat.t
 (** Trim the state down to just the procedure's interface (formals and globals), and simplify and
