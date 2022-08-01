@@ -841,7 +841,7 @@ module Verification = struct
   (* TODO: check that a name is not declared twice *)
   (* TODO: add basic type verification *)
 
-  let pp_error fmt sourcefile error =
+  let pp_error sourcefile fmt error =
     F.fprintf fmt "SIL consistency error in file %a" SourceFile.pp sourcefile ;
     match error with
     | UnknownFieldname {tname; fname} ->

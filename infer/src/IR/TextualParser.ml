@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 let run path =
   if String.is_suffix path ~suffix:".sil" then (
@@ -17,13 +18,15 @@ let run path =
         let lexer = TextualLexer.main in
         let m = TextualMenhir.main lexer filebuf sourcefile in
         let errors = Textual.Verification.run m in
-        if not (List.is_empty errors) then
-          List.iter errors ~f:(Textual.Verification.pp_error Format.std_formatter sourcefile)
-        else Printf.printf "SIL parsing of %s succeeded.\n" filename
+        if List.is_empty errors then L.result "SIL parsing of %s succeeded.@\n" filename
+        else
+          List.iter errors ~f:(fun error ->
+              L.external_error "%a" (Textual.Verification.pp_error sourcefile) error )
       with TextualMenhir.Error ->
         let pos = filebuf.Lexing.lex_curr_p in
         let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
         let line = pos.Lexing.pos_lnum in
         let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol - buf_length in
-        Printf.eprintf "SIL syntax error in file %s at line %d, column %d.\n%!" filename line col ) ;
+        L.external_error "SIL syntax error in file %s at line %d, column %d.\n%!" filename line col
+    ) ;
     In_channel.close cin )

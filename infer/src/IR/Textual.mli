@@ -134,7 +134,7 @@ end
 module Verification : sig
   type error
 
-  val pp_error : Format.formatter -> SourceFile.t -> error -> unit
+  val pp_error : SourceFile.t -> Format.formatter -> error -> unit
 
   val run : Module.t -> error list
 end
