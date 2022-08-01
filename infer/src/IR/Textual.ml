@@ -831,6 +831,9 @@ module Module = struct
         pp_copyright fmt ;
         pp fmt (of_sil ~sourcefile tenv cfg) ;
         Format.pp_print_flush fmt () )
+
+
+  let to_sil _m = (Cfg.create (), Tenv.create ())
 end
 
 module Verification = struct

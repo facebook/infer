@@ -129,6 +129,8 @@ module Module : sig
 
   val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
   (** generate a .sil file with name [filename] containing all the functions in the given cfg *)
+
+  val to_sil : t -> Cfg.t * Tenv.t
 end
 
 module Verification : sig

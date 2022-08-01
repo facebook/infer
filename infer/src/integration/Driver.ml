@@ -174,7 +174,7 @@ let capture ~changed_files mode =
         L.progress "Capturing in hackc mode...@." ;
         Hack.capture ~command:"hackc" ~args
     | Textual {file} ->
-        TextualParser.run file
+        TextualParser.capture file
     | XcodeBuild {prog; args} ->
         L.progress "Capturing in xcodebuild mode...@." ;
         XcodeBuild.capture ~prog ~args
