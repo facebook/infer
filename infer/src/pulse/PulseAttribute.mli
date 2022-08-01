@@ -8,6 +8,7 @@ open! IStd
 module F = Format
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
+module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
 module Timestamp = PulseTimestamp
@@ -57,7 +58,10 @@ module CopyOrigin : sig
 end
 
 module CopiedInto : sig
-  type t = IntoVar of Var.t | IntoField of Fieldname.t [@@deriving compare, equal]
+  type t =
+    | IntoVar of Var.t
+    | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
+  [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 end

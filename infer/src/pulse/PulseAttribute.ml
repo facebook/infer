@@ -9,6 +9,7 @@ module F = Format
 module L = Logging
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
+module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
 module Timestamp = PulseTimestamp
@@ -100,12 +101,15 @@ module Attribute = struct
   end
 
   module CopiedInto = struct
-    type t = IntoVar of Var.t | IntoField of Fieldname.t [@@deriving compare, equal]
+    type t =
+      | IntoVar of Var.t
+      | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
+    [@@deriving compare, equal]
 
     let pp fmt = function
       | IntoVar var ->
           Var.pp fmt var
-      | IntoField field ->
+      | IntoField {field} ->
           Fieldname.pp fmt field
   end
 

@@ -490,11 +490,20 @@ let get_message diagnostic =
              the copy, %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
             location suggestion_msg suppression_msg
-      | IntoField field ->
-          F.asprintf
-            "Field `%a` with type `%a` is %a into from an rvalue-ref here but is not modified \
-             afterwards. Rather than copying into it, try moving into it instead."
-            Fieldname.pp field (Typ.pp_full Pp.text) typ CopyOrigin.pp from )
+      | IntoField {field; source_opt} -> (
+          let advice = "Rather than copying into the field, consider moving into it instead." in
+          match source_opt with
+          | Some source_expr ->
+              F.asprintf
+                "`%a` is an rvalue-ref that is %a into field `%a` with type `%a` but is not \
+                 modified afterwards. %s"
+                DecompilerExpr.pp source_expr CopyOrigin.pp from Fieldname.pp field
+                (Typ.pp_full Pp.text) typ advice
+          | None ->
+              F.asprintf
+                "Field `%a` is %a into from an rvalue-ref that is of type `%a` but is not modified \
+                 afterwards. %s"
+                Fieldname.pp field CopyOrigin.pp from (Typ.pp_full Pp.text) typ advice ) )
 
 
 let add_errlog_header ~nesting ~title location errlog =

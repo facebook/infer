@@ -24,7 +24,8 @@ let get_copied_and_source copy_type path rest_args location from (disjunct : Abd
     | (source_arg, source_typ) :: _ -> (
       match PulseOperations.eval path NoAccess location source_arg disjunct with
       | Ok (disjunct, (source_addr, _)) ->
-          (disjunct, Some (source_addr, source_typ))
+          let source_expr = PulseDecompiler.find source_addr disjunct.decompiler in
+          (disjunct, Some (source_addr, source_expr, source_typ))
       | Recoverable _ | FatalError _ ->
           (disjunct, None) )
     | _ ->
@@ -55,7 +56,7 @@ let add_copies path location call_exp actuals astates astate_non_disj =
                      let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
                      let disjunct' =
                        Option.value_map source_addr_typ_opt ~default:disjunct
-                         ~f:(fun (source_addr, source_typ) ->
+                         ~f:(fun (source_addr, _, source_typ) ->
                            AddressAttributes.add_one source_addr
                              (CopiedInto (Attribute.CopiedInto.IntoVar copied_var)) disjunct
                            |> AddressAttributes.add_one copy_addr
@@ -64,7 +65,7 @@ let add_copies path location call_exp actuals astates astate_non_disj =
                                    ; is_const_ref= Typ.is_const_reference source_typ } ) )
                      in
                      ( NonDisjDomain.add_var copied_var
-                         ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst)
+                         ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst3)
                          copied astate_non_disj
                      , ExecutionDomain.continue disjunct' )
                    else default )
@@ -82,16 +83,19 @@ let add_copies path location call_exp actuals astates astate_non_disj =
                    | Ok (disjunct, (copy_addr, _)) ->
                        let disjunct' =
                          Option.value_map source_addr_typ_opt ~default:disjunct
-                           ~f:(fun (source_addr, _) ->
+                           ~f:(fun (source_addr, source_expr, _) ->
                              AddressAttributes.add_one source_addr
-                               (CopiedInto (Attribute.CopiedInto.IntoField field)) disjunct
+                               (CopiedInto
+                                  (Attribute.CopiedInto.IntoField
+                                     {field; source_opt= Some source_expr} ) )
+                               disjunct
                              |> AddressAttributes.add_one copy_addr
                                   (SourceOriginOfCopy
                                      { source= source_addr
                                      ; is_const_ref= Typ.is_const_reference source_typ } ) )
                        in
                        ( NonDisjDomain.add_field field
-                           ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst)
+                           ~source_opt:(Option.map source_addr_typ_opt ~f:snd3)
                            copied astate_non_disj
                        , ExecutionDomain.continue disjunct' )
                    | Recoverable _ | FatalError _ ->
