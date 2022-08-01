@@ -157,8 +157,6 @@ let () =
         L.die UserError "ERROR: Textual generation is only allowed on a single Java file"
     | _ ->
         L.die UserError "ERROR: Textual generation is only allowed in Java mode currently" )
-  | _ when Option.is_some Config.capture_textual_sil ->
-      TextualParser.run (Option.value_exn Config.capture_textual_sil)
   | _ when Option.is_some Config.java_debug_source_file_info ->
       if Config.java_source_parser_experimental then
         JSourceLocations.debug_on_file (Option.value_exn Config.java_debug_source_file_info)

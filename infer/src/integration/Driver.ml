@@ -30,6 +30,7 @@ type mode =
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {args: string list}
+  | Textual of {file: string}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -71,6 +72,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
   | Hackc {args} ->
       F.fprintf fmt "Hackc driver mode:@\nargs = %a" Pp.cli_args args
+  | Textual {file} ->
+      F.fprintf fmt "Textual capture mode:@\nfile = %s" file
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -170,6 +173,8 @@ let capture ~changed_files mode =
     | Hackc {args} ->
         L.progress "Capturing in hackc mode...@." ;
         Hack.capture ~command:"hackc" ~args
+    | Textual {file} ->
+        TextualParser.run file
     | XcodeBuild {prog; args} ->
         L.progress "Capturing in xcodebuild mode...@." ;
         XcodeBuild.capture ~prog ~args
@@ -269,6 +274,9 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     match (Config.command, mode) with
     | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode) ->
         (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
+        (false, false)
+    | _, Textual _ ->
+        (* textual mode doesn't generate CFGs for now *)
         (false, false)
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
         (* Called from another integration to do capture only. *)
@@ -398,11 +406,17 @@ let assert_supported_build_system build_system =
 
 let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
-  | [] ->
-      if not (List.is_empty Config.clang_compilation_dbs) then (
+  | [] -> (
+    match (Config.clang_compilation_dbs, Config.capture_textual_sil) with
+    | _ :: _, Some _ ->
+        L.die UserError "Both --clang-compilation-dbs and --capture-textual-sil are set."
+    | _ :: _, None ->
         assert_supported_mode `Clang "clang compilation database" ;
-        ClangCompilationDB {db_files= Config.clang_compilation_dbs} )
-      else Analyze
+        ClangCompilationDB {db_files= Config.clang_compilation_dbs}
+    | [], Some textual_sil_file ->
+        Textual {file= textual_sil_file}
+    | [], None ->
+        Analyze )
   | prog :: args -> (
       let build_system =
         match Config.force_integration with
