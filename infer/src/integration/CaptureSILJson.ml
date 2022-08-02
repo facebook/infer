@@ -14,8 +14,13 @@ module L = Logging
 let capture ~changed_files ~cfg_json ~tenv_json =
   let tenv = InferAnalyzeJson.parse_tenv (Yojson.Safe.from_file tenv_json) in
   let cfg = InferAnalyzeJson.parse_cfg (Yojson.Safe.from_file cfg_json) in
-  let source_file = SourceFile.create ~warn_on_error:false "./Program.cs" in
   Tenv.store_global tenv ;
   Language.curr_language := Language.CIL ;
-  SourceFiles.add source_file cfg Tenv.Global None ;
+  match changed_files with
+  | None ->
+    let source_file = SourceFile.create ~warn_on_error:false "./Program.cs" in
+    SourceFiles.add source_file cfg Tenv.Global None ;
+  | Some changed_files_set ->
+    let add_file sf = SourceFiles.add sf cfg Tenv.Global None in
+    SourceFile.Set.iter add_file changed_files_set ;
   ()
