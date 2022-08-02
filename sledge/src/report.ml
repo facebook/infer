@@ -52,10 +52,14 @@ let reached_goal ~dp_goal ~dp_witness =
   [%Dbg.printf "@\n@[<v 2> %t@ %t@]@." dp_witness dp_goal] ;
   Stop.on_reached_goal ~dp_witness !steps ()
 
+let unreachable_goal ~dp_path =
+  [%Dbg.printf "%t" dp_path] ;
+  Stop.on_unreachable_goal ~dp_path
+
 let unimplemented feature fn =
   let open Llair in
   [%Dbg.printf
-    "@\n@[<v 2>%s unimplemented in %a@]@." feature Function.pp fn.name] ;
+    "@\n@[<v 2>%s unimplemented in %a@]@." feature FuncName.pp fn.name] ;
   Stop.on_unimplemented feature fn
 
 (** Status reporting *)
@@ -64,6 +68,7 @@ type status =
   | Safe of {bound: int; switches: int}
   | Unsafe of {alarms: int; bound: int; switches: int}
   | Reached_goal of {steps: int}
+  | Unreachable_goal
   | Ok
   | Unsound
   | Incomplete
@@ -92,6 +97,7 @@ let pp_status ppf stat =
   | Unsafe {alarms; bound; switches} ->
       pf "Unsafe: %i (%i,%i)" alarms switches bound
   | Reached_goal {steps} -> pf "Reached: %i" steps
+  | Unreachable_goal -> pf "Unreachable Goal"
   | Ok -> pf "Ok"
   | Unsound -> pf "Unsound"
   | Incomplete -> pf "Incomplete"
@@ -184,7 +190,7 @@ let init ?append filename =
 
 let coverage (pgm : Llair.program) =
   let size =
-    Llair.Function.Map.fold pgm.functions 0 ~f:(fun ~key:_ ~data:func n ->
+    Llair.FuncName.Map.fold pgm.functions 0 ~f:(fun ~key:_ ~data:func n ->
         Llair.Func.fold_cfg func n ~f:(fun blk n ->
             n + IArray.length blk.cmnd + 1 ) )
   in

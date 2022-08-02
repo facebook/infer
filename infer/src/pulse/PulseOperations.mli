@@ -30,7 +30,7 @@ module Import : sig
     | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
     | LatentInvalidAccess of
         { astate: AbductiveDomain.summary
-        ; address: Decompiler.expr
+        ; address: DecompilerExpr.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
         ; calling_context: (CallEvent.t * Location.t) list }
     | ISLLatentMemoryError of AbductiveDomain.summary
@@ -38,7 +38,7 @@ module Import : sig
   type base_summary_error = AccessResult.summary_error =
     | PotentialInvalidAccessSummary of
         { astate: AbductiveDomain.summary
-        ; address: Decompiler.expr
+        ; address: DecompilerExpr.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
     | ISLErrorSummary of {astate: AbductiveDomain.summary}
@@ -46,7 +46,7 @@ module Import : sig
   type base_error = AccessResult.error =
     | PotentialInvalidAccess of
         { astate: AbductiveDomain.t
-        ; address: Decompiler.expr
+        ; address: DecompilerExpr.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
     | ISLError of {astate: AbductiveDomain.t}

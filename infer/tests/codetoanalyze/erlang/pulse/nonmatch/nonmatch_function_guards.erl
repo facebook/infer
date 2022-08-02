@@ -34,6 +34,9 @@ accepts_all_tricky(X) when X > 0; not (X > 0) -> ok.
 accepts_all_tricky2(X) when X > 0 -> ok;
 accepts_all_tricky2(X) when not (X > 0) -> ok.
 
+% Currently a latent fp (no matching function clause) due to pulse limitations on satisfiability. It
+% seems that when replacing [X] with a concrete parameter this limitation is removed, thus the latent
+% issue does not transfer to concrete ones.
 accepts_all_tricky3(X) when X > 0; X =< 0 -> ok.
 
 possible_exception(X) when 1 div X =:= 1 -> ok.

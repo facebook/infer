@@ -74,7 +74,7 @@ type opN = Record  (** Record (array / struct) constant *)
 type t = private
   | Reg of {id: int; name: string; typ: Typ.t}  (** Virtual register *)
   | Global of {name: string; typ: Typ.t [@ignore]}  (** Global constant *)
-  | Function of {name: string; typ: Typ.t [@ignore]}  (** Function name *)
+  | FuncName of {name: string; typ: Typ.t [@ignore]}  (** Function name *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
   | Integer of {data: Z.t; typ: Typ.t}  (** Integer constant *)
@@ -144,8 +144,8 @@ module Global : sig
   val typ : t -> Typ.t
 end
 
-(** Exp.Function is re-exported as Function *)
-module Function : sig
+(** Exp.FuncName is re-exported as FuncName *)
+module FuncName : sig
   type exp := t
   type t = private exp [@@deriving compare, equal, sexp]
 
@@ -160,9 +160,9 @@ module Function : sig
   val mk : Typ.t -> string -> t
 
   val counterfeit : string -> t
-  (** [compare] ignores [Function.typ], so it is possible to construct
-      [Function] names using a dummy type that compare equal to their
-      genuine counterparts. *)
+  (** [compare] ignores [FuncName.typ], so it is possible to construct
+      [FuncName]s using a dummy type that compare equal to their genuine
+      counterparts. *)
 
   val name : t -> string
   val typ : t -> Typ.t
@@ -174,7 +174,7 @@ end
 val reg : Reg.t -> t
 
 (* constants *)
-val function_ : Function.t -> t
+val funcname : FuncName.t -> t
 val global : Global.t -> t
 val label : parent:string -> name:string -> t
 val null : t

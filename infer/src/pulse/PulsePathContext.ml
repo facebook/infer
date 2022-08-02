@@ -21,6 +21,8 @@ let is_normal _ = true
 
 let is_exceptional _ = true
 
+let is_executable _ = true
+
 let exceptional_to_normal x = x
 
 let pp fmt ({conditions; timestamp} [@warning "+9"]) =

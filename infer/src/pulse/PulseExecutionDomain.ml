@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
-module Decompiler = PulseAbductiveDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module Diagnostic = PulseDiagnostic
 module LatentIssue = PulseLatentIssue
 
@@ -25,7 +25,7 @@ type 'abductive_domain_t base_t =
   | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
   | LatentInvalidAccess of
       { astate: AbductiveDomain.summary
-      ; address: Decompiler.expr
+      ; address: DecompilerExpr.t
       ; must_be_valid: (Trace.t * Invalidation.must_be_valid_reason option[@yojson.opaque])
       ; calling_context: ((CallEvent.t * Location.t) list[@yojson.opaque]) }
   | ISLLatentMemoryError of AbductiveDomain.summary
@@ -52,7 +52,7 @@ let leq ~lhs ~rhs =
       && AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
   | ( LatentInvalidAccess {astate= astate1; address= v1; must_be_valid= _}
     , LatentInvalidAccess {astate= astate2; address= v2; must_be_valid= _} ) ->
-      Decompiler.equal_expr v1 v2
+      DecompilerExpr.equal v1 v2
       && AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
   | _ ->
       false
@@ -73,11 +73,11 @@ let pp fmt = function
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
       let message = Diagnostic.get_message diagnostic in
       let location = Diagnostic.get_location diagnostic in
-      F.fprintf fmt "{LatentAbortProgram(%a: %s) %a}" Location.pp location message
-        AbductiveDomain.pp
+      F.fprintf fmt "{LatentAbortProgram(%a: %s)@ %a@ %a}" Location.pp location message
+        LatentIssue.pp latent_issue AbductiveDomain.pp
         (astate :> AbductiveDomain.t)
   | LatentInvalidAccess {astate; address; must_be_valid= _} ->
-      F.fprintf fmt "{LatentInvalidAccess(%a) %a}" Decompiler.pp_expr address AbductiveDomain.pp
+      F.fprintf fmt "{LatentInvalidAccess(%a) %a}" DecompilerExpr.pp address AbductiveDomain.pp
         (astate :> AbductiveDomain.t)
 
 
@@ -118,6 +118,10 @@ let is_normal (exec_state : t) : bool =
 
 let is_exceptional (exec_state : t) : bool =
   match exec_state with ExceptionRaised _ -> true | _ -> false
+
+
+let is_executable (exec_state : t) : bool =
+  match exec_state with ContinueProgram _ | ExceptionRaised _ -> true | _ -> false
 
 
 let exceptional_to_normal : t -> t = function

@@ -1,175 +1,175 @@
 /* @generated */
 digraph cfg {
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_1" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" [label="3:  Call dealloc \n   n$0=*&self:A* [line 43, column 1]\n  n$1=*n$0.reverseObjectEnumerator:NSEnumerator* [line 43, column 1]\n  n$2=_fun_NSEnumerator.dealloc(n$1:NSEnumerator*) [line 43, column 1]\n " shape="box"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" [label="3:  Call dealloc \n   n$0=*&self:A* [line 43, column 1]\n  n$1=*n$0.reverseObjectEnumerator:NSEnumerator* [line 43, column 1]\n  n$2=_fun_NSEnumerator.dealloc(n$1:NSEnumerator*) [line 43, column 1]\n " shape="box"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" [label="4:  Call dealloc \n   n$3=*&self:A* [line 15, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:A*) [line 15, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:A*,(n$4 - 1):unsigned int) [line 15, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:A*) [line 15, column 1]\n " shape="box"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" [label="4:  Call dealloc \n   n$3=*&self:A* [line 15, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:A*) [line 15, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:A*,(n$4 - 1):unsigned int) [line 15, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:A*) [line 15, column 1]\n " shape="box"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" ;
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 15, column 1]\n " shape="invhouse"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" ;
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 15, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 15, column 1]\n " shape="invhouse"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 15, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" [label="1: Start A.fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* 0$?%__sil_tmp__enumerator_n$1:NSEnumerator* size:int \n  " color=yellow style=filled]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_1" [label="1: Start A.fast_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* 0$?%__sil_tmp__enumerator_n$1:NSEnumerator* size:int \n  " color=yellow style=filled]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_1" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_14" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_2" [label="2: Exit A.fast_loop: \n  " color=yellow style=filled]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_1" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_14" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_2" [label="2: Exit A.fast_loop: \n  " color=yellow style=filled]
 	
 
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_3" [label="3:  Return Stmt \n   n$0=*&size:int [line 24, column 10]\n " shape="box"]
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_3" [label="3:  Return Stmt \n   n$0=*&size:int [line 24, column 10]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_3" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_4" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 24, column 3]\n " shape="box"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_3" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_4" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 24, column 3]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_4" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_2" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_5" [label="5: + \n  " ]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_4" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_2" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_5" [label="5: + \n  " ]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_5" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_6" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_6" [label="6:  Message Call: nextObject \n   n$2=*&0$?%__sil_tmp__enumerator_n$1:NSEnumerator* [line 21, column 3]\n  n$3=_fun_NSEnumerator.nextObject(n$2:NSEnumerator*) virtual [line 21, column 3]\n " shape="box"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_5" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_6" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_6" [label="6:  Message Call: nextObject \n   n$2=*&0$?%__sil_tmp__enumerator_n$1:NSEnumerator* [line 21, column 3]\n  n$3=_fun_NSEnumerator.nextObject(n$2:NSEnumerator*) virtual [line 21, column 3]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_6" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_7" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_7" [label="7:  BinaryOperatorStmt: Assign \n   *&item:NSArray*=n$3 [line 21, column 3]\n  n$4=*&item:NSArray* [line 21, column 3]\n " shape="box"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_6" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_7" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_7" [label="7:  BinaryOperatorStmt: Assign \n   *&item:NSArray*=n$3 [line 21, column 3]\n  n$4=*&item:NSArray* [line 21, column 3]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_7" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_8" ;
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_7" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_9" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_8" [label="8: Prune (true branch, while) \n   PRUNE(n$4, true); [line 21, column 3]\n " shape="invhouse"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_7" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_8" ;
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_7" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_9" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_8" [label="8: Prune (true branch, while) \n   PRUNE(n$4, true); [line 21, column 3]\n " shape="invhouse"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_8" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_9" [label="9: Prune (false branch, while) \n   PRUNE(!n$4, false); [line 21, column 3]\n " shape="invhouse"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_8" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_10" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_9" [label="9: Prune (false branch, while) \n   PRUNE(!n$4, false); [line 21, column 3]\n " shape="invhouse"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_9" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_3" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" [label="10:  BinaryOperatorStmt: AddAssign \n   n$5=*&item:NSArray* [line 22, column 14]\n  n$6=_fun_NSArray.count(n$5:NSArray*) [line 22, column 13]\n  n$7=*&size:int [line 22, column 5]\n  *&size:int=(n$7 + n$6) [line 22, column 5]\n " shape="box"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_9" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_3" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_10" [label="10:  BinaryOperatorStmt: AddAssign \n   n$5=*&item:NSArray* [line 22, column 14]\n  n$6=_fun_NSArray.count(n$5:NSArray*) [line 22, column 13]\n  n$7=*&size:int [line 22, column 5]\n  *&size:int=(n$7 + n$6) [line 22, column 5]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_10" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_5" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" [label="11:  Message Call: objectEnumerator \n   n$9=*&items:NSArray* [line 21, column 25]\n  n$10=_fun_NSArray.objectEnumerator(n$9:NSArray*) virtual [line 21, column 3]\n " shape="box"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_10" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_5" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_11" [label="11:  Message Call: objectEnumerator \n   n$9=*&items:NSArray* [line 21, column 25]\n  n$10=_fun_NSArray.objectEnumerator(n$9:NSArray*) virtual [line 21, column 3]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_13" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp__enumerator_n$1:NSEnumerator*); [line 21, column 3]\n " shape="box"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_11" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_13" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp__enumerator_n$1:NSEnumerator*); [line 21, column 3]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_12" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_11" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_13" [label="13:  DeclStmt \n   *&0$?%__sil_tmp__enumerator_n$1:NSEnumerator*=n$10 [line 21, column 3]\n " shape="box"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_12" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_11" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_13" [label="13:  DeclStmt \n   *&0$?%__sil_tmp__enumerator_n$1:NSEnumerator*=n$10 [line 21, column 3]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_13" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_5" ;
-"fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(size:int); [line 20, column 3]\n  *&size:int=0 [line 20, column 3]\n " shape="box"]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_13" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_5" ;
+"fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(size:int); [line 20, column 3]\n  *&size:int=0 [line 20, column 3]\n " shape="box"]
 	
 
-	 "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_14" -> "fast_loop:#A(class NSArray)#instance.26b39d1106e4365a40bc2f6305401611_12" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" [label="1: Start A.fast_loop_no_crash\nFormals:  self:A*\nLocals:  0$?%__sil_tmp__enumerator_n$19:NSEnumerator* obj:objc_object* \n  " color=yellow style=filled]
+	 "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_14" -> "fast_loop:#A(class NSArray)#[instance].7f100ac4a3f5bf980a59225b34982723_12" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_1" [label="1: Start A.fast_loop_no_crash\nFormals:  self:A*\nLocals:  0$?%__sil_tmp__enumerator_n$19:NSEnumerator* obj:objc_object* \n  " color=yellow style=filled]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_1" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_12" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_2" [label="2: Exit A.fast_loop_no_crash \n  " color=yellow style=filled]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_1" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_12" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_2" [label="2: Exit A.fast_loop_no_crash \n  " color=yellow style=filled]
 	
 
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" [label="3: + \n  " ]
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_3" [label="3: + \n  " ]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_4" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_4" [label="4:  Message Call: nextObject \n   n$20=*&0$?%__sil_tmp__enumerator_n$19:NSEnumerator* [line 38, column 3]\n  n$21=_fun_NSEnumerator.nextObject(n$20:NSEnumerator*) virtual [line 38, column 3]\n " shape="box"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_3" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_4" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_4" [label="4:  Message Call: nextObject \n   n$20=*&0$?%__sil_tmp__enumerator_n$19:NSEnumerator* [line 38, column 3]\n  n$21=_fun_NSEnumerator.nextObject(n$20:NSEnumerator*) virtual [line 38, column 3]\n " shape="box"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_4" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_5" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_5" [label="5:  BinaryOperatorStmt: Assign \n   *&obj:objc_object*=n$21 [line 38, column 3]\n  n$22=*&obj:objc_object* [line 38, column 3]\n " shape="box"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_4" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_5" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_5" [label="5:  BinaryOperatorStmt: Assign \n   *&obj:objc_object*=n$21 [line 38, column 3]\n  n$22=*&obj:objc_object* [line 38, column 3]\n " shape="box"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_5" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_6" ;
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_5" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_6" [label="6: Prune (true branch, while) \n   PRUNE(n$22, true); [line 38, column 3]\n " shape="invhouse"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_5" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_6" ;
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_5" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_7" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_6" [label="6: Prune (true branch, while) \n   PRUNE(n$22, true); [line 38, column 3]\n " shape="invhouse"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_6" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" [label="7: Prune (false branch, while) \n   PRUNE(!n$22, false); [line 38, column 3]\n " shape="invhouse"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_6" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_8" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_7" [label="7: Prune (false branch, while) \n   PRUNE(!n$22, false); [line 38, column 3]\n " shape="invhouse"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_7" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_2" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" [label="8:  Message Call: copy \n   n$23=*&obj:objc_object* [line 39, column 6]\n  n$24=_fun_NSObject.copy(n$23:objc_object*) virtual [line 39, column 5]\n " shape="box"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_7" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_2" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_8" [label="8:  Message Call: copy \n   n$23=*&obj:objc_object* [line 39, column 6]\n  n$24=_fun_NSObject.copy(n$23:objc_object*) virtual [line 39, column 5]\n " shape="box"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_8" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" [label="9:  Message Call: objectEnumerator \n   n$26=*&self:A* [line 38, column 15]\n  n$27=*n$26.reverseObjectEnumerator:NSEnumerator* [line 38, column 15]\n  n$28=_fun_NSEnumerator.objectEnumerator(n$27:NSEnumerator*) virtual [line 38, column 3]\n " shape="box"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_8" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_3" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_9" [label="9:  Message Call: objectEnumerator \n   n$26=*&self:A* [line 38, column 15]\n  n$27=*n$26.reverseObjectEnumerator:NSEnumerator* [line 38, column 15]\n  n$28=_fun_NSEnumerator.objectEnumerator(n$27:NSEnumerator*) virtual [line 38, column 3]\n " shape="box"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_11" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp__enumerator_n$19:NSEnumerator*); [line 38, column 3]\n " shape="box"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_9" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_11" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp__enumerator_n$19:NSEnumerator*); [line 38, column 3]\n " shape="box"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_9" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_11" [label="11:  DeclStmt \n   *&0$?%__sil_tmp__enumerator_n$19:NSEnumerator*=n$28 [line 38, column 3]\n " shape="box"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_10" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_9" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_11" [label="11:  DeclStmt \n   *&0$?%__sil_tmp__enumerator_n$19:NSEnumerator*=n$28 [line 38, column 3]\n " shape="box"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_11" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_3" ;
-"fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(obj:objc_object*); [line 37, column 3]\n  *&obj:objc_object*=null [line 37, column 3]\n " shape="box"]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_11" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_3" ;
+"fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(obj:objc_object*); [line 37, column 3]\n  *&obj:objc_object*=null [line 37, column 3]\n " shape="box"]
 	
 
-	 "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_12" -> "fast_loop_no_crash#A#instance.eaee56a1051009329a3989c3a10fb432_10" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_1" [label="1: Start A.while_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
+	 "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_12" -> "fast_loop_no_crash#A#[instance].3bf7913d666966ac5e8cb355dfc59ce8_10" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_1" [label="1: Start A.while_loop:\nFormals:  self:A* items:NSArray*\nLocals:  item:NSArray* size:int \n  " color=yellow style=filled]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_1" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_11" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_2" [label="2: Exit A.while_loop: \n  " color=yellow style=filled]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_1" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_11" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_2" [label="2: Exit A.while_loop: \n  " color=yellow style=filled]
 	
 
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_3" [label="3:  Return Stmt \n   n$11=*&size:int [line 33, column 10]\n " shape="box"]
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_3" [label="3:  Return Stmt \n   n$11=*&size:int [line 33, column 10]\n " shape="box"]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_3" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_4" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_4" [label="4:  Return Stmt \n   *&return:int=n$11 [line 33, column 3]\n " shape="box"]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_3" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_4" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_4" [label="4:  Return Stmt \n   *&return:int=n$11 [line 33, column 3]\n " shape="box"]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_4" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_2" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" [label="5: + \n  " ]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_4" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_2" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_5" [label="5: + \n  " ]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_6" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_6" [label="6:  BinaryOperatorStmt: Assign \n   n$12=*&items:NSArray* [line 30, column 19]\n  n$13=_fun_NSArray.objectAtIndex:(n$12:NSArray*,(unsigned long)3:unsigned long) virtual [line 30, column 18]\n  *&item:NSArray*=n$13 [line 30, column 11]\n  n$14=*&item:NSArray* [line 30, column 11]\n " shape="box"]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_5" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_6" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_6" [label="6:  BinaryOperatorStmt: Assign \n   n$12=*&items:NSArray* [line 30, column 19]\n  n$13=_fun_NSArray.objectAtIndex:(n$12:NSArray*,(unsigned long)3:unsigned long) virtual [line 30, column 18]\n  *&item:NSArray*=n$13 [line 30, column 11]\n  n$14=*&item:NSArray* [line 30, column 11]\n " shape="box"]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_6" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_7" ;
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_6" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_8" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_7" [label="7: Prune (true branch, while) \n   PRUNE(n$14, true); [line 30, column 11]\n " shape="invhouse"]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_6" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_7" ;
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_6" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_8" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_7" [label="7: Prune (true branch, while) \n   PRUNE(n$14, true); [line 30, column 11]\n " shape="invhouse"]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_7" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_9" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_8" [label="8: Prune (false branch, while) \n   PRUNE(!n$14, false); [line 30, column 11]\n " shape="invhouse"]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_7" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_9" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_8" [label="8: Prune (false branch, while) \n   PRUNE(!n$14, false); [line 30, column 11]\n " shape="invhouse"]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_8" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_3" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$15=*&item:NSArray* [line 31, column 14]\n  n$16=_fun_NSArray.count(n$15:NSArray*) [line 31, column 13]\n  n$17=*&size:int [line 31, column 5]\n  *&size:int=(n$17 + n$16) [line 31, column 5]\n " shape="box"]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_8" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_3" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_9" [label="9:  BinaryOperatorStmt: AddAssign \n   n$15=*&item:NSArray* [line 31, column 14]\n  n$16=_fun_NSArray.count(n$15:NSArray*) [line 31, column 13]\n  n$17=*&size:int [line 31, column 5]\n  *&size:int=(n$17 + n$16) [line 31, column 5]\n " shape="box"]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_9" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(item:NSArray*); [line 29, column 3]\n  *&item:NSArray*=null [line 29, column 3]\n " shape="box"]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_9" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_5" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(item:NSArray*); [line 29, column 3]\n  *&item:NSArray*=null [line 29, column 3]\n " shape="box"]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_10" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_5" ;
-"while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(size:int); [line 28, column 3]\n  *&size:int=0 [line 28, column 3]\n " shape="box"]
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_10" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_5" ;
+"while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(size:int); [line 28, column 3]\n  *&size:int=0 [line 28, column 3]\n " shape="box"]
 	
 
-	 "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_11" -> "while_loop:#A(class NSArray)#instance.225f55f19f886cfaa14fc056eca2399b_10" ;
+	 "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_11" -> "while_loop:#A(class NSArray)#[instance].65037e0c9728c197e8c3271f4107f487_10" ;
 }

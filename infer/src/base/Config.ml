@@ -35,14 +35,15 @@ type build_system =
   | BBuck
   | BBuck2
   | BClang
+  | BErlc
   | BGradle
+  | BHackc
   | BJava
   | BJavac
   | BMake
   | BMvn
   | BNdk
   | BRebar3
-  | BErlc
   | BXcode
 [@@deriving compare, equal]
 
@@ -52,7 +53,8 @@ type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
-  ; policies: Pulse_config_t.taint_policies }
+  ; policies: Pulse_config_t.taint_policies
+  ; data_flow_kinds: string list }
 
 (* List of ([build system], [executable name]). Several executables may map to the same build
    system. In that case, the first one in the list will be used for printing, eg, in which mode
@@ -71,6 +73,7 @@ let build_system_exe_assoc =
   ; (BClang, "clang++")
   ; (BClang, "c++")
   ; (BClang, "g++")
+  ; (BHackc, "hackc")
   ; (BMake, "make")
   ; (BMake, "configure")
   ; (BMake, "cmake")
@@ -363,10 +366,6 @@ let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
 
 (* Normalize the path *)
 
-let linters_def_dir = lib_dir ^/ "linter_rules"
-
-let linters_def_default_file = linters_def_dir ^/ "linters.al"
-
 let wrappers_dir = lib_dir ^/ "wrappers"
 
 let ncpu = Utils.numcores
@@ -451,25 +450,6 @@ let exe_usage =
     version_string
     (Option.value ~default:"command" exe_command_name)
     (Option.value_map ~default:"" ~f:(( ^ ) " ") exe_command_name)
-
-
-let get_symbol_string json_obj =
-  match json_obj with
-  | `String sym_regexp_str ->
-      sym_regexp_str
-  | _ ->
-      L.(die UserError) "each --custom-symbols element should be list of symbol *strings*"
-
-
-let get_symbols_regexp json_obj =
-  let sym_regexp_strs =
-    match json_obj with
-    | `List json_objs ->
-        List.map ~f:get_symbol_string json_objs
-    | _ ->
-        L.(die UserError) "each --custom-symbols element should be a *list* of strings"
-  in
-  Str.regexp ("\\(" ^ String.concat ~sep:"\\|" sym_regexp_strs ^ "\\)")
 
 
 (** Command Line options *)
@@ -1200,12 +1180,6 @@ and cxx =
     "Analyze C++ methods"
 
 
-and custom_symbols =
-  CLOpt.mk_json ~long:"custom-symbols"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Specify named lists of symbols available to rules"
-
-
 and ( biabduction_write_dotty
     , bo_debug
     , deduplicate
@@ -1216,11 +1190,9 @@ and ( biabduction_write_dotty
     , debug_level_capture
     , debug_level_linters
     , debug_level_test_determinator
-    , default_linters
     , filtering
     , frontend_tests
     , keep_going
-    , linters_developer_mode
     , only_cheap_debug
     , print_buckets
     , print_jbir
@@ -1337,10 +1309,6 @@ and ( biabduction_write_dotty
        $(b,--print-buckets), $(b,--reports-include-ml-loc))"
       [developer_mode; print_buckets; reports_include_ml_loc]
       [filtering; keep_going; deduplicate]
-  and default_linters =
-    CLOpt.mk_bool ~long:"default-linters"
-      ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-      ~default:true "Use the default linters for the analysis."
   and frontend_tests =
     CLOpt.mk_bool_group ~long:"frontend-tests"
       ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -1357,17 +1325,6 @@ and ( biabduction_write_dotty
           ; (Report, manual_generic) ]
       "Also log messages to stdout and stderr"
   in
-  let linters_developer_mode =
-    CLOpt.mk_bool_group ~long:"linters-developer-mode"
-      ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-      "Debug mode for developing new linters. (Sets the analyzer to $(b,linters); also sets \
-       $(b,--debug), $(b,--debug-level-linters 2), $(b,--developer-mode), and unsets \
-       $(b,--allowed-failures) and $(b,--default-linters)."
-      ~f:(fun debug ->
-        debug_level_linters := if debug then 2 else 0 ;
-        debug )
-      [debug; developer_mode] [default_linters; keep_going]
-  in
   ( biabduction_write_dotty
   , bo_debug
   , deduplicate
@@ -1378,11 +1335,9 @@ and ( biabduction_write_dotty
   , debug_level_capture
   , debug_level_linters
   , debug_level_test_determinator
-  , default_linters
   , filtering
   , frontend_tests
   , keep_going
-  , linters_developer_mode
   , only_cheap_debug
   , print_buckets
   , print_jbir
@@ -1483,6 +1438,11 @@ and dump_duplicate_symbols =
   CLOpt.mk_bool ~long:"dump-duplicate-symbols"
     ~in_help:InferCommand.[(Capture, manual_clang)]
     "Dump all symbols with the same name that are defined in more than one file."
+
+
+and dump_textual =
+  CLOpt.mk_path_opt ~long:"dump-textual" ~meta:"path"
+    "Generate a SIL program from the captured target. The target has to be a single Java file."
 
 
 and eradicate_condition_redundant =
@@ -1749,6 +1709,8 @@ and java_jar_compiler =
     ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
 
+and java_reflection = CLOpt.mk_bool ~long:"java-reflection" "Print usages of reflection in the log."
+
 and java_source_parser_experimental =
   CLOpt.mk_bool ~long:"java-source-parser-experimental"
     "The experimental Java source parser for declaration locations."
@@ -1801,51 +1763,10 @@ and _log_skipped =
      machine-readable format"
 
 
-and linter =
-  CLOpt.mk_string_opt ~long:"linter"
-    ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-    "From the linters available, only run this one linter. (Useful together with \
-     $(b,--linters-developer-mode))"
-
-
-and linters_def_file =
-  CLOpt.mk_path_list ~default:[] ~long:"linters-def-file"
-    ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-    ~meta:"file" "Specify the file containing linters definition (e.g. 'linters.al')"
-
-
-and linters_def_folder =
-  let linters_def_folder =
-    CLOpt.mk_path_list ~default:[] ~long:"linters-def-folder"
-      ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-      ~meta:"dir" "Specify the folder containing linters files with extension .al"
-  in
-  let () =
-    CLOpt.mk_set linters_def_folder RevList.empty ~long:"reset-linters-def-folder"
-      "Reset the list of folders containing linters definitions to be empty (see \
-       $(b,linters-def-folder))."
-  in
-  linters_def_folder
-
-
-and linters_doc_url =
-  CLOpt.mk_string_list ~long:"linters-doc-url"
-    ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-    "Specify custom documentation URL for some linter that overrides the default one. Useful if \
-     your project has specific ways of fixing a lint error that is not true in general or public \
-     info. Format: linter_name:doc_url."
-
-
 and linters_ignore_clang_failures =
   CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
     ~in_help:InferCommand.[(Capture, manual_clang_linters)]
     ~default:false "Continue linting files even if some compilation fails."
-
-
-and linters_validate_syntax_only =
-  CLOpt.mk_bool ~long:"linters-validate-syntax-only"
-    ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-    ~default:false "Validate syntax of AL files, then emit possible errors in JSON format to stdout"
 
 
 and list_checkers =
@@ -2286,6 +2207,12 @@ and pulse_model_transfer_ownership =
      are method or namespace::method"
 
 
+and pulse_prevent_non_disj_top =
+  CLOpt.mk_bool ~long:"pulse-prevent-non-disj-top" ~default:false
+    "Forcibly prevent non-disjunctive domain value from becoming top. Without this option, \
+     non-disjunctive domain value becomes top when all disjuncts are non-executable."
+
+
 and pulse_recency_limit =
   CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
     "Maximum number of array elements and structure fields to keep track of for a given array \
@@ -2337,11 +2264,16 @@ and pulse_taint_policies =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     {|A description of which taint flows should be reported, following this JSON format:
   { "short_description": "<a short description of the issue>",
-    "taint_flows": [{ "source_kinds": [<matchers>],
-                      "sink_kinds": [<matchers>],
-                      "sanitizer_kinds": [<matchers>]}]
+    "taint_flows": [{ "source_kinds": [<kinds>],
+                      "sink_kinds": [<kinds>],
+                      "sanitizer_kinds": [<kinds>] }]
   }
-where <matchers> are in the same format as $(b,--pulse-taint-sources); the field "sanitizer_kinds" is optional (assumed to be empty), and a policy may have several taint flows in the form of a list.|}
+where <kinds> are specified in taint source/sanitizer/sink matchers (see $(b,--pulse-taint-sources)). The field "sanitizer_kinds" is optional (assumed to be empty), and a single policy can specify several taint flows using a list. The following policy is always enabled:
+{ "short_description": "...",
+  "taint_flows": [{ "source_kinds": ["Simple"],
+                    "sink_kinds": ["Simple"],
+                    "sanitizer_kinds": ["Simple"] }]
+}|}
 
 
 and pulse_taint_sanitizers =
@@ -2361,18 +2293,50 @@ and pulse_taint_sinks =
 and pulse_taint_sources =
   CLOpt.mk_json ~long:"pulse-taint-sources"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), and $(b,--pulse-taint-specifications), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects with the following fields, for example '[{"procedure": "mySimpleSink", "formals": [{"index": 1}]}]':
-  - "procedure" to match a substring of the function or method name, or "procedure_regex" to specify an OCaml regex
-  - "formals" is a list of objects with one or two fields:
-    - "index" is the index of the formal that is tainted, starting at 0. For methods, index 0 is $(i,this), other arguments start at index 1
-    - "type_name" is optional string; only arguments whose type contains this substring match|}
+    {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects, each with one of the following combinations of fields to identify relevant procedures:
+  - "procedure": match a substring of the procedure name
+  - "procedure_regex": as above, but match using an OCaml regex
+  - "class_names" and "method_names":
+      match exact uses of methods of particular classes
+  - "overrides_of_class_with_annotation":
+      match all procedures defined in classes which inherit
+      from a superclass with the specified annotation
+  - "allocation": $(i,\(for taint sources only\))
+      match allocations of the exact class name supplied
+
+  Each object can also optionally specify:
+  - "kinds": the kinds of taint, used in $(b,--pulse-taint-policies)
+      to specify flows between sources/sanitizers/sinks
+      ("Simple" by default).
+  - "taint_target":
+      where the taint should be applied in the procedure.
+      - "ReturnValue": (default for taint sources)
+      - "AllArguments": (default for taint sanitizers and sinks)
+      - ["ArgumentPositions", [<int list>]]:
+          argument positions given by index (zero-indexed)
+      - ["AllArgumentsButPositions", [<int list>]]:
+          all arguments except given indices (zero-indexed)
+      - ["ArgumentMatchingTypes", [<type list>]]:
+          arguments with types containing supplied strings
+    $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).
+  - "match_objc_blocks": boolean, "false" by default
+      "true" if only Objective-C blocks should be matched.|}
+
+
+and pulse_taint_data_flow_kinds =
+  CLOpt.mk_json ~long:"pulse-taint-data-flow-kinds"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Specify which taint kinds should be used for data flow reporting only. If a source has such a \
+     kind, only data flows to sinks which originate at the source will be reported. If a sink has \
+     such a kind, only sensitive data flows to the sink will be reported."
 
 
 and pulse_taint_config =
   CLOpt.mk_path_list ~long:"pulse-taint-config"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Path to a taint analysis configuration file. This file can define $(b,--pulse-taint-sources), \
-     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), and $(b,--pulse-taint-policies)."
+     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
+     $(b,--pulse-taint-data-flow-kinds)."
 
 
 and pulse_widen_threshold =
@@ -2620,6 +2584,12 @@ and simple_lineage_include_builtins =
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
     "Include call/return edges to/from procedures that model primitive Erlang operations, such as \
      constructing a list."
+
+
+and simple_lineage_model_fields =
+  CLOpt.mk_bool ~long:"simple-lineage-model-fields"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "[EXPERIMENTAL] Enable field-aware lineage analysis."
 
 
 and simple_lineage_max_cfg_size =
@@ -3163,9 +3133,6 @@ let post_parsing_initialization command_opt =
     RevList.rev_map ~f:(fun x -> `Raw x) !compilation_database
     |> RevList.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
   (* set analyzer mode to linters in linters developer mode *)
-  if !linters_developer_mode then enable_checker Linters ;
-  if !default_linters then
-    linters_def_file := RevList.cons linters_def_default_file !linters_def_file ;
   ( match !analyzer with
   | Linters ->
       disable_all_checkers () ;
@@ -3181,21 +3148,6 @@ let command =
     CLOpt.parse ?config_file:inferconfig_file ~usage:exe_usage startup_action initial_command
   in
   post_parsing_initialization command_opt
-
-
-let process_linters_doc_url args =
-  let linters_doc_url arg =
-    match String.lsplit2 ~on:':' arg with
-    | Some linter_doc_url_assoc ->
-        linter_doc_url_assoc
-    | None ->
-        L.(die UserError)
-          "Incorrect format for the option linters-doc-url. The correct format is linter:doc_url \
-           but got %s"
-          arg
-  in
-  let linter_doc_url_assocs = RevList.rev_map ~f:linters_doc_url args in
-  fun ~linter_id -> List.Assoc.find ~equal:String.equal linter_doc_url_assocs linter_id
 
 
 (** Freeze initialized configuration values *)
@@ -3427,8 +3379,6 @@ and debug_mode = !debug
 
 and deduplicate = !deduplicate
 
-and default_linters = !default_linters
-
 and dependency_mode = !dependencies
 
 and developer_mode = !developer_mode
@@ -3440,6 +3390,8 @@ and differential_filter_set = !differential_filter_set
 and dotty_cfg_libs = !dotty_cfg_libs
 
 and dump_duplicate_symbols = !dump_duplicate_symbols
+
+and dump_textual = !dump_textual
 
 and eradicate_condition_redundant = !eradicate_condition_redundant
 
@@ -3500,8 +3452,6 @@ and generated_classes = !generated_classes
 
 and genrule_mode = !genrule_mode
 
-and get_linter_doc_url = process_linters_doc_url !linters_doc_url
-
 and help_checker =
   RevList.rev_map !help_checker ~f:(fun checker_string ->
       match Checker.from_id checker_string with
@@ -3549,6 +3499,8 @@ and java_debug_source_file_info = !java_debug_source_file_info
 
 and java_jar_compiler = !java_jar_compiler
 
+and java_reflection = !java_reflection
+
 and java_source_parser_experimental = !java_source_parser_experimental
 
 and java_version = !java_version
@@ -3561,17 +3513,7 @@ and jobs = Option.fold !max_jobs ~init:!jobs ~f:min
 
 and kotlin_capture = !kotlin_capture
 
-and linter = !linter
-
-and linters_def_file = RevList.to_list !linters_def_file
-
-and linters_def_folder = RevList.to_list !linters_def_folder
-
-and linters_developer_mode = !linters_developer_mode
-
 and linters_ignore_clang_failures = !linters_ignore_clang_failures
-
-and linters_validate_syntax_only = !linters_validate_syntax_only
 
 and list_checkers = !list_checkers
 
@@ -3750,6 +3692,8 @@ and pulse_models_for_erlang = !pulse_models_for_erlang
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 
+and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
+
 and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_ignore_unknown_java_methods_patterns =
@@ -3783,7 +3727,10 @@ and pulse_taint_config =
     ; sanitizers= mk_matchers pulse_taint_sanitizers
     ; sinks= mk_matchers pulse_taint_sinks
     ; policies=
-        Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies) }
+        Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies)
+    ; data_flow_kinds=
+        Pulse_config_j.data_flow_kinds_of_string
+          (Yojson.Basic.to_string !pulse_taint_data_flow_kinds) }
   in
   List.fold (RevList.to_list !pulse_taint_config) ~init:base_taint_config
     ~f:(fun taint_config filepath ->
@@ -3809,7 +3756,10 @@ and pulse_taint_config =
       ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
       ; policies=
           combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"
-            taint_config.policies } )
+            taint_config.policies
+      ; data_flow_kinds=
+          combine_fields Pulse_config_j.data_flow_kinds_of_string "pulse-taint-data-flow-kinds"
+            taint_config.data_flow_kinds } )
 
 
 and pulse_widen_threshold = !pulse_widen_threshold
@@ -3894,6 +3844,8 @@ and show_buckets = !print_buckets
 
 and simple_lineage_include_builtins = !simple_lineage_include_builtins
 
+and simple_lineage_model_fields = !simple_lineage_model_fields
+
 and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
 
 and simple_lineage_json_report = !simple_lineage_json_report
@@ -3965,19 +3917,6 @@ and subtype_multirange = !subtype_multirange
 and summaries_caches_max_size = !summaries_caches_max_size
 
 and suppress_lint_ignore_types = !suppress_lint_ignore_types
-
-and custom_symbols =
-  (* Convert symbol lists to regexps just once, here *)
-  match !custom_symbols with
-  | `Assoc sym_lists ->
-      List.Assoc.map ~f:get_symbols_regexp sym_lists
-  | `List [] ->
-      []
-  | _ ->
-      L.(die UserError)
-        "--custom-symbols must be dictionary of symbol lists not %s"
-        (Yojson.Basic.to_string !custom_symbols)
-
 
 and keep_going = !keep_going
 
@@ -4098,14 +4037,6 @@ let dynamic_dispatch = is_checker_enabled Biabduction
 let java_package_is_external package =
   RevList.exists external_java_packages ~f:(fun (prefix : string) ->
       String.is_prefix package ~prefix )
-
-
-let is_in_custom_symbols list_name symbol =
-  match List.Assoc.find ~equal:String.equal custom_symbols list_name with
-  | Some regexp ->
-      Str.string_match regexp symbol 0
-  | None ->
-      false
 
 
 let scuba_execution_id =

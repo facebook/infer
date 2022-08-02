@@ -20,6 +20,7 @@ type id =
   | Debug
   | Differential
   | DuplicateFunctions
+  | DatalogFacts
   | JavaClassnamesCache
   | JavaGlobalTypeEnvironment
   | LintDotty
@@ -107,6 +108,11 @@ let of_id = function
       { rel_path= "duplicates.txt"
       ; kind= File
       ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
+  | DatalogFacts ->
+      { rel_path= "facts"
+      ; kind= Directory
+      ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
   | JavaClassnamesCache ->
       { rel_path= "classnames"

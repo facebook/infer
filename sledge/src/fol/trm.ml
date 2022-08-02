@@ -52,6 +52,33 @@ module Arith0 = Arithmetic.Make (Trm2)
 module Trm3 = struct
   include Trm2
 
+  include struct
+    let bitwidth = Stdlib.Sys.int_size
+
+    (** number of high bits used to store the segment *)
+    let hi = ((bitwidth + 1) / 4) - 1
+
+    (** number of low bits used to store the identifier *)
+    let lo = bitwidth - hi
+
+    (** test if n is non-negative and fits in the given number of bits *)
+    let fits n bits =
+      if 0 > n then fail "%i is negative" n () ;
+      if n > 1 lsl bits then fail "%i does not fit in %i bits" n bits ()
+
+    let encode_id m n =
+      fits m (hi - 1) ;
+      fits n lo ;
+      ((m lsl lo) lor n) - max_int
+
+    let decode_id i =
+      assert (i < 0) ;
+      let i = i + max_int in
+      let m = i lsr lo in
+      let n = (i lsl hi) lsr hi in
+      (m, n)
+  end
+
   (* nul-terminated string value represented by a concatenation *)
   let string_of_concat xs =
     let exception Not_a_string in
@@ -78,7 +105,9 @@ module Trm3 = struct
       match trm with
       | Var {id; name} -> (
           if id < 0 then
-            Dbg.pp_styled `Bold "%%%s!%i" fs name (id + Int.max_int)
+            let m, n = decode_id id in
+            if m = 0 then Dbg.pp_styled `Bold "%%%s!%i" fs name n
+            else Dbg.pp_styled `Bold "%%%s!%i_%i" fs name n m
           else
             match strength trm with
             | None -> Format.fprintf fs "%%%s_%i" name id
@@ -161,10 +190,7 @@ module Var = struct
 
     module Map = Map
 
-    let identified ~name ~id =
-      assert (id > 0) ;
-      make ~id:(id - Int.max_int) ~name
-
+    let identified ~name m n = make ~id:(encode_id m n) ~name
     let of_trm = function Var _ as v -> Some v | _ -> None
   end
 

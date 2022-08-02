@@ -30,7 +30,7 @@ public class WebViews {
     webview.evaluateJavascript(stringSource, null);
     webview.loadData(stringSource, "", "");
     webview.loadDataWithBaseURL("", stringSource, "", "", "");
-    webview.loadUrl(stringSource); // should have 5 reports
+    webview.loadUrl(stringSource);
     webview.postUrl(stringSource, null);
     webview.postWebMessage(null, (Uri) InferTaint.inferSecretSource());
   }

@@ -14,8 +14,6 @@ module NodeKey : sig
   type t
 
   val to_string : t -> string
-
-  val of_frontend_node_key : string -> t
 end
 
 (** node of the control flow graph *)
@@ -254,6 +252,9 @@ val get_formals : t -> (Mangled.t * Typ.t * Annot.Item.t) list
 
 val get_pvar_formals : t -> (Pvar.t * Typ.t) list
 (** Return pvar and type of formal parameters *)
+
+val get_passed_by_value_formals : t -> (Pvar.t * Typ.t) list
+(** Return pvar and type of formal parameters that are passed by reference *)
 
 val get_loc : t -> Location.t
 (** Return loc information for the procedure *)

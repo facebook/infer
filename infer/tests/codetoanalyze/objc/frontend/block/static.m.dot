@@ -55,100 +55,100 @@ digraph cfg {
 	
 
 	 "objc_blockA.test_leak_2.283de372da56cae6e3edcf8db6c39b92_3" -> "objc_blockA.test_leak_2.283de372da56cae6e3edcf8db6c39b92_2" ;
-"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_1" [label="1: Start A.test\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"test#A#[class].48dda612eda9ab554606a634bd0287ab_1" [label="1: Start A.test\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_1" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_5" ;
-"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_2" [label="2: Exit A.test \n  " color=yellow style=filled]
+	 "test#A#[class].48dda612eda9ab554606a634bd0287ab_1" -> "test#A#[class].48dda612eda9ab554606a634bd0287ab_5" ;
+"test#A#[class].48dda612eda9ab554606a634bd0287ab_2" [label="2: Exit A.test \n  " color=yellow style=filled]
 	
 
-"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test.sharedInstance:objc_object* [line 23, column 10]\n " shape="box"]
+"test#A#[class].48dda612eda9ab554606a634bd0287ab_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test.sharedInstance:objc_object* [line 23, column 10]\n " shape="box"]
 	
 
-	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" ;
-"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$0 [line 23, column 3]\n " shape="box"]
+	 "test#A#[class].48dda612eda9ab554606a634bd0287ab_3" -> "test#A#[class].48dda612eda9ab554606a634bd0287ab_4" ;
+"test#A#[class].48dda612eda9ab554606a634bd0287ab_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$0 [line 23, column 3]\n " shape="box"]
 	
 
-	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_2" ;
-"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_5" [label="5:  Compound statement \n   n$3=(_fun_objc_blockA.test_1)() [line 18, column 3]\n " shape="box"]
+	 "test#A#[class].48dda612eda9ab554606a634bd0287ab_4" -> "test#A#[class].48dda612eda9ab554606a634bd0287ab_2" ;
+"test#A#[class].48dda612eda9ab554606a634bd0287ab_5" [label="5:  Compound statement \n   n$3=(_fun_objc_blockA.test_1)() [line 18, column 3]\n " shape="box"]
 	
 
-	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_5" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" ;
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_1" [label="1: Start A.test2\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "test#A#[class].48dda612eda9ab554606a634bd0287ab_5" -> "test#A#[class].48dda612eda9ab554606a634bd0287ab_3" ;
+"test2#A#[class].16025f2311d9515e26b70637424a45b8_1" [label="1: Start A.test2\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_1" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_6" ;
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_2" [label="2: Exit A.test2 \n  " color=yellow style=filled]
+	 "test2#A#[class].16025f2311d9515e26b70637424a45b8_1" -> "test2#A#[class].16025f2311d9515e26b70637424a45b8_6" ;
+"test2#A#[class].16025f2311d9515e26b70637424a45b8_2" [label="2: Exit A.test2 \n  " color=yellow style=filled]
 	
 
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" [label="3:  Return Stmt \n   n$7=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test2.sharedInstance:objc_object* [line 42, column 10]\n " shape="box"]
+"test2#A#[class].16025f2311d9515e26b70637424a45b8_3" [label="3:  Return Stmt \n   n$7=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test2.sharedInstance:objc_object* [line 42, column 10]\n " shape="box"]
 	
 
-	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" ;
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$7 [line 42, column 3]\n " shape="box"]
+	 "test2#A#[class].16025f2311d9515e26b70637424a45b8_3" -> "test2#A#[class].16025f2311d9515e26b70637424a45b8_4" ;
+"test2#A#[class].16025f2311d9515e26b70637424a45b8_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$7 [line 42, column 3]\n " shape="box"]
 	
 
-	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_2" ;
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" [label="5:  Call (_fun_objc_blockA.test2_3) \n   n$9=(_fun_objc_blockA.test2_3)() [line 37, column 3]\n " shape="box"]
+	 "test2#A#[class].16025f2311d9515e26b70637424a45b8_4" -> "test2#A#[class].16025f2311d9515e26b70637424a45b8_2" ;
+"test2#A#[class].16025f2311d9515e26b70637424a45b8_5" [label="5:  Call (_fun_objc_blockA.test2_3) \n   n$9=(_fun_objc_blockA.test2_3)() [line 37, column 3]\n " shape="box"]
 	
 
-	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" ;
-"test2#A#class.ce50cb13c3345decc567dd4eb6124604_6" [label="6:  BinaryOperatorStmt: Assign \n   n$10=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 36, column 21]\n  n$11=_fun_NSObject.init(n$10:A*) virtual [line 36, column 20]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test2.sharedInstance:objc_object*=n$11 [line 36, column 3]\n " shape="box"]
+	 "test2#A#[class].16025f2311d9515e26b70637424a45b8_5" -> "test2#A#[class].16025f2311d9515e26b70637424a45b8_3" ;
+"test2#A#[class].16025f2311d9515e26b70637424a45b8_6" [label="6:  BinaryOperatorStmt: Assign \n   n$10=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 36, column 21]\n  n$11=_fun_NSObject.init(n$10:A*) virtual [line 36, column 20]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test2.sharedInstance:objc_object*=n$11 [line 36, column 3]\n " shape="box"]
 	
 
-	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_6" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" ;
-"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_1" [label="1: Start A.test3\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "test2#A#[class].16025f2311d9515e26b70637424a45b8_6" -> "test2#A#[class].16025f2311d9515e26b70637424a45b8_5" ;
+"test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_1" [label="1: Start A.test3\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_1" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_5" ;
-"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_2" [label="2: Exit A.test3 \n  " color=yellow style=filled]
+	 "test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_1" -> "test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_5" ;
+"test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_2" [label="2: Exit A.test3 \n  " color=yellow style=filled]
 	
 
-"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" [label="3:  Return Stmt \n   n$12=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test3.i:int [line 53, column 10]\n " shape="box"]
+"test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_3" [label="3:  Return Stmt \n   n$12=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A.test3.i:int [line 53, column 10]\n " shape="box"]
 	
 
-	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" ;
-"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" [label="4:  Return Stmt \n   *&return:int=n$12 [line 53, column 3]\n " shape="box"]
+	 "test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_3" -> "test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_4" ;
+"test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_4" [label="4:  Return Stmt \n   *&return:int=n$12 [line 53, column 3]\n " shape="box"]
 	
 
-	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_2" ;
-"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_5" [label="5:  Call (_fun_objc_blockA.test3_4) \n   n$14=(_fun_objc_blockA.test3_4)() [line 48, column 3]\n " shape="box"]
+	 "test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_4" -> "test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_2" ;
+"test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_5" [label="5:  Call (_fun_objc_blockA.test3_4) \n   n$14=(_fun_objc_blockA.test3_4)() [line 48, column 3]\n " shape="box"]
 	
 
-	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_5" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" ;
-"test_leak#A#class.8240788aa53244827857be0e92d27671_1" [label="1: Start A.test_leak\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_5" -> "test3#A#[class].b6c806f5b5c842f69cd63edc10b71395_3" ;
+"test_leak#A#[class].261c3186d41cf1602a4db2f458c89e2d_1" [label="1: Start A.test_leak\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test_leak#A#class.8240788aa53244827857be0e92d27671_1" -> "test_leak#A#class.8240788aa53244827857be0e92d27671_3" ;
-"test_leak#A#class.8240788aa53244827857be0e92d27671_2" [label="2: Exit A.test_leak \n  " color=yellow style=filled]
+	 "test_leak#A#[class].261c3186d41cf1602a4db2f458c89e2d_1" -> "test_leak#A#[class].261c3186d41cf1602a4db2f458c89e2d_3" ;
+"test_leak#A#[class].261c3186d41cf1602a4db2f458c89e2d_2" [label="2: Exit A.test_leak \n  " color=yellow style=filled]
 	
 
-"test_leak#A#class.8240788aa53244827857be0e92d27671_3" [label="3:  Compound statement \n   n$6=(_fun_objc_blockA.test_leak_2)() [line 28, column 3]\n " shape="box"]
+"test_leak#A#[class].261c3186d41cf1602a4db2f458c89e2d_3" [label="3:  Compound statement \n   n$6=(_fun_objc_blockA.test_leak_2)() [line 28, column 3]\n " shape="box"]
 	
 
-	 "test_leak#A#class.8240788aa53244827857be0e92d27671_3" -> "test_leak#A#class.8240788aa53244827857be0e92d27671_2" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+	 "test_leak#A#[class].261c3186d41cf1602a4db2f458c89e2d_3" -> "test_leak#A#[class].261c3186d41cf1602a4db2f458c89e2d_2" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_1" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" [label="4:  Call dealloc \n   n$0=*&self:A* [line 14, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:A*) [line 14, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:A*,(n$1 - 1):unsigned int) [line 14, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:A*) [line 14, column 1]\n " shape="box"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" [label="4:  Call dealloc \n   n$0=*&self:A* [line 14, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:A*) [line 14, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:A*,(n$1 - 1):unsigned int) [line 14, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:A*) [line 14, column 1]\n " shape="box"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" ;
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 14, column 1]\n " shape="invhouse"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" ;
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 14, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 14, column 1]\n " shape="invhouse"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 14, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
 }

@@ -15,7 +15,8 @@ module ProcNameDispatcher = struct
       @ PulseModelsCpp.abort_matchers @ PulseModelsAndroid.matchers @ PulseModelsC.matchers
       @ PulseModelsCpp.matchers @ PulseModelsErlang.matchers
       @ PulseModelsGenericArrayBackedCollection.matchers @ PulseModelsJava.matchers
-      @ PulseModelsObjC.matchers @ PulseModelsOptional.matchers @ Basic.matchers )
+      @ PulseModelsObjC.matchers @ PulseModelsOptional.matchers @ PulseModelsSmartPointers.matchers
+      @ Basic.matchers )
 end
 
 let dispatch tenv proc_name args = ProcNameDispatcher.dispatch (tenv, proc_name) proc_name args

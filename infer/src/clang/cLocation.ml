@@ -36,15 +36,6 @@ let source_file_in_project source_file =
   file_in_project && not file_should_be_skipped
 
 
-let should_do_frontend_check translation_unit (loc_start, _) =
-  match Option.map ~f:SourceFile.from_abs_path loc_start.Clang_ast_t.sl_file with
-  | Some source_file ->
-      SourceFile.equal translation_unit source_file
-      || (source_file_in_project source_file && not Config.testing_mode)
-  | None ->
-      false
-
-
 (** We translate by default the instructions in the current file. In C++ development, we also
     translate the headers that are part of the project. However, in testing mode, we don't want to
     translate the headers because the dot files in the frontend tests should contain nothing else

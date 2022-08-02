@@ -44,6 +44,8 @@ module InstrNode : sig
       with type t = Procdesc.Node.t * instr_index
        and type id = Procdesc.Node.id * instr_index
 
+  val equal : t -> t -> bool
+
   val compare : t -> t -> int
 
   val to_instr : instr_index -> t -> t

@@ -204,22 +204,26 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
   | `AlreadyVisited, call_state ->
       Ok call_state
   | `NotAlreadyVisited, call_state -> (
-    match BaseMemory.find_opt addr_pre pre.BaseDomain.heap with
-    | None ->
-        Ok call_state
-    | Some edges_pre ->
-        PulseResult.container_fold ~fold:Memory.Edges.fold ~init:call_state edges_pre
-          ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
-            (* HACK: we should probably visit the value in the (array) access too, but since it's
-               a value normally it shouldn't appear in the heap anyway so there should be nothing
-               to visit. *)
-            let subst, access_caller = translate_access_to_caller call_state.subst access_callee in
-            let astate, addr_hist_dest_caller =
-              Memory.eval_edge addr_hist_caller access_caller call_state.astate
-            in
-            let call_state = {call_state with astate; subst} in
-            materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:addr_pre_dest
-              ~addr_hist_caller:addr_hist_dest_caller call_state ) )
+      L.d_printfln "visiting from address %a <-> %a" AbstractValue.pp addr_pre AbstractValue.pp
+        (fst addr_hist_caller) ;
+      match BaseMemory.find_opt addr_pre pre.BaseDomain.heap with
+      | None ->
+          Ok call_state
+      | Some edges_pre ->
+          PulseResult.container_fold ~fold:Memory.Edges.fold ~init:call_state edges_pre
+            ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
+              (* HACK: we should probably visit the value in the (array) access too, but since it's
+                 a value normally it shouldn't appear in the heap anyway so there should be nothing
+                 to visit. *)
+              let subst, access_caller =
+                translate_access_to_caller call_state.subst access_callee
+              in
+              let astate, addr_hist_dest_caller =
+                Memory.eval_edge addr_hist_caller access_caller call_state.astate
+              in
+              let call_state = {call_state with astate; subst} in
+              materialize_pre_from_address callee_proc_name call_location ~pre
+                ~addr_pre:addr_pre_dest ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
 
 let deref_non_c_struct addr typ astate =
@@ -798,59 +802,26 @@ let check_all_valid path callee_proc_name call_location {AbductiveDomain.pre; _}
                       ; astate } ) )
 
 
-let check_all_taint_valid path callee_proc_name call_location actuals pre_post astate call_state =
+let check_all_taint_valid path callee_proc_name call_location pre_post astate call_state =
   let open PulseResult.Let_syntax in
-  let mk_flow_from_taint_source ~source ~destination v astate result =
-    let* result in
-    Recoverable
-      ( result
-      , [ PulseOperations.ReportableError
-            { astate
-            ; diagnostic=
-                FlowFromTaintSource
-                  {tainted= Decompiler.find v astate; source; destination; location= call_location}
-            } ] )
-  in
-  let* astate =
-    AddressMap.fold
-      (fun addr_pre (addr_caller, hist_caller) astate_result ->
-        let sinks, procedures =
-          BaseAddressAttributes.get_must_not_be_tainted addr_pre
-            (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
-        in
-        let trace_via_call trace =
-          Trace.ViaCall
-            {in_call= trace; f= Call callee_proc_name; location= call_location; history= hist_caller}
-        in
-        (* Check taint flows to known/specified sinks *)
-        let* astate =
-          Attribute.TaintSinkSet.fold
-            (fun Attribute.TaintSink.{sink; trace} astate_result ->
-              let* astate = astate_result in
-              let sink_and_trace = (sink, trace_via_call trace) in
-              PulseTaintOperations.check_flows_wrt_sink path call_location sink_and_trace
-                addr_caller astate )
-            sinks astate_result
-        in
-        (* Report taint flows to procedures used within the callee, i.e. flows *via* the callee *)
-        let taint_dependencies =
-          PulseTaintOperations.gather_taint_dependencies addr_caller astate
-        in
-        PulseResult.list_fold taint_dependencies ~init:astate ~f:(fun astate v ->
-            let sources, _ = AddressAttributes.get_taint_sources_and_sanitizers v astate in
-            Attribute.TaintedSet.fold
-              (fun {source; hist} ->
-                Attribute.TaintProcedureSet.fold
-                  (fun {origin; proc_name; trace} ->
-                    mk_flow_from_taint_source ~source:(source, hist)
-                      ~destination:(origin, proc_name, trace_via_call trace)
-                      v astate )
-                  procedures )
-              sources (Ok astate) ) )
-      call_state.subst (Ok astate)
-  in
-  PulseTaintOperations.report_flows_to_callee path call_location callee_proc_name actuals
-    call_state.astate astate
+  AddressMap.fold
+    (fun addr_pre (addr_caller, hist_caller) astate_result ->
+      let sinks =
+        BaseAddressAttributes.get_must_not_be_tainted addr_pre
+          (pre_post.AbductiveDomain.pre :> BaseDomain.t).attrs
+      in
+      let trace_via_call trace =
+        Trace.ViaCall
+          {in_call= trace; f= Call callee_proc_name; location= call_location; history= hist_caller}
+      in
+      Attribute.TaintSinkSet.fold
+        (fun Attribute.TaintSink.{sink; trace} astate_result ->
+          let* astate = astate_result in
+          let sink_and_trace = (sink, trace_via_call trace) in
+          PulseTaintOperations.check_flows_wrt_sink path call_location sink_and_trace addr_caller
+            astate )
+        sinks astate_result )
+    call_state.subst (Ok astate)
 
 
 let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location
@@ -923,7 +894,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
   | exception Contradiction reason ->
       (* can't make sense of the pre-condition in the current context: give up on that particular
          pre/post pair *)
-      L.d_printfln "Cannot apply precondition: %a" pp_contradiction reason ;
+      L.d_printfln ~color:Orange "Cannot apply precondition: %a@\n" pp_contradiction reason ;
       log_contradiction reason ;
       (Unsat, Some reason)
   | result -> (
@@ -971,8 +942,7 @@ let apply_prepost path ~is_isl_error_prepost callee_proc_name call_location ~cal
             (* This has to happen after the post has been applied so that we are aware of any
                sanitizers applied to tainted values too, otherwise we'll report false positives if
                the callee both taints and sanitizes a value *)
-            check_all_taint_valid path callee_proc_name call_location actuals pre_post astate
-              call_state
+            check_all_taint_valid path callee_proc_name call_location pre_post astate call_state
         in
         (astate, return_caller, call_state.subst)
       in

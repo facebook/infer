@@ -19,6 +19,11 @@ module PPNode = struct
   let pp fmt node = pp_id fmt (id node)
 end
 
+let () =
+  if Config.simple_lineage_model_fields then
+    Logging.die InternalError "Field support is not implemented yet in lineage"
+
+
 module LineageGraph = struct
   (** INV: Constants occur only as sources of flow. NOTE: Constants are "local" because type [data]
       associates them with a location, in a proc. *)
@@ -27,7 +32,7 @@ module LineageGraph = struct
     | ConstantInt of string
     | ConstantString of string
     | Variable of (Var.t[@sexp.opaque])
-  [@@deriving compare, sexp]
+  [@@deriving compare, equal, sexp]
 
   type data =
     | Local of ((local * PPNode.t)[@sexp.opaque])
@@ -39,7 +44,7 @@ module LineageGraph = struct
     | ReturnOf of (Procname.t[@sexp.opaque])
     | Self
     | Function of (Procname.t[@sexp.opaque])
-  [@@deriving compare, sexp]
+  [@@deriving compare, equal, sexp]
 
   module FlowKind = struct
     module T = struct
@@ -54,26 +59,26 @@ module LineageGraph = struct
         | Summary  (** Summarizes the effect of a procedure call *)
         | DynamicCallFunction
         | DynamicCallModule
-      [@@deriving compare, sexp, variants]
+      [@@deriving compare, equal, sexp, variants]
     end
 
     include T
     include Comparable.Make (T)
   end
 
-  type flow_kind = FlowKind.t [@@deriving compare, sexp]
+  type flow_kind = FlowKind.t [@@deriving compare, equal, sexp]
 
   let rank_of_flow_kind = FlowKind.Variants.to_rank
 
   type flow = {source: data; target: data; kind: flow_kind; node: (PPNode.t[@sexp.opaque])}
-  [@@deriving compare, sexp]
+  [@@deriving compare, equal, sexp]
 
   type t = flow list
 
   (** Make [data] usable in Maps/Sets. *)
   module Vertex = struct
     module T = struct
-      type t = data [@@deriving compare, sexp]
+      type t = data [@@deriving compare, equal, sexp]
     end
 
     include T
@@ -151,12 +156,12 @@ module LineageGraph = struct
 
   let add_flow ~kind ~node ~source ~target graph =
     let added = {source; target; kind; node} :: graph in
-    match ((kind : FlowKind.t), compare_data target source, target, source) with
-    | Direct, 0, _, _ ->
+    match ((kind : FlowKind.t), equal_data target source, target, source) with
+    | Direct, true, _, _ ->
         graph (* skip Direct loops *)
-    | Summary, 0, _, _ ->
+    | Summary, true, _, _ ->
         graph (* skip Summary loops*)
-    | _, 0, _, _ ->
+    | _, true, _, _ ->
         L.die InternalError "There shall be no fancy (%a) loops!" pp_flow_kind kind
     | Call, _, ArgumentOf _, _ ->
         added
@@ -277,7 +282,7 @@ module LineageGraph = struct
       type function_ = {function_: _function [@key "function"]} [@@deriving yojson_of]
 
       type entity_type = Edge | Function | Location | Node | State
-      [@@deriving compare, hash, sexp]
+      [@@deriving compare, equal, hash, sexp]
     end
 
     let channel_ref = ref None
@@ -410,7 +415,7 @@ module LineageGraph = struct
 
     module JsonCacheKey = struct
       module T = struct
-        type t = Json.entity_type * Int64.t [@@deriving compare, hash, sexp]
+        type t = Json.entity_type * Int64.t [@@deriving compare, equal, hash, sexp]
       end
 
       include T
@@ -683,9 +688,7 @@ module Summary = struct
       let rm map key =
         let flow_list = Map.find_multi map key in
         let flow_list =
-          List.filter
-            ~f:(fun elem -> not (Int.equal (LineageGraph.compare_flow elem flow) 0))
-            flow_list
+          List.filter ~f:(fun elem -> not (LineageGraph.equal_flow elem flow)) flow_list
         in
         Map.set map ~key ~data:flow_list
       in
@@ -716,7 +719,7 @@ module Summary = struct
               let keep : LineageGraph.flow =
                 {keep with LineageGraph.source= flow_ab.source; target= flow_bc.target}
               in
-              if Int.equal 0 (LineageGraph.compare_data keep.source keep.target) then
+              if LineageGraph.equal_data keep.source keep.target then
                 L.die InternalError "OOPS: I don't work with loops." ;
               (* (B) add new edges *)
               let parents = Map.add_multi ~key:keep.target ~data:keep parents in
@@ -815,7 +818,7 @@ module TransferFunctions = struct
   (** Make [LineageGraph.local] usable in Maps/Sets. *)
   module Local = struct
     module T = struct
-      type t = LineageGraph.local [@@deriving compare, sexp]
+      type t = LineageGraph.local [@@deriving compare, equal, sexp]
     end
 
     include T
@@ -990,8 +993,8 @@ module TransferFunctions = struct
     ((last_writes, has_unsupported_features), local_edges)
 
 
-  let add_tito tito_arguments (argument_list : Exp.t list) (ret_id : Ident.t) node
-      (astate : Domain.t) : Domain.t =
+  let add_tito (kind : LineageGraph.FlowKind.t) tito_arguments (argument_list : Exp.t list)
+      (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
     let tito_locals =
       let tito_exps =
         List.filter_mapi
@@ -1000,22 +1003,22 @@ module TransferFunctions = struct
       in
       free_locals_of_exp_list tito_exps
     in
-    update_write LineageGraph.FlowKind.Summary (Var.of_id ret_id, node) tito_locals astate
+    update_write kind (Var.of_id ret_id, node) tito_locals astate
 
 
-  let add_tito_all (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) :
-      Domain.t =
+  let add_tito_all (kind : LineageGraph.FlowKind.t) (argument_list : Exp.t list) (ret_id : Ident.t)
+      node (astate : Domain.t) : Domain.t =
     let all = IntSet.of_list (List.mapi argument_list ~f:(fun index _ -> index)) in
-    add_tito all argument_list ret_id node astate
+    add_tito kind all argument_list ret_id node astate
 
 
-  let add_summary_flows (callee : (Procdesc.t * Summary.t) option) (argument_list : Exp.t list)
-      (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
+  let add_summary_flows (kind : LineageGraph.FlowKind.t) (callee : (Procdesc.t * Summary.t) option)
+      (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
     match callee with
     | None ->
-        add_tito_all argument_list ret_id node astate
+        add_tito_all kind argument_list ret_id node astate
     | Some (_callee_pdesc, {Summary.tito_arguments}) ->
-        add_tito tito_arguments argument_list ret_id node astate
+        add_tito kind tito_arguments argument_list ret_id node astate
 
 
   let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
@@ -1027,15 +1030,15 @@ module TransferFunctions = struct
 
 
   let generic_call_model astate node analyze_dependency ret_id procname args =
-    let maybe =
-      if (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname then
-        fun _transform state -> state
-      else fun transform state -> transform state
+    let rm_builtin =
+      (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname
     in
+    let if_not_builtin transform state = if rm_builtin then state else transform state in
+    let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Direct else Summary in
     astate |> record_supported procname
-    |> maybe (add_arg_flows node procname args)
-    |> maybe (add_ret_flows procname ret_id node)
-    |> add_summary_flows (analyze_dependency procname) args ret_id node
+    |> if_not_builtin (add_arg_flows node procname args)
+    |> if_not_builtin (add_ret_flows procname ret_id node)
+    |> add_summary_flows summary_type (analyze_dependency procname) args ret_id node
 
 
   module CustomModel = struct

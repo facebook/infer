@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -391,5 +392,15 @@ class Containers {
 
   static void staticAddToSyncIntegerSetOk(int s) {
     staticSyncSet.add(s);
+  }
+
+  ConcurrentLinkedDeque<Object> deque;
+
+  void addToDequeOk(Object o) {
+    deque.add(o);
+  }
+
+  Object popDequeOk() {
+    return deque.pop();
   }
 }

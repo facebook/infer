@@ -1430,9 +1430,6 @@ let pp_new_eq fmt = function
       F.fprintf fmt "%a=%a" Var.pp v1 Var.pp v2
 
 
-(* keep [pp_new_eq] alive for debugging; remove once it becomes used *)
-let _ = pp_new_eq
-
 type new_eqs = new_eq list
 
 module Formula = struct
@@ -1761,6 +1758,7 @@ module Formula = struct
              normalization steps: when the stronger invariant holds we can normalize in one step (in
              [normalize_linear_eqs]). *)
           let v_new = (v_new :> Var.t) in
+          L.d_printfln "new eq: %a = %a" Var.pp v_old Var.pp v_new ;
           let new_eqs = Equal (v_old, v_new) :: new_eqs in
           let phi, l_new =
             match Var.Map.find_opt v_new phi.linear_eqs with

@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module L = Logging
 module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
@@ -16,6 +15,18 @@ type arg_payload = AbstractValue.t * ValueHistory.t
 
 type model_data =
   { analysis_data: PulseSummary.t InterproceduralAnalysis.t
+  ; dispatch_call_eval_args:
+         PulseSummary.t InterproceduralAnalysis.t
+      -> PathContext.t
+      -> Ident.t * Typ.t
+      -> Exp.t
+      -> (Exp.t * Typ.t) list
+      -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+      -> Location.t
+      -> CallFlags.t
+      -> AbductiveDomain.t
+      -> Procname.t option
+      -> ExecutionDomain.t AccessResult.t list
   ; path: PathContext.t
   ; callee_procname: Procname.t
   ; location: Location.t
@@ -176,24 +187,30 @@ module Basic = struct
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
 
-  let call_destructor {ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access; typ} : model =
-   fun {analysis_data= {tenv; proc_desc; analyze_dependency}; path; location; ret} astate ->
+  let call_destructor
+      ({ProcnameDispatcher.Call.FuncArg.arg_payload= _; exp; typ} as deleted_arg :
+        (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t ) : model =
+   fun ({analysis_data; dispatch_call_eval_args; path; location; ret} : model_data) astate ->
     (* TODO: lookup dynamic type; currently not set in C++, should update model of [new] *)
     match typ.Typ.desc with
     | Typ.Tptr ({desc= Tstruct class_name}, _) -> (
-      match Tenv.find_cpp_destructor tenv class_name with
+      match Tenv.find_cpp_destructor analysis_data.tenv class_name with
       | None ->
-          L.d_printfln "No destructor found for class %a@\n" Typ.Name.pp class_name ;
+          Logging.d_printfln "No destructor found for class %a@\n" Typ.Name.pp class_name ;
           ok_continue astate
       | Some destructor ->
-          L.d_printfln "Found destructor for class %a@\n" Typ.Name.pp class_name ;
-          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
-            ~callee_data:(analyze_dependency destructor) location destructor ~ret
-            ~actuals:[(deleted_access, typ)]
-            ~formals_opt:None ~call_kind:`ResolvedProcname astate
-          |> fst )
+          let callflags : CallFlags.t =
+            { cf_assign_last_arg= false
+            ; cf_injected_destructor= true
+            ; cf_interface= false
+            ; cf_is_objc_block= false
+            ; cf_virtual= false }
+          in
+          dispatch_call_eval_args analysis_data path ret exp
+            [(exp, typ)]
+            [deleted_arg] location callflags astate (Some destructor) )
     | _ ->
-        L.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
+        Logging.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
           (Typ.pp_desc (Pp.html Black))
           typ.Typ.desc ;
         ok_continue astate
@@ -248,10 +265,15 @@ module Basic = struct
 
 
   let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
-      {analysis_data= {tenv}; location; path; callee_procname; ret= ret_id, _} astate =
+      {analysis_data= {tenv}; location; path; callee_procname; ret= ret_id, ret_typ} astate =
     let ret_addr = AbstractValue.mk_fresh () in
     let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
     let ret_alloc_hist = Hist.single_alloc path location desc in
+    let astate =
+      let typ = if Typ.is_pointer ret_typ then Typ.strip_ptr ret_typ else ret_typ in
+      PulseTaintOperations.taint_allocation tenv path location ~typ_desc:typ.desc ~alloc_desc:desc
+        ~allocator ret_addr astate
+    in
     let astate =
       match size_exp_opt with
       | Some (Exp.Sizeof {typ}) ->

@@ -28,10 +28,12 @@ module DisjDomain = struct
 
   let is_exceptional _ = false
 
+  let is_executable _ = true
+
   let exceptional_to_normal _ = assert false (* no exceptional state anyway *)
 end
 
-module NonDisjDomain = AbstractDomain.BottomLifted (AbstractDomain.Empty)
+module NonDisjDomain = AbstractDomain.BottomTopLifted (AbstractDomain.Empty)
 
 module TransferFunctions = struct
   module CFG = ProcCfg.Normal

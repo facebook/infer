@@ -18,14 +18,15 @@ type build_system =
   | BBuck
   | BBuck2
   | BClang
+  | BErlc
   | BGradle
+  | BHackc
   | BJava
   | BJavac
   | BMake
   | BMvn
   | BNdk
   | BRebar3
-  | BErlc
   | BXcode
 
 type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
@@ -300,8 +301,6 @@ val debug_level_test_determinator : int
 
 val debug_mode : bool
 
-val default_linters : bool
-
 val dependency_mode : bool
 
 val developer_mode : bool
@@ -313,6 +312,8 @@ val differential_filter_set : [`Introduced | `Fixed | `Preexisting] list
 val dotty_cfg_libs : bool
 
 val dump_duplicate_symbols : bool
+
+val dump_textual : string option
 
 val eradicate_condition_redundant : bool
 
@@ -362,8 +363,6 @@ val generated_classes : string option
 
 val genrule_mode : bool
 
-val get_linter_doc_url : linter_id:string -> string option
-
 val global_tenv : bool
 
 val help_checker : Checker.t list
@@ -405,6 +404,8 @@ val java_debug_source_file_info : string option
 
 val java_jar_compiler : string option
 
+val java_reflection : bool
+
 val java_source_parser_experimental : bool
 
 val java_version : int option
@@ -419,17 +420,7 @@ val keep_going : bool
 
 val kotlin_capture : bool
 
-val linter : string option
-
-val linters_def_file : string list
-
-val linters_def_folder : string list
-
-val linters_developer_mode : bool
-
 val linters_ignore_clang_failures : bool
-
-val linters_validate_syntax_only : bool
 
 val list_checkers : bool
 
@@ -567,6 +558,8 @@ val pulse_model_skip_pattern : Str.regexp option
 
 val pulse_models_for_erlang : Yojson.Basic.t
 
+val pulse_prevent_non_disj_top : bool
+
 val pulse_report_ignore_unknown_java_methods_patterns : Str.regexp option
 
 val pulse_report_flows_from_taint_source : string option
@@ -591,7 +584,8 @@ type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
-  ; policies: Pulse_config_t.taint_policies }
+  ; policies: Pulse_config_t.taint_policies
+  ; data_flow_kinds: string list }
 
 val pulse_taint_config : pulse_taint_config
 
@@ -670,6 +664,8 @@ val select : [`All | `Select of int] option
 val show_buckets : bool
 
 val simple_lineage_include_builtins : bool
+
+val simple_lineage_model_fields : bool
 
 val simple_lineage_json_report : bool
 
@@ -796,9 +792,6 @@ val toplevel_results_dir : string
     toplevel infer process) will have their own results directory; this points to the results
     directory of the toplevel infer process, which can be useful for, eg, storing debug info. In
     other cases this is equal to {!results_dir}. *)
-
-val is_in_custom_symbols : string -> string -> bool
-(** Does named symbol match any prefix in the named custom symbol list? *)
 
 val java_package_is_external : string -> bool
 (** Check if a Java package is external to the repository *)

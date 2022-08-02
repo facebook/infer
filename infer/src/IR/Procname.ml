@@ -409,9 +409,9 @@ module ObjC_Cpp = struct
           (if is_copy_ctor then "[copy_ctor]" else "")
           (Option.value ~default:"" mangled)
     | ObjCClassMethod ->
-        F.pp_print_string fmt "class"
+        F.pp_print_string fmt "[class]"
     | ObjCInstanceMethod ->
-        F.pp_print_string fmt "instance"
+        F.pp_print_string fmt "[instance]"
 
 
   let pp verbosity fmt osig =

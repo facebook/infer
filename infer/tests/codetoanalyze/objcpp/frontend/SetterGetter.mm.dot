@@ -76,84 +76,84 @@ digraph cfg {
 	
 
 	 "S#S#{}7538395480010452745.a8d9a4dc6f9e01d55f65e4d44e477ef0_6" -> "S#S#{}7538395480010452745.a8d9a4dc6f9e01d55f65e4d44e477ef0_3" ;
-"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_1" [label="1: Start SetterGetter.call_getter\nFormals:  self:SetterGetter* __return_param:S*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:S \n  " color=yellow style=filled]
+"call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_1" [label="1: Start SetterGetter.call_getter\nFormals:  self:SetterGetter* __return_param:S*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:S \n  " color=yellow style=filled]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_1" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" ;
-"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_2" [label="2: Exit SetterGetter.call_getter \n  " color=yellow style=filled]
+	 "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_1" -> "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_4" ;
+"call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_2" [label="2: Exit SetterGetter.call_getter \n  " color=yellow style=filled]
 	
 
-"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:S); [line 24, column 10]\n  n$2=*&self:SetterGetter* [line 24, column 11]\n  n$4=_fun_SetterGetter.x(n$2:SetterGetter*,&0$?%__sil_tmpSIL_materialize_temp__n$1:S*) assign_last [line 24, column 10]\n " shape="box"]
+"call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:S); [line 24, column 10]\n  n$2=*&self:SetterGetter* [line 24, column 11]\n  n$4=_fun_SetterGetter.x(n$2:SetterGetter*,&0$?%__sil_tmpSIL_materialize_temp__n$1:S*) assign_last [line 24, column 10]\n " shape="box"]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_3" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" ;
-"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" [label="4:  Return Stmt \n   n$0=*&__return_param:S* [line 24, column 3]\n " shape="box"]
+	 "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_3" -> "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_5" ;
+"call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_4" [label="4:  Return Stmt \n   n$0=*&__return_param:S* [line 24, column 3]\n " shape="box"]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_4" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_3" ;
-"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" [label="5:  Return Stmt \n   n$5=_fun_S::S(n$0:S*,&0$?%__sil_tmpSIL_materialize_temp__n$1:S&) [line 24, column 10]\n " shape="box"]
+	 "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_4" -> "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_3" ;
+"call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_5" [label="5:  Return Stmt \n   n$5=_fun_S::S(n$0:S*,&0$?%__sil_tmpSIL_materialize_temp__n$1:S&) [line 24, column 10]\n " shape="box"]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_5" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_6" ;
-"call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_6" [label="6:  Return Stmt \n  " shape="box"]
+	 "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_5" -> "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_6" ;
+"call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_6" [label="6:  Return Stmt \n  " shape="box"]
 	
 
-	 "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_6" -> "call_getter#SetterGetter(class S)#instance.0b857a09887ce0b0567d6c41ca9c5a53_2" ;
-"call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_1" [label="1: Start SetterGetter.call_setter:\nFormals:  self:SetterGetter* param:S&\nLocals:  0$?%__sil_tmp__temp_construct_n$6:S \n  " color=yellow style=filled]
+	 "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_6" -> "call_getter#SetterGetter(class S)#[instance].17a118dd0c0e1a24690db0754412a6ca_2" ;
+"call_setter:#SetterGetter#[instance].22ee96b9004649f70397a057b75b5d80_1" [label="1: Start SetterGetter.call_setter:\nFormals:  self:SetterGetter* param:S&\nLocals:  0$?%__sil_tmp__temp_construct_n$6:S \n  " color=yellow style=filled]
 	
 
-	 "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_1" -> "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_3" ;
-"call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_2" [label="2: Exit SetterGetter.call_setter: \n  " color=yellow style=filled]
+	 "call_setter:#SetterGetter#[instance].22ee96b9004649f70397a057b75b5d80_1" -> "call_setter:#SetterGetter#[instance].22ee96b9004649f70397a057b75b5d80_3" ;
+"call_setter:#SetterGetter#[instance].22ee96b9004649f70397a057b75b5d80_2" [label="2: Exit SetterGetter.call_setter: \n  " color=yellow style=filled]
 	
 
-"call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_3" [label="3:  Message Call: setX: \n   n$9=*&self:SetterGetter* [line 28, column 4]\n  n$7=*&param:S& [line 28, column 14]\n  n$8=_fun_S::S(&0$?%__sil_tmp__temp_construct_n$6:S*,n$7:S&) [line 28, column 14]\n  n$10=_fun_SetterGetter.setX:(n$9:SetterGetter*,&0$?%__sil_tmp__temp_construct_n$6:S) [line 28, column 3]\n " shape="box"]
+"call_setter:#SetterGetter#[instance].22ee96b9004649f70397a057b75b5d80_3" [label="3:  Message Call: setX: \n   n$9=*&self:SetterGetter* [line 28, column 4]\n  n$7=*&param:S& [line 28, column 14]\n  n$8=_fun_S::S(&0$?%__sil_tmp__temp_construct_n$6:S*,n$7:S&) [line 28, column 14]\n  n$10=_fun_SetterGetter.setX:(n$9:SetterGetter*,&0$?%__sil_tmp__temp_construct_n$6:S) [line 28, column 3]\n " shape="box"]
 	
 
-	 "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_3" -> "call_setter:#SetterGetter#instance.20e4ef9fb1c3383cffedd4b947ba1ad5_2" ;
-"dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_1" [label="1: Start SetterGetter.dealloc\nFormals:  self:SetterGetter*\nLocals:  \n  " color=yellow style=filled]
+	 "call_setter:#SetterGetter#[instance].22ee96b9004649f70397a057b75b5d80_3" -> "call_setter:#SetterGetter#[instance].22ee96b9004649f70397a057b75b5d80_2" ;
+"dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_1" [label="1: Start SetterGetter.dealloc\nFormals:  self:SetterGetter*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_1" -> "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_4" ;
-"dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_2" [label="2: Exit SetterGetter.dealloc \n  " color=yellow style=filled]
+	 "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_1" -> "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_4" ;
+"dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_2" [label="2: Exit SetterGetter.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_3" -> "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_2" ;
-"dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_4" [label="4:  Call dealloc \n   n$0=*&self:SetterGetter* [line 21, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:SetterGetter*) [line 21, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:SetterGetter*,(n$1 - 1):unsigned int) [line 21, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:SetterGetter*) [line 21, column 1]\n " shape="box"]
+	 "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_3" -> "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_2" ;
+"dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_4" [label="4:  Call dealloc \n   n$0=*&self:SetterGetter* [line 21, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:SetterGetter*) [line 21, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:SetterGetter*,(n$1 - 1):unsigned int) [line 21, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:SetterGetter*) [line 21, column 1]\n " shape="box"]
 	
 
-	 "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_4" -> "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_5" ;
-	 "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_4" -> "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_6" ;
-"dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 21, column 1]\n " shape="invhouse"]
+	 "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_4" -> "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_5" ;
+	 "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_4" -> "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_6" ;
+"dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 21, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_5" -> "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_3" ;
-"dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 21, column 1]\n " shape="invhouse"]
+	 "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_5" -> "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_3" ;
+"dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 21, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_6" -> "dealloc#SetterGetter#instance.a770db60239ac61263c5c333999d1059_2" ;
-"setX:#SetterGetter#instance.a9b2d372efcd209a7c5af8b560cc251d_1" [label="1: Start SetterGetter.setX:\nFormals:  self:SetterGetter* x:S&\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_6" -> "dealloc#SetterGetter#[instance].07db00ddc1cf9208254b22cd2080f6b8_2" ;
+"setX:#SetterGetter#[instance].cae3c31cf05adb536575fb0bb3456a55_1" [label="1: Start SetterGetter.setX:\nFormals:  self:SetterGetter* x:S&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setX:#SetterGetter#instance.a9b2d372efcd209a7c5af8b560cc251d_1" -> "setX:#SetterGetter#instance.a9b2d372efcd209a7c5af8b560cc251d_3" ;
-"setX:#SetterGetter#instance.a9b2d372efcd209a7c5af8b560cc251d_2" [label="2: Exit SetterGetter.setX: \n  " color=yellow style=filled]
+	 "setX:#SetterGetter#[instance].cae3c31cf05adb536575fb0bb3456a55_1" -> "setX:#SetterGetter#[instance].cae3c31cf05adb536575fb0bb3456a55_3" ;
+"setX:#SetterGetter#[instance].cae3c31cf05adb536575fb0bb3456a55_2" [label="2: Exit SetterGetter.setX: \n  " color=yellow style=filled]
 	
 
-"setX:#SetterGetter#instance.a9b2d372efcd209a7c5af8b560cc251d_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:SetterGetter* [line 17, column 13]\n  n$1=*&x.f1:int [line 17, column 13]\n  *n$0._x.f1:int=n$1 [line 17, column 13]\n  n$2=*&x.f2:int [line 17, column 13]\n  *n$0._x.f2:int=n$2 [line 17, column 13]\n " shape="box"]
+"setX:#SetterGetter#[instance].cae3c31cf05adb536575fb0bb3456a55_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:SetterGetter* [line 17, column 13]\n  n$1=*&x.f1:int [line 17, column 13]\n  *n$0._x.f1:int=n$1 [line 17, column 13]\n  n$2=*&x.f2:int [line 17, column 13]\n  *n$0._x.f2:int=n$2 [line 17, column 13]\n " shape="box"]
 	
 
-	 "setX:#SetterGetter#instance.a9b2d372efcd209a7c5af8b560cc251d_3" -> "setX:#SetterGetter#instance.a9b2d372efcd209a7c5af8b560cc251d_2" ;
-"x#SetterGetter(class S)#instance.43d5dcfae019b9af257c8ace74d46e9f_1" [label="1: Start SetterGetter.x\nFormals:  self:SetterGetter* __return_param:S*\nLocals:  \n  " color=yellow style=filled]
+	 "setX:#SetterGetter#[instance].cae3c31cf05adb536575fb0bb3456a55_3" -> "setX:#SetterGetter#[instance].cae3c31cf05adb536575fb0bb3456a55_2" ;
+"x#SetterGetter(class S)#[instance].80170f1d8ec8c763ca0aaffb2280dabc_1" [label="1: Start SetterGetter.x\nFormals:  self:SetterGetter* __return_param:S*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "x#SetterGetter(class S)#instance.43d5dcfae019b9af257c8ace74d46e9f_1" -> "x#SetterGetter(class S)#instance.43d5dcfae019b9af257c8ace74d46e9f_3" ;
-"x#SetterGetter(class S)#instance.43d5dcfae019b9af257c8ace74d46e9f_2" [label="2: Exit SetterGetter.x \n  " color=yellow style=filled]
+	 "x#SetterGetter(class S)#[instance].80170f1d8ec8c763ca0aaffb2280dabc_1" -> "x#SetterGetter(class S)#[instance].80170f1d8ec8c763ca0aaffb2280dabc_3" ;
+"x#SetterGetter(class S)#[instance].80170f1d8ec8c763ca0aaffb2280dabc_2" [label="2: Exit SetterGetter.x \n  " color=yellow style=filled]
 	
 
-"x#SetterGetter(class S)#instance.43d5dcfae019b9af257c8ace74d46e9f_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:SetterGetter* [line 17, column 13]\n  n$1=*&__return_param:S [line 17, column 13]\n  n$2=*n$0._x.f1:int [line 17, column 13]\n  *n$1.f1:int=n$2 [line 17, column 13]\n  n$3=*n$0._x.f2:int [line 17, column 13]\n  *n$1.f2:int=n$3 [line 17, column 13]\n " shape="box"]
+"x#SetterGetter(class S)#[instance].80170f1d8ec8c763ca0aaffb2280dabc_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:SetterGetter* [line 17, column 13]\n  n$1=*&__return_param:S [line 17, column 13]\n  n$2=*n$0._x.f1:int [line 17, column 13]\n  *n$1.f1:int=n$2 [line 17, column 13]\n  n$3=*n$0._x.f2:int [line 17, column 13]\n  *n$1.f2:int=n$3 [line 17, column 13]\n " shape="box"]
 	
 
-	 "x#SetterGetter(class S)#instance.43d5dcfae019b9af257c8ace74d46e9f_3" -> "x#SetterGetter(class S)#instance.43d5dcfae019b9af257c8ace74d46e9f_2" ;
+	 "x#SetterGetter(class S)#[instance].80170f1d8ec8c763ca0aaffb2280dabc_3" -> "x#SetterGetter(class S)#[instance].80170f1d8ec8c763ca0aaffb2280dabc_2" ;
 }

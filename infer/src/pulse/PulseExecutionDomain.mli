@@ -8,7 +8,7 @@
 open! IStd
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
-module Decompiler = PulseAbductiveDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module LatentIssue = PulseLatentIssue
 
 type 'abductive_domain_t base_t =
@@ -22,7 +22,7 @@ type 'abductive_domain_t base_t =
       (** this path leads to an error but we don't have conclusive enough data to report it yet *)
   | LatentInvalidAccess of
       { astate: AbductiveDomain.summary
-      ; address: Decompiler.expr
+      ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
       ; calling_context: (CallEvent.t * Location.t) list }
       (** if [address] is ever observed to be invalid then there is an invalid access because it

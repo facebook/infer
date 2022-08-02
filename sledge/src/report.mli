@@ -21,12 +21,14 @@ val reached_goal :
   -> dp_witness:(Format.formatter -> unit)
   -> unit
 
+val unreachable_goal : dp_path:(Format.formatter -> unit) -> unit
 val unimplemented : string -> Llair.func -> unit
 
 type status =
   | Safe of {bound: int; switches: int}
   | Unsafe of {alarms: int; bound: int; switches: int}
   | Reached_goal of {steps: int}
+  | Unreachable_goal
   | Ok
   | Unsound
   | Incomplete

@@ -45,11 +45,13 @@ let versionJson =
 
 let clang_enabled = is_yes "@BUILD_C_ANALYZERS@"
 
+let erlang_enabled = is_yes "@BUILD_ERLANG_ANALYZERS@"
+
+let hack_enabled = is_yes "@BUILD_HACK_ANALYZERS@"
+
 let java_enabled = is_yes "@BUILD_JAVA_ANALYZERS@"
 
 let java_version = int_of_string_opt "@JAVA_MAJOR_VERSION@"
-
-let erlang_enabled = is_yes "@BUILD_ERLANG_ANALYZERS@"
 
 let xcode_enabled = is_not_no "@XCODE_SELECT@"
 

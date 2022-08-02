@@ -50,10 +50,6 @@ let builtin_memset_chk = "__builtin___memset_chk"
 
 let builtin_object_size = "__builtin_object_size"
 
-let ckcomponent_cl = "CKComponent"
-
-let ckcomponentcontroller_cl = "CKComponentController"
-
 (** script to run our own clang *)
 let clang_bin xx =
   Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name ^/ "facebook-clang-plugins"
@@ -74,8 +70,6 @@ let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:descripti
 
 let handleFailureInMethod = "handleFailureInMethod:object:file:lineNumber:description:"
 
-let id_cl = "id"
-
 let infer = "infer"
 
 let init = "init"
@@ -89,10 +83,6 @@ let new_str = "new"
 let next_object = "nextObject"
 
 let nsenumerator_cl = "NSEnumerator"
-
-let nsproxy_cl = "NSProxy"
-
-let nsobject_cl = "NSObject"
 
 let nsstring_cl = "NSString"
 

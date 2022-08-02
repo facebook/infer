@@ -19,9 +19,6 @@ module NodeKey = struct
   let compute node ~simple_key ~succs ~preds =
     let v = (simple_key node, List.rev_map ~f:simple_key succs, List.rev_map ~f:simple_key preds) in
     Utils.better_hash v
-
-
-  let of_frontend_node_key = Utils.better_hash
 end
 
 (* =============== START of module Node =============== *)
@@ -533,6 +530,8 @@ let get_proc_name pdesc = pdesc.attributes.proc_name
 let get_formals pdesc = pdesc.attributes.formals
 
 let get_pvar_formals pdesc = ProcAttributes.get_pvar_formals pdesc.attributes
+
+let get_passed_by_value_formals pdesc = ProcAttributes.get_passed_by_value_formals pdesc.attributes
 
 let get_loc pdesc = pdesc.attributes.loc
 

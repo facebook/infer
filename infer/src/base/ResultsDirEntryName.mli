@@ -20,6 +20,7 @@ type id =
   | Debug  (** directory containing debug data *)
   | Differential  (** contains the results of [infer reportdiff] *)
   | DuplicateFunctions  (** list of duplicated functions *)
+  | DatalogFacts  (** directory for datalog facts *)
   | JavaClassnamesCache  (** used when capturing Java jar dependencies *)
   | JavaGlobalTypeEnvironment  (** internal {!Tenv.t} object corresponding to the whole project *)
   | LintDotty  (** directory of linters' dotty debug output for CTL evaluation *)

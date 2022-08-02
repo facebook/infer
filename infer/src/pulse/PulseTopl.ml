@@ -676,7 +676,7 @@ let report_errors proc_desc err_log state =
       if not (is_nested_large_step q) then
         let loc = Procdesc.get_loc proc_desc in
         let ltr = make_trace 0 [] q in
-        let message = Format.asprintf "%a" ToplAutomaton.pp_message_of_state (a, q.post.vertex) in
+        let message = ToplAutomaton.message a q.post.vertex in
         Reporting.log_issue proc_desc err_log ~loc ~ltr Topl IssueType.topl_error message
   in
   List.iter ~f:report_simple_state state

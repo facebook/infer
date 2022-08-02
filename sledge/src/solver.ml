@@ -100,8 +100,9 @@ let excise_exists goal vx =
     if Context.Subst.is_empty solutions_for_xs then goal
     else
       let removed =
-        let sub = Sh.norm solutions_for_xs goal.sub vx in
-        Var.Set.diff goal.xs (Sh.fv ~ignore_ctx:() sub)
+        Var.Set.diff goal.xs
+          (Sh.fv ~ignore_ctx:()
+             (Sh.norm ~ignore_ctx:() solutions_for_xs goal.sub vx) )
       in
       if Var.Set.is_empty removed then goal
       else

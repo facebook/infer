@@ -349,9 +349,6 @@ OPTIONS
            Costs report of the base revision to use for comparison       
     See also infer-reportdiff(1).
 
-       --custom-symbols json
-           Specify named lists of symbols available to rules           See also infer-analyze(1).
-
        --no-cxx
            Deactivates: Analyze C++ methods (Conversely: --cxx)       
     See also infer-capture(1).
@@ -359,6 +356,14 @@ OPTIONS
        --cxx-scope-guards json
            Specify scope guard classes that can be read only by destructors
            without being reported as dead stores.           See also infer-analyze(1).
+
+       --datalog
+           Activates: checker datalog: Experimental datalog-based points-to
+           analysis. (Conversely: --no-datalog)           See also infer-analyze(1).
+
+       --datalog-only
+           Activates: Enable datalog and disable all other checkers
+           (Conversely: --no-datalog-only)           See also infer-analyze(1).
 
        --debug,-g
            Activates: Debug mode (also sets --debug-level 2,
@@ -408,10 +413,6 @@ OPTIONS
            --dotnet-resource-leak, --siof, --self-in-block, --starvation
            (Conversely: --default-checkers)           See also infer-analyze(1).
 
-       --no-default-linters
-           Deactivates: Use the default linters for the analysis.
-           (Conversely: --default-linters)           See also infer-capture(1).
-
        --dependencies
            Activates: Translate all the dependencies during the capture. The
            classes in the given jar file will be translated. No sources
@@ -442,6 +443,8 @@ OPTIONS
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
+             BAD_ARG (enabled by default),
+             BAD_ARG_LATENT (disabled by default),
              BAD_KEY (enabled by default),
              BAD_KEY_LATENT (disabled by default),
              BAD_MAP (enabled by default),
@@ -470,7 +473,6 @@ OPTIONS
              CHECKERS_IMMUTABLE_CAST (enabled by default),
              CHECKERS_PRINTF_ARGS (enabled by default),
              CLASS_CAST_EXCEPTION (disabled by default),
-             COMPONENT_WITH_MULTIPLE_FACTORY_METHODS (enabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
              CONFIG_IMPACT (disabled by default),
@@ -484,6 +486,7 @@ OPTIONS
              Cannot_star (enabled by default),
              DANGLING_POINTER_DEREFERENCE (disabled by default),
              DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
+             DATALOG_FACT (enabled by default),
              DATA_FLOW_TO_SINK (disabled by default),
              DEADLOCK (enabled by default),
              DEAD_STORE (enabled by default),
@@ -560,7 +563,6 @@ OPTIONS
              MIXED_SELF_WEAKSELF (enabled by default),
              MODIFIES_IMMUTABLE (enabled by default),
              MULTIPLE_WEAKSELF (enabled by default),
-             MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
              NIL_BLOCK_CALL (enabled by default),
              NIL_BLOCK_CALL_LATENT (disabled by default),
@@ -589,6 +591,7 @@ OPTIONS
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
+             PULSE_CONST_REFABLE (disabled by default),
              PULSE_RESOURCE_LEAK (disabled by default),
              PULSE_UNINITIALIZED_VALUE (enabled by default),
              PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),
@@ -709,8 +712,8 @@ OPTIONS
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
            values: ant, buck, buck2, gradle, gradlew, java, javac, cc, clang,
-           gcc, clang++, c++, g++, make, configure, cmake, waf, mvn, mvnw,
-           ndk-build, rebar3, erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
+           gcc, clang++, c++, g++, hackc, make, configure, cmake, waf, mvn,
+           mvnw, ndk-build, rebar3, erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
 
        --no-fragment-retains-view
            Deactivates: checker fragment-retains-view: Detects when Android
@@ -856,34 +859,9 @@ OPTIONS
            Activates: Enable Kotlin capture (experimental, do not use).
            (Conversely: --no-kotlin-capture)           See also infer-capture(1).
 
-       --linter string
-           From the linters available, only run this one linter. (Useful
-           together with --linters-developer-mode)           See also infer-capture(1).
-
        --no-linters
            Deactivates: checker linters: Declarative linting framework over
            the Clang AST. (Conversely: --linters)           See also infer-analyze(1).
-
-       --linters-def-file +file
-           Specify the file containing linters definition (e.g. 'linters.al')       
-    See also infer-capture(1).
-
-       --linters-def-folder +dir
-           Specify the folder containing linters files with extension .al       
-    See also infer-capture(1).
-
-       --linters-developer-mode
-           Activates: Debug mode for developing new linters. (Sets the
-           analyzer to linters; also sets --debug, --debug-level-linters 2,
-           --developer-mode, and unsets --allowed-failures and
-           --default-linters. (Conversely: --no-linters-developer-mode)       
-    See also infer-capture(1).
-
-       --linters-doc-url +string
-           Specify custom documentation URL for some linter that overrides
-           the default one. Useful if your project has specific ways of
-           fixing a lint error that is not true in general or public info.
-           Format: linter_name:doc_url.           See also infer-capture(1).
 
        --linters-ignore-clang-failures
            Activates: Continue linting files even if some compilation fails.
@@ -892,11 +870,6 @@ OPTIONS
        --linters-only
            Activates: Enable linters and disable all other checkers
            (Conversely: --no-linters-only)           See also infer-analyze(1).
-
-       --linters-validate-syntax-only
-           Activates: Validate syntax of AL files, then emit possible errors
-           in JSON format to stdout (Conversely:
-           --no-linters-validate-syntax-only)           See also infer-capture(1).
 
        --list-checkers
            Activates: Show the list of all available checkers. (Conversely:
@@ -1184,18 +1157,33 @@ OPTIONS
        --pulse-taint-config +path
            Path to a taint analysis configuration file. This file can define
            --pulse-taint-sources, --pulse-taint-sanitizers,
-           --pulse-taint-sinks, and --pulse-taint-policies.           See also infer-analyze(1).
+           --pulse-taint-sinks, --pulse-taint-policies, and
+           --pulse-taint-data-flow-kinds.           See also infer-analyze(1).
+
+       --pulse-taint-data-flow-kinds json
+           Specify which taint kinds should be used for data flow reporting
+           only. If a source has such a kind, only data flows to sinks which
+           originate at the source will be reported. If a sink has such a
+           kind, only sensitive data flows to the sink will be reported.       
+    See also infer-analyze(1).
 
        --pulse-taint-policies json
            A description of which taint flows should be reported, following
            this JSON format:             { "short_description": "<a short description of the issue>",
-               "taint_flows": [{ "source_kinds": [<matchers>],
-                                 "sink_kinds": [<matchers>],
-                                 "sanitizer_kinds": [<matchers>]}]
+               "taint_flows": [{ "source_kinds": [<kinds>],
+                                 "sink_kinds": [<kinds>],
+                                 "sanitizer_kinds": [<kinds>] }]
              }
-           where <matchers> are in the same format as --pulse-taint-sources;
-           the field "sanitizer_kinds" is optional (assumed to be empty), and
-           a policy may have several taint flows in the form of a list.
+           where <kinds> are specified in taint source/sanitizer/sink
+           matchers (see --pulse-taint-sources). The field "sanitizer_kinds"
+           is optional (assumed to be empty), and a single policy can specify
+           several taint flows using a list. The following policy is always
+           enabled:
+           { "short_description": "...",
+             "taint_flows": [{ "source_kinds": ["Simple"],
+                               "sink_kinds": ["Simple"],
+                               "sanitizer_kinds": ["Simple"] }]
+           }
            See also infer-analyze(1).
 
        --pulse-taint-sanitizers json
@@ -1209,19 +1197,38 @@ OPTIONS
     See also infer-analyze(1).
 
        --pulse-taint-sources json
-           Together with --pulse-taint-sanitizers, --pulse-taint-sinks, and
-           --pulse-taint-specifications, specify taint properties. The JSON
-           format of sources also applies to sinks and sanitizers. It
-           consists of a list of objects with the following fields, for
-           example '[{"procedure": "mySimpleSink", "formals": [{"index":
-           1}]}]':             - "procedure" to match a substring of the function or method
-           name, or "procedure_regex" to specify an OCaml regex
-             - "formals" is a list of objects with one or two fields:
-               - "index" is the index of the formal that is tainted,
-           starting at 0. For methods, index 0 is this, other arguments start
-           at index 1
-               - "type_name" is optional string; only arguments whose type
-           contains this substring match
+           Together with --pulse-taint-sanitizers, --pulse-taint-sinks,
+           --pulse-taint-policies, and --pulse-taint-data-flow-kinds, specify
+           taint properties. The JSON format of sources also applies to sinks
+           and sanitizers. It consists of a list of objects, each with one of
+           the following combinations of fields to identify relevant
+           procedures:             - "procedure": match a substring of the procedure name
+             - "procedure_regex": as above, but match using an OCaml regex
+             - "class_names" and "method_names":
+                 match exact uses of methods of particular classes
+             - "overrides_of_class_with_annotation":
+                 match all procedures defined in classes which inherit
+                 from a superclass with the specified annotation
+             - "allocation": (for taint sources only)
+                 match allocations of the exact class name supplied
+           
+             Each object can also optionally specify:
+             - "kinds": the kinds of taint, used in --pulse-taint-policies
+                 to specify flows between sources/sanitizers/sinks
+                 ("Simple" by default).
+             - "taint_target":
+                 where the taint should be applied in the procedure.
+                 - "ReturnValue": (default for taint sources)
+                 - "AllArguments": (default for taint sanitizers and sinks)
+                 - ["ArgumentPositions", [<int list>]]:
+                     argument positions given by index (zero-indexed)
+                 - ["AllArgumentsButPositions", [<int list>]]:
+                     all arguments except given indices (zero-indexed)
+                 - ["ArgumentMatchingTypes", [<type list>]]:
+                     arguments with types containing supplied strings
+               N.B. for methods, index 0 is this/self.
+             - "match_objc_blocks": boolean, "false" by default
+                 "true" if only Objective-C blocks should be matched.
            See also infer-analyze(1).
 
        --purity
@@ -1387,6 +1394,10 @@ OPTIONS
 
        --simple-lineage-max-cfg-size int
            If set, larger CFGs are skipped.           See also infer-analyze(1).
+
+       --simple-lineage-model-fields
+           Activates: [EXPERIMENTAL] Enable field-aware lineage analysis.
+           (Conversely: --no-simple-lineage-model-fields)           See also infer-analyze(1).
 
        --simple-lineage-only
            Activates: Enable simple-lineage and disable all other checkers

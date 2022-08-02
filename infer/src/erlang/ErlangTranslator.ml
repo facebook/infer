@@ -26,10 +26,6 @@ let lists_reverse = Procname.make_erlang ~module_name:"lists" ~function_name:"re
 
 let erlang_ns = ErlangTypeName.erlang_namespace
 
-let erlang_equal = Procname.make_erlang ~module_name:erlang_ns ~function_name:"==" ~arity:2
-
-let erlang_ex_equal = Procname.make_erlang ~module_name:erlang_ns ~function_name:"=:=" ~arity:2
-
 let erlang_send2 = Procname.make_erlang ~module_name:erlang_ns ~function_name:"send" ~arity:2
 
 (* TODO: add Pulse model T93361792 *)
@@ -625,7 +621,6 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   in
   let make_simple_eager_arith = make_simple_eager unbox_integer box_integer in
   let make_simple_eager_bool = make_simple_eager unbox_bool box_bool in
-  let make_simple_eager_comparison = make_simple_eager unbox_integer box_bool in
   let make_short_circuit_logic ~short_circuit_when_lhs_is =
     let unbox1, unbox_block1 = unbox_bool env (Exp.Var id1) in
     let start = Node.make_nop env in
@@ -657,9 +652,9 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | AndAlso ->
       make_short_circuit_logic ~short_circuit_when_lhs_is:false
   | AtLeast ->
-      make_simple_eager_comparison Ge
+      make_builtin_call BuiltinDecl.__erlang_greater_or_equal
   | AtMost ->
-      make_simple_eager_comparison Le
+      make_builtin_call BuiltinDecl.__erlang_lesser_or_equal
   | BAnd ->
       make_simple_eager_arith BAnd
   | BOr ->
@@ -671,17 +666,19 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
   | BXor ->
       make_simple_eager_arith BXor
   | Equal ->
-      make_builtin_call erlang_equal
+      make_builtin_call BuiltinDecl.__erlang_equal
   | ExactlyEqual ->
-      make_builtin_call erlang_ex_equal
-  | ExactlyNotEqual | NotEqual ->
-      make_simple_eager_comparison Ne
+      make_builtin_call BuiltinDecl.__erlang_exactly_equal
+  | ExactlyNotEqual ->
+      make_builtin_call BuiltinDecl.__erlang_exactly_not_equal
+  | NotEqual ->
+      make_builtin_call BuiltinDecl.__erlang_not_equal
   | Greater ->
-      make_simple_eager_comparison Gt
+      make_builtin_call BuiltinDecl.__erlang_greater
   | IDiv ->
       make_simple_eager_arith DivI
   | Less ->
-      make_simple_eager_comparison Lt
+      make_builtin_call BuiltinDecl.__erlang_lesser
   | ListAdd ->
       make_builtin_call lists_append2
   | ListSub ->

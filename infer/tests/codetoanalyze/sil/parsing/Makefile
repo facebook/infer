@@ -4,10 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 TESTS_DIR = ../../..
+INFER_OUT ?= infer-out$(TEST_SUFFIX)
 
 include $(TESTS_DIR)/base.make
 
-INFER_OPTIONS = --sil-source-file
 SOURCES = $(sort $(wildcard *.sil))
 
 .PHONY: compile

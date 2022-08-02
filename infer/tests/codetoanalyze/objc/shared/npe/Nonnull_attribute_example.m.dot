@@ -11,112 +11,112 @@ digraph cfg {
 	
 
 	 "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_3" -> "NonnullAtrributeTest.69a49728cf7d46ab0add381e5c93704c_2" ;
-"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_1" [label="1: Start NonnullA.dealloc\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_1" [label="1: Start NonnullA.dealloc\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_1" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_4" ;
-"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_2" [label="2: Exit NonnullA.dealloc \n  " color=yellow style=filled]
+	 "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_1" -> "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_4" ;
+"dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_2" [label="2: Exit NonnullA.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_2" ;
-"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_4" [label="4:  Call dealloc \n   n$7=*&self:NonnullA* [line 21, column 1]\n  n$8=_fun___objc_get_ref_count(n$7:NonnullA*) [line 21, column 1]\n  n$9=_fun___objc_set_ref_count(n$7:NonnullA*,(n$8 - 1):unsigned int) [line 21, column 1]\n  n$10=_fun___objc_get_ref_count(n$7:NonnullA*) [line 21, column 1]\n " shape="box"]
+	 "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_3" -> "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_2" ;
+"dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_4" [label="4:  Call dealloc \n   n$7=*&self:NonnullA* [line 21, column 1]\n  n$8=_fun___objc_get_ref_count(n$7:NonnullA*) [line 21, column 1]\n  n$9=_fun___objc_set_ref_count(n$7:NonnullA*,(n$8 - 1):unsigned int) [line 21, column 1]\n  n$10=_fun___objc_get_ref_count(n$7:NonnullA*) [line 21, column 1]\n " shape="box"]
 	
 
-	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_4" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_5" ;
-	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_4" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_6" ;
-"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$10 == 0), true); [line 21, column 1]\n " shape="invhouse"]
+	 "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_4" -> "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_5" ;
+	 "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_4" -> "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_6" ;
+"dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$10 == 0), true); [line 21, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_5" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_3" ;
-"dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$10 != 0), false); [line 21, column 1]\n " shape="invhouse"]
+	 "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_5" -> "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_3" ;
+"dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$10 != 0), false); [line 21, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_6" -> "dealloc#NonnullA#instance.ab64b440b6de9bb3d108ab73ec461d09_2" ;
-"getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_1" [label="1: Start NonnullA.getA\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_6" -> "dealloc#NonnullA#[instance].1bb4d04737467238f9c886641307a6d4_2" ;
+"getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_1" [label="1: Start NonnullA.getA\nFormals:  self:NonnullA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_1" -> "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_3" ;
-"getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_2" [label="2: Exit NonnullA.getA \n  " color=yellow style=filled]
+	 "getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_1" -> "getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_3" ;
+"getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_2" [label="2: Exit NonnullA.getA \n  " color=yellow style=filled]
 	
 
-"getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_3" [label="3:  Return Stmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(t=NonnullA):unsigned long) [line 24, column 10]\n  n$1=_fun_NSObject.init(n$0:NonnullA*) virtual [line 24, column 10]\n " shape="box"]
+"getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_3" [label="3:  Return Stmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(t=NonnullA):unsigned long) [line 24, column 10]\n  n$1=_fun_NSObject.init(n$0:NonnullA*) virtual [line 24, column 10]\n " shape="box"]
 	
 
-	 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_3" -> "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_4" ;
-"getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_4" [label="4:  Return Stmt \n   *&return:NonnullA*=n$1 [line 24, column 3]\n " shape="box"]
+	 "getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_3" -> "getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_4" ;
+"getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_4" [label="4:  Return Stmt \n   *&return:NonnullA*=n$1 [line 24, column 3]\n " shape="box"]
 	
 
-	 "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_4" -> "getA#NonnullA#instance.d4b29ece551a370c3f0c0c12526b3def_2" ;
-"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_1" [label="1: Start NonnullC.dealloc\nFormals:  self:NonnullC*\nLocals:  \n  " color=yellow style=filled]
+	 "getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_4" -> "getA#NonnullA#[instance].bed6ee7d34a08b2290f63823f5ec7bbb_2" ;
+"dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_1" [label="1: Start NonnullC.dealloc\nFormals:  self:NonnullC*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_1" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_4" ;
-"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" [label="2: Exit NonnullC.dealloc \n  " color=yellow style=filled]
+	 "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_1" -> "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_4" ;
+"dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_2" [label="2: Exit NonnullC.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" [label="3:  Call dealloc \n   n$0=*&self:NonnullC* [line 42, column 1]\n  n$1=*n$0._name:NSString* [line 42, column 1]\n  n$2=_fun_NSString.dealloc(n$1:NSString*) [line 42, column 1]\n " shape="box"]
+"dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_3" [label="3:  Call dealloc \n   n$0=*&self:NonnullC* [line 42, column 1]\n  n$1=*n$0._name:NSString* [line 42, column 1]\n  n$2=_fun_NSString.dealloc(n$1:NSString*) [line 42, column 1]\n " shape="box"]
 	
 
-	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" ;
-"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_4" [label="4:  Call dealloc \n   n$3=*&self:NonnullC* [line 34, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:NonnullC*) [line 34, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:NonnullC*,(n$4 - 1):unsigned int) [line 34, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:NonnullC*) [line 34, column 1]\n " shape="box"]
+	 "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_3" -> "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_2" ;
+"dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_4" [label="4:  Call dealloc \n   n$3=*&self:NonnullC* [line 34, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:NonnullC*) [line 34, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:NonnullC*,(n$4 - 1):unsigned int) [line 34, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:NonnullC*) [line 34, column 1]\n " shape="box"]
 	
 
-	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_4" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_5" ;
-	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_4" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_6" ;
-"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 34, column 1]\n " shape="invhouse"]
+	 "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_4" -> "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_5" ;
+	 "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_4" -> "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_6" ;
+"dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 34, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_5" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_3" ;
-"dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 34, column 1]\n " shape="invhouse"]
+	 "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_5" -> "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_3" ;
+"dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 34, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_6" -> "dealloc#NonnullC#instance.a35e7cd71ed482b37e513a9c2a2e24d8_2" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" [label="1: Start NonnullC.initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* <_Nonnull> a:NonnullA*\nLocals:  y:int a1:NonnullA* \n  " color=yellow style=filled]
+	 "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_6" -> "dealloc#NonnullC#[instance].f40310f4b791fbd631efd4950360a610_2" ;
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_1" [label="1: Start NonnullC.initWithCoder:and:\nFormals:  self:NonnullC* aDecoder:NSString* <_Nonnull> a:NonnullA*\nLocals:  y:int a1:NonnullA* \n  " color=yellow style=filled]
 	
 
-	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_1" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_6" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_2" [label="2: Exit NonnullC.initWithCoder:and: \n  " color=yellow style=filled]
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_1" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_6" ;
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_2" [label="2: Exit NonnullC.initWithCoder:and: \n  " color=yellow style=filled]
 	
 
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_3" [label="3:  Return Stmt \n   n$0=*&self:NonnullC* [line 39, column 10]\n " shape="box"]
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_3" [label="3:  Return Stmt \n   n$0=*&self:NonnullC* [line 39, column 10]\n " shape="box"]
 	
 
-	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_3" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$0 [line 39, column 3]\n " shape="box"]
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_3" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_4" ;
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$0 [line 39, column 3]\n " shape="box"]
 	
 
-	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_4" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_2" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 38, column 3]\n  n$1=*&a1:NonnullA* [line 38, column 11]\n  n$2=*n$1.x:int [line 38, column 11]\n  *&y:int=n$2 [line 38, column 3]\n " shape="box"]
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_4" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_2" ;
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 38, column 3]\n  n$1=*&a1:NonnullA* [line 38, column 11]\n  n$2=*n$1.x:int [line 38, column 11]\n  *&y:int=n$2 [line 38, column 3]\n " shape="box"]
 	
 
-	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_3" ;
-"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a1:NonnullA*); [line 37, column 3]\n  n$3=*&a:NonnullA* [line 37, column 19]\n  n$4=_fun_NonnullA.getA(n$3:NonnullA*) virtual [line 37, column 18]\n  *&a1:NonnullA*=n$4 [line 37, column 3]\n " shape="box"]
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_5" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_3" ;
+"initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a1:NonnullA*); [line 37, column 3]\n  n$3=*&a:NonnullA* [line 37, column 19]\n  n$4=_fun_NonnullA.getA(n$3:NonnullA*) virtual [line 37, column 18]\n  *&a1:NonnullA*=n$4 [line 37, column 3]\n " shape="box"]
 	
 
-	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_6" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#instance.e23828ce4467c2001440771e2c4692f8_5" ;
-"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" [label="1: Start NonnullC.name\nFormals:  self:NonnullC*\nLocals: \nReturn annotations: <_Nonnull> \n  " color=yellow style=filled]
+	 "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_6" -> "initWithCoder:and:#NonnullC(class NSString,class NonnullA)#[instance].6f76fa7b7626e4a10b5643fa322368aa_5" ;
+"name#NonnullC#[instance].04f39ceb961fdad93dcf63a9c4ab6cf8_1" [label="1: Start NonnullC.name\nFormals:  self:NonnullC*\nLocals: \nReturn annotations: <_Nonnull> \n  " color=yellow style=filled]
 	
 
-	 "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_1" -> "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" ;
-"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_2" [label="2: Exit NonnullC.name \n  " color=yellow style=filled]
+	 "name#NonnullC#[instance].04f39ceb961fdad93dcf63a9c4ab6cf8_1" -> "name#NonnullC#[instance].04f39ceb961fdad93dcf63a9c4ab6cf8_3" ;
+"name#NonnullC#[instance].04f39ceb961fdad93dcf63a9c4ab6cf8_2" [label="2: Exit NonnullC.name \n  " color=yellow style=filled]
 	
 
-"name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:NonnullC* [line 30, column 36]\n  n$1=*n$0._name:NSString* [line 30, column 36]\n  *&return:NSString*=n$1 [line 30, column 36]\n " shape="box"]
+"name#NonnullC#[instance].04f39ceb961fdad93dcf63a9c4ab6cf8_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:NonnullC* [line 30, column 36]\n  n$1=*n$0._name:NSString* [line 30, column 36]\n  *&return:NSString*=n$1 [line 30, column 36]\n " shape="box"]
 	
 
-	 "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_3" -> "name#NonnullC#instance.9c59c8694c0f7942ace24d4346f9a7cd_2" ;
-"setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_1" [label="1: Start NonnullC.setName:\nFormals:  self:NonnullC* <_Nonnull> name:NSString*\nLocals:  \n  " color=yellow style=filled]
+	 "name#NonnullC#[instance].04f39ceb961fdad93dcf63a9c4ab6cf8_3" -> "name#NonnullC#[instance].04f39ceb961fdad93dcf63a9c4ab6cf8_2" ;
+"setName:#NonnullC(class NSString)#[instance].b850b5df43afd06bf6fcdb3e6e1fa8ea_1" [label="1: Start NonnullC.setName:\nFormals:  self:NonnullC* <_Nonnull> name:NSString*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_1" -> "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_3" ;
-"setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_2" [label="2: Exit NonnullC.setName: \n  " color=yellow style=filled]
+	 "setName:#NonnullC(class NSString)#[instance].b850b5df43afd06bf6fcdb3e6e1fa8ea_1" -> "setName:#NonnullC(class NSString)#[instance].b850b5df43afd06bf6fcdb3e6e1fa8ea_3" ;
+"setName:#NonnullC(class NSString)#[instance].b850b5df43afd06bf6fcdb3e6e1fa8ea_2" [label="2: Exit NonnullC.setName: \n  " color=yellow style=filled]
 	
 
-"setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:NonnullC* [line 30, column 36]\n  n$1=*&name:NSString* [line 30, column 36]\n  *n$0._name:NSString*=n$1 [line 30, column 36]\n " shape="box"]
+"setName:#NonnullC(class NSString)#[instance].b850b5df43afd06bf6fcdb3e6e1fa8ea_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:NonnullC* [line 30, column 36]\n  n$1=*&name:NSString* [line 30, column 36]\n  *n$0._name:NSString*=n$1 [line 30, column 36]\n " shape="box"]
 	
 
-	 "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_3" -> "setName:#NonnullC(class NSString)#instance.06c11492d4403b7a142558aeec6ac42a_2" ;
+	 "setName:#NonnullC(class NSString)#[instance].b850b5df43afd06bf6fcdb3e6e1fa8ea_3" -> "setName:#NonnullC(class NSString)#[instance].b850b5df43afd06bf6fcdb3e6e1fa8ea_2" ;
 }

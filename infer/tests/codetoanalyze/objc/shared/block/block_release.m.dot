@@ -28,80 +28,80 @@ digraph cfg {
 	
 
 	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_7" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_1" [label="1: Start My_manager.blockReleaseNoLeak\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:_fn_(*) \n  " color=yellow style=filled]
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_1" [label="1: Start My_manager.blockReleaseNoLeak\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_1" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_13" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_2" [label="2: Exit My_manager.blockReleaseNoLeak \n  " color=yellow style=filled]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_1" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_13" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_2" [label="2: Exit My_manager.blockReleaseNoLeak \n  " color=yellow style=filled]
 	
 
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" [label="3:  Return Stmt \n   n$0=*&z:int [line 30, column 10]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_3" [label="3:  Return Stmt \n   n$0=*&z:int [line 30, column 10]\n " shape="box"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 30, column 3]\n " shape="box"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_3" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_4" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 30, column 3]\n " shape="box"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_4" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_2" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" [label="5: + \n   END_BRANCHES\n " ]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_4" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_2" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_3" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" [label="6: Prune (true branch, if (terminated)) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(n$1, true); [line 28, column 7]\n " shape="invhouse"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_5" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_3" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_6" [label="6: Prune (true branch, if (terminated)) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(n$1, true); [line 28, column 7]\n " shape="invhouse"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" [label="7: Prune (false branch, if (terminated)) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(!n$1, false); [line 28, column 7]\n " shape="invhouse"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_6" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_8" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_7" [label="7: Prune (false branch, if (terminated)) \n   n$1=*&context:CGContext* [line 28, column 7]\n  PRUNE(!n$1, false); [line 28, column 7]\n " shape="invhouse"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" [label="8:  Call _fun_CGContextRelease \n   n$2=*&context:CGContext* [line 29, column 22]\n  n$3=_fun_CGContextRelease(n$2:CGContext*) [line 29, column 5]\n " shape="box"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_7" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_5" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_8" [label="8:  Call _fun_CGContextRelease \n   n$2=*&context:CGContext* [line 29, column 22]\n  n$3=_fun_CGContextRelease(n$2:CGContext*) [line 29, column 5]\n " shape="box"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_8" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_5" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" [label="9:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=n$6(n$7:int) objc_block [line 27, column 3]\n " shape="box"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_8" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_5" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_9" [label="9:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=n$6(n$7:int) objc_block [line 27, column 3]\n " shape="box"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_6" ;
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_7" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager.blockReleaseNoLeak_1,([by value]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_9" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_6" ;
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_9" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_7" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager.blockReleaseNoLeak_1,([by value]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_9" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(newImage:CGImage*); [line 22, column 3]\n  n$16=*&context:CGContext* [line 22, column 52]\n  n$17=_fun_CGBitmapContextCreateImage(n$16:CGContext*) [line 22, column 25]\n  *&newImage:CGImage*=n$17 [line 22, column 3]\n " shape="box"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_10" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_9" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(newImage:CGImage*); [line 22, column 3]\n  n$16=*&context:CGContext* [line 22, column 52]\n  n$17=_fun_CGBitmapContextCreateImage(n$16:CGContext*) [line 22, column 25]\n  *&newImage:CGImage*=n$17 [line 22, column 3]\n " shape="box"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_10" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(context:CGContext*); [line 21, column 3]\n  n$18=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,(unsigned int)0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$18 [line 21, column 3]\n " shape="box"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_11" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_10" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(context:CGContext*); [line 21, column 3]\n  n$18=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,(unsigned int)0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$18 [line 21, column 3]\n " shape="box"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_11" ;
-"blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 20, column 3]\n  *&z:int=3 [line 20, column 3]\n " shape="box"]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_12" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_11" ;
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(z:int); [line 20, column 3]\n  *&z:int=3 [line 20, column 3]\n " shape="box"]
 	
 
-	 "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_13" -> "blockReleaseNoLeak#My_manager#instance.0c48f80f024250b18a529440f1313af6_12" ;
-"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_1" [label="1: Start My_manager.dealloc\nFormals:  self:My_manager*\nLocals:  \n  " color=yellow style=filled]
+	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_13" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_12" ;
+"dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_1" [label="1: Start My_manager.dealloc\nFormals:  self:My_manager*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_1" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_4" ;
-"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_2" [label="2: Exit My_manager.dealloc \n  " color=yellow style=filled]
+	 "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_1" -> "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_4" ;
+"dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_2" [label="2: Exit My_manager.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_2" ;
-"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_4" [label="4:  Call dealloc \n   n$0=*&self:My_manager* [line 16, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:My_manager*) [line 16, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:My_manager*,(n$1 - 1):unsigned int) [line 16, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:My_manager*) [line 16, column 1]\n " shape="box"]
+	 "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_3" -> "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_2" ;
+"dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_4" [label="4:  Call dealloc \n   n$0=*&self:My_manager* [line 16, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:My_manager*) [line 16, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:My_manager*,(n$1 - 1):unsigned int) [line 16, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:My_manager*) [line 16, column 1]\n " shape="box"]
 	
 
-	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_4" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_5" ;
-	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_4" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_6" ;
-"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 16, column 1]\n " shape="invhouse"]
+	 "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_4" -> "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_5" ;
+	 "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_4" -> "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_6" ;
+"dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 16, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_5" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_3" ;
-"dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 16, column 1]\n " shape="invhouse"]
+	 "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_5" -> "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_3" ;
+"dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 16, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_6" -> "dealloc#My_manager#instance.62748019ba808efecf04f93dd9aba402_2" ;
+	 "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_6" -> "dealloc#My_manager#[instance].6a3d6e91a215e966fd770249b28a3a5a_2" ;
 }

@@ -77,7 +77,7 @@ let rec apron_typ_of_llair_typ : Llair.Typ.t -> Texpr1.typ option = function
 
 let rec apron_texpr_of_llair_exp exp q =
   match (exp : Llair.Exp.t) with
-  | Reg {name} | Global {name} | Function {name} ->
+  | Reg {name} | Global {name} | FuncName {name} ->
       Some (Texpr1.Var (apron_var_of_name name))
   | Integer {data} -> Some (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
   | Float {data} -> (

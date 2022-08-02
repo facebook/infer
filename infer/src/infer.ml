@@ -132,13 +132,6 @@ let () =
   (* We specifically want to collect samples only from the main process until
      we figure out what other entries and how we want to collect *)
   if CommandLineOption.is_originator then ScubaLogging.register_global_log_flushing_at_exit () ;
-  ( if Config.linters_validate_syntax_only then
-    match CTLParserHelper.validate_al_files () with
-    | Ok () ->
-        L.exit 0
-    | Error e ->
-        print_endline e ;
-        L.exit 3 ) ;
   ( match Config.check_version with
   | Some check_version ->
       if not (String.equal check_version Version.versionString) then
@@ -156,8 +149,14 @@ let () =
   ( match Config.command with
   | _ when Config.test_determinator && not Config.process_clang_ast ->
       TestDeterminator.compute_and_emit_test_to_run ()
-  | _ when Option.is_some Config.capture_textual_sil ->
-      TextualParser.run (Option.value_exn Config.capture_textual_sil)
+  | _ when Option.is_some Config.dump_textual -> (
+    match Lazy.force Driver.mode_from_command_line with
+    | Javac {compiler; prog; args= [_] as args} ->
+        Javac.capture compiler ~prog ~args
+    | Javac _ ->
+        L.die UserError "ERROR: Textual generation is only allowed on a single Java file"
+    | _ ->
+        L.die UserError "ERROR: Textual generation is only allowed in Java mode currently" )
   | _ when Option.is_some Config.java_debug_source_file_info ->
       if Config.java_source_parser_experimental then
         JSourceLocations.debug_on_file (Option.value_exn Config.java_debug_source_file_info)

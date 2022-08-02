@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -29,9 +30,9 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
       let taint_source, taint_sink =
         let proc_name_of_taint Taint.{proc_name} = Format.asprintf "%a" Procname.pp proc_name in
         match diagnostic with
-        | FlowFromTaintSource {source= source, _} ->
+        | TaintFlow {flow_kind= FlowFromSource; source= source, _} ->
             (Some (proc_name_of_taint source), None)
-        | FlowToTaintSink {sink= sink, _} ->
+        | TaintFlow {flow_kind= FlowToSink; sink= sink, _} ->
             (None, Some (proc_name_of_taint sink))
         | _ ->
             (None, None)
@@ -68,23 +69,31 @@ let is_nullsafe_error tenv ~is_nullptr_dereference jn =
    selected as the candidate for the trace, even if it has nothing to do with the error besides
    being equal to the value being dereferenced *)
 let is_constant_deref_without_invalidation (invalidation : Invalidation.t) access_trace =
-  match invalidation with
-  | ConstantDereference _ ->
-      not (Trace.has_invalidation access_trace)
-  | CFree
-  | CustomFree _
-  | CppDelete
-  | CppDeleteArray
-  | EndIterator
-  | GoneOutOfScope _
-  | OptionalEmpty
-  | StdVector _
-  | JavaIterator _ ->
-      false
+  let res =
+    match invalidation with
+    | ConstantDereference _ ->
+        not (Trace.has_invalidation access_trace)
+    | CFree
+    | CustomFree _
+    | CppDelete
+    | CppDeleteArray
+    | EndIterator
+    | GoneOutOfScope _
+    | OptionalEmpty
+    | StdVector _
+    | JavaIterator _ ->
+        false
+  in
+  if res then
+    L.d_printfln "no invalidation in acces trace %a"
+      (Trace.pp ~pp_immediate:(fun fmt -> F.fprintf fmt "immediate"))
+      access_trace ;
+  res
 
 
 let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t) =
   match diagnostic with
+  | ConstRefableParameter _
   | ErlangError _
   | MemoryLeak _
   | ResourceLeak _
@@ -92,8 +101,6 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ReadUninitializedValue _
   | StackVariableAddressEscape _
   | TaintFlow _
-  | FlowFromTaintSource _
-  | FlowToTaintSink _
   | UnnecessaryCopy _ ->
       false
   | AccessToInvalidAddress {invalidation; access_trace} ->

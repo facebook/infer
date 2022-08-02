@@ -36,42 +36,56 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
       QualifiedCppName.Match.of_fuzzy_qual_names ["std::__wrap_iter"; "__gnu_cxx::__normal_iterator"]
     in
     match actual_typ.Typ.desc with
-    | Typ.Tstruct (Typ.CppClass {name}) ->
-        QualifiedCppName.Match.match_qualifiers matches_iter name
-    | Tptr _ ->
-        (not (Language.curr_language_is Java)) && not (is_ptr_to_const formal_typ_opt)
+    | Typ.Tstruct (Typ.CppClass {name})
+      when QualifiedCppName.Match.match_qualifiers matches_iter name ->
+        `ShouldHavoc
+    | Tptr _ when not (is_ptr_to_const formal_typ_opt) ->
+        AbductiveDomain.should_havoc_if_unknown ()
     | _ ->
-        false
+        `DoNotHavoc
   in
   let havoc_actual_if_ptr ((actual, _), actual_typ) formal_typ_opt astate =
-    (* We should not havoc when the corresponding formal is a pointer to const *)
-    if should_havoc actual_typ formal_typ_opt then (
-      is_functional := false ;
-      (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
-         by [actual] *)
-      let astate =
-        AbductiveDomain.apply_unknown_effect hist actual astate
-        (* record the [UnknownEffect] attribute so callers of the current procedure can apply the
-           above effects too in calling contexts where more is reachable from [actual] than here *)
-        |> AddressAttributes.add_attrs actual (Attributes.singleton (UnknownEffect (reason, hist)))
+    let fold_on_reachable_from_arg astate f =
+      let reachable_from_arg =
+        BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
       in
-      if
-        Option.exists callee_pname_opt ~f:(fun p ->
-            Procname.is_constructor p || Procname.is_copy_assignment p )
-      then astate
-      else
-        (* record the [WrittenTo] attribute for all reachable values
-           starting from actual argument so that we don't assume
-           that they are not modified in the unnecessary copy analysis. *)
-        let reachable_from_arg =
-          BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
+      AbstractValue.Set.fold f reachable_from_arg astate
+    in
+    (* We should not havoc when the corresponding formal is a pointer to const *)
+    match should_havoc actual_typ formal_typ_opt with
+    | `ShouldHavoc ->
+        is_functional := false ;
+        (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
+           by [actual] *)
+        let astate =
+          AbductiveDomain.apply_unknown_effect hist actual astate
+          (* record the [UnknownEffect] attribute so callers of the current procedure can apply the
+             above effects too in calling contexts where more is reachable from [actual] than here *)
+          |> AddressAttributes.add_attrs actual
+               (Attributes.singleton (UnknownEffect (reason, hist)))
         in
-        let call_trace = Trace.Immediate {location= call_loc; history= hist} in
-        let written_attrs = Attributes.singleton (WrittenTo call_trace) in
-        AbstractValue.Set.fold
-          (fun reachable_actual -> AddressAttributes.add_attrs reachable_actual written_attrs)
-          reachable_from_arg astate )
-    else astate
+        if
+          Option.exists callee_pname_opt ~f:(fun p ->
+              Procname.is_constructor p || Procname.is_copy_assignment p )
+        then astate
+        else
+          (* record the [WrittenTo] attribute for all reachable values
+             starting from actual argument so that we don't assume
+             that they are not modified in the unnecessary copy analysis. *)
+          let call_trace = Trace.Immediate {location= call_loc; history= hist} in
+          let written_attrs = Attributes.singleton (WrittenTo call_trace) in
+          fold_on_reachable_from_arg astate (fun reachable_actual ->
+              AddressAttributes.add_attrs reachable_actual written_attrs )
+    | `DoNotHavoc ->
+        astate
+    | `ShouldOnlyHavocResources ->
+        let astate =
+          AddressAttributes.add_attrs actual
+            (Attributes.singleton (UnknownEffect (reason, hist)))
+            astate
+        in
+        fold_on_reachable_from_arg astate (fun reachable_actual ->
+            AddressAttributes.remove_allocation_attr reachable_actual )
   in
   let add_skipped_proc astate =
     let* astate, f =
@@ -191,12 +205,18 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           | ExitProgram _ ->
               Sat (Ok (ExitProgram astate_summary))
           | LatentAbortProgram {latent_issue} -> (
-              let latent_issue = LatentIssue.add_call (Call callee_pname, call_loc) latent_issue in
+              let open SatUnsat.Import in
+              let latent_issue =
+                LatentIssue.add_call (Call callee_pname, call_loc) subst astate_post_call
+                  latent_issue
+              in
               let diagnostic = LatentIssue.to_diagnostic latent_issue in
               match LatentIssue.should_report astate_summary diagnostic with
               | `DelayReport latent_issue ->
+                  L.d_printfln ~color:Orange "issue is still latent, recording a LatentAbortProgram" ;
                   Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
               | `ReportNow ->
+                  L.d_printfln ~color:Red "issue is now manifest, emitting an error" ;
                   Sat
                     (AccessResult.of_error_f
                        (Summary (ReportableErrorSummary {diagnostic; astate= astate_summary}))
@@ -210,10 +230,15 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
               ; calling_context } -> (
             match
-              AbstractValue.Map.find_opt (Decompiler.abstract_value_of_expr address_callee) subst
+              let open IOption.Let_syntax in
+              let* addr = DecompilerExpr.abstract_value_of_expr address_callee in
+              AbstractValue.Map.find_opt addr subst
             with
             | None ->
                 (* the address became unreachable so the bug can never be reached; drop it *)
+                L.d_printfln ~color:Orange
+                  "%a seems no longer reachable, dropping the latent invalid access altogether"
+                  DecompilerExpr.pp address_callee ;
                 Unsat
             | Some (invalid_address, caller_history) -> (
                 let access_trace =
@@ -230,14 +255,24 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                 with
                 | None ->
                     (* still no proof that the address is invalid *)
+                    let address_caller = Decompiler.find invalid_address astate_post_call in
+                    L.d_printfln ~color:Orange
+                      "%a in the callee is %a in the caller which is not known to be invalid, \
+                       keeping the latent invalid access"
+                      DecompilerExpr.pp address_callee DecompilerExpr.pp address_caller ;
                     Sat
                       (Ok
                          (LatentInvalidAccess
                             { astate= astate_summary
-                            ; address= Decompiler.find invalid_address astate_post_call
+                            ; address= address_caller
                             ; must_be_valid= (access_trace, must_be_valid_reason)
                             ; calling_context } ) )
                 | Some (invalidation, invalidation_trace) ->
+                    let address_caller = Decompiler.find invalid_address astate_post_call in
+                    L.d_printfln ~color:Red
+                      "%a in the callee is %a in the caller which invalid, reporting the latent \
+                       invalid access as manifest"
+                      DecompilerExpr.pp address_callee DecompilerExpr.pp address_caller ;
                     Sat
                       (FatalError
                          ( Summary
@@ -245,8 +280,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                                 { diagnostic=
                                     AccessToInvalidAddress
                                       { calling_context
-                                      ; invalid_address=
-                                          Decompiler.find invalid_address astate_post_call
+                                      ; invalid_address= address_caller
                                       ; invalidation
                                       ; invalidation_trace
                                       ; access_trace

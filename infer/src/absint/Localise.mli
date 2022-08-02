@@ -102,8 +102,6 @@ val desc_empty_vector_access : Procname.t option -> string -> Location.t -> erro
 
 val is_empty_vector_access_desc : error_desc -> bool
 
-val desc_frontend_warning : string -> string option -> Location.t -> error_desc
-
 val desc_leak :
      Exp.t option
   -> string option

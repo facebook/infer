@@ -63,7 +63,7 @@ opam_switch_create_if_needed () {
     printf "verdict: %s\n" $switch_exists;
     if [ "$switch_exists" = "no" ]; then
         if [ -e "$(opam var root)/$switch" ] ; then
-            rm -rf "$opam_root/$switch" || true
+            rm -rf "$(opam var root)/$switch" || true
         fi
         opam switch create "$switch" "$options"
     fi

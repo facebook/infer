@@ -18,8 +18,7 @@ There are two frontends:
 - {{:ClangFrontend.html} Clang}
 - {{:JavaFrontend.html} Java}
 
-See also {{:ASTLanguage.html} AST Language}, and
-{{:TestDeterminators.html} TestDeterminators}, which operate right
+See also {{:TestDeterminators.html} TestDeterminators}, which operate right
 after the frontends.
 
 {1 Utilities}

@@ -17,6 +17,26 @@ struct X {
   ~X() { delete pointer_field; }
 };
 
+int make_unique0_ok() {
+  auto x = std::make_unique<int>(42);
+  if (*x != 42) {
+    // Should not report a NPE here as *x is equal to 42
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int make_unique0_bad() {
+  auto x = std::make_unique<int>(42);
+  if (*x == 42) {
+    // Should report a NPE here as *x is equal to 42
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
 int make_unique_ptr_use_ok() {
   std::unique_ptr<X> x = std::make_unique<X>();
   return x->get();

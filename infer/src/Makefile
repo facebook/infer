@@ -64,7 +64,7 @@ GENERATED_FROM_AUTOCONF = dune.common ../dune-workspace base/Version.ml
 .PHONY: dune-workspace
 dune-workspace: ../dune-workspace
 
-GENERATED_DUNES += dune al/dune clang/dune integration/dune java/dune opensource/dune unit/dune
+GENERATED_DUNES += dune clang/dune integration/dune java/dune opensource/dune unit/dune
 
 SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_DUNES) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -163,7 +163,7 @@ roots:=Infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
 roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 endif
-clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost c_stubs deadcode integration IR istd java labs dotnet llvm nullsafe opensource pulse quandary scripts test_determinator topl unit
+clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost c_stubs datalog deadcode integration IR istd java labs dotnet llvm nullsafe opensource pulse quandary scripts test_determinator topl unit
 
 ml_src_files:=$(shell find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
 inc_flags:=$(foreach dir,$(shell find . -not -path './_build*' -type d),-I $(dir))
@@ -237,6 +237,7 @@ $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	  -e "s|@JAVA_MAJOR_VERSION[@]|$(JAVA_MAJOR_VERSION)|g" \
 	  -e "s|@BUILD_C_ANALYZERS[@]|$(BUILD_C_ANALYZERS)|g" \
 	  -e "s|@BUILD_ERLANG_ANALYZERS[@]|$(BUILD_ERLANG_ANALYZERS)|g" \
+	  -e "s|@BUILD_HACK_ANALYZERS[@]|$(BUILD_HACK_ANALYZERS)|g" \
 	  -e "s|@BUILD_JAVA_ANALYZERS[@]|$(BUILD_JAVA_ANALYZERS)|g" \
 	  -e "s|@BUILD_PLATFORM[@]|$(BUILD_PLATFORM)|g" \
 	  -e "s|@OPAMSWITCH[@]|$(OPAMSWITCH)|g" \
@@ -254,7 +255,6 @@ $(GENERATED_DUNES): dune.common
 	$(QUIET)cat $+ > $@
 
 dune: dune.in
-al/dune: al/dune.in
 clang/dune: clang/dune.in
 integration/dune: integration/dune.in
 java/dune: java/dune.in

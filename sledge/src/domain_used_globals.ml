@@ -74,22 +74,22 @@ let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 (** Query *)
 
 type used_globals =
-  | Per_function of summary Llair.Function.Map.t
+  | Per_function of summary Llair.FuncName.Map.t
   | Declared of summary
 
-let by_function : used_globals -> Llair.Function.t -> t =
+let by_function : used_globals -> Llair.FuncName.t -> t =
  fun s fn ->
-  [%Dbg.call fun {pf} -> pf "@ %a" Llair.Function.pp fn]
+  [%Dbg.call fun {pf} -> pf "@ %a" Llair.FuncName.pp fn]
   ;
   ( match s with
   | Declared set -> set
   | Per_function map -> (
-    match Llair.Function.Map.find fn map with
+    match Llair.FuncName.Map.find fn map with
     | Some gs -> gs
     | None ->
         fail
           "main analysis reached function %a that was not reached by \
            used-globals pre-analysis "
-          Llair.Function.pp fn () ) )
+          Llair.FuncName.pp fn () ) )
   |>
   [%Dbg.retn fun {pf} r -> pf "%a" Llair.Global.Set.pp r]

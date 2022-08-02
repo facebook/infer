@@ -22,43 +22,43 @@ digraph cfg {
 	
 
 	 "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_3" -> "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_2" ;
-"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_1" [label="1: Start FBScrollViewDelegateProxy.layoutToUse\nFormals:  __return_param:FBVideoAdLayout*\nLocals:  \n  " color=yellow style=filled]
+"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_1" [label="1: Start FBScrollViewDelegateProxy.layoutToUse\nFormals:  __return_param:FBVideoAdLayout*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_1" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_3" ;
-"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_2" [label="2: Exit FBScrollViewDelegateProxy.layoutToUse \n  " color=yellow style=filled]
+	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_1" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_3" ;
+"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_2" [label="2: Exit FBScrollViewDelegateProxy.layoutToUse \n  " color=yellow style=filled]
 	
 
-"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:FBVideoAdLayout* [line 43, column 3]\n " shape="box"]
+"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_3" [label="3:  Return Stmt \n   n$0=*&__return_param:FBVideoAdLayout* [line 43, column 3]\n " shape="box"]
 	
 
-	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_3" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_4" ;
-"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_4" [label="4:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float [line 43, column 3]\n  *n$0.placeHolderWidth:float=n$1 [line 43, column 3]\n  n$2=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float [line 43, column 3]\n  *n$0.placeHolderHeight:float=n$2 [line 43, column 3]\n  n$3=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float [line 43, column 3]\n  *n$0.contentLeftSidePadding:float=n$3 [line 43, column 3]\n  n$4=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float [line 43, column 3]\n  *n$0.contentRightSidePadding:float=n$4 [line 43, column 3]\n  n$5=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float [line 43, column 3]\n  *n$0.additionalPlaceholderOffset:float=n$5 [line 43, column 3]\n  n$6=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float [line 43, column 3]\n  *n$0.contentGap:float=n$6 [line 43, column 3]\n " shape="box"]
+	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_3" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_4" ;
+"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_4" [label="4:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float [line 43, column 3]\n  *n$0.placeHolderWidth:float=n$1 [line 43, column 3]\n  n$2=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float [line 43, column 3]\n  *n$0.placeHolderHeight:float=n$2 [line 43, column 3]\n  n$3=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float [line 43, column 3]\n  *n$0.contentLeftSidePadding:float=n$3 [line 43, column 3]\n  n$4=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float [line 43, column 3]\n  *n$0.contentRightSidePadding:float=n$4 [line 43, column 3]\n  n$5=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float [line 43, column 3]\n  *n$0.additionalPlaceholderOffset:float=n$5 [line 43, column 3]\n  n$6=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float [line 43, column 3]\n  *n$0.contentGap:float=n$6 [line 43, column 3]\n " shape="box"]
 	
 
-	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_4" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#class.c0c71b15760b8f43ca05dc598adc586c_2" ;
-"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_1" [label="1: Start FBScrollViewDelegateProxy.dealloc\nFormals:  self:FBScrollViewDelegateProxy*\nLocals:  \n  " color=yellow style=filled]
+	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_4" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_2" ;
+"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_1" [label="1: Start FBScrollViewDelegateProxy.dealloc\nFormals:  self:FBScrollViewDelegateProxy*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_1" -> "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_4" ;
-"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_2" [label="2: Exit FBScrollViewDelegateProxy.dealloc \n  " color=yellow style=filled]
+	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_1" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_4" ;
+"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_2" [label="2: Exit FBScrollViewDelegateProxy.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_3" -> "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_2" ;
-"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_4" [label="4:  Call dealloc \n   n$0=*&self:FBScrollViewDelegateProxy* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:FBScrollViewDelegateProxy*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n " shape="box"]
+	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_3" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_2" ;
+"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_4" [label="4:  Call dealloc \n   n$0=*&self:FBScrollViewDelegateProxy* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:FBScrollViewDelegateProxy*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n " shape="box"]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_4" -> "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_5" ;
-	 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_4" -> "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_6" ;
-"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
+	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_4" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_5" ;
+	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_4" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_6" ;
+"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_5" -> "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_3" ;
-"dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
+	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_5" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_3" ;
+"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_6" -> "dealloc#FBScrollViewDelegateProxy#instance.be70c6b49a0df60d48868e383f3399dc_2" ;
+	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_6" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_2" ;
 }

@@ -9,7 +9,7 @@ open! IStd
 module AbductiveDomain = PulseAbductiveDomain
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
-module Decompiler = PulseDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module ValueHistory = PulseValueHistory
 
 (** {1 Wrapper to access the {!PulseDecompiler.t} inside {!AbductiveDomain.t}; all of the interface
@@ -22,10 +22,4 @@ val add_call_source :
   -> AbductiveDomain.t
   -> AbductiveDomain.t
 
-type expr = Decompiler.expr [@@deriving compare, equal, yojson_of]
-
-val pp_expr : Format.formatter -> expr -> unit
-
-val find : AbstractValue.t -> AbductiveDomain.t -> expr
-
-val abstract_value_of_expr : expr -> AbstractValue.t
+val find : AbstractValue.t -> AbductiveDomain.t -> DecompilerExpr.t

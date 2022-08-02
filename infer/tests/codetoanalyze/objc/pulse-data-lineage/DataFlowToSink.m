@@ -7,6 +7,12 @@
 
 #import <Foundation/NSObject.h>
 
+@interface InheritsNSObject : NSObject
+@end
+
+@implementation InheritsNSObject
+@end
+
 @interface DataFlowToSink : NSObject
 @end
 
@@ -60,6 +66,11 @@
   NSObject* obj = self.create_then_mutate;
   obj = [self sanitize:obj];
   [self mutate_then_consume:obj];
+}
+
+- (void)test_simple_inheritance {
+  InheritsNSObject* start = [InheritsNSObject new];
+  [self consume:start];
 }
 
 @end

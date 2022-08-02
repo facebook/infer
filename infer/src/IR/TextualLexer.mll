@@ -123,10 +123,10 @@ rule main = parse
         { LOCAL (int_of_string i) }
 
   | "#" (id as name)
-        { LABEL (Textual.name_of_string name) }
+        { LABEL name }
 
   | (id as name)
-        { IDENT (Textual.name_of_string name) }
+        { IDENT name }
 
   | "\"" ([^ '\"']* as s) "\""
         { STRING s }

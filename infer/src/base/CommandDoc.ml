@@ -70,6 +70,7 @@ $(b,infer) $(b,capture) $(b,--buck-compilation-database) $(i,[no-]deps) $(i,[opt
 $(b,infer) $(b,capture) $(i,[options]) $(b,--compilation-database) $(i,file)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--compilation-database-escaped) $(i,file)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,gradle)/$(b,gradlew) $(i,...)
+$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,hackc) $(i,...)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,javac) $(i,...)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,make)/$(b,clang)/$(b,gcc) $(i,...)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,mvn)/$(b,mvnw) $(i,...)

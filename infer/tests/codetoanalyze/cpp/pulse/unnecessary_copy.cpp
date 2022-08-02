@@ -191,14 +191,14 @@ void copy_in_both_cases_branch_bad(bool cond) {
   auto cpy = get_cond_arr_ref(arr1, arr2, true); // call to copy ctor
 }
 
-void copy_modified_after_abort_ok_FP(std::vector<int> source_vec) {
+void copy_modified_after_abort_ok(std::vector<int> source_vec) {
   auto cpy = source_vec;
   std::vector<int> vec(2);
   int* elt = &vec[1];
   vec.push_back(0);
-  int temp = *elt; // abort: vector invalidation
-  cpy.push_back(0); // copy modified, but we propagate Abort state without
-                     // executing the rest of the stmts
+  int temp = *elt; // abort: vector invalidation, so non-disjunctive
+                   // value becomes top
+  cpy.push_back(0);
 }
 
 namespace ns {

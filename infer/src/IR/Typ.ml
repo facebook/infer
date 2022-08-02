@@ -165,8 +165,10 @@ let ptr_kind_string = function
 
 
 module T = struct
+  (* Note that [is_trivially_copyable] is ignored when compare/equal-ing, since it can be
+     inconsistent for the same type depending on compilation units. *)
   type type_quals =
-    {is_const: bool; is_restrict: bool; is_trivially_copyable: bool; is_volatile: bool}
+    {is_const: bool; is_restrict: bool; is_trivially_copyable: bool [@ignore]; is_volatile: bool}
   [@@deriving compare, equal, yojson_of]
 
   (** types for sil (structured) expressions *)

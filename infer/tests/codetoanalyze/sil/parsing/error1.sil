@@ -7,9 +7,9 @@
 
 global I
 
-type node = { val: int; next: *node }
+type cell = { val: int; next: *cell }
 
-define f(x: int, y: float, n: *node) : void {
+define f(x: int, y: float, n: *cell) : void {
   #entry:
     x: int = load y
     x: int = load n[1]

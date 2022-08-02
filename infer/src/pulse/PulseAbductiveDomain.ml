@@ -13,6 +13,7 @@ module BaseDomain = PulseBaseDomain
 module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
+module DecompilerExpr = PulseDecompilerExpr
 module Decompiler = PulseDecompiler
 module PathContext = PulsePathContext
 module UninitBlocklist = PulseUninitBlocklist
@@ -283,22 +284,7 @@ module AddressAttributes = struct
 
   let add_taint_sink path sink trace addr astate =
     let taint_sink = Attribute.TaintSink.{time= path.PathContext.timestamp; sink; trace} in
-    abduce_attribute addr
-      (MustNotBeTainted
-         { sinks= Attribute.TaintSinkSet.singleton taint_sink
-         ; procedures= Attribute.TaintProcedureSet.empty } )
-      astate
-
-
-  let add_taint_procedure path origin proc_name trace addr astate =
-    let taint_procedure =
-      Attribute.TaintProcedure.{time= path.PathContext.timestamp; origin; proc_name; trace}
-    in
-    abduce_attribute addr
-      (MustNotBeTainted
-         { sinks= Attribute.TaintSinkSet.empty
-         ; procedures= Attribute.TaintProcedureSet.singleton taint_procedure } )
-      astate
+    abduce_attribute addr (MustNotBeTainted (Attribute.TaintSinkSet.singleton taint_sink)) astate
 
 
   let get_taint_sources_and_sanitizers addr astate =
@@ -901,7 +887,7 @@ let check_retain_cycles ~dead_addresses tenv astate =
       if List.exists ~f:(AbstractValue.equal addr) !checked then Ok ()
       else
         let value = Decompiler.find addr astate.decompiler in
-        let is_known = not (Decompiler.is_unknown value) in
+        let is_known = not (DecompilerExpr.is_unknown value) in
         let is_seen = List.exists ~f:(AbstractValue.equal addr) seen in
         if
           is_known && is_seen
@@ -1030,6 +1016,10 @@ let get_reachable {pre; post} =
   AbstractValue.Set.union pre_keep post_keep
 
 
+let should_havoc_if_unknown () =
+  if Language.curr_language_is Java then `ShouldOnlyHavocResources else `ShouldHavoc
+
+
 let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
   let havoc_accesses hist addr heap =
     match BaseMemory.find_opt addr heap with
@@ -1050,12 +1040,17 @@ let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
     BaseDomain.GraphVisit.fold_from_addresses (Seq.return x) post ~init:(post.heap, post.attrs)
       ~already_visited:AbstractValue.Set.empty
       ~f:(fun (heap, attrs) addr _edges ->
-        let attrs =
-          BaseAddressAttributes.remove_allocation_attr addr attrs
-          |> BaseAddressAttributes.initialize addr
-        in
-        let heap = havoc_accesses hist addr heap in
-        Continue (heap, attrs) )
+        match should_havoc_if_unknown () with
+        | `ShouldHavoc ->
+            let attrs =
+              BaseAddressAttributes.remove_allocation_attr addr attrs
+              |> BaseAddressAttributes.initialize addr
+            in
+            let heap = havoc_accesses hist addr heap in
+            Continue (heap, attrs)
+        | `ShouldOnlyHavocResources ->
+            let attrs = BaseAddressAttributes.remove_allocation_attr addr attrs in
+            Continue (heap, attrs) )
       ~finish:Fn.id
     |> snd
   in
@@ -1224,6 +1219,7 @@ let incorporate_new_eqs ~for_summary astate new_eqs =
   List.fold_until new_eqs ~init:(astate, None)
     ~finish:(fun astate_error -> Sat astate_error)
     ~f:(fun (astate, error) (new_eq : PulseFormula.new_eq) ->
+      L.d_printfln "incorporating new eq: %a" PulseFormula.pp_new_eq new_eq ;
       match new_eq with
       | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
           Continue (astate, error)

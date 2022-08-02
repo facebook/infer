@@ -11,29 +11,53 @@ module F = Format
 module Kind = struct
   type t = string [@@deriving compare]
 
-  (** Taint "kinds" are user-configurable and thus represented as strings. This hash table is here
-      to make sure we only store one copy of each kind. *)
+  (** Taint "kinds" are user-configurable and thus represented as strings. This hash table ensures
+      we only store one copy of each kind. It also identifies which kinds are designated for data
+      flow reporting only *)
   let kind_hashconser = Hashtbl.create (module String)
 
-  let of_string s = Hashtbl.find_or_add kind_hashconser s ~default:(fun () -> s)
+  let of_string s =
+    let kind, _ = Hashtbl.find_or_add kind_hashconser s ~default:(fun () -> (s, false)) in
+    kind
+
 
   (* [phys_equal] is enough as kinds are hashcons'd *)
   let equal k1 k2 = phys_equal k1 k2
 
-  let pp = F.pp_print_string
-
   let hash = String.hash
 
   let sexp_of_t = String.sexp_of_t
+
+  let mark_data_flow_only kind =
+    Hashtbl.update kind_hashconser kind ~f:(function
+      | None ->
+          (kind, true)
+      | Some (kind, _) ->
+          (kind, true) )
+
+
+  let is_data_flow_only kind =
+    match Hashtbl.find kind_hashconser kind with
+    | None ->
+        false
+    | Some (_, data_flow_only) ->
+        data_flow_only
+
+
+  let pp fmt kind =
+    F.fprintf fmt "%s%s" kind (if is_data_flow_only kind then " (data flow only)" else "")
 end
 
-type origin = Argument of {index: int} | ReturnValue [@@deriving compare, equal]
+type origin = Argument of {index: int} | ReturnValue | Allocation of {typ: string}
+[@@deriving compare, equal]
 
 let pp_origin fmt = function
   | Argument {index} ->
       F.fprintf fmt "passed as argument #%d to" index
   | ReturnValue ->
       F.fprintf fmt "value returned from"
+  | Allocation {typ} ->
+      F.fprintf fmt "allocation of type %s by" typ
 
 
 type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]

@@ -123,6 +123,10 @@ let load_field path field location obj astate =
 module Errors = struct
   let error err astate = [FatalError (ReportableError {astate; diagnostic= ErlangError err}, [])]
 
+  let badarg : model =
+   fun {location} astate -> error (Badarg {calling_context= []; location}) astate
+
+
   let badkey : model =
    fun {location} astate -> error (Badkey {calling_context= []; location}) astate
 
@@ -272,7 +276,7 @@ module Comparison = struct
 
     (** Compares two objects by comparing one specific field. No type checking is made and the user
         should take care that the field is indeed a valid one for both arguments. *)
-    let from_fields sil_op field location path x y : value_maker =
+    let from_fields sil_op field x y location path : value_maker =
      fun astate ->
       let astate, _addr, (x_field, _) = load_field path field location x astate in
       let astate, _addr, (y_field, _) = load_field path field location y astate in
@@ -281,7 +285,7 @@ module Comparison = struct
 
     (** A trivial comparison that is always false. Can be used eg. for equality on incompatible
         types. *)
-    let const_false _location _path _x _y : value_maker =
+    let const_false _x _y _location _path : value_maker =
      fun astate ->
       let const_false = AbstractValue.mk_fresh () in
       let+ astate = PulseArithmetic.prune_eq_zero const_false astate in
@@ -290,9 +294,7 @@ module Comparison = struct
 
     (** A trivial comparison that is always true. Can be used eg. for inequality on incompatible
         types. *)
-    let _const_true _location _path _x _y : value_maker =
-     (* TODO T116009383: this is currently unused. Remove the leading underscore and this comment
-        when it becomes useful (probably when extending this model for inequality). *)
+    let const_true _x _y _location _path : value_maker =
      fun astate ->
       let const_true = AbstractValue.mk_fresh () in
       let+ astate = PulseArithmetic.prune_positive const_true astate in
@@ -300,48 +302,137 @@ module Comparison = struct
 
 
     (** Returns an unconstrained value. Can be used eg. for overapproximation or for unsupported
-        comparisons. Note that, as an over-approximation, it can lead to some false positives. *)
-    let unknown _location _path _x _y : value_maker =
+        comparisons.
+
+        Note that, as an over-approximation, it can lead to some false positives, that we generally
+        try to avoid. However, the only solution for comparisons that we do not support (such as
+        ordering on atoms) would then be to consider the result as unreachable (that is, return an
+        empty abstract state). This would lead to code depending on such comparisons not being
+        analysed at all, which may be less desirable than analysing it without gaining information
+        from the comparison itself. *)
+    let unknown _x _y _location _path : value_maker =
      fun astate ->
       let result = AbstractValue.mk_fresh () in
       Ok (astate, result)
 
+
+    (** Takes as parameters the types of two values [x] and [y] known to be incompatible and returns
+        a comparator for [x < y] based on this type. Currently, this only supports comparisons with
+        at least one integer: namely, when [x] is known to be an integer, then the comparison is
+        always true, and when [y] is, the comparison is always false. Otherwise it is unknown.
+
+        Reference: {:https://www.erlang.org/doc/reference_manual/expressions.html#term-comparisons}. *)
+    let incompatible_lt ty_x ty_y x y location path : value_maker =
+     fun astate ->
+      match (ty_x, ty_y) with
+      | ErlangTypeName.Integer, _ ->
+          const_true x y location path astate
+      | _, ErlangTypeName.Integer ->
+          const_false x y location path astate
+      | _ ->
+          unknown x y location path astate
+
+
+    (** Takes as parameters the types of two values [x] and [y] known to be incompatible and returns
+        a comparator for [x > y] based on this type.
+
+        See also {!incompatible_lt}. *)
+    let incompatible_gt ty_x ty_y x y location path : value_maker =
+     fun astate ->
+      match (ty_x, ty_y) with
+      | ErlangTypeName.Integer, _ ->
+          const_false x y location path astate
+      | _, ErlangTypeName.Integer ->
+          const_true x y location path astate
+      | _ ->
+          unknown x y location path astate
+
+
+    (** Adapt {!const_false} to have the expected type for the equality of incompatible values (cf
+        {!type:t}, {!recfield:t.incompatible}). *)
+    let incompatible_eq _ty_x _ty_y = const_false
+
+    (** Cf. {!incompatible_eq} *)
+    let incompatible_exactly_not_eq _ty_x _ty_y = const_true
 
     (** {1 Comparators as records of functions} *)
 
     (** The type of the functions that compare two values based on a specific type combination. They
         take the two values as parameters and build the abstract result that holds the comparison
         value. *)
-    type typed_comparison =
-         Location.t
+    type monotyped_comparison =
+         AbstractValue.t * ValueHistory.t
+      -> AbstractValue.t * ValueHistory.t
+      -> Location.t
       -> PathContext.t
-      -> AbstractValue.t * ValueHistory.t
-      -> AbstractValue.t * ValueHistory.t
       -> value_maker
 
     type t =
-      { unsupported: typed_comparison
-      ; incompatible: typed_comparison
-      ; integer: typed_comparison
-      ; atom: typed_comparison }
+      { unsupported: monotyped_comparison
+      ; incompatible: ErlangTypeName.t -> ErlangTypeName.t -> monotyped_comparison
+            (** [incompatible] takes as first parameters the types of the values being compared in
+                order to implement type-based ordering *)
+      ; integer: monotyped_comparison
+      ; atom: monotyped_comparison }
 
     let eq =
       { unsupported= unknown
-      ; incompatible= const_false
+      ; incompatible= incompatible_eq
       ; integer= from_fields Binop.Eq Integers.value_field
       ; atom= from_fields Binop.Eq Atoms.hash_field }
 
 
-    (** Given an [are_compatible] abstract value that indicates if the types of [x] and [y] are both
-        integers, builds the disjunction of the integer comparison of [x] and [y] and their
-        comparison as incompatible values. *)
-    let any_with_integer_split cmp location path ~are_compatible x y : disjunction_maker =
+    let xne =
+      (* exactly_not_equal. *)
+      { unsupported= unknown
+      ; incompatible= incompatible_exactly_not_eq
+      ; integer= from_fields Binop.Ne Integers.value_field
+      ; atom= from_fields Binop.Ne Atoms.hash_field }
+
+
+    (** Makes an ordering comparator given an operator to be used for comparing integer values and a
+        function to compare incompatible values. *)
+    let ordering int_binop incompatible =
+      { unsupported= unknown
+      ; incompatible
+      ; integer= from_fields int_binop Integers.value_field
+      ; atom= unknown }
+
+
+    let gt = ordering Gt incompatible_gt
+
+    let ge = ordering Ge incompatible_gt
+
+    let lt = ordering Lt incompatible_lt
+
+    let le = ordering Le incompatible_lt
+
+    (** Compare two abstract values, when one of them might be an integer, by disjuncting on the
+        case whether it is (an integer) or not.
+
+        Parameters (not in order):
+
+        - Two abstract values [x] and [y]. One of them is expected to ba a known integer, and the
+          other one to have an undetermined dynamic type.
+
+        - The (erlang) types of [x] and [y] as determined by the caller. Corresponding to the
+          expectation mentioned above, [(ty_x, ty_y)] is expected to be either [(Integer, Any)] or
+          [(Any, Integer)] (this is not checked by the function and is the caller responsibility).
+
+        - An [are_compatible] (boolean) abstract value that witnesses if the types of [x] and [y]
+          are both integers or if one of them is not (this is typically obtained by using
+          {!has_erlang_type} on the Any-typed argument).
+
+        Returns: a disjunction built on top of [are_compatible], that compares [x] and [y] as
+        integers when they both are, and as incompatible values when the any-typed one is not an
+        integer. *)
+    let any_with_integer_split cmp location path ~are_compatible ty_x ty_y x y : disjunction_maker =
      fun astate ->
       let<*> astate_int = PulseArithmetic.prune_positive are_compatible astate in
       let<*> astate_incompatible = PulseArithmetic.prune_eq_zero are_compatible astate in
-      let<*> astate_int, int_comparison = cmp.integer location path x y astate_int in
+      let<*> astate_int, int_comparison = cmp.integer x y location path astate_int in
       let<*> astate_incompatible, incompatible_comparison =
-        cmp.incompatible location path x y astate_incompatible
+        cmp.incompatible ty_x ty_y x y location path astate_incompatible
       in
       let int_hist = Hist.single_alloc path location "any_int_comparison" in
       let incompatible_hist = Hist.single_alloc path location "any_incompatible_comparison" in
@@ -393,25 +484,25 @@ module Comparison = struct
     let y_typ = get_erlang_type_or_any y_val astate in
     match (x_typ, y_typ) with
     | Integer, Integer ->
-        let<*> astate, result = cmp.integer location path x y astate in
+        let<*> astate, result = cmp.integer x y location path astate in
         let hist = Hist.single_alloc path location "integer_comparison" in
         [Ok (astate, (result, hist))]
     | Atom, Atom ->
-        let<*> astate, result = cmp.atom location path x y astate in
+        let<*> astate, result = cmp.atom x y location path astate in
         let hist = Hist.single_alloc path location "atom_comparison" in
         [Ok (astate, (result, hist))]
     | Integer, Any ->
         let<*> astate, are_compatible = has_erlang_type y_val Integer astate in
-        Comparator.any_with_integer_split cmp location path ~are_compatible x y astate
+        Comparator.any_with_integer_split cmp location path ~are_compatible Integer Any x y astate
     | Any, Integer ->
         let<*> astate, are_compatible = has_erlang_type x_val Integer astate in
-        Comparator.any_with_integer_split cmp location path ~are_compatible x y astate
+        Comparator.any_with_integer_split cmp location path ~are_compatible Any Integer x y astate
     | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
-        let<*> astate, result = cmp.unsupported location path x y astate in
+        let<*> astate, result = cmp.unsupported x y location path astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
         [Ok (astate, (result, hist))]
     | _ ->
-        let<*> astate, result = cmp.incompatible location path x y astate in
+        let<*> astate, result = cmp.incompatible x_typ y_typ x y location path astate in
         let hist = Hist.single_alloc path location "incompatible_comparison" in
         [Ok (astate, (result, hist))]
 
@@ -435,6 +526,16 @@ module Comparison = struct
   let equal = make Comparator.eq
 
   let prune_equal = prune Comparator.eq
+
+  let exactly_not_equal = make Comparator.xne
+
+  let greater = make Comparator.gt
+
+  let greater_or_equal = make Comparator.ge
+
+  let lesser = make Comparator.lt
+
+  let lesser_or_equal = make Comparator.le
 end
 
 module Lists = struct
@@ -510,10 +611,28 @@ module Lists = struct
         [Ok (hd :: elems, astate)]
 
 
+  let make_astate_badarg (list_val, _list_hist) data astate =
+    (* arg is not a list if its type is neither Cons nor Nil *)
+    let typ_cons = Typ.mk_struct (ErlangType Cons) in
+    let typ_nil = Typ.mk_struct (ErlangType Nil) in
+    let instanceof_val_cons = AbstractValue.mk_fresh () in
+    let instanceof_val_nil = AbstractValue.mk_fresh () in
+    let<*> astate =
+      PulseArithmetic.and_equal_instanceof instanceof_val_cons list_val typ_cons astate
+    in
+    let<*> astate =
+      PulseArithmetic.and_equal_instanceof instanceof_val_nil list_val typ_nil astate
+    in
+    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val_cons astate in
+    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val_nil astate in
+    Errors.badarg data astate
+
+
   let append2 ~reverse list1 list2 : model =
-   fun {location; path; ret= ret_id, _} astate ->
+   fun ({location; path; ret= ret_id, _} as data) astate ->
+    let mk_astate_badarg = make_astate_badarg list1 data astate in
     (* Makes an abstract state corresponding to appending to a list of given length *)
-    let mk_astate_concat length =
+    let mk_good_astate_concat length =
       let> elems, astate = assume_and_deconstruct list1 length astate path location in
       let elems = if reverse then elems else List.rev elems in
       let> astate, result_list =
@@ -523,8 +642,9 @@ module Lists = struct
       in
       [Ok (PulseOperations.write_id ret_id result_list astate)]
     in
-    List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_astate_concat)
-    |> List.map ~f:Basic.map_continue
+    mk_astate_badarg
+    @ ( List.concat (List.init Config.erlang_list_unfold_depth ~f:mk_good_astate_concat)
+      |> List.map ~f:Basic.map_continue )
 
 
   let reverse list : model =
@@ -735,6 +855,36 @@ module Maps = struct
     List.map ~f:Basic.map_continue astate_ok @ astate_badmap
 end
 
+module Strings = struct
+  (** This is a temporary solution for strings to avoid false positives. For now, we consider that
+      the type of strings is list and compute this information whenever a string is created. Strings
+      should be fully supported in future. T93361792 **)
+  let value_field = Fieldname.make (ErlangType Integer) ErlangTypeName.cons_tail
+
+  let make_raw location path (value, _) : disjunction_maker =
+   fun astate ->
+    let new_hist = Hist.single_alloc path location "string" in
+    let<*> astate_nil = PulseArithmetic.and_eq_int value IntLit.zero astate in
+    let<*> astate_nil, addr_nil = Lists.make_nil_raw location path astate_nil in
+    let val_not_nil = AbstractValue.mk_fresh () in
+    let<*> astate_not_nil = PulseArithmetic.and_positive value astate in
+    let astate_not_nil =
+      PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) val_not_nil astate_not_nil
+    in
+    let<*> astate_not_nil =
+      write_field_and_deref path location ~struct_addr:(val_not_nil, new_hist)
+        ~field_addr:(AbstractValue.mk_fresh (), new_hist)
+        ~field_val:(value, new_hist) value_field astate_not_nil
+    in
+    [Ok (astate_nil, addr_nil); Ok (astate_not_nil, (val_not_nil, new_hist))]
+
+
+  let make value : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let> astate, (result, _hist) = make_raw location path value astate in
+    PulseOperations.write_id ret_id (result, _hist) astate |> Basic.ok_continue
+end
+
 module BIF = struct
   let has_type (value, _hist) type_ : model =
    fun {location; path; ret= ret_id, _} astate ->
@@ -939,6 +1089,21 @@ let matchers : matcher list =
     ; +BuiltinDecl.(match_builtin __erlang_make_integer) <>$ arg $--> Integers.make
     ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
     ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
+    ; +BuiltinDecl.(match_builtin __erlang_make_str_const) <>$ arg $--> Strings.make
+    ; +BuiltinDecl.(match_builtin __erlang_equal) <>$ arg $+ arg $--> Comparison.equal
+    ; +BuiltinDecl.(match_builtin __erlang_exactly_equal) <>$ arg $+ arg $--> Comparison.equal
+      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+    ; +BuiltinDecl.(match_builtin __erlang_not_equal)
+      <>$ arg $+ arg $--> Comparison.exactly_not_equal
+      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+    ; +BuiltinDecl.(match_builtin __erlang_exactly_not_equal)
+      <>$ arg $+ arg $--> Comparison.exactly_not_equal
+    ; +BuiltinDecl.(match_builtin __erlang_greater) <>$ arg $+ arg $--> Comparison.greater
+    ; +BuiltinDecl.(match_builtin __erlang_greater_or_equal)
+      <>$ arg $+ arg $--> Comparison.greater_or_equal
+    ; +BuiltinDecl.(match_builtin __erlang_lesser) <>$ arg $+ arg $--> Comparison.lesser
+    ; +BuiltinDecl.(match_builtin __erlang_lesser_or_equal)
+      <>$ arg $+ arg $--> Comparison.lesser_or_equal
     ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
     ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach
     ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse
@@ -948,9 +1113,6 @@ let matchers : matcher list =
     ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
     ; -"maps" &:: "new" <>$$--> Maps.new_
     ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
-    ; -erlang_ns &:: "==" <>$ arg $+ arg $--> Comparison.equal
-      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
-    ; -erlang_ns &:: "=:=" <>$ arg $+ arg $--> Comparison.equal
     ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
     ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
     ; -erlang_ns &:: "is_integer" <>$ arg $--> BIF.is_integer

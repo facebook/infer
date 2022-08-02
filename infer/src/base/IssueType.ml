@@ -324,6 +324,11 @@ let _bad_pointer_comparison =
     ~user_documentation:[%blob "../../documentation/issues/BAD_POINTER_COMPARISON.md"]
 
 
+let bad_arg =
+  register_with_latent ~id:"BAD_ARG" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/BAD_ARG.md"]
+
+
 let bad_key =
   register_with_latent ~id:"BAD_KEY" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_KEY.md"]
@@ -440,12 +445,6 @@ let class_cast_exception =
   register_hidden ~enabled:false ~id:"CLASS_CAST_EXCEPTION" Error Biabduction
 
 
-let component_with_multiple_factory_methods =
-  register ~id:"COMPONENT_WITH_MULTIPLE_FACTORY_METHODS" Advice Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/COMPONENT_WITH_MULTIPLE_FACTORY_METHODS.md"]
-
-
 let condition_always_false =
   register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
 
@@ -467,6 +466,11 @@ let config_impact_analysis_strict =
 let config_impact_analysis_strict_beta =
   register ~enabled:false ~id:"CONFIG_IMPACT_STRICT_BETA" Advice ConfigImpactAnalysis
     ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
+
+
+let pulse_const_refable =
+  register ~enabled:false ~id:"PULSE_CONST_REFABLE" Error Pulse ~hum:"Const Refable Parameter"
+    ~user_documentation:[%blob "../../documentation/issues/PULSE_CONST_REFABLE.md"]
 
 
 let constant_address_dereference =
@@ -842,12 +846,6 @@ let multiple_weakself =
     ~user_documentation:[%blob "../../documentation/issues/MULTIPLE_WEAKSELF.md"]
 
 
-let mutable_local_variable_in_component_file =
-  register ~id:"MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE" Advice Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE.md"]
-
-
 let nil_block_call =
   register_with_latent ~id:"NIL_BLOCK_CALL" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NIL_BLOCK_CALL.md"]
@@ -961,6 +959,11 @@ let sensitive_data_flow =
 let data_flow_to_sink =
   register ~enabled:false ~hum:"Data Flow to Sink" ~id:"DATA_FLOW_TO_SINK" Advice Pulse
     ~user_documentation:"A flow of data was detected to a sink."
+
+
+let datalog_fact =
+  register ~id:"DATALOG_FACT" Info Datalog
+    ~user_documentation:"Datalog fact used as input for a datalog solver."
 
 
 let regex_op_on_ui_thread =

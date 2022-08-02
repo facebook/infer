@@ -21,18 +21,16 @@ val call :
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
 
-val gather_taint_dependencies : AbstractValue.t -> AbductiveDomain.t -> AbstractValue.t list
-(** Preorder traversal of the tree formed by taint dependencies of [v] in [astate] *)
-
-val report_flows_to_callee :
-     PathContext.t
+val taint_allocation :
+     Tenv.t
+  -> PathContext.t
   -> Location.t
-  -> Procname.t
-  -> (BaseStack.value * Typ.t) list
+  -> typ_desc:Typ.desc
+  -> alloc_desc:string
+  -> allocator:Attribute.allocator option
+  -> AbstractValue.t
   -> AbductiveDomain.t
   -> AbductiveDomain.t
-  -> AbductiveDomain.t AccessResult.t
-(** Add callee as a taint procedure and report taint flows to callee actuals *)
 
 val check_flows_wrt_sink :
      PathContext.t

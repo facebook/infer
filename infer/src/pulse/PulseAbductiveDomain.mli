@@ -11,6 +11,7 @@ module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
 module Decompiler = PulseDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module PathContext = PulsePathContext
 
 (** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
@@ -136,9 +137,6 @@ module AddressAttributes : sig
 
   val add_taint_sink : PathContext.t -> Taint.t -> Trace.t -> AbstractValue.t -> t -> t
 
-  val add_taint_procedure :
-    PathContext.t -> Taint.origin -> Procname.t -> Trace.t -> AbstractValue.t -> t -> t
-
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
   val always_reachable : AbstractValue.t -> t -> t
@@ -198,6 +196,8 @@ module AddressAttributes : sig
        list
 end
 
+val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
+
 val apply_unknown_effect :
      ?havoc_filter:(AbstractValue.t -> BaseMemory.Access.t -> BaseMemory.AddrTrace.t -> bool)
   -> ValueHistory.t
@@ -249,10 +249,10 @@ val summary_of_post :
   -> t
   -> ( summary
      , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
-       | `RetainCycle of summary * Trace.t list * Decompiler.expr * Decompiler.expr * Location.t
+       | `RetainCycle of summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
-         summary * Decompiler.expr * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+         summary * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
      SatUnsat.t
 (** Trim the state down to just the procedure's interface (formals and globals), and simplify and

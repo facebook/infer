@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 TESTS_DIR = ../../..
+INFER_OUT ?= infer-out$(TEST_SUFFIX)
 
 include $(TESTS_DIR)/base.make
 
@@ -13,6 +14,7 @@ SIL_FILES = $(patsubst %.java,%.sil,$(SOURCES))
 
 .PHONY: compile
 compile:
+	@for f in $(basename $(SOURCES)); do $(INFER_BIN) --dump-textual $${f}.sil -- javac $${f}.java; done
 
 .PHONY: analyze
 analyze:

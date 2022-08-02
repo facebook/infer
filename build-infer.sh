@@ -32,6 +32,7 @@ function usage() {
   echo "   all      build everything (default)"
   echo "   clang    build C and Objective-C analyzer"
   echo "   erlang   build Erlang analyzer"
+  echo "   hack     build Hack analyzer"
   echo "   java     build Java analyzer"
   echo
   echo " options:"
@@ -50,6 +51,7 @@ function usage() {
 # arguments
 BUILD_CLANG=${BUILD_CLANG:-no}
 BUILD_ERLANG=${BUILD_ERLANG:-no}
+BUILD_HACK=${BUILD_HACK:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
 INFER_CONFIGURE_OPTS=${INFER_CONFIGURE_OPTS:-""}
 INTERACTIVE=${INTERACTIVE:-yes}
@@ -63,6 +65,7 @@ ORIG_ARGS="$*"
 function build_all() {
   BUILD_CLANG=yes
   BUILD_ERLANG=yes
+  BUILD_HACK=yes
   BUILD_JAVA=yes
 }
 
@@ -81,6 +84,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     erlang)
       BUILD_ERLANG=yes
+      shift
+      continue
+      ;;
+    hack)
+      BUILD_HACK=yes
       shift
       continue
       ;;
@@ -120,7 +128,8 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && [ "$BUILD_JAVA" == "no" ]; then
+if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && \
+    [ "$BUILD_HACK" == "no" ] && [ "$BUILD_JAVA" == "no" ]; then
   build_all
 fi
 
@@ -173,6 +182,9 @@ if [ "$BUILD_CLANG" == "no" ]; then
 fi
 if [ "$BUILD_ERLANG" == "no" ]; then
   INFER_CONFIGURE_OPTS+=" --disable-erlang-analyzers"
+fi
+if [ "$BUILD_HACK" == "no" ]; then
+  INFER_CONFIGURE_OPTS+=" --disable-hack-analyzers"
 fi
 if [ "$BUILD_JAVA" == "no" ]; then
   INFER_CONFIGURE_OPTS+=" --disable-java-analyzers"

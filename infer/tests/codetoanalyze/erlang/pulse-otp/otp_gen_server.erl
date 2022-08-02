@@ -10,7 +10,7 @@
     test_cast_Bad/0
 ]).
 
-% T119301532 -- should become non-FP with an OTP update
+% FP: T115354480
 fp_test_cast_Ok() ->
     ok = gen_server:cast(x, y).
 

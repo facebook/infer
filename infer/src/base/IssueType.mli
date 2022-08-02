@@ -83,6 +83,8 @@ val assert_failure : t
 
 val bad_footprint : t
 
+val bad_arg : latent:bool -> t
+
 val bad_key : latent:bool -> t
 
 val bad_map : latent:bool -> t
@@ -137,8 +139,6 @@ val class_cast_exception : t
 
 val complexity_increase : kind:CostKind.t -> is_on_ui_thread:bool -> t
 
-val component_with_multiple_factory_methods : t
-
 val condition_always_false : t
 
 val condition_always_true : t
@@ -148,6 +148,8 @@ val config_impact_analysis : t
 val config_impact_analysis_strict : t
 
 val config_impact_analysis_strict_beta : t
+
+val pulse_const_refable : t
 
 val constant_address_dereference : latent:bool -> t
 
@@ -160,6 +162,8 @@ val dangling_pointer_dereference : t
 val dangling_pointer_dereference_maybe : t
 
 val data_flow_to_sink : t
+
+val datalog_fact : t
 
 val dead_store : t
 
@@ -283,8 +287,6 @@ val mixed_self_weakself : t
 val modifies_immutable : t
 
 val multiple_weakself : t
-
-val mutable_local_variable_in_component_file : t
 
 val nil_block_call : latent:bool -> t
 
