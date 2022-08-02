@@ -14,6 +14,8 @@ type t =
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
 
+let fact_types = ["Reachable"; "Extends"; "Cast"; "Alloc"]
+
 let pp fmt = function
   | Reachable {proc_name} ->
       F.fprintf fmt "Reachable %s" (Procname.to_unique_id proc_name)
@@ -38,6 +40,8 @@ let make_allocation_site proc_name loc id =
 
 
 let to_string fact = F.asprintf "%a" pp fact
+
+let iter_fact_types f = List.iter fact_types ~f
 
 let reachable proc_name = Reachable {proc_name}
 

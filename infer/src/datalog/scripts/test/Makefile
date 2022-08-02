@@ -22,3 +22,4 @@ test-classdump: build-targets
 
 clean:
 	rm -rf java_targets/jar
+	rm -rf classdump_out

@@ -17,6 +17,8 @@ type t =
 
 val to_string : t -> string
 
+val iter_fact_types : (string -> unit) -> unit
+
 val reachable : Procname.t -> t
 
 val extends : Typ.Name.t -> Typ.Name.t -> t

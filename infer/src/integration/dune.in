@@ -17,8 +17,8 @@ let library =
   (:standard
      -open Core -open IStdlib -open IStd -open OpenSource -open ATDGenerated
      -open IBase -open IR -open Absint -open BO -open Checkers -open Costlib -open Concurrency -open Backend
-     -open TestDeterminators -open ClangFrontend -open JavaFrontend -open ErlangFrontend %s %s))
- (libraries xmlm core IStdlib ATDGenerated IBase IR Absint BO Checkers Costlib Concurrency Backend
+     -open TestDeterminators -open ClangFrontend -open Datalog -open JavaFrontend -open ErlangFrontend %s %s))
+ (libraries xmlm core IStdlib Datalog ATDGenerated IBase IR Absint BO Checkers Costlib Concurrency Backend
      TestDeterminators ClangFrontend JavaFrontend ErlangFrontend)
  (preprocess (pps ppx_compare))
 )

@@ -208,8 +208,8 @@ let with_file_in file ~f =
   Exception.try_finally ~f ~finally
 
 
-let with_file_out file ~f =
-  let oc = Out_channel.create file in
+let with_file_out ?append file ~f =
+  let oc = Out_channel.create ?append file in
   let f () = f oc in
   let finally () = Out_channel.close oc in
   Exception.try_finally ~f ~finally

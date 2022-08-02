@@ -237,6 +237,10 @@ let report ?(suppress_console = false) () =
     if Config.sarif then
       SarifReport.create_from_json ~report_sarif:(ResultsDir.get_path ReportSarif)
         ~report_json:issues_json ;
+    if Config.is_checker_enabled Checker.Datalog then
+      DatalogFacts.create_from_json
+        ~datalog_dir:(ResultsDir.get_path DatalogFacts)
+        ~report_json:issues_json ;
     () ) ;
   if Config.export_changed_functions then TestDeterminator.merge_changed_functions_results () ;
   if Config.(test_determinator && process_clang_ast) then
