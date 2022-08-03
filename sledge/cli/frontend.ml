@@ -1307,7 +1307,7 @@ let xlate_instr :
       let name_segs = String.split_on_char fname ~by:'.' in
       let skip msg =
         if StringS.add ignored_callees fname then
-          warn "ignoring uninterpreted %s %s" msg fname () ;
+          warn "ignoring uninterpreted %s %s at %a" msg fname Loc.pp loc () ;
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
