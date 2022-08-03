@@ -10,13 +10,19 @@ module F = Format
 module L = Logging
 
 module Location = struct
-  type t = {line: int; col: int}
+  type t = Known of {line: int; col: int} | Unknown
 
-  let unknown = {line= -1; col= -1}
+  let known ~line ~col = Known {line; col}
 
-  let pp fmt {line; col} = F.fprintf fmt "line %d, column %d" line col
+  let pp fmt = function
+    | Known {line; col} ->
+        F.fprintf fmt "line %d, column %d" line col
+    | Unknown ->
+        F.fprintf fmt "<unknown location>"
 
-  let of_sil ({line; col} : Location.t) = {line; col}
+
+  let of_sil ({line; col} : Location.t) =
+    if Int.(line = -1 && col = -1) then Known {line; col} else Unknown
 end
 
 module type NAME = sig
@@ -39,7 +45,7 @@ module Name : COMMON_NAME = struct
 
   let replace_dot_with_2colons str = String.substr_replace_all str ~pattern:"." ~with_:"::"
 
-  let of_java_name str = {value= replace_dot_with_2colons str; loc= Location.unknown}
+  let of_java_name str = {value= replace_dot_with_2colons str; loc= Location.Unknown}
 
   let equal name1 name2 = String.equal name1.value name2.value
 
@@ -220,7 +226,7 @@ module Procname = struct
 
   let make_allocate (tname : TypeName.t) =
     let name : ProcBaseName.t =
-      {value= builtin_allocate_prefix ^ tname.value; loc= Location.unknown}
+      {value= builtin_allocate_prefix ^ tname.value; loc= Location.Unknown}
     in
     {name; targs= []; tres= Ptr (Struct tname); kind= Builtin}
 
@@ -231,7 +237,7 @@ module Procname = struct
 
   let of_unop unop =
     let value = List.Assoc.find_exn ~equal:Unop.equal unop_table unop in
-    let name : ProcBaseName.t = {value; loc= Location.unknown} in
+    let name : ProcBaseName.t = {value; loc= Location.Unknown} in
     {name; targs= [Int]; tres= Int; kind= Builtin}
 
 
@@ -339,7 +345,7 @@ module Procname = struct
 
   let of_binop binop =
     let value = Map.Poly.find_exn binop_map binop in
-    let name : ProcBaseName.t = {value; loc= Location.unknown} in
+    let name : ProcBaseName.t = {value; loc= Location.Unknown} in
     let targs, tres = typeof_binop binop in
     {name; targs; tres; kind= Builtin}
 
@@ -593,16 +599,16 @@ module Instr = struct
         let id = Ident.of_sil id in
         let exp = Exp.of_sil decls tenv e in
         let typ = Typ.of_sil typ in
-        let loc = Location.unknown in
+        let loc = Location.Unknown in
         Load {id; exp; typ; loc}
     | Store {e1; typ; e2} ->
         let exp1 = Exp.of_sil decls tenv e1 in
         let typ = Typ.of_sil typ in
         let exp2 = Exp.of_sil decls tenv e2 in
-        let loc = Location.unknown in
+        let loc = Location.Unknown in
         Store {exp1; typ; exp2; loc}
     | Prune (e, _, b, _) ->
-        Prune {exp= Exp.of_sil decls tenv e; b; loc= Location.unknown}
+        Prune {exp= Exp.of_sil decls tenv e; b; loc= Location.Unknown}
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
         let procname = TypeName.of_sil_typ_name name |> Procname.make_allocate in
@@ -610,13 +616,13 @@ module Instr = struct
         Let
           { id= Ident.of_sil id
           ; exp= Call {proc= procname.Procname.name; args= []}
-          ; loc= Location.unknown }
+          ; loc= Location.Unknown }
     | Call ((id, _), Const (Cfun pname), args, _, _) ->
         let procname = Procname.of_sil pname in
         let () = Decls.declare_procname decls procname in
         let proc = procname.name in
         let args = List.map ~f:(fun (e, _) -> Exp.of_sil decls tenv e) args in
-        let loc = Location.unknown in
+        let loc = Location.Unknown in
         Let {id= Ident.of_sil id; exp= Call {proc; args}; loc}
     | Call _ ->
         L.die InternalError "Translation of a SIL call that is not const not supported"
@@ -727,7 +733,7 @@ module Procdesc = struct
           lbl
       | None ->
           let value = "node_" ^ string_of_int !count in
-          let res : NodeName.t = {value; loc= Location.unknown} in
+          let res : NodeName.t = {value; loc= Location.Unknown} in
           NodeHash.add tbl node res ;
           incr count ;
           res

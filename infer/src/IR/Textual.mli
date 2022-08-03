@@ -8,7 +8,9 @@
 open! IStd
 
 module Location : sig
-  type t = {line: int; col: int}
+  type t
+
+  val known : line:int -> col:int -> t
 end
 
 module type NAME = sig
