@@ -49,3 +49,9 @@ int sum_in_loop_bad(std::vector<int> vec) {
     total += x; // vec is not modified here
   return total;
 }
+
+// anonymous parameters usually exist to satisfy the signature for virtual
+// functions. If we recommend const ref, the signature would not match and
+// making the base function const-refable might not be possible since it might
+// be using the parameter.
+void some_fun_ok(std::vector<int> /*unnamed_param*/) {}

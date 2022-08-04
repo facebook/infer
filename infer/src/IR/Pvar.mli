@@ -92,6 +92,9 @@ val is_cpp_temporary : t -> bool
 (** return true if this pvar represents a C++ temporary object (see
     http://en.cppreference.com/w/cpp/language/lifetime) *)
 
+val is_cpp_unnamed_param : t -> bool
+(** return true if this pvar represents an unnamed parameter *)
+
 val is_objc_static_local_of_proc_name : string -> t -> bool
 (** Check if a pvar is a local static in objc *)
 
@@ -146,6 +149,8 @@ val to_seed : t -> t
 
 val to_string : t -> string
 (** Convert a pvar to string. *)
+
+val unnamed_param_prefix : string
 
 val get_translation_unit : t -> translation_unit
 (** Get the translation unit corresponding to a global. Raises Invalid_arg if not a global. *)

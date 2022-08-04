@@ -134,7 +134,8 @@ let add_const_refable_parameters procdesc astates astate_non_disj =
               let var = Var.of_pvar pvar in
               if
                 Var.appears_in_source_code var && Typ.is_reference typ
-                && not (is_ptr_to_trivially_copyable typ)
+                && (not (is_ptr_to_trivially_copyable typ))
+                && not (Var.is_cpp_unnamed_param var)
               then
                 NonDisjDomain.add_parameter var
                   (NonDisjDomain.Unmodified

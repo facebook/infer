@@ -71,6 +71,13 @@ let is_cpp_temporary = function
       Pvar.is_cpp_temporary pvar
 
 
+let is_cpp_unnamed_param = function
+  | LogicalVar _ ->
+      false
+  | ProgramVar pvar ->
+      Pvar.is_cpp_unnamed_param pvar
+
+
 let pp fmt = function
   | ProgramVar pv ->
       F.pp_print_string fmt (Pvar.get_simplified_name pv)
