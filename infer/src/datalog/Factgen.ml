@@ -9,6 +9,14 @@ open! IStd
 
 let analyzed_classes = Hash_set.create (module String)
 
+let is_builtin = BuiltinDecl.is_declared
+
+let is_builtin_cast = Procname.equal BuiltinDecl.__cast
+
+let is_builtin_alloc proc =
+  Procname.equal BuiltinDecl.__new proc || Procname.equal BuiltinDecl.__new_array proc
+
+
 let is_entry_proc proc_name =
   let java_proc_name = Procname.as_java_exn proc_name ~explanation:"Only Java procdesc supported" in
   String.equal (Procname.Java.get_method java_proc_name) "main"
@@ -33,14 +41,17 @@ let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc (fact :
         Hash_set.add analyzed_classes (Typ.Name.name typ) ;
         report_fact analysis_data fact ~loc )
   (* Procedure-level facts *)
-  | Reachable _ | Cast _ | Alloc _ ->
+  | Reachable _ | Cast _ | Alloc _ | VirtualCall _ | StaticCall _ ->
       report_fact analysis_data fact ~loc
 
 
+(** [JAVA ONLY] `Foo x = new Foo();` becomes in SIL `tmp = __new(...) ; x = Foo.<init>(..., tmp)`.
+    __new() is the built-in function for allocations, whereas Foo.<init> is a static call to the
+    default constructor of Foo. In the fact generation, a call to __new() generates an "Alloc" fact,
+    whereas a call to a constructor will generate a "StaticCall" fact. Both facts are generated when
+    the `new Class()` statement is used. *)
 let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let is_builtin_cast proc = String.equal "__cast" (Procname.to_string proc) in
-  let is_builtin_alloc proc = String.equal "__new" (Procname.to_string proc) in
   if is_entry_proc proc_name then log_fact analysis_data (Fact.reachable proc_name) ;
   Procdesc.iter_instrs
     (fun _ instr ->
@@ -51,6 +62,11 @@ let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_
       | Call ((ret_id, _), Const (Cfun call_proc), [(Sizeof sizeof, _)], loc, _)
         when is_builtin_alloc call_proc ->
           log_fact analysis_data (Fact.alloc proc_name ret_id loc sizeof.typ) ~loc
+      | Call ((ret_id, _), Const (Cfun call_proc), _args, loc, call_flags)
+        when not (is_builtin call_proc) ->
+          if call_flags.cf_virtual || call_flags.cf_interface then
+            log_fact analysis_data (Fact.virtual_call proc_name loc ret_id call_proc) ~loc
+          else log_fact analysis_data (Fact.static_call proc_name loc ret_id call_proc) ~loc
       | _ ->
           () )
     proc_desc

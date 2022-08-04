@@ -12,7 +12,7 @@
     let location_of_pos pos : Location.t =
       let line = pos.Lexing.pos_lnum in
       let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol in
-      { line; col }
+      Location.known ~line ~col
 
 %}
 

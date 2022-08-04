@@ -37,14 +37,15 @@ let implements_map tenv s =
      n$X      = *&$bcvarY
        _      = *n$X
      n$X+1    = fun_name(n$X,....)
-    *&$irvarZ = n$X+1
+    *&$ir_var = n$X+1
     v} *)
-let find_first_arg_pvar node ~fun_name ~class_name_f =
+let find_first_arg_pvar ?(ir_var_opt = None) node ~fun_name ~class_name_f =
   let instrs = Procdesc.Node.get_instrs node in
   if Instrs.count instrs >= 4 then
     let instr_arr = Instrs.get_underlying_not_reversed instrs in
     match instr_arr.(3) with
-    | Sil.Store {e1= Exp.Lvar _; e2= Exp.Var rhs_id} ->
+    | Sil.Store {e1= Exp.Lvar ir_var; e2= Exp.Var rhs_id}
+      when Option.value_map ~default:true ir_var_opt ~f:(Pvar.equal ir_var) ->
         find_first_arg_id ~fun_name ~class_name_f ~lhs_f:(Ident.equal rhs_id) instr_arr.(2)
         |> Option.bind ~f:(fun arg_id -> find_loaded_pvar arg_id instr_arr.(0))
     | _ ->
@@ -81,7 +82,7 @@ let report_matching_get proc_desc err_log tenv pvar loop_nodes : unit =
 
 
 (** Heuristic: check up to 4 direct predecessor nodes *)
-let when_dominating_preds_satisfy idom my_node ~fun_name ~class_name_f ~f =
+let when_dominating_preds_satisfy ?(ir_var_opt = None) idom my_node ~fun_name ~class_name_f ~f =
   let preds node =
     Procdesc.Node.get_preds node
     |> List.filter ~f:(fun node -> Dominators.dominates idom node my_node)
@@ -90,7 +91,7 @@ let when_dominating_preds_satisfy idom my_node ~fun_name ~class_name_f ~f =
     if not (Int.equal counter 0) then
       match preds node with
       | [pred_node] -> (
-        match find_first_arg_pvar pred_node ~fun_name ~class_name_f with
+        match find_first_arg_pvar pred_node ~fun_name ~class_name_f ~ir_var_opt with
         | Some pvar ->
             f pred_node pvar
         | None ->
@@ -115,8 +116,9 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} =
         |> Option.is_some
       then
         when_dominating_preds_satisfy idom loop_head ~fun_name:"iterator"
-          ~class_name_f:(PatternMatch.Java.implements_set tenv) ~f:(fun itr_node _ ->
+          ~class_name_f:(PatternMatch.Java.implements_set tenv) ~f:(fun itr_node itr_pvar ->
             when_dominating_preds_satisfy idom itr_node ~fun_name:"keySet"
-              ~class_name_f:(implements_map tenv) ~f:(fun _keySet_node get_pvar ->
+              ~ir_var_opt:(Some itr_pvar) ~class_name_f:(implements_map tenv)
+              ~f:(fun _keySet_node get_pvar ->
                 report_matching_get proc_desc err_log tenv get_pvar loop_nodes ) ) )
     loop_head_to_loop_nodes

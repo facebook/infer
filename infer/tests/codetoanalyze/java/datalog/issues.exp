@@ -1,24 +1,64 @@
 codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, Extends Facts java.lang.Object.
+codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, StaticCall Facts.<init>() Facts:10:n$1 java.lang.Object.<init>().
 codetoanalyze/java/datalog/Facts.java, 11, DATALOG_FACT, Reachable Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$0 Facts:13:n$0 java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:13:n$1 java.lang.String.<init>(java.lang.String).
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$2 Facts:15:n$2 java.util.ArrayList.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$4 Facts:15:n$4 java.util.ArrayList.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$7 Facts:15:n$7 java.util.ArrayList.
+codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:15:n$3 java.util.ArrayList.<init>().
+codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:15:n$6 java.util.ArrayList.<init>(java.util.Collection).
+codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:15:n$9 java.util.ArrayList.<init>(java.util.Collection).
 codetoanalyze/java/datalog/Facts.java, 18, DATALOG_FACT, Cast Facts.main(java.lang.String[]):void n$11 n$10 java.lang.String.
 codetoanalyze/java/datalog/Facts.java, 20, DATALOG_FACT, Cast Facts.main(java.lang.String[]):void n$13 n$12 java.util.List.
 codetoanalyze/java/datalog/Facts.java, 20, DATALOG_FACT, Cast Facts.main(java.lang.String[]):void n$14 n$13 java.util.ArrayList.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, Extends Hello java.lang.Object.
+codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, StaticCall Hello.<init>() Hello:8:n$1 java.lang.Object.<init>().
 codetoanalyze/java/datalog/Hello.java, 9, DATALOG_FACT, Reachable Hello.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Hello.java, 10, DATALOG_FACT, VirtualCall Hello.main(java.lang.String[]):void Hello:10:n$2 n$2 java.io.PrintStream.println(java.lang.String):void.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, Extends Reflection java.lang.Object.
+codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, StaticCall Reflection.<init>() Reflection:11:n$1 java.lang.Object.<init>().
 codetoanalyze/java/datalog/Reflection.java, 12, DATALOG_FACT, Reachable Reflection.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Reflection.java, 13, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:13:n$0 Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 14, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:14:n$1 Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 15, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:15:n$2 Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 20, DATALOG_FACT, StaticCall Reflection.dumpMethods():void Reflection:20:n$0 java.lang.Class.forName(java.lang.String):java.lang.Class.
+codetoanalyze/java/datalog/Reflection.java, 21, DATALOG_FACT, VirtualCall Reflection.dumpMethods():void Reflection:21:n$3 n$3 java.lang.Class.getDeclaredMethods():java.lang.reflect.Method[].
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, VirtualCall Reflection.dumpMethods():void Reflection:22:n$14 n$14 java.lang.reflect.Method.toString():java.lang.String.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, VirtualCall Reflection.dumpMethods():void Reflection:22:n$18 n$18 java.io.PrintStream.println(java.lang.String):void.
+codetoanalyze/java/datalog/Reflection.java, 24, DATALOG_FACT, VirtualCall Reflection.dumpMethods():void Reflection:24:n$24 n$24 java.io.PrintStream.println(java.lang.Object):void.
+codetoanalyze/java/datalog/Reflection.java, 30, DATALOG_FACT, StaticCall Reflection.allocNewInstance():void Reflection:30:n$0 java.lang.Class.forName(java.lang.String):java.lang.Class.
+codetoanalyze/java/datalog/Reflection.java, 31, DATALOG_FACT, VirtualCall Reflection.allocNewInstance():void Reflection:31:n$3 n$3 java.lang.Class.newInstance():java.lang.Object.
 codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, Cast Reflection.allocNewInstance():void n$6 n$5 java.util.Stack.
+codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, VirtualCall Reflection.allocNewInstance():void Reflection:32:n$12 n$12 java.io.PrintStream.println(boolean):void.
+codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, VirtualCall Reflection.allocNewInstance():void Reflection:32:n$8 n$8 java.util.Stack.empty():boolean.
+codetoanalyze/java/datalog/Reflection.java, 34, DATALOG_FACT, VirtualCall Reflection.allocNewInstance():void Reflection:34:n$17 n$17 java.io.PrintStream.println(java.lang.Object):void.
 codetoanalyze/java/datalog/Reflection.java, 40, DATALOG_FACT, Alloc Reflection.allocNewClass():void n$0 Reflection:40:n$0 java.util.Stack.
+codetoanalyze/java/datalog/Reflection.java, 40, DATALOG_FACT, StaticCall Reflection.allocNewClass():void Reflection:40:n$1 java.util.Stack.<init>().
+codetoanalyze/java/datalog/Reflection.java, 41, DATALOG_FACT, StaticCall Reflection.allocNewClass():void Reflection:41:n$4 java.lang.Object.getClass():java.lang.Class.
+codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, VirtualCall Reflection.allocNewClass():void Reflection:42:n$12 n$12 java.io.PrintStream.println(java.lang.String):void.
+codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, VirtualCall Reflection.allocNewClass():void Reflection:42:n$8 n$8 java.lang.Class.toString():java.lang.String.
+codetoanalyze/java/datalog/Reflection.java, 44, DATALOG_FACT, VirtualCall Reflection.allocNewClass():void Reflection:44:n$17 n$17 java.io.PrintStream.println(java.lang.Object):void.
 codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, Extends VirtCall java.lang.Object.
+codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, StaticCall VirtCall.<init>() VirtCall:8:n$1 java.lang.Object.<init>().
 codetoanalyze/java/datalog/VirtCall.java, 9, DATALOG_FACT, Reachable VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, Alloc VirtCall.main(java.lang.String[]):void n$0 VirtCall:10:n$0 A*[_*_].
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, Alloc VirtCall.main(java.lang.String[]):void n$1 VirtCall:10:n$1 A.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, Alloc VirtCall.main(java.lang.String[]):void n$5 VirtCall:10:n$5 B.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, StaticCall VirtCall.main(java.lang.String[]):void VirtCall:10:n$2 A.<init>().
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, StaticCall VirtCall.main(java.lang.String[]):void VirtCall:10:n$6 B.<init>().
+codetoanalyze/java/datalog/VirtCall.java, 12, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:12:n$22 n$22 A.f():A.
+codetoanalyze/java/datalog/VirtCall.java, 13, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:13:n$25 n$25 A.g():java.lang.String.
+codetoanalyze/java/datalog/VirtCall.java, 14, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:14:n$28 n$28 A.g():java.lang.String.
+codetoanalyze/java/datalog/VirtCall.java, 15, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:15:n$32 n$32 java.io.PrintStream.println(java.lang.String):void.
+codetoanalyze/java/datalog/VirtCall.java, 16, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:16:n$36 n$36 java.io.PrintStream.println(java.lang.String):void.
 codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, Extends A java.lang.Object.
+codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, StaticCall A.<init>() A:21:n$1 java.lang.Object.<init>().
 codetoanalyze/java/datalog/VirtCall.java, 23, DATALOG_FACT, Alloc A.f():A n$0 A:23:n$0 C.
+codetoanalyze/java/datalog/VirtCall.java, 23, DATALOG_FACT, StaticCall A.f():A A:23:n$1 C.<init>().
 codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, Extends B A.
+codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, StaticCall B.<init>() B:31:n$1 A.<init>().
 codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, Extends C A.
+codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, StaticCall C.<init>() C:38:n$1 A.<init>().
 codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, Extends D A.
+codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, StaticCall D.<init>() D:45:n$1 A.<init>().
