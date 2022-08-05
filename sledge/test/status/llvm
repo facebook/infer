@@ -4860,7 +4860,7 @@ llvm/CodeGen/AMDGPU/xor_add.ll:	Ok
 llvm/CodeGen/AMDGPU/zero_extend.ll:	Ok
 llvm/CodeGen/AMDGPU/zext-i64-bit-operand.ll:	Ok
 llvm/CodeGen/AMDGPU/zext-lid.ll:	Ok
-llvm/CodeGen/ARC/addrmode.ll:	Ok
+llvm/CodeGen/ARC/addrmode.ll:	Internal error: Unsigned conversion requires at least one spare bit
 llvm/CodeGen/ARC/alu.ll:	Ok
 llvm/CodeGen/ARC/brcc.ll:	Ok
 llvm/CodeGen/ARC/call.ll:	Ok
@@ -7077,13 +7077,13 @@ llvm/CodeGen/Hexagon/hwloop-const.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-crit-edge.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-dbg.ll:	Error
 llvm/CodeGen/Hexagon/hwloop-ice.ll:	Ok
-llvm/CodeGen/Hexagon/hwloop-le.ll:	Ok
+llvm/CodeGen/Hexagon/hwloop-le.ll:	Internal error: Unsigned conversion requires at least one spare bit
 llvm/CodeGen/Hexagon/hwloop-long.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-loop1.ll:	Ok
-llvm/CodeGen/Hexagon/hwloop-lt.ll:	Ok
+llvm/CodeGen/Hexagon/hwloop-lt.ll:	Internal error: Unsigned conversion requires at least one spare bit
 llvm/CodeGen/Hexagon/hwloop-lt1.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-missed.ll:	Ok
-llvm/CodeGen/Hexagon/hwloop-ne.ll:	Ok
+llvm/CodeGen/Hexagon/hwloop-ne.ll:	Internal error: Unsigned conversion requires at least one spare bit
 llvm/CodeGen/Hexagon/hwloop-noreturn-call.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-ph-deadcode.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-phi-subreg.ll:	Ok
@@ -22793,7 +22793,7 @@ llvm/Transforms/LoopStrengthReduce/AMDGPU/preserve-addrspace-assert.ll:	Error
 llvm/Transforms/LoopStrengthReduce/ARM/2012-06-15-lsr-noaddrmode.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/ARM/addrec-is-loop-invariant.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/ARM/complexity.ll:	Error
-llvm/Transforms/LoopStrengthReduce/ARM/ivchain-ARM.ll:	Error
+llvm/Transforms/LoopStrengthReduce/ARM/ivchain-ARM.ll:	Internal error: Unsigned conversion requires at least one spare bit
 llvm/Transforms/LoopStrengthReduce/ARM/vctp-chains-inseltpoison.ll:	Error
 llvm/Transforms/LoopStrengthReduce/ARM/vctp-chains.ll:	Error
 llvm/Transforms/LoopStrengthReduce/NVPTX/trunc.ll:	Ok
@@ -22811,7 +22811,7 @@ llvm/Transforms/LoopStrengthReduce/X86/canonical.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/expander-crashes.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/expander-reused-value-insert-point.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/incorrect-offset-scaling.ll:	Ok
-llvm/Transforms/LoopStrengthReduce/X86/ivchain-X86.ll:	Ok
+llvm/Transforms/LoopStrengthReduce/X86/ivchain-X86.ll:	Internal error: Unsigned conversion requires at least one spare bit
 llvm/Transforms/LoopStrengthReduce/X86/ivchain-stress-X86.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/lsr-expand-quadratic.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/lsr-filtering-scaledreg.ll:	Ok
