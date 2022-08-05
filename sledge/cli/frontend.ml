@@ -1763,12 +1763,12 @@ let transform ~internalize ~preserve_fns ~opt_level ~size_level :
     ~pred:should_preserve_fn llmodule ;
   if internalize then
     Llvm_ipo.add_internalize_predicate pm should_preserve_fn ;
-  Llvm_scalar_opts.add_memory_to_register_promotion pm ;
-  Llvm_scalar_opts.add_scalarizer pm ;
   let pmb = Llvm_passmgr_builder.create () in
   Llvm_passmgr_builder.set_opt_level opt_level pmb ;
   Llvm_passmgr_builder.set_size_level size_level pmb ;
   Llvm_passmgr_builder.populate_module_pass_manager pm pmb ;
+  Llvm_scalar_opts.add_scalarizer pm ;
+  Llvm_scalar_opts.add_memory_to_register_promotion pm ;
   Llvm_scalar_opts.add_unify_function_exit_nodes pm ;
   Llvm_scalar_opts.add_cfg_simplification pm ;
   Llvm.PassManager.run_module llmodule pm |> ignore ;

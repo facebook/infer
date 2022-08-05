@@ -4859,7 +4859,7 @@ llvm/CodeGen/AMDGPU/xor_add.ll:	Ok
 llvm/CodeGen/AMDGPU/zero_extend.ll:	Ok
 llvm/CodeGen/AMDGPU/zext-i64-bit-operand.ll:	Ok
 llvm/CodeGen/AMDGPU/zext-lid.ll:	Ok
-llvm/CodeGen/ARC/addrmode.ll:	Internal error: Unsigned conversion requires at least one spare bit
+llvm/CodeGen/ARC/addrmode.ll:	Ok
 llvm/CodeGen/ARC/alu.ll:	Ok
 llvm/CodeGen/ARC/brcc.ll:	Ok
 llvm/CodeGen/ARC/call.ll:	Ok
@@ -7076,13 +7076,13 @@ llvm/CodeGen/Hexagon/hwloop-const.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-crit-edge.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-dbg.ll:	Error
 llvm/CodeGen/Hexagon/hwloop-ice.ll:	Ok
-llvm/CodeGen/Hexagon/hwloop-le.ll:	Internal error: Unsigned conversion requires at least one spare bit
+llvm/CodeGen/Hexagon/hwloop-le.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-long.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-loop1.ll:	Ok
-llvm/CodeGen/Hexagon/hwloop-lt.ll:	Internal error: Unsigned conversion requires at least one spare bit
+llvm/CodeGen/Hexagon/hwloop-lt.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-lt1.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-missed.ll:	Ok
-llvm/CodeGen/Hexagon/hwloop-ne.ll:	Internal error: Unsigned conversion requires at least one spare bit
+llvm/CodeGen/Hexagon/hwloop-ne.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-noreturn-call.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-ph-deadcode.ll:	Ok
 llvm/CodeGen/Hexagon/hwloop-phi-subreg.ll:	Ok
@@ -11792,7 +11792,7 @@ llvm/CodeGen/SystemZ/vec-move-06.ll:	Ok
 llvm/CodeGen/SystemZ/vec-move-07.ll:	Ok
 llvm/CodeGen/SystemZ/vec-move-08.ll:	Ok
 llvm/CodeGen/SystemZ/vec-move-09.ll:	Ok
-llvm/CodeGen/SystemZ/vec-move-10.ll:	Error
+llvm/CodeGen/SystemZ/vec-move-10.ll:	Ok
 llvm/CodeGen/SystemZ/vec-move-11.ll:	Ok
 llvm/CodeGen/SystemZ/vec-move-12.ll:	Ok
 llvm/CodeGen/SystemZ/vec-move-13.ll:	Ok
@@ -14272,7 +14272,7 @@ llvm/CodeGen/X86/extract-insert.ll:	Ok
 llvm/CodeGen/X86/extract-lowbits.ll:	Ok
 llvm/CodeGen/X86/extractelement-fp.ll:	Ok
 llvm/CodeGen/X86/extractelement-from-arg.ll:	Ok
-llvm/CodeGen/X86/extractelement-index.ll:	Error
+llvm/CodeGen/X86/extractelement-index.ll:	Ok
 llvm/CodeGen/X86/extractelement-legalization-cycle.ll:	Ok
 llvm/CodeGen/X86/extractelement-legalization-store-ordering.ll:	Error
 llvm/CodeGen/X86/extractelement-load.ll:	Ok
@@ -22143,7 +22143,7 @@ llvm/Transforms/InstSimplify/div-by-0-guard-before-umul_ov-not.ll:	Ok
 llvm/Transforms/InstSimplify/div-by-0-guard-before-umul_ov.ll:	Ok
 llvm/Transforms/InstSimplify/div.ll:	Ok
 llvm/Transforms/InstSimplify/exact-nsw-nuw.ll:	Ok
-llvm/Transforms/InstSimplify/extract-element.ll:	Error
+llvm/Transforms/InstSimplify/extract-element.ll:	Ok
 llvm/Transforms/InstSimplify/fast-math.ll:	Ok
 llvm/Transforms/InstSimplify/fcmp-select.ll:	Ok
 llvm/Transforms/InstSimplify/fcmp.ll:	Ok
@@ -22786,7 +22786,7 @@ llvm/Transforms/LoopStrengthReduce/AMDGPU/preserve-addrspace-assert.ll:	Error
 llvm/Transforms/LoopStrengthReduce/ARM/2012-06-15-lsr-noaddrmode.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/ARM/addrec-is-loop-invariant.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/ARM/complexity.ll:	Error
-llvm/Transforms/LoopStrengthReduce/ARM/ivchain-ARM.ll:	Internal error: Unsigned conversion requires at least one spare bit
+llvm/Transforms/LoopStrengthReduce/ARM/ivchain-ARM.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/ARM/vctp-chains-inseltpoison.ll:	Error
 llvm/Transforms/LoopStrengthReduce/ARM/vctp-chains.ll:	Error
 llvm/Transforms/LoopStrengthReduce/NVPTX/trunc.ll:	Ok
@@ -22804,7 +22804,7 @@ llvm/Transforms/LoopStrengthReduce/X86/canonical.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/expander-crashes.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/expander-reused-value-insert-point.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/incorrect-offset-scaling.ll:	Ok
-llvm/Transforms/LoopStrengthReduce/X86/ivchain-X86.ll:	Internal error: Unsigned conversion requires at least one spare bit
+llvm/Transforms/LoopStrengthReduce/X86/ivchain-X86.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/ivchain-stress-X86.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/lsr-expand-quadratic.ll:	Ok
 llvm/Transforms/LoopStrengthReduce/X86/lsr-filtering-scaledreg.ll:	Ok
