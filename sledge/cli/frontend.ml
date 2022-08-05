@@ -897,17 +897,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
             pf "%a %a" pp_prefix_exp pre_exp pp_lltype llt]
         in
         fst (xlate_indices (len - 1))
-  | ShuffleVector -> (
-      (* translate shufflevector <N x t> %x, _, <N x i32> zeroinitializer to
-         %x *)
-      let exp = xlate_value x (Llvm.operand llv 0) in
-      let exp_typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
-      let llmask = Llvm.operand llv 2 in
-      let mask_typ = xlate_type x (Llvm.type_of llmask) in
-      match (exp_typ, mask_typ) with
-      | Array {len= m}, Array {len= n} when m = n && Llvm.is_null llmask ->
-          exp
-      | _ -> todo "vector operations: %a" pp_llvalue llv () )
+  | ShuffleVector -> todo "vector operations: %a" pp_llvalue llv ()
   | Freeze -> xlate_value x (Llvm.operand llv 0)
   | Invalid | Ret | Br | Switch | IndirectBr | Invoke | Invalid2
    |Unreachable | Alloca | Load | Store | PHI | Call | CallBr | UserOp1
