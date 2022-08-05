@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 #include <stdlib.h>
 
 // This test validates that modeled functions are replaced with the
@@ -31,7 +38,7 @@ __sledge_foo10(unsigned i, char* buff)
     buff[0] = (char)i;
   }
 }
-}  // namespace subst_test
+}  // namespace subst_test14
 
 using namespace subst_test14;
 
