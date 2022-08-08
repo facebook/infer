@@ -642,13 +642,25 @@ let report_errors proc_desc err_log state =
         let description = description_of_step_data step_data in
         let trace =
           let trace_element = Errlog.make_trace_element nesting step_location description [] in
+          let should_skip name =
+            match Config.topl_skip_report_calls with
+            | Some regexp ->
+                Str.string_match regexp name 0
+            | None ->
+                false
+          in
           match step_data with
+          | SmallStep (Call {procname}) ->
+              let name = Procname.to_string procname in
+              if should_skip name then trace else trace_element :: trace
           | SmallStep _ ->
               trace_element :: trace
           | LargeStep (_, {last_step= None}) ->
               trace (* skip trivial large steps (i.e., those with no steps) *)
-          | LargeStep (_, qq) ->
-              trace_element :: make_trace (nesting + 1) trace qq
+          | LargeStep (procname, qq) ->
+              let trace = make_trace (nesting + 1) trace qq in
+              let name = Procname.to_string procname in
+              if should_skip name then trace else trace_element :: trace
         in
         make_trace nesting trace step_predecessor
   in

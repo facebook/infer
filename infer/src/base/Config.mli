@@ -751,6 +751,8 @@ val topl_max_disjuncts : int
 
 val topl_properties : string list
 
+val topl_skip_report_calls : Str.regexp option
+
 val trace_absarray : bool
 
 val trace_error : bool
