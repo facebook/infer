@@ -148,7 +148,8 @@ module SmartPointers = struct
     let assignment this other ~desc : model =
      fun {path; location} astate ->
       let<*> astate, value = to_internal_value_deref path Read location other astate in
-      let<+> astate, _ = write_value path location this ~value ~desc astate in
+      let<*> astate, _ = write_value path location this ~value ~desc astate in
+      let<+> astate = assign_value_nullptr path location other ~desc astate in
       astate
   end
 end
