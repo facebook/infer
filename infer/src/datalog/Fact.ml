@@ -13,10 +13,26 @@ type t =
   | Extends of {typ: Typ.Name.t; typ_super: Typ.Name.t}
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
-  | VirtualCall of {proc_name: Procname.t; call_site: string; return: Ident.t; call_proc: Procname.t}
+  | VirtualCall of
+      {proc_name: Procname.t; call_site: string; receiver: Ident.t; call_proc: Procname.t}
   | StaticCall of {proc_name: Procname.t; call_site: string; call_proc: Procname.t}
+  | ActualArg of {proc_name: Procname.t; call_site: string; n_arg: int; arg: Ident.t}
+  | FormalArg of {proc_name: Procname.t; n_arg: int; arg: Ident.t}
+  | ActualReturn of {proc_name: Procname.t; call_site: string; return: Ident.t}
+  | FormalReturn of {proc_name: Procname.t; return: Ident.t}
 
-let fact_types = ["Reachable"; "Extends"; "Cast"; "Alloc"; "VirtualCall"; "StaticCall"]
+let fact_types =
+  [ "Reachable"
+  ; "Extends"
+  ; "Cast"
+  ; "Alloc"
+  ; "VirtualCall"
+  ; "StaticCall"
+  ; "ActualArg"
+  ; "FormalArg"
+  ; "ActualReturn"
+  ; "FormalReturn" ]
+
 
 let pp fmt = function
   | Reachable {proc_name} ->
@@ -29,12 +45,23 @@ let pp fmt = function
   | Alloc {proc_name; return; allocation_site; typ} ->
       F.fprintf fmt "Alloc %s %s %s %s" (Procname.to_unique_id proc_name) (Ident.to_string return)
         allocation_site (Typ.to_string typ)
-  | VirtualCall {proc_name; call_site; return; call_proc} ->
+  | VirtualCall {proc_name; call_site; receiver; call_proc} ->
       F.fprintf fmt "VirtualCall %s %s %s %s" (Procname.to_unique_id proc_name) call_site
-        (Ident.to_string return) (Procname.to_unique_id call_proc)
+        (Ident.to_string receiver) (Procname.to_unique_id call_proc)
   | StaticCall {proc_name; call_site; call_proc} ->
       F.fprintf fmt "StaticCall %s %s %s" (Procname.to_unique_id proc_name) call_site
         (Procname.to_unique_id call_proc)
+  | ActualArg {proc_name; call_site; n_arg; arg} ->
+      F.fprintf fmt "ActualArg %s %s %d %s" (Procname.to_unique_id proc_name) call_site n_arg
+        (Ident.to_string arg)
+  | FormalArg {proc_name; n_arg; arg} ->
+      F.fprintf fmt "FormalArg %s %d %s" (Procname.to_unique_id proc_name) n_arg
+        (Ident.to_string arg)
+  | ActualReturn {proc_name; call_site; return} ->
+      F.fprintf fmt "ActualReturn %s %s %s" (Procname.to_unique_id proc_name) call_site
+        (Ident.to_string return)
+  | FormalReturn {proc_name; return} ->
+      F.fprintf fmt "FormalReturn %s %s" (Procname.to_unique_id proc_name) (Ident.to_string return)
 
 
 (** Generate a hash to uniquely identify an allocation or call site. The id of the retunred var is
@@ -61,9 +88,22 @@ let alloc proc_name return loc typ =
   Alloc {proc_name; return; allocation_site= make_site proc_name loc return; typ}
 
 
-let virtual_call proc_name loc return call_proc =
-  VirtualCall {proc_name; return; call_site= make_site proc_name loc return; call_proc}
+let virtual_call proc_name loc return call_proc receiver =
+  VirtualCall {proc_name; receiver; call_site= make_site proc_name loc return; call_proc}
 
 
 let static_call proc_name loc return call_proc =
   StaticCall {proc_name; call_site= make_site proc_name loc return; call_proc}
+
+
+let actual_arg proc_name loc return n_arg arg =
+  ActualArg {proc_name; call_site= make_site proc_name loc return; n_arg; arg}
+
+
+let formal_arg proc_name n_arg arg = FormalArg {proc_name; n_arg; arg}
+
+let actual_return proc_name loc return =
+  ActualReturn {proc_name; call_site= make_site proc_name loc return; return}
+
+
+let formal_return proc_name return = FormalReturn {proc_name; return}

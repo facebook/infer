@@ -7,15 +7,30 @@
 
 open! IStd
 
-(** In Alloc, the allocation site is uniquely identified by the string
-    "class:line:assigned_variable" *)
+(** Type of a Datalog fact. In all facts, "proc_name" is the procedure inside of which the fact is
+    emitted. The allocation and call sites are uniquely identified by the string
+    "class:line:assigned_variable" (note that in SIL there is always an assigned variable, even for
+    procedures with a void return type). The assigned variable is used instead of the column because
+    the Java frontend does not provide information about columns, and variables have unique names. *)
 type t =
   | Reachable of {proc_name: Procname.t}
   | Extends of {typ: Typ.Name.t; typ_super: Typ.Name.t}
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
+  (* return_var = new typ(). The allocation site is "class:line:return". *)
   | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
-  | VirtualCall of {proc_name: Procname.t; call_site: string; return: Ident.t; call_proc: Procname.t}
+  (* receiver.call_proc(). The call site is "class:line:assigned_variable". *)
+  | VirtualCall of
+      {proc_name: Procname.t; call_site: string; receiver: Ident.t; call_proc: Procname.t}
+  (* The call site is "class:line:assigned_variable". *)
   | StaticCall of {proc_name: Procname.t; call_site: string; call_proc: Procname.t}
+  (* A call at call_site with actual argument arg. n_arg is the position of the argument. *)
+  | ActualArg of {proc_name: Procname.t; call_site: string; n_arg: int; arg: Ident.t}
+  (* A procedure with formal argument arg. n_arg is the position of the argument. *)
+  | FormalArg of {proc_name: Procname.t; n_arg: int; arg: Ident.t}
+  (* return_var = call(). If void, then no fact is generated. *)
+  | ActualReturn of {proc_name: Procname.t; call_site: string; return: Ident.t}
+  (* proc_name() {return return_var}. Emitted for every "return" statement. *)
+  | FormalReturn of {proc_name: Procname.t; return: Ident.t}
 
 val to_string : t -> string
 
@@ -29,6 +44,14 @@ val cast : Procname.t -> Ident.t -> Ident.t -> Typ.t -> t
 
 val alloc : Procname.t -> Ident.t -> Location.t -> Typ.t -> t
 
-val virtual_call : Procname.t -> Location.t -> Ident.t -> Procname.t -> t
+val virtual_call : Procname.t -> Location.t -> Ident.t -> Procname.t -> Ident.t -> t
 
 val static_call : Procname.t -> Location.t -> Ident.t -> Procname.t -> t
+
+val actual_arg : Procname.t -> Location.t -> Ident.t -> int -> Ident.t -> t
+
+val formal_arg : Procname.t -> int -> Ident.t -> t
+
+val actual_return : Procname.t -> Location.t -> Ident.t -> t
+
+val formal_return : Procname.t -> Ident.t -> t

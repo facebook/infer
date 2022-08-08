@@ -41,8 +41,28 @@ let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc (fact :
         Hash_set.add analyzed_classes (Typ.Name.name typ) ;
         report_fact analysis_data fact ~loc )
   (* Procedure-level facts *)
-  | Reachable _ | Cast _ | Alloc _ | VirtualCall _ | StaticCall _ ->
+  | Reachable _
+  | Cast _
+  | Alloc _
+  | VirtualCall _
+  | StaticCall _
+  | ActualArg _
+  | FormalArg _
+  | ActualReturn _
+  | FormalReturn _ ->
       report_fact analysis_data fact ~loc
+
+
+let emit_call_moves analysis_data args call_proc proc_name loc ret_id =
+  let java_call_proc = Procname.as_java_exn call_proc ~explanation:"Only Java procdesc supported" in
+  if not (Typ.is_void (Procname.Java.get_return_typ java_call_proc)) then
+    log_fact analysis_data (Fact.actual_return proc_name loc ret_id) ~loc ;
+  List.iteri args ~f:(fun i (exp, _) ->
+      match exp with
+      | Exp.Var arg_id ->
+          log_fact analysis_data (Fact.actual_arg proc_name loc ret_id i arg_id) ~loc
+      | _ ->
+          () )
 
 
 (** [JAVA ONLY] `Foo x = new Foo();` becomes in SIL `tmp = __new(...) ; x = Foo.<init>(..., tmp)`.
@@ -52,6 +72,7 @@ let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc (fact :
     the `new Class()` statement is used. *)
 let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
+  let proc_formal_args = List.map ~f:fst (Procdesc.get_pvar_formals proc_desc) in
   if is_entry_proc proc_name then log_fact analysis_data (Fact.reachable proc_name) ;
   Procdesc.iter_instrs
     (fun _ instr ->
@@ -62,11 +83,24 @@ let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_
       | Call ((ret_id, _), Const (Cfun call_proc), [(Sizeof sizeof, _)], loc, _)
         when is_builtin_alloc call_proc ->
           log_fact analysis_data (Fact.alloc proc_name ret_id loc sizeof.typ) ~loc
-      | Call ((ret_id, _), Const (Cfun call_proc), _args, loc, call_flags)
-        when not (is_builtin call_proc) ->
-          if call_flags.cf_virtual || call_flags.cf_interface then
-            log_fact analysis_data (Fact.virtual_call proc_name loc ret_id call_proc) ~loc
-          else log_fact analysis_data (Fact.static_call proc_name loc ret_id call_proc) ~loc
+      (* Virtual call: the first arg contains the receiver so it always exists (e.g. in a.f() a is the receiver) *)
+      | Call ((ret_id, _), Const (Cfun call_proc), (Var receiver_id, _) :: args, loc, flags)
+        when (not (is_builtin call_proc)) && (flags.cf_virtual || flags.cf_interface) ->
+          log_fact analysis_data (Fact.virtual_call proc_name loc ret_id call_proc receiver_id) ~loc ;
+          emit_call_moves analysis_data args call_proc proc_name loc ret_id
+      (* Static call *)
+      | Call ((ret_id, _), Const (Cfun call_proc), args, loc, flags)
+        when (not (is_builtin call_proc)) && not (flags.cf_virtual || flags.cf_interface) ->
+          log_fact analysis_data (Fact.static_call proc_name loc ret_id call_proc) ~loc ;
+          emit_call_moves analysis_data args call_proc proc_name loc ret_id
+      | Store {e1= Lvar pvar; root_typ= _; typ= _; e2= Var ret_id; loc} when Pvar.is_return pvar ->
+          log_fact analysis_data (Fact.formal_return proc_name ret_id) ~loc
+      | Load {id; e= Lvar pvar; root_typ= _; typ= _; loc= _} -> (
+        match List.findi proc_formal_args ~f:(fun _ -> Pvar.equal pvar) with
+        | Some (i, _) ->
+            log_fact analysis_data (Fact.formal_arg proc_name i id)
+        | None ->
+            () )
       | _ ->
           () )
     proc_desc
