@@ -7,13 +7,13 @@
 
 #include <memory>
 
-int FN_test_volatile1_bad() {
+int test_volatile1_bad() {
   std::unique_ptr<volatile int> x;
   std::unique_ptr<volatile int> y = std::move(x);
   return *y;
 }
 
-int FN_test_volatile2_bad() {
+int test_volatile2_bad() {
   std::unique_ptr<volatile int> x;
   return *x;
 }
@@ -29,13 +29,13 @@ int test_volatile4_bad() {
   return *x;
 }
 
-int FN_test_const1_bad() {
+int test_const1_bad() {
   std::unique_ptr<const int> x;
   std::unique_ptr<const int> y = std::move(x);
   return *y;
 }
 
-int FN_test_const2_bad() {
+int test_const2_bad() {
   std::unique_ptr<const int> x;
   return *x;
 }

@@ -17,6 +17,23 @@ struct X {
   ~X() { delete pointer_field; }
 };
 
+struct Y {
+  int field;
+  int* pointer_field;
+  int get() { return field; }
+  void set(int value) { field = value; }
+  Y() { pointer_field = new int; }
+  Y(const Y& other) { pointer_field = new int(*(other.pointer_field)); }
+  ~Y() { delete pointer_field; }
+};
+
+struct Integer {
+  int field;
+  int get() { return field; }
+  void set(int value) { field = value; }
+  Integer(int value = 0) { field = value; }
+};
+
 int make_unique0_ok() {
   auto x = std::make_unique<int>(42);
   if (*x != 42) {
@@ -27,6 +44,38 @@ int make_unique0_ok() {
   return 0;
 }
 
+int make_unique1_ok() {
+  int obj = 5;
+  auto x = std::make_unique<int>(obj);
+  return *x;
+}
+
+int make_unique2_ok() {
+  auto obj = Integer();
+  auto x = std::make_unique<Integer>(obj);
+  x->get();
+  return 0;
+}
+
+int make_unique3_ok() {
+  auto x = std::make_unique<Integer>(Integer());
+  x->get();
+  return 0;
+}
+
+int FP_make_unique4_ok() {
+  auto x = std::make_unique<Y>(Y());
+  x->get();
+  return 0;
+}
+
+int FP_make_unique5_ok() {
+  auto obj = Y();
+  auto x = std::make_unique<Y>(obj);
+  x->get();
+  return 0;
+}
+
 int make_unique0_bad() {
   auto x = std::make_unique<int>(42);
   if (*x == 42) {
@@ -34,6 +83,23 @@ int make_unique0_bad() {
     int* q = nullptr;
     return *q;
   }
+  return 0;
+}
+
+int make_unique1_bad() {
+  auto x = std::make_unique<X>(X());
+  x->get(); // Should report a USE_AFTER_LIFETIME here as x contains the same
+            // pointer_field as the one of X() which has been deallocated since
+            // X() is a temporary expression
+  return 0;
+}
+
+int make_unique2_bad() {
+  auto obj = X();
+  auto x = std::make_unique<X>(obj);
+  x->get();
+  // Should report a USE_AFTER_DELETE here as the destructors of x and X
+  // deallocate the same pointer twice
   return 0;
 }
 
