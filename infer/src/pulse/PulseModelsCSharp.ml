@@ -511,7 +511,7 @@ let implements_dictionary tenv name =
     PatternMatch.CSharp.implements collection_type tenv name
 
 let implements_collection tenv name =
-    let collection_type = "System.Collections.Generic.ICollection`1<T>" in (* should change to <!0> and update the infersharp tenv.json to !0 for ICollections *)
+    let collection_type = "System.Collections.Generic.ICollection`1<!0>" in
     PatternMatch.CSharp.implements collection_type tenv name
 
 let implements_disposable_not_enumerator tenv name =
@@ -563,6 +563,8 @@ let matchers : matcher list =
     &:: "Close" <>$ capt_arg $--> Resource.release_with_analysis
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
     &:: "Dispose" <>$ capt_arg $--> Resource.release_with_analysis
+  ; +map_context_tenv (PatternMatch.CSharp.implements "System.IAsyncDisposable")
+    &:: "DisposeAsync" <>$ capt_arg $--> Resource.release_with_analysis
 
   ; +map_context_tenv implements_collection
     &:: ".ctor" $ capt_arg_payload
