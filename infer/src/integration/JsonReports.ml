@@ -360,10 +360,11 @@ let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
 
 let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile) =
   if
-    ( ExternalConfigImpactData.is_in_config_data_file proc_name
-    || (Config.config_impact_strict_mode && List.is_empty Config.config_impact_strict_mode_paths)
-    || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file
-    || ConfigImpactAnalysis.is_in_strict_beta_mode_paths loc.Location.file )
+    Config.is_checker_enabled Checker.ConfigImpactAnalysis
+    && ( (Config.config_impact_strict_mode && List.is_empty Config.config_impact_strict_mode_paths)
+       || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file
+       || ConfigImpactAnalysis.is_in_strict_beta_mode_paths loc.Location.file
+       || ExternalConfigImpactData.is_in_config_data_file proc_name )
     && is_in_changed_files loc
   then
     if ConfigImpactPostProcess.is_in_gated_classes proc_name then ()
