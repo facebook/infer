@@ -377,8 +377,12 @@ let readme () =
 
 ;;
 Memtrace.trace_if_requested ()
+
 ;;
-if Version.debug then Printexc.record_backtrace true
+if Version.debug then (
+  Printexc.record_backtrace true ;
+  Out_channel.set_buffered stderr false )
+
 ;;
 Stdlib.Sys.catch_break true
 
