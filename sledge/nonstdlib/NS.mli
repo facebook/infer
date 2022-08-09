@@ -185,11 +185,6 @@ module HashSet = HashSet
 module HashTable = HashTable
 module HashQueue = Core.Hash_queue
 
-(** Input / Output *)
-
-module In_channel = Stdio.In_channel
-module Out_channel = Stdio.Out_channel
-
 (** System interfaces *)
 
 module Sys = Sys

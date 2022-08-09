@@ -146,11 +146,6 @@ module Pair = Containers.Pair
 module Bijection = CCBijection [@@warning "-no-cmi-file"]
 module HashQueue = Core.Hash_queue
 
-(** Input / Output *)
-
-module In_channel = Stdio.In_channel
-module Out_channel = Stdio.Out_channel
-
 (** Invariants *)
 
 let register_sexp_of_exn exn sexp_of_exn =

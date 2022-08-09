@@ -738,7 +738,7 @@ let generate_html perf ?baseline current output =
   let ranges = ranges rows in
   let rows = Iter.sort ~cmp:(cmp perf) rows in
   let rows = add_total rows in
-  Out_channel.with_file output ~f:(write_html ranges rows)
+  Out_channel.with_open_bin output (write_html ranges rows)
 
 let html_cmd =
   let open Command.Let_syntax in
@@ -796,7 +796,7 @@ let generate_status ?baseline current output =
   match output with
   | None -> write_status ?baseline rows Out_channel.stdout
   | Some output ->
-      Out_channel.with_file output ~f:(write_status ?baseline rows)
+      Out_channel.with_open_bin output (write_status ?baseline rows)
 
 let status_cmd =
   let open Command.Let_syntax in
@@ -830,7 +830,7 @@ let sort_tests baseline tests =
   Array.iter test_time ~f:(fun (test, _) ->
       Out_channel.output_string Out_channel.stdout test ;
       Out_channel.output_char Out_channel.stdout ' ' ) ;
-  Out_channel.newline Out_channel.stdout
+  Out_channel.output_char Out_channel.stdout '\n'
 
 let sort_cmd =
   let open Command.Let_syntax in

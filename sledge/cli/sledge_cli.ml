@@ -95,12 +95,12 @@ let command ~summary ?readme param =
   Command.basic ~summary ?readme (trace *> param >>| flush >>| report)
 
 let marshal program file =
-  Out_channel.with_file file ~f:(fun oc -> Marshal.to_channel oc program [])
+  Out_channel.with_open_bin file (fun oc ->
+      Marshal.to_channel oc program [] )
 
 let unmarshal file () =
-  In_channel.with_file
-    ~f:(fun ic : Llair.program -> Marshal.from_channel ic)
-    file
+  In_channel.with_open_bin file (fun ic : Llair.program ->
+      Marshal.from_channel ic )
 
 let entry_points = Config.find_list "entry-points"
 
@@ -129,7 +129,9 @@ type common = {goal_trace: string list option}
 let common : common param =
   let%map_open goal_trace =
     flag "goal-trace"
-      (optional (Arg_type.create In_channel.read_lines))
+      (optional
+         (Arg_type.create (fun file ->
+              In_channel.with_open_bin file Containers.IO.read_lines_l ) ) )
       ~doc:
         "<file> specify a trace to try to explore, in the form of a file \
          containing one LLVM function name per line. If provided, \
@@ -264,7 +266,7 @@ let disassemble =
     ( match llair_output with
     | None -> Format.printf "%a@." Llair.Program.pp pgm
     | Some file ->
-        Out_channel.with_file file ~f:(fun oc ->
+        Out_channel.with_open_bin file (fun oc ->
             let fs = Format.formatter_of_out_channel oc in
             Format.fprintf fs "%a@." Llair.Program.pp pgm ) ) ;
     Report.Ok

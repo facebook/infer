@@ -171,14 +171,20 @@ let name = ref ""
 let output entry =
   Option.iter !chan ~f:(fun chan ->
       Sexp.output chan (sexp_of_t {name= !name; entry}) ;
-      Out_channel.newline chan )
+      Out_channel.output_char chan '\n' )
 
 let init ?append filename =
   (chan :=
      match filename with
      | "" -> None
      | "-" -> Some Out_channel.stderr
-     | _ -> Some (Out_channel.create ?append filename) ) ;
+     | _ ->
+         let flags =
+           (match append with Some true -> [] | _ -> [Open_trunc])
+           @ [Open_wronly; Open_creat; Open_binary]
+         in
+         let perm = 0o666 in
+         Some (Out_channel.open_gen flags perm filename) ) ;
   name :=
     Option.value
       (Filename.chop_suffix_opt ~suffix:".sexp" filename)
@@ -186,7 +192,7 @@ let init ?append filename =
   at_exit (fun () ->
       output (process_times ()) ;
       output (gc_stats ()) ;
-      Option.iter ~f:Out_channel.close_no_err !chan )
+      Option.iter ~f:Out_channel.close_noerr !chan )
 
 let coverage (pgm : Llair.program) =
   let size =
