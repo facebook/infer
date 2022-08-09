@@ -183,7 +183,7 @@ module Multiset = Multiset
 module Bijection = CCBijection [@@warning "-no-cmi-file"]
 module HashSet = HashSet
 module HashTable = HashTable
-module HashQueue = Core_kernel.Hash_queue
+module HashQueue = Core.Hash_queue
 
 (** Input / Output *)
 

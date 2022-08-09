@@ -6,7 +6,7 @@
 (library
  (name NS)
  (public_name nonstdlib)
- (libraries containers containers-data core_kernel sexplib stdio zarith dbg)
+ (libraries containers containers-data core sexplib stdio zarith dbg)
  (flags
   (:standard -w -no-cmx-file))
  (preprocess

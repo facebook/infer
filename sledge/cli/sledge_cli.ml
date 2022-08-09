@@ -7,7 +7,11 @@
 
 (** SLEdge command line interface *)
 
-module Command = Core.Command
+module Command = struct
+  include Core.Command
+  include Command_unix
+end
+
 open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
