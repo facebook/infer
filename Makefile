@@ -162,6 +162,12 @@ BUILD_SYSTEMS_TESTS += rebar3
 endif
 endif # BUILD_ERLANG_ANALYZERS
 
+ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS),Linux+yes)
+ifneq ($(HACKC),no)
+DIRECT_TESTS += hack_capture
+endif
+endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
+
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   differential_interesting_paths_filter \

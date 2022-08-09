@@ -1586,6 +1586,11 @@ and genrule_mode =
     "Enable the genrule compatibility mode used for the Buck integration"
 
 
+and hackc_binary =
+  CLOpt.mk_string ~long:"hackc-binary" ~default:"hackc" ~meta:"path"
+    "Specify hackc binary to use (either name or path)"
+
+
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"; "hd"] ~deprecated_no:["no_headers"; "nhd"] ~long:"headers"
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -3457,6 +3462,8 @@ and frontend_tests = !frontend_tests
 and generated_classes = !generated_classes
 
 and genrule_mode = !genrule_mode
+
+and hackc_binary = !hackc_binary
 
 and help_checker =
   RevList.rev_map !help_checker ~f:(fun checker_string ->

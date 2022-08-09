@@ -2064,6 +2064,9 @@ INTERNAL OPTIONS
            Activates: Enable the genrule compatibility mode used for the Buck
            integration (Conversely: --no-genrule-mode)
 
+       --hackc-binary path
+           Specify hackc binary to use (either name or path)
+
        --help-checker-reset
            Set --help-checker to the empty list.
 

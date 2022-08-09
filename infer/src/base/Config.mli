@@ -365,6 +365,8 @@ val genrule_mode : bool
 
 val global_tenv : bool
 
+val hackc_binary : string
+
 val help_checker : Checker.t list
 
 val help_issue_type : IssueType.t list
