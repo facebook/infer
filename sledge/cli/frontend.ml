@@ -84,7 +84,7 @@ module ScopeTbl = HashTable.Make (struct
   include Poly
 end)
 
-let scope_tbl : (int ref * int String.Tbl.t) ScopeTbl.t =
+let scope_tbl : (int ref * int String.Tbl.t Lazy.t) ScopeTbl.t =
   ScopeTbl.create ~size:32_768 ()
 
 let realpath_tbl = String.Tbl.create ()
@@ -215,7 +215,7 @@ open struct
 
     let find_scope scope =
       ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
-          (ref 0, String.Tbl.create ()) )
+          (ref 0, lazy (String.Tbl.create ())) )
 
     let add_sym llv loc =
       let maybe_scope =
@@ -248,7 +248,7 @@ open struct
                      void-returning function calls. We need unique names for
                      these as they determine the labels of newly-created
                      return blocks. *)
-                  let next, void_tbl = find_scope scope in
+                  let next, (lazy void_tbl) = find_scope scope in
                   let fname =
                     match
                       Llvm.(value_name (operand llv (num_operands llv - 1)))
