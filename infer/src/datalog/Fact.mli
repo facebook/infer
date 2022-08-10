@@ -18,9 +18,9 @@ type t =
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   (* return_var = new typ(). The allocation site is "class:line:return". *)
   | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
-  (* receiver.call_proc(). The call site is "class:line:assigned_variable". *)
+  (* receiver.call_proc(). The call site is "class:line:assigned_variable". proc_signature is the method signature without the class. *)
   | VirtualCall of
-      {proc_name: Procname.t; call_site: string; receiver: Ident.t; call_proc: Procname.t}
+      {proc_name: Procname.t; call_site: string; receiver: Ident.t; proc_signature: string}
   (* The call site is "class:line:assigned_variable". *)
   | StaticCall of {proc_name: Procname.t; call_site: string; call_proc: Procname.t}
   (* A call at call_site with actual argument arg. n_arg is the position of the argument. *)

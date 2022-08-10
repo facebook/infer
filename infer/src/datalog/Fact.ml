@@ -14,7 +14,7 @@ type t =
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
   | VirtualCall of
-      {proc_name: Procname.t; call_site: string; receiver: Ident.t; call_proc: Procname.t}
+      {proc_name: Procname.t; call_site: string; receiver: Ident.t; proc_signature: string}
   | StaticCall of {proc_name: Procname.t; call_site: string; call_proc: Procname.t}
   | ActualArg of {proc_name: Procname.t; call_site: string; n_arg: int; arg: Ident.t}
   | FormalArg of {proc_name: Procname.t; n_arg: int; arg: Ident.t}
@@ -34,34 +34,46 @@ let fact_types =
   ; "FormalReturn" ]
 
 
+let unique_proc_id ?(withclass = true) proc_name =
+  let j_proc_name = Procname.as_java_exn proc_name ~explanation:"Only Java procdesc supported" in
+  let pp_typ = Typ.pp_java ~verbose:true in
+  let pp_param_list = Pp.seq ~sep:"," pp_typ in
+  F.asprintf "%s%s(%a):%a"
+    (if withclass then Procname.Java.get_class_name j_proc_name ^ "." else "")
+    (Procname.Java.get_method j_proc_name)
+    pp_param_list
+    (Procname.Java.get_parameters j_proc_name)
+    pp_typ
+    (Procname.Java.get_return_typ j_proc_name)
+
+
 let pp fmt = function
   | Reachable {proc_name} ->
-      F.fprintf fmt "Reachable %s" (Procname.to_unique_id proc_name)
+      F.fprintf fmt "Reachable %s" (unique_proc_id proc_name)
   | Extends {typ; typ_super} ->
       F.fprintf fmt "Extends %s %s" (Typ.Name.name typ) (Typ.Name.name typ_super)
   | Cast {proc_name; dest; src; dest_typ} ->
-      F.fprintf fmt "Cast %s %s %s %s" (Procname.to_unique_id proc_name) (Ident.to_string dest)
+      F.fprintf fmt "Cast %s %s %s %s" (unique_proc_id proc_name) (Ident.to_string dest)
         (Ident.to_string src) (Typ.to_string dest_typ)
   | Alloc {proc_name; return; allocation_site; typ} ->
-      F.fprintf fmt "Alloc %s %s %s %s" (Procname.to_unique_id proc_name) (Ident.to_string return)
+      F.fprintf fmt "Alloc %s %s %s %s" (unique_proc_id proc_name) (Ident.to_string return)
         allocation_site (Typ.to_string typ)
-  | VirtualCall {proc_name; call_site; receiver; call_proc} ->
-      F.fprintf fmt "VirtualCall %s %s %s %s" (Procname.to_unique_id proc_name) call_site
-        (Ident.to_string receiver) (Procname.to_unique_id call_proc)
+  | VirtualCall {proc_name; call_site; receiver; proc_signature} ->
+      F.fprintf fmt "VirtualCall %s %s %s %s" (unique_proc_id proc_name) call_site
+        (Ident.to_string receiver) proc_signature
   | StaticCall {proc_name; call_site; call_proc} ->
-      F.fprintf fmt "StaticCall %s %s %s" (Procname.to_unique_id proc_name) call_site
-        (Procname.to_unique_id call_proc)
+      F.fprintf fmt "StaticCall %s %s %s" (unique_proc_id proc_name) call_site
+        (unique_proc_id call_proc)
   | ActualArg {proc_name; call_site; n_arg; arg} ->
-      F.fprintf fmt "ActualArg %s %s %d %s" (Procname.to_unique_id proc_name) call_site n_arg
+      F.fprintf fmt "ActualArg %s %s %d %s" (unique_proc_id proc_name) call_site n_arg
         (Ident.to_string arg)
   | FormalArg {proc_name; n_arg; arg} ->
-      F.fprintf fmt "FormalArg %s %d %s" (Procname.to_unique_id proc_name) n_arg
-        (Ident.to_string arg)
+      F.fprintf fmt "FormalArg %s %d %s" (unique_proc_id proc_name) n_arg (Ident.to_string arg)
   | ActualReturn {proc_name; call_site; return} ->
-      F.fprintf fmt "ActualReturn %s %s %s" (Procname.to_unique_id proc_name) call_site
+      F.fprintf fmt "ActualReturn %s %s %s" (unique_proc_id proc_name) call_site
         (Ident.to_string return)
   | FormalReturn {proc_name; return} ->
-      F.fprintf fmt "FormalReturn %s %s" (Procname.to_unique_id proc_name) (Ident.to_string return)
+      F.fprintf fmt "FormalReturn %s %s" (unique_proc_id proc_name) (Ident.to_string return)
 
 
 (** Generate a hash to uniquely identify an allocation or call site. The id of the retunred var is
@@ -89,7 +101,11 @@ let alloc proc_name return loc typ =
 
 
 let virtual_call proc_name loc return call_proc receiver =
-  VirtualCall {proc_name; receiver; call_site= make_site proc_name loc return; call_proc}
+  VirtualCall
+    { proc_name
+    ; receiver
+    ; call_site= make_site proc_name loc return
+    ; proc_signature= unique_proc_id ~withclass:false call_proc }
 
 
 let static_call proc_name loc return call_proc =
