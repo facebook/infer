@@ -217,90 +217,75 @@ open struct
       ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
           (ref 0, lazy (String.Tbl.create ())) )
 
-    let add_sym llv loc =
-      let maybe_scope =
-        match Llvm.classify_value llv with
-        | Argument -> Some (`Fun (Llvm.param_parent llv))
-        | BasicBlock ->
-            Some (`Fun (Llvm.block_parent (Llvm.block_of_value llv)))
-        | Instruction _ ->
-            Some (`Fun (Llvm.block_parent (Llvm.instr_parent llv)))
-        | GlobalVariable | Function -> Some (`Mod (Llvm.global_parent llv))
-        | UndefValue -> None
-        | ConstantExpr -> None
-        | ConstantPointerNull -> None
-        | _ ->
-            warn "Unexpected type of llv, might crash: %a" pp_llvalue llv () ;
-            Some (`Mod (Llvm.global_parent llv))
-      in
-      match maybe_scope with
-      | None -> ()
-      | Some scope -> (
-        match SymTbl.find sym_tbl llv with
-        | Some (name, id, loc0) ->
-            if Loc.equal loc0 Loc.none then
-              SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
-        | None ->
-            let name =
-              if Poly.(Llvm.classify_type (Llvm.type_of llv) = Void) then
-                if Poly.(Llvm.classify_value llv = Instruction Call) then (
-                  (* LLVM does not give unique names to the result of
-                     void-returning function calls. We need unique names for
-                     these as they determine the labels of newly-created
-                     return blocks. *)
-                  let next, (lazy void_tbl) = find_scope scope in
-                  let fname =
-                    match
-                      Llvm.(value_name (operand llv (num_operands llv - 1)))
-                    with
-                    | "" -> Int.to_string (!next - 1)
-                    | s -> s
-                  in
-                  match String.Tbl.find void_tbl fname with
-                  | None ->
-                      String.Tbl.set void_tbl ~key:fname ~data:1 ;
-                      fname ^ ".void"
-                  | Some count ->
-                      String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
-                      String.concat ~sep:""
-                        [fname; ".void."; Int.to_string count] )
-                else ""
-              else
-                match Llvm.value_name llv with
-                | "" ->
-                    (* anonymous values take the next SSA name *)
-                    let next, _ = find_scope scope in
-                    let name = !next in
-                    next := name + 1 ;
-                    Int.to_string name
-                | name -> (
-                  match Int.of_string name with
-                  | Some _ ->
-                      (* escape to avoid clash with names of anonymous
-                         values *)
-                      "\"" ^ name ^ "\""
-                  | None ->
-                      (* Associate model functions with the names of the
-                         functions they are modeling. *)
-                      Option.value (Model.modelee name) ~default:name )
-            in
-            let id = 1 + SymTbl.length sym_tbl in
-            SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc) )
+    let add_sym scope llv loc =
+      match SymTbl.find sym_tbl llv with
+      | Some (name, id, loc0) ->
+          if Loc.equal loc0 Loc.none then
+            SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
+      | None ->
+          let name =
+            if Poly.(Llvm.classify_type (Llvm.type_of llv) = Void) then
+              if Poly.(Llvm.classify_value llv = Instruction Call) then (
+                (* LLVM does not give unique names to the result of
+                   void-returning function calls. We need unique names for
+                   these as they determine the labels of newly-created
+                   return blocks. *)
+                let next, (lazy void_tbl) = find_scope scope in
+                let fname =
+                  match
+                    Llvm.(value_name (operand llv (num_operands llv - 1)))
+                  with
+                  | "" -> Int.to_string (!next - 1)
+                  | s -> s
+                in
+                match String.Tbl.find void_tbl fname with
+                | None ->
+                    String.Tbl.set void_tbl ~key:fname ~data:1 ;
+                    fname ^ ".void"
+                | Some count ->
+                    String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                    String.concat ~sep:""
+                      [fname; ".void."; Int.to_string count] )
+              else ""
+            else
+              match Llvm.value_name llv with
+              | "" ->
+                  (* anonymous values take the next SSA name *)
+                  let next, _ = find_scope scope in
+                  let name = !next in
+                  next := name + 1 ;
+                  Int.to_string name
+              | name -> (
+                match Int.of_string name with
+                | Some _ ->
+                    (* escape to avoid clash with names of anonymous
+                       values *)
+                    "\"" ^ name ^ "\""
+                | None ->
+                    (* Associate model functions with the names of the
+                       functions they are modeling. *)
+                    Option.value (Model.modelee name) ~default:name )
+          in
+          let id = 1 + SymTbl.length sym_tbl in
+          SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
   end
 
   let scan_names_and_locs : Llvm.llmodule -> unit =
    fun m ->
     assert (!sym_count = 0) ;
-    let scan_global g = add_sym g (loc_of_global g) in
+    let scan_global g =
+      add_sym (`Mod (Llvm.global_parent g)) g (loc_of_global g)
+    in
     let scan_instr i =
       let loc = loc_of_instr i in
-      add_sym i loc ;
+      let scope = `Fun (Llvm.block_parent (Llvm.instr_parent i)) in
+      add_sym scope i loc ;
       match Llvm.instr_opcode i with
       | Call -> (
         match Llvm.(value_name (operand i (num_arg_operands i))) with
         | "llvm.dbg.declare" ->
             let md = Llvm.(get_mdnode_operands (operand i 0)) in
-            if not (Array.is_empty md) then add_sym md.(0) loc
+            if not (Array.is_empty md) then add_sym scope md.(0) loc
             else
               warn
                 "could not find variable for debug info at %a with \
@@ -310,12 +295,12 @@ open struct
       | _ -> ()
     in
     let scan_block b =
-      add_sym (Llvm.value_of_block b) Loc.none ;
+      add_sym (`Fun (Llvm.block_parent b)) (Llvm.value_of_block b) Loc.none ;
       Llvm.iter_instrs scan_instr b
     in
     let scan_function f =
-      Llvm.iter_params (fun prm -> add_sym prm Loc.none) f ;
-      add_sym f (loc_of_function f) ;
+      Llvm.iter_params (fun prm -> add_sym (`Fun f) prm Loc.none) f ;
+      add_sym (`Mod (Llvm.global_parent f)) f (loc_of_function f) ;
       Llvm.iter_blocks scan_block f
     in
     Llvm.iter_globals scan_global m ;
