@@ -2144,6 +2144,12 @@ and pulse_model_alloc_pattern =
     "Regex of methods that should be modelled as allocs in Pulse"
 
 
+and pulse_model_cheap_copy_type =
+  CLOpt.mk_string_opt ~long:"pulse-model-cheap-copy-type" ~meta:"regex"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be cheap to copy in Pulse"
+
+
 and pulse_model_free_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3663,6 +3669,8 @@ and pulse_max_heap = !pulse_max_heap
 and pulse_model_abort = RevList.to_list !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
+
+and pulse_model_cheap_copy_type = Option.map ~f:Str.regexp !pulse_model_cheap_copy_type
 
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
 

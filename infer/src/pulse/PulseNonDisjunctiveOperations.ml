@@ -34,17 +34,30 @@ let get_copied_and_source copy_type path rest_args location from (disjunct : Abd
   (copied, disjunct, source_addr_typ_opt)
 
 
-let add_copies path location call_exp actuals astates astate_non_disj =
-  let is_ptr_to_trivially_copyable typ =
-    Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals
-  in
+let is_modeled_as_cheap_to_copy tenv actual_typ =
+  match actual_typ with
+  | {Typ.desc= Tptr ({desc= Tstruct actual_name}, _)} ->
+      Option.exists Config.pulse_model_cheap_copy_type ~f:(fun cheap_modeled ->
+          PatternMatch.supertype_exists tenv
+            (fun type_name _struct -> Str.string_match cheap_modeled (Typ.Name.name type_name) 0)
+            actual_name )
+  | _ ->
+      false
+
+
+let is_cheap_to_copy tenv typ =
+  (Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals)
+  || is_modeled_as_cheap_to_copy tenv typ
+
+
+let add_copies tenv path location call_exp actuals astates astate_non_disj =
   let aux (copy_check_fn, args_map_fn) init astates =
     List.fold_map astates ~init ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
         match (exec_state, (call_exp : Exp.t), args_map_fn actuals) with
         | ( ContinueProgram disjunct
           , (Const (Cfun procname) | Closure {name= procname})
           , (Exp.Lvar copy_pvar, copy_type) :: rest_args )
-          when not (is_ptr_to_trivially_copyable copy_type) ->
+          when not (is_cheap_to_copy tenv copy_type) ->
             let default = (astate_non_disj, exec_state) in
             copy_check_fn procname
             |> Option.value_map ~default ~f:(fun from ->
@@ -72,7 +85,7 @@ let add_copies path location call_exp actuals astates astate_non_disj =
         | ( ContinueProgram disjunct
           , (Const (Cfun procname) | Closure {name= procname})
           , ((Exp.Lfield (_, field, _) as exp), copy_type) :: ((_, source_typ) :: _ as rest_args) )
-          when Typ.is_rvalue_reference source_typ && not (is_ptr_to_trivially_copyable copy_type) ->
+          when Typ.is_rvalue_reference source_typ && not (is_cheap_to_copy tenv copy_type) ->
             let default = (astate_non_disj, exec_state) in
             copy_check_fn procname
             |> Option.value_map ~default ~f:(fun from ->
@@ -120,7 +133,7 @@ let add_copies path location call_exp actuals astates astate_non_disj =
   aux (get_modeled_as_returning_copy_opt, List.rev) astate_n astates
 
 
-let add_const_refable_parameters procdesc astates astate_non_disj =
+let add_const_refable_parameters procdesc tenv astates astate_non_disj =
   let proc_parameters = Procdesc.get_passed_by_value_formals procdesc in
   let location = Procdesc.get_loc procdesc in
   List.fold astates ~init:astate_non_disj
@@ -128,13 +141,10 @@ let add_const_refable_parameters procdesc astates astate_non_disj =
       match exec_state with
       | ContinueProgram disjunct ->
           List.fold proc_parameters ~init:astate_non_disj ~f:(fun astate_non_disj (pvar, typ) ->
-              let is_ptr_to_trivially_copyable typ =
-                Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals
-              in
               let var = Var.of_pvar pvar in
               if
                 Var.appears_in_source_code var && Typ.is_reference typ
-                && (not (is_ptr_to_trivially_copyable typ))
+                && (not (is_cheap_to_copy tenv typ))
                 && not (Var.is_cpp_unnamed_param var)
               then
                 NonDisjDomain.add_parameter var

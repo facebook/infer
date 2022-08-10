@@ -542,6 +542,8 @@ val pulse_model_abort : string list
 
 val pulse_model_alloc_pattern : Str.regexp option
 
+val pulse_model_cheap_copy_type : Str.regexp option
+
 val pulse_model_free_pattern : Str.regexp option
 
 val pulse_model_malloc_pattern : Str.regexp option

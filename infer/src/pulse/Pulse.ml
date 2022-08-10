@@ -773,7 +773,7 @@ module PulseTransferFunctions = struct
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
           in
           let astate_n, astates =
-            PulseNonDisjunctiveOperations.add_copies path loc call_exp actuals astates astate_n
+            PulseNonDisjunctiveOperations.add_copies tenv path loc call_exp actuals astates astate_n
           in
           (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
@@ -921,7 +921,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
     let proc_attrs = Procdesc.get_attributes proc_desc in
     let initial_disjuncts = initial tenv proc_name proc_attrs in
     let initial_non_disj =
-      PulseNonDisjunctiveOperations.add_const_refable_parameters proc_desc initial_disjuncts
+      PulseNonDisjunctiveOperations.add_const_refable_parameters proc_desc tenv initial_disjuncts
         NonDisjDomain.bottom
     in
     let initial =
