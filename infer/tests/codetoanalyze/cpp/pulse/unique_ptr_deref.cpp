@@ -269,6 +269,85 @@ int unique_ptr_move_null_deref_bad() {
   return *p1;
 }
 
+int unique_ptr_swap0_ok() {
+  int* p1 = new int(1);
+  int* p2 = new int(2);
+  {
+    std::unique_ptr<int> x(p1);
+    {
+      std::unique_ptr<int> y(p2);
+      x.swap(y);
+    }
+    return *p2;
+  }
+}
+
+int unique_ptr_swap0_bad() {
+  std::unique_ptr<int> p1(new int(1));
+  std::unique_ptr<int> p2(new int(2));
+  p1.swap(p2);
+  if (*p1 == 2 && *p2 == 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return *p1;
+}
+
+int unique_ptr_swap1_bad() {
+  int* p1 = new int(1);
+  int* p2 = new int(2);
+  {
+    std::unique_ptr<int> x(p1);
+    {
+      std::unique_ptr<int> y(p2);
+      x.swap(y);
+    }
+    return *p1;
+  }
+}
+
+int operator_bool0_ok() {
+  std::unique_ptr<int> x(new int);
+  x.reset();
+  if (x) {
+    // Should not report a NPE here as x manages nullptr
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int operator_bool1_ok() {
+  std::unique_ptr<int> x;
+  if (x) {
+    // Should not report a NPE here as x manages nullptr
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int operator_bool0_bad() {
+  std::unique_ptr<int> x(new int);
+  x.reset();
+  if (!x) {
+    // Should report a NPE here as x manages nullptr
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int operator_bool1_bad() {
+  std::unique_ptr<int> x;
+  if (!x) {
+    // Should report a NPE here as x manages nullptr
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
 // Deleter that doesn't actually call delete
 template <class T>
 struct Deleter {

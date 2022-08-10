@@ -76,6 +76,21 @@ module SmartPointers = struct
     PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
 
 
+  let swap this other ~desc : model =
+   fun {path; location} astate ->
+    let<*> astate, this_value = to_internal_value_deref path Read location this astate in
+    let<*> astate, other_value = to_internal_value_deref path Read location other astate in
+    let<*> astate, _ = write_value path location this ~value:other_value ~desc astate in
+    let<+> astate, _ = write_value path location other ~value:this_value ~desc astate in
+    astate
+
+
+  let operator_bool this ~desc : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let<+> astate, (value_addr, _) = to_internal_value_deref path Write location this astate in
+    PulseOperations.write_id ret_id (value_addr, Hist.single_call path location desc) astate
+
+
   module UniquePtr = struct
     let default_constructor this ~desc : model =
      fun {path; location} astate ->
@@ -184,6 +199,8 @@ let matchers : matcher list =
     $--> SmartPointers.UniquePtr.reset ~desc:"std::unique_ptr::reset(T*)"
   ; -"std" &:: "unique_ptr" &:: "release" $ capt_arg_payload
     $--> SmartPointers.UniquePtr.release ~desc:"std::unique_ptr::release()"
+  ; -"std" &:: "unique_ptr" &:: "swap" $ capt_arg_payload $+ capt_arg_payload
+    $--> SmartPointers.swap ~desc:"std::unique_ptr::swap(std::unique_ptr<T> arg)"
   ; -"std" &:: "unique_ptr" &:: "operator[]" $ capt_arg_payload $+ capt_arg_payload
     $--> SmartPointers.at ~desc:"std::unique_ptr::operator[]()"
   ; -"std" &:: "unique_ptr" &:: "get" $ capt_arg_payload
@@ -191,4 +208,8 @@ let matchers : matcher list =
   ; -"std" &:: "unique_ptr" &:: "operator*" $ capt_arg_payload
     $--> SmartPointers.dereference ~desc:"std::unique_ptr::operator*()"
   ; -"std" &:: "unique_ptr" &:: "operator->" <>$ capt_arg_payload
-    $--> SmartPointers.dereference ~desc:"std::unique_ptr::operator->()" ]
+    $--> SmartPointers.dereference ~desc:"std::unique_ptr::operator->()"
+  ; -"std" &:: "shared_ptr" &:: "swap" $ capt_arg_payload $+ capt_arg_payload
+    $--> SmartPointers.swap ~desc:"std::shared_ptr::swap(std::shared_ptr<T> arg)"
+  ; -"std" &:: "unique_ptr" &:: "operator_bool" <>$ capt_arg_payload
+    $--> SmartPointers.operator_bool ~desc:"std::unique_ptr::operator_bool()" ]
