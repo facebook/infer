@@ -36,6 +36,8 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
       QualifiedCppName.Match.of_fuzzy_qual_names ["std::__wrap_iter"; "__gnu_cxx::__normal_iterator"]
     in
     match actual_typ.Typ.desc with
+    | _ when Language.curr_language_is Erlang ->
+        `DoNotHavoc
     | Typ.Tstruct (Typ.CppClass {name})
       when QualifiedCppName.Match.match_qualifiers matches_iter name ->
         `ShouldHavoc

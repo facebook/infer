@@ -659,12 +659,12 @@ nonmatch_records:test_type_Bad/0: function_clause
 nonmatch_records:test_type_Ok/0: ok
 
 ----- nonmatch_strings -----
-nonmatch_strings:fn_test_match2_Bad/0: function_clause
-nonmatch_strings:fn_test_match3_Bad/0: function_clause
-nonmatch_strings:fn_test_match5_Bad/0: function_clause
-nonmatch_strings:fn_test_match6_Bad/0: function_clause
-nonmatch_strings:test_match1_Ok/0: ok
-nonmatch_strings:test_match4_Ok/0: ok
+nonmatch_strings:fp_test_match1_Ok/0: ok
+nonmatch_strings:fp_test_match4_Ok/0: ok
+nonmatch_strings:test_match2_Bad/0: function_clause
+nonmatch_strings:test_match3_Bad/0: function_clause
+nonmatch_strings:test_match5_Bad/0: function_clause
+nonmatch_strings:test_match6_Bad/0: function_clause
 
 ----- nonmatch_trycatch -----
 nonmatch_trycatch:test_try_simple1_Ok/0: ok
