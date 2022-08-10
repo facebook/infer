@@ -8,6 +8,8 @@ otp_lists:test_any2_Bad/0: case_clause
 otp_lists:test_any3_Bad/0: case_clause
 otp_lists:test_foreach_Bad/0: badmatch
 otp_lists:test_foreach_Ok/0: ok
+otp_lists:test_list_append_with_atom_to_binary_Bad/0: badarg
+otp_lists:test_list_append_with_atom_to_list_Ok/0: ok
 otp_lists:test_partition1_Ok/0: ok
 otp_lists:test_partition2_Bad/0: badmatch
 otp_lists:test_partition3_Ok/0: ok
@@ -294,7 +296,6 @@ features_lists:test_listappend0_Bad/0: expected_crash
 features_lists:test_listappend0_Ok/0: ok
 features_lists:test_listappend0a_Bad/0: expected_crash
 features_lists:test_listappend0a_Ok/0: ok
-features_lists:test_listappend10_Ok/0: ok
 features_lists:test_listappend1_Bad/0: expected_crash
 features_lists:test_listappend1_Ok/0: ok
 features_lists:test_listappend2_Bad/0: expected_crash
