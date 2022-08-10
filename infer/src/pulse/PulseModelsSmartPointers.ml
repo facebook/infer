@@ -152,22 +152,7 @@ module SmartPointers = struct
         astate
 
 
-    let make_unique value this ~desc : model =
-     fun {path; location} astate ->
-      let<+> astate, _ = write_value path location this ~value ~desc astate in
-      astate
-
-
-    let move this ~desc : model =
-     fun {path; location; ret= ret_id, _} astate ->
-      let<*> astate, value = to_internal_value_deref path Read location this astate in
-      let ret_addr, ret_hist = (AbstractValue.mk_fresh (), snd value) in
-      let<*> astate, _ = write_value path location (ret_addr, ret_hist) ~value ~desc astate in
-      let<+> astate = assign_value_nullptr path location this ~desc astate in
-      PulseOperations.write_id ret_id (ret_addr, Hist.add_call path location desc ret_hist) astate
-
-
-    let assignment this other ~desc : model =
+    let move_assignment this other ~desc : model =
      fun {path; location} astate ->
       let<*> astate, value = to_internal_value_deref path Read location other astate in
       let<*> astate, _ = write_value path location this ~value ~desc astate in
@@ -179,21 +164,16 @@ end
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ (* matchers for unique_ptr *)
-    -"std" &:: "move"
-    $ capt_arg_payload_of_typ (-"std" &:: "unique_ptr")
-    $--> SmartPointers.UniquePtr.move ~desc:"std::move"
-  ; -"std" &:: "make_unique" $ capt_arg_payload $+ capt_arg_payload
-    $--> SmartPointers.UniquePtr.make_unique ~desc:"std::make_unique()"
-  ; -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload
+    -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload
     $--> SmartPointers.UniquePtr.default_constructor ~desc:"std::unique_ptr::unique_ptr()"
   ; -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "unique_ptr")
-    $--> SmartPointers.UniquePtr.assignment
-           ~desc:"std::unique_ptr::unique_ptr(std::unique_ptr<T> arg)"
+    $--> SmartPointers.UniquePtr.move_assignment
+           ~desc:"std::unique_ptr::unique_ptr(std::unique_ptr<T>)"
   ; -"std" &:: "unique_ptr" &:: "operator=" $ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "unique_ptr")
-    $--> SmartPointers.UniquePtr.assignment
-           ~desc:"std::unique_ptr::operator=(std::unique_ptr<T> arg)"
+    $--> SmartPointers.UniquePtr.move_assignment
+           ~desc:"std::unique_ptr::operator=(std::unique_ptr<T>)"
   ; -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload $+ capt_arg_payload
     $--> SmartPointers.UniquePtr.assign_pointer ~desc:"std::unique_ptr::unique_ptr(T*)"
   ; -"std" &:: "unique_ptr" &:: "~unique_ptr" $ capt_arg
@@ -201,7 +181,7 @@ let matchers : matcher list =
   ; -"std" &:: "unique_ptr" &:: "reset" $ capt_arg
     $--> SmartPointers.UniquePtr.default_reset ~desc:"std::unique_ptr::reset()"
   ; -"std" &:: "unique_ptr" &:: "reset" $ capt_arg $+ capt_arg_payload
-    $--> SmartPointers.UniquePtr.reset ~desc:"std::unique_ptr::reset(T* arg)"
+    $--> SmartPointers.UniquePtr.reset ~desc:"std::unique_ptr::reset(T*)"
   ; -"std" &:: "unique_ptr" &:: "release" $ capt_arg_payload
     $--> SmartPointers.UniquePtr.release ~desc:"std::unique_ptr::release()"
   ; -"std" &:: "unique_ptr" &:: "operator[]" $ capt_arg_payload $+ capt_arg_payload

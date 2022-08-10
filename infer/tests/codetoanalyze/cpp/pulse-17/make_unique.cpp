@@ -74,20 +74,20 @@ int make_unique3_ok() {
   return 0;
 }
 
-int FP_make_unique4_ok() {
+int make_unique4_ok() {
   auto x = std::make_unique<Y>(Y());
   x->get();
   return 0;
 }
 
-int FP_make_unique5_ok() {
+int make_unique5_ok() {
   auto obj = Y();
   auto x = std::make_unique<Y>(obj);
   x->get();
   return 0;
 }
 
-int FP_make_unique6_ok() {
+int make_unique6_ok() {
   const Y obj = Y();
   auto x = std::make_unique<Y>(obj);
   x->get();
