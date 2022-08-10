@@ -16,7 +16,7 @@ struct Person {
   int access_age() { return *age; }
 };
 
-int FN_deref_after_move_bad() {
+int deref_after_move_bad() {
   Person p;
   auto x = p.move_age();
   *x;

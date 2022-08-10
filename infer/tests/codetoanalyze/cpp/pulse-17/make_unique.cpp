@@ -6,14 +6,17 @@
  */
 #include <memory>
 
-namespace unique_ptr {
+namespace make_unique_ptr {
 
 struct X {
   int field;
   int* pointer_field;
   int get() { return field; }
   void set(int value) { field = value; }
-  X() { pointer_field = new int; }
+  X() {
+    pointer_field = new int;
+    field = *pointer_field;
+  }
   ~X() { delete pointer_field; }
 };
 
@@ -22,7 +25,10 @@ struct Y {
   int* pointer_field;
   int get() { return field; }
   void set(int value) { field = value; }
-  Y() { pointer_field = new int; }
+  Y() {
+    pointer_field = new int;
+    field = *pointer_field;
+  }
   Y(const Y& other) { pointer_field = new int(*(other.pointer_field)); }
   ~Y() { delete pointer_field; }
 };
@@ -32,6 +38,12 @@ struct Integer {
   int get() { return field; }
   void set(int value) { field = value; }
   Integer(int value = 0) { field = value; }
+  Integer(Integer&& other) {
+    field = other.field;
+    other.field = 0;
+  }
+  Integer(int value1, int value2) { field = value1 - value2; }
+  Integer(X* x) { field = x->get(); }
 };
 
 int make_unique0_ok() {
@@ -51,8 +63,7 @@ int make_unique1_ok() {
 }
 
 int make_unique2_ok() {
-  auto obj = Integer();
-  auto x = std::make_unique<Integer>(obj);
+  auto x = std::make_unique<Integer>(52, 10);
   x->get();
   return 0;
 }
@@ -71,6 +82,13 @@ int FP_make_unique4_ok() {
 
 int FP_make_unique5_ok() {
   auto obj = Y();
+  auto x = std::make_unique<Y>(obj);
+  x->get();
+  return 0;
+}
+
+int FP_make_unique6_ok() {
+  const Y obj = Y();
   auto x = std::make_unique<Y>(obj);
   x->get();
   return 0;

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 open PulseBasicInterface
 open PulseOperations.Import
 open PulseModelsImport
@@ -42,17 +43,6 @@ module SmartPointers = struct
       (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
       location (ConstantDereference IntLit.zero) value astate
 
-
-  let delete_internal access path location this ~desc astate =
-    let call_event = Hist.call_event path location desc in
-    let* astate, (value_addr, value_hist) =
-      PulseOperations.eval_access path Read location this access astate
-    in
-    let value_addr_hist = (value_addr, Hist.add_event path call_event value_hist) in
-    PulseOperations.invalidate_access path location CppDelete value_addr_hist Dereference astate
-
-
-  let delete_internal_value = delete_internal value_access
 
   let dereference this ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
@@ -99,24 +89,56 @@ module SmartPointers = struct
       astate
 
 
-    let destructor this ~desc : model =
-     fun {path; location} astate ->
-      let<+> astate = delete_internal_value path location this ~desc astate in
-      astate
+    let destructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
+     fun ({path; location} as model_data) astate ->
+      let<*> astate, (value_addr, value_hist) =
+        to_internal_value_deref path Read location this astate
+      in
+      let value_addr_hist = (value_addr, Hist.add_call path location desc value_hist) in
+      match (Typ.strip_ptr typ).desc with
+      | Typ.Tstruct (CppClass {template_spec_info= Template {args= TType t :: _}}) ->
+          (* create a pointer of the template argument t*)
+          let typ = Typ.mk (Tptr (t, Typ.Pk_pointer)) in
+          (* We need an expression corresponding to the value of the argument we pass to
+             [free_or_delete]. We don't have one that corresponds to the value so we create a fake
+             one from a fresh variable instead.
+
+             One day we may need to store the [fake_ident] -> [value] into the stack of the abstract
+             state too so that if something tries to re-evaluate the fake exp they will get the
+             right value. *)
+          let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
+          let deleted_arg =
+            ProcnameDispatcher.Call.FuncArg.{arg_payload= value_addr_hist; exp= fake_exp; typ}
+          in
+          Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
+      | _ ->
+          L.die InternalError "Cannot find template arguments"
 
 
-    let default_reset this ~desc : model =
-     fun {path; location} astate ->
-      let<*> astate = delete_internal_value path location this ~desc astate in
-      let<+> astate = assign_value_nullptr path location this ~desc astate in
-      astate
+    let default_reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) ~desc : model =
+     fun ({path; location} as model_data) astate ->
+      let astates = destructor arg ~desc model_data astate in
+      List.concat_map astates ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate ->
+              let<+> astate = assign_value_nullptr path location this ~desc astate in
+              astate
+          | _ ->
+              [Ok exec_state] )
 
 
-    let reset this value ~desc : model =
-     fun {path; location} astate ->
-      let<*> astate = delete_internal_value path location this ~desc astate in
-      let<+> astate, _ = write_value path location this ~value ~desc astate in
-      astate
+    let reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) value ~desc : model =
+     fun ({path; location} as model_data) astate ->
+      let astates = destructor arg ~desc model_data astate in
+      List.concat_map astates ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate ->
+              let<+> astate, _ = write_value path location this ~value ~desc astate in
+              astate
+          | _ ->
+              [Ok exec_state] )
 
 
     let release this ~desc : model =
@@ -173,12 +195,12 @@ let matchers : matcher list =
     $--> SmartPointers.UniquePtr.assignment
            ~desc:"std::unique_ptr::operator=(std::unique_ptr<T> arg)"
   ; -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload $+ capt_arg_payload
-    $--> SmartPointers.UniquePtr.assign_pointer ~desc:"std::unique_ptr::unique_ptr(T* arg)"
-  ; -"std" &:: "unique_ptr" &:: "~unique_ptr" $ capt_arg_payload
+    $--> SmartPointers.UniquePtr.assign_pointer ~desc:"std::unique_ptr::unique_ptr(T*)"
+  ; -"std" &:: "unique_ptr" &:: "~unique_ptr" $ capt_arg
     $--> SmartPointers.UniquePtr.destructor ~desc:"std::unique_ptr::~unique_ptr()"
-  ; -"std" &:: "unique_ptr" &:: "reset" $ capt_arg_payload
+  ; -"std" &:: "unique_ptr" &:: "reset" $ capt_arg
     $--> SmartPointers.UniquePtr.default_reset ~desc:"std::unique_ptr::reset()"
-  ; -"std" &:: "unique_ptr" &:: "reset" $ capt_arg_payload $+ capt_arg_payload
+  ; -"std" &:: "unique_ptr" &:: "reset" $ capt_arg $+ capt_arg_payload
     $--> SmartPointers.UniquePtr.reset ~desc:"std::unique_ptr::reset(T* arg)"
   ; -"std" &:: "unique_ptr" &:: "release" $ capt_arg_payload
     $--> SmartPointers.UniquePtr.release ~desc:"std::unique_ptr::release()"
