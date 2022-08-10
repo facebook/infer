@@ -655,12 +655,12 @@ let report_errors proc_desc err_log state =
               if should_skip name then trace else trace_element :: trace
           | SmallStep _ ->
               trace_element :: trace
-          | LargeStep (_, {last_step= None}) ->
-              trace (* skip trivial large steps (i.e., those with no steps) *)
           | LargeStep (procname, qq) ->
-              let trace = make_trace (nesting + 1) trace qq in
+              let new_trace = make_trace (nesting + 1) trace qq in
               let name = Procname.to_string procname in
-              if should_skip name then trace else trace_element :: trace
+              (* Skip based on name, but also trivial large steps (those with no substeps) *)
+              if phys_equal new_trace trace || should_skip name then trace
+              else trace_element :: new_trace
         in
         make_trace nesting trace step_predecessor
   in
