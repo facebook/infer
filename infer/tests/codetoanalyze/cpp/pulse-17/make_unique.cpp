@@ -64,7 +64,11 @@ int make_unique1_ok() {
 
 int make_unique2_ok() {
   auto x = std::make_unique<Integer>(52, 10);
-  x->get();
+  if (x->get() != 42) {
+    // Should not report a NPE here as x->get() is equal to 42
+    int* q = nullptr;
+    return *q;
+  }
   return 0;
 }
 

@@ -52,6 +52,10 @@ let and_equal lhs rhs astate =
   map_path_condition astate ~f:(fun phi -> PathCondition.and_equal lhs rhs phi)
 
 
+let and_not_equal lhs rhs astate =
+  map_path_condition astate ~f:(fun phi -> PathCondition.and_not_equal lhs rhs phi)
+
+
 let eval_binop ret_addr binop lhs rhs astate =
   map_path_condition_with_ret astate ret_addr ~f:(fun phi ->
       PathCondition.eval_binop ret_addr binop lhs rhs phi )
@@ -73,12 +77,22 @@ let prune_binop ~negated binop lhs rhs astate =
 
 let literal_zero = ConstOperand (Cint IntLit.zero)
 
+let literal_one = ConstOperand (Cint IntLit.one)
+
 let prune_eq_zero v astate =
   prune_binop ~negated:false Eq (AbstractValueOperand v) literal_zero astate
 
 
 let prune_positive v astate =
   prune_binop ~negated:false Gt (AbstractValueOperand v) literal_zero astate
+
+
+let prune_gt_one v astate =
+  prune_binop ~negated:false Gt (AbstractValueOperand v) literal_one astate
+
+
+let prune_eq_one v astate =
+  prune_binop ~negated:false Eq (AbstractValueOperand v) literal_one astate
 
 
 let is_known_zero astate v = PathCondition.is_known_zero astate.AbductiveDomain.path_condition v

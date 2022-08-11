@@ -225,7 +225,50 @@ module T = struct
         equal_ignore_quals t1 t2
     | _, _ ->
         false
+
+
+  let rec compatible_match formal actual =
+    match (formal.desc, actual.desc) with
+    (* const T& binds const T&&, T&&.
+       TODO: given actual T&&, the formal T&& shoulds preferred against const T&. *)
+    | Tptr (t1, Pk_lvalue_reference), Tptr (t2, Pk_rvalue_reference) ->
+        t1.quals.is_const && compatible_match t1 t2
+    (* T&& binds T&&
+       const T&& binds const T&& and T&& *)
+    | Tptr (t1, Pk_rvalue_reference), Tptr (t2, Pk_rvalue_reference) ->
+        ((not t2.quals.is_const) || t1.quals.is_const) && compatible_match t1 t2
+    (* Any non-reference type T binds T&& *)
+    | t1, Tptr (t2, Pk_rvalue_reference) ->
+        equal_desc_ignore_quals t1 t2.desc
+    (* T&& does not bind any l-value references *)
+    | Tptr (_, Pk_rvalue_reference), Tptr (_, Pk_lvalue_reference) ->
+        false
+    (* T& binds T&
+       const T& binds const T&, T&. *)
+    | Tptr (t1, Pk_lvalue_reference), Tptr (t2, Pk_lvalue_reference) ->
+        ((not t2.quals.is_const) || t1.quals.is_const) && compatible_match t1 t2
+    (* Any non-reference type T binds T& *)
+    | t1, Tptr (t2, Pk_lvalue_reference) ->
+        equal_desc_ignore_quals t1 t2.desc
+    | Tptr (t1, ptr_kind1), Tptr (t2, ptr_kind2) ->
+        equal_ptr_kind ptr_kind1 ptr_kind2 && compatible_match t1 t2
+    | Tint ikind1, Tint ikind2 ->
+        equal_ikind ikind1 ikind2
+    | Tfloat fkind1, Tfloat fkind2 ->
+        equal_fkind fkind1 fkind2
+    | Tvoid, Tvoid | Tfun, Tfun ->
+        true
+    | Tstruct name1, Tstruct name2 ->
+        equal_name name1 name2
+    | TVar s1, TVar s2 ->
+        String.equal s1 s2
+    | Tarray {elt= t1}, Tarray {elt= t2} ->
+        equal_ignore_quals t1 t2
+    | _, _ ->
+        false
 end
+
+(* let rec perfect_compatibility t1 t2 = equal_desc_ignore_quals t1.desc t2.desc *)
 
 include T
 

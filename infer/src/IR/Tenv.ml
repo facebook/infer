@@ -286,3 +286,15 @@ let find_cpp_destructor tenv class_name =
         Procname.ObjC_Cpp.(is_destructor f && not (is_inner_destructor f))
     | _ ->
         false )
+
+
+let find_cpp_constructor tenv class_name =
+  match lookup tenv class_name with
+  | Some struct_ ->
+      List.filter struct_.Struct.methods ~f:(function
+        | Procname.ObjC_Cpp {kind= CPPConstructor _} ->
+            true
+        | _ ->
+            false )
+  | None ->
+      []

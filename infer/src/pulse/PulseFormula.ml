@@ -1187,6 +1187,8 @@ module Atom = struct
 
   let equal t1 t2 = Equal (t1, t2)
 
+  let not_equal t1 t2 = NotEqual (t1, t2)
+
   let less_equal t1 t2 = LessEqual (t1, t2)
 
   let less_than t1 t2 = LessThan (t1, t2)
@@ -2008,6 +2010,8 @@ let and_mk_atom mk_atom op1 op2 phi =
 
 
 let and_equal = and_mk_atom Atom.equal
+
+let and_not_equal = and_mk_atom Atom.not_equal
 
 let and_equal_instanceof v1 v2 t phi =
   let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in

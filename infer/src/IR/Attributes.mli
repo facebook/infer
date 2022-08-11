@@ -17,5 +17,8 @@ val load : Procname.t -> ProcAttributes.t option
 
 val is_no_return : Procname.t -> bool
 
+val load_formal_types : Procname.t -> Typ.t list
+(** Returns all the formal types of a given procedure. *)
+
 val clear_cache : unit -> unit
 (** clear attribute cache *)

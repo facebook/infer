@@ -122,6 +122,12 @@ let and_equal op1 op2 phi =
   ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
 
 
+let and_not_equal op1 op2 phi =
+  let+ {is_unsat; bo_itvs; citvs; formula} = phi in
+  let+| formula, new_eqs = Formula.and_not_equal op1 op2 formula in
+  ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
+
+
 let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
   if phi.is_unsat then Unsat
   else

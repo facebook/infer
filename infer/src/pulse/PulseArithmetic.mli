@@ -29,6 +29,8 @@ type operand = PathCondition.operand =
 
 val and_equal : operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t
 
+val and_not_equal : operand -> operand -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t
+
 val eval_binop :
      AbstractValue.t
   -> Binop.t
@@ -65,6 +67,12 @@ val prune_eq_zero : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t Ac
 (** helper function wrapping [prune_binop] *)
 
 val prune_positive : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t
+(** helper function wrapping [prune_binop] *)
+
+val prune_gt_one : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t
+(** helper function wrapping [prune_binop] *)
+
+val prune_eq_one : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t
 (** helper function wrapping [prune_binop] *)
 
 val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
