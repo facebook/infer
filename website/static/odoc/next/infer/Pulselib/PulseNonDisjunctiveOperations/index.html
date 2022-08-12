@@ -10,7 +10,11 @@
   <span><a href="../PulseAbductiveDomain/index.html#type-t">PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
   <a href="../PulseNonDisjunctiveDomain/index.html#type-copy_spec_t">PulseDomainInterface.NonDisjDomain.copy_spec_t</a>
   * <a href="../PulseOperations/index.html#type-t">PulseOperations.t</a>
-  * <span><span>(<a href="../PulseAbstractValue/index.html#type-t">PulseBasicInterface.AbstractValue.t</a> * <span class="type-var">'b</span>)</span> option</span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-add_copies" class="anchored"><a href="#val-add_copies" class="anchor"></a><code><span><span class="keyword">val</span> add_copies : 
+  * <span><span>(<a href="../PulseAbstractValue/index.html#type-t">PulseBasicInterface.AbstractValue.t</a>
+     * <a href="../PulseDecompilerExpr/index.html#type-t">PulseDecompiler.DecompilerExpr.t</a>
+     * <span class="type-var">'b</span>)</span>
+      option</span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-is_modeled_as_cheap_to_copy" class="anchored"><a href="#val-is_modeled_as_cheap_to_copy" class="anchor"></a><code><span><span class="keyword">val</span> is_modeled_as_cheap_to_copy : <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> <span class="arrow">&#45;&gt;</span></span> bool</span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-is_cheap_to_copy" class="anchored"><a href="#val-is_cheap_to_copy" class="anchor"></a><code><span><span class="keyword">val</span> is_cheap_to_copy : <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> <span class="arrow">&#45;&gt;</span></span> bool</span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-add_copies" class="anchored"><a href="#val-add_copies" class="anchor"></a><code><span><span class="keyword">val</span> add_copies : 
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../PulsePathContext/index.html#type-t">PulseDomainInterface.PathContext.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IR/Exp/index.html#type-t">IR.Exp.t</a> <span class="arrow">&#45;&gt;</span></span>
@@ -18,7 +22,12 @@
   <span><span><a href="../PulseExecutionDomain/index.html#type-t">PulseDomainInterface.ExecutionDomain.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
   <a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a>
-  * <span><a href="../PulseExecutionDomain/index.html#type-t">PulseDomainInterface.ExecutionDomain.t</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-get_matching_dest_addr_opt" class="anchored"><a href="#val-get_matching_dest_addr_opt" class="anchor"></a><code><span><span class="keyword">val</span> get_matching_dest_addr_opt : 
+  * <span><a href="../PulseExecutionDomain/index.html#type-t">PulseDomainInterface.ExecutionDomain.t</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-add_const_refable_parameters" class="anchored"><a href="#val-add_const_refable_parameters" class="anchor"></a><code><span><span class="keyword">val</span> add_const_refable_parameters : 
+  <span><a href="../../IR/Procdesc/index.html#type-t">IR.Procdesc.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<a href="../PulseExecutionDomain/index.html#type-t">PulseDomainInterface.ExecutionDomain.t</a> * <span class="type-var">'a</span>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-get_matching_dest_addr_opt" class="anchored"><a href="#val-get_matching_dest_addr_opt" class="anchor"></a><code><span><span class="keyword">val</span> get_matching_dest_addr_opt : 
   <span><span>(<a href="../PulseBaseMemory/Edges/index.html#type-t">PulseDomainInterface.BaseMemory.Edges.t</a>
    * <a href="../PulseBaseAddressAttributes/index.html#type-t">PulseDomainInterface.BaseAddressAttributes.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../PulseBaseMemory/Edges/index.html#type-t">PulseDomainInterface.BaseMemory.Edges.t</a> <span class="arrow">&#45;&gt;</span></span>
@@ -28,6 +37,11 @@
   <span>current_attrs:<a href="../PulseBaseAddressAttributes/index.html#type-t">PulseDomainInterface.BaseAddressAttributes.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>copy_heap:<a href="../PulseBaseMemory/index.html#type-t">PulseDomainInterface.BaseMemory.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>reachable_addresses_from_copy:<a href="../PulseAbstractValue/Set/index.html#type-t">PulseBasicInterface.AbstractValue.Set.t</a> <span class="arrow">&#45;&gt;</span></span>
+  bool</span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-is_modified" class="anchored"><a href="#val-is_modified" class="anchor"></a><code><span><span class="keyword">val</span> is_modified : 
+  <span>?is_source_opt:<span>bool option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbstractValue/index.html#type-t">PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseBaseMemory/index.html#type-t">PulseDomainInterface.BaseMemory.t</a> <span class="arrow">&#45;&gt;</span></span>
   bool</span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-mark_modified_address_at" class="anchored"><a href="#val-mark_modified_address_at" class="anchor"></a><code><span><span class="keyword">val</span> mark_modified_address_at : 
   <span>address:<a href="../PulseAbstractValue/index.html#type-t">PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span>source_addr_opt:<span><a href="../PulseAbstractValue/index.html#type-t">PulseAbstractValue.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
@@ -35,11 +49,16 @@
   <span>copied_into:<a href="../PulseAttribute/CopiedInto/index.html#type-t">PulseAttribute.CopiedInto.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../PulseAbductiveDomain/index.html#type-t">PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
-  <a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-mark_modified_copies_with" class="anchored"><a href="#val-mark_modified_copies_with" class="anchor"></a><code><span><span class="keyword">val</span> mark_modified_copies_with : 
+  <a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-mark_modified_parameter_at" class="anchored"><a href="#val-mark_modified_parameter_at" class="anchor"></a><code><span><span class="keyword">val</span> mark_modified_parameter_at : 
+  <span>address:<a href="../PulseAbstractValue/index.html#type-t">PulseBasicInterface.AbstractValue.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>var:<a href="../../IR/Var/index.html#type-t">IR.Var.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseAbductiveDomain/index.html#type-t">PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-mark_modified_copies_and_parameters_with" class="anchored"><a href="#val-mark_modified_copies_and_parameters_with" class="anchor"></a><code><span><span class="keyword">val</span> mark_modified_copies_and_parameters_with : 
   <span><span><a href="../../IR/Var/index.html#type-t">IR.Var.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span>astate:<a href="../PulseAbductiveDomain/index.html#type-t">PulseDomainInterface.AbductiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
-  <a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-mark_modified_copies" class="anchored"><a href="#val-mark_modified_copies" class="anchor"></a><code><span><span class="keyword">val</span> mark_modified_copies : 
+  <a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseDomainInterface.NonDisjDomain.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-mark_modified_copies_and_parameters" class="anchored"><a href="#val-mark_modified_copies_and_parameters" class="anchor"></a><code><span><span class="keyword">val</span> mark_modified_copies_and_parameters : 
   <span><span><a href="../../IR/Var/index.html#type-t">IR.Var.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="../PulseExecutionDomain/index.html#type-t">PulseDomainInterface.ExecutionDomain.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../PulseNonDisjunctiveDomain/index.html#type-t">PulseNonDisjunctiveDomain.t</a> <span class="arrow">&#45;&gt;</span></span>
