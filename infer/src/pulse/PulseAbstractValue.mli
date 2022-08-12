@@ -33,8 +33,6 @@ val is_unrestricted : t -> bool
 
 val pp : F.formatter -> t -> unit
 
-val of_id : int -> t
-
 val compare_unrestricted_first : t -> t -> int
 (** an alternative comparison function that sorts unrestricted variables before restricted variables *)
 

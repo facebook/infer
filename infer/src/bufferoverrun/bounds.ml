@@ -328,8 +328,6 @@ module Bound = struct
 
   let of_sym : SymLinear.t -> t = fun s -> Linear (Z.zero, s)
 
-  let of_foreign_id id = of_sym (SymLinear.singleton_one (Symb.Symbol.of_foreign_id id))
-
   let of_path path_of_partial make_symbol ~unsigned ?non_int partial =
     let s = make_symbol ~unsigned ?non_int (path_of_partial partial) in
     of_sym (SymLinear.singleton_one s)

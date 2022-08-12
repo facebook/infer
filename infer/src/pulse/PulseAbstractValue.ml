@@ -47,8 +47,6 @@ let compare_unrestricted_first v1 v2 =
   else compare v1 v2
 
 
-let of_id v = v
-
 module PPKey = struct
   type nonrec t = t [@@deriving compare]
 

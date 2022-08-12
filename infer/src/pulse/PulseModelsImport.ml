@@ -256,12 +256,19 @@ module Basic = struct
     astate_zero :: astates_alloc
 
 
+  let get_malloced_object_type (exp : Exp.t) =
+    match exp with
+    | BinOp (Mult _, Sizeof {typ}, _) | BinOp (Mult _, _, Sizeof {typ}) | Sizeof {typ} ->
+        Some typ
+    | _ ->
+        None
+
+
   let set_uninitialized tenv path size_exp_opt location ret_value astate =
-    Option.value_map size_exp_opt ~default:astate ~f:(fun size_exp ->
-        BufferOverrunModels.get_malloc_info_opt size_exp
-        |> Option.value_map ~default:astate ~f:(fun (obj_typ, _, _, _) ->
-               AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location
-                 astate ) )
+    (let open IOption.Let_syntax in
+    let+ obj_typ = size_exp_opt >>= get_malloced_object_type in
+    AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location astate)
+    |> Option.value ~default:astate
 
 
   let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
