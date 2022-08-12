@@ -11,18 +11,23 @@ module AbductiveDomain = PulseAbductiveDomain
 module AccessResult = PulseAccessResult
 
 let map_path_condition_common ~f astate =
-  let phi, new_eqs = f astate.AbductiveDomain.path_condition in
+  let open SatUnsat.Import in
+  let* phi, new_eqs = f astate.AbductiveDomain.path_condition in
   let astate = AbductiveDomain.set_path_condition phi astate in
-  let result =
-    AbductiveDomain.incorporate_new_eqs new_eqs astate |> AccessResult.of_abductive_result
+  let+ result =
+    AbductiveDomain.incorporate_new_eqs new_eqs astate >>| AccessResult.of_abductive_result
   in
   (result, new_eqs)
 
 
-let map_path_condition ~f astate = map_path_condition_common ~f astate |> fst
+let map_path_condition ~f astate =
+  let open SatUnsat.Import in
+  map_path_condition_common ~f astate >>| fst
+
 
 let map_path_condition_with_ret ~f astate ret =
-  let result, new_eqs = map_path_condition_common ~f astate in
+  let open SatUnsat.Import in
+  let+ result, new_eqs = map_path_condition_common ~f astate in
   PulseResult.map result ~f:(fun result ->
       (result, AbductiveDomain.incorporate_new_eqs_on_val new_eqs ret) )
 
@@ -96,8 +101,6 @@ let prune_eq_one v astate =
 
 
 let is_known_zero astate v = PathCondition.is_known_zero astate.AbductiveDomain.path_condition v
-
-let is_unsat_cheap astate = PathCondition.is_unsat_cheap astate.AbductiveDomain.path_condition
 
 let is_manifest astate =
   PathCondition.is_manifest

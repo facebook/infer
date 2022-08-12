@@ -31,6 +31,7 @@ type operand =
   | AbstractValueOperand of Var.t
   | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: function_symbol; actuals: Var.t list}
+[@@deriving compare, equal]
 
 val pp_operand : F.formatter -> operand -> unit
 

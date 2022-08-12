@@ -23,10 +23,10 @@ let get_copied_and_source copy_type path rest_args location from (disjunct : Abd
     match rest_args with
     | (source_arg, source_typ) :: _ -> (
       match PulseOperations.eval path NoAccess location source_arg disjunct with
-      | Ok (disjunct, (source_addr, _)) ->
+      | Sat (Ok (disjunct, (source_addr, _))) ->
           let source_expr = PulseDecompiler.find source_addr disjunct.decompiler in
           (disjunct, Some (source_addr, source_expr, source_typ))
-      | Recoverable _ | FatalError _ ->
+      | Sat (Recoverable _ | FatalError _) | Unsat ->
           (disjunct, None) )
     | _ ->
         (disjunct, None)
@@ -93,7 +93,7 @@ let add_copies tenv path location call_exp actuals astates astate_non_disj =
                      get_copied_and_source copy_type path rest_args location from disjunct
                    in
                    match PulseOperations.eval path NoAccess location exp disjunct with
-                   | Ok (disjunct, (copy_addr, _)) ->
+                   | Sat (Ok (disjunct, (copy_addr, _))) ->
                        let disjunct' =
                          Option.value_map source_addr_typ_opt ~default:disjunct
                            ~f:(fun (source_addr, source_expr, _) ->
@@ -111,7 +111,7 @@ let add_copies tenv path location call_exp actuals astates astate_non_disj =
                            ~source_opt:(Option.map source_addr_typ_opt ~f:snd3)
                            copied astate_non_disj
                        , ExecutionDomain.continue disjunct' )
-                   | Recoverable _ | FatalError _ ->
+                   | Sat (Recoverable _ | FatalError _) | Unsat ->
                        default )
         | ExceptionRaised _, _, _
         | ISLLatentMemoryError _, _, _

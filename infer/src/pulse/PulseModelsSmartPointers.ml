@@ -9,7 +9,8 @@ open! IStd
 module L = Logging
 module IRAttributes = Attributes
 open PulseBasicInterface
-open PulseOperations.Import
+open PulseDomainInterface
+open PulseOperationResult.Import
 open PulseModelsImport
 
 let value = Fieldname.make PulseOperations.pulse_model_type "backing_pointer"
@@ -33,12 +34,12 @@ let write_value path location this ~value ~desc astate =
 
 
 let assign_value_nullptr path location this ~desc astate =
-  let* astate, (pointer, value) =
+  let=* astate, (pointer, value) =
     write_value path location this
       ~value:(AbstractValue.mk_fresh (), ValueHistory.epoch)
       ~desc astate
   in
-  let* astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
+  let+* astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
   PulseOperations.invalidate path
     (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
     location (ConstantDereference IntLit.zero) value astate
@@ -121,7 +122,7 @@ module SharedPtr = struct
 
   let assign_constant path location ~ref ~constant ~desc astate =
     let value = (AbstractValue.mk_fresh (), Hist.add_call path location desc ValueHistory.epoch) in
-    let* astate = PulseOperations.write_deref path location ~ref ~obj:value astate in
+    let=* astate = PulseOperations.write_deref path location ~ref ~obj:value astate in
     PulseArithmetic.and_eq_int (fst value) constant astate
 
 
@@ -129,25 +130,25 @@ module SharedPtr = struct
     let address =
       (AbstractValue.mk_fresh (), Hist.add_call path location desc ValueHistory.epoch)
     in
-    let* astate = PulseArithmetic.and_positive (fst address) astate in
-    let+ astate = assign_constant path location ~ref:address ~constant ~desc astate in
+    let** astate = PulseArithmetic.and_positive (fst address) astate in
+    let++ astate = assign_constant path location ~ref:address ~constant ~desc astate in
     (astate, address)
 
 
   let assign_count path location this ~constant ~desc astate =
-    let* astate, value = fresh_value_from_constant path location ~constant ~desc astate in
+    let+* astate, value = fresh_value_from_constant path location ~constant ~desc astate in
     let+ astate, _ = write_count path location this ~value ~desc astate in
     astate
 
 
   let decrease_count path location this ~desc astate =
-    let* astate, (pointer, int_hist) = to_internal_count_deref path Read location this astate in
+    let=* astate, (pointer, int_hist) = to_internal_count_deref path Read location this astate in
     let hist = Hist.add_call path location desc int_hist in
-    let* astate, (count_addr, _) =
+    let=* astate, (count_addr, _) =
       PulseOperations.eval_access path Read location (pointer, hist) Dereference astate
     in
     let bop_addr = AbstractValue.mk_fresh () in
-    let* astate, bop_addr =
+    let+* astate, bop_addr =
       PulseArithmetic.eval_binop bop_addr (MinusA None) (AbstractValueOperand count_addr)
         (ConstOperand (Cint (IntLit.of_int 1)))
         astate
@@ -158,8 +159,8 @@ module SharedPtr = struct
 
   let default_constructor this ~desc : model =
    fun {path; location} astate ->
-    let<*> astate = assign_value_nullptr path location this ~desc astate in
-    let<+> astate = assign_count path location this ~constant:IntLit.zero ~desc astate in
+    let<**> astate = assign_value_nullptr path location this ~desc astate in
+    let<++> astate = assign_count path location this ~constant:IntLit.zero ~desc astate in
     astate
 
 
@@ -176,14 +177,14 @@ module SharedPtr = struct
     (* ref_count greater than one: decrement ref_count *)
     let ref_count_gt_one =
       PulseArithmetic.prune_gt_one (fst count) astate
-      >>= decrease_count path location this ~desc
-      |> Basic.map_continue
+      >>== decrease_count path location this ~desc
+      >>|| ExecutionDomain.continue
     in
     (* ref_count is zero: deallocate ref_count *)
     let ref_count_zero =
       PulseArithmetic.prune_eq_zero (fst count) astate
-      >>= delete_internal_count path location this ~desc
-      |> Basic.map_continue
+      >>|= delete_internal_count path location this ~desc
+      >>|| ExecutionDomain.continue
     in
     (* ref_count is one: deallocate the backing_pointer and the ref_count *)
     let ref_count_one =
@@ -205,13 +206,13 @@ module SharedPtr = struct
           let<*> exec_state = exec_state_result in
           match exec_state with
           | ContinueProgram astate ->
-              let<*> astate = PulseArithmetic.prune_eq_one (fst count) astate in
+              let<**> astate = PulseArithmetic.prune_eq_one (fst count) astate in
               let<+> astate = delete_internal_count path location this ~desc astate in
               astate
           | _ ->
               [Ok exec_state] )
     in
-    ref_count_gt_one :: ref_count_zero :: ref_count_one
+    SatUnsat.to_list ref_count_gt_one @ SatUnsat.to_list ref_count_zero @ ref_count_one
 
 
   let assign_pointer this value ~desc : model =
@@ -220,15 +221,15 @@ module SharedPtr = struct
     (* set ref_count to *)
     let astate_not_nullptr =
       PulseArithmetic.prune_positive (fst value) astate
-      >>= assign_count path location this ~constant:IntLit.one ~desc
-      |> Basic.map_continue
+      >>== assign_count path location this ~constant:IntLit.one ~desc
+      >>|| ExecutionDomain.continue
     in
     let astate_nullptr =
       PulseArithmetic.prune_eq_zero (fst value) astate
-      >>= assign_count path location this ~constant:IntLit.zero ~desc
-      |> Basic.map_continue
+      >>== assign_count path location this ~constant:IntLit.zero ~desc
+      >>|| ExecutionDomain.continue
     in
-    [astate_not_nullptr; astate_nullptr]
+    SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
 
 
   let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
@@ -237,8 +238,8 @@ module SharedPtr = struct
     let op1 = PathCondition.AbstractValueOperand (fst this) in
     let op2 = PathCondition.AbstractValueOperand (fst other) in
     (* self-assignment *)
-    let astate_equals = PulseArithmetic.and_equal op1 op2 astate |> Basic.map_continue in
-    let<*> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in
+    let astate_equals = PulseArithmetic.and_equal op1 op2 astate >>|| ExecutionDomain.continue in
+    let<**> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in
     let astate_not_equals = destructor arg ~desc model_data astate_not_equals in
     let astate_not_equals =
       List.concat_map astate_not_equals ~f:(fun exec_state_result ->
@@ -250,25 +251,25 @@ module SharedPtr = struct
               let<*> astate, _ = write_value path location this ~value ~desc astate in
               (* if 'other' is managing an object *)
               let astate_not_nullptr =
-                let* astate = PulseArithmetic.prune_positive (fst value) astate in
-                let* astate, (this_internal_count, _) =
+                let** astate = PulseArithmetic.prune_positive (fst value) astate in
+                let=* astate, (this_internal_count, _) =
                   to_internal_count path Read location this astate
                 in
-                let* astate, (pointer, int_hist) =
+                let=* astate, (pointer, int_hist) =
                   to_internal_count_deref path Read location other astate
                 in
                 (* copy the pointer to ref count*)
-                let* astate =
+                let=* astate =
                   PulseOperations.write_deref path location ~ref:(this_internal_count, int_hist)
                     ~obj:(pointer, int_hist) astate
                 in
                 let hist = Hist.add_call path location desc int_hist in
                 (* compute the increased ref count *)
-                let* astate, (count_addr, _) =
+                let=* astate, (count_addr, _) =
                   PulseOperations.eval_access path Read location (pointer, hist) Dereference astate
                 in
                 let incremented_count = AbstractValue.mk_fresh () in
-                let* astate, incremented_count =
+                let+* astate, incremented_count =
                   PulseArithmetic.eval_binop incremented_count (PlusA None)
                     (AbstractValueOperand count_addr)
                     (ConstOperand (Cint (IntLit.of_int 1)))
@@ -282,14 +283,14 @@ module SharedPtr = struct
               (* if 'other' is not managing an object *)
               let astate_nullptr =
                 PulseArithmetic.prune_eq_zero (fst value) astate
-                >>= assign_count path location this ~constant:IntLit.zero ~desc
-                |> Basic.map_continue
+                >>== assign_count path location this ~constant:IntLit.zero ~desc
+                >>|| ExecutionDomain.continue
               in
-              [astate_not_nullptr; astate_nullptr]
+              SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
           | _ ->
               [Ok exec_state] )
     in
-    astate_equals :: astate_not_equals
+    SatUnsat.to_list astate_equals @ astate_not_equals
 
 
   let move_assignment this other ~desc : model =
@@ -298,8 +299,8 @@ module SharedPtr = struct
     let<*> astate, count = to_internal_count_deref path Read location other astate in
     let<*> astate, _ = write_value path location (fst this, snd value) ~value ~desc astate in
     let<*> astate, _ = write_count path location (fst this, snd count) ~value:count ~desc astate in
-    let<*> astate = assign_value_nullptr path location other ~desc astate in
-    let<+> astate = assign_count path location other ~constant:IntLit.zero ~desc astate in
+    let<**> astate = assign_value_nullptr path location other ~desc astate in
+    let<++> astate = assign_count path location other ~constant:IntLit.zero ~desc astate in
     astate
 
 
@@ -311,7 +312,7 @@ module SharedPtr = struct
         match exec_state with
         | ContinueProgram astate ->
             let<*> astate, _ = write_value path location this ~value ~desc astate in
-            let<+> astate = assign_count path location this ~constant:IntLit.one ~desc astate in
+            let<++> astate = assign_count path location this ~constant:IntLit.one ~desc astate in
             astate
         | _ ->
             [Ok exec_state] )
@@ -344,8 +345,8 @@ module SharedPtr = struct
         let<*> exec_state = exec_state_result in
         match exec_state with
         | ContinueProgram astate ->
-            let<*> astate = assign_value_nullptr path location this ~desc astate in
-            let<+> astate = assign_count path location this ~constant:IntLit.zero ~desc astate in
+            let<**> astate = assign_value_nullptr path location this ~desc astate in
+            let<++> astate = assign_count path location this ~constant:IntLit.zero ~desc astate in
             astate
         | _ ->
             [Ok exec_state] )
@@ -381,7 +382,7 @@ module SharedPtr = struct
         ~alloc_desc:desc ~allocator:(Some CppNew) (fst value_address) astate
     in
     let astate = PulseOperations.add_dynamic_type typ (fst value_address) astate in
-    let* astate = PulseArithmetic.and_positive (fst value_address) astate in
+    let+* astate = PulseArithmetic.and_positive (fst value_address) astate in
     let+ astate, _ = write_value path location this ~value:value_address ~desc astate in
     (astate, value_address)
 
@@ -409,11 +410,11 @@ module SharedPtr = struct
           L.die InternalError "Cannot find template arguments of make_shared"
     in
     let this = this.arg_payload in
-    let<*> astate = assign_count path location this ~constant:IntLit.one ~desc astate in
+    let<**> astate = assign_count path location this ~constant:IntLit.one ~desc astate in
     match typ.desc with
     | Tstruct class_name ->
         (* assign the value pointer to the field of the shared_ptr *)
-        let<*> astate, value_address = alloc_value_address this ~desc typ model_data astate in
+        let<**> astate, value_address = alloc_value_address this ~desc typ model_data astate in
         let typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
         (* dereferences the actual arguments if they are primitive types.
            In fact, when primitive types are passed in a function call, the frontend seems to dereference them.
@@ -451,8 +452,8 @@ module SharedPtr = struct
         let () = L.d_printfln "Class not found" in
         if Int.equal (List.length actuals) 0 then
           (* assign the value pointer to the field of the shared_ptr *)
-          let<*> astate, value_address = alloc_value_address this ~desc typ model_data astate in
-          let<+> astate =
+          let<**> astate, value_address = alloc_value_address this ~desc typ model_data astate in
+          let<++> astate =
             assign_constant path location ~ref:value_address ~constant:IntLit.zero ~desc astate
           in
           astate
@@ -466,7 +467,7 @@ end
 module UniquePtr = struct
   let default_constructor this ~desc : model =
    fun {path; location} astate ->
-    let<+> astate = assign_value_nullptr path location this ~desc astate in
+    let<++> astate = assign_value_nullptr path location this ~desc astate in
     astate
 
 
@@ -509,7 +510,7 @@ module UniquePtr = struct
         let<*> exec_state = exec_state_result in
         match exec_state with
         | ContinueProgram astate ->
-            let<+> astate = assign_value_nullptr path location this ~desc astate in
+            let<++> astate = assign_value_nullptr path location this ~desc astate in
             astate
         | _ ->
             [Ok exec_state] )
@@ -533,7 +534,7 @@ module UniquePtr = struct
     let<*> astate, (old_value_addr, old_value_hist) =
       to_internal_value_deref path Read location this astate
     in
-    let<+> astate = assign_value_nullptr path location this ~desc astate in
+    let<++> astate = assign_value_nullptr path location this ~desc astate in
     PulseOperations.write_id ret_id
       (old_value_addr, Hist.add_call path location desc old_value_hist)
       astate
@@ -542,7 +543,7 @@ module UniquePtr = struct
   let move_assignment this other ~desc : model =
    fun {path; location} astate ->
     let<*> astate, value = to_internal_value_deref path Read location other astate in
-    let<*> astate = assign_value_nullptr path location other ~desc astate in
+    let<**> astate = assign_value_nullptr path location other ~desc astate in
     let<+> astate, _ = write_value path location this ~value ~desc astate in
     astate
 end

@@ -276,6 +276,7 @@ val incorporate_new_eqs :
      , [> `PotentialInvalidAccess of
           t * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
+     SatUnsat.t
 (** Check that the new equalities discovered are compatible with the current pre and post heaps,
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
     and [y] being allocated separately. In those cases, the resulting path condition is

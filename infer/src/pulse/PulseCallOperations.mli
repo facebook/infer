@@ -36,7 +36,7 @@ val unknown_call :
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> formals_opt:(Pvar.t * Typ.t) list option
   -> t
-  -> t AccessResult.t
+  -> t AccessResult.t SatUnsat.t
 (** performs a call to a function with no summary by optimistically havoc'ing the by-ref actuals and
     the return value as appropriate *)
 

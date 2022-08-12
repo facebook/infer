@@ -86,7 +86,7 @@ module Constraint : sig
 
   val substitute : t substitutor
 
-  val prune_path : t -> PathCondition.t -> PathCondition.t
+  val prune_path : t -> PathCondition.t -> PathCondition.t SatUnsat.t
 
   val pp : Format.formatter -> t -> unit
 end = struct
@@ -162,13 +162,11 @@ end = struct
   let substitute = sub_list substitute_predicate
 
   let prune_path constr path_condition =
+    let open SatUnsat.Import in
     let f path_condition (op, l, r) =
-      let path_condition, _new_eqs =
-        PathCondition.prune_binop ~negated:false op l r path_condition
-      in
-      path_condition
+      PathCondition.prune_binop ~negated:false op l r path_condition >>| fst
     in
-    List.fold ~init:path_condition ~f constr
+    SatUnsat.list_fold ~init:path_condition ~f constr
 
 
   let pp_predicate f (op, l, r) =
@@ -410,18 +408,17 @@ let static_match event : (ToplAutomaton.transition * tcontext) list =
   ToplAutomaton.tfilter_mapi (Topl.automaton ()) ~f:match_one
 
 
-let is_unsat_cheap path_condition pruned =
-  PathCondition.is_unsat_cheap (Constraint.prune_path pruned path_condition)
+let is_unsat = function SatUnsat.Unsat -> true | SatUnsat.Sat _ -> false
 
+let is_unsat_cheap path_condition pruned = Constraint.prune_path pruned path_condition |> is_unsat
 
 let default_tenv = Tenv.create ()
 
 let is_unsat_expensive ~get_dynamic_type path_condition pruned =
-  let _path_condition, unsat, _new_eqs =
-    PathCondition.is_unsat_expensive default_tenv ~get_dynamic_type
-      (Constraint.prune_path pruned path_condition)
-  in
-  unsat
+  let open SatUnsat.Import in
+  Constraint.prune_path pruned path_condition
+  >>= PathCondition.normalize default_tenv ~get_dynamic_type
+  |> is_unsat
 
 
 let drop_infeasible ?(expensive = false) ~get_dynamic_type ~path_condition state =

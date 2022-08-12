@@ -10,7 +10,7 @@ module L = Logging
 module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 
 type t = AbductiveDomain.t
 
@@ -90,17 +90,17 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
             AddressAttributes.remove_allocation_attr reachable_actual )
   in
   let add_skipped_proc astate =
-    let* astate, f =
+    let** astate, f =
       match reason with
       | Call _ | Model _ ->
-          Ok (astate, None)
+          Sat (Ok (astate, None))
       | SkippedKnownCall proc_name ->
-          Ok (astate, Some (PulseFormula.Procname proc_name))
+          Sat (Ok (astate, Some (PulseFormula.Procname proc_name)))
       | SkippedUnknownCall e ->
-          let+ astate, (v, _) = PulseOperations.eval path Read call_loc e astate in
+          let++ astate, (v, _) = PulseOperations.eval path Read call_loc e astate in
           (astate, Some (PulseFormula.Unknown v))
     in
-    let+ astate =
+    let++ astate =
       match f with
       | Some f when !is_functional ->
           PulseArithmetic.and_equal (AbstractValueOperand ret_val)
@@ -108,7 +108,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
                {f; actuals= List.map ~f:(fun ((actual_val, _hist), _typ) -> actual_val) actuals} )
             astate
       | _ ->
-          Ok astate
+          Sat (Ok astate)
     in
     match reason with
     | SkippedKnownCall proc_name ->
@@ -310,13 +310,15 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
 
 
-let ( let<*> ) x f =
-  match (x : _ PulseResult.t) with
-  | FatalError _ as err ->
+let ( let<**> ) x f =
+  match x with
+  | Unsat ->
+      ([], None)
+  | Sat (FatalError _ as err) ->
       ([err], None)
-  | Ok y ->
+  | Sat (Ok y) ->
       f y
-  | Recoverable (y, errors) ->
+  | Sat (Recoverable (y, errors)) ->
       let res, contradiction = f y in
       let res = List.map res ~f:(fun result -> PulseResult.append_errors errors result) in
       (res, contradiction)
@@ -332,7 +334,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
     List.map callee_proc_attrs.captured ~f:(fun {CapturedVar.pvar; capture_mode; typ} ->
         (Var.of_pvar pvar, capture_mode, typ) )
   in
-  let<*> astate, captured_actuals =
+  let<**> astate, captured_actuals =
     PulseOperations.get_captured_actuals callee_pname path call_loc ~captured_formals ~call_kind
       ~actuals astate
   in
@@ -374,7 +376,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
   (* a special case for objc nil messaging *)
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
-      let<+> astate_unknown =
+      let<++> astate_unknown =
         PulseObjectiveCSummary.append_objc_actual_self_positive proc_name proc_attrs
           (List.hd actuals) astate_unknown
       in
@@ -398,7 +400,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
-      let<*> astate_unknown =
+      let<**> astate_unknown =
         conservatively_initialize_args arg_values astate
         |> unknown_call path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
              ~actuals ~formals_opt

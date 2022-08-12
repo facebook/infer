@@ -40,6 +40,7 @@ type operand =
   | AbstractValueOperand of Var.t
   | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: function_symbol; actuals: Var.t list}
+[@@deriving compare, equal]
 
 let pp_operand fmt = function
   | AbstractValueOperand v ->

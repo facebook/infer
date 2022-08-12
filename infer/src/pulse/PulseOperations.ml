@@ -9,63 +9,7 @@ open! IStd
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
-
-module Import = struct
-  type access_mode = Read | Write | NoAccess
-
-  type 'abductive_domain_t execution_domain_base_t = 'abductive_domain_t ExecutionDomain.base_t =
-    | ContinueProgram of 'abductive_domain_t
-    | ExceptionRaised of 'abductive_domain_t
-    | ExitProgram of AbductiveDomain.summary
-    | AbortProgram of AbductiveDomain.summary
-    | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
-    | LatentInvalidAccess of
-        { astate: AbductiveDomain.summary
-        ; address: DecompilerExpr.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
-        ; calling_context: (CallEvent.t * Location.t) list }
-    | ISLLatentMemoryError of AbductiveDomain.summary
-
-  type base_summary_error = AccessResult.summary_error =
-    | PotentialInvalidAccessSummary of
-        { astate: AbductiveDomain.summary
-        ; address: DecompilerExpr.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
-    | ISLErrorSummary of {astate: AbductiveDomain.summary}
-
-  type base_error = AccessResult.error =
-    | PotentialInvalidAccess of
-        { astate: AbductiveDomain.t
-        ; address: DecompilerExpr.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
-    | ISLError of {astate: AbductiveDomain.t}
-    | Summary of base_summary_error
-
-  include PulseResult.Let_syntax
-
-  let ( let<*> ) x f =
-    match (x : _ PulseResult.t) with
-    | FatalError _ as err ->
-        [err]
-    | Ok y ->
-        f y
-    | Recoverable (y, errors) ->
-        List.map (f y) ~f:(fun result -> PulseResult.append_errors errors result)
-
-
-  let ( let<+> ) x f : _ PulseResult.t list =
-    match (x : _ PulseResult.t) with
-    | FatalError _ as err ->
-        [err]
-    | Ok y ->
-        [Ok (ExecutionDomain.ContinueProgram (f y))]
-    | Recoverable (y, errors) ->
-        [Recoverable (ExecutionDomain.ContinueProgram (f y), errors)]
-end
-
-include Import
+open PulseOperationResult.Import
 
 type t = AbductiveDomain.t
 
@@ -227,77 +171,78 @@ let eval path mode location exp0 astate =
   let rec eval ({PathContext.timestamp} as path) mode exp astate =
     match (exp : Exp.t) with
     | Var id ->
-        Ok
-          (Stack.eval path location (* error in case of missing history? *) ValueHistory.epoch
-             (Var.of_id id) astate )
+        Sat
+          (Ok
+             (Stack.eval path location (* error in case of missing history? *) ValueHistory.epoch
+                (Var.of_id id) astate ) )
     | Lvar pvar ->
-        Ok (eval_var path location pvar astate)
+        Sat (Ok (eval_var path location pvar astate))
     | Lfield (exp', field, _) ->
-        let* astate, addr_hist = eval path Read exp' astate in
+        let+* astate, addr_hist = eval path Read exp' astate in
         eval_access path mode location addr_hist (FieldAccess field) astate
     | Lindex (exp', exp_index) ->
-        let* astate, addr_hist_index = eval path Read exp_index astate in
-        let* astate, addr_hist = eval path Read exp' astate in
+        let** astate, addr_hist_index = eval path Read exp_index astate in
+        let+* astate, addr_hist = eval path Read exp' astate in
         eval_access path mode location addr_hist
           (ArrayAccess (StdTyp.void, fst addr_hist_index))
           astate
     | Closure {name; captured_vars} ->
-        let+ astate, rev_captured =
+        let++ astate, rev_captured =
           List.fold captured_vars
-            ~init:(Ok (astate, []))
+            ~init:(Sat (Ok (astate, [])))
             ~f:(fun result (capt_exp, captured_as, typ, mode) ->
-              let* astate, rev_captured = result in
-              let+ astate, addr_trace = eval path Read capt_exp astate in
+              let** astate, rev_captured = result in
+              let++ astate, addr_trace = eval path Read capt_exp astate in
               (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
         in
         Closures.record path location name (List.rev rev_captured) astate
     | Const (Cfun proc_name) ->
         (* function pointers are represented as closures with no captured variables *)
-        Ok (Closures.record path location proc_name [] astate)
+        Sat (Ok (Closures.record path location proc_name [] astate))
     | Cast (_, exp') ->
         eval path mode exp' astate
     | Const (Cint i) ->
         let v = AbstractValue.Constants.get_int i in
         let invalidation = Invalidation.ConstantDereference i in
-        let+ astate =
+        let++ astate =
           PulseArithmetic.and_eq_int v i astate
-          >>| AddressAttributes.invalidate
-                (v, ValueHistory.singleton (Assignment (location, timestamp)))
-                invalidation location
+          >>|| AddressAttributes.invalidate
+                 (v, ValueHistory.singleton (Assignment (location, timestamp)))
+                 invalidation location
         in
         (astate, (v, ValueHistory.singleton (Invalidated (invalidation, location, timestamp))))
     | Const (Cstr s) ->
         (* TODO: record actual string value; since we are making strings be a record in memory
            instead of pure values some care has to be added to access string values once written *)
         let v = AbstractValue.mk_fresh () in
-        let* astate, (len_addr, hist) =
+        let=* astate, (len_addr, hist) =
           eval_access path Write location
             (v, ValueHistory.singleton (Assignment (location, timestamp)))
             (FieldAccess ModeledField.string_length) astate
         in
         let len_int = IntLit.of_int (String.length s) in
-        let+ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
+        let++ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
         (astate, (v, hist))
     | Const ((Cfloat _ | Cclass _) as c) ->
         let v = AbstractValue.mk_fresh () in
-        let+ astate = PulseArithmetic.and_eq_const v c astate in
+        let++ astate = PulseArithmetic.and_eq_const v c astate in
         (astate, (v, ValueHistory.singleton (Assignment (location, timestamp))))
     | UnOp (unop, exp, _typ) ->
-        let* astate, (addr, hist) = eval path Read exp astate in
+        let** astate, (addr, hist) = eval path Read exp astate in
         let unop_addr = AbstractValue.mk_fresh () in
-        let+ astate, unop_addr = PulseArithmetic.eval_unop unop_addr unop addr astate in
+        let++ astate, unop_addr = PulseArithmetic.eval_unop unop_addr unop addr astate in
         (astate, (unop_addr, hist))
     | BinOp (bop, e_lhs, e_rhs) ->
-        let* astate, (addr_lhs, hist_lhs) = eval path Read e_lhs astate in
-        let* astate, (addr_rhs, hist_rhs) = eval path Read e_rhs astate in
+        let** astate, (addr_lhs, hist_lhs) = eval path Read e_lhs astate in
+        let** astate, (addr_rhs, hist_rhs) = eval path Read e_rhs astate in
         let binop_addr = AbstractValue.mk_fresh () in
-        let+ astate, binop_addr =
+        let++ astate, binop_addr =
           PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
             (AbstractValueOperand addr_rhs) astate
         in
         (astate, (binop_addr, ValueHistory.binary_op bop hist_lhs hist_rhs))
     | Sizeof _ | Exn _ ->
-        Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch))
+        Sat (Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch)))
   in
   eval path mode exp0 astate
 
@@ -305,9 +250,9 @@ let eval path mode location exp0 astate =
 let eval_to_operand path location exp astate =
   match (exp : Exp.t) with
   | Const c ->
-      Ok (astate, PulseArithmetic.ConstOperand c, ValueHistory.epoch)
+      Sat (Ok (astate, PulseArithmetic.ConstOperand c, ValueHistory.epoch))
   | exp ->
-      let+ astate, (value, hist) = eval path Read location exp astate in
+      let++ astate, (value, hist) = eval path Read location exp astate in
       (astate, PulseArithmetic.AbstractValueOperand value, hist)
 
 
@@ -315,9 +260,9 @@ let prune path location ~condition astate =
   let rec prune_aux ~negated exp astate =
     match (exp : Exp.t) with
     | BinOp (bop, exp_lhs, exp_rhs) ->
-        let* astate, lhs_op, lhs_hist = eval_to_operand path location exp_lhs astate in
-        let* astate, rhs_op, rhs_hist = eval_to_operand path location exp_rhs astate in
-        let+ astate = PulseArithmetic.prune_binop ~negated bop lhs_op rhs_op astate in
+        let** astate, lhs_op, lhs_hist = eval_to_operand path location exp_lhs astate in
+        let** astate, rhs_op, rhs_hist = eval_to_operand path location exp_rhs astate in
+        let++ astate = PulseArithmetic.prune_binop ~negated bop lhs_op rhs_op astate in
         let hist =
           match (lhs_hist, rhs_hist) with
           | ValueHistory.Epoch, hist | hist, ValueHistory.Epoch ->
@@ -337,7 +282,7 @@ let prune path location ~condition astate =
 
 
 let eval_deref path ?must_be_valid_reason location exp astate =
-  let* astate, addr_hist = eval path Read location exp astate in
+  let+* astate, addr_hist = eval path Read location exp astate in
   let+ astate = check_addr_access path ?must_be_valid_reason Read location addr_hist astate in
   Memory.eval_edge addr_hist Dereference astate
 
@@ -345,21 +290,21 @@ let eval_deref path ?must_be_valid_reason location exp astate =
 let eval_proc_name path location call_exp astate =
   match (call_exp : Exp.t) with
   | Const (Cfun proc_name) | Closure {name= proc_name} ->
-      Ok (astate, Some proc_name)
+      Sat (Ok (astate, Some proc_name))
   | _ ->
-      let+ astate, (f, _) = eval path Read location call_exp astate in
+      let++ astate, (f, _) = eval path Read location call_exp astate in
       (astate, AddressAttributes.get_closure_proc_name f astate)
 
 
 let eval_structure_isl path mode loc exp astate =
   match (exp : Exp.t) with
   | Lfield (exp', field, _) ->
-      let+ astate, addr_hist = eval path mode loc exp' astate in
+      let++ astate, addr_hist = eval path mode loc exp' astate in
       let astates = eval_access_biad_isl path mode loc addr_hist (FieldAccess field) astate in
       (false, astates)
   | Lindex (exp', exp_index) ->
-      let* astate, addr_hist_index = eval path mode loc exp_index astate in
-      let+ astate, addr_hist = eval path mode loc exp' astate in
+      let** astate, addr_hist_index = eval path mode loc exp_index astate in
+      let++ astate, addr_hist = eval path mode loc exp' astate in
       let astates =
         eval_access_biad_isl path mode loc addr_hist
           (ArrayAccess (StdTyp.void, fst addr_hist_index))
@@ -367,7 +312,7 @@ let eval_structure_isl path mode loc exp astate =
       in
       (false, astates)
   | _ ->
-      let+ astate, (addr, history) = eval path mode loc exp astate in
+      let++ astate, (addr, history) = eval path mode loc exp astate in
       (true, [Ok (astate, (addr, history))])
 
 
@@ -379,10 +324,10 @@ let eval_deref_biad_isl path location access addr_hist astate =
 
 
 let eval_deref_isl path location exp astate =
-  let<*> is_structured, ls_astate_addr_hist = eval_structure_isl path Read location exp astate in
+  let<**> is_structured, ls_astate_addr_hist = eval_structure_isl path Read location exp astate in
   let eval_deref_function (astate, addr_hist) =
     if is_structured then eval_deref_biad_isl path location Dereference addr_hist astate
-    else [eval_deref path location exp astate]
+    else eval_deref path location exp astate |> SatUnsat.to_list
   in
   List.concat_map ls_astate_addr_hist ~f:(fun result ->
       let<*> astate_addr = result in
@@ -792,10 +737,10 @@ let get_var_captured_actuals path location ~captured_formals ~actual_closure ast
 
 
 let get_closure_captured_actuals path location ~captured_actuals astate =
-  let+ astate, captured_actuals =
-    PulseResult.list_fold captured_actuals ~init:(astate, [])
+  let++ astate, captured_actuals =
+    PulseOperationResult.list_fold captured_actuals ~init:(astate, [])
       ~f:(fun (astate, captured_actuals) (exp, _, typ, _) ->
-        let+ astate, captured_actual = eval path Read location exp astate in
+        let++ astate, captured_actual = eval path Read location exp astate in
         (astate, (captured_actual, typ) :: captured_actuals) )
   in
   (* captured_actuals is currently in reverse order compared with its original
@@ -820,17 +765,18 @@ let get_captured_actuals procname path location ~captured_formals ~call_kind ~ac
     | `Closure captured_actuals ->
         get_closure_captured_actuals path location ~captured_actuals astate
     | `Var id ->
-        let* astate, actual_closure = eval path Read location (Exp.Var id) astate in
+        let+* astate, actual_closure = eval path Read location (Exp.Var id) astate in
         get_var_captured_actuals path location ~captured_formals ~actual_closure astate
     | `ResolvedProcname ->
-        Ok (astate, [])
+        Sat (Ok (astate, []))
   else
     match actuals with
     | (actual_closure, _) :: _ when not (List.is_empty captured_formals) ->
-        (* Assumption: the first parameter will be a closure *)
-        let* astate, actual_closure =
-          eval_access path Read location actual_closure Dereference astate
-        in
-        get_var_captured_actuals path location ~captured_formals ~actual_closure astate
+        Sat
+          ((* Assumption: the first parameter will be a closure *)
+           let* astate, actual_closure =
+             eval_access path Read location actual_closure Dereference astate
+           in
+           get_var_captured_actuals path location ~captured_formals ~actual_closure astate )
     | _ ->
-        Ok (astate, [])
+        Sat (Ok (astate, []))

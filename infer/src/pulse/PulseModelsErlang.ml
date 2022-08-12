@@ -9,13 +9,18 @@ open! IStd
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 open PulseModelsImport
 
 (** A type for transfer functions that make an object, add it to abstract state
     ([AbductiveDomain.t]), and return a handle to it ([(AbstractValue.t * ValueHistory.t)]). Note
     that the type is simlar to that of [PulseOperations.eval]. *)
 type maker =
+     AbductiveDomain.t
+  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t SatUnsat.t
+
+(** special case of {!maker} when the result is known to be satisfiable *)
+type sat_maker =
   AbductiveDomain.t -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
 (** Similar to {!maker} but can return a disjunction of results. *)
@@ -24,7 +29,8 @@ type disjunction_maker =
 
 (** A type similar to {!maker} for transfer functions that only return an abstract value without any
     history attached to it. *)
-type value_maker = AbductiveDomain.t -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t
+type value_maker =
+  AbductiveDomain.t -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t SatUnsat.t
 
 let write_field_and_deref path location ~struct_addr ~field_addr ~field_val field_name astate =
   let* astate =
@@ -95,17 +101,20 @@ let has_erlang_type value typ : value_maker =
  fun astate ->
   let instanceof_val = AbstractValue.mk_fresh () in
   let sil_type = Typ.mk_struct (ErlangType typ) in
-  let+ astate = PulseArithmetic.and_equal_instanceof instanceof_val value sil_type astate in
+  let++ astate = PulseArithmetic.and_equal_instanceof instanceof_val value sil_type astate in
   (astate, instanceof_val)
 
 
 let prune_type path location (value, hist) typ astate : AbductiveDomain.t AccessResult.t list =
-  (* If check_addr_access fails, we stop exploring this path. *)
-  let ( let^ ) x f = match x with Recoverable _ | FatalError _ -> [] | Ok astate -> [f astate] in
-  let^ astate = PulseOperations.check_addr_access path Read location (value, hist) astate in
-  let* astate, instanceof_val = has_erlang_type value typ astate in
-  let+ astate = PulseArithmetic.prune_positive instanceof_val astate in
-  astate
+  (let open SatUnsat.Import in
+  let* astate =
+    (* If check_addr_access fails, we stop exploring this path by marking it [Unsat] *)
+    PulseOperations.check_addr_access path Read location (value, hist) astate
+    |> PulseResult.ok |> SatUnsat.of_option
+  in
+  let** astate, instanceof_val = has_erlang_type value typ astate in
+  PulseArithmetic.prune_positive instanceof_val astate)
+  |> SatUnsat.to_list
 
 
 (** Loads a field from a struct, assuming that it has the correct type (should be checked by
@@ -164,7 +173,7 @@ module Atoms = struct
 
   let hash_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash
 
-  let make_raw location path value hash : maker =
+  let make_raw location path value hash : sat_maker =
    fun astate ->
     let hist = Hist.single_alloc path location "atom" in
     let addr_atom = (AbstractValue.mk_fresh (), hist) in
@@ -191,11 +200,11 @@ module Atoms = struct
   let of_string location path (name : string) : maker =
    fun astate ->
     (* Note: This should correspond to [ErlangTranslator.mk_atom_call]. *)
-    let* astate, hash =
+    let** astate, hash =
       let hash_exp : Exp.t = Const (Cint (IntLit.of_int (ErlangTypeName.calculate_hash name))) in
       PulseOperations.eval path Read location hash_exp astate
     in
-    let* astate, name =
+    let+* astate, name =
       let name_exp : Exp.t = Const (Cstr name) in
       PulseOperations.eval path Read location name_exp astate
     in
@@ -205,14 +214,15 @@ module Atoms = struct
   (* Converts [bool_value] into true/false, and write it to [addr_atom]. *)
   let of_bool path location bool_value astate =
     let astate_true =
-      let* astate = PulseArithmetic.prune_positive bool_value astate in
+      let** astate = PulseArithmetic.prune_positive bool_value astate in
       of_string location path ErlangTypeName.atom_true astate
     in
-    let astate_false : (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t =
-      let* astate = PulseArithmetic.prune_eq_zero bool_value astate in
+    let astate_false :
+        (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t SatUnsat.t =
+      let** astate = PulseArithmetic.prune_eq_zero bool_value astate in
       of_string location path ErlangTypeName.atom_false astate
     in
-    let> astate, (addr, hist) = [astate_true; astate_false] in
+    let> astate, (addr, hist) = SatUnsat.to_list astate_true @ SatUnsat.to_list astate_false in
     let typ = Typ.mk_struct (ErlangType Atom) in
     [Ok (PulseOperations.add_dynamic_type typ addr astate, (addr, hist))]
 
@@ -226,7 +236,7 @@ end
 module Integers = struct
   let value_field = Fieldname.make (ErlangType Integer) ErlangTypeName.integer_value
 
-  let make_raw location path value : maker =
+  let make_raw location path value : sat_maker =
    fun astate ->
     let hist = Hist.single_alloc path location "integer" in
     let addr = (AbstractValue.mk_fresh (), hist) in
@@ -246,7 +256,7 @@ module Integers = struct
 
   let of_intlit location path (intlit : IntLit.t) : maker =
    fun astate ->
-    let* astate, name =
+    let+* astate, name =
       let intlit_exp : Exp.t = Const (Cint intlit) in
       PulseOperations.eval path Read location intlit_exp astate
     in
@@ -288,7 +298,7 @@ module Comparison = struct
     let const_false _x _y _location _path : value_maker =
      fun astate ->
       let const_false = AbstractValue.mk_fresh () in
-      let+ astate = PulseArithmetic.prune_eq_zero const_false astate in
+      let++ astate = PulseArithmetic.prune_eq_zero const_false astate in
       (astate, const_false)
 
 
@@ -297,7 +307,7 @@ module Comparison = struct
     let const_true _x _y _location _path : value_maker =
      fun astate ->
       let const_true = AbstractValue.mk_fresh () in
-      let+ astate = PulseArithmetic.prune_positive const_true astate in
+      let++ astate = PulseArithmetic.prune_positive const_true astate in
       (astate, const_true)
 
 
@@ -313,7 +323,7 @@ module Comparison = struct
     let unknown _x _y _location _path : value_maker =
      fun astate ->
       let result = AbstractValue.mk_fresh () in
-      Ok (astate, result)
+      Sat (Ok (astate, result))
 
 
     (** Takes as parameters the types of two values [x] and [y] known to be incompatible and returns
@@ -428,16 +438,21 @@ module Comparison = struct
         integer. *)
     let any_with_integer_split cmp location path ~are_compatible ty_x ty_y x y : disjunction_maker =
      fun astate ->
-      let<*> astate_int = PulseArithmetic.prune_positive are_compatible astate in
-      let<*> astate_incompatible = PulseArithmetic.prune_eq_zero are_compatible astate in
-      let<*> astate_int, int_comparison = cmp.integer x y location path astate_int in
-      let<*> astate_incompatible, incompatible_comparison =
-        cmp.incompatible ty_x ty_y x y location path astate_incompatible
+      let int_result =
+        let** astate_int = PulseArithmetic.prune_positive are_compatible astate in
+        let++ astate_int, int_comparison = cmp.integer x y location path astate_int in
+        let int_hist = Hist.single_alloc path location "any_int_comparison" in
+        (astate_int, (int_comparison, int_hist))
       in
-      let int_hist = Hist.single_alloc path location "any_int_comparison" in
-      let incompatible_hist = Hist.single_alloc path location "any_incompatible_comparison" in
-      [ Ok (astate_int, (int_comparison, int_hist))
-      ; Ok (astate_incompatible, (incompatible_comparison, incompatible_hist)) ]
+      let incompatible_result =
+        let** astate_incompatible = PulseArithmetic.prune_eq_zero are_compatible astate in
+        let++ astate_incompatible, incompatible_comparison =
+          cmp.incompatible ty_x ty_y x y location path astate_incompatible
+        in
+        let incompatible_hist = Hist.single_alloc path location "any_incompatible_comparison" in
+        (astate_incompatible, (incompatible_comparison, incompatible_hist))
+      in
+      SatUnsat.to_list int_result @ SatUnsat.to_list incompatible_result
   end
 
   (** Makes an abstract value holding the comparison result of two parameters. We perform a case
@@ -484,25 +499,25 @@ module Comparison = struct
     let y_typ = get_erlang_type_or_any y_val astate in
     match (x_typ, y_typ) with
     | Integer, Integer ->
-        let<*> astate, result = cmp.integer x y location path astate in
+        let<**> astate, result = cmp.integer x y location path astate in
         let hist = Hist.single_alloc path location "integer_comparison" in
         [Ok (astate, (result, hist))]
     | Atom, Atom ->
-        let<*> astate, result = cmp.atom x y location path astate in
+        let<**> astate, result = cmp.atom x y location path astate in
         let hist = Hist.single_alloc path location "atom_comparison" in
         [Ok (astate, (result, hist))]
     | Integer, Any ->
-        let<*> astate, are_compatible = has_erlang_type y_val Integer astate in
+        let<**> astate, are_compatible = has_erlang_type y_val Integer astate in
         Comparator.any_with_integer_split cmp location path ~are_compatible Integer Any x y astate
     | Any, Integer ->
-        let<*> astate, are_compatible = has_erlang_type x_val Integer astate in
+        let<**> astate, are_compatible = has_erlang_type x_val Integer astate in
         Comparator.any_with_integer_split cmp location path ~are_compatible Any Integer x y astate
     | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
-        let<*> astate, result = cmp.unsupported x y location path astate in
+        let<**> astate, result = cmp.unsupported x y location path astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
         [Ok (astate, (result, hist))]
     | _ ->
-        let<*> astate, result = cmp.incompatible x_typ y_typ x y location path astate in
+        let<**> astate, result = cmp.incompatible x_typ y_typ x y location path astate in
         let hist = Hist.single_alloc path location "incompatible_comparison" in
         [Ok (astate, (result, hist))]
 
@@ -518,7 +533,7 @@ module Comparison = struct
   (** Returns an abstract state that has been pruned on the comparison result being true. *)
   let prune cmp location path x y astate : AbductiveDomain.t AccessResult.t list =
     let> astate, (comparison, _hist) = make_raw cmp location path x y astate in
-    [PulseArithmetic.prune_positive comparison astate]
+    PulseArithmetic.prune_positive comparison astate |> SatUnsat.to_list
 
 
   (** {1 Specific comparison operators} *)
@@ -544,7 +559,7 @@ module Lists = struct
   let tail_field = Fieldname.make (ErlangType Cons) ErlangTypeName.cons_tail
 
   (** Helper function to create a Nil structure without assigning it to return value *)
-  let make_nil_raw location path : maker =
+  let make_nil_raw location path : sat_maker =
    fun astate ->
     let event = Hist.alloc_event path location "[]" in
     let addr_nil_val = AbstractValue.mk_fresh () in
@@ -563,7 +578,7 @@ module Lists = struct
 
 
   (** Helper function to create a Cons structure without assigning it to return value *)
-  let make_cons_raw path location hd tl : maker =
+  let make_cons_raw path location hd tl : sat_maker =
    fun astate ->
     let hist = Hist.single_alloc path location "[X|Xs]" in
     let addr_cons_val = AbstractValue.mk_fresh () in
@@ -617,14 +632,14 @@ module Lists = struct
     let typ_nil = Typ.mk_struct (ErlangType Nil) in
     let instanceof_val_cons = AbstractValue.mk_fresh () in
     let instanceof_val_nil = AbstractValue.mk_fresh () in
-    let<*> astate =
+    let<**> astate =
       PulseArithmetic.and_equal_instanceof instanceof_val_cons list_val typ_cons astate
     in
-    let<*> astate =
+    let<**> astate =
       PulseArithmetic.and_equal_instanceof instanceof_val_nil list_val typ_nil astate
     in
-    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val_cons astate in
-    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val_nil astate in
+    let<**> astate = PulseArithmetic.prune_eq_zero instanceof_val_cons astate in
+    let<**> astate = PulseArithmetic.prune_eq_zero instanceof_val_nil astate in
     Errors.badarg data astate
 
 
@@ -653,7 +668,7 @@ module Lists = struct
     append2 ~reverse:true list nil data astate
 
 
-  let rec make_raw location path elements : maker =
+  let rec make_raw location path elements : sat_maker =
    fun astate ->
     match elements with
     | [] ->
@@ -666,14 +681,14 @@ module Lists = struct
   (** Approximation: we don't actually do the side-effect, just assume the return value. *)
   let foreach _fun _list : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let<*> astate, ret = Atoms.of_string location path "ok" astate in
+    let<**> astate, ret = Atoms.of_string location path "ok" astate in
     PulseOperations.write_id ret_id ret astate |> Basic.ok_continue
 end
 
 module Tuples = struct
   (** Helper: Like [Tuples.make] but with a more precise/composable type. *)
   let make_raw (location : Location.t) (path : PathContext.t)
-      (args : (AbstractValue.t * ValueHistory.t) list) : maker =
+      (args : (AbstractValue.t * ValueHistory.t) list) : sat_maker =
    fun astate ->
     let tuple_size = List.length args in
     let tuple_typ_name : Typ.name = ErlangType (Tuple tuple_size) in
@@ -741,7 +756,7 @@ module Maps = struct
       write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
         ~field_val:fresh_val is_empty_field astate
     in
-    let<+> astate = PulseArithmetic.and_eq_int is_empty_value is_empty_lit astate in
+    let<++> astate = PulseArithmetic.and_eq_int is_empty_value is_empty_lit astate in
     write_dynamic_type_and_return addr_map Map ret_id astate
 
 
@@ -750,8 +765,8 @@ module Maps = struct
   let make_astate_badmap (map_val, _map_hist) data astate =
     let typ = Typ.mk_struct (ErlangType Map) in
     let instanceof_val = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
-    let<*> astate = PulseArithmetic.prune_eq_zero instanceof_val astate in
+    let<**> astate = PulseArithmetic.and_equal_instanceof instanceof_val map_val typ astate in
+    let<**> astate = PulseArithmetic.prune_eq_zero instanceof_val astate in
     Errors.badmap data astate
 
 
@@ -771,8 +786,10 @@ module Maps = struct
       let astate, _isempty_addr, (is_empty, _isempty_hist) =
         load_field path is_empty_field location map astate
       in
-      let> astate = [PulseArithmetic.prune_positive is_empty astate] in
-      let> astate = [PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate] in
+      let> astate = PulseArithmetic.prune_positive is_empty astate |> SatUnsat.to_list in
+      let> astate =
+        PulseArithmetic.and_eq_int ret_val_false IntLit.zero astate |> SatUnsat.to_list
+      in
       Atoms.write_return_from_bool path location ret_val_false ret_id astate
     in
     let astate_haskey =
@@ -781,10 +798,10 @@ module Maps = struct
       let astate, _isempty_addr, (is_empty, _isempty_hist) =
         load_field path is_empty_field location map astate
       in
-      let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
+      let> astate = PulseArithmetic.prune_eq_zero is_empty astate |> SatUnsat.to_list in
       let astate, _key_addr, tracked_key = load_field path key_field location map astate in
       let> astate = Comparison.prune_equal location path key tracked_key astate in
-      let> astate = [PulseArithmetic.and_eq_int ret_val_true IntLit.one astate] in
+      let> astate = PulseArithmetic.and_eq_int ret_val_true IntLit.one astate |> SatUnsat.to_list in
       Atoms.write_return_from_bool path location ret_val_true ret_id astate
     in
     astate_empty @ astate_haskey @ astate_badmap
@@ -803,7 +820,7 @@ module Maps = struct
       let astate, _isempty_addr, (is_empty, _isempty_hist) =
         load_field path is_empty_field location map astate
       in
-      let> astate = [PulseArithmetic.prune_eq_zero is_empty astate] in
+      let> astate = PulseArithmetic.prune_eq_zero is_empty astate |> SatUnsat.to_list in
       let astate, _key_addr, tracked_key = load_field path key_field location map astate in
       let> astate = Comparison.prune_equal location path (key, key_history) tracked_key astate in
       let astate, _value_addr, tracked_value = load_field path value_field location map astate in
@@ -814,7 +831,7 @@ module Maps = struct
       let astate, _isempty_addr, (is_empty, _isempty_hist) =
         load_field path is_empty_field location map astate
       in
-      let> astate = [PulseArithmetic.prune_positive is_empty astate] in
+      let> astate = PulseArithmetic.prune_positive is_empty astate |> SatUnsat.to_list in
       Errors.badkey data astate
     in
     List.map ~f:Basic.map_continue astate_ok @ astate_badkey @ astate_badmap
@@ -846,9 +863,10 @@ module Maps = struct
             ~field_val:value value_field astate ]
       in
       let> astate =
-        [ write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
-            ~field_val:fresh_val is_empty_field astate
-          >>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero ]
+        write_field_and_deref path location ~struct_addr:addr_map ~field_addr:addr_is_empty
+          ~field_val:fresh_val is_empty_field astate
+        >>>= PulseArithmetic.and_eq_int is_empty_value IntLit.zero
+        |> SatUnsat.to_list
       in
       [Ok (write_dynamic_type_and_return addr_map Map ret_id astate)]
     in
@@ -864,19 +882,26 @@ module Strings = struct
   let make_raw location path (value, _) : disjunction_maker =
    fun astate ->
     let new_hist = Hist.single_alloc path location "string" in
-    let<*> astate_nil = PulseArithmetic.and_eq_int value IntLit.zero astate in
-    let<*> astate_nil, addr_nil = Lists.make_nil_raw location path astate_nil in
-    let val_not_nil = AbstractValue.mk_fresh () in
-    let<*> astate_not_nil = PulseArithmetic.and_positive value astate in
+    let astate_nil =
+      let+* astate_nil = PulseArithmetic.and_eq_int value IntLit.zero astate in
+      let+ astate_nil, addr_nil = Lists.make_nil_raw location path astate_nil in
+      (astate_nil, addr_nil)
+    in
     let astate_not_nil =
-      PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) val_not_nil astate_not_nil
+      let val_not_nil = AbstractValue.mk_fresh () in
+      let+* astate_not_nil = PulseArithmetic.and_positive value astate in
+      let astate_not_nil =
+        PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) val_not_nil
+          astate_not_nil
+      in
+      let+ astate_not_nil =
+        write_field_and_deref path location ~struct_addr:(val_not_nil, new_hist)
+          ~field_addr:(AbstractValue.mk_fresh (), new_hist)
+          ~field_val:(value, new_hist) value_field astate_not_nil
+      in
+      (astate_not_nil, (val_not_nil, new_hist))
     in
-    let<*> astate_not_nil =
-      write_field_and_deref path location ~struct_addr:(val_not_nil, new_hist)
-        ~field_addr:(AbstractValue.mk_fresh (), new_hist)
-        ~field_val:(value, new_hist) value_field astate_not_nil
-    in
-    [Ok (astate_nil, addr_nil); Ok (astate_not_nil, (val_not_nil, new_hist))]
+    SatUnsat.to_list astate_nil @ SatUnsat.to_list astate_not_nil
 
 
   let make value : model =
@@ -890,7 +915,7 @@ module BIF = struct
    fun {location; path; ret= ret_id, _} astate ->
     let typ = Typ.mk_struct (ErlangType type_) in
     let is_typ = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_equal_instanceof is_typ value typ astate in
+    let<**> astate = PulseArithmetic.and_equal_instanceof is_typ value typ astate in
     Atoms.write_return_from_bool path location is_typ ret_id astate
 
 
@@ -902,8 +927,8 @@ module BIF = struct
       (* Assume not atom: just return false *)
       let typ = Typ.mk_struct (ErlangType Atom) in
       let is_atom = AbstractValue.mk_fresh () in
-      let<*> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
-      let<*> astate = PulseArithmetic.prune_eq_zero is_atom astate in
+      let<**> astate = PulseArithmetic.and_equal_instanceof is_atom atom_val typ astate in
+      let<**> astate = PulseArithmetic.prune_eq_zero is_atom astate in
       Atoms.write_return_from_bool path location is_atom ret_id astate
     in
     let astate_is_atom =
@@ -917,19 +942,19 @@ module BIF = struct
       let is_true = AbstractValue.mk_fresh () in
       let is_false = AbstractValue.mk_fresh () in
       let is_bool = AbstractValue.mk_fresh () in
-      let<*> astate, is_true =
+      let<**> astate, is_true =
         PulseArithmetic.eval_binop is_true Binop.Eq (AbstractValueOperand hash)
           (ConstOperand
              (Cint (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_true))) )
           astate
       in
-      let<*> astate, is_false =
+      let<**> astate, is_false =
         PulseArithmetic.eval_binop is_false Binop.Eq (AbstractValueOperand hash)
           (ConstOperand
              (Cint (IntLit.of_int (ErlangTypeName.calculate_hash ErlangTypeName.atom_false))) )
           astate
       in
-      let<*> astate, is_bool =
+      let<**> astate, is_bool =
         PulseArithmetic.eval_binop is_bool Binop.LOr (AbstractValueOperand is_true)
           (AbstractValueOperand is_false) astate
       in
@@ -947,9 +972,9 @@ module BIF = struct
     let is_cons = AbstractValue.mk_fresh () in
     let is_nil = AbstractValue.mk_fresh () in
     let is_list = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
-    let<*> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
-    let<*> astate, is_list =
+    let<**> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
+    let<**> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
+    let<**> astate, is_list =
       PulseArithmetic.eval_binop is_list Binop.LOr (AbstractValueOperand is_cons)
         (AbstractValueOperand is_nil) astate
     in
@@ -1014,13 +1039,14 @@ module Custom = struct
       | None ->
           let ret_addr = AbstractValue.mk_fresh () in
           let ret_hist = Hist.single_alloc path location "nondet" in
-          Ok (astate, (ret_addr, ret_hist))
+          Sat (Ok (astate, (ret_addr, ret_hist)))
       | Some (Atom None) ->
           let ret_addr = AbstractValue.mk_fresh () in
           let ret_hist = Hist.single_alloc path location "nondet_atom" in
-          Ok
-            ( PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Atom)) ret_addr astate
-            , (ret_addr, ret_hist) )
+          Sat
+            (Ok
+               ( PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Atom)) ret_addr astate
+               , (ret_addr, ret_hist) ) )
       | Some (Atom (Some name)) ->
           Atoms.of_string location path name astate
       | Some (IntLit intlit) ->
@@ -1031,14 +1057,14 @@ module Custom = struct
       | Some (Tuple elements) ->
           let mk = Tuples.make_raw location path in
           many mk elements astate
-    and many (mk : (AbstractValue.t * ValueHistory.t) list -> maker) (elements : erlang_value list)
-        : maker =
+    and many (mk : (AbstractValue.t * ValueHistory.t) list -> sat_maker)
+        (elements : erlang_value list) : maker =
      fun astate ->
       let mk_arg (args, astate) element =
-        let+ astate, arg = one element astate in
+        let++ astate, arg = one element astate in
         (arg :: args, astate)
       in
-      let* args, astate = PulseResult.list_fold ~init:([], astate) ~f:mk_arg elements in
+      let+* args, astate = PulseOperationResult.list_fold ~init:([], astate) ~f:mk_arg elements in
       mk (List.rev args) astate
     in
     fun ret_val astate -> one ret_val astate
@@ -1046,7 +1072,7 @@ module Custom = struct
 
   let return_value_model (ret_val : erlang_value) : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let<+> astate, ret = return_value_helper location path ret_val astate in
+    let<++> astate, ret = return_value_helper location path ret_val astate in
     PulseOperations.write_id ret_id ret astate
 
 

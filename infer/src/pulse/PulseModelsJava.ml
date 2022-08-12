@@ -7,7 +7,8 @@
 
 open! IStd
 open PulseBasicInterface
-open PulseOperations.Import
+open PulseDomainInterface
+open PulseOperationResult.Import
 open PulseModelsImport
 module Cplusplus = PulseModelsCpp
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
@@ -40,7 +41,7 @@ let instance_of (argv, hist) typeexpr : model =
   let res_addr = AbstractValue.mk_fresh () in
   match typeexpr with
   | Exp.Sizeof {typ} ->
-      let<+> astate = PulseArithmetic.and_equal_instanceof res_addr argv typ astate in
+      let<++> astate = PulseArithmetic.and_equal_instanceof res_addr argv typ astate in
       PulseOperations.write_id ret_id (res_addr, Hist.add_event path event hist) astate
   (* The type expr is sometimes a Var expr but this is not expected.
      This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)
@@ -244,10 +245,10 @@ module Collection = struct
         (is_empty_value, Hist.single_event path event)
         location fresh_val astate
     in
-    let<*> astate =
+    let<**> astate =
       PulseOperations.write_deref path location ~ref:this ~obj:fresh_val astate
-      >>= PulseArithmetic.and_eq_int init_value IntLit.zero
-      >>= PulseArithmetic.and_eq_int is_empty_value IntLit.one
+      >>>= PulseArithmetic.and_eq_int init_value IntLit.zero
+      >>== PulseArithmetic.and_eq_int is_empty_value IntLit.one
     in
     astate |> Basic.ok_continue
 
@@ -275,9 +276,9 @@ module Collection = struct
     (* snd_field takes new value given *)
     let<*> astate = PulseOperations.write_deref path location ~ref:snd_addr ~obj:new_elem astate in
     (* Collection.add returns a boolean, in this case the return always has value one *)
-    let<*> astate =
+    let<**> astate =
       PulseArithmetic.and_eq_int ret_value IntLit.one astate
-      >>| PulseOperations.write_id ret_id (ret_value, Hist.single_event path event)
+      >>|| PulseOperations.write_id ret_id (ret_value, Hist.single_event path event)
     in
     (* empty field set to false if the collection was empty *)
     let<*> astate, _, (is_empty_val, hist) =
@@ -286,11 +287,11 @@ module Collection = struct
     if PulseArithmetic.is_known_zero astate is_empty_val then astate |> Basic.ok_continue
     else
       let is_empty_new_val = AbstractValue.mk_fresh () in
-      let<*> astate =
+      let<**> astate =
         write_field path is_empty_field
           (is_empty_new_val, Hist.add_event path event hist)
           location coll_val astate
-        >>= PulseArithmetic.and_eq_int is_empty_new_val IntLit.zero
+        >>>= PulseArithmetic.and_eq_int is_empty_new_val IntLit.zero
       in
       astate |> Basic.ok_continue
 
@@ -340,7 +341,7 @@ module Collection = struct
   let remove_at path ~desc coll location ret_id astate =
     let event = Hist.call_event path location desc in
     let new_val = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
+    let<**> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
     update path coll new_val ValueHistory.epoch event location ret_id astate
 
 
@@ -352,16 +353,16 @@ module Collection = struct
     let null_val = AbstractValue.mk_fresh () in
     let ret_val = AbstractValue.mk_fresh () in
     let is_empty_val = AbstractValue.mk_fresh () in
-    let* astate =
+    let=* astate =
       write_field path is_empty_field
         (is_empty_val, Hist.single_event path event)
         location coll_val astate
     in
-    let* astate =
+    let** astate =
       PulseArithmetic.and_eq_int null_val IntLit.zero astate
-      >>= PulseArithmetic.and_eq_int ret_val IntLit.one
+      >>== PulseArithmetic.and_eq_int ret_val IntLit.one
     in
-    let* astate =
+    let+* astate =
       PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand field_val) astate
     in
@@ -383,22 +384,22 @@ module Collection = struct
     (* case1: given element is equal to fst_field *)
     let astate1 =
       remove_elem_found path coll_val elem fst_addr fst_val ret_id location event astate
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
     (* case2: given element is equal to snd_field *)
     let astate2 =
       remove_elem_found path coll_val elem snd_addr snd_val ret_id location event astate
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
     (* case 3: given element is not equal to the fst AND not equal to the snd *)
     let astate3 =
       PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
-      >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
-            (AbstractValueOperand snd_val)
-      |> Basic.map_continue
+      >>== PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+             (AbstractValueOperand snd_val)
+      >>|| ExecutionDomain.continue
     in
-    [astate1; astate2; astate3]
+    SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
 
 
   let remove ~desc args : model =
@@ -441,9 +442,9 @@ module Collection = struct
     let<*> astate = write_field path fst_field (null_val, hist) location coll_val astate in
     let<*> astate = write_field path snd_field (null_val, hist) location coll_val astate in
     let<*> astate = write_field path is_empty_field (is_empty_val, hist) location coll_val astate in
-    let<+> astate =
+    let<++> astate =
       PulseArithmetic.and_eq_int null_val IntLit.zero astate
-      >>= PulseArithmetic.and_eq_int is_empty_val IntLit.one
+      >>== PulseArithmetic.and_eq_int is_empty_val IntLit.one
     in
     astate
 
@@ -453,11 +454,11 @@ module Collection = struct
      (2) in such case we can return 0 *)
   let get_elem_coll_is_empty path is_empty_val is_empty_expected_val event location ret_id astate =
     let not_found_val = AbstractValue.mk_fresh () in
-    let* astate =
+    let+* astate =
       PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand is_empty_val)
         (AbstractValueOperand is_empty_expected_val) astate
-      >>= PulseArithmetic.and_eq_int not_found_val IntLit.zero
-      >>= PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
+      >>== PulseArithmetic.and_eq_int not_found_val IntLit.zero
+      >>== PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
     in
     let hist = Hist.single_event path event in
     let astate = PulseOperations.write_id ret_id (not_found_val, hist) astate in
@@ -475,25 +476,25 @@ module Collection = struct
     let astate1 =
       PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
-      >>= PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
-            (AbstractValueOperand snd_val)
-      |> Basic.map_continue
+      >>== PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
+             (AbstractValueOperand snd_val)
+      >>|| ExecutionDomain.continue
     in
     (* case 2: given element is equal to fst_field *)
     let astate2 =
       PulseArithmetic.and_positive found_val astate
-      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
-            (AbstractValueOperand fst_val)
-      |> Basic.map_continue
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+             (AbstractValueOperand fst_val)
+      >>|| ExecutionDomain.continue
     in
     (* case 3: given element is equal to snd_field *)
     let astate3 =
       PulseArithmetic.and_positive found_val astate
-      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
-            (AbstractValueOperand snd_val)
-      |> Basic.map_continue
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+             (AbstractValueOperand snd_val)
+      >>|| ExecutionDomain.continue
     in
-    [astate1; astate2; astate3]
+    SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
 
 
   let get ~desc coll (elem, _) : model =
@@ -507,22 +508,22 @@ module Collection = struct
     let true_val = AbstractValue.mk_fresh () in
     let astate1 =
       get_elem_coll_is_empty path is_empty_val true_val event location ret_id astate
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
     (* case 2: collection is not known to be empty *)
     let found_val = AbstractValue.mk_fresh () in
     let astates2 =
       let<*> astate2, _, (fst_val, _) = load_field path fst_field location coll_val astate in
       let<*> astate2, _, (snd_val, _) = load_field path snd_field location coll_val astate2 in
-      let<*> astate2 =
+      let<**> astate2 =
         PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
           (AbstractValueOperand true_val) astate2
-        >>= PulseArithmetic.and_eq_int true_val IntLit.one
-        >>| PulseOperations.write_id ret_id (found_val, Hist.single_event path event)
+        >>== PulseArithmetic.and_eq_int true_val IntLit.one
+        >>|| PulseOperations.write_id ret_id (found_val, Hist.single_event path event)
       in
       get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2
     in
-    astate1 :: astates2
+    SatUnsat.to_list astate1 @ astates2
 end
 
 module Integer = struct
@@ -554,7 +555,7 @@ module Integer = struct
     let<*> astate, _int_addr1, (int1, hist1) = load_backing_int path location this astate in
     let<*> astate, _int_addr2, (int2, hist2) = load_backing_int path location arg astate in
     let binop_addr = AbstractValue.mk_fresh () in
-    let<+> astate, binop_addr =
+    let<++> astate, binop_addr =
       PulseArithmetic.eval_binop binop_addr Eq (AbstractValueOperand int1)
         (AbstractValueOperand int2) astate
     in
@@ -579,13 +580,13 @@ module Preconditions = struct
   let check_not_null (address, hist) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "Preconditions.checkNotNull" in
-    let<+> astate = PulseArithmetic.prune_positive address astate in
+    let<++> astate = PulseArithmetic.prune_positive address astate in
     PulseOperations.write_id ret_id (address, Hist.add_event path event hist) astate
 
 
   let check_state_argument (address, _) : model =
    fun _ astate ->
-    let<+> astate = PulseArithmetic.prune_positive address astate in
+    let<++> astate = PulseArithmetic.prune_positive address astate in
     astate
 end
 

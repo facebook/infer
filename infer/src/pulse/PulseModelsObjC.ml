@@ -8,7 +8,7 @@
 open! IStd
 module IRAttributes = Attributes
 open PulseBasicInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 open PulseModelsImport
 
 module CoreFoundation = struct
@@ -85,12 +85,12 @@ let read_from_collection (key, key_hist) ~desc : model =
   let event = Hist.call_event path location desc in
   let astate_nil =
     let ret_val = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.prune_eq_zero key astate in
-    let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
+    let<**> astate = PulseArithmetic.prune_eq_zero key astate in
+    let<++> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
     PulseOperations.write_id ret_id (ret_val, Hist.add_event path event key_hist) astate
   in
   let astate_not_nil =
-    let<*> astate = PulseArithmetic.prune_positive key astate in
+    let<**> astate = PulseArithmetic.prune_positive key astate in
     let<+> astate, (ret_val, hist) =
       PulseOperations.eval_access path Read location (key, key_hist) Dereference astate
     in
@@ -113,7 +113,7 @@ let alloc_no_fail size : model =
  fun ({ret= ret_id, _} as model_data) astate ->
   (* NOTE: technically this doesn't initialize the result but we haven't modelled initialization so
      assume the object is initialized after [init] for now *)
-  let<+> astate =
+  let<++> astate =
     Basic.alloc_not_null ~initialize:true ~desc:"alloc" ObjCAlloc (Some size) model_data astate
   in
   let ret_addr =
@@ -172,7 +172,7 @@ let check_arg_not_nil (value, value_hist) ~desc : model =
       Dereference astate
   in
   let ret_val = AbstractValue.mk_fresh () in
-  let<+> astate = PulseArithmetic.prune_positive ret_val astate in
+  let<++> astate = PulseArithmetic.prune_positive ret_val astate in
   PulseOperations.write_id ret_id (ret_val, Hist.single_call path location desc) astate
 
 

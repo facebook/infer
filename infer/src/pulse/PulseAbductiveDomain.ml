@@ -997,7 +997,7 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
         AbstractValue.Set.mem canon_addr canon_addresses )
       post
   in
-  (* note: we don't call {!PulsePathCondition.simplify} *)
+  (* note: we don't call {!PathCondition.simplify} *)
   let astate =
     if phys_equal pre_new pre && phys_equal post_new post then astate
     else {astate with pre= pre_new; post= post_new}
@@ -1349,12 +1349,11 @@ let summary_of_post tenv proc_name (proc_attrs : ProcAttributes.t) location asta
   (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
      canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
      contradictions about addresses we are about to garbage collect *)
-  let path_condition, is_unsat, new_eqs =
-    PathCondition.is_unsat_expensive tenv
+  let* path_condition, new_eqs =
+    PathCondition.normalize tenv
       ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
       astate.path_condition
   in
-  let* () = if is_unsat then Unsat else Sat () in
   let astate = {astate with path_condition} in
   let* astate, error = incorporate_new_eqs ~for_summary:true astate new_eqs in
   let astate_before_filter = astate in
@@ -1404,16 +1403,16 @@ let get_post {post} = (post :> BaseDomain.t)
 
 (* re-exported for mli *)
 let incorporate_new_eqs new_eqs astate =
-  if PathCondition.is_unsat_cheap astate.path_condition then Ok astate
-  else
-    match incorporate_new_eqs ~for_summary:false astate new_eqs with
-    | Unsat ->
-        Ok {astate with path_condition= PathCondition.false_}
-    | Sat (astate, None) ->
-        Ok astate
-    | Sat (astate, Some (address, must_be_valid)) ->
-        L.d_printfln ~color:Red "potential error if %a is null" AbstractValue.pp address ;
-        Error (`PotentialInvalidAccess (astate, address, must_be_valid))
+  let open SatUnsat.Import in
+  let+ astate, potential_invalid_access_opt =
+    incorporate_new_eqs ~for_summary:false astate new_eqs
+  in
+  match potential_invalid_access_opt with
+  | None ->
+      Ok astate
+  | Some (address, must_be_valid) ->
+      L.d_printfln ~color:Red "potential error if %a is null" AbstractValue.pp address ;
+      Error (`PotentialInvalidAccess (astate, address, must_be_valid))
 
 
 let incorporate_new_eqs_on_val new_eqs v =

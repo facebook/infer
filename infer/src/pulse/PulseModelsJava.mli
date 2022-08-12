@@ -8,7 +8,7 @@
 open! IStd
 open PulseModelsImport
 open PulseBasicInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 
 val load_field :
      PulsePathContext.t

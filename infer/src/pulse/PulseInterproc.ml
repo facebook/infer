@@ -99,6 +99,13 @@ let log_contradiction = function
 
 exception Contradiction of contradiction
 
+let raise_if_unsat contradiction = function
+  | Sat x ->
+      x
+  | Unsat ->
+      raise (Contradiction contradiction)
+
+
 let fold_globals_of_stack ({PathContext.timestamp} as path) call_loc stack call_state ~f =
   PulseResult.container_fold ~fold:(IContainer.fold_of_pervasives_map_fold BaseStack.fold)
     stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
@@ -127,10 +134,9 @@ let and_aliasing_arith ~addr_callee ~addr_caller0 call_state =
       let path_condition, _new_eqs =
         PathCondition.and_eq_vars addr_caller0 addr_caller'
           call_state.astate.AbductiveDomain.path_condition
+        |> raise_if_unsat PathCondition
       in
-      if PathCondition.is_unsat_cheap path_condition then raise (Contradiction PathCondition)
-      else
-        {call_state with astate= AbductiveDomain.set_path_condition path_condition call_state.astate}
+      {call_state with astate= AbductiveDomain.set_path_condition path_condition call_state.astate}
   | _ ->
       call_state
 
@@ -302,19 +308,18 @@ let conjoin_callee_arith pre_or_post pre_post call_state =
     | `Pre ->
         PathCondition.and_callee_pre call_state.subst call_state.astate.path_condition
           ~callee:pre_post.AbductiveDomain.path_condition
+        |> raise_if_unsat PathCondition
     | `Post ->
         PathCondition.and_callee_post call_state.subst call_state.astate.path_condition
           ~callee:pre_post.AbductiveDomain.path_condition
+        |> raise_if_unsat PathCondition
   in
-  if PathCondition.is_unsat_cheap path_condition then raise (Contradiction PathCondition)
-  else
-    let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
-    let+ astate =
-      AbductiveDomain.incorporate_new_eqs new_eqs astate |> AccessResult.of_abductive_result
-    in
-    if PathCondition.is_unsat_cheap astate.AbductiveDomain.path_condition then
-      raise (Contradiction PathCondition)
-    else {call_state with astate; subst}
+  let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
+  let+ astate =
+    AbductiveDomain.incorporate_new_eqs new_eqs astate
+    |> raise_if_unsat PathCondition |> AccessResult.of_abductive_result
+  in
+  {call_state with astate; subst}
 
 
 let caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller_history call_state

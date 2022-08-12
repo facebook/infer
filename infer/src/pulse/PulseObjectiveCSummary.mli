@@ -14,7 +14,7 @@ val append_objc_actual_self_positive :
   -> ProcAttributes.t
   -> ((AbstractValue.t * ValueHistory.t) * Typ.t) option
   -> AbductiveDomain.t
-  -> AbductiveDomain.t AccessResult.t
+  -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
 val initial_with_positive_self :
   Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t

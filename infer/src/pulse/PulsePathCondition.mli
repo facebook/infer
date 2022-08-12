@@ -11,11 +11,9 @@ module AbstractValue = PulseAbstractValue
 module SatUnsat = PulseSatUnsat
 module ValueHistory = PulseValueHistory
 
-type t [@@deriving compare, equal, yojson_of]
+type t = PulseFormula.t [@@deriving compare, equal, yojson_of]
 
 val true_ : t
-
-val false_ : t
 
 val pp : F.formatter -> t -> unit
 
@@ -23,19 +21,19 @@ type new_eqs = PulseFormula.new_eqs
 
 (** {2 Building arithmetic constraints} *)
 
-val and_nonnegative : AbstractValue.t -> t -> t * new_eqs
+val and_nonnegative : AbstractValue.t -> t -> (t * new_eqs) SatUnsat.t
 (** [and_nonnegative v phi] is [phi ∧ v≥0] *)
 
-val and_positive : AbstractValue.t -> t -> t * new_eqs
+val and_positive : AbstractValue.t -> t -> (t * new_eqs) SatUnsat.t
 (** [and_positive v phi] is [phi ∧ v>0] *)
 
-val and_eq_const : AbstractValue.t -> Const.t -> t -> t * new_eqs
+val and_eq_const : AbstractValue.t -> Const.t -> t -> (t * new_eqs) SatUnsat.t
 (** [and_eq_const v c phi] is [phi ∧ v=c] *)
 
-val and_eq_int : AbstractValue.t -> IntLit.t -> t -> t * new_eqs
+val and_eq_int : AbstractValue.t -> IntLit.t -> t -> (t * new_eqs) SatUnsat.t
 (** [and_eq_int v i phi] is [and_eq_const v (Cint i) phi] *)
 
-val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
+val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> (t * new_eqs) SatUnsat.t
 
 val simplify :
      Tenv.t
@@ -52,13 +50,13 @@ val and_callee_pre :
      (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
   -> t
   -> callee:t
-  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * t * new_eqs
+  -> ((AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * t * new_eqs) SatUnsat.t
 
 val and_callee_post :
      (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
   -> t
   -> callee:t
-  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * t * new_eqs
+  -> ((AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * t * new_eqs) SatUnsat.t
 
 (** {2 Operations} *)
 
@@ -68,23 +66,23 @@ type operand = PulseFormula.operand =
   | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
 [@@deriving compare, equal]
 
-val and_equal : operand -> operand -> t -> t * new_eqs
+val and_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
-val and_not_equal : operand -> operand -> t -> t * new_eqs
+val and_not_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
-val eval_binop : AbstractValue.t -> Binop.t -> operand -> operand -> t -> t * new_eqs
+val eval_binop : AbstractValue.t -> Binop.t -> operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 val eval_binop_av :
-  AbstractValue.t -> Binop.t -> AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
+  AbstractValue.t -> Binop.t -> AbstractValue.t -> AbstractValue.t -> t -> (t * new_eqs) SatUnsat.t
 (** Helper function that wraps [eval_binop], to be used when both operands are abstract values *)
 
-val eval_unop : AbstractValue.t -> Unop.t -> AbstractValue.t -> t -> t * new_eqs
+val eval_unop : AbstractValue.t -> Unop.t -> AbstractValue.t -> t -> (t * new_eqs) SatUnsat.t
 
-val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> t * new_eqs
+val prune_binop : negated:bool -> Binop.t -> operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
-val and_is_int : AbstractValue.t -> t -> t * new_eqs
+val and_is_int : AbstractValue.t -> t -> (t * new_eqs) SatUnsat.t
 
-val and_eq_instanceof : AbstractValue.t -> AbstractValue.t -> Typ.t -> t -> t * new_eqs
+val and_eq_instanceof : AbstractValue.t -> AbstractValue.t -> Typ.t -> t -> (t * new_eqs) SatUnsat.t
 
 (** {2 Queries} *)
 
@@ -97,11 +95,8 @@ val is_known_non_zero : t -> AbstractValue.t -> bool
 
     This only consults the concrete intervals domain for now *)
 
-val is_unsat_cheap : t -> bool
-(** whether the state contains a contradiction, call this as often as you want *)
-
-val is_unsat_expensive :
-  Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t * bool * new_eqs
+val normalize :
+  Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> (t * new_eqs) SatUnsat.t
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
 
 val is_manifest : is_allocated:(AbstractValue.t -> bool) -> t -> bool
