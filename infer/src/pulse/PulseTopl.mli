@@ -6,8 +6,9 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 
-type value = PulseAbstractValue.t
+type value = AbstractValue.t
 
 type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
@@ -20,9 +21,9 @@ val start : unit -> state
 
 val small_step :
      Location.t
-  -> keep:PulseAbstractValue.Set.t
+  -> keep:AbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
-  -> path_condition:PulsePathCondition.t
+  -> path_condition:PathCondition.t
   -> event
   -> state
   -> state
@@ -30,10 +31,10 @@ val small_step :
 val large_step :
      call_location:Location.t
   -> callee_proc_name:Procname.t
-  -> substitution:(value * PulseValueHistory.t) PulseAbstractValue.Map.t
-  -> keep:PulseAbstractValue.Set.t
+  -> substitution:(value * ValueHistory.t) AbstractValue.Map.t
+  -> keep:AbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
-  -> path_condition:PulsePathCondition.t
+  -> path_condition:PathCondition.t
   -> callee_prepost:state
   -> state
   -> state
@@ -43,15 +44,15 @@ val large_step :
     condition&state scope. *)
 
 val filter_for_summary :
-  get_dynamic_type:(value -> Typ.t option) -> PulsePathCondition.t -> state -> state
+  get_dynamic_type:(value -> Typ.t option) -> PathCondition.t -> state -> state
 (** Remove from state those parts that are inconsistent with the path condition. (We do a cheap
     check to not introduce inconsistent Topl states, but they may become inconsistent because the
     program path condition is updated later.) *)
 
 val simplify :
-     keep:PulseAbstractValue.Set.t
+     keep:AbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
-  -> path_condition:PulsePathCondition.t
+  -> path_condition:PathCondition.t
   -> state
   -> state
 (** Keep only a subset of abstract values. This is used for extracting summaries. *)
