@@ -269,6 +269,12 @@ int unique_ptr_move_null_deref_bad() {
   return *p1;
 }
 
+int unique_ptr_self_move_assignment_ok() {
+  std::unique_ptr<int> x(new int(42));
+  x = std::move(x);
+  return *x;
+}
+
 int unique_ptr_swap0_ok() {
   int* p1 = new int(1);
   int* p2 = new int(2);
