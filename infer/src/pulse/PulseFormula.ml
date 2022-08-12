@@ -2030,76 +2030,79 @@ module Formula = struct
 end
 
 type t =
-  { pruned: Atom.Set.t
+  { conditions: Atom.Set.t
         (** collection of conditions that have been assumed (via [PRUNE] CFG nodes) along the path *)
-  ; both: Formula.t
+  ; phi: Formula.t
         (** the arithmetic constraints of the current symbolic state; true in both the pre and post
             since abstract values [Var.t] have immutable semantics *) }
 [@@deriving compare, equal, yojson_of]
 
-let ttrue = {pruned= Atom.Set.empty; both= Formula.ttrue}
+let ttrue = {conditions= Atom.Set.empty; phi= Formula.ttrue}
 
-let pp_with_pp_var pp_var fmt {pruned; both} =
-  F.fprintf fmt "@[conditions=%a,@;phi=%a@]" (Atom.Set.pp_with_pp_var pp_var) pruned
-    (Formula.pp_with_pp_var pp_var) both
+let pp_with_pp_var pp_var fmt {conditions; phi} =
+  F.fprintf fmt "@[conditions=%a,@;phi=%a@]" (Atom.Set.pp_with_pp_var pp_var) conditions
+    (Formula.pp_with_pp_var pp_var) phi
 
 
 let pp = pp_with_pp_var Var.pp
 
-let and_atom atom phi =
+let and_atom atom formula =
   let open SatUnsat.Import in
-  let+ both, new_eqs = Formula.Normalizer.and_atom atom (phi.both, []) in
-  ({phi with both}, new_eqs)
+  let+ phi, new_eqs = Formula.Normalizer.and_atom atom (formula.phi, []) in
+  ({formula with phi}, new_eqs)
 
 
-let and_mk_atom mk_atom op1 op2 phi =
+let and_mk_atom mk_atom op1 op2 formula =
   let atom = mk_atom (Term.of_operand op1) (Term.of_operand op2) in
-  and_atom atom phi
+  and_atom atom formula
 
 
 let and_equal = and_mk_atom Atom.equal
 
 let and_not_equal = and_mk_atom Atom.not_equal
 
-let and_equal_instanceof v1 v2 t phi =
+let and_equal_instanceof v1 v2 t formula =
   let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in
-  and_atom atom phi
+  and_atom atom formula
 
 
-let and_is_int v phi =
+let and_is_int v formula =
   let atom = Atom.equal (IsInt (Var v)) Term.one in
-  and_atom atom phi
+  and_atom atom formula
 
 
 let and_less_equal = and_mk_atom Atom.less_equal
 
 let and_less_than = and_mk_atom Atom.less_than
 
-let and_equal_unop v (op : Unop.t) x phi =
-  and_atom (Equal (Var v, Term.of_unop op (Term.of_operand x))) phi
+let and_equal_unop v (op : Unop.t) x formula =
+  and_atom (Equal (Var v, Term.of_unop op (Term.of_operand x))) formula
 
 
-let and_equal_binop v (bop : Binop.t) x y phi =
-  and_atom (Equal (Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y))) phi
+let and_equal_binop v (bop : Binop.t) x y formula =
+  and_atom (Equal (Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y))) formula
 
 
-let prune_atom atom (phi, new_eqs) =
+let prune_atom atom (formula, new_eqs) =
   let open SatUnsat.Import in
-  (* Use [both] to normalize [atom] here to take previous [prune]s into account. *)
-  let* normalized_atom = Formula.Normalizer.normalize_atom phi.both atom in
-  let+ both, new_eqs = Formula.Normalizer.and_normalized_atom (phi.both, new_eqs) normalized_atom in
-  let pruned =
-    Option.fold normalized_atom ~init:phi.pruned ~f:(fun pruned atom -> Atom.Set.add atom pruned)
+  (* Use [phi] to normalize [atom] here to take previous [prune]s into account. *)
+  let* normalized_atom = Formula.Normalizer.normalize_atom formula.phi atom in
+  let+ phi, new_eqs =
+    Formula.Normalizer.and_normalized_atom (formula.phi, new_eqs) normalized_atom
   in
-  ({both; pruned}, new_eqs)
+  let conditions =
+    Option.fold normalized_atom ~init:formula.conditions ~f:(fun conditions atom ->
+        Atom.Set.add atom conditions )
+  in
+  ({phi; conditions}, new_eqs)
 
 
-let prune_binop ~negated (bop : Binop.t) x y phi =
+let prune_binop ~negated (bop : Binop.t) x y formula =
   let tx = Term.of_operand x in
   let ty = Term.of_operand y in
   let t = Term.of_binop bop tx ty in
   let atom = if negated then Atom.Equal (t, Term.zero) else Atom.NotEqual (t, Term.zero) in
-  prune_atom atom (phi, [])
+  prune_atom atom (formula, [])
 
 
 module DynamicTypes = struct
@@ -2116,7 +2119,7 @@ module DynamicTypes = struct
            Term.of_bool is_instanceof )
 
 
-  let really_simplify tenv ~get_dynamic_type phi =
+  let really_simplify tenv ~get_dynamic_type formula =
     let simplify_term (t : Term.t) =
       match t with
       | IsInstanceOf (v, typ) -> (
@@ -2126,48 +2129,50 @@ module DynamicTypes = struct
     in
     let simplify_atom atom = Atom.map_subterms ~f:simplify_term atom in
     let open SatUnsat.Import in
-    let old_term_eqs = phi.both.term_eqs in
-    let old_atoms = phi.both.atoms in
-    let both = {phi.both with term_eqs= Term.VarMap.empty; atoms= Atom.Set.empty} in
-    let* both, new_eqs =
-      let f t v acc_both =
-        let* acc_both in
+    let old_term_eqs = formula.phi.term_eqs in
+    let old_atoms = formula.phi.atoms in
+    let phi = {formula.phi with term_eqs= Term.VarMap.empty; atoms= Atom.Set.empty} in
+    let* phi, new_eqs =
+      let f t v acc_phi =
+        let* acc_phi in
         let t = simplify_term t in
-        Formula.Normalizer.and_var_term v t acc_both
+        Formula.Normalizer.and_var_term v t acc_phi
       in
-      Term.VarMap.fold f old_term_eqs (Sat (both, []))
+      Term.VarMap.fold f old_term_eqs (Sat (phi, []))
     in
-    let+ both, new_eqs =
-      let f atom acc_both =
-        let* acc_both in
+    let+ phi, new_eqs =
+      let f atom acc_phi =
+        let* acc_phi in
         let atom = simplify_atom atom in
-        Formula.Normalizer.and_atom atom acc_both
+        Formula.Normalizer.and_atom atom acc_phi
       in
-      Atom.Set.fold f old_atoms (Sat (both, new_eqs))
+      Atom.Set.fold f old_atoms (Sat (phi, new_eqs))
     in
-    ({phi with both}, new_eqs)
+    ({formula with phi}, new_eqs)
 
 
-  let has_instanceof phi =
+  let has_instanceof formula =
     let in_term (t : Term.t) = match t with IsInstanceOf _ -> true | _ -> false in
     let in_atom atom = Atom.exists_subterm atom ~f:in_term in
-    Term.VarMap.exists (fun t _v -> in_term t) phi.both.term_eqs
-    || Atom.Set.exists in_atom phi.both.atoms
+    Term.VarMap.exists (fun t _v -> in_term t) formula.phi.term_eqs
+    || Atom.Set.exists in_atom formula.phi.atoms
 
 
-  let simplify tenv ~get_dynamic_type phi =
-    if has_instanceof phi then really_simplify tenv ~get_dynamic_type phi else Sat (phi, [])
+  let simplify tenv ~get_dynamic_type formula =
+    if has_instanceof formula then really_simplify tenv ~get_dynamic_type formula
+    else Sat (formula, [])
 end
 
-let normalize tenv ~get_dynamic_type phi =
+let normalize tenv ~get_dynamic_type formula =
   let open SatUnsat.Import in
-  let* phi, new_eqs = DynamicTypes.simplify tenv ~get_dynamic_type phi in
-  let+ both, new_eqs = Formula.Normalizer.normalize (phi.both, new_eqs) in
-  ({phi with both}, new_eqs)
+  let* formula, new_eqs = DynamicTypes.simplify tenv ~get_dynamic_type formula in
+  let+ phi, new_eqs = Formula.Normalizer.normalize (formula.phi, new_eqs) in
+  ({formula with phi}, new_eqs)
 
 
-(** translate each variable in [phi_foreign] according to [f] then incorporate each fact into [phi0] *)
-let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
+(** translate each variable in [formula_foreign] according to [f] then incorporate each fact into
+    [formula0] *)
+let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
   let f_subst acc v =
     let acc', v' = f_var acc v in
     (acc', VarSubst v')
@@ -2220,8 +2225,8 @@ let and_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
     with Contradiction -> Unsat
   in
   let open SatUnsat.Import in
-  let+ acc, (both, new_eqs) = and_ phi_foreign.both init phi0.both in
-  (acc, {phi0 with both}, new_eqs)
+  let+ acc, (phi, new_eqs) = and_ formula_foreign.phi init formula0.phi in
+  (acc, {formula0 with phi}, new_eqs)
 
 
 let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =
@@ -2234,15 +2239,15 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
   let sat_value_exn (norm : 'a SatUnsat.t) =
     match norm with Unsat -> raise Contradiction | Sat x -> x
   in
-  let add_pruned pruned_foreign init =
-    IContainer.fold_of_pervasives_set_fold Atom.Set.fold pruned_foreign ~init
+  let add_conditions conditions_foreign init =
+    IContainer.fold_of_pervasives_set_fold Atom.Set.fold conditions_foreign ~init
       ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
         let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f:f_subst in
         let phi_new_eqs = prune_atom atom phi_new_eqs |> sat_value_exn in
         (acc_f, phi_new_eqs) )
   in
   try
-    let acc, (phi, new_eqs) = add_pruned phi_foreign.pruned (init, (phi0, [])) in
+    let acc, (phi, new_eqs) = add_conditions phi_foreign.conditions (init, (phi0, [])) in
     Sat (acc, phi, new_eqs)
   with Contradiction -> Unsat
 
@@ -2280,7 +2285,7 @@ end = struct
       atoms Atom.Set.empty
 
 
-  let subst_var_formula subst {Formula.var_eqs; linear_eqs; tableau; term_eqs; atoms} =
+  let subst_var_phi subst {Formula.var_eqs; linear_eqs; tableau; term_eqs; atoms} =
     { Formula.var_eqs= VarUF.apply_subst subst var_eqs
     ; linear_eqs= subst_var_linear_eqs subst linear_eqs
     ; term_eqs= Term.VarMap.apply_var_subst subst term_eqs
@@ -2288,16 +2293,16 @@ end = struct
     ; atoms= subst_var_atoms subst atoms }
 
 
-  let eliminate_vars ~keep phi =
-    let subst_phi =
-      VarUF.reorient phi.both.var_eqs ~should_keep:(fun x ->
+  let eliminate_vars ~keep formula =
+    let subst =
+      VarUF.reorient formula.phi.var_eqs ~should_keep:(fun x ->
           (* TODO: we could probably be less coarse than keeping *all* restricted variables. This
              ensures that substituting in the tableau doesn't introduce unrestricted variables in
              the tableau. Also, getting rid of restricted variables risks losing information: if
              [x=u] with [u] restricted then [x≥0]. *)
           Var.is_restricted x || Var.Set.mem x keep )
     in
-    try Sat {pruned= phi.pruned; both= subst_var_formula subst_phi phi.both}
+    try Sat {conditions= formula.conditions; phi= subst_var_phi subst formula.phi}
     with Contradiction -> Unsat
 end
 
@@ -2387,14 +2392,9 @@ module DeadVariables = struct
       variables in [keep], or variables appearing in atoms together with variables in these sets,
       and so on. In other words, the variables to keep are all the ones transitively reachable from
       variables in [keep] in the graph connecting two variables whenever they appear together in a
-      same atom of the formula. *)
-  let eliminate ~can_be_pruned ~keep phi =
-    (* We only consider [phi.both] when building the relation. Considering [phi.known] and
-       [phi.pruned] as well could lead to us keeping more variables around, but that's not necessarily
-       a good idea. Ignoring them means we err on the side of reporting potentially slightly more
-       issues than we would otherwise, as some atoms in [phi.pruned] may vanish unfairly as a
-       result. *)
-    let var_graph = build_var_graph phi.both in
+      same atom of the phi. *)
+  let eliminate ~precondition_vocabulary ~keep formula =
+    let var_graph = build_var_graph formula.phi in
     let vars_to_keep = get_reachable_from var_graph keep in
     L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
     let simplify_phi phi =
@@ -2418,42 +2418,44 @@ module DeadVariables = struct
       in
       {Formula.var_eqs; linear_eqs; term_eqs; tableau; atoms}
     in
-    let both = simplify_phi phi.both in
-    let pruned =
+    let phi = simplify_phi formula.phi in
+    let conditions =
       (* discard atoms that callers have no way of influencing, i.e. more or less those that do not
          contain variables related to variables in the pre *)
-      let closed_prunable_vars = get_reachable_from var_graph can_be_pruned in
-      Atom.Set.filter (fun atom -> not (Atom.has_var_notin closed_prunable_vars atom)) phi.pruned
+      let closed_prunable_vars = get_reachable_from var_graph precondition_vocabulary in
+      Atom.Set.filter
+        (fun atom -> not (Atom.has_var_notin closed_prunable_vars atom))
+        formula.conditions
     in
-    Sat ({pruned; both}, vars_to_keep)
+    Sat ({conditions; phi}, vars_to_keep)
 end
 
-let simplify tenv ~get_dynamic_type ~can_be_pruned ~keep phi =
+let simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep formula =
   let open SatUnsat.Import in
-  let* phi, new_eqs = normalize tenv ~get_dynamic_type phi in
-  L.d_printfln_escaped "@[Simplifying %a@,wrt %a (keep), with prunables=%a@]" pp phi Var.Set.pp keep
-    Var.Set.pp can_be_pruned ;
+  let* formula, new_eqs = normalize tenv ~get_dynamic_type formula in
+  L.d_printfln_escaped "@[Simplifying %a@,wrt %a (keep), with prunables=%a@]" pp formula Var.Set.pp
+    keep Var.Set.pp precondition_vocabulary ;
   (* get rid of as many variables as possible *)
-  let* phi = QuantifierElimination.eliminate_vars ~keep phi in
+  let* formula = QuantifierElimination.eliminate_vars ~keep formula in
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
      eliminate even more variables *)
-  let+ phi, live_vars = DeadVariables.eliminate ~can_be_pruned ~keep phi in
-  (phi, live_vars, new_eqs)
+  let+ formula, live_vars = DeadVariables.eliminate ~precondition_vocabulary ~keep formula in
+  (formula, live_vars, new_eqs)
 
 
-let is_known_zero phi v =
-  Var.Map.find_opt (VarUF.find phi.both.var_eqs v :> Var.t) phi.both.linear_eqs
+let is_known_zero formula v =
+  Var.Map.find_opt (VarUF.find formula.phi.var_eqs v :> Var.t) formula.phi.linear_eqs
   |> Option.exists ~f:LinArith.is_zero
 
 
-let is_manifest ~is_allocated phi =
+let is_manifest ~is_allocated formula =
   Atom.Set.for_all
     (fun atom ->
       (* ignore [x≠0] when [x] is known to be allocated: pointers being allocated doesn't make an
          issue latent and we still need to remember that [x≠0] was tested by the program explicitly
       *)
       match Atom.get_as_var_ne_or_gt_zero atom with None -> false | Some x -> is_allocated x )
-    phi.pruned
+    formula.conditions
 
 
-let get_both_var_repr phi v = (Formula.Normalizer.get_repr phi.both v :> Var.t)
+let get_var_repr formula v = (Formula.Normalizer.get_repr formula.phi v :> Var.t)

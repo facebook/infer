@@ -162,7 +162,8 @@ let simplify ~keep phi =
   test phi ~f:(fun phi ->
       (* keep variables as if they were in the pre-condition, which makes [simplify] keeps the most
          facts (eg atoms in [pruned] may be discarded if their variables are not in the pre) *)
-      simplify dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type ~can_be_pruned:keep ~keep phi
+      simplify dummy_tenv ~get_dynamic_type:dummy_get_dynamic_type ~precondition_vocabulary:keep
+        ~keep phi
       >>| fst3 )
 
 

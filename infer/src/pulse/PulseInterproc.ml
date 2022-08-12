@@ -727,8 +727,7 @@ let apply_post path callee_proc_name call_location pre_post ~captured_formals ~c
       AddressMap.map
         (fun (v_caller, hist) ->
           let v_caller_canon =
-            PathCondition.get_both_var_repr call_state.astate.AbductiveDomain.path_condition
-              v_caller
+            PathCondition.get_var_repr call_state.astate.AbductiveDomain.path_condition v_caller
           in
           (v_caller_canon, hist) )
         call_state.subst
@@ -756,8 +755,7 @@ let apply_post path callee_proc_name call_location pre_post ~captured_formals ~c
     in
     let return_caller_opt =
       Option.map return_caller_opt ~f:(fun (return_caller, return_hist) ->
-          ( PathCondition.get_both_var_repr call_state.astate.AbductiveDomain.path_condition
-              return_caller
+          ( PathCondition.get_var_repr call_state.astate.AbductiveDomain.path_condition return_caller
           , return_hist ) )
     in
     (call_state, return_caller_opt)

@@ -72,7 +72,7 @@ val normalize : Tenv.t -> get_dynamic_type:(Var.t -> Typ.t option) -> t -> (t * 
 val simplify :
      Tenv.t
   -> get_dynamic_type:(Var.t -> Typ.t option)
-  -> can_be_pruned:Var.Set.t
+  -> precondition_vocabulary:Var.Set.t
   -> keep:Var.Set.t
   -> t
   -> (t * Var.Set.t * new_eqs) SatUnsat.t
@@ -109,6 +109,5 @@ val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
     or null! But, to reiterate, we do want to report errors that only have valid pointers in their
     precondition. *)
 
-val get_both_var_repr : t -> Var.t -> Var.t
-(** get the canonical representative for the variable according to the both/pre+post equality
-    relation *)
+val get_var_repr : t -> Var.t -> Var.t
+(** get the canonical representative for the variable according to the equality relation *)

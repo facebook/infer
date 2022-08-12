@@ -39,14 +39,14 @@ val and_eq_vars : AbstractValue.t -> AbstractValue.t -> t -> t * new_eqs
 
 val simplify :
      Tenv.t
-  -> can_be_pruned:AbstractValue.Set.t
+  -> precondition_vocabulary:AbstractValue.Set.t
   -> keep:AbstractValue.Set.t
   -> get_dynamic_type:(AbstractValue.t -> Typ.t option)
   -> t
   -> (t * AbstractValue.Set.t * new_eqs) SatUnsat.t
-(** [simplify ~can_be_pruned ~keep phi] attempts to get rid of as many variables in [fv phi] but not
-    in [keep] as possible, and tries to eliminate variables not in [can_be_pruned] from the "pruned"
-    part of the formula *)
+(** [simplify ~precondition_vocabulary ~keep phi] attempts to get rid of as many variables in
+    [fv phi] but not in [keep] as possible, and tries to eliminate variables not in
+    [precondition_vocabulary] from the "conditions" part of the formula *)
 
 val and_callee_pre :
      (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
@@ -107,6 +107,5 @@ val is_unsat_expensive :
 val is_manifest : is_allocated:(AbstractValue.t -> bool) -> t -> bool
 (** whether the current path is independent of any calling context *)
 
-val get_both_var_repr : t -> AbstractValue.t -> AbstractValue.t
-(** get the canonical representative for the variable according to the equality relation in the
-    "both" (known + pruned) part of the formula *)
+val get_var_repr : t -> AbstractValue.t -> AbstractValue.t
+(** get the canonical representative for the variable according to the equality relation *)

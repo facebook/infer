@@ -128,13 +128,13 @@ let and_not_equal op1 op2 phi =
   ({is_unsat; bo_itvs; citvs; formula}, new_eqs)
 
 
-let simplify tenv ~can_be_pruned ~keep ~get_dynamic_type phi =
+let simplify tenv ~precondition_vocabulary ~keep ~get_dynamic_type phi =
   if phi.is_unsat then Unsat
   else
     let {is_unsat; bo_itvs; citvs; formula} = phi in
     let open SatUnsat.Import in
     let+ formula, live_vars, new_eqs =
-      Formula.simplify tenv ~can_be_pruned ~keep ~get_dynamic_type formula
+      Formula.simplify tenv ~precondition_vocabulary ~keep ~get_dynamic_type formula
     in
     let is_in_keep v _ = AbstractValue.Set.mem v keep in
     ( { is_unsat
@@ -490,4 +490,4 @@ let is_unsat_expensive tenv ~get_dynamic_type phi =
 
 let is_manifest ~is_allocated phi = Formula.is_manifest ~is_allocated phi.formula
 
-let get_both_var_repr phi v = Formula.get_both_var_repr phi.formula v
+let get_var_repr phi v = Formula.get_var_repr phi.formula v

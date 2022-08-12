@@ -824,7 +824,7 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
 
            We don't have a precise enough memory model to understand everything that
            goes on here but we should at least not report a leak. *)
-        let addr_canon = PathCondition.get_both_var_repr astate.path_condition addr in
+        let addr_canon = PathCondition.get_var_repr astate.path_condition addr in
         if
           reaches_into addr live_addresses (astate.post :> BaseDomain.t)
           || reaches_into addr_canon live_addresses (astate.post :> BaseDomain.t)
@@ -979,10 +979,10 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
       ~already_visited:post_addresses
   in
   let canon_addresses =
-    AbstractValue.Set.map (PathCondition.get_both_var_repr astate.path_condition) pre_addresses
+    AbstractValue.Set.map (PathCondition.get_var_repr astate.path_condition) pre_addresses
     |> AbstractValue.Set.fold
          (fun addr acc ->
-           AbstractValue.Set.add (PathCondition.get_both_var_repr astate.path_condition addr) acc )
+           AbstractValue.Set.add (PathCondition.get_var_repr astate.path_condition addr) acc )
          post_addresses
   in
   let post_new, dead_addresses =
@@ -993,7 +993,7 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
         || AbstractValue.Set.mem address post_addresses
         || AbstractValue.Set.mem address always_reachable_trans_closure
         ||
-        let canon_addr = PathCondition.get_both_var_repr astate.path_condition address in
+        let canon_addr = PathCondition.get_var_repr astate.path_condition address in
         AbstractValue.Set.mem canon_addr canon_addresses )
       post
   in
@@ -1284,7 +1284,7 @@ let canonicalize astate =
     PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
   in
   let canonicalize_post (post : PostDomain.t) =
-    let get_var_repr v = PathCondition.get_both_var_repr astate.path_condition v in
+    let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
     let* stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
     (* note: this step also de-registers addresses pointing to empty edges *)
     let+ heap' = BaseMemory.canonicalize ~get_var_repr (post :> BaseDomain.t).heap in
@@ -1317,7 +1317,7 @@ let filter_for_summary tenv proc_name astate0 =
   let astate, pre_live_addresses, post_live_addresses, dead_addresses =
     discard_unreachable_ ~for_summary:true astate
   in
-  let can_be_pruned =
+  let precondition_vocabulary =
     if PatternMatch.is_entry_point proc_name then
       (* report all latent issues at entry points *)
       AbstractValue.Set.empty
@@ -1328,7 +1328,7 @@ let filter_for_summary tenv proc_name astate0 =
     BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs
   in
   let+ path_condition, live_via_arithmetic, new_eqs =
-    PathCondition.simplify tenv ~get_dynamic_type ~can_be_pruned ~keep:live_addresses
+    PathCondition.simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep:live_addresses
       astate.path_condition
   in
   let live_addresses = AbstractValue.Set.union live_addresses live_via_arithmetic in
