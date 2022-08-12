@@ -23,7 +23,7 @@ val small_step :
      Location.t
   -> keep:AbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
-  -> path_condition:PathCondition.t
+  -> path_condition:Formula.t
   -> event
   -> state
   -> state
@@ -34,7 +34,7 @@ val large_step :
   -> substitution:(value * ValueHistory.t) AbstractValue.Map.t
   -> keep:AbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
-  -> path_condition:PathCondition.t
+  -> path_condition:Formula.t
   -> callee_prepost:state
   -> state
   -> state
@@ -43,8 +43,7 @@ val large_step :
     [callee_prepost] in another scope: the [substitution] maps from the callee scope to the
     condition&state scope. *)
 
-val filter_for_summary :
-  get_dynamic_type:(value -> Typ.t option) -> PathCondition.t -> state -> state
+val filter_for_summary : get_dynamic_type:(value -> Typ.t option) -> Formula.t -> state -> state
 (** Remove from state those parts that are inconsistent with the path condition. (We do a cheap
     check to not introduce inconsistent Topl states, but they may become inconsistent because the
     program path condition is updated later.) *)
@@ -52,7 +51,7 @@ val filter_for_summary :
 val simplify :
      keep:AbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
-  -> path_condition:PathCondition.t
+  -> path_condition:Formula.t
   -> state
   -> state
 (** Keep only a subset of abstract values. This is used for extracting summaries. *)

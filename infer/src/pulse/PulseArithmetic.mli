@@ -10,7 +10,7 @@ open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module AccessResult = PulseAccessResult
 
-(** Wrapper around {!PathCondition} that operates on {!AbductiveDomain.t}. *)
+(** Wrapper around {!Formula} that operates on {!AbductiveDomain.t}. *)
 
 val and_nonnegative :
   AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
@@ -24,7 +24,7 @@ val and_eq_int :
 val and_eq_const :
   AbstractValue.t -> Const.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
-type operand = PathCondition.operand =
+type operand = Formula.operand =
   | AbstractValueOperand of AbstractValue.t
   | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
@@ -43,14 +43,14 @@ val eval_binop :
   -> AbductiveDomain.t
   -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t SatUnsat.t
 
-val eval_binop_av :
+val eval_binop_absval :
      AbstractValue.t
   -> Binop.t
   -> AbstractValue.t
   -> AbstractValue.t
   -> AbductiveDomain.t
   -> (AbductiveDomain.t * AbstractValue.t) AccessResult.t SatUnsat.t
-(** [eval_binop_av ret binop lhs rhs astate] is
+(** [eval_binop_absval ret binop lhs rhs astate] is
     [eval_binop ret binop (AbstractValueOperand lhs) (AbstractValueOperand rhs) astate] *)
 
 val eval_unop :

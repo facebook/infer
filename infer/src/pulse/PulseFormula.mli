@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 module SatUnsat = PulseSatUnsat
+module ValueHistory = PulseValueHistory
 
 (* NOTE: using [Var] for [AbstractValue] here since this is how "abstract values" are interpreted,
    in particular as far as arithmetic is concerned *)
@@ -49,6 +50,10 @@ val ttrue : t
 
 val and_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
+val and_equal_vars : Var.t -> Var.t -> t -> (t * new_eqs) SatUnsat.t
+(** [and_equal_vars v1 v2 phi] is
+    [and_equal (AbstractValueOperand v1) (AbstractValueOperand v2) phi] *)
+
 val and_not_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 val and_equal_instanceof : Var.t -> Var.t -> Typ.t -> t -> (t * new_eqs) SatUnsat.t
@@ -78,20 +83,6 @@ val simplify :
   -> t
   -> (t * Var.Set.t * new_eqs) SatUnsat.t
 
-val and_fold_subst_variables :
-     t
-  -> up_to_f:t
-  -> init:'acc
-  -> f:('acc -> Var.t -> 'acc * Var.t)
-  -> ('acc * t * new_eqs) SatUnsat.t
-
-val and_conditions_fold_subst_variables :
-     t
-  -> up_to_f:t
-  -> init:'acc
-  -> f:('acc -> Var.t -> 'acc * Var.t)
-  -> ('acc * t * new_eqs) SatUnsat.t
-
 val is_known_zero : t -> Var.t -> bool
 
 val is_known_non_zero : t -> Var.t -> bool
@@ -114,3 +105,15 @@ val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
 
 val get_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the equality relation *)
+
+val and_callee_pre :
+     (Var.t * ValueHistory.t) Var.Map.t
+  -> t
+  -> callee:t
+  -> ((Var.t * ValueHistory.t) Var.Map.t * t * new_eqs) SatUnsat.t
+
+val and_callee_post :
+     (Var.t * ValueHistory.t) Var.Map.t
+  -> t
+  -> callee:t
+  -> ((Var.t * ValueHistory.t) Var.Map.t * t * new_eqs) SatUnsat.t

@@ -102,7 +102,7 @@ module PreDomain : BaseDomainSig_ = PostDomain
 type t =
   { post: PostDomain.t
   ; pre: PreDomain.t
-  ; path_condition: PathCondition.t
+  ; path_condition: Formula.t
   ; decompiler: (Decompiler.t[@yojson.opaque] [@equal.ignore] [@compare.ignore])
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; need_specialization: bool
@@ -114,8 +114,8 @@ let pp f {post; pre; path_condition; decompiler; need_specialization; topl; skip
     if Config.debug_level_analysis >= 3 then F.fprintf f "decompiler=%a;@;" Decompiler.pp decompiler
   in
   F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;%tneed_specialization=%b@;skipped_calls=%a@;Topl=%a@]"
-    PathCondition.pp path_condition PostDomain.pp post PreDomain.pp pre pp_decompiler
-    need_specialization SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+    Formula.pp path_condition PostDomain.pp post PreDomain.pp pre pp_decompiler need_specialization
+    SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
 let set_path_condition path_condition astate = {astate with path_condition}
@@ -129,7 +129,7 @@ let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
 let leq ~lhs ~rhs =
   phys_equal lhs rhs
   || SkippedCalls.leq ~lhs:lhs.skipped_calls ~rhs:rhs.skipped_calls
-     && PathCondition.equal lhs.path_condition rhs.path_condition
+     && Formula.equal lhs.path_condition rhs.path_condition
      &&
      match
        BaseDomain.isograph_map BaseDomain.empty_mapping
@@ -458,7 +458,7 @@ module AddressAttributes = struct
         then [Ok astate]
         else
           let null_astates =
-            if PathCondition.is_known_non_zero astate.path_condition addr then []
+            if Formula.is_known_non_zero astate.path_condition addr then []
             else
               let null_attr =
                 Attribute.Invalid (Invalidation.ConstantDereference IntLit.zero, access_trace)
@@ -467,7 +467,7 @@ module AddressAttributes = struct
               if null_noop then [Ok null_astate] else [Error (`ISLError null_astate)]
           in
           let not_null_astates =
-            if PathCondition.is_known_zero astate.path_condition addr then []
+            if Formula.is_known_zero astate.path_condition addr then []
             else
               let valid_astate =
                 let abdalloc = Attribute.ISLAbduced access_trace in
@@ -692,7 +692,7 @@ let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
   let astate =
     { pre
     ; post
-    ; path_condition= PathCondition.true_
+    ; path_condition= Formula.ttrue
     ; decompiler= Decompiler.empty
     ; need_specialization= false
     ; topl= PulseTopl.start ()
@@ -824,7 +824,7 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
 
            We don't have a precise enough memory model to understand everything that
            goes on here but we should at least not report a leak. *)
-        let addr_canon = PathCondition.get_var_repr astate.path_condition addr in
+        let addr_canon = Formula.get_var_repr astate.path_condition addr in
         if
           reaches_into addr live_addresses (astate.post :> BaseDomain.t)
           || reaches_into addr_canon live_addresses (astate.post :> BaseDomain.t)
@@ -979,10 +979,10 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
       ~already_visited:post_addresses
   in
   let canon_addresses =
-    AbstractValue.Set.map (PathCondition.get_var_repr astate.path_condition) pre_addresses
+    AbstractValue.Set.map (Formula.get_var_repr astate.path_condition) pre_addresses
     |> AbstractValue.Set.fold
          (fun addr acc ->
-           AbstractValue.Set.add (PathCondition.get_var_repr astate.path_condition addr) acc )
+           AbstractValue.Set.add (Formula.get_var_repr astate.path_condition addr) acc )
          post_addresses
   in
   let post_new, dead_addresses =
@@ -993,11 +993,11 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
         || AbstractValue.Set.mem address post_addresses
         || AbstractValue.Set.mem address always_reachable_trans_closure
         ||
-        let canon_addr = PathCondition.get_var_repr astate.path_condition address in
+        let canon_addr = Formula.get_var_repr astate.path_condition address in
         AbstractValue.Set.mem canon_addr canon_addresses )
       post
   in
-  (* note: we don't call {!PathCondition.simplify} *)
+  (* note: we don't call {!Formula.simplify} *)
   let astate =
     if phys_equal pre_new pre && phys_equal post_new post then astate
     else {astate with pre= pre_new; post= post_new}
@@ -1284,7 +1284,7 @@ let canonicalize astate =
     PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
   in
   let canonicalize_post (post : PostDomain.t) =
-    let get_var_repr v = PathCondition.get_var_repr astate.path_condition v in
+    let get_var_repr v = Formula.get_var_repr astate.path_condition v in
     let* stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
     (* note: this step also de-registers addresses pointing to empty edges *)
     let+ heap' = BaseMemory.canonicalize ~get_var_repr (post :> BaseDomain.t).heap in
@@ -1328,7 +1328,7 @@ let filter_for_summary tenv proc_name astate0 =
     BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs
   in
   let+ path_condition, live_via_arithmetic, new_eqs =
-    PathCondition.simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep:live_addresses
+    Formula.simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep:live_addresses
       astate.path_condition
   in
   let live_addresses = AbstractValue.Set.union live_addresses live_via_arithmetic in
@@ -1350,7 +1350,7 @@ let summary_of_post tenv proc_name (proc_attrs : ProcAttributes.t) location asta
      canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
      contradictions about addresses we are about to garbage collect *)
   let* path_condition, new_eqs =
-    PathCondition.normalize tenv
+    Formula.normalize tenv
       ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
       astate.path_condition
   in

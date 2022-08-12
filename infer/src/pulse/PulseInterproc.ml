@@ -132,7 +132,7 @@ let and_aliasing_arith ~addr_callee ~addr_caller0 call_state =
          {!AbductiveDomain.incorporate_new_eqs} because it would be too slow to do each time we
          visit a new address. We should re-normalize at the end of the call instead (TODO). *)
       let path_condition, _new_eqs =
-        PathCondition.and_eq_vars addr_caller0 addr_caller'
+        Formula.and_equal_vars addr_caller0 addr_caller'
           call_state.astate.AbductiveDomain.path_condition
         |> raise_if_unsat PathCondition
       in
@@ -299,18 +299,18 @@ let materialize_pre_for_globals path callee_proc_name call_location pre_post cal
 
 let conjoin_callee_arith pre_or_post pre_post call_state =
   let open PulseResult.Let_syntax in
-  L.d_printfln "applying callee path condition: (%a)[%a]" PathCondition.pp
+  L.d_printfln "applying callee path condition: (%a)[%a]" Formula.pp
     pre_post.AbductiveDomain.path_condition
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
     call_state.subst ;
   let subst, path_condition, new_eqs =
     match pre_or_post with
     | `Pre ->
-        PathCondition.and_callee_pre call_state.subst call_state.astate.path_condition
+        Formula.and_callee_pre call_state.subst call_state.astate.path_condition
           ~callee:pre_post.AbductiveDomain.path_condition
         |> raise_if_unsat PathCondition
     | `Post ->
-        PathCondition.and_callee_post call_state.subst call_state.astate.path_condition
+        Formula.and_callee_post call_state.subst call_state.astate.path_condition
           ~callee:pre_post.AbductiveDomain.path_condition
         |> raise_if_unsat PathCondition
   in
@@ -732,7 +732,7 @@ let apply_post path callee_proc_name call_location pre_post ~captured_formals ~c
       AddressMap.map
         (fun (v_caller, hist) ->
           let v_caller_canon =
-            PathCondition.get_var_repr call_state.astate.AbductiveDomain.path_condition v_caller
+            Formula.get_var_repr call_state.astate.AbductiveDomain.path_condition v_caller
           in
           (v_caller_canon, hist) )
         call_state.subst
@@ -760,7 +760,7 @@ let apply_post path callee_proc_name call_location pre_post ~captured_formals ~c
     in
     let return_caller_opt =
       Option.map return_caller_opt ~f:(fun (return_caller, return_hist) ->
-          ( PathCondition.get_var_repr call_state.astate.AbductiveDomain.path_condition return_caller
+          ( Formula.get_var_repr call_state.astate.AbductiveDomain.path_condition return_caller
           , return_hist ) )
     in
     (call_state, return_caller_opt)

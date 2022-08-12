@@ -290,7 +290,7 @@ module Comparison = struct
      fun astate ->
       let astate, _addr, (x_field, _) = load_field path field location x astate in
       let astate, _addr, (y_field, _) = load_field path field location y astate in
-      eval_into_fresh PulseArithmetic.eval_binop_av sil_op x_field y_field astate
+      eval_into_fresh PulseArithmetic.eval_binop_absval sil_op x_field y_field astate
 
 
     (** A trivial comparison that is always false. Can be used eg. for equality on incompatible

@@ -235,8 +235,8 @@ module SharedPtr = struct
   let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
       model =
    fun ({path; location} as model_data) astate ->
-    let op1 = PathCondition.AbstractValueOperand (fst this) in
-    let op2 = PathCondition.AbstractValueOperand (fst other) in
+    let op1 = Formula.AbstractValueOperand (fst this) in
+    let op2 = Formula.AbstractValueOperand (fst other) in
     (* self-assignment *)
     let astate_equals = PulseArithmetic.and_equal op1 op2 astate >>|| ExecutionDomain.continue in
     let<**> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in

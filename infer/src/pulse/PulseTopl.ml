@@ -62,9 +62,7 @@ module Constraint : sig
 
   type t [@@deriving compare, equal]
 
-  type operand = PathCondition.operand
-
-  val make : Binop.t -> operand -> operand -> predicate
+  val make : Binop.t -> Formula.operand -> Formula.operand -> predicate
 
   val true_ : t
 
@@ -86,16 +84,13 @@ module Constraint : sig
 
   val substitute : t substitutor
 
-  val prune_path : t -> PathCondition.t -> PathCondition.t SatUnsat.t
+  val prune_path : t -> Formula.t -> Formula.t SatUnsat.t
 
   val pp : Format.formatter -> t -> unit
 end = struct
-  type predicate = Binop.t * PathCondition.operand * PathCondition.operand
-  [@@deriving compare, equal]
+  type predicate = Binop.t * Formula.operand * Formula.operand [@@deriving compare, equal]
 
   type t = predicate list [@@deriving compare, equal]
-
-  type operand = PathCondition.operand
 
   let make binop lhs rhs = (binop, lhs, rhs)
 
@@ -143,7 +138,7 @@ end = struct
   let size constr = List.length constr
 
   let substitute_predicate (sub, predicate) =
-    let avo x : PathCondition.operand = AbstractValueOperand x in
+    let avo x : Formula.operand = AbstractValueOperand x in
     match (predicate : predicate) with
     | op, AbstractValueOperand l, AbstractValueOperand r ->
         let sub, l = sub_value (sub, l) in
@@ -164,7 +159,7 @@ end = struct
   let prune_path constr path_condition =
     let open SatUnsat.Import in
     let f path_condition (op, l, r) =
-      PathCondition.prune_binop ~negated:false op l r path_condition >>| fst
+      Formula.prune_binop ~negated:false op l r path_condition >>| fst
     in
     SatUnsat.list_fold ~init:path_condition ~f constr
 
@@ -189,7 +184,7 @@ end = struct
     List.filter ~f:is_live_predicate constr
 end
 
-type predicate = Binop.t * PathCondition.operand * PathCondition.operand [@@deriving compare]
+type predicate = Binop.t * Formula.operand * Formula.operand [@@deriving compare]
 
 type step =
   { step_location: Location.t
@@ -271,7 +266,7 @@ let binop_to : ToplAst.binop -> Binop.t = function
 
 
 let eval_guard memory tcontext guard : Constraint.t =
-  let operand_of_value (value : ToplAst.value) : PathCondition.operand =
+  let operand_of_value (value : ToplAst.value) : Formula.operand =
     match value with
     | Constant (LiteralInt x) ->
         ConstOperand (Cint (IntLit.of_int x))
@@ -289,7 +284,7 @@ let eval_guard memory tcontext guard : Constraint.t =
         Constraint.and_predicate (Constraint.make binop l r) pruned
     | Value v ->
         let v = operand_of_value v in
-        let one = PathCondition.ConstOperand (Cint IntLit.one) in
+        let one = Formula.ConstOperand (Cint IntLit.one) in
         Constraint.and_predicate (Constraint.make Binop.Ne v one) pruned
   in
   List.fold ~init:Constraint.true_ ~f:conjoin_predicate guard
@@ -417,7 +412,7 @@ let default_tenv = Tenv.create ()
 let is_unsat_expensive ~get_dynamic_type path_condition pruned =
   let open SatUnsat.Import in
   Constraint.prune_path pruned path_condition
-  >>= PathCondition.normalize default_tenv ~get_dynamic_type
+  >>= Formula.normalize default_tenv ~get_dynamic_type
   |> is_unsat
 
 
@@ -580,7 +575,7 @@ let large_step ~call_location ~callee_proc_name ~substitution ~keep ~get_dynamic
         (* Update the substitution, matching formals with actuals. We work a bit to avoid introducing
            equalities, because a growing [pruned] leads to quadratic behaviour. *)
         let mk_eq val1 val2 =
-          let op x = PathCondition.AbstractValueOperand x in
+          let op x = Formula.AbstractValueOperand x in
           Constraint.make Binop.Eq (op val1) (op val2)
         in
         let f (sub, eqs) (reg1, val1) (reg2, val2) =

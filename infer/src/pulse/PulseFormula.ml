@@ -10,6 +10,7 @@ module F = Format
 module L = Logging
 module CItv = PulseCItv
 module SatUnsat = PulseSatUnsat
+module ValueHistory = PulseValueHistory
 module Var = PulseAbstractValue
 module Q = QSafeCapped
 module Z = ZSafe
@@ -2156,7 +2157,11 @@ let and_mk_atom binop op1 op2 formula =
   and_atom atom formula
 
 
-let and_equal = and_mk_atom Eq
+let and_equal op1 op2 formula = and_mk_atom Eq op1 op2 formula
+
+let and_equal_vars v1 v2 formula =
+  and_equal (AbstractValueOperand v1) (AbstractValueOperand v2) formula
+
 
 let and_not_equal = and_mk_atom Ne
 
@@ -2589,3 +2594,25 @@ let is_manifest ~is_allocated formula =
 
 
 let get_var_repr formula v = (Formula.Normalizer.get_repr formula.phi v :> Var.t)
+
+(** for use in applying callee path conditions: we need to translate callee variables to make sense
+    for the caller, thereby possibly extending the current substitution *)
+let subst_find_or_new subst addr_callee =
+  match Var.Map.find_opt addr_callee subst with
+  | None ->
+      (* map restricted (≥0) values to restricted values to preserve their semantics *)
+      let addr_caller = Var.mk_fresh_same_kind addr_callee in
+      L.d_printfln "new subst %a <-> %a (fresh)" Var.pp addr_callee Var.pp addr_caller ;
+      let addr_hist_fresh = (addr_caller, ValueHistory.epoch) in
+      (Var.Map.add addr_callee addr_hist_fresh subst, fst addr_hist_fresh)
+  | Some addr_hist_caller ->
+      (subst, fst addr_hist_caller)
+
+
+let and_callee_pre subst formula ~callee:formula_callee =
+  and_conditions_fold_subst_variables formula ~up_to_f:formula_callee ~f:subst_find_or_new
+    ~init:subst
+
+
+let and_callee_post subst formula_caller ~callee:formula_callee =
+  and_fold_subst_variables formula_caller ~up_to_f:formula_callee ~f:subst_find_or_new ~init:subst

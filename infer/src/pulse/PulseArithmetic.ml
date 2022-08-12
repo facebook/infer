@@ -32,52 +32,54 @@ let map_path_condition_with_ret ~f astate ret =
       (result, AbductiveDomain.incorporate_new_eqs_on_val new_eqs ret) )
 
 
+let literal_zero = Formula.ConstOperand (Cint IntLit.zero)
+
 let and_nonnegative v astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.and_nonnegative v phi)
+  map_path_condition astate ~f:(fun phi ->
+      Formula.and_less_equal literal_zero (AbstractValueOperand v) phi )
 
 
 let and_positive v astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.and_positive v phi)
-
-
-let and_eq_int v i astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.and_eq_int v i phi)
+  map_path_condition astate ~f:(fun phi ->
+      Formula.and_less_than literal_zero (AbstractValueOperand v) phi )
 
 
 let and_eq_const v c astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.and_eq_const v c phi)
+  map_path_condition astate ~f:(fun phi ->
+      Formula.and_equal (AbstractValueOperand v) (ConstOperand c) phi )
 
 
-type operand = PathCondition.operand =
+let and_eq_int v i astate = and_eq_const v (Cint i) astate
+
+type operand = Formula.operand =
   | AbstractValueOperand of AbstractValue.t
   | ConstOperand of Const.t
   | FunctionApplicationOperand of {f: PulseFormula.function_symbol; actuals: AbstractValue.t list}
 
 let and_equal lhs rhs astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.and_equal lhs rhs phi)
+  map_path_condition astate ~f:(fun phi -> Formula.and_equal lhs rhs phi)
 
 
 let and_not_equal lhs rhs astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.and_not_equal lhs rhs phi)
+  map_path_condition astate ~f:(fun phi -> Formula.and_not_equal lhs rhs phi)
 
 
-let eval_binop ret_addr binop lhs rhs astate =
-  map_path_condition_with_ret astate ret_addr ~f:(fun phi ->
-      PathCondition.eval_binop ret_addr binop lhs rhs phi )
+let eval_binop ret binop lhs rhs astate =
+  map_path_condition_with_ret astate ret ~f:(fun phi ->
+      Formula.and_equal_binop ret binop lhs rhs phi )
 
 
-let eval_binop_av ret_addr binop lhs rhs astate =
-  map_path_condition_with_ret astate ret_addr ~f:(fun phi ->
-      PathCondition.eval_binop_av ret_addr binop lhs rhs phi )
+let eval_binop_absval ret binop lhs rhs astate =
+  eval_binop ret binop (AbstractValueOperand lhs) (AbstractValueOperand rhs) astate
 
 
-let eval_unop ret_addr unop operand astate =
-  map_path_condition_with_ret astate ret_addr ~f:(fun phi ->
-      PathCondition.eval_unop ret_addr unop operand phi )
+let eval_unop ret unop v astate =
+  map_path_condition_with_ret astate ret ~f:(fun phi ->
+      Formula.and_equal_unop ret unop (AbstractValueOperand v) phi )
 
 
 let prune_binop ~negated binop lhs rhs astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.prune_binop ~negated binop lhs rhs phi)
+  map_path_condition astate ~f:(fun phi -> Formula.prune_binop ~negated binop lhs rhs phi)
 
 
 let literal_zero = ConstOperand (Cint IntLit.zero)
@@ -100,17 +102,17 @@ let prune_eq_one v astate =
   prune_binop ~negated:false Eq (AbstractValueOperand v) literal_one astate
 
 
-let is_known_zero astate v = PathCondition.is_known_zero astate.AbductiveDomain.path_condition v
+let is_known_zero astate v = Formula.is_known_zero astate.AbductiveDomain.path_condition v
 
 let is_manifest astate =
-  PathCondition.is_manifest
+  Formula.is_manifest
     ~is_allocated:(fun v ->
       AbductiveDomain.is_heap_allocated astate v
       || AbductiveDomain.AddressAttributes.get_must_be_valid v astate |> Option.is_some )
     astate.AbductiveDomain.path_condition
 
 
-let and_is_int v astate = map_path_condition astate ~f:(fun phi -> PathCondition.and_is_int v phi)
+let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)
 
 let and_equal_instanceof v1 v2 t astate =
-  map_path_condition astate ~f:(fun phi -> PathCondition.and_eq_instanceof v1 v2 t phi)
+  map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t phi)

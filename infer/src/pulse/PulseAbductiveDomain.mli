@@ -41,7 +41,7 @@ module PreDomain : BaseDomainSig
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred procedure pre-condition leading to the current program point *)
-  ; path_condition: PathCondition.t
+  ; path_condition: Formula.t
         (** arithmetic facts true along the path (holding for both [pre] and [post] since abstract
             values are immutable) *)
   ; decompiler: Decompiler.t
@@ -227,7 +227,7 @@ val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
-val set_path_condition : PathCondition.t -> t -> t
+val set_path_condition : Formula.t -> t -> t
 
 val set_need_specialization : t -> t
 
@@ -270,7 +270,7 @@ val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Locat
 (** directly set the edges and attributes for the given address, bypassing abduction altogether *)
 
 val incorporate_new_eqs :
-     PathCondition.new_eqs
+     Formula.new_eqs
   -> t
   -> ( t
      , [> `PotentialInvalidAccess of
@@ -279,10 +279,9 @@ val incorporate_new_eqs :
      SatUnsat.t
 (** Check that the new equalities discovered are compatible with the current pre and post heaps,
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
-    and [y] being allocated separately. In those cases, the resulting path condition is
-    {!PathCondition.false_}. *)
+    and [y] being allocated separately. In those cases, the result is [Unsat]. *)
 
-val incorporate_new_eqs_on_val : PathCondition.new_eqs -> AbstractValue.t -> AbstractValue.t
+val incorporate_new_eqs_on_val : Formula.new_eqs -> AbstractValue.t -> AbstractValue.t
 (** Similar to [incorporate_new_eqs], but apply to an abstract value. *)
 
 val initialize : AbstractValue.t -> t -> t
@@ -311,7 +310,7 @@ module Topl : sig
     -> callee_proc_name:Procname.t
     -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
     -> keep:AbstractValue.Set.t
-    -> path_condition:PathCondition.t
+    -> path_condition:Formula.t
     -> callee_prepost:PulseTopl.state
     -> t
     -> t
