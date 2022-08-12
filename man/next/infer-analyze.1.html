@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.19.2 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,16 +7,17 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p     { margin-top: 0; margin-bottom: 0; }
-       pre   { margin-top: 0; margin-bottom: 0; }
-       table { margin-top: 0; margin-bottom: 0; }
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
 </style>
 <title>infer-analyze</title>
 
 </head>
 <body>
 
-<h1 align=center>infer-analyze</h1>
+<h1 align="center">infer-analyze</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -38,31 +39,35 @@
 <hr>
 
 
+<h2>NAME
 <a name="NAME"></a>
-<h2>NAME</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-analyze -
 analyze the files captured by infer</p>
 
+<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-<h2>SYNOPSIS</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
 analyze</b> <i>[options]</i> <b><br>
 infer</b> <i>[options]</i></p>
 
+<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-<h2>DESCRIPTION</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Analyze the
 files captured in the project results directory and
 report.</p>
 
+<h2>OPTIONS
 <a name="OPTIONS"></a>
-<h2>OPTIONS</h2>
+</h2>
 
 
 
@@ -171,11 +176,17 @@ disable all other checkers (Conversely:
 function pointers in cost reports (Conversely:
 <b>--cost-suppress-func-ptr</b>)</p>
 
-<p style="margin-left:11%;"><b>--custom-symbols</b>
-<i>json</i></p>
+<p style="margin-left:11%;"><b>--datalog</b></p>
 
-<p style="margin-left:17%;">Specify named lists of symbols
-available to rules</p>
+<p style="margin-left:17%;">Activates: checker datalog:
+Experimental datalog-based points-to analysis. (Conversely:
+<b>--no-datalog</b>)</p>
+
+<p style="margin-left:11%;"><b>--datalog-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable datalog and
+disable all other checkers (Conversely:
+<b>--no-datalog-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--debug</b>,<b>-g</b></p>
 
@@ -520,6 +531,13 @@ as abort in Pulse</p>
 modelled as allocs in Pulse</p>
 
 
+<p style="margin-left:11%;"><b>--pulse-model-cheap-copy-type</b>
+<i>regex</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+cheap to copy in Pulse</p>
+
+
 <p style="margin-left:11%;"><b>--pulse-model-free-pattern</b>
 <i>string</i></p>
 
@@ -633,7 +651,18 @@ not be analyzed by Pulse.</p>
 configuration file. This file can define
 <b>--pulse-taint-sources</b>,
 <b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
-and <b>--pulse-taint-policies</b>.</p>
+<b>--pulse-taint-policies</b>, and
+<b>--pulse-taint-data-flow-kinds</b>.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-taint-data-flow-kinds</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Specify which taint kinds
+should be used for data flow reporting only. If a source has
+such a kind, only data flows to sinks which originate at the
+source will be reported. If a sink has such a kind, only
+sensitive data flows to the sink will be reported.</p>
 
 <p style="margin-left:11%;"><b>--pulse-taint-policies</b>
 <i>json</i></p>
@@ -645,16 +674,25 @@ flows should be reported, following this JSON format:</p>
 &quot;short_description&quot;: &quot;&lt;a short description
 of the issue&gt;&quot;, <br>
 &quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
-[&lt;matchers&gt;], <br>
-&quot;sink_kinds&quot;: [&lt;matchers&gt;], <br>
-&quot;sanitizer_kinds&quot;: [&lt;matchers&gt;]}] <br>
+[&lt;kinds&gt;], <br>
+&quot;sink_kinds&quot;: [&lt;kinds&gt;], <br>
+&quot;sanitizer_kinds&quot;: [&lt;kinds&gt;] }] <br>
 } <br>
-where &lt;matchers&gt; are in the same format as
-<b>--pulse-taint-sources</b>; <br>
-the field &quot;sanitizer_kinds&quot; is optional (assumed
-to be empty), and <br>
-a policy may have several taint flows in the form of a list.
-<b><br>
+where &lt;kinds&gt; are specified in taint
+source/sanitizer/sink <br>
+matchers (see <b>--pulse-taint-sources</b>). The field
+&quot;sanitizer_kinds&quot; <br>
+is optional (assumed to be empty), and a single policy can
+specify <br>
+several taint flows using a list. The following policy is
+always <br>
+enabled: <br>
+{ &quot;short_description&quot;: &quot;...&quot;, <br>
+&quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
+[&quot;Simple&quot;], <br>
+&quot;sink_kinds&quot;: [&quot;Simple&quot;], <br>
+&quot;sanitizer_kinds&quot;: [&quot;Simple&quot;] }] <br>
+} <b><br>
 --pulse-taint-sanitizers</b> <i>json</i></p>
 
 <p style="margin-left:17%;">Quick way to specify simple
@@ -674,27 +712,49 @@ for the fields format documentation.</p>
 
 <p style="margin-left:17%;">Together with
 <b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
-and <b>--pulse-taint-specifications</b>, specify taint
+<b>--pulse-taint-policies</b>, and
+<b>--pulse-taint-data-flow-kinds</b>, specify taint
 properties. The JSON format of sources also applies to sinks
-and sanitizers. It consists of a list of objects with the
-following fields, for example '[{&quot;procedure&quot;:
-&quot;mySimpleSink&quot;, &quot;formals&quot;:
-[{&quot;index&quot;: 1}]}]':</p>
+and sanitizers. It consists of a list of objects, each with
+one of the following combinations of fields to identify
+relevant procedures:</p>
 
-<p style="margin-left:11%;">- &quot;procedure&quot; to
-match a substring of the function or method <br>
-name, or &quot;procedure_regex&quot; to specify an OCaml
-regex <br>
-- &quot;formals&quot; is a list of objects with one or two
-fields: <br>
-- &quot;index&quot; is the index of the formal that is
-tainted, <br>
-starting at 0. For methods, index 0 is <i>this</i>, other
-arguments start <br>
-at index 1 <br>
-- &quot;type_name&quot; is optional string; only arguments
-whose type <br>
-contains this substring match <b><br>
+<p style="margin-left:11%;">- &quot;procedure&quot;: match
+a substring of the procedure name <br>
+- &quot;procedure_regex&quot;: as above, but match using an
+OCaml regex <br>
+- &quot;class_names&quot; and &quot;method_names&quot;: <br>
+match exact uses of methods of particular classes <br>
+- &quot;overrides_of_class_with_annotation&quot;: <br>
+match all procedures defined in classes which inherit <br>
+from a superclass with the specified annotation <br>
+- &quot;allocation&quot;: <i>(for taint sources only)</i>
+<br>
+match allocations of the exact class name supplied <br>
+Each object can also optionally specify: <br>
+- &quot;kinds&quot;: the kinds of taint, used in
+<b>--pulse-taint-policies</b> <br>
+to specify flows between sources/sanitizers/sinks <br>
+(&quot;Simple&quot; by default). <br>
+- &quot;taint_target&quot;: <br>
+where the taint should be applied in the procedure. <br>
+- &quot;ReturnValue&quot;: (default for taint sources) <br>
+- &quot;AllArguments&quot;: (default for taint sanitizers
+and sinks) <br>
+- [&quot;ArgumentPositions&quot;, [&lt;int list&gt;]]: <br>
+argument positions given by index (zero-indexed) <br>
+- [&quot;AllArgumentsButPositions&quot;, [&lt;int
+list&gt;]]: <br>
+all arguments except given indices (zero-indexed) <br>
+- [&quot;ArgumentMatchingTypes&quot;, [&lt;type list&gt;]]:
+<br>
+arguments with types containing supplied strings <i><br>
+N.B.</i> for methods, index 0 is <i>this</i>/<i>self</i>.
+<br>
+- &quot;match_objc_blocks&quot;: boolean, &quot;false&quot;
+by default <br>
+&quot;true&quot; if only Objective-C blocks should be
+matched. <b><br>
 --purity</b></p>
 
 <p style="margin-left:17%;">Activates: checker purity:
@@ -876,6 +936,13 @@ temporal properties over multiple objects. (Conversely:
 disable all other checkers (Conversely:
 <b>--no-topl-only</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--topl-skip-report-calls</b>
+<i>regex</i></p>
+
+<p style="margin-left:17%;">Regex of procedures whose calls
+should be skipped from the reported trace.</p>
+
 <p style="margin-left:11%;"><b>--uninit</b></p>
 
 <p style="margin-left:17%;">Activates: checker uninit:
@@ -911,8 +978,9 @@ node. (Conversely: <b>--no-write-html</b>) <b><br>
 <p style="margin-left:17%;">Specify the suffix of Xcode
 isysroot directory, to avoid absolute paths in tests</p>
 
+<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-<h2>BUCK OPTIONS</h2>
+</h2>
 
 
 
@@ -922,8 +990,9 @@ isysroot directory, to avoid absolute paths in tests</p>
 results directories specified in the dependency file.
 (Conversely: <b>--no-merge</b>)</p>
 
+<h2>BUFFER OVERRUN OPTIONS
 <a name="BUFFER OVERRUN OPTIONS"></a>
-<h2>BUFFER OVERRUN OPTIONS</h2>
+</h2>
 
 
 
@@ -945,8 +1014,9 @@ abstract location in buffer-overrun checker</p>
 <p style="margin-left:17%;">Larger CFGs than the max size
 are skipped in buffer overrun analysis.</p>
 
+<h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
-<h2>CLANG OPTIONS</h2>
+</h2>
 
 
 
@@ -979,10 +1049,9 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-}</p>
-
-<p style="margin-left:11%; margin-top: 1em">This will cause
-us to create a new ISOLATED_REACHING_CONNECT <br>
+} <br>
+This will cause us to create a new ISOLATED_REACHING_CONNECT
+<br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -1030,8 +1099,9 @@ common wrappers around these types such as
 when the variables are not read explicitly by the
 program.</p>
 
+<h2>ERLANG OPTIONS
 <a name="ERLANG OPTIONS"></a>
-<h2>ERLANG OPTIONS</h2>
+</h2>
 
 
 
@@ -1041,13 +1111,14 @@ program.</p>
 <p style="margin-left:17%;">Unfold Erlang lists up to depth
 <i>int</i></p>
 
+<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-<h2>JAVA OPTIONS</h2>
+</h2>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--annotation-reachability-custom-pairs</b>
-<i>json</i></p>
+<p style="margin-left:11%; margin-top: 1em"><i><b>--annotation-reachability-custom-pairs</b>
+json</i></p>
 
 <p style="margin-left:17%;">Specify custom sources/sink for
 the annotation reachability checker</p>
@@ -1071,8 +1142,9 @@ packages.</p>
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
 
+<h2>QUANDARY CHECKER OPTIONS
 <a name="QUANDARY CHECKER OPTIONS"></a>
-<h2>QUANDARY CHECKER OPTIONS</h2>
+</h2>
 
 
 
@@ -1100,8 +1172,9 @@ Quandary</p>
 <p style="margin-left:17%;">Specify custom sources for
 Quandary</p>
 
+<h2>RACERD CHECKER OPTIONS
 <a name="RACERD CHECKER OPTIONS"></a>
-<h2>RACERD CHECKER OPTIONS</h2>
+</h2>
 
 
 
@@ -1129,8 +1202,9 @@ here will be ignored by RacerD.</p>
 <p style="margin-left:17%;">Specify custom annotations that
 should be considered aliases of @ThreadSafe</p>
 
+<h2>SIMPLE LINEAGE OPTIONS
 <a name="SIMPLE LINEAGE OPTIONS"></a>
-<h2>SIMPLE LINEAGE OPTIONS</h2>
+</h2>
 
 
 
@@ -1176,6 +1250,13 @@ then the lineage graph produced corresponds to Infer's IR.
 <p style="margin-left:17%;">If set, larger CFGs are
 skipped.</p>
 
+
+<p style="margin-left:11%;"><b>--simple-lineage-model-fields</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
+Enable field-aware lineage analysis. (Conversely:
+<b>--no-simple-lineage-model-fields</b>)</p>
+
 <p style="margin-left:11%;"><b>--simple-lineage-seed</b>
 <i>int</i></p>
 
@@ -1186,8 +1267,9 @@ distributed way without communication, we use hashing. If
 you are unlucky and get collisions, you can try a different
 seed.</p>
 
+<h2>SIOF CHECKER OPTIONS
 <a name="SIOF CHECKER OPTIONS"></a>
-<h2>SIOF CHECKER OPTIONS</h2>
+</h2>
 
 
 
@@ -1208,8 +1290,9 @@ recent libstdc++ then it is safe to turn this option on.
 &quot;foo&lt;int&gt;::bar()&quot;, etc. (can be specified
 multiple times)</p>
 
+<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-<h2>ENVIRONMENT</h2>
+</h2>
 
 
 
@@ -1219,8 +1302,9 @@ multiple times)</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
+<h2>FILES
 <a name="FILES"></a>
-<h2>FILES</h2>
+</h2>
 
 
 
@@ -1229,8 +1313,9 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
+<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-<h2>SEE ALSO</h2>
+</h2>
 
 
 

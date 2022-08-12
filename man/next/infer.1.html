@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.19.2 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,16 +7,17 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p     { margin-top: 0; margin-bottom: 0; }
-       pre   { margin-top: 0; margin-bottom: 0; }
-       table { margin-top: 0; margin-bottom: 0; }
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
 </style>
 <title>infer</title>
 
 </head>
 <body>
 
-<h1 align=center>infer</h1>
+<h1 align="center">infer</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -29,15 +30,17 @@
 <hr>
 
 
+<h2>NAME
 <a name="NAME"></a>
-<h2>NAME</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer - static
 analysis for Java and C/C++/Objective-C/Objective-C++</p>
 
+<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-<h2>SYNOPSIS</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -54,8 +57,9 @@ infer --compilation-database[-escaped]</b> <i>file
 infer</b> <i>[options]</i> <b>-- compile command <br>
 infer</b> <i>[options]</i></p>
 
+<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-<h2>DESCRIPTION</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Infer is a
@@ -75,8 +79,9 @@ specified via the <b>--</b> option or one of the
 <b>infer</b> behaves as <b>infer-run</b>(1). Otherwise,
 <b>infer</b> behaves as <b>infer-analyze</b>(1).</p>
 
+<h2>OPTIONS
 <a name="OPTIONS"></a>
-<h2>OPTIONS</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Every infer
@@ -166,10 +171,9 @@ Example:</p>
 &quot;.*::Trusted::.*&quot; ] } <br>
 } <br>
 } <br>
-}</p>
-
-<p style="margin-left:11%; margin-top: 1em">This will cause
-us to create a new ISOLATED_REACHING_CONNECT <br>
+} <br>
+This will cause us to create a new ISOLATED_REACHING_CONNECT
+<br>
 issue for every function whose source path starts with
 &quot;isolated/&quot; <br>
 that may reach the function named &quot;connect&quot;,
@@ -618,13 +622,6 @@ revision to use for comparison</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-reportdiff</b>(1). <b><br>
---custom-symbols</b> <i>json</i></p>
-
-<p style="margin-left:17%;">Specify named lists of symbols
-available to rules</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
 --no-cxx</b></p>
 
 <p style="margin-left:17%;">Deactivates: Analyze C++
@@ -637,6 +634,22 @@ methods (Conversely: <b>--cxx</b>)</p>
 <p style="margin-left:17%;">Specify scope guard classes
 that can be read only by destructors without being reported
 as dead stores.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--datalog</b></p>
+
+<p style="margin-left:17%;">Activates: checker datalog:
+Experimental datalog-based points-to analysis. (Conversely:
+<b>--no-datalog</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--datalog-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable datalog and
+disable all other checkers (Conversely:
+<b>--no-datalog-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -727,14 +740,6 @@ infer-reportdiff</b>(1). <b><br>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---no-default-linters</b></p>
-
-<p style="margin-left:17%;">Deactivates: Use the default
-linters for the analysis. (Conversely:
-<b>--default-linters</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
 --dependencies</b></p>
 
 <p style="margin-left:17%;">Activates: Translate all the
@@ -763,11 +768,9 @@ have run. In particular, note that disabling issue types
 does not make the corresponding checker not run.</p>
 
 <p style="margin-left:11%;">Available issue types are as
-follows:</p>
-
-
-<p style="margin-left:11%; margin-top: 1em">ARBITRARY_CODE_EXECUTION_UNDER_LOCK
-(enabled by default), <br>
+follows: <br>
+ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
+<br>
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
@@ -782,6 +785,8 @@ default), <br>
 Abduction_case_not_implemented (enabled by default), <br>
 Array_of_pointsto (enabled by default), <br>
 Assert_failure (enabled by default), <br>
+BAD_ARG (enabled by default), <br>
+BAD_ARG_LATENT (disabled by default), <br>
 BAD_KEY (enabled by default), <br>
 BAD_KEY_LATENT (disabled by default), <br>
 BAD_MAP (enabled by default), <br>
@@ -812,8 +817,6 @@ CHECKERS_FRAGMENT_RETAINS_VIEW (enabled by default), <br>
 CHECKERS_IMMUTABLE_CAST (enabled by default), <br>
 CHECKERS_PRINTF_ARGS (enabled by default), <br>
 CLASS_CAST_EXCEPTION (disabled by default), <br>
-COMPONENT_WITH_MULTIPLE_FACTORY_METHODS (enabled by
-default), <br>
 CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
@@ -830,6 +833,7 @@ Cannot_star (enabled by default), <br>
 DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
 DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
 <br>
+DATALOG_FACT (enabled by default), <br>
 DATA_FLOW_TO_SINK (disabled by default), <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
@@ -917,8 +921,6 @@ MISSING_REQUIRED_PROP (enabled by default), <br>
 MIXED_SELF_WEAKSELF (enabled by default), <br>
 MODIFIES_IMMUTABLE (enabled by default), <br>
 MULTIPLE_WEAKSELF (enabled by default), <br>
-MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by
-default), <br>
 Missing_fld (enabled by default), <br>
 NIL_BLOCK_CALL (enabled by default), <br>
 NIL_BLOCK_CALL_LATENT (disabled by default), <br>
@@ -950,6 +952,7 @@ PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
+PULSE_CONST_REFABLE (disabled by default), <br>
 PULSE_RESOURCE_LEAK (disabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
@@ -1003,10 +1006,8 @@ USE_AFTER_LIFETIME_LATENT (disabled by default), <br>
 VECTOR_INVALIDATION (enabled by default), <br>
 VECTOR_INVALIDATION_LATENT (disabled by default), <br>
 WEAK_SELF_IN_NO_ESCAPE_BLOCK (enabled by default), <br>
-Wrong_argument_number (enabled by default).</p>
-
-<p style="margin-left:11%; margin-top: 1em">See also
-<b>infer-report</b>(1). <b><br>
+Wrong_argument_number (enabled by default). <br>
+See also <b>infer-report</b>(1). <b><br>
 --dump-duplicate-symbols</b></p>
 
 <p style="margin-left:17%;">Activates: Dump all symbols
@@ -1125,9 +1126,9 @@ argument after <b>--</b> was <i>command</i>. Possible
 values: <i>ant</i>, <i>buck</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
 <i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
-<i>c++</i>, <i>g++</i>, <i>make</i>, <i>configure</i>,
-<i>cmake</i>, <i>waf</i>, <i>mvn</i>, <i>mvnw</i>,
-<i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
+<i>c++</i>, <i>g++</i>, <i>hackc</i>, <i>make</i>,
+<i>configure</i>, <i>cmake</i>, <i>waf</i>, <i>mvn</i>,
+<i>mvnw</i>, <i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
 <i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;">See also
@@ -1396,14 +1397,6 @@ capture (experimental, do not use). (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---linter</b> <i>string</i></p>
-
-<p style="margin-left:17%;">From the linters available,
-only run this one linter. (Useful together with
-<b>--linters-developer-mode</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
 --no-linters</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker linters:
@@ -1412,42 +1405,6 @@ Declarative linting framework over the Clang AST.
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---linters-def-file</b> <i>+file</i></p>
-
-<p style="margin-left:17%;">Specify the file containing
-linters definition (e.g. 'linters.al')</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
---linters-def-folder</b> <i>+dir</i></p>
-
-<p style="margin-left:17%;">Specify the folder containing
-linters files with extension .al</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
---linters-developer-mode</b></p>
-
-<p style="margin-left:17%;">Activates: Debug mode for
-developing new linters. (Sets the analyzer to
-<b>linters</b>; also sets <b>--debug</b>,
-<b>--debug-level-linters 2</b>, <b>--developer-mode</b>, and
-unsets <b>--allowed-failures</b> and
-<b>--default-linters</b>. (Conversely:
-<b>--no-linters-developer-mode</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
---linters-doc-url</b> <i>+string</i></p>
-
-<p style="margin-left:17%;">Specify custom documentation
-URL for some linter that overrides the default one. Useful
-if your project has specific ways of fixing a lint error
-that is not true in general or public info. Format:
-linter_name:doc_url.</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
 --linters-ignore-clang-failures</b></p>
 
 <p style="margin-left:17%;">Activates: Continue linting
@@ -1464,14 +1421,6 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---linters-validate-syntax-only</b></p>
-
-<p style="margin-left:17%;">Activates: Validate syntax of
-AL files, then emit possible errors in JSON format to stdout
-(Conversely: <b>--no-linters-validate-syntax-only</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
 --list-checkers</b></p>
 
 <p style="margin-left:17%;">Activates: Show the list of all
@@ -1853,6 +1802,13 @@ modelled as allocs in Pulse</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-model-cheap-copy-type</b> <i>regex</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+cheap to copy in Pulse</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-model-free-pattern</b> <i>string</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
@@ -1985,7 +1941,18 @@ not be analyzed by Pulse.</p>
 configuration file. This file can define
 <b>--pulse-taint-sources</b>,
 <b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
-and <b>--pulse-taint-policies</b>.</p>
+<b>--pulse-taint-policies</b>, and
+<b>--pulse-taint-data-flow-kinds</b>.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-taint-data-flow-kinds</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Specify which taint kinds
+should be used for data flow reporting only. If a source has
+such a kind, only data flows to sinks which originate at the
+source will be reported. If a sink has such a kind, only
+sensitive data flows to the sink will be reported.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1998,16 +1965,25 @@ flows should be reported, following this JSON format:</p>
 &quot;short_description&quot;: &quot;&lt;a short description
 of the issue&gt;&quot;, <br>
 &quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
-[&lt;matchers&gt;], <br>
-&quot;sink_kinds&quot;: [&lt;matchers&gt;], <br>
-&quot;sanitizer_kinds&quot;: [&lt;matchers&gt;]}] <br>
+[&lt;kinds&gt;], <br>
+&quot;sink_kinds&quot;: [&lt;kinds&gt;], <br>
+&quot;sanitizer_kinds&quot;: [&lt;kinds&gt;] }] <br>
 } <br>
-where &lt;matchers&gt; are in the same format as
-<b>--pulse-taint-sources</b>; <br>
-the field &quot;sanitizer_kinds&quot; is optional (assumed
-to be empty), and <br>
-a policy may have several taint flows in the form of a list.
-<br>
+where &lt;kinds&gt; are specified in taint
+source/sanitizer/sink <br>
+matchers (see <b>--pulse-taint-sources</b>). The field
+&quot;sanitizer_kinds&quot; <br>
+is optional (assumed to be empty), and a single policy can
+specify <br>
+several taint flows using a list. The following policy is
+always <br>
+enabled: <br>
+{ &quot;short_description&quot;: &quot;...&quot;, <br>
+&quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
+[&quot;Simple&quot;], <br>
+&quot;sink_kinds&quot;: [&quot;Simple&quot;], <br>
+&quot;sanitizer_kinds&quot;: [&quot;Simple&quot;] }] <br>
+} <br>
 See also <b>infer-analyze</b>(1). <b><br>
 --pulse-taint-sanitizers</b> <i>json</i></p>
 
@@ -2030,27 +2006,49 @@ for the fields format documentation.</p>
 
 <p style="margin-left:17%;">Together with
 <b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
-and <b>--pulse-taint-specifications</b>, specify taint
+<b>--pulse-taint-policies</b>, and
+<b>--pulse-taint-data-flow-kinds</b>, specify taint
 properties. The JSON format of sources also applies to sinks
-and sanitizers. It consists of a list of objects with the
-following fields, for example '[{&quot;procedure&quot;:
-&quot;mySimpleSink&quot;, &quot;formals&quot;:
-[{&quot;index&quot;: 1}]}]':</p>
+and sanitizers. It consists of a list of objects, each with
+one of the following combinations of fields to identify
+relevant procedures:</p>
 
-<p style="margin-left:11%;">- &quot;procedure&quot; to
-match a substring of the function or method <br>
-name, or &quot;procedure_regex&quot; to specify an OCaml
-regex <br>
-- &quot;formals&quot; is a list of objects with one or two
-fields: <br>
-- &quot;index&quot; is the index of the formal that is
-tainted, <br>
-starting at 0. For methods, index 0 is <i>this</i>, other
-arguments start <br>
-at index 1 <br>
-- &quot;type_name&quot; is optional string; only arguments
-whose type <br>
-contains this substring match <br>
+<p style="margin-left:11%;">- &quot;procedure&quot;: match
+a substring of the procedure name <br>
+- &quot;procedure_regex&quot;: as above, but match using an
+OCaml regex <br>
+- &quot;class_names&quot; and &quot;method_names&quot;: <br>
+match exact uses of methods of particular classes <br>
+- &quot;overrides_of_class_with_annotation&quot;: <br>
+match all procedures defined in classes which inherit <br>
+from a superclass with the specified annotation <br>
+- &quot;allocation&quot;: <i>(for taint sources only)</i>
+<br>
+match allocations of the exact class name supplied <br>
+Each object can also optionally specify: <br>
+- &quot;kinds&quot;: the kinds of taint, used in
+<b>--pulse-taint-policies</b> <br>
+to specify flows between sources/sanitizers/sinks <br>
+(&quot;Simple&quot; by default). <br>
+- &quot;taint_target&quot;: <br>
+where the taint should be applied in the procedure. <br>
+- &quot;ReturnValue&quot;: (default for taint sources) <br>
+- &quot;AllArguments&quot;: (default for taint sanitizers
+and sinks) <br>
+- [&quot;ArgumentPositions&quot;, [&lt;int list&gt;]]: <br>
+argument positions given by index (zero-indexed) <br>
+- [&quot;AllArgumentsButPositions&quot;, [&lt;int
+list&gt;]]: <br>
+all arguments except given indices (zero-indexed) <br>
+- [&quot;ArgumentMatchingTypes&quot;, [&lt;type list&gt;]]:
+<br>
+arguments with types containing supplied strings <i><br>
+N.B.</i> for methods, index 0 is <i>this</i>/<i>self</i>.
+<br>
+- &quot;match_objc_blocks&quot;: boolean, &quot;false&quot;
+by default <br>
+&quot;true&quot; if only Objective-C blocks should be
+matched. <br>
 See also <b>infer-analyze</b>(1). <b><br>
 --purity</b></p>
 
@@ -2361,6 +2359,14 @@ skipped.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--simple-lineage-model-fields</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
+Enable field-aware lineage analysis. (Conversely:
+<b>--no-simple-lineage-model-fields</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --simple-lineage-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
@@ -2621,6 +2627,13 @@ disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--topl-skip-report-calls</b> <i>regex</i></p>
+
+<p style="margin-left:17%;">Regex of procedures whose calls
+should be skipped from the reported trace.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --uninit</b></p>
 
 <p style="margin-left:17%;">Activates: checker uninit:
@@ -2758,27 +2771,28 @@ command&gt;&lsquo;</i>. (Conversely:
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1).</p>
 
-<table width="100%" border=0 rules="none" frame="void"
+<table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
+<p><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p style="margin-top: 1em" valign="top">Stop argument
-processing, use remaining arguments as a build command</p></td>
+<p>Stop argument processing, use remaining arguments as a
+build command</p></td></tr>
 </table>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1).</p>
 
+<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-<h2>ENVIRONMENT</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Extra arguments
@@ -2801,8 +2815,9 @@ commands will exit with an error code in some cases when
 otherwise a simple warning would be emitted on stderr, for
 instance if a deprecated form of an option is used.</p>
 
+<h2>FILES
 <a name="FILES"></a>
-<h2>FILES</h2>
+</h2>
 
 
 
@@ -2841,8 +2856,9 @@ first <b>.inferconfig</b> file found.</p>
 [&quot;@gen&quot;,&quot;/* no infer */&quot;] <br>
 }</p>
 
+<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-<h2>SEE ALSO</h2>
+</h2>
 
 
 
