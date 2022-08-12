@@ -458,7 +458,7 @@ module AddressAttributes = struct
         then [Ok astate]
         else
           let null_astates =
-            if PathCondition.is_known_not_equal_zero astate.path_condition addr then []
+            if PathCondition.is_known_non_zero astate.path_condition addr then []
             else
               let null_attr =
                 Attribute.Invalid (Invalidation.ConstantDereference IntLit.zero, access_trace)

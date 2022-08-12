@@ -121,8 +121,6 @@ module Unsafe : sig
   val equal_to : IntLit.t -> t
 
   val not_equal_to : IntLit.t -> t
-
-  val ge_to : IntLit.t -> t
 end = struct
   type t = Between of Bound.t * Bound.t | Outside of IntLit.t * IntLit.t
   [@@deriving compare, equal]
@@ -143,10 +141,6 @@ end = struct
 
 
   let not_equal_to i = Outside (i, i)
-
-  let ge_to i =
-    let b = Bound.Int i in
-    Between (b, Bound.PlusInfinity)
 end
 
 include Unsafe
@@ -427,8 +421,6 @@ let abduce_binop_constraints ~negated (bop : Binop.t) (a1 : t) (a2 : t) =
   | _ ->
       Satisfiable (None, None)
 
-
-let zero_inf = between (Int IntLit.zero) PlusInfinity
 
 let abduce_binop_is_true ~negated bop v1 v2 =
   Logging.d_printfln "abduce_binop_is_true ~negated:%b %s (%a) (%a)" negated (Binop.str Pp.text bop)

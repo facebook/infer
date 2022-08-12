@@ -93,6 +93,8 @@ val and_conditions_fold_subst_variables :
 
 val is_known_zero : t -> Var.t -> bool
 
+val is_known_non_zero : t -> Var.t -> bool
+
 val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
 (** Some types or errors detected by Pulse require that the state be *manifest*, which corresponds
     to the fact that the error can happen in *any reasonable* calling context (see below). If not,

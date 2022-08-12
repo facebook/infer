@@ -91,7 +91,7 @@ val and_eq_instanceof : AbstractValue.t -> AbstractValue.t -> Typ.t -> t -> t * 
 val is_known_zero : t -> AbstractValue.t -> bool
 (** [is_known_zero phi t] returns [true] if [phi |- t = 0], [false] if we don't know for sure *)
 
-val is_known_not_equal_zero : t -> AbstractValue.t -> bool
+val is_known_non_zero : t -> AbstractValue.t -> bool
 (** [is_known_not_equal_zero phi t] returns [true] if [phi |- t != 0], [false] if we don't know for
     sure.
 

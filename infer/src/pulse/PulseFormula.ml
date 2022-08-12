@@ -2568,8 +2568,13 @@ let simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep formula =
 
 
 let is_known_zero formula v =
-  Var.Map.find_opt (VarUF.find formula.phi.var_eqs v :> Var.t) formula.phi.linear_eqs
-  |> Option.exists ~f:LinArith.is_zero
+  Var.Map.find_opt v formula.phi.intervals |> Option.exists ~f:CItv.is_equal_to_zero
+  || Var.Map.find_opt (VarUF.find formula.phi.var_eqs v :> Var.t) formula.phi.linear_eqs
+     |> Option.exists ~f:LinArith.is_zero
+
+
+let is_known_non_zero formula v =
+  Var.Map.find_opt v formula.phi.intervals |> Option.exists ~f:CItv.is_not_equal_to_zero
 
 
 let is_manifest ~is_allocated formula =
