@@ -289,13 +289,11 @@ end = struct
   let is_maximized (_, vs) = VarMap.for_all (fun _ c -> Q.(c <= zero)) vs
 end
 
-let pp_linear_eqs what pp_var fmt m =
-  if Var.Map.is_empty m then F.fprintf fmt "true (no %s)" what
-  else
-    Pp.collection ~sep:" ∧ "
-      ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
-      ~pp_item:(fun fmt (v, l) -> F.fprintf fmt "%a = %a" pp_var v (LinArith.pp pp_var) l)
-      fmt m
+let pp_var_map ~arrow pp_val pp_var fmt m =
+  Pp.collection ~sep:" ∧ "
+    ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
+    ~pp_item:(fun fmt (v, value) -> F.fprintf fmt "%a%s%a" pp_var v arrow pp_val value)
+    fmt m
 
 
 (** An implementation of \[2\] "Solving Linear Arithmetic Constraints" by Harald Rueß and Natarajan
@@ -318,7 +316,7 @@ module Tableau = struct
       - the tableau is {e feasible}: each equality [u = c + q1·v1 + ... + qN·vN] is such that [c>0] *)
   type t = LinArith.t Var.Map.t [@@deriving compare, equal]
 
-  let pp = pp_linear_eqs "tableau"
+  let pp pp_var fmt tableau = pp_var_map ~arrow:" = " (LinArith.pp pp_var) pp_var fmt tableau
 
   let yojson_of_t = Var.Map.yojson_of_t LinArith.yojson_of_t
 
@@ -1134,13 +1132,10 @@ module Term = struct
     type t_ = Var.t t [@@deriving compare, equal]
 
     let pp_with_pp_var pp_var fmt m =
-      if is_empty m then F.pp_print_string fmt "true (no term_eqs)"
-      else
-        Pp.collection ~sep:"∧"
-          ~fold:(IContainer.fold_of_pervasives_map_fold fold)
-          ~pp_item:(fun fmt (term, var) ->
-            F.fprintf fmt "%a=%a" (pp_no_paren pp_var) term pp_var var )
-          fmt m
+      Pp.collection ~sep:"∧"
+        ~fold:(IContainer.fold_of_pervasives_map_fold fold)
+        ~pp_item:(fun fmt (term, var) -> F.fprintf fmt "%a=%a" (pp_no_paren pp_var) term pp_var var)
+        fmt m
 
 
     let yojson_of_t_ m = `List (List.map (bindings m) ~f:[%yojson_of: t * Var.t])
@@ -1437,7 +1432,7 @@ module Atom = struct
     end)
 
     let pp_with_pp_var pp_var fmt atoms =
-      if is_empty atoms then F.pp_print_string fmt "true (no atoms)"
+      if is_empty atoms then F.pp_print_string fmt "(empty)"
       else
         Pp.collection ~sep:"∧"
           ~fold:(IContainer.fold_of_pervasives_set_fold fold)
@@ -1519,12 +1514,24 @@ module Formula = struct
     ; atoms= Atom.Set.empty }
 
 
-  let pp_with_pp_var pp_var fmt phi =
-    F.fprintf fmt "@[<hv>%a@ &&@ %a@ &&@ %a@ &&@ %a@ &&@ %a@]"
-      (VarUF.pp ~pp_empty:(fun fmt -> F.pp_print_string fmt "true (no var=var)") pp_var)
-      phi.var_eqs (pp_linear_eqs "linear" pp_var) phi.linear_eqs
-      (Term.VarMap.pp_with_pp_var pp_var)
-      phi.term_eqs (Tableau.pp pp_var) phi.tableau (Atom.Set.pp_with_pp_var pp_var) phi.atoms
+  let pp_with_pp_var pp_var fmt ({var_eqs; linear_eqs; term_eqs; tableau; atoms} [@warning "+9"]) =
+    let is_first = ref true in
+    let pp_if condition header pp fmt x =
+      let pp_and fmt = if not !is_first then F.fprintf fmt "@;&& " else is_first := false in
+      if condition then F.fprintf fmt "%t%s: %a" pp_and header pp x
+    in
+    F.pp_open_hvbox fmt 0 ;
+    (pp_if (not (VarUF.is_empty var_eqs)) "var_eqs" (VarUF.pp pp_var)) fmt var_eqs ;
+    (pp_if
+       (not (Var.Map.is_empty linear_eqs))
+       "linear_eqs"
+       (pp_var_map ~arrow:" = " (LinArith.pp pp_var) pp_var) )
+      fmt linear_eqs ;
+    (pp_if (not (Term.VarMap.is_empty term_eqs)) "term_eqs" (Term.VarMap.pp_with_pp_var pp_var))
+      fmt term_eqs ;
+    (pp_if (not (Var.Map.is_empty tableau)) "tableau" (Tableau.pp pp_var)) fmt tableau ;
+    (pp_if (not (Atom.Set.is_empty atoms)) "atoms" (Atom.Set.pp_with_pp_var pp_var)) fmt atoms ;
+    F.pp_close_box fmt ()
 
 
   (** module that breaks invariants more often that the rest, with an interface that is safer to use *)
@@ -2040,7 +2047,7 @@ type t =
 let ttrue = {conditions= Atom.Set.empty; phi= Formula.ttrue}
 
 let pp_with_pp_var pp_var fmt {conditions; phi} =
-  F.fprintf fmt "@[conditions=%a,@;phi=%a@]" (Atom.Set.pp_with_pp_var pp_var) conditions
+  F.fprintf fmt "@[<hv>conditions: %a@;phi: %a@]" (Atom.Set.pp_with_pp_var pp_var) conditions
     (Formula.pp_with_pp_var pp_var) phi
 
 
