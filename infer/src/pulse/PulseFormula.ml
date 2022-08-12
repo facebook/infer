@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module CItv = PulseCItv
 module SatUnsat = PulseSatUnsat
 module Var = PulseAbstractValue
 module Q = QSafeCapped
@@ -1492,6 +1493,8 @@ module Formula = struct
 
   let yojson_of_linear_eqs linear_eqs = Var.Map.yojson_of_t LinArith.yojson_of_t linear_eqs
 
+  type intervals = CItv.t Var.Map.t [@@deriving compare, equal]
+
   type t =
     { var_eqs: var_eqs  (** equality relation between variables *)
     ; linear_eqs: linear_eqs
@@ -1502,6 +1505,7 @@ module Formula = struct
     ; tableau: Tableau.t
           (** linear equalities similar to [linear_eqs] but involving only "restricted" (aka
               "slack") variables; this is used for reasoning about inequalities, see \[2\] *)
+    ; intervals: (intervals[@yojson.opaque])
     ; atoms: Atom.Set.t  (** "everything else"; not always normalized w.r.t. the components above *)
     }
   [@@deriving compare, equal, yojson_of]
@@ -1511,10 +1515,12 @@ module Formula = struct
     ; linear_eqs= Var.Map.empty
     ; term_eqs= Term.VarMap.empty
     ; tableau= Tableau.empty
+    ; intervals= Var.Map.empty
     ; atoms= Atom.Set.empty }
 
 
-  let pp_with_pp_var pp_var fmt ({var_eqs; linear_eqs; term_eqs; tableau; atoms} [@warning "+9"]) =
+  let pp_with_pp_var pp_var fmt
+      ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms} [@warning "+9"]) =
     let is_first = ref true in
     let pp_if condition header pp fmt x =
       let pp_and fmt = if not !is_first then F.fprintf fmt "@;&& " else is_first := false in
@@ -1530,6 +1536,8 @@ module Formula = struct
     (pp_if (not (Term.VarMap.is_empty term_eqs)) "term_eqs" (Term.VarMap.pp_with_pp_var pp_var))
       fmt term_eqs ;
     (pp_if (not (Var.Map.is_empty tableau)) "tableau" (Tableau.pp pp_var)) fmt tableau ;
+    (pp_if (not (Var.Map.is_empty intervals)) "intervals" (pp_var_map ~arrow:"" CItv.pp pp_var))
+      fmt intervals ;
     (pp_if (not (Atom.Set.is_empty atoms)) "atoms" (Atom.Set.pp_with_pp_var pp_var)) fmt atoms ;
     F.pp_close_box fmt ()
 
@@ -2059,14 +2067,97 @@ let and_atom atom formula =
   ({formula with phi}, new_eqs)
 
 
-let and_mk_atom mk_atom op1 op2 formula =
-  let atom = mk_atom (Term.of_operand op1) (Term.of_operand op2) in
+let mk_atom_of_binop (binop : Binop.t) =
+  match binop with
+  | Eq ->
+      Atom.equal
+  | Ne ->
+      Atom.not_equal
+  | Le ->
+      Atom.less_equal
+  | Lt ->
+      Atom.less_than
+  | _ ->
+      L.die InternalError "wrong argument to [mk_atom_of_binop]: %a" Binop.pp binop
+
+
+module Intervals = struct
+  let interval_and_var_of_operand intervals = function
+    | AbstractValueOperand v ->
+        (Some v, Var.Map.find_opt v intervals)
+    | ConstOperand (Cint i) ->
+        (None, Some (CItv.equal_to i))
+    | ConstOperand (Cfun _ | Cstr _ | Cfloat _ | Cclass _) ->
+        (None, None)
+    | FunctionApplicationOperand _ ->
+        (None, None)
+
+
+  let interval_of_operand intervals operand = interval_and_var_of_operand intervals operand |> snd
+
+  let update_formula formula intervals = {formula with phi= {formula.phi with intervals}}
+
+  let and_binop ~negated binop op1 op2 formula =
+    let intervals = formula.phi.intervals in
+    let v1_opt, i1_opt = interval_and_var_of_operand intervals op1 in
+    let v2_opt, i2_opt = interval_and_var_of_operand intervals op2 in
+    match CItv.abduce_binop_is_true ~negated binop i1_opt i2_opt with
+    | Unsatisfiable ->
+        Unsat
+    | Satisfiable (i1_better_opt, i2_better_opt) ->
+        let refine v_opt i_better_opt intervals =
+          Option.both v_opt i_better_opt
+          |> Option.fold ~init:intervals ~f:(fun intervals (v, i_better) ->
+                 Var.Map.add v i_better intervals )
+        in
+        let intervals = refine v1_opt i1_better_opt intervals in
+        let intervals = refine v2_opt i2_better_opt intervals in
+        Sat (update_formula formula intervals)
+
+
+  let binop v bop op_lhs op_rhs formula =
+    let intervals = formula.phi.intervals in
+    match
+      Option.both (interval_of_operand intervals op_lhs) (interval_of_operand intervals op_rhs)
+      |> Option.bind ~f:(fun (lhs, rhs) -> CItv.binop bop lhs rhs)
+    with
+    | None ->
+        formula
+    | Some binop_itv ->
+        Var.Map.add v binop_itv intervals |> update_formula formula
+
+
+  let unop v op x formula =
+    let open Option.Monad_infix in
+    let intervals = formula.phi.intervals in
+    match interval_of_operand intervals x >>= CItv.unop op with
+    | None ->
+        formula
+    | Some unop_itv ->
+        Var.Map.add v unop_itv intervals |> update_formula formula
+
+
+  let and_callee_interval v citv_callee (phi, new_eqs) =
+    let citv_caller_opt = Var.Map.find_opt v phi.Formula.intervals in
+    match CItv.abduce_binop_is_true ~negated:false Eq citv_caller_opt (Some citv_callee) with
+    | Unsatisfiable ->
+        Unsat
+    | Satisfiable (Some abduce_caller, _abduce_callee) ->
+        Sat
+          ({phi with Formula.intervals= Var.Map.add v abduce_caller phi.Formula.intervals}, new_eqs)
+    | Satisfiable (None, _) ->
+        Sat (phi, new_eqs)
+end
+
+let and_mk_atom binop op1 op2 formula =
+  let* formula = Intervals.and_binop ~negated:false binop op1 op2 formula in
+  let atom = (mk_atom_of_binop binop) (Term.of_operand op1) (Term.of_operand op2) in
   and_atom atom formula
 
 
-let and_equal = and_mk_atom Atom.equal
+let and_equal = and_mk_atom Eq
 
-let and_not_equal = and_mk_atom Atom.not_equal
+let and_not_equal = and_mk_atom Ne
 
 let and_equal_instanceof v1 v2 t formula =
   let atom = Atom.equal (Var v1) (IsInstanceOf (v2, t)) in
@@ -2078,15 +2169,17 @@ let and_is_int v formula =
   and_atom atom formula
 
 
-let and_less_equal = and_mk_atom Atom.less_equal
+let and_less_equal = and_mk_atom Le
 
-let and_less_than = and_mk_atom Atom.less_than
+let and_less_than = and_mk_atom Lt
 
 let and_equal_unop v (op : Unop.t) x formula =
+  let formula = Intervals.unop v op x formula in
   and_atom (Equal (Var v, Term.of_unop op (Term.of_operand x))) formula
 
 
 let and_equal_binop v (bop : Binop.t) x y formula =
+  let formula = Intervals.binop v bop x y formula in
   and_atom (Equal (Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y))) formula
 
 
@@ -2105,6 +2198,7 @@ let prune_atom atom (formula, new_eqs) =
 
 
 let prune_binop ~negated (bop : Binop.t) x y formula =
+  let* formula = Intervals.and_binop ~negated bop x y formula in
   let tx = Term.of_operand x in
   let ty = Term.of_operand y in
   let t = Term.of_binop bop tx ty in
@@ -2215,6 +2309,15 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
         let phi_new_eqs = Formula.Normalizer.and_var_term v t phi_new_eqs |> sat_value_exn in
         (acc_f, phi_new_eqs) )
   in
+  let and_intervals intervals_foreign acc_phi_new_eqs =
+    IContainer.fold_of_pervasives_map_fold Var.Map.fold intervals_foreign ~init:acc_phi_new_eqs
+      ~f:(fun (acc_f, phi_new_eqs) (v_foreign, interval_foreign) ->
+        let acc_f, v = f_var acc_f v_foreign in
+        let phi_new_eqs =
+          Intervals.and_callee_interval v interval_foreign phi_new_eqs |> sat_value_exn
+        in
+        (acc_f, phi_new_eqs) )
+  in
   let and_atoms atoms_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms_foreign ~init:acc_phi_new_eqs
       ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
@@ -2228,6 +2331,7 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
         ( and_var_eqs phi_foreign.Formula.var_eqs (acc, (phi, []))
         |> and_linear_eqs phi_foreign.Formula.linear_eqs
         |> and_term_eqs phi_foreign.Formula.term_eqs
+        |> and_intervals phi_foreign.Formula.intervals
         |> and_atoms phi_foreign.Formula.atoms )
     with Contradiction -> Unsat
   in
@@ -2284,6 +2388,15 @@ end = struct
       linear_eqs Var.Map.empty
 
 
+  let subst_var_intervals subst intervals =
+    Var.Map.fold
+      (fun x citv new_map ->
+        let x' = subst_f subst x in
+        (* concrete intervals have no variables inside them *)
+        Var.Map.add x' citv new_map )
+      intervals Var.Map.empty
+
+
   let subst_var_atoms subst atoms =
     Atom.Set.fold
       (fun atom atoms ->
@@ -2292,11 +2405,12 @@ end = struct
       atoms Atom.Set.empty
 
 
-  let subst_var_phi subst {Formula.var_eqs; linear_eqs; tableau; term_eqs; atoms} =
+  let subst_var_phi subst {Formula.var_eqs; linear_eqs; tableau; term_eqs; intervals; atoms} =
     { Formula.var_eqs= VarUF.apply_subst subst var_eqs
     ; linear_eqs= subst_var_linear_eqs subst linear_eqs
     ; term_eqs= Term.VarMap.apply_var_subst subst term_eqs
     ; tableau= subst_var_linear_eqs subst tableau
+    ; intervals= subst_var_intervals subst intervals
     ; atoms= subst_var_atoms subst atoms }
 
 
@@ -2423,7 +2537,10 @@ module DeadVariables = struct
       let atoms =
         Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.Formula.atoms
       in
-      {Formula.var_eqs; linear_eqs; term_eqs; tableau; atoms}
+      let intervals =
+        Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.intervals
+      in
+      {Formula.var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
     in
     let phi = simplify_phi formula.phi in
     let conditions =
