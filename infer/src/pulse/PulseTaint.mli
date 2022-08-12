@@ -17,7 +17,7 @@ module Kind : sig
 
   val hash : t -> int
 
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val sexp_of_t : t -> Sexp.t
 
   val mark_data_flow_only : t -> unit
 
