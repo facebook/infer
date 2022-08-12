@@ -107,20 +107,28 @@ let mk_nil_messaging_summary tenv proc_name (proc_attrs : ProcAttributes.t) =
   else None
 
 
+let prune_positive_allocated_self location self_address astate =
+  (* it's important to do the prune *first* before the dereference to detect contradictions if the
+     address is equal to 0 *)
+  PulseArithmetic.prune_positive (fst self_address) astate
+  >>= PulseOperations.eval_access PathContext.initial Read location self_address Dereference
+  >>| fst
+
+
 let initial_with_positive_self proc_name (proc_attrs : ProcAttributes.t) initial_astate =
-  let self = mk_objc_self_pvar proc_name in
+  let self_var = mk_objc_self_pvar proc_name in
   (* same HACK as above with respect to [PulseResult.ok_exn] *)
   if Procname.is_objc_instance_method proc_name then
-    let astate, value =
-      PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar self) initial_astate
+    let astate, self_address =
+      PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar self_var) initial_astate
       |> PulseResult.ok_exn
     in
-    PulseArithmetic.and_positive (fst value) astate |> PulseResult.ok_exn
+    prune_positive_allocated_self proc_attrs.loc self_address astate |> PulseResult.ok_exn
   else initial_astate
 
 
-let append_objc_actual_self_positive proc_name self_actual astate =
+let append_objc_actual_self_positive proc_name (proc_attrs : ProcAttributes.t) self_actual astate =
   if Procname.is_objc_instance_method proc_name then
-    Option.value_map self_actual ~default:(Ok astate) ~f:(fun ((self, _), _) ->
-        PulseArithmetic.prune_positive self astate )
+    Option.value_map self_actual ~default:(Ok astate) ~f:(fun (self, _) ->
+        prune_positive_allocated_self proc_attrs.loc self astate )
   else Ok astate

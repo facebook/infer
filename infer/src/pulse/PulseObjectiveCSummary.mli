@@ -11,6 +11,7 @@ open PulseDomainInterface
 
 val append_objc_actual_self_positive :
      Procname.t
+  -> ProcAttributes.t
   -> ((AbstractValue.t * ValueHistory.t) * Typ.t) option
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t

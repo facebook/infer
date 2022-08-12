@@ -18,7 +18,6 @@ void latent_use_after_free(int b, int* x) {
   }
 }
 
-// Filtered out
 void manifest_use_after_free(int* x) { latent_use_after_free(1, x); }
 
 void deref_then_free_then_deref_bad(int* x) {

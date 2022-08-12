@@ -99,8 +99,12 @@ let is_known_zero astate v = PathCondition.is_known_zero astate.AbductiveDomain.
 
 let is_unsat_cheap astate = PathCondition.is_unsat_cheap astate.AbductiveDomain.path_condition
 
-let has_no_assumptions astate =
-  PathCondition.has_no_assumptions astate.AbductiveDomain.path_condition
+let is_manifest astate =
+  PathCondition.is_manifest
+    ~is_allocated:(fun v ->
+      AbductiveDomain.is_heap_allocated astate v
+      || AbductiveDomain.AddressAttributes.get_must_be_valid v astate |> Option.is_some )
+    astate.AbductiveDomain.path_condition
 
 
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> PathCondition.and_is_int v phi)

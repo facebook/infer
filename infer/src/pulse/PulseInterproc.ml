@@ -291,15 +291,20 @@ let materialize_pre_for_globals path callee_proc_name call_location pre_post cal
         ~addr_pre ~addr_hist_caller call_state )
 
 
-let conjoin_callee_arith pre_post call_state =
+let conjoin_callee_arith pre_or_post pre_post call_state =
   let open PulseResult.Let_syntax in
   L.d_printfln "applying callee path condition: (%a)[%a]" PathCondition.pp
     pre_post.AbductiveDomain.path_condition
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
     call_state.subst ;
   let subst, path_condition, new_eqs =
-    PathCondition.and_callee call_state.subst call_state.astate.path_condition
-      ~callee:pre_post.AbductiveDomain.path_condition
+    match pre_or_post with
+    | `Pre ->
+        PathCondition.and_callee_pre call_state.subst call_state.astate.path_condition
+          ~callee:pre_post.AbductiveDomain.path_condition
+    | `Post ->
+        PathCondition.and_callee_post call_state.subst call_state.astate.path_condition
+          ~callee:pre_post.AbductiveDomain.path_condition
   in
   if PathCondition.is_unsat_cheap path_condition then raise (Contradiction PathCondition)
   else
@@ -329,8 +334,8 @@ let caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller
   ({call_state with subst= !subst_ref}, attrs)
 
 
-let apply_arithmetic_constraints {PathContext.timestamp} callee_proc_name call_location pre_post
-    call_state =
+let apply_arithmetic_constraints pre_or_post {PathContext.timestamp} callee_proc_name call_location
+    pre_post call_state =
   let open PulseResult.Let_syntax in
   let one_address_sat callee_attrs (addr_caller, caller_history) call_state =
     let call_state, attrs_caller =
@@ -340,7 +345,7 @@ let apply_arithmetic_constraints {PathContext.timestamp} callee_proc_name call_l
     let astate = AddressAttributes.abduce_and_add addr_caller attrs_caller call_state.astate in
     if phys_equal astate call_state.astate then call_state else {call_state with astate}
   in
-  let+ call_state = conjoin_callee_arith pre_post call_state in
+  let+ call_state = conjoin_callee_arith pre_or_post pre_post call_state in
   (* check all callee addresses that make sense for the caller, i.e. the domain of [call_state.subst] *)
   if Config.pulse_isl then
     AddressMap.fold
@@ -395,7 +400,7 @@ let materialize_pre path callee_proc_name call_location pre_post ~captured_forma
     >>= materialize_pre_for_globals path callee_proc_name call_location pre_post
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
-    apply_arithmetic_constraints path callee_proc_name call_location pre_post
+    apply_arithmetic_constraints `Pre path callee_proc_name call_location pre_post
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r
@@ -485,7 +490,8 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
 
 let rec record_post_for_address path callee_proc_name call_loc
     ({AbductiveDomain.pre; _} as pre_post) ~addr_callee ~addr_hist_caller call_state =
-  L.d_printfln "%a<->%a" AbstractValue.pp addr_callee AbstractValue.pp (fst addr_hist_caller) ;
+  L.d_printf "visiting %a<->%a.. " AbstractValue.pp addr_callee AbstractValue.pp
+    (fst addr_hist_caller) ;
   match visit call_state ~pre:(pre :> BaseDomain.t) ~addr_callee ~addr_hist_caller with
   | `AlreadyVisited, call_state ->
       call_state
@@ -716,9 +722,24 @@ let apply_post path callee_proc_name call_location pre_post ~captured_formals ~c
     ~formals ~actuals call_state =
   let open PulseResult.Let_syntax in
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
+  let normalize_subst_for_post call_state =
+    let subst =
+      AddressMap.map
+        (fun (v_caller, hist) ->
+          let v_caller_canon =
+            PathCondition.get_both_var_repr call_state.astate.AbductiveDomain.path_condition
+              v_caller
+          in
+          (v_caller_canon, hist) )
+        call_state.subst
+    in
+    {call_state with subst}
+  in
   let r =
-    let call_state, return_caller =
-      apply_unknown_effects pre_post call_state
+    let call_state, return_caller_opt =
+      (* subst was suitable for pre but post may know more equalities, take them into account now *)
+      normalize_subst_for_post call_state
+      |> apply_unknown_effects pre_post
       |> apply_post_for_parameters path callee_proc_name call_location pre_post ~formals ~actuals
       |> apply_post_for_captured_vars path callee_proc_name call_location pre_post ~captured_formals
            ~captured_actuals
@@ -729,9 +750,17 @@ let apply_post path callee_proc_name call_location pre_post ~captured_formals ~c
       record_post_remaining_attributes path callee_proc_name call_location pre_post call_state
       |> record_skipped_calls callee_proc_name call_location pre_post
       |> record_need_specialization pre_post
-      |> conjoin_callee_arith pre_post
+      |> conjoin_callee_arith `Post pre_post
+      (* normalize subst again now that we know more arithmetic facts *)
+      >>| normalize_subst_for_post
     in
-    (call_state, return_caller)
+    let return_caller_opt =
+      Option.map return_caller_opt ~f:(fun (return_caller, return_hist) ->
+          ( PathCondition.get_both_var_repr call_state.astate.AbductiveDomain.path_condition
+              return_caller
+          , return_hist ) )
+    in
+    (call_state, return_caller_opt)
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r

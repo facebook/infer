@@ -165,6 +165,11 @@ module AddressAttributes : sig
 
   val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
 
+  val get_must_be_valid :
+       AbstractValue.t
+    -> t
+    -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
+
   val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
   val get_taint_sources_and_sanitizers :
@@ -293,6 +298,9 @@ val set_uninitialized :
   -> t
   -> t
 (** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
+
+val is_heap_allocated : t -> AbstractValue.t -> bool
+(** whether the abstract value provided has edges in the pre or post heap *)
 
 module Topl : sig
   val small_step : Location.t -> keep:AbstractValue.Set.t -> PulseTopl.event -> t -> t

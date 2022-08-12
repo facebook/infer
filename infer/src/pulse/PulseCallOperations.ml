@@ -375,8 +375,8 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
       let<+> astate_unknown =
-        PulseObjectiveCSummary.append_objc_actual_self_positive proc_name (List.hd actuals)
-          astate_unknown
+        PulseObjectiveCSummary.append_objc_actual_self_positive proc_name proc_attrs
+          (List.hd actuals) astate_unknown
       in
       astate_unknown
     in

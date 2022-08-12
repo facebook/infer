@@ -92,7 +92,7 @@ let add_call call_and_loc call_subst astate latent_issue =
 
 
 let is_manifest (astate : AbductiveDomain.summary) =
-  PulseArithmetic.has_no_assumptions (astate :> AbductiveDomain.t)
+  PulseArithmetic.is_manifest (astate :> AbductiveDomain.t)
   && ( (not Config.pulse_isl)
      || AbductiveDomain.is_isl_without_allocation (astate :> AbductiveDomain.t)
         && ( (not Config.pulse_manifest_emp)

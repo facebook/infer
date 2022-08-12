@@ -351,6 +351,10 @@ module AddressAttributes = struct
     BaseAddressAttributes.get_copied_into addr (astate.post :> base_domain).attrs
 
 
+  let get_must_be_valid addr astate =
+    BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs
+
+
   let get_source_origin_of_copy addr astate =
     BaseAddressAttributes.get_source_origin_of_copy addr (astate.post :> base_domain).attrs
 
@@ -1255,7 +1259,7 @@ let incorporate_new_eqs ~for_summary astate new_eqs =
              times. This would require normalizing the arithmetic part at each step, which is too
              expensive. *)
           L.d_printfln ~color:Red "Potential ERROR: %a = 0 but is allocated" AbstractValue.pp v ;
-          match BaseAddressAttributes.get_must_be_valid v (astate.pre :> base_domain).attrs with
+          match AddressAttributes.get_must_be_valid v astate with
           | None ->
               (* we don't know why [v|->-] is in the state, weird and probably cannot happen; drop
                  the path because we won't be able to give a sensible error *)
@@ -1271,7 +1275,6 @@ let incorporate_new_eqs ~for_summary astate new_eqs =
 (** it's a good idea to normalize the path condition before calling this function *)
 let canonicalize astate =
   let open SatUnsat.Import in
-  let get_var_repr v = PathCondition.get_known_var_repr astate.path_condition v in
   let canonicalize_pre (pre : PreDomain.t) =
     (* (ab)use canonicalization to filter out empty edges in the heap and detect aliasing
        contradictions *)
@@ -1281,6 +1284,7 @@ let canonicalize astate =
     PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
   in
   let canonicalize_post (post : PostDomain.t) =
+    let get_var_repr v = PathCondition.get_both_var_repr astate.path_condition v in
     let* stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
     (* note: this step also de-registers addresses pointing to empty edges *)
     let+ heap' = BaseMemory.canonicalize ~get_var_repr (post :> BaseDomain.t).heap in

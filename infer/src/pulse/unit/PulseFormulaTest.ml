@@ -187,9 +187,8 @@ let%test_module "normalization" =
       normalize (x < y) ;
       [%expect
         {|
-        known=true (no var=var) && x = y + -a1 -1 && [y + -a1 -1]=x && true (no tableau) && true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var) && x = y + -a2 -1 && [y + -a2 -1]=x && true (no tableau) && true (no atoms) |}]
+        conditions=true (no atoms),
+        phi=true (no var=var) && x = y + -a1 -1 && [y + -a1 -1]=x && true (no tableau) && true (no atoms) |}]
 
     let%expect_test _ =
       normalize (x + i 1 - i 1 < x) ;
@@ -221,9 +220,8 @@ let%test_module "normalization" =
       normalize (of_binop Eq x y = i 0 && x = i 0 && y = i 1) ;
       [%expect
         {|
-        known=x=v6 && x = 0 ∧ y = 1 && 0=x∧1=y && true (no tableau) && true (no atoms),
-        pruned=true (no atoms),
-        both=x=v6 && x = 0 ∧ y = 1 && 0=x∧1=y && true (no tableau) && true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=x=v6 && x = 0 ∧ y = 1 && 0=x∧1=y && true (no tableau) && true (no atoms)|}]
 
     let%expect_test _ =
       normalize (x = i 0 && x < i 0) ;
@@ -237,75 +235,48 @@ let%test_module "normalization" =
       normalize (z * (x + (v * y) + i 1) / w = i 0) ;
       [%expect
         {|
-        known=true (no var=var)
-              &&
-              x = -v6 + v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
-              &&
-              0=v10∧[-v6 + v8 -1]=x∧[v8 -1]=v7∧[z]×[v8]=v9∧[v]×[y]=v6∧[v9]÷[w]=v10
-              &&
-              true (no tableau)
-              &&
-              true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var)
-             &&
-             x = -v6 + v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
-             &&
-             0=v10∧[-v6 + v8 -1]=x∧[v8 -1]=v7∧[z]×[v8]=v9∧[v]×[y]=v6∧[v9]÷[w]=v10
-             &&
-             true (no tableau)
-             &&
-             true (no atoms) |}]
+        conditions=true (no atoms),
+        phi=true (no var=var)
+            &&
+            x = -v6 + v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
+            &&
+            0=v10∧[-v6 + v8 -1]=x∧[v8 -1]=v7∧[z]×[v8]=v9∧[v]×[y]=v6∧[v9]÷[w]=v10
+            &&
+            true (no tableau)
+            &&
+            true (no atoms) |}]
 
     (* check that this becomes all linear equalities *)
     let%expect_test _ =
       normalize (i 12 * (x + (i 3 * y) + i 1) / i 1 = i 0) ;
       [%expect
         {|
-        known=v8=v9=v10
-              &&
-              x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
-              &&
-              -1=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
-              &&
-              true (no tableau)
-              &&
-              true (no atoms),
-        pruned=true (no atoms),
-        both=v8=v9=v10
-             &&
-             x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
-             &&
-             -1=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
-             &&
-             true (no tableau)
-             &&
-             true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=v8=v9=v10
+            &&
+            x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
+            &&
+            -1=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
+            &&
+            true (no tableau)
+            &&
+            true (no atoms)|}]
 
     (* check that this becomes all linear equalities thanks to constant propagation *)
     let%expect_test _ =
       normalize (z * (x + (v * y) + i 1) / w = i 0 && z = i 12 && v = i 3 && w = i 1) ;
       [%expect
         {|
-        known=v8=v9=v10
-              &&
-              x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
-              &&
-              -1=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
-              &&
-              true (no tableau)
-              &&
-              true (no atoms),
-        pruned=true (no atoms),
-        both=v8=v9=v10
-             &&
-             x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
-             &&
-             -1=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
-             &&
-             true (no tableau)
-             &&
-             true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=v8=v9=v10
+            &&
+            x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
+            &&
+            -1=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
+            &&
+            true (no tableau)
+            &&
+            true (no atoms)|}]
 
     (* expected: [is_int(x)] and [is_int(y)] get simplified away, [is_int(z)] is kept around *)
     let%expect_test _ =
@@ -313,25 +284,16 @@ let%test_module "normalization" =
         (is_int x_var && x + x = i 4 && is_int y_var && y = i (-42) && is_int z_var && z = x + w) ;
       [%expect
         {|
-        known=z=v7
-              &&
-              x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
-              &&
-              -42=y∧2=x∧4=v6∧[w +2]=z
-              &&
-              true (no tableau)
-              &&
-              {is_int([z]) = 1},
-        pruned=true (no atoms),
-        both=z=v7
-             &&
-             x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
-             &&
-             -42=y∧2=x∧4=v6∧[w +2]=z
-             &&
-             true (no tableau)
-             &&
-             {is_int([z]) = 1}|}]
+        conditions=true (no atoms),
+        phi=z=v7
+            &&
+            x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
+            &&
+            -42=y∧2=x∧4=v6∧[w +2]=z
+            &&
+            true (no tableau)
+            &&
+            {is_int([z]) = 1}|}]
 
     let%expect_test _ =
       normalize (is_int x_var && x + x = i 5) ;
@@ -344,90 +306,67 @@ let%test_module "variable elimination" =
       simplify ~keep:[x_var; y_var] (x = y) ;
       [%expect
         {|
-        known=x=y && true (no linear) && true (no term_eqs) && true (no tableau) && true (no atoms),
-        pruned=true (no atoms),
-        both=x=y && true (no linear) && true (no term_eqs) && true (no tableau) && true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=x=y && true (no linear) && true (no term_eqs) && true (no tableau) && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var] (x = i 0 && y = i 1 && z = i 2 && w = i 3) ;
       [%expect
         {|
-        known=true (no var=var) && x = 0 && 0=x && true (no tableau) && true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var) && x = 0 && 0=x && true (no tableau) && true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=true (no var=var) && x = 0 && 0=x && true (no tableau) && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var] (x = y + i 1 && x = i 0) ;
       [%expect
         {|
-          known=true (no var=var) && x = 0 && 0=x && true (no tableau) && true (no atoms),
-          pruned=true (no atoms),
-          both=true (no var=var) && x = 0 && 0=x && true (no tableau) && true (no atoms)|}]
+          conditions=true (no atoms),
+          phi=true (no var=var) && x = 0 && 0=x && true (no tableau) && true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[y_var] (x = y + i 1 && x = i 0) ;
       [%expect
         {|
-        known=true (no var=var) && y = -1 && -1=y && true (no tableau) && true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var) && y = -1 && -1=y && true (no tableau) && true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=true (no var=var) && y = -1 && -1=y && true (no tableau) && true (no atoms)|}]
 
     (* should keep most of this or realize that [w = z] hence this boils down to [z+1 = 0] *)
     let%expect_test _ =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
       [%expect
         {|
-        known=true (no var=var)
-              &&
-              x = y -1 ∧ z = -1
-              &&
-              -1=z∧[y -1]=x
-              &&
-              true (no tableau)
-              &&
-              true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var)
-             &&
-             x = y -1 ∧ z = -1
-             &&
-             -1=z∧[y -1]=x
-             &&
-             true (no tableau)
-             &&
-             true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=true (no var=var)
+            &&
+            x = y -1 ∧ z = -1
+            &&
+            -1=z∧[y -1]=x
+            &&
+            true (no tableau)
+            &&
+            true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y + z && w + x + y = i 0 && v = w + i 1) ;
       [%expect
         {|
-          known=true (no var=var)
-                &&
-                x = -v + v7 +1 ∧ y = -v7 ∧ z = -v + 2·v7 +1 ∧ w = v -1
-                &&
-                [v -1]=w∧[-v7]=y∧[-v + v7 +1]=x∧[-v + 2·v7 +1]=z
-                &&
-                true (no tableau)
-                &&
-                true (no atoms),
-          pruned=true (no atoms),
-          both=true (no var=var)
-               &&
-               x = -v + v7 +1 ∧ y = -v7 ∧ z = -v + 2·v7 +1 ∧ w = v -1
-               &&
-               [v -1]=w∧[-v7]=y∧[-v + v7 +1]=x∧[-v + 2·v7 +1]=z
-               &&
-               true (no tableau)
-               &&
-               true (no atoms)|}]
+          conditions=true (no atoms),
+          phi=true (no var=var)
+              &&
+              x = -v + v7 +1 ∧ y = -v7 ∧ z = -v + 2·v7 +1 ∧ w = v -1
+              &&
+              [v -1]=w∧[-v7]=y∧[-v + v7 +1]=x∧[-v + 2·v7 +1]=z
+              &&
+              true (no tableau)
+              &&
+              true (no atoms)|}]
 
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y + i 4 && x = w && y = z) ;
       [%expect
         {|
-        known=true (no var=var) && x = y +4 && [y +4]=x && true (no tableau) && true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var) && x = y +4 && [y +4]=x && true (no tableau) && true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=true (no var=var) && x = y +4 && [y +4]=x && true (no tableau) && true (no atoms)|}]
   end )
 
 let%test_module "non-linear simplifications" =
@@ -436,41 +375,30 @@ let%test_module "non-linear simplifications" =
       simplify ~keep:[w_var] (((i 0 / (x * z)) & v) * v mod y = w) ;
       [%expect
         {|
-        known=true (no var=var) && w = 0 && 0=w && true (no tableau) && true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var) && w = 0 && 0=w && true (no tableau) && true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=true (no var=var) && w = 0 && 0=w && true (no tableau) && true (no atoms)|}]
 
     let%expect_test "constant propagation: bitshift" =
       simplify ~keep:[x_var] (of_binop Shiftlt (of_binop Shiftrt (i 0b111) (i 2)) (i 2) = x) ;
       [%expect
         {|
-        known=true (no var=var) && x = 4 && 4=x && true (no tableau) && true (no atoms),
-        pruned=true (no atoms),
-        both=true (no var=var) && x = 4 && 4=x && true (no tableau) && true (no atoms)|}]
+        conditions=true (no atoms),
+        phi=true (no var=var) && x = 4 && 4=x && true (no tableau) && true (no atoms)|}]
 
     let%expect_test "non-linear becomes linear" =
       normalize (w = (i 2 * z) - i 3 && z = x * y && y = i 2) ;
       [%expect
         {|
-          known=z=v8 ∧ w=v7
-                &&
-                x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
-                &&
-                2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
-                &&
-                true (no tableau)
-                &&
-                true (no atoms),
-          pruned=true (no atoms),
-          both=z=v8 ∧ w=v7
-               &&
-               x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
-               &&
-               2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
-               &&
-               true (no tableau)
-               &&
-               true (no atoms)|}]
+          conditions=true (no atoms),
+          phi=z=v8 ∧ w=v7
+              &&
+              x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
+              &&
+              2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
+              &&
+              true (no tableau)
+              &&
+              true (no atoms)|}]
   end )
 
 let%test_module "inequalities" =
@@ -487,25 +415,16 @@ let%test_module "inequalities" =
       normalize (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3)) ;
       [%expect
         {|
-        known=a5=z ∧ a3=y ∧ a1=x
-              &&
-              v6 = a1 + a3 ∧ v7 = -a3 + a5
-              &&
-              [a1 + a3]=v6∧[-a3 + a5]=v7
-              &&
-              a7 = a1 + a5 + a9 +1 ∧ a3 = a5 + a9 +3
-              &&
-              true (no atoms),
-        pruned=true (no atoms),
-        both=a6=z ∧ a4=y ∧ a2=x
-             &&
-             v6 = a2 + a4 ∧ v7 = -a4 + a6
-             &&
-             [a2 + a4]=v6∧[-a4 + a6]=v7
-             &&
-             a8 = a2 + a6 + a10 +1 ∧ a4 = a6 + a10 +3
-             &&
-             true (no atoms) |}]
+        conditions=true (no atoms),
+        phi=a3=z ∧ a2=y ∧ a1=x
+            &&
+            v6 = a1 + a2 ∧ v7 = -a2 + a3
+            &&
+            [a1 + a2]=v6∧[-a2 + a3]=v7
+            &&
+            a4 = a1 + a3 + a5 +1 ∧ a2 = a3 + a5 +3
+            &&
+            true (no atoms) |}]
 
     let%expect_test "add to tableau with pivot then unsat" =
       normalize (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3) && y < i 1) ;

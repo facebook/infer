@@ -84,12 +84,30 @@ val and_fold_subst_variables :
   -> f:('acc -> Var.t -> 'acc * Var.t)
   -> ('acc * t * new_eqs) SatUnsat.t
 
+val and_conditions_fold_subst_variables :
+     t
+  -> up_to_f:t
+  -> init:'acc
+  -> f:('acc -> Var.t -> 'acc * Var.t)
+  -> ('acc * t * new_eqs) SatUnsat.t
+
 val is_known_zero : t -> Var.t -> bool
 
-val has_no_assumptions : t -> bool
+val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
+(** Some types or errors detected by Pulse require that the state be *manifest*, which corresponds
+    to the fact that the error can happen in *any reasonable* calling context (see below). If not,
+    the error is flagged as *latent* and not reported until it becomes manifest.
 
-val get_known_var_repr : t -> Var.t -> Var.t
-(** get the canonical representative for the variable according to the known/post equality relation *)
+    A state is *manifest* when its path condition (here meaning the conjunction of conditions
+    encountered in [if] statements, loop conditions, etc., i.e. anything in a {!Sil.Prune} node) is
+    either a) empty or b) comprised only of facts of the form [p>0] or [p≠0] where [p] is known to
+    be allocated. The latter condition captures the idea that addresses being valid pointers in
+    memory should not deter us from reporting any error that we find on that program path as it is
+    somewhat the happy/expected case. The unhappy/unexpected case here would be to report errors
+    that require a pointer to be invalid or null in the precondition; we do not want to report such
+    errors until we see that there exists a calling context in which the pointer is indeed invalid
+    or null! But, to reiterate, we do want to report errors that only have valid pointers in their
+    precondition. *)
 
 val get_both_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the both/pre+post equality

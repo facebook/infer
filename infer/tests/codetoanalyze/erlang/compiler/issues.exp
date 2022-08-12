@@ -527,10 +527,10 @@ nonmatch_case_guards:test_accepts_positive_Ok/0: ok
 
 ----- nonmatch_function_guards -----
 nonmatch_function_guards:fn_test_possible_exception2_Bad/0: function_clause
+nonmatch_function_guards:fp_test_accepts_all_tricky3_Ok/0: ok
 nonmatch_function_guards:test_accepts_all_basic2_Ok/0: ok
 nonmatch_function_guards:test_accepts_all_basic_Ok/0: ok
 nonmatch_function_guards:test_accepts_all_tricky2_Ok/0: ok
-nonmatch_function_guards:test_accepts_all_tricky3_Ok/0: ok
 nonmatch_function_guards:test_accepts_all_tricky_Ok/0: ok
 nonmatch_function_guards:test_accepts_positive2_Bad/0: function_clause
 nonmatch_function_guards:test_accepts_positive2_Ok/0: ok

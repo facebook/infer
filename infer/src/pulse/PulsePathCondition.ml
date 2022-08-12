@@ -240,6 +240,21 @@ let and_citvs_callee subst citvs_caller citvs_callee =
   (subst, citvs')
 
 
+let and_callee_pre subst phi ~callee:phi_callee =
+  if phi.is_unsat || phi_callee.is_unsat then (subst, false_, [])
+  else
+    match
+      Formula.and_conditions_fold_subst_variables phi.formula ~up_to_f:phi_callee.formula
+        ~f:subst_find_or_new ~init:subst
+    with
+    | Unsat ->
+        L.d_printfln "contradiction found when applying callee's path conditions" ;
+        (subst, false_, [])
+    | Sat (subst, formula', new_eqs) ->
+        L.d_printfln "formula with callee's path conditions: %a@\n" Formula.pp formula' ;
+        (subst, {phi with formula= formula'}, new_eqs)
+
+
 let and_formula_callee subst formula_caller ~callee:formula_callee =
   (* need to translate callee variables to make sense for the caller, thereby possibly extending
      the current substitution *)
@@ -247,7 +262,7 @@ let and_formula_callee subst formula_caller ~callee:formula_callee =
     ~init:subst
 
 
-let and_callee subst phi ~callee:phi_callee =
+let and_callee_post subst phi ~callee:phi_callee =
   if phi.is_unsat || phi_callee.is_unsat then (subst, false_, [])
   else
     match and_bo_itvs_callee subst phi.bo_itvs phi_callee.bo_itvs with
@@ -473,8 +488,6 @@ let is_unsat_expensive tenv ~get_dynamic_type phi =
         ({phi with formula}, false, new_eqs)
 
 
-let has_no_assumptions phi = Formula.has_no_assumptions phi.formula
-
-let get_known_var_repr phi v = Formula.get_known_var_repr phi.formula v
+let is_manifest ~is_allocated phi = Formula.is_manifest ~is_allocated phi.formula
 
 let get_both_var_repr phi v = Formula.get_both_var_repr phi.formula v

@@ -221,7 +221,7 @@ module Basic = struct
    fun ({path; location} as model_data) astate ->
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
     let astates_alloc =
-      let<*> astate = PulseArithmetic.and_positive (fst deleted_access) astate in
+      let<*> astate = PulseArithmetic.prune_positive (fst deleted_access) astate in
       let astates =
         match operation with
         | `Free ->

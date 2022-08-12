@@ -48,7 +48,13 @@ val simplify :
     in [keep] as possible, and tries to eliminate variables not in [can_be_pruned] from the "pruned"
     part of the formula *)
 
-val and_callee :
+val and_callee_pre :
+     (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+  -> t
+  -> callee:t
+  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * t * new_eqs
+
+val and_callee_post :
      (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
   -> t
   -> callee:t
@@ -87,9 +93,9 @@ val is_known_zero : t -> AbstractValue.t -> bool
 
 val is_known_not_equal_zero : t -> AbstractValue.t -> bool
 (** [is_known_not_equal_zero phi t] returns [true] if [phi |- t != 0], [false] if we don't know for
-    sure *)
+    sure.
 
-(* this only consults the concrete intervals domain for now *)
+    This only consults the concrete intervals domain for now *)
 
 val is_unsat_cheap : t -> bool
 (** whether the state contains a contradiction, call this as often as you want *)
@@ -98,12 +104,8 @@ val is_unsat_expensive :
   Tenv.t -> get_dynamic_type:(AbstractValue.t -> Typ.t option) -> t -> t * bool * new_eqs
 (** whether the state contains a contradiction, only call this when you absolutely have to *)
 
-val has_no_assumptions : t -> bool
+val is_manifest : is_allocated:(AbstractValue.t -> bool) -> t -> bool
 (** whether the current path is independent of any calling context *)
-
-val get_known_var_repr : t -> AbstractValue.t -> AbstractValue.t
-(** get the canonical representative for the variable according to the equality relation in the
-    "known" part of the formula *)
 
 val get_both_var_repr : t -> AbstractValue.t -> AbstractValue.t
 (** get the canonical representative for the variable according to the equality relation in the
