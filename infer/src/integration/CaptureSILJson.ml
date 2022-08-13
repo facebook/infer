@@ -10,11 +10,9 @@
 open! IStd
 module L = Logging
 
- 
 let capture ~changed_files ~cfg_json ~tenv_json =
   let tenv = InferAnalyzeJson.parse_tenv (Yojson.Safe.from_file tenv_json) in
   let cfg = InferAnalyzeJson.parse_cfg (Yojson.Safe.from_file cfg_json) in
   Tenv.store_global tenv ;
-  Language.curr_language := Language.CIL ;
   InferAnalyzeJson.store cfg ;
   ()

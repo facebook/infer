@@ -79,10 +79,10 @@ $(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) $(b,xcodebui
 $(b,infer) $(b,analyzejson) $(b,--debug) $(b,--cfg-json) $(i,[options]) $(b,--tenv-json) $(i,[options]))|}
     ~description:
       [ `P
-          "Capture the build command or compilation database or cfg/tenv json files specified on the command line: infer \
-           intercepts calls to the compiler to read source files, translate them into infer's \
-           intermediate representation, and store the result of the translation in the results \
-           directory." ]
+          "Capture the build command or compilation database or cfg/tenv json files specified on \
+           the command line: infer intercepts calls to the compiler to read source files, \
+           translate them into infer's intermediate representation, and store the result of the \
+           translation in the results directory." ]
     ~see_also:InferCommand.[Analyze; Compile; Run]
 
 

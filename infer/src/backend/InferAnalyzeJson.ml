@@ -681,13 +681,13 @@ let parse_cfg (json : Safe.t) =
 
 let add_proc_to_cfg source_file pname pdesc map =
   match SourceFile.Map.find_opt source_file !map with
-  | Some cfg -> (
-    Procname.Hash.add cfg pname pdesc ;
-    SourceFile.Map.add source_file cfg !map )
-  | None -> (
-    let new_cfg = Cfg.create () in
-    Procname.Hash.add new_cfg pname pdesc ;
-    SourceFile.Map.add source_file new_cfg !map )
+  | Some cfg ->
+      Procname.Hash.add cfg pname pdesc ;
+      SourceFile.Map.add source_file cfg !map
+  | None ->
+      let new_cfg = Cfg.create () in
+      Procname.Hash.add new_cfg pname pdesc ;
+      SourceFile.Map.add source_file new_cfg !map
 
 
 let store cfg =
@@ -698,10 +698,7 @@ let store cfg =
     cfg_map := add_proc_to_cfg source_file procname proc_desc cfg_map
   in
   Procname.Hash.iter save_proc cfg ;
-  SourceFile.Map.iter 
-    (fun sf mapped_cfg -> 
-      SourceFiles.add sf mapped_cfg Tenv.Global None )
-    !cfg_map 
+  SourceFile.Map.iter (fun sf mapped_cfg -> SourceFiles.add sf mapped_cfg Tenv.Global None) !cfg_map
 
 
 let parse_tenv_type (json : Safe.t) tenv =
@@ -714,4 +711,3 @@ let parse_tenv (json : Safe.t) =
   let tenv = Tenv.create () in
   List.iter ~f:(fun entry -> parse_tenv_type entry tenv) (to_list json) ;
   tenv
-

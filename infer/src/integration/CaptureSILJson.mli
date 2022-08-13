@@ -7,13 +7,8 @@
 
 (** Capture module for the json analysis in the capture phase *)
 
- open! IStd
+open! IStd
 
- 
- val capture :
-      changed_files:SourceFile.Set.t option
-   -> cfg_json:string
-   -> tenv_json:string
-   -> unit
- (** Run the capture of the files for which we have cfg in [cfg_json], type environment [tenv_json] in and
-     [changed_files], if specified. *)
+val capture : changed_files:SourceFile.Set.t option -> cfg_json:string -> tenv_json:string -> unit
+(** Run the capture of the files for which we have cfg in [cfg_json], type environment [tenv_json]
+    in and [changed_files], if specified. *)

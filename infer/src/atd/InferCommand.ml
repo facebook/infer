@@ -7,16 +7,7 @@
 open Core
 
 (* NOTE: All variants must be also added to [command_to_string] below *)
-type t =
-  | Analyze
-  | Capture
-  | Compile
-  | Debug
-  | Explore
-  | Help
-  | Report
-  | ReportDiff
-  | Run
+type t = Analyze | Capture | Compile | Debug | Explore | Help | Report | ReportDiff | Run
 [@@deriving compare, equal]
 
 let command_to_string =
