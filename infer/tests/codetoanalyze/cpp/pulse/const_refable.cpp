@@ -55,3 +55,17 @@ int sum_in_loop_bad(std::vector<int> vec) {
 // making the base function const-refable might not be possible since it might
 // be using the parameter.
 void some_fun_ok(std::vector<int> /*unnamed_param*/) {}
+
+void pass_rvalue_ref(std::set<int>&& x) {}
+
+// params which are passed-by-value and get moved are usually intentional
+int move_ok(std::set<int> source) {
+  pass_rvalue_ref(std::move(source));
+  return 0;
+}
+
+int param_ref_move_ok(std::set<int> source) {
+  auto& source_ref = source;
+  pass_rvalue_ref(std::move(source_ref));
+  return 0;
+}

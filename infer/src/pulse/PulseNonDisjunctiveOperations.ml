@@ -180,7 +180,7 @@ let get_matching_dest_addr_opt (edges_curr, attr_curr) edges_orig : AbstractValu
             None )
 
 
-let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
+let is_modified_since_detected addr ~is_param ~current_heap ~current_attrs ~copy_heap
     ~reachable_addresses_from_copy =
   let rec aux ~addr_to_explore ~visited =
     match addr_to_explore with
@@ -195,6 +195,12 @@ let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
           let copy_edges_opt = BaseMemory.find_opt addr copy_heap in
           let current_edges_opt = BaseMemory.find_opt addr current_heap in
           let visited = AbstractValue.Set.add addr visited in
+          let is_moved =
+            (is_param || BaseAddressAttributes.is_copied_from_const_ref addr current_attrs)
+            && BaseAddressAttributes.is_std_moved addr current_attrs
+          in
+          is_moved
+          ||
           match (current_edges_opt, copy_edges_opt) with
           | None, None ->
               aux ~addr_to_explore ~visited
@@ -213,9 +219,7 @@ let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
               |> Option.value_map ~default:true ~f:(fun matching_addr_list ->
                      aux ~addr_to_explore:(matching_addr_list @ addr_to_explore) ~visited ) )
   in
-  BaseAddressAttributes.is_copied_from_const_ref addr current_attrs
-  && BaseAddressAttributes.is_std_moved addr current_attrs
-  || aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
+  aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
 
 
 let is_modified ?(is_source_opt = None) address astate heap =
@@ -239,8 +243,8 @@ let is_modified ?(is_source_opt = None) address astate heap =
         L.d_printfln_escaped "%s reachable heap %a"
           (if s then "Source" else "Copy")
           BaseMemory.pp (reachable_from heap) ) ;
-  is_modified_since_copy address ~current_heap ~copy_heap:heap ~current_attrs
-    ~reachable_addresses_from_copy
+  is_modified_since_detected address ~is_param:(Option.is_none is_source_opt) ~current_heap
+    ~copy_heap:heap ~current_attrs ~reachable_addresses_from_copy
 
 
 let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) ~copied_into astate
