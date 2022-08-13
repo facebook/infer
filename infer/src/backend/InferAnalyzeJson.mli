@@ -12,3 +12,5 @@ open! IStd
 val parse_tenv : Yojson.Safe.t -> Tenv.t
 
 val parse_cfg : Yojson.Safe.t -> Cfg.t
+
+val store : Cfg.t -> unit

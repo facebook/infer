@@ -679,6 +679,31 @@ let parse_cfg (json : Safe.t) =
   cfg
 
 
+let add_proc_to_cfg source_file pname pdesc map =
+  match SourceFile.Map.find_opt source_file !map with
+  | Some cfg -> (
+    Procname.Hash.add cfg pname pdesc ;
+    SourceFile.Map.add source_file cfg !map )
+  | None -> (
+    let new_cfg = Cfg.create () in
+    Procname.Hash.add new_cfg pname pdesc ;
+    SourceFile.Map.add source_file new_cfg !map )
+
+
+let store cfg =
+  let cfg_map = ref SourceFile.Map.empty in
+  let save_proc procname proc_desc =
+    let attributes = Procdesc.get_attributes proc_desc in
+    let source_file = attributes.loc.Location.file in
+    cfg_map := add_proc_to_cfg source_file procname proc_desc cfg_map
+  in
+  Procname.Hash.iter save_proc cfg ;
+  SourceFile.Map.iter 
+    (fun sf mapped_cfg -> 
+      SourceFiles.add sf mapped_cfg Tenv.Global None )
+    !cfg_map 
+
+
 let parse_tenv_type (json : Safe.t) tenv =
   let tn = parse_typename (member "type_name" json) in
   let fields, statics, supers, methods, annots = parse_struct (member "type_struct" json) in
