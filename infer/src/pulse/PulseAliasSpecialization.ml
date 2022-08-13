@@ -223,7 +223,7 @@ let get_actual_captured_vars callee_pname call_kind captured func_args path call
       ~actuals astate
   in
   let open IOption.Let_syntax in
-  let+ astate, captured_vars = PulseResult.ok astate_captured_vars in
+  let+ astate, captured_vars = PulseOperationResult.sat_ok astate_captured_vars in
   (astate, List.map captured_vars ~f:fst)
 
 

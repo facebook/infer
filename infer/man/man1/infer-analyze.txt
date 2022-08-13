@@ -295,6 +295,9 @@ OPTIONS
        --pulse-model-alloc-pattern string
            Regex of methods that should be modelled as allocs in Pulse
 
+       --pulse-model-cheap-copy-type regex
+           Regex of methods that should be cheap to copy in Pulse
+
        --pulse-model-free-pattern string
            Regex of methods that should be modelled as wrappers to free(3) in
            Pulse. The pointer to be freed should be the first argument of the
@@ -539,6 +542,10 @@ OPTIONS
        --topl-only
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)
+
+       --topl-skip-report-calls regex
+           Regex of procedures whose calls should be skipped from the
+           reported trace.
 
        --uninit
            Activates: checker uninit: Warns when values are used before

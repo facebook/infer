@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.19.2 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,16 +7,17 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p     { margin-top: 0; margin-bottom: 0; }
-       pre   { margin-top: 0; margin-bottom: 0; }
-       table { margin-top: 0; margin-bottom: 0; }
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
 </style>
 <title>infer-run</title>
 
 </head>
 <body>
 
-<h1 align=center>infer-run</h1>
+<h1 align="center">infer-run</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -31,15 +32,17 @@
 <hr>
 
 
+<h2>NAME
 <a name="NAME"></a>
-<h2>NAME</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-run -
 capture source files, analyze, and report</p>
 
+<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-<h2>SYNOPSIS</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -47,8 +50,9 @@ run</b> <i>[options]</i> <b><br>
 infer</b> <i>[options]</i> <b>--</b> <i>compile
 command</i></p>
 
+<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-<h2>DESCRIPTION</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Calling
@@ -59,13 +63,14 @@ to performing the following sequence of commands:</p>
 capture</b> <i>[options]</i> <b><br>
 infer analyze</b> <i>[options]</i></p>
 
+<h2>OPTIONS
 <a name="OPTIONS"></a>
-<h2>OPTIONS</h2>
+</h2>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--no-censor-report</b>
-<i>+issue_type_regex</i></p>
+<p style="margin-left:11%; margin-top: 1em"><i><b>--no-censor-report</b>
++issue_type_regex</i></p>
 
 <p style="margin-left:17%;">For debugging/experimentation
 only: Specify issues not to be censored by
@@ -159,9 +164,9 @@ argument after <b>--</b> was <i>command</i>. Possible
 values: <i>ant</i>, <i>buck</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
 <i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
-<i>c++</i>, <i>g++</i>, <i>make</i>, <i>configure</i>,
-<i>cmake</i>, <i>waf</i>, <i>mvn</i>, <i>mvnw</i>,
-<i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
+<i>c++</i>, <i>g++</i>, <i>hackc</i>, <i>make</i>,
+<i>configure</i>, <i>cmake</i>, <i>waf</i>, <i>mvn</i>,
+<i>mvnw</i>, <i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
 <i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;"><b>--help</b></p>
@@ -298,24 +303,25 @@ exit</p>
 <p style="margin-left:17%;">Print version information in
 json format and exit</p>
 
-<table width="100%" border=0 rules="none" frame="void"
+<table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
+<p><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p style="margin-top: 1em" valign="top">Stop argument
-processing, use remaining arguments as a build command</p></td>
+<p>Stop argument processing, use remaining arguments as a
+build command</p></td></tr>
 </table>
 
+<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-<h2>BUCK OPTIONS</h2>
+</h2>
 
 
 
@@ -334,8 +340,9 @@ not Java. <b><br>
 matched by the specified regular expression. Only valid for
 <b>--buck-compilation-database</b>.</p>
 
+<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-<h2>JAVA OPTIONS</h2>
+</h2>
 
 
 
@@ -346,8 +353,9 @@ matched by the specified regular expression. Only valid for
 by the specified OCaml regular expression (only supported by
 the javac integration for now).</p>
 
+<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-<h2>ENVIRONMENT</h2>
+</h2>
 
 
 
@@ -357,8 +365,9 @@ the javac integration for now).</p>
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
+<h2>FILES
 <a name="FILES"></a>
-<h2>FILES</h2>
+</h2>
 
 
 
@@ -367,8 +376,9 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
+<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-<h2>SEE ALSO</h2>
+</h2>
 
 
 

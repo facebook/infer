@@ -11,7 +11,7 @@ module IRAttributes = Attributes
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 
 let type_matches tenv actual_typ types =
   (* TODO: [Typ.Name.name] may not be the most intuitive representation of types here, also
@@ -788,15 +788,30 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
       else astate
 
 
-let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate =
-  let astate, actuals =
-    List.fold_map (ProcAttributes.get_pvar_formals proc_attrs) ~init:astate
-      ~f:(fun astate (pvar, typ) ->
-        let astate, actual_value =
-          PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar pvar) astate
-          |> PulseResult.ok_exn
-        in
-        (astate, {ProcnameDispatcher.Call.FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value}) )
+let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate0 =
+  let result =
+    let++ astate, rev_actuals =
+      List.fold
+        (ProcAttributes.get_pvar_formals proc_attrs)
+        ~init:(Sat (Ok (astate0, [])))
+        ~f:(fun result (pvar, typ) ->
+          let** astate, rev_actuals = result in
+          let++ astate, actual_value =
+            PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar pvar) astate
+          in
+          ( astate
+          , {ProcnameDispatcher.Call.FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value}
+            :: rev_actuals ) )
+    in
+    taint_sources tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
+      ~has_added_return_param:false proc_name (List.rev rev_actuals) astate
   in
-  taint_sources tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
-    ~has_added_return_param:false proc_name actuals astate
+  match PulseOperationResult.sat_ok result with
+  | Some astate_tainted ->
+      astate_tainted
+  | None ->
+      L.internal_error
+        "could not add taint to the initial state for %a, got an error or an unsat state starting \
+         from %a"
+        Procname.pp proc_name AbductiveDomain.pp astate0 ;
+      astate0

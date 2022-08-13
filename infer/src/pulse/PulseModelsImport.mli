@@ -8,7 +8,7 @@
 open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 
 type arg_payload = AbstractValue.t * ValueHistory.t
 
@@ -109,7 +109,7 @@ module Basic : sig
     -> initialize:bool
     -> model_data
     -> AbductiveDomain.t
-    -> AbductiveDomain.t AccessResult.t
+    -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
   val alloc_no_leak_not_null :
        ?desc:string
@@ -117,7 +117,7 @@ module Basic : sig
     -> initialize:bool
     -> model_data
     -> AbductiveDomain.t
-    -> AbductiveDomain.t AccessResult.t
+    -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
   val assert_ : (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t -> model
 

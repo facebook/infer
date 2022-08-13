@@ -712,11 +712,9 @@ developing new linters in Infer. Read about them in the [`infer capture` manual]
 The following issue types are reported by this checker:
 - [ASSIGN_POINTER_WARNING](/docs/next/all-issue-types#assign_pointer_warning)
 - [BAD_POINTER_COMPARISON](/docs/next/all-issue-types#bad_pointer_comparison)
-- [COMPONENT_WITH_MULTIPLE_FACTORY_METHODS](/docs/next/all-issue-types#component_with_multiple_factory_methods)
 - [CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK](/docs/next/all-issue-types#cxx_reference_captured_in_objc_block)
 - [DIRECT_ATOMIC_PROPERTY_ACCESS](/docs/next/all-issue-types#direct_atomic_property_access)
 - [DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER](/docs/next/all-issue-types#discouraged_weak_property_custom_setter)
 - [GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL](/docs/next/all-issue-types#global_variable_initialized_with_function_or_method_call)
-- [MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE](/docs/next/all-issue-types#mutable_local_variable_in_component_file)
 - [POINTER_TO_CONST_OBJC_CLASS](/docs/next/all-issue-types#pointer_to_const_objc_class)
 - [STRONG_DELEGATE_WARNING](/docs/next/all-issue-types#strong_delegate_warning)

@@ -180,9 +180,7 @@ void random_non_functional_bad() {
   }
 }
 
-// quantifier elimination not powerful enough to discard [\exists v. y = v] in
-// the pruned part
-void FNlatent_random_modelled_bad(int y) {
+void random_modelled_bad(int y) {
   int x = random();
   if (x == y) {
     int* p = NULL;

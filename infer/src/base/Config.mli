@@ -365,6 +365,8 @@ val genrule_mode : bool
 
 val global_tenv : bool
 
+val hackc_binary : string
+
 val help_checker : Checker.t list
 
 val help_issue_type : IssueType.t list
@@ -539,6 +541,8 @@ val pulse_max_heap : int option
 val pulse_model_abort : string list
 
 val pulse_model_alloc_pattern : Str.regexp option
+
+val pulse_model_cheap_copy_type : Str.regexp option
 
 val pulse_model_free_pattern : Str.regexp option
 
@@ -750,6 +754,8 @@ val topl_max_conjuncts : int
 val topl_max_disjuncts : int
 
 val topl_properties : string list
+
+val topl_skip_report_calls : Str.regexp option
 
 val trace_absarray : bool
 

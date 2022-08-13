@@ -88,4 +88,6 @@ val resolve_method :
 
 val find_cpp_destructor : t -> Typ.Name.t -> Procname.t option
 
+val find_cpp_constructor : t -> Typ.Name.t -> Procname.t list
+
 module SQLite : SqliteUtils.Data with type t = per_file

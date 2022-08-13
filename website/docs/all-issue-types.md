@@ -72,6 +72,30 @@ Reported as "Autoreleasepool Size Unreachable At Exit" by [cost](/docs/next/chec
 \[EXPERIMENTAL\] This issue type indicates that the program's execution doesn't reach the exit
 node. Hence, we cannot compute a static bound of ObjC autoreleasepool's size for the procedure.
 
+## BAD_ARG
+
+Reported as "Bad Arg" by [pulse](/docs/next/checker-pulse).
+
+Bad arg in Erlang: Reports an error when the type of an argument is wrong or the argument is badly formed. Corresponds to the `badarg` error in the Erlang runtime.
+
+For example, trying to concatenate the number `3` with  the list `[1,2]` gives `badarg` error because `3` is not a list.
+```erlang
+f() ->
+    3 ++ [1,2]. // badarg error
+```
+
+Note that although the first argument needs to be a list, the second argument may not be a list.
+For instance, concatenating [1,2] with the number `3` raises no error in Erlang.
+```erlang
+g() ->
+    [1,2] ++ 3. // no error. Result: [1,2|3]
+```
+
+## BAD_ARG_LATENT
+
+Reported as "Bad Arg Latent" by [pulse](/docs/next/checker-pulse).
+
+A latent [BAD_ARG](#bad_arg). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BAD_KEY
 
 Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).
@@ -446,11 +470,6 @@ This error is reported when the argument types to a `printf` method do not match
 
 Action: fix the mismatch between format string and argument types.
 
-## COMPONENT_WITH_MULTIPLE_FACTORY_METHODS
-
-Reported as "Component With Multiple Factory Methods" by [linters](/docs/next/checker-linters).
-
-
 ## CONFIG_IMPACT
 
 Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
@@ -575,6 +594,11 @@ const int copied_v = v;
 Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
 
 
+## DATALOG_FACT
+
+Reported as "Datalog Fact" by [datalog](/docs/next/checker-datalog).
+
+Datalog fact used as input for a datalog solver.
 ## DATA_FLOW_TO_SINK
 
 Reported as "Data Flow to Sink" by [pulse](/docs/next/checker-pulse).
@@ -1651,12 +1675,6 @@ we assume that any captured weak pointer whose name contains "self" is a weak re
 In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to
 a local strong pointer that has been assigned `weakSelf`.
 
-## MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
-
-Reported as "Mutable Local Variable In Component File" by [linters](/docs/next/checker-linters).
-
-[Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables)
-
 ## NIL_BLOCK_CALL
 
 Reported as "Nil Block Call" by [pulse](/docs/next/checker-pulse).
@@ -2086,6 +2104,24 @@ An example of such variadic methods is
 
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be
 created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
+
+## PULSE_CONST_REFABLE
+
+Reported as "Const Refable Parameter" by [pulse](/docs/next/checker-pulse).
+
+This issue is reported when a function parameter is a) passed by value and b) is not modified inside the function. Instead, parameter can be passed by const reference, i.e. converted to a `const&` so that no unnecessary copy is created at the callsite of the function.
+
+For example,
+
+```cpp
+#include <vector>
+
+int read_first(const std::vector<int>& vec) { return vec[0]; }
+
+void const_refable(std::vector<int> vec) {
+  int first = read_first(vec); // vec is never modified, so the parameter should have type const&
+}
+```
 
 ## PULSE_RESOURCE_LEAK
 

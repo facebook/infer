@@ -8,6 +8,8 @@ otp_lists:test_any2_Bad/0: case_clause
 otp_lists:test_any3_Bad/0: case_clause
 otp_lists:test_foreach_Bad/0: badmatch
 otp_lists:test_foreach_Ok/0: ok
+otp_lists:test_list_append_with_atom_to_binary_Bad/0: badarg
+otp_lists:test_list_append_with_atom_to_list_Ok/0: ok
 otp_lists:test_partition1_Ok/0: ok
 otp_lists:test_partition2_Bad/0: badmatch
 otp_lists:test_partition3_Ok/0: ok
@@ -294,7 +296,6 @@ features_lists:test_listappend0_Bad/0: expected_crash
 features_lists:test_listappend0_Ok/0: ok
 features_lists:test_listappend0a_Bad/0: expected_crash
 features_lists:test_listappend0a_Ok/0: ok
-features_lists:test_listappend10_Ok/0: ok
 features_lists:test_listappend1_Bad/0: expected_crash
 features_lists:test_listappend1_Ok/0: ok
 features_lists:test_listappend2_Bad/0: expected_crash
@@ -526,10 +527,10 @@ nonmatch_case_guards:test_accepts_positive_Ok/0: ok
 
 ----- nonmatch_function_guards -----
 nonmatch_function_guards:fn_test_possible_exception2_Bad/0: function_clause
+nonmatch_function_guards:fp_test_accepts_all_tricky3_Ok/0: ok
 nonmatch_function_guards:test_accepts_all_basic2_Ok/0: ok
 nonmatch_function_guards:test_accepts_all_basic_Ok/0: ok
 nonmatch_function_guards:test_accepts_all_tricky2_Ok/0: ok
-nonmatch_function_guards:test_accepts_all_tricky3_Ok/0: ok
 nonmatch_function_guards:test_accepts_all_tricky_Ok/0: ok
 nonmatch_function_guards:test_accepts_positive2_Bad/0: function_clause
 nonmatch_function_guards:test_accepts_positive2_Ok/0: ok
@@ -658,12 +659,12 @@ nonmatch_records:test_type_Bad/0: function_clause
 nonmatch_records:test_type_Ok/0: ok
 
 ----- nonmatch_strings -----
-nonmatch_strings:fn_test_match2_Bad/0: function_clause
-nonmatch_strings:fn_test_match3_Bad/0: function_clause
-nonmatch_strings:fn_test_match5_Bad/0: function_clause
-nonmatch_strings:fn_test_match6_Bad/0: function_clause
-nonmatch_strings:test_match1_Ok/0: ok
-nonmatch_strings:test_match4_Ok/0: ok
+nonmatch_strings:fp_test_match1_Ok/0: ok
+nonmatch_strings:fp_test_match4_Ok/0: ok
+nonmatch_strings:test_match2_Bad/0: function_clause
+nonmatch_strings:test_match3_Bad/0: function_clause
+nonmatch_strings:test_match5_Bad/0: function_clause
+nonmatch_strings:test_match6_Bad/0: function_clause
 
 ----- nonmatch_trycatch -----
 nonmatch_trycatch:test_try_simple1_Ok/0: ok

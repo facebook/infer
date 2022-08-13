@@ -381,3 +381,11 @@ class WrapperArr {
                             // ownership of the object.
   }
 };
+
+namespace my_proj {
+struct CheapToCopy {
+  std::vector<int> vec;
+};
+
+void cheap_to_copy_ok(CheapToCopy source) { auto c = source; }
+}; // namespace my_proj

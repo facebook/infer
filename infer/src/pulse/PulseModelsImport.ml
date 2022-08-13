@@ -9,7 +9,7 @@ open! IStd
 module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 
 type arg_payload = AbstractValue.t * ValueHistory.t
 
@@ -136,7 +136,7 @@ module Basic = struct
    fun i64 {path; location; ret= ret_id, _} astate ->
     let i = IntLit.of_int64 i64 in
     let ret_addr = AbstractValue.Constants.get_int i in
-    let<+> astate = PulseArithmetic.and_eq_int ret_addr i astate in
+    let<++> astate = PulseArithmetic.and_eq_int ret_addr i astate in
     PulseOperations.write_id ret_id (ret_addr, Hist.single_call path location desc) astate
 
 
@@ -144,14 +144,14 @@ module Basic = struct
    fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value = (ret_addr, Hist.single_call path location desc) in
-    let<+> astate = PulseArithmetic.and_positive ret_addr astate in
+    let<++> astate = PulseArithmetic.and_positive ret_addr astate in
     PulseOperations.write_id ret_id ret_value astate
 
 
   let return_unknown_size ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let<+> astate = PulseArithmetic.and_nonnegative ret_addr astate in
+    let<++> astate = PulseArithmetic.and_nonnegative ret_addr astate in
     PulseOperations.write_id ret_id (ret_addr, Hist.single_call path location desc) astate
 
 
@@ -167,7 +167,7 @@ module Basic = struct
     let formals_opt =
       IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
-    let<+> astate =
+    let<++> astate =
       PulseCallOperations.unknown_call path location (Model skip_reason) (Some callee_procname) ~ret
         ~actuals ~formals_opt astate
     in
@@ -221,7 +221,7 @@ module Basic = struct
    fun ({path; location} as model_data) astate ->
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
     let astates_alloc =
-      let<*> astate = PulseArithmetic.and_positive (fst deleted_access) astate in
+      let<**> astate = PulseArithmetic.prune_positive (fst deleted_access) astate in
       let astates =
         match operation with
         | `Free ->
@@ -252,16 +252,26 @@ module Basic = struct
           | ISLLatentMemoryError _ ->
               [Ok exec_state] )
     in
-    let astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate |> map_continue in
-    astate_zero :: astates_alloc
+    let astate_zero =
+      PulseArithmetic.prune_eq_zero (fst deleted_access) astate
+      >>|| ExecutionDomain.continue |> SatUnsat.to_list
+    in
+    astate_zero @ astates_alloc
+
+
+  let get_malloced_object_type (exp : Exp.t) =
+    match exp with
+    | BinOp (Mult _, Sizeof {typ}, _) | BinOp (Mult _, _, Sizeof {typ}) | Sizeof {typ} ->
+        Some typ
+    | _ ->
+        None
 
 
   let set_uninitialized tenv path size_exp_opt location ret_value astate =
-    Option.value_map size_exp_opt ~default:astate ~f:(fun size_exp ->
-        BufferOverrunModels.get_malloc_info_opt size_exp
-        |> Option.value_map ~default:astate ~f:(fun (obj_typ, _, _, _) ->
-               AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location
-                 astate ) )
+    (let open IOption.Let_syntax in
+    let+ obj_typ = size_exp_opt >>= get_malloced_object_type in
+    AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location astate)
+    |> Option.value ~default:astate
 
 
   let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
@@ -313,7 +323,7 @@ module Basic = struct
       was called. *)
   let assert_ {ProcnameDispatcher.Call.FuncArg.exp= condition} : model =
    fun {path; location} astate ->
-    let<+> astate, _ = PulseOperations.prune path location ~condition astate in
+    let<++> astate, _ = PulseOperations.prune path location ~condition astate in
     astate
 
 

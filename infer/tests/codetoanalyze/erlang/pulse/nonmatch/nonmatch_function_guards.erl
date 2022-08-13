@@ -14,7 +14,7 @@
     test_accepts_all_basic2_Ok/0,
     test_accepts_all_tricky_Ok/0,
     test_accepts_all_tricky2_Ok/0,
-    test_accepts_all_tricky3_Ok/0,
+    fp_test_accepts_all_tricky3_Ok/0,
     test_possible_exception_Ok/0,
     test_possible_exception_Bad/0,
     fn_test_possible_exception2_Bad/0
@@ -37,7 +37,7 @@ accepts_all_tricky2(X) when not (X > 0) -> ok.
 % Currently a latent fp (no matching function clause) due to pulse limitations on satisfiability. It
 % seems that when replacing [X] with a concrete parameter this limitation is removed, thus the latent
 % issue does not transfer to concrete ones.
-accepts_all_tricky3(X) when X > 0; X =< 0 -> ok.
+fplatent_accepts_all_tricky3(X) when X > 0; X =< 0 -> ok.
 
 possible_exception(X) when 1 div X =:= 1 -> ok.
 
@@ -69,9 +69,9 @@ test_accepts_all_tricky2_Ok() ->
     accepts_all_tricky2(0),
     accepts_all_tricky2(1).
 
-test_accepts_all_tricky3_Ok() ->
-    accepts_all_tricky3(0),
-    accepts_all_tricky3(1).
+fp_test_accepts_all_tricky3_Ok() ->
+    fplatent_accepts_all_tricky3(0),
+    fplatent_accepts_all_tricky3(1).
 
 test_possible_exception_Ok() ->
     possible_exception(1).

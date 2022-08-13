@@ -183,12 +183,7 @@ module Multiset = Multiset
 module Bijection = CCBijection [@@warning "-no-cmi-file"]
 module HashSet = HashSet
 module HashTable = HashTable
-module HashQueue = Core_kernel.Hash_queue
-
-(** Input / Output *)
-
-module In_channel = Stdio.In_channel
-module Out_channel = Stdio.Out_channel
+module HashQueue = Core.Hash_queue
 
 (** System interfaces *)
 

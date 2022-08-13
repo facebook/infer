@@ -59,7 +59,6 @@
     fp_test_listappend8_Ok/0,
     test_listappend8_Bad/0,
     test_listappend9_Ok/0,
-    test_listappend10_Ok/0,
     fp_test_listsub1_Ok/0,
     fp_test_listsub2_Ok/0,
     test_listsub3_Bad/0,
@@ -305,10 +304,6 @@ test_listappend8_Bad() ->
 test_listappend9_Ok() ->
     L = [1,2] ++ atom,
     ?ASSERT_EQUAL([1,2|atom], L).
-
-% test below assumes that --erlang-with-otp-specs is given
-test_listappend10_Ok() ->
-    atom_to_list(checker) ++ "_clean".
 
 % Not yet supported
 fp_test_listsub1_Ok() ->

@@ -41,7 +41,7 @@ module PreDomain : BaseDomainSig
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred procedure pre-condition leading to the current program point *)
-  ; path_condition: PathCondition.t
+  ; path_condition: Formula.t
         (** arithmetic facts true along the path (holding for both [pre] and [post] since abstract
             values are immutable) *)
   ; decompiler: Decompiler.t
@@ -165,6 +165,11 @@ module AddressAttributes : sig
 
   val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
 
+  val get_must_be_valid :
+       AbstractValue.t
+    -> t
+    -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
+
   val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
   val get_taint_sources_and_sanitizers :
@@ -222,7 +227,7 @@ val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
-val set_path_condition : PathCondition.t -> t -> t
+val set_path_condition : Formula.t -> t -> t
 
 val set_need_specialization : t -> t
 
@@ -265,18 +270,18 @@ val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Locat
 (** directly set the edges and attributes for the given address, bypassing abduction altogether *)
 
 val incorporate_new_eqs :
-     PathCondition.new_eqs
+     Formula.new_eqs
   -> t
   -> ( t
      , [> `PotentialInvalidAccess of
           t * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
+     SatUnsat.t
 (** Check that the new equalities discovered are compatible with the current pre and post heaps,
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
-    and [y] being allocated separately. In those cases, the resulting path condition is
-    {!PathCondition.false_}. *)
+    and [y] being allocated separately. In those cases, the result is [Unsat]. *)
 
-val incorporate_new_eqs_on_val : PathCondition.new_eqs -> AbstractValue.t -> AbstractValue.t
+val incorporate_new_eqs_on_val : Formula.new_eqs -> AbstractValue.t -> AbstractValue.t
 (** Similar to [incorporate_new_eqs], but apply to an abstract value. *)
 
 val initialize : AbstractValue.t -> t -> t
@@ -294,6 +299,9 @@ val set_uninitialized :
   -> t
 (** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
 
+val is_heap_allocated : t -> AbstractValue.t -> bool
+(** whether the abstract value provided has edges in the pre or post heap *)
+
 module Topl : sig
   val small_step : Location.t -> keep:AbstractValue.Set.t -> PulseTopl.event -> t -> t
 
@@ -302,7 +310,7 @@ module Topl : sig
     -> callee_proc_name:Procname.t
     -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
     -> keep:AbstractValue.Set.t
-    -> path_condition:PathCondition.t
+    -> path_condition:Formula.t
     -> callee_prepost:PulseTopl.state
     -> t
     -> t

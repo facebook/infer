@@ -188,12 +188,38 @@ let rec invariant exp =
   | Float {typ} -> (
     match typ with Float _ -> assert true | _ -> assert false )
   | Label _ -> assert true
-  | Ap1 (Signed {bits}, dst, arg) | Ap1 (Unsigned {bits}, dst, arg) -> (
-    match (dst, typ_of arg) with
-    | Integer {bits= dst_bits}, Typ.Integer _
-     |Array {bits= dst_bits}, Typ.Array _ ->
-        assert (bits <= dst_bits)
+  | Ap1 (Signed {bits}, Integer {bits= dst_bits}, arg) -> (
+    match typ_of arg with
+    | Typ.Integer _ -> assert (bits <= dst_bits)
     | _ -> assert false )
+  | Ap1 (Unsigned {bits}, Integer {bits= dst_bits}, arg) -> (
+    match typ_of arg with
+    | Typ.Integer _ ->
+        assert (
+          bits < dst_bits
+          || fail "Unsigned conversion requires at least one spare bit" () )
+    | _ -> assert false )
+  | Ap1
+      ( Signed {bits}
+      , Array {len= dst_len; elt= Integer {bits= dst_bits}}
+      , arg ) -> (
+    match typ_of arg with
+    | Array {len= src_len; elt= Integer {bits= src_bits}} ->
+        assert (bits == src_bits) ;
+        assert (src_bits <= dst_bits) ;
+        assert (src_len == dst_len)
+    | _ -> assert false )
+  | Ap1
+      ( Unsigned {bits}
+      , Array {len= dst_len; elt= Integer {bits= dst_bits}}
+      , arg ) -> (
+    match typ_of arg with
+    | Array {len= src_len; elt= Integer {bits= src_bits}} ->
+        assert (bits == src_bits) ;
+        assert (src_bits < dst_bits) ;
+        assert (dst_len == src_len)
+    | _ -> assert false )
+  | Ap1 (Signed _, _, _) | Ap1 (Unsigned _, _, _) -> assert false
   | Ap1 (Convert {src= Integer _}, Integer _, _) -> assert false
   | Ap1 (Convert {src}, dst, arg) ->
       assert (Typ.convertible src dst) ;

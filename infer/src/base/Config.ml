@@ -1586,6 +1586,11 @@ and genrule_mode =
     "Enable the genrule compatibility mode used for the Buck integration"
 
 
+and hackc_binary =
+  CLOpt.mk_string ~long:"hackc-binary" ~default:"hackc" ~meta:"path"
+    "Specify hackc binary to use (either name or path)"
+
+
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"; "hd"] ~deprecated_no:["no_headers"; "nhd"] ~long:"headers"
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -2137,6 +2142,12 @@ and pulse_model_alloc_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-alloc-pattern"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Regex of methods that should be modelled as allocs in Pulse"
+
+
+and pulse_model_cheap_copy_type =
+  CLOpt.mk_string_opt ~long:"pulse-model-cheap-copy-type" ~meta:"regex"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be cheap to copy in Pulse"
 
 
 and pulse_model_free_pattern =
@@ -2825,6 +2836,12 @@ and topl_properties =
     "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl)."
 
 
+and topl_skip_report_calls =
+  CLOpt.mk_string_opt ~long:"topl-skip-report-calls"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~meta:"regex" "Regex of procedures whose calls should be skipped from the reported trace."
+
+
 and profiler_samples =
   CLOpt.mk_path_opt ~long:"profiler-samples"
     "File containing the profiler samples when Infer is run Test Determinator mode with \
@@ -3452,6 +3469,8 @@ and generated_classes = !generated_classes
 
 and genrule_mode = !genrule_mode
 
+and hackc_binary = !hackc_binary
+
 and help_checker =
   RevList.rev_map !help_checker ~f:(fun checker_string ->
       match Checker.from_id checker_string with
@@ -3650,6 +3669,8 @@ and pulse_max_heap = !pulse_max_heap
 and pulse_model_abort = RevList.to_list !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
+
+and pulse_model_cheap_copy_type = Option.map ~f:Str.regexp !pulse_model_cheap_copy_type
 
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
 
@@ -3939,6 +3960,8 @@ and topl_max_conjuncts = !topl_max_conjuncts
 and topl_max_disjuncts = !topl_max_disjuncts
 
 and topl_properties = RevList.to_list !topl_properties
+
+and topl_skip_report_calls = Option.map ~f:Str.regexp !topl_skip_report_calls
 
 and trace_error = !trace_error
 

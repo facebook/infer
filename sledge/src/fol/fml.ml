@@ -31,10 +31,13 @@ let ppx strength fs fml =
     in
     let pp_arith op x =
       let p_c, n_d = Trm.Arith.partition_sign (Trm.Arith.trm x) in
+      (* x = (p+c) - (n+d) *)
       if Trm.Arith.equal (Trm.Arith.const Q.zero) p_c then
+        (* x = -(n+d) so x > 0 iff -(n+d) > 0 iff -n-d > 0 iff -d > n *)
         let n, d = Trm.Arith.split_const n_d in
-        pp_arith_op n op (Trm.Arith.const (Q.neg d))
+        pp_arith_op (Trm.Arith.const (Q.neg d)) op n
       else if Trm.Arith.equal (Trm.Arith.const Q.zero) n_d then
+        (* x = (p+c) so x > 0 iff p+c > 0 iff p > -c *)
         let p, c = Trm.Arith.split_const p_c in
         pp_arith_op p op (Trm.Arith.const (Q.neg c))
       else pp_arith_op p_c op n_d

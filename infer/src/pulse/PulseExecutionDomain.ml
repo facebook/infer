@@ -81,21 +81,6 @@ let pp fmt = function
         (astate :> AbductiveDomain.t)
 
 
-(* do not export this function as there lies wickedness: clients should generally care about what
-   kind of state they are manipulating so let's not encourage them not to *)
-let get_astate : t -> AbductiveDomain.t = function
-  | ExceptionRaised astate | ContinueProgram astate ->
-      astate
-  | ExitProgram astate
-  | AbortProgram astate
-  | LatentAbortProgram {astate}
-  | LatentInvalidAccess {astate}
-  | ISLLatentMemoryError astate ->
-      (astate :> AbductiveDomain.t)
-
-
-let is_unsat_cheap exec_state = PathCondition.is_unsat_cheap (get_astate exec_state).path_condition
-
 type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
 
 let equal_fast exec_state1 exec_state2 =

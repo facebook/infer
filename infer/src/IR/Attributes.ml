@@ -57,4 +57,8 @@ let load, clear_cache, store =
   (load, clear_cache, store)
 
 
+let load_formal_types pname =
+  match load pname with Some {formals} -> List.map formals ~f:snd3 | None -> []
+
+
 let is_no_return pname = match load pname with Some {is_no_return} -> is_no_return | _ -> false

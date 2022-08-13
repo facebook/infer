@@ -8,67 +8,7 @@
 open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
-
-(** For [open]ing in other modules. *)
-module Import : sig
-  type access_mode =
-    | Read
-    | Write
-    | NoAccess
-        (** The initialized-ness of the address is not checked when it evaluates a heap address
-            without actual memory access, for example, when evaluating [&x.f] we need to check
-            initialized-ness of [x], not that of [x.f]. *)
-
-  (** {2 Imported types for ease of use and so we can write variants without the corresponding
-      module prefix} *)
-
-  type 'abductive_domain_t execution_domain_base_t = 'abductive_domain_t ExecutionDomain.base_t =
-    | ContinueProgram of 'abductive_domain_t
-    | ExceptionRaised of 'abductive_domain_t
-    | ExitProgram of AbductiveDomain.summary
-    | AbortProgram of AbductiveDomain.summary
-    | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
-    | LatentInvalidAccess of
-        { astate: AbductiveDomain.summary
-        ; address: DecompilerExpr.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
-        ; calling_context: (CallEvent.t * Location.t) list }
-    | ISLLatentMemoryError of AbductiveDomain.summary
-
-  type base_summary_error = AccessResult.summary_error =
-    | PotentialInvalidAccessSummary of
-        { astate: AbductiveDomain.summary
-        ; address: DecompilerExpr.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
-    | ISLErrorSummary of {astate: AbductiveDomain.summary}
-
-  type base_error = AccessResult.error =
-    | PotentialInvalidAccess of
-        { astate: AbductiveDomain.t
-        ; address: DecompilerExpr.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
-    | ISLError of {astate: AbductiveDomain.t}
-    | Summary of base_summary_error
-
-  (** {2 Monadic syntax} *)
-
-  include module type of PulseResult.Let_syntax
-
-  val ( let<*> ) : 'a AccessResult.t -> ('a -> 'b AccessResult.t list) -> 'b AccessResult.t list
-  (** monadic "bind" but not really that turns an [AccessResult.t] into a list of [AccessResult.t]s
-      (not really because the first type is not an [AccessResult.t list] but just an
-      [AccessResult.t]) *)
-
-  val ( let<+> ) :
-       'a AccessResult.t
-    -> ('a -> 'abductive_domain_t)
-    -> 'abductive_domain_t execution_domain_base_t AccessResult.t list
-  (** monadic "map" but even less really that turns an [AccessResult.t] into an analysis result *)
-end
-
-include module type of Import
+open PulseOperationResult.Import
 
 type t = AbductiveDomain.t
 
@@ -111,7 +51,7 @@ val eval :
   -> Location.t
   -> Exp.t
   -> t
-  -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
+  -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t SatUnsat.t
 (** Use the stack and heap to evaluate the given expression down to an abstract address representing
     its value.
 
@@ -127,12 +67,16 @@ val eval_structure_isl :
   -> Location.t
   -> Exp.t
   -> t
-  -> (bool * (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t list) AccessResult.t
+  -> (bool * (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t list) AccessResult.t SatUnsat.t
 (** Similar to eval but apply to data structures and ISL abduction. Return a list of abduced states
     (ISLOk and ISLErs); The boolean indicates whether it is data structures or not. *)
 
 val prune :
-  PathContext.t -> Location.t -> condition:Exp.t -> t -> (t * ValueHistory.t) AccessResult.t
+     PathContext.t
+  -> Location.t
+  -> condition:Exp.t
+  -> t
+  -> (t * ValueHistory.t) AccessResult.t SatUnsat.t
 
 val eval_deref :
      PathContext.t
@@ -140,7 +84,7 @@ val eval_deref :
   -> Location.t
   -> Exp.t
   -> t
-  -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
+  -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t SatUnsat.t
 (** Like [eval] but evaluates [*exp]. *)
 
 val eval_deref_isl :
@@ -174,7 +118,7 @@ val eval_deref_access :
 (** Like [eval_access] but does additional dereference. *)
 
 val eval_proc_name :
-  PathContext.t -> Location.t -> Exp.t -> t -> (t * Procname.t option) AccessResult.t
+  PathContext.t -> Location.t -> Exp.t -> t -> (t * Procname.t option) AccessResult.t SatUnsat.t
 
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
@@ -348,4 +292,4 @@ val get_captured_actuals :
   -> call_kind:call_kind
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> t
-  -> (t * ((AbstractValue.t * ValueHistory.t) * Typ.t) list) AccessResult.t
+  -> (t * ((AbstractValue.t * ValueHistory.t) * Typ.t) list) AccessResult.t SatUnsat.t

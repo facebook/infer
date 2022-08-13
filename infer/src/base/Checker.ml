@@ -163,7 +163,7 @@ let config_unsafe checker =
       ; activates= [BufferOverrunAnalysis; PurityAnalysis] }
   | Datalog ->
       { id= "datalog"
-      ; kind= Internal
+      ; kind= UserFacing {title= "Datalog-based points-to analysis"; markdown_body= ""}
       ; support= mk_support_func ~java:ExperimentalSupport ()
       ; short_documentation= "Experimental datalog-based points-to analysis."
       ; cli_flags= Some {deprecated= []; show_in_help= true}

@@ -9,6 +9,15 @@
 
 namespace unique_ptr {
 
+struct X {
+  int field;
+  int* pointer_field;
+  int get() { return field; }
+  void set(int value) { field = value; }
+  X() { pointer_field = new int; }
+  ~X() { delete pointer_field; }
+};
+
 int constructor0_ok() {
   std::unique_ptr<int> x(new int(42));
   if (*x != 42) {
@@ -30,41 +39,9 @@ int constructor0_bad() {
   return 0;
 }
 
-int destructor0_ok() {
-  auto x = new std::unique_ptr<int>(new int(5));
-  delete x;
-  return 0;
-}
-
-int destructor1_ok() {
-  { std::unique_ptr<int>(new int(5)); }
-  return 0;
-}
-
-int destructor2_ok() {
-  { std::unique_ptr<int> p; }
-  return 0;
-}
-
-int destructor3_ok() {
-  auto x = new std::unique_ptr<int>();
-  delete x;
-  return 0;
-}
-
-int destructor0_bad() {
-  auto p = new int(5);
-  auto x = new std::unique_ptr<int>(p);
-  delete x;
-  // Should report a NPE here as p has been deallocated
-  return *p;
-}
-
-int destructor1_bad() {
-  auto p = new int(5);
-  { std::unique_ptr<int> x(p); }
-  // Should report a NPE here as p has been deallocated
-  return *p;
+int constructor1_bad() {
+  std::unique_ptr<int> x(nullptr);
+  return *x;
 }
 
 int array_access0_ok() {
@@ -154,15 +131,6 @@ int get1_bad() {
   return 0;
 }
 
-struct X {
-  int field;
-  int* pointer_field;
-  int get() { return field; }
-  void set(int value) { field = value; }
-  X() { pointer_field = new int; }
-  ~X() { delete pointer_field; }
-};
-
 int empty_ptr_deref_bad() {
   std::unique_ptr<int> x;
   return *x;
@@ -209,7 +177,7 @@ void unique_ptr_release0_bad() {
   *x; // Should report a NPE here as x, after the release, contains a nullptr
 }
 
-void FN_unique_ptr_release1_bad() {
+void unique_ptr_release1_bad() {
   std::unique_ptr<X> x(new X());
   x.release(); // Should report a memory leak since the object of X has not been
                // deallocated
@@ -221,16 +189,18 @@ int reset_ptr_null_deref_bad() {
   return *x;
 }
 
-void unique_ptr_release_get_ok() {
+void unique_ptr_release_get0_bad() {
   std::unique_ptr<X> x(new X());
   if (x.get() != x.release()) {
     // Should not report a NPE here as both x.release() and x.get() return the
     // pointers contained in x
     *x; // x, after the release, contains a nullptr
   }
+  // Should report a memory leak since the object of X has not been
+  // deallocated
 }
 
-void unique_ptr_release_get_bad() {
+void unique_ptr_release_get1_bad() {
   std::unique_ptr<X> x(new X());
   if (x.get() == x.release())
   // Should report a NPE here as both x.release() and x.get() return the
@@ -297,6 +267,91 @@ int unique_ptr_move_null_deref_bad() {
   std::unique_ptr<int> p1(new int);
   std::unique_ptr<int> p2 = std::move(p1);
   return *p1;
+}
+
+int unique_ptr_self_move_assignment_ok() {
+  std::unique_ptr<int> x(new int(42));
+  x = std::move(x);
+  return *x;
+}
+
+int unique_ptr_swap0_ok() {
+  int* p1 = new int(1);
+  int* p2 = new int(2);
+  {
+    std::unique_ptr<int> x(p1);
+    {
+      std::unique_ptr<int> y(p2);
+      x.swap(y);
+    }
+    return *p2;
+  }
+}
+
+int unique_ptr_swap0_bad() {
+  std::unique_ptr<int> p1(new int(1));
+  std::unique_ptr<int> p2(new int(2));
+  p1.swap(p2);
+  if (*p1 == 2 && *p2 == 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return *p1;
+}
+
+int unique_ptr_swap1_bad() {
+  int* p1 = new int(1);
+  int* p2 = new int(2);
+  {
+    std::unique_ptr<int> x(p1);
+    {
+      std::unique_ptr<int> y(p2);
+      x.swap(y);
+    }
+    return *p1;
+  }
+}
+
+int operator_bool0_ok() {
+  std::unique_ptr<int> x(new int);
+  x.reset();
+  if (x) {
+    // Should not report a NPE here as x manages nullptr
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int operator_bool1_ok() {
+  std::unique_ptr<int> x;
+  if (x) {
+    // Should not report a NPE here as x manages nullptr
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int operator_bool0_bad() {
+  std::unique_ptr<int> x(new int);
+  x.reset();
+  if (!x) {
+    // Should report a NPE here as x manages nullptr
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int operator_bool1_bad() {
+  std::unique_ptr<int> x;
+  if (!x) {
+    // Should report a NPE here as x manages nullptr
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
 }
 
 // Deleter that doesn't actually call delete

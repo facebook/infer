@@ -35,6 +35,12 @@ Computes the asymptotic complexity of functions with respect to execution cost o
 
 [Visit here for more information.](/docs/next/checker-cost)
 
+## Datalog-based points-to analysis
+
+Experimental datalog-based points-to analysis.
+
+[Visit here for more information.](/docs/next/checker-datalog)
+
 ## Eradicate
 
 The eradicate `@Nullable` checker for Java annotations.

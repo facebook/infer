@@ -1,4 +1,4 @@
-<!-- Creator     : groff version 1.19.2 -->
+<!-- Creator     : groff version 1.22.4 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -7,16 +7,17 @@
 <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
 <meta name="Content-Style" content="text/css">
 <style type="text/css">
-       p     { margin-top: 0; margin-bottom: 0; }
-       pre   { margin-top: 0; margin-bottom: 0; }
-       table { margin-top: 0; margin-bottom: 0; }
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
 </style>
 <title>infer-capture</title>
 
 </head>
 <body>
 
-<h1 align=center>infer-capture</h1>
+<h1 align="center">infer-capture</h1>
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
@@ -34,15 +35,17 @@
 <hr>
 
 
+<h2>NAME
 <a name="NAME"></a>
-<h2>NAME</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">infer-capture -
 capture source files for later analysis</p>
 
+<h2>SYNOPSIS
 <a name="SYNOPSIS"></a>
-<h2>SYNOPSIS</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer
@@ -58,6 +61,8 @@ infer capture</b> <i>[options]</i>
 <b>--compilation-database-escaped</b> <i>file</i> <b><br>
 infer capture</b> <i>[options]</i> <b>--
 gradle</b>/<b>gradlew</b> <i>...</i> <b><br>
+infer capture</b> <i>[options]</i> <b>-- hackc</b>
+<i>...</i> <b><br>
 infer capture</b> <i>[options]</i> <b>-- javac</b>
 <i>...</i> <b><br>
 infer capture</b> <i>[options]</i> <b>--
@@ -69,8 +74,9 @@ infer capture</b> <i>[options]</i> <b>-- ndk-build</b>
 infer capture</b> <i>[--no-xcpretty] [options]</i> <b>--
 xcodebuild</b> <i>...</i></p>
 
+<h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
-<h2>DESCRIPTION</h2>
+</h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Capture the
@@ -80,8 +86,9 @@ source files, translate them into infer's intermediate
 representation, and store the result of the translation in
 the results directory.</p>
 
+<h2>OPTIONS
 <a name="OPTIONS"></a>
-<h2>OPTIONS</h2>
+</h2>
 
 
 
@@ -149,9 +156,9 @@ argument after <b>--</b> was <i>command</i>. Possible
 values: <i>ant</i>, <i>buck</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
 <i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
-<i>c++</i>, <i>g++</i>, <i>make</i>, <i>configure</i>,
-<i>cmake</i>, <i>waf</i>, <i>mvn</i>, <i>mvnw</i>,
-<i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
+<i>c++</i>, <i>g++</i>, <i>hackc</i>, <i>make</i>,
+<i>configure</i>, <i>cmake</i>, <i>waf</i>, <i>mvn</i>,
+<i>mvnw</i>, <i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
 <i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;"><b>--help</b></p>
@@ -249,24 +256,25 @@ phase is expected to require several <i>different</i>
 project roots, all relative to a common workspace. Usually a
 single project root is enough, though.</p>
 
-<table width="100%" border=0 rules="none" frame="void"
+<table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
 <td width="3%">
 
 
-<p style="margin-top: 1em" valign="top"><b>--</b></p></td>
+<p><b>--</b></p></td>
 <td width="3%"></td>
 <td width="83%">
 
 
-<p style="margin-top: 1em" valign="top">Stop argument
-processing, use remaining arguments as a build command</p></td>
+<p>Stop argument processing, use remaining arguments as a
+build command</p></td></tr>
 </table>
 
+<h2>BUCK OPTIONS
 <a name="BUCK OPTIONS"></a>
-<h2>BUCK OPTIONS</h2>
+</h2>
 
 
 
@@ -403,8 +411,9 @@ Only valid for <b>--buck-clang</b>.</p>
 <p style="margin-left:17%;">Specify the path to Xcode
 developer directory, to use for Buck clang targets</p>
 
+<h2>CLANG LINTERS OPTIONS
 <a name="CLANG LINTERS OPTIONS"></a>
-<h2>CLANG LINTERS OPTIONS</h2>
+</h2>
 
 
 
@@ -415,67 +424,15 @@ developer directory, to use for Buck clang targets</p>
 See <b>--debug-level</b> for accepted values.</p>
 
 
-<p style="margin-left:11%;"><b>--no-default-linters</b></p>
-
-<p style="margin-left:17%;">Deactivates: Use the default
-linters for the analysis. (Conversely:
-<b>--default-linters</b>)</p>
-
-<p style="margin-left:11%;"><b>--linter</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">From the linters available,
-only run this one linter. (Useful together with
-<b>--linters-developer-mode</b>)</p>
-
-<p style="margin-left:11%;"><b>--linters-def-file</b>
-<i>+file</i></p>
-
-<p style="margin-left:17%;">Specify the file containing
-linters definition (e.g. 'linters.al')</p>
-
-<p style="margin-left:11%;"><b>--linters-def-folder</b>
-<i>+dir</i></p>
-
-<p style="margin-left:17%;">Specify the folder containing
-linters files with extension .al</p>
-
-
-<p style="margin-left:11%;"><b>--linters-developer-mode</b></p>
-
-<p style="margin-left:17%;">Activates: Debug mode for
-developing new linters. (Sets the analyzer to
-<b>linters</b>; also sets <b>--debug</b>,
-<b>--debug-level-linters 2</b>, <b>--developer-mode</b>, and
-unsets <b>--allowed-failures</b> and
-<b>--default-linters</b>. (Conversely:
-<b>--no-linters-developer-mode</b>)</p>
-
-<p style="margin-left:11%;"><b>--linters-doc-url</b>
-<i>+string</i></p>
-
-<p style="margin-left:17%;">Specify custom documentation
-URL for some linter that overrides the default one. Useful
-if your project has specific ways of fixing a lint error
-that is not true in general or public info. Format:
-linter_name:doc_url.</p>
-
-
 <p style="margin-left:11%;"><b>--linters-ignore-clang-failures</b></p>
 
 <p style="margin-left:17%;">Activates: Continue linting
 files even if some compilation fails. (Conversely:
 <b>--no-linters-ignore-clang-failures</b>)</p>
 
-
-<p style="margin-left:11%;"><b>--linters-validate-syntax-only</b></p>
-
-<p style="margin-left:17%;">Activates: Validate syntax of
-AL files, then emit possible errors in JSON format to stdout
-(Conversely: <b>--no-linters-validate-syntax-only</b>)</p>
-
+<h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
-<h2>CLANG OPTIONS</h2>
+</h2>
 
 
 
@@ -583,8 +540,9 @@ still just <i>&lsquo;infer -- &lt;xcodebuild
 command&gt;&lsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
+<h2>ERLANG OPTIONS
 <a name="ERLANG OPTIONS"></a>
-<h2>ERLANG OPTIONS</h2>
+</h2>
 
 
 
@@ -612,8 +570,9 @@ type specs from OTP (available in the system) to generate
 more precise Pulse summaries for unknown library functions.
 (Conversely: <b>--no-erlang-with-otp-specs</b>)</p>
 
+<h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>
-<h2>JAVA OPTIONS</h2>
+</h2>
 
 
 
@@ -668,8 +627,9 @@ capture (experimental, do not use). (Conversely:
 thrown by Sawja/Javalib during Java capture (Conversely:
 <b>--mask-sawja-exceptions</b>)</p>
 
+<h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>
-<h2>ENVIRONMENT</h2>
+</h2>
 
 
 
@@ -679,8 +639,9 @@ thrown by Sawja/Javalib during Java capture (Conversely:
 <p style="margin-left:17%;">See the ENVIRONMENT section in
 the manual of <b>infer</b>(1).</p>
 
+<h2>FILES
 <a name="FILES"></a>
-<h2>FILES</h2>
+</h2>
 
 
 
@@ -689,8 +650,9 @@ the manual of <b>infer</b>(1).</p>
 <p style="margin-left:17%;">See the FILES section in the
 manual of <b>infer</b>(1).</p>
 
+<h2>SEE ALSO
 <a name="SEE ALSO"></a>
-<h2>SEE ALSO</h2>
+</h2>
 
 
 

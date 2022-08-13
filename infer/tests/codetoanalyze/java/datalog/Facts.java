@@ -18,5 +18,17 @@ public class Facts {
     String str = (String) obj;
     // Nested casts
     ArrayList l2 = (ArrayList) ((List) obj);
+
+    // Call with void
+    testVoid(str);
   }
+
+  // FormalArg and FormalReturn facts
+  private static String testArgs(String a, String b) {
+    String a_loc = a;
+    return a_loc;
+  }
+
+  // Test void return
+  private static void testVoid(String a) {}
 }

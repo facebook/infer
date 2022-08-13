@@ -133,6 +133,8 @@ class Registry {
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+- [BAD_ARG](/docs/next/all-issue-types#bad_arg)
+- [BAD_ARG_LATENT](/docs/next/all-issue-types#bad_arg_latent)
 - [BAD_KEY](/docs/next/all-issue-types#bad_key)
 - [BAD_KEY_LATENT](/docs/next/all-issue-types#bad_key_latent)
 - [BAD_MAP](/docs/next/all-issue-types#bad_map)
@@ -166,6 +168,7 @@ The following issue types are reported by this checker:
 - [NULL_ARGUMENT_LATENT](/docs/next/all-issue-types#null_argument_latent)
 - [OPTIONAL_EMPTY_ACCESS](/docs/next/all-issue-types#optional_empty_access)
 - [OPTIONAL_EMPTY_ACCESS_LATENT](/docs/next/all-issue-types#optional_empty_access_latent)
+- [PULSE_CONST_REFABLE](/docs/next/all-issue-types#pulse_const_refable)
 - [PULSE_RESOURCE_LEAK](/docs/next/all-issue-types#pulse_resource_leak)
 - [PULSE_UNINITIALIZED_VALUE](/docs/next/all-issue-types#pulse_uninitialized_value)
 - [PULSE_UNINITIALIZED_VALUE_LATENT](/docs/next/all-issue-types#pulse_uninitialized_value_latent)

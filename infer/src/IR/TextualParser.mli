@@ -7,4 +7,6 @@
 
 open! IStd
 
-val capture : string -> unit
+val capture : ?source_path:string -> string -> unit
+(** Capture textual from the provided path. When the textual is a result of translation of another
+    source file, [source_path] specifies the orignal source. *)

@@ -14,6 +14,7 @@ otp_lists.erl, test_sub3_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [n
 otp_lists.erl, test_sub4_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 otp_lists.erl, test_sub5_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 otp_lists.erl, test_sub6_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
+otp_lists.erl, test_list_append_with_atom_to_binary_Bad/0, 1, BAD_ARG, no_bucket, ERROR, [bad arg here]
 otp_maps.erl, test_intersect2_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 otp_maps.erl, test_merge2_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]
 otp_maps.erl, test_filter2_Bad/0, 2, NO_MATCHING_CASE_CLAUSE, no_bucket, ERROR, [no matching case clause here]

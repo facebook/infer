@@ -238,7 +238,6 @@ module Symbol = struct
   (* NOTE: non_int represents the symbols that are not integer type,
      so that their ranges are not used in the cost checker. *)
   type t =
-    | ForeignVariable of {id: int}
     | OneValue of {unsigned: bool [@ignore]; non_int: bool [@ignore]; path: SymbolPath.t}
     | BoundEnd of
         { unsigned: bool [@ignore]
@@ -250,15 +249,13 @@ module Symbol = struct
   let pp : F.formatter -> t -> unit =
    fun fmt s ->
     match s with
-    | ForeignVariable {id} ->
-        F.fprintf fmt "v%d" id
     | OneValue {unsigned; non_int; path} | BoundEnd {unsigned; non_int; path} ->
         SymbolPath.pp fmt path ;
         ( if Config.developer_mode then
           match s with
           | BoundEnd {bound_end} ->
               Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end)
-          | ForeignVariable _ | OneValue _ ->
+          | OneValue _ ->
               () ) ;
         if Config.bo_debug > 1 then
           F.fprintf fmt "(%c%s)" (if unsigned then 'u' else 's') (if non_int then "n" else "")
@@ -266,12 +263,6 @@ module Symbol = struct
 
   let compare s1 s2 =
     match (s1, s2) with
-    | ForeignVariable _, (OneValue _ | BoundEnd _) ->
-        -1
-    | (OneValue _ | BoundEnd _), ForeignVariable _ ->
-        1
-    | ForeignVariable {id= x}, ForeignVariable {id= y} ->
-        compare_int x y
     | OneValue _, BoundEnd _ ->
         -1
     | BoundEnd _, OneValue _ ->
@@ -290,8 +281,7 @@ module Symbol = struct
 
   let paths_equal s1 s2 =
     match (s1, s2) with
-    | ForeignVariable _, _ | _, ForeignVariable _ | OneValue _, BoundEnd _ | BoundEnd _, OneValue _
-      ->
+    | OneValue _, BoundEnd _ | BoundEnd _, OneValue _ ->
         false
     | OneValue {path= path1}, OneValue {path= path2} | BoundEnd {path= path1}, BoundEnd {path= path2}
       ->
@@ -310,56 +300,25 @@ module Symbol = struct
 
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
 
-  let is_unsigned : t -> bool = function
-    | ForeignVariable _ ->
-        false
-    | OneValue {unsigned} | BoundEnd {unsigned} ->
-        unsigned
+  let is_unsigned : t -> bool = function OneValue {unsigned} | BoundEnd {unsigned} -> unsigned
 
-
-  let is_non_int : t -> bool = function
-    | ForeignVariable _ ->
-        false
-    | OneValue {non_int} | BoundEnd {non_int} ->
-        non_int
-
+  let is_non_int : t -> bool = function OneValue {non_int} | BoundEnd {non_int} -> non_int
 
   let is_global : t -> bool = function
-    | ForeignVariable _ ->
-        false
     | OneValue {path} | BoundEnd {path} ->
         SymbolPath.is_global path
 
 
-  let of_foreign_id id = ForeignVariable {id}
-
-  let get_foreign_id_exn : t -> int = function
-    | ForeignVariable {id} ->
-        id
-    | OneValue _ | BoundEnd _ ->
-        assert false
-
-
   (* This should be called on non-pulse bound as of now. *)
-  let path = function
-    | ForeignVariable _ ->
-        assert false
-    | OneValue {path} | BoundEnd {path} ->
-        path
+  let path = function OneValue {path} | BoundEnd {path} -> path
 
-
-  let is_length = function
-    | ForeignVariable _ ->
-        false
-    | OneValue {path} | BoundEnd {path} ->
-        SymbolPath.is_length path
-
+  let is_length = function OneValue {path} | BoundEnd {path} -> SymbolPath.is_length path
 
   (* NOTE: This may not be satisfied in the cost checker for simplifying its results. *)
   let check_bound_end s be =
     if Config.bo_debug >= 3 then
       match s with
-      | ForeignVariable _ | OneValue _ ->
+      | OneValue _ ->
           ()
       | BoundEnd {bound_end} ->
           if not (BoundEnd.equal be bound_end) then
@@ -368,11 +327,7 @@ module Symbol = struct
               (BoundEnd.to_string be)
 
 
-  let exists_str ~f = function
-    | ForeignVariable _ ->
-        false
-    | OneValue {path} | BoundEnd {path} ->
-        SymbolPath.exists_str ~f path
+  let exists_str ~f = function OneValue {path} | BoundEnd {path} -> SymbolPath.exists_str ~f path
 end
 
 module SymbolSet = struct

@@ -10,6 +10,7 @@ module IRAttributes = Attributes
 module FuncArg = ProcnameDispatcher.Call.FuncArg
 open PulseBasicInterface
 open PulseDomainInterface
+open PulseOperationResult.Import
 
 (* Because we use the callee's captured vars' pvars to specialize the callee in the
    caller's context, the pvars might be wrong if the caller has been specialized:
@@ -45,7 +46,10 @@ let get_caller_values_to_closures {InterproceduralAnalysis.proc_desc} path call_
       Pvar.Map.fold
         (fun pvar passed_closure map ->
           let pvar = Pvar.specialize_pvar pvar caller_pname in
-          match PulseResult.ok (PulseOperations.eval path Read call_loc (Exp.Lvar pvar) astate) with
+          match
+            PulseOperations.eval path Read call_loc (Exp.Lvar pvar) astate
+            |> PulseOperationResult.sat_ok
+          with
           | Some (_, (value, _)) ->
               let rec get_deepest value =
                 match BaseMemory.find_opt value post.heap with
@@ -79,7 +83,7 @@ let captured_vars_of_captured caller_pname captured path call_loc astate =
               | _ ->
                   PulseOperations.eval_deref path call_loc (Exp.Lvar pvar) astate
             in
-            match PulseResult.ok astate_addr_hist with
+            match PulseOperationResult.sat_ok astate_addr_hist with
             | Some (astate, addr_hist) ->
                 let id = Ident.create_fresh Ident.knormal in
                 let astate = PulseOperations.write_id id addr_hist astate in
@@ -234,10 +238,9 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
     captured_vars caller_values_to_closures path call_loc astate =
   (* Notation: using dftb as an alias for deep_formals_to_closures in the rest of this function *)
   let rec dftb_of_captured_var (exp, pvar, _, _) map astate seen =
-    if Pvar.Map.mem pvar map then Ok (astate, map)
+    if Pvar.Map.mem pvar map then Sat (Ok (astate, map))
     else
-      let open PulseResult.Let_syntax in
-      let+ astate', (value, _) = PulseOperations.eval path Read call_loc exp astate in
+      let++ astate', (value, _) = PulseOperations.eval path Read call_loc exp astate in
       match dftb_and_passed_closure_of_value value exp map astate' seen with
       | _, _, None ->
           (astate, map)
@@ -254,11 +257,11 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
     | Some (astate, captured_vars) -> (
         (* complete the map with the new captured vars info *)
         let astate_map =
-          PulseResult.list_fold captured_vars ~init:(astate, map)
+          PulseOperationResult.list_fold captured_vars ~init:(astate, map)
             ~f:(fun (astate, map) captured_var ->
               dftb_of_captured_var captured_var map astate seen )
         in
-        match PulseResult.ok astate_map with
+        match PulseOperationResult.sat_ok astate_map with
         | Some (astate, map) ->
             (astate, map, Some (ProcAttributes.Closure (pname, captured_vars)))
         | None ->
@@ -361,7 +364,7 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
                   | _ ->
                       (astate, map, res) ) )
   in
-  PulseResult.list_fold captured_vars ~init:(astate, Pvar.Map.empty)
+  PulseOperationResult.list_fold captured_vars ~init:(astate, Pvar.Map.empty)
     ~f:(fun (astate, map) captured_var ->
       dftb_of_captured_var captured_var map astate AbstractValue.Set.empty )
 
@@ -425,7 +428,7 @@ let get_deep_formals_to_closures analysis_data captured_vars caller_values_to_cl
     deep_formals_to_closures_of_captured_vars analysis_data captured_vars caller_values_to_closures
       path call_loc astate
   in
-  PulseResult.ok res
+  PulseOperationResult.sat_ok res
 
 
 let prepend_deep_captured_vars deep_formals_to_closures captured_vars =
@@ -453,15 +456,14 @@ let make_specialized_call_exp analysis_data func_args callee_pname call_kind pat
   let open IOption.Let_syntax in
   let orig_captured_vars = get_orig_captured_vars analysis_data callee_pname call_kind in
   let rev_func_captured_vars =
-    let open PulseResult.Let_syntax in
-    PulseResult.list_fold orig_captured_vars ~init:(astate, [])
+    PulseOperationResult.list_fold orig_captured_vars ~init:(astate, [])
       ~f:(fun (astate, rev_func_captured_vars) (exp, _, typ, _) ->
-        let+ astate, evaled = PulseOperations.eval path Read call_loc exp astate in
+        let++ astate, evaled = PulseOperations.eval path Read call_loc exp astate in
         ( astate
         , ProcnameDispatcher.Call.FuncArg.{exp; arg_payload= evaled; typ} :: rev_func_captured_vars
         ) )
   in
-  let* astate, rev_func_captured_vars = PulseResult.ok rev_func_captured_vars in
+  let* astate, rev_func_captured_vars = PulseOperationResult.sat_ok rev_func_captured_vars in
   let func_captured_vars = List.rev rev_func_captured_vars in
   let caller_values_to_closures =
     get_caller_values_to_closures analysis_data path call_loc astate

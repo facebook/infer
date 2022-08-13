@@ -80,7 +80,7 @@
   (name sledge_report)
   (public_name sledge-report)
   (package sledge)
-  (libraries sledge core)
+  (libraries sledge core_unix.command_unix)
   (flags
    (:standard -open NS -open Sledge))
   (preprocess
@@ -103,10 +103,10 @@
   (name sledge_cli)
   (public_name sledge)
   (package sledge)
-  (libraries apron apron.boxMPQ core ctypes ctypes.foreign dbg
-    dune-build-info llvm llvm.analysis llvm.bitwriter llvm.ipo llvm.irreader
-    llvm.linker llvm.passmgr_builder llvm.scalar_opts llvm.target memtrace
-    shexp.process yojson nonstdlib sledge smtlib-utils)
+  (libraries apron apron.boxMPQ core_unix.command_unix ctypes ctypes.foreign
+    dbg dune-build-info llvm llvm.analysis llvm.bitwriter llvm.ipo
+    llvm.irreader llvm.linker llvm.passmgr_builder llvm.scalar_opts
+    llvm.target memtrace shexp.process yojson nonstdlib sledge smtlib-utils)
   (flags
    (:standard -w -no-cmx-file -open NS -open Sledge))
   (preprocess

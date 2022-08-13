@@ -9,13 +9,13 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseModelsImport
-open PulseOperations.Import
+open PulseOperationResult.Import
 
 val matchers : matcher list
 
 val eval :
      PathContext.t
-  -> PulseOperations.access_mode
+  -> access_mode
   -> Location.t
   -> AbstractValue.t * ValueHistory.t
   -> AbductiveDomain.t
@@ -60,7 +60,7 @@ module Iterator : sig
 
   val to_internal_pointer :
        PathContext.t
-    -> PulseOperations.access_mode
+    -> access_mode
     -> Location.t
     -> AbstractValue.t * ValueHistory.t
     -> AbductiveDomain.t

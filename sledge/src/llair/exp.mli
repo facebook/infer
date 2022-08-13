@@ -17,14 +17,18 @@ type op1 =
           it two's-complement--decodes the low [n] bits of the infinite
           two's-complement encoding of [arg]. The injection into [dst] is a
           no-op, so [dst] must be an integer type with bitwidth at least
-          [n]. *)
+          [n]. This expression can also be lifted to operate element-wise
+          over arrays. When [dst] is an array [arg] must also be an array of
+          the same length, with element types satisfying the aforementioned
+          constraints on integer types. *)
   | Unsigned of {bits: int}
       (** [Ap1 (Unsigned {bits= n}, dst, arg)] is [arg] interpreted as an
           [n]-bit unsigned integer and injected into the [dst] type. That
           is, it unsigned-binary--decodes the low [n] bits of the infinite
           two's-complement encoding of [arg]. The injection into [dst] is a
           no-op, so [dst] must be an integer type with bitwidth greater than
-          [n]. *)
+          [n]. This expression can be lifted to arrays, as described for
+          [Signed] just above. *)
   | Convert of {src: Typ.t}
       (** [Ap1 (Convert {src}, dst, arg)] is [arg] converted from type [src]
           to type [dst], possibly with loss of information. The [src] and
