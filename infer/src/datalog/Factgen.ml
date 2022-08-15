@@ -49,7 +49,8 @@ let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc (fact :
   | ActualArg _
   | FormalArg _
   | ActualReturn _
-  | FormalReturn _ ->
+  | FormalReturn _
+  | Implem _ ->
       report_fact analysis_data fact ~loc
 
 
@@ -103,7 +104,12 @@ let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_
             () )
       | _ ->
           () )
-    proc_desc
+    proc_desc ;
+  match Procname.get_class_type_name proc_name with
+  | Some class_typ ->
+      log_fact analysis_data (Fact.implem class_typ proc_name)
+  | None ->
+      ()
 
 
 let emit_class_level_facts ({IntraproceduralAnalysis.proc_desc; tenv} as analysis_data) =

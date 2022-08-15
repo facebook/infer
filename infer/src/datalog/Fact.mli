@@ -18,7 +18,8 @@ type t =
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   (* return_var = new typ(). The allocation site is "class:line:return". *)
   | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
-  (* receiver.call_proc(). The call site is "class:line:assigned_variable". proc_signature is the method signature without the class. *)
+  (* receiver.call_proc(). The call site is "class:line:assigned_variable".
+     proc_signature is the method signature without the class. *)
   | VirtualCall of
       {proc_name: Procname.t; call_site: string; receiver: Ident.t; proc_signature: string}
   (* The call site is "class:line:assigned_variable". *)
@@ -31,6 +32,9 @@ type t =
   | ActualReturn of {proc_name: Procname.t; call_site: string; return: Ident.t}
   (* proc_name() {return return_var}. Emitted for every "return" statement. *)
   | FormalReturn of {proc_name: Procname.t; return: Ident.t}
+  (* Class typ implements method proc_signature.
+     proc_signature is the method signature without the class. *)
+  | Implem of {typ: Typ.Name.t; proc_signature: string}
 
 val to_string : t -> string
 
@@ -55,3 +59,5 @@ val formal_arg : Procname.t -> int -> Ident.t -> t
 val actual_return : Procname.t -> Location.t -> Ident.t -> t
 
 val formal_return : Procname.t -> Ident.t -> t
+
+val implem : Typ.Name.t -> Procname.t -> t
