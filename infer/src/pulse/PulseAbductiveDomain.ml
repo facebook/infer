@@ -825,9 +825,10 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
            We don't have a precise enough memory model to understand everything that
            goes on here but we should at least not report a leak. *)
         let addr_canon = Formula.get_var_repr astate.path_condition addr in
-        if
-          reaches_into addr live_addresses (astate.post :> BaseDomain.t)
-          || reaches_into addr_canon live_addresses (astate.post :> BaseDomain.t)
+        let addr_reaches = reaches_into addr live_addresses (astate.post :> BaseDomain.t) in
+        let addr_canon_reaches = reaches_into addr_canon live_addresses (astate.post :> BaseDomain.t) in
+        if (addr_reaches || addr_canon_reaches)
+           && (not Config.pulse_increase_leak_recall)
         then (
           L.d_printfln ~color:Orange
             "False alarm: address is still reachable via other means; forgetting about its \
