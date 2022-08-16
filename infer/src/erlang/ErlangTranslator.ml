@@ -210,7 +210,11 @@ let rec translate_pattern env (value : Ident.t) {Ast.location; simple_expression
       (* TODO: Cover all cases. *)
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
         (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
-      Block.all env [mk_general_unsupported_block env; Block.make_failure env]
+      let unsupported = call_unsupported "pattern" 1 in
+      let id = mk_fresh_id () in
+      Block.all env
+        [ Block.make_instruction env [builtin_call_1 env id unsupported (Var value)]
+        ; Block.make_branch env (Var id) ]
 
 
 and translate_pattern_cons env value head tail : Block.t =
