@@ -2836,12 +2836,6 @@ and topl_properties =
     "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl)."
 
 
-and topl_skip_report_calls =
-  CLOpt.mk_string_opt ~long:"topl-skip-report-calls"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    ~meta:"regex" "Regex of procedures whose calls should be skipped from the reported trace."
-
-
 and profiler_samples =
   CLOpt.mk_path_opt ~long:"profiler-samples"
     "File containing the profiler samples when Infer is run Test Determinator mode with \
@@ -3960,8 +3954,6 @@ and topl_max_conjuncts = !topl_max_conjuncts
 and topl_max_disjuncts = !topl_max_disjuncts
 
 and topl_properties = RevList.to_list !topl_properties
-
-and topl_skip_report_calls = Option.map ~f:Str.regexp !topl_skip_report_calls
 
 and trace_error = !trace_error
 
