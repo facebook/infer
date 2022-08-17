@@ -1,63 +1,63 @@
 /* @generated */
 digraph cfg {
-"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_1" [label="1: Start Available_expr.dealloc\nFormals:  self:Available_expr*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_1" [label="1: Start Available_expr.dealloc\nFormals:  self:Available_expr*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_1" -> "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_4" ;
-"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_2" [label="2: Exit Available_expr.dealloc \n  " color=yellow style=filled]
+	 "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_1" -> "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_4" ;
+"dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_2" [label="2: Exit Available_expr.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_3" -> "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_2" ;
-"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_4" [label="4:  Call dealloc \n   n$0=*&self:Available_expr* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Available_expr*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Available_expr*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Available_expr*) [line 13, column 1]\n " shape="box"]
+	 "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_3" -> "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_2" ;
+"dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_4" [label="4:  Call dealloc \n   n$0=*&self:Available_expr* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Available_expr*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Available_expr*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Available_expr*) [line 13, column 1]\n " shape="box"]
 	
 
-	 "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_4" -> "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_5" ;
-	 "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_4" -> "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_6" ;
-"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
+	 "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_4" -> "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_5" ;
+	 "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_4" -> "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_6" ;
+"dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_5" -> "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_3" ;
-"dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
+	 "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_5" -> "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_3" ;
+"dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_6" -> "dealloc#Available_expr#instance.091f6c131a219839e0881eafb90a9c30_2" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_1" [label="1: Start Available_expr.test_no_bug\nFormals:  self:Available_expr*\nLocals:  p:int* \n  " color=yellow style=filled]
+	 "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_6" -> "dealloc#Available_expr#[instance].3d736136827b3d7899897e3d369b718a_2" ;
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_1" [label="1: Start Available_expr.test_no_bug\nFormals:  self:Available_expr*\nLocals:  p:int* \n  " color=yellow style=filled]
 	
 
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_1" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_9" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" [label="2: Exit Available_expr.test_no_bug \n  " color=yellow style=filled]
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_1" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_9" ;
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_2" [label="2: Exit Available_expr.test_no_bug \n  " color=yellow style=filled]
 	
 
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" [label="3:  Return Stmt \n   *&return:int=0 [line 20, column 3]\n " shape="box"]
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_3" [label="3:  Return Stmt \n   *&return:int=0 [line 20, column 3]\n " shape="box"]
 	
 
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" [label="4: + \n   END_BRANCHES\n " ]
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_3" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_2" ;
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_4" [label="4: + \n   END_BRANCHES\n " ]
 	
 
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE(n$0, true); [line 17, column 7]\n " shape="invhouse"]
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_4" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_3" ;
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE(n$0, true); [line 17, column 7]\n " shape="invhouse"]
 	
 
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE(!n$0, false); [line 17, column 7]\n " shape="invhouse"]
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_5" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_7" ;
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE(!n$0, false); [line 17, column 7]\n " shape="invhouse"]
 	
 
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" [label="7:  Return Stmt \n   n$1=*&p:int* [line 18, column 13]\n  n$2=*n$1:int [line 18, column 12]\n " shape="box"]
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_6" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_4" ;
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_7" [label="7:  Return Stmt \n   n$1=*&p:int* [line 18, column 13]\n  n$2=*n$1:int [line 18, column 12]\n " shape="box"]
 	
 
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" [label="8:  Return Stmt \n   *&return:int=n$2 [line 18, column 5]\n " shape="box"]
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_7" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_8" ;
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_8" [label="8:  Return Stmt \n   *&return:int=n$2 [line 18, column 5]\n " shape="box"]
 	
 
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" ;
-"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 16, column 3]\n  *&p:int*=null [line 16, column 3]\n " shape="box"]
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_8" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_2" ;
+"test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 16, column 3]\n  *&p:int*=null [line 16, column 3]\n " shape="box"]
 	
 
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_9" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" ;
-	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_9" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" ;
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_9" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_5" ;
+	 "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_9" -> "test_no_bug#Available_expr#[instance].345aeaa1f59b7635afa449d9318ea1d1_6" ;
 }

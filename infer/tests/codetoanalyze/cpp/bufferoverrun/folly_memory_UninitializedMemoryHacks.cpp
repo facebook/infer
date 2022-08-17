@@ -254,31 +254,8 @@ inline void unsafeStringSetLargerSize(std::string& s, std::size_t n) {
   }                                                                      \
   }
 
-#if defined(_LIBCPP_VECTOR)
-// libc++
-
-template <typename Tag, typename T, typename A, A Ptr__end_>
-struct MakeUnsafeVectorSetLargerSize {
-  friend void unsafeVectorSetLargerSizeImpl(std::vector<T>& v, std::size_t n) {
-    // v.__end_ += (n - v.size());
-    using Base = std::__vector_base<T, std::allocator<T>>;
-    static_assert(std::is_standard_layout<std::vector<T>>::value &&
-                      sizeof(std::vector<T>) == sizeof(Base),
-                  "reinterpret_cast safety conditions not met");
-    reinterpret_cast<Base&>(v).*Ptr__end_ += (n - v.size());
-  }
-};
-
-#define FOLLY_DECLARE_VECTOR_RESIZE_WITHOUT_INIT(TYPE)          \
-  template struct folly::detail::MakeUnsafeVectorSetLargerSize< \
-      FollyMemoryDetailTranslationUnitTag,                      \
-      TYPE,                                                     \
-      TYPE*(std::__vector_base<TYPE, std::allocator<TYPE>>::*), \
-      &std::vector<TYPE>::__end_>;                              \
-  FOLLY_DECLARE_VECTOR_RESIZE_WITHOUT_INIT_IMPL(TYPE)
-
-#elif defined(_GLIBCXX_VECTOR)
-// libstdc++
+#if defined(_GLIBCXX_VECTOR)
+   // libstdc++
 
 template <typename Tag,
           typename T,

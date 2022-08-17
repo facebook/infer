@@ -54,6 +54,12 @@ val add_field : t -> Typ.Name.t -> Struct.field -> unit
 val pp : Format.formatter -> t -> unit
 (** print a type environment *)
 
+val fold_supers : t -> Typ.Name.t -> init:'a -> f:(Typ.Name.t -> Struct.t option -> 'a -> 'a) -> 'a
+
+val mem_supers : t -> Typ.Name.t -> f:(Typ.Name.t -> Struct.t option -> bool) -> bool
+
+val find_map_supers : t -> Typ.Name.t -> f:(Typ.Name.t -> Struct.t option -> 'a option) -> 'a option
+
 val implements_remodel_class : t -> Typ.Name.t -> bool
 (** Check if a class implements the Remodel class *)
 
@@ -81,5 +87,7 @@ val resolve_method :
     its class potentially changed to some [other_class]) is among the [methods] of [other_class]. *)
 
 val find_cpp_destructor : t -> Typ.Name.t -> Procname.t option
+
+val find_cpp_constructor : t -> Typ.Name.t -> Procname.t list
 
 module SQLite : SqliteUtils.Data with type t = per_file

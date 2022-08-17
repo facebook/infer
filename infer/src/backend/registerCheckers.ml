@@ -161,6 +161,10 @@ let all_checkers =
     ; callbacks=
         (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in
          [(pulse, Clang); (pulse, Erlang); (pulse, Java); (pulse, CIL)] ) }
+  ; { checker= Datalog
+    ; callbacks=
+        (let datalog = intraprocedural DatalogAnalysis.checker in
+         [(datalog, Java)] ) }
   ; { checker= Impurity
     ; callbacks=
         (let impurity =

@@ -10,13 +10,11 @@
 type oriented_equality = {var: Trm.t; rep: Trm.t}
 
 type t =
-  { wrt: Var.Set.t
-  ; no_fresh: bool
-  ; fresh: Var.Set.t
+  { no_fresh: bool
   ; solved: oriented_equality list option
   ; pending: (Trm.t * Trm.t) list }
 
 val pp : t pp
 val prefer : Trm.t -> Trm.t -> int
 val solve_concat : Trm.sized array -> Trm.t -> Trm.t -> t -> t
-val solve : Trm.t -> Trm.t -> t -> t
+val solve : Trm.t -> Trm.t -> t -> t Var.Fresh.m

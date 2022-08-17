@@ -227,3 +227,13 @@ void resize_Bad() {
   v.resize(1);
   v[1] = 0;
 }
+
+void iterate_rvalue_ref(std::vector<int>&& v) {
+  [&]() {
+    /* In SIL, the type iterator becomes a pointer to another pointer, i.e. an
+       rvalue reference to vector. Inferbo should not raise an internal error in
+       that case. */
+    for (std::vector<int>::iterator it = v.begin(); it != v.end(); it++) {
+    }
+  };
+}

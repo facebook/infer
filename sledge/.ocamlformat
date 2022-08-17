@@ -1,3 +1,4 @@
+ocaml-version = 4.14
 profile = ocamlformat
 break-cases = fit
 break-infix = fit-or-vertical

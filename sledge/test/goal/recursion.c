@@ -35,8 +35,14 @@ foo(int x)
 }
 
 int
-main()
+root()
 {
   // check that distance computation doesn't get stuck in recursive cycles
   return foo(5);
+}
+
+int
+main()
+{
+  return root();
 }

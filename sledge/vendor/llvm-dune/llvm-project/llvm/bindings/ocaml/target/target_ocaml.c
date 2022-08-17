@@ -47,7 +47,7 @@ static struct custom_operations llvm_data_layout_ops = {
 
 value llvm_alloc_data_layout(LLVMTargetDataRef DataLayout) {
   value V =
-      alloc_custom(&llvm_data_layout_ops, sizeof(LLVMTargetDataRef), 0, 1);
+      caml_alloc_custom(&llvm_data_layout_ops, sizeof(LLVMTargetDataRef), 0, 1);
   DataLayout_val(V) = DataLayout;
   return V;
 }
@@ -60,7 +60,7 @@ value llvm_datalayout_of_string(value StringRep) {
 /* DataLayout.t -> string */
 value llvm_datalayout_as_string(value TD) {
   char *StringRep = LLVMCopyStringRepOfTargetData(DataLayout_val(TD));
-  value Copy = copy_string(StringRep);
+  value Copy = caml_copy_string(StringRep);
   LLVMDisposeMessage(StringRep);
   return Copy;
 }
@@ -220,7 +220,7 @@ static struct custom_operations llvm_target_machine_ops = {
     custom_compare_ext_default};
 
 static value llvm_alloc_targetmachine(LLVMTargetMachineRef Machine) {
-  value V = alloc_custom(&llvm_target_machine_ops, sizeof(LLVMTargetMachineRef),
+  value V = caml_alloc_custom(&llvm_target_machine_ops, sizeof(LLVMTargetMachineRef),
                          0, 1);
   TargetMachine_val(V) = Machine;
   return V;

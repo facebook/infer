@@ -324,6 +324,11 @@ let _bad_pointer_comparison =
     ~user_documentation:[%blob "../../documentation/issues/BAD_POINTER_COMPARISON.md"]
 
 
+let bad_arg =
+  register_with_latent ~id:"BAD_ARG" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/BAD_ARG.md"]
+
+
 let bad_key =
   register_with_latent ~id:"BAD_KEY" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/BAD_KEY.md"]
@@ -440,12 +445,6 @@ let class_cast_exception =
   register_hidden ~enabled:false ~id:"CLASS_CAST_EXCEPTION" Error Biabduction
 
 
-let component_with_multiple_factory_methods =
-  register ~id:"COMPONENT_WITH_MULTIPLE_FACTORY_METHODS" Advice Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/COMPONENT_WITH_MULTIPLE_FACTORY_METHODS.md"]
-
-
 let condition_always_false =
   register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_FALSE" Warning BufferOverrunChecker
 
@@ -467,6 +466,11 @@ let config_impact_analysis_strict =
 let config_impact_analysis_strict_beta =
   register ~enabled:false ~id:"CONFIG_IMPACT_STRICT_BETA" Advice ConfigImpactAnalysis
     ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
+
+
+let pulse_const_refable =
+  register ~enabled:false ~id:"PULSE_CONST_REFABLE" Error Pulse ~hum:"Const Refable Parameter"
+    ~user_documentation:[%blob "../../documentation/issues/PULSE_CONST_REFABLE.md"]
 
 
 let constant_address_dereference =
@@ -562,7 +566,8 @@ let eradicate_field_not_nullable =
 (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
 let eradicate_field_over_annotated =
   register ~id:"ERADICATE_FIELD_OVER_ANNOTATED" ~hum:"Field Over Annotated" Advice
-    Eradicate (* TODO *) ~user_documentation:""
+    Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_inconsistent_subclass_parameter_annotation =
@@ -581,7 +586,8 @@ let eradicate_inconsistent_subclass_return_annotation =
 
 let eradicate_redundant_nested_class_annotation =
   register ~id:"ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION"
-    ~hum:"@Nullsafe annotation is redundant" Advice Eradicate (* TODO *) ~user_documentation:""
+    ~hum:"@Nullsafe annotation is redundant" Advice Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_bad_nested_class_annotation =
@@ -592,7 +598,8 @@ let eradicate_bad_nested_class_annotation =
 
 let eradicate_nullable_dereference =
   register ~id:"ERADICATE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference" Warning
-    Eradicate (* TODO *) ~user_documentation:""
+    Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_parameter_not_nullable =
@@ -630,7 +637,8 @@ let eradicate_meta_class_is_nullsafe =
   register ~id:"ERADICATE_META_CLASS_IS_NULLSAFE"
     ~hum:
       "Class is marked @Nullsafe and has 0 issues" (* Should be enabled for special integrations *)
-    ~enabled:false Info Eradicate (* TODO *) ~user_documentation:""
+    ~enabled:false Info Eradicate (* TODO *)
+    ~user_documentation:""
 
 
 let eradicate_meta_class_needs_improvement =
@@ -644,9 +652,9 @@ let eradicate_meta_class_needs_improvement =
 
 let eradicate_meta_class_can_be_nullsafe =
   register ~id:"ERADICATE_META_CLASS_CAN_BE_NULLSAFE"
-    ~hum:
-      "Class has 0 issues and can be marked @Nullsafe"
-      (* Should be enabled for special integrations *) ~enabled:false Advice Eradicate (* TODO *)
+    ~hum:"Class has 0 issues and can be marked @Nullsafe"
+      (* Should be enabled for special integrations *)
+    ~enabled:false Advice Eradicate (* TODO *)
     ~user_documentation:""
 
 
@@ -838,12 +846,6 @@ let multiple_weakself =
     ~user_documentation:[%blob "../../documentation/issues/MULTIPLE_WEAKSELF.md"]
 
 
-let mutable_local_variable_in_component_file =
-  register ~id:"MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE" Advice Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE.md"]
-
-
 let nil_block_call =
   register_with_latent ~id:"NIL_BLOCK_CALL" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NIL_BLOCK_CALL.md"]
@@ -883,6 +885,11 @@ let no_true_branch_in_if =
 let no_matching_branch_in_try =
   register_with_latent ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
     ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
+
+
+let null_argument =
+  register_with_latent ~id:"NULL_ARGUMENT" Error Pulse
+    ~user_documentation:[%blob "../../documentation/issues/NULL_ARGUMENT.md"]
 
 
 let null_dereference =
@@ -952,6 +959,11 @@ let sensitive_data_flow =
 let data_flow_to_sink =
   register ~enabled:false ~hum:"Data Flow to Sink" ~id:"DATA_FLOW_TO_SINK" Advice Pulse
     ~user_documentation:"A flow of data was detected to a sink."
+
+
+let datalog_fact =
+  register ~id:"DATALOG_FACT" Info Datalog
+    ~user_documentation:"Datalog fact used as input for a datalog solver."
 
 
 let regex_op_on_ui_thread =
@@ -1061,6 +1073,12 @@ let unnecessary_copy_assignment_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT" Error Pulse
     ~hum:"Unnecessary Copy Assignment"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
+
+
+let unnecessary_copy_assignment_movable_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE" Error Pulse
+    ~hum:"Unnecessary Copy Assignment Movable"
+    ~user_documentation:"See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable)."
 
 
 let unnecessary_copy_movable_pulse =

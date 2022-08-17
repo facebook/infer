@@ -54,6 +54,7 @@ module Make (State_domain : State_domain_sig) = struct
     in
     (State_domain.joinN entrys, State_domain.joinN currents)
 
+  let is_unsat (_, current) = State_domain.is_unsat current
   let resolve_int tid (_, current) = State_domain.resolve_int tid current
 
   let exec_assume tid (entry, current) cnd =
@@ -70,9 +71,6 @@ module Make (State_domain : State_domain_sig) = struct
     let open Or_alarm.Import in
     let+ next = State_domain.exec_inst tid inst current in
     (entry, next)
-
-  let enter_scope tid regs (entry, current) =
-    (entry, State_domain.enter_scope tid regs current)
 
   type from_call =
     {state_from_call: State_domain.from_call; caller_entry: State_domain.t}
@@ -126,8 +124,7 @@ module Make (State_domain : State_domain_sig) = struct
     (entry, State_domain.move_term_code tid reg code current)
 
   let dnf (entry, current) =
-    State_domain.Set.fold (State_domain.dnf current) Set.empty
-      ~f:(fun c rs -> Set.add (entry, c) rs)
+    Iter.map ~f:(fun c -> (entry, c)) (State_domain.dnf current)
 
   let resolve_callee f tid e (_, current) =
     State_domain.resolve_callee f tid e current

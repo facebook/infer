@@ -508,12 +508,14 @@ let replace_array_contents (hpred : Predicates.hpred) esel : Predicates.hpred =
 let rec pi_sorted_remove_redundant (pi : pi) =
   match pi with
   | (Aeq (BinOp (Le, e1, Const (Cint n1)), Const (Cint i1)) as a1)
-    :: Aeq (BinOp (Le, e2, Const (Cint n2)), Const (Cint i2)) :: rest
+    :: Aeq (BinOp (Le, e2, Const (Cint n2)), Const (Cint i2))
+    :: rest
     when IntLit.isone i1 && IntLit.isone i2 && Exp.equal e1 e2 && IntLit.lt n1 n2 ->
       (* second inequality redundant *)
       pi_sorted_remove_redundant (a1 :: rest)
   | Aeq (BinOp (Lt, Const (Cint n1), e1), Const (Cint i1))
-    :: (Aeq (BinOp (Lt, Const (Cint n2), e2), Const (Cint i2)) as a2) :: rest
+    :: (Aeq (BinOp (Lt, Const (Cint n2), e2), Const (Cint i2)) as a2)
+    :: rest
     when IntLit.isone i1 && IntLit.isone i2 && Exp.equal e1 e2 && IntLit.lt n1 n2 ->
       (* first inequality redundant *)
       pi_sorted_remove_redundant (a2 :: rest)
@@ -834,8 +836,7 @@ module Normalize = struct
           in
           (* test if the extensible array at the end of [typ] has elements of type [elt] *)
           let extensible_array_element_typ_equal elt typ =
-            Option.value_map ~f:(Typ.equal elt) ~default:false
-              (Struct.get_extensible_array_element_typ ~lookup typ)
+            Option.exists ~f:(Typ.equal elt) (Struct.get_extensible_array_element_typ ~lookup typ)
           in
           match (e1', e2') with
           (* pattern for arrays and extensible structs:

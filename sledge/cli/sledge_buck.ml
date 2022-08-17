@@ -110,7 +110,7 @@ let expand_arch_archive ~context archive_name =
        archive_name ()
 
 (* find bitcode module(s) in a linker arg *)
-let parse_linker_arg ~context rev_modules arg =
+let parse_linker_arg ~context arg rev_modules =
   if String.suffix arg ~suf:".o" then add_module ~context arg rev_modules
   else if String.suffix arg ~suf:".a" then
     let thin_archive =
@@ -136,9 +136,11 @@ let bitcode_files_of ~target =
   let context = context () in
   buck_build ~context target ;
   let modules =
-    In_channel.with_file
-      (argsfile ~context target)
-      ~f:(In_channel.fold_lines ~init:[] ~f:(parse_linker_arg ~context))
+    In_channel.with_open_bin (argsfile ~context target) (fun chan ->
+        Iter.fold
+          (Containers.IO.read_lines_iter chan)
+          []
+          ~f:(parse_linker_arg ~context) )
     |> List.rev
   in
   List.map ~f:(make_absolute (Lazy.force buck_root)) modules
@@ -201,7 +203,9 @@ let main ~(command : Report.status Command.basic_command) =
         Format.printf "%a"
           (List.pp " " Format.pp_print_string)
           bitcode_files
-    | Some file -> Out_channel.write_lines file bitcode_files
+    | Some file ->
+        Out_channel.with_open_bin file (fun chan ->
+            Containers.IO.write_lines_l chan bitcode_files )
     | None -> () ) ;
     bitcode_files
   in

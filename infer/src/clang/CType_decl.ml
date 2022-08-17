@@ -107,9 +107,10 @@ module BuildMethodSignature = struct
             |> qual_type_to_sil_type tenv
           in
           let is_pointer_to_const = CType.is_pointer_to_const qt in
+          let is_reference = CType.is_reference_type qt in
           let is_no_escape_block_arg = CAst_utils.is_no_escape_block_arg par in
           let annot = CAst_utils.sil_annot_of_type qt in
-          CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~annot
+          CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~is_reference ~annot
             ~is_no_escape_block_arg
       | _ ->
           raise CFrontend_errors.Invalid_declaration
@@ -372,7 +373,7 @@ let get_translate_as_friend_decl decl_list =
     match get_friend_decl_opt decl with
     | Some decl ->
         let named_decl_tuple_opt = Clang_ast_proj.get_named_decl_tuple decl in
-        Option.value_map ~f:is_translate_as_friend_name ~default:false named_decl_tuple_opt
+        Option.exists ~f:is_translate_as_friend_name named_decl_tuple_opt
     | None ->
         false
   in
@@ -814,23 +815,6 @@ module CProcname = struct
     let objc_method_of_string_kind class_name method_name method_kind =
       mk_objc_method class_name method_name method_kind []
   end
-
-  let from_decl_for_linters method_decl =
-    let open Clang_ast_t in
-    match method_decl with
-    | ObjCMethodDecl (decl_info, name_info, mdi) ->
-        let method_name =
-          match String.split ~on:':' name_info.Clang_ast_t.ni_name with
-          | hd :: _ ->
-              hd
-          | _ ->
-              name_info.Clang_ast_t.ni_name
-        in
-        objc_method_procname decl_info method_name mdi []
-    | BlockDecl _ ->
-        Procname.Block (Procname.Block.make_surrounding None Config.anonymous_block_prefix [])
-    | _ ->
-        from_decl method_decl
 end
 
 let get_type_from_expr_info ei tenv =

@@ -329,7 +329,12 @@ struct
             L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
             (post_astate, n_disjuncts) ) )
     in
-    (disjuncts, List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates)
+    let non_disjunct =
+      if Config.pulse_prevent_non_disj_top || List.exists disjuncts ~f:T.DisjDomain.is_executable
+      then List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates
+      else T.NonDisjDomain.top
+    in
+    (disjuncts, non_disjunct)
 
 
   let pp_session_name node f = T.pp_session_name node f

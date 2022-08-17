@@ -8,6 +8,7 @@ open! IStd
 module F = Format
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
+module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
 module Timestamp = PulseTimestamp
@@ -30,26 +31,37 @@ val pp_allocator : F.formatter -> allocator -> unit
 type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
 
 module Tainted : sig
-  type t = {source: Taint.t; hist: ValueHistory.t; intra_procedural_only: bool}
+  type t =
+    {source: Taint.t; time_trace: Timestamp.trace; hist: ValueHistory.t; intra_procedural_only: bool}
   [@@deriving compare, equal]
 end
 
 module TaintedSet : PrettyPrintable.PPSet with type elt = Tainted.t
 
-module MustNotBeTainted : sig
+module TaintSink : sig
   type t = {sink: Taint.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
 end
 
-module MustNotBeTaintedSet : PrettyPrintable.PPSet with type elt = MustNotBeTainted.t
+module TaintSinkSet : PrettyPrintable.PPSet with type elt = TaintSink.t
 
 module TaintSanitized : sig
-  type t = {sanitizer: Taint.t; trace: Trace.t} [@@deriving compare, equal]
+  type t = {sanitizer: Taint.t; time_trace: Timestamp.trace; trace: Trace.t}
+  [@@deriving compare, equal]
 end
 
 module TaintSanitizedSet : PrettyPrintable.PPSet with type elt = TaintSanitized.t
 
+module CopyOrigin : sig
+  type t = CopyCtor | CopyAssignment [@@deriving compare, equal]
+
+  val pp : Formatter.t -> t -> unit
+end
+
 module CopiedInto : sig
-  type t = IntoVar of Var.t | IntoField of Fieldname.t [@@deriving compare, equal]
+  type t =
+    | IntoVar of Var.t
+    | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
+  [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 end
@@ -67,7 +79,7 @@ type t =
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
   | MustBeInitialized of Timestamp.t * Trace.t
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-  | MustNotBeTainted of MustNotBeTaintedSet.t
+  | MustNotBeTainted of TaintSinkSet.t
   | JavaResourceReleased
   | PropagateTaintFrom of taint_in list
   | RefCounted
@@ -136,7 +148,7 @@ module Attributes : sig
   val get_must_be_valid :
     t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
-  val get_must_not_be_tainted : t -> MustNotBeTaintedSet.t
+  val get_must_not_be_tainted : t -> TaintSinkSet.t
 
   val get_written_to : t -> Trace.t option
 

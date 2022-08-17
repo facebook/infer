@@ -7,7 +7,8 @@
 
 open! IStd
 open PulseBasicInterface
-open PulseOperations.Import
+open PulseDomainInterface
+open PulseOperationResult.Import
 open PulseModelsImport
 
 let internal_value = Fieldname.make PulseOperations.pulse_model_type "backing_value"
@@ -37,7 +38,7 @@ let assign_value_fresh path location this ~desc astate =
 let assign_none this ~desc : model =
  fun {path; location} astate ->
   let<*> astate, pointer, value = assign_value_fresh path location this ~desc astate in
-  let<*> astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
+  let<**> astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
   let<+> astate =
     PulseOperations.invalidate path
       (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
@@ -50,7 +51,7 @@ let assign_value this _value ~desc : model =
  fun {path; location} astate ->
   (* TODO: call the copy constructor of a value *)
   let<*> astate, _, value = assign_value_fresh path location this ~desc astate in
-  let<+> astate = PulseArithmetic.and_positive (fst value) astate in
+  let<++> astate = PulseArithmetic.and_positive (fst value) astate in
   astate
 
 
@@ -84,19 +85,19 @@ let has_value optional ~desc : model =
   let<*> astate, (value_addr, _) = to_internal_value_deref path Read location optional astate in
   let result_non_empty =
     PulseArithmetic.prune_positive value_addr astate
-    >>= PulseArithmetic.prune_positive ret_addr
-    >>| PulseOperations.write_id ret_id
-          (ret_addr, Hist.single_call path location ~more:"non-empty case" desc)
-    |> Basic.map_continue
+    >>== PulseArithmetic.prune_positive ret_addr
+    >>|| PulseOperations.write_id ret_id
+           (ret_addr, Hist.single_call path location ~more:"non-empty case" desc)
+    >>|| ExecutionDomain.continue
   in
   let result_empty =
     PulseArithmetic.prune_eq_zero value_addr astate
-    >>= PulseArithmetic.prune_eq_zero ret_addr
-    >>| PulseOperations.write_id ret_id
-          (ret_addr, Hist.single_call path location ~more:"empty case" desc)
-    |> Basic.map_continue
+    >>== PulseArithmetic.prune_eq_zero ret_addr
+    >>|| PulseOperations.write_id ret_id
+           (ret_addr, Hist.single_call path location ~more:"empty case" desc)
+    >>|| ExecutionDomain.continue
   in
-  [result_non_empty; result_empty]
+  SatUnsat.to_list result_non_empty @ SatUnsat.to_list result_empty
 
 
 let get_pointer optional ~desc : model =
@@ -108,7 +109,7 @@ let get_pointer optional ~desc : model =
   let astate_value_addr =
     PulseOperations.write_id ret_id value_update_hist astate
     |> PulseArithmetic.prune_positive (fst value_addr)
-    |> Basic.map_continue
+    >>|| ExecutionDomain.continue
   in
   let nullptr =
     (AbstractValue.mk_fresh (), Hist.single_call path location desc ~more:"empty case")
@@ -116,22 +117,22 @@ let get_pointer optional ~desc : model =
   let astate_null =
     PulseOperations.write_id ret_id nullptr astate
     |> PulseArithmetic.prune_eq_zero (fst value_addr)
-    >>= PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
-    >>= PulseOperations.invalidate path
-          (StackAddress (Var.of_id ret_id, snd nullptr))
-          location (ConstantDereference IntLit.zero) nullptr
-    |> Basic.map_continue
+    >>== PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
+    >>|= PulseOperations.invalidate path
+           (StackAddress (Var.of_id ret_id, snd nullptr))
+           location (ConstantDereference IntLit.zero) nullptr
+    >>|| ExecutionDomain.continue
   in
-  [astate_value_addr; astate_null]
+  SatUnsat.to_list astate_value_addr @ SatUnsat.to_list astate_null
 
 
 let value_or optional default ~desc : model =
  fun {path; location; ret= ret_id, _} astate ->
   let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
   let astate_non_empty =
-    let+ astate_non_empty, value =
+    let++ astate_non_empty, value =
       PulseArithmetic.prune_positive (fst value_addr) astate
-      >>= PulseOperations.eval_access path Read location value_addr Dereference
+      >>|= PulseOperations.eval_access path Read location value_addr Dereference
     in
     let value_update_hist =
       (fst value, Hist.add_call path location desc ~more:"non-empty case" (snd value))
@@ -139,17 +140,17 @@ let value_or optional default ~desc : model =
     PulseOperations.write_id ret_id value_update_hist astate_non_empty |> Basic.continue
   in
   let astate_default =
-    let* astate, (default_val, default_hist) =
+    let=* astate, (default_val, default_hist) =
       PulseOperations.eval_access path Read location default Dereference astate
     in
     let default_value_hist =
       (default_val, Hist.add_call path location desc ~more:"empty case" default_hist)
     in
     PulseArithmetic.prune_eq_zero (fst value_addr) astate
-    >>| PulseOperations.write_id ret_id default_value_hist
-    |> Basic.map_continue
+    >>|| PulseOperations.write_id ret_id default_value_hist
+    >>|| ExecutionDomain.continue
   in
-  [astate_non_empty; astate_default]
+  SatUnsat.to_list astate_non_empty @ SatUnsat.to_list astate_default
 
 
 let matchers : matcher list =

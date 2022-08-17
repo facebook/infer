@@ -4,18 +4,18 @@ version: "1.1.0"
 synopsis: "A static analyzer for Java, C, C++, and Objective-C"
 maintainer: "the infer team"
 authors: "Facebook"
+license: "MIT"
 homepage: "https://github.com/facebook/infer"
 bug-reports: "https://github.com/facebook/infer/issues"
-license: "MIT"
 depends: [
-  "ANSITerminal" {= "0.8.3"}
+  "ANSITerminal" {= "0.8.4"}
   "async" {= "v0.14.0"}
   "async_kernel" {= "v0.14.0"}
   "async_rpc_kernel" {= "v0.14.0"}
   "async_unix" {= "v0.14.0"}
-  "atd" {= "2.2.1"}
-  "atdgen" {= "2.2.1"}
-  "atdgen-runtime" {= "2.2.1"}
+  "atd" {= "2.9.1"}
+  "atdgen" {= "2.9.1"}
+  "atdgen-runtime" {= "2.9.1"}
   "base" {= "v0.14.3"}
   "base-bigarray" {= "base"}
   "base-bytes" {= "base"}
@@ -26,12 +26,13 @@ depends: [
   "base_quickcheck" {= "v0.14.1"}
   "bheap" {= "2.0.0"}
   "bigarray-compat" {= "1.1.0"}
-  "bin_prot" {= "v0.14.0"}
+  "bin_prot" {= "v0.14.1"}
   "biniou" {= "1.2.1"}
+  "camlp-streams" {= "5.0.1"}
   "camlzip" {= "1.11"}
   "camomile" {= "1.0.2"}
   "charInfo_width" {= "1.1.0"}
-  "cmdliner" {= "1.1.0"}
+  "cmdliner" {= "1.1.1"}
   "conf-autoconf" {= "0.1"}
   "conf-gmp" {= "4"}
   "conf-pkg-config" {= "2"}
@@ -40,15 +41,15 @@ depends: [
   "conf-zlib" {= "1"}
   "core" {= "v0.14.1"}
   "core_kernel" {= "v0.14.2"}
-  "cppo" {= "1.6.8"}
+  "cppo" {= "1.6.9"}
   "csexp" {= "1.5.1"}
-  "ctypes" {= "0.20.0"}
-  "dune" {= "3.0.2"}
-  "dune-configurator" {= "3.0.2"}
-  "easy-format" {= "1.3.2"}
+  "ctypes" {= "0.20.1"}
+  "dune" {= "3.3.1"}
+  "dune-configurator" {= "3.3.1"}
+  "easy-format" {= "1.3.4"}
   "extlib" {= "1.7.8"}
   "fieldslib" {= "v0.14.0"}
-  "integers" {= "0.6.0"}
+  "integers" {= "0.7.0"}
   "iter" {= "1.4"}
   "jane-street-headers" {= "v0.14.0"}
   "javalib" {= "3.2.1"}
@@ -57,7 +58,7 @@ depends: [
   "lwt" {= "5.5.0"}
   "lwt_log" {= "1.1.1"}
   "lwt_react" {= "1.1.5"}
-  "memtrace" {= "0.2.1.2"}
+  "memtrace" {= "0.2.2"}
   "menhir" {= "20211128"}
   "menhirLib" {= "20211128"}
   "menhirSdk" {= "20211128"}
@@ -72,7 +73,7 @@ depends: [
   "ocaml-option-flambda" {= "1"}
   "ocaml-variants" {= "4.14.0+options"}
   "ocamlbuild" {= "0.14.1"}
-  "ocamlfind" {= "1.9.3"}
+  "ocamlfind" {= "1.9.5"}
   "ocamlgraph" {= "2.0.0"}
   "ocplib-endian" {= "1.2"}
   "octavius" {= "1.2.2"}
@@ -113,16 +114,16 @@ depends: [
   "ppx_variants_conv" {= "v0.14.2"}
   "ppx_yojson_conv" {= "v0.14.0"}
   "ppx_yojson_conv_lib" {= "v0.14.0"}
-  "ppxlib" {= "0.24.0"}
+  "ppxlib" {= "0.25.1"}
   "protocol_version_header" {= "v0.14.0"}
-  "re" {= "1.10.3"}
+  "re" {= "1.10.4"}
   "react" {= "1.2.2"}
   "result" {= "1.5"}
   "sawja" {= "1.5.11"}
   "seq" {= "base"}
   "sexplib" {= "v0.14.0"}
   "sexplib0" {= "v0.14.0"}
-  "spawn" {= "v0.15.0"}
+  "spawn" {= "v0.15.1"}
   "splittable_random" {= "v0.14.0"}
   "sqlite3" {= "5.1.0"}
   "stdio" {= "v0.14.0"}
@@ -133,7 +134,7 @@ depends: [
   "topkg" {= "1.0.5"}
   "trie" {= "1.0.0"}
   "typerep" {= "v0.14.0"}
-  "utop" {= "2.9.0"}
+  "utop" {= "2.9.2"}
   "variantslib" {= "v0.14.0"}
   "xmlm" {= "1.4.0"}
   "yojson" {= "1.7.0"}

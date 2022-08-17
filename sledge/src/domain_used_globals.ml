@@ -23,7 +23,6 @@ let init globals =
 
 let join l r = Llair.Global.Set.union l r
 let joinN xs = Set.fold ~f:join xs empty
-let enter_scope _ _ state = state
 let recursion_beyond_bound = `skip
 let post _ _ _ state = state
 let retn _ _ _ from_call post = Llair.Global.Set.union from_call post
@@ -32,7 +31,7 @@ type term_code = unit [@@deriving compare, sexp_of]
 
 let term _ _ _ _ = ()
 let move_term_code _ _ () q = q
-let dnf t = Set.of_ t
+let dnf t = Iter.singleton t
 
 let used_globals exp s =
   Llair.Exp.fold_exps exp s ~f:(fun e s ->
@@ -40,6 +39,7 @@ let used_globals exp s =
       | Some g -> Llair.Global.Set.add g s
       | None -> s )
 
+let is_unsat _ = false
 let resolve_int _ _ _ = []
 let exec_assume _ st exp = Some (used_globals exp st)
 let exec_kill _ _ st = st
@@ -75,22 +75,22 @@ let apply_summary st summ = Some (Llair.Global.Set.union st summ)
 (** Query *)
 
 type used_globals =
-  | Per_function of summary Llair.Function.Map.t
+  | Per_function of summary Llair.FuncName.Map.t
   | Declared of summary
 
-let by_function : used_globals -> Llair.Function.t -> t =
+let by_function : used_globals -> Llair.FuncName.t -> t =
  fun s fn ->
-  [%Dbg.call fun {pf} -> pf "@ %a" Llair.Function.pp fn]
+  [%Dbg.call fun {pf} -> pf "@ %a" Llair.FuncName.pp fn]
   ;
   ( match s with
   | Declared set -> set
   | Per_function map -> (
-    match Llair.Function.Map.find fn map with
+    match Llair.FuncName.Map.find fn map with
     | Some gs -> gs
     | None ->
         fail
           "main analysis reached function %a that was not reached by \
            used-globals pre-analysis "
-          Llair.Function.pp fn () ) )
+          Llair.FuncName.pp fn () ) )
   |>
   [%Dbg.retn fun {pf} r -> pf "%a" Llair.Global.Set.pp r]

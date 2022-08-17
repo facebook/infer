@@ -258,6 +258,8 @@ module Name : sig
 
   module Map : PrettyPrintable.PPMap with type key = t
 
+  module Hash : Caml.Hashtbl.S with type key = t
+
   module Normalizer : HashNormalizer.S with type t = t
 end
 
@@ -270,6 +272,9 @@ val equal_name : name -> name -> bool
 
 val equal_ignore_quals : t -> t -> bool
 (** Equality for types, but ignoring quals in it. *)
+
+val compatible_match : t -> t -> bool
+(** [compatible_match t1 t2] checks whether t1 can be converted into t2 *)
 
 val pp_full : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type with all the details. *)

@@ -15,13 +15,12 @@ type t = Procdesc.t Procname.Hash.t
 
 let create () = Procname.Hash.create 16
 
-let iter_over_sorted_procs cfg ~f =
+let get_sorted_procs cfg =
   let compare_proc_desc_by_proc_name pdesc1 pdesc2 =
     Procname.compare (Procdesc.get_proc_name pdesc1) (Procdesc.get_proc_name pdesc2)
   in
   Procname.Hash.fold (fun _ pdesc acc -> pdesc :: acc) cfg []
   |> List.sort ~compare:compare_proc_desc_by_proc_name
-  |> List.iter ~f
 
 
 let get_all_defined_proc_names cfg =
@@ -40,7 +39,9 @@ let create_proc_desc cfg (proc_attributes : ProcAttributes.t) =
   pdesc
 
 
-let iter_sorted cfg ~f = iter_over_sorted_procs cfg ~f
+let iter_sorted cfg ~f = get_sorted_procs cfg |> List.iter ~f
+
+let fold_sorted cfg ~init ~f = get_sorted_procs cfg |> List.fold ~init ~f
 
 let store source_file cfg =
   let save_proc _ proc_desc =
@@ -51,12 +52,12 @@ let store source_file cfg =
       {attributes with loc= loc'; translation_unit= source_file}
     in
     Procdesc.set_attributes proc_desc attributes' ;
-    Attributes.store ~proc_desc:(Some proc_desc) attributes'
+    Attributes.store ~proc_desc:(Option.some_if attributes.is_defined proc_desc) attributes'
   in
   Procname.Hash.iter save_proc cfg
 
 
 let pp_proc_signatures fmt cfg =
   F.fprintf fmt "@[<v>METHOD SIGNATURES@;" ;
-  iter_over_sorted_procs ~f:(Procdesc.pp_signature fmt) cfg ;
+  iter_sorted ~f:(Procdesc.pp_signature fmt) cfg ;
   F.fprintf fmt "@]"

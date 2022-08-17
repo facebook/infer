@@ -7,6 +7,5 @@ depends: [
   "ocp-indent"
   "odig"
   "patdiff"
-  "tuareg"
   "user-setup"
 ]

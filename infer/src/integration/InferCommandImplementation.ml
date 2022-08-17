@@ -55,7 +55,7 @@ let debug () =
       else
         L.result "%a"
           Config.(
-            Procedures.pp_all ~filter ~proc_name:procedures_name ~attr_kind:procedures_definedness
+            Procedures.pp_all ~filter ~proc_name:procedures_name ~defined:procedures_definedness
               ~source_file:procedures_source_file ~proc_attributes:procedures_attributes
               ~proc_cfg:procedures_cfg)
           () ) ;

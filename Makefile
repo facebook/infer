@@ -20,7 +20,6 @@ BUILD_SYSTEMS_TESTS += \
   annotation-reachability-sources-override \
   assembly \
   backtrack_level \
-  ck_imports \
   clang_compilation_db_escaped clang_compilation_db_relpath \
   clang_multiple_files \
   clang_translation \
@@ -35,7 +34,6 @@ BUILD_SYSTEMS_TESTS += \
   duplicate_symbols \
   fail_on_issue \
   j1 \
-  linters \
   project_root_rel \
   pulse_messages \
   reactive \
@@ -66,8 +64,6 @@ DIRECT_TESTS += \
   cpp_frontend \
   cpp_frontend-17 \
   cpp_impurity \
-  cpp_linters \
-  cpp_linters-for-test-only \
   cpp_liveness \
   cpp_performance \
   cpp_performance-11 \
@@ -118,9 +114,6 @@ DIRECT_TESTS += \
   objc_bufferoverrun \
   objc_biabduction \
   objc_frontend \
-  objc_linters \
-  objc_linters-def-folder \
-  objc_linters-for-test-only \
   objc_liveness \
   objc_parameter-not-null-checked \
   objc_performance \
@@ -131,8 +124,6 @@ DIRECT_TESTS += \
   objc_uninit \
   objcpp_biabduction \
   objcpp_frontend \
-  objcpp_linters \
-  objcpp_linters-for-test-only \
   objcpp_liveness \
   objcpp_pulse \
   objcpp_racerd \
@@ -171,6 +162,12 @@ BUILD_SYSTEMS_TESTS += rebar3
 endif
 endif # BUILD_ERLANG_ANALYZERS
 
+ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS),Linux+yes)
+ifneq ($(HACKC),no)
+DIRECT_TESTS += hack_capture
+endif
+endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
+
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   differential_interesting_paths_filter \
@@ -197,6 +194,7 @@ DIRECT_TESTS += \
   java_biabduction \
   java_bufferoverrun \
   java_checkers \
+  java_datalog \
   java_hoisting \
   java_hoistingExpensive \
   java_impurity \
@@ -212,10 +210,12 @@ DIRECT_TESTS += \
   java_purity \
   java_quandary \
   java_racerd \
+  java_sil \
   java_starvation \
   java_starvation-dedup \
   java_starvation-whole-program \
   java_topl \
+  sil_parsing \
 
 ifneq ($(KOTLINC), no)
 DIRECT_TESTS += \
@@ -470,8 +470,7 @@ clang_plugin: clang_setup
 	  SDKPATH=$(XCODE_ISYSROOT) \
 	)
 	$(QUIET)$(call silent_on_success,Building clang plugin OCaml interface,\
-	$(MAKE) -C $(FCP_DIR)/clang-ocaml all \
-          build/clang_ast_proj.ml build/clang_ast_proj.mli \
+	$(MAKE) -C $(FCP_DIR)/clang-ocaml build/clang_ast_proj.ml build/clang_ast_proj.mli \
 	  CC=$(CC) CXX=$(CXX) \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
@@ -931,15 +930,21 @@ OPAM_DEV_DEPS += tuareg
 endif
 
 .PHONY: devsetup
-devsetup: Makefile.autoconf
+devsetup:
 	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
 ifeq ($(OPAM_PIN_OCAMLFORMAT),yes)
 	$(QUIET)$(call silent_on_success,pinning ocamlformat,\
 	  OPAMSWITCH=$(OPAMSWITCH); \
-	  $(OPAM) pin add ocamlformat.0.19.0 'git+https://github.com/ocaml-ppx/ocamlformat#nebuchadnezzar' --yes)
+	  $(OPAM) pin add $$(cat "$(ABSOLUTE_ROOT_DIR)"/opam/ocamlformat) --yes --no-action)
+	$(QUIET)$(call silent_on_success,installing ocamlformat dependencies,\
+	  OPAMSWITCH=$(OPAMSWITCH); \
+	  $(OPAM) install --deps-only --locked --yes opam/ocamlformat.opam.locked)
+	$(QUIET)$(call silent_on_success,installing ocamlformat,\
+	  OPAMSWITCH=$(OPAMSWITCH); \
+	  $(OPAM) install ocamlformat --yes)
 endif
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
-	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes user-setup $(OPAM_DEV_DEPS))
+	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-depext user-setup $(OPAM_DEV_DEPS))
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
 	  echo '$(TERM_INFO)*** Installing GNU sed$(TERM_RESET)' >&2; \
 	  brew install gnu-sed; \

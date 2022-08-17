@@ -328,8 +328,6 @@ module Bound = struct
 
   let of_sym : SymLinear.t -> t = fun s -> Linear (Z.zero, s)
 
-  let of_foreign_id id = of_sym (SymLinear.singleton_one (Symb.Symbol.of_foreign_id id))
-
   let of_path path_of_partial make_symbol ~unsigned ?non_int partial =
     let s = make_symbol ~unsigned ?non_int (path_of_partial partial) in
     of_sym (SymLinear.singleton_one s)
@@ -349,8 +347,7 @@ module Bound = struct
 
   let is_path_of ~f = function
     | Linear (n, se) when Z.(equal n zero) ->
-        Option.value_map (SymLinear.get_one_symbol_opt se) ~default:false ~f:(fun s ->
-            f (Symb.Symbol.path s) )
+        Option.exists (SymLinear.get_one_symbol_opt se) ~f:(fun s -> f (Symb.Symbol.path s))
     | _ ->
         false
 
@@ -499,9 +496,9 @@ module Bound = struct
         false
 
 
-  let le_opt1 le opt_n m = Option.value_map opt_n ~default:false ~f:(fun n -> le n m)
+  let le_opt1 le opt_n m = Option.exists opt_n ~f:(fun n -> le n m)
 
-  let le_opt2 le n opt_m = Option.value_map opt_m ~default:false ~f:(fun m -> le n m)
+  let le_opt2 le n opt_m = Option.exists opt_m ~f:(fun m -> le n m)
 
   let rec le : t -> t -> bool =
    fun x y ->

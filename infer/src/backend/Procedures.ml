@@ -59,9 +59,15 @@ let select_proc_names_interactive ~filter =
       ask_user_input ()
 
 
-let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file_cond
-    ~proc_attributes ~proc_cfg fmt () =
+let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_cond ~proc_attributes
+    ~proc_cfg fmt () =
   let db = ResultsDatabase.get_database () in
+  let deserialize_bool_int = function
+    | Sqlite3.Data.INT int64 -> (
+      match Int64.to_int_exn int64 with 0 -> false | _ -> true )
+    | _ ->
+        L.die InternalError "deserialize_int"
+  in
   let pp_if ?(new_line = false) condition title pp fmt x =
     if condition then (
       if new_line then F.fprintf fmt "@[<v2>" else F.fprintf fmt "@[<h>" ;
@@ -87,8 +93,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
       source_file
       (pp_if proc_name_cond "proc_name" Procname.pp)
       proc_name
-      (pp_column_if stmt attr_kind "attribute_kind" Attributes.deserialize_attributes_kind
-         Attributes.pp_attributes_kind )
+      (pp_column_if stmt defined "defined" deserialize_bool_int Bool.pp)
       2
       (pp_column_if stmt ~new_line:true proc_attributes "attributes"
          ProcAttributes.SQLite.deserialize ProcAttributes.pp )
@@ -104,7 +109,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
        SELECT
          proc_name,
          proc_uid,
-         attr_kind,
+         cfg IS NOT NULL,
          source_file,
          proc_attributes,
          cfg

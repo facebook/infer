@@ -77,7 +77,7 @@ let rec apron_typ_of_llair_typ : Llair.Typ.t -> Texpr1.typ option = function
 
 let rec apron_texpr_of_llair_exp exp q =
   match (exp : Llair.Exp.t) with
-  | Reg {name} | Global {name} | Function {name} ->
+  | Reg {name} | Global {name} | FuncName {name} ->
       Some (Texpr1.Var (apron_var_of_name name))
   | Integer {data} -> Some (Texpr1.Cst (Coeff.s_of_int (Z.to_int data)))
   | Float {data} -> (
@@ -167,6 +167,7 @@ let assign reg exp q =
   |>
   [%Dbg.retn fun {pf} r -> pf "{%a}" pp r]
 
+let is_unsat _ = false
 let resolve_int _ _ _ = []
 
 (** block if [e] is known to be false; skip otherwise *)
@@ -212,8 +213,6 @@ let exec_inst tid i q =
     ->
       Ok (exec_kill tid reg q)
   | Builtin {reg= None; _} -> Ok q
-
-let enter_scope _ _ q = q
 
 type from_call = {areturn: Llair.Reg.t option; caller_q: t}
 [@@deriving sexp_of]
@@ -296,7 +295,7 @@ let call ~summaries _ ?child:_ ~globals:_ ~actuals ~areturn ~formals
     in
     (q''', {areturn; caller_q= q})
 
-let dnf q = Set.of_ q
+let dnf q = Iter.singleton q
 let resolve_callee _ _ _ _ = []
 
 type summary = t

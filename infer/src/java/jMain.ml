@@ -29,6 +29,7 @@ let do_source_file program tenv source_basename package_opt source_file =
   L.(debug Capture Medium) "@\nfilename: %a (%s)@." SourceFile.pp source_file source_basename ;
   init_global_state source_file ;
   let cfg = JFrontend.compute_source_icfg program tenv source_basename package_opt source_file in
+  Option.iter Config.dump_textual ~f:(fun filename -> Textual.Module.from_java ~filename tenv cfg) ;
   store_icfg source_file cfg
 
 
@@ -81,9 +82,7 @@ let do_all_files sources program =
   let tenv = load_tenv () in
   let skip source_file =
     let is_path_matching path =
-      Option.value_map ~default:false
-        ~f:(fun re -> Str.string_match re path 0)
-        Config.skip_analysis_in_path
+      Option.exists ~f:(fun re -> Str.string_match re path 0) Config.skip_analysis_in_path
     in
     is_path_matching (SourceFile.to_rel_path source_file)
     || Inferconfig.skip_translation_matcher source_file Procname.empty_block

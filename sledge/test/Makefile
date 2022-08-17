@@ -19,7 +19,7 @@ SLEDGE_D_ARGS?=
 SLEDGE_A_ARGS?=-loop-bound 5 -switch-bound 3 -cct-schedule-points
 SLEDGE_S_ARGS?=
 SLEDGE_R_ARGS?=
-SLEDGE_G_ARGS?=-trace Stop.on_reached_goal
+SLEDGE_G_ARGS?=-trace Stop.on_reached_goal+Stop.on_unreachable_goal
 
 # limits for each test run
 TIMEOUT?=300

@@ -46,11 +46,13 @@ module InstrNode : sig
 
   val compare : t -> t -> int
 
+  val equal : t -> t -> bool
+
   val to_instr : instr_index -> t -> t
 end = struct
   type instr_index = int [@@deriving compare, equal]
 
-  type t = Procdesc.Node.t * instr_index [@@deriving compare]
+  type t = Procdesc.Node.t * instr_index [@@deriving compare, equal]
 
   type id = Procdesc.Node.id * instr_index [@@deriving compare, equal]
 

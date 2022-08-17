@@ -1,0 +1,30 @@
+{
+  "pulse-taint-policies": [
+     { "short_description": "Data flows to from inits to sinks",
+       "taint_flows": [
+        { "source_kinds": ["InitSource"],
+          "sanitizer_kinds": ["SimpleSanitizer"],
+          "sink_kinds": ["SimpleSink"] }
+       ]
+    },
+    { "short_description": "Sensitive data flows",
+      "taint_flows": [
+      { "source_kinds": ["SimpleSource"],
+        "sanitizer_kinds": ["SimpleSanitizer"],
+        "sink_kinds": ["SensitiveSink"] }
+      ]
+    }
+  ],
+  "pulse-taint-sources": [
+      { "procedure": "__infer_taint_source", "kinds": ["SimpleSource"] },
+      { "allocation": "NSObject", "kinds": ["InitSource"]}
+  ],
+  "pulse-taint-sanitizers": [
+      { "procedure": "__infer_taint_sanitizer", "kinds": ["SimpleSanitizer"] }
+  ],
+  "pulse-taint-sinks": [
+      { "procedure": "__infer_taint_sink", "kinds": ["SimpleSink"] },
+      { "procedure_regex": ".*", "kinds": ["SensitiveSink"] }
+  ],
+  "pulse-taint-data-flow-kinds": ["InitSource","SensitiveSink"]
+}

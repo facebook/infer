@@ -49,78 +49,78 @@ digraph cfg {
 	
 
 	 "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" -> "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_2" ;
-"capture#A#instance.d411336575e4bf632a1828f5f5979726_1" [label="1: Start A.capture\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+"capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_1" [label="1: Start A.capture\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_1" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_4" ;
-"capture#A#instance.d411336575e4bf632a1828f5f5979726_2" [label="2: Exit A.capture \n  " color=yellow style=filled]
+	 "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_1" -> "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_4" ;
+"capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_2" [label="2: Exit A.capture \n  " color=yellow style=filled]
 	
 
-"capture#A#instance.d411336575e4bf632a1828f5f5979726_3" [label="3:  Compound statement \n   n$3=*&self:A* [line 45, column 4]\n  n$4=*n$3._b:B* [line 45, column 4]\n  n$0=*&self:A* [line 45, column 16]\n  n$5=_fun_B.sHandler:(n$4:B*,(_fun_objc_blockA.capture_1,([by value]n$0 &self:A*)):_fn_(*)) virtual [line 45, column 3]\n " shape="box"]
+"capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_3" [label="3:  Compound statement \n   n$3=*&self:A* [line 45, column 4]\n  n$4=*n$3._b:B* [line 45, column 4]\n  n$0=*&self:A* [line 45, column 16]\n  n$5=_fun_B.sHandler:(n$4:B*,(_fun_objc_blockA.capture_1,([by value]n$0 &self:A*)):_fn_(*)) virtual [line 45, column 3]\n " shape="box"]
 	
 
-	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_3" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_2" ;
-"capture#A#instance.d411336575e4bf632a1828f5f5979726_4" [label="4:  BinaryOperatorStmt: Assign \n   n$6=*&self:A* [line 44, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 44, column 8]\n  *n$6._b:B*=n$7 [line 44, column 3]\n " shape="box"]
+	 "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_3" -> "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_2" ;
+"capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_4" [label="4:  BinaryOperatorStmt: Assign \n   n$6=*&self:A* [line 44, column 3]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 44, column 8]\n  *n$6._b:B*=n$7 [line 44, column 3]\n " shape="box"]
 	
 
-	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_4" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_3" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
+	 "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_4" -> "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_3" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_1" [label="1: Start A.dealloc\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_1" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_1" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" [label="3:  Call dealloc \n   n$7=*&self:A* [line 50, column 1]\n  n$8=*n$7._data:D* [line 50, column 1]\n  n$9=_fun_D.dealloc(n$8:D*) [line 50, column 1]\n  n$10=*&self:A* [line 50, column 1]\n  n$11=*n$10._b:B* [line 50, column 1]\n  n$12=_fun_B.dealloc(n$11:B*) [line 50, column 1]\n " shape="box"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" [label="3:  Call dealloc \n   n$7=*&self:A* [line 50, column 1]\n  n$8=*n$7._data:D* [line 50, column 1]\n  n$9=_fun_D.dealloc(n$8:D*) [line 50, column 1]\n  n$10=*&self:A* [line 50, column 1]\n  n$11=*n$10._b:B* [line 50, column 1]\n  n$12=_fun_B.dealloc(n$11:B*) [line 50, column 1]\n " shape="box"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" [label="4:  Call dealloc \n   n$13=*&self:A* [line 38, column 1]\n  n$14=_fun___objc_get_ref_count(n$13:A*) [line 38, column 1]\n  n$15=_fun___objc_set_ref_count(n$13:A*,(n$14 - 1):unsigned int) [line 38, column 1]\n  n$16=_fun___objc_get_ref_count(n$13:A*) [line 38, column 1]\n " shape="box"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" [label="4:  Call dealloc \n   n$13=*&self:A* [line 38, column 1]\n  n$14=_fun___objc_get_ref_count(n$13:A*) [line 38, column 1]\n  n$15=_fun___objc_set_ref_count(n$13:A*,(n$14 - 1):unsigned int) [line 38, column 1]\n  n$16=_fun___objc_get_ref_count(n$13:A*) [line 38, column 1]\n " shape="box"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" ;
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_4" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$16 == 0), true); [line 38, column 1]\n " shape="invhouse"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" ;
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$16 == 0), true); [line 38, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_5" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_3" ;
-"dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$16 != 0), false); [line 38, column 1]\n " shape="invhouse"]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" ;
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$16 != 0), false); [line 38, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_6" -> "dealloc#A#instance.55ac864e91dcd5d484e8ab7d8eb94fcb_2" ;
-"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_1" [label="1: Start B.dealloc\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_1" [label="1: Start B.dealloc\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_1" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_4" ;
-"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
+	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_1" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" ;
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" [label="3:  Call dealloc \n   n$0=*&self:B* [line 31, column 1]\n  n$1=*n$0._d:D* [line 31, column 1]\n  n$2=_fun_D.dealloc(n$1:D*) [line 31, column 1]\n " shape="box"]
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" [label="3:  Call dealloc \n   n$0=*&self:B* [line 31, column 1]\n  n$1=*n$0._d:D* [line 31, column 1]\n  n$2=_fun_D.dealloc(n$1:D*) [line 31, column 1]\n " shape="box"]
 	
 
-	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" ;
-"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_4" [label="4:  Call dealloc \n   n$3=*&self:B* [line 21, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:B*) [line 21, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:B*,(n$4 - 1):unsigned int) [line 21, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:B*) [line 21, column 1]\n " shape="box"]
+	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" ;
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" [label="4:  Call dealloc \n   n$3=*&self:B* [line 21, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:B*) [line 21, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:B*,(n$4 - 1):unsigned int) [line 21, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:B*) [line 21, column 1]\n " shape="box"]
 	
 
-	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_4" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_5" ;
-	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_4" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_6" ;
-"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 21, column 1]\n " shape="invhouse"]
+	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" ;
+	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" ;
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 21, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_5" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_3" ;
-"dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 21, column 1]\n " shape="invhouse"]
+	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" ;
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 21, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_6" -> "dealloc#B#instance.8757740e0d47129962d40fbccbdf4d3f_2" ;
-"sHandler:#B#instance.590685250eb38eaab242405cd45c572b_1" [label="1: Start B.sHandler:\nFormals:  self:B* h:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" ;
+"sHandler:#B#[instance].2c9d8ca3b6059922f95e9a3218ee07e2_1" [label="1: Start B.sHandler:\nFormals:  self:B* h:_fn_(*)\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_1" -> "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_3" ;
-"sHandler:#B#instance.590685250eb38eaab242405cd45c572b_2" [label="2: Exit B.sHandler: \n  " color=yellow style=filled]
+	 "sHandler:#B#[instance].2c9d8ca3b6059922f95e9a3218ee07e2_1" -> "sHandler:#B#[instance].2c9d8ca3b6059922f95e9a3218ee07e2_3" ;
+"sHandler:#B#[instance].2c9d8ca3b6059922f95e9a3218ee07e2_2" [label="2: Exit B.sHandler: \n  " color=yellow style=filled]
 	
 
-"sHandler:#B#instance.590685250eb38eaab242405cd45c572b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:B* [line 28, column 3]\n  n$1=*&h:_fn_(*) [line 28, column 14]\n  *n$0._h:_fn_(*)=n$1 [line 28, column 3]\n " shape="box"]
+"sHandler:#B#[instance].2c9d8ca3b6059922f95e9a3218ee07e2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:B* [line 28, column 3]\n  n$1=*&h:_fn_(*) [line 28, column 14]\n  *n$0._h:_fn_(*)=n$1 [line 28, column 3]\n " shape="box"]
 	
 
-	 "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_3" -> "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_2" ;
+	 "sHandler:#B#[instance].2c9d8ca3b6059922f95e9a3218ee07e2_3" -> "sHandler:#B#[instance].2c9d8ca3b6059922f95e9a3218ee07e2_2" ;
 }

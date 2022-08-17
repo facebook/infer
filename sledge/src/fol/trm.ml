@@ -52,6 +52,33 @@ module Arith0 = Arithmetic.Make (Trm2)
 module Trm3 = struct
   include Trm2
 
+  include struct
+    let bitwidth = Stdlib.Sys.int_size
+
+    (** number of high bits used to store the segment *)
+    let hi = ((bitwidth + 1) / 4) - 1
+
+    (** number of low bits used to store the identifier *)
+    let lo = bitwidth - hi
+
+    (** test if n is non-negative and fits in the given number of bits *)
+    let fits n bits =
+      if 0 > n then fail "%i is negative" n () ;
+      if n > 1 lsl bits then fail "%i does not fit in %i bits" n bits ()
+
+    let encode_id m n =
+      fits m (hi - 1) ;
+      fits n lo ;
+      ((m lsl lo) lor n) - max_int
+
+    let decode_id i =
+      assert (i < 0) ;
+      let i = i + max_int in
+      let m = i lsr lo in
+      let n = (i lsl hi) lsr hi in
+      (m, n)
+  end
+
   (* nul-terminated string value represented by a concatenation *)
   let string_of_concat xs =
     let exception Not_a_string in
@@ -66,7 +93,7 @@ module Trm3 = struct
              | {siz= Z o; seq= Z c} when Z.equal Z.one o ->
                  Char.of_int_exn (Z.to_int c)
              | _ -> raise_notrace Not_a_string ) )
-    with _ -> None
+    with Not_a_string | Z.Overflow | Invalid_argument _ -> None
 
   let rec ppx strength fs trm =
     let rec pp fs trm =
@@ -78,7 +105,9 @@ module Trm3 = struct
       match trm with
       | Var {id; name} -> (
           if id < 0 then
-            Dbg.pp_styled `Bold "%%%s!%i" fs name (id + Int.max_int)
+            let m, n = decode_id id in
+            if m = 0 then Dbg.pp_styled `Bold "%%%s!%i" fs name n
+            else Dbg.pp_styled `Bold "%%%s!%i_%i" fs name n m
           else
             match strength trm with
             | None -> Format.fprintf fs "%%%s_%i" name id
@@ -156,31 +185,167 @@ module Var = struct
       let ppx strength vs = pp_full (ppx strength) vs
 
       let pp_xs fs xs =
-        if not (is_empty xs) then
-          Format.fprintf fs "@<2>∃ @[%a@] .@;<1 2>" pp xs
+        if not (is_empty xs) then Format.fprintf fs "@<2>∃ @[%a@] .@;" pp xs
     end
 
     module Map = Map
 
-    let fresh name ~wrt =
-      let max =
-        match Set.max_elt wrt with None -> 0 | Some m -> max 0 (id m)
-      in
-      let x' = make ~id:(max + 1) ~name in
-      (x', Set.add x' wrt)
-
-    let freshen v ~wrt = fresh (name v) ~wrt
-
-    let identified ~name ~id =
-      assert (id > 0) ;
-      make ~id:(id - Int.max_int) ~name
-
-    let of_ v = v |> check invariant
+    let identified ~name m n = make ~id:(encode_id m n) ~name
     let of_trm = function Var _ as v -> Some v | _ -> None
   end
 
   include V
-  module Subst = Subst.Make (V)
+
+  module Subst = struct
+    type t = V.t Map.t [@@deriving compare, equal, sexp_of]
+
+    let t_of_sexp = Map.t_of_sexp V.t_of_sexp
+    let pp = Map.pp V.pp V.pp
+
+    let invariant s =
+      let@ () = Invariant.invariant [%here] s [%sexp_of: t] in
+      let domain, range =
+        Map.fold s (Set.empty, Set.empty)
+          ~f:(fun ~key ~data (domain, range) ->
+            (* substs are injective *)
+            assert (not (Set.mem data range)) ;
+            (Set.add key domain, Set.add data range) )
+      in
+      assert (Set.disjoint domain range)
+
+    let empty = Map.empty
+    let is_empty = Map.is_empty
+    let fold sub z ~f = Map.fold ~f:(fun ~key ~data -> f key data) sub z
+    let domain sub = Set.of_iter (Map.keys sub)
+    let range sub = Set.of_iter (Map.values sub)
+
+    let invert sub =
+      Map.fold sub empty ~f:(fun ~key ~data sub' ->
+          Map.add_exn ~key:data ~data:key sub' )
+      |> check invariant
+
+    let restrict_dom sub vs =
+      Map.fold sub sub ~f:(fun ~key ~data:_ z ->
+          if not (Set.mem key vs) then z else Map.remove key z )
+
+    let apply sub v = Map.find v sub |> Option.value ~default:v
+  end
+
+  module Context = struct
+    type t = {voc: int; xs: Set.t} [@@deriving compare, equal, sexp]
+
+    let pp_voc ppf vx = [%Dbg.fprintf ppf "@<2>∀ %i .@ " vx.voc]
+    let pp_diff ppf (vx, vx') = Set.pp_xs ppf (Set.diff vx'.xs vx.xs)
+
+    (* Constructors *)
+
+    let empty = {voc= 0; xs= Set.empty}
+
+    let of_vars vs =
+      let voc = match Set.max_elt vs with None -> 0 | Some v -> id v in
+      {voc; xs= Set.empty}
+
+    let with_xs xs vx = {vx with xs}
+
+    let merge vx1 vx2 =
+      let {voc= voc1; xs= xs1} = vx1 in
+      let {voc= voc2; xs= xs2} = vx2 in
+      let voc = Int.max voc1 voc2 in
+      let xs = Set.union xs1 xs2 in
+      {voc; xs}
+
+    (* Queries *)
+
+    let xs vx = vx.xs
+
+    let contains vx vs =
+      match Set.max_elt vs with None -> true | Some v -> id v <= vx.voc
+
+    let diff_inter vs vx =
+      let var = Var {id= vx.voc; name= ""} in
+      let clash, present, no_clash = Set.split var vs in
+      if not present then (no_clash, clash)
+      else (no_clash, Set.add (Set.find var vs) clash)
+
+    let diff vs vx =
+      let var = Var {id= vx.voc; name= ""} in
+      let _, _, no_clash = Set.split var vs in
+      no_clash
+
+    let inter vs vx = snd (diff_inter vs vx)
+  end
+
+  module Fresh = struct
+    type 'a m = Context.t ref -> 'a
+
+    let gen s m =
+      let r = ref s in
+      let a = m r in
+      (a, !r)
+
+    let gen_ s m = m (ref s)
+
+    module Import = struct
+      module Dbg = struct
+        include Dbg
+
+        let dbgs ?call =
+          let thunk f r =
+            let a, s = f !r in
+            r := s ;
+            a
+          in
+          let force m s = gen s m in
+          dbgs thunk force ?call
+      end
+    end
+
+    open Import
+
+    (* Actions *)
+
+    let var_ ~existential name r =
+      let {Context.voc; xs} = !r in
+      let voc = voc + 1 in
+      let x' = make ~id:voc ~name in
+      let xs = if existential then Set.add x' xs else xs in
+      r := {voc; xs} ;
+      x'
+
+    let var name r = var_ ~existential:true name r
+
+    let rename ?(existential = true) x sub r =
+      let x' = var_ ~existential (name x) r in
+      Map.add_exn ~key:x ~data:x' sub
+
+    let subst dom =
+      [%dbgs]
+        ~call:(fun {pf} -> pf "%a" Set.pp dom)
+        ~retn:(fun {pf} (s, vxd) ->
+          pf "%a%a" Context.pp_diff vxd Subst.pp s ;
+          Subst.invariant s )
+      @@ fun r -> Set.fold dom Subst.empty ~f:(fun x sub -> rename x sub r)
+
+    (* Convenience wrappers *)
+
+    let reset_xs r =
+      let vx : Context.t = !r in
+      r := {vx with xs= Set.empty} ;
+      vx
+
+    let extract_xs r =
+      let vx = reset_xs r in
+      vx.xs
+
+    let inter_xs xs r =
+      let vx : Context.t = !r in
+      r := {vx with xs= Set.inter vx.xs xs}
+
+    let fold_iter m init ~f r =
+      Iter.fold (m r) init ~f:(fun (e, vx) z ->
+          r := Context.merge vx !r ;
+          f e z )
+  end
 end
 
 (* Add definitions needed for arithmetic embedding into terms *)
@@ -203,7 +368,7 @@ module Trm = struct
 
   let rec iter_vars e ~f =
     match e with
-    | Var _ as v -> f (Var.of_ v)
+    | Var _ as v -> f v
     | Z _ | Q _ -> ()
     | Arith a -> Iter.iter ~f:(iter_vars ~f) (Arith0.trms a)
     | Splat x -> iter_vars ~f x
@@ -587,7 +752,7 @@ let map_sized ({seq; siz} as na) ~f =
 
 let rec map_vars e ~f =
   match e with
-  | Var _ as v -> (f (Var.of_ v) : Var.t :> t)
+  | Var _ as v -> (f v : Var.t :> t)
   | Z _ | Q _ -> e
   | Arith a -> map1 (Arith.map ~f:(map_vars ~f)) e _Arith a
   | Splat x -> map1 (map_vars ~f) e splat x

@@ -84,7 +84,7 @@ module ScopeTbl = HashTable.Make (struct
   include Poly
 end)
 
-let scope_tbl : (int ref * int String.Tbl.t) ScopeTbl.t =
+let scope_tbl : (int ref * int String.Tbl.t Lazy.t) ScopeTbl.t =
   ScopeTbl.create ~size:32_768 ()
 
 let realpath_tbl = String.Tbl.create ()
@@ -95,6 +95,100 @@ let get_debug_loc_directory llv =
   else
     String.Tbl.find_or_add realpath_tbl dir ~default:(fun () ->
         try Unix.realpath dir with Unix.Unix_error _ -> dir )
+
+module StringS = HashSet.Make (String)
+
+(** Modeling functions by other functions. Functions starting with the
+    __sledge_ prefix are model functions. If both foo and __sledge_foo
+    exist, then foo would not be translated and the llair name of
+    __sledge_foo appearing in the symbols table would be foo. As of now,
+    there is no attempt to check that both foo and __sledge_foo are
+    type-compatible. *)
+module Model : sig
+  val modelee : string -> string option
+  (** [modelee name] is [Some modelee_name] if [name] is the name of a model
+      of [modelee_name], and [None] if [name] is not the name of a model. *)
+
+  val has_model : string -> bool
+  (** [has_model name] holds if there is a model function for [name]. *)
+
+  val init : Llvm.llmodule -> unit
+  (** Initialize the module state. Must be called before [has_model]. *)
+end = struct
+  let modeled = StringS.create 0
+  let model_prefix = "__sledge_"
+
+  (* Scans name from [from_idx] to [to_idx], expecting to encounter (len,
+     id) blocks (as a concatenation of the respective strings), and returns
+     the len component corresponding to the pair where id is at [to_idx]
+     (plus the accumulator [idlen]). If the scan fails, returns -1. *)
+  let rec extract_model_name_len name ~from_idx ~to_idx ~idlen =
+    let c = String.get name from_idx in
+    let is_digit = Char.('0' <= c && c <= '9') in
+    if from_idx > to_idx then -1
+    else if is_digit then
+      (* Continue by accumulating the length of the current block. *)
+      extract_model_name_len name ~from_idx:(from_idx + 1) ~to_idx
+        ~idlen:((idlen * 10) + Char.to_int c - Char.to_int '0')
+    else if from_idx == to_idx then idlen
+    else
+      (* Move to the next block. *)
+      extract_model_name_len name ~from_idx:(from_idx + idlen) ~to_idx
+        ~idlen:0
+
+  (* This is specific to the mangling schemes of Clang and GCC. We want to
+     replace, for example, 12__sledge_foo by 3foo. *)
+  let modelee name =
+    let mangled_symbol_prefix = "_ZN" in
+    let model_prefix_idx = String.find ~sub:model_prefix name in
+    if
+      model_prefix_idx == -1
+      || not (String.prefix ~pre:mangled_symbol_prefix name)
+    then None
+    else
+      (* 12 in our example. *)
+      let model_name_len =
+        extract_model_name_len name
+          ~from_idx:(String.length mangled_symbol_prefix)
+          ~to_idx:model_prefix_idx ~idlen:0
+      in
+      if model_name_len == -1 then (
+        warn "Unable to transform %s to modelee!" name () ;
+        None (* __sledge_foo in our example. *) )
+      else
+        let model_name =
+          String.sub name ~pos:model_prefix_idx ~len:model_name_len
+        in
+        (* 12__sledge_foo in our example. *)
+        let mangled_model_name =
+          Printf.sprintf "%d%s" model_name_len model_name
+        in
+        (* foo in our example. *)
+        let modelee_func_name =
+          String.replace ~which:`Left ~sub:model_prefix ~by:String.empty
+            model_name
+        in
+        (* 3foo in our example. *)
+        let mangled_modelee_name =
+          Printf.sprintf "%d%s"
+            (String.length modelee_func_name)
+            modelee_func_name
+        in
+        let result =
+          String.replace ~which:`Left ~sub:mangled_model_name
+            ~by:mangled_modelee_name name
+        in
+        Some result
+
+  let has_model = StringS.mem modeled
+
+  let init llmodule =
+    Llvm.iter_functions
+      (fun llf ->
+        modelee (Llvm.value_name llf)
+        |> Option.iter ~f:(StringS.insert modeled) )
+      llmodule
+end
 
 open struct
   open struct
@@ -121,89 +215,77 @@ open struct
 
     let find_scope scope =
       ScopeTbl.find_or_add scope_tbl scope ~default:(fun () ->
-          (ref 0, String.Tbl.create ()) )
+          (ref 0, lazy (String.Tbl.create ())) )
 
-    let add_sym llv loc =
-      let maybe_scope =
-        match Llvm.classify_value llv with
-        | Argument -> Some (`Fun (Llvm.param_parent llv))
-        | BasicBlock ->
-            Some (`Fun (Llvm.block_parent (Llvm.block_of_value llv)))
-        | Instruction _ ->
-            Some (`Fun (Llvm.block_parent (Llvm.instr_parent llv)))
-        | GlobalVariable | Function -> Some (`Mod (Llvm.global_parent llv))
-        | UndefValue -> None
-        | ConstantExpr -> None
-        | ConstantPointerNull -> None
-        | _ ->
-            warn "Unexpected type of llv, might crash: %a" pp_llvalue llv () ;
-            Some (`Mod (Llvm.global_parent llv))
-      in
-      match maybe_scope with
-      | None -> ()
-      | Some scope -> (
-        match SymTbl.find sym_tbl llv with
-        | Some (name, id, loc0) ->
-            if Loc.equal loc0 Loc.none then
-              SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
-        | None ->
-            let name =
-              if Poly.(Llvm.classify_type (Llvm.type_of llv) = Void) then
-                if Poly.(Llvm.classify_value llv = Instruction Call) then (
-                  (* LLVM does not give unique names to the result of
-                     void-returning function calls. We need unique names for
-                     these as they determine the labels of newly-created
-                     return blocks. *)
-                  let next, void_tbl = find_scope scope in
-                  let fname =
-                    match
-                      Llvm.(value_name (operand llv (num_operands llv - 1)))
-                    with
-                    | "" -> Int.to_string (!next - 1)
-                    | s -> s
-                  in
-                  match String.Tbl.find void_tbl fname with
-                  | None ->
-                      String.Tbl.set void_tbl ~key:fname ~data:1 ;
-                      fname ^ ".void"
-                  | Some count ->
-                      String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
-                      String.concat ~sep:""
-                        [fname; ".void."; Int.to_string count] )
-                else ""
-              else
-                match Llvm.value_name llv with
-                | "" ->
-                    (* anonymous values take the next SSA name *)
-                    let next, _ = find_scope scope in
-                    let name = !next in
-                    next := name + 1 ;
-                    Int.to_string name
-                | name -> (
-                  match Int.of_string name with
-                  | Some _ ->
-                      (* escape to avoid clash with names of anonymous
-                         values *)
-                      "\"" ^ name ^ "\""
-                  | None -> name )
-            in
-            let id = 1 + SymTbl.length sym_tbl in
-            SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc) )
+    let add_sym scope llv loc =
+      match SymTbl.find sym_tbl llv with
+      | Some (name, id, loc0) ->
+          if Loc.equal loc0 Loc.none then
+            SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
+      | None ->
+          let name =
+            if Poly.(Llvm.classify_type (Llvm.type_of llv) = Void) then
+              if Poly.(Llvm.classify_value llv = Instruction Call) then (
+                (* LLVM does not give unique names to the result of
+                   void-returning function calls. We need unique names for
+                   these as they determine the labels of newly-created
+                   return blocks. *)
+                let next, (lazy void_tbl) = find_scope scope in
+                let fname =
+                  match
+                    Llvm.(value_name (operand llv (num_operands llv - 1)))
+                  with
+                  | "" -> Int.to_string (!next - 1)
+                  | s -> s
+                in
+                match String.Tbl.find void_tbl fname with
+                | None ->
+                    String.Tbl.set void_tbl ~key:fname ~data:1 ;
+                    fname ^ ".void"
+                | Some count ->
+                    String.Tbl.set void_tbl ~key:fname ~data:(count + 1) ;
+                    String.concat ~sep:""
+                      [fname; ".void."; Int.to_string count] )
+              else ""
+            else
+              match Llvm.value_name llv with
+              | "" ->
+                  (* anonymous values take the next SSA name *)
+                  let next, _ = find_scope scope in
+                  let name = !next in
+                  next := name + 1 ;
+                  Int.to_string name
+              | name -> (
+                match Int.of_string name with
+                | Some _ ->
+                    (* escape to avoid clash with names of anonymous
+                       values *)
+                    "\"" ^ name ^ "\""
+                | None ->
+                    (* Associate model functions with the names of the
+                       functions they are modeling. *)
+                    Option.value (Model.modelee name) ~default:name )
+          in
+          let id = 1 + SymTbl.length sym_tbl in
+          SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
   end
 
   let scan_names_and_locs : Llvm.llmodule -> unit =
    fun m ->
     assert (!sym_count = 0) ;
-    let scan_global g = add_sym g (loc_of_global g) in
+    let scan_global g =
+      add_sym (`Mod (Llvm.global_parent g)) g (loc_of_global g)
+    in
     let scan_instr i =
       let loc = loc_of_instr i in
-      add_sym i loc ;
+      let scope = `Fun (Llvm.block_parent (Llvm.instr_parent i)) in
+      add_sym scope i loc ;
       match Llvm.instr_opcode i with
       | Call -> (
         match Llvm.(value_name (operand i (num_arg_operands i))) with
         | "llvm.dbg.declare" ->
             let md = Llvm.(get_mdnode_operands (operand i 0)) in
-            if not (Array.is_empty md) then add_sym md.(0) loc
+            if not (Array.is_empty md) then add_sym scope md.(0) loc
             else
               warn
                 "could not find variable for debug info at %a with \
@@ -213,12 +295,12 @@ open struct
       | _ -> ()
     in
     let scan_block b =
-      add_sym (Llvm.value_of_block b) Loc.none ;
+      add_sym (`Fun (Llvm.block_parent b)) (Llvm.value_of_block b) Loc.none ;
       Llvm.iter_instrs scan_instr b
     in
     let scan_function f =
-      Llvm.iter_params (fun prm -> add_sym prm Loc.none) f ;
-      add_sym f (loc_of_function f) ;
+      Llvm.iter_params (fun prm -> add_sym (`Fun f) prm Loc.none) f ;
+      add_sym (`Mod (Llvm.global_parent f)) f (loc_of_function f) ;
       Llvm.iter_blocks scan_block f
     in
     Llvm.iter_globals scan_global m ;
@@ -321,8 +403,12 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
             in
             Typ.struct_ ~name elts ~bits ~byts
       | Function -> fail "expected to be unsized: %a" pp_lltype llt ()
-      | Vector | X86_amx | ScalableVector ->
-          todo "vector types: %a" pp_lltype llt ()
+      | Vector ->
+          let elt = xlate_type x (Llvm.element_type llt) in
+          let len = Llvm.vector_size llt in
+          Typ.array ~elt ~len ~bits ~byts
+      | X86_amx | ScalableVector ->
+          todo "matrix / scalable vector types: %a" pp_lltype llt ()
       | Void | Label | Metadata | Token -> assert false
     else
       match Llvm.classify_type llt with
@@ -466,7 +552,7 @@ type backpatch =
   | IndirectBP of {typ: Typ.t; backpatch: candidates:func iarray -> unit}
 
 let calls_to_backpatch : backpatch list ref = ref []
-let rval_fns : Function.t list Typ.Tbl.t = Typ.Tbl.create ()
+let rval_fns : FuncName.t list Typ.Tbl.t = Typ.Tbl.create ()
 let func_tbl : Func.t String.Tbl.t = String.Tbl.create ()
 
 let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
@@ -511,9 +597,9 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t
         ([], Exp.reg (xlate_name x llv))
     | Function ->
         let typ = xlate_type x (Llvm.type_of llv) in
-        let fn = Function.mk typ (fst (find_name llv)) in
+        let fn = FuncName.mk typ (fst (find_name llv)) in
         Typ.Tbl.add_multi rval_fns ~key:typ ~data:fn ;
-        ([], Exp.function_ fn)
+        ([], Exp.funcname fn)
     | GlobalVariable -> ([], Exp.global (xlate_global x llv).name)
     | GlobalAlias -> xlate_value x (Llvm.operand llv 0)
     | ConstantInt -> ([], xlate_int x llv)
@@ -732,7 +818,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
           | _ -> fail "xlate_value: %a" pp_llvalue llv ()
         in
         let update_or_return elt ret =
-          match[@warning "p"] opcode with
+          match[@warning "-partial-match"] opcode with
           | InsertValue ->
               let pre, elt = Lazy.force elt in
               (pre0 @ pre, upd ~elt)
@@ -796,17 +882,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
             pf "%a %a" pp_prefix_exp pre_exp pp_lltype llt]
         in
         fst (xlate_indices (len - 1))
-  | ShuffleVector -> (
-      (* translate shufflevector <N x t> %x, _, <N x i32> zeroinitializer to
-         %x *)
-      let exp = xlate_value x (Llvm.operand llv 0) in
-      let exp_typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
-      let llmask = Llvm.operand llv 2 in
-      let mask_typ = xlate_type x (Llvm.type_of llmask) in
-      match (exp_typ, mask_typ) with
-      | Array {len= m}, Array {len= n} when m = n && Llvm.is_null llmask ->
-          exp
-      | _ -> todo "vector operations: %a" pp_llvalue llv () )
+  | ShuffleVector -> todo "vector operations: %a" pp_llvalue llv ()
   | Freeze -> xlate_value x (Llvm.operand llv 0)
   | Invalid | Ret | Br | Switch | IndirectBr | Invoke | Invalid2
    |Unreachable | Alloca | Load | Store | PHI | Call | CallBr | UserOp1
@@ -961,8 +1037,7 @@ let xlate_jump :
       let src_lbl = label_of_block (Llvm.instr_parent instr) in
       let lbl = src_lbl ^ ".jmp." ^ dst_lbl in
       let blk =
-        Block.mk ~lbl
-          ~cmnd:(IArray.of_array [|mov|])
+        Block.mk ~lbl ~cmnd:(IArray.of_array [|mov|])
           ~term:(Term.goto ~dst:jmp ~loc)
       in
       let blocks =
@@ -993,8 +1068,6 @@ let pp_code fs (insts, term, blocks) =
             Term.pp term )
     (fun fs -> if List.is_empty blocks then () else Format.fprintf fs "@\n")
     (List.pp "@ " Block.pp) blocks
-
-module StringS = HashSet.Make (String)
 
 let ignored_callees = StringS.create 0
 
@@ -1209,7 +1282,7 @@ let xlate_instr :
       let name_segs = String.split_on_char fname ~by:'.' in
       let skip msg =
         if StringS.add ignored_callees fname then
-          warn "ignoring uninterpreted %s %s" msg fname () ;
+          warn "ignoring uninterpreted %s %s at %a" msg fname Loc.pp loc () ;
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
@@ -1425,8 +1498,7 @@ let xlate_instr :
         in
         let lbl_i = lbl ^ "." ^ Int.to_string i in
         let blk =
-          Block.mk ~lbl:lbl_i
-            ~cmnd:(IArray.of_array [|mov|])
+          Block.mk ~lbl:lbl_i ~cmnd:(IArray.of_array [|mov|])
             ~term:(Term.goto ~dst:(Jump.mk lbl) ~loc)
         in
         (Jump.mk lbl_i, blk :: rev_blocks)
@@ -1531,7 +1603,8 @@ let xlate_instr :
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
   | CallBr -> todo "inline asm: %a" pp_llvalue instr ()
-  | PHI | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
+  | PHI -> fail "unexpected phi node" ()
+  | Invalid | Invalid2 | UserOp1 | UserOp2 -> assert false
 
 let rec xlate_instrs : pop_thunk -> x -> _ Llvm.llpos -> code =
  fun pop x -> function
@@ -1568,11 +1641,11 @@ let xlate_block : pop_thunk -> x -> Llvm.llbasicblock -> Llair.block list =
 
 let report_undefined func name =
   if Option.is_some (Llvm.use_begin func) then
-    [%Dbg.printf "@\n@[undefined function: %a@]" Function.pp name]
+    [%Dbg.printf "@\n@[undefined function: %a@]" FuncName.pp name]
 
 let xlate_function_decl x llfunc typ k =
   let loc = find_loc llfunc in
-  let name = Function.mk typ (fst (find_name llfunc)) in
+  let name = FuncName.mk typ (fst (find_name llfunc)) in
   let formals =
     Iter.from_iter (fun f -> Llvm.iter_params f llfunc)
     |> Iter.map ~f:(xlate_name x)
@@ -1602,7 +1675,7 @@ let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
   ( match Llvm.block_begin llf with
   | Before entry_blk ->
       let pop = pop_stack_frame_of_function x llf entry_blk in
-      let[@warning "p"] (entry_block :: entry_blocks) =
+      let[@warning "-partial-match"] (entry_block :: entry_blocks) =
         xlate_block pop x entry_blk
       in
       let entry =
@@ -1640,7 +1713,7 @@ let backpatch_calls x =
           in
           backpatch ~callee )
     | IndirectBP {typ; backpatch} ->
-        let resolve_func = Function.name >> String.Tbl.find_exn func_tbl in
+        let resolve_func = FuncName.name >> String.Tbl.find_exn func_tbl in
         let candidates =
           Typ.Tbl.fold rval_fns Iter.empty ~f:(fun ~key ~data acc ->
               if Typ.compatible_fnptr key typ then
@@ -1662,7 +1735,9 @@ let transform ~internalize ~preserve_fns ~opt_level ~size_level :
   let pm = Llvm.PassManager.create () in
   let should_preserve_fn =
     let fns = Config.find_list "entry-points" @ preserve_fns in
-    fun x -> List.exists ~f:(String.equal x) fns
+    fun x ->
+      List.exists ~f:(String.equal x) fns
+      || Option.is_some (Model.modelee x)
   in
   (* Apply "noinline" attribute to each function marked for preservation in
      [preserve_fns], suppressing optimizations that inline the function at
@@ -1673,12 +1748,12 @@ let transform ~internalize ~preserve_fns ~opt_level ~size_level :
     ~pred:should_preserve_fn llmodule ;
   if internalize then
     Llvm_ipo.add_internalize_predicate pm should_preserve_fn ;
-  Llvm_scalar_opts.add_memory_to_register_promotion pm ;
-  Llvm_scalar_opts.add_scalarizer pm ;
   let pmb = Llvm_passmgr_builder.create () in
   Llvm_passmgr_builder.set_opt_level opt_level pmb ;
   Llvm_passmgr_builder.set_size_level size_level pmb ;
   Llvm_passmgr_builder.populate_module_pass_manager pm pmb ;
+  Llvm_scalar_opts.add_scalarizer pm ;
+  Llvm_scalar_opts.add_memory_to_register_promotion pm ;
   Llvm_scalar_opts.add_unify_function_exit_nodes pm ;
   Llvm_scalar_opts.add_cfg_simplification pm ;
   Llvm.PassManager.run_module llmodule pm |> ignore ;
@@ -1758,6 +1833,7 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
     ~f:(Llvm_bitwriter.write_bitcode_file llmodule)
     dump_bitcode
   |> ignore ;
+  Model.init llmodule ;
   scan_names_and_locs llmodule ;
   let lldatalayout =
     Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule)
@@ -1782,17 +1858,18 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
           String.prefix name ~pre:"__llair_"
           || String.prefix name ~pre:"llvm."
           || Option.is_some (Intrinsic.of_name name)
+          || Model.has_model name
         then functions
         else
           let typ = xlate_type x (Llvm.type_of llf) in
           let func =
             try xlate_function x llf typ
             with Unimplemented feature ->
-              [%Dbg.info "Unimplemented feature %s in %s" feature name] ;
+              warn "Unimplemented feature %s in %s" feature name () ;
               xlate_function_decl x llf typ Func.mk_undefined
               $> Report.unimplemented feature
           in
-          String.Tbl.set func_tbl ~key:(Function.name func.name) ~data:func ;
+          String.Tbl.set func_tbl ~key:(FuncName.name func.name) ~data:func ;
           func :: functions )
       [] llmodule
   in

@@ -14,8 +14,6 @@ module NodeKey : sig
   type t
 
   val to_string : t -> string
-
-  val of_frontend_node_key : string -> t
 end
 
 (** node of the control flow graph *)
@@ -255,6 +253,9 @@ val get_formals : t -> (Mangled.t * Typ.t * Annot.Item.t) list
 val get_pvar_formals : t -> (Pvar.t * Typ.t) list
 (** Return pvar and type of formal parameters *)
 
+val get_passed_by_value_formals : t -> (Pvar.t * Typ.t) list
+(** Return pvar and type of formal parameters that are passed by reference *)
+
 val get_loc : t -> Location.t
 (** Return loc information for the procedure *)
 
@@ -273,24 +274,12 @@ val get_proc_name : t -> Procname.t
 val get_ret_type : t -> Typ.t
 (** Return the return type of the procedure and type string *)
 
-val has_added_return_param : t -> bool
-
-val is_ret_type_pod : t -> bool
-
 val get_ret_var : t -> Pvar.t
-
-val get_ret_param_var : t -> Pvar.t
-
-val get_ret_type_from_signature : t -> Typ.t
-(** Return the return type from method signature: if the procedure has added return parameter,
-    return its type *)
 
 val get_start_node : t -> Node.t
 
 val get_static_callees : t -> Procname.t list
 (** get a list of unique static callees excluding self *)
-
-val get_specialized_with_aliasing_info : t -> ProcAttributes.specialized_with_aliasing_info option
 
 val is_defined : t -> bool
 (** Return [true] iff the procedure is defined, and not just declared *)

@@ -158,7 +158,7 @@ module Call : sig
   include
     Common
       with type ('context, 'f, 'arg_payload) dispatcher =
-            'context -> Procname.t -> 'arg_payload FuncArg.t list -> 'f option
+        'context -> Procname.t -> 'arg_payload FuncArg.t list -> 'f option
 
   val merge_dispatchers :
        ('context, 'f, 'arg_payload) dispatcher

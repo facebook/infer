@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module Command = Core.Command
+module Command = struct
+  include Core.Command
+  include Command_unix
+end
+
 module Tbl = String.Tbl
 
 let read filename =
@@ -369,14 +373,14 @@ let write_html ranges rows chan =
         Printf.fprintf ppf
           "<td style=\"border-left: 2px solid #eee8d5\"; \
            align=\"right\">%s</td>\n"
-          Core_kernel.Byte_units.(to_string_short (of_megabytes w))
+          Core.Byte_units.(Short.to_string (of_megabytes w))
       in
       let nondelta ppf t =
         Printf.fprintf ppf "<td align=\"right\">%12.3f</td>\n" t
       in
       let nondelta_mem ppf w =
         Printf.fprintf ppf "<td align=\"right\">%s</td>\n"
-          Core_kernel.Byte_units.(to_string_short (of_megabytes w))
+          Core.Byte_units.(Short.to_string (of_megabytes w))
       in
       let delta max pct t ppf d =
         let r = 100. *. d /. t in
@@ -394,7 +398,7 @@ let write_html ranges rows chan =
           "<td align=\"right\" bgcolor=\"%s\">%s</td>\n\
            <td align=\"right\" bgcolor=\"%s\">%12.2fx</td>\n"
           (color max d)
-          Core_kernel.Byte_units.(to_string_short (of_megabytes d))
+          Core.Byte_units.(Short.to_string (of_megabytes d))
           (color pct r)
           (Base.Float.round_decimal ~decimal_digits:2 x)
       in
@@ -458,7 +462,7 @@ let write_html ranges rows chan =
             if
               List.exists ss ~f:(fun s ->
                   match (s : Report.status) with
-                  | Safe _ | Unsafe _ | Ok -> false
+                  | Safe _ | Unsafe _ | Reached_goal _ | Ok -> false
                   | _ -> true )
             then Printf.fprintf ppf " class=\"regress\"" ;
             Printf.fprintf ppf ">%s"
@@ -677,7 +681,15 @@ let cmp perf x y =
               |> fun o -> if o <> 0 then o else String.compare x.name y.name
           | Some _, None -> 1
           | None, Some _ -> -1
-          | None, None -> String.compare x.name y.name )
+          | None, None -> (
+            match (x.times, y.times) with
+            | Some xt, Some yt ->
+                -Float.(compare xt.utime yt.utime)
+                |> fun o ->
+                if o <> 0 then o else String.compare x.name y.name
+            | Some _, None -> 1
+            | None, Some _ -> -1
+            | None, None -> String.compare x.name y.name ) )
         | ( Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete)
           , Some (Safe _ | Unsafe _ | Ok | Unsound | Incomplete) ) -> (
           match (x.gcs_deltas, y.gcs_deltas) with
@@ -726,7 +738,7 @@ let generate_html perf ?baseline current output =
   let ranges = ranges rows in
   let rows = Iter.sort ~cmp:(cmp perf) rows in
   let rows = add_total rows in
-  Out_channel.with_file output ~f:(write_html ranges rows)
+  Out_channel.with_open_bin output (write_html ranges rows)
 
 let html_cmd =
   let open Command.Let_syntax in
@@ -784,7 +796,7 @@ let generate_status ?baseline current output =
   match output with
   | None -> write_status ?baseline rows Out_channel.stdout
   | Some output ->
-      Out_channel.with_file output ~f:(write_status ?baseline rows)
+      Out_channel.with_open_bin output (write_status ?baseline rows)
 
 let status_cmd =
   let open Command.Let_syntax in
@@ -818,7 +830,7 @@ let sort_tests baseline tests =
   Array.iter test_time ~f:(fun (test, _) ->
       Out_channel.output_string Out_channel.stdout test ;
       Out_channel.output_char Out_channel.stdout ' ' ) ;
-  Out_channel.newline Out_channel.stdout
+  Out_channel.output_char Out_channel.stdout '\n'
 
 let sort_cmd =
   let open Command.Let_syntax in

@@ -8,7 +8,7 @@
 open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 open PulseModelsImport
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
 
@@ -26,7 +26,7 @@ let delete_array deleted_arg : model =
 
 let new_ type_name : model =
  fun model_data astate ->
-  let<+> astate =
+  let<++> astate =
     (* Java and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
        builtin for [\[Class new\]]) *)
     if Procname.is_java @@ Procdesc.get_proc_name model_data.analysis_data.proc_desc then
@@ -41,7 +41,7 @@ let new_ type_name : model =
 (* TODO: actually allocate an array  *)
 let new_array type_name : model =
  fun model_data astate ->
-  let<+> astate =
+  let<++> astate =
     (* Java and C++ [new\[\]] share the same builtin *)
     if Procname.is_java @@ Procdesc.get_proc_name model_data.analysis_data.proc_desc then
       Basic.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new[]" model_data astate
@@ -98,10 +98,10 @@ module AtomicInteger = struct
 
 
   let arith_bop path prepost location event ret_id bop this operand astate =
-    let* astate, int_addr, (old_int, old_hist) = load_backing_int path location this astate in
+    let=* astate, int_addr, (old_int, old_hist) = load_backing_int path location this astate in
     let hist = Hist.add_event path event old_hist in
     let bop_addr = AbstractValue.mk_fresh () in
-    let* astate, bop_addr =
+    let+* astate, bop_addr =
       PulseArithmetic.eval_binop bop_addr bop (AbstractValueOperand old_int) operand astate
     in
     let+ astate =
@@ -114,7 +114,7 @@ module AtomicInteger = struct
   let fetch_add this (increment, _) _memory_ordering : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::fetch_add()" in
-    let<+> astate =
+    let<++> astate =
       arith_bop path `Post location event ret_id (PlusA None) this (AbstractValueOperand increment)
         astate
     in
@@ -124,7 +124,7 @@ module AtomicInteger = struct
   let fetch_sub this (increment, _) _memory_ordering : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::fetch_sub()" in
-    let<+> astate =
+    let<++> astate =
       arith_bop path `Post location event ret_id (MinusA None) this (AbstractValueOperand increment)
         astate
     in
@@ -134,7 +134,7 @@ module AtomicInteger = struct
   let operator_plus_plus_pre this : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::operator++()" in
-    let<+> astate =
+    let<++> astate =
       arith_bop path `Pre location event ret_id (PlusA None) this (ConstOperand (Cint IntLit.one))
         astate
     in
@@ -144,7 +144,7 @@ module AtomicInteger = struct
   let operator_plus_plus_post this _int : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic<T>::operator++(T)" in
-    let<+> astate =
+    let<++> astate =
       arith_bop path `Post location event ret_id (PlusA None) this (ConstOperand (Cint IntLit.one))
         astate
     in
@@ -154,7 +154,7 @@ module AtomicInteger = struct
   let operator_minus_minus_pre this : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::operator--()" in
-    let<+> astate =
+    let<++> astate =
       arith_bop path `Pre location event ret_id (MinusA None) this (ConstOperand (Cint IntLit.one))
         astate
     in
@@ -164,7 +164,7 @@ module AtomicInteger = struct
   let operator_minus_minus_post this _int : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic<T>::operator--(T)" in
-    let<+> astate =
+    let<++> astate =
       arith_bop path `Post location event ret_id (MinusA None) this (ConstOperand (Cint IntLit.one))
         astate
     in
@@ -235,7 +235,7 @@ module BasicString = struct
   let constructor_from_constant (this, hist) exp : model =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::basic_string::basic_string()" in
-    let<*> astate, init_hist = PulseOperations.eval path Read location exp astate in
+    let<**> astate, init_hist = PulseOperations.eval path Read location exp astate in
     let<+> astate =
       PulseOperations.write_field path location
         ~ref:(this, Hist.add_event path event hist)
@@ -296,16 +296,16 @@ module BasicString = struct
     in
     let ((ret_addr, _) as ret_hist) = (AbstractValue.mk_fresh (), Hist.add_event path event hist) in
     let astate_empty =
-      let* astate = PulseArithmetic.prune_eq_zero len_addr astate in
-      let+ astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
+      let** astate = PulseArithmetic.prune_eq_zero len_addr astate in
+      let++ astate = PulseArithmetic.and_eq_int ret_addr IntLit.one astate in
       PulseOperations.write_id ret_id ret_hist astate |> Basic.continue
     in
     let astate_non_empty =
-      let* astate = PulseArithmetic.prune_positive len_addr astate in
-      let+ astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
+      let** astate = PulseArithmetic.prune_positive len_addr astate in
+      let++ astate = PulseArithmetic.and_eq_int ret_addr IntLit.zero astate in
       PulseOperations.write_id ret_id ret_hist astate |> Basic.continue
     in
-    [astate_empty; astate_non_empty]
+    SatUnsat.to_list astate_empty @ SatUnsat.to_list astate_non_empty
 
 
   let length this_hist : model =
@@ -433,7 +433,7 @@ module Vector = struct
     let pointer_hist = Hist.add_event path event (snd iter) in
     let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
     let index_zero = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
+    let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
     let<*> astate, ((arr_addr, _) as arr) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
@@ -525,6 +525,29 @@ let abort_matchers : matcher list =
   get_cpp_matchers ~model:(fun _ -> Basic.early_exit) Config.pulse_model_abort
 
 
+module Pair = struct
+  let make_pair type1 type2 value1 value2 (return_param, _) : model =
+    let make_pair_field =
+      Fieldname.make
+        (Typ.CppClass
+           { name= QualifiedCppName.of_qual_string "std::pair"
+           ; template_spec_info= Template {mangled= None; args= [TType type1; TType type2]}
+           ; is_union= false } )
+    in
+    let first = make_pair_field "first" in
+    let second = make_pair_field "second" in
+    fun {path; location} astate ->
+      let hist = Hist.single_call path location "std::make_pair()" in
+      let<*> astate =
+        PulseOperations.write_field path location ~ref:(return_param, hist) first ~obj:value1 astate
+      in
+      let<+> astate =
+        PulseOperations.write_field path location ~ref:(return_param, hist) second ~obj:value2
+          astate
+      in
+      astate
+end
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
@@ -573,6 +596,8 @@ let matchers : matcher list =
   ; -"std" &:: "__atomic_base"
     &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
     <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t
+  ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
+    $+ capt_arg_payload $--> Pair.make_pair
   ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
     $+...$--> Vector.init_list_constructor

@@ -133,6 +133,12 @@
           "sanitizer_kinds": ["StringConcatenation"],
           "sink_kinds": ["ClassLoading"] }
       ]
+    },
+    { "short_description": "user data gets logged",
+      "taint_flows": [
+        { "source_kinds": ["UserData"],
+          "sink_kinds": ["Logger"] }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -240,7 +246,10 @@
     { "class_names": ["codetoanalyze.java.pulse.InterfaceSpec"],
       "method_names": ["source"],
       "kinds": ["PrivateData"]
-    }
+    },
+    { "class_names": ["codetoanalyze.java.pulse.InterproceduralInterfileUser"],
+      "method_names": ["getPhoneNumber"],
+      "kinds": ["UserData"] }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
@@ -377,7 +386,10 @@
     },
     { "procedure": "codetoanalyze.java.pulse.ConstructorSink.<init>",
       "taint_target": ["ArgumentPositions", [1]]
-    }
+    },
+    { "class_names": ["codetoanalyze.java.pulse.Logger"],
+      "method_names": ["log"],
+      "kinds": ["Logger"] }
   ],
   "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },

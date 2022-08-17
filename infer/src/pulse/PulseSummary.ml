@@ -28,7 +28,12 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
       Unsat (* we do not propagate exception interproceduraly yet *)
   | ContinueProgram astate -> (
       let open SatUnsat.Import in
-      let+ summary_result = AbductiveDomain.summary_of_post tenv proc_desc location astate in
+      let+ summary_result =
+        AbductiveDomain.summary_of_post tenv
+          (Procdesc.get_proc_name proc_desc)
+          (Procdesc.get_attributes proc_desc)
+          location astate
+      in
       match (summary_result : _ result) with
       | Ok astate ->
           continue_program astate
@@ -51,10 +56,10 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           (`PotentialInvalidAccessSummary
             ((astate : AbductiveDomain.summary), address, must_be_valid) ) -> (
         match
-          AbductiveDomain.find_post_cell_opt
-            (Decompiler.abstract_value_of_expr address)
-            (astate :> AbductiveDomain.t)
-          |> Option.bind ~f:(fun (_, attrs) -> Attributes.get_invalid attrs)
+          let open IOption.Let_syntax in
+          let* addr = DecompilerExpr.abstract_value_of_expr address in
+          let* _, attrs = AbductiveDomain.find_post_cell_opt addr (astate :> AbductiveDomain.t) in
+          Attributes.get_invalid attrs
         with
         | None ->
             ExecutionDomain.LatentInvalidAccess {astate; address; must_be_valid; calling_context= []}

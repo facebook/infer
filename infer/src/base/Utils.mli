@@ -8,9 +8,6 @@
 
 open! IStd
 
-val find_files : path:string -> extension:string -> string list
-(** recursively traverse a path for files ending with a given extension *)
-
 val fold_folders : init:'acc -> f:('acc -> string -> 'acc) -> path:string -> 'acc
 (** recursively traverse a path for folders, returning resuls by a given fold function *)
 
@@ -66,7 +63,7 @@ val read_safe_json_file : string -> (Yojson.Safe.t, string) Result.t
 
 val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 
-val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
+val with_file_out : ?append:bool -> string -> f:(Out_channel.t -> 'a) -> 'a
 
 val with_intermediate_temp_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 (** like [with_file_out] but uses a fresh intermediate temporary file and rename to avoid

@@ -28,8 +28,7 @@ let global g = uconst (Llair.Global.name g)
 let reg tid r =
   RegTbl.find_or_add reg_tbl (r, tid) ~default:(fun () ->
       let name = Llair.Reg.name r in
-      let id = 1 + RegTbl.length reg_tbl in
-      Var.identified ~name ~id )
+      Var.identified ~name tid (Llair.Reg.id r) )
 
 let regs tid rs =
   Var.Set.of_iter (Iter.map ~f:(reg tid) (Llair.Reg.Set.to_iter rs))
@@ -86,7 +85,7 @@ and term : ThreadID.t -> Llair.Exp.t -> T.t =
            ~neg:(formula tid neg) )
   (* terms *)
   | Reg _ -> T.var (reg tid (Llair.Reg.of_exp e |> Option.get_exn))
-  | Global {name; typ= _} | Function {name; typ= _} -> uconst name
+  | Global {name; typ= _} | FuncName {name; typ= _} -> uconst name
   | Label {parent; name} ->
       uap0 (Funsym.uninterp ("label_" ^ parent ^ "_" ^ name))
   | Integer {typ= _; data} -> T.integer data

@@ -209,6 +209,26 @@ JSON (Conversely: <b>--no-procedures-summary-json</b>)</p>
 discovered by infer (Conversely:
 <b>--no-source-files</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--source-files-call-graph</b></p>
+
+<p style="margin-left:17%;">Activates: Output a dotty file
+in infer-out/captured/file-call-graph.dot. The graph is the
+file-based syntactic call graph of all captured procedures
+(with known translation units). (Conversely:
+<b>--no-source-files-call-graph</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--source-files-call-graph-partition</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">The number of partitions to
+divide the set of captured source files, using static call
+graph information. The generated file lists are found under
+infer-out/captured/workerXX.idx. Not setting this option
+skips partitioning. This is used for distributed
+analysis.</p>
+
 <p style="margin-left:11%;"><b>--source-files-cfg</b></p>
 
 <p style="margin-left:17%;">Activates: Output a dotty file

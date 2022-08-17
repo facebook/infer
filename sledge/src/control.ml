@@ -24,7 +24,7 @@ module type Elt = sig
 
   val pp : t pp
   val prio : t -> Priority.t
-  val dnf : t -> t list
+  val dnf : t -> t iter
 end
 
 (** Interface of analysis control scheduler "queues". *)
@@ -168,7 +168,7 @@ module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
     ; last= Add_or_pop_frontier }
 
   let add elt q =
-    let add_elt l = List.fold ~f:RAL.cons (Elt.dnf elt) l in
+    let add_elt l = Iter.fold ~f:RAL.cons (Elt.dnf elt) l in
     match q.last with
     | Add_or_pop_frontier ->
         (* elt is a sibling of the elements of recent, so extend recent *)
@@ -592,7 +592,7 @@ struct
       in
       let pp_ip fs ip =
         let open Llair in
-        Format.fprintf fs "%a%a%a" Function.pp (IP.block ip).parent.name
+        Format.fprintf fs "%a%a%a" FuncName.pp (IP.block ip).parent.name
           IP.pp ip Loc.pp (IP.loc ip)
       in
       Format.fprintf fs "@[<v 2>Witness Trace:@ %a@]" (List.pp "@ " pp_ip)
@@ -693,11 +693,7 @@ struct
             x y
 
       let equal = [%compare.equal: t]
-
-      let dnf x =
-        List.map
-          ~f:(fun state -> {x with state})
-          (D.Set.to_list (D.dnf x.state))
+      let dnf x = Iter.map ~f:(fun state -> {x with state}) (D.dnf x.state)
     end
 
     module Queue = Queue (Elt)
@@ -722,27 +718,24 @@ struct
         [Joinable] represents the subset of [ams] fields that can be joined
         across several executions that share the same execution history. *)
     module Joinable = struct
-      module T = struct
+      module Elt = struct
         type t = {state: D.t; depths: Depths.t; history: Hist.t [@ignore]}
         [@@deriving compare, equal, sexp_of]
       end
 
-      module M = Map.Make (T)
+      module M = Map.Make (Elt)
 
       type t = Edge.t list M.t
 
       let empty = M.empty
       let is_empty = M.is_empty
+      let add = M.add_multi
 
       let diff =
         M.merge ~f:(fun _ -> function
           | `Left v -> Some v | `Right _ | `Both _ -> None )
 
       let union = M.union ~f:(fun _ v1 v2 -> Some (List.append v1 v2))
-
-      let of_list l =
-        List.fold l M.empty ~f:(fun (key, data) m ->
-            M.add_multi ~key ~data m )
 
       let join m =
         let states, depths, hists, edges =
@@ -830,7 +823,11 @@ struct
       module M = Partition.Map
 
       let empty = M.empty
-      let add = M.add_multi
+
+      let add ~key ~data:(elt, edge) m =
+        M.update key m ~f:(fun data ->
+            let joinable = Option.value data ~default:Joinable.empty in
+            Some (Joinable.add ~key:elt ~data:edge joinable) )
 
       let find_first m ~f =
         let exception Stop in
@@ -867,21 +864,20 @@ struct
                     in
                     Succs.add
                       ~key:(switches, ip, threads, goal)
-                      ~data:(({state; depths; history} : Joinable.T.t), edge)
+                      ~data:({state; depths; history}, edge)
                       succs ) )
       in
       let found, hit_end =
         Succs.find_first succs
           ~f:(fun ~key:(switches, ip, threads, goal) ~data:incoming ->
             let next = (switches, ip, threads, goal) in
-            let curr = Joinable.of_list incoming in
             let+ done_states, next_states =
               match Cursor.find next cursor with
               | Some done_states ->
-                  let next_states = Joinable.diff curr done_states in
+                  let next_states = Joinable.diff incoming done_states in
                   if Joinable.is_empty next_states then None
                   else Some (done_states, next_states)
-              | None -> Some (Joinable.empty, curr)
+              | None -> Some (Joinable.empty, incoming)
             in
             let cursor =
               Cursor.add ~key:next
@@ -916,13 +912,13 @@ struct
       | None -> ()
   end
 
-  let summary_table = Llair.Function.Tbl.create ()
+  let summary_table = Llair.FuncName.Tbl.create ()
 
   let pp_st () =
     [%Dbg.printf
       "@[<v>%t@]" (fun fs ->
-          Llair.Function.Tbl.iteri summary_table ~f:(fun ~key ~data ->
-              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.Function.pp key
+          Llair.FuncName.Tbl.iteri summary_table ~f:(fun ~key ~data ->
+              Format.fprintf fs "@[<v>%a:@ @[%a@]@]@ " Llair.FuncName.pp key
                 (List.pp "@," D.pp_summary)
                 data ) )]
 
@@ -944,7 +940,7 @@ struct
     let Llair.{name; formals; freturn; locals; entry} = callee in
     [%Dbg.call fun {pf} ->
       pf " t%i@[<2>@ %a from %a with state@]@;<1 2>%a" tid
-        Llair.Func.pp_call call Llair.Function.pp return.dst.parent.name
+        Llair.Func.pp_call call Llair.FuncName.pp return.dst.parent.name
         D.pp state]
     ;
     let ip = Llair.IP.mk entry in
@@ -954,17 +950,18 @@ struct
         ~dp_goal:(fun fs -> Goal.pp fs goal)
         ~dp_witness:(Hist.dump (Hist.extend ip [history])) ;
     let dnf_states =
-      if Config.function_summaries then D.dnf state else D.Set.of_ state
+      if Config.function_summaries then D.dnf state
+      else Iter.singleton state
     in
     let domain_call =
       D.call tid ~globals ~actuals ~areturn ~formals ~freturn ~locals
     in
-    D.Set.fold dnf_states wl ~f:(fun state wl ->
+    Iter.fold dnf_states wl ~f:(fun state wl ->
         match
           if not Config.function_summaries then None
           else
             let state = fst (domain_call ~summaries:false state) in
-            let* summary = Llair.Function.Tbl.find summary_table name in
+            let* summary = Llair.FuncName.Tbl.find summary_table name in
             List.find_map ~f:(D.apply_summary state) summary
         with
         | None ->
@@ -989,19 +986,24 @@ struct
       let globals = Domain_used_globals.by_function Config.globals name in
       exec_call globals call ams wl
 
-  let exec_return exp ({ctrl= {ip; stk; tid}; state} as ams) wl =
+  let exec_return exp ({ctrl= {ip; stk; tid}; state; history} as ams) wl =
     let block = Llair.IP.block ip in
     let func = block.parent in
     let Llair.{name; formals; freturn; locals} = func in
-    [%Dbg.call fun {pf} -> pf " t%i@ from: %a" tid Llair.Function.pp name]
+    [%Dbg.call fun {pf} -> pf " t%i@ from: %a" tid Llair.FuncName.pp name]
     ;
+    let goal = Goal.update_after_retn name ams.goal in
+    if goal != ams.goal && Goal.reached goal then
+      Report.reached_goal
+        ~dp_goal:(fun fs -> Goal.pp fs goal)
+        ~dp_witness:(Hist.dump (Hist.extend ip [history])) ;
     let summarize post_state =
       if not Config.function_summaries then post_state
       else
         let function_summary, post_state =
           D.create_summary tid ~locals ~formals post_state
         in
-        Llair.Function.Tbl.add_multi ~key:name ~data:function_summary
+        Llair.FuncName.Tbl.add_multi ~key:name ~data:function_summary
           summary_table ;
         pp_st () ;
         post_state
@@ -1021,13 +1023,13 @@ struct
         in
         let retn_state = D.retn tid formals freturn from_call post_state in
         exec_jump retn_site
-          {ams with ctrl= {ams.ctrl with stk}; state= retn_state}
+          {ams with ctrl= {ams.ctrl with stk}; state= retn_state; goal}
           wl
     | None ->
         summarize exit_state |> ignore ;
         let tc = D.term tid formals freturn exit_state in
         Work.add ~retreating:false
-          {ams with ctrl= {dst= Terminated (tc, tid); src= block}}
+          {ams with ctrl= {dst= Terminated (tc, tid); src= block}; goal}
           wl )
     |>
     [%Dbg.retn fun {pf} _ -> pf ""]
@@ -1035,7 +1037,7 @@ struct
   let exec_throw exc ({ctrl= {ip; stk; tid}; state} as ams) wl =
     let func = (Llair.IP.block ip).parent in
     let Llair.{name; formals; freturn; fthrow; locals} = func in
-    [%Dbg.call fun {pf} -> pf "@ from %a" Llair.Function.pp name]
+    [%Dbg.call fun {pf} -> pf "@ from %a" Llair.FuncName.pp name]
     ;
     let unwind formals scope from_call state =
       D.retn tid formals (Some fthrow) from_call
@@ -1127,7 +1129,7 @@ struct
             exec_assume
               (Llair.Exp.eq ptr
                  (Llair.Exp.label
-                    ~parent:(Llair.Function.name jump.dst.parent.name)
+                    ~parent:(Llair.FuncName.name jump.dst.parent.name)
                     ~name:jump.dst.lbl ) )
               jump ams wl )
     | Call ({callee= Direct callee} as call) ->
@@ -1165,9 +1167,10 @@ struct
     | Return {exp} -> exec_return exp ams wl
     | Throw {exc} -> exec_throw exc ams wl
     | Abort {loc} ->
-        Report.alarm
-          (Alarm.v Abort loc Llair.Term.pp term D.pp state)
-          ~dp_witness:(Hist.dump ams.history) ;
+        if not (D.is_unsat state) then
+          Report.alarm
+            (Alarm.v Abort loc Llair.Term.pp term D.pp state)
+            ~dp_witness:(Hist.dump ams.history) ;
         wl
     | Unreachable -> wl
 
@@ -1219,11 +1222,11 @@ struct
   let compute_summaries pgm goal =
     assert Config.function_summaries ;
     exec_pgm pgm goal ;
-    Llair.Function.Tbl.fold summary_table Llair.Function.Map.empty
+    Llair.FuncName.Tbl.fold summary_table Llair.FuncName.Map.empty
       ~f:(fun ~key ~data map ->
         match data with
         | [] -> map
-        | _ -> Llair.Function.Map.add ~key ~data map )
+        | _ -> Llair.FuncName.Map.add ~key ~data map )
 end
 [@@inlined]
 

@@ -29,6 +29,8 @@ type mode =
   | NdkBuild of {build_cmd: string list}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
+  | Hackc of {args: string list}
+  | Textual of {file: string}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -68,6 +70,10 @@ let pp_mode fmt = function
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | Erlc {args} ->
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
+  | Hackc {args} ->
+      F.fprintf fmt "Hackc driver mode:@\nargs = %a" Pp.cli_args args
+  | Textual {file} ->
+      F.fprintf fmt "Textual capture mode:@\nfile = %s" file
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -164,6 +170,11 @@ let capture ~changed_files mode =
     | Erlc {args} ->
         L.progress "Capturing in erlc mode...@." ;
         Erlang.capture ~command:"erlc" ~args
+    | Hackc {args} ->
+        L.progress "Capturing in hackc mode...@." ;
+        Hack.capture ~command:"hackc" ~args
+    | Textual {file} ->
+        TextualParser.capture file
     | XcodeBuild {prog; args} ->
         L.progress "Capturing in xcodebuild mode...@." ;
         XcodeBuild.capture ~prog ~args
@@ -226,6 +237,10 @@ let report ?(suppress_console = false) () =
     if Config.sarif then
       SarifReport.create_from_json ~report_sarif:(ResultsDir.get_path ReportSarif)
         ~report_json:issues_json ;
+    if Config.is_checker_enabled Checker.Datalog then
+      DatalogFacts.create_from_json
+        ~datalog_dir:(ResultsDir.get_path DatalogFacts)
+        ~report_json:issues_json ;
     () ) ;
   if Config.export_changed_functions then TestDeterminator.merge_changed_functions_results () ;
   if Config.(test_determinator && process_clang_ast) then
@@ -263,6 +278,9 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     match (Config.command, mode) with
     | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode) ->
         (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
+        (false, false)
+    | _, Textual _ ->
+        (* textual mode doesn't generate CFGs for now *)
         (false, false)
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
         (* Called from another integration to do capture only. *)
@@ -325,6 +343,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
         Version.java_enabled
     | `Erlang ->
         Version.erlang_enabled
+    | `Hack ->
+        Version.hack_enabled
     | `Xcode ->
         Version.clang_enabled && Version.xcode_enabled
   in
@@ -339,6 +359,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "java"
       | `Erlang ->
           "erlang"
+      | `Hack ->
+          "hack"
       | `Xcode ->
           "clang and xcode"
     in
@@ -365,6 +387,8 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Erlang
   | BErlc ->
       Config.string_of_build_system build_system |> assert_supported_mode `Erlang
+  | BHackc ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Hack
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck2 | BBuck ->
@@ -386,11 +410,17 @@ let assert_supported_build_system build_system =
 
 let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
-  | [] ->
-      if not (List.is_empty Config.clang_compilation_dbs) then (
+  | [] -> (
+    match (Config.clang_compilation_dbs, Config.capture_textual_sil) with
+    | _ :: _, Some _ ->
+        L.die UserError "Both --clang-compilation-dbs and --capture-textual-sil are set."
+    | _ :: _, None ->
         assert_supported_mode `Clang "clang compilation database" ;
-        ClangCompilationDB {db_files= Config.clang_compilation_dbs} )
-      else Analyze
+        ClangCompilationDB {db_files= Config.clang_compilation_dbs}
+    | [], Some textual_sil_file ->
+        Textual {file= textual_sil_file}
+    | [], None ->
+        Analyze )
   | prog :: args -> (
       let build_system =
         match Config.force_integration with
@@ -438,6 +468,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Rebar3 {args}
       | BErlc, _ ->
           Erlc {args}
+      | BHackc, _ ->
+          Hackc {args}
       | BXcode, _ when Config.xcpretty ->
           XcodeXcpretty {prog; args}
       | BXcode, _ ->

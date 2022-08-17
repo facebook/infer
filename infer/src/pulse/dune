@@ -8,8 +8,7 @@
  (public_name infer.Pulselib)
  (flags
   (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
-    -open IBase -open Absint -open BO -open Topllib -open Nullsafe))
- (libraries core iter IStdlib ATDGenerated IBase IR Absint BO Topllib
-   Nullsafe)
+    -open IBase -open Absint -open Topllib -open Nullsafe))
+ (libraries core iter IStdlib ATDGenerated IBase IR Absint Topllib Nullsafe)
  (preprocess
   (pps ppx_compare ppx_variants_conv ppx_yojson_conv)))

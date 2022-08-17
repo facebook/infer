@@ -8,7 +8,7 @@
 open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 open PulseModelsImport
 
 let field = Fieldname.make PulseOperations.pulse_model_type "backing_array"
@@ -134,17 +134,17 @@ module Iterator = struct
     in
     let astate_equal =
       PulseArithmetic.and_eq_int ret_val ret_val_equal astate
-      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand index_lhs)
-            (AbstractValueOperand index_rhs)
-      |> Basic.map_continue
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand index_lhs)
+             (AbstractValueOperand index_rhs)
+      >>|| ExecutionDomain.continue
     in
     let astate_notequal =
       PulseArithmetic.and_eq_int ret_val ret_val_notequal astate
-      >>= PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand index_lhs)
-            (AbstractValueOperand index_rhs)
-      |> Basic.map_continue
+      >>== PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand index_lhs)
+             (AbstractValueOperand index_rhs)
+      >>|| ExecutionDomain.continue
     in
-    [astate_equal; astate_notequal]
+    SatUnsat.to_list astate_equal @ SatUnsat.to_list astate_notequal
 
 
   let operator_star ~desc iter : model =

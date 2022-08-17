@@ -25,7 +25,9 @@
     test_sub3_Bad/0,
     test_sub4_Bad/0,
     test_sub5_Bad/0,
-    test_sub6_Bad/0
+    test_sub6_Bad/0,
+    test_list_append_with_atom_to_list_Ok/0,
+    test_list_append_with_atom_to_binary_Bad/0
 ]).
 
 test_foreach_Ok() ->
@@ -135,3 +137,9 @@ test_sub6_Bad() ->
     case X of
         [] -> nil
     end.
+
+test_list_append_with_atom_to_list_Ok() ->
+    atom_to_list(checker) ++ "_clean".
+
+test_list_append_with_atom_to_binary_Bad() ->
+    atom_to_binary(checker) ++ "_clean".

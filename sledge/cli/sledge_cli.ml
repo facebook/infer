@@ -7,7 +7,11 @@
 
 (** SLEdge command line interface *)
 
-module Command = Core.Command
+module Command = struct
+  include Core.Command
+  include Command_unix
+end
+
 open Command.Let_syntax
 
 type 'a param = 'a Command.Param.t
@@ -40,8 +44,8 @@ register_sexp_of_exn (Dbg.Parse_failure "") (function
   | _ -> assert false )
 
 ;;
-register_sexp_of_exn (Goal.Sparse_trace.Failed_lookup "") (function
-  | Goal.Sparse_trace.Failed_lookup msg -> Sexplib0.Sexp.Atom msg
+register_sexp_of_exn (Goal.Sparse_trace.Invalid_trace "") (function
+  | Goal.Sparse_trace.Invalid_trace msg -> Sexplib0.Sexp.Atom msg
   | _ -> assert false )
 
 (* define a command, with trace flag, and with action wrapped in
@@ -50,7 +54,7 @@ let command ~summary ?readme param =
   let trace =
     let%map_open config =
       flag "trace" ~doc:"<spec> enable debug tracing"
-        (optional_with_default Dbg.none (Arg_type.create Dbg.parse))
+        (optional_with_default Dbg.none (Arg_type.create Dbg.parse_exn))
     and colors = flag "colors" no_arg ~doc:"enable printing in colors"
     and margin =
       flag "margin" ~doc:"<cols> wrap debug tracing at <cols> columns"
@@ -82,6 +86,7 @@ let command ~summary ?readme param =
         | Failure msg -> Report.InternalError msg
         | Stop.Stop -> Report.safe_or_unsafe ()
         | Stop.Reached_goal {steps} -> Report.Reached_goal {steps}
+        | Stop.Unreachable_goal -> Report.Unreachable_goal
         | exn -> Report.UnknownError (Printexc.to_string exn)
       in
       Report.status (status_of_exn exn) ;
@@ -90,12 +95,12 @@ let command ~summary ?readme param =
   Command.basic ~summary ?readme (trace *> param >>| flush >>| report)
 
 let marshal program file =
-  Out_channel.with_file file ~f:(fun oc -> Marshal.to_channel oc program [])
+  Out_channel.with_open_bin file (fun oc ->
+      Marshal.to_channel oc program [] )
 
 let unmarshal file () =
-  In_channel.with_file
-    ~f:(fun ic : Llair.program -> Marshal.from_channel ic)
-    file
+  In_channel.with_open_bin file (fun ic : Llair.program ->
+      Marshal.from_channel ic )
 
 let entry_points = Config.find_list "entry-points"
 
@@ -113,7 +118,7 @@ let used_globals pgm entry_points preanalyze =
     in
     let summary_table = Analysis.compute_summaries pgm in
     UG.Per_function
-      (Llair.Function.Map.map summary_table ~f:Llair.Global.Set.union_list)
+      (Llair.FuncName.Map.map summary_table ~f:Llair.Global.Set.union_list)
   else
     UG.Declared
       (Llair.Global.Set.of_iter
@@ -124,7 +129,9 @@ type common = {goal_trace: string list option}
 let common : common param =
   let%map_open goal_trace =
     flag "goal-trace"
-      (optional (Arg_type.create In_channel.read_lines))
+      (optional
+         (Arg_type.create (fun file ->
+              In_channel.with_open_bin file Containers.IO.read_lines_l ) ) )
       ~doc:
         "<file> specify a trace to try to explore, in the form of a file \
          containing one LLVM function name per line. If provided, \
@@ -217,10 +224,11 @@ let analyze =
     let module Queue = (val queue) in
     (match seed with None -> Random.self_init () | Some n -> Random.init n) ;
     Llair.cct_schedule_points := cct_schedule_points ;
-    Sh.do_normalize := normalize_states ;
+    Symbolic_heap.do_normalize := normalize_states ;
     Domain_sh.simplify_states := not no_simplify_states ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
-    Option.iter dump_simplify ~f:(fun n -> Sh.dump_simplify := n) ;
+    Option.iter dump_simplify ~f:(fun n ->
+        Symbolic_heap.Xsh.dump_simplify := n ) ;
     at_exit (fun () -> Report.coverage pgm) ;
     ( match goal_trace with
     | None ->
@@ -258,7 +266,7 @@ let disassemble =
     ( match llair_output with
     | None -> Format.printf "%a@." Llair.Program.pp pgm
     | Some file ->
-        Out_channel.with_file file ~f:(fun oc ->
+        Out_channel.with_open_bin file (fun oc ->
             let fs = Format.formatter_of_out_channel oc in
             Format.fprintf fs "%a@." Llair.Program.pp pgm ) ) ;
     Report.Ok
@@ -369,8 +377,12 @@ let readme () =
 
 ;;
 Memtrace.trace_if_requested ()
+
 ;;
-if Version.debug then Printexc.record_backtrace true
+if Version.debug then (
+  Printexc.record_backtrace true ;
+  Out_channel.set_buffered stderr false )
+
 ;;
 Stdlib.Sys.catch_break true
 

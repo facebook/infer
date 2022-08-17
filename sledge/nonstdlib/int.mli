@@ -16,6 +16,7 @@ val of_string_exn : string -> int
 val sign : int -> Sign.t
 val incr : int ref -> unit
 val decr : int ref -> unit
+val post_incr : int ref -> int
 
 module Infix : sig
   val ( -- ) : t -> t -> t iter

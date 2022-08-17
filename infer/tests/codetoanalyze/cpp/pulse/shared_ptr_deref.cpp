@@ -34,6 +34,11 @@ int nullptr_ptr_deref_bad() {
   return *x;
 }
 
+int shared_ptr_create_use_ok() {
+  std::shared_ptr<X> x(new X());
+  return x->get();
+}
+
 int empty_ptr_field_deref_bad() {
   std::shared_ptr<X> x;
   return x.get()->field;
@@ -49,13 +54,13 @@ int empty_ptr_method_deref_bad() {
   return x->get();
 }
 
-int FN_reset_ptr_null_deref_bad() {
+int reset_ptr_null_deref0_bad() {
   std::shared_ptr<int> x(new int);
   x.reset();
   return *x;
 }
 
-int FN_reset_ptr_null_deref2_bad() {
+int reset_ptr_null_deref1_bad() {
   std::shared_ptr<int> x(new int);
   x.reset(new int);
   x.reset();
@@ -81,22 +86,20 @@ int shared_ptr_copy_null_deref_bad() {
   return *p2;
 }
 
-int FN_shared_ptr_assign_null_deref_bad() {
+int shared_ptr_assign_null_deref_bad() {
   std::shared_ptr<int> p1(new int);
   std::shared_ptr<int> p2;
   p1 = p2;
   return *p1;
 }
 
-// FP is a memory leak
-int FP_shared_ptr_copy_deref_ok() {
+int shared_ptr_copy_deref_ok() {
   std::shared_ptr<int> p1(new int);
   std::shared_ptr<int> p2 = p1;
   return *p2;
 }
 
-// FP is a memory leak
-int FP_shared_ptr_assign_deref_ok() {
+int shared_ptr_assign_deref_ok() {
   std::shared_ptr<int> p1(new int);
   std::shared_ptr<int> p2;
   p2 = p1;
@@ -104,7 +107,7 @@ int FP_shared_ptr_assign_deref_ok() {
   return *p2;
 }
 
-int FN_shared_ptr_move_null_deref_bad() {
+int shared_ptr_move_null_deref_bad() {
   std::shared_ptr<int> p1(new int);
   std::shared_ptr<int> p2 = std::move(p1);
   return *p1;

@@ -14,9 +14,13 @@ let tt fmt =
   Logging.debug Analysis mode fmt
 
 
+type pindex = int [@@deriving compare, hash, sexp]
+
+type pname = ToplAst.property_name
+
 module Vname = struct
   module T = struct
-    type t = ToplAst.property_name * ToplAst.vertex [@@deriving compare, hash, sexp]
+    type t = pindex * ToplAst.vertex [@@deriving compare, hash, sexp]
   end
 
   include T
@@ -38,11 +42,14 @@ type transition = {source: vindex; target: vindex; label: ToplAst.label option}
     The fields marked as redundant are computed from the others (when the automaton is built), and
     are cached for speed. *)
 type t =
-  { states: vname array
+  { names: pname array
+  ; pindex: pname -> pindex (* redundant *)
+  ; messages: string array
+  ; states: vname array
   ; transitions: transition array
   ; skips: bool array (* redundant *)
   ; outgoing: tindex list array
-  ; vindex: vname -> vindex
+  ; vindex: vname -> vindex (* redundant *)
   ; max_args: int (* redundant *) }
 
 (** [index_in H a] returns a pair of functions [(opt, err)] that lookup the (last) index of an
@@ -65,19 +72,30 @@ let index_in (type k) (module H : Hashtbl_intf.S with type key = k) (a : k array
 
 
 let make properties =
-  let states : vname array =
-    let open ToplAst in
-    let f p =
-      let f {source; target; _} = [(p.name, source); (p.name, target)] in
-      List.concat_map ~f p.transitions
-    in
-    Array.of_list (List.dedup_and_sort ~compare:Vname.compare (List.concat_map ~f properties))
+  let names : pname array =
+    let f {ToplAst.name} = name in
+    Array.of_list (List.map ~f properties)
   in
-  Array.iteri ~f:(fun i (p, v) -> tt "state[%d]=(%s,%s)@\n" i p v) states ;
+  let _pindex_opt, pindex = index_in (module String.Table) names in
+  let pindex = pindex "property name" in
+  let messages : string array =
+    let f {ToplAst.name; message} =
+      match message with None -> Format.sprintf "property %s fails" name | Some m -> m
+    in
+    Array.of_list (List.map ~f properties)
+  in
+  let states : vname array =
+    let f index {ToplAst.transitions} =
+      let f {ToplAst.source; target; _} = [(index, source); (index, target)] in
+      List.concat_map ~f transitions
+    in
+    Array.of_list (List.dedup_and_sort ~compare:Vname.compare (List.concat_mapi ~f properties))
+  in
+  Array.iteri ~f:(fun i (p, v) -> tt "state[%d]=(%d,%s)@\n" i p v) states ;
   let _vindex_opt, vindex = index_in (module Vname.Table) states in
   let vindex = vindex "vertex" in
   let transitions : transition array =
-    let f p =
+    let f pindex p =
       let prefix_pname pname =
         if String.equal ".*" pname then pname
         else
@@ -90,15 +108,15 @@ let make properties =
           | ProcedureNamePattern pname -> ProcedureNamePattern (prefix_pname pname) | p -> p)
       in
       let prefix_label label = ToplAst.{label with pattern= prefix_pattern label.pattern} in
-      let f t =
-        let source = vindex ToplAst.(p.name, t.source) in
-        let target = vindex ToplAst.(p.name, t.target) in
-        let label = Option.map ~f:prefix_label t.ToplAst.label in
+      let f {ToplAst.source; target; label} =
+        let source = vindex (pindex, source) in
+        let target = vindex (pindex, target) in
+        let label = Option.map ~f:prefix_label label in
         {source; target; label}
       in
       List.map ~f p.ToplAst.transitions
     in
-    Array.of_list (List.concat_map ~f properties)
+    Array.of_list (List.concat_mapi ~f properties)
   in
   Array.iteri transitions ~f:(fun i {source; target; label} ->
       tt "transition%d %d -> %d on %a@\n" i source target ToplAstOps.pp_label label ) ;
@@ -121,7 +139,7 @@ let make properties =
     let is_skip {label} = Option.is_none label in
     Array.map ~f:is_skip transitions
   in
-  {states; transitions; skips; outgoing; vindex; max_args}
+  {names; pindex; messages; states; transitions; skips; outgoing; vindex; max_args}
 
 
 let vname a i = a.states.(i)
@@ -145,16 +163,12 @@ let registers a =
   String.Set.to_list (Array.fold ~init:String.Set.empty ~f:do_transition a.transitions)
 
 
-let pp_message_of_state fmt (a, i) =
-  let property, state = vname a i in
-  Format.fprintf fmt "property %s reaches state %s" property state
-
-
 let tfilter_mapi a ~f = Array.to_list (Array.filter_mapi ~f a.transitions)
 
 let pp_vertex a f i =
-  let property, vertex = vname a i in
-  Format.fprintf f "@[%s.%s[%d]@]" property vertex i
+  let pindex, vertex = vname a i in
+  let {names} = a in
+  Format.fprintf f "@[%s.%s[%d]@]" names.(pindex) vertex i
 
 
 let pp_transition a f {source; target; label} =
@@ -172,3 +186,8 @@ let has_name n a i =
 let is_start = has_name "start"
 
 let is_error = has_name "error"
+
+let message a i =
+  let {messages} = a in
+  let pindex, _vertex = vname a i in
+  messages.(pindex)

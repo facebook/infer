@@ -63,6 +63,10 @@ module type S0 = sig
       Considering an arithmetic term as a polynomial,
       [trms (c × (Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ Xᵢⱼ^pᵢⱼ))] is the sequence of terms
       [Xᵢⱼ] for each [i] and [j]. *)
+
+  val sum_of_power_products : t -> (Q.t * (trm * int) iter) iter
+  (** [sum_of_power_products a] expresses [a] as a sum of power products
+      [Σᵢ₌₁ⁿ cᵢ × Πⱼ₌₁ᵐᵢ Xᵢⱼ^pᵢⱼ]. *)
 end
 
 (** An embedding of arithmetic terms [t] into indeterminates [trm]. *)

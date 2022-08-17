@@ -5,15 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 @interface InferTaint : NSObject
+
+@property(nonatomic, assign) NSObject* obj;
 
 + (NSObject*)source;
 + (void)taintsArg:(NSObject*)param;
 + (void)sink:(NSObject*)param;
 + (NSObject*)sanitizer:(NSObject*)param;
 + (void)sanitizeThenSink:(NSObject*)param;
++ (NSObject*)sanitizeThenTaint:(NSObject*)param;
 + (void)twoSinks:(NSObject*)param;
 + (void)twoKindSink:(NSObject*)param;
 + (void)notASink:(NSObject*)param;
@@ -23,7 +26,9 @@
 @implementation InferTaint
 
 + (NSObject*)source {
-  return [NSObject new];
+  InferTaint* result = [InferTaint new];
+  result.obj = [NSObject new];
+  return result;
 };
 
 + (void)taintsArg:(NSObject*)param {
@@ -39,6 +44,12 @@
 + (void)sanitizeThenSink:(NSObject*)param {
   NSObject* sanitized = [InferTaint sanitizer:param];
   [InferTaint sink:sanitized];
+}
+
++ (NSObject*)sanitizeThenTaint:(NSObject*)param {
+  NSObject* sanitized = [InferTaint sanitizer:param];
+  [InferTaint taintsArg:sanitized];
+  return sanitized;
 }
 
 + (void)twoSinks:(NSObject*)param {
@@ -96,4 +107,45 @@ void taintSourceParameterBlockBad() {
 void viaSanitizerOk() {
   NSObject* source = [InferTaint source];
   [InferTaint sanitizeThenSink:source];
+}
+
+void sanitizerThenTaintDirectBad() {
+  NSObject* obj = [NSObject new];
+  obj = [InferTaint sanitizer:obj];
+  [InferTaint taintsArg:obj];
+  [InferTaint twoKindSink:obj];
+}
+
+void sanitizerThenTaintInterprocBad() {
+  NSObject* obj = [NSObject new];
+  [InferTaint sanitizeThenTaint:obj];
+  [InferTaint twoKindSink:obj];
+}
+
+void fieldAccessBad() {
+  InferTaint* source = [InferTaint source];
+  NSObject* obj = source.obj;
+  [InferTaint sink:obj];
+}
+
+void compoundStmtBad() {
+  InferTaint* taint = ({
+    assert(true);
+    InferTaint.source;
+  });
+  [InferTaint sink:taint];
+}
+
+void compoundStmt_taintSourceParameterBad(InferTaint* source) {
+  InferTaint* taint = ({
+    assert(true);
+    source;
+  });
+  [InferTaint sink:taint];
+}
+
+void clashingBlockNameOk(NSObject* tainted) {
+  ^void(NSObject* obj) {
+    [InferTaint sink:obj];
+  };
 }

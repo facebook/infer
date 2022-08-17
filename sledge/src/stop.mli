@@ -9,6 +9,7 @@
 
 exception Stop
 exception Reached_goal of {steps: int}
+exception Unreachable_goal
 exception Unimplemented of {feature: string}
 
 val on_unknown_call : 'a -> unit
@@ -17,4 +18,5 @@ val on_alarm : Alarm.t -> unit
 val on_reached_goal :
   int -> dp_witness:(Format.formatter -> unit) -> 'a -> unit
 
+val on_unreachable_goal : dp_path:(Format.formatter -> unit) -> unit
 val on_unimplemented : string -> 'a -> unit

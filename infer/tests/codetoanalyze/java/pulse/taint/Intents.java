@@ -192,7 +192,7 @@ public class Intents {
     newIntent2.setData(Uri.parse(extra)); // should report
   }
 
-  void extraToExtraOk() {
+  void extraToExtraBad() {
     Intent taintedIntent = (Intent) InferTaint.inferSecretSource();
     String extra = taintedIntent.getStringExtra("foo");
 

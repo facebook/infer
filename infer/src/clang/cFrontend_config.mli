@@ -49,10 +49,6 @@ val builtin_memset_chk : string
 
 val builtin_object_size : string
 
-val ckcomponent_cl : string
-
-val ckcomponentcontroller_cl : string
-
 val clang_bin : string -> string
 (** Script to run our own clang. The argument is expected to be either "" or "++". *)
 
@@ -70,8 +66,6 @@ val handleFailureInFunction : string
 
 val handleFailureInMethod : string
 
-val id_cl : string
-
 val infer : string
 
 val init : string
@@ -85,10 +79,6 @@ val new_str : string
 val next_object : string
 
 val nsenumerator_cl : string
-
-val nsproxy_cl : string
-
-val nsobject_cl : string
 
 val nsstring_cl : string
 

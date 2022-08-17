@@ -83,6 +83,8 @@ val assert_failure : t
 
 val bad_footprint : t
 
+val bad_arg : latent:bool -> t
+
 val bad_key : latent:bool -> t
 
 val bad_map : latent:bool -> t
@@ -137,8 +139,6 @@ val class_cast_exception : t
 
 val complexity_increase : kind:CostKind.t -> is_on_ui_thread:bool -> t
 
-val component_with_multiple_factory_methods : t
-
 val condition_always_false : t
 
 val condition_always_true : t
@@ -148,6 +148,8 @@ val config_impact_analysis : t
 val config_impact_analysis_strict : t
 
 val config_impact_analysis_strict_beta : t
+
+val pulse_const_refable : t
 
 val constant_address_dereference : latent:bool -> t
 
@@ -160,6 +162,8 @@ val dangling_pointer_dereference : t
 val dangling_pointer_dereference_maybe : t
 
 val data_flow_to_sink : t
+
+val datalog_fact : t
 
 val dead_store : t
 
@@ -284,8 +288,6 @@ val modifies_immutable : t
 
 val multiple_weakself : t
 
-val mutable_local_variable_in_component_file : t
-
 val nil_block_call : latent:bool -> t
 
 val nil_insertion_into_collection : latent:bool -> t
@@ -301,6 +303,8 @@ val no_matching_function_clause : latent:bool -> t
 val no_true_branch_in_if : latent:bool -> t
 
 val no_matching_branch_in_try : latent:bool -> t
+
+val null_argument : latent:bool -> t
 
 val null_dereference : t
 
@@ -367,6 +371,8 @@ val uninitialized_value_pulse : latent:bool -> t
 val unnecessary_copy_pulse : t
 
 val unnecessary_copy_assignment_pulse : t
+
+val unnecessary_copy_assignment_movable_pulse : t
 
 val unnecessary_copy_movable_pulse : t
 
