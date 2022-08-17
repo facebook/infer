@@ -912,6 +912,11 @@ and cfg_json =
     ~meta:"file" "Path to CFG json file"
 
 
+and cil_lang =
+  CLOpt.mk_bool ~long:"cil-lang"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Analyze on project written in cil language (.NET)"
+
 and censor_report =
   CLOpt.mk_string_list ~long:"censor-report" ~deprecated:["-filter-report"]
     ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
@@ -3274,6 +3279,8 @@ and capture_textual_sil = !capture_textual_sil
 and capture_block_list = !capture_block_list
 
 and cfg_json = !cfg_json
+
+and cil_lang = !cil_lang
 
 and censor_report =
   RevList.rev_map !censor_report ~f:(fun str ->

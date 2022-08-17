@@ -8,7 +8,6 @@
 (** Capture module for the json analysis in the capture phase *)
 
 open! IStd
-module L = Logging
 
 let capture ~changed_files ~cfg_json ~tenv_json =
   let tenv = InferAnalyzeJson.parse_tenv (Yojson.Safe.from_file tenv_json) in
