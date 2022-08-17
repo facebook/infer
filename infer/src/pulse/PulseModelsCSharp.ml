@@ -82,10 +82,10 @@ module Collection = struct
         (is_empty_value, Hist.single_event path event)
         location fresh_val astate
     in
-    let<*> astate =
+    let<**> astate =
       PulseOperations.write_deref path location ~ref:this ~obj:fresh_val astate
-      >>= PulseArithmetic.and_eq_int init_value IntLit.zero
-      >>= PulseArithmetic.and_eq_int is_empty_value IntLit.one
+      >>>= PulseArithmetic.and_eq_int init_value IntLit.zero
+      >>== PulseArithmetic.and_eq_int is_empty_value IntLit.one
     in
     astate |> Basic.ok_continue
 
@@ -113,9 +113,9 @@ module Collection = struct
     (* snd_field takes new value given *)
     let<*> astate = PulseOperations.write_deref path location ~ref:snd_addr ~obj:new_elem astate in
     (* Collection.add returns a boolean, in this case the return always has value one *)
-    let<*> astate =
+    let<**> astate =
       PulseArithmetic.and_eq_int ret_value IntLit.one astate
-      >>| PulseOperations.write_id ret_id (ret_value, Hist.single_event path event)
+      >>|| PulseOperations.write_id ret_id (ret_value, Hist.single_event path event)
     in
     (* empty field set to false if the collection was empty *)
     let<*> astate, _, (is_empty_val, hist) =
@@ -124,11 +124,11 @@ module Collection = struct
     if PulseArithmetic.is_known_zero astate is_empty_val then astate |> Basic.ok_continue
     else
       let is_empty_new_val = AbstractValue.mk_fresh () in
-      let<*> astate =
+      let<**> astate =
         write_field path is_empty_field
           (is_empty_new_val, Hist.add_event path event hist)
           location coll_val astate
-        >>= PulseArithmetic.and_eq_int is_empty_new_val IntLit.zero
+        >>>= PulseArithmetic.and_eq_int is_empty_new_val IntLit.zero
       in
       astate |> Basic.ok_continue
 
@@ -178,7 +178,7 @@ module Collection = struct
   let remove_at path ~desc coll location ret_id astate =
     let event = Hist.call_event path location desc in
     let new_val = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
+    let<**> astate = PulseArithmetic.and_eq_int new_val IntLit.zero astate in
     update path coll new_val ValueHistory.epoch event location ret_id astate
 
 
@@ -190,16 +190,16 @@ module Collection = struct
     let null_val = AbstractValue.mk_fresh () in
     let ret_val = AbstractValue.mk_fresh () in
     let is_empty_val = AbstractValue.mk_fresh () in
-    let* astate =
+    let=* astate =
       write_field path is_empty_field
         (is_empty_val, Hist.single_event path event)
         location coll_val astate
     in
-    let* astate =
+    let** astate =
       PulseArithmetic.and_eq_int null_val IntLit.zero astate
-      >>= PulseArithmetic.and_eq_int ret_val IntLit.one
+      >>== PulseArithmetic.and_eq_int ret_val IntLit.one
     in
-    let* astate =
+    let+* astate =
       PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand field_val) astate
     in
@@ -221,22 +221,22 @@ module Collection = struct
     (* case1: given element is equal to fst_field *)
     let astate1 =
       remove_elem_found path coll_val elem fst_addr fst_val ret_id location event astate
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
     (* case2: given element is equal to snd_field *)
     let astate2 =
       remove_elem_found path coll_val elem snd_addr snd_val ret_id location event astate
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
     (* case 3: given element is not equal to the fst AND not equal to the snd *)
     let astate3 =
       PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
-      >>= PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
+      >>== PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
             (AbstractValueOperand snd_val)
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
-    [astate1; astate2; astate3]
+    SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
 
 
   let remove ~desc args : model =
@@ -279,9 +279,9 @@ module Collection = struct
     let<*> astate = write_field path fst_field (null_val, hist) location coll_val astate in
     let<*> astate = write_field path snd_field (null_val, hist) location coll_val astate in
     let<*> astate = write_field path is_empty_field (is_empty_val, hist) location coll_val astate in
-    let<+> astate =
+    let<++> astate =
       PulseArithmetic.and_eq_int null_val IntLit.zero astate
-      >>= PulseArithmetic.and_eq_int is_empty_val IntLit.one
+      >>== PulseArithmetic.and_eq_int is_empty_val IntLit.one
     in
     astate
 
@@ -291,11 +291,11 @@ module Collection = struct
      (2) in such case we can return 0 *)
   let get_elem_coll_is_empty path is_empty_val is_empty_expected_val event location ret_id astate =
     let not_found_val = AbstractValue.mk_fresh () in
-    let* astate =
+    let+* astate =
       PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand is_empty_val)
         (AbstractValueOperand is_empty_expected_val) astate
-      >>= PulseArithmetic.and_eq_int not_found_val IntLit.zero
-      >>= PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
+      >>== PulseArithmetic.and_eq_int not_found_val IntLit.zero
+      >>== PulseArithmetic.and_eq_int is_empty_expected_val IntLit.one
     in
     let hist = Hist.single_event path event in
     let astate = PulseOperations.write_id ret_id (not_found_val, hist) astate in
@@ -313,25 +313,25 @@ module Collection = struct
     let astate1 =
       PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
-      >>= PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
+      >>== PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
             (AbstractValueOperand snd_val)
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
     (* case 2: given element is equal to fst_field *)
     let astate2 =
       PulseArithmetic.and_positive found_val astate
-      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
             (AbstractValueOperand fst_val)
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
     (* case 3: given element is equal to snd_field *)
     let astate3 =
       PulseArithmetic.and_positive found_val astate
-      >>= PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
             (AbstractValueOperand snd_val)
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
-    [astate1; astate2; astate3]
+    SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
 
 
   let get ~desc coll (elem, _) : model =
@@ -345,26 +345,26 @@ module Collection = struct
     let true_val = AbstractValue.mk_fresh () in
     let astate1 =
       get_elem_coll_is_empty path is_empty_val true_val event location ret_id astate
-      |> Basic.map_continue
+      >>|| ExecutionDomain.continue
     in
     (* case 2: collection is not known to be empty *)
     let found_val = AbstractValue.mk_fresh () in
     let astates2 =
       let<*> astate2, _, (fst_val, _) = load_field path fst_field location coll_val astate in
       let<*> astate2, _, (snd_val, _) = load_field path snd_field location coll_val astate2 in
-      let<*> astate2 =
+      let<**> astate2 =
         PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand is_empty_val)
           (AbstractValueOperand true_val) astate2
-        >>= PulseArithmetic.and_eq_int true_val IntLit.one
-        >>| PulseOperations.write_id ret_id (found_val, Hist.single_event path event)
+        >>== PulseArithmetic.and_eq_int true_val IntLit.one
+        >>|| PulseOperations.write_id ret_id (found_val, Hist.single_event path event)
       in
       get_elem_coll_not_known_empty elem found_val fst_val snd_val astate2
     in
-    astate1 :: astates2
+    SatUnsat.to_list astate1 @ astates2
 end
 
 module Resource = struct
-  let allocate_state (this, _) {location; callee_procname} astate : PulseAbductiveDomain.t =
+  let allocate_state (this, _) {location; callee_procname} astate : AbductiveDomain.t =
     let[@warning "-8"] (Some (Typ.CSharpClass class_name)) =
       Procname.get_class_type_name callee_procname
     in
@@ -390,15 +390,15 @@ module Resource = struct
     in delegated_state @ exn_state
 
 
-  let allocate ~exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
+  let _allocate ~exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
 
   let allocate_with_delegation ~exn_class_name () this_arg delegation : model =
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
-  let _update_result_ok_state ~(f : PulseAbductiveDomain.t -> PulseAbductiveDomain.t)
-      (results : PulseExecutionDomain.t PulseAccessResult.t list) :
-          PulseExecutionDomain.t PulseAccessResult.t list =
+  let _update_result_ok_state ~(f : AbductiveDomain.t -> AbductiveDomain.t)
+      (results : ExecutionDomain.t AccessResult.t list) :
+          ExecutionDomain.t AccessResult.t list =
               List.map results ~f:(PulseResult.map
                   ~f:(function
                       | ContinueProgram astate -> ContinueProgram (f astate)
@@ -529,7 +529,7 @@ let matchers : matcher list =
     $--> string_is_null_or_whitespace ~desc:"String.IsNullOrEmpty"
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Diagnostics.Debug")
     &:: "Assert" <>$ capt_arg $--> Basic.assert_
-  (* IDisposables that take care of passed resource (stream), and may throw exception *)
+  (* IDisposables that take care of passed resource (stream) *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of
       [ "System.IO.StreamReader"
       ; "System.IO.StreamWriter"
@@ -539,24 +539,21 @@ let matchers : matcher list =
         ])
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:None ()
+  (* Things that may throw an exception *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Net.Sockets.NetworkStream")
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:(Some "System.IO.IOException") ()
-  (* Things that may throw an exception *)
-  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of
-      [ "System.IO.FileStream"
-      ; "System.IO.IsolatedStorage.IsolatedStorageFileStream"
-      ])
-    &:: ".ctor" <>$ capt_arg_payload
-    $+...$--> Resource.allocate ~exn_class_name:(Some "System.IO.FileNotFoundException")
-  (* Usage of IDisposables *)
+  (* If a stream function is used, like Read, model the possibility for an exception *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.Stream")
-    &::+ (fun _ str -> StringSet.mem str input_resource_usage_modeled)
+    &::+ (fun _ function_name -> StringSet.mem function_name input_resource_usage_modeled)
     <>$ any_arg $+...$--> Resource.use ~exn_class_name:"System.IO.IOException"
-  (* Some IDisposables that don't _need_ to be disposed, so don't track *)
+  (* Some IDisposables that don't _need_ to be disposed, so we treat them as nops *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
     &:: ".ctor" <>$ any_arg $+...$--> Basic.skip
-  (* Base case for IDisposables *)
+  (* Base case for IDisposables:
+      model the allocation and deallocation and if code exists analyze it.
+      we don't model enumerators, as they are an exception to the general IDisposable rule,
+        instead we want to analyze the code for the enumerator *)
   ; +map_context_tenv implements_disposable_not_enumerator
     &:: ".ctor" <>$ capt_arg $++$--> Resource.allocate_with_analysis
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
@@ -566,30 +563,27 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IAsyncDisposable")
     &:: "DisposeAsync" <>$ capt_arg $--> Resource.release_with_analysis
 
+  (* Models for collections and dictionaries *)
   ; +map_context_tenv implements_collection
     &:: ".ctor" $ capt_arg_payload
     $--> Collection.init ~desc:"Collection..ctor()"
   ; +map_context_tenv implements_dictionary 
     &:: "Add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-    $--> Collection.put ~desc:"Map.put()"
+    $--> Collection.put ~desc:"Dictionary.Add()"
   ; +map_context_tenv implements_dictionary
-    &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Collection.get ~desc:"Map.get()"
+    &:: "get_Item" <>$ capt_arg_payload $+ capt_arg_payload $--> Collection.get ~desc:"Dictionary.[]"
   ; +map_context_tenv implements_collection
     &:: "Add" $ capt_arg_payload $+ capt_arg_payload
-    $--> Collection.add ~desc:"Collection.add"
+    $--> Collection.add ~desc:"Collection.Add"
   ; +map_context_tenv implements_collection
     &:: "Remove"
-    &++> Collection.remove ~desc:"Collection.remove"
+    &++> Collection.remove ~desc:"Collection.Remove"
   ; +map_context_tenv implements_collection
     &:: "IsEmpty" <>$ capt_arg_payload
-    $--> Collection.is_empty ~desc:"Collection.isEmpty()"
+    $--> Collection.is_empty ~desc:"Collection.IsEmpty()"
   ; +map_context_tenv implements_collection
     &:: "Clear" $ capt_arg_payload
-    $--> Collection.clear ~desc:"Collection.clear()"
-    (* investigate code for getting more*)
-  ; +map_context_tenv (PatternMatch.CSharp.implements "System.Linq.Enumerable")
-    &:: "ElementAt" $ capt_arg_payload $+ capt_arg_payload
-    $--> PulseModelsCpp.Vector.at ~desc:"Collection.get()"
+    $--> Collection.clear ~desc:"Collection.Clear()"
 
     (* This is needed for constructors that call out to the base constructor for objects. *)
     (* In particular, it was added for analyzing the constructors of IDisposables,
