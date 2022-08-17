@@ -52,6 +52,7 @@ const poweredByImages = [
   { url: "https://tangramflex.com", image: "/img/who/tangramflex.png" },
   { url: "https://www.uber.com", image: "/img/who/uber.svg" },
   { url: "https://www.whatsapp.com", image: "/img/who/whatsapp.svg" },
+  { url: "https://www.sonatype.com", image: "/img/who/sonatype.png" },
 ];
 
 const poweredByItems = [
