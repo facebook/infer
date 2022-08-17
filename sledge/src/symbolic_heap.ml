@@ -531,6 +531,8 @@ module Sh = struct
     if strong_unsat then is_unsat_dnf q vx
     else Context.refutes q.ctx (pure_approx q)
 
+  let is_unsat_strong _ = false
+
   (** Simplify *)
 
   let norm ?(ignore_ctx : unit option) s q vx =
@@ -1058,6 +1060,7 @@ module Xsh = struct
 
   let is_unsat_dnf (q, vx) = Var.Fresh.gen_ vx (Sh.is_unsat_dnf q)
   let is_unsat (q, vx) = Var.Fresh.gen_ vx (Sh.is_unsat q)
+  let is_unsat_strong (q, _) = Sh.is_unsat_strong q
 
   (** Simplify *)
 

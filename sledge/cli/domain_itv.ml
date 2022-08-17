@@ -167,6 +167,7 @@ let assign reg exp q =
   |>
   [%Dbg.retn fun {pf} r -> pf "{%a}" pp r]
 
+let is_unsat _ = false
 let resolve_int _ _ _ = []
 
 (** block if [e] is known to be false; skip otherwise *)

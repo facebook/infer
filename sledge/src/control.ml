@@ -1167,9 +1167,10 @@ struct
     | Return {exp} -> exec_return exp ams wl
     | Throw {exc} -> exec_throw exc ams wl
     | Abort {loc} ->
-        Report.alarm
-          (Alarm.v Abort loc Llair.Term.pp term D.pp state)
-          ~dp_witness:(Hist.dump ams.history) ;
+        if not (D.is_unsat state) then
+          Report.alarm
+            (Alarm.v Abort loc Llair.Term.pp term D.pp state)
+            ~dp_witness:(Hist.dump ams.history) ;
         wl
     | Unreachable -> wl
 
