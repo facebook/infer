@@ -531,7 +531,69 @@ module Sh = struct
     if strong_unsat then is_unsat_dnf q vx
     else Context.refutes q.ctx (pure_approx q)
 
-  let is_unsat_strong _ = false
+  let to_z3 ctx q =
+    let dnf_iter :
+           conj:(t -> 'conjuncts -> 'conjuncts)
+        -> t
+        -> 'conjuncts
+        -> 'conjuncts iter =
+     fun ~conj sjn cjn ->
+      Iter.from_iter
+      @@ fun yield ->
+      let add_conjunct sjn (cjn, splits) =
+        let sjn, djns = ({sjn with djns= []}, sjn.djns) in
+        let cjn = conj sjn cjn in
+        let splits = Iter.append (Iter.of_list djns) splits in
+        (cjn, splits)
+      in
+      let rec add_disjunct sjn (cjn, splits) =
+        let cjn, splits = add_conjunct sjn (cjn, splits) in
+        match Iter.pop splits with
+        | Some (split, splits) ->
+            Set.iter split ~f:(fun sjn -> add_disjunct sjn (cjn, splits))
+        | None -> yield cjn
+      in
+      if not (is_false sjn) then add_disjunct sjn (cjn, Iter.empty)
+    in
+    let conj q (pure, heap) =
+      ( Z3.Boolean.mk_and ctx [Formula.to_z3 ctx q.pure; pure]
+      , Segs.fold ~f:List.cons q.heap heap )
+    in
+    (* [a,m) and [b,n) are disjoint iff a+m ≤ b ∨ b+n ≤ a *)
+    let disjoint (a, m) (b, n) =
+      let a = Term.to_z3 ctx a in
+      let am = Z3.Arithmetic.mk_add ctx [a; Term.to_z3 ctx m] in
+      let b = Term.to_z3 ctx b in
+      let bn = Z3.Arithmetic.mk_add ctx [b; Term.to_z3 ctx n] in
+      Z3.Boolean.mk_or ctx
+        [Z3.Arithmetic.mk_le ctx am b; Z3.Arithmetic.mk_le ctx bn a]
+    in
+    let equal (a, m) (b, n) =
+      Z3.Boolean.mk_and ctx
+        [ Z3.Boolean.mk_eq ctx (Term.to_z3 ctx a) (Term.to_z3 ctx b)
+        ; Z3.Boolean.mk_eq ctx (Term.to_z3 ctx m) (Term.to_z3 ctx n) ]
+    in
+    let compatible ((h : seg), (k : seg)) =
+      Z3.Boolean.mk_and ctx
+        [ disjoint (h.loc, h.siz) (k.loc, k.siz)
+        ; Z3.Boolean.mk_or ctx
+            [ disjoint (h.bas, h.len) (k.bas, k.len)
+            ; equal (h.bas, h.len) (k.bas, k.len) ] ]
+    in
+    dnf_iter ~conj q (Z3.Boolean.mk_true ctx, [])
+    |> Iter.map ~f:(fun (pure, heap) ->
+           let compat = Iter.map ~f:compatible (Iter.diagonal_l heap) in
+           Z3.Boolean.mk_and ctx (pure :: Iter.to_list compat) )
+    |> Iter.to_list
+    |> Z3.Boolean.mk_or ctx
+
+  let is_unsat_strong q =
+    let ctx = Z3.mk_context [] in
+    let solver = Z3.Solver.mk_solver ctx None in
+    Z3.Solver.add solver [to_z3 ctx q] ;
+    match Z3.Solver.check solver [] with
+    | UNSATISFIABLE -> true
+    | UNKNOWN | SATISFIABLE -> false
 
   (** Simplify *)
 

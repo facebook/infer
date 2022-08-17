@@ -31,6 +31,7 @@ depends: [
   "shexp"
   "smtlib-utils" {> "0.1"}
   "yojson"
+  "z3"
   "zarith"
 ]
 synopsis: "SLEdge analyzer"
