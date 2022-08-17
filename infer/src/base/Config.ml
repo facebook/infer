@@ -3404,6 +3404,8 @@ and dump_duplicate_symbols = !dump_duplicate_symbols
 
 and dump_textual = !dump_textual
 
+and dynamic_dispatch_json_file_path = !dynamic_dispatch_json_file_path
+
 and eradicate_condition_redundant = !eradicate_condition_redundant
 
 and eradicate_field_over_annotated = !eradicate_field_over_annotated

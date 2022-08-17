@@ -652,6 +652,10 @@ OPTIONS
            more than one file. (Conversely: --no-dump-duplicate-symbols)       
     See also infer-capture(1).
 
+       --dynamic-dispatch-json-file-path path
+           Dynamic dispatch file path to get the JSON used for method name
+           substitution           See also infer-analyze(1).
+
        --enable-issue-type +issue_type
            Show reports coming from this type of issue. By default, all issue
            types are enabled except the ones listed in --disable-issue-type.
@@ -1988,6 +1992,9 @@ INTERNAL OPTIONS
 
        --dump-textual-reset
            Cancel the effect of --dump-textual.
+
+       --dynamic-dispatch-json-file-path-reset
+           Cancel the effect of --dynamic-dispatch-json-file-path.
 
        --enable-issue-type-reset
            Set --enable-issue-type to the empty list.
