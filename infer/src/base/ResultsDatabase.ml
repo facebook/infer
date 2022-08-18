@@ -18,7 +18,6 @@ let procedures_schema prefix =
     {|
       CREATE TABLE IF NOT EXISTS %sprocedures
         ( proc_uid TEXT PRIMARY KEY NOT NULL
-        , proc_name BLOB NOT NULL
         , source_file TEXT NOT NULL
         , proc_attributes BLOB NOT NULL
         , cfg BLOB

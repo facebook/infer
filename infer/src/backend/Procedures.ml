@@ -11,11 +11,13 @@ module L = Logging
 
 let get_all ~filter () =
   let db = ResultsDatabase.get_database () in
-  let stmt = Sqlite3.prepare db "SELECT source_file, proc_name FROM procedures" in
+  let stmt = Sqlite3.prepare db "SELECT source_file, proc_attributes FROM procedures" in
   SqliteUtils.result_fold_rows db ~log:"reading all procedure names" stmt ~init:[]
     ~f:(fun rev_results stmt ->
       let source_file = Sqlite3.column stmt 0 |> SourceFile.SQLite.deserialize in
-      let proc_name = Sqlite3.column stmt 1 |> Procname.SQLite.deserialize in
+      let proc_name =
+        Sqlite3.column stmt 1 |> ProcAttributes.SQLite.deserialize |> ProcAttributes.get_proc_name
+      in
       if filter source_file proc_name then proc_name :: rev_results else rev_results )
 
 
@@ -94,20 +96,19 @@ let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_c
       (pp_if proc_name_cond "proc_name" Procname.pp)
       proc_name
       (pp_column_if stmt defined "defined" deserialize_bool_int Bool.pp)
-      2
+      1
       (pp_column_if stmt ~new_line:true proc_attributes "attributes"
          ProcAttributes.SQLite.deserialize ProcAttributes.pp )
-      4
+      3
       (pp_column_if stmt ~new_line:false proc_cfg "control-flow graph" Procdesc.SQLite.deserialize
          dump_cfg )
-      5
+      4
   in
   (* we could also register this statement but it's typically used only once per run so just prepare
      it inside the function *)
   Sqlite3.prepare db
     {|
        SELECT
-         proc_name,
          proc_uid,
          cfg IS NOT NULL,
          source_file,
@@ -117,6 +118,9 @@ let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_c
     |}
   |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"print all procedures")
        ~f:(fun stmt ->
-         let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
-         let source_file = Sqlite3.column stmt 3 |> SourceFile.SQLite.deserialize in
+         let proc_name =
+           Sqlite3.column stmt 3 |> ProcAttributes.SQLite.deserialize
+           |> ProcAttributes.get_proc_name
+         in
+         let source_file = Sqlite3.column stmt 2 |> SourceFile.SQLite.deserialize in
          if filter source_file proc_name then pp_row stmt fmt source_file proc_name )

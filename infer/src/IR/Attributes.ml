@@ -20,17 +20,21 @@ let find =
         |> Option.map ~f:ProcAttributes.SQLite.deserialize )
 
 
-let load, clear_cache, store =
+let load_from_uid, load, clear_cache, store =
   (* capture DB attribute cache: only keeps positive entries as analysis may add entries *)
   let cache : ProcAttributes.t Procname.Hash.t = Procname.Hash.create 1 in
+  let load_from_uid uid =
+    let result = find uid in
+    Option.iter result ~f:(fun attrs ->
+        Procname.Hash.add cache (ProcAttributes.get_proc_name attrs) attrs ) ;
+    result
+  in
   let load pname =
     match Procname.Hash.find_opt cache pname with
     | Some _ as result ->
         result
     | None ->
-        let result = find (Procname.to_unique_id pname) in
-        Option.iter result ~f:(Procname.Hash.add cache pname) ;
-        result
+        load_from_uid (Procname.to_unique_id pname)
   in
   let clear_cache () = Procname.Hash.clear cache in
   let store ~proc_desc (attr : ProcAttributes.t) =
@@ -43,7 +47,6 @@ let load, clear_cache, store =
         ProcAttributes.pp attr (Pp.option Procdesc.pp_signature) proc_desc ;
     let pname = attr.proc_name in
     let proc_uid = Procname.to_unique_id pname in
-    let proc_name = Procname.SQLite.serialize pname in
     let cfg = Procdesc.SQLite.serialize proc_desc in
     let proc_attributes = ProcAttributes.SQLite.serialize attr in
     let source_file = SourceFile.SQLite.serialize attr.loc.Location.file in
@@ -51,10 +54,10 @@ let load, clear_cache, store =
       Option.value_map proc_desc ~f:Procdesc.get_static_callees ~default:[]
       |> Procname.SQLiteList.serialize
     in
-    DBWriter.replace_attributes ~proc_uid ~proc_name ~source_file ~proc_attributes ~cfg ~callees ;
+    DBWriter.replace_attributes ~proc_uid ~source_file ~proc_attributes ~cfg ~callees ;
     Procname.Hash.remove cache pname
   in
-  (load, clear_cache, store)
+  (load_from_uid, load, clear_cache, store)
 
 
 let load_formal_types pname =
