@@ -54,6 +54,7 @@ module Make (State_domain : State_domain_sig) = struct
     in
     (State_domain.joinN entrys, State_domain.joinN currents)
 
+  let is_unsat (_, current) = State_domain.is_unsat current
   let resolve_int tid (_, current) = State_domain.resolve_int tid current
 
   let exec_assume tid (entry, current) cnd =

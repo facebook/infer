@@ -121,6 +121,13 @@ struct
           Sum.iter poly ~f:(fun mono _ ->
               Prod.iter mono ~f:(fun trm _ -> f trm) ) )
 
+    let power_product m =
+      Iter.from_iter (fun f -> Prod.iter m ~f:(fun x p -> f (x, p)))
+
+    let sum_of_power_products p =
+      Iter.from_iter (fun f ->
+          Sum.iter p ~f:(fun m c -> f (c, power_product m)) )
+
     (* core invariant *)
 
     let mono_invariant mono =

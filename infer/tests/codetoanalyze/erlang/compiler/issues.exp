@@ -699,6 +699,11 @@ nonmatch_tuples:test_size2_Bad/0: function_clause
 nonmatch_tuples:test_size3_Bad/0: function_clause
 nonmatch_tuples:test_size4_Bad/0: function_clause
 
+----- nonmatch_unsupported -----
+nonmatch_unsupported:fp_test_case4_Ok/0: ok
+nonmatch_unsupported:test_case3_Ok/0: ok
+nonmatch_unsupported:test_case5_Bad/0: expected_crash
+
 ----- specs_basic -----
 specs_basic:test_no_args_Bad/0: badmatch
 specs_basic:test_no_args_Ok/0: ok

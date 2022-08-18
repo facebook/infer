@@ -14,8 +14,8 @@ depends: [
   "async_rpc_kernel" {= "v0.14.0"}
   "async_unix" {= "v0.14.0"}
   "atd" {= "2.9.1"}
-  "atdgen" {= "2.9.1"}
-  "atdgen-runtime" {= "2.9.1"}
+  "atdgen" {= "2.10.0"}
+  "atdgen-runtime" {= "2.10.0"}
   "base" {= "v0.14.3"}
   "base-bigarray" {= "base"}
   "base-bytes" {= "base"}
@@ -28,7 +28,6 @@ depends: [
   "bigarray-compat" {= "1.1.0"}
   "bin_prot" {= "v0.14.1"}
   "biniou" {= "1.2.1"}
-  "camlp-streams" {= "5.0.1"}
   "camlzip" {= "1.11"}
   "camomile" {= "1.0.2"}
   "charInfo_width" {= "1.1.0"}
@@ -137,7 +136,7 @@ depends: [
   "utop" {= "2.9.2"}
   "variantslib" {= "v0.14.0"}
   "xmlm" {= "1.4.0"}
-  "yojson" {= "1.7.0"}
+  "yojson" {= "2.0.2"}
   "zarith" {= "1.12"}
   "zed" {= "3.1.0"}
 ]

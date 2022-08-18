@@ -54,6 +54,7 @@ let joinN qs =
   [%Dbg.retn fun {pf} -> pf "%a" pp]
 
 let dnf = Xsh.dnf
+let is_unsat q = Xsh.is_unsat_strong q
 
 let resolve_int tid q e =
   match Term.get_z (Context.normalize (Xsh.ctx q) (X.term tid e)) with

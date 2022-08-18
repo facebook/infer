@@ -1549,10 +1549,6 @@ OPTIONS
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)           See also infer-analyze(1).
 
-       --topl-skip-report-calls regex
-           Regex of procedures whose calls should be skipped from the
-           reported trace.           See also infer-analyze(1).
-
        --uninit
            Activates: checker uninit: Warns when values are used before
            having been initialized. (Conversely: --no-uninit)           See also infer-analyze(1).

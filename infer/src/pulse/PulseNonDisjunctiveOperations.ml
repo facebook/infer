@@ -180,17 +180,13 @@ let get_matching_dest_addr_opt (edges_curr, attr_curr) edges_orig : AbstractValu
             None )
 
 
-let is_modified_since_detected addr ~is_param ~current_heap ~current_attrs ~copy_heap
-    ~reachable_addresses_from_copy =
+let is_modified_since_detected addr ~is_param ~current_heap ~current_attrs ~copy_heap =
   let rec aux ~addr_to_explore ~visited =
     match addr_to_explore with
     | [] ->
         false
     | addr :: addr_to_explore -> (
-        if
-          AbstractValue.Set.mem addr visited
-          || not (AbstractValue.Set.mem addr reachable_addresses_from_copy)
-        then aux ~addr_to_explore ~visited
+        if AbstractValue.Set.mem addr visited then aux ~addr_to_explore ~visited
         else
           let copy_edges_opt = BaseMemory.find_opt addr copy_heap in
           let current_edges_opt = BaseMemory.find_opt addr current_heap in
@@ -223,18 +219,18 @@ let is_modified_since_detected addr ~is_param ~current_heap ~current_attrs ~copy
 
 
 let is_modified ?(is_source_opt = None) address astate heap =
-  let reachable_addresses_from_copy =
-    BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
-      (astate.AbductiveDomain.post :> BaseDomain.t)
-  in
   let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
   let current_attrs = (astate.AbductiveDomain.post :> BaseDomain.t).attrs in
-  let reachable_from heap =
-    BaseMemory.filter
-      (fun address _ -> AbstractValue.Set.mem address reachable_addresses_from_copy)
-      heap
-  in
   if Config.debug_mode then (
+    let reachable_addresses_from_copy =
+      BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
+        (astate.AbductiveDomain.post :> BaseDomain.t)
+    in
+    let reachable_from heap =
+      BaseMemory.filter
+        (fun address _ -> AbstractValue.Set.mem address reachable_addresses_from_copy)
+        heap
+    in
     L.d_printfln_escaped "Current reachable heap %a" BaseMemory.pp (reachable_from current_heap) ;
     match is_source_opt with
     | None ->
@@ -244,7 +240,7 @@ let is_modified ?(is_source_opt = None) address astate heap =
           (if s then "Source" else "Copy")
           BaseMemory.pp (reachable_from heap) ) ;
   is_modified_since_detected address ~is_param:(Option.is_none is_source_opt) ~current_heap
-    ~copy_heap:heap ~current_attrs ~reachable_addresses_from_copy
+    ~copy_heap:heap ~current_attrs
 
 
 let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) ~copied_into astate
