@@ -7,5 +7,38 @@
       "language": "Java",
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }
+  ],
+
+  "pulse-only" : true,
+  "enable-issue-type" : [ "PULSE_RESOURCE_LEAK",  "TAINT_ERROR" ],
+
+  "pulse-taint-policies": [
+    { "short_description": "SQL injection risk",
+      "taint_flows": [
+        { "source_kinds": ["UserControlledURI"],
+          "sink_kinds": ["SQLInjection"]  }
+      ]
+    }
+  ],
+  "pulse-taint-sources": [
+    { "method_with_annotation" : "HttpGetAttribute",
+      "kinds": ["UserControlledURI"],
+      "taint_target": "AllArguments"},
+    { "method_with_annotation" : "HttpPutAttribute",
+      "kinds": ["UserControlledURI"],
+      "taint_target": "AllArguments"},
+    { "method_with_annotation" : "HttpPostAttribute",
+      "kinds": ["UserControlledURI"],
+      "taint_target": "AllArguments"},
+    { "method_with_annotation" : "HttpDeleteAttribute",
+      "kinds": ["UserControlledURI"],
+      "taint_target": "AllArguments"}
+  ],
+  "pulse-taint-sinks": [
+    { "class_names": ["System.Data.Common.DbCommand"],
+      "method_names": ["set_CommandText"],
+      "kinds": ["SQLInjection"]
+    }
   ]
+
 }
