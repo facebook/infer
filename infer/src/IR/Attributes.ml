@@ -49,12 +49,11 @@ let load_from_uid, load, clear_cache, store =
     let proc_uid = Procname.to_unique_id pname in
     let cfg = Procdesc.SQLite.serialize proc_desc in
     let proc_attributes = ProcAttributes.SQLite.serialize attr in
-    let source_file = SourceFile.SQLite.serialize attr.loc.Location.file in
     let callees =
       Option.value_map proc_desc ~f:Procdesc.get_static_callees ~default:[]
       |> Procname.SQLiteList.serialize
     in
-    DBWriter.replace_attributes ~proc_uid ~source_file ~proc_attributes ~cfg ~callees ;
+    DBWriter.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ;
     Procname.Hash.remove cache pname
   in
   (load_from_uid, load, clear_cache, store)

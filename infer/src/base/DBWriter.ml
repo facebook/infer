@@ -14,19 +14,17 @@ module Implementation = struct
     let attribute_replace_statement =
       (* The innermost SELECT returns 1 iff there is a row with the same procedure uid but which is strictly
          more defined than the one we are trying to store. This is either because the stored proc has a CFG
-         and ours doesn't, or because the procedures are equally (un)defined but the source file of the stored
-         one is lexicographically smaller. The latter is used purely to impose determinism.
+         and ours doesn't, or because the procedures are equally (un)defined but the attributes of the stored
+         one are lexicographically smaller. The latter is used purely to impose determinism.
 
          The outermost operation will insert or replace the given values only if the innermost query returns
          nothing. *)
-      (* TRICK: use the source file to be more deterministic in case the same procedure name is defined
-         in several files *)
       (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
-         values so the lexicographic ordering for (:cgf, :sfile) is done by hand *)
+         values so the lexicographic ordering for (:cgf, :proc_attributes) is done by hand *)
       ResultsDatabase.register_statement
         {|
           INSERT OR REPLACE INTO procedures
-          SELECT :uid, :sfile, :pattr, :cfg, :callees
+          SELECT :uid, :pattr, :cfg, :callees
           WHERE NOT EXISTS
           (
             SELECT 1
@@ -35,23 +33,21 @@ module Implementation = struct
             AND (
                   (:cfg IS NOT NULL) < (cfg IS NOT NULL)
                   OR
-                  ((:cfg IS NOT NULL) = (cfg IS NOT NULL) AND :sfile < source_file)
+                  ((:cfg IS NOT NULL) = (cfg IS NOT NULL) AND :pattr < proc_attributes)
             )
           )
         |}
     in
-    fun ~proc_uid ~source_file ~proc_attributes ~cfg ~callees ->
+    fun ~proc_uid ~proc_attributes ~cfg ~callees ->
       ResultsDatabase.with_registered_statement attribute_replace_statement
         ~f:(fun db replace_stmt ->
           Sqlite3.bind replace_stmt 1 (* :proc_uid *) (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"replace bind proc_uid" ;
-          Sqlite3.bind replace_stmt 2 (* :sfile *) source_file
-          |> SqliteUtils.check_result_code db ~log:"replace bind source source_file" ;
-          Sqlite3.bind replace_stmt 3 (* :pattr *) proc_attributes
+          Sqlite3.bind replace_stmt 2 (* :pattr *) proc_attributes
           |> SqliteUtils.check_result_code db ~log:"replace bind proc proc_attributes" ;
-          Sqlite3.bind replace_stmt 4 (* :cfg *) cfg
+          Sqlite3.bind replace_stmt 3 (* :cfg *) cfg
           |> SqliteUtils.check_result_code db ~log:"replace bind cfg" ;
-          Sqlite3.bind replace_stmt 5 (* :callees *) callees
+          Sqlite3.bind replace_stmt 4 (* :callees *) callees
           |> SqliteUtils.check_result_code db ~log:"replace bind callees" ;
           SqliteUtils.result_unit db ~finalize:false ~log:"replace_attributes" replace_stmt )
 
@@ -102,7 +98,6 @@ module Implementation = struct
               INSERT OR REPLACE INTO memdb.procedures
               SELECT
                 sub.proc_uid,
-                sub.source_file,
                 sub.proc_attributes,
                 sub.cfg,
                 sub.callees
@@ -115,7 +110,7 @@ module Implementation = struct
                 OR
                 (main.cfg IS NOT NULL) < (sub.cfg IS NOT NULL)
                 OR
-                ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.source_file < sub.source_file)
+                ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.proc_attributes < sub.proc_attributes)
             |}
 
 
@@ -249,7 +244,6 @@ module Command = struct
         ; report_summary: Sqlite3.Data.t }
     | ReplaceAttributes of
         { proc_uid: string
-        ; source_file: Sqlite3.Data.t
         ; proc_attributes: Sqlite3.Data.t
         ; cfg: Sqlite3.Data.t
         ; callees: Sqlite3.Data.t }
@@ -300,8 +294,8 @@ module Command = struct
         Implementation.merge infer_deps_file
     | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
         Implementation.store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary
-    | ReplaceAttributes {proc_uid; source_file; proc_attributes; cfg; callees} ->
-        Implementation.replace_attributes ~proc_uid ~source_file ~proc_attributes ~cfg ~callees
+    | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees} ->
+        Implementation.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees
     | ResetCaptureTables ->
         Implementation.reset_capture_tables ()
     | Terminate ->
@@ -439,8 +433,8 @@ let start () = Server.start ()
 
 let stop () = try Server.send Command.Terminate with Unix.Unix_error _ -> ()
 
-let replace_attributes ~proc_uid ~source_file ~proc_attributes ~cfg ~callees =
-  perform (ReplaceAttributes {proc_uid; source_file; proc_attributes; cfg; callees})
+let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees =
+  perform (ReplaceAttributes {proc_uid; proc_attributes; cfg; callees})
 
 
 let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =

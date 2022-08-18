@@ -13,7 +13,6 @@ val use_daemon : bool Lazy.t
 
 val replace_attributes :
      proc_uid:string
-  -> source_file:Sqlite3.Data.t
   -> proc_attributes:Sqlite3.Data.t
   -> cfg:Sqlite3.Data.t
   -> callees:Sqlite3.Data.t
