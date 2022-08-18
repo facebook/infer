@@ -262,6 +262,10 @@ module Xsh : sig
   (** Holds only of inconsistent formulas, does not hold of all inconsistent
       formulas. Like [is_unsat] but more complete and expensive. *)
 
+  val is_unsat_strong : t -> bool
+  (** Holds only of inconsistent formulas, may not hold of all inconsistent
+      formulas. Like [is_unsat] but more complete and much more expensive. *)
+
   val is_empty : t -> bool
   (** Holds only if all satisfying states have empty heap. *)
 

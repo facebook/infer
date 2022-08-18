@@ -1097,8 +1097,42 @@ module TransferFunctions = struct
         astate
 
 
-  let call {interproc= {tenv; analyze_dependency}; get_formals; get_instantiated_cost; is_param}
-      node idx ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
+  let get_kotlin_lazy_method =
+    let regexp =
+      (* NOTE: Found two cases so far, `getFoo` and `getFoo$<full class path>`. *)
+      Re.Str.regexp "^get\\([a-zA-Z0-9_]*\\)"
+    in
+    fun ~caller ~callee ->
+      if
+        Procname.is_java callee && String.equal (Procname.to_string callee) "Object Lazy.getValue()"
+      then
+        let getter = Procname.get_method caller in
+        match Procname.get_class_type_name caller with
+        | Some class_name when Re.Str.string_match regexp getter 0 ->
+            let original_method = String.uncapitalize (Re.Str.matched_group 1 getter) in
+            let invoke_class_name =
+              Typ.Name.Java.from_string (Typ.Name.name class_name ^ "$" ^ original_method ^ "$2")
+            in
+            Some
+              (Procname.make_java ~class_name:invoke_class_name
+                 ~return_type:(Some StdTyp.Java.pointer_to_java_lang_object) ~method_name:"invoke"
+                 ~parameters:[] ~kind:Non_Static )
+        | _ ->
+            None
+      else None
+
+
+  let call
+      { interproc= {proc_desc; tenv; analyze_dependency}
+      ; get_formals
+      ; get_instantiated_cost
+      ; is_param } node idx ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
+    let callee =
+      get_kotlin_lazy_method ~caller:(Procdesc.get_proc_name proc_desc) ~callee
+      |> Option.value_map ~default:callee ~f:(fun invoke ->
+             Logging.d_printfln_escaped "Replace (%a) to (%a)" Procname.pp callee Procname.pp invoke ;
+             invoke )
+    in
     match FbGKInteraction.get_config_check ~is_param tenv callee args with
     | Some (`Config config) ->
         Dom.call_config_check ret_id config astate
