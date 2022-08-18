@@ -55,7 +55,7 @@
  (library
   (name fol)
   (public_name sledge.fol)
-  (libraries nonstdlib llair)
+  (libraries z3 nonstdlib llair)
   (flags
    (:standard -open NS))
   (preprocess

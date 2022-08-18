@@ -454,4 +454,45 @@ int shared_ptr_move_deref_bad() {
   return *p1;
 }
 
+struct Foo : public std::enable_shared_from_this<Foo> {
+  Foo() {}
+  ~Foo() {}
+  std::shared_ptr<Foo> getFoo() { return shared_from_this(); }
+};
+
+int FP_shared_from_this_ok() {
+  Foo* f = new Foo;
+  int* q = nullptr;
+  std::shared_ptr<Foo> pf1;
+  {
+    std::shared_ptr<Foo> pf2(f);
+    pf1 = pf2->getFoo(); // shares ownership of object with pf2
+    if (pf2.use_count() !=
+        2) { // should not report a NPE here as the ref count is 2
+      return *q;
+    }
+  }
+  if (pf1.use_count() != 1) {
+    // pf2 is out of scope
+    // should not report a NPE here as the ref count is 1
+    return *q;
+  }
+  return 0;
+}
+
+int FN_shared_from_this_bad() {
+  Foo* f = new Foo;
+  int* q = nullptr;
+  std::shared_ptr<Foo> pf1;
+  {
+    std::shared_ptr<Foo> pf2(f);
+    pf1 = pf2->getFoo();
+    if (pf2.use_count() == 2 && pf1.use_count() == 2) {
+      // should report a NPE here as pf1, pf2 share ownership of f
+      return *q;
+    }
+  }
+  return 0;
+}
+
 } // namespace shared_ptr_semantics
