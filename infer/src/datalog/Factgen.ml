@@ -41,7 +41,7 @@ let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc (fact :
         Hash_set.add analyzed_classes (Typ.Name.name typ) ;
         report_fact analysis_data fact ~loc )
   (* Procedure-level facts *)
-  | Reachable _
+  | EntryPoint _
   | Cast _
   | Alloc _
   | VirtualCall _
@@ -74,7 +74,7 @@ let emit_call_moves analysis_data args call_proc proc_name loc ret_id =
 let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_formal_args = List.map ~f:fst (Procdesc.get_pvar_formals proc_desc) in
-  if is_entry_proc proc_name then log_fact analysis_data (Fact.reachable proc_name) ;
+  if is_entry_proc proc_name then log_fact analysis_data (Fact.entrypoint proc_name) ;
   Procdesc.iter_instrs
     (fun _ instr ->
       match instr with

@@ -13,7 +13,7 @@ open! IStd
     procedures with a void return type). The assigned variable is used instead of the column because
     the Java frontend does not provide information about columns, and variables have unique names. *)
 type t =
-  | Reachable of {proc_name: Procname.t}
+  | EntryPoint of {proc_name: Procname.t}
   | Extends of {typ: Typ.Name.t; typ_super: Typ.Name.t}
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   (* return_var = new typ(). The allocation site is "class:line:return". *)
@@ -40,7 +40,7 @@ val to_string : t -> string
 
 val iter_fact_types : (string -> unit) -> unit
 
-val reachable : Procname.t -> t
+val entrypoint : Procname.t -> t
 
 val extends : Typ.Name.t -> Typ.Name.t -> t
 

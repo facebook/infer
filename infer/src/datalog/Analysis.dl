@@ -1,0 +1,96 @@
+/* Andersen-style points-to analysis */
+.type int             <: symbol
+.type Var             <: symbol
+.type Method          <: symbol
+.type MethodSignature <: symbol
+.type ClassName       <: symbol
+.type Field           <: symbol
+.type CallSite        <: symbol
+.type AllocSite       <: symbol
+.type Context   = [size: number, head: CallSite, next: Context]
+
+/* Ground facts */
+.decl EntryPoint(m: Method)
+.decl Extends(cn: ClassName, cn_super: ClassName)
+.decl Cast(m: Method, dest: Var, source: Var, cn: ClassName)
+.decl Alloc(m: Method, dest: Var, site: AllocSite, cn: ClassName)
+.decl VirtualCall(m: Method, s: CallSite, x: Var, ms: MethodSignature)
+.decl StaticCall(m1: Method, s: CallSite, m2: Method)
+.decl ActualArg(m: Method, s: CallSite, num: int, arg: Var)
+.decl FormalArg(m: Method, num: int, arg: Var)
+.decl ActualReturn(m: Method, s: CallSite, arg: Var)
+.decl FormalReturn(m: Method, arg: Var)
+.decl Implem(cn: ClassName, ms: MethodSignature, m: Method)
+.decl Load(m: Method, dest: Var, source: Var, f: Field) // TODO generate
+.decl Store(m: Method, dest: Var, f: Field, source: Var) // TODO generate
+.decl Move(m: Method, dest: Var, source: Var) // TODO generate
+.input EntryPoint
+.input Extends
+.input Cast
+.input Alloc
+.input VirtualCall
+.input StaticCall
+.input ActualArg
+.input FormalArg
+.input ActualReturn
+.input FormalReturn
+.input Implem
+.input Load
+.input Store
+.input Move
+
+/* Inferred facts */
+.decl ExtendsClosure(cn: ClassName, cn_super: ClassName)
+.decl Push(s: CallSite, callerCtx: Context, calleeCtx: Context)
+.decl InterProcAssign(ctx1: Context, m1: Method, dest: Var, ctx2: Context, source: Var)
+.decl Implements(cn: ClassName, ms: MethodSignature)
+.decl ReachableMethod(ctx: Context, m: Method)
+.decl Resolve(cn: ClassName, ms: MethodSignature, m: Method)
+
+/* Inferred facts used as final output */
+.decl PtV(ctx: Context, x: Var, h: AllocSite)
+.decl PtH(f: Field, base: AllocSite, h: AllocSite)
+.decl Call(callerCtx: Context, m1: Method, site: CallSite, m2: Method)
+.output PtV
+.output PtH
+.output Call
+
+/* Inference rules */
+ExtendsClosure(cn, cn) :- Extends(cn, _).
+ExtendsClosure(cn, cn) :- Extends(_, cn).
+ExtendsClosure(cn, cn_parent) :- ExtendsClosure(cn_super, cn_parent), Extends(cn, cn_super).
+
+Resolve(cn, ms, cat(cat(cn, "."), ms)) :- Implem(cn, ms).
+Resolve(cn, ms, m) :- Extends(cn, cn_super), Resolve(cn_super, ms, m), !Implem(cn, ms).
+
+ReachableMethod(nil, m) :- EntryPoint(m).
+ReachableMethod(calleeCtx, m) :- Call(callerCtx, _, s, m), Push(s, callerCtx, calleeCtx).
+
+InterProcAssign(ctx, m, dest, ctx, source) :- ReachableMethod(ctx, m), Move(m, dest, source).
+InterProcAssign(calleeCtx, m2, dest, callerCtx, source) :-
+    Call(callerCtx, m1, s, m2),
+    ActualArg(m1, s, num, source),
+    FormalArg(m2, num, dest),
+    Push(s, callerCtx, calleeCtx).
+InterProcAssign(callerCtx, m1, dest, calleeCtx, source) :-
+    Call(callerCtx, m1, s, m2),
+    ActualReturn(m1, s, dest),
+    FormalReturn(m2, source),
+    Push(s, callerCtx, calleeCtx).
+
+Push(s, ctx, ctx) :- Call(ctx, _, s, _).
+
+PtV(ctx, x, h) :- ReachableMethod(ctx, m), Alloc(m, x, h, _).
+PtV(ctx1, dest, h) :- ReachableMethod(ctx1, m1), InterProcAssign(ctx1, m1, dest, ctx2, source), PtV(ctx2, source, h).
+PtV(ctx, x, h2) :- ReachableMethod(ctx, m), Load(m, x, y, f), PtV(ctx, y, h1), PtH(f, h1, h2).
+PtV(ctx, x, h) :- ReachableMethod(ctx, m), Cast(m, x, y, cn), PtV(ctx, y, h), Alloc(_, _, h, cn_dyn), ExtendsClosure(cn, cn_dyn).
+
+PtH(f, h1, h2) :- ReachableMethod(ctx, m), Store(m, x, f, y), PtV(ctx, x, h1), PtV(ctx, y, h2).
+
+Call(callerCtx, m1, s, m2) :- ReachableMethod(callerCtx, m1), StaticCall(m1, s, m2).
+Call(callerCtx, m1, s, m2) :-
+    ReachableMethod(callerCtx, m1),
+    VirtualCall(m1, s, x, ms),
+    PtV(callerCtx, x, h),
+    Alloc(_, _, h, cn),
+    Resolve(cn, ms, m2).

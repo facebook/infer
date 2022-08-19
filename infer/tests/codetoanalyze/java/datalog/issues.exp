@@ -3,8 +3,8 @@ codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, Extends Facts java.lang
 codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, FormalArg Facts.<init>():void 0 n$0.
 codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, Implem Facts <init>():void.
 codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, StaticCall Facts.<init>():void Facts:10:n$1 java.lang.Object.<init>():void.
+codetoanalyze/java/datalog/Facts.java, 11, DATALOG_FACT, EntryPoint Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 11, DATALOG_FACT, Implem Facts main(java.lang.String[]):void.
-codetoanalyze/java/datalog/Facts.java, 11, DATALOG_FACT, Reachable Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:13:n$1 0 n$0.
 codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$0 Facts:13:n$0 java.lang.String.
 codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:13:n$1 java.lang.String.<init>(java.lang.String):void.
@@ -33,16 +33,16 @@ codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, Extends Hello java.lang.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, FormalArg Hello.<init>():void 0 n$0.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, Implem Hello <init>():void.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, StaticCall Hello.<init>():void Hello:8:n$1 java.lang.Object.<init>():void.
+codetoanalyze/java/datalog/Hello.java, 9, DATALOG_FACT, EntryPoint Hello.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Hello.java, 9, DATALOG_FACT, Implem Hello main(java.lang.String[]):void.
-codetoanalyze/java/datalog/Hello.java, 9, DATALOG_FACT, Reachable Hello.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Hello.java, 10, DATALOG_FACT, VirtualCall Hello.main(java.lang.String[]):void Hello:10:n$2 n$0 println(java.lang.String):void.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, ActualArg Reflection.<init>():void Reflection:11:n$1 0 n$0.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, Extends Reflection java.lang.Object.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, FormalArg Reflection.<init>():void 0 n$0.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, Implem Reflection <init>():void.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, StaticCall Reflection.<init>():void Reflection:11:n$1 java.lang.Object.<init>():void.
+codetoanalyze/java/datalog/Reflection.java, 12, DATALOG_FACT, EntryPoint Reflection.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Reflection.java, 12, DATALOG_FACT, Implem Reflection main(java.lang.String[]):void.
-codetoanalyze/java/datalog/Reflection.java, 12, DATALOG_FACT, Reachable Reflection.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Reflection.java, 13, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:13:n$0 Reflection.dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 14, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:14:n$1 Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 15, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:15:n$2 Reflection.allocNewClass():void.
@@ -87,8 +87,8 @@ codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, Extends VirtCall java
 codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, FormalArg VirtCall.<init>():void 0 n$0.
 codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, Implem VirtCall <init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, StaticCall VirtCall.<init>():void VirtCall:8:n$1 java.lang.Object.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 9, DATALOG_FACT, EntryPoint VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 9, DATALOG_FACT, Implem VirtCall main(java.lang.String[]):void.
-codetoanalyze/java/datalog/VirtCall.java, 9, DATALOG_FACT, Reachable VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, ActualArg VirtCall.main(java.lang.String[]):void VirtCall:10:n$2 0 n$1.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, ActualArg VirtCall.main(java.lang.String[]):void VirtCall:10:n$6 0 n$5.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, Alloc VirtCall.main(java.lang.String[]):void n$0 VirtCall:10:n$0 A*[_*_].

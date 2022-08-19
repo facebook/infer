@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 type t =
-  | Reachable of {proc_name: Procname.t}
+  | EntryPoint of {proc_name: Procname.t}
   | Extends of {typ: Typ.Name.t; typ_super: Typ.Name.t}
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
@@ -23,7 +23,7 @@ type t =
   | Implem of {typ: Typ.Name.t; proc_signature: string}
 
 let fact_types =
-  [ "Reachable"
+  [ "EntryPoint"
   ; "Extends"
   ; "Cast"
   ; "Alloc"
@@ -50,8 +50,8 @@ let unique_proc_id ?(withclass = true) proc_name =
 
 
 let pp fmt = function
-  | Reachable {proc_name} ->
-      F.fprintf fmt "Reachable %s" (unique_proc_id proc_name)
+  | EntryPoint {proc_name} ->
+      F.fprintf fmt "EntryPoint %s" (unique_proc_id proc_name)
   | Extends {typ; typ_super} ->
       F.fprintf fmt "Extends %s %s" (Typ.Name.name typ) (Typ.Name.name typ_super)
   | Cast {proc_name; dest; src; dest_typ} ->
@@ -94,7 +94,7 @@ let to_string fact = F.asprintf "%a" pp fact
 
 let iter_fact_types f = List.iter fact_types ~f
 
-let reachable proc_name = Reachable {proc_name}
+let entrypoint proc_name = EntryPoint {proc_name}
 
 let extends typ typ_super = Extends {typ; typ_super}
 
