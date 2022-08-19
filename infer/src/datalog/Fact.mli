@@ -13,7 +13,7 @@ open! IStd
     procedures with a void return type). The assigned variable is used instead of the column because
     the Java frontend does not provide information about columns, and variables have unique names. *)
 type t =
-  | Reachable of {proc_name: Procname.t}
+  | EntryPoint of {proc_name: Procname.t}
   | Extends of {typ: Typ.Name.t; typ_super: Typ.Name.t}
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   (* return_var = new typ(). The allocation site is "class:line:return". *)
@@ -35,12 +35,16 @@ type t =
   (* Class typ implements method proc_signature.
      proc_signature is the method signature without the class. *)
   | Implem of {typ: Typ.Name.t; proc_signature: string}
+  (* dest = src.src_field *)
+  | LoadField of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; src_field: Fieldname.t}
+  (* dest.dest_field = src *)
+  | StoreField of {proc_name: Procname.t; dest: Ident.t; dest_field: Fieldname.t; src: Ident.t}
 
 val to_string : t -> string
 
 val iter_fact_types : (string -> unit) -> unit
 
-val reachable : Procname.t -> t
+val entrypoint : Procname.t -> t
 
 val extends : Typ.Name.t -> Typ.Name.t -> t
 
@@ -61,3 +65,7 @@ val actual_return : Procname.t -> Location.t -> Ident.t -> t
 val formal_return : Procname.t -> Ident.t -> t
 
 val implem : Typ.Name.t -> Procname.t -> t
+
+val load_field : Procname.t -> Ident.t -> Ident.t -> Fieldname.t -> t
+
+val store_field : Procname.t -> Ident.t -> Fieldname.t -> Ident.t -> t

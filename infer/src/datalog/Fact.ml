@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 type t =
-  | Reachable of {proc_name: Procname.t}
+  | EntryPoint of {proc_name: Procname.t}
   | Extends of {typ: Typ.Name.t; typ_super: Typ.Name.t}
   | Cast of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; dest_typ: Typ.t}
   | Alloc of {proc_name: Procname.t; return: Ident.t; allocation_site: string; typ: Typ.t}
@@ -21,9 +21,11 @@ type t =
   | ActualReturn of {proc_name: Procname.t; call_site: string; return: Ident.t}
   | FormalReturn of {proc_name: Procname.t; return: Ident.t}
   | Implem of {typ: Typ.Name.t; proc_signature: string}
+  | LoadField of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; src_field: Fieldname.t}
+  | StoreField of {proc_name: Procname.t; dest: Ident.t; dest_field: Fieldname.t; src: Ident.t}
 
 let fact_types =
-  [ "Reachable"
+  [ "EntryPoint"
   ; "Extends"
   ; "Cast"
   ; "Alloc"
@@ -33,7 +35,9 @@ let fact_types =
   ; "FormalArg"
   ; "ActualReturn"
   ; "FormalReturn"
-  ; "Implem" ]
+  ; "Implem"
+  ; "LoadField"
+  ; "StoreField" ]
 
 
 let unique_proc_id ?(withclass = true) proc_name =
@@ -50,8 +54,8 @@ let unique_proc_id ?(withclass = true) proc_name =
 
 
 let pp fmt = function
-  | Reachable {proc_name} ->
-      F.fprintf fmt "Reachable %s" (unique_proc_id proc_name)
+  | EntryPoint {proc_name} ->
+      F.fprintf fmt "EntryPoint %s" (unique_proc_id proc_name)
   | Extends {typ; typ_super} ->
       F.fprintf fmt "Extends %s %s" (Typ.Name.name typ) (Typ.Name.name typ_super)
   | Cast {proc_name; dest; src; dest_typ} ->
@@ -78,6 +82,12 @@ let pp fmt = function
       F.fprintf fmt "FormalReturn %s %s" (unique_proc_id proc_name) (Ident.to_string return)
   | Implem {typ; proc_signature} ->
       F.fprintf fmt "Implem %s %s" (Typ.Name.name typ) proc_signature
+  | LoadField {proc_name; dest; src; src_field} ->
+      F.fprintf fmt "LoadField %s %s %s %s" (unique_proc_id proc_name) (Ident.to_string dest)
+        (Ident.to_string src) (Fieldname.to_string src_field)
+  | StoreField {proc_name; dest; dest_field; src} ->
+      F.fprintf fmt "StoreField %s %s %s %s" (unique_proc_id proc_name) (Ident.to_string dest)
+        (Fieldname.to_string dest_field) (Ident.to_string src)
 
 
 (** Generate a hash to uniquely identify an allocation or call site. The id of the retunred var is
@@ -94,7 +104,7 @@ let to_string fact = F.asprintf "%a" pp fact
 
 let iter_fact_types f = List.iter fact_types ~f
 
-let reachable proc_name = Reachable {proc_name}
+let entrypoint proc_name = EntryPoint {proc_name}
 
 let extends typ typ_super = Extends {typ; typ_super}
 
@@ -129,3 +139,7 @@ let actual_return proc_name loc return =
 let formal_return proc_name return = FormalReturn {proc_name; return}
 
 let implem typ proc_name = Implem {typ; proc_signature= unique_proc_id ~withclass:false proc_name}
+
+let load_field proc_name dest src src_field = LoadField {proc_name; dest; src; src_field}
+
+let store_field proc_name dest dest_field src = StoreField {proc_name; dest; dest_field; src}
