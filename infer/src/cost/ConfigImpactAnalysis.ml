@@ -761,7 +761,7 @@ module Dom = struct
           [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
           ; +BuiltinDecl.(match_builtin __java_throw) <>--> KnownCheap
           ; +PatternMatch.Java.implements_android "content.SharedPreferences"
-            &:: "edit" &--> KnownExpensive
+            &:: "edit" &--> KnownCheap
           ; +PatternMatch.Java.implements_android "content.SharedPreferences"
             &::+ (fun _ method_name -> String.is_prefix method_name ~prefix:"get")
             &--> KnownExpensive
