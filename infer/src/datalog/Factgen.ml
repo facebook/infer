@@ -37,30 +37,18 @@ let report_fact {IntraproceduralAnalysis.proc_desc; err_log} ~loc fact =
 
 
 (** If a specific location is not given, the location of the procdesc is used *)
-let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc (fact : Fact.t) =
+let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc fact =
   let loc = Option.value loc ~default:(Procdesc.get_loc proc_desc) in
-  match fact with
-  (* Class-level facts *)
-  | Extends {typ; _} ->
+  (* Facts that are generated once for each class *)
+  match Fact.is_generated_per_class fact with
+  | Some typ ->
       if
         (not (Hash_set.mem analyzed_classes (Typ.Name.name typ)))
         && Procname.is_constructor (Procdesc.get_proc_name proc_desc)
       then (
         Hash_set.add analyzed_classes (Typ.Name.name typ) ;
         report_fact analysis_data fact ~loc )
-  (* Procedure-level facts *)
-  | EntryPoint _
-  | Cast _
-  | Alloc _
-  | VirtualCall _
-  | StaticCall _
-  | ActualArg _
-  | FormalArg _
-  | ActualReturn _
-  | FormalReturn _
-  | Implem _
-  | LoadField _
-  | StoreField _ ->
+  | None ->
       report_fact analysis_data fact ~loc
 
 
