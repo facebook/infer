@@ -14,7 +14,7 @@ let get_all ~filter () =
   let stmt = Sqlite3.prepare db "SELECT proc_attributes FROM procedures" in
   SqliteUtils.result_fold_rows db ~log:"reading all procedure names" stmt ~init:[]
     ~f:(fun rev_results stmt ->
-      let attrs = Sqlite3.column stmt 1 |> ProcAttributes.SQLite.deserialize in
+      let attrs = Sqlite3.column stmt 0 |> ProcAttributes.SQLite.deserialize in
       let source_file = attrs.ProcAttributes.translation_unit in
       let proc_name = ProcAttributes.get_proc_name attrs in
       if filter source_file proc_name then proc_name :: rev_results else rev_results )
