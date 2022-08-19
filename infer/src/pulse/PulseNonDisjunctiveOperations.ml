@@ -9,6 +9,7 @@ open! IStd
 module L = Logging
 open PulseDomainInterface
 open PulseBasicInterface
+module CheapCopyTypes = PulseCheapCopyTypes
 
 let get_modeled_as_returning_copy_opt proc_name =
   Option.value_map ~default:None Config.pulse_model_returns_copy_pattern ~f:(fun r ->
@@ -45,9 +46,18 @@ let is_modeled_as_cheap_to_copy tenv actual_typ =
       false
 
 
+let is_known_cheap_copy typ =
+  match typ.Typ.desc with
+  | Tptr ({desc= Tstruct typename}, _) ->
+      CheapCopyTypes.is_known_cheap_copy typename
+  | _ ->
+      false
+
+
 let is_cheap_to_copy tenv typ =
   (Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals)
   || is_modeled_as_cheap_to_copy tenv typ
+  || is_known_cheap_copy typ
 
 
 let add_copies tenv path location call_exp actuals astates astate_non_disj =

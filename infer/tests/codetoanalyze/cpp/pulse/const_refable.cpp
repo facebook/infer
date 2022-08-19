@@ -4,9 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#include <vector>
+#include <optional>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 struct Arr {
   int arr[2];
@@ -69,3 +71,26 @@ int param_ref_move_ok(std::set<int> source) {
   pass_rvalue_ref(std::move(source_ref));
   return 0;
 }
+
+// structs known to be cheap to copy are not reported
+int std_pair_int_ok(std::pair<int, int> p) { return p.first; }
+
+int std_pair_vector_bad(std::pair<int, std::vector<int>> p) { return p.first; }
+
+int std_pair_string_bad(std::pair<std::string, std::string> p) { return 0; }
+
+namespace folly {
+template <class Value>
+class Optional {
+ public:
+  Optional(const Optional& src);
+};
+} // namespace folly
+
+int folly_optional_int_ok(folly::Optional<int> n_opt) { return 0; }
+
+int folly_optional_vector_bad(folly::Optional<std::vector<int>> vec_opt) {
+  return 0;
+}
+
+int folly_optional_string_bad(folly::Optional<std::string> s_opt) { return 0; }
