@@ -35,6 +35,10 @@ type t =
   (* Class typ implements method proc_signature.
      proc_signature is the method signature without the class. *)
   | Implem of {typ: Typ.Name.t; proc_signature: string}
+  (* dest = src.src_field *)
+  | LoadField of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; src_field: Fieldname.t}
+  (* dest.dest_field = src *)
+  | StoreField of {proc_name: Procname.t; dest: Ident.t; dest_field: Fieldname.t; src: Ident.t}
 
 val to_string : t -> string
 
@@ -61,3 +65,7 @@ val actual_return : Procname.t -> Location.t -> Ident.t -> t
 val formal_return : Procname.t -> Ident.t -> t
 
 val implem : Typ.Name.t -> Procname.t -> t
+
+val load_field : Procname.t -> Ident.t -> Ident.t -> Fieldname.t -> t
+
+val store_field : Procname.t -> Ident.t -> Fieldname.t -> Ident.t -> t

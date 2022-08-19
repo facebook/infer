@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 let analyzed_classes = Hash_set.create (module String)
 
@@ -21,6 +22,13 @@ let is_entry_proc proc_name =
   let java_proc_name = Procname.as_java_exn proc_name ~explanation:"Only Java procdesc supported" in
   String.equal (Procname.Java.get_method java_proc_name) "main"
   && Typ.is_void (Procname.Java.get_return_typ java_proc_name)
+
+
+let die_on_instr instr loc =
+  L.(die InternalError)
+    "FACTGEN: Unexpected instruction '%a' at location %a.@\n"
+    (Sil.pp_instr Pp.text ~print_types:true)
+    instr Location.pp_file_pos loc
 
 
 let report_fact {IntraproceduralAnalysis.proc_desc; err_log} ~loc fact =
@@ -50,7 +58,9 @@ let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc (fact :
   | FormalArg _
   | ActualReturn _
   | FormalReturn _
-  | Implem _ ->
+  | Implem _
+  | LoadField _
+  | StoreField _ ->
       report_fact analysis_data fact ~loc
 
 
@@ -102,7 +112,17 @@ let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_
             log_fact analysis_data (Fact.formal_arg proc_name i id)
         | None ->
             () )
-      | _ ->
+      | Load {id= dest; e= Lfield (Var src, src_field, _); root_typ= _; typ= _; loc} ->
+          log_fact analysis_data (Fact.load_field proc_name dest src src_field) ~loc
+      | Store {e1= Lfield (Var dest, dest_field, _); root_typ= _; typ= _; e2= Var src; loc} ->
+          log_fact analysis_data (Fact.store_field proc_name dest dest_field src) ~loc
+      (* Unexpected instructions *)
+      | Store {e1= Lvar _; root_typ= _; typ= _; e2= Lvar _; loc}
+      | Store {e1= Lfield (Var _, _, _); root_typ= _; typ= _; e2= Lvar _; loc}
+      | Store {e1= Lfield (Var _, _, _); root_typ= _; typ= _; e2= Lfield (Var _, _, _); loc} ->
+          die_on_instr instr loc
+      (* Ignored instructions *)
+      | Prune _ | Metadata _ | _ ->
           () )
     proc_desc ;
   match Procname.get_class_type_name proc_name with

@@ -24,10 +24,23 @@ codetoanalyze/java/datalog/Facts.java, 20, DATALOG_FACT, Cast Facts.main(java.la
 codetoanalyze/java/datalog/Facts.java, 20, DATALOG_FACT, Cast Facts.main(java.lang.String[]):void n$14 n$13 java.util.ArrayList.
 codetoanalyze/java/datalog/Facts.java, 23, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:23:n$16 0 n$15.
 codetoanalyze/java/datalog/Facts.java, 23, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:23:n$16 Facts.testVoid(java.lang.String):void.
-codetoanalyze/java/datalog/Facts.java, 27, DATALOG_FACT, FormalArg Facts.testArgs(java.lang.String,java.lang.String):java.lang.String 0 n$0.
-codetoanalyze/java/datalog/Facts.java, 27, DATALOG_FACT, Implem Facts testArgs(java.lang.String,java.lang.String):java.lang.String.
-codetoanalyze/java/datalog/Facts.java, 29, DATALOG_FACT, FormalReturn Facts.testArgs(java.lang.String,java.lang.String):java.lang.String n$1.
-codetoanalyze/java/datalog/Facts.java, 33, DATALOG_FACT, Implem Facts testVoid(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:26:n$18 0 n$17.
+codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$17 Facts:26:n$17 Cl.
+codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:26:n$18 Cl.<init>():void.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:30:n$21 0 n$20.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$20 Facts:30:n$20 java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:30:n$21 java.lang.String.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, StoreField Facts.main(java.lang.String[]):void n$22 Cl.x n$23.
+codetoanalyze/java/datalog/Facts.java, 31, DATALOG_FACT, LoadField Facts.main(java.lang.String[]):void n$25 n$24 Cl.x.
+codetoanalyze/java/datalog/Facts.java, 35, DATALOG_FACT, FormalArg Facts.testArgs(java.lang.String,java.lang.String):java.lang.String 0 n$0.
+codetoanalyze/java/datalog/Facts.java, 35, DATALOG_FACT, Implem Facts testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 37, DATALOG_FACT, FormalReturn Facts.testArgs(java.lang.String,java.lang.String):java.lang.String n$1.
+codetoanalyze/java/datalog/Facts.java, 41, DATALOG_FACT, Implem Facts testVoid(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, ActualArg Cl.<init>():void Cl:44:n$1 0 n$0.
+codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, Extends Cl java.lang.Object.
+codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, FormalArg Cl.<init>():void 0 n$0.
+codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, Implem Cl <init>():void.
+codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, StaticCall Cl.<init>():void Cl:44:n$1 java.lang.Object.<init>():void.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, ActualArg Hello.<init>():void Hello:8:n$1 0 n$0.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, Extends Hello java.lang.Object.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, FormalArg Hello.<init>():void 0 n$0.

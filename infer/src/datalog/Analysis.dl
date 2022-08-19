@@ -21,8 +21,8 @@
 .decl ActualReturn(m: Method, s: CallSite, arg: Var)
 .decl FormalReturn(m: Method, arg: Var)
 .decl Implem(cn: ClassName, ms: MethodSignature, m: Method)
-.decl Load(m: Method, dest: Var, source: Var, f: Field) // TODO generate
-.decl Store(m: Method, dest: Var, f: Field, source: Var) // TODO generate
+.decl LoadField(m: Method, dest: Var, source: Var, f: Field)
+.decl StoreField(m: Method, dest: Var, f: Field, source: Var)
 .decl Move(m: Method, dest: Var, source: Var) // TODO generate
 .input EntryPoint
 .input Extends
@@ -35,8 +35,8 @@
 .input ActualReturn
 .input FormalReturn
 .input Implem
-.input Load
-.input Store
+.input LoadField
+.input StoreField
 .input Move
 
 /* Inferred facts */
@@ -82,10 +82,10 @@ Push(s, ctx, ctx) :- Call(ctx, _, s, _).
 
 PtV(ctx, x, h) :- ReachableMethod(ctx, m), Alloc(m, x, h, _).
 PtV(ctx1, dest, h) :- ReachableMethod(ctx1, m1), InterProcAssign(ctx1, m1, dest, ctx2, source), PtV(ctx2, source, h).
-PtV(ctx, x, h2) :- ReachableMethod(ctx, m), Load(m, x, y, f), PtV(ctx, y, h1), PtH(f, h1, h2).
+PtV(ctx, x, h2) :- ReachableMethod(ctx, m), LoadField(m, x, y, f), PtV(ctx, y, h1), PtH(f, h1, h2).
 PtV(ctx, x, h) :- ReachableMethod(ctx, m), Cast(m, x, y, cn), PtV(ctx, y, h), Alloc(_, _, h, cn_dyn), ExtendsClosure(cn, cn_dyn).
 
-PtH(f, h1, h2) :- ReachableMethod(ctx, m), Store(m, x, f, y), PtV(ctx, x, h1), PtV(ctx, y, h2).
+PtH(f, h1, h2) :- ReachableMethod(ctx, m), StoreField(m, x, f, y), PtV(ctx, x, h1), PtV(ctx, y, h2).
 
 Call(callerCtx, m1, s, m2) :- ReachableMethod(callerCtx, m1), StaticCall(m1, s, m2).
 Call(callerCtx, m1, s, m2) :-
