@@ -15,7 +15,7 @@
   "pulse-taint-policies": [
     { "short_description": "SQL injection risk",
       "taint_flows": [
-        { "source_kinds": ["UserControlledURI"],
+        { "source_kinds": ["UserControlledURI", "UserControlledString"],
           "sink_kinds": ["SQLInjection"]  }
       ]
     }
@@ -32,7 +32,16 @@
       "taint_target": "AllArguments"},
     { "method_with_annotation" : "HttpDeleteAttribute",
       "kinds": ["UserControlledURI"],
-      "taint_target": "AllArguments"}
+      "taint_target": "AllArguments"},
+    { "class_names": ["System.Web.UI.Page"],
+      "method_names": ["get_Request"],
+      "kinds": ["UserControlledURI"]},
+    { "class_names": ["System.Web.UI.WebControls.TextBox"],
+      "method_names": ["get_Text"],
+      "kinds": ["UserControlledString"],
+      "taint_target": "ReturnValue"
+    }
+
   ],
   "pulse-taint-sinks": [
     { "class_names": ["System.Data.Common.DbCommand"],
