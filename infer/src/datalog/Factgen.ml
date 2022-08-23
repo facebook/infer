@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 let analyzed_classes = Hash_set.create (module String)
 
@@ -23,34 +24,31 @@ let is_entry_proc proc_name =
   && Typ.is_void (Procname.Java.get_return_typ java_proc_name)
 
 
+let die_on_instr instr loc =
+  L.(die InternalError)
+    "FACTGEN: Unexpected instruction '%a' at location %a.@\n"
+    (Sil.pp_instr Pp.text ~print_types:true)
+    instr Location.pp_file_pos loc
+
+
 let report_fact {IntraproceduralAnalysis.proc_desc; err_log} ~loc fact =
   Reporting.log_issue proc_desc err_log ~loc Checker.Datalog IssueType.datalog_fact
     (Fact.to_string fact)
 
 
 (** If a specific location is not given, the location of the procdesc is used *)
-let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc (fact : Fact.t) =
+let log_fact ({IntraproceduralAnalysis.proc_desc} as analysis_data) ?loc fact =
   let loc = Option.value loc ~default:(Procdesc.get_loc proc_desc) in
-  match fact with
-  (* Class-level facts *)
-  | Extends {typ; _} ->
+  (* Facts that are generated once for each class *)
+  match Fact.is_generated_per_class fact with
+  | Some typ ->
       if
         (not (Hash_set.mem analyzed_classes (Typ.Name.name typ)))
         && Procname.is_constructor (Procdesc.get_proc_name proc_desc)
       then (
         Hash_set.add analyzed_classes (Typ.Name.name typ) ;
         report_fact analysis_data fact ~loc )
-  (* Procedure-level facts *)
-  | Reachable _
-  | Cast _
-  | Alloc _
-  | VirtualCall _
-  | StaticCall _
-  | ActualArg _
-  | FormalArg _
-  | ActualReturn _
-  | FormalReturn _
-  | Implem _ ->
+  | None ->
       report_fact analysis_data fact ~loc
 
 
@@ -74,7 +72,9 @@ let emit_call_moves analysis_data args call_proc proc_name loc ret_id =
 let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_formal_args = List.map ~f:fst (Procdesc.get_pvar_formals proc_desc) in
-  if is_entry_proc proc_name then log_fact analysis_data (Fact.reachable proc_name) ;
+  List.iteri proc_formal_args ~f:(fun i arg ->
+      log_fact analysis_data (Fact.formal_arg proc_name i arg) ) ;
+  if is_entry_proc proc_name then log_fact analysis_data (Fact.entrypoint proc_name) ;
   Procdesc.iter_instrs
     (fun _ instr ->
       match instr with
@@ -96,13 +96,21 @@ let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_
           emit_call_moves analysis_data args call_proc proc_name loc ret_id
       | Store {e1= Lvar pvar; root_typ= _; typ= _; e2= Var ret_id; loc} when Pvar.is_return pvar ->
           log_fact analysis_data (Fact.formal_return proc_name ret_id) ~loc
-      | Load {id; e= Lvar pvar; root_typ= _; typ= _; loc= _} -> (
-        match List.findi proc_formal_args ~f:(fun _ -> Pvar.equal pvar) with
-        | Some (i, _) ->
-            log_fact analysis_data (Fact.formal_arg proc_name i id)
-        | None ->
-            () )
-      | _ ->
+      | Load {id= dest; e= Lfield (Var src, src_field, _); root_typ= _; typ= _; loc} ->
+          log_fact analysis_data (Fact.load_field proc_name dest src src_field) ~loc
+      | Store {e1= Lfield (Var dest, dest_field, _); root_typ= _; typ= _; e2= Var src; loc} ->
+          log_fact analysis_data (Fact.store_field proc_name dest dest_field src) ~loc
+      | Load {id= dest; e= Lvar src_pvar; root_typ= _; typ= _; loc} ->
+          log_fact analysis_data (Fact.move_load proc_name dest src_pvar) ~loc
+      | Store {e1= Lvar dest_pvar; root_typ= _; typ= _; e2= Var src; loc} ->
+          log_fact analysis_data (Fact.move_store proc_name dest_pvar src) ~loc
+      (* Unexpected instructions *)
+      | Store {e1= Lvar _; root_typ= _; typ= _; e2= Lvar _; loc}
+      | Store {e1= Lfield (Var _, _, _); root_typ= _; typ= _; e2= Lvar _; loc}
+      | Store {e1= Lfield (Var _, _, _); root_typ= _; typ= _; e2= Lfield (Var _, _, _); loc} ->
+          die_on_instr instr loc
+      (* Ignored instructions *)
+      | Prune _ | Metadata _ | _ ->
           () )
     proc_desc ;
   match Procname.get_class_type_name proc_name with

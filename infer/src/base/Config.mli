@@ -587,6 +587,7 @@ val pulse_skip_procedures : Str.regexp option
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
+  ; propagaters: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }

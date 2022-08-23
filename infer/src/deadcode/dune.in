@@ -9,9 +9,9 @@
  (flags
   (:standard -w +60))
  (libraries javalib ANSITerminal async atdgen base base64 bheap cmdliner core iter
-   memtrace mtime.clock.os ocamlgraph oUnit parmap re sawja sqlite3 str unix xmlm
+   memtrace mtime.clock.os ocamlgraph oUnit parmap ppx_show.runtime re sawja sqlite3 str unix xmlm
    yojson zarith zip CStubs)
  (modules All_infer_in_one_file)
  (preprocess
   (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_hash
-    ppx_sexp_conv ppx_variants_conv ppx_yojson_conv -no-check)))
+    ppx_sexp_conv ppx_show ppx_variants_conv ppx_yojson_conv -no-check)))

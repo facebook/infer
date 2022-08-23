@@ -52,6 +52,7 @@ type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
+  ; propagaters: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }
@@ -2294,6 +2295,13 @@ and pulse_taint_sanitizers =
      the fields format documentation."
 
 
+and pulse_taint_propagaters =
+  CLOpt.mk_json ~long:"pulse-taint-propagaters"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple propagaters as a JSON objects. See $(b,--pulse-taint-sources) for \
+     the fields format documentation."
+
+
 and pulse_taint_sinks =
   CLOpt.mk_json ~long:"pulse-taint-sinks"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2321,7 +2329,7 @@ and pulse_taint_sources =
       ("Simple" by default).
   - "taint_target":
       where the taint should be applied in the procedure.
-      - "ReturnValue": (default for taint sources)
+      - "ReturnValue": (default for taint sources and propagaters)
       - "AllArguments": (default for taint sanitizers and sinks)
       - ["ArgumentPositions", [<int list>]]:
           argument positions given by index (zero-indexed)
@@ -2346,8 +2354,8 @@ and pulse_taint_config =
   CLOpt.mk_path_list ~long:"pulse-taint-config"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Path to a taint analysis configuration file. This file can define $(b,--pulse-taint-sources), \
-     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
-     $(b,--pulse-taint-data-flow-kinds)."
+     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), \
+     $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds)."
 
 
 and pulse_widen_threshold =
@@ -3740,6 +3748,7 @@ and pulse_taint_config =
     in
     { sources= mk_matchers pulse_taint_sources
     ; sanitizers= mk_matchers pulse_taint_sanitizers
+    ; propagaters= mk_matchers pulse_taint_propagaters
     ; sinks= mk_matchers pulse_taint_sinks
     ; policies=
         Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies)
@@ -3768,6 +3777,7 @@ and pulse_taint_config =
       let combine_matchers = combine_fields Pulse_config_j.matchers_of_string in
       { sources= combine_matchers "pulse-taint-sources" taint_config.sources
       ; sanitizers= combine_matchers "pulse-taint-sanitizers" taint_config.sanitizers
+      ; propagaters= combine_matchers "pulse-taint-propagaters" taint_config.propagaters
       ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
       ; policies=
           combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"
