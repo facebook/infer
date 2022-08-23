@@ -606,6 +606,7 @@ module Attributes = struct
     || mem_by_rank Attribute.invalid_rank attrs
     || mem_by_rank Attribute.unknown_effect_rank attrs
     || mem_by_rank Attribute.java_resource_released_rank attrs
+    || mem_by_rank Attribute.propagate_taint_from_rank attrs
 
 
   let is_always_reachable = mem_by_rank Attribute.always_reachable_rank

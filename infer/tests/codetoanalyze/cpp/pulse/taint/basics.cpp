@@ -26,6 +26,7 @@ class Obj {
   void string_sink(std::string) {}
   static std::string* sanitizer1(std::string* input) { return input; }
   static std::string sanitizer2(const std::string& input) { return input; }
+  static std::string propagater(std::string& input, std::string& output);
 
   std::string field1;
   std::string field2;
@@ -158,7 +159,7 @@ void via_passthrough_bad1(Obj* obj) {
   obj->string_sink(*laundered_source);
 }
 
-void via_passthrough_bad2_FN(Obj* obj) {
+void via_passthrough_bad2(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string laundered_source = id2<std::string>(source);
   obj->string_sink(laundered_source);
@@ -182,7 +183,7 @@ void via_sanitizer_ok1_FP(Obj* obj) {
   obj->string_sink(*sanitized);
 }
 
-void via_sanitizer_ok2(Obj* obj) {
+void via_sanitizer_ok2_FP(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string sanitized = obj->sanitizer2(source);
   obj->string_sink(sanitized);
@@ -224,5 +225,26 @@ void loop_ok(struct node* init) {
 void ret_void_ok() { return; }
 
 void ret_void_transitive_ok() { return ret_void_ok(); }
+
+void via_propagater_bad(Obj* obj) {
+  std::string source = obj->string_source(0);
+  std::string propagated("");
+  std::string unpropagated = Obj::propagater(source, propagated);
+  obj->string_sink(propagated);
+}
+
+void via_propagater_ok1(Obj* obj) {
+  std::string source = obj->string_source(0);
+  std::string propagated("");
+  std::string unpropagated = Obj::propagater(source, propagated);
+  obj->string_sink(unpropagated);
+}
+
+void via_propagater_ok2(Obj* obj) {
+  std::string propagated = obj->string_source(0);
+  std::string source("");
+  std::string unpropagated = Obj::propagater(source, propagated);
+  obj->string_sink(source);
+}
 
 } // namespace basics

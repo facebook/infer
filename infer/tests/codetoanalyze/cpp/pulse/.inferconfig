@@ -83,6 +83,13 @@
     }
   ],
   "pulse-taint-sanitizers": [
-     { "procedure": "basics::Obj::sanitizer1" }
+     { "procedure": "basics::Obj::sanitizer1" },
+     { "procedure": "basics::Obj::sanitizer2" }
+  ],
+  "pulse-taint-propagaters": [
+    {
+      "procedure": "basics::Obj::propagater",
+      "taint_target": ["ArgumentPositions", [1]]
+    }
   ]
 }
