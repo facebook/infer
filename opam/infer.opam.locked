@@ -29,8 +29,6 @@ depends: [
   "bin_prot" {= "v0.14.1"}
   "biniou" {= "1.2.1"}
   "camlzip" {= "1.11"}
-  "camomile" {= "1.0.2" & with-test}
-  "charInfo_width" {= "1.1.0" & with-test}
   "cmdliner" {= "1.1.1"}
   "conf-autoconf" {= "0.1"}
   "conf-gmp" {= "4"}
@@ -53,17 +51,16 @@ depends: [
   "jane-street-headers" {= "v0.14.0"}
   "javalib" {= "3.2.1"}
   "jst-config" {= "v0.14.1"}
-  "lambda-term" {= "3.2.0" & with-test}
-  "lwt" {= "5.5.0" & with-test}
-  "lwt_log" {= "1.1.1" & with-test}
-  "lwt_react" {= "1.1.5" & with-test}
+  "lambda-term" {= "3.3.1" & with-test}
+  "logs" {= "0.7.0" & with-test}
+  "lwt" {= "5.6.1" & with-test}
+  "lwt_react" {= "1.2.0" & with-test}
   "memtrace" {= "0.2.2"}
   "menhir" {= "20211128"}
   "menhirLib" {= "20211128"}
   "menhirSdk" {= "20211128"}
   "mew" {= "0.1.0" & with-test}
   "mew_vi" {= "0.5.0" & with-test}
-  "mmap" {= "1.2.0" & with-test}
   "mtime" {= "1.4.0"}
   "num" {= "1.4"}
   "ocaml" {= "4.14.0"}
@@ -107,6 +104,7 @@ depends: [
   "ppx_sexp_conv" {= "v0.14.3"}
   "ppx_sexp_message" {= "v0.14.1"}
   "ppx_sexp_value" {= "v0.14.0"}
+  "ppx_show" {= "0.2.1"}
   "ppx_stable" {= "v0.14.1"}
   "ppx_string" {= "v0.14.1"}
   "ppx_typerep_conv" {= "v0.14.2"}
@@ -125,6 +123,7 @@ depends: [
   "spawn" {= "v0.15.1"}
   "splittable_random" {= "v0.14.0"}
   "sqlite3" {= "5.1.0"}
+  "stdcompat" {= "19"}
   "stdio" {= "v0.14.0"}
   "stdlib-shims" {= "0.3.0"}
   "textutils" {= "v0.14.0"}
@@ -133,12 +132,16 @@ depends: [
   "topkg" {= "1.0.5"}
   "trie" {= "1.0.0" & with-test}
   "typerep" {= "v0.14.0"}
-  "utop" {= "2.9.2" & with-test}
+  "uchar" {= "0.0.2"}
+  "utop" {= "2.10.0" & with-test}
+  "uucp" {= "14.0.0" & with-test}
+  "uuseg" {= "14.0.0" & with-test}
+  "uutf" {= "1.0.3" & with-test}
   "variantslib" {= "v0.14.0"}
   "xmlm" {= "1.4.0"}
   "yojson" {= "2.0.2"}
   "zarith" {= "1.12"}
-  "zed" {= "3.1.0" & with-test}
+  "zed" {= "3.2.0" & with-test}
 ]
 build: [
   ["./autogen.sh"]
