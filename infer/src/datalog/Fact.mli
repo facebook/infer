@@ -30,7 +30,7 @@ val static_call : Procname.t -> Location.t -> Ident.t -> Procname.t -> t
 
 val actual_arg : Procname.t -> Location.t -> Ident.t -> int -> Ident.t -> t
 
-val formal_arg : Procname.t -> int -> Ident.t -> t
+val formal_arg : Procname.t -> int -> Pvar.t -> t
 
 val actual_return : Procname.t -> Location.t -> Ident.t -> t
 
@@ -41,3 +41,7 @@ val implem : Typ.Name.t -> Procname.t -> t
 val load_field : Procname.t -> Ident.t -> Ident.t -> Fieldname.t -> t
 
 val store_field : Procname.t -> Ident.t -> Fieldname.t -> Ident.t -> t
+
+val move_load : Procname.t -> Ident.t -> Pvar.t -> t
+
+val move_store : Procname.t -> Pvar.t -> Ident.t -> t

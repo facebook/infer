@@ -1,6 +1,7 @@
 /* Andersen-style points-to analysis */
 .type int             <: symbol
 .type Var             <: symbol
+.type Pvar            <: symbol
 .type Method          <: symbol
 .type MethodSignature <: symbol
 .type ClassName       <: symbol
@@ -17,13 +18,14 @@
 .decl VirtualCall(m: Method, s: CallSite, x: Var, ms: MethodSignature)
 .decl StaticCall(m1: Method, s: CallSite, m2: Method)
 .decl ActualArg(m: Method, s: CallSite, num: int, arg: Var)
-.decl FormalArg(m: Method, num: int, arg: Var)
+.decl FormalArg(m: Method, num: int, arg: Pvar)
 .decl ActualReturn(m: Method, s: CallSite, arg: Var)
 .decl FormalReturn(m: Method, arg: Var)
 .decl Implem(cn: ClassName, ms: MethodSignature, m: Method)
 .decl LoadField(m: Method, dest: Var, source: Var, f: Field)
 .decl StoreField(m: Method, dest: Var, f: Field, source: Var)
-.decl Move(m: Method, dest: Var, source: Var) // TODO generate
+.decl MoveLoad(m: Method, dest: Var, source: Pvar)
+.decl MoveStore(m: Method, dest: Pvar, source: Var)
 .input EntryPoint
 .input Extends
 .input Cast
@@ -37,9 +39,11 @@
 .input Implem
 .input LoadField
 .input StoreField
-.input Move
+.input MoveLoad
+.input MoveStore
 
 /* Inferred facts */
+.decl Move(m: Method, dest: Var, source: Var)
 .decl ExtendsClosure(cn: ClassName, cn_super: ClassName)
 .decl Push(s: CallSite, callerCtx: Context, calleeCtx: Context)
 .decl InterProcAssign(ctx1: Context, m1: Method, dest: Var, ctx2: Context, source: Var)
@@ -65,6 +69,9 @@ Resolve(cn, ms, m) :- Extends(cn, cn_super), Resolve(cn_super, ms, m), !Implem(c
 
 ReachableMethod(nil, m) :- EntryPoint(m).
 ReachableMethod(calleeCtx, m) :- Call(callerCtx, _, s, m), Push(s, callerCtx, calleeCtx).
+
+Move(m, dest, source) :- MoveLoad(m, dest, source).
+Move(m, dest, source) :- MoveStore(m, dest, source).
 
 InterProcAssign(ctx, m, dest, ctx, source) :- ReachableMethod(ctx, m), Move(m, dest, source).
 InterProcAssign(calleeCtx, m2, dest, callerCtx, source) :-

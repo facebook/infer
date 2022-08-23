@@ -1,12 +1,15 @@
 codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, ActualArg Facts.<init>():void Facts:10:n$1 0 n$0@Facts.<init>():void.
 codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, Extends Facts java.lang.Object.
-codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, FormalArg Facts.<init>():void 0 n$0@Facts.<init>():void.
+codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, FormalArg Facts.<init>():void 0 this@Facts.<init>():void.
 codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, Implem Facts <init>():void.
+codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, MoveLoad Facts.<init>():void n$0@Facts.<init>():void this@Facts.<init>():void.
 codetoanalyze/java/datalog/Facts.java, 10, DATALOG_FACT, StaticCall Facts.<init>():void Facts:10:n$1 java.lang.Object.<init>():void.
 codetoanalyze/java/datalog/Facts.java, 11, DATALOG_FACT, EntryPoint Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 11, DATALOG_FACT, FormalArg Facts.main(java.lang.String[]):void 0 args@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 11, DATALOG_FACT, Implem Facts main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:13:n$1 0 n$0@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$0@Facts.main(java.lang.String[]):void Facts:13:n$0 java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void obj@Facts.main(java.lang.String[]):void n$0@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 13, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:13:n$1 java.lang.String.<init>(java.lang.String):void.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:15:n$3 0 n$2@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:15:n$6 0 n$4@Facts.main(java.lang.String[]):void.
@@ -16,135 +19,256 @@ codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, ActualArg Facts.main(ja
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$2@Facts.main(java.lang.String[]):void Facts:15:n$2 java.util.ArrayList.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$4@Facts.main(java.lang.String[]):void Facts:15:n$4 java.util.ArrayList.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$7@Facts.main(java.lang.String[]):void Facts:15:n$7 java.util.ArrayList.
+codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$5@Facts.main(java.lang.String[]):void $irvar0@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$8@Facts.main(java.lang.String[]):void $irvar1@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void $irvar0@Facts.main(java.lang.String[]):void n$2@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void $irvar1@Facts.main(java.lang.String[]):void n$4@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void l@Facts.main(java.lang.String[]):void n$7@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:15:n$3 java.util.ArrayList.<init>():void.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:15:n$6 java.util.ArrayList.<init>(java.util.Collection):void.
 codetoanalyze/java/datalog/Facts.java, 15, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:15:n$9 java.util.ArrayList.<init>(java.util.Collection):void.
 codetoanalyze/java/datalog/Facts.java, 18, DATALOG_FACT, Cast Facts.main(java.lang.String[]):void n$11@Facts.main(java.lang.String[]):void n$10@Facts.main(java.lang.String[]):void java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 18, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$10@Facts.main(java.lang.String[]):void obj@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 18, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void str@Facts.main(java.lang.String[]):void n$11@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 20, DATALOG_FACT, Cast Facts.main(java.lang.String[]):void n$13@Facts.main(java.lang.String[]):void n$12@Facts.main(java.lang.String[]):void java.util.List.
 codetoanalyze/java/datalog/Facts.java, 20, DATALOG_FACT, Cast Facts.main(java.lang.String[]):void n$14@Facts.main(java.lang.String[]):void n$13@Facts.main(java.lang.String[]):void java.util.ArrayList.
+codetoanalyze/java/datalog/Facts.java, 20, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$12@Facts.main(java.lang.String[]):void obj@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 20, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void l2@Facts.main(java.lang.String[]):void n$14@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 23, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:23:n$16 0 n$15@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 23, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$15@Facts.main(java.lang.String[]):void str@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 23, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:23:n$16 Facts.testVoid(java.lang.String):void.
-codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:26:n$18 0 n$17@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:26:n$19 0 n$17@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:26:n$19 1 n$18@Facts.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$17@Facts.main(java.lang.String[]):void Facts:26:n$17 Cl.
-codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:26:n$18 Cl.<init>():void.
-codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:30:n$21 0 n$20@Facts.main(java.lang.String[]):void.
-codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$20@Facts.main(java.lang.String[]):void Facts:30:n$20 java.lang.String.
-codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:30:n$21 java.lang.String.<init>(java.lang.String):void.
-codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, StoreField Facts.main(java.lang.String[]):void n$22@Facts.main(java.lang.String[]):void Cl.x n$23@Facts.main(java.lang.String[]):void.
-codetoanalyze/java/datalog/Facts.java, 31, DATALOG_FACT, LoadField Facts.main(java.lang.String[]):void n$25@Facts.main(java.lang.String[]):void n$24@Facts.main(java.lang.String[]):void Cl.x.
-codetoanalyze/java/datalog/Facts.java, 35, DATALOG_FACT, FormalArg Facts.testArgs(java.lang.String,java.lang.String):java.lang.String 0 n$0@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
-codetoanalyze/java/datalog/Facts.java, 35, DATALOG_FACT, Implem Facts testArgs(java.lang.String,java.lang.String):java.lang.String.
-codetoanalyze/java/datalog/Facts.java, 37, DATALOG_FACT, FormalReturn Facts.testArgs(java.lang.String,java.lang.String):java.lang.String n$1@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
-codetoanalyze/java/datalog/Facts.java, 41, DATALOG_FACT, Implem Facts testVoid(java.lang.String):void.
-codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, ActualArg Cl.<init>():void Cl:44:n$1 0 n$0@Cl.<init>():void.
-codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, Extends Cl java.lang.Object.
-codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, FormalArg Cl.<init>():void 0 n$0@Cl.<init>():void.
-codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, Implem Cl <init>():void.
-codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, StaticCall Cl.<init>():void Cl:44:n$1 java.lang.Object.<init>():void.
+codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$18@Facts.main(java.lang.String[]):void str@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void foo@Facts.main(java.lang.String[]):void n$17@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 26, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:26:n$19 Cl.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 27, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$20@Facts.main(java.lang.String[]):void foo@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 27, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void bar@Facts.main(java.lang.String[]):void n$20@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:30:n$22 0 n$21@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, Alloc Facts.main(java.lang.String[]):void n$21@Facts.main(java.lang.String[]):void Facts:30:n$21 java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$23@Facts.main(java.lang.String[]):void foo@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$24@Facts.main(java.lang.String[]):void $irvar2@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void $irvar2@Facts.main(java.lang.String[]):void n$21@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:30:n$22 java.lang.String.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 30, DATALOG_FACT, StoreField Facts.main(java.lang.String[]):void n$23@Facts.main(java.lang.String[]):void Cl.x n$24@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 31, DATALOG_FACT, LoadField Facts.main(java.lang.String[]):void n$26@Facts.main(java.lang.String[]):void n$25@Facts.main(java.lang.String[]):void Cl.x.
+codetoanalyze/java/datalog/Facts.java, 31, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$25@Facts.main(java.lang.String[]):void foo@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 31, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void y@Facts.main(java.lang.String[]):void n$26@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 34, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:34:n$29 0 n$27@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 34, DATALOG_FACT, ActualArg Facts.main(java.lang.String[]):void Facts:34:n$29 1 n$28@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 34, DATALOG_FACT, ActualReturn Facts.main(java.lang.String[]):void Facts:34:n$29 n$29@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 34, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$27@Facts.main(java.lang.String[]):void str@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 34, DATALOG_FACT, MoveLoad Facts.main(java.lang.String[]):void n$28@Facts.main(java.lang.String[]):void y@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 34, DATALOG_FACT, MoveStore Facts.main(java.lang.String[]):void ret_var@Facts.main(java.lang.String[]):void n$29@Facts.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Facts.java, 34, DATALOG_FACT, StaticCall Facts.main(java.lang.String[]):void Facts:34:n$29 Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 38, DATALOG_FACT, FormalArg Facts.testArgs(java.lang.String,java.lang.String):java.lang.String 0 a@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 38, DATALOG_FACT, FormalArg Facts.testArgs(java.lang.String,java.lang.String):java.lang.String 1 b@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 38, DATALOG_FACT, Implem Facts testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 39, DATALOG_FACT, MoveLoad Facts.testArgs(java.lang.String,java.lang.String):java.lang.String n$0@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String a@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 39, DATALOG_FACT, MoveStore Facts.testArgs(java.lang.String,java.lang.String):java.lang.String a_loc@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String n$0@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 40, DATALOG_FACT, FormalReturn Facts.testArgs(java.lang.String,java.lang.String):java.lang.String n$1@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 40, DATALOG_FACT, MoveLoad Facts.testArgs(java.lang.String,java.lang.String):java.lang.String n$1@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String a_loc@Facts.testArgs(java.lang.String,java.lang.String):java.lang.String.
+codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, FormalArg Facts.testVoid(java.lang.String):void 0 a@Facts.testVoid(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 44, DATALOG_FACT, Implem Facts testVoid(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 51, DATALOG_FACT, ActualArg Cl.<init>(java.lang.String):void Cl:51:n$1 0 n$0@Cl.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 51, DATALOG_FACT, Extends Cl java.lang.Object.
+codetoanalyze/java/datalog/Facts.java, 51, DATALOG_FACT, FormalArg Cl.<init>(java.lang.String):void 0 this@Cl.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 51, DATALOG_FACT, FormalArg Cl.<init>(java.lang.String):void 1 s@Cl.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 51, DATALOG_FACT, Implem Cl <init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 51, DATALOG_FACT, MoveLoad Cl.<init>(java.lang.String):void n$0@Cl.<init>(java.lang.String):void this@Cl.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 51, DATALOG_FACT, StaticCall Cl.<init>(java.lang.String):void Cl:51:n$1 java.lang.Object.<init>():void.
+codetoanalyze/java/datalog/Facts.java, 52, DATALOG_FACT, MoveLoad Cl.<init>(java.lang.String):void n$2@Cl.<init>(java.lang.String):void this@Cl.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 52, DATALOG_FACT, MoveLoad Cl.<init>(java.lang.String):void n$3@Cl.<init>(java.lang.String):void s@Cl.<init>(java.lang.String):void.
+codetoanalyze/java/datalog/Facts.java, 52, DATALOG_FACT, StoreField Cl.<init>(java.lang.String):void n$2@Cl.<init>(java.lang.String):void Cl.x n$3@Cl.<init>(java.lang.String):void.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, ActualArg Hello.<init>():void Hello:8:n$1 0 n$0@Hello.<init>():void.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, Extends Hello java.lang.Object.
-codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, FormalArg Hello.<init>():void 0 n$0@Hello.<init>():void.
+codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, FormalArg Hello.<init>():void 0 this@Hello.<init>():void.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, Implem Hello <init>():void.
+codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, MoveLoad Hello.<init>():void n$0@Hello.<init>():void this@Hello.<init>():void.
 codetoanalyze/java/datalog/Hello.java, 8, DATALOG_FACT, StaticCall Hello.<init>():void Hello:8:n$1 java.lang.Object.<init>():void.
 codetoanalyze/java/datalog/Hello.java, 9, DATALOG_FACT, EntryPoint Hello.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Hello.java, 9, DATALOG_FACT, FormalArg Hello.main(java.lang.String[]):void 0 args@Hello.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Hello.java, 9, DATALOG_FACT, Implem Hello main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Hello.java, 10, DATALOG_FACT, VirtualCall Hello.main(java.lang.String[]):void Hello:10:n$2 n$0@Hello.main(java.lang.String[]):void println(java.lang.String):void.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, ActualArg Reflection.<init>():void Reflection:11:n$1 0 n$0@Reflection.<init>():void.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, Extends Reflection java.lang.Object.
-codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, FormalArg Reflection.<init>():void 0 n$0@Reflection.<init>():void.
+codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, FormalArg Reflection.<init>():void 0 this@Reflection.<init>():void.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, Implem Reflection <init>():void.
+codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, MoveLoad Reflection.<init>():void n$0@Reflection.<init>():void this@Reflection.<init>():void.
 codetoanalyze/java/datalog/Reflection.java, 11, DATALOG_FACT, StaticCall Reflection.<init>():void Reflection:11:n$1 java.lang.Object.<init>():void.
 codetoanalyze/java/datalog/Reflection.java, 12, DATALOG_FACT, EntryPoint Reflection.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/Reflection.java, 12, DATALOG_FACT, FormalArg Reflection.main(java.lang.String[]):void 0 args@Reflection.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Reflection.java, 12, DATALOG_FACT, Implem Reflection main(java.lang.String[]):void.
 codetoanalyze/java/datalog/Reflection.java, 13, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:13:n$0 Reflection.dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 14, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:14:n$1 Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 15, DATALOG_FACT, StaticCall Reflection.main(java.lang.String[]):void Reflection:15:n$2 Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 18, DATALOG_FACT, Implem Reflection dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 20, DATALOG_FACT, ActualReturn Reflection.dumpMethods():void Reflection:20:n$0 n$0@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 20, DATALOG_FACT, MoveStore Reflection.dumpMethods():void c@Reflection.dumpMethods():void n$0@Reflection.dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 20, DATALOG_FACT, StaticCall Reflection.dumpMethods():void Reflection:20:n$0 java.lang.Class.forName(java.lang.String):java.lang.Class.
 codetoanalyze/java/datalog/Reflection.java, 21, DATALOG_FACT, ActualReturn Reflection.dumpMethods():void Reflection:21:n$3 n$3@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 21, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$1@Reflection.dumpMethods():void c@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 21, DATALOG_FACT, MoveStore Reflection.dumpMethods():void m@Reflection.dumpMethods():void n$3@Reflection.dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 21, DATALOG_FACT, VirtualCall Reflection.dumpMethods():void Reflection:21:n$3 n$1@Reflection.dumpMethods():void getDeclaredMethods():java.lang.reflect.Method[].
 codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, ActualArg Reflection.dumpMethods():void Reflection:22:n$18 0 n$17@Reflection.dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, ActualReturn Reflection.dumpMethods():void Reflection:22:n$14 n$14@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$10@Reflection.dumpMethods():void i@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$15@Reflection.dumpMethods():void $irvar1@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$17@Reflection.dumpMethods():void $irvar0@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$19@Reflection.dumpMethods():void i@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$4@Reflection.dumpMethods():void i@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$5@Reflection.dumpMethods():void m@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$9@Reflection.dumpMethods():void m@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveStore Reflection.dumpMethods():void $irvar0@Reflection.dumpMethods():void n$14@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, MoveStore Reflection.dumpMethods():void $irvar1@Reflection.dumpMethods():void n$8@Reflection.dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, VirtualCall Reflection.dumpMethods():void Reflection:22:n$14 n$12@Reflection.dumpMethods():void toString():java.lang.String.
 codetoanalyze/java/datalog/Reflection.java, 22, DATALOG_FACT, VirtualCall Reflection.dumpMethods():void Reflection:22:n$18 n$15@Reflection.dumpMethods():void println(java.lang.String):void.
+codetoanalyze/java/datalog/Reflection.java, 23, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$20@Reflection.dumpMethods():void CatchVar40@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 23, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$25@Reflection.dumpMethods():void return@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 23, DATALOG_FACT, MoveStore Reflection.dumpMethods():void e@Reflection.dumpMethods():void n$20@Reflection.dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 24, DATALOG_FACT, ActualArg Reflection.dumpMethods():void Reflection:24:n$24 0 n$23@Reflection.dumpMethods():void.
+codetoanalyze/java/datalog/Reflection.java, 24, DATALOG_FACT, MoveLoad Reflection.dumpMethods():void n$23@Reflection.dumpMethods():void e@Reflection.dumpMethods():void.
 codetoanalyze/java/datalog/Reflection.java, 24, DATALOG_FACT, VirtualCall Reflection.dumpMethods():void Reflection:24:n$24 n$21@Reflection.dumpMethods():void println(java.lang.Object):void.
 codetoanalyze/java/datalog/Reflection.java, 28, DATALOG_FACT, Implem Reflection allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 30, DATALOG_FACT, ActualReturn Reflection.allocNewInstance():void Reflection:30:n$0 n$0@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 30, DATALOG_FACT, MoveStore Reflection.allocNewInstance():void c@Reflection.allocNewInstance():void n$0@Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 30, DATALOG_FACT, StaticCall Reflection.allocNewInstance():void Reflection:30:n$0 java.lang.Class.forName(java.lang.String):java.lang.Class.
 codetoanalyze/java/datalog/Reflection.java, 31, DATALOG_FACT, ActualReturn Reflection.allocNewInstance():void Reflection:31:n$3 n$3@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 31, DATALOG_FACT, MoveLoad Reflection.allocNewInstance():void n$1@Reflection.allocNewInstance():void c@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 31, DATALOG_FACT, MoveStore Reflection.allocNewInstance():void s@Reflection.allocNewInstance():void n$3@Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 31, DATALOG_FACT, VirtualCall Reflection.allocNewInstance():void Reflection:31:n$3 n$1@Reflection.allocNewInstance():void newInstance():java.lang.Object.
 codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, ActualArg Reflection.allocNewInstance():void Reflection:32:n$12 0 n$11@Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, ActualReturn Reflection.allocNewInstance():void Reflection:32:n$8 n$8@Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, Cast Reflection.allocNewInstance():void n$6@Reflection.allocNewInstance():void n$5@Reflection.allocNewInstance():void java.util.Stack.
+codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, MoveLoad Reflection.allocNewInstance():void n$11@Reflection.allocNewInstance():void $irvar0@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, MoveLoad Reflection.allocNewInstance():void n$5@Reflection.allocNewInstance():void s@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, MoveLoad Reflection.allocNewInstance():void n$9@Reflection.allocNewInstance():void $irvar1@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, MoveStore Reflection.allocNewInstance():void $irvar0@Reflection.allocNewInstance():void n$8@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, MoveStore Reflection.allocNewInstance():void $irvar1@Reflection.allocNewInstance():void n$4@Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, VirtualCall Reflection.allocNewInstance():void Reflection:32:n$12 n$9@Reflection.allocNewInstance():void println(boolean):void.
 codetoanalyze/java/datalog/Reflection.java, 32, DATALOG_FACT, VirtualCall Reflection.allocNewInstance():void Reflection:32:n$8 n$6@Reflection.allocNewInstance():void empty():boolean.
+codetoanalyze/java/datalog/Reflection.java, 33, DATALOG_FACT, MoveLoad Reflection.allocNewInstance():void n$13@Reflection.allocNewInstance():void CatchVar27@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 33, DATALOG_FACT, MoveLoad Reflection.allocNewInstance():void n$18@Reflection.allocNewInstance():void return@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 33, DATALOG_FACT, MoveStore Reflection.allocNewInstance():void e@Reflection.allocNewInstance():void n$13@Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 34, DATALOG_FACT, ActualArg Reflection.allocNewInstance():void Reflection:34:n$17 0 n$16@Reflection.allocNewInstance():void.
+codetoanalyze/java/datalog/Reflection.java, 34, DATALOG_FACT, MoveLoad Reflection.allocNewInstance():void n$16@Reflection.allocNewInstance():void e@Reflection.allocNewInstance():void.
 codetoanalyze/java/datalog/Reflection.java, 34, DATALOG_FACT, VirtualCall Reflection.allocNewInstance():void Reflection:34:n$17 n$14@Reflection.allocNewInstance():void println(java.lang.Object):void.
 codetoanalyze/java/datalog/Reflection.java, 38, DATALOG_FACT, Implem Reflection allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 40, DATALOG_FACT, ActualArg Reflection.allocNewClass():void Reflection:40:n$1 0 n$0@Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 40, DATALOG_FACT, Alloc Reflection.allocNewClass():void n$0@Reflection.allocNewClass():void Reflection:40:n$0 java.util.Stack.
+codetoanalyze/java/datalog/Reflection.java, 40, DATALOG_FACT, MoveStore Reflection.allocNewClass():void s@Reflection.allocNewClass():void n$0@Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 40, DATALOG_FACT, StaticCall Reflection.allocNewClass():void Reflection:40:n$1 java.util.Stack.<init>():void.
 codetoanalyze/java/datalog/Reflection.java, 41, DATALOG_FACT, ActualArg Reflection.allocNewClass():void Reflection:41:n$4 0 n$2@Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 41, DATALOG_FACT, ActualReturn Reflection.allocNewClass():void Reflection:41:n$4 n$4@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 41, DATALOG_FACT, MoveLoad Reflection.allocNewClass():void n$2@Reflection.allocNewClass():void s@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 41, DATALOG_FACT, MoveStore Reflection.allocNewClass():void c@Reflection.allocNewClass():void n$4@Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 41, DATALOG_FACT, StaticCall Reflection.allocNewClass():void Reflection:41:n$4 java.lang.Object.getClass():java.lang.Class.
 codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, ActualArg Reflection.allocNewClass():void Reflection:42:n$12 0 n$11@Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, ActualReturn Reflection.allocNewClass():void Reflection:42:n$8 n$8@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, MoveLoad Reflection.allocNewClass():void n$11@Reflection.allocNewClass():void $irvar0@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, MoveLoad Reflection.allocNewClass():void n$6@Reflection.allocNewClass():void c@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, MoveLoad Reflection.allocNewClass():void n$9@Reflection.allocNewClass():void $irvar1@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, MoveStore Reflection.allocNewClass():void $irvar0@Reflection.allocNewClass():void n$8@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, MoveStore Reflection.allocNewClass():void $irvar1@Reflection.allocNewClass():void n$5@Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, VirtualCall Reflection.allocNewClass():void Reflection:42:n$12 n$9@Reflection.allocNewClass():void println(java.lang.String):void.
 codetoanalyze/java/datalog/Reflection.java, 42, DATALOG_FACT, VirtualCall Reflection.allocNewClass():void Reflection:42:n$8 n$6@Reflection.allocNewClass():void toString():java.lang.String.
+codetoanalyze/java/datalog/Reflection.java, 43, DATALOG_FACT, MoveLoad Reflection.allocNewClass():void n$13@Reflection.allocNewClass():void CatchVar26@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 43, DATALOG_FACT, MoveLoad Reflection.allocNewClass():void n$18@Reflection.allocNewClass():void return@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 43, DATALOG_FACT, MoveStore Reflection.allocNewClass():void e@Reflection.allocNewClass():void n$13@Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 44, DATALOG_FACT, ActualArg Reflection.allocNewClass():void Reflection:44:n$17 0 n$16@Reflection.allocNewClass():void.
+codetoanalyze/java/datalog/Reflection.java, 44, DATALOG_FACT, MoveLoad Reflection.allocNewClass():void n$16@Reflection.allocNewClass():void e@Reflection.allocNewClass():void.
 codetoanalyze/java/datalog/Reflection.java, 44, DATALOG_FACT, VirtualCall Reflection.allocNewClass():void Reflection:44:n$17 n$14@Reflection.allocNewClass():void println(java.lang.Object):void.
 codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, ActualArg VirtCall.<init>():void VirtCall:8:n$1 0 n$0@VirtCall.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, Extends VirtCall java.lang.Object.
-codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, FormalArg VirtCall.<init>():void 0 n$0@VirtCall.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, FormalArg VirtCall.<init>():void 0 this@VirtCall.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, Implem VirtCall <init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, MoveLoad VirtCall.<init>():void n$0@VirtCall.<init>():void this@VirtCall.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 8, DATALOG_FACT, StaticCall VirtCall.<init>():void VirtCall:8:n$1 java.lang.Object.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 9, DATALOG_FACT, EntryPoint VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 9, DATALOG_FACT, FormalArg VirtCall.main(java.lang.String[]):void 0 args@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 9, DATALOG_FACT, Implem VirtCall main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, ActualArg VirtCall.main(java.lang.String[]):void VirtCall:10:n$2 0 n$1@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, ActualArg VirtCall.main(java.lang.String[]):void VirtCall:10:n$6 0 n$5@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, Alloc VirtCall.main(java.lang.String[]):void n$0@VirtCall.main(java.lang.String[]):void VirtCall:10:n$0 A*[_*_].
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, Alloc VirtCall.main(java.lang.String[]):void n$1@VirtCall.main(java.lang.String[]):void VirtCall:10:n$1 A.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, Alloc VirtCall.main(java.lang.String[]):void n$5@VirtCall.main(java.lang.String[]):void VirtCall:10:n$5 B.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$3@VirtCall.main(java.lang.String[]):void $irvar0@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$4@VirtCall.main(java.lang.String[]):void $irvar1@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$7@VirtCall.main(java.lang.String[]):void $irvar0@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$8@VirtCall.main(java.lang.String[]):void $irvar2@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$9@VirtCall.main(java.lang.String[]):void $irvar0@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void $irvar0@VirtCall.main(java.lang.String[]):void n$0@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void $irvar1@VirtCall.main(java.lang.String[]):void n$1@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void $irvar2@VirtCall.main(java.lang.String[]):void n$5@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void as@VirtCall.main(java.lang.String[]):void n$9@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, StaticCall VirtCall.main(java.lang.String[]):void VirtCall:10:n$2 A.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 10, DATALOG_FACT, StaticCall VirtCall.main(java.lang.String[]):void VirtCall:10:n$6 B.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$10@VirtCall.main(java.lang.String[]):void as@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$11@VirtCall.main(java.lang.String[]):void $bcvar2@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$14@VirtCall.main(java.lang.String[]):void $bcvar4@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$15@VirtCall.main(java.lang.String[]):void $bcvar3@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$16@VirtCall.main(java.lang.String[]):void $bcvar2@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$17@VirtCall.main(java.lang.String[]):void $bcvar4@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$37@VirtCall.main(java.lang.String[]):void $bcvar4@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void $bcvar2@VirtCall.main(java.lang.String[]):void n$10@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void $bcvar3@VirtCall.main(java.lang.String[]):void n$13@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 11, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void a@VirtCall.main(java.lang.String[]):void n$19@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 12, DATALOG_FACT, ActualReturn VirtCall.main(java.lang.String[]):void VirtCall:12:n$22 n$22@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 12, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$20@VirtCall.main(java.lang.String[]):void a@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 12, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void a2@VirtCall.main(java.lang.String[]):void n$22@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 12, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:12:n$22 n$20@VirtCall.main(java.lang.String[]):void f():A.
 codetoanalyze/java/datalog/VirtCall.java, 13, DATALOG_FACT, ActualReturn VirtCall.main(java.lang.String[]):void VirtCall:13:n$25 n$25@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 13, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$23@VirtCall.main(java.lang.String[]):void a@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 13, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void x@VirtCall.main(java.lang.String[]):void n$25@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 13, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:13:n$25 n$23@VirtCall.main(java.lang.String[]):void g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 14, DATALOG_FACT, ActualReturn VirtCall.main(java.lang.String[]):void VirtCall:14:n$28 n$28@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 14, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$26@VirtCall.main(java.lang.String[]):void a2@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 14, DATALOG_FACT, MoveStore VirtCall.main(java.lang.String[]):void y@VirtCall.main(java.lang.String[]):void n$28@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 14, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:14:n$28 n$26@VirtCall.main(java.lang.String[]):void g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 15, DATALOG_FACT, ActualArg VirtCall.main(java.lang.String[]):void VirtCall:15:n$32 0 n$31@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 15, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$31@VirtCall.main(java.lang.String[]):void x@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 15, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:15:n$32 n$29@VirtCall.main(java.lang.String[]):void println(java.lang.String):void.
 codetoanalyze/java/datalog/VirtCall.java, 16, DATALOG_FACT, ActualArg VirtCall.main(java.lang.String[]):void VirtCall:16:n$36 0 n$35@VirtCall.main(java.lang.String[]):void.
+codetoanalyze/java/datalog/VirtCall.java, 16, DATALOG_FACT, MoveLoad VirtCall.main(java.lang.String[]):void n$35@VirtCall.main(java.lang.String[]):void y@VirtCall.main(java.lang.String[]):void.
 codetoanalyze/java/datalog/VirtCall.java, 16, DATALOG_FACT, VirtualCall VirtCall.main(java.lang.String[]):void VirtCall:16:n$36 n$33@VirtCall.main(java.lang.String[]):void println(java.lang.String):void.
 codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, ActualArg A.<init>():void A:21:n$1 0 n$0@A.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, Extends A java.lang.Object.
-codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, FormalArg A.<init>():void 0 n$0@A.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, FormalArg A.<init>():void 0 this@A.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, Implem A <init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, MoveLoad A.<init>():void n$0@A.<init>():void this@A.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 21, DATALOG_FACT, StaticCall A.<init>():void A:21:n$1 java.lang.Object.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 22, DATALOG_FACT, FormalArg A.f():A 0 this@A.f():A.
 codetoanalyze/java/datalog/VirtCall.java, 22, DATALOG_FACT, Implem A f():A.
 codetoanalyze/java/datalog/VirtCall.java, 23, DATALOG_FACT, ActualArg A.f():A A:23:n$1 0 n$0@A.f():A.
 codetoanalyze/java/datalog/VirtCall.java, 23, DATALOG_FACT, Alloc A.f():A n$0@A.f():A A:23:n$0 C.
 codetoanalyze/java/datalog/VirtCall.java, 23, DATALOG_FACT, FormalReturn A.f():A n$2@A.f():A.
+codetoanalyze/java/datalog/VirtCall.java, 23, DATALOG_FACT, MoveLoad A.f():A n$2@A.f():A $irvar0@A.f():A.
+codetoanalyze/java/datalog/VirtCall.java, 23, DATALOG_FACT, MoveStore A.f():A $irvar0@A.f():A n$0@A.f():A.
 codetoanalyze/java/datalog/VirtCall.java, 23, DATALOG_FACT, StaticCall A.f():A A:23:n$1 C.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 26, DATALOG_FACT, FormalArg A.g():java.lang.String 0 this@A.g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 26, DATALOG_FACT, Implem A g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, ActualArg B.<init>():void B:31:n$1 0 n$0@B.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, Extends B A.
-codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, FormalArg B.<init>():void 0 n$0@B.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, FormalArg B.<init>():void 0 this@B.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, Implem B <init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, MoveLoad B.<init>():void n$0@B.<init>():void this@B.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 31, DATALOG_FACT, StaticCall B.<init>():void B:31:n$1 A.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 33, DATALOG_FACT, FormalArg B.g():java.lang.String 0 this@B.g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 33, DATALOG_FACT, Implem B g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, ActualArg C.<init>():void C:38:n$1 0 n$0@C.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, Extends C A.
-codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, FormalArg C.<init>():void 0 n$0@C.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, FormalArg C.<init>():void 0 this@C.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, Implem C <init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, MoveLoad C.<init>():void n$0@C.<init>():void this@C.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 38, DATALOG_FACT, StaticCall C.<init>():void C:38:n$1 A.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 40, DATALOG_FACT, FormalArg C.g():java.lang.String 0 this@C.g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 40, DATALOG_FACT, Implem C g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, ActualArg D.<init>():void D:45:n$1 0 n$0@D.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, Extends D A.
-codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, FormalArg D.<init>():void 0 n$0@D.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, FormalArg D.<init>():void 0 this@D.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, Implem D <init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, MoveLoad D.<init>():void n$0@D.<init>():void this@D.<init>():void.
 codetoanalyze/java/datalog/VirtCall.java, 45, DATALOG_FACT, StaticCall D.<init>():void D:45:n$1 A.<init>():void.
+codetoanalyze/java/datalog/VirtCall.java, 47, DATALOG_FACT, FormalArg D.g():java.lang.String 0 this@D.g():java.lang.String.
 codetoanalyze/java/datalog/VirtCall.java, 47, DATALOG_FACT, Implem D g():java.lang.String.

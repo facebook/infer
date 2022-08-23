@@ -28,7 +28,7 @@ type t =
   (* A call at call_site with actual argument arg. n_arg is the position of the argument. *)
   | ActualArg of {proc_name: Procname.t; call_site: string; n_arg: int; arg: Ident.t}
   (* A procedure with formal argument arg. n_arg is the position of the argument. *)
-  | FormalArg of {proc_name: Procname.t; n_arg: int; arg: Ident.t}
+  | FormalArg of {proc_name: Procname.t; n_arg: int; arg: Pvar.t}
   (* return_var = call(). If void, then no fact is generated. *)
   | ActualReturn of {proc_name: Procname.t; call_site: string; return: Ident.t}
   (* proc_name() {return return_var}. Emitted for every "return" statement. *)
@@ -40,6 +40,10 @@ type t =
   | LoadField of {proc_name: Procname.t; dest: Ident.t; src: Ident.t; src_field: Fieldname.t}
   (* dest.dest_field = src *)
   | StoreField of {proc_name: Procname.t; dest: Ident.t; dest_field: Fieldname.t; src: Ident.t}
+  (* dest = *&src *)
+  | MoveLoad of {proc_name: Procname.t; dest: Ident.t; src: Pvar.t}
+  (* *&dest = src *)
+  | MoveStore of {proc_name: Procname.t; dest: Pvar.t; src: Ident.t}
 
 let fact_types =
   [ "EntryPoint"
@@ -54,7 +58,9 @@ let fact_types =
   ; "FormalReturn"
   ; "Implem"
   ; "LoadField"
-  ; "StoreField" ]
+  ; "StoreField"
+  ; "MoveLoad"
+  ; "MoveStore" ]
 
 
 let unique_proc_id ?(withclass = true) proc_name =
@@ -72,6 +78,10 @@ let unique_proc_id ?(withclass = true) proc_name =
 
 let unique_var_id proc_name var =
   F.asprintf "%s@%s" (Ident.to_string var) (unique_proc_id proc_name)
+
+
+let unique_pvar_id proc_name pvar =
+  F.asprintf "%s@%s" (Pvar.to_string pvar) (unique_proc_id proc_name)
 
 
 (** Generate a hash to uniquely identify an allocation or call site. The id of the retunred var is
@@ -107,7 +117,7 @@ let pp fmt = function
         (unique_var_id proc_name arg)
   | FormalArg {proc_name; n_arg; arg} ->
       F.fprintf fmt "FormalArg %s %d %s" (unique_proc_id proc_name) n_arg
-        (unique_var_id proc_name arg)
+        (unique_pvar_id proc_name arg)
   | ActualReturn {proc_name; call_site; return} ->
       F.fprintf fmt "ActualReturn %s %s %s" (unique_proc_id proc_name) call_site
         (unique_var_id proc_name return)
@@ -121,6 +131,12 @@ let pp fmt = function
   | StoreField {proc_name; dest; dest_field; src} ->
       F.fprintf fmt "StoreField %s %s %s %s" (unique_proc_id proc_name)
         (unique_var_id proc_name dest) (Fieldname.to_string dest_field)
+        (unique_var_id proc_name src)
+  | MoveLoad {proc_name; dest; src} ->
+      F.fprintf fmt "MoveLoad %s %s %s" (unique_proc_id proc_name) (unique_var_id proc_name dest)
+        (unique_pvar_id proc_name src)
+  | MoveStore {proc_name; dest; src} ->
+      F.fprintf fmt "MoveStore %s %s %s" (unique_proc_id proc_name) (unique_pvar_id proc_name dest)
         (unique_var_id proc_name src)
 
 
@@ -169,3 +185,7 @@ let implem typ proc_name = Implem {typ; proc_signature= unique_proc_id ~withclas
 let load_field proc_name dest src src_field = LoadField {proc_name; dest; src; src_field}
 
 let store_field proc_name dest dest_field src = StoreField {proc_name; dest; dest_field; src}
+
+let move_load proc_name dest src = MoveLoad {proc_name; dest; src}
+
+let move_store proc_name dest src = MoveStore {proc_name; dest; src}

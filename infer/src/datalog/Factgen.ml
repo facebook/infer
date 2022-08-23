@@ -72,6 +72,8 @@ let emit_call_moves analysis_data args call_proc proc_name loc ret_id =
 let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_formal_args = List.map ~f:fst (Procdesc.get_pvar_formals proc_desc) in
+  List.iteri proc_formal_args ~f:(fun i arg ->
+      log_fact analysis_data (Fact.formal_arg proc_name i arg) ) ;
   if is_entry_proc proc_name then log_fact analysis_data (Fact.entrypoint proc_name) ;
   Procdesc.iter_instrs
     (fun _ instr ->
@@ -94,16 +96,14 @@ let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_
           emit_call_moves analysis_data args call_proc proc_name loc ret_id
       | Store {e1= Lvar pvar; root_typ= _; typ= _; e2= Var ret_id; loc} when Pvar.is_return pvar ->
           log_fact analysis_data (Fact.formal_return proc_name ret_id) ~loc
-      | Load {id; e= Lvar pvar; root_typ= _; typ= _; loc= _} -> (
-        match List.findi proc_formal_args ~f:(fun _ -> Pvar.equal pvar) with
-        | Some (i, _) ->
-            log_fact analysis_data (Fact.formal_arg proc_name i id)
-        | None ->
-            () )
       | Load {id= dest; e= Lfield (Var src, src_field, _); root_typ= _; typ= _; loc} ->
           log_fact analysis_data (Fact.load_field proc_name dest src src_field) ~loc
       | Store {e1= Lfield (Var dest, dest_field, _); root_typ= _; typ= _; e2= Var src; loc} ->
           log_fact analysis_data (Fact.store_field proc_name dest dest_field src) ~loc
+      | Load {id= dest; e= Lvar src_pvar; root_typ= _; typ= _; loc} ->
+          log_fact analysis_data (Fact.move_load proc_name dest src_pvar) ~loc
+      | Store {e1= Lvar dest_pvar; root_typ= _; typ= _; e2= Var src; loc} ->
+          log_fact analysis_data (Fact.move_store proc_name dest_pvar src) ~loc
       (* Unexpected instructions *)
       | Store {e1= Lvar _; root_typ= _; typ= _; e2= Lvar _; loc}
       | Store {e1= Lfield (Var _, _, _); root_typ= _; typ= _; e2= Lvar _; loc}
