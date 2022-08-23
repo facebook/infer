@@ -8,6 +8,7 @@
     { "short_description": "Simple Test",
       "taint_flows": [
         { "source_kinds": ["SimpleSource"],
+          "sanitizer_kinds": ["Simple"],
           "sink_kinds": ["SimpleSink"]
         }
       ]
@@ -83,8 +84,14 @@
     }
   ],
   "pulse-taint-sanitizers": [
-     { "procedure": "basics::Obj::sanitizer1" },
-     { "procedure": "basics::Obj::sanitizer2" }
+     {
+       "procedure": "basics::Obj::sanitizer1",
+       "taint_target": "ReturnValue"
+     },
+     {
+       "procedure": "basics::Obj::sanitizer2",
+       "taint_target": "ReturnValue"
+     }
   ],
   "pulse-taint-propagaters": [
     {

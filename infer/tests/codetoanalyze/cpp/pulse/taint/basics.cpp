@@ -25,7 +25,9 @@ class Obj {
   static int taint_arg_source(int* arg) { return 1; }
   void string_sink(std::string) {}
   static std::string* sanitizer1(std::string* input) { return input; }
-  static std::string sanitizer2(const std::string& input) { return input; }
+  static std::string sanitizer2(const std::string& input) {
+    return input.substr();
+  }
   static std::string propagater(std::string& input, std::string& output);
 
   std::string field1;
@@ -177,23 +179,30 @@ void taint_arg_source_ok() {
   __infer_taint_sink((void*)ret); // return value is not a source
 }
 
-void via_sanitizer_ok1_FP(Obj* obj) {
+// FP in C++11
+void via_sanitizer_ok1(Obj* obj) {
   std::string* source = &obj->string_source(0);
   std::string* sanitized = Obj::sanitizer1(source);
   obj->string_sink(*sanitized);
 }
 
-void via_sanitizer_ok2_FP(Obj* obj) {
+void via_sanitizer_ok2(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string sanitized = obj->sanitizer2(source);
   obj->string_sink(sanitized);
 }
 
-std::string* unsanitized_bad(Obj* obj) {
+// FP in C++11
+std::string* implicit_sanitized_ok(Obj* obj) {
   std::string* source = &obj->string_source(0);
   std::string* sanitized = Obj::sanitizer1(source);
   obj->string_sink(*source);
-  return sanitized;
+}
+
+std::string* unsanitized_bad(Obj* obj) {
+  std::string source = obj->string_source(0);
+  std::string sanitized = Obj::sanitizer2(source);
+  obj->string_sink(source);
 }
 
 void funCall_bad2(int x, void* t) { __infer_taint_sink(t); }
