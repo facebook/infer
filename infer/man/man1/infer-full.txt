@@ -1161,8 +1161,9 @@ OPTIONS
        --pulse-taint-config +path
            Path to a taint analysis configuration file. This file can define
            --pulse-taint-sources, --pulse-taint-sanitizers,
-           --pulse-taint-sinks, --pulse-taint-policies, and
-           --pulse-taint-data-flow-kinds.           See also infer-analyze(1).
+           --pulse-taint-sanitizers, --pulse-taint-sinks,
+           --pulse-taint-policies, and --pulse-taint-data-flow-kinds.       
+    See also infer-analyze(1).
 
        --pulse-taint-data-flow-kinds json
            Specify which taint kinds should be used for data flow reporting
@@ -1189,6 +1190,11 @@ OPTIONS
                                "sanitizer_kinds": ["Simple"] }]
            }
            See also infer-analyze(1).
+
+       --pulse-taint-propagaters json
+           Quick way to specify simple propagaters as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.       
+    See also infer-analyze(1).
 
        --pulse-taint-sanitizers json
            Quick way to specify simple sanitizers as a JSON objects. See
@@ -1222,7 +1228,8 @@ OPTIONS
                  ("Simple" by default).
              - "taint_target":
                  where the taint should be applied in the procedure.
-                 - "ReturnValue": (default for taint sources)
+                 - "ReturnValue": (default for taint sources and
+           propagaters)
                  - "AllArguments": (default for taint sanitizers and sinks)
                  - ["ArgumentPositions", [<int list>]]:
                      argument positions given by index (zero-indexed)
