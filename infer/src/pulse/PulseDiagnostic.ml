@@ -210,7 +210,12 @@ let get_location = function
       location
 
 
-let get_copy_type = function UnnecessaryCopy {typ} -> Some typ | _ -> None
+let get_copy_type = function
+  | UnnecessaryCopy {typ} | ConstRefableParameter {typ} ->
+      Some typ
+  | _ ->
+      None
+
 
 let aborts_execution = function
   | AccessToInvalidAddress _
