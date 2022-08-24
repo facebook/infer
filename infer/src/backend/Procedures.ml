@@ -80,7 +80,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_c
       pp_if ?new_line condition title pp fmt (Sqlite3.column stmt column |> deserialize)
   in
   let pp_row stmt fmt source_file proc_name =
-    let[@warning "-8"] (Sqlite3.Data.TEXT proc_uid) = Sqlite3.column stmt 1 in
+    let[@warning "-8"] (Sqlite3.Data.TEXT proc_uid) = Sqlite3.column stmt 0 in
     let dump_cfg fmt cfg_opt =
       match cfg_opt with
       | None ->

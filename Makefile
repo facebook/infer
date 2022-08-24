@@ -33,6 +33,7 @@ BUILD_SYSTEMS_TESTS += \
   disjunctive_domain \
   duplicate_symbols \
   fail_on_issue \
+  infer-debug \
   j1 \
   project_root_rel \
   pulse_messages \
