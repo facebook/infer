@@ -18,6 +18,10 @@ let is_builtin_alloc proc =
   Procname.equal BuiltinDecl.__new proc || Procname.equal BuiltinDecl.__new_array proc
 
 
+let is_static_call proc =
+  (match Procname.is_static proc with Some b -> b | None -> false) || Procname.is_constructor proc
+
+
 let is_entry_proc proc_name =
   let java_proc_name = Procname.as_java_exn proc_name ~explanation:"Only Java procdesc supported" in
   String.equal (Procname.Java.get_method java_proc_name) "main"
@@ -85,13 +89,13 @@ let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_
         when is_builtin_alloc call_proc ->
           log_fact analysis_data (Fact.alloc proc_name ret_id loc sizeof.typ) ~loc
       (* Virtual call: the first arg contains the receiver so it always exists (e.g. in a.f() a is the receiver) *)
-      | Call ((ret_id, _), Const (Cfun call_proc), (Var receiver_id, _) :: args, loc, flags)
-        when (not (is_builtin call_proc)) && (flags.cf_virtual || flags.cf_interface) ->
+      | Call ((ret_id, _), Const (Cfun call_proc), (Var receiver_id, _) :: args, loc, _)
+        when (not (is_builtin call_proc)) && not (is_static_call call_proc) ->
           log_fact analysis_data (Fact.virtual_call proc_name loc ret_id call_proc receiver_id) ~loc ;
           emit_call_moves analysis_data args call_proc proc_name loc ret_id
       (* Static call *)
-      | Call ((ret_id, _), Const (Cfun call_proc), args, loc, flags)
-        when (not (is_builtin call_proc)) && not (flags.cf_virtual || flags.cf_interface) ->
+      | Call ((ret_id, _), Const (Cfun call_proc), args, loc, _)
+        when (not (is_builtin call_proc)) && is_static_call call_proc ->
           log_fact analysis_data (Fact.static_call proc_name loc ret_id call_proc) ~loc ;
           emit_call_moves analysis_data args call_proc proc_name loc ret_id
       | Store {e1= Lvar pvar; root_typ= _; typ= _; e2= Var ret_id; loc} when Pvar.is_return pvar ->

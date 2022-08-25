@@ -1,7 +1,7 @@
 /* Andersen-style points-to analysis */
 .type int             <: symbol
 .type Var             <: symbol
-.type Pvar            <: symbol
+.type Pvar            =  Var
 .type Method          <: symbol
 .type MethodSignature <: symbol
 .type ClassName       <: symbol
@@ -21,7 +21,7 @@
 .decl FormalArg(m: Method, num: int, arg: Pvar)
 .decl ActualReturn(m: Method, s: CallSite, arg: Var)
 .decl FormalReturn(m: Method, arg: Var)
-.decl Implem(cn: ClassName, ms: MethodSignature, m: Method)
+.decl Implem(cn: ClassName, ms: MethodSignature)
 .decl LoadField(m: Method, dest: Var, source: Var, f: Field)
 .decl StoreField(m: Method, dest: Var, f: Field, source: Var)
 .decl MoveLoad(m: Method, dest: Var, source: Pvar)
@@ -47,7 +47,6 @@
 .decl ExtendsClosure(cn: ClassName, cn_super: ClassName)
 .decl Push(s: CallSite, callerCtx: Context, calleeCtx: Context)
 .decl InterProcAssign(ctx1: Context, m1: Method, dest: Var, ctx2: Context, source: Var)
-.decl Implements(cn: ClassName, ms: MethodSignature)
 .decl ReachableMethod(ctx: Context, m: Method)
 .decl Resolve(cn: ClassName, ms: MethodSignature, m: Method)
 
