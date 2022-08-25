@@ -43,9 +43,7 @@ end = struct
   let pp fmt m = AbstractValue.Map.pp ~pp_value:DecompilerExpr.pp_source_expr fmt m
 end
 
-type t = Invalid  (** to store in summaries *) | Map of Map.t
-
-let pp fmt = function Invalid -> F.fprintf fmt "Invalid" | Map m -> Map.pp fmt m
+type t = Invalid  (** to store in summaries *) | Map of Map.t [@@deriving show {with_path= false}]
 
 let empty = Map Map.empty
 
