@@ -722,6 +722,13 @@ let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
                   ~f:(fun ((pre_heap, post_heap, addr) as acc) pvar ->
                     match BaseStack.find_opt (Var.of_pvar pvar) initial_stack with
                     | None ->
+                        L.d_printfln "Misnamed %a. Not found in intial_stack of %a" Pvar.pp_value
+                          pvar Procname.pp proc_name ;
+                        ( match Pvar.get_declaring_function pvar with
+                        | None ->
+                            ()
+                        | Some pname ->
+                            L.d_printfln "%a belongs to %a" Pvar.pp_value pvar Procname.pp pname ) ;
                         acc
                     | Some (src_addr, addr_hist) ->
                         let addr =
