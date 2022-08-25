@@ -629,6 +629,10 @@ CLANG OPTIONS
            Specify scope guard classes that can be read only by destructors
            without being reported as dead stores.
 
+       --dynamic-dispatch-json-file-path path
+           Dynamic dispatch file path to get the JSON used for method name
+           substitution
+
        --liveness-dangerous-classes json
            Specify classes where the destructor should be ignored when
            computing liveness. In other words, assignement to variables of

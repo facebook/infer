@@ -42,3 +42,5 @@ val check_flows_wrt_sink :
 
 val taint_initial :
   Tenv.t -> Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t
+
+val dynamic_dispatch_map : Yojson.Basic.t option [@@warning "-32"]

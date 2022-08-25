@@ -1446,6 +1446,12 @@ and dump_textual =
     "Generate a SIL program from the captured target. The target has to be a single Java file."
 
 
+and dynamic_dispatch_json_file_path =
+  CLOpt.mk_path_opt ~long:"dynamic-dispatch-json-file-path"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    "Dynamic dispatch file path to get the JSON used for method name substitution"
+
+
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant" "Condition redundant warnings"
 
@@ -3411,6 +3417,8 @@ and dotty_cfg_libs = !dotty_cfg_libs
 and dump_duplicate_symbols = !dump_duplicate_symbols
 
 and dump_textual = !dump_textual
+
+and dynamic_dispatch_json_file_path = !dynamic_dispatch_json_file_path
 
 and eradicate_condition_redundant = !eradicate_condition_redundant
 

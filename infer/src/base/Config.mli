@@ -315,6 +315,8 @@ val dump_duplicate_symbols : bool
 
 val dump_textual : string option
 
+val dynamic_dispatch_json_file_path : string option
+
 val eradicate_condition_redundant : bool
 
 val eradicate_field_over_annotated : bool
