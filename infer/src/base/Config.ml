@@ -902,8 +902,8 @@ and capture_block_list =
      the javac integration for now)."
 
 
-and capture_textual_sil =
-  CLOpt.mk_path_opt ~long:"capture-textual-sil" ~meta:"path"
+and capture_textual =
+  CLOpt.mk_path_opt ~long:"capture-textual" ~meta:"path"
     "Generate a SIL program from a textual representation given in a .sil file."
 
 
@@ -3277,7 +3277,7 @@ and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and capture = !capture
 
-and capture_textual_sil = !capture_textual_sil
+and capture_textual = !capture_textual
 
 and capture_block_list = !capture_block_list
 

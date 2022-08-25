@@ -1773,12 +1773,12 @@ INTERNAL OPTIONS
        --capture-block-list-reset
            Cancel the effect of --capture-block-list.
 
-       --capture-textual-sil path
+       --capture-textual path
            Generate a SIL program from a textual representation given in a
            .sil file.
 
-       --capture-textual-sil-reset
-           Cancel the effect of --capture-textual-sil.
+       --capture-textual-reset
+           Cancel the effect of --capture-textual.
 
        --no-censor-report-reset
            Set --no-censor-report to the empty list.

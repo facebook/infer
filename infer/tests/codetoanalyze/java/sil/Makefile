@@ -15,7 +15,7 @@ LOG_FILES = $(patsubst %.java,%.log,$(SOURCES))
 CLASSES_DIR = classes
 # infer-outs from --dump-textual
 DUMP_DIR = dump-outs
-# infer-outs from --capture-textual-sil
+# infer-outs from --capture-textual
 CAPTURE_DIR = capture-outs
 
 CLEAN_EXTRA = $(CLASSES_DIR) $(DUMP_DIR) $(CAPTURE_DIR) *.sil *.log
@@ -30,7 +30,7 @@ $(CLASSES_DIR):
 compile: $(SIL_FILES)
 
 %.log: %.sil $(INFER_BIN)
-	$(INFER_BIN) --quiet --no-progress-bar -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual-sil $< &> $@ || exit 0
+	$(INFER_BIN) --quiet --no-progress-bar -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual $< &> $@ || exit 0
 
 issues.exp.test: $(LOG_FILES)
 	cat $^ | awk '{gsub("$(realpath $(shell pwd))", "");print}' > $@

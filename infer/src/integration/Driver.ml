@@ -408,9 +408,9 @@ let assert_supported_build_system build_system =
 let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
   | [] -> (
-    match (Config.clang_compilation_dbs, Config.capture_textual_sil) with
+    match (Config.clang_compilation_dbs, Config.capture_textual) with
     | _ :: _, Some _ ->
-        L.die UserError "Both --clang-compilation-dbs and --capture-textual-sil are set."
+        L.die UserError "Both --clang-compilation-dbs and --capture-textual are set."
     | _ :: _, None ->
         assert_supported_mode `Clang "clang compilation database" ;
         ClangCompilationDB {db_files= Config.clang_compilation_dbs}

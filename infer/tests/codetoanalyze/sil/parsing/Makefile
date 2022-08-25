@@ -11,13 +11,13 @@ include $(TESTS_DIR)/base.make
 SOURCES = $(sort $(wildcard *.sil))
 LOGS = $(patsubst %.sil,%.log,$(SOURCES))
 
-# infer-outs from --capture-textual-sil
+# infer-outs from --capture-textual
 CAPTURE_DIR = capture-outs
 
 CLEAN_EXTRA = $(CAPTURE_DIR) *.log
 
 %.log: %.sil
-	$(INFER_BIN) --quiet --no-progress-bar -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual-sil $< &> $@
+	$(INFER_BIN) --quiet --no-progress-bar -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual $< &> $@
 
 .PHONY: compile
 compile: $(LOGS)
