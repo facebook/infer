@@ -125,6 +125,18 @@ int make_unique2_bad() {
   return 0;
 }
 
+int make_unique3_bad() {
+  int v = 42;
+  auto x = std::make_unique<int>(v);
+  v++;
+  if (*x == 42) {
+    // Should report a NPE here as *x is equal to 42
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
 int make_unique_ptr_use_ok() {
   std::unique_ptr<X> x = std::make_unique<X>();
   return x->get();
@@ -159,4 +171,4 @@ void allocate_in_branch_ok(bool b) {
   }
 }
 
-} // namespace unique_ptr
+} // namespace make_unique_ptr
