@@ -1,3 +1,2 @@
-SIL parsing of Basic.sil succeeded.
-SIL parsing of Factorial.sil succeeded.
-SIL parsing of List.sil succeeded.
+Usage Error: the call n4 = <init>(n0, n1, n3) has been given a wrong number of arguments
+

@@ -279,9 +279,6 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode) ->
         (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
         (false, false)
-    | _, Textual _ ->
-        (* textual mode doesn't generate CFGs for now *)
-        (false, false)
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
         (* Called from another integration to do capture only. *)
         (false, false)

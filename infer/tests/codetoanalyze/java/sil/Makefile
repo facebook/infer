@@ -9,26 +9,36 @@ INFER_OUT ?= infer-out$(TEST_SUFFIX)
 include $(TESTS_DIR)/base.make
 
 SOURCES = $(sort $(wildcard *.java))
-CLASS_FILES = $(patsubst %.java,%.class,$(SOURCES))
 SIL_FILES = $(patsubst %.java,%.sil,$(SOURCES))
+LOG_FILES = $(patsubst %.java,%.log,$(SOURCES))
+
+CLASSES_DIR = classes
+# infer-outs from --dump-textual
+DUMP_DIR = dump-outs
+# infer-outs from --capture-textual-sil
+CAPTURE_DIR = capture-outs
+
+CLEAN_EXTRA = $(CLASSES_DIR) $(DUMP_DIR) $(CAPTURE_DIR) *.sil *.log
+
+$(CLASSES_DIR):
+	mkdir $@
+
+%.sil: %.java $(CLASSES_DIR) $(INFER_BIN)
+	$(INFER_BIN) -g capture -o "$(DUMP_DIR)/infer-out-$(basename $<)" --dump-textual "$@" -- javac -d $(CLASSES_DIR) $<
 
 .PHONY: compile
-compile:
-	@for f in $(basename $(SOURCES)); do $(INFER_BIN) --dump-textual $${f}.sil -- javac $${f}.java; done
+compile: $(SIL_FILES)
 
-.PHONY: analyze
-analyze:
+%.log: %.sil $(INFER_BIN)
+	$(INFER_BIN) --quiet --no-progress-bar -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual-sil $< &> $@ || exit 0
 
-.PHONY: print
-print:
+issues.exp.test: $(LOG_FILES)
+	cat $^ | awk '{gsub("$(realpath $(shell pwd))", "");print}' > $@
 
 .PHONY: test
 test: issues.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
-
-issues.exp.test: $(SIL_FILES) $(INFER_BIN)
-	@for f in $(SIL_FILES); do $(INFER_BIN) --capture-textual-sil $${f}; done >& $@
 
 .PHONY: replace
 replace: issues.exp.test

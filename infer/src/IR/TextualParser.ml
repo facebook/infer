@@ -46,13 +46,8 @@ let run ?source_path textual_path =
         SourceFile.create filename
   in
   let result =
-    match parse sourcefile cin with
-    | Ok module_ ->
-        L.result "SIL parsing of %s succeeded.@\n" filename ;
-        Ok module_
-    | Error errs ->
-        List.iter errs ~f:(fun err -> L.external_error "%a" (pp_error sourcefile) err) ;
-        Error ()
+    let print_errors errs = List.iter errs ~f:(L.external_error "%a" (pp_error sourcefile)) in
+    parse sourcefile cin |> Result.map_error ~f:print_errors
   in
   In_channel.close cin ;
   result
@@ -62,13 +57,18 @@ let capture ?source_path textual_path =
   match run ?source_path textual_path with
   | Error () ->
       ()
-  | Ok module_ ->
+  | Ok module_ -> (
       let source_file = module_.sourcefile in
-      let cfg, tenv = Textual.Module.to_sil module_ in
-      SourceFiles.add source_file cfg (FileLocal tenv) None ;
-      if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
-      if
-        Config.debug_mode || Config.testing_mode || Config.frontend_tests
-        || Option.is_some Config.icfg_dotty_outfile
-      then DotCfg.emit_frontend_cfg source_file cfg ;
-      ()
+      try
+        let cfg, tenv = Textual.Module.to_sil module_ in
+        SourceFiles.add source_file cfg (FileLocal tenv) None ;
+        if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
+        if
+          Config.debug_mode || Config.testing_mode || Config.frontend_tests
+          || Option.is_some Config.icfg_dotty_outfile
+        then DotCfg.emit_frontend_cfg source_file cfg ;
+        ()
+      with Textual.ToSilTransformationError pp ->
+        L.external_error
+          "%s: conversion from Textual to SIL failed because of an unsupported form\n  %a\n"
+          (Filename.basename textual_path) pp () )
