@@ -7,6 +7,7 @@ TESTS_DIR = ../../..
 INFER_OUT ?= infer-out$(TEST_SUFFIX)
 
 include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/java.make
 
 SOURCES = $(sort $(wildcard *.java))
 SIL_FILES = $(patsubst %.java,%.sil,$(SOURCES))
@@ -24,7 +25,7 @@ $(CLASSES_DIR):
 	mkdir $@
 
 %.sil: %.java $(CLASSES_DIR) $(INFER_BIN)
-	$(INFER_BIN) -g capture -o "$(DUMP_DIR)/infer-out-$(basename $<)" --dump-textual "$@" -- javac -d $(CLASSES_DIR) $<
+	$(INFER_BIN) -g capture -o "$(DUMP_DIR)/infer-out-$(basename $<)" --dump-textual "$@" -- javac -cp $(CLASSPATH) -d $(CLASSES_DIR) $<
 
 .PHONY: compile
 compile: $(SIL_FILES)

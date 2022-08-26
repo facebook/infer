@@ -539,7 +539,7 @@ module Struct = struct
     let pp_fields =
       Pp.seq ~print_env:Pp.text_break ~sep:";" (fun fmt -> F.fprintf fmt " %a" Fieldname.pp)
     in
-    F.fprintf fmt "%a = {@[<hov>%a2@] }" TypeName.pp name pp_fields fields
+    F.fprintf fmt "%a = {@[<hov>%a@] }" TypeName.pp name pp_fields fields
 end
 
 module Decls = struct

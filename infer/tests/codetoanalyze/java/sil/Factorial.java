@@ -6,6 +6,12 @@
 //
 
 class Factorial{
+
+  public static void main(String args[]){
+    int n=5;
+    System.out.println("Factorial of "+n+" is: "+fact(n));
+  }
+
   private static int fact(int n) {
     int i,fact = 1;
     for(i=1;i<=n;i++){
