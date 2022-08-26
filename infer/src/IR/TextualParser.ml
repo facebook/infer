@@ -59,6 +59,7 @@ let capture ?source_path textual_path =
       ()
   | Ok module_ -> (
       let source_file = module_.sourcefile in
+      DB.Results_dir.init source_file ;
       try
         let cfg, tenv = Textual.Module.to_sil module_ in
         SourceFiles.add source_file cfg (FileLocal tenv) None ;
