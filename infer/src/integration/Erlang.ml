@@ -68,7 +68,104 @@ let capture ~command ~args =
   Option.iter ~f:parse_translate_store Config.erlang_ast_dir ;
   if not Config.erlang_skip_compile then (
     let in_dir = ResultsDir.get_path Temporary in
-    let result_dir = Filename.temp_dir ~in_dir (command ^ "infer") "" in
+    let result_dir = Filename.temp_dir ~in_dir command "infer" in
     run_compile Config.erlang_with_otp_specs command result_dir args ;
     parse_translate_store result_dir ;
     if not Config.debug_mode then Utils.rmtree result_dir )
+
+
+let add_or_get_build_report_path args =
+  let split_on s list = List.split_while list ~f:(String.equal s |> Fn.non) in
+  let split_on_build args =
+    let before_build, from_build = split_on "build" args in
+    match List.tl from_build with
+    | None ->
+        L.die UserError "Only 'build' command of buck is supported."
+    | Some after_build ->
+        (before_build, after_build)
+  in
+  let add_or_get args =
+    let before_option, from_option = split_on "--build-report" args in
+    match from_option with
+    | [] ->
+        let build_report_path =
+          Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "build-report" ".json"
+        in
+        (before_option @ ["--build-report"; build_report_path], build_report_path)
+    | "--build-report" :: existing_path :: _ ->
+        (args, existing_path)
+    | ["--build-report"] ->
+        L.die UserError "--build-report should be followed by a path"
+    | _ ->
+        L.die InternalError "Can't happen"
+  in
+  let before_build, after_build = split_on_build args in
+  let after_build, build_report_path = add_or_get after_build in
+  (build_report_path, before_build @ ["build"] @ after_build)
+
+
+let save_beams_from_report build_report_path beam_list_path =
+  let report =
+    match Utils.read_json_file build_report_path with
+    | Ok json ->
+        json
+    | Error message ->
+        L.external_warning "@[<v>@[Failed to parse Buck report: %s@]@;@]" message ;
+        `Assoc []
+  in
+  let rec get_strings under_outputs strings json =
+    match json with
+    | `String s when under_outputs ->
+        Set.add strings s
+    | `List jsons ->
+        List.fold ~init:strings ~f:(get_strings under_outputs) jsons
+    | `Assoc tagged_jsons ->
+        let f strings (tag, json) =
+          get_strings (under_outputs || String.equal tag "outputs") strings json
+        in
+        List.fold ~init:strings ~f tagged_jsons
+    | _ ->
+        strings
+  in
+  let get_beams beams dir =
+    let ebin_dir = dir ^/ "ebin" in
+    match Sys.is_directory ebin_dir with
+    | `Yes ->
+        let new_beams = Utils.find_files ~path:ebin_dir ~extension:".beam" in
+        Set.union beams (String.Set.of_list new_beams)
+    | _ ->
+        beams
+  in
+  let all = get_strings false String.Set.empty report in
+  let beams = Set.fold ~init:String.Set.empty ~f:get_beams all in
+  Out_channel.write_lines beam_list_path (Set.elements beams)
+
+
+let process_beams beam_list_path =
+  Option.iter ~f:parse_translate_store Config.erlang_ast_dir ;
+  if not Config.erlang_skip_compile then (
+    let jsonast_dir =
+      let in_dir = ResultsDir.get_path Temporary in
+      Filename.temp_dir ~in_dir "buck2-erlang" "infer"
+    in
+    let _ignore_extract_err =
+      let prog = Config.lib_dir ^/ "erlang" ^/ "extract.escript" in
+      let args =
+        if Config.erlang_with_otp_specs then
+          ["--list"; beam_list_path; "--specs-only"; "--otp"; jsonast_dir]
+        else ["--list"; beam_list_path; jsonast_dir]
+      in
+      (* extract.escript prints a warning to stdout if the abstract forms are missing,
+         but keeps going *)
+      Process.create_process_and_wait_with_output ~prog ~args ReadStderr
+    in
+    parse_translate_store jsonast_dir ;
+    if not Config.debug_mode then Utils.rmtree jsonast_dir )
+
+
+let capture_buck ~command ~args =
+  let build_report_path, args = add_or_get_build_report_path args in
+  Buck.wrap_buck_call ~label:"erlang" (command :: args) |> ignore ;
+  let beam_list_path = ResultsDir.get_path Temporary ^/ "beams.list" in
+  save_beams_from_report build_report_path beam_list_path ;
+  process_beams beam_list_path

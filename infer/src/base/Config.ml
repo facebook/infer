@@ -867,6 +867,10 @@ and buck_mode =
      clang targets, as per Buck's $(i,#compilation-database) flavor."
     ~symbols:[("no-deps", `NoDeps); ("deps", `DepsTmp)]
   |> ignore ;
+  CLOpt.mk_bool ~long:"buck-erlang"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    ~f:(set_mode `Erlang) "Buck integration for Erlang."
+  |> ignore ;
   CLOpt.mk_bool ~long:"buck-java-flavor"
     ~in_help:InferCommand.[(Capture, manual_buck)]
     ~f:(set_mode `JavaFlavor)
@@ -3269,6 +3273,8 @@ and buck_mode : BuckMode.t option =
       Some (ClangCompilationDB DepsAllDepths)
   | `ClangCompilationDB `DepsTmp, Some depth ->
       Some (ClangCompilationDB (DepsUpToDepth depth))
+  | `Erlang, _ ->
+      Some Erlang
   | `JavaFlavor, _ ->
       Some JavaFlavor
 

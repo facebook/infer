@@ -11,13 +11,15 @@ module F = Format
 module Hashtbl = Caml.Hashtbl
 module L = Die
 
-let fold_folders ~init ~f ~path =
+let fold_file_tree ~init ~f_dir ~f_reg ~path =
   let rec traverse_dir_aux acc dir_path =
     let aux base_path acc' rel_path =
       let full_path = base_path ^/ rel_path in
-      match (Unix.stat full_path).Unix.st_kind with
-      | Unix.S_DIR ->
-          traverse_dir_aux (f acc' full_path) full_path
+      match (Unix.stat full_path).st_kind with
+      | S_DIR ->
+          traverse_dir_aux (f_dir acc' full_path) full_path
+      | S_REG ->
+          f_reg acc' full_path
       | _ ->
           acc'
       | exception Unix.Unix_error (ENOENT, _, _) ->
@@ -26,6 +28,18 @@ let fold_folders ~init ~f ~path =
     Sys.fold_dir ~init:acc ~f:(aux dir_path) dir_path
   in
   traverse_dir_aux init path
+
+
+let fold_folders ~init ~f ~path =
+  let f_reg acc _ignore_reg = acc in
+  fold_file_tree ~init ~f_dir:f ~f_reg ~path
+
+
+(** recursively find all files in [path] with names ending in [extension] *)
+let find_files ~path ~extension =
+  let f_dir acc _ignore_dir = acc in
+  let f_reg acc path = if Filename.check_suffix path extension then path :: acc else acc in
+  fold_file_tree ~init:[] ~f_dir ~f_reg ~path
 
 
 (** read a source file and return a list of lines, or None in case of error *)

@@ -118,7 +118,7 @@ module Target = struct
     match (mode, command) with
     | ClangCompilationDB _, _ ->
         add_flavor_internal target "compilation-database"
-    | ClangV2, _ | ClangFlavors, Compile ->
+    | ClangV2, _ | ClangFlavors, Compile | Erlang, _ ->
         target
     | JavaFlavor, _ ->
         add_flavor_internal target "infer-java-capture"
@@ -164,7 +164,7 @@ let config =
           get_java_flavor_config ()
       | ClangFlavors ->
           get_clang_flavor_config ()
-      | ClangV2 | ClangCompilationDB _ ->
+      | ClangV2 | ClangCompilationDB _ | Erlang ->
           []
     in
     List.fold args ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
@@ -341,6 +341,8 @@ let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
       "^(apple|cxx)_(binary|library|test)$"
   | ClangV2 | ClangFlavors ->
       "^(apple|cxx)_(binary|library)$"
+  | Erlang ->
+      L.die InternalError "Not used"
   | JavaFlavor ->
       "^(java|android)_library$"
 
@@ -348,7 +350,7 @@ let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
 let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
   targets |> List.rev_map ~f:Query.target |> Query.set
   |> ( match buck_mode with
-     | ClangV2 | ClangFlavors | ClangCompilationDB NoDependencies ->
+     | ClangV2 | ClangFlavors | ClangCompilationDB NoDependencies | Erlang ->
          Fn.id
      | JavaFlavor ->
          Query.deps Config.buck_java_flavor_dependency_depth
@@ -422,6 +424,8 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
       , {pattern_targets; alias_targets; normal_targets} ) ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets buck_mode
+    | Erlang, _ ->
+        L.die InternalError "parse_command_and_targets should not be used for Erlang"
   in
   let targets =
     Option.value_map ~default:targets

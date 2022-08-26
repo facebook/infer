@@ -169,6 +169,10 @@ OPTIONS
            option. By default, all recursive dependencies are captured.       
     See also infer-capture(1).
 
+       --buck-erlang
+           Activates: Buck integration for Erlang. (Conversely:
+           --no-buck-erlang)           See also infer-capture(1).
+
        --buck-java-flavor
            Activates: Buck integration for Java which uses the buck flavor
            #infer-java-capture instead of genrules like buck-java.

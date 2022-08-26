@@ -19,6 +19,7 @@ type mode =
   | Buck2 of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
+  | BuckErlang of {prog: string; args: string list}
   | BuckGenrule of {prog: string}
   | BuckJavaFlavor of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
@@ -50,6 +51,8 @@ let pp_mode fmt = function
   | BuckCompilationDB {deps; prog; args} ->
       F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a@\ndeps = %a" prog
         Pp.cli_args args BuckMode.pp_clang_compilation_db_deps deps
+  | BuckErlang {prog; args} ->
+      F.fprintf fmt "BuckErlang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | BuckGenrule {prog} ->
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
   | BuckJavaFlavor {build_cmd} ->
@@ -140,6 +143,9 @@ let capture ~changed_files mode =
           CaptureCompilationDatabase.get_compilation_database_files_buck deps ~prog ~args
         in
         CaptureCompilationDatabase.capture ~changed_files ~db_files
+    | BuckErlang {prog; args} ->
+        L.progress "Capturing Erlang using Buck...@." ;
+        Erlang.capture_buck ~command:prog ~args
     | BuckGenrule {prog} ->
         L.progress "Capturing for Buck genrule compatibility...@." ;
         JMain.from_arguments prog
@@ -399,6 +405,8 @@ let assert_supported_build_system build_system =
             (`Clang, "buck with flavors")
         | Some (ClangCompilationDB _) ->
             (`Clang, "buck compilation database")
+        | Some Erlang ->
+            (`Erlang, Config.string_of_build_system build_system)
         | Some JavaFlavor ->
             (`Java, Config.string_of_build_system build_system)
       in
@@ -439,12 +447,16 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
              set --no-linters to disable them and this warning.@." ;
           BuckClangFlavor {build_cmd}
+      | BBuck, Some Erlang ->
+          L.die UserError "Invalid buildsystem configuration.@."
       | BBuck, Some JavaFlavor ->
           BuckJavaFlavor {build_cmd}
       | BBuck, Some ClangFlavors ->
           BuckClangFlavor {build_cmd}
       | BBuck, Some ClangV2 ->
           L.die UserError "Invalid buildsystem configuration.@."
+      | BBuck2, Some Erlang ->
+          BuckErlang {prog; args}
       | BBuck2, _ ->
           Buck2 {build_cmd}
       | BClang, _ ->

@@ -18,6 +18,7 @@ type mode =
   | Buck2 of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
+  | BuckErlang of {prog: string; args: string list}
   | BuckGenrule of {prog: string}
   | BuckJavaFlavor of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
