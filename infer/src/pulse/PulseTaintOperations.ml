@@ -45,6 +45,7 @@ type procedure_matcher =
   | ProcedureNameRegex of {name_regex: Str.regexp}
   | ClassAndMethodNames of {class_names: string list; method_names: string list}
   | OverridesOfClassWithAnnotation of {annotation: string}
+  | MethodWithAnnotation of {annotation: string}
   | Allocation of {class_name: string}
 
 type matcher =
@@ -124,6 +125,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= None
           ; allocation= None } ->
             ProcedureName {name}
         | { procedure= None
@@ -131,6 +133,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= None
           ; allocation= None } ->
             ProcedureNameRegex {name_regex= Str.regexp name_regex}
         | { procedure= None
@@ -138,6 +141,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_names= Some class_names
           ; method_names= Some method_names
           ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= None
           ; allocation= None } ->
             ClassAndMethodNames {class_names; method_names}
         | { procedure= None
@@ -145,6 +149,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= Some annotation
+          ; method_with_annotation= None
           ; allocation= None } ->
             OverridesOfClassWithAnnotation {annotation}
         | { procedure= None
@@ -152,6 +157,15 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= Some annotation
+          ; allocation= None } ->
+            MethodWithAnnotation {annotation}
+        | { procedure= None
+          ; procedure_regex= None
+          ; class_names= None
+          ; method_names= None
+          ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= None
           ; allocation= Some class_name } ->
             Allocation {class_name}
         | _ ->
@@ -160,16 +174,16 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
                \"procedure_regex\", \"allocation\" must be provided, or else \"class_names\" and \
                \"method_names\" must be provided, or else \"overrides_of_class_with_annotation\", \
                but got \"procedure\": %a, \"procedure_regex\": %a, \"class_names\": %a, \
-               \"method_names\": %a, \"overrides_of_class_with_annotation\": %a, \"allocation\": \
-               %a"
-              option_name (Pp.option F.pp_print_string) matcher.procedure
-              (Pp.option F.pp_print_string) matcher.procedure_regex
+               \"method_names\": %a, \"overrides_of_class_with_annotation\": %a,\n\
+              \               \"method_with_annotation\": %a \"allocation\": %a" option_name
+              (Pp.option F.pp_print_string) matcher.procedure (Pp.option F.pp_print_string)
+              matcher.procedure_regex
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.class_names
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.method_names (Pp.option F.pp_print_string)
               matcher.overrides_of_class_with_annotation (Pp.option F.pp_print_string)
-              matcher.allocation
+              matcher.method_with_annotation (Pp.option F.pp_print_string) matcher.allocation
       in
       { procedure_matcher
       ; arguments= matcher.argument_constraints
@@ -241,6 +255,9 @@ let procedure_matches tenv matchers proc_name actuals =
                                String.equal (Procname.get_method superclass_pname) method_name )
                              tenv proc_name ) )
                   procedure_class_name )
+        | MethodWithAnnotation {annotation} ->
+            Annotations.pname_has_return_annot proc_name (fun annot_item ->
+                Annotations.ia_ends_with annot_item annotation )
         | Allocation _ ->
             false
       in
