@@ -504,7 +504,8 @@ struct
       transition need not originate from the terminator of [src]. Edges can
       also represent transitions that produce threads in non-[Runnable]
       scheduling states, determined by the form of [dst]. *)
-  type edge = {dst: Thread.t; src: Llair.Block.t} [@@deriving sexp_of]
+  type edge = {dst: Thread.t; src: Llair.Block.t; retreating: bool}
+  [@@deriving sexp_of]
 
   module Edge = struct
     type t = edge [@@deriving sexp_of]
@@ -525,23 +526,8 @@ struct
         match (x, y) with
         | {dst= Runnable x_t}, {dst= Runnable y_t}
          |{dst= Suspended x_t}, {dst= Suspended y_t} ->
-            let is_rec_call {dst; src} =
-              match src with
-              | {Llair.term= Call {callee= Direct {recursive}}} -> recursive
-              | {Llair.term= Call {callee= Indirect {candidates}}} ->
-                  (let* dst_func =
-                     let+ ip = Thread.ip dst in
-                     Llair.(IP.block ip).parent
-                   in
-                   IArray.find_map candidates
-                     ~f:(fun {Llair.func; recursive} ->
-                       if Llair.Func.equal func dst_func then Some recursive
-                       else None ) )
-                  |> Option.get_or ~default:true
-              | _ -> false
-            in
             let compare_stk stk1 stk2 =
-              if is_rec_call x then 0
+              if x.retreating then 0
               else Stack.compare_as_inlined_location stk1 stk2
             in
             Llair.IP.compare x_t.ip y_t.ip
@@ -658,7 +644,7 @@ struct
     type t
 
     val init : D.t -> Llair.block -> Goal.t -> t
-    val add : retreating:bool -> work -> t -> t
+    val add : work -> t -> t
     val run : f:(ams -> t -> t) -> t -> unit
   end = struct
     (** Element of the frontier of execution, ordered for scheduler's
@@ -807,7 +793,9 @@ struct
       let stk = Stack.empty in
       let prev = curr in
       let tid = ThreadID.init in
-      let edge = {dst= Runnable {ip; stk; tid}; src= prev} in
+      let edge =
+        {dst= Runnable {ip; stk; tid}; src= prev; retreating= false}
+      in
       let threads = Threads.init in
       let switches = 0 in
       let depths = Depths.empty in
@@ -818,8 +806,8 @@ struct
         {ctrl= edge; state; threads; switches; depths; goal; history}
         (queue, cursor)
 
-    let add ~retreating ({ctrl= edge; depths} as elt) wl =
-      if not retreating then enqueue 0 elt wl
+    let add ({ctrl= edge; depths} as elt) wl =
+      if not edge.retreating then enqueue 0 elt wl
       else
         let depth = 1 + Option.value (Depths.find edge depths) ~default:0 in
         if depth <= Config.loop_bound then
@@ -937,8 +925,8 @@ struct
     let src = Llair.IP.block ip in
     let {Llair.dst; retreating} = jump in
     let ip = Llair.IP.mk dst in
-    let edge = {dst= Runnable {ip; stk; tid}; src} in
-    Work.add ~retreating {ams with ctrl= edge} wl
+    let edge = {dst= Runnable {ip; stk; tid}; src; retreating} in
+    Work.add {ams with ctrl= edge} wl
 
   let exec_skip_func areturn return ({ctrl= {ip; tid}; state} as ams) wl =
     Report.unknown_call (Llair.IP.block ip).term ;
@@ -982,10 +970,10 @@ struct
             in
             let stk = Stack.push_call call from_call stk in
             let src = Llair.IP.block ams.ctrl.ip in
-            let edge = {dst= Runnable {ip; stk; tid}; src} in
-            Work.add ~retreating:recursive
-              {ams with ctrl= edge; state; goal}
-              wl
+            let edge =
+              {dst= Runnable {ip; stk; tid}; src; retreating= recursive}
+            in
+            Work.add {ams with ctrl= edge; state; goal} wl
         | Some post -> exec_jump return {ams with state= post; goal} wl )
     |>
     [%Dbg.retn fun {pf} _ -> pf ""]
@@ -1042,8 +1030,10 @@ struct
     | None ->
         summarize exit_state |> ignore ;
         let tc = D.term tid formals freturn exit_state in
-        Work.add ~retreating:false
-          {ams with ctrl= {dst= Terminated (tc, tid); src= block}; goal}
+        Work.add
+          { ams with
+            ctrl= {dst= Terminated (tc, tid); src= block; retreating= false}
+          ; goal }
           wl )
     |>
     [%Dbg.retn fun {pf} _ -> pf ""]
@@ -1206,8 +1196,10 @@ struct
             let ip = Llair.IP.succ ip in
             if Llair.IP.is_schedule_point ip then
               let src = Llair.IP.block ip in
-              let edge = {dst= Runnable {ip; stk; tid}; src} in
-              Work.add ~retreating:false {ams with ctrl= edge; state} wl
+              let edge =
+                {dst= Runnable {ip; stk; tid}; src; retreating= false}
+              in
+              Work.add {ams with ctrl= edge; state} wl
             else exec_ip pgm {ams with ctrl= {ams.ctrl with ip}; state} wl
         | Error alarm ->
             Report.alarm alarm ~dp_witness:(Hist.dump ams.history) ;
