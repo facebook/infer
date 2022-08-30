@@ -9,7 +9,7 @@ open! IStd
 
 type javac_data = {files: string list; opts: string list}
 
-val parse_gradle_line : line:string -> javac_data
+val parse_gradle_line : kotlin:bool -> line:string -> javac_data
 (** parse a single gradle output line and extract files and javac opts *)
 
 val capture : prog:string -> args:string list -> unit

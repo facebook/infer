@@ -6,80 +6,68 @@
 
 -mode(compile).
 
--define(OPTIONS, ["specs_only"]).
-
 usage() ->
     Usage =
         [
             "Usage:",
-            "    extract.escript [--specs_only] <PATH> <OUTDIR>",
-            "    extract.escript <TERM>",
+            "    extract.escript <BEAMS> [--specs-only <BEAMS>] <OUTDIR>",
             "",
-            "In the first form, the script will traverse all beam files",
-            "in PATH, read their Abstract Syntax Trees (AST), and write a",
-            "corresponding file in OUTDIR with the AST encoded as json.",
-            "PATH can be;",
-            "  a directory, a beam file, or a file with a list of beam files.",
-            "Optional flag `--specs_only` is to filter specs AST nodes only."
+            "For each beam file, produce one json file representing the Erlang AST.",
             "",
-            "In the second form, intended for debugging, the string TERM will",
-            "be converted to an Erlang term and rendered as json."
+            "You can specify beam files in several ways:",
+            "   '--beam <PATH>' specifies the path to one beam file",
+            "   '--directory <DIR>' specifies all the beam files in <DIR>",
+            "   '--list <FILE>' specifies all the paths listed, one per line, in <FILE>",
+            "   '--otp' specifies all the beam files in OTP",
+            "",
+            "For the beam files coming after '--specs-only',",
+            "the AST is filtered to keep only specs."
         ],
-    lists:foreach(fun(U) -> io:format("~s~n", [U]) end, Usage),
+    lists:foreach(fun(U) -> io:fwrite("~s~n", [U]) end, Usage),
     halt(1).
 
-main([Str]) when is_integer(hd(Str)) ->
-    {ok, Tokens, _} = erl_scan:string(Str ++ [$.]),
-    {ok, Term} = erl_parse:parse_term(Tokens),
-    io:fwrite("~s~n", [ast_to_json(Term)]);
 main(Args) ->
-    do_main(Args, []).
+    do_main(Args, false, {[], []}, []).
 
-do_main([[$-, $- | Option] | Rest], Options) ->
-    case lists:member(Option, ?OPTIONS) of
-        true ->
-            do_main(Rest, Options ++ [list_to_atom(Option)]);
-        _ ->
-            io:fwrite("Unrecognized option `--~s`~n~n", [Option]),
-            usage()
-    end;
-do_main([Path, OutDir], Options) ->
-    ast_to_json(Path, OutDir, Options);
-do_main(_, _) ->
+do_main(["--specs-only" | Rest], _SpecsOnly, Beams, Args) ->
+    do_main(Rest, true, Beams, Args);
+do_main(["--beam", BeamPath | Rest], SpecsOnly, Beams, Args) ->
+    do_main(Rest, SpecsOnly, add_beams(SpecsOnly, [BeamPath], Beams), Args);
+do_main(["--directory", Dir | Rest], SpecsOnly, Beams, Args) ->
+    do_main(Rest, SpecsOnly, add_beams(SpecsOnly, beams_from_dir(Dir), Beams), Args);
+do_main(["--list", File | Rest], SpecsOnly, Beams, Args) ->
+    do_main(Rest, SpecsOnly, add_beams(SpecsOnly, beams_from_file(File), Beams), Args);
+do_main(["--otp" | Rest], SpecsOnly, Beams, Args) ->
+    do_main(Rest, SpecsOnly, add_beams(SpecsOnly, beams_from_otp(), Beams), Args);
+do_main([Arg | Rest], SpecsOnly, Beams, []) ->
+    do_main(Rest, SpecsOnly, Beams, [Arg]);
+do_main([], _SpecsOnly, {FullBeams, SpecsOnlyBeams}, [OutDir]) ->
+    filelib:ensure_dir(filename:join(OutDir, dummy)),
+    gather(mapper(OutDir, SpecsOnlyBeams, true)),
+    gather(mapper(OutDir, FullBeams, false));
+do_main(_, _, _, _) ->
     usage().
 
-ast_to_json(Path, OutDir, Options) ->
-    filelib:ensure_dir(filename:join(OutDir, dummy)),
-    Beams = path_to_beams(Path),
-    filelib:ensure_dir(filename:join(OutDir, dummy)),
-    gather(mapper(OutDir, Beams, Options)).
+add_beams(true, NewBeams, {FullBeams, SpecsOnlyBeams}) -> {FullBeams, NewBeams ++ SpecsOnlyBeams};
+add_beams(false, NewBeams, {FullBeams, SpecsOnlyBeams}) -> {NewBeams ++ FullBeams, SpecsOnlyBeams}.
 
-path_to_beams(Path) ->
-    case filelib:is_dir(Path) of
-        true ->
-            filelib:wildcard(filename:join(Path, "*.beam"));
-        false ->
-            case lists:suffix(".beam", Path) of
-                true ->
-                    [Path];
-                false ->
-                    case file:consult(Path) of
-                        {ok, Paths} ->
-                            Paths;
-                        _ ->
-                            case file:read_file(Path) of
-                                {ok, Bin} ->
-                                    string:tokens(binary_to_list(Bin), "\n");
-                                E ->
-                                    io:format("error reading: ~s: ~p~n", [Path, E]),
-                                    halt(1)
-                            end
-                    end
-            end
+beams_from_dir(Dir) ->
+    filelib:wildcard(filename:join(Dir, "*.beam")).
+beams_from_file(File) ->
+    case file:read_file(File) of
+        {ok, Bin} ->
+            string:tokens(binary_to_list(Bin), "\n");
+        E ->
+            io:format("error reading: ~s: ~p~n", [File, E]),
+            halt(1)
     end.
 
-mapper(OutDir, Beams, Options) ->
-    Handler = fun(B) -> fun() -> exit(process_beam(B, OutDir, Options)) end end,
+beams_from_otp() ->
+    Glob = filename:join([code:lib_dir(), "*", "ebin", "*.beam"]),
+    filelib:wildcard(Glob).
+
+mapper(OutDir, Beams, SpecsOnly) ->
+    Handler = fun(B) -> fun() -> exit(process_beam(B, OutDir, SpecsOnly)) end end,
     Spawner = fun(B) -> spawn_monitor(Handler(B)) end,
     maps:from_list(lists:map(Spawner, Beams)).
 
@@ -113,11 +101,11 @@ filter_specs([], Acc) ->
     lists:reverse(Acc).
 
 %% this runs in its own process
-process_beam(BeamFilePath, OutDir, Options) ->
+process_beam(BeamFilePath, OutDir, SpecsOnly) ->
     case get_ast(BeamFilePath) of
         {ok, Module, Forms} ->
             Forms1 =
-                case lists:member(specs_only, Options) of
+                case SpecsOnly of
                     true -> filter_specs(Forms, []);
                     _ -> Forms
                 end,
@@ -132,6 +120,9 @@ get_ast(BeamFilePath) ->
     case beam_lib:chunks(BeamFilePath, [abstract_code]) of
         {ok, {Module, [{abstract_code, {_, Forms}}]}} ->
             {ok, atom_to_list(Module), Forms};
+        {ok, {_, [{abstract_code, no_abstract_code}]}} ->
+            % should be compiled with +debug_info
+            {error, no_abstract_code};
         {error, _, What} ->
             {error, What}
     end.

@@ -20,3 +20,4 @@ This checker collects functions whose execution isn't gated by certain pre-defin
 The following issue types are reported by this checker:
 - [CONFIG_IMPACT](/docs/next/all-issue-types#config_impact)
 - [CONFIG_IMPACT_STRICT](/docs/next/all-issue-types#config_impact_strict)
+- [CONFIG_IMPACT_STRICT_BETA](/docs/next/all-issue-types#config_impact_strict_beta)

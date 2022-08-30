@@ -16,7 +16,7 @@ module Access : sig
     | Dereference
   [@@deriving compare, equal, yojson_of]
 
-  type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, yojson_of]
+  type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, equal, yojson_of]
 
   val loose_compare :
     ('array_index -> 'array_index -> int) -> 'array_index t -> 'array_index t -> int
@@ -45,7 +45,7 @@ and access_expression = private
   | ArrayOffset of access_expression * Typ.t * t option  (** array access *)
   | AddressOf of access_expression  (** "address of" operator [&] *)
   | Dereference of access_expression  (** "dereference" operator [*] *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 module AccessExpression : sig
   val of_id : Ident.t -> Typ.t -> access_expression [@@warning "-32"]

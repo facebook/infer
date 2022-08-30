@@ -45,7 +45,7 @@ module type DisjReady = sig
 
   module DisjDomain : AbstractDomain.Disjunct
 
-  module NonDisjDomain : AbstractDomain.WithBottom
+  module NonDisjDomain : AbstractDomain.WithBottomTop
 
   type analysis_data
 

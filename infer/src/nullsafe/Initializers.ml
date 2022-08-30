@@ -9,7 +9,7 @@ open! IStd
 
 type init = Procname.t * Procdesc.t
 
-let equal_class_opt = [%compare.equal: string option]
+let equal_class_opt = [%equal: string option]
 
 let final_typestates initializers_current_class tenv typecheck_proc =
   (* Get the private methods, from the same class, directly called by the initializers. *)

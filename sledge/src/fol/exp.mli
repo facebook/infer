@@ -87,6 +87,10 @@ module rec Term : sig
   val map_trms : t -> f:(Trm.t -> Trm.t) -> t
   val fold_map_vars : t -> 's -> f:(Var.t -> 's -> Var.t * 's) -> t * 's
   val rename : Var.Subst.t -> t -> t
+
+  (** Encode *)
+
+  val to_z3 : Z3.context -> t -> Z3.Expr.expr
 end
 
 (** Formulas *)
@@ -147,4 +151,8 @@ and Formula : sig
   val map_vars : t -> f:(Var.t -> Var.t) -> t
   val fold_map_vars : t -> 's -> f:(Var.t -> 's -> Var.t * 's) -> t * 's
   val rename : Var.Subst.t -> t -> t
+
+  (** Encode *)
+
+  val to_z3 : Z3.context -> t -> Z3.Expr.expr
 end

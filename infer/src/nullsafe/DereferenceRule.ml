@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type violation = {nullability: InferredNullability.t} [@@deriving compare]
+type violation = {nullability: InferredNullability.t} [@@deriving compare, equal]
 
 module ProvisionalViolation = struct
   type t = {offending_annotations: ProvisionalAnnotation.t list}
@@ -26,7 +26,7 @@ module ReportableViolation = struct
     | AccessToField of Fieldname.t
     | AccessByIndex of {index_desc: string}
     | ArrayLengthAccess
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let from nullsafe_mode ({nullability} as violation) =
     if

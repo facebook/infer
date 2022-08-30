@@ -1,0 +1,22 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+// 
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// 
+
+global I
+
+type cell = { val: int; next: *cell }
+
+define f(x: int, y: float, n: *cell) : void {
+  #entry:
+    n0: int = load &y
+    n0: int = load &I[1]
+    jmp lab2
+  #lab1:
+    store &x <- n0:int
+    store &I.cell.n <- n0:int
+    n2 = g()
+    ret n2
+
+}

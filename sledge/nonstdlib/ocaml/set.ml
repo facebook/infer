@@ -125,7 +125,8 @@ module T = struct
           then c
           else compare_aux (cons_enum r1 e1) (cons_enum r2 e2)
     in
-    compare_aux (cons_enum s1 End) (cons_enum s2 End)
+    if s1 == s2 then 0
+    else compare_aux (cons_enum s1 End) (cons_enum s2 End)
 
   type 'compare_elt compare [@@deriving compare, equal, sexp]
 end
@@ -142,7 +143,7 @@ let equal equal_elt _ s1 s2 =
         equal_elt v1 v2 &&
         equal_aux (cons_enum r1 e1) (cons_enum r2 e2)
   in
-  equal_aux (cons_enum s1 End) (cons_enum s2 End)
+  s1 == s2 || equal_aux (cons_enum s1 End) (cons_enum s2 End)
 
 let rec elements_aux accu = function
     Empty -> accu

@@ -11,33 +11,15 @@ module F = Format
 module Hashtbl = Caml.Hashtbl
 module L = Die
 
-(** recursively traverse a path for files ending with a given extension *)
-let find_files ~path ~extension =
-  let rec traverse_dir_aux init dir_path =
-    let aux base_path files rel_path =
-      let full_path = base_path ^/ rel_path in
-      match (Unix.stat full_path).Unix.st_kind with
-      | Unix.S_REG when String.is_suffix ~suffix:extension full_path ->
-          full_path :: files
-      | Unix.S_DIR ->
-          traverse_dir_aux files full_path
-      | _ ->
-          files
-      | exception Unix.Unix_error (ENOENT, _, _) ->
-          files
-    in
-    Sys.fold_dir ~init ~f:(aux dir_path) dir_path
-  in
-  traverse_dir_aux [] path
-
-
-let fold_folders ~init ~f ~path =
+let fold_file_tree ~init ~f_dir ~f_reg ~path =
   let rec traverse_dir_aux acc dir_path =
     let aux base_path acc' rel_path =
       let full_path = base_path ^/ rel_path in
-      match (Unix.stat full_path).Unix.st_kind with
-      | Unix.S_DIR ->
-          traverse_dir_aux (f acc' full_path) full_path
+      match (Unix.stat full_path).st_kind with
+      | S_DIR ->
+          traverse_dir_aux (f_dir acc' full_path) full_path
+      | S_REG ->
+          f_reg acc' full_path
       | _ ->
           acc'
       | exception Unix.Unix_error (ENOENT, _, _) ->
@@ -46,6 +28,18 @@ let fold_folders ~init ~f ~path =
     Sys.fold_dir ~init:acc ~f:(aux dir_path) dir_path
   in
   traverse_dir_aux init path
+
+
+let fold_folders ~init ~f ~path =
+  let f_reg acc _ignore_reg = acc in
+  fold_file_tree ~init ~f_dir:f ~f_reg ~path
+
+
+(** recursively find all files in [path] with names ending in [extension] *)
+let find_files ~path ~extension =
+  let f_dir acc _ignore_dir = acc in
+  let f_reg acc path = if Filename.check_suffix path extension then path :: acc else acc in
+  fold_file_tree ~init:[] ~f_dir ~f_reg ~path
 
 
 (** read a source file and return a list of lines, or None in case of error *)
@@ -228,8 +222,8 @@ let with_file_in file ~f =
   Exception.try_finally ~f ~finally
 
 
-let with_file_out file ~f =
-  let oc = Out_channel.create file in
+let with_file_out ?append file ~f =
+  let oc = Out_channel.create ?append file in
   let f () = f oc in
   let finally () = Out_channel.close oc in
   Exception.try_finally ~f ~finally
@@ -465,6 +459,24 @@ let iter_infer_deps ~project_root ~f infer_deps_file =
       List.iter ~f:one_line lines
   | Error error ->
       Die.die InternalError "Couldn't read deps file '%s': %s" infer_deps_file error
+
+
+let inline_argument_files args =
+  let expand_arg arg =
+    if String.is_prefix ~prefix:"@" arg then
+      let file_name = String.chop_prefix_exn ~prefix:"@" arg in
+      if not (ISys.file_exists file_name) then [arg]
+        (* Arguments that start with @ could mean something different than an arguments file *)
+      else
+        let expanded_args =
+          try with_file_in file_name ~f:In_channel.input_lines
+          with exn ->
+            Die.die UserError "Could not read from file '%s': %a@\n" file_name Exn.pp exn
+        in
+        expanded_args
+    else [arg]
+  in
+  List.concat_map ~f:expand_arg args
 
 
 let physical_cores () =

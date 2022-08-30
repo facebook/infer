@@ -8,7 +8,7 @@ open! IStd
 
 let get_java_class_initializer_summary_of {InterproceduralAnalysis.proc_desc; analyze_dependency} =
   let procname = Procdesc.get_proc_name proc_desc in
-  match procname with
+  match Procname.base_of procname with
   | Procname.Java _ ->
       Procname.get_class_type_name procname
       |> Option.map ~f:(fun tname -> Procname.(Java (Java.get_class_initializer tname)))

@@ -21,7 +21,18 @@ val call :
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
 
-val check_not_tainted_wrt_sink :
+val taint_allocation :
+     Tenv.t
+  -> PathContext.t
+  -> Location.t
+  -> typ_desc:Typ.desc
+  -> alloc_desc:string
+  -> allocator:Attribute.allocator option
+  -> AbstractValue.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t
+
+val check_flows_wrt_sink :
      PathContext.t
   -> Location.t
   -> Taint.t * Trace.t
@@ -29,4 +40,7 @@ val check_not_tainted_wrt_sink :
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 
-val taint_initial : Tenv.t -> Procdesc.t -> AbductiveDomain.t -> AbductiveDomain.t
+val taint_initial :
+  Tenv.t -> Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t
+
+val dynamic_dispatch_map : Yojson.Basic.t option [@@warning "-32"]

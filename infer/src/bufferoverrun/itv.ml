@@ -134,8 +134,6 @@ module ItvPure = struct
 
   let of_int_lit n = of_big_int (IntLit.to_big_int n)
 
-  let of_foreign_id id = of_bound (Bound.of_foreign_id id)
-
   let mone = of_bound Bound.mone
 
   let zero_255 = (Bound.zero, Bound.z255)
@@ -212,17 +210,6 @@ module ItvPure = struct
 
   let to_boolean : t -> Boolean.t =
    fun x -> if is_false x then Boolean.False else if is_true x then Boolean.True else Boolean.Top
-
-
-  let of_boolean : Boolean.t -> t bottom_lifted = function
-    | True ->
-        NonBottom (of_int 1)
-    | False ->
-        NonBottom (of_int 0)
-    | Bottom ->
-        Bottom
-    | Top ->
-        NonBottom top
 
 
   let lnot : t -> Boolean.t = fun x -> to_boolean x |> Boolean.not_
@@ -423,50 +410,6 @@ module ItvPure = struct
     | _ ->
         Bottom
 
-
-  let assert_no_bottom = function Bottom -> assert false | NonBottom x -> x
-
-  let arith_binop (bop : Binop.t) x y =
-    match bop with
-    | PlusA _ | PlusPI ->
-        plus x y
-    | MinusA _ | MinusPI | MinusPP ->
-        minus x y
-    | Mult _ ->
-        mult x y
-    | DivI | DivF ->
-        div x y
-    | Mod ->
-        mod_sem x y
-    | Shiftlt ->
-        shiftlt x y
-    | Shiftrt ->
-        shiftrt x y
-    | Lt ->
-        of_boolean (lt_sem x y) |> assert_no_bottom
-    | Gt ->
-        of_boolean (gt_sem x y) |> assert_no_bottom
-    | Le ->
-        of_boolean (le_sem x y) |> assert_no_bottom
-    | Ge ->
-        of_boolean (ge_sem x y) |> assert_no_bottom
-    | Eq ->
-        of_boolean (eq_sem x y) |> assert_no_bottom
-    | Ne ->
-        of_boolean (ne_sem x y) |> assert_no_bottom
-    | BAnd ->
-        band_sem x y
-    | BXor ->
-        top
-    | BOr ->
-        top
-    | LAnd ->
-        of_boolean (land_sem x y) |> assert_no_bottom
-    | LOr ->
-        of_boolean (lor_sem x y) |> assert_no_bottom
-
-
-  let arith_unop (unop : Unop.t) x = match unop with Neg -> Some (neg x) | BNot | LNot -> None
 
   let prune_le : t -> t -> t bottom_lifted =
    fun (l1, u1) (_, u2) -> normalize (l1, Bound.overapprox_min u1 u2)

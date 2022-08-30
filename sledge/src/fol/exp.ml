@@ -197,6 +197,124 @@ module Sized = struct
 end
 
 (*
+ * Encode
+ *)
+
+(* The SLEdge internal logic is unsorted, while Z3 requires sorts. Therefore
+   this encoding treats every element of the universe as a rational/real
+   number. This causes the interpretation of arithmetic inequality to be not
+   entirely correct. Also, terms representing byte-arrays/sequences are left
+   uninterpreted. *)
+
+module ToZ3 = struct
+  let integer x (z : Z.t) =
+    match Z.to_int z with
+    | n -> Z3.Expr.mk_numeral_int x n (Z3.Arithmetic.Real.mk_sort x)
+    | exception Z.Overflow ->
+        Z3.Expr.mk_numeral_string x (Z.to_string z)
+          (Z3.Arithmetic.Real.mk_sort x)
+
+  let rational x (q : Q.t) =
+    match (Z.to_int q.num, Z.to_int q.den) with
+    | n, d -> Z3.Arithmetic.Real.mk_numeral_nd x n d
+    | exception Z.Overflow ->
+        Z3.Expr.mk_numeral_string x (Q.to_string q)
+          (Z3.Arithmetic.Real.mk_sort x)
+
+  let rec trm x e =
+    match (e : trm) with
+    | Var {id; name= _} ->
+        let sym =
+          if 0 <= id && id < 1 lsl 30 then Z3.Symbol.mk_int x id
+          else Z3.Symbol.mk_string x (string_of_int id)
+        in
+        Z3.Expr.mk_const x sym (Z3.Arithmetic.Real.mk_sort x)
+    | Z z -> integer x z
+    | Q q -> rational x q
+    | Arith a ->
+        let pow (b, p) =
+          Z3.Arithmetic.mk_power x (trm x b)
+            (Z3.Expr.mk_numeral_int x p (Z3.Arithmetic.Integer.mk_sort x))
+        in
+        let mono (c, m) =
+          Z3.Arithmetic.mk_mul x
+            (rational x c :: Iter.to_list (Iter.map ~f:pow m))
+        in
+        let poly p =
+          Z3.Arithmetic.mk_add x (Iter.to_list (Iter.map ~f:mono p))
+        in
+        poly (Trm.Arith.sum_of_power_products a)
+    | Splat e ->
+        let sort = Z3.Arithmetic.Real.mk_sort x in
+        Z3.Expr.mk_app x
+          (Z3.FuncDecl.mk_func_decl_s x "splat" [sort] sort)
+          [trm x e]
+    | Extract {seq; siz; off; len} ->
+        let sort = Z3.Arithmetic.Real.mk_sort x in
+        Z3.Expr.mk_app x
+          (Z3.FuncDecl.mk_func_decl_s x "extract" [sort; sort; sort; sort]
+             sort )
+          [trm x seq; trm x siz; trm x off; trm x len]
+    | Concat nas ->
+        let sort = Z3.Arithmetic.Real.mk_sort x in
+        let concat =
+          Z3.FuncDecl.mk_func_decl_s x "concat" [sort; sort; sort] sort
+        in
+        let empty = Z3.Expr.mk_const_s x "empty" sort in
+        Array.fold_right nas empty ~f:(fun {seq; siz} agg ->
+            Z3.Expr.mk_app x concat [trm x seq; trm x siz; agg] )
+    | Apply (f, es) ->
+        let sort = Z3.Arithmetic.Real.mk_sort x in
+        let fsym =
+          Z3.FuncDecl.mk_func_decl_s x
+            (Sexp.to_string (Funsym.sexp_of_t f))
+            (List.init (Array.length es) ~f:(fun _ -> sort))
+            sort
+        in
+        Z3.Expr.mk_app x fsym
+          (Iter.to_list (Iter.map ~f:(trm x) (Array.to_iter es)))
+
+  let rec fml x b =
+    match (b : fml) with
+    | Tt -> Z3.Boolean.mk_true x
+    | Eq (d, e) -> Z3.Boolean.mk_eq x (trm x d) (trm x e)
+    | Distinct es ->
+        Z3.Boolean.mk_distinct x
+          (Iter.to_list (Iter.map ~f:(trm x) (Array.to_iter es)))
+    | Eq0 e ->
+        Z3.Boolean.mk_eq x (trm x e)
+          (Z3.Expr.mk_numeral_int x 0 (Z3.Arithmetic.Real.mk_sort x))
+    | Pos e ->
+        Z3.Arithmetic.mk_gt x (trm x e)
+          (Z3.Expr.mk_numeral_int x 0 (Z3.Arithmetic.Real.mk_sort x))
+    | Not a -> Z3.Boolean.mk_not x (fml x a)
+    | And {pos; neg} -> Z3.Boolean.mk_and x (pos_neg_fml x ~pos ~neg)
+    | Or {pos; neg} -> Z3.Boolean.mk_or x (pos_neg_fml x ~pos ~neg)
+    | Iff (a, b) -> Z3.Boolean.mk_iff x (fml x a) (fml x b)
+    | Cond {cnd; pos; neg} ->
+        Z3.Boolean.mk_ite x (fml x cnd) (fml x pos) (fml x neg)
+    | Lit (p, es) ->
+        let sort = Z3.Arithmetic.Real.mk_sort x in
+        let psym =
+          Z3.FuncDecl.mk_func_decl_s x
+            (Sexp.to_string (Predsym.sexp_of_t p))
+            (List.init (Array.length es) ~f:(fun _ -> sort))
+            sort
+        in
+        Z3.Expr.mk_app x psym
+          (Iter.to_list (Iter.map ~f:(trm x) (Array.to_iter es)))
+
+  and pos_neg_fml x ~pos ~neg =
+    Fml.fold_pos_neg ~pos ~neg ~f:(fun a bs -> fml x a :: bs) []
+
+  let rec cnd x = function
+    | `Trm t -> trm x t
+    | `Ite (b, p, n) -> Z3.Boolean.mk_ite x (fml x b) (cnd x p) (cnd x n)
+
+  let exp x = function `Fml f -> fml x f | #cnd as c -> cnd x c
+end
+
+(*
  * Terms: exposed interface
  *)
 
@@ -281,17 +399,24 @@ module Term = struct
 
   (** Traverse *)
 
-  let iter e ~f:iter_t =
-    let iter_f f = Iter.flat_map ~f:iter_t (Fml.trms f) in
-    let rec iter_c = function
-      | `Ite (cnd, thn, els) ->
-          Iter.(append (iter_f cnd) (append (iter_c thn) (iter_c els)))
-      | `Trm e -> iter_t e
-    in
-    match e with `Fml f -> iter_f f | #cnd as c -> iter_c c
+  let rec iter_trms_c c ~f =
+    match c with
+    | `Ite (cnd, thn, els) ->
+        Iter.iter ~f (Fml.trms cnd) ;
+        iter_trms_c ~f thn ;
+        iter_trms_c ~f els
+    | `Trm e -> f e
 
-  let vars = iter ~f:Trm.vars
-  let atoms = iter ~f:(fun e -> Iter.map ~f:(fun a -> `Trm a) (Trm.atoms e))
+  let iter_trms e ~f =
+    match e with
+    | `Fml b -> Iter.iter ~f (Fml.trms b)
+    | #cnd as c -> iter_trms_c ~f c
+
+  let trms e = Iter.from_labelled_iter (iter_trms e)
+  let vars e = Iter.flat_map ~f:Trm.vars (trms e)
+
+  let atoms e =
+    Iter.flat_map ~f:(fun t -> Iter.map ~f:of_trm (Trm.atoms t)) (trms e)
 
   (** Transform *)
 
@@ -344,6 +469,10 @@ module Term = struct
   (** Query *)
 
   let fv e = Var.Set.of_iter (vars e)
+
+  (** Encode *)
+
+  let to_z3 = ToZ3.exp
 end
 
 (*
@@ -437,4 +566,8 @@ module Formula = struct
     (e', !s)
 
   let rename s e = map_vars ~f:(Var.Subst.apply s) e
+
+  (** Encode *)
+
+  let to_z3 = ToZ3.fml
 end

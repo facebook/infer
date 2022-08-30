@@ -14,6 +14,7 @@ type param_type =
   { annot: Annot.Item.t
   ; is_no_escape_block_arg: bool
   ; is_pointer_to_const: bool
+  ; is_reference: bool
   ; name: Mangled.t
   ; typ: Typ.t }
 
@@ -67,6 +68,7 @@ val pp : Format.formatter -> t -> unit
 
 val mk_param_type :
      ?is_pointer_to_const:bool
+  -> ?is_reference:bool
   -> ?annot:Annot.Item.t
   -> ?is_no_escape_block_arg:bool
   -> Mangled.t

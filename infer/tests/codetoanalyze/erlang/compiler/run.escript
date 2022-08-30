@@ -23,6 +23,8 @@ run_test(Module, Function) ->
         Module:Function(),
         io:format("ok~n")
     catch
+        % Ignore details, we don't need them and might change across versions
+        error:{Reason,_Details} -> io:format("~w~n", [Reason]);
         error:Error -> io:format("~w~n", [Error])
     end.
 

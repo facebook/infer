@@ -15,7 +15,7 @@ module F = Format
 
 module IntegerWidths = struct
   type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let java = {char_width= 16; short_width= 16; int_width= 32; long_width= 64; longlong_width= 64}
 
@@ -142,15 +142,18 @@ let fkind_to_string = function
 (** kind of pointer *)
 type ptr_kind =
   | Pk_pointer  (** C/C++, Java, Objc standard/__strong pointer *)
-  | Pk_reference  (** C++ reference *)
+  | Pk_lvalue_reference  (** C++ lvalue reference *)
+  | Pk_rvalue_reference  (** C++ rvalue reference *)
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
 [@@deriving compare, equal, yojson_of]
 
 let ptr_kind_string = function
-  | Pk_reference ->
+  | Pk_lvalue_reference ->
       "&"
+  | Pk_rvalue_reference ->
+      "&&"
   | Pk_pointer ->
       "*"
   | Pk_objc_weak ->
@@ -162,7 +165,10 @@ let ptr_kind_string = function
 
 
 module T = struct
-  type type_quals = {is_const: bool; is_restrict: bool; is_volatile: bool}
+  (* Note that [is_trivially_copyable] is ignored when compare/equal-ing, since it can be
+     inconsistent for the same type depending on compilation units. *)
+  type type_quals =
+    {is_const: bool; is_restrict: bool; is_trivially_copyable: bool [@ignore]; is_volatile: bool}
   [@@deriving compare, equal, yojson_of]
 
   (** types for sil (structured) expressions *)
@@ -183,9 +189,7 @@ module T = struct
     | CStruct of QualifiedCppName.t
     | CUnion of QualifiedCppName.t
     | CppClass of
-        { name: QualifiedCppName.t
-        ; template_spec_info: template_spec_info
-        ; is_union: bool [@compare.ignore] }
+        {name: QualifiedCppName.t; template_spec_info: template_spec_info; is_union: bool [@ignore]}
     | CSharpClass of CSharpClassName.t
     | ErlangType of ErlangTypeName.t
     | JavaClass of JavaClassName.t
@@ -197,17 +201,9 @@ module T = struct
   and template_spec_info =
     | NoTemplate
     | Template of {mangled: string option; args: template_arg list}
-  [@@deriving compare, yojson_of]
+  [@@deriving compare, equal, yojson_of]
 
   let yojson_of_name = [%yojson_of: _]
-
-  let equal_desc = [%compare.equal: desc]
-
-  let equal_name = [%compare.equal: name]
-
-  let equal_quals = [%compare.equal: type_quals]
-
-  let equal = [%compare.equal: t]
 
   let rec equal_ignore_quals t1 t2 = equal_desc_ignore_quals t1.desc t2.desc
 
@@ -229,22 +225,70 @@ module T = struct
         equal_ignore_quals t1 t2
     | _, _ ->
         false
+
+
+  let rec compatible_match formal actual =
+    match (formal.desc, actual.desc) with
+    (* const T& binds const T&&, T&&.
+       TODO: given actual T&&, the formal T&& shoulds preferred against const T&. *)
+    | Tptr (t1, Pk_lvalue_reference), Tptr (t2, Pk_rvalue_reference) ->
+        t1.quals.is_const && compatible_match t1 t2
+    (* T&& binds T&&
+       const T&& binds const T&& and T&& *)
+    | Tptr (t1, Pk_rvalue_reference), Tptr (t2, Pk_rvalue_reference) ->
+        ((not t2.quals.is_const) || t1.quals.is_const) && compatible_match t1 t2
+    (* Any non-reference type T binds T&& *)
+    | t1, Tptr (t2, Pk_rvalue_reference) ->
+        equal_desc_ignore_quals t1 t2.desc
+    (* T&& does not bind any l-value references *)
+    | Tptr (_, Pk_rvalue_reference), Tptr (_, Pk_lvalue_reference) ->
+        false
+    (* T& binds T&
+       const T& binds const T&, T&. *)
+    | Tptr (t1, Pk_lvalue_reference), Tptr (t2, Pk_lvalue_reference) ->
+        ((not t2.quals.is_const) || t1.quals.is_const) && compatible_match t1 t2
+    (* Any non-reference type T binds T& *)
+    | t1, Tptr (t2, Pk_lvalue_reference) ->
+        equal_desc_ignore_quals t1 t2.desc
+    | Tptr (t1, ptr_kind1), Tptr (t2, ptr_kind2) ->
+        equal_ptr_kind ptr_kind1 ptr_kind2 && compatible_match t1 t2
+    | Tint ikind1, Tint ikind2 ->
+        equal_ikind ikind1 ikind2
+    | Tfloat fkind1, Tfloat fkind2 ->
+        equal_fkind fkind1 fkind2
+    | Tvoid, Tvoid | Tfun, Tfun ->
+        true
+    | Tstruct name1, Tstruct name2 ->
+        equal_name name1 name2
+    | TVar s1, TVar s2 ->
+        String.equal s1 s2
+    | Tarray {elt= t1}, Tarray {elt= t2} ->
+        equal_ignore_quals t1 t2
+    | _, _ ->
+        false
 end
+
+(* let rec perfect_compatibility t1 t2 = equal_desc_ignore_quals t1.desc t2.desc *)
 
 include T
 
-let mk_type_quals ?default ?is_const ?is_restrict ?is_volatile () =
-  let default_ = {is_const= false; is_restrict= false; is_volatile= false} in
-  let mk_aux ?(default = default_) ?(is_const = default.is_const)
-      ?(is_restrict = default.is_restrict) ?(is_volatile = default.is_volatile) () =
-    {is_const; is_restrict; is_volatile}
+let mk_type_quals ?default ?is_const ?is_restrict ?is_trivially_copyable ?is_volatile () =
+  let default_ =
+    {is_const= false; is_restrict= false; is_trivially_copyable= false; is_volatile= false}
   in
-  mk_aux ?default ?is_const ?is_restrict ?is_volatile ()
+  let mk_aux ?(default = default_) ?(is_const = default.is_const)
+      ?(is_restrict = default.is_restrict) ?(is_trivially_copyable = default.is_trivially_copyable)
+      ?(is_volatile = default.is_volatile) () =
+    {is_const; is_restrict; is_trivially_copyable; is_volatile}
+  in
+  mk_aux ?default ?is_const ?is_restrict ?is_trivially_copyable ?is_volatile ()
 
 
 let is_const {is_const} = is_const
 
 let is_restrict {is_restrict} = is_restrict
+
+let is_trivially_copyable {is_trivially_copyable} = is_trivially_copyable
 
 let is_volatile {is_volatile} = is_volatile
 
@@ -601,6 +645,12 @@ module Name = struct
     let pp = pp
   end)
 
+  module Hash = Hashtbl.Make (struct
+    type nonrec t = t [@@deriving equal]
+
+    let hash = hash
+  end)
+
   module Normalizer = HashNormalizer.Make (struct
     type nonrec t = t [@@deriving equal]
 
@@ -663,7 +713,17 @@ let is_cpp_class = is_class_of_kind Name.Cpp.is_class
 
 let is_pointer typ = match typ.desc with Tptr _ -> true | _ -> false
 
-let is_reference typ = match typ.desc with Tptr (_, Pk_reference) -> true | _ -> false
+let is_reference typ =
+  match typ.desc with Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) -> true | _ -> false
+
+
+let is_rvalue_reference typ =
+  match typ.desc with Tptr (_, Pk_rvalue_reference) -> true | _ -> false
+
+
+let is_const_reference typ =
+  match typ.desc with Tptr ({quals}, Pk_lvalue_reference) -> is_const quals | _ -> false
+
 
 let is_struct typ = match typ.desc with Tstruct _ -> true | _ -> false
 

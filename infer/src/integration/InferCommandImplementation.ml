@@ -55,32 +55,37 @@ let debug () =
       else
         L.result "%a"
           Config.(
-            Procedures.pp_all ~filter ~proc_name:procedures_name ~attr_kind:procedures_definedness
+            Procedures.pp_all ~filter ~proc_name:procedures_name ~defined:procedures_definedness
               ~source_file:procedures_source_file ~proc_attributes:procedures_attributes
               ~proc_cfg:procedures_cfg)
           () ) ;
     if Config.source_files then (
-      let filter = Lazy.force Filtering.source_files_filter in
-      L.result "%a"
-        (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
-           ~procedure_names:Config.source_files_procedure_names
-           ~freshly_captured:Config.source_files_freshly_captured )
-        () ;
-      if Config.source_files_cfg then (
-        let source_files = SourceFiles.get_all ~filter () in
-        List.iter source_files ~f:(fun source_file ->
-            (* create directory in captured/ *)
-            DB.Results_dir.init ~debug:true source_file ;
-            (* collect the CFGs for all the procedures in [source_file] *)
-            let proc_names = SourceFiles.proc_names_of_source source_file in
-            let cfgs = Procname.Hash.create (List.length proc_names) in
-            List.iter proc_names ~f:(fun proc_name ->
-                Procdesc.load proc_name
-                |> Option.iter ~f:(fun cfg -> Procname.Hash.add cfgs proc_name cfg) ) ;
-            (* emit the dot file in captured/... *)
-            DotCfg.emit_frontend_cfg source_file cfgs ) ;
-        L.result "CFGs written in %s/*/%s@." (ResultsDir.get_path Debug)
-          Config.dotty_frontend_output ) ) )
+      if Config.source_files_call_graph then SourceFileGraph.to_dotty "file-call-graph.dot"
+      else if Option.is_some Config.source_files_call_graph_partition then
+        Option.iter Config.source_files_call_graph_partition ~f:(fun n_workers ->
+            SourceFileGraph.partition_source_file_call_graph ~n_workers )
+      else
+        let filter = Lazy.force Filtering.source_files_filter in
+        L.result "%a"
+          (SourceFiles.pp_all ~filter ~type_environment:Config.source_files_type_environment
+             ~procedure_names:Config.source_files_procedure_names
+             ~freshly_captured:Config.source_files_freshly_captured )
+          () ;
+        if Config.source_files_cfg then (
+          let source_files = SourceFiles.get_all ~filter () in
+          List.iter source_files ~f:(fun source_file ->
+              (* create directory in captured/ *)
+              DB.Results_dir.init ~debug:true source_file ;
+              (* collect the CFGs for all the procedures in [source_file] *)
+              let proc_names = SourceFiles.proc_names_of_source source_file in
+              let cfgs = Procname.Hash.create (List.length proc_names) in
+              List.iter proc_names ~f:(fun proc_name ->
+                  Procdesc.load proc_name
+                  |> Option.iter ~f:(fun cfg -> Procname.Hash.add cfgs proc_name cfg) ) ;
+              (* emit the dot file in captured/... *)
+              DotCfg.emit_frontend_cfg source_file cfgs ) ;
+          L.result "CFGs written in %s/*/%s@." (ResultsDir.get_path Debug)
+            Config.dotty_frontend_output ) ) )
 
 
 let explore () =
@@ -230,23 +235,34 @@ let report () =
     , Config.cost_issues_tests
     , Config.config_impact_issues_tests
     , Config.simple_lineage_json_report
-    , Config.merge_report )
+    , Config.merge_report
+    , Config.pulse_report_flows_from_taint_source
+    , Config.pulse_report_flows_to_taint_sink )
   with
-  | None, None, None, false, [] ->
+  | None, None, None, false, [], None, None ->
       L.die UserError
         "Expected at least one of '--issues-tests', '--cost-issues-tests', \
-         '--config-impact-issues-tests', '--simple-lineage-json-report' or '--merge-report'.@\n"
-  | out_path, cost_out_path, config_impact_out_path, report_lineage, [] ->
+         '--config-impact-issues-tests', '--simple-lineage-json-report', '--merge-report', \
+         '--pulse-report-flows-from-taint-source', or '--pulse-report-flows-to-taint-sink'.@\n"
+  | _, _, _, _, [], Some _, Some _ ->
+      L.die UserError
+        "Only one of '--pulse-report-flows-from-taint-source' and \
+         '--pulse-report-flows-to-taint-sink' can be used.@\n"
+  | out_path, cost_out_path, config_impact_out_path, report_lineage, [], taint_source, taint_sink ->
       Option.iter out_path ~f:write_from_json ;
       Option.iter cost_out_path ~f:write_from_cost_json ;
       Option.iter config_impact_out_path ~f:write_from_config_impact_json ;
-      if report_lineage then ReportSimpleLineage.report ()
-  | None, None, None, false, _ ->
+      if report_lineage then ReportSimpleLineage.report () ;
+      Option.iter taint_source
+        ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:FromSource) ;
+      Option.iter taint_sink ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:ToSink)
+  | None, None, None, false, _, None, None ->
       merge_reports ()
-  | _, _, _, _, _ :: _ ->
+  | _, _, _, _, _ :: _, _, _ ->
       L.die UserError
         "Option '--merge-report' cannot be used with '--issues-tests', '--cost-issues-tests', \
-         '--config-impact-issues-tests' or '--simple-lineage-json-report'.@\n"
+         '--config-impact-issues-tests', '--simple-lineage-json-report', \
+         '--pulse-report-flows-from-taint-source', or '--pulse-report-flows-to-taint-sink'.@\n"
 
 
 let report_diff () =

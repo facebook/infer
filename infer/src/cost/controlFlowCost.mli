@@ -37,9 +37,7 @@ val pp : F.formatter -> t -> unit
 val sum : Item.t list -> t
 
 module Set : sig
-  type elt = t
-
-  val compare_elt : elt -> elt -> int
+  type elt = t [@@deriving compare, equal]
 
   type t
 

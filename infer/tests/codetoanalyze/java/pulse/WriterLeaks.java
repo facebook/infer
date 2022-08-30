@@ -21,7 +21,7 @@ public class WriterLeaks {
 
   // Writer tests
 
-  public void FN_writerNotClosedAfterWriteBad() {
+  public void writerNotClosedAfterWriteBad() {
     Writer writer;
     try {
       writer = new PrintWriter("file.txt");
@@ -44,7 +44,7 @@ public class WriterLeaks {
 
   // PrintWriter tests
 
-  public void FN_printWriterNotClosedAfterAppendBad() {
+  public void printWriterNotClosedAfterAppendBad() {
     PrintWriter writer;
     try {
       writer = new PrintWriter("file.txt");
@@ -59,7 +59,7 @@ public class WriterLeaks {
     try {
       writer = new PrintWriter("file.txt");
       writer = writer.append(null);
-    } catch (IOException e) {
+
     } finally {
       if (writer != null) writer.close();
     }
@@ -67,7 +67,7 @@ public class WriterLeaks {
 
   // BufferedWriter tests
 
-  public void FN_bufferedWriterNotClosedAfterWriteBad() {
+  public void bufferedWriterNotClosedAfterWriteBad() {
     BufferedWriter writer;
     try {
       FileWriter fw = new FileWriter("file.txt");
@@ -102,7 +102,7 @@ public class WriterLeaks {
     }
   }
 
-  public void FP_outputStreamWriterClosedOk() throws IOException {
+  public void outputStreamWriterClosedOk() throws IOException {
     OutputStreamWriter writer = null;
     try {
       writer = new OutputStreamWriter(new FileOutputStream("file.txt"));
@@ -115,7 +115,7 @@ public class WriterLeaks {
 
   // FileWriter tests
 
-  public void FN_fileWriterNotClosedAfterWriteBad() {
+  public void fileWriterNotClosedAfterWriteBad() {
     FileWriter writer;
     try {
       writer = new FileWriter("file.txt");
@@ -138,7 +138,7 @@ public class WriterLeaks {
 
   // PipedWriter tests
 
-  public void FN_pipedWriterNotClosedAfterConstructedWithReaderBad() {
+  public void pipedWriterNotClosedAfterConstructedWithReaderBad() {
     PipedWriter writer;
     PipedReader reader;
     try {

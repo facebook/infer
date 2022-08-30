@@ -74,7 +74,7 @@ baz()
 }
 
 int
-main()
+root()
 {
   // mimics a taint analysis trace from source f0 to sink g3
   int y = f3(1);
@@ -87,4 +87,11 @@ main()
   } else {
     baz();
   }
+  return __llair_choice();
+}
+
+int
+main()
+{
+  return root();
 };

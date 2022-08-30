@@ -12,7 +12,7 @@ val get_all : filter:Filtering.procedures_filter -> unit -> Procname.t list
 val pp_all :
      filter:Filtering.procedures_filter
   -> proc_name:bool
-  -> attr_kind:bool
+  -> defined:bool
   -> source_file:bool
   -> proc_attributes:bool
   -> proc_cfg:bool

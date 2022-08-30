@@ -24,6 +24,7 @@ module BaseStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module Decompiler = PulseAbductiveDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module Diagnostic = PulseDiagnostic
 module LatentIssue = PulseLatentIssue
 module PathContext = PulsePathContext

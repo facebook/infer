@@ -14,6 +14,7 @@ type t =
   | BufferOverrunChecker
   | ConfigImpactAnalysis
   | Cost
+  | Datalog
   | DisjunctiveDemo
   | Eradicate
   | FragmentRetainsView

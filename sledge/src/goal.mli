@@ -17,13 +17,16 @@ module type S = sig
   val pp : t pp
 
   val reached : t -> bool
-  (** true iff the goal has been reached and there is no more work to do *)
+  (** True iff the goal has been reached and there is no more work to do. *)
 
-  val after_call : Llair.Function.t -> t -> t
-  (** update the goal, having called the given Llair function *)
+  val update_after_call : Llair.FuncName.t -> t -> t
+  (** Update the goal, having called the given Llair function. *)
+
+  val update_after_retn : Llair.FuncName.t -> t -> t
+  (** Update the goal, having returned from the given Llair function. *)
 
   val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit
-  (** perform any upfront metadata computation and decorate [pgm] with it *)
+  (** Perform any upfront metadata computation and decorate [pgm] with it. *)
 end
 
 module Undirected : S with type t = unit
@@ -31,12 +34,17 @@ module Undirected : S with type t = unit
 module Sparse_trace : sig
   include S
 
-  (** Raised when [parse] encounters a function name not corresponding to
+  (** Raised when [of_fns_exn] is called on invalid arguments, either
+      because of a malformed trace or a function name not corresponding to
       any function in the given [Llair.program] *)
-  exception Failed_lookup of string
+  exception Invalid_trace of string
 
-  val parse_exn : string -> Llair.program -> t
-  (** parse a "+"-delimited sequence of function names to a sparse trace
-      over the given [Llair.program] IR. Raises [Failed_lookup] if a
-      function name is encountered that is not in the IR. *)
+  val of_fns_exn : string list -> Llair.program -> t
+  (** Convert a list of function names to a sparse trace over the given
+      [Llair.program] IR. Raises [Failed_lookup] if a function name is
+      encountered that is not in the IR. If "__sledge_trace_separator__"
+      appears in the list, it separates a "source" trace from a "sink"
+      trace, and the "goal" is to call down the source trace, return back to
+      the root (i.e. the first function in the trace), then call down the
+      sink trace. *)
 end

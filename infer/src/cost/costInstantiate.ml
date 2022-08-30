@@ -85,7 +85,7 @@ let prepare_call_args
   in
   let get_callee_cost_summary_and_formals callee_pname =
     let* callee_pdesc, (_inferbo, _, callee_costs_summary) = analyze_dependency callee_pname in
-    let+ callee_costs_summary = callee_costs_summary in
+    let+ callee_costs_summary in
     (callee_costs_summary, Procdesc.get_pvar_formals callee_pdesc)
   in
   let inferbo_get_summary callee_pname =

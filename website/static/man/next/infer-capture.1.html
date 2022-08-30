@@ -61,6 +61,8 @@ infer capture</b> <i>[options]</i>
 <b>--compilation-database-escaped</b> <i>file</i> <b><br>
 infer capture</b> <i>[options]</i> <b>--
 gradle</b>/<b>gradlew</b> <i>...</i> <b><br>
+infer capture</b> <i>[options]</i> <b>-- hackc</b>
+<i>...</i> <b><br>
 infer capture</b> <i>[options]</i> <b>-- javac</b>
 <i>...</i> <b><br>
 infer capture</b> <i>[options]</i> <b>--
@@ -154,9 +156,9 @@ argument after <b>--</b> was <i>command</i>. Possible
 values: <i>ant</i>, <i>buck</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
 <i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
-<i>c++</i>, <i>g++</i>, <i>make</i>, <i>configure</i>,
-<i>cmake</i>, <i>waf</i>, <i>mvn</i>, <i>mvnw</i>,
-<i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
+<i>c++</i>, <i>g++</i>, <i>hackc</i>, <i>make</i>,
+<i>configure</i>, <i>cmake</i>, <i>waf</i>, <i>mvn</i>,
+<i>mvnw</i>, <i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
 <i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;"><b>--help</b></p>
@@ -422,64 +424,11 @@ developer directory, to use for Buck clang targets</p>
 See <b>--debug-level</b> for accepted values.</p>
 
 
-<p style="margin-left:11%;"><b>--no-default-linters</b></p>
-
-<p style="margin-left:17%;">Deactivates: Use the default
-linters for the analysis. (Conversely:
-<b>--default-linters</b>)</p>
-
-<p style="margin-left:11%;"><b>--linter</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">From the linters available,
-only run this one linter. (Useful together with
-<b>--linters-developer-mode</b>)</p>
-
-<p style="margin-left:11%;"><b>--linters-def-file</b>
-<i>+file</i></p>
-
-<p style="margin-left:17%;">Specify the file containing
-linters definition (e.g. 'linters.al')</p>
-
-<p style="margin-left:11%;"><b>--linters-def-folder</b>
-<i>+dir</i></p>
-
-<p style="margin-left:17%;">Specify the folder containing
-linters files with extension .al</p>
-
-
-<p style="margin-left:11%;"><b>--linters-developer-mode</b></p>
-
-<p style="margin-left:17%;">Activates: Debug mode for
-developing new linters. (Sets the analyzer to
-<b>linters</b>; also sets <b>--debug</b>,
-<b>--debug-level-linters 2</b>, <b>--developer-mode</b>, and
-unsets <b>--allowed-failures</b> and
-<b>--default-linters</b>. (Conversely:
-<b>--no-linters-developer-mode</b>)</p>
-
-<p style="margin-left:11%;"><b>--linters-doc-url</b>
-<i>+string</i></p>
-
-<p style="margin-left:17%;">Specify custom documentation
-URL for some linter that overrides the default one. Useful
-if your project has specific ways of fixing a lint error
-that is not true in general or public info. Format:
-linter_name:doc_url.</p>
-
-
 <p style="margin-left:11%;"><b>--linters-ignore-clang-failures</b></p>
 
 <p style="margin-left:17%;">Activates: Continue linting
 files even if some compilation fails. (Conversely:
 <b>--no-linters-ignore-clang-failures</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--linters-validate-syntax-only</b></p>
-
-<p style="margin-left:17%;">Activates: Validate syntax of
-AL files, then emit possible errors in JSON format to stdout
-(Conversely: <b>--no-linters-validate-syntax-only</b>)</p>
 
 <h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
@@ -605,12 +554,21 @@ files in the given path. These .json files usually come from
 a previous run with <b>--debug</b>.</p>
 
 
-<p style="margin-left:11%;"><b>--erlang-skip-rebar3</b></p>
+<p style="margin-left:11%;"><b>--erlang-skip-compile</b></p>
 
-<p style="margin-left:17%;">Activates: Skip running rebar,
-to save time. It is useful together with
+<p style="margin-left:17%;">Activates: Skip running
+compiler (erlc/rebar3), to save time. The build command is
+basically ignored in this case. To be used together with
 <b>--erlang-ast-dir</b>. (Conversely:
-<b>--no-erlang-skip-rebar3</b>)</p>
+<b>--no-erlang-skip-compile</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--erlang-with-otp-specs</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL] Use
+type specs from OTP (available in the system) to generate
+more precise Pulse summaries for unknown library functions.
+(Conversely: <b>--no-erlang-with-otp-specs</b>)</p>
 
 <h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>

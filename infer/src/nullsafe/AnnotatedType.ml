@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type t = {nullability: AnnotatedNullability.t; typ: Typ.t} [@@deriving compare]
+type t = {nullability: AnnotatedNullability.t; typ: Typ.t} [@@deriving compare, equal]
 
 let pp fmt {nullability; typ} =
   Format.fprintf fmt "%a %a" AnnotatedNullability.pp nullability (Typ.pp_full Pp.text) typ

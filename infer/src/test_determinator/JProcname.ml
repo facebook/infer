@@ -23,9 +23,7 @@ module JNI = struct
     | FullyQualifiedClass of (string * string)
     | Array of t
     | Method of (t list * t)
-  [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  [@@deriving compare, equal]
 
   let void_method_with_no_arguments = "()V"
 

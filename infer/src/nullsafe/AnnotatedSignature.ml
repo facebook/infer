@@ -26,7 +26,7 @@ and param_signature =
   { param_annotation_deprecated: Annot.Item.t
   ; mangled: Mangled.t
   ; param_annotated_type: AnnotatedType.t }
-[@@deriving compare]
+[@@deriving compare, equal]
 
 and kind = FirstParty | ThirdParty of third_party_model_source [@deriving compare]
 

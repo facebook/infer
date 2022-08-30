@@ -8,6 +8,8 @@
 type kind = Abort | Invalid_memory_access
 type t
 
+val kind : t -> kind
+
 val v : kind -> Llair.Loc.t -> 'a pp -> 'a -> 's pp -> 's -> t
 (** [v kind location pp_action action pp_state state] is a [kind] alarm
     triggered at [location] by [action] (which can be printed by

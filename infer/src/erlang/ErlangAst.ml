@@ -162,11 +162,11 @@ type type_ =
   | Record of string (* TODO: fields*)
   | Reference
   | Remote of {module_: string; type_: string} (* TODO: arguments *)
-  | String (* TODO: replace this with [char()] when we model strings as lists. *)
   | Tuple of tuple_type
   | Union of type_ list
   | UserDefined of string (* TODO: arguments *)
   | Var of string
+  | Unsupported (* If we don't support parsing some type, we can use this *)
 [@@deriving sexp_of]
 
 and list_type = Proper of type_

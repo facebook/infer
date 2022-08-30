@@ -104,6 +104,10 @@ OCAMLFORMAT_ARGS=
 fmt_all:
 	parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $(shell find * \( -name _build -or -name vendor \) -prune -or \( -name '*'.ml -or -name '*'.mli \) -print 2>/dev/null)
 
+dep.pdf: release
+	${MAKE} -C ../facebook/dependencies/cmgraph
+	cmgraph _build/release/ -e 'Llvm_' -e 'NS' -e '_intf' -e 'Dbg' -f Sledge_cli -r -o dep.pdf
+
 # print any variable for Makefile debugging
 print-%:
 	@printf '$*='; printf '$($*)'; printf '\n'

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -24,9 +25,29 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         [Errlog.make_trace_element depth location "*** SUPPRESSED ***" tags]
       else []
     in
+    let extras =
+      let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
+      let taint_source, taint_sink =
+        let proc_name_of_taint Taint.{proc_name} = Format.asprintf "%a" Procname.pp proc_name in
+        match diagnostic with
+        | TaintFlow {flow_kind= FlowFromSource; source= source, _} ->
+            (Some (proc_name_of_taint source), None)
+        | TaintFlow {flow_kind= FlowToSink; sink= sink, _} ->
+            (None, Some (proc_name_of_taint sink))
+        | _ ->
+            (None, None)
+      in
+      Jsonbug_t.
+        { cost_polynomial= None
+        ; cost_degree= None
+        ; nullsafe_extra= None
+        ; copy_type
+        ; taint_source
+        ; taint_sink }
+    in
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
       ~ltr:(extra_trace @ get_trace diagnostic)
-      Pulse
+      ~extras Pulse
       (get_issue_type ~latent diagnostic)
       (get_message diagnostic)
 
@@ -48,23 +69,31 @@ let is_nullsafe_error tenv ~is_nullptr_dereference jn =
    selected as the candidate for the trace, even if it has nothing to do with the error besides
    being equal to the value being dereferenced *)
 let is_constant_deref_without_invalidation (invalidation : Invalidation.t) access_trace =
-  match invalidation with
-  | ConstantDereference _ ->
-      not (Trace.has_invalidation access_trace)
-  | CFree
-  | CustomFree _
-  | CppDelete
-  | CppDeleteArray
-  | EndIterator
-  | GoneOutOfScope _
-  | OptionalEmpty
-  | StdVector _
-  | JavaIterator _ ->
-      false
+  let res =
+    match invalidation with
+    | ConstantDereference _ ->
+        not (Trace.has_invalidation access_trace)
+    | CFree
+    | CustomFree _
+    | CppDelete
+    | CppDeleteArray
+    | EndIterator
+    | GoneOutOfScope _
+    | OptionalEmpty
+    | StdVector _
+    | JavaIterator _ ->
+        false
+  in
+  if res then
+    L.d_printfln "no invalidation in acces trace %a"
+      (Trace.pp ~pp_immediate:(fun fmt -> F.fprintf fmt "immediate"))
+      access_trace ;
+  res
 
 
 let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t) =
   match diagnostic with
+  | ConstRefableParameter _
   | ErlangError _
   | MemoryLeak _
   | ResourceLeak _
@@ -102,7 +131,12 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
 
 
 let summary_of_error_post tenv proc_desc location mk_error astate =
-  match AbductiveDomain.summary_of_post tenv proc_desc location astate with
+  match
+    AbductiveDomain.summary_of_post tenv
+      (Procdesc.get_proc_name proc_desc)
+      (Procdesc.get_attributes proc_desc)
+      location astate
+  with
   | Sat (Ok summary)
   | Sat (Error (`MemoryLeak (summary, _, _, _)) | Error (`ResourceLeak (summary, _, _, _)))
   | Sat (Error (`RetainCycle (summary, _, _, _, _))) ->

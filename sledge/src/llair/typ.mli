@@ -86,3 +86,12 @@ val convertible : t -> t -> bool
     some loss of information. Not transitive: some admissible conversions
     must be performed in multiple steps, such as from [Pointer] to [Integer]
     to [Array]. *)
+
+val compatible_fnptr : t -> t -> bool
+(** [compatible_fnptr t t'] holds when (1) both [t] and [t'] are pointer
+    types with function element type, and (2) [t]'s function type can be
+    applied at a call site with [t']'s function type, in that they have the
+    same arity and convertible formal argument/return types. *)
+
+(** Mutable hash tables keyed on types *)
+module Tbl : HashTable.S with type key = t

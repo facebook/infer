@@ -16,7 +16,7 @@ let javac_data_eq {files= f1; opts= o1} {files= f2; opts= o2} =
 
 let test_parse line files opts =
   let p = String.concat ~sep:";" in
-  let res = parse_gradle_line ~line in
+  let res = parse_gradle_line ~kotlin:true ~line in
   assert_equal ~cmp:javac_data_eq
     ~msg:
       (Printf.sprintf "f:[%s] <> [%s] || o:[%s] <> [%s]" (p res.files) (p files) (p res.opts)
@@ -56,6 +56,8 @@ let tests_wrapper _test_ctxt =
     ["-XDuseUnsharedTable=true"; "-classpath"; "''"; "-Xmaxerrs"; "1000"] ;
   test_parse "-XDuseUnsharedTable=true -classpath foo -Xmaxerrs 1000" []
     ["-XDuseUnsharedTable=true"; "-classpath"; "foo"; "-Xmaxerrs"; "1000"] ;
+  let tmpkotlin = Filename.temp_file "" ".kt" in
+  test_parse ("-opt1 " ^ tmpkotlin) [tmpkotlin] ["-opt1"] ;
   ()
 
 

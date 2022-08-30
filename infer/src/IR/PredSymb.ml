@@ -17,10 +17,10 @@ type mem_kind =
   | Mnew  (** memory allocated with new *)
   | Mnew_array  (** memory allocated with new[] *)
   | Mobjc  (** memory allocated with objective-c alloc *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 (** resource that can be allocated *)
-type resource = Rmemory of mem_kind | Rfile | Rignore | Rlock [@@deriving compare]
+type resource = Rmemory of mem_kind | Rfile | Rignore | Rlock [@@deriving compare, equal]
 
 (** kind of resource action *)
 type res_act_kind = Racquire | Rrelease [@@deriving compare, equal]
@@ -31,38 +31,20 @@ type dangling_kind =
   | DAaddr_stack_var
       (** pointer is dangling because it is the address of a stack variable which went out of scope *)
   | DAminusone  (** pointer is -1 *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 (** position in a path: proc name, node id *)
-type path_pos = Procname.t * int [@@deriving compare]
-
-let equal_path_pos = [%compare.equal: path_pos]
+type path_pos = Procname.t * int [@@deriving compare, equal]
 
 (** acquire/release action on a resource *)
 type res_action =
   { ra_kind: res_act_kind  (** kind of action *)
   ; ra_res: resource  (** kind of resource *)
-  ; ra_pname: Procname.t  (** name of the procedure used to acquire/release the resource *)
-  ; ra_loc: Location.t  (** location of the acquire/release *)
-  ; ra_vpath: DecompiledExp.vpath  (** vpath of the resource value *) }
-
-(* ignore other values beside resources: arbitrary merging into one *)
-let compare_res_action {ra_kind= k1; ra_res= r1} {ra_kind= k2; ra_res= r2} =
-  [%compare: res_act_kind * resource] (k1, r1) (k2, r2)
-
-
-(* type aliases for components of t values that compare should ignore *)
-type annot_item_ = Annot.Item.t
-
-let compare_annot_item_ _ _ = 0
-
-type location_ = Location.t
-
-let compare_location_ _ _ = 0
-
-type path_pos_ = path_pos
-
-let compare_path_pos_ _ _ = 0
+  ; ra_pname: Procname.t [@ignore]
+        (** name of the procedure used to acquire/release the resource *)
+  ; ra_loc: Location.t [@ignore]  (** location of the acquire/release *)
+  ; ra_vpath: DecompiledExp.vpath [@ignore]  (** vpath of the resource value *) }
+[@@deriving compare, equal]
 
 (** Attributes are nary function symbols that are applied to expression arguments in Apred and
     Anpred atomic formulas. Many operations don't make much sense for nullary predicates, and are
@@ -76,7 +58,7 @@ type t =
   | Aresource of res_action  (** resource acquire/release *)
   | Aautorelease
   | Adangling of dangling_kind  (** dangling pointer *)
-  | Aundef of Procname.t * annot_item_ * location_ * path_pos_
+  | Aundef of Procname.t * (Annot.Item.t[@ignore]) * (Location.t[@ignore]) * (path_pos[@ignore])
   | Alocked
   | Aunlocked
   | Adiv0 of path_pos  (** value appeared in second argument of division at given path position *)
@@ -88,9 +70,7 @@ type t =
   | Aunsubscribed_observer
       (** denotes an object unsubscribed from observers of a notification center *)
   | Awont_leak  (** value do not participate in memory leak analysis *)
-[@@deriving compare]
-
-let equal = [%compare.equal: t]
+[@@deriving compare, equal]
 
 (** name of the allocation function for the given memory kind *)
 let mem_alloc_pname = function

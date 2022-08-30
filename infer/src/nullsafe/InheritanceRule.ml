@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-type violation = {base: Nullability.t; overridden: Nullability.t} [@@deriving compare]
+type violation = {base: Nullability.t; overridden: Nullability.t} [@@deriving compare, equal]
 
 type type_role = Param | Ret
 
@@ -16,7 +16,7 @@ module ReportableViolation = struct
   type violation_type =
     | InconsistentParam of {param_description: string; param_index: int}
     | InconsistentReturn
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let from nullsafe_mode ({base; overridden} as violation) =
     if

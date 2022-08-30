@@ -37,7 +37,7 @@ let id =
     !count
 
 let decl_var name =
-  let v = Term.var (Var.identified ~name ~id:(id ())) in
+  let v = Term.var (Var.identified ~name 0 (id ())) in
   let top = top () in
   top.var_env <- VarEnv.add_exn ~key:name ~data:v top.var_env
 
@@ -131,15 +131,15 @@ and x_fml : var_env -> Smt.Ast.term -> Formula.t =
 let x_context {asserts; var_env} =
   Context.dnf (Formula.andN (List.map ~f:(x_fml var_env) asserts))
 
-let check_unsat (_, asserts, ctx) =
-  [%Trace.call fun {pf} ->
+let check_unsat (asserts, ctx) =
+  [%Dbg.call fun {pf} ->
     pf "@ %a@ %a@ %a" Formula.pp asserts Context.pp ctx Context.pp_raw ctx]
   ;
   ( Context.is_unsat ctx
   || Formula.equal Formula.ff
        (Formula.map_terms ~f:(Context.normalize ctx) asserts) )
   |>
-  [%Trace.retn fun {pf} -> pf "%b"]
+  [%Dbg.retn fun {pf} -> pf "%b"]
 
 exception Unsound
 exception Incomplete
@@ -147,7 +147,8 @@ exception Incomplete
 let expect_unsat = ref false
 
 let check_sat () =
-  let unsat = Iter.for_all ~f:check_unsat (x_context (top ())) in
+  let dnf = Var.Fresh.gen_ Var.Context.empty (x_context (top ())) in
+  let unsat = Iter.for_all ~f:(fst >> check_unsat) dnf in
   if (not unsat) && !expect_unsat then raise Incomplete
   else if unsat && not !expect_unsat then raise Unsound
 

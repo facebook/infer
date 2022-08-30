@@ -7,13 +7,13 @@
 
 (** LLAIR (Low-Level Analysis Internal Representation) *)
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 module Loc = Loc
 module Typ = Typ
 module Reg = Reg
 module Exp = Exp
-module Function = Function
+module FuncName = FuncName
 module Global = Global
 module GlobalDefn = GlobalDefn
 
@@ -64,16 +64,22 @@ type label = string [@@deriving compare, equal, sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
 
-and callee = Direct of func | Indirect of Exp.t | Intrinsic of Intrinsic.t
+and call_target = {mutable func: func; mutable recursive: bool}
+
+and icall_target = {ptr: Exp.t; mutable candidates: call_target iarray}
+
+and callee =
+  | Direct of call_target
+  | Indirect of icall_target
+  | Intrinsic of Intrinsic.t
 
 and 'a call =
-  { mutable callee: 'a
+  { callee: 'a
   ; typ: Typ.t
   ; actuals: Exp.t iarray
   ; areturn: Reg.t option
   ; return: jump
   ; throw: jump option
-  ; mutable recursive: bool
   ; loc: Loc.t }
 
 and term =
@@ -91,10 +97,10 @@ and block =
   ; term: term
   ; mutable parent: func
   ; mutable sort_index: int
-  ; mutable checkpoint_dists: int Function.Map.t }
+  ; mutable checkpoint_dists: int Int.Map.t }
 
 and func =
-  { name: Function.t
+  { name: FuncName.t
   ; formals: Reg.t iarray
   ; freturn: Reg.t option
   ; fthrow: Reg.t
@@ -105,8 +111,8 @@ and func =
 (* compare *)
 
 (* functions are uniquely identified by [name] *)
-let compare_func x y = if x == y then 0 else Function.compare x.name y.name
-let equal_func x y = x == y || Function.equal x.name y.name
+let compare_func x y = if x == y then 0 else FuncName.compare x.name y.name
+let equal_func x y = x == y || FuncName.equal x.name y.name
 
 (* blocks in a [t] are uniquely identified by [sort_index] *)
 let compare_block x y =
@@ -125,20 +131,27 @@ with type jump := jump
   type nonrec jump = jump = {mutable dst: block; mutable retreating: bool}
   [@@deriving compare, equal]
 
+  type nonrec call_target = call_target =
+    {mutable func: func; mutable recursive: bool}
+  [@@deriving compare, equal]
+
+  type nonrec icall_target = icall_target =
+    {ptr: Exp.t; mutable candidates: call_target iarray}
+  [@@deriving compare, equal]
+
   type nonrec callee = callee =
-    | Direct of func
-    | Indirect of Exp.t
+    | Direct of call_target
+    | Indirect of icall_target
     | Intrinsic of Intrinsic.t
   [@@deriving compare, equal]
 
   type nonrec 'a call = 'a call =
-    { mutable callee: 'a
+    { callee: 'a
     ; typ: Typ.t
     ; actuals: Exp.t iarray
     ; areturn: Reg.t option
     ; return: jump
     ; throw: jump option
-    ; mutable recursive: bool
     ; loc: Loc.t }
   [@@deriving compare, equal]
 
@@ -169,12 +182,12 @@ let sexp_of_jump {dst; retreating} =
   [%sexp {dst: label = dst.lbl; retreating: bool}]
 
 let sexp_of_callee = function
-  | Direct func -> sexp_ctor "Direct" [%sexp (func.name : Function.t)]
-  | Indirect exp -> sexp_ctor "Indirect" [%sexp (exp : Exp.t)]
+  | Direct {func; _} -> sexp_ctor "Direct" [%sexp (func.name : FuncName.t)]
+  | Indirect {ptr; candidates= _} ->
+      sexp_ctor "Indirect" [%sexp (ptr : Exp.t)]
   | Intrinsic intr -> sexp_ctor "Intrinsic" [%sexp (intr : Intrinsic.t)]
 
-let sexp_of_call
-    {callee; typ; actuals; areturn; return; throw; recursive; loc} =
+let sexp_of_call {callee; typ; actuals; areturn; return; throw; loc} =
   sexp_ctor "Call"
     [%sexp
       { callee: callee
@@ -183,7 +196,6 @@ let sexp_of_call
       ; areturn: Reg.t option
       ; return: jump
       ; throw: jump option
-      ; recursive: bool
       ; loc: Loc.t }]
 
 let sexp_of_term = function
@@ -205,13 +217,13 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index; checkpoint_dists} =
     { lbl: label
     ; cmnd: cmnd
     ; term: term
-    ; parent: Function.t = parent.name
+    ; parent: FuncName.t = parent.name
     ; sort_index: int
-    ; checkpoint_dists: int Function.Map.t }]
+    ; checkpoint_dists: int Int.Map.t }]
 
 let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
   [%sexp
-    { name: Function.t
+    { name: FuncName.t
     ; formals: Reg.t iarray
     ; freturn: Reg.t option
     ; fthrow: Reg.t
@@ -219,7 +231,7 @@ let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
     ; entry: block
     ; loc: Loc.t }]
 
-type functions = func Function.Map.t [@@deriving sexp_of]
+type functions = func FuncName.Map.t [@@deriving sexp_of]
 
 type program = {globals: GlobalDefn.t iarray; functions: functions}
 [@@deriving sexp_of]
@@ -266,19 +278,24 @@ let pp_formal fs reg = Reg.pp fs reg
 let pp_jump fs {dst; retreating} =
   Format.fprintf fs "@[<2>%s%%%s@]" (if retreating then "↑" else "") dst.lbl
 
+let pp_call_target fs {func; recursive} =
+  Format.fprintf fs "%s%a"
+    (if recursive then "↑" else "")
+    FuncName.pp func.name
+
 let pp_callee fs = function
-  | Direct f -> Function.pp fs f.name
-  | Indirect f -> Exp.pp fs f
+  | Direct target -> pp_call_target fs target
+  | Indirect {ptr; candidates} ->
+      Format.fprintf fs "%a(candidates: %a)" Exp.pp ptr
+        (IArray.pp " ; " pp_call_target)
+        candidates
   | Intrinsic i -> Intrinsic.pp fs i
 
-let pp_call fs
-    {callee; typ= _; actuals; areturn; return; throw; recursive; loc} =
+let pp_call fs {callee; typ= _; actuals; areturn; return; throw; loc} =
   Format.fprintf fs
-    "@[<2>@[<7>%acall @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
+    "@[<2>@[<7>%acall @[<2>%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
     (Option.pp "%a := " Reg.pp)
-    areturn
-    (if recursive then "↑" else "")
-    pp_callee callee (pp_actuals Exp.pp) actuals pp_jump return
+    areturn pp_callee callee (pp_actuals Exp.pp) actuals pp_jump return
     (Option.pp "@ throwto %a" pp_jump)
     throw Loc.pp loc
 
@@ -326,11 +343,11 @@ let rec dummy_block =
   ; term= Unreachable
   ; parent= dummy_func
   ; sort_index= 0
-  ; checkpoint_dists= Function.Map.empty }
+  ; checkpoint_dists= Int.Map.empty }
 
 and dummy_func =
   { name=
-      Function.mk
+      FuncName.mk
         (Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None))
         "dummy"
   ; formals= IArray.empty
@@ -467,41 +484,29 @@ module Term = struct
   let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
   let call ~name ~typ ~actuals ~areturn ~return ~throw ~loc =
+    let target =
+      {func= {dummy_func with name= FuncName.mk typ name}; recursive= false}
+    in
     let cal =
-      { callee= Direct {dummy_func with name= Function.mk typ name}
-      ; typ
-      ; actuals
-      ; areturn
-      ; return
-      ; throw
-      ; recursive= false
-      ; loc }
+      {callee= Direct target; typ; actuals; areturn; return; throw; loc}
     in
     let k = Call cal in
-    (k |> check invariant, fun ~callee -> cal.callee <- Direct callee)
+    (k |> check invariant, fun ~callee -> target.func <- callee)
 
   let icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
-    Call
-      { callee= Indirect callee
-      ; typ
-      ; actuals
-      ; areturn
-      ; return
-      ; throw
-      ; recursive= false
-      ; loc }
-    |> check invariant
+    let target = {ptr= callee; candidates= IArray.empty} in
+    let cal =
+      {callee= Indirect target; typ; actuals; areturn; return; throw; loc}
+    in
+    let k = Call cal in
+    ( k |> check invariant
+    , fun ~candidates ->
+        target.candidates <-
+          IArray.map candidates ~f:(fun func -> {func; recursive= false}) )
 
   let intrinsic ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
     Call
-      { callee= Intrinsic callee
-      ; typ
-      ; actuals
-      ; areturn
-      ; return
-      ; throw
-      ; recursive= false
-      ; loc }
+      {callee= Intrinsic callee; typ; actuals; areturn; return; throw; loc}
     |> check invariant
 
   let return ~exp ~loc = Return {exp; loc} |> check invariant
@@ -540,6 +545,10 @@ module Block = struct
   module Tbl = HashTable.Make (T)
 
   let pp = pp_block
+
+  let pp_ident fs b =
+    Format.fprintf fs "%a#%s" FuncName.pp b.parent.name b.lbl
+
   let mk ~lbl ~cmnd ~term = {dummy_block with lbl; cmnd; term}
 end
 
@@ -557,6 +566,12 @@ module IP = struct
     else None
 
   let block ip = ip.block
+  let index ip = ip.index
+
+  let loc ip =
+    match inst ip with
+    | Some i -> Inst.loc i
+    | None -> Term.loc (block ip).term
 
   let is_schedule_point ip =
     if !cct_schedule_points then
@@ -579,8 +594,8 @@ module IP = struct
             true )
       | None -> (
         match ip.block.term with
-        | Call {callee= Direct f; _} -> (
-          match Function.name f.name with
+        | Call {callee= Direct {func; _}; _} -> (
+          match FuncName.name func.name with
           | "sledge_thread_join" -> true
           | _ -> false )
         | _ -> false )
@@ -603,11 +618,11 @@ module Block_label = struct
     type t = block [@@deriving sexp_of]
 
     let compare x y =
-      [%compare: string * Function.t] (x.lbl, x.parent.name)
+      [%compare: string * FuncName.t] (x.lbl, x.parent.name)
         (y.lbl, y.parent.name)
 
     let equal x y =
-      [%equal: string * Function.t] (x.lbl, x.parent.name)
+      [%equal: string * FuncName.t] (x.lbl, x.parent.name)
         (y.lbl, y.parent.name)
 
     let hash b = Poly.hash (b.lbl, b.parent.name)
@@ -670,7 +685,7 @@ module Func = struct
     Format.fprintf fs "%a%a(@[%a@])"
       (Option.pp "%a := " pp_arg)
       (Option.map2 (fun a f -> (Exp.reg a, f)) areturn freturn)
-      Function.pp name pp_args (actuals, formals)
+      FuncName.pp name pp_args (actuals, formals)
 
   let pp fs func =
     let {name; formals; freturn; entry; loc; _} = func in
@@ -678,11 +693,11 @@ module Func = struct
     let pp_if cnd str fs = if cnd then Format.fprintf fs str in
     Format.fprintf fs "@[<v>@[<v>%a%a@[<2>%a%a@]%t@]"
       (Option.pp "%a " Typ.pp)
-      ( match Function.typ name with
+      ( match FuncName.typ name with
       | Pointer {elt= Function {return; _}} -> return
       | _ -> None )
       (Option.pp " %a := " Reg.pp)
-      freturn Function.pp name (pp_actuals pp_formal) formals
+      freturn FuncName.pp name (pp_actuals pp_formal) formals
       (fun fs ->
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index
         else
@@ -699,7 +714,7 @@ module Func = struct
     assert (func == func.entry.parent) ;
     let@ () = Invariant.invariant [%here] func [%sexp_of: t] in
     try
-      match Function.typ func.name with
+      match FuncName.typ func.name with
       | Pointer {elt= Function {return; _}; _} ->
           assert (
             not
@@ -712,11 +727,11 @@ module Func = struct
       | _ -> assert false
     with exc ->
       let bt = Printexc.get_raw_backtrace () in
-      [%Trace.info " %a" pp func] ;
+      [%Dbg.info " %a" pp func] ;
       Printexc.raise_with_backtrace exc bt
 
   let find name functions =
-    Function.Map.find (Function.counterfeit name) functions
+    FuncName.Map.find (FuncName.counterfeit name) functions
 
   let lookup cfg lbl =
     Iter.find_exn (IArray.to_iter cfg) ~f:(fun k -> String.equal lbl k.lbl)
@@ -783,12 +798,13 @@ module FuncQ = HashQueue.Make (Func)
 let set_derived_metadata functions =
   let compute_roots functions =
     let roots = FuncQ.create () in
-    Function.Map.iter functions ~f:(fun func ->
+    FuncName.Map.iter functions ~f:(fun func ->
         FuncQ.enqueue_back_exn roots func func ) ;
-    Function.Map.iter functions ~f:(fun func ->
+    FuncName.Map.iter functions ~f:(fun func ->
         Func.iter_term func ~f:(fun term ->
             match term with
-            | Call {callee= Direct f; _} -> FuncQ.remove roots f |> ignore
+            | Call {callee= Direct {func; _}; _} ->
+                FuncQ.remove roots func |> ignore
             | _ -> () ) ) ;
     roots
   in
@@ -806,13 +822,17 @@ let set_derived_metadata functions =
             IArray.iter tbl ~f:(fun (_, jmp) -> jump jmp) ;
             jump els
         | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
-        | Call ({callee; return; throw; _} as call) ->
+        | Call {callee; return; throw; _} ->
             ( match callee with
-            | Direct f when not (Block_label.Set.mem f.entry ancestors) ->
-                visit ancestors f.entry
-            | Direct _ | Indirect _ ->
-                (* conservatively assume all indirect calls are recursive *)
-                call.recursive <- true
+            | Direct tgt ->
+                if Block_label.Set.mem tgt.func.entry ancestors then
+                  tgt.recursive <- true
+                else visit ancestors tgt.func.entry
+            | Indirect {candidates; _} ->
+                IArray.iter candidates ~f:(fun c ->
+                    if Block_label.Set.mem c.func.entry ancestors then
+                      c.recursive <- true
+                    else visit ancestors c.func.entry )
             | Intrinsic _ -> () ) ;
             jump return ;
             Option.iter ~f:jump throw
@@ -830,8 +850,8 @@ let set_derived_metadata functions =
         index := !index - 1 )
   in
   let functions =
-    List.fold functions Function.Map.empty ~f:(fun func m ->
-        Function.Map.add_exn ~key:func.name ~data:func m )
+    List.fold functions FuncName.Map.empty ~f:(fun func m ->
+        FuncName.Map.add_exn ~key:func.name ~data:func m )
   in
   let roots = compute_roots functions in
   let tips_to_roots = topsort roots in
@@ -858,86 +878,229 @@ module Program = struct
       (IArray.pp "@\n@\n" GlobalDefn.pp)
       globals
       (List.pp "@\n@\n" Func.pp)
-      ( Function.Map.values functions
+      ( FuncName.Map.values functions
       |> Iter.to_list
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
 
-  let reachable_dists prev next =
+  (** An [Abstr_stack.t] abstracts some concrete stack(s) for the CFL
+      reachability problem of the distance computations below. It is
+      conceptually a set of "spare" close parentheses ([Abstr_stack.T.t])
+      corresponding to some unmatched open parentheses, but is implemented
+      as a hash table from functions to sets of return sites (i.e. of calls
+      to that function) to support quick/easy lookup *)
+  module Abstr_stack = struct
+    let empty () : BlockS.t FuncName.Tbl.t = FuncName.Tbl.create ()
+
+    let add k callee =
+      FuncName.Tbl.find_or_add k callee ~default:(fun () -> BlockS.create 0)
+      |> BlockS.insert
+
+    let return_sites k callee =
+      match FuncName.Tbl.find k callee with
+      | None -> Iter.empty
+      | Some rets -> BlockS.to_iter rets
+  end
+
+  (** Join some [new_dists] map (from blocks to ints) onto an [old_dists]
+      map, if one is given. Note that [merge_endo] is important here,
+      ensuring that [y == join_dists x (Some y)] holds whenever the old
+      distances [y] subsume the new distances [x]. *)
+  let join_dists new_dists old_dists_opt =
+    match old_dists_opt with
+    | None -> new_dists
+    | Some old_dists ->
+        Block.Map.merge_endo old_dists new_dists ~f:(fun _ -> function
+          | `Left d | `Right d -> Some d | `Both (d, d') -> Some (min d d') )
+
+  let reachable_dists ~dp_path ?(preceding_stack = Abstr_stack.empty ())
+      init predicate =
+    [%dbg]
+      ~call:(fun {pf} -> pf "%t" dp_path)
+      ~retn:(fun {pf} (dists, _ctx) ->
+        pf "@[<v 2>%t@]@\n@\n" (fun ppf ->
+            let pp = Format.fprintf ppf "@ %a (%i)" Block.pp_ident in
+            Block.Map.iteri dists ~f:(fun ~key ~data -> pp key data) ) )
+    @@ fun () ->
     (* [intermediate_dists] maps [dst] blocks to [src] blocks to integers,
        such that [intermediate_dists(dst)(src)] is the distance from src to
        dst *)
     let intermediate_dists = Block.Tbl.create () in
-    let rec visit ~next_checkpoint ~curr_block dists stack =
-      let changed = ref false in
-      let join_dists new_dists old_dists_opt =
-        match old_dists_opt with
-        | None ->
-            changed := true ;
-            new_dists
-        | Some old_dists ->
-            Block.Map.merge old_dists new_dists ~f:(fun _ -> function
-              | `Left d -> Some d
-              | `Right d ->
-                  changed := true ;
-                  Some d
-              | `Both (d, d') ->
-                  if d <= d' then Some d
-                  else (
-                    changed := true ;
-                    Some d' ) )
-      in
+    let open_calls = Abstr_stack.empty () in
+    let rec visit ~predicate ~curr_block dists stack =
+      let old_dists = Block.Tbl.find intermediate_dists curr_block in
       let new_dists =
         Block.Map.(map ~f:succ dists |> add ~key:curr_block ~data:0)
       in
-      Block.Tbl.update intermediate_dists curr_block
-        ~f:(join_dists new_dists >> Option.some) ;
-      if (not !changed) || Block.equal next_checkpoint curr_block then ()
-      else
-        let dists = Block.Tbl.find_exn intermediate_dists curr_block in
-        let visit_target tgt =
-          visit ~next_checkpoint ~curr_block:tgt dists
-        in
-        let jump jmp = visit_target jmp.dst stack in
-        match curr_block.term with
-        | Switch {tbl; els; _} ->
-            IArray.iter tbl ~f:(snd >> jump) ;
-            jump els
-        | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
-        | Call ({callee; return; _} as call) -> (
-          match callee with
-          | Direct f when not call.recursive ->
-              visit_target f.entry (return.dst :: stack)
-          | Intrinsic _ -> jump return
-          | Direct _ | Indirect _ -> () )
-        | Return _ -> (
-          match stack with
-          | ret :: stack -> visit_target ret stack
-          | [] ->
-              ()
-              (* empty stack indicates we're returning from one checkpoint
-                 function without having reached the next -- no
-                 sparse-trace-compatible executions down that path *) )
-        | Throw _ | Abort _ | Unreachable -> ()
+      let joined_dists = join_dists new_dists old_dists in
+      if Option.exists old_dists ~f:(( == ) joined_dists) then ()
+      else (
+        Block.Tbl.set intermediate_dists ~key:curr_block ~data:joined_dists ;
+        if predicate curr_block then
+          List.iter stack ~f:(fun (return_site, callee) ->
+              Abstr_stack.add open_calls callee return_site )
+          (* search has completed, so we return with an abstract stack
+             containing all as-yet-unmatched call frames on the stack *)
+        else
+          let dists = Block.Tbl.find_exn intermediate_dists curr_block in
+          let visit_target k tgt =
+            visit ~predicate ~curr_block:tgt dists k
+          in
+          let jump jmp = visit_target stack jmp.dst in
+          match curr_block.term with
+          | Switch {tbl; els; _} ->
+              IArray.iter tbl ~f:(snd >> jump) ;
+              jump els
+          | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
+          | Call {callee; return; _} -> (
+            match callee with
+            | Direct {func; _} ->
+                visit_target ((return.dst, func.name) :: stack) func.entry
+            | Intrinsic _ -> jump return
+            | Indirect {candidates; _} ->
+                IArray.iter candidates ~f:(fun {func; _} ->
+                    visit_target
+                      ((return.dst, func.name) :: stack)
+                      func.entry ) )
+          | Return _ -> (
+            match stack with
+            | (ret, _) :: stack -> visit_target stack ret
+            | [] ->
+                Abstr_stack.return_sites preceding_stack
+                  curr_block.parent.name (visit_target [])
+                (* empty stack indicates we're returning from one checkpoint
+                   function without having reached the next -- no
+                   sparse-trace-compatible executions down that path *) )
+          | Throw _ | Abort _ | Unreachable -> () )
     in
-    visit ~next_checkpoint:next ~curr_block:prev Block.Map.empty [] ;
-    Block.Tbl.find intermediate_dists next
+    visit ~predicate ~curr_block:init Block.Map.empty [] ;
+    Block.Tbl.fold intermediate_dists None ~f:(fun ~key ~data dists ->
+        if predicate key then Some (join_dists data dists) else dists )
     |> Option.value ~default:Block.Map.empty
+    |> fun x -> (x, open_calls)
 
-  let compute_distances ~entry ~trace pgm =
-    IArray.fold trace entry ~f:(fun next curr ->
-        let next_entry =
-          Function.Map.find_exn next pgm.functions
-          |> fun {entry; _} -> entry
+  let record_dists ~idx dists ~dp_path =
+    if Block.Map.is_empty dists then Error dp_path
+    else
+      Ok
+        (Block.Map.iteri dists ~f:(fun ~key:blk ~data ->
+             blk.checkpoint_dists <-
+               Int.Map.add blk.checkpoint_dists ~key:idx ~data ) )
+
+  (** Compute and record distances between two blocks. *)
+  let record_block_dists ~idx prev next =
+    let dp_path ppf =
+      Format.fprintf ppf "from %a to %a" Block.pp_ident prev Block.pp_ident
+        next
+    in
+    let dists, stack = reachable_dists ~dp_path prev (Block.equal next) in
+    Result.map (fun _ -> stack) (record_dists ~idx ~dp_path dists)
+
+  (** Compute and record distances between return sites of one function and
+      any location in another. *)
+  let record_fn_dists ~idx ~preceding_stack prev next =
+    let dp_path ppf =
+      Format.fprintf ppf "from retn(%a) to %a" FuncName.pp prev FuncName.pp
+        next
+    in
+    Iter.fold (Abstr_stack.return_sites preceding_stack prev) None
+      ~f:(fun ret_site dists ->
+        let pred b = FuncName.(equal next b.parent.name) in
+        let dists', _ =
+          reachable_dists ~preceding_stack ~dp_path ret_site pred
         in
-        let dists = reachable_dists curr next_entry in
-        [%Trace.info
-          "distances to %a from locations reachable from %a: %a" Block.pp
-            next_entry Block.pp curr
-            (Block.Map.pp Block.pp Int.pp)
-            dists] ;
-        Block.Map.iteri dists ~f:(fun ~key:blk ~data ->
-            blk.checkpoint_dists <-
-              Function.Map.add blk.checkpoint_dists ~key:next ~data ) ;
-        next_entry )
-    |> ignore
+        Some (join_dists dists' dists) )
+    |> Option.value ~default:Block.Map.empty
+    |> record_dists ~dp_path ~idx
+
+  (** Compute and record distances from a block to any return site of that
+      block's procedure *)
+  let record_dists_to_exit ~idx ~preceding_stack block =
+    let dp_path ppf =
+      Format.fprintf ppf "from %a to exit(%a)" Block.pp_ident block
+        FuncName.pp block.parent.name
+    in
+    let rets =
+      Abstr_stack.return_sites preceding_stack block.parent.name
+      |> IArray.of_iter
+    in
+    let dists, _ =
+      reachable_dists ~preceding_stack ~dp_path block (fun b ->
+          IArray.mem b rets ~eq:Block_label.equal )
+    in
+    record_dists ~idx ~dp_path dists
+
+  (** Compute static distance heuristics for each step along some
+      [src_trace] and [snk_trace], starting from [entry]. Traces are as
+      defined in [Goal.Sparse_trace], so we compute distances between: (1)
+      successive calls along the [src_trace]; (2) the last call of
+      [src_trace] and its exit; (3) successive exits along the [src_trace],
+      in reverse; (4) the last exit of the [src_trace] and the [snk_trace]
+      entry; (5) successive calls along the [snk_trace]. Each step is
+      computed using [reachable_dists], labelled inline by the numbers given
+      here. If [snk_trace] is empty, then only (1) is needed. *)
+  let compute_distances ~entry ~src_trace ~snk_trace pgm =
+    [%dbg]
+      ~call:(fun {pf} ->
+        let pp_trace =
+          IArray.pp "@ -> " (fun ppf -> FuncName.name >> String.pp ppf)
+        in
+        pf "wrt trace: @[<v 2>src:@ %a@]@\n@[<v 2>sink:@ %a@]" pp_trace
+          src_trace pp_trace snk_trace ;
+        assert (not (IArray.is_empty src_trace)) )
+      ~retn:(fun {pf} _ -> pf "")
+    @@ fun () ->
+    let open Containers.Result.Infix in
+    let checkpoint_idx = ref 0 in
+    let ret_idx call_idx = (2 * IArray.length src_trace) - call_idx in
+    let root_to_src_ctx = ref None in
+    let* last_entry, preceding_stack =
+      IArray.fold src_trace
+        (Ok (entry, Abstr_stack.empty ()))
+        ~f:(fun next curr ->
+          let* curr, _ = curr in
+          let next_entry =
+            FuncName.Map.(find_exn next pgm.functions).entry
+          in
+          let idx = Int.post_incr checkpoint_idx in
+          (* (1): successive calls along [src_trace] *)
+          let* preceding_stack = record_block_dists ~idx curr next_entry in
+          if idx = 1 then
+            root_to_src_ctx := Some (next_entry, preceding_stack) ;
+          let+ () =
+            if idx > 0 && not (IArray.is_empty snk_trace) then
+              (* (3): successive returns along [src_trace] *)
+              record_fn_dists ~idx:(ret_idx idx) ~preceding_stack next
+                curr.parent.name
+            else Ok ()
+          in
+          (next_entry, preceding_stack) )
+    in
+    match Array.to_list (IArray.to_array snk_trace) with
+    | [] -> Ok ()
+    | snk_head :: snk_tail ->
+        (* (2): from the entry to exit of the innermost [src_trace] fn *)
+        let* () =
+          record_dists_to_exit ~idx:(IArray.length src_trace)
+            ~preceding_stack last_entry
+        in
+        let src_trace_root, root_ctx = Option.get_exn !root_to_src_ctx in
+        checkpoint_idx := ret_idx 0 ;
+        (* (4): from exit of [src_trace] to entry of [snk_trace] *)
+        let idx = Int.post_incr checkpoint_idx in
+        let* () =
+          record_fn_dists ~idx ~preceding_stack:root_ctx
+            src_trace_root.parent.name snk_head
+        in
+        List.fold snk_tail
+          (Ok FuncName.Map.(find_exn snk_head pgm.functions).entry)
+          ~f:(fun next curr_res ->
+            let* curr = curr_res in
+            let next_entry =
+              FuncName.Map.(find_exn next pgm.functions).entry
+            in
+            let idx = Int.post_incr checkpoint_idx in
+            (* (5): successive calls along [snk_trace] *)
+            let+ _ = record_block_dists ~idx curr next_entry in
+            next_entry )
+        >|= ignore
 end

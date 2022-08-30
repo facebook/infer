@@ -28,7 +28,7 @@ module SourceKind = struct
     | Other  (** for testing or uncategorized sources *)
     | UserControlledEndpoint of (Mangled.t * Typ.desc)
         (** source originating from formal of an endpoint that is known to hold user-controlled data *)
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -66,7 +66,7 @@ module SourceKind = struct
 
   let get ~caller_pname:_ pname actuals tenv =
     let return = None in
-    match pname with
+    match Procname.base_of pname with
     | Procname.ObjC_Cpp cpp_name -> (
         let qualified_pname = Procname.get_qualifiers pname in
         match
@@ -202,7 +202,7 @@ module SinkKind = struct
     | StackAllocation  (** stack memory allocation *)
     | URL  (** URL creation *)
     | Other  (** for testing or uncategorized sinks *)
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -295,7 +295,7 @@ module SinkKind = struct
       || String.is_substring ~substring:"array" typename
       || String.is_substring ~substring:"string" typename
     in
-    match pname with
+    match Procname.base_of pname with
     | Procname.ObjC_Cpp cpp_name -> (
       match
         ( QualifiedCppName.to_list
@@ -405,7 +405,7 @@ module CppSanitizer = struct
     | EscapeSQL  (** escape string to sanitize SQL queries *)
     | EscapeURL  (** escape string to sanitize URLs (e.g., prevent injecting GET/POST params) *)
     | All  (** sanitizes all forms of taint *)
-  [@@deriving compare, equal]
+  [@@deriving compare, equal, show {with_path= false}]
 
   let of_string = function
     | "EscapeShell" ->
@@ -432,17 +432,6 @@ module CppSanitizer = struct
         if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then Some kind
         else None )
       external_sanitizers
-
-
-  let pp fmt = function
-    | EscapeShell ->
-        F.pp_print_string fmt "EscapeShell"
-    | EscapeSQL ->
-        F.pp_print_string fmt "EscapeSQL"
-    | EscapeURL ->
-        F.pp_print_string fmt "EscapeURL"
-    | All ->
-        F.pp_print_string fmt "All"
 end
 
 include TaintTrace.Make (struct

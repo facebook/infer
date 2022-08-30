@@ -11,11 +11,12 @@ module L = Logging
 
 let get_all ~filter () =
   let db = ResultsDatabase.get_database () in
-  let stmt = Sqlite3.prepare db "SELECT source_file, proc_name FROM procedures" in
+  let stmt = Sqlite3.prepare db "SELECT proc_attributes FROM procedures" in
   SqliteUtils.result_fold_rows db ~log:"reading all procedure names" stmt ~init:[]
     ~f:(fun rev_results stmt ->
-      let source_file = Sqlite3.column stmt 0 |> SourceFile.SQLite.deserialize in
-      let proc_name = Sqlite3.column stmt 1 |> Procname.SQLite.deserialize in
+      let attrs = Sqlite3.column stmt 0 |> ProcAttributes.SQLite.deserialize in
+      let source_file = attrs.ProcAttributes.translation_unit in
+      let proc_name = ProcAttributes.get_proc_name attrs in
       if filter source_file proc_name then proc_name :: rev_results else rev_results )
 
 
@@ -59,9 +60,15 @@ let select_proc_names_interactive ~filter =
       ask_user_input ()
 
 
-let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file_cond
-    ~proc_attributes ~proc_cfg fmt () =
+let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_cond ~proc_attributes
+    ~proc_cfg fmt () =
   let db = ResultsDatabase.get_database () in
+  let deserialize_bool_int = function
+    | Sqlite3.Data.INT int64 -> (
+      match Int64.to_int_exn int64 with 0 -> false | _ -> true )
+    | _ ->
+        L.die InternalError "deserialize_int"
+  in
   let pp_if ?(new_line = false) condition title pp fmt x =
     if condition then (
       if new_line then F.fprintf fmt "@[<v2>" else F.fprintf fmt "@[<h>" ;
@@ -73,7 +80,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
       pp_if ?new_line condition title pp fmt (Sqlite3.column stmt column |> deserialize)
   in
   let pp_row stmt fmt source_file proc_name =
-    let[@warning "-8"] (Sqlite3.Data.TEXT proc_uid) = Sqlite3.column stmt 1 in
+    let[@warning "-8"] (Sqlite3.Data.TEXT proc_uid) = Sqlite3.column stmt 0 in
     let dump_cfg fmt cfg_opt =
       match cfg_opt with
       | None ->
@@ -87,31 +94,29 @@ let pp_all ~filter ~proc_name:proc_name_cond ~attr_kind ~source_file:source_file
       source_file
       (pp_if proc_name_cond "proc_name" Procname.pp)
       proc_name
-      (pp_column_if stmt attr_kind "attribute_kind" Attributes.deserialize_attributes_kind
-         Attributes.pp_attributes_kind )
-      2
+      (pp_column_if stmt defined "defined" deserialize_bool_int Bool.pp)
+      1
       (pp_column_if stmt ~new_line:true proc_attributes "attributes"
          ProcAttributes.SQLite.deserialize ProcAttributes.pp )
-      4
+      2
       (pp_column_if stmt ~new_line:false proc_cfg "control-flow graph" Procdesc.SQLite.deserialize
          dump_cfg )
-      5
+      3
   in
   (* we could also register this statement but it's typically used only once per run so just prepare
      it inside the function *)
   Sqlite3.prepare db
     {|
        SELECT
-         proc_name,
          proc_uid,
-         attr_kind,
-         source_file,
+         cfg IS NOT NULL,
          proc_attributes,
          cfg
        FROM procedures ORDER BY proc_uid
     |}
   |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"print all procedures")
        ~f:(fun stmt ->
-         let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
-         let source_file = Sqlite3.column stmt 3 |> SourceFile.SQLite.deserialize in
+         let attrs = Sqlite3.column stmt 2 |> ProcAttributes.SQLite.deserialize in
+         let proc_name = ProcAttributes.get_proc_name attrs in
+         let source_file = attrs.ProcAttributes.translation_unit in
          if filter source_file proc_name then pp_row stmt fmt source_file proc_name )

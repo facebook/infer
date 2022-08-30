@@ -1,42 +1,42 @@
 /* @generated */
 digraph cfg {
-"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_1" [label="1: Start AClass.dealloc\nFormals:  self:AClass*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_1" [label="1: Start AClass.dealloc\nFormals:  self:AClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_1" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_4" ;
-"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" [label="2: Exit AClass.dealloc \n  " color=yellow style=filled]
+	 "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_1" -> "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_4" ;
+"dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_2" [label="2: Exit AClass.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" ;
-"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_4" [label="4:  Call dealloc \n   n$0=*&self:AClass* [line 15, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:AClass*) [line 15, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:AClass*,(n$1 - 1):unsigned int) [line 15, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:AClass*) [line 15, column 1]\n " shape="box"]
+	 "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_3" -> "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_2" ;
+"dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_4" [label="4:  Call dealloc \n   n$0=*&self:AClass* [line 15, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:AClass*) [line 15, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:AClass*,(n$1 - 1):unsigned int) [line 15, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:AClass*) [line 15, column 1]\n " shape="box"]
 	
 
-	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_4" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_5" ;
-	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_4" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_6" ;
-"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 15, column 1]\n " shape="invhouse"]
+	 "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_4" -> "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_5" ;
+	 "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_4" -> "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_6" ;
+"dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 15, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_5" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_3" ;
-"dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 15, column 1]\n " shape="invhouse"]
+	 "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_5" -> "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_3" ;
+"dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 15, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_6" -> "dealloc#AClass#instance.5339a8e9aec421a1f58ba25e08faeb6b_2" ;
-"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_1" [label="1: Start AClass.sharedInstance\nFormals:  self:AClass*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_6" -> "dealloc#AClass#[instance].12f0e42f3ef799dbddba6890e210edd0_2" ;
+"sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_1" [label="1: Start AClass.sharedInstance\nFormals:  self:AClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_1" -> "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" ;
-"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_2" [label="2: Exit AClass.sharedInstance \n  " color=yellow style=filled]
+	 "sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_1" -> "sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_3" ;
+"sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_2" [label="2: Exit AClass.sharedInstance \n  " color=yellow style=filled]
 	
 
-"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass_2.m>$aVariable:NSObject* [line 19, column 10]\n " shape="box"]
+"sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass_2.m>$aVariable:NSObject* [line 19, column 10]\n " shape="box"]
 	
 
-	 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" -> "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_4" ;
-"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_4" [label="4:  Return Stmt \n   *&return:NSObject*=n$0 [line 19, column 3]\n " shape="box"]
+	 "sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_3" -> "sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_4" ;
+"sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_4" [label="4:  Return Stmt \n   *&return:NSObject*=n$0 [line 19, column 3]\n " shape="box"]
 	
 
-	 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_4" -> "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_2" ;
+	 "sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_4" -> "sharedInstance#AClass#[instance].3c884775257e07f51a2903ec184f661f_2" ;
 }

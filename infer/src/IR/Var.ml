@@ -10,7 +10,7 @@ module F = Format
 
 (** Single abstraction for all the kinds of variables in SIL *)
 
-type t = LogicalVar of Ident.t | ProgramVar of Pvar.t [@@deriving compare, yojson_of]
+type t = LogicalVar of Ident.t | ProgramVar of Pvar.t [@@deriving compare, equal, yojson_of]
 
 let equal = [%compare.equal: t]
 
@@ -69,6 +69,13 @@ let is_cpp_temporary = function
       false
   | ProgramVar pvar ->
       Pvar.is_cpp_temporary pvar
+
+
+let is_cpp_unnamed_param = function
+  | LogicalVar _ ->
+      false
+  | ProgramVar pvar ->
+      Pvar.is_cpp_unnamed_param pvar
 
 
 let pp fmt = function

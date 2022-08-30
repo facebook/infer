@@ -9,21 +9,13 @@ open! IStd
 module F = Format
 
 module Raw = struct
-  type typ_ = Typ.t
-
-  let compare_typ_ _ _ = 0
-
   (* ignore types while comparing bases. we can't trust the types from all of our frontends to be
      consistent, and the variable names should already be enough to distinguish the bases. *)
-  type base = Var.t * typ_ [@@deriving compare]
+  type base = Var.t * (Typ.t[@ignore]) [@@deriving compare, equal]
 
-  let equal_base = [%compare.equal: base]
+  type access = ArrayAccess of (Typ.t[@ignore]) * t list | FieldAccess of Fieldname.t
 
-  type access = ArrayAccess of typ_ * t list | FieldAccess of Fieldname.t
-
-  and t = base * access list [@@deriving compare]
-
-  let equal_access = [%compare.equal: access]
+  and t = base * access list [@@deriving compare, equal]
 
   let may_pp_typ fmt typ =
     if Config.debug_level_analysis >= 3 then F.fprintf fmt ":%a" (Typ.pp Pp.text) typ
@@ -56,8 +48,6 @@ module Raw = struct
     | base, accesses ->
         F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
 
-
-  let equal = [%compare.equal: t]
 
   let lookup_field_type_annot tenv base_typ field_name =
     let lookup = Tenv.lookup tenv in
@@ -150,9 +140,7 @@ end
 module Abs = struct
   type raw = Raw.t
 
-  type t = Abstracted of Raw.t | Exact of Raw.t [@@deriving compare]
-
-  let equal = [%compare.equal: t]
+  type t = Abstracted of Raw.t | Exact of Raw.t [@@deriving compare, equal]
 
   let extract = function Exact ap | Abstracted ap -> ap
 

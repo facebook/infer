@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_maps).
+-include("../../common.hrl").
 
 -export([
     test_is_key_Ok/0,
@@ -11,7 +12,9 @@
     test_is_key_badmap_Bad/0,
     test_get_Ok/0,
     test_get_Bad/0,
-    test_get_badkey_Bad/0,
+    test_get_badkey1_Ok/0,
+    test_get_badkey2_Bad/0,
+    fn_test_get_badkey3_Bad/0,
     test_get_badmap_Bad/0,
     test_put1_Ok/0,
     test_put2_Ok/0,
@@ -21,46 +24,43 @@
     test_put6_Bad/0,
     test_new_Ok/0,
     test_new_Bad/0,
-    test_merge_return_type_Ok/0,
-    test_filter_return_type_Ok/0
+    test_key_not_checked_Latent/1,
+    test_key_checked_Ok/1,
+    test_update_exact1_Ok/0,
+    test_update_exact2_Bad/0,
+    fn_test_update_exact3_Bad/0
 ]).
-
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
 
 test_is_key_Ok() ->
     M = #{1 => 2},
-    case maps:is_key(1, M) of
-        true -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(true, maps:is_key(1, M)).
 
 test_is_key_Bad() ->
     M = #{1 => 2},
-    case maps:is_key(1, M) of
-        true -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(true, maps:is_key(1, M)).
 
 test_is_key_badmap_Bad() ->
     maps:is_key(1, [not_a_map]).
 
 test_get_Ok() ->
     M = #{1 => 2},
-    case maps:get(1, M) of
-        2 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(2, maps:get(1, M)).
 
 test_get_Bad() ->
     M = #{1 => 2},
-    case maps:get(1, M) of
-        2 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(2, maps:get(1, M)).
 
-test_get_badkey_Bad() ->
+test_get_badkey1_Ok() ->
+    M = #{1 => 2},
+    maps:get(1, M).
+
+test_get_badkey2_Bad() ->
     M = #{},
+    maps:get(1, M).
+
+% Known limitation due to recency abstraction
+fn_test_get_badkey3_Bad() ->
+    M = #{2 => 3},
     maps:get(1, M).
 
 test_get_badmap_Bad() ->
@@ -98,24 +98,39 @@ test_put6_Bad() ->
 
 test_new_Ok() ->
     M = maps:new(),
-    case maps:is_key(1, M) of
-        false -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(false, maps:is_key(1, M)).
 
 test_new_Bad() ->
     M = maps:new(),
-    case maps:is_key(1, M) of
-        false -> warn(1);
-        _ -> ok
+    ?CRASH_IF_EQUAL(false, maps:is_key(1, M)).
+
+test_key_not_checked_Latent(M) ->
+    if
+        % We don't check for the key: BAD
+        is_map(M) -> maps:get(key, M);
+        true -> nope
     end.
 
-test_merge_return_type_Ok() ->
-    M = maps:merge(#{}, #{}),
-    % No BAD_MAP should happen here
-    maps:put(1, 3, M).
+test_key_checked_Ok(M) ->
+    if
+        is_map(M) ->
+            % We first check the key: OK
+            case maps:is_key(key, M) of
+                true -> maps:get(key, M);
+                _ -> nope
+            end;
+        true -> nope
+    end.
 
-test_filter_return_type_Ok() ->
-    M = maps:filter(fun(_, _) -> ok end, #{}),
-    % No BAD_MAP should happen here
-    maps:put(1, 3, M).
+test_update_exact1_Ok() ->
+    M = #{2 => 1},
+    M#{2 := 3}.
+
+test_update_exact2_Bad() ->
+    M = #{},
+    M#{2 := 3}.
+
+% Known limitation due to recency abstraction
+fn_test_update_exact3_Bad() ->
+    M = #{1 => 2},
+    M#{2 := 3}.

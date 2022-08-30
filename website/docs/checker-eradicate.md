@@ -5,6 +5,8 @@ description: "The eradicate `@Nullable` checker for Java annotations."
 
 The eradicate `@Nullable` checker for Java annotations.
 
+**\*\*\*DEPRECATED\*\*\*** Unmaintained and will be removed in the future. Consider using [NullAway](https://github.com/uber/NullAway) as an alternative to Eradicate.
+
 Activate with `--eradicate`.
 
 Supported languages:

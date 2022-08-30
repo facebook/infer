@@ -18,3 +18,4 @@ end
 
 let to_array xs = xs
 let of_array xs = xs
+let find = find_opt

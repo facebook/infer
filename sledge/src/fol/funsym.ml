@@ -32,7 +32,7 @@ let pp ppf f =
   | BitAshr -> pf "ashr"
   | Signed n -> pf "(s%i)" n
   | Unsigned n -> pf "(u%i)" n
-  | Uninterp sym -> Trace.pp_styled `Bold "%s" ppf sym
+  | Uninterp sym -> Dbg.pp_styled `Bold "%s" ppf sym
 
 let uninterp s = Uninterp s
 

@@ -12,155 +12,21 @@ module AbstractValue = PulseAbstractValue
 module BaseMemory = PulseBaseMemory
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module CallEvent = PulseCallEvent
+module DecompilerExpr = PulseDecompilerExpr
 module ValueHistory = PulseValueHistory
-
-type base = PVar of Pvar.t | ReturnValue of CallEvent.t [@@deriving compare, equal]
-
-type access =
-  | CaptureFieldAccess of CapturedVar.t
-  | FieldAccess of Fieldname.t
-  | ArrayAccess of source_expr option
-  | TakeAddress
-  | Dereference
-
-(* TODO: could add more kinds of operations too to show "x + y" or "x + 4", or even "x +
-   sizeof(struct x)". At the moment the memory model doesn't do anything useful with those though so
-   there's no need to be that fancy. *)
-and source_expr = base * access list [@@deriving compare, equal]
-
-(** intermediate representation of [source_expr] used for pretty-printing only *)
-type access_expr =
-  | ProgramVar of Pvar.t
-  | Call of CallEvent.t
-  | Capture of access_expr * CapturedVar.t
-  | Deref of access_expr
-  | ArrowField of access_expr * Fieldname.t
-  | DotField of access_expr * Fieldname.t
-  | Array of access_expr * access_expr option
-  | AddressOf of access_expr
-  | Parens of access_expr
-
-let rec pp_access_expr fmt = function
-  | ProgramVar pvar ->
-      Pvar.pp_value fmt pvar
-  | Call call ->
-      let java_or_objc_getter =
-        match call with
-        | Call procname | SkippedKnownCall procname -> (
-            Procname.is_java procname
-            ||
-            match Attributes.load procname with
-            | Some {objc_accessor= Some (Objc_getter _)} ->
-                true
-            | _ ->
-                false )
-        | Model _ | SkippedUnknownCall _ ->
-            false
-      in
-      if java_or_objc_getter then CallEvent.pp_name_only fmt call
-      else F.fprintf fmt "%a()" CallEvent.pp_name_only call
-  | Capture (access_expr, captured_var) ->
-      F.fprintf fmt "%a capturing %a" pp_access_expr access_expr Pvar.pp_value
-        captured_var.CapturedVar.pvar
-  | ArrowField (access_expr, field) ->
-      F.fprintf fmt "%a->%a" pp_access_expr access_expr Fieldname.pp field
-  | DotField (access_expr, field) ->
-      F.fprintf fmt "%a.%a" pp_access_expr access_expr Fieldname.pp field
-  | Array (access_expr, index) ->
-      let pp_index fmt index =
-        match index with
-        | None ->
-            F.pp_print_char fmt '_'
-        | Some index_expr ->
-            pp_access_expr fmt index_expr
-      in
-      F.fprintf fmt "%a[%a]" pp_access_expr access_expr pp_index index
-  | AddressOf access_expr ->
-      F.fprintf fmt "&%a" pp_access_expr access_expr
-  | Deref access_expr ->
-      F.fprintf fmt "*%a" pp_access_expr access_expr
-  | Parens access_expr ->
-      F.fprintf fmt "(%a)" pp_access_expr access_expr
-
-
-let rec access_expr_of_source_expr (base, rev_accesses) =
-  let accesses = List.rev rev_accesses in
-  let base_expr, prev_is_deref, accesses =
-    match (base, accesses) with
-    | PVar pvar, [] ->
-        (AddressOf (ProgramVar pvar), false, [])
-    | PVar pvar, Dereference :: accesses' ->
-        (ProgramVar pvar, true, accesses')
-    | PVar pvar, _ ->
-        (ProgramVar pvar, false, accesses)
-    | ReturnValue call, _ ->
-        (Call call, false, accesses)
-  in
-  let deref_if b access_expr =
-    if b then
-      match access_expr with
-      | ProgramVar _ | Deref _ | ArrowField _ | DotField _ ->
-          Deref access_expr
-      | _ ->
-          Deref (Parens access_expr)
-    else access_expr
-  in
-  let rec aux ~prev_is_deref ~prev_is_capture access_expr accesses =
-    match (accesses, base) with
-    | [], _ ->
-        access_expr
-    | Dereference :: TakeAddress :: accesses', _ ->
-        aux ~prev_is_deref:false ~prev_is_capture:false access_expr accesses'
-    | Dereference :: accesses', _ ->
-        aux ~prev_is_deref:true ~prev_is_capture:false
-          (deref_if prev_is_deref access_expr)
-          accesses'
-    | TakeAddress :: accesses', _ ->
-        aux ~prev_is_deref:false ~prev_is_capture:false (AddressOf access_expr) accesses'
-    | CaptureFieldAccess captured_var :: accesses', _ ->
-        aux ~prev_is_deref:false ~prev_is_capture:true
-          (Capture (access_expr, captured_var))
-          accesses'
-    | FieldAccess field :: accesses', _ ->
-        let access_expr' =
-          let needs_parens = match access_expr with Deref _ | AddressOf _ -> true | _ -> false in
-          let access_expr = if needs_parens then Parens access_expr else access_expr in
-          if prev_is_deref || prev_is_capture then ArrowField (access_expr, field)
-          else DotField (access_expr, field)
-        in
-        aux ~prev_is_deref:false ~prev_is_capture:false access_expr' accesses'
-    | ArrayAccess index :: accesses', _ ->
-        aux ~prev_is_deref:false ~prev_is_capture:false
-          (Array (access_expr, Option.map index ~f:access_expr_of_source_expr))
-          accesses'
-  in
-  aux ~prev_is_deref ~prev_is_capture:false base_expr accesses
-
-
-let pp_source_expr fmt source_expr = pp_access_expr fmt (access_expr_of_source_expr source_expr)
-
-type decompiled = SourceExpr of source_expr * AbstractValue.t | Unknown of AbstractValue.t
-[@@deriving compare, equal]
-
-let pp_decompiled_aux fmt = function
-  | Unknown _ ->
-      F.fprintf fmt "UNKNOWN"
-  | SourceExpr (source_expr, _) ->
-      pp_source_expr fmt source_expr
-
 
 module Map : sig
   type t
 
   val empty : t
 
-  val add : AbstractValue.t -> source_expr -> t -> t
+  val add : AbstractValue.t -> DecompilerExpr.source_expr -> t -> t
 
-  val find : AbstractValue.t -> t -> decompiled
+  val find : AbstractValue.t -> t -> DecompilerExpr.t
 
   val pp : F.formatter -> t -> unit
 end = struct
-  type t = source_expr AbstractValue.Map.t
+  type t = DecompilerExpr.source_expr AbstractValue.Map.t
 
   let empty = AbstractValue.Map.empty
 
@@ -169,17 +35,15 @@ end = struct
   let find v m =
     match AbstractValue.Map.find_opt v m with
     | None ->
-        Unknown v
+        DecompilerExpr.Unknown (Some v)
     | Some source_expr ->
-        SourceExpr (source_expr, v)
+        DecompilerExpr.SourceExpr (source_expr, Some v)
 
 
-  let pp fmt m = AbstractValue.Map.pp ~pp_value:pp_source_expr fmt m
+  let pp fmt m = AbstractValue.Map.pp ~pp_value:DecompilerExpr.pp_source_expr fmt m
 end
 
-type t = Invalid  (** to store in summaries *) | Map of Map.t
-
-let pp fmt = function Invalid -> F.fprintf fmt "Invalid" | Map m -> Map.pp fmt m
+type t = Invalid  (** to store in summaries *) | Map of Map.t [@@deriving show {with_path= false}]
 
 let empty = Map Map.empty
 
@@ -202,10 +66,10 @@ let find v decompiler =
 
 
 let add_var_source v var decompiler =
-  let+ decompiler = decompiler in
+  let+ decompiler in
   if Var.appears_in_source_code var then
     let[@warning "-8"] (Var.ProgramVar pvar) = var in
-    Map.add v (PVar pvar, []) decompiler
+    Map.add v (DecompilerExpr.PVar pvar, []) decompiler
   else decompiler
 
 
@@ -220,12 +84,13 @@ let access_of_field_access src attrs field =
       in
       List.nth attributes.ProcAttributes.captured pos
     in
-    CaptureFieldAccess captured_var
+    DecompilerExpr.CaptureFieldAccess captured_var
   in
-  IOption.if_none_eval capture_field_access ~f:(fun () -> FieldAccess field)
+  IOption.if_none_eval capture_field_access ~f:(fun () -> DecompilerExpr.FieldAccess field)
 
 
-let access_of_memory_access src attrs decompiler (access : BaseMemory.Access.t) : access =
+let access_of_memory_access src attrs decompiler (access : BaseMemory.Access.t) :
+    DecompilerExpr.access =
   match access with
   | ArrayAccess (_, index) ->
       let index_expr =
@@ -240,10 +105,31 @@ let access_of_memory_access src attrs decompiler (access : BaseMemory.Access.t) 
       Dereference
 
 
-let add_access_source v (access : BaseMemory.Access.t) ~src attrs decompiler =
+let add_access_source ?(allow_cycle = false) v (access : BaseMemory.Access.t) ~src attrs decompiler
+    =
+  let contains_access v src =
+    match (v, src) with
+    | ( DecompilerExpr.SourceExpr ((PVar pvar_v, access_v), _)
+      , DecompilerExpr.SourceExpr ((PVar pvar_src, access_src), _) )
+      when Pvar.equal pvar_v pvar_src ->
+        let rec is_sub_access sub access =
+          match (sub, access) with
+          | [], _ ->
+              true
+          | _, [] ->
+              false
+          | s :: sub, a :: access ->
+              DecompilerExpr.equal_access s a && is_sub_access sub access
+        in
+        is_sub_access (List.rev access_v) (List.rev access_src)
+    | _ ->
+        false
+  in
   let+ decompiler in
   match Map.find src decompiler with
   | Unknown _ ->
+      decompiler
+  | src when (not allow_cycle) && contains_access (Map.find v decompiler) src ->
       decompiler
   | SourceExpr ((base, accesses), _) ->
       Map.add v (base, access_of_memory_access src attrs decompiler access :: accesses) decompiler
@@ -270,7 +156,7 @@ let replace_getter_call_with_property_access procname v call actuals decompiler 
 
 
 let add_call_source v (call : CallEvent.t) actuals decompiler =
-  let+ decompiler = decompiler in
+  let+ decompiler in
   match call with
   | CallEvent.Call procname | SkippedKnownCall procname -> (
     match Attributes.load procname with
@@ -280,14 +166,3 @@ let add_call_source v (call : CallEvent.t) actuals decompiler =
         Map.add v (ReturnValue call, []) decompiler )
   | Model _ | SkippedUnknownCall _ ->
       Map.add v (ReturnValue call, []) decompiler
-
-
-type expr = decompiled [@@deriving compare, equal]
-
-let pp_expr fmt decompiled = pp_decompiled_aux fmt decompiled
-
-let yojson_of_expr expr = `String (F.asprintf "%a" pp_expr expr)
-
-let abstract_value_of_expr = function Unknown v | SourceExpr (_, v) -> v
-
-let is_unknown = function Unknown _ -> true | SourceExpr _ -> false

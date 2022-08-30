@@ -90,11 +90,6 @@ let log_issue_from_errlog ?severity_override err_log ~loc ~node ~session ~ltr ~a
       ~access ~extras checker issue_to_report
 
 
-let log_frontend_issue errlog ~loc ~node_key ~ltr exn =
-  let node = Errlog.FrontendNode {node_key} in
-  log_issue_from_errlog errlog ~loc ~node ~session:0 ~ltr ~access:None ~extras:None Linters exn
-
-
 let log_issue_from_summary ?severity_override proc_desc err_log ~node ~session ~loc ~ltr ?extras
     checker exn =
   let procname = Procdesc.get_proc_name proc_desc in

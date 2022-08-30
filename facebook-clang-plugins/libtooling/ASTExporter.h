@@ -605,6 +605,7 @@ void ASTExporter<ATDWriter>::dumpSourceRange(SourceRange R) {
 //@atd   type_ptr : type_ptr;
 //@atd   ~is_const : bool;
 //@atd   ~is_restrict : bool;
+//@atd   ~is_trivially_copyable : bool;
 //@atd   ~is_volatile : bool;
 //@atd } <ocaml field_prefix="qt_">
 template <class ATDWriter>
@@ -613,12 +614,16 @@ void ASTExporter<ATDWriter>::dumpQualType(const QualType &qt) {
       qt.isNull() ? clang::Qualifiers() : qt.getQualifiers();
   bool isConst = Quals.hasConst();
   bool isRestrict = Quals.hasRestrict();
+  bool isTriviallyCopyable =
+      qt.isNull() ? false : qt.isTriviallyCopyableType(Context);
   bool isVolatile = Quals.hasVolatile();
-  ObjectScope oScope(OF, 1 + isConst + isVolatile + isRestrict);
+  ObjectScope oScope(
+      OF, 1 + isConst + isRestrict + isTriviallyCopyable + isVolatile);
   OF.emitTag("type_ptr");
   dumpQualTypeNoQuals(qt);
   OF.emitFlag("is_const", isConst);
   OF.emitFlag("is_restrict", isRestrict);
+  OF.emitFlag("is_trivially_copyable", isTriviallyCopyable);
   OF.emitFlag("is_volatile", isVolatile);
 }
 
@@ -1535,7 +1540,8 @@ int ASTExporter<ATDWriter>::FunctionDeclTupleSize() {
 //@atd   ~parameters : decl list;
 //@atd   ?decl_ptr_with_body : pointer option;
 //@atd   ?body : stmt option;
-//@atd   ?template_specialization : template_specialization_info option
+//@atd   ?template_specialization : template_specialization_info option;
+//@atd   ?point_of_instantiation : source_location option
 //@atd } <ocaml field_prefix="fdi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
@@ -1568,10 +1574,13 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   }
   bool HasDeclarationBody = D->doesThisDeclarationHaveABody();
   FunctionTemplateDecl *TemplateDecl = D->getPrimaryTemplate();
+  SourceLocation PointOfInstantiation = D->getPointOfInstantiation();
+  bool IsValidPointOfInstantiation = PointOfInstantiation.isValid();
   int size = ShouldMangleName + IsCpp + IsInlineSpecified + IsModulePrivate +
              IsPure + IsDeletedAsWritten + IsNoReturn + IsConstexpr +
              IsVariadic + IsStatic + HasParameters + (bool)DeclWithBody +
-             HasDeclarationBody + (bool)TemplateDecl;
+             HasDeclarationBody + (bool)TemplateDecl +
+             IsValidPointOfInstantiation;
   ObjectScope Scope(OF, size);
 
   if (ShouldMangleName) {
@@ -1651,6 +1660,10 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
     OF.emitTag("template_specialization");
     dumpTemplateSpecialization(TemplateDecl,
                                *D->getTemplateSpecializationArgs());
+  }
+  if (IsValidPointOfInstantiation) {
+    OF.emitTag("point_of_instantiation");
+    dumpSourceLocation(PointOfInstantiation);
   }
 }
 
@@ -2071,10 +2084,10 @@ void ASTExporter<ATDWriter>::dumpTemplateSpecialization(
 
 template <class ATDWriter>
 int ASTExporter<ATDWriter>::ClassTemplateSpecializationDeclTupleSize() {
-  return CXXRecordDeclTupleSize() + 2;
+  return CXXRecordDeclTupleSize() + 3;
 }
 
-//@atd #define class_template_specialization_decl_tuple cxx_record_decl_tuple * string * template_specialization_info
+//@atd #define class_template_specialization_decl_tuple cxx_record_decl_tuple * string * source_location * template_specialization_info
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
     const ClassTemplateSpecializationDecl *D) {
@@ -2090,6 +2103,7 @@ void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
   } else {
     OF.emitString("");
   }
+  dumpSourceLocation(D->getPointOfInstantiation());
   dumpTemplateSpecialization(D->getSpecializedTemplate(), D->getTemplateArgs());
 }
 
@@ -2102,6 +2116,7 @@ int ASTExporter<ATDWriter>::CXXMethodDeclTupleSize() {
 //@atd   ~is_virtual : bool;
 //@atd   ~is_static : bool;
 //@atd   ~is_const : bool;
+//@atd   ~is_copy_assignment : bool;
 //@atd   ~is_copy_constructor : bool;
 //@atd   ~cxx_ctor_initializers : cxx_ctor_initializer list;
 //@atd   ~overriden_methods : decl_ref list;
@@ -2111,6 +2126,7 @@ void ASTExporter<ATDWriter>::VisitCXXMethodDecl(const CXXMethodDecl *D) {
   VisitFunctionDecl(D);
   bool IsVirtual = D->isVirtual();
   bool IsStatic = D->isStatic();
+  bool isCopyAssignment = D->isCopyAssignmentOperator();
   const CXXConstructorDecl *C = dyn_cast<CXXConstructorDecl>(D);
   bool isCopyConstructor = C && C->isCopyConstructor();
   bool isConst = D->isConst();
@@ -2118,11 +2134,13 @@ void ASTExporter<ATDWriter>::VisitCXXMethodDecl(const CXXMethodDecl *D) {
   auto OB = D->begin_overridden_methods();
   auto OE = D->end_overridden_methods();
   ObjectScope Scope(OF,
-                    IsVirtual + IsStatic + isConst + isCopyConstructor +
-                        HasCtorInitializers + (OB != OE));
+                    IsVirtual + IsStatic + isConst + isCopyAssignment +
+                        isCopyConstructor + HasCtorInitializers + (OB != OE));
+
   OF.emitFlag("is_virtual", IsVirtual);
   OF.emitFlag("is_static", IsStatic);
   OF.emitFlag("is_const", isConst);
+  OF.emitFlag("is_copy_assignment", isCopyAssignment);
   OF.emitFlag("is_copy_constructor", isCopyConstructor);
   if (HasCtorInitializers) {
     OF.emitTag("cxx_ctor_initializers");

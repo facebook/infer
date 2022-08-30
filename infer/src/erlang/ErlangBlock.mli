@@ -14,8 +14,6 @@ val ( |~~> ) : Procdesc.Node.t -> Procdesc.Node.t list -> unit
 
 val make_success : (Procdesc.t Env.present, _) Env.t -> t
 
-val make_failure : (Procdesc.t Env.present, _) Env.t -> t
-
 val all : (Procdesc.t Env.present, _) Env.t -> t list -> t
 (** Chain a list of blocks together in a conjunctive style: a failure in any block leads to a global
     failure, and successes lead to the next block. *)

@@ -9,6 +9,7 @@
     test_a_Bad/0,
     test_b_Ok/0,
     test_c_Bad/0,
+    fp_test_c2_Ok/0,
     test_d_Bad/0,
     test_e_Ok/0,
     test_f_Bad/0,
@@ -27,6 +28,11 @@ test_b_Ok() ->
 test_c_Bad() ->
     X = source(),
     sink(X).
+
+% T124029605
+fp_test_c2_Ok() ->
+    _X = source(),
+    sink(notdirty).
 
 test_d_Bad() ->
     call_sink_indirectly(tito(source())).

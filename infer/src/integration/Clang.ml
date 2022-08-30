@@ -10,7 +10,6 @@ module L = Logging
 type compiler = Clang | Make [@@deriving compare]
 
 let capture compiler ~prog ~args =
-  RegisterCallback.register_frontend_checks () ;
   match compiler with
   | Clang ->
       ClangWrapper.exe ~prog ~args

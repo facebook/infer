@@ -144,6 +144,19 @@ let get_const_params_indices params =
   aux [] params
 
 
+(** Returns a list of the indices of expressions in [args] which are passed by reference *)
+let get_reference_indices params =
+  let i = ref 0 in
+  let rec aux result = function
+    | [] ->
+        List.rev result
+    | ({is_reference} : CMethodSignature.param_type) :: tl ->
+        incr i ;
+        if is_reference then aux ((!i - 1) :: result) tl else aux result tl
+  in
+  aux [] params
+
+
 let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
   match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_property_opt with
@@ -186,8 +199,9 @@ let find_sentinel_attribute attrs =
 
 
 (** Creates a procedure description. *)
-let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_captured = false)
-    ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv ms fbody captured =
+let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
+    ?(record_lambda_captured = false) ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv
+    ms fbody captured =
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
   let clang_method_kind = ms.CMethodSignature.method_kind in
@@ -231,6 +245,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         all_params
     in
     let const_formals = get_const_params_indices all_params in
+    let reference_formals = get_reference_indices all_params in
     let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose)
       "@\nCreating a new procdesc for function: '%a'@\n@." Procname.pp proc_name ;
@@ -253,6 +268,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
           ProcAttributes.captured= captured_mangled_not_formals
         ; formals
         ; const_formals
+        ; reference_formals
         ; has_added_return_param
         ; is_ret_type_pod= ms.CMethodSignature.is_ret_type_pod
         ; is_ret_constexpr= ms.CMethodSignature.is_ret_constexpr
@@ -265,6 +281,7 @@ let create_local_procdesc ?(set_objc_accessor_attr = false) ?(record_lambda_capt
         ; is_variadic= ms.CMethodSignature.is_variadic
         ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
         ; loc= loc_start
+        ; loc_instantiated
         ; clang_method_kind
         ; objc_accessor= objc_property_accessor
         ; ret_type

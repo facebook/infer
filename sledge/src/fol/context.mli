@@ -32,17 +32,17 @@ val empty : t
 val unsat : t
 (** An unsatisfiable context of assumptions. *)
 
-val add : Var.Set.t -> Formula.t -> t -> Var.Set.t * t
+val add : Formula.t -> t -> t Var.Fresh.m
 (** Add (that is, conjoin) an assumption to a context. *)
 
-val union : Var.Set.t -> t -> t -> Var.Set.t * t
+val union : t -> t -> t Var.Fresh.m
 (** Union (that is, conjoin) two contexts of assumptions. *)
 
-val interN : Var.Set.t -> (Var.Set.t * t) list -> Var.Set.t * t
-(** Intersect contexts of assumptions. Possibly weaker than logical
+val inter : t -> t -> t Var.Fresh.m
+(** Intersect two contexts of assumptions. Possibly weaker than logical
     disjunction. *)
 
-val dnf : Formula.t -> (Var.Set.t * Formula.t * t) iter
+val dnf : Formula.t -> ((Formula.t * t) * Var.Context.t) iter Var.Fresh.m
 (** Disjunctive-normal form expansion. *)
 
 val rename : t -> Var.Subst.t -> t
@@ -100,23 +100,21 @@ module Subst : sig
       maximal where ∃ks. ν is universally valid, xs ⊇ ks and ks ∩ fv(τ) = ∅. *)
 end
 
-val solve_for_vars : Var.Set.t list -> t -> Subst.t
-(** [solve_for_vars vss x] is a solution substitution that is implied by [x]
-    and consists of oriented equalities [v ↦ e] that map terms [v] with free
-    variables contained in (the union of) a prefix [uss] of [vss] to terms
-    [e] with free variables contained in as short a prefix of [uss] as
-    possible. *)
+val solve_for : Var.Set.t -> ?not_ito:Var.Set.t -> t -> Subst.t Var.Fresh.m
+(** [solve_for vs ~not_ito:ws x] is a solution substitution that is implied
+    by [x] and consists of oriented equalities [v ↦ e] that map terms [v]
+    with free variables contained in [vs] to terms [e] with free variables
+    disjoint from [ws]. *)
 
-val apply_subst : Var.Set.t -> Subst.t -> t -> Var.Set.t * t
+val apply_subst : Subst.t -> t -> t Var.Fresh.m
 (** Context induced by applying a solution substitution to a set of
     equations generating the argument context. *)
 
 val apply_and_elim :
-  wrt:Var.Set.t -> Var.Set.t -> Subst.t -> t -> Var.Set.t * t * Var.Set.t
+  Var.Set.t -> Subst.t -> t -> (t * Var.Set.t) Var.Fresh.m
 (** Apply a solution substitution to eliminate the solved variables. That
-    is, [apply_and_elim ~wrt vs s x] is [(zs, x', ks)] where
-    [∃zs. r' ∧ ∃ks. s] is equivalent to [∃xs. r] where [zs] are fresh with
-    respect to [wrt] and [ks ⊆ xs] and is maximal. *)
+    is, [apply_and_elim vs s x] is [(x', ks)] where [x' ∧ ∃ks. s] is
+    equivalent to [∃vs. x] where [ks ⊆ vs] and is maximal. *)
 
 (**/**)
 

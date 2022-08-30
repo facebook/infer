@@ -11,6 +11,7 @@ exception Invalid_llvm of string
 
 val translate :
      internalize:bool
+  -> preserve_fns:string list
   -> opt_level:int
   -> size_level:int
   -> ?dump_bitcode:string

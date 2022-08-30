@@ -9,9 +9,6 @@ open! IStd
 
 module Map : module type of Map.Make (Int)
 
-val ivar_to_property_table : Clang_ast_t.decl Int.Table.t
-(** maps ivar decl pointer to its decl record *)
-
 val pointer_decl_table : Clang_ast_t.decl Int.Table.t
 (** maps decl pointer to its decl record *)
 

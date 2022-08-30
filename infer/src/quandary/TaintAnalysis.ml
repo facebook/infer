@@ -182,8 +182,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 match
                   List.find
                     ~f:(fun source ->
-                      [%compare.equal: Source.Kind.t] kind (Source.kind source)
-                      && not (is_recursive source) )
+                      Source.Kind.equal kind (Source.kind source) && not (is_recursive source) )
                     (Sources.Known.elements (sources trace).Sources.known)
                 with
                 | Some matching_source ->
@@ -209,9 +208,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               (fun acc _ trace ->
                 match
                   List.find
-                    ~f:(fun sink ->
-                      [%compare.equal: Sink.Kind.t] kind (Sink.kind sink) && not (is_recursive sink)
-                      )
+                    ~f:(fun sink -> Sink.Kind.equal kind (Sink.kind sink) && not (is_recursive sink))
                     (Sinks.elements (sinks trace))
                 with
                 | Some matching_sink ->

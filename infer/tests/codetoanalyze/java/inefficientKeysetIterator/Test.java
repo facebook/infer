@@ -100,4 +100,13 @@ class Test {
       arrayMap.get(key);
     }
   }
+
+  void independent_itr_loop_ok(
+      HashMap<String, Integer> testMap, HashMap<Integer, String> otherMap) {
+    Set<Integer> s = otherMap.keySet(); // irrelevant
+    for (Map.Entry<String, Integer> entry : testMap.entrySet()) {
+      String elem =
+          otherMap.get(entry.getKey()); // getter is not coming from the one we are iterating over
+    }
+  }
 }

@@ -13,7 +13,7 @@ module F = Format
 
 module IntegerWidths : sig
   type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   val java : t
 
@@ -61,7 +61,8 @@ type fkind = FFloat  (** [float] *) | FDouble  (** [double] *) | FLongDouble  (*
 (** kind of pointer *)
 type ptr_kind =
   | Pk_pointer  (** C/C++, Java, Objc standard/__strong pointer *)
-  | Pk_reference  (** C++ reference *)
+  | Pk_lvalue_reference  (** C++ lvalue reference *)
+  | Pk_rvalue_reference  (** C++ rvalue reference *)
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
@@ -69,12 +70,13 @@ type ptr_kind =
 
 val equal_ptr_kind : ptr_kind -> ptr_kind -> bool
 
-type type_quals [@@deriving compare]
+type type_quals [@@deriving compare, equal]
 
 val mk_type_quals :
      ?default:type_quals
   -> ?is_const:bool
   -> ?is_restrict:bool
+  -> ?is_trivially_copyable:bool
   -> ?is_volatile:bool
   -> unit
   -> type_quals
@@ -83,10 +85,12 @@ val is_const : type_quals -> bool
 
 val is_restrict : type_quals -> bool
 
+val is_trivially_copyable : type_quals -> bool
+
 val is_volatile : type_quals -> bool
 
 (** types for sil (structured) expressions *)
-type t = {desc: desc; quals: type_quals} [@@deriving compare, yojson_of]
+type t = {desc: desc; quals: type_quals} [@@deriving compare, equal, yojson_of]
 
 and desc =
   | Tint of ikind  (** integer type *)
@@ -254,6 +258,8 @@ module Name : sig
 
   module Map : PrettyPrintable.PPMap with type key = t
 
+  module Hash : Caml.Hashtbl.S with type key = t
+
   module Normalizer : HashNormalizer.S with type t = t
 end
 
@@ -264,10 +270,11 @@ val equal_desc : desc -> desc -> bool
 
 val equal_name : name -> name -> bool
 
-val equal_quals : type_quals -> type_quals -> bool
-
 val equal_ignore_quals : t -> t -> bool
 (** Equality for types, but ignoring quals in it. *)
+
+val compatible_match : t -> t -> bool
+(** [compatible_match t1 t2] checks whether t1 can be converted into t2 *)
 
 val pp_full : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type with all the details. *)
@@ -326,6 +333,10 @@ val is_pointer_to_function : t -> bool
 val is_pointer : t -> bool
 
 val is_reference : t -> bool
+
+val is_rvalue_reference : t -> bool
+
+val is_const_reference : t -> bool
 
 val is_struct : t -> bool
 

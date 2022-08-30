@@ -123,7 +123,9 @@ module T = struct
           let c = compare_a d1 d2 in
           if c <> 0 then c else
           compare_aux (cons_enum r1 e1) (cons_enum r2 e2)
-    in compare_aux (cons_enum m1 End) (cons_enum m2 End)
+    in
+    if m1 == m2 then 0
+    else compare_aux (cons_enum m1 End) (cons_enum m2 End)
 
   type ('compare_key, 'compare_a) compare [@@deriving compare, equal, sexp]
 end
@@ -139,7 +141,8 @@ let equal equal_key equal_a _ m1 m2 =
     | (More(v1, d1, r1, e1), More(v2, d2, r2, e2)) ->
         equal_key v1 v2 && equal_a d1 d2 &&
         equal_aux (cons_enum r1 e1) (cons_enum r2 e2)
-  in equal_aux (cons_enum m1 End) (cons_enum m2 End)
+  in
+  m1 == m2 || equal_aux (cons_enum m1 End) (cons_enum m2 End)
 
 let rec bindings_aux accu = function
     Empty -> accu

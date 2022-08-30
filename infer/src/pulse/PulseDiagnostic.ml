@@ -10,7 +10,7 @@ module F = Format
 module L = Logging
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
-module Decompiler = PulseDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
 module Trace = PulseTrace
@@ -18,54 +18,171 @@ module ValueHistory = PulseValueHistory
 
 type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal]
 
+let pp_calling_context fmt calling_context =
+  F.fprintf fmt "[@[<v1>%a@]]"
+    (Pp.seq ~sep:";@;" (Pp.pair ~fst:CallEvent.pp ~snd:Location.pp))
+    calling_context
+
+
 type access_to_invalid_address =
   { calling_context: calling_context
-  ; invalid_address: Decompiler.expr
+  ; invalid_address: DecompilerExpr.t
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
   ; access_trace: Trace.t
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal]
 
-type erlang_error =
-  | Badkey of {calling_context: calling_context; location: Location.t}
-  | Badmap of {calling_context: calling_context; location: Location.t}
-  | Badmatch of {calling_context: calling_context; location: Location.t}
-  | Badrecord of {calling_context: calling_context; location: Location.t}
-  | Case_clause of {calling_context: calling_context; location: Location.t}
-  | Function_clause of {calling_context: calling_context; location: Location.t}
-  | If_clause of {calling_context: calling_context; location: Location.t}
-  | Try_clause of {calling_context: calling_context; location: Location.t}
-[@@deriving compare, equal]
+let yojson_of_access_to_invalid_address = [%yojson_of: _]
+
+let pp_access_to_invalid_address fmt
+    ({ calling_context
+     ; invalid_address
+     ; invalidation
+     ; invalidation_trace
+     ; access_trace
+     ; must_be_valid_reason } [@warning "+9"] ) =
+  let pp_immediate fmt = F.pp_print_string fmt "immediate" in
+  F.fprintf fmt
+    "{@[calling_context=%a;@;\
+     invalid_address=%a;@;\
+     invalidation=%a;@;\
+     invalidation_trace=%a;@;\
+     access_trace=%a;@;\
+     must_be_valid_reason=%a;@;\
+     @]}"
+    pp_calling_context calling_context DecompilerExpr.pp_with_abstract_value invalid_address
+    Invalidation.pp invalidation (Trace.pp ~pp_immediate) invalidation_trace
+    (Trace.pp ~pp_immediate) access_trace Invalidation.pp_must_be_valid_reason must_be_valid_reason
+
+
+module ErlangError = struct
+  type t =
+    | Badarg of {calling_context: calling_context; location: Location.t}
+    | Badkey of {calling_context: calling_context; location: Location.t}
+    | Badmap of {calling_context: calling_context; location: Location.t}
+    | Badmatch of {calling_context: calling_context; location: Location.t}
+    | Badrecord of {calling_context: calling_context; location: Location.t}
+    | Case_clause of {calling_context: calling_context; location: Location.t}
+    | Function_clause of {calling_context: calling_context; location: Location.t}
+    | If_clause of {calling_context: calling_context; location: Location.t}
+    | Try_clause of {calling_context: calling_context; location: Location.t}
+  [@@deriving compare, equal, variants]
+
+  let yojson_of_t = [%yojson_of: _]
+
+  let pp fmt erlang_error =
+    (* this is for debug purposes so if you add another field please remove this warning but make sure
+       to pretty print it too *)
+    let[@warning "+9"] ( Badarg {calling_context; location}
+                       | Badkey {calling_context; location}
+                       | Badmap {calling_context; location}
+                       | Badmatch {calling_context; location}
+                       | Badrecord {calling_context; location}
+                       | Case_clause {calling_context; location}
+                       | Function_clause {calling_context; location}
+                       | If_clause {calling_context; location}
+                       | Try_clause {calling_context; location} ) =
+      erlang_error
+    in
+    F.fprintf fmt "%s{@[location=%a; calling_context=%a@]}" (Variants.to_name erlang_error)
+      Location.pp location pp_calling_context calling_context
+end
 
 type read_uninitialized_value = {calling_context: calling_context; trace: Trace.t}
 [@@deriving compare, equal]
 
-let yojson_of_access_to_invalid_address = [%yojson_of: _]
-
-let yojson_of_erlang_error = [%yojson_of: _]
-
 let yojson_of_read_uninitialized_value = [%yojson_of: _]
+
+let pp_read_uninitialized_value fmt ({calling_context; trace} [@warning "+9"]) =
+  F.fprintf fmt "{@[calling_context=%a;@;trace=%a@]}" pp_calling_context calling_context
+    (Trace.pp ~pp_immediate:(fun fmt -> F.pp_print_string fmt "immediate"))
+    trace
+
+
+type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
+
+let pp_flow_kind fmt flow_kind =
+  match flow_kind with
+  | TaintedFlow ->
+      F.fprintf fmt "tainted flow"
+  | FlowToSink ->
+      F.fprintf fmt "flow to a taint sink"
+  | FlowFromSource ->
+      F.fprintf fmt "flow from a taint source"
+
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
+  | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | RetainCycle of
       { assignment_traces: Trace.t list
-      ; value: Decompiler.expr
-      ; path: Decompiler.expr
+      ; value: DecompilerExpr.t
+      ; path: DecompilerExpr.t
       ; location: Location.t }
-  | ErlangError of erlang_error
+  | ErlangError of ErlangError.t
   | ReadUninitializedValue of read_uninitialized_value
   | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
-      { tainted: Decompiler.expr
+      { expr: DecompilerExpr.t
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
-      ; location: Location.t }
-  | UnnecessaryCopy of {variable: Var.t; location: Location.t}
+      ; location: Location.t
+      ; flow_kind: flow_kind }
+  | UnnecessaryCopy of
+      { copied_into: PulseAttribute.CopiedInto.t
+      ; typ: Typ.t
+      ; location: Location.t
+      ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
+
+let pp fmt diagnostic =
+  let pp_immediate fmt = F.pp_print_string fmt "immediate" in
+  match[@warning "+9"] diagnostic with
+  | AccessToInvalidAddress access_to_invalid_address ->
+      F.fprintf fmt "AccessToInvalidAddress %a" pp_access_to_invalid_address
+        access_to_invalid_address
+  | ConstRefableParameter {param; typ; location} ->
+      F.fprintf fmt "ConstRefableParameter {@[param=%a;@;typ=%a;@;location=%a@]}" Var.pp param
+        (Typ.pp_full Pp.text) typ Location.pp location
+  | MemoryLeak {allocator; allocation_trace; location} ->
+      F.fprintf fmt "MemoryLeak {@[allocator=%a;@;allocation_trace=%a;@;location=%a@]}"
+        Attribute.pp_allocator allocator (Trace.pp ~pp_immediate) allocation_trace Location.pp
+        location
+  | RetainCycle {assignment_traces; value; path; location} ->
+      F.fprintf fmt
+        "RetainCycle {@[assignment_traces=[@[<v>%a@]];@;value=%a;@;path=%a;@;location=%a@]}"
+        (Pp.seq ~sep:";@;" (Trace.pp ~pp_immediate))
+        assignment_traces DecompilerExpr.pp_with_abstract_value value DecompilerExpr.pp path
+        Location.pp location
+  | ErlangError erlang_error ->
+      ErlangError.pp fmt erlang_error
+  | ReadUninitializedValue read_uninitialized_value ->
+      F.fprintf fmt "ReadUninitializedValue %a" pp_read_uninitialized_value read_uninitialized_value
+  | ResourceLeak {class_name; allocation_trace; location} ->
+      F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
+        JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
+  | StackVariableAddressEscape {variable; history; location} ->
+      F.fprintf fmt "StackVariableAddressEscape {@[variable=%a;@;history=%a;@;location:%a@]}" Var.pp
+        variable ValueHistory.pp history Location.pp location
+  | TaintFlow {expr; source; sink; location; flow_kind} ->
+      F.fprintf fmt "TaintFlow {@[expr=%a;@;source=%a;@;sink=%a;@;location:%a;@;flow_kind=%a@]}"
+        DecompilerExpr.pp_with_abstract_value expr
+        (Pp.pair ~fst:Taint.pp ~snd:ValueHistory.pp)
+        source
+        (Pp.pair ~fst:Taint.pp ~snd:(Trace.pp ~pp_immediate))
+        sink Location.pp location pp_flow_kind flow_kind
+  | UnnecessaryCopy
+      { copied_into: PulseAttribute.CopiedInto.t
+      ; typ: Typ.t
+      ; location: Location.t
+      ; from: PulseAttribute.CopyOrigin.t } ->
+      F.fprintf fmt "UnnecessaryCopy {@[copied_into=%a;@;typ=%a;@;location:%a;@;from=%a@]}"
+        PulseAttribute.CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp location
+        PulseAttribute.CopyOrigin.pp from
+
 
 let get_location = function
   | AccessToInvalidAddress {calling_context= []; access_trace}
@@ -74,9 +191,11 @@ let get_location = function
   | AccessToInvalidAddress {calling_context= (_, location) :: _}
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
+  | ConstRefableParameter {location}
   | MemoryLeak {location}
   | ResourceLeak {location}
   | RetainCycle {location}
+  | ErlangError (Badarg {location})
   | ErlangError (Badkey {location})
   | ErlangError (Badmap {location})
   | ErlangError (Badmatch {location})
@@ -91,10 +210,18 @@ let get_location = function
       location
 
 
+let get_copy_type = function
+  | UnnecessaryCopy {typ} | ConstRefableParameter {typ} ->
+      Some typ
+  | _ ->
+      None
+
+
 let aborts_execution = function
   | AccessToInvalidAddress _
   | ErlangError
-      ( Badkey _
+      ( Badarg _
+      | Badkey _
       | Badmap _
       | Badmatch _
       | Badrecord _
@@ -107,6 +234,7 @@ let aborts_execution = function
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       true
+  | ConstRefableParameter _
   | MemoryLeak _
   | ResourceLeak _
   | RetainCycle _
@@ -161,7 +289,7 @@ let get_message diagnostic =
           | `Immediate ->
               ()
           | `Call f ->
-              F.fprintf fmt " in call to %a" CallEvent.describe f
+              F.fprintf fmt " in the call to %a" CallEvent.describe f
         in
         let pp_invalidation_trace line fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
@@ -176,12 +304,12 @@ let get_message diagnostic =
         in
         let pp_must_be_valid_reason fmt expr =
           let pp_prefix fmt null_nil_block =
-            if Decompiler.is_unknown expr then
+            if DecompilerExpr.is_unknown expr then
               F.fprintf fmt "%s %a" null_nil_block
                 (pp_invalidation_trace invalidation_line)
                 invalidation_trace
             else
-              F.fprintf fmt "`%a` could be %s %a and" Decompiler.pp_expr expr null_nil_block
+              F.fprintf fmt "`%a` could be %s %a and" DecompilerExpr.pp expr null_nil_block
                 (pp_invalidation_trace invalidation_line)
                 invalidation_trace
           in
@@ -204,6 +332,10 @@ let get_message diagnostic =
           | Some BlockCall ->
               F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block" pp_access_trace
                 access_trace
+          | Some (NullArgumentWhereNonNullExpected procname) ->
+              F.fprintf fmt
+                "%a is passed as argument to %s; this function requires a non-nil argument"
+                pp_prefix "nil" procname
           | None ->
               F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
         in
@@ -233,6 +365,12 @@ let get_message diagnostic =
         F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
           (pp_invalidation_trace invalidation_line invalidation)
           invalidation_trace )
+  | ConstRefableParameter {param; typ; location} ->
+      F.asprintf
+        "Function parameter `%a` with type `%a` is passed by-value but not modified inside the \
+         function on %a. This might result in an unnecessary copy at the callsite of this \
+         function. Consider changing the type of this function parameter to `const &`."
+        Var.pp param (Typ.pp_full Pp.text) typ Location.pp_line location
   | MemoryLeak {allocator; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
@@ -269,7 +407,9 @@ let get_message diagnostic =
       F.asprintf
         "Memory managed via reference counting is locked in a retain cycle at %a: `%a` retains \
          itself via `%a`"
-        Location.pp location Decompiler.pp_expr value Decompiler.pp_expr path
+        Location.pp location DecompilerExpr.pp value DecompilerExpr.pp path
+  | ErlangError (Badarg {calling_context= _; location}) ->
+      F.asprintf "bad arg at %a" Location.pp location
   | ErlangError (Badkey {calling_context= _; location}) ->
       F.asprintf "bad key at %a" Location.pp location
   | ErlangError (Badmap {calling_context= _; location}) ->
@@ -331,16 +471,44 @@ let get_message diagnostic =
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
       F.asprintf "Address of %a is returned by the function" pp_var variable
-  | TaintFlow {tainted; source= source, _; sink= sink, _} ->
+  | TaintFlow {expr; source= source, _; sink= sink, _; flow_kind} ->
       (* TODO: say what line the source happened in the current function *)
-      F.asprintf "`%a` is tainted by %a and flows to %a" Decompiler.pp_expr tainted Taint.pp source
-        Taint.pp sink
-  | UnnecessaryCopy {variable; location} ->
-      F.asprintf
-        "copied variable `%a` is not modified after it is copied on %a. Consider using a reference \
-         `&` instead to avoid the copy. If this copy was intentional, consider adding the word \
-         `copy` into the variable name to suppress this warning"
-        Var.pp variable Location.pp_line location
+      F.asprintf "`%a` is tainted by %a and flows to %a (%a)" DecompilerExpr.pp expr Taint.pp source
+        Taint.pp sink pp_flow_kind flow_kind
+  | UnnecessaryCopy {copied_into; typ; location; from} -> (
+      let open PulseAttribute in
+      let suppression_msg =
+        "If this copy was intentional, consider adding the word `copy` into the variable name to \
+         suppress this warning"
+      in
+      let suggestion_msg =
+        match (from : CopyOrigin.t) with
+        | CopyCtor ->
+            "try using a reference `&`"
+        | CopyAssignment ->
+            "try getting a reference to it or move it if possible"
+      in
+      match copied_into with
+      | IntoVar _ ->
+          F.asprintf
+            "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid \
+             the copy, %s. %s."
+            CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
+            location suggestion_msg suppression_msg
+      | IntoField {field; source_opt} -> (
+          let advice = "Rather than copying into the field, consider moving into it instead." in
+          match source_opt with
+          | Some source_expr ->
+              F.asprintf
+                "`%a` is an rvalue-ref that is %a into field `%a` with type `%a` but is not \
+                 modified afterwards. %s"
+                DecompilerExpr.pp source_expr CopyOrigin.pp from Fieldname.pp field
+                (Typ.pp_full Pp.text) typ advice
+          | None ->
+              F.asprintf
+                "Field `%a` is %a into from an rvalue-ref that is of type `%a` but is not modified \
+                 afterwards. %s"
+                Fieldname.pp field CopyOrigin.pp from (Typ.pp_full Pp.text) typ advice ) )
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -420,6 +588,9 @@ let get_trace = function
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace
       @@ []
+  | ConstRefableParameter {param; location} ->
+      let nesting = 0 in
+      [Errlog.make_trace_element nesting location (F.asprintf "Parameter %a" Var.pp param) []]
   | ResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let access_start_location = Trace.get_start_location allocation_trace in
@@ -440,12 +611,13 @@ let get_trace = function
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
   | RetainCycle {assignment_traces; location} ->
-      List.fold_right assignment_traces
-        ~init:[Errlog.make_trace_element 0 location "retain cycle here" []]
-        ~f:(fun assignment_trace errlog ->
-          Trace.add_to_errlog ~nesting:1
-            ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
-            assignment_trace errlog )
+      let errlog = [Errlog.make_trace_element 0 location "retain cycle here" []] in
+      Trace.synchronous_add_to_errlog ~nesting:1
+        ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
+        assignment_traces errlog
+  | ErlangError (Badarg {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad arg here" []]
   | ErlangError (Badkey {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad key here" []]
@@ -493,30 +665,42 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
-  | UnnecessaryCopy {location; _} ->
+  | UnnecessaryCopy {location; from} ->
       let nesting = 0 in
-      [Errlog.make_trace_element nesting location "copied here" []]
+      [ Errlog.make_trace_element nesting location
+          (F.asprintf "%a here" PulseAttribute.CopyOrigin.pp from)
+          [] ]
 
 
 let get_issue_type ~latent issue_type =
   match (issue_type, latent) with
+  | ConstRefableParameter _, false ->
+      IssueType.pulse_const_refable
   | MemoryLeak {allocator}, false -> (
     match allocator with
     | CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _ ->
         IssueType.pulse_memory_leak_c
     | CppNew | CppNewArray ->
         IssueType.pulse_memory_leak_cpp
-    | JavaResource _ ->
-        L.die InternalError "Memory leaks should not have a Java resource as allocator" )
+    | JavaResource _ | ObjCAlloc ->
+        L.die InternalError
+          "Memory leaks should not have a Java resource or Objective-C alloc as allocator" )
   | ResourceLeak _, false ->
       IssueType.pulse_resource_leak
   | RetainCycle _, false ->
       IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
-  | UnnecessaryCopy _, false ->
+  | UnnecessaryCopy {copied_into= IntoField _; from= CopyAssignment}, false ->
+      IssueType.unnecessary_copy_assignment_movable_pulse
+  | UnnecessaryCopy {copied_into= IntoField _; from= CopyCtor}, false ->
+      IssueType.unnecessary_copy_movable_pulse
+  | UnnecessaryCopy {from= CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
-  | ( ( MemoryLeak _
+  | UnnecessaryCopy {from= CopyAssignment}, false ->
+      IssueType.unnecessary_copy_assignment_pulse
+  | ( ( ConstRefableParameter _
+      | MemoryLeak _
       | ResourceLeak _
       | RetainCycle _
       | StackVariableAddressEscape _
@@ -525,6 +709,8 @@ let get_issue_type ~latent issue_type =
       L.die InternalError "Issue type cannot be latent"
   | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
       Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
+  | ErlangError (Badarg _), _ ->
+      IssueType.bad_arg ~latent
   | ErlangError (Badkey _), _ ->
       IssueType.bad_key ~latent
   | ErlangError (Badmap _), _ ->
@@ -543,5 +729,9 @@ let get_issue_type ~latent issue_type =
       IssueType.no_matching_branch_in_try ~latent
   | ReadUninitializedValue _, _ ->
       IssueType.uninitialized_value_pulse ~latent
-  | TaintFlow _, _ ->
+  | TaintFlow {flow_kind= TaintedFlow}, _ ->
       IssueType.taint_error
+  | TaintFlow {flow_kind= FlowToSink}, _ ->
+      IssueType.data_flow_to_sink
+  | TaintFlow {flow_kind= FlowFromSource}, _ ->
+      IssueType.sensitive_data_flow

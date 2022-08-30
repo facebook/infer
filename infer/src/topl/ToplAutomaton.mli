@@ -24,7 +24,7 @@ open! IStd
 type t
 
 (** from 0 to vcount()-1, inclusive *)
-type vindex = int [@@deriving compare]
+type vindex = int [@@deriving compare, equal]
 
 (** from 0 to tcount()-1, inclusive *)
 type tindex = int
@@ -41,8 +41,7 @@ val tfilter_mapi : t -> f:(tindex -> transition -> 'a option) -> 'a list
 
 val registers : t -> ToplAst.register_name list
 
-val pp_message_of_state : Format.formatter -> t * tindex -> unit
-(** Print "property P reaches state E". *)
+val message : t -> vindex -> string
 
 val is_start : t -> vindex -> bool
 

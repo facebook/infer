@@ -75,11 +75,3 @@ end
 module Call : sig
   val dispatch : (Tenv.t, model, unit) ProcnameDispatcher.Call.dispatcher
 end
-
-val get_malloc_info_opt : Exp.t -> (Typ.t * Int.t option * Exp.t * Exp.t option) option
-(** Return a tuple of malloc information with heuristics:
-
-    - type of array element
-    - stride of the type
-    - array size
-    - flexible array size *)

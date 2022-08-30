@@ -17,7 +17,7 @@ open! IStd
     NOTE: Rule 1) is based on Java covariance rule for the return type. In contrast, rule 2) is
     nullsafe specific as Java does not support type contravariance for method params. *)
 
-type violation [@@deriving compare]
+type violation [@@deriving compare, equal]
 
 type type_role = Param | Ret
 
@@ -32,7 +32,7 @@ module ReportableViolation : sig
   type violation_type =
     | InconsistentParam of {param_description: string; param_index: int}
     | InconsistentReturn
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   val from : NullsafeMode.t -> violation -> t option
   (** Depending on the mode, violation might or might not be important enough to be reported to the

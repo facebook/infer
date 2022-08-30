@@ -1,10 +1,12 @@
 (lang dune 2.5)
 
+(wrapped_executables false)
+
 (package
  (name nonstdlib))
 
 (package
- (name ppx_trace))
+ (name ppx_dbg))
 
 (package
  (name sledge))

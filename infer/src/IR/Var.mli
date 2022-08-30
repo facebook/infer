@@ -51,6 +51,8 @@ val appears_in_source_code : t -> bool
 
 val is_cpp_temporary : t -> bool
 
+val is_cpp_unnamed_param : t -> bool
+
 val get_footprint_index : t -> int option
 
 val pp : Format.formatter -> t -> unit

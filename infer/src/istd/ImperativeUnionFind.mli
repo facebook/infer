@@ -8,7 +8,7 @@
 open! IStd
 
 module type Set = sig
-  type elt [@@deriving compare]
+  type elt [@@deriving compare, equal]
 
   type t
 

@@ -112,7 +112,8 @@ let parse_fkind (json : Safe.t) =
 let parse_ptr_kind (json : Safe.t) =
   let ptr_kind_map =
     [ ("Pk_pointer", Typ.Pk_pointer)
-    ; ("Pk_reference", Typ.Pk_reference)
+    ; ("Pk_lvalue_reference", Typ.Pk_lvalue_reference)
+    ; ("Pk_rvalue_reference", Typ.Pk_rvalue_reference)
     ; ("Pk_objc_weak", Typ.Pk_objc_weak)
     ; ("Pk_objc_unsafe_unretained", Typ.Pk_objc_unsafe_unretained)
     ; ("Pk_objc_autoreleasing", Typ.Pk_objc_autoreleasing) ]
@@ -701,7 +702,7 @@ let analyze_json cfg_json tenv_json =
   if not Config.continue_analysis then
     if Config.reanalyze then (
       L.progress "Invalidating procedures to be reanalyzed@." ;
-      Summary.OnDisk.reset_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
+      Summary.OnDisk.delete_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
       L.progress "Done@." )
     else if not Config.incremental_analysis then DBWriter.delete_all_specs () ;
   Printexc.record_backtrace true ;

@@ -1,0 +1,33 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+global I
+
+type Int = {}
+
+declare plus(*Int, *Int) : *Int
+
+declare mult(*Int, *Int) : *Int
+
+define f_without_let(x: *Int, y: *Int) : *Int {
+  #entry:
+    n0 : *Int = load &x
+    n1 : *Int = load &y
+    n2 : *Int = load &I
+    ret plus(n0,mult(n1,n2))
+}
+
+define f_with_let(x: *Int, y: *Int) : *Int {
+  #entry:
+    n3 = &x
+    n0 : *Int = load n3
+    n4 = &y
+    n1 : *Int = load n4
+    n5 = &I
+    n2 : *Int = load n5
+    n7 = mult(n1,n2)
+    n8 = plus(n0,n7)
+    ret n8
+}

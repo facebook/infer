@@ -12,60 +12,51 @@ let%test_module _ =
     open Fol
     open Context
 
-    let () = Trace.init ~margin:68 ()
+    let () = Dbg.init ~margin:68 ()
 
     (* let () =
-     *   Trace.init ~margin:160
+     *   Dbg.init ~margin:160
      *     ~config:
-     *       (Trace.parse
+     *       (Dbg.parse_exn
      *          "+Fol+Context-Context.canon-Context.canon_f-Context.norm" )
      *     () *)
 
-    [@@@warning "-32"]
+    [@@@warning "-unused-value-declaration"]
 
+    let vx = ref Var.Context.empty
+
+    let var name =
+      let x_ = Var.Fresh.var name vx in
+      (x_, Term.var x_)
+
+    let of_eqs l =
+      List.fold l empty ~f:(fun (a, b) r -> add (Formula.eq a b) r vx)
+
+    let add_eq a b r = add (Formula.eq a b) r vx
+    let union r s = union r s vx
+    let inter r s = inter r s vx
+    let implies_eq r a b = implies r (Formula.eq a b)
+    let difference x e f = Term.get_z (normalize x (Term.sub e f))
     let printf pp = Format.printf "@\n%a@." pp
     let pp_raw = printf pp_raw
     let pp = Format.printf "@\n@[<hv>  %a@]@." pp
-    let ( ! ) i = Term.integer (Z.of_int i)
+    let i n = Term.integer (Z.of_int n)
     let ( + ) = Term.add
     let ( - ) = Term.sub
     let ( * ) i e = Term.mulq (Q.of_int i) e
-    let wrt = Var.Set.empty
-    let t_, wrt = Var.fresh "t" ~wrt
-    let u_, wrt = Var.fresh "u" ~wrt
-    let v_, wrt = Var.fresh "v" ~wrt
-    let w_, wrt = Var.fresh "w" ~wrt
-    let x_, wrt = Var.fresh "x" ~wrt
-    let y_, wrt = Var.fresh "y" ~wrt
-    let z_, wrt = Var.fresh "z" ~wrt
-    let t = Term.var t_
-    let u = Term.var u_
-    let v = Term.var v_
-    let w = Term.var w_
-    let x = Term.var x_
-    let y = Term.var y_
-    let z = Term.var z_
+    let t_, t = var "t"
+    let u_, u = var "u"
+    let v_, v = var "v"
+    let w_, w = var "w"
+    let x_, x = var "x"
+    let y_, y = var "y"
+    let z_, z = var "z"
     let f x = Term.apply (Uninterp "f") [|x|]
     let g x y = Term.apply (Uninterp "g") [|x; y|]
 
-    let of_eqs l =
-      List.fold
-        ~f:(fun (a, b) (us, r) -> add us (Formula.eq a b) r)
-        l (wrt, empty)
-      |> snd
-
-    let add_eq a b r = add wrt (Formula.eq a b) r |> snd
-    let union r s = union wrt r s |> snd
-
-    let inter r s =
-      interN wrt [(Var.Set.empty, r); (Var.Set.empty, s)] |> snd
-
-    let implies_eq r a b = implies r (Formula.eq a b)
-    let difference x e f = Term.get_z (normalize x (Term.sub e f))
-
     (** tests *)
 
-    let f1 = of_eqs [(!0, !1)]
+    let f1 = of_eqs [(i 0, i 1)]
 
     let%test _ = is_unsat f1
 
@@ -73,9 +64,9 @@ let%test_module _ =
       pp_raw f1 ;
       [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
-    let%test _ = is_unsat (add_eq !1 !1 f1)
+    let%test _ = is_unsat (add_eq (i 1) (i 1) f1)
 
-    let f2 = of_eqs [(x, x + !1)]
+    let f2 = of_eqs [(x, x + i 1)]
 
     let%test _ = is_unsat f2
 
@@ -83,7 +74,7 @@ let%test_module _ =
       pp_raw f2 ;
       [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
-    let f3 = of_eqs [(x + !0, x + !1)]
+    let f3 = of_eqs [(x + i 0, x + i 1)]
 
     let%test _ = is_unsat f3
 
@@ -91,7 +82,7 @@ let%test_module _ =
       pp_raw f3 ;
       [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
-    let f4 = of_eqs [(x, y); (x + !0, y + !1)]
+    let f4 = of_eqs [(x, y); (x + i 0, y + i 1)]
 
     let%test _ = is_unsat f4
 
@@ -101,7 +92,7 @@ let%test_module _ =
         {|
           { sat= false; rep= [[%y_6 ↦ %x_5]]; cls= [[%x_5 ↦ {%y_6}]]; use= [] } |}]
 
-    let t1 = of_eqs [(!1, !1)]
+    let t1 = of_eqs [(i 1, i 1)]
 
     let%test _ = is_empty t1
 
@@ -122,7 +113,7 @@ let%test_module _ =
       [%expect {| tt |}]
 
     let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
-    let%test _ = difference r0 !4 !3 |> Poly.equal (Some (Z.of_int 1))
+    let%test _ = difference r0 (i 4) (i 3) |> Poly.equal (Some (Z.of_int 1))
 
     let r1 = of_eqs [(x, y)]
 
@@ -219,7 +210,7 @@ let%test_module _ =
     let%test _ = implies_eq r3 x z
     let%test _ = implies_eq (union r2 r3) x z
 
-    let r4 = of_eqs [(w + !2, x - !3); (x - !5, y + !7); (y, z - !4)]
+    let r4 = of_eqs [(w + i 2, x - i 3); (x - i 5, y + i 7); (y, z - i 4)]
 
     let%expect_test _ =
       pp r4 ;
@@ -237,14 +228,14 @@ let%test_module _ =
               [(%z_7 + 8) ↦ {%x_5}]];
         use= [[%z_7 ↦ (%z_7 - 4), (%z_7 + 3), (%z_7 + 8)]] } |}]
 
-    let%test _ = implies_eq r4 x (w + !5)
+    let%test _ = implies_eq r4 x (w + i 5)
     let%test _ = difference r4 x w |> Poly.equal (Some (Z.of_int 5))
 
     let r5 = of_eqs [(x, y); (g w x, y); (g w y, f z)]
 
     let%test _ = Var.Set.equal (fv r5) (Var.Set.of_list [w_; x_; y_; z_])
 
-    let r6 = of_eqs [(x, !1); (!1, y)]
+    let r6 = of_eqs [(x, i 1); (i 1, y)]
 
     let%expect_test _ =
       pp r6 ;
@@ -296,7 +287,7 @@ let%test_module _ =
     let%test _ =
       implies_eq (of_eqs [(g w x, g y w); (x, z)]) (g w x) (g w z)
 
-    let r8 = of_eqs [(x + !42, (3 * y) + (13 * z)); (13 * z, x)]
+    let r8 = of_eqs [(x + i 42, (3 * y) + (13 * z)); (13 * z, x)]
 
     let%expect_test _ =
       pp r8 ;
@@ -310,9 +301,9 @@ let%test_module _ =
         cls= [[14 ↦ {%y_6}]; [13×%z_7 ↦ {%x_5}]];
         use= [[%z_7 ↦ (3×%y_6 + 13×%z_7 - 42), 13×%z_7]] } |}]
 
-    let%test _ = implies_eq r8 y !14
+    let%test _ = implies_eq r8 y (i 14)
 
-    let r9 = of_eqs [(x, z - !16)]
+    let r9 = of_eqs [(x, z - i 16)]
 
     let%expect_test _ =
       pp_raw r9 ;
@@ -329,17 +320,17 @@ let%test_module _ =
         cls= [[(%z_7 - 16) ↦ {%x_5}]];
         use= [[%z_7 ↦ (%z_7 - 16)]] } |}]
 
-    let%test _ = difference r9 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
+    let%test _ = difference r9 z (x + i 8) |> Poly.equal (Some (Z.of_int 8))
 
-    let r10 = of_eqs [(!16, z - x)]
+    let r10 = of_eqs [(i 16, z - x)]
 
     let%expect_test _ =
       pp_raw r10 ;
       pp_raw r10 ;
-      Format.printf "@.%a@." Term.pp (z - (x + !8)) ;
-      Format.printf "@.%a@." Term.pp (normalize r10 (z - (x + !8))) ;
-      Format.printf "@.%a@." Term.pp (x + !8 - z) ;
-      Format.printf "@.%a@." Term.pp (normalize r10 (x + !8 - z)) ;
+      Format.printf "@.%a@." Term.pp (z - (x + i 8)) ;
+      Format.printf "@.%a@." Term.pp (normalize r10 (z - (x + i 8))) ;
+      Format.printf "@.%a@." Term.pp (x + i 8 - z) ;
+      Format.printf "@.%a@." Term.pp (normalize r10 (x + i 8 - z)) ;
       [%expect
         {|
         { sat= true;
@@ -360,18 +351,18 @@ let%test_module _ =
     
         -8 |}]
 
-    let%test _ = difference r10 z (x + !8) |> Poly.equal (Some (Z.of_int 8))
+    let%test _ = difference r10 z (x + i 8) |> Poly.equal (Some (Z.of_int 8))
 
     let%test _ =
-      difference r10 (x + !8) z |> Poly.equal (Some (Z.of_int (-8)))
+      difference r10 (x + i 8) z |> Poly.equal (Some (Z.of_int (-8)))
 
-    let r11 = of_eqs [(!16, z - x); (x + !8 - z, z - !16 + !8 - z)]
+    let r11 = of_eqs [(i 16, z - x); (x + i 8 - z, z - i 16 + i 8 - z)]
 
     let%expect_test _ =
       pp r11 ;
       [%expect {| (%z_7 - 16) = %x_5 |}]
 
-    let r12 = of_eqs [(!16, z - x); (x + !8 - z, z + !16 + !8 - z)]
+    let r12 = of_eqs [(i 16, z - x); (x + i 8 - z, z + i 16 + i 8 - z)]
 
     let%expect_test _ =
       pp r12 ;
@@ -379,8 +370,8 @@ let%test_module _ =
 
     let r13 =
       of_eqs
-        [ (Formula.inject (Formula.eq x !2), y)
-        ; (Formula.inject (Formula.dq x !2), z)
+        [ (Formula.inject (Formula.eq x (i 2)), y)
+        ; (Formula.inject (Formula.dq x (i 2)), z)
         ; (y, z) ]
 
     let%expect_test _ =
@@ -391,8 +382,8 @@ let%test_module _ =
 
     let%test _ = not (is_unsat r13) (* incomplete *)
 
-    let a = Formula.inject (Formula.dq x !0)
-    let r14 = of_eqs [(a, a); (x, !1)]
+    let a = Formula.inject (Formula.dq x (i 0))
+    let r14 = of_eqs [(a, a); (x, i 1)]
 
     let%expect_test _ =
       pp_raw r14 ;
@@ -402,8 +393,8 @@ let%test_module _ =
 
     let%test _ = implies_eq r14 a (Formula.inject Formula.tt)
 
-    let b = Formula.inject (Formula.dq y !0)
-    let r14 = of_eqs [(a, b); (x, !1)]
+    let b = Formula.inject (Formula.dq y (i 0))
+    let r14 = of_eqs [(a, b); (x, i 1)]
 
     let%expect_test _ =
       pp_raw r14 ;
@@ -415,8 +406,8 @@ let%test_module _ =
     (* incomplete *)
     let%test _ = not (implies_eq r14 b (Formula.inject Formula.tt))
 
-    let b = Formula.inject (Formula.dq x !0)
-    let r15 = of_eqs [(b, b); (x, !1)]
+    let b = Formula.inject (Formula.dq x (i 0))
+    let r15 = of_eqs [(b, b); (x, i 1)]
 
     let%expect_test _ =
       pp_raw r15 ;
@@ -426,7 +417,8 @@ let%test_module _ =
 
     (* f(x−1)−1=x+1, f(y)+1=y−1, y+1=x ⊢ false *)
     let r16 =
-      of_eqs [(f (x - !1) - !1, x + !1); (f y + !1, y - !1); (y + !1, x)]
+      of_eqs
+        [(f (x - i 1) - i 1, x + i 1); (f y + i 1, y - i 1); (y + i 1, x)]
 
     let%expect_test _ =
       pp_raw r16 ;
@@ -444,7 +436,7 @@ let%test_module _ =
     let%test _ = is_unsat r16
 
     (* f(x) = x, f(y) = y − 1, y = x ⊢ false *)
-    let r17 = of_eqs [(f x, x); (f y, y - !1); (y, x)]
+    let r17 = of_eqs [(f x, x); (f y, y - i 1); (y, x)]
 
     let%expect_test _ =
       pp_raw r17 ;
@@ -458,7 +450,7 @@ let%test_module _ =
     let%test _ = is_unsat r17
 
     let%expect_test _ =
-      let r18 = of_eqs [(f x, x); (f y, y - !1)] in
+      let r18 = of_eqs [(f x, x); (f y, y - i 1)] in
       pp_raw r18 ;
       pp r18 ;
       [%expect
@@ -470,7 +462,7 @@ let%test_module _ =
 
           %x_5 = f(%x_5) ∧ (%y_6 - 1) = f(%y_6) |}]
 
-    let r19 = of_eqs [(x, y + z); (x, !0); (y, !0)]
+    let r19 = of_eqs [(x, y + z); (x, i 0); (y, i 0)]
 
     let%expect_test _ =
       pp_raw r19 ;
@@ -481,9 +473,9 @@ let%test_module _ =
             cls= [[0 ↦ {%x_5, %y_6, %z_7}]];
             use= [] } |}]
 
-    let%test _ = implies_eq r19 x !0
-    let%test _ = implies_eq r19 y !0
-    let%test _ = implies_eq r19 z !0
+    let%test _ = implies_eq r19 x (i 0)
+    let%test _ = implies_eq r19 y (i 0)
+    let%test _ = implies_eq r19 z (i 0)
 
     let r20 = of_eqs [(f x, t); (x, y); (f y, u)]
 
@@ -507,12 +499,13 @@ let%test_module _ =
         Formula.(
           andN
             [ eq x y
-            ; cond ~cnd:(eq x !0) ~pos:(eq z !2) ~neg:(eq z !3)
-            ; or_ (eq w !4) (eq w !5) ])
+            ; cond ~cnd:(eq x (i 0)) ~pos:(eq z (i 2)) ~neg:(eq z (i 3))
+            ; or_ (eq w (i 4)) (eq w (i 5)) ])
       in
       printf Formula.pp f ;
       printf Formula.pp
-        (Formula.orN (Iter.to_list (Iter.map ~f:snd3 (Context.dnf f)))) ;
+        (Formula.orN
+           (Iter.to_list (Iter.map ~f:(fst >> fst) (Context.dnf f vx))) ) ;
       [%expect
         {|
         ((%x_5 = %y_6) ∧ ((5 = %w_4) ∨ (4 = %w_4))

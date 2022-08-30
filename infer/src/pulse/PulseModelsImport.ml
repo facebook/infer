@@ -6,16 +6,27 @@
  *)
 
 open! IStd
-module L = Logging
 module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 
 type arg_payload = AbstractValue.t * ValueHistory.t
 
 type model_data =
   { analysis_data: PulseSummary.t InterproceduralAnalysis.t
+  ; dispatch_call_eval_args:
+         PulseSummary.t InterproceduralAnalysis.t
+      -> PathContext.t
+      -> Ident.t * Typ.t
+      -> Exp.t
+      -> (Exp.t * Typ.t) list
+      -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+      -> Location.t
+      -> CallFlags.t
+      -> AbductiveDomain.t
+      -> Procname.t option
+      -> ExecutionDomain.t AccessResult.t list
   ; path: PathContext.t
   ; callee_procname: Procname.t
   ; location: Location.t
@@ -104,7 +115,10 @@ module Basic = struct
    fun {analysis_data= {tenv; proc_desc}; location} astate ->
     let open SatUnsat.Import in
     match
-      AbductiveDomain.summary_of_post tenv proc_desc location astate
+      AbductiveDomain.summary_of_post tenv
+        (Procdesc.get_proc_name proc_desc)
+        (Procdesc.get_attributes proc_desc)
+        location astate
       >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
       >>| AccessResult.of_summary
     with
@@ -122,7 +136,7 @@ module Basic = struct
    fun i64 {path; location; ret= ret_id, _} astate ->
     let i = IntLit.of_int64 i64 in
     let ret_addr = AbstractValue.Constants.get_int i in
-    let<+> astate = PulseArithmetic.and_eq_int ret_addr i astate in
+    let<++> astate = PulseArithmetic.and_eq_int ret_addr i astate in
     PulseOperations.write_id ret_id (ret_addr, Hist.single_call path location desc) astate
 
 
@@ -130,14 +144,14 @@ module Basic = struct
    fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value = (ret_addr, Hist.single_call path location desc) in
-    let<+> astate = PulseArithmetic.and_positive ret_addr astate in
+    let<++> astate = PulseArithmetic.and_positive ret_addr astate in
     PulseOperations.write_id ret_id ret_value astate
 
 
   let return_unknown_size ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
-    let<+> astate = PulseArithmetic.and_nonnegative ret_addr astate in
+    let<++> astate = PulseArithmetic.and_nonnegative ret_addr astate in
     PulseOperations.write_id ret_id (ret_addr, Hist.single_call path location desc) astate
 
 
@@ -153,7 +167,7 @@ module Basic = struct
     let formals_opt =
       IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
-    let<+> astate =
+    let<++> astate =
       PulseCallOperations.unknown_call path location (Model skip_reason) (Some callee_procname) ~ret
         ~actuals ~formals_opt astate
     in
@@ -173,22 +187,30 @@ module Basic = struct
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
 
-  let call_destructor {ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access; typ} : model =
-   fun {analysis_data= {tenv; proc_desc; analyze_dependency}; path; location; ret} astate ->
+  let call_destructor
+      ({ProcnameDispatcher.Call.FuncArg.arg_payload= _; exp; typ} as deleted_arg :
+        (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t ) : model =
+   fun ({analysis_data; dispatch_call_eval_args; path; location; ret} : model_data) astate ->
     (* TODO: lookup dynamic type; currently not set in C++, should update model of [new] *)
     match typ.Typ.desc with
     | Typ.Tptr ({desc= Tstruct class_name}, _) -> (
-      match Tenv.find_cpp_destructor tenv class_name with
+      match Tenv.find_cpp_destructor analysis_data.tenv class_name with
       | None ->
-          L.d_printfln "No destructor found for class %a@\n" Typ.Name.pp class_name ;
+          Logging.d_printfln "No destructor found for class %a@\n" Typ.Name.pp class_name ;
           ok_continue astate
       | Some destructor ->
-          L.d_printfln "Found destructor for class %a@\n" Typ.Name.pp class_name ;
-          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
-            ~callee_data:(analyze_dependency destructor) location destructor ~ret
-            ~actuals:[(deleted_access, typ)] ~formals_opt:None ~call_kind:`ResolvedProcname astate )
+          let callflags : CallFlags.t =
+            { cf_assign_last_arg= false
+            ; cf_injected_destructor= true
+            ; cf_interface= false
+            ; cf_is_objc_block= false
+            ; cf_virtual= false }
+          in
+          dispatch_call_eval_args analysis_data path ret exp
+            [(exp, typ)]
+            [deleted_arg] location callflags astate (Some destructor) )
     | _ ->
-        L.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
+        Logging.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
           (Typ.pp_desc (Pp.html Black))
           typ.Typ.desc ;
         ok_continue astate
@@ -199,7 +221,7 @@ module Basic = struct
    fun ({path; location} as model_data) astate ->
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
     let astates_alloc =
-      let<*> astate = PulseArithmetic.and_positive (fst deleted_access) astate in
+      let<**> astate = PulseArithmetic.prune_positive (fst deleted_access) astate in
       let astates =
         match operation with
         | `Free ->
@@ -230,23 +252,38 @@ module Basic = struct
           | ISLLatentMemoryError _ ->
               [Ok exec_state] )
     in
-    let astate_zero = PulseArithmetic.prune_eq_zero (fst deleted_access) astate |> map_continue in
-    astate_zero :: astates_alloc
+    let astate_zero =
+      PulseArithmetic.prune_eq_zero (fst deleted_access) astate
+      >>|| ExecutionDomain.continue |> SatUnsat.to_list
+    in
+    astate_zero @ astates_alloc
+
+
+  let get_malloced_object_type (exp : Exp.t) =
+    match exp with
+    | BinOp (Mult _, Sizeof {typ}, _) | BinOp (Mult _, _, Sizeof {typ}) | Sizeof {typ} ->
+        Some typ
+    | _ ->
+        None
 
 
   let set_uninitialized tenv path size_exp_opt location ret_value astate =
-    Option.value_map size_exp_opt ~default:astate ~f:(fun size_exp ->
-        BufferOverrunModels.get_malloc_info_opt size_exp
-        |> Option.value_map ~default:astate ~f:(fun (obj_typ, _, _, _) ->
-               AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location
-                 astate ) )
+    (let open IOption.Let_syntax in
+    let+ obj_typ = size_exp_opt >>= get_malloced_object_type in
+    AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location astate)
+    |> Option.value ~default:astate
 
 
   let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
-      {analysis_data= {tenv}; location; path; callee_procname; ret= ret_id, _} astate =
+      {analysis_data= {tenv}; location; path; callee_procname; ret= ret_id, ret_typ} astate =
     let ret_addr = AbstractValue.mk_fresh () in
     let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
     let ret_alloc_hist = Hist.single_alloc path location desc in
+    let astate =
+      let typ = if Typ.is_pointer ret_typ then Typ.strip_ptr ret_typ else ret_typ in
+      PulseTaintOperations.taint_allocation tenv path location ~typ_desc:typ.desc ~alloc_desc:desc
+        ~allocator ret_addr astate
+    in
     let astate =
       match size_exp_opt with
       | Some (Exp.Sizeof {typ}) ->
@@ -286,7 +323,7 @@ module Basic = struct
       was called. *)
   let assert_ {ProcnameDispatcher.Call.FuncArg.exp= condition} : model =
    fun {path; location} astate ->
-    let<+> astate, _ = PulseOperations.prune path location ~condition astate in
+    let<++> astate, _ = PulseOperations.prune path location ~condition astate in
     astate
 
 

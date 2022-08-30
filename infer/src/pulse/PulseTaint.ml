@@ -9,31 +9,49 @@ open! IStd
 module F = Format
 
 module Kind = struct
-  type t = string [@@deriving compare]
+  type t = string [@@deriving compare, equal]
 
-  (** Taint "kinds" are user-configurable and thus represented as strings. This hash table is here
-      to make sure we only store one copy of each kind. *)
-  let kind_hashconser = Hashtbl.create (module String)
+  type kind_info = {name: string; is_data_flow_only: bool}
 
-  let of_string s = Hashtbl.find_or_add kind_hashconser s ~default:(fun () -> s)
+  (** Taint "kinds" are user-configurable and thus represented as strings. This hash table ensures
+      we only store one copy of each kind. It also identifies which kinds are designated for data
+      flow reporting only. *)
+  let all_kinds = Hashtbl.create (module String)
 
-  (* [phys_equal] is enough as kinds are hashcons'd *)
-  let equal k1 k2 = phys_equal k1 k2
+  let of_string name =
+    (* use [all_kinds] to do a weak hashconsing and try to keep only one version of each string
+       around. This does not ensure we always get the same representative for each string because
+       kinds get marshalled in and out of summaries, which does not maintain physical equality
+       between equal kinds *)
+    (Hashtbl.find_or_add all_kinds name ~default:(fun () -> {name; is_data_flow_only= false})).name
 
-  let pp = F.pp_print_string
 
-  let hash = String.hash
+  let hash kind = String.hash kind
 
-  let sexp_of_t = String.sexp_of_t
+  let sexp_of_t kind = String.sexp_of_t kind
+
+  let mark_data_flow_only name =
+    Hashtbl.update all_kinds name ~f:(fun _ -> {name; is_data_flow_only= true})
+
+
+  let is_data_flow_only name =
+    Hashtbl.find all_kinds name |> Option.exists ~f:(fun {is_data_flow_only} -> is_data_flow_only)
+
+
+  let pp fmt kind =
+    F.fprintf fmt "%s%s" kind (if is_data_flow_only kind then " (data flow only)" else "")
 end
 
-type origin = Argument of {index: int} | ReturnValue [@@deriving compare, equal]
+type origin = Argument of {index: int} | ReturnValue | Allocation of {typ: string}
+[@@deriving compare, equal]
 
 let pp_origin fmt = function
   | Argument {index} ->
       F.fprintf fmt "passed as argument #%d to" index
   | ReturnValue ->
       F.fprintf fmt "value returned from"
+  | Allocation {typ} ->
+      F.fprintf fmt "allocation of type %s by" typ
 
 
 type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]

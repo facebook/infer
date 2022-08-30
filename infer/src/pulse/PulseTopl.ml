@@ -9,12 +9,12 @@ open! IStd
 open PulseBasicInterface
 module L = Logging
 
-type value = AbstractValue.t [@@deriving compare]
+type value = AbstractValue.t [@@deriving compare, equal]
 
 type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
   | Call of {return: value option; arguments: value list; procname: Procname.t}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
 
@@ -27,11 +27,11 @@ let pp_event f = function
         (pp_comma_seq AbstractValue.pp) arguments
 
 
-type vertex = ToplAutomaton.vindex [@@deriving compare]
+type vertex = ToplAutomaton.vindex [@@deriving compare, equal]
 
-type register = ToplAst.register_name [@@deriving compare]
+type register = ToplAst.register_name [@@deriving compare, equal]
 
-type configuration = {vertex: vertex; memory: (register * value) list} [@@deriving compare]
+type configuration = {vertex: vertex; memory: (register * value) list} [@@deriving compare, equal]
 
 type substitution = (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
 
@@ -60,11 +60,9 @@ let sub_list : 'a substitutor -> 'a list substitutor =
 module Constraint : sig
   type predicate
 
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
-  type operand = PathCondition.operand
-
-  val make : Binop.t -> operand -> operand -> predicate
+  val make : Binop.t -> Formula.operand -> Formula.operand -> predicate
 
   val true_ : t
 
@@ -86,15 +84,13 @@ module Constraint : sig
 
   val substitute : t substitutor
 
-  val prune_path : t -> PathCondition.t -> PathCondition.t
+  val prune_path : t -> Formula.t -> Formula.t SatUnsat.t
 
   val pp : Format.formatter -> t -> unit
 end = struct
-  type predicate = Binop.t * PathCondition.operand * PathCondition.operand [@@deriving compare]
+  type predicate = Binop.t * Formula.operand * Formula.operand [@@deriving compare, equal]
 
-  type t = predicate list [@@deriving compare]
-
-  type operand = PathCondition.operand
+  type t = predicate list [@@deriving compare, equal]
 
   let make binop lhs rhs = (binop, lhs, rhs)
 
@@ -142,7 +138,7 @@ end = struct
   let size constr = List.length constr
 
   let substitute_predicate (sub, predicate) =
-    let avo x : PathCondition.operand = AbstractValueOperand x in
+    let avo x : Formula.operand = AbstractValueOperand x in
     match (predicate : predicate) with
     | op, AbstractValueOperand l, AbstractValueOperand r ->
         let sub, l = sub_value (sub, l) in
@@ -161,13 +157,11 @@ end = struct
   let substitute = sub_list substitute_predicate
 
   let prune_path constr path_condition =
+    let open SatUnsat.Import in
     let f path_condition (op, l, r) =
-      let path_condition, _new_eqs =
-        PathCondition.prune_binop ~negated:false op l r path_condition
-      in
-      path_condition
+      Formula.prune_binop ~negated:false op l r path_condition >>| fst
     in
-    List.fold ~init:path_condition ~f constr
+    SatUnsat.list_fold ~init:path_condition ~f constr
 
 
   let pp_predicate f (op, l, r) =
@@ -190,7 +184,7 @@ end = struct
     List.filter ~f:is_live_predicate constr
 end
 
-type predicate = Binop.t * PathCondition.operand * PathCondition.operand [@@deriving compare]
+type predicate = Binop.t * Formula.operand * Formula.operand [@@deriving compare]
 
 type step =
   { step_location: Location.t
@@ -203,10 +197,8 @@ and simple_state =
   { pre: configuration  (** at the start of the procedure *)
   ; post: configuration  (** at the current program point *)
   ; pruned: Constraint.t  (** path-condition for the automaton *)
-  ; last_step: step option [@compare.ignore]  (** for trace error reporting *) }
-[@@deriving compare]
-
-let equal_simple_state = [%compare.equal: simple_state]
+  ; last_step: step option [@ignore]  (** for trace error reporting *) }
+[@@deriving compare, equal]
 
 (* TODO: include a hash of the automaton in a summary to avoid caching problems. *)
 (* TODO: limit the number of simple_states to some configurable number (default ~5) *)
@@ -274,7 +266,7 @@ let binop_to : ToplAst.binop -> Binop.t = function
 
 
 let eval_guard memory tcontext guard : Constraint.t =
-  let operand_of_value (value : ToplAst.value) : PathCondition.operand =
+  let operand_of_value (value : ToplAst.value) : Formula.operand =
     match value with
     | Constant (LiteralInt x) ->
         ConstOperand (Cint (IntLit.of_int x))
@@ -292,7 +284,7 @@ let eval_guard memory tcontext guard : Constraint.t =
         Constraint.and_predicate (Constraint.make binop l r) pruned
     | Value v ->
         let v = operand_of_value v in
-        let one = PathCondition.ConstOperand (Cint IntLit.one) in
+        let one = Formula.ConstOperand (Cint IntLit.one) in
         Constraint.and_predicate (Constraint.make Binop.Ne v one) pruned
   in
   List.fold ~init:Constraint.true_ ~f:conjoin_predicate guard
@@ -411,18 +403,17 @@ let static_match event : (ToplAutomaton.transition * tcontext) list =
   ToplAutomaton.tfilter_mapi (Topl.automaton ()) ~f:match_one
 
 
-let is_unsat_cheap path_condition pruned =
-  PathCondition.is_unsat_cheap (Constraint.prune_path pruned path_condition)
+let is_unsat = function SatUnsat.Unsat -> true | SatUnsat.Sat _ -> false
 
+let is_unsat_cheap path_condition pruned = Constraint.prune_path pruned path_condition |> is_unsat
 
 let default_tenv = Tenv.create ()
 
 let is_unsat_expensive ~get_dynamic_type path_condition pruned =
-  let _path_condition, unsat, _new_eqs =
-    PathCondition.is_unsat_expensive default_tenv ~get_dynamic_type
-      (Constraint.prune_path pruned path_condition)
-  in
-  unsat
+  let open SatUnsat.Import in
+  Constraint.prune_path pruned path_condition
+  >>= Formula.normalize default_tenv ~get_dynamic_type
+  |> is_unsat
 
 
 let drop_infeasible ?(expensive = false) ~get_dynamic_type ~path_condition state =
@@ -584,7 +575,7 @@ let large_step ~call_location ~callee_proc_name ~substitution ~keep ~get_dynamic
         (* Update the substitution, matching formals with actuals. We work a bit to avoid introducing
            equalities, because a growing [pruned] leads to quadratic behaviour. *)
         let mk_eq val1 val2 =
-          let op x = PathCondition.AbstractValueOperand x in
+          let op x = Formula.AbstractValueOperand x in
           Constraint.make Binop.Eq (op val1) (op val2)
         in
         let f (sub, eqs) (reg1, val1) (reg2, val2) =
@@ -646,10 +637,10 @@ let report_errors proc_desc err_log state =
           match step_data with
           | SmallStep _ ->
               trace_element :: trace
-          | LargeStep (_, {last_step= None}) ->
-              trace (* skip trivial large steps (i.e., those with no steps) *)
           | LargeStep (_, qq) ->
-              trace_element :: make_trace (nesting + 1) trace qq
+              let new_trace = make_trace (nesting + 1) trace qq in
+              (* Skip trivial large steps (those with no substeps) *)
+              if phys_equal new_trace trace then trace else trace_element :: new_trace
         in
         make_trace nesting trace step_predecessor
   in
@@ -677,7 +668,7 @@ let report_errors proc_desc err_log state =
       if not (is_nested_large_step q) then
         let loc = Procdesc.get_loc proc_desc in
         let ltr = make_trace 0 [] q in
-        let message = Format.asprintf "%a" ToplAutomaton.pp_message_of_state (a, q.post.vertex) in
+        let message = ToplAutomaton.message a q.post.vertex in
         Reporting.log_issue proc_desc err_log ~loc ~ltr Topl IssueType.topl_error message
   in
   List.iter ~f:report_simple_state state

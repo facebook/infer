@@ -51,7 +51,7 @@ let sigma_get_start_lexps_sort sigma =
 
 (** {2 Utility functions for side} *)
 
-type side = Lhs | Rhs [@@deriving compare]
+type side = Lhs | Rhs [@@deriving compare, equal]
 
 let select side e1 e2 = match side with Lhs -> e1 | Rhs -> e2
 
@@ -689,11 +689,9 @@ end = struct
 
 
   module SideExpPairHash = Hashtbl.Make (struct
-    type t = side * Exp.t [@@deriving compare]
+    type t = side * Exp.t [@@deriving compare, equal]
 
     let hash = Hashtbl.hash
-
-    let equal = [%compare.equal: t]
   end)
 
   (* Each triple (L,R,U) in !tbl gives rise to an edge (Lhs,L)--(Rhs,R)
@@ -1127,11 +1125,11 @@ and dynamic_length_partial_join l1 l2 =
 and typ_partial_join (t1 : Typ.t) (t2 : Typ.t) =
   match (t1.desc, t2.desc) with
   | Typ.Tptr (t1, pk1), Typ.Tptr (t2, pk2)
-    when Typ.equal_ptr_kind pk1 pk2 && Typ.equal_quals t1.quals t2.quals ->
+    when Typ.equal_ptr_kind pk1 pk2 && Typ.equal_type_quals t1.quals t2.quals ->
       Typ.mk ~default:t1 (Tptr (typ_partial_join t1 t2, pk1)) (* quals are the same for t1 and t2 *)
   | ( Typ.Tarray {elt= typ1; length= len1; stride= stride1}
     , Typ.Tarray {elt= typ2; length= len2; stride= stride2} )
-    when Typ.equal_quals typ1.quals typ2.quals ->
+    when Typ.equal_type_quals typ1.quals typ2.quals ->
       let elt = typ_partial_join typ1 typ2 in
       let length = static_length_partial_join len1 len2 in
       let stride = static_length_partial_join stride1 stride2 in

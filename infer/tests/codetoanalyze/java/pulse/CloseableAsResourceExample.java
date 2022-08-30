@@ -117,7 +117,10 @@ public class CloseableAsResourceExample {
     s.mR.close();
   } // should report a resource leak
 
-  void noNeedToCloseStringReader() {
+  void needToCloseStringReaderBad() {
+    // The need for closing a StringReader is a bit controversial
+    // between Java programmers. But not closing it would violate
+    // the spec of the interface java.io.Reader anyway
     StringReader stringReader = new StringReader("paf!");
   }
 

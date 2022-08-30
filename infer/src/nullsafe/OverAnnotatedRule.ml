@@ -7,7 +7,7 @@
 open! IStd
 
 type violation = {declared_nullability: Nullability.t; can_be_narrowed_to: Nullability.t}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let check ~what ~by_rhs_upper_bound =
   match (what, by_rhs_upper_bound) with
@@ -28,7 +28,7 @@ let check ~what ~by_rhs_upper_bound =
 type violation_type =
   | FieldOverAnnoted of Fieldname.t
   | ReturnOverAnnotated of Procname.Java.t  (** Return value of a method can be made non-nullable *)
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let violation_description _ violation_type =
   let module MF = MarkupFormatter in

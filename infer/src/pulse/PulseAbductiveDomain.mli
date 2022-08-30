@@ -11,6 +11,7 @@ module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
 module BaseStack = PulseBaseStack
 module Decompiler = PulseDecompiler
+module DecompilerExpr = PulseDecompilerExpr
 module PathContext = PulsePathContext
 
 (** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
@@ -40,7 +41,7 @@ module PreDomain : BaseDomainSig
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
   ; pre: PreDomain.t  (** inferred procedure pre-condition leading to the current program point *)
-  ; path_condition: PathCondition.t
+  ; path_condition: Formula.t
         (** arithmetic facts true along the path (holding for both [pre] and [post] since abstract
             values are immutable) *)
   ; decompiler: Decompiler.t
@@ -56,7 +57,7 @@ val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val mk_initial : Tenv.t -> Procdesc.t -> t
+val mk_initial : Tenv.t -> Procname.t -> ProcAttributes.t -> t
 
 val get_pre : t -> BaseDomain.t
 
@@ -154,16 +155,25 @@ module AddressAttributes : sig
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
+  val remove_taint_attrs : AbstractValue.t -> t -> t
+
+  val get_dynamic_type : AbstractValue.t -> t -> Typ.t option
+
   val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
 
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
-  val get_copied_var : AbstractValue.t -> t -> Var.t option
+  val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
+
+  val get_must_be_valid :
+       AbstractValue.t
+    -> t
+    -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
   val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
-  val get_taint_source_and_sanitizer :
-    AbstractValue.t -> t -> ((Taint.t * ValueHistory.t * bool) * Taint.t option) option
+  val get_taint_sources_and_sanitizers :
+    AbstractValue.t -> t -> Attribute.TaintedSet.t * Attribute.TaintSanitizedSet.t
 
   val get_propagate_taint_from : AbstractValue.t -> t -> Attribute.taint_in list option
 
@@ -191,6 +201,8 @@ module AddressAttributes : sig
        list
 end
 
+val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
+
 val apply_unknown_effect :
      ?havoc_filter:(AbstractValue.t -> BaseMemory.Access.t -> BaseMemory.AddrTrace.t -> bool)
   -> ValueHistory.t
@@ -215,7 +227,7 @@ val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
-val set_path_condition : PathCondition.t -> t -> t
+val set_path_condition : Formula.t -> t -> t
 
 val set_need_specialization : t -> t
 
@@ -236,15 +248,16 @@ val summary_with_need_specialization : summary -> summary
 
 val summary_of_post :
      Tenv.t
-  -> Procdesc.t
+  -> Procname.t
+  -> ProcAttributes.t
   -> Location.t
   -> t
   -> ( summary
      , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
-       | `RetainCycle of summary * Trace.t list * Decompiler.expr * Decompiler.expr * Location.t
+       | `RetainCycle of summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
        | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
        | `PotentialInvalidAccessSummary of
-         summary * Decompiler.expr * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+         summary * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
      SatUnsat.t
 (** Trim the state down to just the procedure's interface (formals and globals), and simplify and
@@ -257,18 +270,18 @@ val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Locat
 (** directly set the edges and attributes for the given address, bypassing abduction altogether *)
 
 val incorporate_new_eqs :
-     PathCondition.new_eqs
+     Formula.new_eqs
   -> t
   -> ( t
      , [> `PotentialInvalidAccess of
           t * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
      result
+     SatUnsat.t
 (** Check that the new equalities discovered are compatible with the current pre and post heaps,
     e.g. [x = 0] is not compatible with [x] being allocated, and [x = y] is not compatible with [x]
-    and [y] being allocated separately. In those cases, the resulting path condition is
-    {!PathCondition.false_}. *)
+    and [y] being allocated separately. In those cases, the result is [Unsat]. *)
 
-val incorporate_new_eqs_on_val : PathCondition.new_eqs -> AbstractValue.t -> AbstractValue.t
+val incorporate_new_eqs_on_val : Formula.new_eqs -> AbstractValue.t -> AbstractValue.t
 (** Similar to [incorporate_new_eqs], but apply to an abstract value. *)
 
 val initialize : AbstractValue.t -> t -> t
@@ -286,6 +299,9 @@ val set_uninitialized :
   -> t
 (** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
 
+val is_heap_allocated : t -> AbstractValue.t -> bool
+(** whether the abstract value provided has edges in the pre or post heap *)
+
 module Topl : sig
   val small_step : Location.t -> keep:AbstractValue.Set.t -> PulseTopl.event -> t -> t
 
@@ -294,7 +310,7 @@ module Topl : sig
     -> callee_proc_name:Procname.t
     -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
     -> keep:AbstractValue.Set.t
-    -> path_condition:PathCondition.t
+    -> path_condition:Formula.t
     -> callee_prepost:PulseTopl.state
     -> t
     -> t

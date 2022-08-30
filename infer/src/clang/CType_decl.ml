@@ -107,9 +107,10 @@ module BuildMethodSignature = struct
             |> qual_type_to_sil_type tenv
           in
           let is_pointer_to_const = CType.is_pointer_to_const qt in
+          let is_reference = CType.is_reference_type qt in
           let is_no_escape_block_arg = CAst_utils.is_no_escape_block_arg par in
           let annot = CAst_utils.sil_annot_of_type qt in
-          CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~annot
+          CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~is_reference ~annot
             ~is_no_escape_block_arg
       | _ ->
           raise CFrontend_errors.Invalid_declaration
@@ -223,8 +224,8 @@ let get_struct_decls decl =
   let open Clang_ast_t in
   match decl with
   | CapturedDecl (_, decl_list, _)
-  | ClassTemplatePartialSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
-  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | ClassTemplatePartialSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _, _)
   | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
   | EnumDecl (_, _, _, decl_list, _, _, _)
   | LinkageSpecDecl (_, decl_list, _)
@@ -337,7 +338,7 @@ let get_superclass_decls decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info)
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info, _, _) ->
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info, _, _, _) ->
       (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
       let get_decl_or_fail typ_ptr =
@@ -372,14 +373,14 @@ let get_translate_as_friend_decl decl_list =
     match get_friend_decl_opt decl with
     | Some decl ->
         let named_decl_tuple_opt = Clang_ast_proj.get_named_decl_tuple decl in
-        Option.value_map ~f:is_translate_as_friend_name ~default:false named_decl_tuple_opt
+        Option.exists ~f:is_translate_as_friend_name named_decl_tuple_opt
     | None ->
         false
   in
   match get_friend_decl_opt (List.find_exn ~f:is_translate_as_friend_decl decl_list) with
   | Some
       (Clang_ast_t.ClassTemplateSpecializationDecl
-        (_, _, _, _, _, _, _, _, _, {tsi_specialization_args= [`Type t_ptr]}) ) ->
+        (_, _, _, _, _, _, _, _, _, _, {tsi_specialization_args= [`Type t_ptr]}) ) ->
       Some t_ptr
   | _ ->
       None
@@ -391,7 +392,7 @@ let get_record_definition decl =
   let open Clang_ast_t in
   match decl with
   | ClassTemplateSpecializationDecl
-      (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _, _, _)
+      (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _, _, _, _)
   | CXXRecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _)
   | RecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr})
     when (not rdi_is_complete_definition) && rdi_definition_ptr <> 0 ->
@@ -460,7 +461,7 @@ and get_record_declaration_type tenv decl =
 and get_record_friend_decl_type tenv definition_decl =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _, _)
   | CXXRecordDecl (_, _, _, decl_list, _, _, _, _) ->
       Option.map ~f:(qual_type_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _ ->
@@ -477,8 +478,8 @@ and get_record_typename ?tenv decl =
   match (decl, tenv) with
   | RecordDecl (_, name_info, _, _, _, tag_kind, _), _ ->
       CAst_utils.get_qualified_name ~linters_mode name_info |> create_c_record_typename tag_kind
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, tag_kind, _, _, mangling, spec_info), Some tenv
-    ->
+  | ( ClassTemplateSpecializationDecl (_, _, _, _, _, tag_kind, _, _, mangling, _, spec_info)
+    , Some tenv ) ->
       let tname =
         match CAst_utils.get_decl spec_info.tsi_template_decl with
         | Some dec ->
@@ -494,8 +495,8 @@ and get_record_typename ?tenv decl =
   | CXXRecordDecl (_, name_info, _, _, _, `TTK_Union, _, _), _ ->
       Typ.CUnion (CAst_utils.get_qualified_name ~linters_mode name_info)
   | CXXRecordDecl (_, name_info, _, _, _, tag_kind, _, _), _
-  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _), _
-  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _), _ ->
+  | ClassTemplatePartialSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _, _), _
+  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, tag_kind, _, _, _, _, _), _ ->
       (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
       Typ.Name.Cpp.from_qual_name Typ.NoTemplate ~is_union:(is_union_tag tag_kind)
@@ -614,17 +615,19 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
   else Procname.C (Procname.C.c name mangled parameters template_info)
 
 
-and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
+and mk_cpp_method ~is_copy_assignment ?tenv class_name method_name ?meth_decl mangled parameters =
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
-    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_copy_constructor= is_copy_ctor}))
-      ->
-        Procname.ObjC_Cpp.CPPConstructor {mangled; is_copy_ctor}
+    | Some
+        ( Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_copy_constructor= is_copy_ctor}) as
+        decl ) ->
+        let is_implicit = CAst_utils.is_implicit_decl decl in
+        Procname.ObjC_Cpp.CPPConstructor {mangled; is_copy_ctor; is_implicit}
     | Some (Clang_ast_t.CXXDestructorDecl _) ->
         Procname.ObjC_Cpp.CPPDestructor {mangled}
     | _ ->
-        Procname.ObjC_Cpp.CPPMethod {mangled}
+        Procname.ObjC_Cpp.CPPMethod {mangled; is_copy_assignment}
   in
   let template_info =
     match meth_decl with
@@ -691,7 +694,8 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
     let mangled = get_mangled_method_name fdi mdi in
     let method_name = CAst_utils.get_unqualified_name name_info in
     let class_typename = get_class_typename ?tenv decl_info in
-    mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled parameters
+    let is_copy_assignment = mdi.xmdi_is_copy_assignment in
+    mk_cpp_method ~is_copy_assignment ?tenv class_typename method_name ~meth_decl mangled parameters
   in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
@@ -738,7 +742,7 @@ and get_struct_methods struct_decl tenv =
 and get_record_struct_type tenv definition_decl : Typ.desc =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _, _)
   | CXXRecordDecl (_, _, type_ptr, _, _, _, record_decl_info, _)
   | RecordDecl (_, _, type_ptr, _, _, _, record_decl_info) -> (
       let sil_typename = get_record_typename ~tenv definition_decl in
@@ -805,29 +809,12 @@ module CProcname = struct
 
 
     let cpp_method_of_string tenv class_name method_name =
-      mk_cpp_method ~tenv class_name method_name None []
+      mk_cpp_method ~is_copy_assignment:false ~tenv class_name method_name None []
 
 
     let objc_method_of_string_kind class_name method_name method_kind =
       mk_objc_method class_name method_name method_kind []
   end
-
-  let from_decl_for_linters method_decl =
-    let open Clang_ast_t in
-    match method_decl with
-    | ObjCMethodDecl (decl_info, name_info, mdi) ->
-        let method_name =
-          match String.split ~on:':' name_info.Clang_ast_t.ni_name with
-          | hd :: _ ->
-              hd
-          | _ ->
-              name_info.Clang_ast_t.ni_name
-        in
-        objc_method_procname decl_info method_name mdi []
-    | BlockDecl _ ->
-        Procname.Block (Procname.Block.make_surrounding None Config.anonymous_block_prefix [])
-    | _ ->
-        from_decl method_decl
 end
 
 let get_type_from_expr_info ei tenv =
