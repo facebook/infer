@@ -19,6 +19,18 @@ let is_ptr_to_const formal_typ_opt =
       match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
 
 
+let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
+  if
+    (not (List.is_empty actuals))
+    && Option.value_map callee_pname_opt ~default:true ~f:(fun pname ->
+           not (Procname.is_constructor pname) )
+  then
+    AbductiveDomain.AddressAttributes.add_one ret_val
+      (ReturnedFromUnknown (List.map actuals ~f:(fun ((v, _), _) -> v)))
+      astate
+  else astate
+
+
 let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) callee_pname_opt
     ~ret ~actuals ~formals_opt ({AbductiveDomain.post} as astate) =
   let hist =
@@ -26,6 +38,8 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
       (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
   in
   let ret_val = AbstractValue.mk_fresh () in
+  (* record the [ReturnedFromUnknown] attribute from ret_v -> actuals for checking for modifications to copies *)
+  let astate = add_returned_from_unknown callee_pname_opt ret_val actuals astate in
   let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
   let astate = Decompiler.add_call_source ret_val reason actuals astate in
   (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the

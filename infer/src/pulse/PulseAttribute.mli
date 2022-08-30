@@ -83,6 +83,7 @@ type t =
   | JavaResourceReleased
   | PropagateTaintFrom of taint_in list
   | RefCounted
+  | ReturnedFromUnknown of AbstractValue.t list
   | SourceOriginOfCopy of {source: PulseAbstractValue.t; is_const_ref: bool}
       (** records the source value for a given copy to lookup the appropriate heap in non-disj
           domain *)
@@ -140,6 +141,8 @@ module Attributes : sig
   val get_tainted : t -> TaintedSet.t
 
   val get_propagate_taint_from : t -> taint_in list option
+
+  val get_returned_from_unknown : t -> AbstractValue.t list option
 
   val get_taint_sanitized : t -> TaintSanitizedSet.t
 

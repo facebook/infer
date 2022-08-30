@@ -133,6 +133,9 @@ module Attribute = struct
          retain [v1] to [vn], in fact they should be collected
          when they become unreachable *)
     | RefCounted
+    | ReturnedFromUnknown of AbstractValue.t list
+    (* [ret_v -> ReturnedFromUnknown \[v1; ..; vn\]] does not
+         retain actuals [v1] to [vn] just like PropagateTaintFrom *)
     | SourceOriginOfCopy of {source: AbstractValue.t; is_const_ref: bool}
     | StdMoved
     | StdVectorReserve
@@ -179,6 +182,8 @@ module Attribute = struct
   let propagate_taint_from_rank = Variants.propagatetaintfrom.rank
 
   let ref_counted_rank = Variants.refcounted.rank
+
+  let returned_from_unknown = Variants.returnedfromunknown.rank
 
   let std_moved_rank = Variants.stdmoved.rank
 
@@ -262,6 +267,8 @@ module Attribute = struct
         F.fprintf f "PropagateTaintFrom([%a])" (Pp.seq ~sep:";" pp_taint_in) taints_in
     | RefCounted ->
         F.fprintf f "RefCounted"
+    | ReturnedFromUnknown values ->
+        F.fprintf f "ReturnedFromUnknown([%a])" (Pp.seq ~sep:";" AbstractValue.pp) values
     | SourceOriginOfCopy {source; is_const_ref} ->
         F.fprintf f "copied of source %a" AbstractValue.pp source ;
         if is_const_ref then F.pp_print_string f " (const&)"
@@ -297,6 +304,7 @@ module Attribute = struct
     | EndOfCollection
     | JavaResourceReleased
     | PropagateTaintFrom _
+    | ReturnedFromUnknown _
     | SourceOriginOfCopy _
     | StdMoved
     | StdVectorReserve
@@ -325,6 +333,7 @@ module Attribute = struct
     | JavaResourceReleased
     | PropagateTaintFrom _
     | RefCounted
+    | ReturnedFromUnknown _
     | SourceOriginOfCopy _
     | StdMoved
     | StdVectorReserve
@@ -360,6 +369,7 @@ module Attribute = struct
     | JavaResourceReleased
     | PropagateTaintFrom _
     | RefCounted
+    | ReturnedFromUnknown _
     | StdMoved
     | StdVectorReserve
     | TaintSanitized _
@@ -395,6 +405,8 @@ module Attribute = struct
         MustNotBeTainted (TaintSinkSet.map add_call_to_sink sinks)
     | PropagateTaintFrom taints_in ->
         PropagateTaintFrom (List.map taints_in ~f:(fun {v} -> {v= subst v}))
+    | ReturnedFromUnknown values ->
+        ReturnedFromUnknown (List.map values ~f:subst)
     | Tainted tainted ->
         let add_call_to_tainted Tainted.{source; time_trace; hist; intra_procedural_only} =
           if intra_procedural_only then
@@ -452,21 +464,26 @@ module Attribute = struct
 
 
   let filter_unreachable subst f_keep attr =
+    let filter_aux values ~f_in ~f_out =
+      let values' =
+        List.fold values ~init:AbstractValue.Set.empty ~f:(fun acc v ->
+            let v = f_in v in
+            if f_keep v then AbstractValue.Set.add v acc
+            else
+              AbstractValue.Set.union
+                (Option.value ~default:AbstractValue.Set.empty (AbstractValue.Map.find_opt v subst))
+                acc )
+      in
+      if AbstractValue.Set.is_empty values' then None
+      else AbstractValue.Set.fold (fun v list -> f_out v :: list) values' [] |> Option.some
+    in
     match attr with
     | PropagateTaintFrom taints_in ->
-        let taints_in' =
-          List.fold taints_in ~init:AbstractValue.Set.empty ~f:(fun acc {v} ->
-              if f_keep v then AbstractValue.Set.add v acc
-              else
-                AbstractValue.Set.union
-                  (Option.value ~default:AbstractValue.Set.empty
-                     (AbstractValue.Map.find_opt v subst) )
-                  acc )
-        in
-        if AbstractValue.Set.is_empty taints_in' then None
-        else
-          let taints_in' = AbstractValue.Set.fold (fun v list -> {v} :: list) taints_in' [] in
-          Some (PropagateTaintFrom taints_in')
+        filter_aux taints_in ~f_in:(fun {v} -> v) ~f_out:(fun v -> {v})
+        |> Option.map ~f:(fun taints_in -> PropagateTaintFrom taints_in)
+    | ReturnedFromUnknown values ->
+        filter_aux values ~f_in:Fn.id ~f_out:Fn.id
+        |> Option.map ~f:(fun values -> ReturnedFromUnknown values)
     | MustNotBeTainted sinks when TaintSinkSet.is_empty sinks ->
         L.die InternalError "Unexpected attribute %a." pp attr
     | Tainted set when TaintedSet.is_empty set ->
@@ -561,6 +578,11 @@ module Attributes = struct
   let get_propagate_taint_from =
     get_by_rank Attribute.propagate_taint_from_rank ~dest:(function [@warning "-8"]
         | PropagateTaintFrom taints_in -> taints_in )
+
+
+  let get_returned_from_unknown =
+    get_by_rank Attribute.returned_from_unknown ~dest:(function [@warning "-8"]
+        | ReturnedFromUnknown values -> values )
 
 
   let is_java_resource_released = mem_by_rank Attribute.java_resource_released_rank
