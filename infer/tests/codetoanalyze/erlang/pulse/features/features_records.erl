@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_records).
+-include("../../common.hrl").
 
 -record(person, {name, phone, address}).
 -record(car, {plate, owner}).
@@ -75,244 +76,165 @@
     test_lyse_user_guard_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 test_index2_Ok() ->
-    case #person.name of
-        2 -> ok
-    end.
+    ?ASSERT_EQUAL(2, #person.name).
 
 test_index2_Bad() ->
-    case #person.name of
-        2 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(2, #person.name).
 
 test_index3_Ok() ->
-    case #person.phone of
-        3 -> ok
-    end.
+    ?ASSERT_EQUAL(3, #person.phone).
 
 test_index3_Bad() ->
-    case #person.phone of
-        3 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(3, #person.phone).
 
 test_index4_Ok() ->
-    case #person.address of
-        4 -> ok
-    end.
+    ?ASSERT_EQUAL(4, #person.address).
 
 test_index4_Bad() ->
-    case #person.address of
-        4 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(4, #person.address).
 
 test_field2_Ok() ->
     P = #person{name = 123, phone = 45, address = 6789},
-    case P#person.name of
-        123 -> ok
-    end.
+    ?ASSERT_EQUAL(123, P#person.name).
 
 test_field2_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
-    case P#person.name of
-        123 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(123, P#person.name).
 
 test_field3_Ok() ->
     P = #person{name = 123, phone = 45, address = 6789},
-    case P#person.phone of
-        45 -> ok
-    end.
+    ?ASSERT_EQUAL(45, P#person.phone).
 
 test_field3_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
-    case P#person.phone of
-        45 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(45, P#person.phone).
 
 test_field4_Ok() ->
     P = #person{name = 123, phone = 45, address = 6789},
-    case P#person.address of
-        6789 -> ok
-    end.
+    ?ASSERT_EQUAL(6789, P#person.address).
 
 test_field4_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
-    case P#person.address of
-        6789 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(6789, P#person.address).
 
 test_field_rearranged_Ok() ->
     % Fields are set in different order
     P = #person{phone = 45, address = 6789, name = 123},
-    case P#person.name of
-        123 -> ok
-    end.
+    ?ASSERT_EQUAL(123, P#person.name).
 
 test_field_rearranged_Bad() ->
     % Fields are set in different order
     P = #person{phone = 45, address = 6789, name = 123},
-    case P#person.name of
-        123 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(123, P#person.name).
 
 test_field_all_other1_Ok() ->
     P = #person{phone = 45, _ = 123},
-    case P#person.name of
-        123 -> ok
-    end.
+    ?ASSERT_EQUAL(123, P#person.name).
 
 test_field_all_other1_Bad() ->
     P = #person{phone = 45, _ = 123},
-    case P#person.name of
-        123 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(123, P#person.name).
 
 test_field_all_other2_Ok() ->
     P = #person{phone = 45, _ = 123},
-    case P#person.address of
-        123 -> ok
-    end.
+    ?ASSERT_EQUAL(123, P#person.address).
 
 test_field_all_other2_Bad() ->
     P = #person{phone = 45, _ = 123},
-    case P#person.address of
-        123 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(123, P#person.address).
 
 test_field_all_other3_Ok() ->
     P = #person{phone = 45, _ = 123},
-    case P#person.phone of
-        45 -> ok
-    end.
+    ?ASSERT_EQUAL(45, P#person.phone).
 
 test_field_all_other3_Bad() ->
     P = #person{phone = 45, _ = 123},
-    case P#person.phone of
-        45 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(45, P#person.phone).
 
 test_field_update1_Ok() ->
     P = #person{name = 123, phone = 45, address = 6789},
     Q = P#person{phone = 0},
-    case Q#person.phone of
-        0 -> ok
-    end.
+    ?ASSERT_EQUAL(0, Q#person.phone).
 
 test_field_update1_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     Q = P#person{phone = 0},
-    case Q#person.phone of
-        0 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(0, Q#person.phone).
 
 test_field_update2_Ok() ->
     P = #person{name = 123, phone = 45, address = 6789},
     Q = P#person{phone = 0},
-    case Q#person.name of
-        123 -> ok
-    end.
+    ?ASSERT_EQUAL(123, P#person.name).
 
 test_field_update2_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     Q = P#person{phone = 0},
-    case Q#person.name of
-        123 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(123, P#person.name).
 
 test_field_update3_Ok() ->
     P = #person{name = 123, phone = 45, address = 6789},
     Q = P#person{phone = 0},
-    case Q#person.address of
-        6789 -> ok
-    end.
+    ?ASSERT_EQUAL(6789, Q#person.address).
 
 test_field_update3_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     Q = P#person{phone = 0},
-    case Q#person.address of
-        6789 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(6789, Q#person.address).
 
 -record(rabbit, {name = 123, color = 45}).
 
 test_initializer1_Ok() ->
     R = #rabbit{},
-    case R#rabbit.name of
-        123 -> ok
-    end.
+    ?ASSERT_EQUAL(123, R#rabbit.name).
 
 test_initializer1_Bad() ->
     R = #rabbit{},
-    case R#rabbit.name of
-        123 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(123, R#rabbit.name).
 
 test_initializer2_Ok() ->
     R = #rabbit{},
-    case R#rabbit.color of
-        45 -> ok
-    end.
+    ?ASSERT_EQUAL(45, R#rabbit.color).
 
 test_initializer2_Bad() ->
     R = #rabbit{},
-    case R#rabbit.color of
-        45 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(45, R#rabbit.color).
 
 test_initializer_explicit_override_Ok() ->
     R = #rabbit{name = 6789},
-    case R#rabbit.name of
-        6789 -> ok
-    end.
+    ?ASSERT_EQUAL(6789, R#rabbit.name).
 
 test_initializer_explicit_override_Bad() ->
     R = #rabbit{name = 6789},
-    case R#rabbit.name of
-        6789 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(6789, R#rabbit.name).
 
 test_initializer_update_override_Ok() ->
     R = #rabbit{name = 987, color = 65},
     Q = R#rabbit{name = 4321},
-    case Q#rabbit.name of
-        4321 -> ok
-    end.
+    ?ASSERT_EQUAL(4321, Q#rabbit.name).
 
 test_initializer_update_override_Bad() ->
     R = #rabbit{name = 987, color = 65},
     Q = R#rabbit{name = 4321},
-    case Q#rabbit.name of
-        4321 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(4321, Q#rabbit.name).
 
 test_undefined_Ok() ->
     P = #person{},
-    case P#person.name of
-        undefined -> ok
-    end.
+    ?ASSERT_EQUAL(undefined, P#person.name).
 
 test_undefined_Bad() ->
     P = #person{},
-    case P#person.name of
-        undefined -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(undefined, P#person.name).
 
 test_nested_Ok() ->
     P = #person{name = 123, phone = 45, address = 6789},
     C = #car{plate = 987654, owner = P},
-    case C#car.owner#person.name of
-        123 -> ok
-    end.
+    ?ASSERT_EQUAL(123, C#car.owner#person.name).
 
 test_nested_Bad() ->
     P = #person{name = 123, phone = 45, address = 6789},
     C = #car{plate = 987654, owner = P},
-    case C#car.owner#person.name of
-        123 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(123, C#car.owner#person.name).
 
 %% Tests inspired from the "Learn You Some Erlang" (lyse) book
 %% https://learnyousomeerlang.com/a-short-visit-to-common-data-structures#records
@@ -326,39 +248,27 @@ test_nested_Bad() ->
 
 test_lyse_robot_default_value_atom_Ok() ->
     R = #robot{},
-    case R#robot.type of
-        industrial -> ok
-    end.
+    ?ASSERT_EQUAL(industrial, R#robot.type).
 
 test_lyse_robot_default_value_atom_Bad() ->
     R = #robot{},
-    case R#robot.type of
-        industrial -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(industrial, R#robot.type).
 
 test_lyse_robot_default_value_list_Ok() ->
     R = #robot{},
-    case R#robot.details of
-        [] -> ok
-    end.
+    ?ASSERT_EQUAL([], R#robot.details).
 
 test_lyse_robot_default_value_list_Bad() ->
     R = #robot{},
-    case R#robot.details of
-        [] -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL([], R#robot.details).
 
 test_lyse_robot_default_value_undefined_Ok() ->
     R = #robot{},
-    case R#robot.details of
-        [] -> ok
-    end.
+    ?ASSERT_EQUAL(undefined, R#robot.name).
 
 test_lyse_robot_default_value_undefined_Bad() ->
     R = #robot{},
-    case R#robot.details of
-        [] -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(undefined, R#robot.name).
 
 test_lyse_robot_default_value_override_Ok() ->
     R = #robot{
@@ -366,9 +276,7 @@ test_lyse_robot_default_value_override_Ok() ->
         type = handmade,
         details = ["Moved from the inside"]
     },
-    case {R#robot.type, R#robot.hobbies} of
-        {handmade, undefined} -> ok
-    end.
+    ?ASSERT_EQUAL({handmade, undefined}, {R#robot.type, R#robot.hobbies}).
 
 test_lyse_robot_default_value_override_Bad() ->
     R = #robot{
@@ -376,77 +284,55 @@ test_lyse_robot_default_value_override_Bad() ->
         type = handmade,
         details = ["Moved from the inside"]
     },
-    case {R#robot.type, R#robot.hobbies} of
-        {handmade, undefined} -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL({handmade, undefined}, {R#robot.type, R#robot.hobbies}).
 
 %% Probably related to string handling. See: T93361792
 fp_test_lyse_robot_nested_Ok() ->
     NestedBot = #robot{details = #robot{name = "erNest"}},
-    case (NestedBot#robot.details)#robot.name of
-        "erNest" -> ok
-    end.
+    ?ASSERT_EQUAL("erNest", (NestedBot#robot.details)#robot.name).
 
 test_lyse_robot_nested_Bad() ->
     NestedBot = #robot{details = #robot{name = "erNest"}},
-    case (NestedBot#robot.details)#robot.name of
-        "erNest" -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL("erNest", (NestedBot#robot.details)#robot.name).
 
 test_lyse_robot_nested_literals_Ok() ->
     NestedBot = #robot{details = #robot{name = "erNest"}},
-    case (NestedBot#robot.details)#robot.type of
-        industrial -> ok
-    end.
+    ?ASSERT_EQUAL(industrial, (NestedBot#robot.details)#robot.type).
 
 test_lyse_robot_nested_literals_Bad() ->
     NestedBot = #robot{details = #robot{name = "erNest"}},
-    case (NestedBot#robot.details)#robot.type of
-        industrial -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(industrial, (NestedBot#robot.details)#robot.type).
 
 test_lyse_robot_field_number_Ok() ->
-    case #robot.type of
-        3 -> ok
-    end.
+    ?ASSERT_EQUAL(3, #robot.type).
 
 test_lyse_robot_field_number_Bad() ->
-    case #robot.type of
-        3 -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(3, #robot.type).
 
 %% Probably related to string handling. See: T93361792
 fp_test_lyse_robot_update_Ok() ->
     Rob = #robot{name = "Ulbert", hobbies = ["trying to have feelings"]},
     Details = Rob#robot.details,
     NewRob = Rob#robot{details = ["Repaired by repairman" | Details]},
-    case NewRob#robot.details of
-        ["Repaired by repairman"] -> ok
-    end.
+    ?ASSERT_EQUAL(["Repaired by repairman"], NewRob#robot.details).
 
 test_lyse_robot_update_Bad() ->
     Rob = #robot{name = "Ulbert", hobbies = ["trying to have feelings"]},
     Details = Rob#robot.details,
     NewRob = Rob#robot{details = ["Repaired by repairman" | Details]},
-    case NewRob#robot.details of
-        ["Repaired by repairman"] -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL(["Repaired by repairman"], NewRob#robot.details).
 
 test_lyse_robot_update_literals_Ok() ->
     Rob = #robot{name = "Ulbert", hobbies = ["trying to have feelings"]},
     Details = Rob#robot.details,
     NewRob = Rob#robot{details = [repaired | Details]},
-    case NewRob#robot.details of
-        [repaired] -> ok
-    end.
+    ?ASSERT_EQUAL([repaired], NewRob#robot.details).
 
 test_lyse_robot_update_literals_Bad() ->
     Rob = #robot{name = "Ulbert", hobbies = ["trying to have feelings"]},
     Details = Rob#robot.details,
     NewRob = Rob#robot{details = [repaired | Details]},
-    case NewRob#robot.details of
-        [repaired] -> warn(1)
-    end.
+    ?CRASH_IF_EQUAL([repaired], NewRob#robot.details).
 
 -record(user, {id = 0, name, group, age}).
 
@@ -459,10 +345,7 @@ fp_test_lyse_user_pattern_matching_fun_Ok() ->
         (#user{name = Name}) ->
             Name ++ " is not allowed"
     end,
-    case F(User) of
-        "User is allowed!" ->
-            ok
-    end.
+    ?ASSERT_EQUAL("User is allowed!", F(User)).
 
 test_lyse_user_pattern_matching_fun_Bad() ->
     User = #user{name = "User", group = admin},
@@ -472,10 +355,7 @@ test_lyse_user_pattern_matching_fun_Bad() ->
         (#user{name = Name}) ->
             Name ++ " is not allowed"
     end,
-    case F(User) of
-        "User is allowed!" ->
-            warn(1)
-    end.
+    ?CRASH_IF_EQUAL("User is allowed!", F(User)).
 
 test_lyse_user_pattern_matching_fun_literals_Ok() ->
     User = #user{name = "User", group = admin},
@@ -487,10 +367,7 @@ test_lyse_user_pattern_matching_fun_literals_Ok() ->
         (_) ->
             42
     end,
-    case F(User) of
-        42 ->
-            ok
-    end.
+    ?ASSERT_EQUAL(42, F(User)).
 
 test_lyse_user_pattern_matching_fun_literals_Bad() ->
     User = #user{name = "User", group = admin},
@@ -502,10 +379,7 @@ test_lyse_user_pattern_matching_fun_literals_Bad() ->
         (_) ->
             42
     end,
-    case F(User) of
-        42 ->
-            warn(1)
-    end.
+    ?CRASH_IF_EQUAL(42, F(User)).
 
 test_lyse_user_guard_Ok() ->
     User = #user{age = 16},
@@ -515,10 +389,7 @@ test_lyse_user_guard_Ok() ->
         (_) ->
             forbidden
     end,
-    case F(User) of
-        forbidden ->
-            ok
-    end.
+    ?ASSERT_EQUAL(forbidden, F(User)).
 
 test_lyse_user_guard_Bad() ->
     User = #user{age = 16},
@@ -528,7 +399,4 @@ test_lyse_user_guard_Bad() ->
         (_) ->
             forbidden
     end,
-    case F(User) of
-        forbidden ->
-            warn(1)
-    end.
+    ?CRASH_IF_EQUAL(forbidden, F(User)).

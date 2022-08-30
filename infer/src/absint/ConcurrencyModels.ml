@@ -190,13 +190,18 @@ end = struct
     ; (* only unlock *)
       "folly::SharedMutex::ReadHolder"
     ; (* only unlock *)
+      "folly::SharedMutexImpl::ReadHolder"
+    ; (* only unlock *)
       "folly::SharedMutex::WriteHolder"
+    ; (* only unlock *)
+      "folly::SharedMutexImpl::WriteHolder"
     ; (* read/write locks under operator() etc *)
       "folly::LockedPtr"
     ; (* no lock/unlock *)
       "folly::SpinLockGuard"
     ; (* no lock/unlock *)
       "std::lock_guard"
+    ; "std::scoped_lock"
     ; (* everything *)
       "std::shared_lock"
     ; (* everything *)
@@ -359,14 +364,24 @@ let is_android_lifecycle_method tenv pname =
     | _ ->
         false
   in
-  match (pname : Procname.t) with
-  | C _ | Erlang _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | WithBlockParameters _
-    ->
-      false
-  | Java _ ->
-      method_starts_with_on pname
-      && (not (is_allow_listed pname))
-      && overrides_android_method tenv pname
+  let rec test_pname pname =
+    match (pname : Procname.t) with
+    | C _
+    | Erlang _
+    | Linters_dummy_method
+    | Block _
+    | ObjC_Cpp _
+    | CSharp _
+    | WithFunctionParameters _ ->
+        false
+    | WithAliasingParameters (base, _) ->
+        test_pname base
+    | Java _ ->
+        method_starts_with_on pname
+        && (not (is_allow_listed pname))
+        && overrides_android_method tenv pname
+  in
+  test_pname pname
 
 
 type annotation_trail = DirectlyAnnotated | Override of Procname.t | SuperClass of Typ.name
@@ -375,21 +390,13 @@ type annotation_trail = DirectlyAnnotated | Override of Procname.t | SuperClass 
 let find_override_or_superclass_annotated is_annot tenv proc_name =
   let is_annotated pn = Annotations.pname_has_return_annot pn is_annot in
   let is_override = Staged.unstage (PatternMatch.has_same_signature proc_name) in
-  let rec find_override_or_superclass_aux class_name =
-    match Tenv.lookup tenv class_name with
-    | None ->
-        None
-    | Some tstruct when Annotations.struct_typ_has_annot tstruct is_annot ->
-        Some (SuperClass class_name)
-    | Some (tstruct : Struct.t) -> (
-      match
-        List.find_map tstruct.methods ~f:(fun pn ->
-            if is_override pn && is_annotated pn then Some (Override pn) else None )
-      with
-      | Some _ as result ->
-          result
-      | None ->
-          List.find_map tstruct.supers ~f:find_override_or_superclass_aux )
+  let find_override_or_superclass_aux class_name =
+    Tenv.find_map_supers tenv class_name ~f:(fun name struct_opt ->
+        Option.bind struct_opt ~f:(fun ({Struct.methods} as str) ->
+            if Annotations.struct_typ_has_annot str is_annot then Some (SuperClass name)
+            else
+              List.find_map methods ~f:(fun pn ->
+                  if is_override pn && is_annotated pn then Some (Override pn) else None ) ) )
   in
   if is_annotated proc_name then Some DirectlyAnnotated
   else Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux

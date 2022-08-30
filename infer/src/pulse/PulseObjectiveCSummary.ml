@@ -6,14 +6,12 @@
  *)
 
 open! IStd
-open PulseDomainInterface
-open PulseOperations.Import
+module L = Logging
 open PulseBasicInterface
+open PulseDomainInterface
+open PulseOperationResult.Import
 
-let mk_objc_self_pvar proc_desc =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  Pvar.mk Mangled.self proc_name
-
+let mk_objc_self_pvar proc_name = Pvar.mk Mangled.self proc_name
 
 let init_fields_zero tenv path location ~zero addr typ astate =
   let get_fields typ =
@@ -27,7 +25,7 @@ let init_fields_zero tenv path location ~zero addr typ astate =
     match get_fields typ with
     | Some fields ->
         List.fold fields ~init:(Ok astate) ~f:(fun acc (field, field_typ, _) ->
-            let* acc = acc in
+            let* acc in
             let acc, field_addr = Memory.eval_edge addr (FieldAccess field) acc in
             init_fields_zero_helper field_addr field_typ acc )
     | None ->
@@ -38,97 +36,121 @@ let init_fields_zero tenv path location ~zero addr typ astate =
 
 (** Constructs summary [{self = 0} {return = self}] when [proc_desc] returns a POD type. This allows
     us to connect invalidation with invalid access in the trace *)
-let mk_nil_messaging_summary_aux tenv proc_desc =
+let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) =
   let path = PathContext.initial in
   let t0 = path.PathContext.timestamp in
-  let location = Procdesc.get_loc proc_desc in
-  let self = mk_objc_self_pvar proc_desc in
-  let astate = AbductiveDomain.mk_initial tenv proc_desc in
-  (* HACK: we are operating on an "empty" initial state and do not expect to create any alarms
-     (nothing is Invalid in the initial state) or unsatisfiability (we won't create arithmetic
-     contradictions) so we make liberal use of [PulseResult.ok_exn] *)
-  let astate, (self_value, self_history) =
-    PulseOperations.eval_deref path location (Lvar self) astate |> PulseResult.ok_exn
+  let self = mk_objc_self_pvar proc_name in
+  let astate = AbductiveDomain.mk_initial tenv proc_name proc_attrs in
+  let** astate, (self_value, self_history) =
+    PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in
-  let astate = PulseArithmetic.prune_eq_zero self_value astate |> PulseResult.ok_exn in
-  let event = ValueHistory.NilMessaging (location, t0) in
+  let** astate = PulseArithmetic.prune_eq_zero self_value astate in
+  let event = ValueHistory.NilMessaging (proc_attrs.loc, t0) in
   let updated_self_value_hist = (self_value, ValueHistory.sequence event self_history) in
-  match List.last (Procdesc.get_formals proc_desc) with
+  match List.last proc_attrs.formals with
   | Some (last_formal, {desc= Tptr (typ, _)}, _) when Mangled.is_return_param last_formal ->
-      let ret_param_var = Procdesc.get_ret_param_var proc_desc in
-      let astate, ret_param_var_addr_hist =
-        PulseOperations.eval_deref path location (Lvar ret_param_var) astate |> PulseResult.ok_exn
+      let ret_param_var = Pvar.get_ret_param_pvar proc_name in
+      let** astate, ret_param_var_addr_hist =
+        PulseOperations.eval_deref path proc_attrs.loc (Lvar ret_param_var) astate
       in
-      init_fields_zero tenv path location ~zero:updated_self_value_hist ret_param_var_addr_hist typ
-        astate
-      |> PulseResult.ok_exn
+      Sat
+        (init_fields_zero tenv path proc_attrs.loc ~zero:updated_self_value_hist
+           ret_param_var_addr_hist typ astate )
   | _ ->
-      let ret_var = Procdesc.get_ret_var proc_desc in
-      let astate, ret_var_addr_hist =
-        PulseOperations.eval path Write location (Lvar ret_var) astate |> PulseResult.ok_exn
+      let ret_var = Pvar.get_ret_pvar proc_name in
+      let** astate, ret_var_addr_hist =
+        PulseOperations.eval path Write proc_attrs.loc (Lvar ret_var) astate
       in
-      PulseOperations.write_deref path location ~ref:ret_var_addr_hist ~obj:updated_self_value_hist
-        astate
-      |> PulseResult.ok_exn
+      Sat
+        (PulseOperations.write_deref path proc_attrs.loc ~ref:ret_var_addr_hist
+           ~obj:updated_self_value_hist astate )
 
 
-let mk_latent_non_POD_nil_messaging tenv proc_desc =
+let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.t) =
   let path = PathContext.initial in
-  let location = Procdesc.get_loc proc_desc in
-  let self = mk_objc_self_pvar proc_desc in
-  let astate = AbductiveDomain.mk_initial tenv proc_desc in
-  (* same HACK as above with respect to [PulseResult.ok_exn] *)
-  let astate, (self_value, _self_history) =
-    PulseOperations.eval_deref path location (Lvar self) astate |> PulseResult.ok_exn
+  let self = mk_objc_self_pvar proc_name in
+  let astate = AbductiveDomain.mk_initial tenv proc_name proc_attrs in
+  let** astate, (self_value, _self_history) =
+    PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in
-  let trace = Trace.Immediate {location; history= ValueHistory.epoch} in
-  let astate = PulseArithmetic.prune_eq_zero self_value astate |> PulseResult.ok_exn in
-  match AbductiveDomain.summary_of_post tenv proc_desc location astate with
-  | Unsat | Sat (Error _) ->
-      assert false
-  | Sat (Ok summary) ->
-      ExecutionDomain.LatentInvalidAccess
-        { astate= summary
-        ; address= Decompiler.find self_value astate
-        ; must_be_valid=
-            (trace, Some (SelfOfNonPODReturnMethod (Procdesc.get_ret_type_from_signature proc_desc)))
-        ; calling_context= [] }
+  let trace = Trace.Immediate {location= proc_attrs.loc; history= ValueHistory.epoch} in
+  let** astate = PulseArithmetic.prune_eq_zero self_value astate in
+  let++ summary =
+    let open SatUnsat.Import in
+    AbductiveDomain.summary_of_post tenv proc_name proc_attrs proc_attrs.loc astate
+    >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+    >>| AccessResult.of_summary
+  in
+  ExecutionDomain.LatentInvalidAccess
+    { astate= summary
+    ; address= Decompiler.find self_value astate
+    ; must_be_valid=
+        (trace, Some (SelfOfNonPODReturnMethod (ProcAttributes.to_return_type proc_attrs)))
+    ; calling_context= [] }
 
 
-let mk_nil_messaging_summary tenv proc_desc =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  if Procname.is_objc_instance_method proc_name then
-    if Procdesc.is_ret_type_pod proc_desc then
-      (* In ObjC, when a method is called on nil, there is no NPE,
-         the method is actually not called and the return value is 0/false/nil.
-         We create a nil summary to avoid reporting NPE in this case.
-         However, there is an exception in the case where the return type is non-POD.
+let mk_nil_messaging_summary tenv proc_name (proc_attrs : ProcAttributes.t) =
+  if Procname.is_objc_instance_method proc_name then (
+    if proc_attrs.is_ret_type_pod then (
+      (* In ObjC, when a method is called on nil, there is no NPE, the method is actually not called
+         and the return value is 0/false/nil.  We create a nil summary to avoid reporting NPE in
+         this case.  However, there is an exception in the case where the return type is non-POD.
          In that case it's UB and we want to report an error. *)
-      let astate = mk_nil_messaging_summary_aux tenv proc_desc in
-      Some (ContinueProgram astate)
+      match
+        mk_nil_messaging_summary_aux tenv proc_name proc_attrs |> PulseOperationResult.sat_ok
+      with
+      | Some astate ->
+          Some (ContinueProgram astate)
+      | None ->
+          L.internal_error
+            "mk_nil_messaging_summary_aux for %a resulted in an error or an unsat state" Procname.pp
+            proc_name ;
+          None )
     else
-      let summary = mk_latent_non_POD_nil_messaging tenv proc_desc in
-      Some summary
+      match
+        mk_latent_non_POD_nil_messaging tenv proc_name proc_attrs |> PulseOperationResult.sat_ok
+      with
+      | Some _ as some_summary ->
+          some_summary
+      | None ->
+          L.internal_error
+            "mk_latent_non_POD_nil_messaging for %a resulted in an error or an unsat state"
+            Procname.pp proc_name ;
+          None )
   else None
 
 
-let initial_with_positive_self proc_desc initial_astate =
-  let location = Procdesc.get_loc proc_desc in
-  let self = mk_objc_self_pvar proc_desc in
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  (* same HACK as above with respect to [PulseResult.ok_exn] *)
-  if Procname.is_objc_instance_method proc_name then
-    let astate, value =
-      PulseOperations.eval_deref PathContext.initial location (Lvar self) initial_astate
-      |> PulseResult.ok_exn
+let prune_positive_allocated_self location self_address astate =
+  (* it's important to do the prune *first* before the dereference to detect contradictions if the
+     address is equal to 0 *)
+  PulseArithmetic.prune_positive (fst self_address) astate
+  >>|= PulseOperations.eval_access PathContext.initial Read location self_address Dereference
+  >>|| fst
+
+
+let initial_with_positive_self proc_name (proc_attrs : ProcAttributes.t) initial_astate =
+  let self_var = mk_objc_self_pvar proc_name in
+  if Procname.is_objc_instance_method proc_name then (
+    let result =
+      let** astate, self_address =
+        PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar self_var) initial_astate
+      in
+      prune_positive_allocated_self proc_attrs.loc self_address astate
     in
-    PulseArithmetic.and_positive (fst value) astate |> PulseResult.ok_exn
+    match PulseOperationResult.sat_ok result with
+    | Some astate ->
+        astate
+    | None ->
+        L.internal_error
+          "found an error or an unsat state when adding [self > 0] to %a's initial state %a"
+          AbductiveDomain.pp initial_astate Procname.pp proc_name ;
+        initial_astate )
   else initial_astate
 
 
-let append_objc_actual_self_positive procdesc self_actual astate =
-  let proc_name = Procdesc.get_proc_name procdesc in
-  if Procname.is_objc_instance_method proc_name then
-    Option.value_map self_actual ~default:(Ok astate) ~f:(fun ((self, _), _) ->
-        PulseArithmetic.prune_positive self astate )
-  else Ok astate
+let append_objc_actual_self_positive proc_name (proc_attrs : ProcAttributes.t) self_actual astate =
+  match self_actual with
+  | Some (self, _) when Procname.is_objc_instance_method proc_name ->
+      prune_positive_allocated_self proc_attrs.loc self astate
+  | _ ->
+      Sat (Ok astate)

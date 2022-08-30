@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module type Kind = sig
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   val matches : caller:t -> callee:t -> bool
   (** Return true if the [caller] element kind matches the [callee] element kind. Used during trace
@@ -21,7 +21,7 @@ module type Kind = sig
 end
 
 module type S = sig
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   module Kind : Kind
 

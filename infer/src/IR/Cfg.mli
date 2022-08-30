@@ -32,4 +32,7 @@ val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
 val iter_sorted : t -> f:(Procdesc.t -> unit) -> unit
 (** Iterate over all the proc descs in the cfg in ascending order *)
 
+val fold_sorted : t -> init:'a -> f:('a -> Procdesc.t -> 'a) -> 'a
+(** Fold over all the proc descs in the cfg in ascending order *)
+
 val pp_proc_signatures : Format.formatter -> t -> unit

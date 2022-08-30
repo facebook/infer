@@ -21,3 +21,14 @@ std::vector<int> copy_decl_bad() {
   // call to copy constructor A::A(a, n$0)
   return cpy.vec;
 }
+
+void copy_assignment_bad(A source) {
+  A c; // default constructor is called
+  c = source; // copy assignment operator is called
+}
+
+class Test {
+  A mem_a;
+
+  void unnecessary_copy_moveable_bad(A&& a) { mem_a = a; }
+};

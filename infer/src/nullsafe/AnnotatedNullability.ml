@@ -23,7 +23,7 @@ type t =
   | LocallyTrustedNonnull
   | LocallyCheckedNonnull
   | StrictNonnull of strict_nonnull_origin
-[@@deriving compare]
+[@@deriving compare, equal]
 
 and nullable_origin =
   | AnnotatedNullable

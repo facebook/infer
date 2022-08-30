@@ -32,7 +32,7 @@ f3(int x)
 extern int pit;
 
 int
-main()
+root()
 {
   // check that goal-directed analysis can traverse back edges when needed
   while (__llair_choice())
@@ -40,5 +40,11 @@ main()
   while (__llair_choice())
     f2(__llair_choice());
 
-  f3(__llair_choice());
+  return f3(__llair_choice());
+}
+
+int
+main()
+{
+  return root();
 }

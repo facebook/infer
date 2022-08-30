@@ -6,8 +6,9 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 
-type value = PulseAbstractValue.t
+type value = AbstractValue.t
 
 type event =
   | ArrayWrite of {aw_array: value; aw_index: value}
@@ -18,27 +19,41 @@ type state [@@deriving compare, equal]
 val start : unit -> state
 (** Return the initial state of [Topl.automaton ()]. *)
 
-val small_step : Location.t -> PulsePathCondition.t -> event -> state -> state
+val small_step :
+     Location.t
+  -> keep:AbstractValue.Set.t
+  -> get_dynamic_type:(value -> Typ.t option)
+  -> path_condition:Formula.t
+  -> event
+  -> state
+  -> state
 
 val large_step :
      call_location:Location.t
   -> callee_proc_name:Procname.t
-  -> substitution:(value * PulseValueHistory.t) PulseAbstractValue.Map.t
-  -> condition:PulsePathCondition.t
+  -> substitution:(value * ValueHistory.t) AbstractValue.Map.t
+  -> keep:AbstractValue.Set.t
+  -> get_dynamic_type:(value -> Typ.t option)
+  -> path_condition:Formula.t
   -> callee_prepost:state
   -> state
   -> state
-(** [large_step ~substitution ~condition state ~callee_prepost] updates [state] according to
+(** [large_step ~substitution ~keep ~condition state ~callee_prepost] updates [state] according to
     [callee_prepost]. The abstract values in [condition] and [state] are in one scope, and those in
     [callee_prepost] in another scope: the [substitution] maps from the callee scope to the
     condition&state scope. *)
 
-val filter_for_summary : PulsePathCondition.t -> state -> state
+val filter_for_summary : get_dynamic_type:(value -> Typ.t option) -> Formula.t -> state -> state
 (** Remove from state those parts that are inconsistent with the path condition. (We do a cheap
-    check to not introduce inconsistent Topl states, but they mey become inconsistent because the
+    check to not introduce inconsistent Topl states, but they may become inconsistent because the
     program path condition is updated later.) *)
 
-val simplify : keep:PulseAbstractValue.Set.t -> state -> state
+val simplify :
+     keep:AbstractValue.Set.t
+  -> get_dynamic_type:(value -> Typ.t option)
+  -> path_condition:Formula.t
+  -> state
+  -> state
 (** Keep only a subset of abstract values. This is used for extracting summaries. *)
 
 val report_errors : Procdesc.t -> Errlog.t -> state -> unit

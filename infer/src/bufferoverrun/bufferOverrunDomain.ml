@@ -526,9 +526,7 @@ module Val = struct
 
   let is_mone x = Itv.is_mone (get_itv x)
 
-  let is_incr_of l {itv} =
-    Option.value_map (Loc.get_path l) ~default:false ~f:(fun path -> Itv.is_incr_of path itv)
-
+  let is_incr_of l {itv} = Option.exists (Loc.get_path l) ~f:(fun path -> Itv.is_incr_of path itv)
 
   let cast typ v = {v with powloc= PowLoc.cast typ v.powloc}
 
@@ -913,13 +911,11 @@ module AliasTarget = struct
     | IteratorHasNext of {java_tmp: Loc.t option}
     | IteratorNextObject of {objc_tmp: AbsLoc.Loc.t option}
     | Top
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let top = Top
 
   let is_top = function Top -> true | _ -> false
-
-  let equal = [%compare.equal: t]
 
   let pp_with_key ~pp_lhs ~pp_rhs =
     let pp_intlit fmt i =

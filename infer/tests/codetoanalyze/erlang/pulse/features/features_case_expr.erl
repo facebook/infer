@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_case_expr).
+-include("../../common.hrl").
 
 -export([
     test_case_Ok/0,
@@ -12,9 +13,6 @@
     test_case_in_function_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 test_case_Ok() ->
     Y = 3,
     X =
@@ -22,10 +20,7 @@ test_case_Ok() ->
             3 -> 1;
             _ -> 0
         end,
-    case X of
-        1 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(1, X).
 
 test_case_Bad() ->
     Y = 3,
@@ -34,10 +29,7 @@ test_case_Bad() ->
             3 -> 1;
             _ -> 0
         end,
-    case X of
-        1 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(1, X).
 
 case_in_function(X) ->
     case X of
@@ -47,14 +39,8 @@ case_in_function(X) ->
 
 test_case_in_function_Ok() ->
     Y = case_in_function(1),
-    case Y of
-        2 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(2, Y).
 
 test_case_in_function_Bad() ->
     Y = case_in_function(1),
-    case Y of
-        2 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(2, Y).

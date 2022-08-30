@@ -19,7 +19,7 @@ SLEDGE_D_ARGS?=
 SLEDGE_A_ARGS?=-loop-bound 5 -switch-bound 3 -cct-schedule-points
 SLEDGE_S_ARGS?=
 SLEDGE_R_ARGS?=
-SLEDGE_G_ARGS?=-trace Stop.on_reached_goal
+SLEDGE_G_ARGS?=-trace Stop.on_reached_goal+Stop.on_unreachable_goal
 
 # limits for each test run
 TIMEOUT?=300
@@ -66,7 +66,7 @@ llair_intrinsics_h:=$(CURDIR)/../model/llair_intrinsics.h
 
 # compile c++ to llvm bitcode
 %.bc : %.cpp
-	clang++ -g -c -emit-llvm $(CXX_FLAGS) $(CLANG_ARGS) -o $@ $<
+	clang++ -g -c -emit-llvm $(CXX_FLAGS) -include $(llair_intrinsics_h) $(CLANG_ARGS) -o $@ $<
 
 # disassemble bitcode to llvm assembly
 %.ll : %.bc
@@ -164,7 +164,7 @@ analyze-perf7: compile
 # for each `goal/<foo>.c` or `goal/<foo>.cpp`, analyze with goal trace `goal/<foo>.trace`
 analyze-goal: compile
 	$(foreach test,$(GoalTests), \
-	$(sledge_dbg) llvm analyze -goal-trace $(shell cat $(test:.bc=.trace)) $(SLEDGE_A_ARGS) $(SLEDGE_G_ARGS) $(test);)
+	$(sledge_dbg) llvm analyze -goal-trace $(test:.bc=.trace) $(SLEDGE_A_ARGS) $(SLEDGE_G_ARGS) $(test);)
 
 .PHONY: analyze.sexp
 analyze.sexp:

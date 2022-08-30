@@ -43,7 +43,8 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
           Format.fprintf fmt "\\nCaptured: %a" pp_var_list (Procdesc.get_captured pdesc) ;
         let ret_annots = attributes.ProcAttributes.ret_annots in
         if not (Annot.Item.is_empty ret_annots) then
-          Format.fprintf fmt "\\nReturn annotations: %a" Annot.Item.pp ret_annots
+          Format.asprintf "Return annotations: %a" Annot.Item.pp ret_annots
+          |> Escape.escape_dotty |> Format.fprintf fmt "\\n%s"
     | Exit_node ->
         let pname = Procdesc.Node.get_proc_name n in
         Format.fprintf fmt "Exit %s" (Escape.escape_dotty (Procname.to_string pname))

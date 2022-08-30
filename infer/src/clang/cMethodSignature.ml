@@ -16,12 +16,13 @@ type param_type =
   { annot: Annot.Item.t
   ; is_no_escape_block_arg: bool
   ; is_pointer_to_const: bool
+  ; is_reference: bool
   ; name: Mangled.t
   ; typ: Typ.t }
 
-let mk_param_type ?(is_pointer_to_const = false) ?(annot = Annot.Item.empty)
+let mk_param_type ?(is_pointer_to_const = false) ?(is_reference = false) ?(annot = Annot.Item.empty)
     ?(is_no_escape_block_arg = false) name typ =
-  {name; typ; is_pointer_to_const; annot; is_no_escape_block_arg}
+  {name; typ; is_pointer_to_const; is_reference; annot; is_no_escape_block_arg}
 
 
 type t =

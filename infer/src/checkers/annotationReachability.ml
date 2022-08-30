@@ -470,15 +470,7 @@ let annot_specs =
 
 
 let get_annot_specs pname =
-  let language =
-    match pname with
-    | Procname.Java _ ->
-        Language.Java
-    | Procname.ObjC_Cpp _ | Procname.C _ | Procname.Block _ ->
-        Language.Clang
-    | _ ->
-        L.die InternalError "Cannot find language for proc %s" (Procname.to_string pname)
-  in
+  let language = Procname.get_language pname in
   List.Assoc.find_exn ~equal:Language.equal annot_specs language
 
 

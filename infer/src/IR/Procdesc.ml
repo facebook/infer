@@ -19,9 +19,6 @@ module NodeKey = struct
   let compute node ~simple_key ~succs ~preds =
     let v = (simple_key node, List.rev_map ~f:simple_key succs, List.rev_map ~f:simple_key preds) in
     Utils.better_hash v
-
-
-  let of_frontend_node_key = Utils.better_hash
 end
 
 (* =============== START of module Node =============== *)
@@ -36,7 +33,7 @@ module Node = struct
     | DestrScope
     | DestrTemporariesCleanup
     | DestrVirtualBase
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let string_of_destruction_kind = function
     | DestrBreakStmt ->
@@ -108,7 +105,7 @@ module Node = struct
     | Throw
     | ThrowNPE
     | UnaryOperator
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   type prune_node_kind =
     | PruneNodeKind_ExceptionHandler
@@ -118,7 +115,7 @@ module Node = struct
     | PruneNodeKind_MethodBody
     | PruneNodeKind_NotNull
     | PruneNodeKind_TrueBranch
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   type nodekind =
     | Start_node
@@ -128,9 +125,7 @@ module Node = struct
     | Prune_node of bool * Sil.if_kind * prune_node_kind
         (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
-  [@@deriving compare]
-
-  let equal_nodekind = [%compare.equal: nodekind]
+  [@@deriving compare, equal]
 
   (** a node *)
   type t =
@@ -536,6 +531,8 @@ let get_formals pdesc = pdesc.attributes.formals
 
 let get_pvar_formals pdesc = ProcAttributes.get_pvar_formals pdesc.attributes
 
+let get_passed_by_value_formals pdesc = ProcAttributes.get_passed_by_value_formals pdesc.attributes
+
 let get_loc pdesc = pdesc.attributes.loc
 
 (** Return name and type of local variables *)
@@ -545,10 +542,6 @@ let is_local pdesc pvar =
   List.exists (get_locals pdesc) ~f:(fun {ProcAttributes.name} ->
       Mangled.equal name (Pvar.get_name pvar) )
 
-
-let has_added_return_param pdesc = pdesc.attributes.has_added_return_param
-
-let is_ret_type_pod pdesc = pdesc.attributes.is_ret_type_pod
 
 (** Return name and type of captured variables *)
 let get_captured pdesc = pdesc.attributes.captured
@@ -562,18 +555,6 @@ let get_nodes pdesc = pdesc.nodes
 let get_ret_type pdesc = pdesc.attributes.ret_type
 
 let get_ret_var pdesc = Pvar.get_ret_pvar (get_proc_name pdesc)
-
-let get_ret_param_var pdesc = Pvar.get_ret_param_pvar (get_proc_name pdesc)
-
-let get_ret_type_from_signature pdesc =
-  if pdesc.attributes.has_added_return_param then
-    List.last pdesc.attributes.formals
-    |> Option.value_map
-         ~f:(fun (_, typ, _) ->
-           match typ.Typ.desc with Tptr (t, _) -> t | _ -> pdesc.attributes.ret_type )
-         ~default:pdesc.attributes.ret_type
-  else pdesc.attributes.ret_type
-
 
 let get_start_node pdesc = pdesc.start_node
 
@@ -884,6 +865,12 @@ let pp_signature fmt pdesc =
 let is_specialized pdesc =
   let attributes = get_attributes pdesc in
   attributes.ProcAttributes.is_specialized
+
+
+let is_kotlin pdesc =
+  let attributes = get_attributes pdesc in
+  let source = attributes.ProcAttributes.translation_unit in
+  SourceFile.has_extension ~ext:Config.kotlin_source_extension source
 
 
 (* true if pvar is a captured variable of a cpp lambda or objc block *)

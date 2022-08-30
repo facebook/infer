@@ -7,5 +7,5 @@ For example, accessing `R` as a `person` record gives `{badrecord,person}` error
 
 f() ->
     R = #rabbit{name = "Bunny", color = "Brown"},
-    R#person.name
+    R#person.name.
 ```

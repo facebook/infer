@@ -155,7 +155,7 @@ DEFINE-CHECKER id_of_the_checker = {
      SET message = <error message to show the user>;
      SET suggestion = <optional suggestion to the user>;
      SET doc_url = <optional URL to documentation of the issue>;
-     SET severity = INFO | LIKE | ADVICE | WARNING | ERROR;
+     SET severity = INFO | ADVICE | WARNING | ERROR;
      SET mode = ON | OFF
      SET allow_list_path = {path1, path2, ..., pathn };
      SET block_list_path = {path1, path2, ..., pathn };
@@ -540,7 +540,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
     WHEN objc_method_has_nth_parameter_of_type("2", "A*")
     HOLDS-IN-NODE ObjCMethodDecl;
   SET message = "Found a method with the 2nd parameter of type A*";
-  SET severity = "LIKE";
+  SET severity = "ADVICE";
 };
 ```
 
@@ -712,11 +712,9 @@ developing new linters in Infer. Read about them in the [`infer capture` manual]
 The following issue types are reported by this checker:
 - [ASSIGN_POINTER_WARNING](/docs/next/all-issue-types#assign_pointer_warning)
 - [BAD_POINTER_COMPARISON](/docs/next/all-issue-types#bad_pointer_comparison)
-- [COMPONENT_WITH_MULTIPLE_FACTORY_METHODS](/docs/next/all-issue-types#component_with_multiple_factory_methods)
 - [CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK](/docs/next/all-issue-types#cxx_reference_captured_in_objc_block)
 - [DIRECT_ATOMIC_PROPERTY_ACCESS](/docs/next/all-issue-types#direct_atomic_property_access)
 - [DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER](/docs/next/all-issue-types#discouraged_weak_property_custom_setter)
 - [GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL](/docs/next/all-issue-types#global_variable_initialized_with_function_or_method_call)
-- [MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE](/docs/next/all-issue-types#mutable_local_variable_in_component_file)
 - [POINTER_TO_CONST_OBJC_CLASS](/docs/next/all-issue-types#pointer_to_const_objc_class)
 - [STRONG_DELEGATE_WARNING](/docs/next/all-issue-types#strong_delegate_warning)

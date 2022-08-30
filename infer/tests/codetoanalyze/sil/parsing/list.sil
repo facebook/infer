@@ -1,0 +1,16 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+type cell = { value:int; next: *cell }
+
+type list = { header: *cell }
+
+define head(l: *list) : int {
+  #entry:
+    n0: *list = load &l
+    n1: *cell = load n0.list.header
+    n2: int = load n1.cell.value
+    ret n2
+}

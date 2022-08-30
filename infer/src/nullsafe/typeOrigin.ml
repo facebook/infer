@@ -10,14 +10,14 @@ open! IStd
 (** Describe the origin of values propagated by the checker. *)
 
 type method_parameter_origin = Normal of AnnotatedSignature.param_signature | ObjectEqualsOverride
-[@@deriving compare]
+[@@deriving compare, equal]
 
 type method_call_origin =
   { pname: Procname.Java.t
   ; call_loc: Location.t
   ; annotated_signature: AnnotatedSignature.t
   ; is_defined: bool }
-[@@deriving compare]
+[@@deriving compare, equal]
 
 type t =
   | NullConst of Location.t
@@ -36,7 +36,7 @@ type t =
   | ArrayAccess
   | InferredNonnull of {previous_origin: t}
   | OptimisticFallback
-[@@deriving compare]
+[@@deriving compare, equal]
 
 let get_nullability = function
   | NullConst _ ->

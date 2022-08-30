@@ -9,7 +9,7 @@ open! IStd
 (** Dereference rule should be checked every type an object is dereferenced. The rule checks if the
     reference is nullable. *)
 
-type violation [@@deriving compare]
+type violation [@@deriving compare, equal]
 
 val check : InferredNullability.t -> (unit, violation) result
 (** violation of Dereference rule reflects possibility of dereferencing of `null`. Note that this
@@ -38,7 +38,7 @@ module ReportableViolation : sig
     | AccessToField of Fieldname.t
     | AccessByIndex of {index_desc: string}
     | ArrayLengthAccess
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   val from : NullsafeMode.t -> violation -> t option
   (** Depending on the mode, violation might or might not be important enough to be reported to the

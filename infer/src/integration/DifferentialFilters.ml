@@ -13,7 +13,7 @@ module FileRenamings = struct
 
   module CurrentToPreviousMap = Caml.Map.Make (String)
 
-  type t = string CurrentToPreviousMap.t [@@deriving compare]
+  type t = string CurrentToPreviousMap.t [@@deriving compare, equal]
 
   let empty = CurrentToPreviousMap.empty
 
@@ -69,7 +69,7 @@ module FileRenamings = struct
 
     let of_list = of_renamings ~fold:List.fold
 
-    let equal = [%compare.equal: t]
+    let equal = equal
 
     let pp fmt t =
       let pp_tuple fmt (current, previous) =

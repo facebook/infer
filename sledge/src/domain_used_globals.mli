@@ -11,9 +11,9 @@ open Domain_intf
 include Domain with type summary = Llair.Global.Set.t
 
 type used_globals =
-  | Per_function of Llair.Global.Set.t Llair.Function.Map.t
+  | Per_function of Llair.Global.Set.t Llair.FuncName.Map.t
       (** map of functions to globals they or their callees use *)
   | Declared of Llair.Global.Set.t
       (** set of declared globals used in the program *)
 
-val by_function : used_globals -> Llair.Function.t -> summary
+val by_function : used_globals -> Llair.FuncName.t -> summary

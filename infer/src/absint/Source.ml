@@ -35,7 +35,7 @@ end
 module Make (Kind : Kind) = struct
   module Kind = Kind
 
-  type t = {kind: Kind.t; site: CallSite.t} [@@deriving compare]
+  type t = {kind: Kind.t; site: CallSite.t} [@@deriving compare, equal]
 
   type spec = {source: t; index: int option}
 
@@ -72,7 +72,7 @@ module Make (Kind : Kind) = struct
 end
 
 module Dummy = struct
-  type t = unit [@@deriving compare]
+  type t = unit [@@deriving compare, equal]
 
   type spec = {source: t; index: int option}
 
@@ -91,7 +91,7 @@ module Dummy = struct
 
 
   module Kind = struct
-    type nonrec t = t [@@deriving compare]
+    type nonrec t = t [@@deriving compare, equal]
 
     let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 

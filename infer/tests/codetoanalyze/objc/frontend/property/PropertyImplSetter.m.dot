@@ -1,49 +1,49 @@
 /* @generated */
 digraph cfg {
-"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_1" [label="1: Start PropertyImplSetter.dealloc\nFormals:  self:PropertyImplSetter*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_1" [label="1: Start PropertyImplSetter.dealloc\nFormals:  self:PropertyImplSetter*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_1" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_4" ;
-"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_2" [label="2: Exit PropertyImplSetter.dealloc \n  " color=yellow style=filled]
+	 "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_1" -> "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_4" ;
+"dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_2" [label="2: Exit PropertyImplSetter.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_2" ;
-"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_4" [label="4:  Call dealloc \n   n$0=*&self:PropertyImplSetter* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:PropertyImplSetter*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:PropertyImplSetter*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:PropertyImplSetter*) [line 10, column 1]\n " shape="box"]
+	 "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_3" -> "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_2" ;
+"dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_4" [label="4:  Call dealloc \n   n$0=*&self:PropertyImplSetter* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:PropertyImplSetter*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:PropertyImplSetter*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:PropertyImplSetter*) [line 10, column 1]\n " shape="box"]
 	
 
-	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_4" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_5" ;
-	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_4" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_6" ;
-"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_4" -> "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_5" ;
+	 "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_4" -> "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_6" ;
+"dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_5" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_3" ;
-"dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_5" -> "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_3" ;
+"dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_6" -> "dealloc#PropertyImplSetter#instance.5650d9bd0d7d0f070430d4aa59d7fb97_2" ;
-"maximumFileSize#PropertyImplSetter#instance.716325bc2c2bc7e4d2d62472c6a1d10d_1" [label="1: Start PropertyImplSetter.maximumFileSize\nFormals:  self:PropertyImplSetter*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_6" -> "dealloc#PropertyImplSetter#[instance].86958382b1e29a796ec06d8ce98c6449_2" ;
+"maximumFileSize#PropertyImplSetter#[instance].aeac3f0f0d0d796610f78e3fbd61999c_1" [label="1: Start PropertyImplSetter.maximumFileSize\nFormals:  self:PropertyImplSetter*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "maximumFileSize#PropertyImplSetter#instance.716325bc2c2bc7e4d2d62472c6a1d10d_1" -> "maximumFileSize#PropertyImplSetter#instance.716325bc2c2bc7e4d2d62472c6a1d10d_3" ;
-"maximumFileSize#PropertyImplSetter#instance.716325bc2c2bc7e4d2d62472c6a1d10d_2" [label="2: Exit PropertyImplSetter.maximumFileSize \n  " color=yellow style=filled]
+	 "maximumFileSize#PropertyImplSetter#[instance].aeac3f0f0d0d796610f78e3fbd61999c_1" -> "maximumFileSize#PropertyImplSetter#[instance].aeac3f0f0d0d796610f78e3fbd61999c_3" ;
+"maximumFileSize#PropertyImplSetter#[instance].aeac3f0f0d0d796610f78e3fbd61999c_2" [label="2: Exit PropertyImplSetter.maximumFileSize \n  " color=yellow style=filled]
 	
 
-"maximumFileSize#PropertyImplSetter#instance.716325bc2c2bc7e4d2d62472c6a1d10d_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyImplSetter* [line 12, column 26]\n  n$1=*n$0._maximumFileSize:int [line 12, column 26]\n  *&return:int=n$1 [line 12, column 26]\n " shape="box"]
+"maximumFileSize#PropertyImplSetter#[instance].aeac3f0f0d0d796610f78e3fbd61999c_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyImplSetter* [line 12, column 26]\n  n$1=*n$0._maximumFileSize:int [line 12, column 26]\n  *&return:int=n$1 [line 12, column 26]\n " shape="box"]
 	
 
-	 "maximumFileSize#PropertyImplSetter#instance.716325bc2c2bc7e4d2d62472c6a1d10d_3" -> "maximumFileSize#PropertyImplSetter#instance.716325bc2c2bc7e4d2d62472c6a1d10d_2" ;
-"setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_1" [label="1: Start PropertyImplSetter.setMaximumFileSize:\nFormals:  self:PropertyImplSetter* newMaximumFileSize:int\nLocals:  \n  " color=yellow style=filled]
+	 "maximumFileSize#PropertyImplSetter#[instance].aeac3f0f0d0d796610f78e3fbd61999c_3" -> "maximumFileSize#PropertyImplSetter#[instance].aeac3f0f0d0d796610f78e3fbd61999c_2" ;
+"setMaximumFileSize:#PropertyImplSetter#[instance].eaa284f8ab7d45723e7b816556364055_1" [label="1: Start PropertyImplSetter.setMaximumFileSize:\nFormals:  self:PropertyImplSetter* newMaximumFileSize:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_1" -> "setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_3" ;
-"setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_2" [label="2: Exit PropertyImplSetter.setMaximumFileSize: \n  " color=yellow style=filled]
+	 "setMaximumFileSize:#PropertyImplSetter#[instance].eaa284f8ab7d45723e7b816556364055_1" -> "setMaximumFileSize:#PropertyImplSetter#[instance].eaa284f8ab7d45723e7b816556364055_3" ;
+"setMaximumFileSize:#PropertyImplSetter#[instance].eaa284f8ab7d45723e7b816556364055_2" [label="2: Exit PropertyImplSetter.setMaximumFileSize: \n  " color=yellow style=filled]
 	
 
-"setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:PropertyImplSetter* [line 13, column 3]\n  *n$0._maximumFileSize:int=0 [line 13, column 3]\n " shape="box"]
+"setMaximumFileSize:#PropertyImplSetter#[instance].eaa284f8ab7d45723e7b816556364055_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:PropertyImplSetter* [line 13, column 3]\n  *n$0._maximumFileSize:int=0 [line 13, column 3]\n " shape="box"]
 	
 
-	 "setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_3" -> "setMaximumFileSize:#PropertyImplSetter#instance.1d600fefeeb62155817021d20e02a478_2" ;
+	 "setMaximumFileSize:#PropertyImplSetter#[instance].eaa284f8ab7d45723e7b816556364055_3" -> "setMaximumFileSize:#PropertyImplSetter#[instance].eaa284f8ab7d45723e7b816556364055_2" ;
 }

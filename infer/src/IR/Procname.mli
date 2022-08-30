@@ -44,7 +44,7 @@ module Java : sig
         (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
     | Static  (** in Java, procedures called with invokestatic *)
 
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   val to_simplified_string : ?withclass:bool -> t -> string
 
@@ -141,8 +141,8 @@ end
 
 module ObjC_Cpp : sig
   type kind =
-    | CPPMethod of {mangled: string option}
-    | CPPConstructor of {mangled: string option; is_copy_ctor: bool}
+    | CPPMethod of {mangled: string option; is_copy_assignment: bool}
+    | CPPConstructor of {mangled: string option; is_copy_ctor: bool; is_implicit: bool}
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -172,9 +172,6 @@ module ObjC_Cpp : sig
 
   val is_objc_constructor : string -> bool
   (** Check if this is a constructor method in Objective-C. *)
-
-  val is_objc_dealloc : string -> bool
-  (** Check if this is a dealloc method in Objective-C. *)
 
   val is_destructor : t -> bool
   (** Check if this is a dealloc method. *)
@@ -209,8 +206,6 @@ module Block : sig
 
   type t = {block_type: block_type; parameters: Parameter.clang_parameter list} [@@deriving compare]
 
-  val make_surrounding : Typ.name option -> string -> Parameter.clang_parameter list -> t
-
   val make_in_outer_scope : block_type -> int -> Parameter.clang_parameter list -> t
 end
 
@@ -218,10 +213,14 @@ module Erlang : sig
   type t = private {module_name: string; function_name: string; arity: int}
 end
 
-(** Type of procedure names. WithBlockParameters is used for creating an instantiation of a method
-    that contains block parameters and it's called with concrete blocks. For example:
+module FunctionParameters : sig
+  type t = private FunPtr of C.t | Block of Block.t
+end
+
+(** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a
+    method that contains function parameters and it's called with concrete functions. For example:
     [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
-    [foo_my_block() {my_block(); }] where foo_my_block is created with WithBlockParameters (foo,
+    [foo_my_block() {my_block(); }] where foo_my_block is created with WithFunctionParameters (foo,
     [my_block]) *)
 type t =
   | CSharp of CSharp.t
@@ -231,10 +230,16 @@ type t =
   | Linters_dummy_method
   | Block of Block.t
   | ObjC_Cpp of ObjC_Cpp.t
-  | WithBlockParameters of t * Block.t list
+  | WithAliasingParameters of t * Mangled.t list list
+  | WithFunctionParameters of t * FunctionParameters.t list
 [@@deriving compare, yojson_of]
 
-val block_of_procname : t -> Block.t
+val base_of : t -> t
+(** if a procedure has been specialised, return the original one, otherwise itself *)
+
+val of_function_parameter : FunctionParameters.t -> t
+
+val to_function_parameter : t -> FunctionParameters.t
 
 val equal : t -> t -> bool
 
@@ -251,7 +256,13 @@ val replace_parameters : Parameter.t list -> t -> t
 
 val parameter_of_name : t -> Typ.Name.t -> Parameter.t
 
+val is_copy_assignment : t -> bool
+
 val is_copy_ctor : t -> bool
+
+val is_cpp_assignment_operator : t -> bool
+
+val is_implicit_ctor : t -> bool
 
 val is_destructor : t -> bool
 
@@ -270,6 +281,8 @@ val is_objc_method : t -> bool
 
 val is_objc_instance_method : t -> bool
 (** Includes specialized objective-c instance methods*)
+
+val is_std_move : t -> bool
 
 (** Hash tables with proc names as keys. *)
 module Hash : Caml.Hashtbl.S with type key = t
@@ -341,8 +354,8 @@ val get_method : t -> string
 val is_objc_block : t -> bool
 (** Return whether the procname is a block procname. *)
 
-val is_specialized : t -> bool
-(** Return whether the procname is a specialized with blocks procname. *)
+val is_specialized_with_function_parameters : t -> bool
+(** Return whether the procname is a specialized with functions procname. *)
 
 val is_cpp_lambda : t -> bool
 (** Return whether the procname is a cpp lambda procname. *)
@@ -368,9 +381,13 @@ val is_java : t -> bool
 val as_java_exn : explanation:string -> t -> Java.t
 (** Converts to a Java.t. Throws if [is_java] is false *)
 
-val with_block_parameters : t -> Block.t list -> t
-(** Create a procedure name instantiated with block parameters from a base procedure name and a list
-    of block procedures. *)
+val with_aliasing_parameters : t -> Mangled.t list list -> t
+(** Create a procedure name instantiated with aliasing parameters from a base procedure name and a
+    list aliases. *)
+
+val with_function_parameters : t -> FunctionParameters.t list -> t
+(** Create a procedure name instantiated with function parameters from a base procedure name and a
+    list of function procedures. *)
 
 val objc_cpp_replace_method_name : t -> string -> t
 
@@ -437,11 +454,27 @@ val pp_name_only : F.formatter -> t -> unit
     - In Java, ObjC, C#: "<ClassName>.<ProcName>"
     - In C/Erlang: "<ProcName>" *)
 
+val is_c : t -> bool
+
 val patterns_match : Re.Str.regexp list -> t -> bool
 (** Test whether a proc name matches to one of the regular expressions. *)
 
 val is_erlang_unsupported : t -> bool
 
 val is_erlang : t -> bool
+
+val erlang_call_unqualified : arity:int -> t
+(** A special infer-erlang procname that represents a syntactic erlang (unqualified) function call.
+    [arity] is the arity of the erlang function. First parameter of this procedure is expecteed to
+    be the erlang function name, and the remaining parameters are the erlang parameters (given
+    one-by-one and not as an erlang list). *)
+
+val erlang_call_qualified : arity:int -> t
+(** Same as [erlang_call_unqualified] but is expected to have an erlang module name as the first
+    parameter, and the function name as second. [arity] is (still) the erlang arity of the function. *)
+
+val is_erlang_call_unqualified : t -> bool
+
+val is_erlang_call_qualified : t -> bool
 
 module Normalizer : HashNormalizer.S with type t = t

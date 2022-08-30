@@ -39,6 +39,10 @@ module type Disjunct = sig
   val is_exceptional : t -> bool
   (** test if the abstract state represents exactly exceptional concrete states *)
 
+  val is_executable : t -> bool
+  (** test if the abstract state represents executable states, e.g. [ContinueProgram] or
+      [ExceptionRaised]. *)
+
   val exceptional_to_normal : t -> t
   (** convert all exceptional states into normal states (used when reaching a handler) *)
 end
@@ -79,6 +83,19 @@ module type WithTop = sig
   val is_top : t -> bool
 end
 
+(** A domain with an explicit bottom and top values *)
+module type WithBottomTop = sig
+  include S
+
+  val bottom : t
+
+  val is_bottom : t -> bool
+
+  val top : t
+
+  val is_top : t -> bool
+end
+
 (** Create a domain with Bottom element from a pre-domain *)
 module BottomLifted (Domain : S) : sig
   include WithBottom with type t = Domain.t bottom_lifted
@@ -96,6 +113,9 @@ module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
 module TopLiftedUtils : sig
   val pp_top : Format.formatter -> unit
 end
+
+(** Create a domain with Bottom and Top elements from a pre-domain *)
+module BottomTopLifted (Domain : S) : WithBottomTop
 
 (** Cartesian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) : S with type t = Domain1.t * Domain2.t

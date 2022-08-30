@@ -99,10 +99,9 @@ public class HashMapExample {
     map.get(key).toString(); // NPE here
   }
 
-  // A null pointer dereference is currently reported as latent (during the access of
-  // s.equals("foo")).
-  // Once keySet() is modelled, this null deference should not be reported anymore
-  void FP_latent_getFromKeySetOk(HashMap<String, String> map) {
+  // A null pointer dereference is currently reportedduring the access of s.equals("foo").
+  // Once keySet() is modelled, this null deference should not be reported anymore.
+  void FP_getFromKeySetOk(HashMap<String, String> map) {
     for (String key : map.keySet()) {
       String s = map.get(key);
       if (s.equals("foo")) {

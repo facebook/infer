@@ -35,6 +35,18 @@ val add_to_errlog :
   -> Errlog.loc_trace_elem list
   -> Errlog.loc_trace_elem list
 
+val synchronous_add_to_errlog :
+     nesting:int
+  -> pp_immediate:(F.formatter -> unit)
+  -> t list
+  -> Errlog.loc_trace_elem list
+  -> Errlog.loc_trace_elem list
+(** [synchronous_add_to_errlog] adds a list of the traces to the errlog in the given order while
+    grouping traces that take place at the same location to reduce deduplication and ensure events
+    happening together are identifiable as such. E.g. if two traces start with a [ViaCall] and they
+    happen at the same location, then that call will only appear once and the rest of those traces
+    will then be added synchronously as well *)
+
 val find_map : t -> f:(ValueHistory.event -> 'a option) -> 'a option
 (** [find_map] applied to history events; does not look into contextual events *)
 

@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_block).
+-include("../../common.hrl").
 
 -export([
     test_block_Ok/0,
@@ -12,34 +13,21 @@
     test_block_in_function_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 test_block_Ok() ->
-    case
-        begin
-            X = 3,
-            Y = X,
-            Z = Y,
-            Z
-        end
-    of
-        3 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(3, begin
+        X = 3,
+        Y = X,
+        Z = Y,
+        Z
+    end).
 
 test_block_Bad() ->
-    case
-        begin
-            X = 3,
-            Y = X,
-            Z = Y,
-            Z
-        end
-    of
-        3 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(3, begin
+        X = 3,
+        Y = X,
+        Z = Y,
+        Z
+    end).
 
 block_in_function() ->
     begin
@@ -50,14 +38,8 @@ block_in_function() ->
 
 test_block_in_function_Ok() ->
     X = block_in_function(),
-    case X of
-        3 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(3, X).
 
 test_block_in_function_Bad() ->
     X = block_in_function(),
-    case X of
-        3 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(3, X).

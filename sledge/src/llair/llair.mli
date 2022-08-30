@@ -12,7 +12,7 @@ module Loc = Loc
 module Typ = Typ
 module Reg = Reg
 module Exp = Exp
-module Function = Function
+module FuncName = FuncName
 module Global = Global
 module GlobalDefn = GlobalDefn
 
@@ -84,7 +84,9 @@ type jump = private {mutable dst: block; mutable retreating: bool}
 
 and callee =
   | Direct of func  (** Statically resolved function *)
-  | Indirect of Exp.t  (** Dynamically resolved function-pointer *)
+  | Indirect of {ptr: Exp.t; candidates: func iarray}
+      (** Dynamically resolved function-pointer, along with an array of
+          candidate callees overapproximating the possible call targets *)
   | Intrinsic of Intrinsic.t
       (** Intrinsic implemented in analyzer rather than source code *)
 
@@ -125,14 +127,14 @@ and block = private
   ; mutable parent: func
   ; mutable sort_index: int
         (** Position in a topological order, ignoring [retreating] edges. *)
-  ; mutable checkpoint_dists: int Function.Map.t
-        (** Distances from this block to some checkpoint functions' entries,
-            as computed by [Program.compute_distances]. *) }
+  ; mutable checkpoint_dists: int Int.Map.t
+        (** Distances from this block to some [Sparse_trace.t]'s
+            checkpoints, as computed by [Program.compute_distances]. *) }
 
 (** A function is a control-flow graph with distinguished entry block, whose
     parameters are the function parameters. *)
 and func = private
-  { name: Function.t
+  { name: FuncName.t
   ; formals: Reg.t iarray  (** Formal parameters *)
   ; freturn: Reg.t option
   ; fthrow: Reg.t
@@ -141,7 +143,7 @@ and func = private
   ; loc: Loc.t }
 
 type ip
-type functions = func Function.Map.t
+type functions = func FuncName.Map.t
 
 type program = private
   { globals: GlobalDefn.t iarray  (** Global definitions. *)
@@ -217,7 +219,7 @@ module Term : sig
     -> return:jump
     -> throw:jump option
     -> loc:Loc.t
-    -> t * (callee:func -> unit)
+    -> term * (callee:func -> unit)
 
   val icall :
        callee:Exp.t
@@ -227,7 +229,7 @@ module Term : sig
     -> return:jump
     -> throw:jump option
     -> loc:Loc.t
-    -> term
+    -> term * (candidates:func iarray -> unit)
 
   val intrinsic :
        callee:Intrinsic.t
@@ -262,7 +264,9 @@ module IP : sig
   val pp : t pp
   val mk : block -> t
   val block : t -> block
+  val index : t -> int
   val inst : t -> inst option
+  val loc : t -> Loc.t
   val succ : t -> t
   val is_schedule_point : t -> bool
 
@@ -278,7 +282,7 @@ module Func : sig
   include Invariant.S with type t := t
 
   val mk :
-       name:Function.t
+       name:FuncName.t
     -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
@@ -288,7 +292,7 @@ module Func : sig
     -> t
 
   val mk_undefined :
-       name:Function.t
+       name:FuncName.t
     -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
@@ -315,8 +319,16 @@ module Program : sig
   val mk : globals:GlobalDefn.t list -> functions:func list -> t
 
   val compute_distances :
-    entry:block -> trace:Function.t iarray -> t -> unit
-  (** Compute distances to the next "checkpoint" function in the [trace] for
-      each block reachable from the last checkpoint, and store the results
-      in the [checkpoint_dists] field of those blocks. *)
+       entry:block
+    -> src_trace:FuncName.t iarray
+    -> snk_trace:FuncName.t iarray
+    -> t
+    -> (unit, Format.formatter -> unit) result
+  (** Compute static distance heuristics along the trace defined by
+      [src_trace] and [snk_trace]. For each step, we compute the distance to
+      the next checkpoint for every block on a path from the previous to the
+      next checkpoint, storing the results in the [checkpoint_dists] field
+      of those blocks. Returns [Ok ()] if a path was found and written to
+      block metadata, and [Error dp_path] otherwise, with [dp_path] a
+      delayed printer describing the specific path that could not be found. *)
 end

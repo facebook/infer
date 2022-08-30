@@ -17,13 +17,13 @@ let replace_with_specialize_methods instr =
                 List.map c.captured_vars ~f:(fun (_, pvar, typ, capture_mode) ->
                     CapturedVar.{pvar; typ; capture_mode} )
               in
-              Some (ProcAttributes.Block (c.name, captured))
+              Some (ProcAttributes.Closure (c.name, captured))
           | _ ->
               None )
       in
       match
-        BlockSpecialization.create_specialized_procdesc callee_pname
-          ~extra_formals_to_blocks:Pvar.Map.empty ~captured_actuals:[] ~arg_actuals:args
+        ClosureSpecialization.create_specialized_procdesc callee_pname
+          ~extra_formals_to_closures:Pvar.Map.empty ~captured_actuals:[] ~arg_actuals:args
       with
       | Some specialized_pname ->
           Sil.Call (ret, Exp.Const (Const.Cfun specialized_pname), actual_params, loc, flags)
@@ -37,7 +37,7 @@ let process proc_desc =
   (* For each procdesc:
      1. If we are a specialized procdesc:
       1.1. Copy original procdesc
-      1.2. Update blocks' uses
+      1.2. Update closures' uses
      2. Update calls' closure arguments
      3. Update calls with closures as arguments to specialized calls:
       3.1. Create procdescs for specialized callees if they don't already exist
@@ -45,8 +45,8 @@ let process proc_desc =
   *)
   (* 1.
       1.1. Create a specialized copy of [proc_desc]'s [orig_pdesc] (if it exists).
-      1.2. Specialize at instruction level: [foo(f)] when [f = block] replaces every
-           use of [f] (calls and as argument) with the corresponding [block] and its
+      1.2. Specialize at instruction level: [foo(f)] when [f = closure] replaces every
+           use of [f] (calls and as argument) with the corresponding [closure] and its
            captured variables. *)
   ClosureSubstSpecializedMethod.process proc_desc ;
   (* 2.

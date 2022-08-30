@@ -49,7 +49,7 @@ struct
         else Format.fprintf ppf "%a^%i" pp_trm indet exponent
       in
       let pp_num ppf num =
-        if Prod.is_empty num then Trace.pp_styled `Magenta "1" ppf
+        if Prod.is_empty num then Dbg.pp_styled `Magenta "1" ppf
         else Prod.pp "@ @<2>× " pp_factor ppf num
       in
       let pp_den ppf den =
@@ -95,10 +95,10 @@ struct
 
   module S0 = struct
     let ppx pp_trm ppf poly =
-      if Sum.is_empty poly then Trace.pp_styled `Magenta "0" ppf
+      if Sum.is_empty poly then Dbg.pp_styled `Magenta "0" ppf
       else
         let pp_coeff_mono ppf (m, c) =
-          if Mono.equal_one m then Trace.pp_styled `Magenta "%a" ppf Q.pp c
+          if Mono.equal_one m then Dbg.pp_styled `Magenta "%a" ppf Q.pp c
           else if Q.equal Q.one c then
             Format.fprintf ppf "%a" (Mono.ppx pp_trm) m
           else Format.fprintf ppf "%a@<1>×%a" Q.pp c (Mono.ppx pp_trm) m
@@ -120,6 +120,13 @@ struct
       Iter.from_iter (fun f ->
           Sum.iter poly ~f:(fun mono _ ->
               Prod.iter mono ~f:(fun trm _ -> f trm) ) )
+
+    let power_product m =
+      Iter.from_iter (fun f -> Prod.iter m ~f:(fun x p -> f (x, p)))
+
+    let sum_of_power_products p =
+      Iter.from_iter (fun f ->
+          Sum.iter p ~f:(fun m c -> f (c, power_product m)) )
 
     (* core invariant *)
 
@@ -229,7 +236,7 @@ struct
     include S0
 
     (** hide S0.trm and S0.trms that ignore the embedding, shadowed below *)
-    let[@warning "-32"] trm, trms = ((), ())
+    let[@warning "-unused-value-declaration"] trm, trms = ((), ())
 
     let pp = ppx Trm.pp
 
@@ -295,7 +302,7 @@ struct
           redundant representations, singleton polynomials are flattened. *)
       let of_trm : ?power:int -> Trm.t -> t =
        fun ?(power = 1) base ->
-        [%trace]
+        [%dbg]
           ~call:(fun {pf} -> pf "@ %a^%i" Trm.pp base power)
           ~retn:(fun {pf} (c, m) -> pf "%a×%a" Q.pp c Mono.pp m)
         @@ fun () ->
@@ -318,7 +325,7 @@ struct
           polynomials are multiplied by their coefficients directly. *)
       let to_poly : t -> Poly.t =
        fun (coeff, mono) ->
-        [%trace]
+        [%dbg]
           ~call:(fun {pf} -> pf "@ %a×%a" Q.pp coeff Mono.pp mono)
           ~retn:(fun {pf} -> pf "%a" pp)
         @@ fun () ->
@@ -375,7 +382,7 @@ struct
 
     (** map over [trms] *)
     let map poly ~f =
-      [%trace]
+      [%dbg]
         ~call:(fun {pf} -> pf "@ %a" pp poly)
         ~retn:(fun {pf} poly' ->
           pf "%a" pp poly' ;
@@ -419,7 +426,7 @@ struct
     (** [solve_for_mono r c m p] solves [0 = r + (c×m) + p] as [m = q]
         ([Some (m, q)]) such that [r + (c×m) + p = m - q] *)
     let solve_for_mono rejected_poly coeff mono poly =
-      [%trace]
+      [%dbg]
         ~call:(fun {pf} ->
           pf "@ 0 = %a + (%a×%a) + %a" pp rejected_poly Q.pp coeff Mono.pp
             mono pp poly )
@@ -438,7 +445,7 @@ struct
     (** [solve_poly r p] solves [0 = r + p] as [m = q] ([Some (m, q)]) such
         that [r + p = m - q] *)
     let rec solve_poly rejected poly =
-      [%trace]
+      [%dbg]
         ~call:(fun {pf} -> pf "@ 0 = (%a) + (%a)" pp rejected pp poly)
         ~retn:(fun {pf} s ->
           pf "%a"
@@ -453,7 +460,7 @@ struct
 
     (** solve [0 = e] *)
     let solve_zero_eq ?for_ e =
-      [%trace]
+      [%dbg]
         ~call:(fun {pf} ->
           pf "@ 0 = %a%a" Trm.pp e (Option.pp " for %a" Trm.pp) for_ )
         ~retn:(fun {pf} s ->
@@ -473,7 +480,7 @@ struct
           match get_mono for_poly with
           | Some m ->
               let c, p = Sum.find_and_remove m a in
-              let* c = c in
+              let* c in
               solve_for_mono Sum.empty c m p
           | _ -> None )
   end

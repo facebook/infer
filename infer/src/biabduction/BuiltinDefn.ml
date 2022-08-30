@@ -263,13 +263,10 @@ let execute___instanceof_cast ~instof
   | [(val1_, typ1); (texp2_, _)] ->
       let val1, prop__ = check_arith_norm_exp analysis_data val1_ prop_ in
       let texp2, prop = check_arith_norm_exp analysis_data texp2_ prop__ in
-      let is_cast_to_reference =
-        match typ1.desc with Typ.Tptr (_, Typ.Pk_reference) -> true | _ -> false
-      in
       (* In Java, we throw an exception, in C++ we return 0 in case of a cast to a pointer, *)
       (* and throw an exception in case of a cast to a reference. *)
       let should_throw_exception =
-        Language.curr_language_is Java || Language.curr_language_is CIL || is_cast_to_reference
+        Language.curr_language_is Java || Language.curr_language_is CIL || Typ.is_reference typ1
       in
       let deal_with_failed_cast val1 texp1 texp2 =
         raise (Tabulation.create_cast_exception tenv __POS__ None texp1 texp2 val1)

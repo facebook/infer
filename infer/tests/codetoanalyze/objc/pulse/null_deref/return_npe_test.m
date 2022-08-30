@@ -46,7 +46,7 @@
   }
 }
 
-- (void)no_early_return_manifest_bad_FN:(ContainerClass*)c {
+- (void)no_early_return_manifest_bad_FN {
   [self no_early_return_bad_latent_FN:nil];
 }
 
@@ -60,7 +60,7 @@
   }
 }
 
-- (void)no_early_return_no_zero_manifest_bad:(ContainerClass*)c {
+- (void)no_early_return_no_zero_manifest_bad {
   [self no_early_return_no_zero_latent_bad_FN:nil];
 }
 

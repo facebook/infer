@@ -11,7 +11,7 @@ open! IStd
 
 type t =
   {nullsafe_mode: NullsafeMode.t; kind: kind; ret: ret_signature; params: param_signature list}
-[@@deriving compare]
+[@@deriving compare, equal]
 
 and ret_signature = {ret_annotation_deprecated: Annot.Item.t; ret_annotated_type: AnnotatedType.t}
 [@@deriving compare]

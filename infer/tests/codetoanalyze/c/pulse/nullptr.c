@@ -180,9 +180,7 @@ void random_non_functional_bad() {
   }
 }
 
-// quantifier elimination not powerful enough to discard [\exists v. y = v] in
-// the pruned part
-void FNlatent_random_modelled_bad(int y) {
+void random_modelled_bad(int y) {
   int x = random();
   if (x == y) {
     int* p = NULL;
@@ -212,4 +210,29 @@ void FNsuppressed_no_invalidation_compare_to_NULL_bad() {
     q = p;
   }
   *q = 42;
+}
+
+void incr_deref(int* x, int* y) {
+  (*x)++;
+  (*y)++;
+}
+
+void call_incr_deref_with_alias_bad(void) {
+  int x = 0;
+  int* ptr = &x;
+  incr_deref(ptr, ptr);
+  if (x == 2) {
+    ptr = NULL;
+  }
+  x = *ptr;
+}
+
+void call_incr_deref_with_alias_good(void) {
+  int x = 0;
+  int* ptr = &x;
+  incr_deref(ptr, ptr);
+  if (x != 2) {
+    ptr = NULL;
+  }
+  x = *ptr;
 }

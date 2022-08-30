@@ -72,6 +72,30 @@ Reported as "Autoreleasepool Size Unreachable At Exit" by [cost](/docs/next/chec
 \[EXPERIMENTAL\] This issue type indicates that the program's execution doesn't reach the exit
 node. Hence, we cannot compute a static bound of ObjC autoreleasepool's size for the procedure.
 
+## BAD_ARG
+
+Reported as "Bad Arg" by [pulse](/docs/next/checker-pulse).
+
+Bad arg in Erlang: Reports an error when the type of an argument is wrong or the argument is badly formed. Corresponds to the `badarg` error in the Erlang runtime.
+
+For example, trying to concatenate the number `3` with  the list `[1,2]` gives `badarg` error because `3` is not a list.
+```erlang
+f() ->
+    3 ++ [1,2]. // badarg error
+```
+
+Note that although the first argument needs to be a list, the second argument may not be a list.
+For instance, concatenating [1,2] with the number `3` raises no error in Erlang.
+```erlang
+g() ->
+    [1,2] ++ 3. // no error. Result: [1,2|3]
+```
+
+## BAD_ARG_LATENT
+
+Reported as "Bad Arg Latent" by [pulse](/docs/next/checker-pulse).
+
+A latent [BAD_ARG](#bad_arg). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BAD_KEY
 
 Reported as "Bad Key" by [pulse](/docs/next/checker-pulse).
@@ -81,9 +105,12 @@ Bad key in Erlang: Reports an error when trying to access or update a non-existi
 For example, trying to update the key `2` in `M` gives `{badkey,2}` error because `2` is not present as a key in `M`.
 ```erlang
 f() ->
-    M = #{1 => 2},
+    M = #{},
     M#{2 := 3}.
 ```
+
+Note that maps currently use a recency abstraction, meaning that only the most recent key/value is tracked.
+Therefore, if a map is non-empty and we try to access a key other than the one we track, we just assume that it is there to avoid false positives.
 
 ## BAD_KEY_LATENT
 
@@ -140,7 +167,7 @@ For example, accessing `R` as a `person` record gives `{badrecord,person}` error
 
 f() ->
     R = #rabbit{name = "Bunny", color = "Brown"},
-    R#person.name
+    R#person.name.
 ```
 
 ## BAD_RECORD_LATENT
@@ -443,11 +470,6 @@ This error is reported when the argument types to a `printf` method do not match
 
 Action: fix the mismatch between format string and argument types.
 
-## COMPONENT_WITH_MULTIPLE_FACTORY_METHODS
-
-Reported as "Component With Multiple Factory Methods" by [linters](/docs/next/checker-linters).
-
-
 ## CONFIG_IMPACT
 
 Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
@@ -513,6 +535,13 @@ Reported as "Config Impact Strict" by [config-impact-analysis](/docs/next/checke
 This is similar to [`CONFIG_IMPACT` issue](#config_impact) but the analysis reports **all** ungated
 codes irrespective of whether they are expensive or not.
 
+## CONFIG_IMPACT_STRICT_BETA
+
+Reported as "Config Impact Strict Beta" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
+
+This is similar to [`CONFIG_IMPACT_STRICT` issue](#config_impact_strict) but it is only used for
+beta testing that fine-tunes the checker to analysis targets.
+
 ## CONSTANT_ADDRESS_DEREFERENCE
 
 Reported as "Constant Address Dereference" by [pulse](/docs/next/checker-pulse).
@@ -565,6 +594,16 @@ const int copied_v = v;
 Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
 
 
+## DATALOG_FACT
+
+Reported as "Datalog Fact" by [datalog](/docs/next/checker-datalog).
+
+Datalog fact used as input for a datalog solver.
+## DATA_FLOW_TO_SINK
+
+Reported as "Data Flow to Sink" by [pulse](/docs/next/checker-pulse).
+
+A flow of data was detected to a sink.
 ## DEADLOCK
 
 Reported as "Deadlock" by [starvation](/docs/next/checker-starvation).
@@ -1636,12 +1675,6 @@ we assume that any captured weak pointer whose name contains "self" is a weak re
 In contrast, `strongSelf` is a local variable to the block, so the check supports any name given to
 a local strong pointer that has been assigned `weakSelf`.
 
-## MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE
-
-Reported as "Mutable Local Variable In Component File" by [linters](/docs/next/checker-linters).
-
-[Doc in ComponentKit page](http://componentkit.org/docs/avoid-local-variables)
-
 ## NIL_BLOCK_CALL
 
 Reported as "Nil Block Call" by [pulse](/docs/next/checker-pulse).
@@ -1717,7 +1750,7 @@ that the object passed will never be `nil`, or adding a check for `nil` before c
 
 ## NIL_INSERTION_INTO_COLLECTION_LATENT
 
-Reported as "Nil Insertion Into Collection Latent" by [pulse](/docs/next/checker-pulse).
+Reported as "Nil Insertion Into Collection" by [pulse](/docs/next/checker-pulse).
 
 A latent [NIL_INSERTION_INTO_COLLECTION](#nil_insertion_into_collection). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NIL_MESSAGING_TO_NON_POD
@@ -1953,6 +1986,30 @@ also have a dedicated issue type for this case:
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
 
 A latent [NULLPTR_DEREFERENCE](#nullptr_dereference). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+## NULL_ARGUMENT
+
+Reported as "Null Argument" by [pulse](/docs/next/checker-pulse).
+
+```objc
+This issue type indicates `nil` being passed as argument where a non-nil value expected.
+
+#import <Foundation/Foundation.h>
+
+// Test (non-nil) returned values of NSString methods against `nil`
+NSString* stringNotNil(NSString* str) {
+  if (!str) {
+        // ERROR: NSString:stringWithString: expects a non-nil value
+	return [NSString stringWithString:nil];
+  }
+  return str;
+}
+```
+
+## NULL_ARGUMENT_LATENT
+
+Reported as "Null Argument Latent" by [pulse](/docs/next/checker-pulse).
+
+A latent [NULL_ARGUMENT](#null_argument). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NULL_DEREFERENCE
 
 Reported as "Null Dereference" by [biabduction](/docs/next/checker-biabduction).
@@ -2048,6 +2105,24 @@ An example of such variadic methods is
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be
 created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
+## PULSE_CONST_REFABLE
+
+Reported as "Const Refable Parameter" by [pulse](/docs/next/checker-pulse).
+
+This issue is reported when a function parameter is a) passed by value and b) is not modified inside the function. Instead, parameter can be passed by const reference, i.e. converted to a `const&` so that no unnecessary copy is created at the callsite of the function.
+
+For example,
+
+```cpp
+#include <vector>
+
+int read_first(const std::vector<int>& vec) { return vec[0]; }
+
+void const_refable(std::vector<int> vec) {
+  int first = read_first(vec); // vec is never modified, so the parameter should have type const&
+}
+```
+
 ## PULSE_RESOURCE_LEAK
 
 Reported as "Pulse Resource Leak" by [pulse](/docs/next/checker-pulse).
@@ -2085,6 +2160,47 @@ int use_reference_instead(A& x){
   auto& y = x; // copy the ref only
   return y.a;
 }
+```
+## PULSE_UNNECESSARY_COPY_ASSIGNMENT
+
+Reported as "Unnecessary Copy Assignment" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
+## PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE
+
+Reported as "Unnecessary Copy Assignment Movable" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable).
+## PULSE_UNNECESSARY_COPY_MOVABLE
+
+Reported as "Unnecessary Copy Movable" by [pulse](/docs/next/checker-pulse).
+
+This is reported when Infer detects an unnecessary copy into a field where
+- the source is an rvalue-reference
+- the source is not modified before it goes out of scope or is destroyed.
+
+Note that the copy can be modified since it has the ownership of the object.
+
+Fix: Rather than the copying into the field, the source should be moved into it.
+
+For example,
+
+```cpp
+struct A {
+  std::vector<int> vec;
+};
+
+class Test {
+  A mem_a;
+
+  void unnecessary_copy(A&& src) {
+   mem_a = src;
+   // fix is to move as follows
+   // mem_a = std::move(src);
+  }
+
+};
+
 ```
 ## PURE_FUNCTION
 
@@ -2447,6 +2563,11 @@ hierarchy:
 @end
 ```
 
+## SENSITIVE_DATA_FLOW
+
+Reported as "Sensitive Data Flow" by [pulse](/docs/next/checker-pulse).
+
+A flow of sensitive data was detected from a source.
 ## SHELL_INJECTION
 
 Reported as "Shell Injection" by [quandary](/docs/next/checker-quandary).

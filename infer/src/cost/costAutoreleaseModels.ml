@@ -19,11 +19,11 @@ let unit_cost {model_env= {pname; location}} ~ret:_ _inferbo_mem =
 
 
 module NSArray = struct
-  let index_of_object_passing_test array block ({get_summary; model_env= {pname}} as cost_model_env)
-      ~ret inferbo_mem =
-    match block with
-    | Exp.Closure {name= block_name} -> (
-      match get_summary block_name with
+  let index_of_object_passing_test array closure
+      ({get_summary; model_env= {pname}} as cost_model_env) ~ret inferbo_mem =
+    match closure with
+    | Exp.Closure {name= closure_name} -> (
+      match get_summary closure_name with
       | Some {CostDomain.post= callee_summary} ->
           let {BasicCostWithReason.cost= callee_cost} =
             CostDomain.get_cost_kind AutoreleasepoolSize callee_summary

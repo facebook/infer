@@ -13,3 +13,4 @@ module Var = Var
 module Term = Exp.Term
 module Formula = Exp.Formula
 module Context = Context
+include module type of Var.Fresh.Import

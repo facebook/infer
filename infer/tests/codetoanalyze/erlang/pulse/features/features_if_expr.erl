@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_if_expr).
+-include("../../common.hrl").
 
 -export([
     test_if_Ok/0,
@@ -14,9 +15,6 @@
     test_if_in_function2_Bad/0
 ]).
 
-% Call this method with warn(1) to trigger a warning to expect
-warn(0) -> ok.
-
 test_if_Ok() ->
     Y = 3,
     X =
@@ -24,10 +22,7 @@ test_if_Ok() ->
             Y == 3 -> 1;
             not (Y == 3) -> 0
         end,
-    case X of
-        1 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(1, X).
 
 test_if_Bad() ->
     Y = 3,
@@ -36,10 +31,7 @@ test_if_Bad() ->
             Y == 3 -> 1;
             not (Y == 3) -> 0
         end,
-    case X of
-        1 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(1, X).
 
 if_in_function(X) ->
     if
@@ -48,29 +40,13 @@ if_in_function(X) ->
     end.
 
 test_if_in_function_Ok() ->
-    Y = if_in_function(true),
-    case Y of
-        2 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(2, if_in_function(true)).
 
 test_if_in_function_Bad() ->
-    Y = if_in_function(true),
-    case Y of
-        2 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(2, if_in_function(true)).
 
 test_if_in_function2_Ok() ->
-    Y = if_in_function(false),
-    case Y of
-        3 -> ok;
-        _ -> warn(1)
-    end.
+    ?ASSERT_EQUAL(3, if_in_function(false)).
 
 test_if_in_function2_Bad() ->
-    Y = if_in_function(false),
-    case Y of
-        3 -> warn(1);
-        _ -> ok
-    end.
+    ?CRASH_IF_EQUAL(3, if_in_function(false)).

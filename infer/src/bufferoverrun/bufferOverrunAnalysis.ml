@@ -106,8 +106,8 @@ module TransferFunctions = struct
     in
     let ret_var = Loc.of_var (Var.of_id ret_id) in
     let ret_val =
-      match Procdesc.load callee_pname with
-      | Some callee_pdesc when Procdesc.has_added_return_param callee_pdesc ->
+      match Attributes.load callee_pname with
+      | Some callee_attrs when callee_attrs.ProcAttributes.has_added_return_param ->
           Dom.Val.of_loc (Loc.of_pvar (Pvar.get_ret_param_pvar callee_pname))
       | _ ->
           Dom.Mem.find (Loc.of_pvar (Pvar.get_ret_pvar callee_pname)) callee_exit_mem

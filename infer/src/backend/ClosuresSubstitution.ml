@@ -35,6 +35,8 @@ let rec eval_expr (astate : Domain.t) (expr : Exp.t) =
   match expr with
   | Var id ->
       get_var astate (Var.of_id id)
+  | Const (Cfun pname) when Config.function_pointer_specialization && Procname.is_c pname ->
+      VDom.v Exp.{name= pname; captured_vars= []}
   | Closure c when Exp.is_objc_block_closure expr ->
       VDom.v c
   | Closure _ (* TODO: implement for C++ lambdas *) ->
@@ -99,7 +101,8 @@ let replace_closure_call node (astate : Domain.t) (instr : Sil.instr) : Sil.inst
               L.d_printfln "replaced by call %a " (Sil.pp_instr Pp.text ~print_types:true) new_instr ;
               new_instr )
       | Call (ret_id_typ, Const (Cfun pname), actual_params, loc, call_flags)
-        when Procname.is_objc_block pname || Procname.is_specialized pname ->
+        when Procname.is_objc_block pname || Procname.is_specialized_with_function_parameters pname
+        ->
           L.d_printfln "call  %a " (Sil.pp_instr Pp.text ~print_types:true) instr ;
           let captured_by_args =
             List.concat_map actual_params ~f:(function

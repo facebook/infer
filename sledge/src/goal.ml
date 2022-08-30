@@ -12,7 +12,8 @@ module type S = sig
   val status : t -> Llair.block option -> status
   val pp : t pp
   val reached : t -> bool
-  val after_call : Llair.Function.t -> t -> t
+  val update_after_call : Llair.FuncName.t -> t -> t
+  val update_after_retn : Llair.FuncName.t -> t -> t
   val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit
 end
 
@@ -23,59 +24,124 @@ module Undirected = struct
   let status _ _ = ()
   let pp _ppf _ = ()
   let reached _ = false
-  let after_call _ _ = ()
+  let update_after_call _ _ = ()
+  let update_after_retn _ _ = ()
   let initialize ~pgm:_ ~entry:_ _ = ()
 end
 
 module Sparse_trace = struct
-  type t = {cursor: int; trace: Llair.Function.t iarray}
+  type direction = Call | Retn [@@deriving compare, equal, sexp_of]
+
+  type checkpoint = direction * Llair.FuncName.t
+  [@@deriving compare, equal, sexp_of]
+
+  let pp_checkpoint ppf (dir, fn) =
+    let dir_string = match dir with Call -> "" | Retn -> "retn:" in
+    Format.fprintf ppf "%s%a" dir_string Llair.FuncName.pp fn
+
+  let is_call (dir, _) = match dir with Call -> true | Retn -> false
+  let is_ret = is_call >> not
+  let function_of_cp (_, f) = f
+
+  type t = {cursor: int; trace: checkpoint iarray}
   [@@deriving compare, equal, sexp_of]
 
   let pp ppf {cursor; trace} =
     Format.fprintf ppf "[" ;
-    IArray.iteri trace ~f:(fun idx fn ->
+    IArray.iteri trace ~f:(fun idx cp ->
         let arrow = if Int.equal cursor idx then "*->" else "->" in
-        Format.fprintf ppf "%s@,%a" arrow Llair.Function.pp fn ) ;
+        Format.fprintf ppf "%s@,%a" arrow pp_checkpoint cp ) ;
     Format.fprintf ppf "]"
 
   let reached {cursor; trace} = Int.equal cursor (IArray.length trace)
 
-  let after_call fn ({cursor; trace} as goal) =
+  let update_after_call fn ({cursor; trace} as goal) =
     if
       cursor < IArray.length trace
-      && Llair.Function.equal fn (IArray.get trace cursor)
+      &&
+      match IArray.get trace cursor with
+      | Call, fn' -> Llair.FuncName.equal fn fn'
+      | Retn, _ -> false
     then (
-      let goal' = {goal with cursor= cursor + 1} in
-      [%Trace.info "updated goal: %a" pp goal'] ;
-      if reached goal' then Report.reached_goal (fun fs -> pp fs goal') ;
-      goal' )
+      [%Dbg.info "reached %a in %a" Llair.FuncName.pp fn pp goal] ;
+      {goal with cursor= cursor + 1} )
     else goal
 
-  exception Failed_lookup of string
+  let update_after_retn fn ({cursor; trace} as goal) =
+    if
+      cursor < IArray.length trace
+      &&
+      match IArray.get trace cursor with
+      | Call, _ -> false
+      | Retn, fn' -> Llair.FuncName.equal fn fn'
+    then (
+      [%Dbg.info "reached %a in %a" pp_checkpoint (Retn, fn) pp goal] ;
+      {goal with cursor= cursor + 1} )
+    else goal
 
-  let parse_exn s pgm =
+  exception Invalid_trace of string
+
+  let of_fns_exn fns pgm =
     let lookup x =
       match Llair.(Func.find x pgm.functions) with
       | Some f -> f.name
       | None ->
           raise
-            (Failed_lookup
-               ("Unable to resolve function " ^ x ^ " in goal trace " ^ s)
-            )
+            (Invalid_trace
+               ("Unable to resolve function " ^ x ^ " in goal trace") )
     in
-    List.map ~f:lookup (String.split_on_char ~by:'+' s)
-    |> IArray.of_list
-    |> fun trace -> {cursor= 0; trace}
+    let src_trace, snk_trace =
+      List.take_drop_while
+        ~f:(not << String.equal "__sledge_trace_separator__")
+        fns
+    in
+    if List.is_empty src_trace then
+      raise (Invalid_trace "Malformed trace: src_trace must not be empty") ;
+    let src_trace_fns = List.map ~f:lookup src_trace in
+    let src_calls = List.map ~f:(fun f -> (Call, f)) src_trace_fns in
+    let trace =
+      IArray.of_list
+      @@
+      if List.is_empty snk_trace then src_calls
+      else
+        List.(
+          let src_rets =
+            drop 1 src_trace_fns |> map ~f:(fun f -> (Retn, f)) |> rev
+          in
+          let snk_calls =
+            drop 1 snk_trace |> map ~f:(fun f -> (Call, lookup f))
+          in
+          src_calls @ src_rets @ snk_calls)
+    in
+    {cursor= 0; trace}
+
+  let src_trace =
+    IArray.to_iter
+    >> Iter.(take_while ~f:is_call >> map ~f:function_of_cp)
+    >> IArray.of_iter
+
+  let snk_trace =
+    IArray.to_iter
+    >> Iter.(
+         drop_while ~f:is_call
+         >> drop_while ~f:is_ret
+         >> map ~f:function_of_cp)
+    >> IArray.of_iter
 
   let initialize ~pgm ~entry {trace; _} =
-    Llair.Program.compute_distances ~entry ~trace pgm
+    let src_trace = src_trace trace in
+    let snk_trace = snk_trace trace in
+    match
+      Llair.Program.compute_distances ~entry ~src_trace ~snk_trace pgm
+    with
+    | Result.Ok _ -> ()
+    | Result.Error dp_path -> Report.unreachable_goal ~dp_path
 
-  let dist_to_next_checkpoint (({trace; cursor} as goal), block) =
+  let dist_to_next_checkpoint (({cursor; _} as goal), block) =
     if reached goal then 0
     else
-      let next_fn = IArray.get trace cursor in
       Option.value ~default:Int.max_int
-        Llair.(Function.Map.find next_fn block.checkpoint_dists)
+        (Int.Map.find cursor block.Llair.checkpoint_dists)
 
   type status = t * Llair.block option
 

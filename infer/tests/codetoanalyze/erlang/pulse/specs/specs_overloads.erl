@@ -6,43 +6,43 @@
 -module(specs_overloads).
 
 -export([
-    combinations2_Latent/2,
-    combinations1_Ok/2,
-    overload4_Latent/2,
-    overload3_Latent/2,
-    overload2_Latent/2,
-    overload1_Ok/2
+    test_combinations2_Latent/2,
+    test_combinations1_Ok/2,
+    test_overload4_Latent/2,
+    test_overload3_Latent/2,
+    test_overload2_Latent/2,
+    test_overload1_Ok/2
 ]).
 
--spec overload1_Ok
+-spec test_overload1_Ok
     (atom(), nil()) -> any();
     (map(), nil()) -> any().
-overload1_Ok(X, []) when is_atom(X) -> ok;
-overload1_Ok(X, []) when is_map(X) -> ok.
+test_overload1_Ok(X, []) when is_atom(X) -> ok;
+test_overload1_Ok(X, []) when is_map(X) -> ok.
 
-overload2_Latent(X, []) when is_atom(X) -> ok;
-overload2_Latent(X, []) when is_map(X) -> ok.
+test_overload2_Latent(X, []) when is_atom(X) -> ok;
+test_overload2_Latent(X, []) when is_map(X) -> ok.
 
--spec overload3_Latent
+-spec test_overload3_Latent
     (atom(), nil()) -> any();
     (map(), nil()) -> any().
-overload3_Latent(X, []) when is_atom(X) -> ok.
+test_overload3_Latent(X, []) when is_atom(X) -> ok.
 
--spec overload4_Latent
+-spec test_overload4_Latent
     (atom(), nil()) -> any();
     (map(), nil()) -> any().
-overload4_Latent(X, []) when is_map(X) -> ok.
+test_overload4_Latent(X, []) when is_map(X) -> ok.
 
--spec combinations1_Ok
+-spec test_combinations1_Ok
     (atom(), atom()) -> any();
     (nil(), nil()) -> any().
-combinations1_Ok([], []) -> ok;
-combinations1_Ok(X, Y) when is_atom(X), is_atom(Y) -> ok.
+test_combinations1_Ok([], []) -> ok;
+test_combinations1_Ok(X, Y) when is_atom(X), is_atom(Y) -> ok.
 
 % This is to make sure we have a disjunction (overloads) of conjunctions (arguments)
 % and not the other way around
--spec combinations2_Latent
+-spec test_combinations2_Latent
     (atom(), atom()) -> any();
     (nil(), nil()) -> any().
-combinations2_Latent([], Y) when is_atom(Y) -> ok;
-combinations2_Latent(X, []) when is_atom(X) -> ok.
+test_combinations2_Latent([], Y) when is_atom(Y) -> ok;
+test_combinations2_Latent(X, []) when is_atom(X) -> ok.

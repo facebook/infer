@@ -8,11 +8,11 @@
 
 open! IStd
 
-val find_files : path:string -> extension:string -> string list
-(** recursively traverse a path for files ending with a given extension *)
-
 val fold_folders : init:'acc -> f:('acc -> string -> 'acc) -> path:string -> 'acc
-(** recursively traverse a path for folders, returning resuls by a given fold function *)
+(** recursively traverse a path for folders, returning results by a given fold function *)
+
+val find_files : path:string -> extension:string -> string list
+(** recursively find all files in [path] with names ending in [extension] *)
 
 val string_crc_hex32 : string -> string
 (** Compute a 32-character hexadecimal crc using the Digest module *)
@@ -45,8 +45,7 @@ type outfile =
   ; fmt: Format.formatter  (** formatter for printing *) }
 
 val create_outfile : string -> outfile option
-(** create an outfile for the command line, the boolean indicates whether to do demangling when
-    closing the file *)
+(** create an outfile for the command line *)
 
 val close_outf : outfile -> unit
 (** close an outfile *)
@@ -66,7 +65,7 @@ val read_safe_json_file : string -> (Yojson.Safe.t, string) Result.t
 
 val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 
-val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
+val with_file_out : ?append:bool -> string -> f:(Out_channel.t -> 'a) -> 'a
 
 val with_intermediate_temp_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 (** like [with_file_out] but uses a fresh intermediate temporary file and rename to avoid
@@ -149,6 +148,10 @@ val get_available_memory_MB : unit -> int option
 val iter_infer_deps : project_root:string -> f:(string -> unit) -> string -> unit
 (** Parse each line of the given infer_deps.txt file (split on tabs, assume 3 elements per line) and
     run [f] on the third element. [project_root] is an argument to avoid dependency cycles. *)
+
+val inline_argument_files : string list -> string list
+(** Given a list of arguments return the extended list of arguments where the args in a file have
+    been extracted *)
 
 val numcores : int
 (** - On Linux return the number of physical cores (sockets * cores per socket).

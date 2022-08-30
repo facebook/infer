@@ -17,8 +17,8 @@ DEPENDENCIES_DIR="$INFER_ROOT/facebook/dependencies"
 PLATFORM="$(uname)"
 SANDCASTLE=${SANDCASTLE:-}
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-INFER_OPAM_DEFAULT_SWITCH="4.13.1+flambda"
-INFER_OPAM_DEFAULT_SWITCH_OPTIONS="--package=ocaml-variants.4.13.1+options,ocaml-option-flambda"
+INFER_OPAM_DEFAULT_SWITCH="4.14.0+flambda"
+INFER_OPAM_DEFAULT_SWITCH_OPTIONS="--package=ocaml-variants.4.14.0+options,ocaml-option-flambda"
 INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_DEFAULT_SWITCH}
 INFER_OPAM_SWITCH_OPTIONS=${INFER_OPAM_SWITCH_OPTIONS:-$INFER_OPAM_DEFAULT_SWITCH_OPTIONS}
 PLUGIN_DIR="$INFER_ROOT/facebook-clang-plugins"
@@ -32,6 +32,7 @@ function usage() {
   echo "   all      build everything (default)"
   echo "   clang    build C and Objective-C analyzer"
   echo "   erlang   build Erlang analyzer"
+  echo "   hack     build Hack analyzer"
   echo "   java     build Java analyzer"
   echo
   echo " options:"
@@ -50,6 +51,7 @@ function usage() {
 # arguments
 BUILD_CLANG=${BUILD_CLANG:-no}
 BUILD_ERLANG=${BUILD_ERLANG:-no}
+BUILD_HACK=${BUILD_HACK:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
 INFER_CONFIGURE_OPTS=${INFER_CONFIGURE_OPTS:-""}
 INTERACTIVE=${INTERACTIVE:-yes}
@@ -63,6 +65,7 @@ ORIG_ARGS="$*"
 function build_all() {
   BUILD_CLANG=yes
   BUILD_ERLANG=yes
+  BUILD_HACK=yes
   BUILD_JAVA=yes
 }
 
@@ -81,6 +84,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     erlang)
       BUILD_ERLANG=yes
+      shift
+      continue
+      ;;
+    hack)
+      BUILD_HACK=yes
       shift
       continue
       ;;
@@ -120,7 +128,8 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && [ "$BUILD_JAVA" == "no" ]; then
+if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && \
+    [ "$BUILD_HACK" == "no" ] && [ "$BUILD_JAVA" == "no" ]; then
   build_all
 fi
 
@@ -145,10 +154,7 @@ install_opam_deps () {
     if [ "$USE_OPAM_LOCK" == yes ]; then
         locked=.locked
     fi
-    opam install --deps-only "$INFER_ROOT"/opam/infer.opam$locked &&
-    if [ -n "$SANDCASTLE" ]; then
-        opam pin list | grep yojson || opam pin add yojson "${DEPENDENCIES_DIR}/yojson-1.7.0fix"
-    fi
+    opam install --deps-only "$INFER_ROOT"/opam/infer.opam$locked
 }
 
 echo "initializing opam... " >&2
@@ -173,6 +179,9 @@ if [ "$BUILD_CLANG" == "no" ]; then
 fi
 if [ "$BUILD_ERLANG" == "no" ]; then
   INFER_CONFIGURE_OPTS+=" --disable-erlang-analyzers"
+fi
+if [ "$BUILD_HACK" == "no" ]; then
+  INFER_CONFIGURE_OPTS+=" --disable-hack-analyzers"
 fi
 if [ "$BUILD_JAVA" == "no" ]; then
   INFER_CONFIGURE_OPTS+=" --disable-java-analyzers"

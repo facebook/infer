@@ -6,4 +6,4 @@
  *)
 open! IStd
 
-let tests = [CiOSVersionNumbersTests.tests; QualifiedCppNameTests.tests; ALIssuesTests.tests]
+let tests = [QualifiedCppNameTests.tests]

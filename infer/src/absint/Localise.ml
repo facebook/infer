@@ -86,8 +86,7 @@ let error_desc_set_bucket err_desc bucket =
 let error_desc_is_reportable_bucket err_desc =
   let issue_bucket = error_desc_get_bucket err_desc in
   let high_buckets = BucketLevel.[b1; b2] in
-  Option.value_map issue_bucket ~default:false ~f:(fun b ->
-      List.mem ~equal:String.equal high_buckets b )
+  Option.exists issue_bucket ~f:(fun b -> List.mem ~equal:String.equal high_buckets b)
 
 
 (** get the value tag, if any *)
@@ -109,7 +108,7 @@ let error_desc_hash desc = Hashtbl.hash (desc_get_comparable desc)
 
 (** equality for error_desc *)
 let error_desc_equal desc1 desc2 =
-  [%compare.equal: string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
+  [%equal: string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
 
 
 let line_tag_ tags tag loc =
@@ -405,16 +404,6 @@ let desc_empty_vector_access pname_opt object_str loc =
 
 
 let is_empty_vector_access_desc desc = has_tag desc Tags.empty_vector_access
-
-let desc_frontend_warning desc sugg_opt loc =
-  let tags = Tags.create () in
-  let sugg = match sugg_opt with Some sugg -> sugg | None -> "" in
-  (* If the description ends in a period, we remove it because the sentence continues with
-     "at line ..." *)
-  let desc = match String.chop_suffix ~suffix:"." desc with Some desc -> desc | None -> desc in
-  let description = Format.sprintf "%s %s. %s" desc (at_line tags loc) sugg in
-  {no_desc with descriptions= [description]; tags= !tags}
-
 
 let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc bucket_opt =
   let tags = Tags.create () in

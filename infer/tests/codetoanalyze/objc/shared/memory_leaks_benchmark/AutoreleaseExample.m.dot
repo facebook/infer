@@ -132,69 +132,69 @@ digraph cfg {
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_5" -> "createA.48a5d7f480131d59bba69d521715b836_3" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" [label="1: Start Auto.autorelease_main\nFormals:  self:Auto*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+"autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_1" [label="1: Start Auto.autorelease_main\nFormals:  self:Auto*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
-	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_5" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" [label="2: Exit Auto.autorelease_main \n  " color=yellow style=filled]
+	 "autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_1" -> "autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_5" ;
+"autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_2" [label="2: Exit Auto.autorelease_main \n  " color=yellow style=filled]
 	
 
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 11]\n  n$1=_fun_NSObject.autorelease(n$0:NSString*) virtual [line 22, column 10]\n " shape="box"]
+"autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 11]\n  n$1=_fun_NSObject.autorelease(n$0:NSString*) virtual [line 22, column 10]\n " shape="box"]
 	
 
-	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" [label="4:  Return Stmt \n   *&return:NSString*=n$1 [line 22, column 3]\n " shape="box"]
+	 "autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_3" -> "autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_4" ;
+"autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_4" [label="4:  Return Stmt \n   *&return:NSString*=n$1 [line 22, column 3]\n " shape="box"]
 	
 
-	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" ;
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$2 [line 21, column 3]\n " shape="box"]
+	 "autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_4" -> "autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_2" ;
+"autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$2 [line 21, column 3]\n " shape="box"]
 	
 
-	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_5" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" ;
-"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_1" [label="1: Start Auto.dealloc\nFormals:  self:Auto*\nLocals:  \n  " color=yellow style=filled]
+	 "autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_5" -> "autorelease_main#Auto#[instance].033d15a3ff1df677b2f5c08dfa7d1f59_3" ;
+"dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_1" [label="1: Start Auto.dealloc\nFormals:  self:Auto*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_1" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_4" ;
-"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_2" [label="2: Exit Auto.dealloc \n  " color=yellow style=filled]
+	 "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_1" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_4" ;
+"dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_2" [label="2: Exit Auto.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_3" [label="3:  Call dealloc \n   n$0=*&self:Auto* [line 25, column 1]\n  n$1=*n$0._son:Auto* [line 25, column 1]\n  n$2=_fun_Auto.dealloc(n$1:Auto*) [line 25, column 1]\n " shape="box"]
+"dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_3" [label="3:  Call dealloc \n   n$0=*&self:Auto* [line 25, column 1]\n  n$1=*n$0._son:Auto* [line 25, column 1]\n  n$2=_fun_Auto.dealloc(n$1:Auto*) [line 25, column 1]\n " shape="box"]
 	
 
-	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_3" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_2" ;
-"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_4" [label="4:  Call dealloc \n   n$3=*&self:Auto* [line 18, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:Auto*) [line 18, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:Auto*,(n$4 - 1):unsigned int) [line 18, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:Auto*) [line 18, column 1]\n " shape="box"]
+	 "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_3" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_2" ;
+"dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_4" [label="4:  Call dealloc \n   n$3=*&self:Auto* [line 18, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:Auto*) [line 18, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:Auto*,(n$4 - 1):unsigned int) [line 18, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:Auto*) [line 18, column 1]\n " shape="box"]
 	
 
-	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_4" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_5" ;
-	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_4" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_6" ;
-"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 18, column 1]\n " shape="invhouse"]
+	 "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_4" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_5" ;
+	 "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_4" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_6" ;
+"dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 18, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_5" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_3" ;
-"dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 18, column 1]\n " shape="invhouse"]
+	 "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_5" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_3" ;
+"dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 18, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_6" -> "dealloc#Auto#instance.f75e3ca5aab8c1f0122d42fc04b27666_2" ;
-"setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_1" [label="1: Start Auto.setSon:\nFormals:  self:Auto* son:Auto*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_6" -> "dealloc#Auto#[instance].c3f7b6216f9a7edb7c431d71370a8cea_2" ;
+"setSon:#Auto(class Auto)#[instance].3d71c66b9bada0f1499f76e12fd56a17_1" [label="1: Start Auto.setSon:\nFormals:  self:Auto* son:Auto*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_1" -> "setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_3" ;
-"setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_2" [label="2: Exit Auto.setSon: \n  " color=yellow style=filled]
+	 "setSon:#Auto(class Auto)#[instance].3d71c66b9bada0f1499f76e12fd56a17_1" -> "setSon:#Auto(class Auto)#[instance].3d71c66b9bada0f1499f76e12fd56a17_3" ;
+"setSon:#Auto(class Auto)#[instance].3d71c66b9bada0f1499f76e12fd56a17_2" [label="2: Exit Auto.setSon: \n  " color=yellow style=filled]
 	
 
-"setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:Auto* [line 15, column 17]\n  n$1=*&son:Auto* [line 15, column 17]\n  *n$0._son:Auto*=n$1 [line 15, column 17]\n " shape="box"]
+"setSon:#Auto(class Auto)#[instance].3d71c66b9bada0f1499f76e12fd56a17_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:Auto* [line 15, column 17]\n  n$1=*&son:Auto* [line 15, column 17]\n  *n$0._son:Auto*=n$1 [line 15, column 17]\n " shape="box"]
 	
 
-	 "setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_3" -> "setSon:#Auto(class Auto)#instance.b314785cc6e34d48670dac2910ec765e_2" ;
-"son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_1" [label="1: Start Auto.son\nFormals:  self:Auto*\nLocals:  \n  " color=yellow style=filled]
+	 "setSon:#Auto(class Auto)#[instance].3d71c66b9bada0f1499f76e12fd56a17_3" -> "setSon:#Auto(class Auto)#[instance].3d71c66b9bada0f1499f76e12fd56a17_2" ;
+"son#Auto#[instance].7dea4cebbc3e5c6ae2fd4c5ba22bf952_1" [label="1: Start Auto.son\nFormals:  self:Auto*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_1" -> "son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_3" ;
-"son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_2" [label="2: Exit Auto.son \n  " color=yellow style=filled]
+	 "son#Auto#[instance].7dea4cebbc3e5c6ae2fd4c5ba22bf952_1" -> "son#Auto#[instance].7dea4cebbc3e5c6ae2fd4c5ba22bf952_3" ;
+"son#Auto#[instance].7dea4cebbc3e5c6ae2fd4c5ba22bf952_2" [label="2: Exit Auto.son \n  " color=yellow style=filled]
 	
 
-"son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:Auto* [line 15, column 17]\n  n$1=*n$0._son:Auto* [line 15, column 17]\n  *&return:Auto*=n$1 [line 15, column 17]\n " shape="box"]
+"son#Auto#[instance].7dea4cebbc3e5c6ae2fd4c5ba22bf952_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:Auto* [line 15, column 17]\n  n$1=*n$0._son:Auto* [line 15, column 17]\n  *&return:Auto*=n$1 [line 15, column 17]\n " shape="box"]
 	
 
-	 "son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_3" -> "son#Auto#instance.10d5e200f659259b61aeb33f58f3b9ab_2" ;
+	 "son#Auto#[instance].7dea4cebbc3e5c6ae2fd4c5ba22bf952_3" -> "son#Auto#[instance].7dea4cebbc3e5c6ae2fd4c5ba22bf952_2" ;
 }

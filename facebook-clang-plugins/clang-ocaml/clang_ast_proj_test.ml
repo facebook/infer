@@ -35,7 +35,11 @@ let append_name_info info suffix =
 
 
 let qual_type ptr =
-  {qt_type_ptr= ptr; qt_is_const= false; qt_is_restrict= false; qt_is_volatile= false}
+  { qt_type_ptr= ptr
+  ; qt_is_const= false
+  ; qt_is_restrict= false
+  ; qt_is_trivially_copyable= false
+  ; qt_is_volatile= false }
 
 
 let var_decl_info ~is_global =
@@ -78,8 +82,7 @@ let () =
   assert_equal "is_valid_astnode_kind" (is_valid_astnode_kind (get_decl_kind_string decl)) true ;
   assert_equal "is_valid_astnode_kind" (is_valid_astnode_kind "AFakeNodeThatDoesNotExist") false ;
   let decl2 = update_named_decl_tuple (fun (di, info) -> (di, append_name_info info "bar")) decl in
-  assert_equal "update_named_decl_tuple" (get_named_decl_tuple decl2)
-    (Some (di, name_info "foobar")) ;
+  assert_equal "update_named_decl_tuple" (get_named_decl_tuple decl2) (Some (di, name_info "foobar")) ;
   let di2 = decl_info (source_location ~file:"bla" ()) (source_location ~file:"bleh" ()) in
   let decl3 = update_decl_tuple (fun _ -> di2) decl in
   assert_equal "update_decl_tuple" (get_decl_tuple decl3) di2 ;

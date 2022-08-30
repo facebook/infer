@@ -36,7 +36,6 @@ open OpenSource;;
 open Backend;;
 open JavaFrontend;;
 open ClangFrontend;;
-open ASTLanguage;;
 open TestDeterminators;;
 open Integration;;
 

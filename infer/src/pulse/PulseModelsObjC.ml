@@ -8,7 +8,7 @@
 open! IStd
 module IRAttributes = Attributes
 open PulseBasicInterface
-open PulseOperations.Import
+open PulseOperationResult.Import
 open PulseModelsImport
 
 module CoreFoundation = struct
@@ -35,7 +35,7 @@ let call args : model =
       let formals_opt = get_pvar_formals c.name in
       let callee_data = analyze_dependency c.name in
       let call_kind = `Closure c.captured_vars in
-      let r =
+      let r, _contradiction =
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location c.name
           ~ret ~actuals ~formals_opt ~call_kind astate
       in
@@ -85,12 +85,12 @@ let read_from_collection (key, key_hist) ~desc : model =
   let event = Hist.call_event path location desc in
   let astate_nil =
     let ret_val = AbstractValue.mk_fresh () in
-    let<*> astate = PulseArithmetic.prune_eq_zero key astate in
-    let<+> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
+    let<**> astate = PulseArithmetic.prune_eq_zero key astate in
+    let<++> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
     PulseOperations.write_id ret_id (ret_val, Hist.add_event path event key_hist) astate
   in
   let astate_not_nil =
-    let<*> astate = PulseArithmetic.prune_positive key astate in
+    let<**> astate = PulseArithmetic.prune_positive key astate in
     let<+> astate, (ret_val, hist) =
       PulseOperations.eval_access path Read location (key, key_hist) Dereference astate
     in
@@ -113,8 +113,8 @@ let alloc_no_fail size : model =
  fun ({ret= ret_id, _} as model_data) astate ->
   (* NOTE: technically this doesn't initialize the result but we haven't modelled initialization so
      assume the object is initialized after [init] for now *)
-  let<+> astate =
-    Basic.alloc_no_leak_not_null ~initialize:true ~desc:"alloc" (Some size) model_data astate
+  let<++> astate =
+    Basic.alloc_not_null ~initialize:true ~desc:"alloc" ObjCAlloc (Some size) model_data astate
   in
   let ret_addr =
     match PulseOperations.read_id ret_id astate with
@@ -166,12 +166,13 @@ let check_arg_not_nil (value, value_hist) ~desc : model =
  fun {path; location; ret= ret_id, _} astate ->
   let event = Hist.call_event path location desc in
   let<*> astate, _ =
-    PulseOperations.eval_access path Read location
+    PulseOperations.eval_access path ~must_be_valid_reason:(NullArgumentWhereNonNullExpected desc)
+      Read location
       (value, Hist.add_event path event value_hist)
       Dereference astate
   in
   let ret_val = AbstractValue.mk_fresh () in
-  let<+> astate = PulseArithmetic.prune_positive ret_val astate in
+  let<++> astate = PulseArithmetic.prune_positive ret_val astate in
   PulseOperations.write_id ret_id (ret_val, Hist.single_call path location desc) astate
 
 

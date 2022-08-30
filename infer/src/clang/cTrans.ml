@@ -131,13 +131,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match expr_info.Clang_ast_t.ei_value_kind with `LValue | `XValue -> true | `RValue -> false
     in
     match (is_glvalue, typ.desc) with
-    | true, Tptr (_, Pk_reference) ->
+    | true, Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
         (* reference of reference is not allowed in C++ - it's most likely frontend *)
         (* trying to add same reference to same type twice*)
         (* this is hacky and should be fixed (t9838691) *)
         typ
     | true, _ ->
-        Typ.mk (Tptr (typ, Pk_reference))
+        Typ.mk (Tptr (typ, Pk_lvalue_reference))
     | _ ->
         typ
 
@@ -570,7 +570,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | MemberOrIvar {return= (_, {Typ.desc= Tptr _}) as return} ->
             (return, [])
         | MemberOrIvar {return= exp, typ} ->
-            ((exp, Typ.mk (Tptr (typ, Typ.Pk_reference))), [])
+            ((exp, Typ.mk (Tptr (typ, Typ.Pk_lvalue_reference))), [])
         | DeclRefExpr ->
             (mk_fresh_void_exp_typ (), [])
       else (* don't add 'this' expression for static methods. *)
@@ -627,7 +627,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let* decl_ref =
       match CAst_utils.get_decl_from_typ_ptr class_type_ptr with
       | Some (CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info))
-      | Some (ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _)) ->
+      | Some (ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _, _)) ->
           cxx_record_info.xrdi_destructor
       | _ ->
           None
@@ -824,7 +824,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match ast_typ.Typ.desc with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
           if CGeneral_utils.is_cpp_translation context.translation_unit_context then
-            Typ.mk (Tptr (ast_typ, Pk_reference))
+            Typ.mk (Tptr (ast_typ, Pk_lvalue_reference))
           else ast_typ
       | _ ->
           ast_typ
@@ -858,12 +858,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (Typ.pp Pp.text) typ ;
     let res_trans = mk_trans_result return empty_control in
     let res_trans =
-      match typ.desc with
-      | Tptr (_, Pk_reference) ->
-          (* dereference pvar due to the behavior of reference types in clang's AST *)
-          dereference_value_from_result stmt_info.Clang_ast_t.si_source_range sil_loc res_trans
-      | _ ->
-          res_trans
+      if Typ.is_reference typ then
+        (* dereference pvar due to the behavior of reference types in clang's AST *)
+        dereference_value_from_result stmt_info.Clang_ast_t.si_source_range sil_loc res_trans
+      else res_trans
     in
     (* TODO: For now, it does not generate the initializers for static local variables. This is
        unsound because a static local varaible should be initialized once globally.  On the other
@@ -1129,23 +1127,35 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     match atomic_expr_info.Clang_ast_t.aei_kind with
     | `AO__atomic_add_fetch
-    | `AO__atomic_sub_fetch
-    | `AO__atomic_or_fetch
-    | `AO__atomic_xor_fetch
     | `AO__atomic_and_fetch
     | `AO__atomic_fetch_add
-    | `AO__atomic_fetch_sub
-    | `AO__atomic_fetch_or
-    | `AO__atomic_fetch_xor
     | `AO__atomic_fetch_and
+    | `AO__atomic_fetch_or
+    | `AO__atomic_fetch_sub
+    | `AO__atomic_fetch_xor
+    | `AO__atomic_or_fetch
+    | `AO__atomic_sub_fetch
+    | `AO__atomic_xor_fetch
     | `AO__c11_atomic_fetch_add
-    | `AO__c11_atomic_fetch_sub
-    | `AO__c11_atomic_fetch_or
-    | `AO__c11_atomic_fetch_xor
     | `AO__c11_atomic_fetch_and
+    | `AO__c11_atomic_fetch_nand
+    | `AO__c11_atomic_fetch_or
+    | `AO__c11_atomic_fetch_sub
+    | `AO__c11_atomic_fetch_xor
+    | `AO__hip_atomic_compare_exchange_strong
+    | `AO__hip_atomic_compare_exchange_weak
+    | `AO__hip_atomic_exchange
+    | `AO__hip_atomic_fetch_add
+    | `AO__hip_atomic_fetch_and
+    | `AO__hip_atomic_fetch_max
+    | `AO__hip_atomic_fetch_min
+    | `AO__hip_atomic_fetch_or
+    | `AO__hip_atomic_fetch_xor
+    | `AO__hip_atomic_load
+    | `AO__hip_atomic_store
     | `AO__opencl_atomic_fetch_add
-    | `AO__opencl_atomic_fetch_sub
     | `AO__opencl_atomic_fetch_or
+    | `AO__opencl_atomic_fetch_sub
     | `AO__opencl_atomic_fetch_xor
     | `AO__opencl_atomic_fetch_and ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -1556,7 +1566,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* we cannot translate the arguments of __builtin_object_size because preprocessing copies
        them verbatim from a call to a different function, and they might be side-effecting *)
     let should_translate_args =
-      not (Option.value_map ~f:CTrans_models.is_builtin_object_size ~default:false callee_pname_opt)
+      not (Option.exists ~f:CTrans_models.is_builtin_object_size callee_pname_opt)
     in
     let params_stmt = if should_translate_args then params_stmt else [] in
     (* As we may have nodes coming from different parameters we need to  *)
@@ -3852,7 +3862,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block) ->
               let mode, typ =
                 if modify_in_block || Pvar.is_global var then
-                  (CapturedVar.ByReference, Typ.mk (Tptr (typ, Pk_reference)))
+                  (CapturedVar.ByReference, Typ.mk (Tptr (typ, Pk_lvalue_reference)))
                 else (CapturedVar.ByValue, typ)
               in
               (var, typ, mode) )
@@ -3886,7 +3896,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let translate_captured_var_assign exp pvar typ mode =
       (* Structs always have reference if passed as parameters *)
       let typ =
-        match typ.Typ.desc with Tstruct _ -> Typ.mk (Tptr (typ, Pk_reference)) | _ -> typ
+        match typ.Typ.desc with Tstruct _ -> Typ.mk (Tptr (typ, Pk_lvalue_reference)) | _ -> typ
       in
       let instr, exp = CTrans_utils.dereference_var_sil (exp, typ) loc in
       let trans_results = mk_trans_result (exp, typ) {empty_control with instrs= [instr]} in
@@ -3911,7 +3921,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match (mode : CapturedVar.capture_mode) with
       | ByReference -> (
         match typ.Typ.desc with
-        | Tptr (_, Typ.Pk_reference) ->
+        | Tptr (_, Typ.Pk_lvalue_reference) ->
             let trans_result, captured_var =
               translate_captured_var_assign (Exp.Lvar pvar) pvar typ mode
             in
@@ -3922,13 +3932,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | _ ->
             (* A variable captured by ref (except ref variables) is missing ref in its type *)
             ( trans_results_acc
-            , (Exp.Lvar pvar, pvar, Typ.mk (Tptr (typ, Pk_reference)), mode) :: captured_vars_acc )
-        )
+            , (Exp.Lvar pvar, pvar, Typ.mk (Tptr (typ, Pk_lvalue_reference)), mode)
+              :: captured_vars_acc ) )
       | ByValue -> (
           let init, exp, typ_new =
             match typ.Typ.desc with
             (* TODO: Structs are missing copy constructor instructions when passed by value *)
-            | Tptr (typ_no_ref, Pk_reference) when not (Typ.is_struct typ_no_ref) ->
+            | Tptr (typ_no_ref, Pk_lvalue_reference) when not (Typ.is_struct typ_no_ref) ->
                 let return = (Exp.Lvar pvar, typ) in
                 (* We need to dereference ref variable as usual when we read its value *)
                 let init_trans_results =
@@ -5129,12 +5139,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPFlushDirective _
     | OMPForDirective _
     | OMPForSimdDirective _
+    | OMPGenericLoopDirective _
     | OMPInteropDirective _
     | OMPIteratorExpr _
     | OMPMaskedDirective _
     | OMPMasterDirective _
     | OMPMasterTaskLoopDirective _
     | OMPMasterTaskLoopSimdDirective _
+    | OMPMetaDirective _
     | OMPOrderedDirective _
     | OMPParallelDirective _
     | OMPParallelForDirective _
@@ -5264,7 +5276,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             else trans_state
           in
           let control_tail_rev, returns_tail_rev =
-            exec_trans_instrs_rev trans_state' trans_stmt_fun_list'
+            (* Note: for assignment, we should keep only the value of the last instruction.
+               This is handled above, and for all other instructions we must discard the value. *)
+            exec_trans_instrs_rev {trans_state' with var_exp_typ= None} trans_stmt_fun_list'
           in
           ( { root_nodes= control_tail_rev.root_nodes
             ; leaf_nodes=

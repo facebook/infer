@@ -13,8 +13,8 @@ module AbstractValue = PulseAbstractValue
 module Attribute = PulseAttribute
 module Attributes = PulseAttribute.Attributes
 module CallEvent = PulseCallEvent
+module Formula = PulseFormula
 module Invalidation = PulseInvalidation
-module PathCondition = PulsePathCondition
 module SatUnsat = PulseSatUnsat
 module SkippedCalls = PulseSkippedCalls
 module Taint = PulseTaint
@@ -34,8 +34,6 @@ include struct
   module PulseCallEvent = PulseCallEvent [@@deprecated "use the short form CallEvent instead"]
   module PulseInvalidation = PulseInvalidation
   [@@deprecated "use the short form Invalidation instead"]
-  module PulsePathCondition = PulsePathCondition
-  [@@deprecated "use the short form PathCondition instead"]
   module PulseTimestamp = PulseTimestamp [@@deprecated "use the short form Timestamp instead"]
   module PulseSkippedCalls = PulseSkippedCalls
   [@@deprecated "use the short form SkippedCalls instead"]

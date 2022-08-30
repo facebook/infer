@@ -1,0 +1,4 @@
+property SendAfterClose
+  start -> start: *
+  start -> closed: "erlang:exit/2"(Pid, Reason, Ret) => pid:=Pid
+  closed -> error: "erlang:send/2"(Pid, Msg, Ret) when Pid==pid

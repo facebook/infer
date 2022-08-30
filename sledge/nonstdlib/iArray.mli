@@ -58,6 +58,7 @@ val to_iter : 'a t -> 'a iter
 val iter : 'a t -> f:('a -> unit) -> unit
 val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool
+val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool
 val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
 val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's

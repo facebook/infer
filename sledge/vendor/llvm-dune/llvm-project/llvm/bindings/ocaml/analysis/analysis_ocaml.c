@@ -33,7 +33,7 @@ value llvm_verify_module(LLVMModuleRef M) {
   if (0 == Result) {
     Option = Val_none;
   } else {
-    String = copy_string(Message);
+    String = caml_copy_string(Message);
     Option = caml_alloc_some(String);
   }
 

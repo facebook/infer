@@ -60,7 +60,7 @@ build/ast_inline.atd: build/ast_inline.atd.p
 build/clang_ast.atd: build/ast_inline.atd
 #	$(ATDCAT) returns 0 even if it fails - look at the output file to
 #	determine whether it failed or not. Then remove the result file as
-#	make misteriously doesn't do that by itself
+#	make mysteriously doesn't do that by itself
 	$(ATDCAT) $< > $@ && { [ -s $@ ] || { rm $@; exit 1; }; }
 
 build/ast_inline.atd.inc: build/ast_inline.atd.p

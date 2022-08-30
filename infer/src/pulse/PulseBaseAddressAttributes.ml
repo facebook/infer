@@ -63,13 +63,65 @@ let empty = Graph.empty
 
 let filter = Graph.filter
 
+(* for an abstract value v, where f_keep(v) == false, find an abstract value v_keep, where
+   f_keep(v_keep) == true and where v_keep has taint propagated from v *)
+let mk_transitive_taint_from_subst f_keep memory =
+  (* construct map v -> [v1,...,vn], where taint is propagated from v1,...,vn to v *)
+  let taints_from_map =
+    fold
+      (fun addr attrs taint_from_map ->
+        match Attributes.get_propagate_taint_from attrs with
+        | None ->
+            taint_from_map
+        | Some taints_in ->
+            List.fold ~init:taint_from_map
+              ~f:(fun acc {Attribute.v= from} ->
+                match AbstractValue.Map.find_opt addr acc with
+                | None ->
+                    AbstractValue.Map.add addr [from] acc
+                | Some taint_from ->
+                    AbstractValue.Map.add addr (from :: taint_from) acc )
+              taints_in )
+      memory AbstractValue.Map.empty
+  in
+  let rec find_live_and_subst subst addr =
+    match AbstractValue.Map.find_opt addr subst with
+    | None -> (
+        if f_keep addr then subst
+        else
+          (* to avoid cycles *)
+          let subst = AbstractValue.Map.add addr AbstractValue.Set.empty subst in
+          match AbstractValue.Map.find_opt addr taints_from_map with
+          | None ->
+              subst
+          | Some taints_from ->
+              let subst =
+                List.fold taints_from
+                  ~f:(fun subst addr -> find_live_and_subst subst addr)
+                  ~init:subst
+              in
+              let new_taints_from =
+                List.fold taints_from ~init:AbstractValue.Set.empty ~f:(fun acc addr ->
+                    if f_keep addr then AbstractValue.Set.add addr acc
+                    else AbstractValue.Set.union (AbstractValue.Map.find addr subst) acc )
+              in
+              AbstractValue.Map.add addr new_taints_from subst )
+    | Some _ ->
+        subst
+  in
+  AbstractValue.Map.fold
+    (fun addr _taint_from subst -> find_live_and_subst subst addr)
+    taints_from_map AbstractValue.Map.empty
+
+
 let filter_with_discarded_addrs f_keep memory =
+  let taint_from_subst = mk_transitive_taint_from_subst f_keep memory in
   fold
     (fun addr attrs ((memory, discarded) as acc) ->
       if f_keep addr then
         let attrs' =
           Attributes.fold attrs ~init:attrs ~f:(fun attrs' attr ->
-              match Attribute.filter_unreachable f_keep attr with
+              match Attribute.filter_unreachable taint_from_subst f_keep attr with
               | None ->
                   Attributes.remove attr attrs'
               | Some attr' ->
@@ -140,6 +192,27 @@ let remove_allocation_attr address memory =
       memory
 
 
+let remove_tainted address memory =
+  remove_one address (Attribute.Tainted Attribute.TaintedSet.empty) memory
+
+
+let remove_taint_sanitizer address memory =
+  remove_one address (Attribute.TaintSanitized Attribute.TaintSanitizedSet.empty) memory
+
+
+let remove_propagate_taint_from address memory =
+  match get_attribute Attributes.get_propagate_taint_from address memory with
+  | Some taint ->
+      remove_one address (Attribute.PropagateTaintFrom taint) memory
+  | None ->
+      memory
+
+
+let remove_taint_attrs address memory =
+  remove_tainted address memory |> remove_taint_sanitizer address
+  |> remove_propagate_taint_from address
+
+
 let remove_isl_abduced_attr address memory =
   match get_attribute Attributes.get_isl_abduced address memory with
   | Some trace ->
@@ -172,15 +245,28 @@ let get_allocation = get_attribute Attributes.get_allocation
 
 let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
-let get_copied_var = get_attribute Attributes.get_copied_var
+let get_copied_into = get_attribute Attributes.get_copied_into
 
-let get_source_origin_of_copy = get_attribute Attributes.get_source_origin_of_copy
+let get_source_origin_of_copy address attrs =
+  get_attribute Attributes.get_source_origin_of_copy address attrs |> Option.map ~f:fst
+
+
+let is_copied_from_const_ref address attrs =
+  get_attribute Attributes.get_source_origin_of_copy address attrs
+  |> Option.exists ~f:(fun (_, is_const_ref) -> is_const_ref)
+
 
 let get_invalid = get_attribute Attributes.get_invalid
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
-let get_must_not_be_tainted = get_attribute Attributes.get_must_not_be_tainted
+let get_must_not_be_tainted address memory =
+  match Graph.find_opt address memory with
+  | None ->
+      Attribute.TaintSinkSet.empty
+  | Some attrs ->
+      Attributes.get_must_not_be_tainted attrs
+
 
 let is_must_be_valid_or_allocated_isl address attrs =
   Option.is_some (get_must_be_valid address attrs)
@@ -191,6 +277,8 @@ let is_must_be_valid_or_allocated_isl address attrs =
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
 
 let get_written_to = get_attribute Attributes.get_written_to
+
+let get_returned_from_unknown = get_attribute Attributes.get_returned_from_unknown
 
 let add_dynamic_type typ address memory = add_one address (Attribute.DynamicType typ) memory
 
@@ -214,11 +302,15 @@ let is_java_resource_released adress attrs =
   Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_java_resource_released
 
 
+let is_std_moved address attrs =
+  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_moved
+
+
 let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_vector_reserved
 
 
-let canonicalize ~get_var_repr attrs_map =
+let canonicalize_common ~for_summary ~get_var_repr attrs_map =
   (* TODO: merging attributes together can produce contradictory attributes, eg [MustBeValid] +
      [Invalid]. We could detect these and abort execution. This is not really restricted to merging
      as it might be possible to get a contradiction by accident too so maybe here is not the best
@@ -237,12 +329,16 @@ let canonicalize ~get_var_repr attrs_map =
                  Attributes.union_prefer_left attrs' attrs )
         in
         add addr' attrs' g )
-    (remove_unsuitable_for_summary attrs_map)
+    (if for_summary then remove_unsuitable_for_summary attrs_map else attrs_map)
     Graph.empty
 
 
-let subst_var (v, v') attrs_map =
+let canonicalize ~get_var_repr attrs_map =
+  canonicalize_common ~for_summary:true ~get_var_repr attrs_map
+
+
+let subst_var ~for_summary (v, v') attrs_map =
   if Graph.mem v attrs_map then
-    canonicalize attrs_map ~get_var_repr:(fun addr ->
+    canonicalize_common ~for_summary attrs_map ~get_var_repr:(fun addr ->
         if AbstractValue.equal addr v then v' else addr )
   else attrs_map

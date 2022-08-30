@@ -29,11 +29,6 @@ module ItvPure : sig
 
   val zero : t
 
-  val nat : t
-
-  val pos : t
-  (** [1, +oo] *)
-
   val of_int : int -> t
 
   val lb : t -> Bound.t
@@ -105,20 +100,6 @@ module ItvPure : sig
   val mult : t -> t -> t
 
   val exists_str : f:(string -> bool) -> t -> bool
-
-  val of_int_lit : IntLit.t -> t
-
-  val of_foreign_id : int -> t
-
-  val get_bound : t -> Symb.BoundEnd.t -> Bound.t
-
-  val arith_binop : Binop.t -> t -> t -> t
-
-  val arith_unop : Unop.t -> t -> t option
-
-  val to_boolean : t -> Boolean.t
-
-  val prune_binop : Binop.t -> t -> t -> t bottom_lifted
 end
 
 include module type of AbstractDomain.BottomLifted (ItvPure)

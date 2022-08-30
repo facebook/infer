@@ -14,13 +14,21 @@ val step_term : Llair.block -> unit
 val hit_loop_bound : int -> unit
 val hit_switch_bound : int -> unit
 val unknown_call : Llair.term -> unit
-val alarm : Alarm.t -> unit
-val reached_goal : (Format.formatter -> unit) -> unit
+val alarm : Alarm.t -> dp_witness:(Format.formatter -> unit) -> unit
+
+val reached_goal :
+     dp_goal:(Format.formatter -> unit)
+  -> dp_witness:(Format.formatter -> unit)
+  -> unit
+
+val unreachable_goal : dp_path:(Format.formatter -> unit) -> unit
+val unimplemented : string -> Llair.func -> unit
 
 type status =
   | Safe of {bound: int; switches: int}
   | Unsafe of {alarms: int; bound: int; switches: int}
   | Reached_goal of {steps: int}
+  | Unreachable_goal
   | Ok
   | Unsound
   | Incomplete

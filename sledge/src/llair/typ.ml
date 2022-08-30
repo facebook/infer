@@ -172,3 +172,21 @@ let rec convertible t0 t1 =
   | Array {elt= t; len= m}, Array {elt= u; len= n} ->
       m = n && convertible t u
   | _ -> false
+
+let compatible_fnptr t t' =
+  t == t'
+  ||
+  match (t, t') with
+  | ( Pointer {elt= Function {return; args}}
+    , Pointer {elt= Function {return= return'; args= args'}} ) ->
+      Option.equal convertible return return'
+      && IArray.(length args = length args')
+      && IArray.for_all2_exn args args' ~f:convertible
+  | _ -> false
+
+module Tbl = HashTable.Make (struct
+  type nonrec t = t
+
+  let equal = equal
+  let hash = Poly.hash
+end)

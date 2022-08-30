@@ -31,10 +31,13 @@ let ppx strength fs fml =
     in
     let pp_arith op x =
       let p_c, n_d = Trm.Arith.partition_sign (Trm.Arith.trm x) in
+      (* x = (p+c) - (n+d) *)
       if Trm.Arith.equal (Trm.Arith.const Q.zero) p_c then
+        (* x = -(n+d) so x > 0 iff -(n+d) > 0 iff -n-d > 0 iff -d > n *)
         let n, d = Trm.Arith.split_const n_d in
-        pp_arith_op n op (Trm.Arith.const (Q.neg d))
+        pp_arith_op (Trm.Arith.const (Q.neg d)) op n
       else if Trm.Arith.equal (Trm.Arith.const Q.zero) n_d then
+        (* x = (p+c) so x > 0 iff p+c > 0 iff p > -c *)
         let p, c = Trm.Arith.split_const p_c in
         pp_arith_op p op (Trm.Arith.const (Q.neg c))
       else pp_arith_op p_c op n_d
@@ -189,23 +192,34 @@ let iter_pos_neg ~pos ~neg ~f =
   Set.iter ~f pos ;
   Set.iter ~f:f_not neg
 
-let iter_dnf ~meet1 ~top fml ~f =
-  let rec add_conjunct fml (cjn, splits) =
+let iter_dnf ~meet1 ~top fml ~f vx =
+  let rec add_conjunct fml (cjn, splits) vx =
     match fml with
     | Tt | Eq _ | Distinct _ | Eq0 _ | Pos _ | Iff _ | Lit _ | Not _ ->
-        (meet1 fml cjn, splits)
-    | And {pos; neg} -> fold_pos_neg ~f:add_conjunct ~pos ~neg (cjn, splits)
-    | Or {pos; neg} -> (cjn, (pos, neg) :: splits)
+        let cjn = meet1 fml cjn vx in
+        (cjn, splits)
+    | And {pos; neg} ->
+        fold_pos_neg ~pos ~neg (cjn, splits) ~f:(fun fml cjn_splits ->
+            add_conjunct fml cjn_splits vx )
+    | Or {pos; neg} ->
+        let splits = (pos, neg) :: splits in
+        (cjn, splits)
     | Cond {cnd; pos; neg} ->
-        add_conjunct (or_ (and_ cnd pos) (and_ (not_ cnd) neg)) (cjn, splits)
+        let cjt = or_ (and_ cnd pos) (and_ (not_ cnd) neg) in
+        add_conjunct cjt (cjn, splits) vx
   in
-  let rec add_disjunct (cjn, splits) fml =
-    let cjn, splits = add_conjunct fml (cjn, splits) in
+  let rec add_disjunct (cjn, splits) fml vx =
+    let cjn, splits = add_conjunct fml (cjn, splits) vx in
+    let vx = !vx in
     match splits with
     | (pos, neg) :: splits ->
-        iter_pos_neg ~f:(add_disjunct (cjn, splits)) ~pos ~neg
-    | [] -> f cjn
+        iter_pos_neg ~pos ~neg ~f:(fun fml ->
+            Var.Fresh.gen_ vx (add_disjunct (cjn, splits) fml) )
+    | [] -> f (cjn, vx)
   in
-  add_disjunct (top, []) fml
+  add_disjunct (top, []) fml vx
+
+let dnf ~meet1 ~top fml vx =
+  Iter.from_iter (fun f -> iter_dnf ~meet1 ~top fml ~f vx)
 
 let vars p = Iter.flat_map ~f:Trm.vars (trms p)

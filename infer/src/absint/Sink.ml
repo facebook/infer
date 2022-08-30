@@ -27,7 +27,7 @@ end
 module Make (Kind : Kind) = struct
   module Kind = Kind
 
-  type t = {kind: Kind.t; site: CallSite.t; indexes: IntSet.t} [@@deriving compare]
+  type t = {kind: Kind.t; site: CallSite.t; indexes: IntSet.t} [@@deriving compare, equal]
 
   let kind t = t.kind
 

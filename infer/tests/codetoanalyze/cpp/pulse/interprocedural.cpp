@@ -124,9 +124,7 @@ void set_first_non_null_ok(int* x, int* y) {
   }
 }
 
-// should get two latent issues here, or at least one for the dereference of
-// [p=nullptr]
-void set_x_then_crash_latent(int* x) {
+void set_x_then_crash_bad(int* x) {
   set_first_non_null_ok(x, nullptr);
   set_first_non_null_ok(nullptr, x);
   int* p = nullptr;

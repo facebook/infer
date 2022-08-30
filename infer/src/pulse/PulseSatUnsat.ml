@@ -35,3 +35,15 @@ module Import = struct
 
   let ( let* ) x f = bind f x
 end
+
+let to_result = function Unsat -> Error () | Sat x -> Ok x
+
+let of_result = function Error () -> Unsat | Ok x -> Sat x
+
+let list_fold l ~init ~f =
+  List.fold_result l ~init ~f:(fun accum x -> f accum x |> to_result) |> of_result
+
+
+let to_list sat_unsat = sat sat_unsat |> Option.to_list
+
+let filter l = List.filter_map l ~f:sat

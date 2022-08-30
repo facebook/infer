@@ -35,9 +35,17 @@ Computes the asymptotic complexity of functions with respect to execution cost o
 
 [Visit here for more information.](/docs/next/checker-cost)
 
+## Datalog-based points-to analysis
+
+Experimental datalog-based points-to analysis.
+
+[Visit here for more information.](/docs/next/checker-datalog)
+
 ## Eradicate
 
 The eradicate `@Nullable` checker for Java annotations.
+
+**\*\*\*DEPRECATED\*\*\*** Unmaintained and will be removed in the future. Consider using [NullAway](https://github.com/uber/NullAway) as an alternative to Eradicate.
 
 [Visit here for more information.](/docs/next/checker-eradicate)
 

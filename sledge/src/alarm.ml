@@ -17,6 +17,8 @@ type t =
   ; pp_action: Format.formatter -> unit
   ; pp_state: Format.formatter -> unit }
 
+let kind {kind} = kind
+
 let v kind loc pp_action action pp_state state =
   { kind
   ; loc

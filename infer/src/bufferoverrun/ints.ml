@@ -10,7 +10,7 @@ open! AbstractDomain.Types
 module F = Format
 
 module NonZeroInt = struct
-  type t = Z.t [@@deriving compare]
+  type t = Z.t [@@deriving compare, equal]
 
   exception DivisionNotExact
 
@@ -49,7 +49,7 @@ module NonZeroInt = struct
 end
 
 module NonNegativeInt = struct
-  type t = Z.t [@@deriving compare]
+  type t = Z.t [@@deriving compare, equal]
 
   let zero = Z.zero
 
@@ -87,7 +87,7 @@ module NonNegativeInt = struct
 end
 
 module PositiveInt = struct
-  type t = NonNegativeInt.t [@@deriving compare]
+  type t = NonNegativeInt.t [@@deriving compare, equal]
 
   let one = Z.one
 

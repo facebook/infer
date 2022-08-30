@@ -189,6 +189,26 @@ public class FilterOutputStreamLeaks {
     }
   }
 
+  public void deflaterOutputStreamWithArgNotClosedAfterWriteBad(FileOutputStream fis) {
+    byte[] arr = {1, 2, 3};
+    try {
+      DeflaterOutputStream dos = new DeflaterOutputStream(fis, null);
+      dos.write(arr);
+    } catch (IOException e) {
+    }
+  }
+
+  public void deflaterOutputStreamWithArgClosedAfterWriteOk(FileOutputStream fis)
+      throws IOException {
+    byte[] arr = {1, 2, 3};
+    DeflaterOutputStream dos = new DeflaterOutputStream(fis, null);
+    try {
+      dos.write(arr);
+    } finally {
+      dos.finish();
+    }
+  }
+
   // DigestOutputStream  tests
 
   public void digestOutputStreamNotClosedAfterWriteBad() {

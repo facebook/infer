@@ -10,7 +10,7 @@ open! IStd
     explicit (lhs = rhs) or implicit (e.g. returning from a function). This rule checks if null can
     be passed to a place that does not expect null. *)
 
-type violation [@@deriving compare]
+type violation [@@deriving compare, equal]
 
 val check : lhs:AnnotatedNullability.t -> rhs:InferredNullability.t -> (unit, violation) result
 (** If `null` can leak from a "less strict" type to "more strict" type, this is an Assignment Rule
@@ -44,7 +44,7 @@ module ReportableViolation : sig
     | PassingParamToFunction of function_info
     | AssigningToField of Fieldname.t
     | ReturningFromFunction of Procname.Java.t
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   and function_info =
     { param_signature: AnnotatedSignature.param_signature

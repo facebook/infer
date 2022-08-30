@@ -1,0 +1,3 @@
+property Interval
+  start -> start: *
+  start -> error: "foo:bar/1"(T, R) when 11 <= T && T <= 14

@@ -6,6 +6,9 @@
  *)
 open! IStd
 
+val iter_captured_procs_and_callees : (Procname.t -> Procname.t list -> unit) -> unit
+(** run a function on every captured procedure, passing its list of syntactic callees *)
+
 val make : SourceFile.t list -> (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t
 (** task generator that works by
 

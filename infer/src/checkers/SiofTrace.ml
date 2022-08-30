@@ -24,7 +24,7 @@ module GlobalVarSet = PrettyPrintable.MakePPSet (GlobalVar)
 module TraceElem = struct
   module Kind = GlobalVar
 
-  type t = {site: CallSite.t; kind: [`Call | `Access] * Kind.t} [@@deriving compare]
+  type t = {site: CallSite.t; kind: [`Call | `Access] * Kind.t} [@@deriving compare, equal]
 
   let call_site {site} = site
 

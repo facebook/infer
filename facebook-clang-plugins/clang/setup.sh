@@ -18,6 +18,7 @@ PATCHELF=${PATCHELF:-patchelf}
 PLATFORM_ENV=${PLATFORM_ENV:-}
 STRIP=${STRIP:-strip}
 CMAKE=${CMAKE:-cmake}
+ZLIB=${ZLIB:-$CLANG_SRC}
 
 NCPUS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)"
 JOBS="${JOBS:-$(($NCPUS>=8?$NCPUS/4:2))}"
@@ -170,7 +171,6 @@ CMAKE_ARGS=(
   -DLLVM_BUILD_TOOLS=Off
   -DLLVM_ENABLE_ASSERTIONS=Off
   -DLLVM_ENABLE_EH=On
-  -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp"
   -DLLVM_ENABLE_RTTI=On
   -DLLVM_INCLUDE_DOCS=Off
   -DLLVM_INCLUDE_EXAMPLES=Off
@@ -188,6 +188,17 @@ else
     CMAKE_ARGS+=(
       -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS $CMAKE_SHARED_LINKER_FLAGS -lstdc++ -fPIC"
     )
+fi
+
+if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
+    # Please note that this case only applies to infer/master platform builds
+    # Prevent CMAKE from adding -isystem /usr/include for platform builds
+    CMAKE_ARGS+=(
+        -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi"
+        -DZLIB_INCLUDE_DIR="$ZLIB/include"
+    )
+else
+    CMAKE_ARGS+=(-DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp")
 fi
 
 if [ "$USE_NINJA" = "yes" ]; then

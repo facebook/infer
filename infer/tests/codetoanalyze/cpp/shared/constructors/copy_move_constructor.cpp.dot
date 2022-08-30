@@ -263,7 +263,7 @@ digraph cfg {
 	
 
 	 "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_8" -> "moveY_moveY_copyY_div0#copy_move_constructor#11319351724516006746.d5d5d96d98dcf1c634b647be30001d2e_5" ;
-"X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_1" [label="1: Start copy_move_constructor::X::X\nFormals:  this:copy_move_constructor::X* __param_0:copy_move_constructor::X&\nLocals:  \n  " color=yellow style=filled]
+"X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_1" [label="1: Start copy_move_constructor::X::X\nFormals:  this:copy_move_constructor::X* __param_0:copy_move_constructor::X&&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_1" -> "X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_3" ;
@@ -274,7 +274,7 @@ digraph cfg {
 	
 
 	 "X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_3" -> "X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_4" ;
-"X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_4" [label="4:  Constructor Init \n   n$2=*&__param_0:copy_move_constructor::X& [line 13, column 8]\n  n$3=*n$2.f:int [line 13, column 8]\n  *n$1.f:int=n$3 [line 13, column 8]\n " shape="box"]
+"X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_4" [label="4:  Constructor Init \n   n$2=*&__param_0:copy_move_constructor::X&& [line 13, column 8]\n  n$3=*n$2.f:int [line 13, column 8]\n  *n$1.f:int=n$3 [line 13, column 8]\n " shape="box"]
 	
 
 	 "X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_4" -> "X#X#copy_move_constructor#{}11779436833146999139.12492038d07d74366d33cba1a85beacb_2" ;
@@ -322,7 +322,7 @@ digraph cfg {
 "Y#Y#copy_move_constructor#{}1655253079210153473.874ebde9c785ced9e1f55b5218105847_2" [label="2: Exit copy_move_constructor::Y::Y \n  " color=yellow style=filled]
 	
 
-"Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_1" [label="1: Start copy_move_constructor::Y::Y\nFormals:  this:copy_move_constructor::Y* y:copy_move_constructor::Y const &\nLocals:  \n  " color=yellow style=filled]
+"Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_1" [label="1: Start copy_move_constructor::Y::Y\nFormals:  this:copy_move_constructor::Y* y:copy_move_constructor::Y const &&\nLocals:  \n  " color=yellow style=filled]
 	
 
 	 "Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_1" -> "Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_3" ;
@@ -333,7 +333,7 @@ digraph cfg {
 	
 
 	 "Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_3" -> "Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_4" ;
-"Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_4" [label="4:  Constructor Init \n   n$2=*&y:copy_move_constructor::Y const & [line 24, column 22]\n  n$3=*n$2.f:int [line 24, column 22]\n  *n$1.f:int=(n$3 - 1) [line 24, column 20]\n " shape="box"]
+"Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_4" [label="4:  Constructor Init \n   n$2=*&y:copy_move_constructor::Y const && [line 24, column 22]\n  n$3=*n$2.f:int [line 24, column 22]\n  *n$1.f:int=(n$3 - 1) [line 24, column 20]\n " shape="box"]
 	
 
 	 "Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_4" -> "Y#Y#copy_move_constructor#{}18239234573116449841.5122329a8790202ff1bedc6b87cb3fea_2" ;

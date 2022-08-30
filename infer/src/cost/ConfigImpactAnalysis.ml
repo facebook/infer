@@ -761,7 +761,7 @@ module Dom = struct
           [ +BuiltinDecl.(match_builtin __cast) <>--> KnownCheap
           ; +BuiltinDecl.(match_builtin __java_throw) <>--> KnownCheap
           ; +PatternMatch.Java.implements_android "content.SharedPreferences"
-            &:: "edit" &--> KnownExpensive
+            &:: "edit" &--> KnownCheap
           ; +PatternMatch.Java.implements_android "content.SharedPreferences"
             &::+ (fun _ method_name -> String.is_prefix method_name ~prefix:"get")
             &--> KnownExpensive
@@ -829,35 +829,49 @@ module Dom = struct
         false
 
 
+  let is_NS_method pname =
+    Procname.get_class_name pname |> Option.exists ~f:(String.is_prefix ~prefix:"NS")
+
+
   let is_config_setter_getter ~is_static ret_typ pname args =
     let method_name = Procname.get_method pname in
     (is_config_setter_typ ~is_static ret_typ args && String.is_prefix method_name ~prefix:"set")
-    || (is_config_getter_typ ~is_static ret_typ args && String.is_prefix method_name ~prefix:"get")
+    || is_config_getter_typ ~is_static ret_typ args
+       && ( String.is_prefix method_name ~prefix:"get"
+          || Language.curr_language_is Clang
+             && (not (is_NS_method pname))
+             && String.is_suffix method_name ~suffix:"Value" )
 
 
   let update_gated_callees ~callee args
       ({condition_checks= config_checks, latent_config_checks; gated_classes} as astate) =
-    match args with
-    | [(Exp.Sizeof {typ= {desc= Tstruct typ_name}}, _)]
-      when Procname.equal callee BuiltinDecl.__objc_alloc_no_fail ->
-        if ConfigChecks.exists (fun _ -> function True -> true | _ -> false) config_checks then
-          (* Gated by true gate condition *)
-          {astate with gated_classes= GatedClasses.add_gated typ_name gated_classes}
+    let update_gated_class_constructor typ_name =
+      if ConfigChecks.exists (fun _ -> function True -> true | _ -> false) config_checks then
+        (* Gated by true gate condition *)
+        {astate with gated_classes= GatedClasses.add_gated typ_name gated_classes}
+      else
+        let cond =
+          LatentConfigChecks.fold
+            (fun latent_config branch acc ->
+              match branch with True -> LatentConfigs.add latent_config acc | _ -> acc )
+            latent_config_checks LatentConfigs.empty
+        in
+        if LatentConfigs.is_empty cond then
+          (* Ungated by any condition *)
+          {astate with gated_classes= GatedClasses.add typ_name Top gated_classes}
         else
-          let cond =
-            LatentConfigChecks.fold
-              (fun latent_config branch acc ->
-                match branch with True -> LatentConfigs.add latent_config acc | _ -> acc )
-              latent_config_checks LatentConfigs.empty
-          in
-          if LatentConfigs.is_empty cond then
-            (* Ungated by any condition *)
-            {astate with gated_classes= GatedClasses.add typ_name Top gated_classes}
-          else
-            (* Gated by latent configs *)
-            {astate with gated_classes= GatedClasses.add_cond typ_name cond gated_classes}
-    | _ ->
-        astate
+          (* Gated by latent configs *)
+          {astate with gated_classes= GatedClasses.add_cond typ_name cond gated_classes}
+    in
+    let typ_name =
+      match args with
+      | [(Exp.Sizeof {typ= {desc= Tstruct typ_name}}, _)]
+        when Procname.equal callee BuiltinDecl.__objc_alloc_no_fail ->
+          Some typ_name
+      | _ ->
+          if Procname.is_constructor callee then Procname.get_class_type_name callee else None
+    in
+    Option.value_map typ_name ~default:astate ~f:update_gated_class_constructor
 
 
   let update_latent_params formals args astate =
@@ -1083,8 +1097,42 @@ module TransferFunctions = struct
         astate
 
 
-  let call {interproc= {tenv; analyze_dependency}; get_formals; get_instantiated_cost; is_param}
-      node idx ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
+  let get_kotlin_lazy_method =
+    let regexp =
+      (* NOTE: Found two cases so far, `getFoo` and `getFoo$<full class path>`. *)
+      Re.Str.regexp "^get\\([a-zA-Z0-9_]*\\)"
+    in
+    fun ~caller ~callee ->
+      if
+        Procname.is_java callee && String.equal (Procname.to_string callee) "Object Lazy.getValue()"
+      then
+        let getter = Procname.get_method caller in
+        match Procname.get_class_type_name caller with
+        | Some class_name when Re.Str.string_match regexp getter 0 ->
+            let original_method = String.uncapitalize (Re.Str.matched_group 1 getter) in
+            let invoke_class_name =
+              Typ.Name.Java.from_string (Typ.Name.name class_name ^ "$" ^ original_method ^ "$2")
+            in
+            Some
+              (Procname.make_java ~class_name:invoke_class_name
+                 ~return_type:(Some StdTyp.Java.pointer_to_java_lang_object) ~method_name:"invoke"
+                 ~parameters:[] ~kind:Non_Static )
+        | _ ->
+            None
+      else None
+
+
+  let call
+      { interproc= {proc_desc; tenv; analyze_dependency}
+      ; get_formals
+      ; get_instantiated_cost
+      ; is_param } node idx ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
+    let callee =
+      get_kotlin_lazy_method ~caller:(Procdesc.get_proc_name proc_desc) ~callee
+      |> Option.value_map ~default:callee ~f:(fun invoke ->
+             Logging.d_printfln_escaped "Replace (%a) to (%a)" Procname.pp callee Procname.pp invoke ;
+             invoke )
+    in
     match FbGKInteraction.get_config_check ~is_param tenv callee args with
     | Some (`Config config) ->
         Dom.call_config_check ret_id config astate

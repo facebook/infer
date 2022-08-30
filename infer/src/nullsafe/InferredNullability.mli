@@ -14,7 +14,7 @@ open! IStd
     InferredNullability represents what Nullsafe thinks about such and such expression according to
     its type inference rules. *)
 
-type t [@@deriving compare]
+type t [@@deriving compare, equal]
 
 val get_nullability : t -> Nullability.t
 

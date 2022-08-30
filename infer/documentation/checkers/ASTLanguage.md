@@ -138,7 +138,7 @@ DEFINE-CHECKER id_of_the_checker = {
      SET message = <error message to show the user>;
      SET suggestion = <optional suggestion to the user>;
      SET doc_url = <optional URL to documentation of the issue>;
-     SET severity = INFO | LIKE | ADVICE | WARNING | ERROR;
+     SET severity = INFO | ADVICE | WARNING | ERROR;
      SET mode = ON | OFF
      SET allow_list_path = {path1, path2, ..., pathn };
      SET block_list_path = {path1, path2, ..., pathn };
@@ -523,7 +523,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
     WHEN objc_method_has_nth_parameter_of_type("2", "A*")
     HOLDS-IN-NODE ObjCMethodDecl;
   SET message = "Found a method with the 2nd parameter of type A*";
-  SET severity = "LIKE";
+  SET severity = "ADVICE";
 };
 ```
 
