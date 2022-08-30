@@ -64,19 +64,22 @@ type label = string [@@deriving compare, equal, sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
 
+and call_target = {mutable func: func; mutable recursive: bool}
+
+and icall_target = {ptr: Exp.t; mutable candidates: call_target iarray}
+
 and callee =
-  | Direct of func
-  | Indirect of {ptr: Exp.t; candidates: func iarray}
+  | Direct of call_target
+  | Indirect of icall_target
   | Intrinsic of Intrinsic.t
 
 and 'a call =
-  { mutable callee: 'a
+  { callee: 'a
   ; typ: Typ.t
   ; actuals: Exp.t iarray
   ; areturn: Reg.t option
   ; return: jump
   ; throw: jump option
-  ; mutable recursive: bool
   ; loc: Loc.t }
 
 and term =
@@ -128,20 +131,27 @@ with type jump := jump
   type nonrec jump = jump = {mutable dst: block; mutable retreating: bool}
   [@@deriving compare, equal]
 
+  type nonrec call_target = call_target =
+    {mutable func: func; mutable recursive: bool}
+  [@@deriving compare, equal]
+
+  type nonrec icall_target = icall_target =
+    {ptr: Exp.t; mutable candidates: call_target iarray}
+  [@@deriving compare, equal]
+
   type nonrec callee = callee =
-    | Direct of func
-    | Indirect of {ptr: Exp.t; candidates: func iarray}
+    | Direct of call_target
+    | Indirect of icall_target
     | Intrinsic of Intrinsic.t
   [@@deriving compare, equal]
 
   type nonrec 'a call = 'a call =
-    { mutable callee: 'a
+    { callee: 'a
     ; typ: Typ.t
     ; actuals: Exp.t iarray
     ; areturn: Reg.t option
     ; return: jump
     ; throw: jump option
-    ; mutable recursive: bool
     ; loc: Loc.t }
   [@@deriving compare, equal]
 
@@ -172,13 +182,12 @@ let sexp_of_jump {dst; retreating} =
   [%sexp {dst: label = dst.lbl; retreating: bool}]
 
 let sexp_of_callee = function
-  | Direct func -> sexp_ctor "Direct" [%sexp (func.name : FuncName.t)]
+  | Direct {func; _} -> sexp_ctor "Direct" [%sexp (func.name : FuncName.t)]
   | Indirect {ptr; candidates= _} ->
       sexp_ctor "Indirect" [%sexp (ptr : Exp.t)]
   | Intrinsic intr -> sexp_ctor "Intrinsic" [%sexp (intr : Intrinsic.t)]
 
-let sexp_of_call
-    {callee; typ; actuals; areturn; return; throw; recursive; loc} =
+let sexp_of_call {callee; typ; actuals; areturn; return; throw; loc} =
   sexp_ctor "Call"
     [%sexp
       { callee: callee
@@ -187,7 +196,6 @@ let sexp_of_call
       ; areturn: Reg.t option
       ; return: jump
       ; throw: jump option
-      ; recursive: bool
       ; loc: Loc.t }]
 
 let sexp_of_term = function
@@ -270,19 +278,24 @@ let pp_formal fs reg = Reg.pp fs reg
 let pp_jump fs {dst; retreating} =
   Format.fprintf fs "@[<2>%s%%%s@]" (if retreating then "↑" else "") dst.lbl
 
+let pp_call_target fs {func; recursive} =
+  Format.fprintf fs "%s%a"
+    (if recursive then "↑" else "")
+    FuncName.pp func.name
+
 let pp_callee fs = function
-  | Direct f -> FuncName.pp fs f.name
-  | Indirect {ptr; candidates= _} -> Exp.pp fs ptr
+  | Direct target -> pp_call_target fs target
+  | Indirect {ptr; candidates} ->
+      Format.fprintf fs "%a(candidates: %a)" Exp.pp ptr
+        (IArray.pp " ; " pp_call_target)
+        candidates
   | Intrinsic i -> Intrinsic.pp fs i
 
-let pp_call fs
-    {callee; typ= _; actuals; areturn; return; throw; recursive; loc} =
+let pp_call fs {callee; typ= _; actuals; areturn; return; throw; loc} =
   Format.fprintf fs
-    "@[<2>@[<7>%acall @[<2>%s%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
+    "@[<2>@[<7>%acall @[<2>%a%a@]@]@ @[returnto %a%a;@]@]\t%a"
     (Option.pp "%a := " Reg.pp)
-    areturn
-    (if recursive then "↑" else "")
-    pp_callee callee (pp_actuals Exp.pp) actuals pp_jump return
+    areturn pp_callee callee (pp_actuals Exp.pp) actuals pp_jump return
     (Option.pp "@ throwto %a" pp_jump)
     throw Loc.pp loc
 
@@ -471,44 +484,29 @@ module Term = struct
   let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
   let call ~name ~typ ~actuals ~areturn ~return ~throw ~loc =
+    let target =
+      {func= {dummy_func with name= FuncName.mk typ name}; recursive= false}
+    in
     let cal =
-      { callee= Direct {dummy_func with name= FuncName.mk typ name}
-      ; typ
-      ; actuals
-      ; areturn
-      ; return
-      ; throw
-      ; recursive= false
-      ; loc }
+      {callee= Direct target; typ; actuals; areturn; return; throw; loc}
     in
     let k = Call cal in
-    (k |> check invariant, fun ~callee -> cal.callee <- Direct callee)
+    (k |> check invariant, fun ~callee -> target.func <- callee)
 
   let icall ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
+    let target = {ptr= callee; candidates= IArray.empty} in
     let cal =
-      { callee= Indirect {ptr= callee; candidates= IArray.empty}
-      ; typ
-      ; actuals
-      ; areturn
-      ; return
-      ; throw
-      ; recursive= false
-      ; loc }
+      {callee= Indirect target; typ; actuals; areturn; return; throw; loc}
     in
     let k = Call cal in
     ( k |> check invariant
-    , fun ~candidates -> cal.callee <- Indirect {ptr= callee; candidates} )
+    , fun ~candidates ->
+        target.candidates <-
+          IArray.map candidates ~f:(fun func -> {func; recursive= false}) )
 
   let intrinsic ~callee ~typ ~actuals ~areturn ~return ~throw ~loc =
     Call
-      { callee= Intrinsic callee
-      ; typ
-      ; actuals
-      ; areturn
-      ; return
-      ; throw
-      ; recursive= false
-      ; loc }
+      {callee= Intrinsic callee; typ; actuals; areturn; return; throw; loc}
     |> check invariant
 
   let return ~exp ~loc = Return {exp; loc} |> check invariant
@@ -596,8 +594,8 @@ module IP = struct
             true )
       | None -> (
         match ip.block.term with
-        | Call {callee= Direct f; _} -> (
-          match FuncName.name f.name with
+        | Call {callee= Direct {func; _}; _} -> (
+          match FuncName.name func.name with
           | "sledge_thread_join" -> true
           | _ -> false )
         | _ -> false )
@@ -805,7 +803,8 @@ let set_derived_metadata functions =
     FuncName.Map.iter functions ~f:(fun func ->
         Func.iter_term func ~f:(fun term ->
             match term with
-            | Call {callee= Direct f; _} -> FuncQ.remove roots f |> ignore
+            | Call {callee= Direct {func; _}; _} ->
+                FuncQ.remove roots func |> ignore
             | _ -> () ) ) ;
     roots
   in
@@ -823,13 +822,17 @@ let set_derived_metadata functions =
             IArray.iter tbl ~f:(fun (_, jmp) -> jump jmp) ;
             jump els
         | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
-        | Call ({callee; return; throw; _} as call) ->
+        | Call {callee; return; throw; _} ->
             ( match callee with
-            | Direct f when not (Block_label.Set.mem f.entry ancestors) ->
-                visit ancestors f.entry
-            | Direct _ | Indirect _ ->
-                (* conservatively assume all indirect calls are recursive *)
-                call.recursive <- true
+            | Direct tgt ->
+                if Block_label.Set.mem tgt.func.entry ancestors then
+                  tgt.recursive <- true
+                else visit ancestors tgt.func.entry
+            | Indirect {candidates; _} ->
+                IArray.iter candidates ~f:(fun c ->
+                    if Block_label.Set.mem c.func.entry ancestors then
+                      c.recursive <- true
+                    else visit ancestors c.func.entry )
             | Intrinsic _ -> () ) ;
             jump return ;
             Option.iter ~f:jump throw
@@ -950,12 +953,14 @@ module Program = struct
           | Iswitch {tbl; _} -> IArray.iter tbl ~f:jump
           | Call {callee; return; _} -> (
             match callee with
-            | Direct f ->
-                visit_target ((return.dst, f.name) :: stack) f.entry
+            | Direct {func; _} ->
+                visit_target ((return.dst, func.name) :: stack) func.entry
             | Intrinsic _ -> jump return
             | Indirect {candidates; _} ->
-                IArray.iter candidates ~f:(fun f ->
-                    visit_target ((return.dst, f.name) :: stack) f.entry ) )
+                IArray.iter candidates ~f:(fun {func; _} ->
+                    visit_target
+                      ((return.dst, func.name) :: stack)
+                      func.entry ) )
           | Return _ -> (
             match stack with
             | (ret, _) :: stack -> visit_target stack ret

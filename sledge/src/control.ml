@@ -247,7 +247,7 @@ struct
     type t
 
     val empty : t
-    val push_call : Llair.func Llair.call -> D.from_call -> t -> t
+    val push_call : Llair.call_target Llair.call -> D.from_call -> t -> t
     val pop_return : t -> (D.from_call * Llair.jump * t) option
 
     val pop_throw :
@@ -291,7 +291,7 @@ struct
     let empty = Empty |> check invariant
 
     let push_return call from_call stk =
-      let Llair.{callee= {formals; locals}; return; _} = call in
+      let Llair.{callee= {func= {formals; locals}; _}; return; _} = call in
       Return {dst= return; formals; locals; from_call; stk}
       |> check invariant
 
@@ -525,12 +525,23 @@ struct
         match (x, y) with
         | {dst= Runnable x_t}, {dst= Runnable y_t}
          |{dst= Suspended x_t}, {dst= Suspended y_t} ->
-            let is_rec_call = function
-              | {Llair.term= Call {recursive= true}} -> true
+            let is_rec_call {dst; src} =
+              match src with
+              | {Llair.term= Call {callee= Direct {recursive}}} -> recursive
+              | {Llair.term= Call {callee= Indirect {candidates}}} ->
+                  (let* dst_func =
+                     let+ ip = Thread.ip dst in
+                     Llair.(IP.block ip).parent
+                   in
+                   IArray.find_map candidates
+                     ~f:(fun {Llair.func; recursive} ->
+                       if Llair.Func.equal func dst_func then Some recursive
+                       else None ) )
+                  |> Option.get_or ~default:true
               | _ -> false
             in
             let compare_stk stk1 stk2 =
-              if is_rec_call x.src then 0
+              if is_rec_call x then 0
               else Stack.compare_as_inlined_location stk1 stk2
             in
             Llair.IP.compare x_t.ip y_t.ip
@@ -936,12 +947,13 @@ struct
 
   let exec_call globals call ({ctrl= {stk; tid}; state; history} as ams) wl
       =
-    let Llair.{callee; actuals; areturn; return; recursive} = call in
-    let Llair.{name; formals; freturn; locals; entry} = callee in
+    let Llair.{callee; actuals; areturn; return} = call in
+    let Llair.{func; recursive} = callee in
+    let Llair.{name; formals; freturn; locals; entry} = func in
     [%Dbg.call fun {pf} ->
       pf " t%i@[<2>@ %a from %a with state@]@;<1 2>%a" tid
-        Llair.Func.pp_call call Llair.FuncName.pp return.dst.parent.name
-        D.pp state]
+        Llair.Func.pp_call {call with callee= func} Llair.FuncName.pp
+        return.dst.parent.name D.pp state]
     ;
     let ip = Llair.IP.mk entry in
     let goal = Goal.update_after_call name ams.goal in
@@ -979,11 +991,13 @@ struct
     [%Dbg.retn fun {pf} _ -> pf ""]
 
   let exec_call call ams wl =
-    let Llair.{callee= {name} as callee; areturn; return; _} = call in
-    if Llair.Func.is_undefined callee then
+    let Llair.{callee= {func}; areturn; return; _} = call in
+    if Llair.Func.is_undefined func then
       exec_skip_func areturn return ams wl
     else
-      let globals = Domain_used_globals.by_function Config.globals name in
+      let globals =
+        Domain_used_globals.by_function Config.globals func.name
+      in
       exec_call globals call ams wl
 
   let exec_return exp ({ctrl= {ip; stk; tid}; state; history} as ams) wl =
@@ -1140,13 +1154,19 @@ struct
       match resolve_callee pgm tid callee state with
       | [] -> exec_skip_func areturn return ams wl
       | callees ->
-          List.fold callees wl ~f:(fun callee wl ->
-              assert (
-                IArray.mem callee candidates ~eq:Llair.Func.equal
-                ||
-                ( warn "unexpected call target %a at indirect callsite %a"
-                    Llair.Func.pp callee Llair.Term.pp term () ;
-                  true ) ) ;
+          List.fold callees wl ~f:(fun callee_func wl ->
+              let callee =
+                match
+                  IArray.find candidates ~f:(fun {Llair.func; _} ->
+                      Llair.Func.equal func callee_func )
+                with
+                | Some callee -> callee
+                | None ->
+                    warn "unexpected call target %a at indirect callsite %a"
+                      Llair.Func.pp callee_func Llair.Term.pp term () ;
+                    (* Conservatively assume this call may be recursive *)
+                    {Llair.func= callee_func; recursive= true}
+              in
               exec_call {call with callee} ams wl ) )
     | Call {callee= Intrinsic callee; actuals; areturn; return} -> (
       match (callee, IArray.to_array actuals) with

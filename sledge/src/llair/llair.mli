@@ -82,24 +82,31 @@ type label = string
 (** A jump to a block. *)
 type jump = private {mutable dst: block; mutable retreating: bool}
 
+and call_target =
+  { mutable func: func
+  ; mutable recursive: bool
+        (** Holds unless this call target is definitely not recursive *) }
+
+and icall_target =
+  { ptr: Exp.t  (** Dynamically resolved function pointer. *)
+  ; mutable candidates: call_target iarray
+        (** Statically computed over-approximation of possible call targets. *)
+  }
+
 and callee =
-  | Direct of func  (** Statically resolved function *)
-  | Indirect of {ptr: Exp.t; candidates: func iarray}
-      (** Dynamically resolved function-pointer, along with an array of
-          candidate callees overapproximating the possible call targets *)
+  | Direct of call_target  (** Statically resolved function *)
+  | Indirect of icall_target  (** Dynamically resolved function *)
   | Intrinsic of Intrinsic.t
       (** Intrinsic implemented in analyzer rather than source code *)
 
 (** A call to a function. *)
 and 'a call =
-  { mutable callee: 'a
+  { callee: 'a
   ; typ: Typ.t  (** Type of the callee. *)
   ; actuals: Exp.t iarray  (** Actual arguments. *)
   ; areturn: Reg.t option  (** Register to receive return value. *)
   ; return: jump  (** Return destination. *)
   ; throw: jump option  (** Handler destination. *)
-  ; mutable recursive: bool
-        (** Holds unless [callee] is definitely not recursive. *)
   ; loc: Loc.t }
 
 (** Block terminators for function call/return or other control transfers. *)
