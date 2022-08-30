@@ -1,0 +1,21 @@
+# infer debug --procedures
+test
+  source_file: hello.c
+  defined: true
+  
+# infer debug --procedures --procedures-filter 'te.t'
+test
+  source_file: hello.c
+  defined: true
+  
+# infer debug --procedures --procedures-filter 'hello.c:test'
+test
+  source_file: hello.c
+  defined: true
+  
+# infer debug --procedures --procedures-filter 'nothing matches this'
+# infer debug --source-files
+hello.c
+# infer debug --source-files --source-files-filter 'he.lo.*'
+hello.c
+# infer debug --source-files --source-files-filter 'nothing matches this'

@@ -207,7 +207,7 @@ val capture : bool
 
 val capture_block_list : string option
 
-val capture_textual_sil : string option
+val capture_textual : string option
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
@@ -314,6 +314,8 @@ val dotty_cfg_libs : bool
 val dump_duplicate_symbols : bool
 
 val dump_textual : string option
+
+val dynamic_dispatch_json_file_path : string option
 
 val eradicate_condition_redundant : bool
 
@@ -587,6 +589,7 @@ val pulse_skip_procedures : Str.regexp option
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
+  ; propagaters: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }
@@ -754,8 +757,6 @@ val topl_max_conjuncts : int
 val topl_max_disjuncts : int
 
 val topl_properties : string list
-
-val topl_skip_report_calls : Str.regexp option
 
 val trace_absarray : bool
 

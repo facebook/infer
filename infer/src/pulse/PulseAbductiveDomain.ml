@@ -719,19 +719,30 @@ let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
           List.fold aliases ~init:(pre_heap, post_heap) ~f:(fun (pre_heap, post_heap) alias ->
               let pre_heap, post_heap, _ =
                 List.fold alias ~init:(pre_heap, post_heap, None)
-                  ~f:(fun (pre_heap, post_heap, addr) pvar ->
-                    let addr =
-                      match addr with None -> AbstractValue.mk_fresh () | Some addr -> addr
-                    in
-                    let src_addr, addr_hist = BaseStack.find (Var.of_pvar pvar) initial_stack in
-                    let pre_heap =
-                      BaseMemory.add_edge src_addr Dereference (addr, ValueHistory.epoch) pre_heap
-                      |> BaseMemory.register_address addr
-                    in
-                    let post_heap =
-                      BaseMemory.add_edge src_addr Dereference (addr, addr_hist) post_heap
-                    in
-                    (pre_heap, post_heap, Some addr) )
+                  ~f:(fun ((pre_heap, post_heap, addr) as acc) pvar ->
+                    match BaseStack.find_opt (Var.of_pvar pvar) initial_stack with
+                    | None ->
+                        L.d_printfln "Misnamed %a. Not found in intial_stack of %a" Pvar.pp_value
+                          pvar Procname.pp proc_name ;
+                        ( match Pvar.get_declaring_function pvar with
+                        | None ->
+                            ()
+                        | Some pname ->
+                            L.d_printfln "%a belongs to %a" Pvar.pp_value pvar Procname.pp pname ) ;
+                        acc
+                    | Some (src_addr, addr_hist) ->
+                        let addr =
+                          match addr with None -> AbstractValue.mk_fresh () | Some addr -> addr
+                        in
+                        let pre_heap =
+                          BaseMemory.add_edge src_addr Dereference (addr, ValueHistory.epoch)
+                            pre_heap
+                          |> BaseMemory.register_address addr
+                        in
+                        let post_heap =
+                          BaseMemory.add_edge src_addr Dereference (addr, addr_hist) post_heap
+                        in
+                        (pre_heap, post_heap, Some addr) )
               in
               (pre_heap, post_heap) )
         in

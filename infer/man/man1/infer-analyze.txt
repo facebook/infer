@@ -359,8 +359,8 @@ OPTIONS
        --pulse-taint-config +path
            Path to a taint analysis configuration file. This file can define
            --pulse-taint-sources, --pulse-taint-sanitizers,
-           --pulse-taint-sinks, --pulse-taint-policies, and
-           --pulse-taint-data-flow-kinds.
+           --pulse-taint-sanitizers, --pulse-taint-sinks,
+           --pulse-taint-policies, and --pulse-taint-data-flow-kinds.
 
        --pulse-taint-data-flow-kinds json
            Specify which taint kinds should be used for data flow reporting
@@ -385,6 +385,10 @@ OPTIONS
                                "sink_kinds": ["Simple"],
                                "sanitizer_kinds": ["Simple"] }]
            }
+
+       --pulse-taint-propagaters json
+           Quick way to specify simple propagaters as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.
 
        --pulse-taint-sanitizers json
            Quick way to specify simple sanitizers as a JSON objects. See
@@ -416,7 +420,8 @@ OPTIONS
                  ("Simple" by default).
              - "taint_target":
                  where the taint should be applied in the procedure.
-                 - "ReturnValue": (default for taint sources)
+                 - "ReturnValue": (default for taint sources and
+           propagaters)
                  - "AllArguments": (default for taint sanitizers and sinks)
                  - ["ArgumentPositions", [<int list>]]:
                      argument positions given by index (zero-indexed)
@@ -543,10 +548,6 @@ OPTIONS
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)
 
-       --topl-skip-report-calls regex
-           Regex of procedures whose calls should be skipped from the
-           reported trace.
-
        --uninit
            Activates: checker uninit: Warns when values are used before
            having been initialized. (Conversely: --no-uninit)
@@ -627,6 +628,10 @@ CLANG OPTIONS
        --cxx-scope-guards json
            Specify scope guard classes that can be read only by destructors
            without being reported as dead stores.
+
+       --dynamic-dispatch-json-file-path path
+           Dynamic dispatch file path to get the JSON used for method name
+           substitution
 
        --liveness-dangerous-classes json
            Specify classes where the destructor should be ignored when

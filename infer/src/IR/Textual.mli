@@ -53,14 +53,16 @@ module Const : sig
 end
 
 module Procname : sig
-  type proc_kind = Virtual | NonVirtual
+  type kind = Virtual | NonVirtual
 
-  type kind =
-    | Builtin  (** it models a specific langage feature not directly expressible in Sil *)
-    | SilInstr  (** it will be turned into unop/binop SIL expression during translation *)
-    | Proc of {pkind: proc_kind}  (** it has been defined by the programmer *)
+  type enclosing_class = TopLevel | Enclosing of TypeName.t
 
-  type t = {name: ProcBaseName.t; targs: Typ.t list; tres: Typ.t; kind: kind}
+  type t =
+    { enclosing_class: enclosing_class
+    ; name: ProcBaseName.t
+    ; targs: Typ.t list
+    ; tres: Typ.t
+    ; kind: kind }
 end
 
 module Pvar : sig
@@ -117,11 +119,16 @@ module Node : sig
 end
 
 module Procdesc : sig
-  type t = {procname: Procname.t; nodes: Node.t list; start: NodeName.t; params: VarName.t list}
+  type t =
+    { procname: Procname.t
+    ; nodes: Node.t list
+    ; start: NodeName.t
+    ; params: VarName.t list
+    ; exit_loc: Location.t }
 end
 
 module Struct : sig
-  type t = {name: TypeName.t; fields: Fieldname.t list}
+  type t = {name: TypeName.t; fields: Fieldname.t list; methods: Procname.t list}
 end
 
 module Module : sig
@@ -142,3 +149,5 @@ module Verification : sig
 
   val run : Module.t -> error list
 end
+
+exception ToSilTransformationError of (Format.formatter -> unit -> unit)

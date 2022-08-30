@@ -39,6 +39,7 @@ let used_globals exp s =
       | Some g -> Llair.Global.Set.add g s
       | None -> s )
 
+let is_unsat _ = false
 let resolve_int _ _ _ = []
 let exec_assume _ st exp = Some (used_globals exp st)
 let exec_kill _ _ st = st

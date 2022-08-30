@@ -7,14 +7,16 @@
 
 class VirtCall {
   public static void main(String[] args) {
-    A[] as = {new A(), new B()};
-    for (A a : as) {
-      A a2 = a.f();
-      String x = a.g();
-      String y = a2.g();
-      System.out.println(x);
-      System.out.println(y);
-    }
+    A a = new A();
+    A b = new B();
+
+    A a2 = a.f();
+    String x1 = a.g();
+    String y1 = a2.g();
+
+    A b2 = b.f();
+    String x2 = b.g();
+    String y2 = b2.g();
   }
 }
 
@@ -24,27 +26,27 @@ class A {
   }
 
   public String g() {
-    return "A";
+    return new String("A");
   }
 }
 
 class B extends A {
   @Override
   public String g() {
-    return "B";
+    return new String("B");
   }
 }
 
 class C extends A {
   @Override
   public String g() {
-    return "A";
+    return new String("C");
   }
 }
 
 class D extends A {
   @Override
   public String g() {
-    return "D";
+    return new String("D");
   }
 }

@@ -21,6 +21,17 @@ public class Facts {
 
     // Call with void
     testVoid(str);
+
+    // Move fact
+    Cl foo = new Cl(str);
+    Cl bar = foo;
+
+    // Store and load facts
+    foo.x = new String("Test");
+    String y = foo.x;
+
+    // ActualArgs and ActualReturn facts
+    String ret_var = testArgs(str, y);
   }
 
   // FormalArg and FormalReturn facts
@@ -31,4 +42,13 @@ public class Facts {
 
   // Test void return
   private static void testVoid(String a) {}
+}
+
+class Cl {
+  public String x;
+
+  // Test non-default constructor (will still appear as "<init>()")
+  public Cl(String s) {
+    x = s;
+  }
 }

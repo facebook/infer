@@ -18,6 +18,7 @@ let pp fs () = Format.pp_print_string fs "()"
 let init _ = ()
 let join () () = ()
 let joinN _ = ()
+let is_unsat () = false
 let resolve_int _ _ _ = []
 let exec_assume _ () _ = Some ()
 let exec_kill _ _ () = ()

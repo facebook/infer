@@ -9,6 +9,15 @@ open! IStd
 module L = Logging
 open PulseDomainInterface
 open PulseBasicInterface
+module CheapCopyTypes = PulseCheapCopyTypes
+
+type origin =
+  | Copy  (** the copied value *)
+  | Source  (** the original source value that has been copied *)
+  | Parameter  (** the parameter value that is checked for modifications *)
+[@@deriving show {with_path= false}]
+
+let is_param = function Parameter -> true | Source | Copy -> false
 
 let get_modeled_as_returning_copy_opt proc_name =
   Option.value_map ~default:None Config.pulse_model_returns_copy_pattern ~f:(fun r ->
@@ -45,9 +54,18 @@ let is_modeled_as_cheap_to_copy tenv actual_typ =
       false
 
 
+let is_known_cheap_copy typ =
+  match typ.Typ.desc with
+  | Tptr ({desc= Tstruct typename}, _) ->
+      CheapCopyTypes.is_known_cheap_copy typename
+  | _ ->
+      false
+
+
 let is_cheap_to_copy tenv typ =
   (Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals)
   || is_modeled_as_cheap_to_copy tenv typ
+  || is_known_cheap_copy typ
 
 
 let add_copies tenv path location call_exp actuals astates astate_non_disj =
@@ -180,21 +198,24 @@ let get_matching_dest_addr_opt (edges_curr, attr_curr) edges_orig : AbstractValu
             None )
 
 
-let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
-    ~reachable_addresses_from_copy =
+let is_modified_since_detected addr ~is_param ~current_heap ~current_attrs ~copy_heap
+    ~source_addr_opt =
   let rec aux ~addr_to_explore ~visited =
     match addr_to_explore with
     | [] ->
         false
     | addr :: addr_to_explore -> (
-        if
-          AbstractValue.Set.mem addr visited
-          || not (AbstractValue.Set.mem addr reachable_addresses_from_copy)
-        then aux ~addr_to_explore ~visited
+        if AbstractValue.Set.mem addr visited then aux ~addr_to_explore ~visited
         else
           let copy_edges_opt = BaseMemory.find_opt addr copy_heap in
           let current_edges_opt = BaseMemory.find_opt addr current_heap in
           let visited = AbstractValue.Set.add addr visited in
+          let is_moved =
+            (is_param || BaseAddressAttributes.is_copied_from_const_ref addr current_attrs)
+            && BaseAddressAttributes.is_std_moved addr current_attrs
+          in
+          is_moved
+          ||
           match (current_edges_opt, copy_edges_opt) with
           | None, None ->
               aux ~addr_to_explore ~visited
@@ -213,45 +234,47 @@ let is_modified_since_copy addr ~current_heap ~current_attrs ~copy_heap
               |> Option.value_map ~default:true ~f:(fun matching_addr_list ->
                      aux ~addr_to_explore:(matching_addr_list @ addr_to_explore) ~visited ) )
   in
-  BaseAddressAttributes.is_copied_from_const_ref addr current_attrs
-  && BaseAddressAttributes.is_std_moved addr current_attrs
-  || aux ~addr_to_explore:[addr] ~visited:AbstractValue.Set.empty
-
-
-let is_modified ?(is_source_opt = None) address astate heap =
-  let reachable_addresses_from_copy =
-    BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
-      (astate.AbductiveDomain.post :> BaseDomain.t)
+  (* check for modifications to values coming from addresses
+     that is returned from unknown calls *)
+  let addr_to_explore_opt =
+    let open IOption.Let_syntax in
+    let* source_addr = source_addr_opt in
+    let+ return = BaseAddressAttributes.get_returned_from_unknown source_addr current_attrs in
+    addr :: return
   in
+  let addr_to_explore = Option.value addr_to_explore_opt ~default:[addr] in
+  aux ~addr_to_explore ~visited:AbstractValue.Set.empty
+
+
+let is_modified origin ~source_addr_opt address astate heap =
   let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
   let current_attrs = (astate.AbductiveDomain.post :> BaseDomain.t).attrs in
-  let reachable_from heap =
-    BaseMemory.filter
-      (fun address _ -> AbstractValue.Set.mem address reachable_addresses_from_copy)
-      heap
-  in
   if Config.debug_mode then (
+    let reachable_addresses_from_copy =
+      BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
+        (astate.AbductiveDomain.post :> BaseDomain.t)
+    in
+    let reachable_from heap =
+      BaseMemory.filter
+        (fun address _ -> AbstractValue.Set.mem address reachable_addresses_from_copy)
+        heap
+    in
     L.d_printfln_escaped "Current reachable heap %a" BaseMemory.pp (reachable_from current_heap) ;
-    match is_source_opt with
-    | None ->
-        ()
-    | Some s ->
-        L.d_printfln_escaped "%s reachable heap %a"
-          (if s then "Source" else "Copy")
-          BaseMemory.pp (reachable_from heap) ) ;
-  is_modified_since_copy address ~current_heap ~copy_heap:heap ~current_attrs
-    ~reachable_addresses_from_copy
+    L.d_printfln_escaped "%a reachable heap %a" pp_origin origin BaseMemory.pp (reachable_from heap)
+    ) ;
+  is_modified_since_detected address ~is_param:(is_param origin) ~current_heap ~copy_heap:heap
+    ~current_attrs ~source_addr_opt
 
 
-let mark_modified_address_at ~address ~source_addr_opt ?(is_source = false) ~copied_into astate
+let mark_modified_address_at ~address ~source_addr_opt origin ~copied_into astate
     (astate_n : NonDisjDomain.t) : NonDisjDomain.t =
   NonDisjDomain.mark_copy_as_modified ~copied_into ~source_addr_opt astate_n
-    ~is_modified:(is_modified ~is_source_opt:(Some is_source) address astate)
+    ~is_modified:(is_modified origin ~source_addr_opt address astate)
 
 
 let mark_modified_parameter_at ~address ~var astate (astate_n : NonDisjDomain.t) : NonDisjDomain.t =
   NonDisjDomain.mark_parameter_as_modified ~var astate_n
-    ~is_modified:(is_modified ~is_source_opt:None address astate)
+    ~is_modified:(is_modified Parameter ~source_addr_opt:None address astate)
 
 
 let mark_modified_copies_and_parameters_with vars ~astate astate_n =
@@ -260,7 +283,7 @@ let mark_modified_copies_and_parameters_with vars ~astate astate_n =
     |> Option.value_map ~default ~f:(fun (address, _history) ->
            let source_addr_opt = AddressAttributes.get_source_origin_of_copy address astate in
            mark_modified_address_at ~address ~source_addr_opt
-             ~copied_into:(Attribute.CopiedInto.IntoVar var) astate default )
+             ~copied_into:(Attribute.CopiedInto.IntoVar var) Copy astate default )
   in
   let mark_modified_parameter var default =
     Stack.find_opt var astate
@@ -273,8 +296,8 @@ let mark_modified_copies_and_parameters_with vars ~astate astate_n =
         let open IOption.Let_syntax in
         let* source_addr, _ = Stack.find_opt var astate in
         let+ copied_into = AddressAttributes.get_copied_into source_addr astate in
-        mark_modified_address_at ~address:source_addr ~source_addr_opt:(Some source_addr)
-          ~is_source:true ~copied_into astate astate_n
+        mark_modified_address_at ~address:source_addr ~source_addr_opt:(Some source_addr) Source
+          ~copied_into astate astate_n
       in
       match res_opt with Some res -> res | None -> mark_modified_copy var astate_n )
 

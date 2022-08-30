@@ -55,6 +55,8 @@ val get_must_be_valid :
 
 val get_must_not_be_tainted : AbstractValue.t -> t -> Attribute.TaintSinkSet.t
 
+val get_returned_from_unknown : AbstractValue.t -> t -> AbstractValue.t list option
+
 val is_must_be_valid_or_allocated_isl : AbstractValue.t -> t -> bool
 
 val get_must_be_initialized : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option

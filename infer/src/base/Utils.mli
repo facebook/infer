@@ -9,7 +9,10 @@
 open! IStd
 
 val fold_folders : init:'acc -> f:('acc -> string -> 'acc) -> path:string -> 'acc
-(** recursively traverse a path for folders, returning resuls by a given fold function *)
+(** recursively traverse a path for folders, returning results by a given fold function *)
+
+val find_files : path:string -> extension:string -> string list
+(** recursively find all files in [path] with names ending in [extension] *)
 
 val string_crc_hex32 : string -> string
 (** Compute a 32-character hexadecimal crc using the Digest module *)
@@ -42,8 +45,7 @@ type outfile =
   ; fmt: Format.formatter  (** formatter for printing *) }
 
 val create_outfile : string -> outfile option
-(** create an outfile for the command line, the boolean indicates whether to do demangling when
-    closing the file *)
+(** create an outfile for the command line *)
 
 val close_outf : outfile -> unit
 (** close an outfile *)

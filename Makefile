@@ -33,6 +33,7 @@ BUILD_SYSTEMS_TESTS += \
   disjunctive_domain \
   duplicate_symbols \
   fail_on_issue \
+  infer-debug \
   j1 \
   project_root_rel \
   pulse_messages \
@@ -76,6 +77,12 @@ DIRECT_TESTS += \
   cpp_siof \
   cpp_starvation \
   cpp_uninit \
+
+ifeq ($(IS_FACEBOOK_TREE),yes)
+DIRECT_TESTS += \
+  c_fb-pulse \
+
+endif
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += \

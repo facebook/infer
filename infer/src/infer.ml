@@ -151,10 +151,8 @@ let () =
       TestDeterminator.compute_and_emit_test_to_run ()
   | _ when Option.is_some Config.dump_textual -> (
     match Lazy.force Driver.mode_from_command_line with
-    | Javac {compiler; prog; args= [_] as args} ->
+    | Javac {compiler; prog; args} ->
         Javac.capture compiler ~prog ~args
-    | Javac _ ->
-        L.die UserError "ERROR: Textual generation is only allowed on a single Java file"
     | _ ->
         L.die UserError "ERROR: Textual generation is only allowed in Java mode currently" )
   | _ when Option.is_some Config.java_debug_source_file_info ->

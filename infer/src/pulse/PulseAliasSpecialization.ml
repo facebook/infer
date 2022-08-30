@@ -10,6 +10,7 @@ module FuncArg = ProcnameDispatcher.Call.FuncArg
 module IRAttributes = Attributes
 open PulseBasicInterface
 
+(* Relocalize all the pvars from the unspecialized pname to the specialized one *)
 module PvarSpecialization = struct
   let try_keep_original ~default orig new_ ~f = if phys_equal orig new_ then default else f new_
 

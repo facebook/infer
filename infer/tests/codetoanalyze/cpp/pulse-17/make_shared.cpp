@@ -192,6 +192,18 @@ int make_shared5_bad() {
   return 0;
 }
 
+int FN_make_shared6_bad() {
+  int v = 42;
+  auto x = std::make_shared<int>(v);
+  v++;
+  if (*x == 42) {
+    // Should report a NPE here as *x is equal to 42
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
 int make_shared_ptr_use_ok() {
   std::shared_ptr<X> x = std::make_shared<X>();
   return x->get();

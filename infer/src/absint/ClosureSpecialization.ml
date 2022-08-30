@@ -163,6 +163,14 @@ let create_specialized_procdesc callee_pname ~extra_formals_to_closures ~capture
                           [ get_extra_captured extra_formals_to_closures
                           ; get_captured actuals
                           ; orig_attributes.captured ]
+                    ; specialized_with_aliasing_info=
+                        Option.map orig_attributes.specialized_with_aliasing_info
+                          ~f:(fun ({ProcAttributes.aliases} as info) ->
+                            { info with
+                              aliases=
+                                List.map aliases ~f:(fun alias ->
+                                    List.map alias ~f:(fun pvar ->
+                                        Pvar.specialize_pvar pvar specialized_pname ) ) } )
                     ; proc_name= specialized_pname }
                   in
                   let specialized_pdesc = Procdesc.from_proc_attributes new_attributes in

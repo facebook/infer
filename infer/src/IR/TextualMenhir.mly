@@ -59,6 +59,7 @@
 
 %start <SourceFile.t -> Textual.Module.t> main
 %type <Module.decl> declaration
+%type <Procname.enclosing_class * ProcBaseName.t> pname_and_enclosing
 %type <ProcBaseName.t> pname
 %type <FieldBaseName.t> fname
 %type <NodeName.t> nname
@@ -117,6 +118,12 @@ vname:
   | id=IDENT
     { { value=id; loc=location_of_pos $startpos(id) } }
 
+pname_and_enclosing:
+  | tname=tname DOT pname=pname
+    { (Enclosing tname, pname) }
+  | pname=pname
+    { (TopLevel, pname) }
+
 declaration:
   | GLOBAL name=vname
     { let pvar : Pvar.t = {name; kind=Global} in
@@ -125,22 +132,25 @@ declaration:
     { let fields =
         List.map l ~f:(fun (typ, name_f) ->
                         {Fieldname.name=name_f; typ; enclosing_type=name}) in
-      Struct {name; fields} }
-  | DECLARE name=pname LPAREN targs = separated_list(COMMA, typ) RPAREN COLON tres=typ
-    { let pkind : Procname.proc_kind = NonVirtual in
-      let kind : Procname.kind = Proc { pkind } in
-      let pname : Procname.t = {name; targs; tres; kind} (* FIXME: deals with virutal kind *) in
+      Struct {name; fields; methods=[]} }
+  | DECLARE pname_and_enclosing=pname_and_enclosing LPAREN targs = separated_list(COMMA, typ) RPAREN COLON tres=typ
+    { let kind : Procname.kind = NonVirtual in
+      let (enclosing_class, name) = pname_and_enclosing in
+      let pname : Procname.t = {name; targs; tres; kind; enclosing_class}
+      (* FIXME: deals with virutal kind *) in
       Procname pname
     }
-  | DEFINE name=pname LPAREN params = separated_list(COMMA, typed_var) RPAREN COLON tres=typ
+  | DEFINE pname_and_enclosing=pname_and_enclosing LPAREN params = separated_list(COMMA, typed_var) RPAREN COLON tres=typ
                          LBRACKET nodes=block+ RBRACKET
     { let targs = List.map ~f:fst params in
-      let pkind : Procname.proc_kind = NonVirtual in
-      let kind : Procname.kind = Proc { pkind } in
-      let procname : Procname.t = {name; targs; tres; kind} (* FIXME:: deals with virutal kind *) in
+      let kind : Procname.kind = NonVirtual in
+      let (enclosing_class, name) = pname_and_enclosing in
+      let procname : Procname.t = {name; targs; tres; kind; enclosing_class}
+      (* FIXME:: deals with virtual kind *) in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:snd params in
-      Proc { procname; nodes; start= start_node.Node.label; params}
+      let exit_loc = location_of_pos $endpos in
+      Proc { procname; nodes; start= start_node.Node.label; params; exit_loc}
     }
 
 base_typ:

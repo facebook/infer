@@ -62,7 +62,9 @@ let loc_trace_to_jsonbug_record trace_list ekind =
   | _ ->
       let trace_item_to_record trace_item =
         { Jsonbug_j.level= trace_item.Errlog.lt_level
-        ; filename= SourceFile.to_string trace_item.Errlog.lt_loc.Location.file
+        ; filename=
+            SourceFile.to_string ~force_relative:Config.report_force_relative_path
+              trace_item.Errlog.lt_loc.Location.file
         ; line_number= trace_item.Errlog.lt_loc.Location.line
         ; column_number= trace_item.Errlog.lt_loc.Location.col
         ; description= trace_item.Errlog.lt_description }

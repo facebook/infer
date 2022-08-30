@@ -45,6 +45,7 @@ const poweredByImages = [
   { url: "https://www.microsoft.com", image: "/img/who/microsoft.png" },
   { url: "http://www.mozilla.com", image: "/img/who/mozilla.png" },
   { url: "https://www.oculus.com", image: "/img/who/oculus.png" },
+  { url: "https://www.sonatype.com", image: "/img/who/sonatype.png" },
   {
     url: "/blog/2016/03/17/collaboration-with-spotify",
     image: "/img/who/spotify.png",

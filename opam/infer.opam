@@ -36,6 +36,7 @@ depends: [
   "ppx_enumerate" {>= "v0.14.0" & < "v0.15"}
   "ppx_expect" {>= "v0.14.0" & < "v0.15"}
   "ppx_fields_conv" {>= "v0.14.0" & < "v0.15"}
+  "ppx_show"
   "ppx_yojson_conv" {>= "v0.14.0" & < "v0.15"}
   "sawja" {>="1.5.11"}
   "sqlite3"

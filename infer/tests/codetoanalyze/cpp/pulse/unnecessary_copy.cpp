@@ -7,6 +7,7 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <list>
 
 struct Arr {
   int arr[2];
@@ -116,6 +117,8 @@ class Vec {
 
  public:
   std::vector<int> vec;
+  std::list<Arr> my_list;
+
   Vec() {
     for (int i = 1; i <= 3; i++) {
       vec.push_back(i);
@@ -128,6 +131,13 @@ class Vec {
   }
 
   int get(int i) const { return vec[i]; }
+
+  void source_modified_via_unmodeled_ok() {
+    auto arr = my_list.front(); // result of unknown call on source is copied
+    my_list.pop_front();
+    // when checking for modifications, we need to check that arr is propagated
+    // from my_list which is modified
+  }
 };
 
 void copy_own_vec_bad() {

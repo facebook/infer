@@ -1,9 +1,7 @@
-// 
 // Copyright (c) Facebook, Inc. and its affiliates.
-// 
+//
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
-// 
 
 global I
 
@@ -11,16 +9,17 @@ type node = { val: int; next: *node }
 
 declare cons(int, *node) : node
 
-define f(x: int, y: float, n: *node3) : void {
+define f(x: int, y: float, n: *node) : void {
   #entry:
     n0:int = load &y
     n1:int = load &n[1]
-    n2 = f(3)
+    n2 = f(3, 3.0, n1)
     jmp lab1
     .handlers lab1, lab2
   #lab1:
     store &x <- n0:int
     store &x[1] <- n1:int
     ret n2
-
+  #lab2:
+    jmp
 }

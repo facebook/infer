@@ -8,7 +8,6 @@
 #include <vector>
 #include <string>
 #include <memory>
-
 namespace folly {
 
 template <class Value>
@@ -67,6 +66,13 @@ class Optional {
 };
 } // namespace folly
 
+struct Integer {
+  int field;
+
+  Integer(int x = 0) : field(x) {}
+  int get() const { return field; }
+};
+
 int not_none_ok() {
   folly::Optional<int> foo{5};
   return foo.value();
@@ -74,7 +80,7 @@ int not_none_ok() {
 
 // missing a more precise model for
 // constructing an optional from a value
-int not_none_check_value_ok_FP() {
+int FP_not_none_check_value0_ok() {
   folly::Optional<int> foo{5};
   int x = foo.value();
   if (x != 5) {
@@ -82,6 +88,59 @@ int not_none_check_value_ok_FP() {
     return foo.value();
   }
   return x;
+}
+
+int FP_not_none_check_value1_ok() {
+  int p = 5;
+  folly::Optional<int> foo{p};
+  p++;
+  int x = foo.value();
+  if (x != 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return x;
+}
+
+int FP_not_none_check_value2_ok() {
+  auto p = Integer{5};
+  folly::Optional<Integer> foo{p};
+  p.field += 1;
+  if (foo.value().get() != 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_check_value0_bad() {
+  folly::Optional<int> foo{5};
+  if (foo.value() == 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_check_value1_bad() {
+  auto p = Integer{5};
+  folly::Optional<Integer> foo{p};
+  if (foo.value().get() == 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_check_value2_bad() {
+  auto p = Integer{5};
+  folly::Optional<Integer> foo{p};
+  p.field += 1;
+  if (foo.value().get() == 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
 }
 
 int none_check_ok() {
@@ -97,7 +156,27 @@ int none_no_check_bad() {
   return foo.value();
 }
 
-int none_copy_ok() {
+int FP_not_none_copy0_ok() {
+  folly::Optional<int> foo{5};
+  folly::Optional<int> bar{foo};
+  if (foo.value() != 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_copy0_bad() {
+  folly::Optional<int> foo{5};
+  folly::Optional<int> bar{foo};
+  if (foo.value() == 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_copy_ok() {
   folly::Optional<int> foo{5};
   folly::Optional<int> bar{foo};
   return bar.value();
@@ -210,7 +289,6 @@ std::string get_optional_string_wrapper_ok() {
   return StringWrapper::get_optional().value().x.data();
 }
 
-
 struct Container final {
   std::vector<int> _vec;
 
@@ -230,9 +308,6 @@ struct Container final {
     return -1;
   }
 };
-
-
-
 
 struct Node {
   std::shared_ptr<int> shared;

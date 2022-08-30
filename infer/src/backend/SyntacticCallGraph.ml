@@ -10,9 +10,13 @@ module L = Logging
 let iter_captured_procs_and_callees f =
   let db = ResultsDatabase.get_database () in
   (* only load procedure info for those we have a CFG *)
-  let stmt = Sqlite3.prepare db "SELECT proc_name, callees FROM procedures WHERE cfg IS NOT NULL" in
+  let stmt =
+    Sqlite3.prepare db "SELECT proc_attributes, callees FROM procedures WHERE cfg IS NOT NULL"
+  in
   SqliteUtils.result_fold_rows db ~log:"loading captured procs" stmt ~init:() ~f:(fun () stmt ->
-      let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
+      let proc_name =
+        Sqlite3.column stmt 0 |> ProcAttributes.SQLite.deserialize |> ProcAttributes.get_proc_name
+      in
       let callees : Procname.t list = Sqlite3.column stmt 1 |> Procname.SQLiteList.deserialize in
       f proc_name callees )
 

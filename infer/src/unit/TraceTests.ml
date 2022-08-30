@@ -6,10 +6,9 @@
  *)
 
 open! IStd
-module F = Format
 
 module MockTraceElem = struct
-  type t = Kind1 | Kind2 [@@deriving compare, equal]
+  type t = Kind1 | Kind2 [@@deriving compare, equal, show {with_path= false}]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
@@ -18,13 +17,6 @@ module MockTraceElem = struct
   let kind t = t
 
   let make ?indexes:_ kind _ = kind
-
-  let pp fmt = function
-    | Kind1 ->
-        F.pp_print_string fmt "Kind1"
-    | Kind2 ->
-        F.pp_print_string fmt "Kind2"
-
 
   module Kind = struct
     type nonrec t = t [@@deriving compare, equal]

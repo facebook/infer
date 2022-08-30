@@ -162,7 +162,8 @@ module LockDomain = struct
 end
 
 module ThreadsDomain = struct
-  type t = NoThread | AnyThreadButSelf | AnyThread [@@deriving compare, equal]
+  type t = NoThread | AnyThreadButSelf | AnyThread
+  [@@deriving compare, equal, show {with_path= false}]
 
   let bottom = NoThread
 
@@ -196,17 +197,6 @@ module ThreadsDomain = struct
 
 
   let widen ~prev ~next ~num_iters:_ = join prev next
-
-  let pp fmt astate =
-    F.pp_print_string fmt
-      ( match astate with
-      | NoThread ->
-          "NoThread"
-      | AnyThreadButSelf ->
-          "AnyThreadButSelf"
-      | AnyThread ->
-          "AnyThread" )
-
 
   (* at least one access is known to occur on a background thread *)
   let can_conflict astate1 astate2 =
