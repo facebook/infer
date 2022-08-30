@@ -21,7 +21,6 @@ analyze/inequality.bc:	Safe
 analyze/int_bool_assign.bc:	Unsafe: 1
 analyze/irreducible.bc:	Safe
 analyze/loop.bc:	Safe
-analyze/model_substitution.bc:	Safe
 analyze/nested_loop_branch.bc:	Safe (_,5)
 analyze/nonreducible_call_graph.bc:	Safe (_,5)
 analyze/recursion.bc:	Safe (_,5)
