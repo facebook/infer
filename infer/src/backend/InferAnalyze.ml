@@ -148,7 +148,7 @@ let analyze source_files_to_analyze =
     L.debug Analysis Quiet "Config impact strict mode: %a@." ConfigImpactAnalysis.pp_mode
       ConfigImpactAnalysis.mode ;
   if Config.jobs <= 1 then (
-    let target_files =
+      let target_files =
       List.rev_map (Lazy.force source_files_to_analyze) ~f:(fun sf -> TaskSchedulerTypes.File sf)
     in
     let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
@@ -261,7 +261,6 @@ let main ~changed_files =
   let source_files = lazy (get_source_files_to_analyze ~changed_files) in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
-  if Config.cil_lang then Language.curr_language := Language.CIL ;
   let backend_stats_list, gc_stats_list = analyze source_files in
   Stats.log_aggregate backend_stats_list ;
   GCStats.log_aggregate ~prefix:"backend_stats." Analysis gc_stats_list ;

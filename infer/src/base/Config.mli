@@ -213,8 +213,6 @@ val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val cfg_json : string option
 
-val cil_lang : bool
-
 val changed_files_index : string option
 
 val check_version : string option
