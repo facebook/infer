@@ -147,7 +147,7 @@ let analyze source_files_to_analyze =
   if Config.is_checker_enabled ConfigImpactAnalysis then
     L.debug Analysis Quiet "Config impact strict mode: %a@." ConfigImpactAnalysis.pp_mode
       ConfigImpactAnalysis.mode ;
-  if Config.jobs <= 1 then (
+  if Int.equal Config.jobs 1 then (
       let target_files =
       List.rev_map (Lazy.force source_files_to_analyze) ~f:(fun sf -> TaskSchedulerTypes.File sf)
     in
