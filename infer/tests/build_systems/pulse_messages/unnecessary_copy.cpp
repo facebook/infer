@@ -32,3 +32,11 @@ class Test {
 
   void unnecessary_copy_moveable_bad(A&& a) { mem_a = a; }
 };
+
+int get_size(A a) { return a.vec.size(); }
+
+void unnecessary_intermetidate_copy(const A& my_a) {
+  // we are copying the argument my_a unnecessarily because get_size doesn't
+  // have const A&
+  get_size(my_a);
+}

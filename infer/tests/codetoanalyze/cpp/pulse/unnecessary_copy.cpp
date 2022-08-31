@@ -399,3 +399,11 @@ struct CheapToCopy {
 
 void cheap_to_copy_ok(CheapToCopy source) { auto c = source; }
 }; // namespace my_proj
+
+void unnecessary_copy_initializer_list(std::vector<int> c1,
+                                       std::vector<int> c2) {
+  for (const auto& c : {c1, c2}) {
+  }
+  // fix here is not to add & but use ptrs
+  // for (const auto* c : { &c1, &c2 }) // use *c
+}

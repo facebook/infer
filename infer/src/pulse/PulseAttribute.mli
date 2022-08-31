@@ -59,7 +59,7 @@ end
 
 module CopiedInto : sig
   type t =
-    | IntoVar of Var.t
+    | IntoVar of {copied_var: Var.t; source_opt: Pvar.t option}
     | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
   [@@deriving compare, equal]
 
