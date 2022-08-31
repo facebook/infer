@@ -487,7 +487,8 @@ let physical_cores () =
       let rec loop sockets cores =
         match In_channel.input_line ~fix_win_eol:true ic with
         | None ->
-            (Int.Set.length sockets, Int.Set.length cores)
+            let physical_cores = Int.Set.length sockets * Int.Set.length cores in
+            if physical_cores <= 0 then None else Some physical_cores
         | Some line when Re.Str.string_match physical_or_core_regxp line 0 -> (
             let value = Re.Str.matched_group 2 line |> int_of_string in
             match Re.Str.matched_group 1 line with
@@ -496,18 +497,23 @@ let physical_cores () =
             | "core id" ->
                 loop sockets (Int.Set.add cores value)
             | _ ->
+                (* cannot happen thanks to the regexp *)
                 L.die InternalError "Couldn't parse line '%s' from /proc/cpuinfo." line )
         | Some _ ->
             loop sockets cores
       in
-      let sockets, cores_per_socket = loop Int.Set.empty Int.Set.empty in
-      sockets * cores_per_socket )
+      loop Int.Set.empty Int.Set.empty )
 
 
 let cpus = Setcore.numcores ()
 
 let numcores =
-  match Version.build_platform with Darwin | Windows -> cpus / 2 | Linux -> physical_cores ()
+  let default = cpus / 2 in
+  match Version.build_platform with
+  | Darwin | Windows ->
+      default
+  | Linux ->
+      physical_cores () |> Option.value ~default
 
 
 let set_best_cpu_for worker_id =

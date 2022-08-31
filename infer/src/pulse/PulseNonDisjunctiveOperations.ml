@@ -318,5 +318,3 @@ let mark_modified_copies_and_parameters vars disjuncts astate_n =
           astate_n
       | ContinueProgram astate ->
           mark_modified_copies_and_parameters_with unchecked_vars ~astate astate_n )
-(* let copy_domain = mark_modified_copies_with unchecked_vars ~astate astate_n in
-   mark_modified_parameters_with unchecked_vars ~astate copy_domain ) *)
