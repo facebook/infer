@@ -592,19 +592,6 @@ module Decls = struct
     ignore (Hashtbl.add decls.globals ~key ~data:pvar)
 
 
-  let declare_label decls pname label =
-    let tbl =
-      match Hashtbl.find decls.labels pname.ProcBaseName.value with
-      | Some tbl ->
-          tbl
-      | None ->
-          let tbl = Hashtbl.create (module String) in
-          ignore (Hashtbl.add decls.labels ~key:pname.ProcBaseName.value ~data:tbl) ;
-          tbl
-    in
-    ignore (Hashtbl.add tbl ~key:label.NodeName.value ~data:())
-
-
   let declare_procname decls (pname : Procname.t) =
     let enclosing_class_name =
       Procname.enclosing_class_to_string pname.qualified_name.enclosing_class
@@ -645,14 +632,6 @@ module Decls = struct
         false
     | Some struct_ ->
         List.exists struct_.fields ~f:(fun {Fieldname.name} -> FieldBaseName.equal name fname)
-
-
-  let is_label_declared decls pname label =
-    match Hashtbl.find decls.labels pname.ProcBaseName.value with
-    | None ->
-        false
-    | Some tbl ->
-        Hashtbl.mem tbl label.NodeName.value
 
 
   let get_global decls (vname : VarName.t) = Hashtbl.find decls.globals vname.value
@@ -1137,12 +1116,6 @@ module Module = struct
       | Procname pname ->
           Decls.declare_procname decls_env pname
       | Proc pdesc ->
-          let register_label node =
-            let label = node.Node.label in
-            let pname = pdesc.procname.qualified_name.name in
-            Decls.declare_label decls_env pname label
-          in
-          List.iter pdesc.nodes ~f:register_label ;
           Decls.declare_procname decls_env pdesc.procname
     in
     List.iter decls ~f:register ;
@@ -1218,7 +1191,7 @@ module Verification = struct
   type error =
     | UnknownFieldname of {tname: TypeName.t; fname: FieldBaseName.t}
     | UnknownProcname of Procname.qualified_name
-    | UnknownLabel of {label: NodeName.t; pname: ProcBaseName.t}
+    | UnknownLabel of {label: NodeName.t; pname: Procname.qualified_name}
   (* TODO: check that a name is not declared twice *)
   (* TODO: add basic type verification *)
 
@@ -1233,13 +1206,13 @@ module Verification = struct
           Procname.pp_qualified_name proc
     | UnknownLabel {label; pname} ->
         F.fprintf fmt ", %a: label %a is not declared in function %a\n" Location.pp label.loc
-          NodeName.pp label ProcBaseName.pp pname
+          NodeName.pp label Procname.pp_qualified_name pname
 
 
-  let verify_decl ~is_label_declared ~is_fieldname_declared ~is_procname_declared errors
-      (decl : Module.decl) =
-    let verify_label errors pname label =
-      if is_label_declared pname label then errors else UnknownLabel {label; pname} :: errors
+  let verify_decl ~is_fieldname_declared ~is_procname_declared errors (decl : Module.decl) =
+    let verify_label errors declared_labels pname label =
+      if String.Set.mem declared_labels label.NodeName.value then errors
+      else UnknownLabel {label; pname} :: errors
     in
     let verify_fieldname errors tname fname =
       if is_fieldname_declared tname fname then errors
@@ -1274,7 +1247,11 @@ module Verification = struct
           verify_exp errors exp2
     in
     let verify_procdesc errors ({procname; nodes} : Procdesc.t) =
-      let verify_label errors = verify_label errors procname.qualified_name.name in
+      let declared_labels =
+        List.fold nodes ~init:String.Set.empty ~f:(fun set node ->
+            String.Set.add set node.Node.label.value )
+      in
+      let verify_label errors = verify_label errors declared_labels procname.qualified_name in
       let verify_terminator errors (t : Terminator.t) =
         match t with
         | Jump l ->
@@ -1298,9 +1275,8 @@ module Verification = struct
 
   let run (module_ : Module.t) =
     let decls_env = Module.make_decls module_ in
-    let is_label_declared = Decls.is_label_declared decls_env in
     let is_fieldname_declared = Decls.is_fieldname_declared decls_env in
     let is_procname_declared = Decls.is_procname_declared decls_env in
-    let f = verify_decl ~is_label_declared ~is_fieldname_declared ~is_procname_declared in
+    let f = verify_decl ~is_fieldname_declared ~is_procname_declared in
     List.fold ~f ~init:[] module_.decls
 end

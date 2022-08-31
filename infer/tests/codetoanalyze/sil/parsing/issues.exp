@@ -2,6 +2,7 @@ SIL syntax error in file error1.sil at line 13, column 4.
 SIL consistency error in file error2.sil, line 19, column 9: function g is not declared
 SIL consistency error in file error2.sil, line 18, column 13: field cell.n is not declared
 SIL consistency error in file error2.sil, line 15, column 8: label lab2 is not declared in function f
+SIL consistency error in file error_label.sil, line 16, column 8: label lab2 is not declared in function B.f
 let.sil: conversion from Textual to SIL failed because of an unsupported form
   the expression in n3 = &x should start with a regular call
 ssa.sil: conversion from Textual to SIL failed because of an unsupported form
