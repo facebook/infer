@@ -489,12 +489,16 @@ let get_message diagnostic =
             "try getting a reference to it or move it if possible"
       in
       match copied_into with
-      | IntoVar _ ->
+      | IntoVar {source_opt= None} ->
           F.asprintf
             "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid \
              the copy, %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
             location suggestion_msg suppression_msg
+      | IntoVar {source_opt= Some pvar} ->
+          F.asprintf "variable `%a` with type `%a` is %a unnecessarily into an intermediate on %a."
+            Pvar.pp_value pvar (Typ.pp_full Pp.text) typ CopyOrigin.pp from Location.pp_line
+            location
       | IntoField {field; source_opt} -> (
           let advice = "Rather than copying into the field, consider moving into it instead." in
           match source_opt with
@@ -695,8 +699,10 @@ let get_issue_type ~latent issue_type =
       IssueType.unnecessary_copy_assignment_movable_pulse
   | UnnecessaryCopy {copied_into= IntoField _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_movable_pulse
-  | UnnecessaryCopy {from= CopyCtor}, false ->
+  | UnnecessaryCopy {copied_into= IntoVar {source_opt= None}; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
+  | UnnecessaryCopy {copied_into= IntoVar {source_opt= Some _}; from= CopyCtor}, false ->
+      IssueType.unnecessary_copy_intermediate_pulse
   | UnnecessaryCopy {from= CopyAssignment}, false ->
       IssueType.unnecessary_copy_assignment_pulse
   | ( ( ConstRefableParameter _

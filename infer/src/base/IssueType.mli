@@ -374,6 +374,8 @@ val unnecessary_copy_assignment_pulse : t
 
 val unnecessary_copy_assignment_movable_pulse : t
 
+val unnecessary_copy_intermediate_pulse : t
+
 val unnecessary_copy_movable_pulse : t
 
 val unreachable_code_after : t

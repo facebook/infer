@@ -19,7 +19,13 @@ type parameter_spec_t =
 
 include AbstractDomain.WithBottomTop
 
-val add_var : Var.t -> source_addr_opt:PulseAbstractValue.t option -> copy_spec_t -> t -> t
+val add_var :
+     Var.t
+  -> source_addr_opt:PulseAbstractValue.t option
+  -> source_opt:Pvar.t option
+  -> copy_spec_t
+  -> t
+  -> t
 
 val add_field : Fieldname.t -> source_opt:PulseDecompilerExpr.t option -> copy_spec_t -> t -> t
 
