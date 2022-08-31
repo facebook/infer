@@ -247,14 +247,20 @@ module Procname = struct
 
   type enclosing_class = TopLevel | Enclosing of TypeName.t
 
+  type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
+
   type t =
-    { enclosing_class: enclosing_class
-    ; name: ProcBaseName.t
-    ; targs: Typ.t list
-    ; tres: Typ.t
-    ; kind: kind }
+    {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
 
   let toplevel_classname = "$TOPLEVEL$CLASS$"
+
+  let enclosing_class_to_string enclosing_class =
+    match enclosing_class with
+    | TopLevel ->
+        toplevel_classname
+    | Enclosing tname ->
+        tname.TypeName.value
+
 
   let pp_enclosing_class fmt = function
     | TopLevel ->
@@ -263,20 +269,25 @@ module Procname = struct
         F.fprintf fmt "%a." TypeName.pp tname
 
 
-  let pp fmt {enclosing_class; name; targs; tres} =
-    F.fprintf fmt "%a%a(%a) : %a" pp_enclosing_class enclosing_class ProcBaseName.pp name
-      (pp_list_with_comma Typ.pp) targs Typ.pp tres
+  let pp_qualified_name fmt {enclosing_class; name} =
+    F.fprintf fmt "%a%a" pp_enclosing_class enclosing_class ProcBaseName.pp name
 
 
-  let pp_with_params params fmt {enclosing_class; name; targs; tres} =
+  let pp fmt {qualified_name; formals_types; result_type} =
+    F.fprintf fmt "%a(%a) : %a" pp_qualified_name qualified_name (pp_list_with_comma Typ.pp)
+      formals_types Typ.pp result_type
+
+
+  let pp_with_params params fmt {qualified_name; formals_types; result_type} =
     let pp fmt (typ, id) = F.fprintf fmt "%a: %a" VarName.pp id Typ.pp typ in
-    match List.zip targs params with
+    match List.zip formals_types params with
     | Ok args ->
-        F.fprintf fmt "%a%a(%a) : %a" pp_enclosing_class enclosing_class ProcBaseName.pp name
-          (pp_list_with_comma pp) args Typ.pp tres
+        F.fprintf fmt "%a(%a) : %a" pp_qualified_name qualified_name (pp_list_with_comma pp) args
+          Typ.pp result_type
     | _ ->
-        L.die InternalError "Textual printing error: params has size %d and targs has size %d"
-          (List.length params) (List.length targs)
+        L.die InternalError
+          "Textual printing error: params has size %d and formals_types has size %d"
+          (List.length params) (List.length formals_types)
 
 
   let of_sil (pname : Procname.t) =
@@ -286,34 +297,38 @@ module Procname = struct
           if Procname.Java.is_static jpname then NonVirtual
           else Virtual (* FIXME: we do not handle virtuall call yet *)
         in
-        let name = Procname.Java.get_method jpname |> ProcBaseName.of_java_name in
-        let targs = Procname.Java.get_parameters jpname |> List.map ~f:Typ.of_sil in
-        let targs =
-          if Procname.Java.is_static jpname then targs
-          else
-            let typ = Procname.Java.get_class_type_name jpname in
-            let this_type = Typ.(Ptr (Struct (TypeName.of_sil_typ_name typ))) in
-            this_type :: targs
-        in
-        let tres = Procname.Java.get_return_typ jpname |> Typ.of_sil in
         let enclosing_class =
           Enclosing (TypeName.of_java_name (Procname.Java.get_class_name jpname))
         in
+        let name = Procname.Java.get_method jpname |> ProcBaseName.of_java_name in
+        let qualified_name : qualified_name = {enclosing_class; name} in
+        let formals_types = Procname.Java.get_parameters jpname |> List.map ~f:Typ.of_sil in
+        let formals_types =
+          if Procname.Java.is_static jpname then formals_types
+          else
+            let typ = Procname.Java.get_class_type_name jpname in
+            let this_type = Typ.(Ptr (Struct (TypeName.of_sil_typ_name typ))) in
+            this_type :: formals_types
+        in
+        let result_type = Procname.Java.get_return_typ jpname |> Typ.of_sil in
         (* FIXME when adding inheritance *)
-        {enclosing_class; name; targs; tres; kind}
+        {qualified_name; formals_types; result_type; kind}
     | _ ->
         L.die InternalError "Non-Java procname should not appear in Java mode"
 
 
-  let make_builtin ~name ~targs ~tres =
-    {name; targs; tres; kind= NonVirtual; enclosing_class= TopLevel}
+  let make_toplevel_name name : qualified_name = {enclosing_class= TopLevel; name}
+
+  let make_builtin ~name ~formals_types ~result_type =
+    let qualified_name : qualified_name = make_toplevel_name name in
+    {qualified_name; formals_types; result_type; kind= NonVirtual}
 
 
   let make_allocate (tname : TypeName.t) =
     let name : ProcBaseName.t =
       {value= builtin_allocate_prefix ^ tname.value; loc= Location.Unknown}
     in
-    make_builtin ~name ~targs:[] ~tres:(Ptr (Struct tname))
+    make_builtin ~name ~formals_types:[] ~result_type:(Ptr (Struct tname))
 
 
   let unop_table : (Unop.t * string) list =
@@ -327,11 +342,15 @@ module Procname = struct
   let of_unop unop =
     let value = List.Assoc.find_exn ~equal:Unop.equal unop_table unop in
     let name : ProcBaseName.t = {value; loc= Location.Unknown} in
-    name
+    make_toplevel_name name
 
 
-  let to_unop pname : Unop.t option =
-    List.Assoc.find ~equal:String.equal unop_inverse_table pname.ProcBaseName.value
+  let to_unop ({enclosing_class; name} : qualified_name) : Unop.t option =
+    match enclosing_class with
+    | TopLevel ->
+        List.Assoc.find ~equal:String.equal unop_inverse_table name.value
+    | _ ->
+        None
 
 
   let inverse_assoc_list l = List.map l ~f:(fun (a, b) -> (b, a))
@@ -410,42 +429,50 @@ module Procname = struct
   let of_binop binop =
     let value = Map.Poly.find_exn binop_map binop in
     let name : ProcBaseName.t = {value; loc= Location.Unknown} in
-    name
+    make_toplevel_name name
 
 
   let binop_inverse_map = inverse_assoc_list binop_table |> Map.Poly.of_alist_exn
 
-  let is_allocate_builtin (pname : ProcBaseName.t) =
-    String.is_prefix ~prefix:builtin_allocate_prefix pname.value
+  let is_allocate_builtin ({enclosing_class; name} : qualified_name) =
+    match enclosing_class with
+    | TopLevel ->
+        String.is_prefix ~prefix:builtin_allocate_prefix name.value
+    | _ ->
+        false
 
 
-  let is_sil_instr (pname : ProcBaseName.t) =
-    let name = pname.value in
-    List.Assoc.mem ~equal:String.equal unop_inverse_table name
-    || Map.Poly.mem binop_inverse_map name
+  let is_sil_instr ({enclosing_class; name} : qualified_name) =
+    match enclosing_class with
+    | TopLevel ->
+        let name = name.value in
+        List.Assoc.mem ~equal:String.equal unop_inverse_table name
+        || Map.Poly.mem binop_inverse_map name
+    | _ ->
+        false
 
 
-  let is_not_regular_proc_name (pname : ProcBaseName.t) =
-    is_allocate_builtin pname || is_sil_instr pname
+  let is_not_regular_proc proc = is_allocate_builtin proc || is_sil_instr proc
+
+  let to_binop ({enclosing_class; name} : qualified_name) : Binop.t option =
+    match enclosing_class with TopLevel -> Map.Poly.find binop_inverse_map name.value | _ -> None
 
 
-  let to_binop pname : Binop.t option = Map.Poly.find binop_inverse_map pname.ProcBaseName.value
-
-  let to_sil {name; targs; tres; enclosing_class} : Procname.t =
+  let to_sil {qualified_name; formals_types; result_type} : Procname.t =
     let class_name =
       TypeName.to_java_sil
-        ( match enclosing_class with
+        ( match qualified_name.enclosing_class with
         | TopLevel ->
             TypeName.of_java_name toplevel_classname
         | Enclosing tname ->
             tname )
     in
-    let tres = Typ.to_sil tres in
-    let return_type = Some tres in
-    let method_name = name.ProcBaseName.value in
-    let targs = List.map ~f:Typ.to_sil targs in
+    let result_type = Typ.to_sil result_type in
+    let return_type = Some result_type in
+    let method_name = qualified_name.name.ProcBaseName.value in
+    let formals_types = List.map ~f:Typ.to_sil formals_types in
     let kind = Procname.Java.Non_Static (* FIXME when handling inheritance *) in
-    Procname.make_java ~class_name ~return_type ~method_name ~parameters:targs ~kind
+    Procname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
 
 
   let kind_to_sil_callflag = function
@@ -548,7 +575,7 @@ module Decls = struct
   type t =
     { globals: (string, Pvar.t) Hashtbl.t
     ; labels: (string, (string, unit) Hashtbl.t) Hashtbl.t
-    ; procnames: (string, Procname.t) Hashtbl.t
+    ; procnames: (string, (string, Procname.t) Hashtbl.t) Hashtbl.t
     ; structs: (string, Struct.t) Hashtbl.t
     ; sourcefile: SourceFile.t }
 
@@ -579,7 +606,19 @@ module Decls = struct
 
 
   let declare_procname decls (pname : Procname.t) =
-    ignore (Hashtbl.add decls.procnames ~key:pname.name.value ~data:pname)
+    let enclosing_class_name =
+      Procname.enclosing_class_to_string pname.qualified_name.enclosing_class
+    in
+    let tbl =
+      match Hashtbl.find decls.procnames enclosing_class_name with
+      | Some tbl ->
+          tbl
+      | None ->
+          let tbl = Hashtbl.create (module String) in
+          ignore (Hashtbl.add decls.procnames ~key:enclosing_class_name ~data:tbl) ;
+          tbl
+    in
+    ignore (Hashtbl.add tbl ~key:pname.qualified_name.name.value ~data:pname)
 
 
   let declare_struct decls (s : Struct.t) =
@@ -616,8 +655,6 @@ module Decls = struct
         Hashtbl.mem tbl label.NodeName.value
 
 
-  let is_procname_declared decls pname = Hashtbl.mem decls.procnames pname.ProcBaseName.value
-
   let get_global decls (vname : VarName.t) = Hashtbl.find decls.globals vname.value
 
   let get_fieldname decls (tname : TypeName.t) (fname : FieldBaseName.t) =
@@ -626,14 +663,23 @@ module Decls = struct
     List.find strct.Struct.fields ~f:(fun {Fieldname.name} -> FieldBaseName.equal name fname)
 
 
-  let get_procname decls (pname : ProcBaseName.t) = Hashtbl.find decls.procnames pname.value
+  let get_procname decls ({enclosing_class; name} : Procname.qualified_name) =
+    let enclosing_class_name = Procname.enclosing_class_to_string enclosing_class in
+    Option.bind (Hashtbl.find decls.procnames enclosing_class_name) ~f:(fun tbl ->
+        Hashtbl.find tbl name.value )
+
+
+  let is_procname_declared decls proc = get_procname decls proc |> Option.is_some
 
   let fold_globals decls ~init ~f =
     Hashtbl.fold ~init ~f:(fun ~key ~data x -> f x key data) decls.globals
 
 
   let fold_procnames decls ~init ~f =
-    Hashtbl.fold ~init ~f:(fun ~key ~data x -> f x key data) decls.procnames
+    Hashtbl.fold ~init
+      ~f:(fun ~key:_ ~data:tbl x ->
+        Hashtbl.fold tbl ~init:x ~f:(fun ~key:_ ~data:procname x -> f x procname) )
+      decls.procnames
 
 
   let fold_structs decls ~init ~f =
@@ -650,7 +696,7 @@ module Exp = struct
     | Index of t * t
     (*  | Sizeof of sizeof_data *)
     | Const of Const.t
-    | Call of {proc: ProcBaseName.t; args: t list}
+    | Call of {proc: Procname.qualified_name; args: t list}
     | Cast of Typ.t * t
 
   let rec of_sil decls tenv (e : Exp.t) =
@@ -698,7 +744,7 @@ module Exp = struct
     | Const c ->
         Const.pp fmt c
     | Call {proc; args} ->
-        ProcBaseName.pp fmt proc ;
+        Procname.pp_qualified_name fmt proc ;
         pp_list fmt args
     | Cast (typ, e) ->
         F.fprintf fmt "(%a %a)" Typ.pp typ pp e
@@ -745,7 +791,7 @@ module Exp = struct
             BinOp (binop, aux exp1, aux exp2)
         | _, _, _, _ ->
             L.die InternalError "Internal error: procname %a has an unexpected property"
-              ProcBaseName.pp proc
+              Procname.pp_qualified_name proc
             (* FIXME: transform instruction to put call at head of expressions *) )
       | Cast (typ, exp) ->
           Cast (Typ.to_sil typ, aux exp)
@@ -793,12 +839,12 @@ module Instr = struct
         let () = Decls.declare_procname decls procname in
         Let
           { id= Ident.of_sil id
-          ; exp= Call {proc= procname.Procname.name; args= []}
+          ; exp= Call {proc= procname.Procname.qualified_name; args= []}
           ; loc= Location.Unknown }
     | Call ((id, _), Const (Cfun pname), args, _, _) ->
         let procname = Procname.of_sil pname in
         let () = Decls.declare_procname decls procname in
-        let proc = procname.name in
+        let proc = procname.qualified_name in
         let args = List.map ~f:(fun (e, _) -> Exp.of_sil decls tenv e) args in
         let loc = Location.Unknown in
         Let {id= Ident.of_sil id; exp= Call {proc; args}; loc}
@@ -828,7 +874,7 @@ module Instr = struct
         let loc = Location.to_sil sourcefile loc in
         Prune (e, loc, b, Ik_if {terminated= false})
     | Let {id; exp= Call {proc; args= []}; loc} when Procname.is_allocate_builtin proc ->
-        let typ = SilTyp.mk_struct (TypeName.allocate_buitin_to_java_sil proc) in
+        let typ = SilTyp.mk_struct (TypeName.allocate_buitin_to_java_sil proc.name) in
         let sizeof =
           SilExp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
         in
@@ -851,11 +897,11 @@ module Instr = struct
                      F.fprintf fmt "the expression in %a should start with a regular call" pp i ) )
         in
         let pname = Procname.to_sil procname in
-        let targs = List.map procname.targs ~f:Typ.to_sil in
-        let tres = Typ.to_sil procname.tres in
+        let formals_types = List.map procname.formals_types ~f:Typ.to_sil in
+        let result_type = Typ.to_sil procname.result_type in
         let args = List.map ~f:(Exp.to_sil decls_env procname) args in
         let args =
-          match List.zip args targs with
+          match List.zip args formals_types with
           | Ok l ->
               l
           | _ ->
@@ -863,7 +909,7 @@ module Instr = struct
         in
         let loc = Location.to_sil sourcefile loc in
         let cflag = Procname.kind_to_sil_callflag procname.kind in
-        Call ((ret, tres), Const (Cfun pname), args, loc, cflag)
+        Call ((ret, result_type), Const (Cfun pname), args, loc, cflag)
     | Let _ ->
         raise
           (ToSilTransformationError
@@ -981,7 +1027,7 @@ module Procdesc = struct
     let pattributes = ProcAttributes.default sourcefile sil_procname in
     let locals =
       match
-        List.map2 procname.targs params ~f:(fun typ vname ->
+        List.map2 procname.formals_types params ~f:(fun typ vname ->
             let name = Mangled.from_string vname.VarName.value in
             let typ = Typ.to_sil typ in
             ProcAttributes.
@@ -991,7 +1037,7 @@ module Procdesc = struct
           l
       | Unequal_lengths ->
           L.die InternalError "procname %a has not the same number of arg names and arg types"
-            ProcBaseName.pp procname.name
+            Procname.pp_qualified_name procname.qualified_name
     in
     let () = pattributes.locals <- locals in
     let pdesc = Cfg.create_proc_desc cfgs pattributes in
@@ -1093,7 +1139,7 @@ module Module = struct
       | Proc pdesc ->
           let register_label node =
             let label = node.Node.label in
-            let pname = pdesc.procname.name in
+            let pname = pdesc.procname.qualified_name.name in
             Decls.declare_label decls_env pname label
           in
           List.iter pdesc.nodes ~f:register_label ;
@@ -1132,7 +1178,7 @@ module Module = struct
       Decls.fold_structs env ~init:decls ~f:(fun decls _ struct_ -> Struct struct_ :: decls)
     in
     let decls =
-      Decls.fold_procnames env ~init:decls ~f:(fun decls _ procname -> Procname procname :: decls)
+      Decls.fold_procnames env ~init:decls ~f:(fun decls procname -> Procname procname :: decls)
     in
     {decls; sourcefile}
 
@@ -1171,7 +1217,7 @@ end
 module Verification = struct
   type error =
     | UnknownFieldname of {tname: TypeName.t; fname: FieldBaseName.t}
-    | UnknownProcname of {pname: ProcBaseName.t}
+    | UnknownProcname of Procname.qualified_name
     | UnknownLabel of {label: NodeName.t; pname: ProcBaseName.t}
   (* TODO: check that a name is not declared twice *)
   (* TODO: add basic type verification *)
@@ -1182,9 +1228,9 @@ module Verification = struct
     | UnknownFieldname {tname; fname} ->
         F.fprintf fmt ", %a: field %a.%a is not declared\n" Location.pp tname.loc TypeName.pp tname
           FieldBaseName.pp fname
-    | UnknownProcname {pname} ->
-        F.fprintf fmt ", %a: function %a is not declared\n" Location.pp pname.loc ProcBaseName.pp
-          pname
+    | UnknownProcname proc ->
+        F.fprintf fmt ", %a: function %a is not declared\n" Location.pp proc.name.loc
+          Procname.pp_qualified_name proc
     | UnknownLabel {label; pname} ->
         F.fprintf fmt ", %a: label %a is not declared in function %a\n" Location.pp label.loc
           NodeName.pp label ProcBaseName.pp pname
@@ -1199,9 +1245,9 @@ module Verification = struct
       if is_fieldname_declared tname fname then errors
       else UnknownFieldname {tname; fname} :: errors
     in
-    let verify_procname errors pname =
-      if is_procname_declared pname || Procname.is_not_regular_proc_name pname then errors
-      else UnknownProcname {pname} :: errors
+    let verify_procname errors proc =
+      if is_procname_declared proc || Procname.is_not_regular_proc proc then errors
+      else UnknownProcname proc :: errors
     in
     let rec verify_exp errors (exp : Exp.t) =
       match exp with
@@ -1228,7 +1274,7 @@ module Verification = struct
           verify_exp errors exp2
     in
     let verify_procdesc errors ({procname; nodes} : Procdesc.t) =
-      let verify_label errors = verify_label errors procname.name in
+      let verify_label errors = verify_label errors procname.qualified_name.name in
       let verify_terminator errors (t : Terminator.t) =
         match t with
         | Jump l ->

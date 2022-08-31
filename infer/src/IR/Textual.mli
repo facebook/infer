@@ -57,12 +57,10 @@ module Procname : sig
 
   type enclosing_class = TopLevel | Enclosing of TypeName.t
 
+  type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
+
   type t =
-    { enclosing_class: enclosing_class
-    ; name: ProcBaseName.t
-    ; targs: Typ.t list
-    ; tres: Typ.t
-    ; kind: kind }
+    {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
 end
 
 module Pvar : sig
@@ -84,7 +82,7 @@ module Exp : sig
         (** field offset, fname must be declared in type tname *)
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
-    | Call of {proc: ProcBaseName.t; args: t list}
+    | Call of {proc: Procname.qualified_name; args: t list}
     | Cast of Typ.t * t
 end
 
