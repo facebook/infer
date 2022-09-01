@@ -1,4 +1,3 @@
-analyze/FA_dynamic_size_array.bc:	Unsafe: 1
 analyze/FA_mallctl_thread_allocatedp.bc:	Unsafe: 1
 analyze/FN_ptr_arith_bad.bc:	Safe
 analyze/addr_of_global_struct.bc:	Safe
@@ -12,7 +11,8 @@ analyze/array_access_unsafe.bc:	Safe
 analyze/assert.bc:	Safe
 analyze/bool_to_int.bc:	Safe
 analyze/copy_struct_on_stack.bc:	Safe
-analyze/dynamic_size_2d_array.bc:	Unsafe: 1
+analyze/dynamic_size_2d_array.bc:	Safe (_,5)
+analyze/dynamic_size_array.bc:	Safe (_,5)
 analyze/free_free.bc:	Safe
 analyze/free_local.bc:	Safe
 analyze/global_vars.bc:	Safe
