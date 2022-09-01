@@ -72,7 +72,7 @@ module PulseTransferFunctions = struct
             | LatentAbortProgram {astate}
             | LatentInvalidAccess {astate}
             | ISLLatentMemoryError astate ) ->
-            (astate :> AbductiveDomain.t).need_specialization
+            AbductiveDomain.Summary.need_specialization astate
         | None ->
             false )
 
@@ -88,23 +88,23 @@ module PulseTransferFunctions = struct
                 let astate = AbductiveDomain.set_need_specialization astate in
                 ContinueProgram astate
             | ExitProgram astate ->
-                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                let astate = AbductiveDomain.Summary.with_need_specialization astate in
                 ExitProgram astate
             | AbortProgram astate ->
-                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                let astate = AbductiveDomain.Summary.with_need_specialization astate in
                 AbortProgram astate
             | LatentAbortProgram latent_abort_program ->
                 let astate =
-                  AbductiveDomain.summary_with_need_specialization latent_abort_program.astate
+                  AbductiveDomain.Summary.with_need_specialization latent_abort_program.astate
                 in
                 LatentAbortProgram {latent_abort_program with astate}
             | LatentInvalidAccess latent_invalid_access ->
                 let astate =
-                  AbductiveDomain.summary_with_need_specialization latent_invalid_access.astate
+                  AbductiveDomain.Summary.with_need_specialization latent_invalid_access.astate
                 in
                 LatentInvalidAccess {latent_invalid_access with astate}
             | ISLLatentMemoryError astate ->
-                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                let astate = AbductiveDomain.Summary.with_need_specialization astate in
                 ISLLatentMemoryError astate ) )
     else astates
 
@@ -414,8 +414,6 @@ module PulseTransferFunctions = struct
       List.filter_map exec_states_res ~f:(fun exec_state_res ->
           (let+ exec_state = exec_state_res in
            PulseSummary.force_exit_program tenv proc_desc err_log call_loc exec_state
-           |> SatUnsat.map (fun (exec_state : ExecutionDomain.summary) ->
-                  (exec_state :> ExecutionDomain.t) )
            |> SatUnsat.sat )
           |> PulseResult.of_some )
     else exec_states_res
@@ -935,8 +933,8 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
               PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_name proc_attrs
             in
             let summary =
-              PulseSummary.of_posts tenv proc_desc err_log exit_location
-                (Option.to_list objc_nil_summary @ posts)
+              Option.to_list objc_nil_summary
+              @ PulseSummary.of_posts tenv proc_desc err_log exit_location posts
             in
             report_topl_errors proc_desc err_log summary ;
             report_unnecessary_copies proc_desc err_log non_disj_astate ;

@@ -192,7 +192,7 @@ int make_shared5_bad() {
   return 0;
 }
 
-int FN_make_shared6_bad() {
+int make_shared6_bad() {
   int v = 42;
   auto x = std::make_shared<int>(v);
   v++;

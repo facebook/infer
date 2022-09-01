@@ -19,6 +19,6 @@ val force_exit_program :
   -> Errlog.t
   -> Location.t
   -> ExecutionDomain.t
-  -> ExecutionDomain.summary SatUnsat.t
+  -> _ ExecutionDomain.base_t SatUnsat.t
 
 val pp : Format.formatter -> t -> unit

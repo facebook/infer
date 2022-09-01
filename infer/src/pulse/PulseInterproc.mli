@@ -29,12 +29,12 @@ type contradiction = private
   | ISLPreconditionMismatch
   | PathCondition
 
-val apply_prepost :
+val apply_summary :
      PathContext.t
   -> is_isl_error_prepost:bool
   -> Procname.t
   -> Location.t
-  -> callee_prepost:AbductiveDomain.t
+  -> callee_summary:AbductiveDomain.Summary.t
   -> captured_formals:(Var.t * Typ.t) list
   -> captured_actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> formals:(Var.t * Typ.t) list
