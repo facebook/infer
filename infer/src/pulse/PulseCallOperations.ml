@@ -164,9 +164,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         |> SatUnsat.of_option |> SatUnsat.map PulseResult.join )
       x
   in
-  let map_call_result ~is_isl_error_prepost callee_prepost ~f =
+  let map_call_result ~is_isl_error_prepost callee_summary ~f =
     let sat_unsat, contradiction =
-      PulseInterproc.apply_prepost path ~is_isl_error_prepost callee_pname call_loc ~callee_prepost
+      PulseInterproc.apply_summary path ~is_isl_error_prepost callee_pname call_loc ~callee_summary
         ~captured_formals ~captured_actuals ~formals ~actuals astate
     in
     let sat_unsat =
@@ -200,17 +200,14 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   | ExitProgram astate
   | LatentAbortProgram {astate}
   | LatentInvalidAccess {astate} ->
-      map_call_result ~is_isl_error_prepost:false
-        (astate :> AbductiveDomain.t)
-        ~f:(fun subst astate_post_call ->
-          let* (astate_summary : AbductiveDomain.Summary.t) =
+      map_call_result ~is_isl_error_prepost:false astate ~f:(fun subst astate_post_call ->
+          let* astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post tenv
               (Procdesc.get_proc_name caller_proc_desc)
               (Procdesc.get_attributes caller_proc_desc)
               call_loc astate_post_call
             >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
-            >>| AccessResult.of_summary
           in
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ | ISLLatentMemoryError _ ->
@@ -235,12 +232,14 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                   L.d_printfln ~color:Red "issue is now manifest, emitting an error" ;
                   Sat
                     (AccessResult.of_error_f
-                       (Summary (ReportableErrorSummary {diagnostic; astate= astate_summary}))
+                       (Summary
+                          (ReportableError {diagnostic; astate= astate_post_call}, astate_summary)
+                       )
                        ~f:(fun _ ->
                          L.die InternalError
                            "LatentAbortProgram cannot be applied to non-fatal errors" ) )
               | `ISLDelay astate ->
-                  Sat (FatalError (Summary (ISLErrorSummary {astate}), [])) )
+                  Sat (FatalError (Summary (ISLError {astate}, astate_summary), [])) )
           | LatentInvalidAccess
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
@@ -292,28 +291,26 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                     Sat
                       (FatalError
                          ( Summary
-                             (ReportableErrorSummary
-                                { diagnostic=
-                                    AccessToInvalidAddress
-                                      { calling_context
-                                      ; invalid_address= address_caller
-                                      ; invalidation
-                                      ; invalidation_trace
-                                      ; access_trace
-                                      ; must_be_valid_reason }
-                                ; astate= astate_summary } )
+                             ( ReportableError
+                                 { diagnostic=
+                                     AccessToInvalidAddress
+                                       { calling_context
+                                       ; invalid_address= address_caller
+                                       ; invalidation
+                                       ; invalidation_trace
+                                       ; access_trace
+                                       ; must_be_valid_reason }
+                                 ; astate= astate_post_call }
+                             , astate_summary )
                          , [] ) ) ) ) )
-  | ISLLatentMemoryError astate ->
-      map_call_result ~is_isl_error_prepost:true
-        (astate :> AbductiveDomain.t)
-        ~f:(fun _subst astate ->
+  | ISLLatentMemoryError summary ->
+      map_call_result ~is_isl_error_prepost:true summary ~f:(fun _subst astate ->
           let open SatUnsat.Import in
           AbductiveDomain.Summary.of_post tenv
             (Procdesc.get_proc_name caller_proc_desc)
             (Procdesc.get_attributes caller_proc_desc)
             call_loc astate
           >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
-          >>| AccessResult.of_summary
           >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 
@@ -408,8 +405,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
   | Some (callee_proc_desc, exec_states) ->
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
         (Procdesc.get_attributes callee_proc_desc)
-        (exec_states :> ExecutionDomain.t list)
-        astate
+        exec_states astate
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module DecompilerExpr = PulseDecompilerExpr
@@ -38,3 +39,5 @@ include AbstractDomain.Disjunct with type t := t
 val continue : AbductiveDomain.t -> t
 
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
+
+val pp_summary : F.formatter -> summary -> unit

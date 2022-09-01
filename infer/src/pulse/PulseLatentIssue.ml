@@ -91,12 +91,12 @@ let add_call call_and_loc call_subst astate latent_issue =
   add_call_to_calling_context call_and_loc latent_issue
 
 
-let is_manifest (astate : AbductiveDomain.Summary.t) =
-  PulseArithmetic.is_manifest (astate :> AbductiveDomain.t)
+let is_manifest astate =
+  PulseArithmetic.is_manifest astate
   && ( (not Config.pulse_isl)
-     || AbductiveDomain.is_isl_without_allocation (astate :> AbductiveDomain.t)
+     || AbductiveDomain.Summary.is_isl_without_allocation astate
         && ( (not Config.pulse_manifest_emp)
-           || AbductiveDomain.is_pre_without_isl_abduced (astate :> AbductiveDomain.t) ) )
+           || AbductiveDomain.Summary.is_pre_without_isl_abduced astate ) )
 
 
 (* require a summary because we don't want to stop reporting because some non-abducible condition is

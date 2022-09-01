@@ -17,7 +17,7 @@ let pp fmt pre_posts =
   F.open_vbox 0 ;
   F.fprintf fmt "%d pre/post(s)@;" (List.length pre_posts) ;
   List.iteri pre_posts ~f:(fun i (pre_post : ExecutionDomain.summary) ->
-      F.fprintf fmt "#%d: @[%a@]@;" i ExecutionDomain.pp (pre_post :> ExecutionDomain.t) ) ;
+      F.fprintf fmt "#%d: @[%a@]@;" i ExecutionDomain.pp_summary pre_post ) ;
   F.close_box ()
 
 
@@ -35,26 +35,27 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           location astate
       in
       match (summary_result : _ result) with
-      | Ok astate ->
-          continue_program astate
-      | Error (`RetainCycle (astate, assignment_traces, value, path, location)) ->
+      | Ok summary ->
+          continue_program summary
+      | Error (`RetainCycle (summary, astate, assignment_traces, value, path, location)) ->
           PulseReport.report_summary_error tenv proc_desc err_log
-            (ReportableErrorSummary
-               {astate; diagnostic= RetainCycle {assignment_traces; value; path; location}} )
-          |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
-      | Error (`MemoryLeak (astate, allocator, allocation_trace, location)) ->
+            ( ReportableError
+                {astate; diagnostic= RetainCycle {assignment_traces; value; path; location}}
+            , summary )
+          |> Option.value ~default:(continue_program summary)
+      | Error (`MemoryLeak (summary, astate, allocator, allocation_trace, location)) ->
           PulseReport.report_summary_error tenv proc_desc err_log
-            (ReportableErrorSummary
-               {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}} )
-          |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
-      | Error (`ResourceLeak (astate, class_name, allocation_trace, location)) ->
+            ( ReportableError
+                {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}}
+            , summary )
+          |> Option.value ~default:(continue_program summary)
+      | Error (`ResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
           PulseReport.report_summary_error tenv proc_desc err_log
-            (ReportableErrorSummary
-               {astate; diagnostic= ResourceLeak {class_name; allocation_trace; location}} )
-          |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
-      | Error
-          (`PotentialInvalidAccessSummary
-            ((astate : AbductiveDomain.Summary.t), address, must_be_valid) ) -> (
+            ( ReportableError
+                {astate; diagnostic= ResourceLeak {class_name; allocation_trace; location}}
+            , summary )
+          |> Option.value ~default:(continue_program summary)
+      | Error (`PotentialInvalidAccessSummary (summary, astate, address, must_be_valid)) -> (
         match
           let open IOption.Let_syntax in
           let* addr = DecompilerExpr.abstract_value_of_expr address in
@@ -62,23 +63,25 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           Attributes.get_invalid attrs
         with
         | None ->
-            ExecutionDomain.LatentInvalidAccess {astate; address; must_be_valid; calling_context= []}
+            ExecutionDomain.LatentInvalidAccess
+              {astate= summary; address; must_be_valid; calling_context= []}
         | Some (invalidation, invalidation_trace) ->
             (* NOTE: this probably leads to the error being dropped as the access trace is unlikely to
                contain the reason for invalidation and thus we will filter out the report. TODO:
                figure out if that's a problem. *)
             PulseReport.report_summary_error tenv proc_desc err_log
-              (ReportableErrorSummary
-                 { diagnostic=
-                     AccessToInvalidAddress
-                       { calling_context= []
-                       ; invalid_address= address
-                       ; invalidation
-                       ; invalidation_trace
-                       ; access_trace= fst must_be_valid
-                       ; must_be_valid_reason= snd must_be_valid }
-                 ; astate } )
-            |> Option.value ~default:(ExecutionDomain.ContinueProgram astate) ) )
+              ( ReportableError
+                  { diagnostic=
+                      AccessToInvalidAddress
+                        { calling_context= []
+                        ; invalid_address= address
+                        ; invalidation
+                        ; invalidation_trace
+                        ; access_trace= fst must_be_valid
+                        ; must_be_valid_reason= snd must_be_valid }
+                  ; astate }
+              , summary )
+            |> Option.value ~default:(continue_program summary) ) )
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
   | AbortProgram astate ->
       Sat (AbortProgram astate)

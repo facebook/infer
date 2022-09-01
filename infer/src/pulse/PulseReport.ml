@@ -108,7 +108,7 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
 
 
 let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation
-    astate =
+    summary =
   if is_constant_deref_without_invalidation then (
     L.d_printfln ~color:Red
       "Dropping error: constant dereference with no invalidation in the access trace" ;
@@ -121,7 +121,7 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
           L.d_printfln ~color:Red "Dropping error: conflicting with nullsafe" ;
           b )
         else
-          let b = not (AbductiveDomain.Summary.skipped_calls_match_pattern astate) in
+          let b = not (AbductiveDomain.Summary.skipped_calls_match_pattern summary) in
           if b then
             L.d_printfln ~color:Red
               "Dropping error: skipped an unknown function not in the allow list" ;
@@ -138,42 +138,35 @@ let summary_of_error_post tenv proc_desc location mk_error astate =
       location astate
   with
   | Sat (Ok summary)
-  | Sat (Error (`MemoryLeak (summary, _, _, _)) | Error (`ResourceLeak (summary, _, _, _)))
-  | Sat (Error (`RetainCycle (summary, _, _, _, _))) ->
+  | Sat (Error (`MemoryLeak (summary, _, _, _, _)) | Error (`ResourceLeak (summary, _, _, _, _)))
+  | Sat (Error (`RetainCycle (summary, _, _, _, _, _))) ->
       (* ignore potential memory leaks: error'ing in the middle of a function will typically produce
          spurious leaks *)
       Sat (mk_error summary)
-  | Sat (Error (`PotentialInvalidAccessSummary (summary, addr, trace))) ->
+  | Sat (Error (`PotentialInvalidAccessSummary (summary, astate, addr, trace))) ->
       (* ignore the error we wanted to report (with [mk_error]): the abstract state contained a
          potential error already so report [error] instead *)
       Sat
-        (AccessResult.of_abductive_summary_error
-           (`PotentialInvalidAccessSummary (summary, addr, trace)) )
+        ( AccessResult.of_abductive_summary_error
+            (`PotentialInvalidAccessSummary (summary, astate, addr, trace))
+        , summary )
   | Unsat ->
       Unsat
 
 
-let summary_error_of_error tenv proc_desc location (error : AccessResult.error) :
-    AccessResult.summary_error SatUnsat.t =
+let summary_error_of_error tenv proc_desc location (error : AccessResult.error) : _ SatUnsat.t =
   match error with
-  | Summary summary_error ->
-      Sat summary_error
-  | PotentialInvalidAccess {astate; address; must_be_valid} ->
-      summary_of_error_post tenv proc_desc location
-        (fun astate -> PotentialInvalidAccessSummary {astate; address; must_be_valid})
-        astate
-  | ReportableError {astate; diagnostic} ->
-      summary_of_error_post tenv proc_desc location
-        (fun astate -> ReportableErrorSummary {astate; diagnostic})
-        astate
-  | ISLError {astate} ->
-      summary_of_error_post tenv proc_desc location (fun astate -> ISLErrorSummary {astate}) astate
+  | Summary (error, summary) ->
+      Sat (error, summary)
+  | PotentialInvalidAccess {astate} | ReportableError {astate} | ISLError {astate} ->
+      summary_of_error_post tenv proc_desc location (fun summary -> (error, summary)) astate
 
 
-let report_summary_error tenv proc_desc err_log (access_error : AccessResult.summary_error) :
-    ExecutionDomain.summary option =
+(* the access error and summary must come from [summary_error_of_error] *)
+let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.error), summary) :
+    _ ExecutionDomain.base_t option =
   match access_error with
-  | PotentialInvalidAccessSummary {astate; address; must_be_valid} ->
+  | PotentialInvalidAccess {address; must_be_valid} ->
       let invalidation = Invalidation.ConstantDereference IntLit.zero in
       let access_trace = fst must_be_valid in
       let is_constant_deref_without_invalidation =
@@ -181,7 +174,7 @@ let report_summary_error tenv proc_desc err_log (access_error : AccessResult.sum
       in
       let is_suppressed =
         is_suppressed tenv proc_desc ~is_nullptr_dereference:true
-          ~is_constant_deref_without_invalidation astate
+          ~is_constant_deref_without_invalidation summary
       in
       if is_suppressed then L.d_printfln "suppressed error" ;
       if Config.pulse_report_latent_issues then
@@ -194,10 +187,10 @@ let report_summary_error tenv proc_desc err_log (access_error : AccessResult.sum
                  Immediate {location= Procdesc.get_loc proc_desc; history= ValueHistory.epoch}
              ; access_trace
              ; must_be_valid_reason= snd must_be_valid } ) ;
-      Some (LatentInvalidAccess {astate; address; must_be_valid; calling_context= []})
-  | ISLErrorSummary {astate} ->
-      Some (ISLLatentMemoryError astate)
-  | ReportableErrorSummary {astate; diagnostic} -> (
+      Some (LatentInvalidAccess {astate= summary; address; must_be_valid; calling_context= []})
+  | ISLError _ ->
+      Some (ISLLatentMemoryError summary)
+  | ReportableError {diagnostic} -> (
       let is_nullptr_dereference =
         match diagnostic with AccessToInvalidAddress _ -> true | _ -> false
       in
@@ -206,18 +199,21 @@ let report_summary_error tenv proc_desc err_log (access_error : AccessResult.sum
       in
       let is_suppressed =
         is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation
-          astate
+          summary
       in
-      match LatentIssue.should_report astate diagnostic with
+      match LatentIssue.should_report summary diagnostic with
       | `ReportNow ->
           if is_suppressed then L.d_printfln "ReportNow suppressed error" ;
           report ~latent:false ~is_suppressed proc_desc err_log diagnostic ;
-          if Diagnostic.aborts_execution diagnostic then Some (AbortProgram astate) else None
+          if Diagnostic.aborts_execution diagnostic then Some (AbortProgram summary) else None
       | `DelayReport latent_issue ->
           if is_suppressed then L.d_printfln "DelayReport suppressed error" ;
           if Config.pulse_report_latent_issues then
             report_latent_issue ~is_suppressed proc_desc err_log latent_issue ;
-          Some (LatentAbortProgram {astate; latent_issue}) )
+          Some (LatentAbortProgram {astate= summary; latent_issue}) )
+  | Summary _ ->
+      (* impossible thanks to prior application of [summary_error_of_error] *)
+      assert false
 
 
 let report_error tenv proc_desc err_log location access_error =
@@ -255,7 +251,7 @@ let report_exec_results tenv proc_desc err_log location results =
           | Recoverable (exec_state, _) ->
               Some exec_state )
         | Sat (Some exec_state) ->
-            Some (exec_state :> ExecutionDomain.t) ) )
+            Some exec_state ) )
 
 
 let report_results tenv proc_desc err_log location results =

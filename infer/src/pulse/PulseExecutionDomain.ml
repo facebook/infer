@@ -42,46 +42,47 @@ let leq ~lhs ~rhs =
   | AbortProgram astate1, AbortProgram astate2
   | ExitProgram astate1, ExitProgram astate2
   | ISLLatentMemoryError astate1, ISLLatentMemoryError astate2 ->
-      AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
+      AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
   | ExceptionRaised astate1, ExceptionRaised astate2
   | ContinueProgram astate1, ContinueProgram astate2 ->
       AbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
   | ( LatentAbortProgram {astate= astate1; latent_issue= issue1}
     , LatentAbortProgram {astate= astate2; latent_issue= issue2} ) ->
-      LatentIssue.equal issue1 issue2
-      && AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
+      LatentIssue.equal issue1 issue2 && AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
   | ( LatentInvalidAccess {astate= astate1; address= v1; must_be_valid= _}
     , LatentInvalidAccess {astate= astate2; address= v2; must_be_valid= _} ) ->
-      DecompilerExpr.equal v1 v2
-      && AbductiveDomain.leq ~lhs:(astate1 :> AbductiveDomain.t) ~rhs:(astate2 :> AbductiveDomain.t)
+      DecompilerExpr.equal v1 v2 && AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
   | _ ->
       false
 
 
-let pp fmt = function
+let pp_ pp_abductive_domain_t fmt = function
   | AbortProgram astate ->
-      F.fprintf fmt "{AbortProgram %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
+      F.fprintf fmt "{AbortProgram %a}" AbductiveDomain.Summary.pp astate
   | ContinueProgram astate ->
-      AbductiveDomain.pp fmt astate
+      pp_abductive_domain_t fmt astate
   | ExceptionRaised astate ->
-      F.fprintf fmt "{ExceptionRaised %a}" AbductiveDomain.pp astate
+      F.fprintf fmt "{ExceptionRaised %a}" pp_abductive_domain_t astate
   | ExitProgram astate ->
-      F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
+      F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.Summary.pp astate
   | ISLLatentMemoryError astate ->
-      F.fprintf fmt "{ISLLatentMemoryError %a}" AbductiveDomain.pp (astate :> AbductiveDomain.t)
+      F.fprintf fmt "{ISLLatentMemoryError %a}" AbductiveDomain.Summary.pp astate
   | LatentAbortProgram {astate; latent_issue} ->
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
       let message = Diagnostic.get_message diagnostic in
       let location = Diagnostic.get_location diagnostic in
       F.fprintf fmt "{LatentAbortProgram(%a: %s)@ %a@ %a}" Location.pp location message
-        LatentIssue.pp latent_issue AbductiveDomain.pp
-        (astate :> AbductiveDomain.t)
+        LatentIssue.pp latent_issue AbductiveDomain.Summary.pp astate
   | LatentInvalidAccess {astate; address; must_be_valid= _} ->
-      F.fprintf fmt "{LatentInvalidAccess(%a) %a}" DecompilerExpr.pp address AbductiveDomain.pp
-        (astate :> AbductiveDomain.t)
+      F.fprintf fmt "{LatentInvalidAccess(%a) %a}" DecompilerExpr.pp address
+        AbductiveDomain.Summary.pp astate
 
+
+let pp fmt exec_state = pp_ AbductiveDomain.pp fmt exec_state
 
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
+
+let pp_summary fmt exec_summary = pp_ AbductiveDomain.Summary.pp fmt exec_summary
 
 let equal_fast exec_state1 exec_state2 =
   phys_equal exec_state1 exec_state2

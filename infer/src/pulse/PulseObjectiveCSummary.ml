@@ -79,7 +79,6 @@ let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.
     let open SatUnsat.Import in
     AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
     >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
-    >>| AccessResult.of_summary
   in
   ExecutionDomain.LatentInvalidAccess
     { astate= summary
@@ -97,10 +96,14 @@ let mk_nil_messaging_summary tenv proc_name (proc_attrs : ProcAttributes.t) =
          this case.  However, there is an exception in the case where the return type is non-POD.
          In that case it's UB and we want to report an error. *)
       match
-        mk_nil_messaging_summary_aux tenv proc_name proc_attrs |> PulseOperationResult.sat_ok
+        (let** astate = mk_nil_messaging_summary_aux tenv proc_name proc_attrs in
+         let open SatUnsat.Import in
+         AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
+         >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result )
+        |> PulseOperationResult.sat_ok
       with
-      | Some astate ->
-          Some (ContinueProgram astate)
+      | Some summary ->
+          Some (ContinueProgram summary)
       | None ->
           L.internal_error
             "mk_nil_messaging_summary_aux for %a resulted in an error or an unsat state" Procname.pp

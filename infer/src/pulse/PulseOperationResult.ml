@@ -126,14 +126,6 @@ module Import = struct
         ; calling_context: (CallEvent.t * Location.t) list }
     | ISLLatentMemoryError of AbductiveDomain.Summary.t
 
-  type base_summary_error = AccessResult.summary_error =
-    | PotentialInvalidAccessSummary of
-        { astate: AbductiveDomain.Summary.t
-        ; address: DecompilerExpr.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | ReportableErrorSummary of {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t}
-    | ISLErrorSummary of {astate: AbductiveDomain.Summary.t}
-
   type base_error = AccessResult.error =
     | PotentialInvalidAccess of
         { astate: AbductiveDomain.t
@@ -141,7 +133,7 @@ module Import = struct
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
     | ISLError of {astate: AbductiveDomain.t}
-    | Summary of base_summary_error
+    | Summary of base_error * AbductiveDomain.Summary.t
 end
 
 open Import

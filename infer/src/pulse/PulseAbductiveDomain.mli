@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
 module BaseMemory = PulseBaseMemory
@@ -58,10 +59,6 @@ val leq : lhs:t -> rhs:t -> bool
 val pp : Format.formatter -> t -> unit
 
 val mk_initial : Tenv.t -> Procname.t -> ProcAttributes.t -> t
-
-val get_pre : t -> BaseDomain.t
-
-val get_post : t -> BaseDomain.t
 
 (** stack operations like {!BaseStack} but that also take care of propagating facts to the
     precondition *)
@@ -165,11 +162,6 @@ module AddressAttributes : sig
 
   val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
 
-  val get_must_be_valid :
-       AbstractValue.t
-    -> t
-    -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
-
   val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
   val get_taint_sources_and_sanitizers :
@@ -235,10 +227,6 @@ val unset_need_specialization : t -> t
 
 val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
 
-val is_isl_without_allocation : t -> bool
-
-val is_pre_without_isl_abduced : t -> bool
-
 val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)
 
@@ -275,9 +263,6 @@ val set_uninitialized :
   -> t
 (** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
 
-val is_heap_allocated : t -> AbstractValue.t -> bool
-(** whether the abstract value provided has edges in the pre or post heap *)
-
 module Summary : sig
   (** private type to make sure {!of_post} is always called when creating summaries *)
   type summary = private t [@@deriving compare, equal, yojson_of]
@@ -293,15 +278,45 @@ module Summary : sig
     -> Location.t
     -> t
     -> ( summary
-       , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
-         | `RetainCycle of summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
-         | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
+       , [> `ResourceLeak of summary * t * JavaClassName.t * Trace.t * Location.t
+         | `RetainCycle of
+           summary * t * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
+         | `MemoryLeak of summary * t * Attribute.allocator * Trace.t * Location.t
          | `PotentialInvalidAccessSummary of
-           summary * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+           summary * t * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ]
+       )
        result
        SatUnsat.t
   (** Trim the state down to just the procedure's interface (formals and globals), and simplify and
       normalize the state. *)
+
+  val leq : lhs:summary -> rhs:summary -> bool
+
+  val pp : F.formatter -> summary -> unit
+
+  val get_pre : summary -> BaseDomain.t
+
+  val get_post : summary -> BaseDomain.t
+
+  val get_path_condition : summary -> Formula.t
+
+  val get_topl : summary -> PulseTopl.state
+
+  val need_specialization : summary -> bool
+
+  val get_skipped_calls : summary -> SkippedCalls.t
+
+  val is_heap_allocated : summary -> AbstractValue.t -> bool
+  (** whether the abstract value provided has edges in the pre or post heap *)
+
+  val get_must_be_valid :
+       AbstractValue.t
+    -> summary
+    -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
+
+  val is_isl_without_allocation : summary -> bool
+
+  val is_pre_without_isl_abduced : summary -> bool
 
   type t = summary [@@deriving compare, equal, yojson_of]
 end
@@ -315,7 +330,7 @@ module Topl : sig
     -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
     -> keep:AbstractValue.Set.t
     -> path_condition:Formula.t
-    -> callee_prepost:PulseTopl.state
+    -> callee_summary:PulseTopl.state
     -> t
     -> t
 

@@ -35,12 +35,12 @@ val large_step :
   -> keep:AbstractValue.Set.t
   -> get_dynamic_type:(value -> Typ.t option)
   -> path_condition:Formula.t
-  -> callee_prepost:state
+  -> callee_summary:state
   -> state
   -> state
-(** [large_step ~substitution ~keep ~condition state ~callee_prepost] updates [state] according to
-    [callee_prepost]. The abstract values in [condition] and [state] are in one scope, and those in
-    [callee_prepost] in another scope: the [substitution] maps from the callee scope to the
+(** [large_step ~substitution ~keep ~condition state ~callee_summary] updates [state] according to
+    [callee_summary]. The abstract values in [condition] and [state] are in one scope, and those in
+    [callee_summary] in another scope: the [substitution] maps from the callee scope to the
     condition&state scope. *)
 
 val filter_for_summary : get_dynamic_type:(value -> Typ.t option) -> Formula.t -> state -> state

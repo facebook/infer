@@ -12,14 +12,6 @@ module DecompilerExpr = PulseDecompilerExpr
 module Decompiler = PulseAbductiveDecompiler
 module Diagnostic = PulseDiagnostic
 
-type summary_error =
-  | PotentialInvalidAccessSummary of
-      { astate: AbductiveDomain.Summary.t
-      ; address: DecompilerExpr.t
-      ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-  | ReportableErrorSummary of {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t}
-  | ISLErrorSummary of {astate: AbductiveDomain.Summary.t}
-
 type error =
   | PotentialInvalidAccess of
       { astate: AbductiveDomain.t
@@ -27,41 +19,25 @@ type error =
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
   | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
   | ISLError of {astate: AbductiveDomain.t}
-  | Summary of summary_error
+  | Summary of error * AbductiveDomain.Summary.t
 
-let is_fatal_summary = function
-  | PotentialInvalidAccessSummary _ | ISLErrorSummary _ ->
-      true
-  | ReportableErrorSummary {diagnostic} ->
-      Diagnostic.aborts_execution diagnostic
-
-
-let is_fatal = function
+let rec is_fatal = function
   | PotentialInvalidAccess _ | ISLError _ ->
       true
   | ReportableError {diagnostic} ->
       Diagnostic.aborts_execution diagnostic
-  | Summary summary_error ->
-      is_fatal_summary summary_error
+  | Summary (error, _) ->
+      is_fatal error
 
 
-let summary_of_error = function
-  | PotentialInvalidAccessSummary {astate}
-  | ReportableErrorSummary {astate}
-  | ISLErrorSummary {astate} ->
-      astate
-
-
-let astate_of_error = function
+let rec astate_of_error = function
   | PotentialInvalidAccess {astate} | ReportableError {astate} | ISLError {astate} ->
       astate
-  | Summary summary_error ->
-      (summary_of_error summary_error :> AbductiveDomain.t)
+  | Summary (error, _) ->
+      astate_of_error error
 
 
 type 'a t = ('a, error) PulseResult.t
-
-type 'a summary = ('a, summary_error) PulseResult.t
 
 type abductive_error =
   [ `ISLError of AbductiveDomain.t
@@ -71,14 +47,15 @@ type abductive_error =
 type abductive_summary_error =
   [ `PotentialInvalidAccessSummary of
     AbductiveDomain.Summary.t
+    * AbductiveDomain.t
     * DecompilerExpr.t
     * (Trace.t * Invalidation.must_be_valid_reason option) ]
 
 let ignore_leaks = function
   | Ok astate
-  | Error (`MemoryLeak (astate, _, _, _))
-  | Error (`ResourceLeak (astate, _, _, _))
-  | Error (`RetainCycle (astate, _, _, _, _)) ->
+  | Error (`MemoryLeak (astate, _, _, _, _))
+  | Error (`ResourceLeak (astate, _, _, _, _))
+  | Error (`RetainCycle (astate, _, _, _, _, _)) ->
       Ok astate
   | Error #abductive_summary_error as result ->
       result
@@ -97,8 +74,8 @@ let of_abductive_result abductive_result =
 
 
 let of_abductive_summary_error = function
-  | `PotentialInvalidAccessSummary (astate, address, must_be_valid) ->
-      PotentialInvalidAccessSummary {astate; address; must_be_valid}
+  | `PotentialInvalidAccessSummary (summary, astate, address, must_be_valid) ->
+      Summary (PotentialInvalidAccess {astate; address; must_be_valid}, summary)
 
 
 let of_abductive_summary_result abductive_summary_result =
@@ -140,6 +117,3 @@ let of_result_f (result : _ result) ~f : _ t =
 
 
 let of_result result = of_result_f ~f:astate_of_error result
-
-let of_summary summary_result =
-  PulseResult.map_error summary_result ~f:(fun summary_error -> Summary summary_error)

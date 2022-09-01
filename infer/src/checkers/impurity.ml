@@ -155,21 +155,21 @@ let is_modeled_pure tenv pname =
 
 (** Given Pulse summary, extract impurity info, i.e. parameters and global variables that are
     modified by the function and skipped functions. *)
-let extract_impurity tenv pname formals (exec_state : ExecutionDomain.t) : ImpurityDomain.t =
+let extract_impurity tenv pname formals (exec_state : ExecutionDomain.summary) : ImpurityDomain.t =
   let astate, exited =
     match exec_state with
     | ExitProgram astate ->
-        ((astate :> AbductiveDomain.t), true)
+        (astate, true)
     | ContinueProgram astate | ExceptionRaised astate ->
         (astate, false)
     | AbortProgram astate
     | LatentAbortProgram {astate}
     | LatentInvalidAccess {astate}
     | ISLLatentMemoryError astate ->
-        ((astate :> AbductiveDomain.t), false)
+        (astate, false)
   in
-  let pre_heap = (AbductiveDomain.get_pre astate).BaseDomain.heap in
-  let post = AbductiveDomain.get_post astate in
+  let pre_heap = (AbductiveDomain.Summary.get_pre astate).BaseDomain.heap in
+  let post = AbductiveDomain.Summary.get_post astate in
   let post_stack = post.BaseDomain.stack in
   let modified_params = get_modified_params pname post_stack pre_heap post formals in
   let modified_globals = get_modified_globals pname pre_heap post post_stack in
@@ -177,7 +177,7 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.t) : Impur
     SkippedCalls.filter
       (fun proc_name _ ->
         PurityChecker.should_report proc_name && not (is_modeled_pure tenv proc_name) )
-      astate.AbductiveDomain.skipped_calls
+      (AbductiveDomain.Summary.get_skipped_calls astate)
   in
   {modified_globals; modified_params; skipped_calls; exited}
 
@@ -248,11 +248,8 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
       let formals = Procdesc.get_formals proc_desc in
       let proc_name = Procdesc.get_proc_name proc_desc in
       let impurity_astate =
-        List.fold pre_posts ~init:ImpurityDomain.pure
-          ~f:(fun acc (exec_state : ExecutionDomain.summary) ->
-            let impurity_astate =
-              extract_impurity tenv proc_name formals (exec_state :> ExecutionDomain.t)
-            in
+        List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc exec_state ->
+            let impurity_astate = extract_impurity tenv proc_name formals exec_state in
             ImpurityDomain.join acc impurity_astate )
       in
       if PurityChecker.should_report proc_name && not (ImpurityDomain.is_pure impurity_astate) then (
