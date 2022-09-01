@@ -6,6 +6,7 @@
 module Array = Stdlib.Array
 module Hashtbl = Stdlib.Hashtbl
 module List = Stdlib.List
+module Result = Stdlib.Result
 module String = Stdlib.String
 
 (** Iter abstract iterator type *)

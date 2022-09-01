@@ -156,3 +156,30 @@ and Formula : sig
 
   val to_z3 : Z3.context -> t -> Z3.Expr.expr
 end
+
+module Infix : sig
+  (* arithmetic terms *)
+  val ( ~- ) : Term.t -> Term.t
+  val ( + ) : Term.t -> Term.t -> Term.t
+  val ( - ) : Term.t -> Term.t -> Term.t
+  val ( *. ) : Q.t -> Term.t -> Term.t
+  val ( * ) : Term.t -> Term.t -> Term.t
+  val ( / ) : Term.t -> Term.t -> Term.t
+  val ( ^ ) : Term.t -> int -> Term.t
+
+  (* equality formulas *)
+  val ( = ) : Term.t -> Term.t -> Formula.t
+  val ( != ) : Term.t -> Term.t -> Formula.t
+
+  (* arithmetic formulas *)
+  val ( > ) : Term.t -> Term.t -> Formula.t
+  val ( >= ) : Term.t -> Term.t -> Formula.t
+  val ( < ) : Term.t -> Term.t -> Formula.t
+  val ( <= ) : Term.t -> Term.t -> Formula.t
+
+  (* logical connectives *)
+  val ( ~~ ) : Formula.t -> Formula.t
+  val ( && ) : Formula.t -> Formula.t -> Formula.t
+  val ( || ) : Formula.t -> Formula.t -> Formula.t
+  val ( <=> ) : Formula.t -> Formula.t -> Formula.t
+end
