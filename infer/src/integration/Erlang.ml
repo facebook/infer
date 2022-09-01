@@ -231,14 +231,19 @@ let simplify_targets targets =
   ellipsis_patterns @ colon_patterns @ targets
 
 
+let run_buck ~command ~args =
+  let args_file = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck" ".args" in
+  Utils.with_file_out args_file ~f:(fun channel -> Out_channel.output_lines channel args) ;
+  Buck.wrap_buck_call ~label:"erlang" [command; "@" ^ args_file]
+
+
 let update_buck_targets ~command ~args =
   (* Precondition: [args] contains "[GLOBALOPTS] build [BUILDOPTS] [TARGETS]" *)
   let global_options, build_options, old_targets = parse_buck_arguments args in
   let query =
-    [command] @ global_options @ ["cquery"] @ build_options @ ["kind('erlang', deps(%s))"]
-    @ old_targets
+    global_options @ ["cquery"] @ build_options @ ["kind('erlang', deps(%s))"] @ old_targets
   in
-  let query_result = Buck.wrap_buck_call ~label:"erlang" query in
+  let query_result = run_buck ~command ~args:query in
   let new_targets = parse_dependencies query_result in
   let all_targets =
     simplify_targets (old_targets @ new_targets)
@@ -250,7 +255,7 @@ let update_buck_targets ~command ~args =
 let capture_buck ~command ~args =
   let args = update_buck_targets ~command ~args in
   let build_report_path, args = add_or_get_build_report_path args in
-  Buck.wrap_buck_call ~label:"erlang" (command :: args) |> ignore ;
+  run_buck ~command ~args |> ignore ;
   let beam_list_path = ResultsDir.get_path Temporary ^/ "beams.list" in
   save_beams_from_report build_report_path beam_list_path ;
   process_beams ~command beam_list_path
