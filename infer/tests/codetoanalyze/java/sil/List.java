@@ -10,9 +10,6 @@ class List {
     static class Node {
 	int elt;
 	Node next;
-	Node(int elt) {
-	    this.elt = elt;
-	}
 	Node(int elt, Node next) {
 	    this.elt = elt;
 	    this.next = next;

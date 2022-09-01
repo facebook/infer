@@ -555,8 +555,34 @@ module Sh = struct
       in
       if not (is_false sjn) then add_disjunct sjn (cjn, Iter.empty)
     in
+    (* k-[b;m)->⟨n,α⟩ |-
+     * (m >= 0) * (n >= 0) * (k >= b) * (k+n <= b+m) * (n = 0 <=> m = 0) *)
+    let add_seg_valid ctx {loc; bas; len; siz; cnt= _} ps =
+      let addresses_and_sizes_are_ints =
+        vars_seg {loc; bas; len; siz; cnt= Term.concat [||]}
+        |> Iter.map ~f:(fun v ->
+               Z3.Arithmetic.Real.mk_is_integer ctx
+                 (Term.to_z3 ctx (Term.var v)) )
+      in
+      let k = Term.to_z3 ctx loc in
+      let b = Term.to_z3 ctx bas in
+      let m = Term.to_z3 ctx len in
+      let n = Term.to_z3 ctx siz in
+      let zero =
+        Z3.Expr.mk_numeral_int ctx 0 (Z3.Arithmetic.Real.mk_sort ctx)
+      in
+      Z3.Arithmetic.(
+        mk_ge ctx k b
+        :: mk_ge ctx m zero
+        :: mk_ge ctx n zero
+        :: mk_le ctx (mk_add ctx [k; n]) (mk_add ctx [b; m])
+        :: Z3.Boolean.(mk_iff ctx (mk_eq ctx n zero) (mk_eq ctx m zero))
+        :: Iter.fold addresses_and_sizes_are_ints ~f:List.cons ps)
+    in
     let conj q (pure, heap) =
-      ( Z3.Boolean.mk_and ctx [Formula.to_z3 ctx q.pure; pure]
+      ( Z3.Boolean.mk_and ctx
+          (Segs.fold ~f:(add_seg_valid ctx) q.heap
+             [Formula.to_z3 ctx q.pure; pure] )
       , Segs.fold ~f:List.cons q.heap heap )
     in
     (* [a,m) and [b,n) are disjoint iff a+m ≤ b ∨ b+n ≤ a *)

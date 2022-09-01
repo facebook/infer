@@ -163,7 +163,82 @@ let process_beams beam_list_path =
     if not Config.debug_mode then Utils.rmtree jsonast_dir )
 
 
+let parse_buck_arguments args =
+  let is_option s = Caml.String.starts_with ~prefix:"--" s in
+  let global_options, args = List.split_while args ~f:is_option in
+  let args =
+    match args with
+    | "build" :: rest ->
+        rest
+    | _ ->
+        L.die UserError "Expecting: [GLOBALOPTIONS] build [BUILDOPTIONS] TARGETS"
+  in
+  let build_options, targets = List.partition_tf args ~f:is_option in
+  let build_options = List.filter ~f:(Fn.non (String.equal "--")) build_options in
+  (global_options, build_options, targets)
+
+
+let parse_dependencies buck_query_output =
+  let parse_line line =
+    match String.split_on_chars ~on:[' '] line with
+    | "" :: _ ->
+        L.external_warning "@[<v>@[Unexpected query result@]@;@]" ;
+        None
+    | target :: _ ->
+        Some target
+    | [] ->
+        L.die InternalError "split_on_chars never returns empty list"
+  in
+  List.filter_map buck_query_output ~f:parse_line
+
+
+(* Removes duplicates. Also, if both A/... and A/B are targets, keep only the former.
+   Finally, if both A: and A:B are targets, keep only the former. *)
+let simplify_targets targets =
+  let targets = Set.elements (String.Set.of_list targets) in
+  let ellipsis_suffix = "/..." in
+  let ellipsis_patterns, targets =
+    List.partition_tf ~f:(Caml.String.ends_with ~suffix:ellipsis_suffix) targets
+  in
+  let colon_patterns, targets = List.partition_tf ~f:(Caml.String.ends_with ~suffix:":") targets in
+  let make_regex len patterns =
+    match patterns with
+    | [] ->
+        Str.regexp "$" (* something that does not match targets *)
+    | _ ->
+        let regexps =
+          let f p = String.concat ["\\("; String.drop_suffix p len; "\\)"] in
+          List.map ~f patterns
+        in
+        Str.regexp (String.concat ~sep:"\\|" regexps)
+  in
+  let in_ellipsis = make_regex (String.length ellipsis_suffix - 1) ellipsis_patterns in
+  let filter regex patterns = List.filter ~f:(fun x -> not (Str.string_match regex x 0)) patterns in
+  let colon_patterns = filter in_ellipsis colon_patterns in
+  let targets = filter in_ellipsis targets in
+  let in_colon = make_regex 0 colon_patterns in
+  let targets = filter in_colon targets in
+  ellipsis_patterns @ colon_patterns @ targets
+
+
+let update_buck_targets ~command ~args =
+  (* Precondition: [args] contains "[GLOBALOPTS] build [BUILDOPTS] [TARGETS]" *)
+  let global_options, build_options, old_targets = parse_buck_arguments args in
+  let query =
+    [command] @ global_options @ ["cquery"] @ build_options @ ["kind('erlang', deps(%s))"]
+    @ old_targets
+  in
+  let query_result = Buck.wrap_buck_call ~label:"erlang" query in
+  let new_targets = parse_dependencies query_result in
+  let all_targets =
+    simplify_targets (old_targets @ new_targets)
+    (* to avoid long command lines *)
+  in
+  global_options @ ["build"] @ build_options @ all_targets
+
+
 let capture_buck ~command ~args =
+  let args = update_buck_targets ~command ~args in
   let build_report_path, args = add_or_get_build_report_path args in
   Buck.wrap_buck_call ~label:"erlang" (command :: args) |> ignore ;
   let beam_list_path = ResultsDir.get_path Temporary ^/ "beams.list" in

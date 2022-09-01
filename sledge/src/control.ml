@@ -247,7 +247,7 @@ struct
     type t
 
     val empty : t
-    val push_call : Llair.func Llair.call -> D.from_call -> t -> t
+    val push_call : Llair.call_target Llair.call -> D.from_call -> t -> t
     val pop_return : t -> (D.from_call * Llair.jump * t) option
 
     val pop_throw :
@@ -291,7 +291,7 @@ struct
     let empty = Empty |> check invariant
 
     let push_return call from_call stk =
-      let Llair.{callee= {formals; locals}; return; _} = call in
+      let Llair.{callee= {func= {formals; locals}; _}; return; _} = call in
       Return {dst= return; formals; locals; from_call; stk}
       |> check invariant
 
@@ -504,7 +504,8 @@ struct
       transition need not originate from the terminator of [src]. Edges can
       also represent transitions that produce threads in non-[Runnable]
       scheduling states, determined by the form of [dst]. *)
-  type edge = {dst: Thread.t; src: Llair.Block.t} [@@deriving sexp_of]
+  type edge = {dst: Thread.t; src: Llair.Block.t; retreating: bool}
+  [@@deriving sexp_of]
 
   module Edge = struct
     type t = edge [@@deriving sexp_of]
@@ -525,12 +526,8 @@ struct
         match (x, y) with
         | {dst= Runnable x_t}, {dst= Runnable y_t}
          |{dst= Suspended x_t}, {dst= Suspended y_t} ->
-            let is_rec_call = function
-              | {Llair.term= Call {recursive= true}} -> true
-              | _ -> false
-            in
             let compare_stk stk1 stk2 =
-              if is_rec_call x.src then 0
+              if x.retreating then 0
               else Stack.compare_as_inlined_location stk1 stk2
             in
             Llair.IP.compare x_t.ip y_t.ip
@@ -647,7 +644,7 @@ struct
     type t
 
     val init : D.t -> Llair.block -> Goal.t -> t
-    val add : retreating:bool -> work -> t -> t
+    val add : work -> t -> t
     val run : f:(ams -> t -> t) -> t -> unit
   end = struct
     (** Element of the frontier of execution, ordered for scheduler's
@@ -796,7 +793,9 @@ struct
       let stk = Stack.empty in
       let prev = curr in
       let tid = ThreadID.init in
-      let edge = {dst= Runnable {ip; stk; tid}; src= prev} in
+      let edge =
+        {dst= Runnable {ip; stk; tid}; src= prev; retreating= false}
+      in
       let threads = Threads.init in
       let switches = 0 in
       let depths = Depths.empty in
@@ -807,8 +806,8 @@ struct
         {ctrl= edge; state; threads; switches; depths; goal; history}
         (queue, cursor)
 
-    let add ~retreating ({ctrl= edge; depths} as elt) wl =
-      if not retreating then enqueue 0 elt wl
+    let add ({ctrl= edge; depths} as elt) wl =
+      if not edge.retreating then enqueue 0 elt wl
       else
         let depth = 1 + Option.value (Depths.find edge depths) ~default:0 in
         if depth <= Config.loop_bound then
@@ -926,8 +925,8 @@ struct
     let src = Llair.IP.block ip in
     let {Llair.dst; retreating} = jump in
     let ip = Llair.IP.mk dst in
-    let edge = {dst= Runnable {ip; stk; tid}; src} in
-    Work.add ~retreating {ams with ctrl= edge} wl
+    let edge = {dst= Runnable {ip; stk; tid}; src; retreating} in
+    Work.add {ams with ctrl= edge} wl
 
   let exec_skip_func areturn return ({ctrl= {ip; tid}; state} as ams) wl =
     Report.unknown_call (Llair.IP.block ip).term ;
@@ -936,12 +935,13 @@ struct
 
   let exec_call globals call ({ctrl= {stk; tid}; state; history} as ams) wl
       =
-    let Llair.{callee; actuals; areturn; return; recursive} = call in
-    let Llair.{name; formals; freturn; locals; entry} = callee in
+    let Llair.{callee; actuals; areturn; return} = call in
+    let Llair.{func; recursive} = callee in
+    let Llair.{name; formals; freturn; locals; entry} = func in
     [%Dbg.call fun {pf} ->
       pf " t%i@[<2>@ %a from %a with state@]@;<1 2>%a" tid
-        Llair.Func.pp_call call Llair.FuncName.pp return.dst.parent.name
-        D.pp state]
+        Llair.Func.pp_call {call with callee= func} Llair.FuncName.pp
+        return.dst.parent.name D.pp state]
     ;
     let ip = Llair.IP.mk entry in
     let goal = Goal.update_after_call name ams.goal in
@@ -970,20 +970,22 @@ struct
             in
             let stk = Stack.push_call call from_call stk in
             let src = Llair.IP.block ams.ctrl.ip in
-            let edge = {dst= Runnable {ip; stk; tid}; src} in
-            Work.add ~retreating:recursive
-              {ams with ctrl= edge; state; goal}
-              wl
+            let edge =
+              {dst= Runnable {ip; stk; tid}; src; retreating= recursive}
+            in
+            Work.add {ams with ctrl= edge; state; goal} wl
         | Some post -> exec_jump return {ams with state= post; goal} wl )
     |>
     [%Dbg.retn fun {pf} _ -> pf ""]
 
   let exec_call call ams wl =
-    let Llair.{callee= {name} as callee; areturn; return; _} = call in
-    if Llair.Func.is_undefined callee then
+    let Llair.{callee= {func}; areturn; return; _} = call in
+    if Llair.Func.is_undefined func then
       exec_skip_func areturn return ams wl
     else
-      let globals = Domain_used_globals.by_function Config.globals name in
+      let globals =
+        Domain_used_globals.by_function Config.globals func.name
+      in
       exec_call globals call ams wl
 
   let exec_return exp ({ctrl= {ip; stk; tid}; state; history} as ams) wl =
@@ -1028,8 +1030,10 @@ struct
     | None ->
         summarize exit_state |> ignore ;
         let tc = D.term tid formals freturn exit_state in
-        Work.add ~retreating:false
-          {ams with ctrl= {dst= Terminated (tc, tid); src= block}; goal}
+        Work.add
+          { ams with
+            ctrl= {dst= Terminated (tc, tid); src= block; retreating= false}
+          ; goal }
           wl )
     |>
     [%Dbg.retn fun {pf} _ -> pf ""]
@@ -1140,13 +1144,19 @@ struct
       match resolve_callee pgm tid callee state with
       | [] -> exec_skip_func areturn return ams wl
       | callees ->
-          List.fold callees wl ~f:(fun callee wl ->
-              assert (
-                IArray.mem callee candidates ~eq:Llair.Func.equal
-                ||
-                ( warn "unexpected call target %a at indirect callsite %a"
-                    Llair.Func.pp callee Llair.Term.pp term () ;
-                  true ) ) ;
+          List.fold callees wl ~f:(fun callee_func wl ->
+              let callee =
+                match
+                  IArray.find candidates ~f:(fun {Llair.func; _} ->
+                      Llair.Func.equal func callee_func )
+                with
+                | Some callee -> callee
+                | None ->
+                    warn "unexpected call target %a at indirect callsite %a"
+                      Llair.Func.pp callee_func Llair.Term.pp term () ;
+                    (* Conservatively assume this call may be recursive *)
+                    {Llair.func= callee_func; recursive= true}
+              in
               exec_call {call with callee} ams wl ) )
     | Call {callee= Intrinsic callee; actuals; areturn; return} -> (
       match (callee, IArray.to_array actuals) with
@@ -1186,8 +1196,10 @@ struct
             let ip = Llair.IP.succ ip in
             if Llair.IP.is_schedule_point ip then
               let src = Llair.IP.block ip in
-              let edge = {dst= Runnable {ip; stk; tid}; src} in
-              Work.add ~retreating:false {ams with ctrl= edge; state} wl
+              let edge =
+                {dst= Runnable {ip; stk; tid}; src; retreating= false}
+              in
+              Work.add {ams with ctrl= edge; state} wl
             else exec_ip pgm {ams with ctrl= {ams.ctrl with ip}; state} wl
         | Error alarm ->
             Report.alarm alarm ~dp_witness:(Hist.dump ams.history) ;

@@ -13,7 +13,8 @@
     test_case2_Latent/1,
     test_case3_Ok/0,
     fp_test_case4_Ok/0,
-    test_case5_Bad/0
+    test_case5_Bad/0,
+    test_match1_Latent/1
 ]).
 
 % Test that the body of a clause still gets translated even if there are unsupported

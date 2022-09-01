@@ -12,5 +12,6 @@ module Predsym = Predsym
 module Var = Var
 module Term = Exp.Term
 module Formula = Exp.Formula
+module Exp = Exp.Infix
 module Context = Context
 include Var.Fresh.Import

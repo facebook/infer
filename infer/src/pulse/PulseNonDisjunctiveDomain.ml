@@ -259,7 +259,7 @@ let get_copied = function
       in
       let is_captured copy_into =
         match (copy_into : PulseAttribute.CopiedInto.t) with
-        | IntoVar (ProgramVar pvar) ->
+        | IntoVar {copied_var= ProgramVar pvar} ->
             Captured.mem pvar captured
         | _ ->
             false
@@ -289,12 +289,17 @@ let get_const_refable_parameters = function
         parameter_map []
 
 
-let add_var_elt copied_var ~source_addr_opt (res : copy_spec_t) astate =
+let add_var_elt copied_var ~source_addr_opt ~source_opt (res : copy_spec_t) astate =
   { astate with
-    copy_map= CopyMap.add {copied_into= IntoVar copied_var; source_addr_opt} res astate.copy_map }
+    copy_map=
+      CopyMap.add
+        {copied_into= IntoVar {copied_var; source_opt}; source_addr_opt}
+        res astate.copy_map }
 
 
-let add_var copied_var ~source_addr_opt res = map (add_var_elt copied_var ~source_addr_opt res)
+let add_var copied_var ~source_addr_opt ~source_opt res =
+  map (add_var_elt copied_var ~source_addr_opt ~source_opt res)
+
 
 let add_field_elt copied_field ~source_opt (res : copy_spec_t) astate =
   { astate with

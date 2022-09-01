@@ -124,6 +124,10 @@ module Sh : sig
       [is_empty q], then [pure_approx q] is equivalent to
       [pure (pure_approx q)]. *)
 
+  val to_z3 : Z3.context -> t -> Z3.Expr.expr
+  (** Encode first-order consequences of a symbolic heap formula to Z3
+      constraints. *)
+
   val dnf : t -> Set.t Var.Fresh.m
   (** Convert to disjunctive-normal form. *)
 end

@@ -62,15 +62,19 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
   in
   fun target ->
     let exe_env = Exe_env.mk () in
-    (* clear cache for each source file to avoid it growing unboundedly *)
+    let result =
+      match target with
+      | Procname procname ->
+          analyze_proc_name exe_env procname
+      | ProcUID proc_uid ->
+          proc_name_of_uid proc_uid |> analyze_proc_name exe_env
+      | File source_file ->
+          analyze_source_file exe_env source_file
+    in
+    (* clear cache for each source file to avoid it growing unboundedly; we do it here to
+       release memory before potentially going idle *)
     clear_caches_except_lrus () ;
-    match target with
-    | Procname procname ->
-        analyze_proc_name exe_env procname
-    | ProcUID proc_uid ->
-        proc_name_of_uid proc_uid |> analyze_proc_name exe_env
-    | File source_file ->
-        analyze_source_file exe_env source_file
+    result
 
 
 let source_file_should_be_analyzed ~changed_files source_file =
