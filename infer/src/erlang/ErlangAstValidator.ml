@@ -337,6 +337,10 @@ let validate_form env (form : Ast.form) =
   match form.simple_form with
   | Function {function_; clauses} ->
       validate_function env function_ clauses
+  | Spec {spec= []; _} ->
+      (* A function spec is a list of overloads. This list should not be empty *)
+      Logging.debug Capture Verbose "Invalid spec: empty list of overloads@." ;
+      false
   | Spec {spec; _} ->
       List.for_all ~f:validate_spec_disjunct spec
       ||
