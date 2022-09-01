@@ -387,18 +387,29 @@ module SharedPtr = struct
     (astate, value_address)
 
 
+  let fresh_copied_value path location this ~value ~desc astate =
+    let address = (AbstractValue.mk_fresh (), Hist.add_call path location desc (snd value)) in
+    let=* astate, value_deref =
+      PulseOperations.eval_access path Read location value Dereference astate
+    in
+    let=* astate = PulseOperations.write_deref path location ~ref:address ~obj:value_deref astate in
+    let+* astate = PulseArithmetic.and_positive (fst address) astate in
+    let+ astate, _ = write_value path location this ~value:address ~desc astate in
+    astate
+
+
   let make_shared
       (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list) ~desc :
       model =
    fun ({callee_procname; path; location} as model_data) astate ->
-    let this, args, actuals =
+    let this, args_without_this, actuals =
       match
         ( args |> List.last
         , args |> List.drop_last
         , IRAttributes.load_formal_types callee_procname |> List.drop_last )
       with
-      | Some this, Some args, Some formals ->
-          (this, args, formals)
+      | Some this, Some args_without_this, Some formals ->
+          (this, args_without_this, formals)
       | _ ->
           L.die InternalError "Not enough arguments to call make_shared"
     in
@@ -420,8 +431,8 @@ module SharedPtr = struct
            In fact, when primitive types are passed in a function call, the frontend seems to dereference them.
            We have to simulate this part when we call the constructor.
         *)
-        let<*> astate, args =
-          PulseResult.list_fold args ~init:(astate, [])
+        let<*> astate, args_without_this =
+          PulseResult.list_fold (List.rev args_without_this) ~init:(astate, [])
             ~f:(fun
                  (astate, rev_func_args)
                  (ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= value} as arg)
@@ -437,31 +448,32 @@ module SharedPtr = struct
                   , ProcnameDispatcher.Call.FuncArg.{exp; arg_payload= new_payload; typ}
                     :: rev_func_args ) )
         in
-        let args = List.rev args in
         (* We need an expression corresponding to the value of the argument we pass to
            the constructor. See e.g. the comment in UniquePtr.destructor as well. *)
         let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-        let args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list =
-          {typ; exp= fake_exp; arg_payload= value_address} :: args
+        let args =
+          {ProcnameDispatcher.Call.FuncArg.typ; exp= fake_exp; arg_payload= value_address}
+          :: args_without_this
         in
         (* create the list of types of the actual arguments of the constructor
            Note that these types are the formal arguments of make_shared *)
         let actuals = typ :: actuals in
         call_constructor class_name actuals args fake_exp model_data astate
-    | _ ->
-        let () = L.d_printfln "Class not found" in
-        if Int.equal (List.length actuals) 0 then
-          (* assign the value pointer to the field of the shared_ptr *)
-          let<**> astate, value_address = alloc_value_address this ~desc typ model_data astate in
-          let<++> astate =
-            assign_constant path location ~ref:value_address ~constant:IntLit.zero ~desc astate
-          in
-          astate
-        else
-          let<+> astate, _ =
-            write_value path location this ~value:(List.nth_exn args 0).arg_payload ~desc astate
-          in
-          astate
+    | _ -> (
+        L.d_printfln "std::make_shared called on non-class type, assuming primitive type" ;
+        match args_without_this with
+        | [] ->
+            (* assign the value pointer to the field of the shared_ptr *)
+            let<**> astate, value_address = alloc_value_address this ~desc typ model_data astate in
+            let<++> astate =
+              assign_constant path location ~ref:value_address ~constant:IntLit.zero ~desc astate
+            in
+            astate
+        | first_arg :: _ ->
+            let<++> astate =
+              fresh_copied_value path location this ~value:first_arg.arg_payload ~desc astate
+            in
+            astate )
 end
 
 module UniquePtr = struct
