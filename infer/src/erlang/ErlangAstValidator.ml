@@ -333,6 +333,17 @@ let validate_spec_disjunct ({arguments; return; constraints} : Ast.spec_disjunct
   && String.Map.for_all ~f:validate_type constraints
 
 
+let validate_spec_arities (func_arity : int) (spec : Ast.spec) =
+  (* We check that all the overloads in the function spec have the same arity,
+     and that this agrees with the arity of the function (according to the spec). *)
+  List.for_all
+    ~f:(fun ({arguments: _} : Ast.spec_disjunct) -> Int.equal (List.length arguments) func_arity)
+    spec
+  ||
+  ( Logging.debug Capture Verbose "Invalid spec: inconsistent arities in function spec@." ;
+    false )
+
+
 let validate_form env (form : Ast.form) =
   match form.simple_form with
   | Function {function_; clauses} ->
@@ -341,8 +352,8 @@ let validate_form env (form : Ast.form) =
       (* A function spec is a list of overloads. This list should not be empty *)
       Logging.debug Capture Verbose "Invalid spec: empty list of overloads@." ;
       false
-  | Spec {spec; _} ->
-      List.for_all ~f:validate_spec_disjunct spec
+  | Spec {function_= {arity; _}; spec} ->
+      (validate_spec_arities arity spec && List.for_all ~f:validate_spec_disjunct spec)
       ||
       ( Logging.debug Capture Verbose "Invalid spec@." ;
         false )
