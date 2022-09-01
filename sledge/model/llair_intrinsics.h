@@ -13,10 +13,10 @@ extern "C" {
 #endif
 
 /* allocation that cannot fail */
-void* __llair_alloc(unsigned size);
+void* __llair_alloc(long size);
 
 /* non-deterministic choice */
-int __llair_choice();
+long __llair_choice();
 
 /* executions that call __llair_unreachable are assumed to be impossible */
 __attribute__((noreturn)) void __llair_unreachable();
