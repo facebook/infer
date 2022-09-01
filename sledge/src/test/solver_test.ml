@@ -36,7 +36,11 @@ let%test_module _ =
     end
 
     let infer_frame p xs q =
-      Solver.infer_frame p (Var.Set.of_list xs) q vx |> ignore
+      Solver.infer_frame p (Var.Set.of_list xs) q
+      |> Var.Fresh.(
+           reset_xs vx |> ignore ;
+           gen_ !vx)
+      |> ignore
 
     let check_frame p xs q =
       Solver.infer_frame p (Var.Set.of_list xs) q vx
