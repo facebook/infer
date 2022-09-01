@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module Hashtbl = Caml.Hashtbl
 
 exception ToSilTransformationError of (F.formatter -> unit -> unit)
 
@@ -40,25 +41,31 @@ end
 
 (* this signature will not be exported in .mli *)
 module type COMMON_NAME = sig
-  include NAME
+  type t = {value: string; loc: Location.t} [@@deriving equal, hash]
 
   val of_java_name : string -> t
 
-  val equal : t -> t -> bool
-
   val pp : F.formatter -> t -> unit
+
+  module Hashtbl : Hashtbl.S with type key = t
 end
 
 module Name : COMMON_NAME = struct
-  type t = {value: string; loc: Location.t}
+  type t = {value: string; loc: Location.t [@equal.ignore] [@hash.ignore]} [@@deriving equal, hash]
 
   let replace_dot_with_2colons str = String.substr_replace_all str ~pattern:"." ~with_:"::"
 
   let of_java_name str = {value= replace_dot_with_2colons str; loc= Location.Unknown}
 
-  let equal name1 name2 = String.equal name1.value name2.value
-
   let pp fmt name = F.pp_print_string fmt name.value
+
+  module Hashtbl = Hashtbl.Make (struct
+    type nonrec t = t
+
+    let equal = equal
+
+    let hash = hash
+  end)
 end
 
 module ProcBaseName : COMMON_NAME = Name
@@ -245,22 +252,15 @@ module SilProcname = Procname
 module Procname = struct
   type kind = Virtual | NonVirtual [@@deriving equal]
 
-  type enclosing_class = TopLevel | Enclosing of TypeName.t
+  type enclosing_class = TopLevel | Enclosing of TypeName.t [@@deriving equal, hash]
 
   type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
+  [@@deriving equal, hash]
 
   type t =
     {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
 
   let toplevel_classname = "$TOPLEVEL$CLASS$"
-
-  let enclosing_class_to_string enclosing_class =
-    match enclosing_class with
-    | TopLevel ->
-        toplevel_classname
-    | Enclosing tname ->
-        tname.TypeName.value
-
 
   let pp_enclosing_class fmt = function
     | TopLevel ->
@@ -572,48 +572,39 @@ end
 module Decls = struct
   (* We do not export this module. We record here each name to a more elaborate object *)
 
+  module QualifiedNameHashtbl = Hashtbl.Make (struct
+    type t = Procname.qualified_name
+
+    let equal = Procname.equal_qualified_name
+
+    let hash = Procname.hash_qualified_name
+  end)
+
   type t =
-    { globals: (string, Pvar.t) Hashtbl.t
-    ; labels: (string, (string, unit) Hashtbl.t) Hashtbl.t
-    ; procnames: (string, (string, Procname.t) Hashtbl.t) Hashtbl.t
-    ; structs: (string, Struct.t) Hashtbl.t
+    { globals: Pvar.t VarName.Hashtbl.t
+    ; procnames: Procname.t QualifiedNameHashtbl.t
+    ; structs: Struct.t TypeName.Hashtbl.t
     ; sourcefile: SourceFile.t }
 
   let init sourcefile =
-    { globals= Hashtbl.create (module String)
-    ; labels= Hashtbl.create (module String)
-    ; procnames= Hashtbl.create (module String)
-    ; structs= Hashtbl.create (module String)
+    { globals= VarName.Hashtbl.create 17
+    ; procnames= QualifiedNameHashtbl.create 17
+    ; structs= TypeName.Hashtbl.create 17
     ; sourcefile }
 
 
   let declare_global decls (pvar : Pvar.t) =
-    let key = pvar.name.value in
-    ignore (Hashtbl.add decls.globals ~key ~data:pvar)
+    ignore (VarName.Hashtbl.replace decls.globals pvar.name pvar)
 
 
   let declare_procname decls (pname : Procname.t) =
-    let enclosing_class_name =
-      Procname.enclosing_class_to_string pname.qualified_name.enclosing_class
-    in
-    let tbl =
-      match Hashtbl.find decls.procnames enclosing_class_name with
-      | Some tbl ->
-          tbl
-      | None ->
-          let tbl = Hashtbl.create (module String) in
-          ignore (Hashtbl.add decls.procnames ~key:enclosing_class_name ~data:tbl) ;
-          tbl
-    in
-    ignore (Hashtbl.add tbl ~key:pname.qualified_name.name.value ~data:pname)
+    ignore (QualifiedNameHashtbl.replace decls.procnames pname.qualified_name pname)
 
 
-  let declare_struct decls (s : Struct.t) =
-    ignore (Hashtbl.add decls.structs ~key:s.name.value ~data:s)
+  let declare_struct decls (s : Struct.t) = ignore (TypeName.Hashtbl.replace decls.structs s.name s)
 
-
-  let declare_struct_from_tenv decls tenv (tname : TypeName.t) =
-    match Hashtbl.find decls.structs tname.value with
+  let declare_struct_from_tenv decls tenv tname =
+    match TypeName.Hashtbl.find_opt decls.structs tname with
     | Some _ ->
         ()
     | None -> (
@@ -627,42 +618,37 @@ module Decls = struct
 
 
   let is_fieldname_declared decls (tname : TypeName.t) (fname : FieldBaseName.t) =
-    match Hashtbl.find decls.structs tname.value with
+    match TypeName.Hashtbl.find_opt decls.structs tname with
     | None ->
         false
     | Some struct_ ->
         List.exists struct_.fields ~f:(fun {Fieldname.name} -> FieldBaseName.equal name fname)
 
 
-  let get_global decls (vname : VarName.t) = Hashtbl.find decls.globals vname.value
+  let get_global decls vname = VarName.Hashtbl.find_opt decls.globals vname
 
   let get_fieldname decls (tname : TypeName.t) (fname : FieldBaseName.t) =
     let open IOption.Let_syntax in
-    let* strct = Hashtbl.find decls.structs tname.value in
+    let* strct = TypeName.Hashtbl.find_opt decls.structs tname in
     List.find strct.Struct.fields ~f:(fun {Fieldname.name} -> FieldBaseName.equal name fname)
 
 
-  let get_procname decls ({enclosing_class; name} : Procname.qualified_name) =
-    let enclosing_class_name = Procname.enclosing_class_to_string enclosing_class in
-    Option.bind (Hashtbl.find decls.procnames enclosing_class_name) ~f:(fun tbl ->
-        Hashtbl.find tbl name.value )
+  let get_procname decls qualified_name =
+    QualifiedNameHashtbl.find_opt decls.procnames qualified_name
 
 
   let is_procname_declared decls proc = get_procname decls proc |> Option.is_some
 
   let fold_globals decls ~init ~f =
-    Hashtbl.fold ~init ~f:(fun ~key ~data x -> f x key data) decls.globals
+    VarName.Hashtbl.fold (fun key data x -> f x key data) decls.globals init
 
 
   let fold_procnames decls ~init ~f =
-    Hashtbl.fold ~init
-      ~f:(fun ~key:_ ~data:tbl x ->
-        Hashtbl.fold tbl ~init:x ~f:(fun ~key:_ ~data:procname x -> f x procname) )
-      decls.procnames
+    QualifiedNameHashtbl.fold (fun _ procname x -> f x procname) decls.procnames init
 
 
   let fold_structs decls ~init ~f =
-    Hashtbl.fold ~init ~f:(fun ~key ~data x -> f x key data) decls.structs
+    TypeName.Hashtbl.fold (fun key data x -> f x key data) decls.structs init
 end
 
 module SilExp = Exp
@@ -1021,12 +1007,12 @@ module Procdesc = struct
     let () = pattributes.locals <- locals in
     let pdesc = Cfg.create_proc_desc cfgs pattributes in
     (* FIXME: special exit nodes should be added *)
-    let node_map : (string, Node.t * Procdesc.Node.t) Hashtbl.t = Hashtbl.create (module String) in
+    let node_map : (string, Node.t * Procdesc.Node.t) Hashtbl.t = Hashtbl.create 17 in
     List.iter nodes ~f:(fun node ->
         let data = (node, Node.to_sil decls_env procname pdesc node) in
         let key = node.Node.label.value in
-        ignore (Hashtbl.add node_map ~key ~data) ) ;
-    ( match Hashtbl.find node_map start.value with
+        ignore (Hashtbl.replace node_map key data) ) ;
+    ( match Hashtbl.find_opt node_map start.value with
     | Some (_, start_node) ->
         Procdesc.set_start_node pdesc start_node
     | None ->
@@ -1040,19 +1026,19 @@ module Procdesc = struct
       (* FIXME: generate a ret assignment *)
       | Jump l ->
           List.map
-            ~f:(fun ({label} : Terminator.node_call) -> Hashtbl.find_exn node_map label.value |> snd)
+            ~f:(fun ({label} : Terminator.node_call) -> Hashtbl.find node_map label.value |> snd)
             l
       | Throw _ ->
           L.die InternalError "TODO: implement throw"
     in
-    Hashtbl.iter node_map ~f:(fun ((node : Node.t), sil_node) ->
+    Hashtbl.iter
+      (fun _ ((node : Node.t), sil_node) ->
         let normal = normal_succ node.last in
         let exn : Procdesc.Node.t list =
-          List.map
-            ~f:(fun name -> Hashtbl.find_exn node_map name.NodeName.value |> snd)
-            node.exn_succs
+          List.map ~f:(fun name -> Hashtbl.find node_map name.NodeName.value |> snd) node.exn_succs
         in
         Procdesc.node_set_succs pdesc sil_node ~normal ~exn )
+      node_map
 
 
   let pp fmt {procname; nodes; params} =
