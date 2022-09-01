@@ -162,7 +162,7 @@ let search_classes path =
     (fun accu p ->
       let paths, classes = accu in
       if Filename.check_suffix p "class" then add_class paths classes p
-      else if Filename.check_suffix p "jar" then
+      else if Filename.check_suffix p "jar" || Filename.check_suffix p "war" then
         (add_root_path p paths, collect_classnames classes p)
       else accu )
     (String.Set.empty, JBasics.ClassSet.empty)
