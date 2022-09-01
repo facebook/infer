@@ -18,11 +18,16 @@ void* __llair_alloc(unsigned size);
 /* non-deterministic choice */
 int __llair_choice();
 
-/* throw an exception */
-__attribute__((noreturn)) void __llair_throw(void* thrown_exception);
-
 /* executions that call __llair_unreachable are assumed to be impossible */
 __attribute__((noreturn)) void __llair_unreachable();
+
+/* assume a condition */
+#define __llair_assume(condition) \
+  if (!(condition))               \
+  __llair_unreachable()
+
+/* throw an exception */
+__attribute__((noreturn)) void __llair_throw(void* thrown_exception);
 
 /* glibc version */
 #define __assert_fail(assertion, file, line, function) abort()
