@@ -567,7 +567,7 @@ let sub_simple_state (sub, {pre; post; pruned; last_step}) =
 
 
 let large_step ~call_location ~callee_proc_name ~substitution ~keep ~get_dynamic_type
-    ~path_condition ~callee_prepost state =
+    ~path_condition ~callee_summary state =
   let seq ((p : simple_state), (q : simple_state)) =
     if not (Int.equal p.post.vertex q.pre.vertex) then None
     else
@@ -604,9 +604,9 @@ let large_step ~call_location ~callee_proc_name ~substitution ~keep ~get_dynamic
   in
   (* TODO(rgrigore): may be worth optimizing the cartesian_product *)
   let state = normalize_state state in
-  let callee_prepost = normalize_state callee_prepost in
-  let result = List.filter_map ~f:seq (List.cartesian_product state callee_prepost) in
-  L.d_printfln "@[<2>PulseTopl.large_step:@;callee_prepost=%a@;%a@ -> %a@]" pp_state callee_prepost
+  let callee_summary = normalize_state callee_summary in
+  let result = List.filter_map ~f:seq (List.cartesian_product state callee_summary) in
+  L.d_printfln "@[<2>PulseTopl.large_step:@;callee_prepost=%a@;%a@ -> %a@]" pp_state callee_summary
     pp_state state pp_state result ;
   result |> apply_limits ~keep ~get_dynamic_type ~path_condition
 
