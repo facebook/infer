@@ -14,20 +14,20 @@ module LatentIssue = PulseLatentIssue
 type 'abductive_domain_t base_t =
   | ContinueProgram of 'abductive_domain_t  (** represents the state at the program point *)
   | ExceptionRaised of 'abductive_domain_t  (** state after an exception has been thrown *)
-  | ExitProgram of AbductiveDomain.summary
+  | ExitProgram of AbductiveDomain.Summary.t
       (** represents the state originating at exit/divergence. *)
-  | AbortProgram of AbductiveDomain.summary
+  | AbortProgram of AbductiveDomain.Summary.t
       (** represents the state at the program point that caused an error *)
-  | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+  | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
       (** this path leads to an error but we don't have conclusive enough data to report it yet *)
   | LatentInvalidAccess of
-      { astate: AbductiveDomain.summary
+      { astate: AbductiveDomain.Summary.t
       ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
       ; calling_context: (CallEvent.t * Location.t) list }
       (** if [address] is ever observed to be invalid then there is an invalid access because it
           [must_be_valid] *)
-  | ISLLatentMemoryError of AbductiveDomain.summary
+  | ISLLatentMemoryError of AbductiveDomain.Summary.t
       (** represents the state at the program point that might cause an error; used for
           {!Config.pulse_isl} *)
 
@@ -37,4 +37,4 @@ include AbstractDomain.Disjunct with type t := t
 
 val continue : AbductiveDomain.t -> t
 
-type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
+type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]

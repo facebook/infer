@@ -29,7 +29,7 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
   | ContinueProgram astate -> (
       let open SatUnsat.Import in
       let+ summary_result =
-        AbductiveDomain.summary_of_post tenv
+        AbductiveDomain.Summary.of_post tenv
           (Procdesc.get_proc_name proc_desc)
           (Procdesc.get_attributes proc_desc)
           location astate
@@ -54,7 +54,7 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           |> Option.value ~default:(ExecutionDomain.ContinueProgram astate)
       | Error
           (`PotentialInvalidAccessSummary
-            ((astate : AbductiveDomain.summary), address, must_be_valid) ) -> (
+            ((astate : AbductiveDomain.Summary.t), address, must_be_valid) ) -> (
         match
           let open IOption.Let_syntax in
           let* addr = DecompilerExpr.abstract_value_of_expr address in

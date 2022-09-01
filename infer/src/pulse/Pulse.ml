@@ -88,23 +88,23 @@ module PulseTransferFunctions = struct
                 let astate = AbductiveDomain.set_need_specialization astate in
                 ContinueProgram astate
             | ExitProgram astate ->
-                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                let astate = AbductiveDomain.Summary.with_need_specialization astate in
                 ExitProgram astate
             | AbortProgram astate ->
-                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                let astate = AbductiveDomain.Summary.with_need_specialization astate in
                 AbortProgram astate
             | LatentAbortProgram latent_abort_program ->
                 let astate =
-                  AbductiveDomain.summary_with_need_specialization latent_abort_program.astate
+                  AbductiveDomain.Summary.with_need_specialization latent_abort_program.astate
                 in
                 LatentAbortProgram {latent_abort_program with astate}
             | LatentInvalidAccess latent_invalid_access ->
                 let astate =
-                  AbductiveDomain.summary_with_need_specialization latent_invalid_access.astate
+                  AbductiveDomain.Summary.with_need_specialization latent_invalid_access.astate
                 in
                 LatentInvalidAccess {latent_invalid_access with astate}
             | ISLLatentMemoryError astate ->
-                let astate = AbductiveDomain.summary_with_need_specialization astate in
+                let astate = AbductiveDomain.Summary.with_need_specialization astate in
                 ISLLatentMemoryError astate ) )
     else astates
 

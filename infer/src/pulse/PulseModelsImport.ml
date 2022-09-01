@@ -115,7 +115,7 @@ module Basic = struct
    fun {analysis_data= {tenv; proc_desc}; location} astate ->
     let open SatUnsat.Import in
     match
-      AbductiveDomain.summary_of_post tenv
+      AbductiveDomain.Summary.of_post tenv
         (Procdesc.get_proc_name proc_desc)
         (Procdesc.get_attributes proc_desc)
         location astate

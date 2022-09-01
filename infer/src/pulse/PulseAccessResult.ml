@@ -14,11 +14,11 @@ module Diagnostic = PulseDiagnostic
 
 type summary_error =
   | PotentialInvalidAccessSummary of
-      { astate: AbductiveDomain.summary
+      { astate: AbductiveDomain.Summary.t
       ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-  | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
-  | ISLErrorSummary of {astate: AbductiveDomain.summary}
+  | ReportableErrorSummary of {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t}
+  | ISLErrorSummary of {astate: AbductiveDomain.Summary.t}
 
 type error =
   | PotentialInvalidAccess of
@@ -70,8 +70,9 @@ type abductive_error =
 
 type abductive_summary_error =
   [ `PotentialInvalidAccessSummary of
-    AbductiveDomain.summary * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option)
-  ]
+    AbductiveDomain.Summary.t
+    * DecompilerExpr.t
+    * (Trace.t * Invalidation.must_be_valid_reason option) ]
 
 let ignore_leaks = function
   | Ok astate

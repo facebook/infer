@@ -121,7 +121,7 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
           L.d_printfln ~color:Red "Dropping error: conflicting with nullsafe" ;
           b )
         else
-          let b = not (AbductiveDomain.skipped_calls_match_pattern astate) in
+          let b = not (AbductiveDomain.Summary.skipped_calls_match_pattern astate) in
           if b then
             L.d_printfln ~color:Red
               "Dropping error: skipped an unknown function not in the allow list" ;
@@ -132,7 +132,7 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
 
 let summary_of_error_post tenv proc_desc location mk_error astate =
   match
-    AbductiveDomain.summary_of_post tenv
+    AbductiveDomain.Summary.of_post tenv
       (Procdesc.get_proc_name proc_desc)
       (Procdesc.get_attributes proc_desc)
       location astate

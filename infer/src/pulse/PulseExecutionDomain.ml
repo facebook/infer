@@ -20,15 +20,15 @@ module LatentIssue = PulseLatentIssue
 type 'abductive_domain_t base_t =
   | ContinueProgram of 'abductive_domain_t
   | ExceptionRaised of 'abductive_domain_t
-  | ExitProgram of AbductiveDomain.summary
-  | AbortProgram of AbductiveDomain.summary
-  | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+  | ExitProgram of AbductiveDomain.Summary.t
+  | AbortProgram of AbductiveDomain.Summary.t
+  | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
   | LatentInvalidAccess of
-      { astate: AbductiveDomain.summary
+      { astate: AbductiveDomain.Summary.t
       ; address: DecompilerExpr.t
       ; must_be_valid: (Trace.t * Invalidation.must_be_valid_reason option[@yojson.opaque])
       ; calling_context: ((CallEvent.t * Location.t) list[@yojson.opaque]) }
-  | ISLLatentMemoryError of AbductiveDomain.summary
+  | ISLLatentMemoryError of AbductiveDomain.Summary.t
 [@@deriving equal, compare, yojson_of]
 
 type t = AbductiveDomain.t base_t
@@ -81,7 +81,7 @@ let pp fmt = function
         (astate :> AbductiveDomain.t)
 
 
-type summary = AbductiveDomain.summary base_t [@@deriving compare, equal, yojson_of]
+type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
 
 let equal_fast exec_state1 exec_state2 =
   phys_equal exec_state1 exec_state2

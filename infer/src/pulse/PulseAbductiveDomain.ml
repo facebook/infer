@@ -769,16 +769,6 @@ let add_skipped_calls new_skipped_calls astate =
   if phys_equal skipped_calls astate.skipped_calls then astate else {astate with skipped_calls}
 
 
-let skipped_calls_match_pattern astate =
-  (* For every skipped function, there needs to be at least one regexp given in --pulse_report_ignore_java_methods_patterns
-     that matches it *)
-  Option.value_map Config.pulse_report_ignore_unknown_java_methods_patterns ~default:true
-    ~f:(fun patt ->
-      SkippedCalls.for_all
-        (fun skipped_proc _ -> Str.string_match patt (Procname.to_string skipped_proc) 0)
-        astate.skipped_calls )
-
-
 let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
   let reaches_into addr addrs astate =
     AbstractValue.Set.mem addr addrs
@@ -1204,10 +1194,6 @@ let is_pre_without_isl_abduced astate =
     (astate.pre :> base_domain).attrs
 
 
-type summary = t [@@deriving compare, equal, yojson_of]
-
-let summary_with_need_specialization summary = {summary with need_specialization= true}
-
 let is_heap_allocated {post; pre} v =
   BaseMemory.is_allocated (post :> BaseDomain.t).heap v
   || BaseMemory.is_allocated (pre :> BaseDomain.t).heap v
@@ -1352,88 +1338,87 @@ let filter_for_summary tenv proc_name astate0 =
   , new_eqs )
 
 
-let summary_of_post tenv proc_name (proc_attrs : ProcAttributes.t) location astate0 =
-  let open SatUnsat.Import in
-  (* do not store the decompiler in the summary and make sure we only use the original one by
-     marking it invalid *)
-  let astate = {astate0 with decompiler= Decompiler.invalid} in
-  (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
-     canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
-     contradictions about addresses we are about to garbage collect *)
-  let* path_condition, new_eqs =
-    Formula.normalize tenv
-      ~get_dynamic_type:(BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
-      astate.path_condition
-  in
-  let astate = {astate with path_condition} in
-  let* astate, error = incorporate_new_eqs ~for_summary:true astate new_eqs in
-  let astate_before_filter = astate in
-  let* astate, live_addresses, dead_addresses, new_eqs = filter_for_summary tenv proc_name astate in
-  let+ astate, error =
-    match error with
-    | None ->
-        incorporate_new_eqs ~for_summary:true astate new_eqs
-    | Some _ ->
-        Sat (astate, error)
-  in
-  match error with
-  | None -> (
-    match
-      check_retain_cycles ~dead_addresses tenv
-        {astate_before_filter with decompiler= astate0.decompiler}
-    with
-    | Error (assignment_traces, value, path, location) ->
-        Error (`RetainCycle (astate, assignment_traces, value, path, location))
-    | Ok () -> (
-      (* NOTE: it's important for correctness that we check leaks last because we are going to carry
-         on with the astate after the leak and we don't want to accidentally skip modifications of
-         the state because of the error monad *)
-      match
-        check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses
-          astate_before_filter
-      with
-      | Ok () ->
-          Ok (invalidate_locals proc_attrs.locals astate)
-      | Error (unreachable_location, JavaResource class_name, trace) ->
-          Error
-            (`ResourceLeak
-              (astate, class_name, trace, Option.value unreachable_location ~default:location) )
-      | Error (unreachable_location, allocator, trace) ->
-          Error
-            (`MemoryLeak
-              (astate, allocator, trace, Option.value unreachable_location ~default:location) ) ) )
-  | Some (address, must_be_valid) ->
-      Error
-        (`PotentialInvalidAccessSummary
-          (astate, Decompiler.find address astate0.decompiler, must_be_valid) )
-
-
 let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
 
-(* re-exported for mli *)
-let incorporate_new_eqs new_eqs astate =
-  let open SatUnsat.Import in
-  let+ astate, potential_invalid_access_opt =
-    incorporate_new_eqs ~for_summary:false astate new_eqs
-  in
-  match potential_invalid_access_opt with
-  | None ->
-      Ok astate
-  | Some (address, must_be_valid) ->
-      L.d_printfln ~color:Red "potential error if %a is null" AbstractValue.pp address ;
-      Error (`PotentialInvalidAccess (astate, address, must_be_valid))
+module Summary = struct
+  type summary = t [@@deriving compare, equal, yojson_of]
+
+  type t = summary [@@deriving compare, equal, yojson_of]
+
+  let of_post tenv proc_name (proc_attrs : ProcAttributes.t) location astate0 =
+    let open SatUnsat.Import in
+    (* do not store the decompiler in the summary and make sure we only use the original one by
+       marking it invalid *)
+    let astate = {astate0 with decompiler= Decompiler.invalid} in
+    (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
+       canonicalize *before* garbage collecting unused addresses in case we detect any last-minute
+       contradictions about addresses we are about to garbage collect *)
+    let* path_condition, new_eqs =
+      Formula.normalize tenv
+        ~get_dynamic_type:
+          (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
+        astate.path_condition
+    in
+    let astate = {astate with path_condition} in
+    let* astate, error = incorporate_new_eqs ~for_summary:true astate new_eqs in
+    let astate_before_filter = astate in
+    let* astate, live_addresses, dead_addresses, new_eqs =
+      filter_for_summary tenv proc_name astate
+    in
+    let+ astate, error =
+      match error with
+      | None ->
+          incorporate_new_eqs ~for_summary:true astate new_eqs
+      | Some _ ->
+          Sat (astate, error)
+    in
+    match error with
+    | None -> (
+      match
+        check_retain_cycles ~dead_addresses tenv
+          {astate_before_filter with decompiler= astate0.decompiler}
+      with
+      | Error (assignment_traces, value, path, location) ->
+          Error (`RetainCycle (astate, assignment_traces, value, path, location))
+      | Ok () -> (
+        (* NOTE: it's important for correctness that we check leaks last because we are going to carry
+           on with the astate after the leak and we don't want to accidentally skip modifications of
+           the state because of the error monad *)
+        match
+          check_memory_leaks ~live_addresses ~unreachable_addresses:dead_addresses
+            astate_before_filter
+        with
+        | Ok () ->
+            Ok (invalidate_locals proc_attrs.locals astate)
+        | Error (unreachable_location, JavaResource class_name, trace) ->
+            Error
+              (`ResourceLeak
+                (astate, class_name, trace, Option.value unreachable_location ~default:location) )
+        | Error (unreachable_location, allocator, trace) ->
+            Error
+              (`MemoryLeak
+                (astate, allocator, trace, Option.value unreachable_location ~default:location) ) )
+      )
+    | Some (address, must_be_valid) ->
+        Error
+          (`PotentialInvalidAccessSummary
+            (astate, Decompiler.find address astate0.decompiler, must_be_valid) )
 
 
-let incorporate_new_eqs_on_val new_eqs v =
-  List.find_map new_eqs ~f:(function
-    | PulseFormula.Equal (v1, v2) when AbstractValue.equal v1 v ->
-        Some v2
-    | _ ->
-        None )
-  |> Option.value ~default:v
+  let skipped_calls_match_pattern astate =
+    (* For every skipped function, there needs to be at least one regexp given in --pulse_report_ignore_java_methods_patterns
+       that matches it *)
+    Option.value_map Config.pulse_report_ignore_unknown_java_methods_patterns ~default:true
+      ~f:(fun patt ->
+        SkippedCalls.for_all
+          (fun skipped_proc _ -> Str.string_match patt (Procname.to_string skipped_proc) 0)
+          astate.skipped_calls )
 
+
+  let with_need_specialization summary = {summary with need_specialization= true}
+end
 
 module Topl = struct
   let small_step loc ~keep event astate =
@@ -1457,3 +1442,25 @@ module Topl = struct
 
   let get {topl} = topl
 end
+
+(* re-exported for mli *)
+let incorporate_new_eqs new_eqs astate =
+  let open SatUnsat.Import in
+  let+ astate, potential_invalid_access_opt =
+    incorporate_new_eqs ~for_summary:false astate new_eqs
+  in
+  match potential_invalid_access_opt with
+  | None ->
+      Ok astate
+  | Some (address, must_be_valid) ->
+      L.d_printfln ~color:Red "potential error if %a is null" AbstractValue.pp address ;
+      Error (`PotentialInvalidAccess (astate, address, must_be_valid))
+
+
+let incorporate_new_eqs_on_val new_eqs v =
+  List.find_map new_eqs ~f:(function
+    | PulseFormula.Equal (v1, v2) when AbstractValue.equal v1 v ->
+        Some v2
+    | _ ->
+        None )
+  |> Option.value ~default:v

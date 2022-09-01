@@ -89,23 +89,23 @@ module Import : sig
   type 'abductive_domain_t execution_domain_base_t = 'abductive_domain_t ExecutionDomain.base_t =
     | ContinueProgram of 'abductive_domain_t
     | ExceptionRaised of 'abductive_domain_t
-    | ExitProgram of AbductiveDomain.summary
-    | AbortProgram of AbductiveDomain.summary
-    | LatentAbortProgram of {astate: AbductiveDomain.summary; latent_issue: LatentIssue.t}
+    | ExitProgram of AbductiveDomain.Summary.t
+    | AbortProgram of AbductiveDomain.Summary.t
+    | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
     | LatentInvalidAccess of
-        { astate: AbductiveDomain.summary
+        { astate: AbductiveDomain.Summary.t
         ; address: DecompilerExpr.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
         ; calling_context: (CallEvent.t * Location.t) list }
-    | ISLLatentMemoryError of AbductiveDomain.summary
+    | ISLLatentMemoryError of AbductiveDomain.Summary.t
 
   type base_summary_error = AccessResult.summary_error =
     | PotentialInvalidAccessSummary of
-        { astate: AbductiveDomain.summary
+        { astate: AbductiveDomain.Summary.t
         ; address: DecompilerExpr.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-    | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
-    | ISLErrorSummary of {astate: AbductiveDomain.summary}
+    | ReportableErrorSummary of {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t}
+    | ISLErrorSummary of {astate: AbductiveDomain.Summary.t}
 
   type base_error = AccessResult.error =
     | PotentialInvalidAccess of

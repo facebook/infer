@@ -77,7 +77,7 @@ let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.
   let** astate = PulseArithmetic.prune_eq_zero self_value astate in
   let++ summary =
     let open SatUnsat.Import in
-    AbductiveDomain.summary_of_post tenv proc_name proc_attrs proc_attrs.loc astate
+    AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
     >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
     >>| AccessResult.of_summary
   in

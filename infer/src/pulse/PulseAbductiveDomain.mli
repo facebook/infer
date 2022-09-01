@@ -239,30 +239,6 @@ val is_isl_without_allocation : t -> bool
 
 val is_pre_without_isl_abduced : t -> bool
 
-(** private type to make sure {!summary_of_post} is always called when creating summaries *)
-type summary = private t [@@deriving compare, equal, yojson_of]
-
-val skipped_calls_match_pattern : summary -> bool
-
-val summary_with_need_specialization : summary -> summary
-
-val summary_of_post :
-     Tenv.t
-  -> Procname.t
-  -> ProcAttributes.t
-  -> Location.t
-  -> t
-  -> ( summary
-     , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
-       | `RetainCycle of summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
-       | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
-       | `PotentialInvalidAccessSummary of
-         summary * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
-     result
-     SatUnsat.t
-(** Trim the state down to just the procedure's interface (formals and globals), and simplify and
-    normalize the state. *)
-
 val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)
 
@@ -302,6 +278,34 @@ val set_uninitialized :
 val is_heap_allocated : t -> AbstractValue.t -> bool
 (** whether the abstract value provided has edges in the pre or post heap *)
 
+module Summary : sig
+  (** private type to make sure {!of_post} is always called when creating summaries *)
+  type summary = private t [@@deriving compare, equal, yojson_of]
+
+  val skipped_calls_match_pattern : summary -> bool
+
+  val with_need_specialization : summary -> summary
+
+  val of_post :
+       Tenv.t
+    -> Procname.t
+    -> ProcAttributes.t
+    -> Location.t
+    -> t
+    -> ( summary
+       , [> `ResourceLeak of summary * JavaClassName.t * Trace.t * Location.t
+         | `RetainCycle of summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
+         | `MemoryLeak of summary * Attribute.allocator * Trace.t * Location.t
+         | `PotentialInvalidAccessSummary of
+           summary * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option) ] )
+       result
+       SatUnsat.t
+  (** Trim the state down to just the procedure's interface (formals and globals), and simplify and
+      normalize the state. *)
+
+  type t = summary [@@deriving compare, equal, yojson_of]
+end
+
 module Topl : sig
   val small_step : Location.t -> keep:AbstractValue.Set.t -> PulseTopl.event -> t -> t
 
@@ -315,5 +319,5 @@ module Topl : sig
     -> t
     -> t
 
-  val get : summary -> PulseTopl.state
+  val get : Summary.t -> PulseTopl.state
 end

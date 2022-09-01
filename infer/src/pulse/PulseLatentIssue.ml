@@ -91,7 +91,7 @@ let add_call call_and_loc call_subst astate latent_issue =
   add_call_to_calling_context call_and_loc latent_issue
 
 
-let is_manifest (astate : AbductiveDomain.summary) =
+let is_manifest (astate : AbductiveDomain.Summary.t) =
   PulseArithmetic.is_manifest (astate :> AbductiveDomain.t)
   && ( (not Config.pulse_isl)
      || AbductiveDomain.is_isl_without_allocation (astate :> AbductiveDomain.t)
@@ -101,7 +101,7 @@ let is_manifest (astate : AbductiveDomain.summary) =
 
 (* require a summary because we don't want to stop reporting because some non-abducible condition is
    not true as calling context cannot possibly influence such conditions *)
-let should_report (astate : AbductiveDomain.summary) (diagnostic : Diagnostic.t) =
+let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.t) =
   match diagnostic with
   | ConstRefableParameter _
   | MemoryLeak _

@@ -203,9 +203,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
       map_call_result ~is_isl_error_prepost:false
         (astate :> AbductiveDomain.t)
         ~f:(fun subst astate_post_call ->
-          let* (astate_summary : AbductiveDomain.summary) =
+          let* (astate_summary : AbductiveDomain.Summary.t) =
             let open SatUnsat.Import in
-            AbductiveDomain.summary_of_post tenv
+            AbductiveDomain.Summary.of_post tenv
               (Procdesc.get_proc_name caller_proc_desc)
               (Procdesc.get_attributes caller_proc_desc)
               call_loc astate_post_call
@@ -308,7 +308,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         (astate :> AbductiveDomain.t)
         ~f:(fun _subst astate ->
           let open SatUnsat.Import in
-          AbductiveDomain.summary_of_post tenv
+          AbductiveDomain.Summary.of_post tenv
             (Procdesc.get_proc_name caller_proc_desc)
             (Procdesc.get_attributes caller_proc_desc)
             call_loc astate

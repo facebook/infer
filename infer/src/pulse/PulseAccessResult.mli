@@ -13,11 +13,11 @@ module Diagnostic = PulseDiagnostic
 
 type summary_error =
   | PotentialInvalidAccessSummary of
-      { astate: AbductiveDomain.summary
+      { astate: AbductiveDomain.Summary.t
       ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
-  | ReportableErrorSummary of {astate: AbductiveDomain.summary; diagnostic: Diagnostic.t}
-  | ISLErrorSummary of {astate: AbductiveDomain.summary}
+  | ReportableErrorSummary of {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t}
+  | ISLErrorSummary of {astate: AbductiveDomain.Summary.t}
 
 type error =
   | PotentialInvalidAccess of
@@ -44,8 +44,9 @@ type abductive_error =
 
 type abductive_summary_error =
   [ `PotentialInvalidAccessSummary of
-    AbductiveDomain.summary * DecompilerExpr.t * (Trace.t * Invalidation.must_be_valid_reason option)
-  ]
+    AbductiveDomain.Summary.t
+    * DecompilerExpr.t
+    * (Trace.t * Invalidation.must_be_valid_reason option) ]
 
 val of_result_f : ('a, error) result -> f:(error -> 'a) -> 'a t
 
@@ -70,11 +71,11 @@ val of_abductive_access_result :
 val of_summary : 'a summary -> 'a t
 
 val ignore_leaks :
-     ( AbductiveDomain.summary
-     , [< `MemoryLeak of AbductiveDomain.summary * Attribute.allocator * Trace.t * Location.t
-       | `ResourceLeak of AbductiveDomain.summary * JavaClassName.t * Trace.t * Location.t
+     ( AbductiveDomain.Summary.t
+     , [< `MemoryLeak of AbductiveDomain.Summary.t * Attribute.allocator * Trace.t * Location.t
+       | `ResourceLeak of AbductiveDomain.Summary.t * JavaClassName.t * Trace.t * Location.t
        | `RetainCycle of
-         AbductiveDomain.summary * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
+         AbductiveDomain.Summary.t * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
        | abductive_summary_error ] )
      result
-  -> (AbductiveDomain.summary, [> abductive_summary_error]) result
+  -> (AbductiveDomain.Summary.t, [> abductive_summary_error]) result
