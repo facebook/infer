@@ -141,24 +141,34 @@ let save_beams_from_report build_report_path beam_list_path =
   Out_channel.write_lines beam_list_path (Set.elements beams)
 
 
-let process_beams beam_list_path =
+let run_in_dir ~dir ~prog ~args =
+  let here = Sys.getcwd () in
+  Sys.chdir dir ;
+  let _ignore_err = Process.create_process_and_wait_with_output ~prog ~args ReadStderr in
+  Sys.chdir here
+
+
+let process_beams ~command beam_list_path =
   Option.iter ~f:parse_translate_store Config.erlang_ast_dir ;
   if not Config.erlang_skip_compile then (
     let jsonast_dir =
       let in_dir = ResultsDir.get_path Temporary in
-      Filename.temp_dir ~in_dir "buck2-erlang" "infer"
+      Filename.realpath (Filename.temp_dir ~in_dir "buck2-erlang" "infer")
     in
-    let _ignore_extract_err =
-      let prog = Config.lib_dir ^/ "erlang" ^/ "extract.escript" in
-      let args =
-        if Config.erlang_with_otp_specs then
-          ["--list"; beam_list_path; "--specs-only"; "--otp"; jsonast_dir]
-        else ["--list"; beam_list_path; jsonast_dir]
-      in
-      (* extract.escript prints a warning to stdout if the abstract forms are missing,
-         but keeps going *)
-      Process.create_process_and_wait_with_output ~prog ~args ReadStderr
+    let prog = Config.lib_dir ^/ "erlang" ^/ "extract.escript" in
+    let args =
+      if Config.erlang_with_otp_specs then
+        ["--list"; beam_list_path; "--specs-only"; "--otp"; jsonast_dir]
+      else ["--list"; beam_list_path; jsonast_dir]
     in
+    let buck_root =
+      String.strip
+        (Process.create_process_and_wait_with_output ~prog:command ~args:["root"] ReadStdout)
+    in
+    Sys.chdir buck_root ;
+    (* extract.escript prints a warning to stdout if the abstract forms are missing,
+       but keeps going *)
+    run_in_dir ~dir:buck_root ~prog ~args ;
     parse_translate_store jsonast_dir ;
     if not Config.debug_mode then Utils.rmtree jsonast_dir )
 
@@ -243,4 +253,4 @@ let capture_buck ~command ~args =
   Buck.wrap_buck_call ~label:"erlang" (command :: args) |> ignore ;
   let beam_list_path = ResultsDir.get_path Temporary ^/ "beams.list" in
   save_beams_from_report build_report_path beam_list_path ;
-  process_beams beam_list_path
+  process_beams ~command beam_list_path
