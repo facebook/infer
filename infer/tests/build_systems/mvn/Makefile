@@ -9,6 +9,8 @@ INFERPRINT_OPTIONS = --issues-tests
 TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 
 MVN_DIRS = app_with_submodules  simple_app  app_with_infer_profile  app_with_profiles
+MVN_ROOT = ../codetoanalyze/mvn
+SOURCES = $(shell find $(MVN_ROOT) -type f -name '*.java' -o -name 'pom.xml')
 
 CLEAN_EXTRA = \
   $(MVN_DIRS:%=../codetoanalyze/mvn/%/target) \
@@ -24,7 +26,7 @@ infer-out/report.json:
 	$(QUIET)touch $@
 
 infer-out-%/report.json: $(JAVA_DEPS) $(SOURCES)
-	$(QUIET)cd ../codetoanalyze/mvn/$* && \
+	$(QUIET)cd $(MVN_ROOT)/$* && \
 	$(call silent_on_success,Testing mvn Java integration: $*,\
 	  $(INFER_BIN) --results-dir $(CURDIR)/$(@D) \
 	    --project-root $(CURDIR)/$(TESTS_DIR) -- \
