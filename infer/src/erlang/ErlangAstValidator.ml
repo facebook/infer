@@ -310,11 +310,44 @@ and validate_function_clause env ({patterns= ps; guards= gs; body= b; _} : Ast.c
 
 let validate_function env _ = List.for_all ~f:(validate_function_clause env)
 
+let rec validate_type (type_ : Ast.type_) =
+  match type_ with
+  | List (Proper t) ->
+      validate_type t
+  | Tuple (FixedSize ts) ->
+      List.for_all ~f:validate_type ts
+  | Union [] ->
+      (* A union is a list of types. This list should not be empty. *)
+      Logging.debug Capture Verbose "Invalid type: empty union@." ;
+      false
+  | Union ts ->
+      List.for_all ~f:validate_type ts
+  | _ ->
+      (* TODO: validate other kinds of types. *)
+      true
+
+
+let validate_spec_disjunct ({arguments; return; constraints} : Ast.spec_disjunct) =
+  List.for_all ~f:validate_type arguments
+  && validate_type return
+  && String.Map.for_all ~f:validate_type constraints
+
+
 let validate_form env (form : Ast.form) =
   match form.simple_form with
   | Function {function_; clauses} ->
       validate_function env function_ clauses
-  (* TODO: validate other forms, e.g., type constraints *)
+  | Spec {spec; _} ->
+      List.for_all ~f:validate_spec_disjunct spec
+      ||
+      ( Logging.debug Capture Verbose "Invalid spec@." ;
+        false )
+  | Type {name; type_} ->
+      validate_type type_
+      ||
+      ( Logging.debug Capture Verbose "Invalid type: %s@." name ;
+        false )
+  (* TODO: validate other forms. *)
   | _ ->
       true
 
