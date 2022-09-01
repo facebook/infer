@@ -214,10 +214,14 @@ module ToZ3 = struct
         Z3.Expr.mk_numeral_string x (Z.to_string z)
           (Z3.Arithmetic.Real.mk_sort x)
 
+  (** -(2^31) to ((2^31) - 1) *)
+  let fits_32 n = -(1 lsl 31) <= n && n < 1 lsl 31
+
   let rational x (q : Q.t) =
     match (Z.to_int q.num, Z.to_int q.den) with
-    | n, d -> Z3.Arithmetic.Real.mk_numeral_nd x n d
-    | exception Z.Overflow ->
+    | n, d when fits_32 n && fits_32 d ->
+        Z3.Arithmetic.Real.mk_numeral_nd x n d
+    | _ | (exception Z.Overflow) ->
         Z3.Expr.mk_numeral_string x (Q.to_string q)
           (Z3.Arithmetic.Real.mk_sort x)
 
