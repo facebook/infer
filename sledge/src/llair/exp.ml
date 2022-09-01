@@ -470,7 +470,17 @@ let or_ = binary Or
 (* bitwise *)
 
 let xor = binary Xor
-let shl = binary Shl
+
+let shl ?typ x y =
+  let typ = match typ with Some typ -> typ | None -> typ_of x in
+  match (y, typ) with
+  | Integer {data; _}, Integer {bits; _} -> (
+    match Z.to_int data with
+    | data when 0 <= data && data < bits - 1 ->
+        mul ~typ x (integer typ (Z.pow (Z.of_int 2) data))
+    | _ | (exception Z.Overflow) -> binary Shl ~typ x y )
+  | _ -> binary Shl ~typ x y
+
 let lshr = binary Lshr
 let ashr = binary Ashr
 
