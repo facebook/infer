@@ -575,3 +575,30 @@ module Formula = struct
 
   let to_z3 = ToZ3.fml
 end
+
+module Infix = struct
+  (* arithmetic terms *)
+  let ( ~- ) = Term.neg
+  let ( + ) = Term.add
+  let ( - ) = Term.sub
+  let ( *. ) = Term.mulq
+  let ( * ) = Term.mul
+  let ( / ) = Term.div
+  let ( ^ ) = Term.pow
+
+  (* equality formulas *)
+  let ( = ) = Formula.eq
+  let ( != ) = Formula.dq
+
+  (* arithmetic formulas *)
+  let ( > ) = Formula.gt
+  let ( >= ) = Formula.ge
+  let ( < ) = Formula.lt
+  let ( <= ) = Formula.le
+
+  (* logical connectives *)
+  let ( ~~ ) = Formula.not_
+  let ( && ) = Formula.and_
+  let ( || ) = Formula.or_
+  let ( <=> ) = Formula.iff
+end
