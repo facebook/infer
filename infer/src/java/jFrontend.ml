@@ -233,7 +233,7 @@ let compute_source_icfg program tenv source_basename package_opt source_file =
     JSourceLocations.collect_class_location program source_file
   else JSourceFileInfo.collect_class_location program source_file ;
   let () =
-    JBasics.ClassMap.iter
+    JProgramDesc.Classmap.iter
       (select
          (should_capture program package_opt source_basename)
          (create_icfg source_file program tenv icfg) )

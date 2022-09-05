@@ -9,7 +9,9 @@
 open! IStd
 open Javalib_pack
 
-type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
+module Classmap : Caml.Hashtbl.S with type key = JBasics.class_name
+
+type classmap = JCode.jcode Javalib.interface_or_class Classmap.t
 
 type t
 
