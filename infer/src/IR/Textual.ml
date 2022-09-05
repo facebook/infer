@@ -13,7 +13,7 @@ module Hashtbl = Caml.Hashtbl
 exception ToSilTransformationError of (F.formatter -> unit -> unit)
 
 module Location = struct
-  type t = Known of {line: int; col: int} | Unknown
+  type t = Known of {line: int; col: int} | Unknown [@@deriving compare]
 
   let known ~line ~col = Known {line; col}
 
@@ -33,6 +33,13 @@ module Location = struct
 
   let of_sil ({line; col} : Location.t) =
     if Int.(line = -1 && col = -1) then Known {line; col} else Unknown
+
+
+  module Set = Caml.Set.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+  end)
 end
 
 module type NAME = sig
@@ -184,7 +191,19 @@ module Typ = struct
         F.fprintf fmt "%a[]" pp typ
 end
 
-module Ident = struct
+module Ident : sig
+  type t
+
+  val to_sil : t -> Ident.t
+
+  val of_int : int -> t
+
+  val of_sil : Ident.t -> t
+
+  val pp : F.formatter -> t -> unit
+
+  module Map : Caml.Map.S with type key = t
+end = struct
   type t = int
 
   let to_sil id = Ident.create Ident.knormal id
@@ -199,6 +218,8 @@ module Ident = struct
 
 
   let pp fmt id = F.fprintf fmt "n%d" id
+
+  module Map = Caml.Map.Make (Int)
 end
 
 module SilConst = Const
@@ -717,6 +738,18 @@ module Exp = struct
 
   and pp_list fmt l = F.fprintf fmt "(%a)" (pp_list_with_comma pp) l
 
+  let rec do_not_contain_regular_call exp =
+    match exp with
+    | Var _ | Lvar _ | Const _ ->
+        true
+    | Field {exp} | Cast (_, exp) ->
+        do_not_contain_regular_call exp
+    | Index (exp1, exp2) ->
+        do_not_contain_regular_call exp1 && do_not_contain_regular_call exp2
+    | Call {proc; args} ->
+        Procname.is_not_regular_proc proc && List.for_all args ~f:do_not_contain_regular_call
+
+
   let to_sil decls_env procname exp =
     let rec aux e : Exp.t =
       match e with
@@ -819,6 +852,26 @@ module Instr = struct
         L.die InternalError "Translation of a metadata instructions not supported"
 
 
+  (* to be ready, an instruction should satisfy 2 properties:
+      1) regular calls should only appear as top level expr of Let instruction
+      2) Let instruction should only have this kind of expression as argument *)
+  let is_ready_for_to_sil_conversion i =
+    match i with
+    | Load {exp} ->
+        Exp.do_not_contain_regular_call exp
+    | Store {exp1; exp2} ->
+        Exp.do_not_contain_regular_call exp1 && Exp.do_not_contain_regular_call exp2
+    | Prune {exp} ->
+        Exp.do_not_contain_regular_call exp
+    | Let {exp= Call {proc; args= []}} when Procname.is_allocate_builtin proc ->
+        true
+    | Let {exp= Call {proc; args}} ->
+        (not (Procname.is_not_regular_proc proc))
+        && List.for_all args ~f:Exp.do_not_contain_regular_call
+    | Let {exp= _} ->
+        false
+
+
   let to_sil decls_env procname i : Sil.instr =
     let sourcefile = decls_env.Decls.sourcefile in
     match i with
@@ -903,6 +956,10 @@ module Terminator = struct
         F.fprintf fmt "throw %a" Exp.pp e
 
 
+  let do_not_contain_regular_call t =
+    match t with Ret exp | Throw exp -> Exp.do_not_contain_regular_call exp | Jump _ -> true
+
+
   let of_sil decls tenv label_of_node ~opt_last succs =
     match opt_last with
     | None ->
@@ -923,6 +980,12 @@ module Node = struct
     ; instrs: Instr.t list
     ; last_loc: Location.t
     ; label_loc: Location.t }
+
+  (* see the specification of Instr.is_ready_for_to_sil_conversion above *)
+  let is_ready_for_to_sil_conversion node =
+    Terminator.do_not_contain_regular_call node.last
+    && List.for_all node.instrs ~f:Instr.is_ready_for_to_sil_conversion
+
 
   let to_sil decls_env procname pdesc node =
     if not (List.is_empty node.ssa_parameters) then
@@ -985,6 +1048,10 @@ module Procdesc = struct
     ; start: NodeName.t
     ; params: VarName.t list
     ; exit_loc: Location.t }
+
+  let is_ready_for_to_sil_conversion {nodes} =
+    List.for_all nodes ~f:Node.is_ready_for_to_sil_conversion
+
 
   let to_sil decls_env cfgs {procname; nodes; start; params; exit_loc} =
     let sourcefile = decls_env.Decls.sourcefile in
@@ -1086,6 +1153,57 @@ module Procdesc = struct
     {procname; nodes; start; params; exit_loc}
 end
 
+module SsaVerification = struct
+  type error = SsaError of {id: Ident.t; locations: Location.Set.t}
+
+  let pp_error fmt error =
+    match error with
+    | SsaError {id; locations} ->
+        let pp_location fmt loc = F.fprintf fmt "[%a]" Location.pp loc in
+        F.fprintf fmt "ident %a is defined more than once at locations %a" Ident.pp id
+          (F.pp_print_list ~pp_sep:(fun fmt () -> F.pp_print_string fmt ", ") pp_location)
+          (Location.Set.elements locations)
+
+
+  let run (pdesc : Procdesc.t) =
+    let collect seen id loc =
+      match Ident.Map.find_opt id seen with
+      | None ->
+          Ident.Map.add id (Location.Set.singleton loc) seen
+      | Some locations ->
+          Ident.Map.add id (Location.Set.add loc locations) seen
+    in
+    let collect_defs_in_instr seen (instr : Instr.t) =
+      match instr with
+      | Load {id; loc} | Let {id; loc} ->
+          collect seen id loc
+      | Store _ | Prune _ ->
+          seen
+    in
+    let collect_defs_in_phi_args seen loc (ssa_parameters : Ident.t list) =
+      List.fold ssa_parameters ~init:seen ~f:(fun seen id -> collect seen id loc)
+    in
+    let collect_defs_in_node seen (node : Node.t) =
+      let seen = collect_defs_in_phi_args seen node.label_loc node.ssa_parameters in
+      List.fold node.instrs ~init:seen ~f:collect_defs_in_instr
+    in
+    let seen = List.fold pdesc.nodes ~f:collect_defs_in_node ~init:Ident.Map.empty in
+    let errors =
+      Ident.Map.fold
+        (fun id locations errors ->
+          if Location.Set.cardinal locations > 1 then SsaError {id; locations} :: errors else errors
+          )
+        seen []
+    in
+    if not (List.is_empty errors) then
+      let pp fmt () =
+        F.fprintf fmt "%a"
+          (F.pp_print_list ~pp_sep:(fun fmt () -> F.pp_print_string fmt "\n  ") pp_error)
+          errors
+      in
+      raise (ToSilTransformationError pp)
+end
+
 module Module = struct
   type decl = Global of Pvar.t | Struct of Struct.t | Procname of Procname.t | Proc of Procdesc.t
 
@@ -1121,6 +1239,11 @@ module Module = struct
         | Procname _ ->
             ()
         | Proc pdesc ->
+            if not (Procdesc.is_ready_for_to_sil_conversion pdesc) then
+              (* we only run SSA verification if the to_sil conversion needs
+                 extra transformation, because some .sil files that are generated by
+                 Java examples are not in SSA *)
+              SsaVerification.run pdesc ;
             Procdesc.to_sil decls_env cfgs pdesc ) ;
     (cfgs, tenv)
 

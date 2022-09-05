@@ -1,0 +1,17 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+// 
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+define f(x: int, y: int) : void {
+  #entry:
+    n0 = &y
+    n1 = &x
+    jmp lab1, lab2(n0)
+  #lab1:
+    n0 = 1
+    n1 = 2
+    ret null
+  #lab2(n1):
+    ret n1
+}
