@@ -352,52 +352,6 @@ module SharedPtr = struct
             [Ok exec_state] )
 
 
-  let match_arguments actuals (proc : Procname.t) : bool =
-    let candidate = IRAttributes.load_formal_types proc in
-    (* Check if the formal arguments of the candidate function bind the actual arguments *)
-    List.equal Typ.compatible_match candidate actuals
-
-
-  let call_constructor class_name actuals args exp
-      {analysis_data; dispatch_call_eval_args; path; location; ret} astate =
-    let candidates = Tenv.find_cpp_constructor analysis_data.tenv class_name in
-    match List.find candidates ~f:(match_arguments actuals) with
-    | Some constructor ->
-        L.d_printfln "Constructor found: %a" Procname.pp_unique_id constructor ;
-        dispatch_call_eval_args analysis_data path ret exp
-          (List.map args ~f:(fun x ->
-               (x.PulseAliasSpecialization.FuncArg.exp, x.PulseAliasSpecialization.FuncArg.typ) ) )
-          args location CallFlags.default astate (Some constructor)
-    | None ->
-        (* In theory, with a precise overloading resolution, it shouldn't go here *)
-        L.d_printfln "Constructor not found" ;
-        astate |> Basic.ok_continue
-
-
-  let alloc_value_address this (typ : Typ.t) ~desc {analysis_data; path; location} astate =
-    (* alloc an address for some object *)
-    let value_address = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
-    let astate =
-      PulseTaintOperations.taint_allocation analysis_data.tenv path location ~typ_desc:typ.desc
-        ~alloc_desc:desc ~allocator:(Some CppNew) (fst value_address) astate
-    in
-    let astate = PulseOperations.add_dynamic_type typ (fst value_address) astate in
-    let+* astate = PulseArithmetic.and_positive (fst value_address) astate in
-    let+ astate, _ = write_value path location this ~value:value_address ~desc astate in
-    (astate, value_address)
-
-
-  let fresh_copied_value path location this ~value ~desc astate =
-    let address = (AbstractValue.mk_fresh (), Hist.add_call path location desc (snd value)) in
-    let=* astate, value_deref =
-      PulseOperations.eval_access path Read location value Dereference astate
-    in
-    let=* astate = PulseOperations.write_deref path location ~ref:address ~obj:value_deref astate in
-    let+* astate = PulseArithmetic.and_positive (fst address) astate in
-    let+ astate, _ = write_value path location this ~value:address ~desc astate in
-    astate
-
-
   let make_shared
       (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list) ~desc :
       model =
@@ -425,7 +379,8 @@ module SharedPtr = struct
     match typ.desc with
     | Tstruct class_name ->
         (* assign the value pointer to the field of the shared_ptr *)
-        let<**> astate, value_address = alloc_value_address this ~desc typ model_data astate in
+        let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
+        let<*> astate, _ = write_value path location this ~value:value_address ~desc astate in
         let typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
         (* dereferences the actual arguments if they are primitive types.
            In fact, when primitive types are passed in a function call, the frontend seems to dereference them.
@@ -458,21 +413,23 @@ module SharedPtr = struct
         (* create the list of types of the actual arguments of the constructor
            Note that these types are the formal arguments of make_shared *)
         let actuals = typ :: actuals in
-        call_constructor class_name actuals args fake_exp model_data astate
+        Basic.call_constructor class_name actuals args fake_exp model_data astate
     | _ -> (
         L.d_printfln "std::make_shared called on non-class type, assuming primitive type" ;
         match args_without_this with
         | [] ->
             (* assign the value pointer to the field of the shared_ptr *)
-            let<**> astate, value_address = alloc_value_address this ~desc typ model_data astate in
+            let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
+            let<*> astate, _ = write_value path location this ~value:value_address ~desc astate in
             let<++> astate =
               assign_constant path location ~ref:value_address ~constant:IntLit.zero ~desc astate
             in
             astate
         | first_arg :: _ ->
-            let<++> astate =
-              fresh_copied_value path location this ~value:first_arg.arg_payload ~desc astate
+            let<**> astate, address =
+              Basic.deep_copy path location ~value:first_arg.arg_payload ~desc astate
             in
+            let<+> astate, _ = write_value path location this ~value:address ~desc astate in
             astate )
 end
 

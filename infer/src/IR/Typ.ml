@@ -227,16 +227,13 @@ module T = struct
         false
 
 
-  let rec compatible_match formal actual =
+  let rec strict_compatible_match formal actual =
+    (* Check if formal binds actual, excluding the case where const T& binds const T&&, T&& *)
     match (formal.desc, actual.desc) with
-    (* const T& binds const T&&, T&&.
-       TODO: given actual T&&, the formal T&& shoulds preferred against const T&. *)
-    | Tptr (t1, Pk_lvalue_reference), Tptr (t2, Pk_rvalue_reference) ->
-        t1.quals.is_const && compatible_match t1 t2
     (* T&& binds T&&
        const T&& binds const T&& and T&& *)
     | Tptr (t1, Pk_rvalue_reference), Tptr (t2, Pk_rvalue_reference) ->
-        ((not t2.quals.is_const) || t1.quals.is_const) && compatible_match t1 t2
+        ((not t2.quals.is_const) || t1.quals.is_const) && strict_compatible_match t1 t2
     (* Any non-reference type T binds T&& *)
     | t1, Tptr (t2, Pk_rvalue_reference) ->
         equal_desc_ignore_quals t1 t2.desc
@@ -246,12 +243,12 @@ module T = struct
     (* T& binds T&
        const T& binds const T&, T&. *)
     | Tptr (t1, Pk_lvalue_reference), Tptr (t2, Pk_lvalue_reference) ->
-        ((not t2.quals.is_const) || t1.quals.is_const) && compatible_match t1 t2
+        ((not t2.quals.is_const) || t1.quals.is_const) && strict_compatible_match t1 t2
     (* Any non-reference type T binds T& *)
     | t1, Tptr (t2, Pk_lvalue_reference) ->
         equal_desc_ignore_quals t1 t2.desc
     | Tptr (t1, ptr_kind1), Tptr (t2, ptr_kind2) ->
-        equal_ptr_kind ptr_kind1 ptr_kind2 && compatible_match t1 t2
+        equal_ptr_kind ptr_kind1 ptr_kind2 && strict_compatible_match t1 t2
     | Tint ikind1, Tint ikind2 ->
         equal_ikind ikind1 ikind2
     | Tfloat fkind1, Tfloat fkind2 ->
@@ -266,9 +263,23 @@ module T = struct
         equal_ignore_quals t1 t2
     | _, _ ->
         false
-end
 
-(* let rec perfect_compatibility t1 t2 = equal_desc_ignore_quals t1.desc t2.desc *)
+
+  let compatible_match formal actual =
+    (* Check if formal binds actual, including the case where const T& binds const T&&, T&&. *)
+    match (formal.desc, actual.desc) with
+    (* const T& binds const T&&, T&&. *)
+    | Tptr (t1, Pk_lvalue_reference), Tptr (t2, Pk_rvalue_reference) ->
+        t1.quals.is_const && strict_compatible_match t1 t2
+    | _ ->
+        strict_compatible_match formal actual
+
+
+  let overloading_resolution = [strict_compatible_match; compatible_match]
+  (* [overloading_resolution] is a list of predicates that compare whether a type T1 binds a type T2.
+      It is ordered by priority, from the highest to the lowest one. The current implementation prioritise
+      const T&& / T&& in binding a type const T&&/T&&, as done in the standard (13.3.3.2.3) *)
+end
 
 include T
 
