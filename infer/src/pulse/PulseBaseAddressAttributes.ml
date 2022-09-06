@@ -36,16 +36,6 @@ let add_one addr attribute attrs =
       Graph.add addr new_attrs attrs
 
 
-let remove_one addr attribute attrs =
-  match Graph.find_opt addr attrs with
-  | None ->
-      attrs
-  | Some old_attrs ->
-      let new_attrs = Attributes.remove attribute old_attrs in
-      if Attributes.is_empty new_attrs then Graph.remove addr attrs
-      else Graph.add addr new_attrs attrs
-
-
 let add addr attributes attrs =
   match Graph.find_opt addr attrs with
   | None ->
@@ -184,50 +174,33 @@ let get_attribute getter address attrs =
   Graph.find_opt address attrs >>= getter
 
 
-let remove_allocation_attr address memory =
-  match get_attribute Attributes.get_allocation address memory with
-  | Some (allocator, trace) ->
-      remove_one address (Attribute.Allocated (allocator, trace)) memory
-  | None ->
-      memory
+let remove_attribute remover address attrs =
+  Graph.update address
+    (function
+      | None ->
+          None
+      | Some attrs ->
+          let attrs = remover attrs in
+          if AttributesNoRank.is_empty attrs then None else Some attrs )
+    attrs
 
 
-let remove_tainted address memory =
-  remove_one address (Attribute.Tainted Attribute.TaintedSet.empty) memory
+let remove_allocation_attr = remove_attribute Attributes.remove_allocation
 
+let remove_tainted = remove_attribute Attributes.remove_tainted
 
-let remove_taint_sanitizer address memory =
-  remove_one address (Attribute.TaintSanitized Attribute.TaintSanitizedSet.empty) memory
+let remove_taint_sanitizer = remove_attribute Attributes.remove_taint_sanitized
 
-
-let remove_propagate_taint_from address memory =
-  match get_attribute Attributes.get_propagate_taint_from address memory with
-  | Some taint ->
-      remove_one address (Attribute.PropagateTaintFrom taint) memory
-  | None ->
-      memory
-
+let remove_propagate_taint_from = remove_attribute Attributes.remove_propagate_taint_from
 
 let remove_taint_attrs address memory =
   remove_tainted address memory |> remove_taint_sanitizer address
   |> remove_propagate_taint_from address
 
 
-let remove_isl_abduced_attr address memory =
-  match get_attribute Attributes.get_isl_abduced address memory with
-  | Some trace ->
-      remove_one address (Attribute.ISLAbduced trace) memory
-  | None ->
-      memory
+let remove_isl_abduced_attr = remove_attribute Attributes.remove_isl_abduced
 
-
-let remove_must_be_valid_attr address memory =
-  match get_attribute Attributes.get_must_be_valid address memory with
-  | Some (timestamp, trace, reason) ->
-      remove_one address (Attribute.MustBeValid (timestamp, trace, reason)) memory
-  | None ->
-      memory
-
+let remove_must_be_valid_attr = remove_attribute Attributes.remove_must_be_valid
 
 let remove_unsuitable_for_summary =
   Graph.filter_map (fun _addr attrs ->
@@ -235,11 +208,7 @@ let remove_unsuitable_for_summary =
       if Attributes.is_empty new_attrs then None else Some new_attrs )
 
 
-let initialize address attrs =
-  if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then
-    remove_one address Attribute.Uninitialized attrs
-  else attrs
-
+let initialize = remove_attribute Attributes.remove_uninitialized
 
 let get_allocation = get_attribute Attributes.get_allocation
 

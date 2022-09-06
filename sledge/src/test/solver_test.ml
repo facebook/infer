@@ -36,7 +36,11 @@ let%test_module _ =
     end
 
     let infer_frame p xs q =
-      Solver.infer_frame p (Var.Set.of_list xs) q vx |> ignore
+      Solver.infer_frame p (Var.Set.of_list xs) q
+      |> Var.Fresh.(
+           reset_xs vx |> ignore ;
+           gen_ !vx)
+      |> ignore
 
     let check_frame p xs q =
       Solver.infer_frame p (Var.Set.of_list xs) q vx
@@ -238,7 +242,7 @@ let%test_module _ =
                ∧ (%l_6 + 16) -[ %l_6, 16 )-> ⟨0,%a_3⟩)
             ) |}]
 
-    (* Incompleteness: equivalent to above but using ≤ instead of ∨ *)
+    (* Equivalent to above but using ≤ instead of ∨ *)
     let%expect_test _ =
       infer_frame
         (Sh.and_ (Formula.le n (i 2)) seg_split_symbolically)
@@ -251,7 +255,11 @@ let%test_module _ =
           ∧ %l_6 -[ %l_6, 16 )-> ⟨8×%n_9,%a_2⟩^⟨(-8×%n_9 + 16),%a_3⟩
           \- ∃ %a_1, %m_8 .
             %l_6 -[ %l_6, %m_8 )-> ⟨%m_8,%a_1⟩
-        ) Solver.infer_frame: |}]
+        ) Solver.infer_frame:
+            16 = %m_8
+          ∧ (⟨8×%n_9,%a_2⟩^⟨(-8×%n_9 + 16),%a_3⟩) = %a_1
+          ∧ ((16 > 8×%n_9) ∧ (2 ≥ %n_9))
+          ∧ emp |}]
 
     (* Incompleteness: cannot witness existentials to satisfy non-equality
        pure constraints *)

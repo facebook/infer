@@ -532,12 +532,16 @@ module Attributes = struct
       |> Option.value ~default:Attribute.TaintedSet.empty
 
 
+    let remove_tainted = remove_by_rank Attribute.tainted_rank
+
     let get_taint_sanitized attrs =
       get_by_rank Attribute.taint_sanitized_rank
         ~dest:(function[@warning "-8"] TaintSanitized taint_sanitized -> taint_sanitized)
         attrs
       |> Option.value ~default:Attribute.TaintSanitizedSet.empty
 
+
+    let remove_taint_sanitized = remove_by_rank Attribute.taint_sanitized_rank
 
     let get_must_not_be_tainted attrs =
       get_by_rank Attribute.must_not_be_tainted_rank
@@ -570,6 +574,8 @@ module Attributes = struct
 
   let get_by_rank = Set.get_by_rank
 
+  let remove_by_rank = Set.remove_by_rank
+
   let mem_by_rank rank attrs = Set.find_rank attrs rank |> Option.is_some
 
   let get_invalid =
@@ -582,6 +588,8 @@ module Attributes = struct
         | PropagateTaintFrom taints_in -> taints_in )
 
 
+  let remove_propagate_taint_from = remove_by_rank Attribute.propagate_taint_from_rank
+
   let get_returned_from_unknown =
     get_by_rank Attribute.returned_from_unknown ~dest:(function [@warning "-8"]
         | ReturnedFromUnknown values -> values )
@@ -593,6 +601,8 @@ module Attributes = struct
     get_by_rank Attribute.must_be_valid_rank ~dest:(function [@warning "-8"]
         | Attribute.MustBeValid (timestamp, trace, reason) -> (timestamp, trace, reason) )
 
+
+  let remove_must_be_valid = remove_by_rank Attribute.must_be_valid_rank
 
   let get_written_to =
     get_by_rank Attribute.written_to_rank ~dest:(function [@warning "-8"] WrittenTo action ->
@@ -637,6 +647,8 @@ module Attributes = struct
 
   let is_uninitialized = mem_by_rank Attribute.uninitialized_rank
 
+  let remove_uninitialized = remove_by_rank Attribute.uninitialized_rank
+
   let is_ref_counted = mem_by_rank Attribute.ref_counted_rank
 
   let get_allocation =
@@ -644,10 +656,14 @@ module Attributes = struct
         | Allocated (allocator, trace) -> (allocator, trace) )
 
 
+  let remove_allocation = remove_by_rank Attribute.allocated_rank
+
   let get_isl_abduced =
     get_by_rank Attribute.isl_abduced_rank ~dest:(function [@warning "-8"] ISLAbduced trace ->
         trace )
 
+
+  let remove_isl_abduced = remove_by_rank Attribute.isl_abduced_rank
 
   let get_unknown_effect =
     get_by_rank Attribute.unknown_effect_rank ~dest:(function [@warning "-8"]

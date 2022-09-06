@@ -104,12 +104,10 @@ let prune_eq_one v astate =
 
 let is_known_zero astate v = Formula.is_known_zero astate.AbductiveDomain.path_condition v
 
-let is_manifest astate =
-  Formula.is_manifest
-    ~is_allocated:(fun v ->
-      AbductiveDomain.is_heap_allocated astate v
-      || AbductiveDomain.AddressAttributes.get_must_be_valid v astate |> Option.is_some )
-    astate.AbductiveDomain.path_condition
+let is_manifest summary =
+  Formula.is_manifest (AbductiveDomain.Summary.get_path_condition summary) ~is_allocated:(fun v ->
+      AbductiveDomain.Summary.is_heap_allocated summary v
+      || AbductiveDomain.Summary.get_must_be_valid v summary |> Option.is_some )
 
 
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)

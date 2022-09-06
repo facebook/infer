@@ -47,7 +47,7 @@ type t =
 type support = NoSupport | ExperimentalSupport | Support
 
 let mk_support_func ?(clang = NoSupport) ?(java = NoSupport) ?(csharp = NoSupport)
-    ?(erlang = NoSupport) () : Language.t -> support = function
+    ?(erlang = NoSupport) ?(hack = NoSupport) () : Language.t -> support = function
   | Clang ->
       clang
   | Java ->
@@ -56,6 +56,8 @@ let mk_support_func ?(clang = NoSupport) ?(java = NoSupport) ?(csharp = NoSuppor
       csharp
   | Erlang ->
       erlang
+  | Hack ->
+      hack
 
 
 (** see .mli for how to fill these *)

@@ -25,7 +25,7 @@ val pp : F.formatter -> t -> unit
 
 val to_diagnostic : t -> Diagnostic.t
 
-val should_report : AbductiveDomain.summary -> Diagnostic.t -> [> `DelayReport of t | `ReportNow]
+val should_report : AbductiveDomain.Summary.t -> Diagnostic.t -> [> `DelayReport of t | `ReportNow]
 
 val add_call :
      CallEvent.t * Location.t

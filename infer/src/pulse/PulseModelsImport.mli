@@ -86,6 +86,21 @@ module Basic : sig
   val shallow_copy_model :
     string -> AbstractValue.t * ValueHistory.t -> AbstractValue.t * ValueHistory.t -> model
 
+  val deep_copy :
+       PathContext.t
+    -> Location.t
+    -> value:AbstractValue.t * ValueHistory.t
+    -> desc:string
+    -> AbductiveDomain.t
+    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t), base_error) PulseOperationResult.t
+
+  val alloc_value_address :
+       Typ.t
+    -> desc:string
+    -> model_data
+    -> AbductiveDomain.t
+    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t), base_error) PulseOperationResult.t
+
   val early_exit : model
 
   val return_int : desc:string -> int64 -> model
@@ -118,6 +133,15 @@ module Basic : sig
     -> model_data
     -> AbductiveDomain.t
     -> AbductiveDomain.t AccessResult.t SatUnsat.t
+
+  val call_constructor :
+       Typ.name
+    -> Typ.t list
+    -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+    -> Exp.t
+    -> model_data
+    -> AbductiveDomain.t
+    -> ExecutionDomain.t AccessResult.t list
 
   val assert_ : (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t -> model
 

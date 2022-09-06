@@ -9,12 +9,12 @@ three_branch:
   #0: 0
   
  Non-disj state:⊥ 
-four_branch:
+two_branch:
   1 disjuncts:
   #0: 0
   
  Non-disj state:⊥ 
-two_branch:
+four_branch:
   1 disjuncts:
   #0: 0
   
@@ -42,18 +42,18 @@ three_branch:
   #2: 2
   
  Non-disj state:⊥ 
+two_branch:
+  2 disjuncts:
+  #0: 0
+  #1: 1
+  
+ Non-disj state:⊥ 
 four_branch:
   4 disjuncts:
   #0: 0
   #1: 1
   #2: 2
   #3: 3
-  
- Non-disj state:⊥ 
-two_branch:
-  2 disjuncts:
-  #0: 0
-  #1: 1
   
  Non-disj state:⊥ 
 sequence:
@@ -85,18 +85,18 @@ three_branch:
   #2: 2
   
  Non-disj state:⊥ 
+two_branch:
+  2 disjuncts:
+  #0: 0
+  #1: 1
+  
+ Non-disj state:⊥ 
 four_branch:
   4 disjuncts:
   #0: 0
   #1: 1
   #2: 2
   #3: 3
-  
- Non-disj state:⊥ 
-two_branch:
-  2 disjuncts:
-  #0: 0
-  #1: 1
   
  Non-disj state:⊥ 
 sequence:

@@ -1,53 +1,5 @@
 /* @generated */
 digraph cfg {
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" [label="1: Start DispatchMain\nFormals: \nLocals:  p:int* b:DispatchA* \n  " color=yellow style=filled]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" [label="2: Exit DispatchMain \n  " color=yellow style=filled]
-	
-
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_3" [label="3: + \n   END_BRANCHES\n " ]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_3" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&b:DispatchA* [line 85, column 7]\n " shape="box"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" ;
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$0 == null), true); [line 85, column 7]\n " shape="invhouse"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$0 == null), false); [line 85, column 7]\n " shape="invhouse"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 86, column 13]\n  n$2=*n$1:int [line 86, column 12]\n " shape="box"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" [label="9:  Return Stmt \n   *&return:int=n$2 [line 86, column 5]\n " shape="box"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" [label="10:  Return Stmt \n   *&return:int=0 [line 88, column 5]\n " shape="box"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 84, column 3]\n  *&p:int*=null [line 84, column 3]\n " shape="box"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" ;
-"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(b:DispatchA*); [line 83, column 3]\n  n$4=_fun_DispatchA.sharedInstance() [line 83, column 18]\n  *&b:DispatchA*=n$4 [line 83, column 3]\n " shape="box"]
-	
-
-	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" ;
 "objc_blockDispatchA.block_attribute_2(class DispatchA).fbb5956dc6c8f95a8f2ae751ac2b44a1_1" [label="1: Start objc_blockDispatchA.block_attribute_2\nFormals: \nLocals: \nCaptured:  [by ref]&a:DispatchA*& \n  " color=yellow style=filled]
 	
 
@@ -103,6 +55,54 @@ digraph cfg {
 	
 
 	 "objc_blockDispatchA.trans_3.2993ae0bfb5e0ec6d91c5c53d1084592_3" -> "objc_blockDispatchA.trans_3.2993ae0bfb5e0ec6d91c5c53d1084592_2" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" [label="1: Start DispatchMain\nFormals: \nLocals:  p:int* b:DispatchA* \n  " color=yellow style=filled]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_1" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" [label="2: Exit DispatchMain \n  " color=yellow style=filled]
+	
+
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_3" [label="3: + \n   END_BRANCHES\n " ]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_3" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_4" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&b:DispatchA* [line 85, column 7]\n " shape="box"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" ;
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE((n$0 == null), true); [line 85, column 7]\n " shape="invhouse"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_6" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!(n$0 == null), false); [line 85, column 7]\n " shape="invhouse"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_7" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 86, column 13]\n  n$2=*n$1:int [line 86, column 12]\n " shape="box"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_8" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" [label="9:  Return Stmt \n   *&return:int=n$2 [line 86, column 5]\n " shape="box"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_9" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" [label="10:  Return Stmt \n   *&return:int=0 [line 88, column 5]\n " shape="box"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_10" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_2" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(p:int*); [line 84, column 3]\n  *&p:int*=null [line 84, column 3]\n " shape="box"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_5" ;
+"DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(b:DispatchA*); [line 83, column 3]\n  n$4=_fun_DispatchA.sharedInstance() [line 83, column 18]\n  *&b:DispatchA*=n$4 [line 83, column 3]\n " shape="box"]
+	
+
+	 "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_12" -> "DispatchMain.f6461dbdaeaf9a114cbe40f5f72fbb3f_11" ;
 "block_attribute#DispatchA#[class].73d115a412667b49834f7a274372e5cb_1" [label="1: Start DispatchA.block_attribute\nFormals: \nLocals:  a:DispatchA*(__block) \n  " color=yellow style=filled]
 	
 
