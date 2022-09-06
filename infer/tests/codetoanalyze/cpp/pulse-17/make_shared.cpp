@@ -42,6 +42,13 @@ struct Y {
   ~Y() { delete pointer_field; }
 };
 
+struct SharedPtr {
+  SharedPtr(std::shared_ptr<int> _s_ptr) { s_ptr0 = _s_ptr; }
+  SharedPtr(std::shared_ptr<float> _s_ptr) : s_ptr1(_s_ptr) {}
+  std::shared_ptr<int> s_ptr0;
+  std::shared_ptr<float> s_ptr1;
+};
+
 struct Integer {
   int field;
   int get() { return field; }
@@ -131,6 +138,17 @@ int make_shared8_ok() {
     return *q;
   }
   return 0;
+}
+
+int make_shared9_ok() {
+  auto sharedPtr = SharedPtr(std::make_shared<int>(42));
+  return *sharedPtr.s_ptr0;
+}
+
+float FP_make_shared10_ok() {
+  // There are some issues with list-initialization
+  auto sharedPtr = SharedPtr(std::make_shared<float>(42));
+  return *sharedPtr.s_ptr1;
 }
 
 int make_shared0_bad() {
