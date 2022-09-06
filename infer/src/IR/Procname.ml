@@ -620,14 +620,30 @@ module FunctionParameters = struct
         Block.pp verbose f block
 end
 
+module Hack = struct
+  type t = {class_name: string option; function_name: string} [@@deriving compare, equal, yojson_of]
+
+  let pp verbosity fmt t =
+    match verbosity with
+    | Simple | Non_verbose | NameOnly ->
+        F.fprintf fmt "%s" t.function_name
+    | Verbose -> (
+      match t.class_name with
+      | Some class_name ->
+          F.fprintf fmt "%s.%s" class_name t.function_name
+      | _ ->
+          F.fprintf fmt "%s" t.function_name )
+end
+
 (** Type of procedure names. *)
 type t =
-  | CSharp of CSharp.t
-  | Java of Java.t
-  | C of C.t
-  | Erlang of Erlang.t
-  | Linters_dummy_method
   | Block of Block.t
+  | C of C.t
+  | CSharp of CSharp.t
+  | Erlang of Erlang.t
+  | Hack of Hack.t
+  | Java of Java.t
+  | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
   | WithAliasingParameters of t * Mangled.t list list
   | WithFunctionParameters of t * FunctionParameters.t list
@@ -690,6 +706,12 @@ let rec compare_name x y =
   | Erlang _, _ ->
       -1
   | _, Erlang _ ->
+      1
+  | Hack name1, Hack name2 ->
+      Hack.compare name1 name2
+  | Hack _, _ ->
+      -1
+  | _, Hack _ ->
       1
   | Linters_dummy_method, Linters_dummy_method ->
       0
@@ -800,7 +822,7 @@ let rec is_objc_helper ~f = function
       f objc_cpp_pname
   | WithAliasingParameters (base, _) | WithFunctionParameters (base, _) ->
       is_objc_helper ~f base
-  | Block _ | C _ | CSharp _ | Erlang _ | Java _ | Linters_dummy_method ->
+  | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Linters_dummy_method ->
       false
 
 
@@ -853,7 +875,7 @@ let rec replace_class t (new_class : Typ.Name.t) =
       WithAliasingParameters (replace_class base new_class, aliases)
   | WithFunctionParameters (base, functions) ->
       WithFunctionParameters (replace_class base new_class, functions)
-  | C _ | Block _ | Erlang _ | Linters_dummy_method ->
+  | C _ | Block _ | Erlang _ | Hack _ | Linters_dummy_method ->
       t
 
 
@@ -897,7 +919,7 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
       WithAliasingParameters (objc_cpp_replace_method_name base new_method_name, aliases)
   | WithFunctionParameters (base, functions) ->
       WithFunctionParameters (objc_cpp_replace_method_name base new_method_name, functions)
-  | C _ | CSharp _ | Block _ | Erlang _ | Linters_dummy_method | Java _ ->
+  | C _ | CSharp _ | Block _ | Erlang _ | Hack _ | Linters_dummy_method | Java _ ->
       t
 
 
@@ -911,6 +933,8 @@ let rec get_method = function
   | C {name} ->
       QualifiedCppName.to_qual_string name
   | Erlang name ->
+      name.function_name
+  | Hack name ->
       name.function_name
   | Block {block_type} ->
       F.asprintf "%a" (Block.pp_block_type ~with_prefix_and_index:false) block_type
@@ -959,6 +983,8 @@ let rec get_language = function
       Language.Clang
   | Erlang _ ->
       Language.Erlang
+  | Hack _ ->
+      Language.Hack
   | Block _ ->
       Language.Clang
   | Linters_dummy_method ->
@@ -1005,6 +1031,7 @@ let rec is_static = function
   | C _
   | Block _
   | Erlang _
+  | Hack _
   | Linters_dummy_method
   | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
       None
@@ -1073,6 +1100,8 @@ let rec pp_unique_id fmt = function
       C.pp Verbose fmt osig
   | Erlang e ->
       Erlang.pp Verbose fmt e
+  | Hack h ->
+      Hack.pp Verbose fmt h
   | ObjC_Cpp osig ->
       ObjC_Cpp.pp Verbose fmt osig
   | Block bsig ->
@@ -1099,6 +1128,8 @@ let rec pp fmt = function
       C.pp Non_verbose fmt osig
   | Erlang e ->
       Erlang.pp Non_verbose fmt e
+  | Hack h ->
+      Hack.pp Non_verbose fmt h
   | ObjC_Cpp osig ->
       ObjC_Cpp.pp Non_verbose fmt osig
   | Block bsig ->
@@ -1140,6 +1171,8 @@ let rec pp_name_only fmt = function
       C.pp NameOnly fmt osig
   | Erlang e ->
       Erlang.pp NameOnly fmt e
+  | Hack h ->
+      Hack.pp NameOnly fmt h
   | ObjC_Cpp osig ->
       ObjC_Cpp.pp NameOnly fmt osig
   | Block bsig ->
@@ -1165,6 +1198,8 @@ let rec pp_simplified_string ?(withclass = false) fmt = function
       C.pp Simple fmt osig
   | Erlang e ->
       Erlang.pp Simple fmt e
+  | Hack h ->
+      Hack.pp Simple fmt h
   | ObjC_Cpp osig ->
       ObjC_Cpp.pp (if withclass then Non_verbose else Simple) fmt osig
   | Block bsig ->
@@ -1236,6 +1271,9 @@ let rec get_parameters procname =
       clang_param_to_param (C.get_parameters osig)
   | Erlang e ->
       List.init e.arity ~f:(fun _ -> Parameter.ErlangParameter)
+  | Hack _ ->
+      (* TODO(arr): we don't know yet how the parameters of Hack methods will be represented. Will refine later. *)
+      []
   | ObjC_Cpp osig ->
       clang_param_to_param (ObjC_Cpp.get_parameters osig)
   | Block bsig ->
@@ -1302,6 +1340,8 @@ let rec replace_parameters new_parameters procname =
       C (C.replace_parameters (params_to_clang_params new_parameters) osig)
   | Erlang e ->
       Erlang (Erlang.set_arity (params_to_erlang_arity new_parameters) e)
+  | Hack _ ->
+      procname
   | ObjC_Cpp osig ->
       ObjC_Cpp (ObjC_Cpp.replace_parameters (params_to_clang_params new_parameters) osig)
   | Block bsig ->

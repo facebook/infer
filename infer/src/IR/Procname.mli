@@ -217,18 +217,23 @@ module FunctionParameters : sig
   type t = private FunPtr of C.t | Block of Block.t
 end
 
+module Hack : sig
+  type t = private {class_name: string option; function_name: string}
+end
+
 (** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a
     method that contains function parameters and it's called with concrete functions. For example:
     [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
     [foo_my_block() {my_block(); }] where foo_my_block is created with WithFunctionParameters (foo,
     [my_block]) *)
 type t =
-  | CSharp of CSharp.t
-  | Java of Java.t
-  | C of C.t
-  | Erlang of Erlang.t
-  | Linters_dummy_method
   | Block of Block.t
+  | C of C.t
+  | CSharp of CSharp.t
+  | Erlang of Erlang.t
+  | Hack of Hack.t
+  | Java of Java.t
+  | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
   | WithAliasingParameters of t * Mangled.t list list
   | WithFunctionParameters of t * FunctionParameters.t list

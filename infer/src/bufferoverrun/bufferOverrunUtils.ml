@@ -91,6 +91,8 @@ module Exec = struct
             Dom.Val.of_java_array_alloc allocsite ~length:size ~traces
         | Language.Erlang ->
             L.die InternalError "Erlang not supported"
+        | Language.Hack ->
+            L.die InternalError "Hack not supported"
       in
       if Int.equal dimension 1 then Dom.Mem.add_stack ~represents_multiple_values loc arr mem
       else Dom.Mem.add_heap ~represents_multiple_values loc arr mem
