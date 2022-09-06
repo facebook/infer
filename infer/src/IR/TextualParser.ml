@@ -9,20 +9,21 @@ open! IStd
 module F = Format
 module L = Logging
 
+type error = VerificationError of Textual.Verification.error | SyntaxError of string
+
 let pp_error sourcefile fmt = function
-  | `VerificationError err ->
+  | VerificationError err ->
       Textual.Verification.pp_error sourcefile fmt err
-  | `SyntaxError err ->
+  | SyntaxError err ->
       F.fprintf fmt "%s" err
 
 
-let parse sourcefile ic =
-  let filebuf = Lexing.from_channel ic in
+let parse_buf sourcefile filebuf =
   try
     let lexer = TextualLexer.main in
     let m = TextualMenhir.main lexer filebuf sourcefile in
     let errors = Textual.Verification.run m in
-    if List.is_empty errors then Ok m else Error (List.map errors ~f:(fun x -> `VerificationError x))
+    if List.is_empty errors then Ok m else Error (List.map errors ~f:(fun x -> VerificationError x))
   with TextualMenhir.Error ->
     let pos = filebuf.Lexing.lex_curr_p in
     let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
@@ -32,7 +33,17 @@ let parse sourcefile ic =
       sprintf "SIL syntax error in file %s at line %d, column %d.\n%!"
         (SourceFile.to_string sourcefile) line col
     in
-    Error [`SyntaxError err_msg]
+    Error [SyntaxError err_msg]
+
+
+let parse_string sourcefile text =
+  let filebuf = Lexing.from_string text in
+  parse_buf sourcefile filebuf
+
+
+let parse_chan sourcefile ic =
+  let filebuf = Lexing.from_channel ic in
+  parse_buf sourcefile filebuf
 
 
 let run ?source_path textual_path =
@@ -47,7 +58,7 @@ let run ?source_path textual_path =
   in
   let result =
     let print_errors errs = List.iter errs ~f:(L.external_error "%a" (pp_error sourcefile)) in
-    parse sourcefile cin |> Result.map_error ~f:print_errors
+    parse_chan sourcefile cin |> Result.map_error ~f:print_errors
   in
   In_channel.close cin ;
   result

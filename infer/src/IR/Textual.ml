@@ -1153,6 +1153,34 @@ module Procdesc = struct
     {procname; nodes; start; params; exit_loc}
 end
 
+module Lang = struct
+  type t = Java | Hack [@@deriving equal]
+
+  let of_string s =
+    match String.lowercase s with "java" -> Some Java | "hack" -> Some Hack | _ -> None
+
+
+  let to_string = function Java -> "java" | Hack -> "hack"
+end
+
+module Attr = struct
+  type t = {name: string; value: string; loc: Location.t}
+
+  let name {name} = name
+
+  let value {value} = value
+
+  let source_language = "source_language"
+
+  let mk_source_language value =
+    {name= source_language; value= Lang.to_string value; loc= Location.Unknown}
+
+
+  let pp fmt {name; value} = F.fprintf fmt "%s = \"%s\"" name value
+
+  let pp_with_loc fmt t = F.fprintf fmt "%a: %a" Location.pp t.loc pp t
+end
+
 module SsaVerification = struct
   type error = SsaError of {id: Ident.t; locations: Location.Set.t}
 
@@ -1207,7 +1235,14 @@ end
 module Module = struct
   type decl = Global of Pvar.t | Struct of Struct.t | Procname of Procname.t | Proc of Procdesc.t
 
-  type t = {decls: decl list; sourcefile: SourceFile.t}
+  type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
+
+  let lang {attrs} =
+    let lang_attr =
+      List.find attrs ~f:(fun (attr : Attr.t) -> String.equal attr.name Attr.source_language)
+    in
+    lang_attr |> Option.bind ~f:(fun x -> Attr.value x |> Lang.of_string)
+
 
   let make_decls {decls; sourcefile} =
     let decls_env = Decls.init sourcefile in
@@ -1248,7 +1283,7 @@ module Module = struct
     (cfgs, tenv)
 
 
-  let of_sil ~sourcefile tenv cfg =
+  let of_sil ~sourcefile ~lang tenv cfg =
     let env = Decls.init sourcefile in
     let decls =
       Cfg.fold_sorted cfg ~init:[] ~f:(fun decls pdesc ->
@@ -1262,8 +1297,11 @@ module Module = struct
     let decls =
       Decls.fold_procnames env ~init:decls ~f:(fun decls procname -> Procname procname :: decls)
     in
-    {decls; sourcefile}
+    let attrs = [Attr.mk_source_language lang] in
+    {attrs; decls; sourcefile}
 
+
+  let pp_attr fmt attr = F.fprintf fmt "attribute %a@\n@\n" Attr.pp attr
 
   let pp_decl fmt = function
     | Global pvar ->
@@ -1276,7 +1314,10 @@ module Module = struct
         F.fprintf fmt "type %a@\n@\n" Struct.pp struct_
 
 
-  let pp fmt module_ = List.iter ~f:(pp_decl fmt) module_.decls
+  let pp fmt module_ =
+    List.iter ~f:(pp_attr fmt) module_.attrs ;
+    List.iter ~f:(pp_decl fmt) module_.decls
+
 
   let pp_copyright fmt =
     F.fprintf fmt "// \n" ;
@@ -1292,7 +1333,7 @@ module Module = struct
         let fmt = F.formatter_of_out_channel oc in
         let sourcefile = SourceFile.create filename in
         pp_copyright fmt ;
-        pp fmt (of_sil ~sourcefile tenv cfg) ;
+        pp fmt (of_sil ~sourcefile ~lang:Java tenv cfg) ;
         Format.pp_print_flush fmt () )
 end
 
