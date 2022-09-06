@@ -59,53 +59,52 @@ let swap this other ~desc : model =
   astate
 
 
-module UniqueLock = struct
-  let default_constructor this ~desc : model =
-   fun {path; location} astate ->
-    let<++> astate = assign_value_nullptr path location this ~desc astate in
+let default_constructor this ~desc : model =
+ fun {path; location} astate ->
+  let<++> astate = assign_value_nullptr path location this ~desc astate in
+  astate
+
+
+let assign_mutex this value ~desc : model =
+ fun {path; location} astate ->
+  let<+> astate, _ = write_value path location this ~value ~desc astate in
+  astate
+
+
+let release this ~desc : model =
+ fun {path; location; ret= ret_id, _} astate ->
+  let<*> astate, (old_value_addr, old_value_hist) =
+    to_internal_value_deref path Read location this astate
+  in
+  let<++> astate = assign_value_nullptr path location this ~desc astate in
+  PulseOperations.write_id ret_id
+    (old_value_addr, Hist.add_call path location desc old_value_hist)
     astate
 
 
-  let assign_mutex this value ~desc : model =
-   fun {path; location} astate ->
-    let<+> astate, _ = write_value path location this ~value ~desc astate in
-    astate
+let move_assignment this other ~desc : model =
+ fun {path; location} astate ->
+  let<*> astate, value = to_internal_value_deref path Read location other astate in
+  let<**> astate = assign_value_nullptr path location other ~desc astate in
+  let<+> astate, _ = write_value path location this ~value ~desc astate in
+  astate
 
-
-  let release this ~desc : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let<*> astate, (old_value_addr, old_value_hist) =
-      to_internal_value_deref path Read location this astate
-    in
-    let<++> astate = assign_value_nullptr path location this ~desc astate in
-    PulseOperations.write_id ret_id
-      (old_value_addr, Hist.add_call path location desc old_value_hist)
-      astate
-
-
-  let move_assignment this other ~desc : model =
-   fun {path; location} astate ->
-    let<*> astate, value = to_internal_value_deref path Read location other astate in
-    let<**> astate = assign_value_nullptr path location other ~desc astate in
-    let<+> astate, _ = write_value path location this ~value ~desc astate in
-    astate
-end
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
-  [ (* matchers for unique_lock *)
+  [ (* matchers for std::unique_lock *)
     -"std" &:: "unique_lock" &:: "unique_lock" $ capt_arg_payload
-    $--> UniqueLock.default_constructor ~desc:"std::unique_lock::unique_lock()"
+    $--> default_constructor ~desc:"std::unique_lock::unique_lock()"
   ; -"std" &:: "unique_lock" &:: "unique_lock" $ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "unique_lock")
-    $--> UniqueLock.move_assignment ~desc:"std::unique_lock::unique_lock(std::unique_lock<T>)"
+    $--> move_assignment ~desc:"std::unique_lock::unique_lock(std::unique_lock<T>)"
   ; -"std" &:: "unique_lock" &:: "operator=" $ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "unique_lock")
-    $--> UniqueLock.move_assignment ~desc:"std::unique_lock::operator=(std::unique_lock<T>)"
+    $--> move_assignment ~desc:"std::unique_lock::operator=(std::unique_lock<T>)"
   ; -"std" &:: "unique_lock" &:: "unique_lock" $ capt_arg_payload $+ capt_arg_payload
-    $+...$--> UniqueLock.assign_mutex ~desc:"std::unique_lock::unique_lock(Mutex)"
+    $+...$--> assign_mutex ~desc:"std::unique_lock::unique_lock(Mutex)"
   ; -"std" &:: "unique_lock" &:: "release" $ capt_arg_payload
-    $--> UniqueLock.release ~desc:"std::unique_lock::release()"
+    $--> release ~desc:"std::unique_lock::release()"
   ; -"std" &:: "unique_lock" &:: "mutex" $ capt_arg_payload
     $--> mutex ~desc:"std::unique_lock::mutex()"
   ; -"std" &:: "unique_lock" &:: "swap" $ capt_arg_payload $+ capt_arg_payload
@@ -117,4 +116,29 @@ let matchers : matcher list =
   ; -"std" &:: "unique_lock" &:: "try_lock_until" &::.*--> Basic.skip
   ; -"std" &:: "unique_lock" &:: "unlock" &::.*--> Basic.skip
   ; -"std" &:: "unique_lock" &:: "owns_lock" &::.*--> Basic.skip
-  ; -"std" &:: "unique_lock" &:: "operator_bool" &::.*--> Basic.skip ]
+  ; -"std" &:: "unique_lock" &:: "operator_bool" &::.*--> Basic.skip
+    (* matchers for std::shared_lock *)
+  ; -"std" &:: "shared_lock" &:: "shared_lock" $ capt_arg_payload
+    $--> default_constructor ~desc:"std::shared_lock::shared_lock()"
+  ; -"std" &:: "shared_lock" &:: "shared_lock" $ capt_arg_payload
+    $+ capt_arg_payload_of_typ (-"std" &:: "shared_lock")
+    $--> move_assignment ~desc:"std::shared_lock::shared_lock(std::shared_lock<T>)"
+  ; -"std" &:: "shared_lock" &:: "operator=" $ capt_arg_payload
+    $+ capt_arg_payload_of_typ (-"std" &:: "shared_lock")
+    $--> move_assignment ~desc:"std::shared_lock::operator=(std::shared_lock<T>)"
+  ; -"std" &:: "shared_lock" &:: "shared_lock" $ capt_arg_payload $+ capt_arg_payload
+    $+...$--> assign_mutex ~desc:"std::shared_lock::shared_lock(Mutex)"
+  ; -"std" &:: "shared_lock" &:: "release" $ capt_arg_payload
+    $--> release ~desc:"std::shared_lock::release()"
+  ; -"std" &:: "shared_lock" &:: "mutex" $ capt_arg_payload
+    $--> mutex ~desc:"std::shared_lock::mutex()"
+  ; -"std" &:: "shared_lock" &:: "swap" $ capt_arg_payload $+ capt_arg_payload
+    $--> swap ~desc:"std::shared_lock::swap(std::shared_lock<Mutex>)"
+  ; -"std" &:: "shared_lock" &:: "~shared_lock" &::.*--> Basic.skip
+  ; -"std" &:: "shared_lock" &:: "lock" &::.*--> Basic.skip
+  ; -"std" &:: "shared_lock" &:: "try_lock" &::.*--> Basic.skip
+  ; -"std" &:: "shared_lock" &:: "try_lock_for" &::.*--> Basic.skip
+  ; -"std" &:: "shared_lock" &:: "try_lock_until" &::.*--> Basic.skip
+  ; -"std" &:: "shared_lock" &:: "unlock" &::.*--> Basic.skip
+  ; -"std" &:: "shared_lock" &:: "owns_lock" &::.*--> Basic.skip
+  ; -"std" &:: "shared_lock" &:: "operator_bool" &::.*--> Basic.skip ]
