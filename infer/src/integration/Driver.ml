@@ -166,7 +166,7 @@ let capture ~changed_files mode =
         Javac.capture compiler ~prog ~args
     | JsonSIL {cfg_json; tenv_json} ->
         L.progress "Capturing using JSON mode...@." ;
-        CaptureSILJson.capture ~changed_files ~cfg_json ~tenv_json
+        CaptureSILJson.capture ~cfg_json ~tenv_json
     | Maven {prog; args} ->
         L.progress "Capturing in maven mode...@." ;
         Maven.capture ~prog ~args

@@ -691,7 +691,6 @@ let add_proc_to_cfg source_file pname pdesc map =
 
 
 let store cfg =
-  let cfg_map = ref in
   let save_proc procname proc_desc cfg_map =
     let attributes = Procdesc.get_attributes proc_desc in
     let source_file = attributes.loc.Location.file in
