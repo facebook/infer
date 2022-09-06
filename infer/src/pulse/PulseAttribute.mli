@@ -126,6 +126,8 @@ module Attributes : sig
 
   val get_allocation : t -> (allocator * Trace.t) option
 
+  val remove_allocation : t -> t
+
   val is_ref_counted : t -> bool
 
   val get_unknown_effect : t -> (CallEvent.t * ValueHistory.t) option
@@ -140,16 +142,26 @@ module Attributes : sig
 
   val get_tainted : t -> TaintedSet.t
 
+  val remove_tainted : t -> t
+
   val get_propagate_taint_from : t -> taint_in list option
+
+  val remove_propagate_taint_from : t -> t
 
   val get_returned_from_unknown : t -> AbstractValue.t list option
 
   val get_taint_sanitized : t -> TaintSanitizedSet.t
 
+  val remove_taint_sanitized : t -> t
+
   val get_isl_abduced : t -> Trace.t option
+
+  val remove_isl_abduced : t -> t
 
   val get_must_be_valid :
     t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
+
+  val remove_must_be_valid : t -> t
 
   val get_must_not_be_tainted : t -> TaintSinkSet.t
 
@@ -164,6 +176,8 @@ module Attributes : sig
   val is_std_vector_reserved : t -> bool
 
   val is_uninitialized : t -> bool
+
+  val remove_uninitialized : t -> t
 
   val get_must_be_initialized : t -> (Timestamp.t * Trace.t) option
 
