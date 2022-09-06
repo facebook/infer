@@ -74,28 +74,41 @@ let add_copies tenv path location call_exp actuals astates astate_non_disj =
         match (exec_state, (call_exp : Exp.t), args_map_fn actuals) with
         | ( ContinueProgram disjunct
           , (Const (Cfun procname) | Closure {name= procname})
-          , (Exp.Lvar copy_pvar, copy_type) :: rest_args )
+          , ((Exp.Lvar copy_pvar | Exp.Lindex (Exp.Lvar copy_pvar, _)), copy_type) :: rest_args )
           when not (is_cheap_to_copy tenv copy_type) ->
             let default = (astate_non_disj, exec_state) in
             copy_check_fn procname
             |> Option.value_map ~default ~f:(fun from ->
                    let copied_var = Var.of_pvar copy_pvar in
-                   if Var.appears_in_source_code copied_var && not (Var.is_global copied_var) then
-                     let copied, disjunct, source_addr_typ_opt =
-                       get_copied_and_source copy_type path rest_args location from disjunct
-                     in
+                   let copied, disjunct, source_addr_typ_opt =
+                     get_copied_and_source copy_type path rest_args location from disjunct
+                   in
+                   let is_copy_legit =
+                     Var.appears_in_source_code copied_var && not (Var.is_global copied_var)
+                   in
+                   let source_opt =
+                     Option.bind source_addr_typ_opt ~f:(fun (_, source_expr, _) ->
+                         match source_expr with
+                         | DecompilerExpr.SourceExpr ((DecompilerExpr.PVar pvar, _), _)
+                           when (not (Pvar.is_frontend_tmp pvar)) && not is_copy_legit ->
+                             Some pvar
+                         | _ ->
+                             None )
+                   in
+                   if Option.is_some source_opt || is_copy_legit then
                      let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
                      let disjunct' =
                        Option.value_map source_addr_typ_opt ~default:disjunct
                          ~f:(fun (source_addr, _, source_typ) ->
                            AddressAttributes.add_one source_addr
-                             (CopiedInto (Attribute.CopiedInto.IntoVar copied_var)) disjunct
+                             (CopiedInto (Attribute.CopiedInto.IntoVar {copied_var; source_opt}))
+                             disjunct
                            |> AddressAttributes.add_one copy_addr
                                 (SourceOriginOfCopy
                                    { source= source_addr
                                    ; is_const_ref= Typ.is_const_reference source_typ } ) )
                      in
-                     ( NonDisjDomain.add_var copied_var
+                     ( NonDisjDomain.add_var copied_var ~source_opt
                          ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst3)
                          copied astate_non_disj
                      , ExecutionDomain.continue disjunct' )
@@ -283,7 +296,8 @@ let mark_modified_copies_and_parameters_with vars ~astate astate_n =
     |> Option.value_map ~default ~f:(fun (address, _history) ->
            let source_addr_opt = AddressAttributes.get_source_origin_of_copy address astate in
            mark_modified_address_at ~address ~source_addr_opt
-             ~copied_into:(Attribute.CopiedInto.IntoVar var) Copy astate default )
+             ~copied_into:(Attribute.CopiedInto.IntoVar {copied_var= var; source_opt= None})
+             Copy astate default )
   in
   let mark_modified_parameter var default =
     Stack.find_opt var astate

@@ -102,13 +102,15 @@ module Attribute = struct
 
   module CopiedInto = struct
     type t =
-      | IntoVar of Var.t
+      | IntoVar of {copied_var: Var.t; source_opt: Pvar.t option}
       | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
     [@@deriving compare, equal]
 
     let pp fmt = function
-      | IntoVar var ->
-          Var.pp fmt var
+      | IntoVar {copied_var; source_opt= None} ->
+          Var.pp fmt copied_var
+      | IntoVar {source_opt= Some pvar} ->
+          (Pvar.pp Pp.text) fmt pvar
       | IntoField {field} ->
           Fieldname.pp fmt field
   end
