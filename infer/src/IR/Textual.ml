@@ -1077,23 +1077,37 @@ module Procdesc = struct
   let to_sil lang decls_env cfgs {procname; nodes; start; params; exit_loc} =
     let sourcefile = decls_env.Decls.sourcefile in
     let sil_procname = Procname.to_sil lang procname in
-    let pattributes = ProcAttributes.default sourcefile sil_procname in
-    let locals =
-      match
-        List.map2 procname.formals_types params ~f:(fun typ vname ->
-            let name = Mangled.from_string vname.VarName.value in
-            let typ = Typ.to_sil typ in
-            ProcAttributes.
-              {name; typ; modify_in_block= false; is_constexpr= false; is_declared_unused= false} )
-      with
+    let sil_ret_type = Typ.to_sil procname.result_type in
+    let definition_loc = Location.to_sil sourcefile procname.qualified_name.name.loc in
+    let formals =
+      let mk_formal typ vname =
+        let name = Mangled.from_string vname.VarName.value in
+        let typ = Typ.to_sil typ in
+        (name, typ, Annot.Item.empty)
+      in
+      match List.map2 procname.formals_types params ~f:mk_formal with
       | Ok l ->
           l
       | Unequal_lengths ->
           L.die InternalError "procname %a has not the same number of arg names and arg types"
             Procname.pp_qualified_name procname.qualified_name
     in
-    let () = pattributes.locals <- locals in
+    let pattributes =
+      { (ProcAttributes.default sourcefile sil_procname) with
+        is_defined= true
+      ; formals
+      ; locals= [] (* Locals are not yet supported *)
+      ; ret_type= sil_ret_type
+      ; loc= definition_loc }
+    in
     let pdesc = Cfg.create_proc_desc cfgs pattributes in
+    (* Create standalone start and end nodes. Note that SIL start node does not correspond to the start node in
+       Textual. The latter is more like a _first node_. *)
+    let start_node = Procdesc.create_node pdesc definition_loc Procdesc.Node.Start_node [] in
+    Procdesc.set_start_node pdesc start_node ;
+    let exit_loc = Location.to_sil sourcefile exit_loc in
+    let exit_node = Procdesc.create_node pdesc exit_loc Procdesc.Node.Exit_node [] in
+    Procdesc.set_exit_node pdesc exit_node ;
     (* FIXME: special exit nodes should be added *)
     let node_map : (string, Node.t * Procdesc.Node.t) Hashtbl.t = Hashtbl.create 17 in
     List.iter nodes ~f:(fun node ->
@@ -1101,12 +1115,10 @@ module Procdesc = struct
         let key = node.Node.label.value in
         ignore (Hashtbl.replace node_map key data) ) ;
     ( match Hashtbl.find_opt node_map start.value with
-    | Some (_, start_node) ->
-        Procdesc.set_start_node pdesc start_node
+    | Some (_, first_node) ->
+        Procdesc.node_set_succs pdesc start_node ~normal:[first_node] ~exn:[]
     | None ->
         L.die InternalError "start node %a npt found" NodeName.pp start ) ;
-    let exit_loc = Location.to_sil sourcefile exit_loc in
-    let exit_node = Procdesc.create_node pdesc exit_loc Procdesc.Node.Exit_node [] in
     (* TODO: register this exit node *)
     let normal_succ : Terminator.t -> Procdesc.Node.t list = function
       | Ret _ ->

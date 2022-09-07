@@ -79,6 +79,7 @@ let capture ?source_path textual_path =
           Config.debug_mode || Config.testing_mode || Config.frontend_tests
           || Option.is_some Config.icfg_dotty_outfile
         then DotCfg.emit_frontend_cfg source_file cfg ;
+        Tenv.store_global tenv ;
         ()
       with Textual.ToSilTransformationError pp ->
         L.external_error
