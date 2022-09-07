@@ -12,28 +12,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-module LocalCache = struct
-  let results =
-    lazy
-      (Procname.LRUHash.create ~initial_size:Config.summaries_caches_max_size
-         ~max_size:Config.summaries_caches_max_size )
-
-
-  let clear () = Procname.LRUHash.clear (Lazy.force results)
-
-  let remove pname = Procname.LRUHash.remove (Lazy.force results) pname
-
-  let get proc_name =
-    let summ_opt_opt = Procname.LRUHash.find_opt (Lazy.force results) proc_name in
-    if Option.is_some summ_opt_opt then Stats.incr_ondemand_local_cache_hits ()
-    else Stats.incr_ondemand_local_cache_misses () ;
-    summ_opt_opt
-
-
-  let add proc_name summary_option =
-    Procname.LRUHash.replace (Lazy.force results) proc_name summary_option
-end
-
 (* always incremented before use *)
 let nesting = ref (-1)
 
@@ -292,30 +270,22 @@ let analyze_callee exe_env ?caller_summary callee_pname =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
-    match LocalCache.get callee_pname with
-    | Some callee_summary_option ->
-        callee_summary_option
-    | None ->
-        let summ_opt =
-          match Summary.OnDisk.get callee_pname with
-          | Some _ as summ_opt ->
-              summ_opt
-          | None when procedure_should_be_analyzed callee_pname ->
-              get_proc_desc callee_pname
-              |> Option.map ~f:(fun callee_pdesc ->
-                     RestartScheduler.lock_exn callee_pname ;
-                     let callee_summary =
-                       run_proc_analysis exe_env
-                         ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-                         callee_pdesc
-                     in
-                     RestartScheduler.unlock callee_pname ;
-                     callee_summary )
-          | _ ->
-              None
-        in
-        LocalCache.add callee_pname summ_opt ;
+    match Summary.OnDisk.get callee_pname with
+    | Some _ as summ_opt ->
         summ_opt
+    | None when procedure_should_be_analyzed callee_pname ->
+        get_proc_desc callee_pname
+        |> Option.map ~f:(fun callee_pdesc ->
+               RestartScheduler.lock_exn callee_pname ;
+               let callee_summary =
+                 run_proc_analysis exe_env
+                   ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
+                   callee_pdesc
+               in
+               RestartScheduler.unlock callee_pname ;
+               callee_summary )
+    | _ ->
+        None
 
 
 let analyze_proc_name exe_env ~caller_summary callee_pname =

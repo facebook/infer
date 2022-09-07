@@ -53,10 +53,7 @@ let clear_caches_except_lrus () =
   Attributes.clear_cache ()
 
 
-let clear_caches () =
-  Ondemand.LocalCache.clear () ;
-  clear_caches_except_lrus ()
-
+let clear_caches () = clear_caches_except_lrus ()
 
 let proc_name_of_uid uid =
   match Attributes.load_from_uid uid with
@@ -261,7 +258,6 @@ let invalidate_changed_procedures changed_files =
     let invalidated_nodes =
       CallGraph.fold_flagged reverse_callgraph
         ~f:(fun node acc ->
-          Ondemand.LocalCache.remove node.pname ;
           Summary.OnDisk.delete node.pname ;
           acc + 1 )
         0

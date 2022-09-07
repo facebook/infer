@@ -740,7 +740,7 @@ val starvation_whole_program : bool
 
 val subtype_multirange : bool
 
-val summaries_caches_max_size : int
+val summaries_caches_max_size : int [@@warning "-32"]
 
 val suppress_lint_ignore_types : bool
 
