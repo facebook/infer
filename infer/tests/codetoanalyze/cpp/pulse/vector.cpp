@@ -6,6 +6,58 @@
  */
 #include <iostream>
 #include <vector>
+#include <memory>
+
+struct Vector {
+  std::vector<std::unique_ptr<int>> u_vector;
+  std::vector<std::shared_ptr<int>> s_vector;
+  int add(std::unique_ptr<int> u_ptr) {
+    u_vector.push_back(std::move(u_ptr));
+    return 0;
+  }
+  int add(std::shared_ptr<int> s_ptr) {
+    s_vector.push_back(s_ptr);
+    return 0;
+  }
+  static Vector* getInstance() {
+    static Vector instance;
+    return &instance;
+  }
+};
+
+// missing a more precise model for vector::push_back
+int FP_push_back0_ok(int* value) {
+  std::unique_ptr<int> ptr(value);
+  Vector* v = Vector::getInstance();
+  v->add(std::move(ptr));
+  // value should not be deallocated: it is owned by the first element of
+  // u_vector
+  return *value;
+}
+
+// missing a more precise model for vector::push_back
+int FP_push_back1_ok(int* value) {
+  {
+    std::shared_ptr<int> ptr(value);
+    Vector* v = Vector::getInstance();
+    v->add(ptr);
+  }
+  // value should not be deallocated: it is owned by the first element of
+  // s_vector
+  return *value;
+}
+
+// missing a more precise model for vector::push_back
+void FN_push_back0_bad() {
+  std::vector<int> v;
+  int n = 42;
+  v.push_back(n);
+  if (v.back() == 42) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
 
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
