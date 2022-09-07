@@ -63,3 +63,35 @@ let%test_module "parsing" =
 
           } |}]
   end )
+
+let%test_module "procnames" =
+  ( module struct
+    let%expect_test _ =
+      let toplevel_proc =
+        Procname.
+          { qualified_name=
+              { enclosing_class= TopLevel
+              ; name= {value= "toplevel"; loc= Location.known ~line:0 ~col:0} }
+          ; formals_types= []
+          ; result_type= Typ.Void
+          ; kind= NonVirtual }
+      in
+      let as_java = Procname.to_sil Lang.Java toplevel_proc in
+      let as_hack = Procname.to_sil Lang.Hack toplevel_proc in
+      F.printf "%a@\n" SilProcname.pp as_java ;
+      F.printf "%a@\n" SilProcname.pp as_hack ;
+      [%expect {|
+        void $TOPLEVEL$CLASS$.toplevel()
+        toplevel |}]
+  end )
+
+let%test_module "to_sil" =
+  ( module struct
+    let%expect_test _ =
+      let no_lang = {|define nothing() : void { #node: ret null }|} in
+      let m = parse_module no_lang in
+      try Module.to_sil m |> ignore
+      with ToSilTransformationError pp_msg ->
+        pp_msg F.std_formatter () ;
+        [%expect {| Missing or unsupported source_language attribute |}]
+  end )

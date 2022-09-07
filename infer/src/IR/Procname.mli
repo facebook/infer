@@ -338,6 +338,9 @@ val make_csharp :
 val make_erlang : module_name:string -> function_name:string -> arity:int -> t
 (** Create an Erlang procedure name. *)
 
+val make_hack : class_name:string option -> function_name:string -> t
+(** Create a Hack procedure name. *)
+
 val make_objc_dealloc : Typ.Name.t -> t
 (** Create a Objective-C dealloc name. This is a destructor for an Objective-C class. This procname
     is given by the class name, since it is always an instance method with the name "dealloc" *)

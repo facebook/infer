@@ -6,7 +6,7 @@ SIL consistency error in file error_label.sil, line 16, column 8: label lab2 is 
 let.sil: conversion from Textual to SIL failed because of an unsupported form
   the expression in n3 = &x should start with a regular call
 need_transformations.sil: conversion from Textual to SIL failed because of an unsupported form
-  ident n1 is defined more than once at locations [line 9, column 4], [line 13, column 4], [line 15, column 2]
-  ident n0 is defined more than once at locations [line 8, column 4], [line 12, column 4]
+  ident n1 is defined more than once at locations [line 11, column 4], [line 15, column 4], [line 17, column 2]
+  ident n0 is defined more than once at locations [line 10, column 4], [line 14, column 4]
 ssa.sil: conversion from Textual to SIL failed because of an unsupported form
   Node lab3 should not have SSA parameters

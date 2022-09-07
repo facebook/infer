@@ -53,6 +53,16 @@ module Const : sig
     | Float of float  (** float constants *)
 end
 
+module Lang : sig
+  type t = Java | Hack [@@deriving equal]
+
+  val of_string : string -> t option [@@warning "-32"]
+
+  val to_string : t -> string [@@warning "-32"]
+end
+
+module SilProcname = Procname
+
 module Procname : sig
   type kind = Virtual | NonVirtual
 
@@ -62,6 +72,8 @@ module Procname : sig
 
   type t =
     {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
+
+  val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
 end
 
 module Pvar : sig
@@ -128,14 +140,6 @@ end
 
 module Struct : sig
   type t = {name: TypeName.t; fields: Fieldname.t list; methods: Procname.t list}
-end
-
-module Lang : sig
-  type t = Java | Hack [@@deriving equal]
-
-  val of_string : string -> t option [@@warning "-32"]
-
-  val to_string : t -> string [@@warning "-32"]
 end
 
 module Attr : sig

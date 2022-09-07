@@ -1,4 +1,6 @@
 Capturing in hackc mode...
+snippets-empty.sil: conversion from Textual to SIL failed because of an unsupported form
+  Missing or unsupported source_language attribute
 Capturing in hackc mode...
 SIL consistency error in file snippets/hello-world.hack, line 5, column 7: function hack_print is not declared
 SIL consistency error in file snippets/hello-world.hack, line 4, column 7: function hack_null is not declared

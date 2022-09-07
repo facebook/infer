@@ -1383,6 +1383,8 @@ let make_csharp ~class_name ~return_type ~method_name ~parameters ~kind =
 
 let make_erlang ~module_name ~function_name ~arity = Erlang {module_name; function_name; arity}
 
+let make_hack ~class_name ~function_name = Hack {class_name; function_name}
+
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
 
 let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZone ~is_mutable name)
