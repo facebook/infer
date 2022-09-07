@@ -27,7 +27,9 @@ let get_modeled_as_returning_copy_opt proc_name =
 
 let get_copied_and_source copy_type path rest_args location from (disjunct : AbductiveDomain.t) =
   let heap = (disjunct.post :> BaseDomain.t).heap in
-  let copied = NonDisjDomain.Copied {heap; typ= Typ.strip_ptr copy_type; location; from} in
+  let copied =
+    NonDisjDomain.Copied {heap; typ= Typ.strip_ptr copy_type; location; copied_location= None; from}
+  in
   let disjunct, source_addr_typ_opt =
     match rest_args with
     | (source_arg, source_typ) :: _ -> (
@@ -68,7 +70,18 @@ let is_cheap_to_copy tenv typ =
   || is_known_cheap_copy typ
 
 
-let add_copies tenv path location call_exp actuals astates astate_non_disj =
+let get_return_param pdesc =
+  let attrs = Procdesc.get_attributes pdesc in
+  if attrs.ProcAttributes.has_added_return_param then
+    Some (Pvar.get_ret_param_pvar (Procdesc.get_proc_name pdesc))
+  else None
+
+
+let is_copy_legit copied_var =
+  Var.appears_in_source_code copied_var && not (Var.is_global copied_var)
+
+
+let add_copies tenv proc_desc path location call_exp actuals astates astate_non_disj =
   let aux (copy_check_fn, args_map_fn) init astates =
     List.fold_map astates ~init ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
         match (exec_state, (call_exp : Exp.t), args_map_fn actuals) with
@@ -83,9 +96,7 @@ let add_copies tenv path location call_exp actuals astates astate_non_disj =
                    let copied, disjunct, source_addr_typ_opt =
                      get_copied_and_source copy_type path rest_args location from disjunct
                    in
-                   let is_copy_legit =
-                     Var.appears_in_source_code copied_var && not (Var.is_global copied_var)
-                   in
+                   let is_copy_legit = is_copy_legit copied_var in
                    let source_opt =
                      Option.bind source_addr_typ_opt ~f:(fun (_, source_expr, _) ->
                          match source_expr with
@@ -144,6 +155,36 @@ let add_copies tenv path location call_exp actuals astates astate_non_disj =
                        , ExecutionDomain.continue disjunct' )
                    | Sat (Recoverable _ | FatalError _) | Unsat ->
                        default )
+        | ( ContinueProgram disjunct
+          , (Const (Cfun procname) | Closure {name= procname})
+          , (Exp.Var copy_var, copy_type) :: (source_exp, source_typ) :: _ )
+          when not (is_cheap_to_copy tenv copy_type) -> (
+            let default = (astate_non_disj, exec_state) in
+            match (copy_check_fn procname, get_return_param proc_desc) with
+            | Some from, Some return_param -> (
+                let disjunct, (return_param_addr, _) =
+                  PulseOperations.eval_var path location return_param disjunct
+                in
+                match
+                  ( PulseOperations.read_id copy_var disjunct
+                  , Memory.find_edge_opt return_param_addr Dereference disjunct )
+                with
+                | Some (copy_addr, _), Some (return_addr, _)
+                  when AbstractValue.equal copy_addr return_addr -> (
+                  match PulseOperations.eval path NoAccess location source_exp disjunct with
+                  | Sat (Ok (disjunct, (source, _))) ->
+                      let disjunct =
+                        AddressAttributes.add_copied_return copy_addr ~source
+                          ~is_const_ref:(Typ.is_const_reference source_typ)
+                          from location disjunct
+                      in
+                      (astate_non_disj, ExecutionDomain.continue disjunct)
+                  | _ ->
+                      default )
+                | _, _ ->
+                    default )
+            | _, _ ->
+                default )
         | ExceptionRaised _, _, _
         | ISLLatentMemoryError _, _, _
         | AbortProgram _, _, _
@@ -162,6 +203,58 @@ let add_copies tenv path location call_exp actuals astates astate_non_disj =
   let astate_n, astates = aux (copy_from_fn, Fn.id) astate_non_disj astates in
   (* For functions that return a copy, the last argument is the assigned copy *)
   aux (get_modeled_as_returning_copy_opt, List.rev) astate_n astates
+
+
+let add_copied_return path location call_exp actuals astates astate_non_disj =
+  let default = (astate_non_disj, astates) in
+  match (call_exp : Exp.t) with
+  | Const (Cfun procname) | Closure {name= procname} -> (
+    match (Option.map (Procdesc.load procname) ~f:Procdesc.get_attributes, List.last actuals) with
+    | Some attrs, Some ((Exp.Lvar ret_pvar as ret), copy_type) when attrs.has_added_return_param ->
+        let copied_var = Var.of_pvar ret_pvar in
+        if is_copy_legit copied_var then
+          List.fold_map astates ~init:astate_non_disj
+            ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
+              let default = (astate_non_disj, exec_state) in
+              match exec_state with
+              | ContinueProgram disjunct -> (
+                match PulseOperations.eval path NoAccess location ret disjunct with
+                | Sat (Ok (disjunct, (ret_addr, _))) ->
+                    Option.value_map (AddressAttributes.get_copied_return ret_addr disjunct)
+                      ~default ~f:(fun (source, is_const_ref, from, copied_location) ->
+                        let disjunct =
+                          AddressAttributes.remove_copied_return ret_addr disjunct
+                          |> AddressAttributes.add_one source
+                               (CopiedInto (IntoVar {copied_var; source_opt= None}))
+                          |> AddressAttributes.add_one ret_addr
+                               (SourceOriginOfCopy {source; is_const_ref})
+                        in
+                        let astate_non_disj =
+                          NonDisjDomain.add_var copied_var ~source_opt:None
+                            ~source_addr_opt:(Some source)
+                            (Copied
+                               { heap= (disjunct.post :> BaseDomain.t).heap
+                               ; typ= Typ.strip_ptr copy_type
+                               ; location
+                               ; copied_location= Some copied_location
+                               ; from } )
+                            astate_non_disj
+                        in
+                        (astate_non_disj, ExecutionDomain.continue disjunct) )
+                | _ ->
+                    default )
+              | AbortProgram _
+              | ExceptionRaised _
+              | ExitProgram _
+              | ISLLatentMemoryError _
+              | LatentAbortProgram _
+              | LatentInvalidAccess _ ->
+                  default )
+        else default
+    | _, _ ->
+        default )
+  | _ ->
+      default
 
 
 let add_const_refable_parameters procdesc tenv astates astate_non_disj =

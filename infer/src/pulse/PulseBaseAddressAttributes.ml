@@ -216,6 +216,10 @@ let get_closure_proc_name = get_attribute Attributes.get_closure_proc_name
 
 let get_copied_into = get_attribute Attributes.get_copied_into
 
+let get_copied_return = get_attribute Attributes.get_copied_return
+
+let remove_copied_return = remove_attribute Attributes.remove_copied_return
+
 let get_source_origin_of_copy address attrs =
   get_attribute Attributes.get_source_origin_of_copy address attrs |> Option.map ~f:fst
 
@@ -262,6 +266,10 @@ let is_ref_counted address attrs =
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
 let add_unreachable_at address location memory = add_one address (UnreachableAt location) memory
+
+let add_copied_return address ~source ~is_const_ref from copied_location memory =
+  add_one address (Attribute.CopiedReturn {source; is_const_ref; from; copied_location}) memory
+
 
 let is_end_of_collection address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection

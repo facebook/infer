@@ -73,6 +73,9 @@ type t =
   | AlwaysReachable
   | Closure of Procname.t
   | CopiedInto of CopiedInto.t  (** records the copied var/field for each source address *)
+  | CopiedReturn of
+      {source: AbstractValue.t; is_const_ref: bool; from: CopyOrigin.t; copied_location: Location.t}
+      (** records the copied value for the return address *)
   | DynamicType of Typ.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
@@ -121,6 +124,10 @@ module Attributes : sig
   val get_closure_proc_name : t -> Procname.t option
 
   val get_copied_into : t -> CopiedInto.t option
+
+  val get_copied_return : t -> (AbstractValue.t * bool * CopyOrigin.t * Location.t) option
+
+  val remove_copied_return : t -> t
 
   val get_source_origin_of_copy : t -> (PulseAbstractValue.t * bool) option
 

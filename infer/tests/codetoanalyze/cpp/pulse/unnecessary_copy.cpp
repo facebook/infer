@@ -407,3 +407,34 @@ void unnecessary_copy_initializer_list(std::vector<int> c1,
   // fix here is not to add & but use ptrs
   // for (const auto* c : { &c1, &c2 }) // use *c
 }
+
+class MyValueOr {
+  bool b;
+  Arr& value;
+
+ public:
+  Arr value_or(const Arr& default_value) const {
+    if (b) {
+      return value;
+    } else {
+      return default_value;
+    }
+  }
+
+  Arr get_arr_implicit_copy() const { return get_a_ref(); }
+};
+
+void call_value_or_bad(const MyValueOr& c) {
+  const static Arr f{};
+  Arr g = c.value_or(f);
+}
+
+void call_value_or_ok(const MyValueOr& c) {
+  const static Arr f{};
+  Arr g = c.value_or(f);
+  g.arr[0] = 42;
+}
+
+void call_get_arr_implicit_copy_bad(const MyValueOr& c) {
+  Arr g = c.get_arr_implicit_copy();
+}
