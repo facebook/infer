@@ -241,6 +241,10 @@ val classpath : string option
 
 val command : InferCommand.t
 
+val compaction_if_heap_greater_equal_to_GB : int
+
+val compaction_minimum_interval_s : int
+
 val config_impact_config_field_patterns : Re.Str.regexp list
 
 val config_impact_config_function_patterns : Re.Str.regexp list
