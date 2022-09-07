@@ -160,7 +160,7 @@ let all_checkers =
   ; { checker= Pulse
     ; callbacks=
         (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in
-         [(pulse, Clang); (pulse, Erlang); (pulse, Java); (pulse, CIL)] ) }
+         [(pulse, Clang); (pulse, Erlang); (pulse, Hack); (pulse, Java); (pulse, CIL)] ) }
   ; { checker= Datalog
     ; callbacks=
         (let datalog = intraprocedural DatalogAnalysis.checker in
