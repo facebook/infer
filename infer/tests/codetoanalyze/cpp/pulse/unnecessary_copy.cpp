@@ -411,6 +411,7 @@ void unnecessary_copy_initializer_list(std::vector<int> c1,
 class MyValueOr {
   bool b;
   Arr& value;
+  std::shared_ptr<Arr> shared_ptr;
 
  public:
   Arr value_or(const Arr& default_value) const {
@@ -422,6 +423,8 @@ class MyValueOr {
   }
 
   Arr get_arr_implicit_copy() const { return get_a_ref(); }
+
+  std::shared_ptr<Arr> copy_shared_ptr() const { return shared_ptr; }
 };
 
 void call_value_or_bad(const MyValueOr& c) {
@@ -437,4 +440,8 @@ void call_value_or_ok(const MyValueOr& c) {
 
 void call_get_arr_implicit_copy_bad(const MyValueOr& c) {
   Arr g = c.get_arr_implicit_copy();
+}
+
+void call_copy_shared_ptr_ok(const MyValueOr& c) {
+  auto g = c.copy_shared_ptr();
 }

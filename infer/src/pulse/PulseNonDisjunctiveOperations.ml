@@ -158,7 +158,8 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
         | ( ContinueProgram disjunct
           , (Const (Cfun procname) | Closure {name= procname})
           , (Exp.Var copy_var, copy_type) :: (source_exp, source_typ) :: _ )
-          when not (is_cheap_to_copy tenv copy_type) -> (
+          when (not (is_cheap_to_copy tenv copy_type))
+               && not (Typ.is_pointer_to_smart_pointer copy_type) -> (
             let default = (astate_non_disj, exec_state) in
             match (copy_check_fn procname, get_return_param proc_desc) with
             | Some from, Some return_param -> (

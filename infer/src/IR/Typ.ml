@@ -746,6 +746,18 @@ let is_pointer_to_objc_non_tagged_class typ =
 
 let is_pointer_to_void typ = match typ.desc with Tptr ({desc= Tvoid}, _) -> true | _ -> false
 
+let is_pointer_to_smart_pointer typ =
+  match typ.desc with
+  | Tptr ({desc= Tstruct (CppClass {name})}, _) -> (
+    match QualifiedCppName.to_list name with
+    | ["std"; "shared_ptr"] | ["std"; "unique_ptr"] ->
+        true
+    | _ ->
+        false )
+  | _ ->
+      false
+
+
 let is_void typ = match typ.desc with Tvoid -> true | _ -> false
 
 let is_pointer_to_int typ = match typ.desc with Tptr ({desc= Tint _}, _) -> true | _ -> false
