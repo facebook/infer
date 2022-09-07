@@ -145,8 +145,7 @@ int make_shared9_ok() {
   return *sharedPtr.s_ptr0;
 }
 
-float FP_make_shared10_ok() {
-  // There are some issues with list-initialization
+float make_shared10_ok() {
   auto sharedPtr = SharedPtr(std::make_shared<float>(42));
   return *sharedPtr.s_ptr1;
 }
