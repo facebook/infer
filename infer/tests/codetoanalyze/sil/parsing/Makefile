@@ -16,7 +16,7 @@ CAPTURE_DIR = capture-outs
 
 CLEAN_EXTRA = $(CAPTURE_DIR) *.log
 
-%.log: %.sil
+%.log: %.sil $(INFER_BIN)
 	$(INFER_BIN) --quiet --no-progress-bar -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual $< &> $@
 
 .PHONY: compile

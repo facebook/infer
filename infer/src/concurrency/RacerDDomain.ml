@@ -37,6 +37,8 @@ let pp_exp fmt exp =
       AccessPath.pp fmt (AccessExpression.to_access_path exp)
   | Erlang ->
       L.die InternalError "Erlang not supported"
+  | Hack ->
+      L.die InternalError "Hack not supported"
 
 
 let rec should_keep_exp formals (exp : AccessExpression.t) =

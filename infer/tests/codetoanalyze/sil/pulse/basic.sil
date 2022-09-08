@@ -1,0 +1,21 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+attribute source_language = "hack"
+
+declare __taint_source() : int
+declare __taint_sink(int) : void
+
+define basic_flow(untainted: int) : void {
+  #node_1:
+    n1 = __taint_source()
+    n2:int = load &untainted
+    jmp node_2
+
+  #node_2:
+    n3 = __taint_sink(n2)
+    n4 = __taint_sink(n1)
+    ret null
+}

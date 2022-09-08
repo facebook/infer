@@ -212,6 +212,8 @@ module type PPUniqRankSet = sig
 
   val remove : elt -> t -> t
 
+  val remove_by_rank : rank -> t -> t
+
   val mem : elt -> t -> bool
 
   val update : elt -> t -> t

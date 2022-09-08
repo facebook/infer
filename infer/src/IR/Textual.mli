@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 module Location : sig
   type t
@@ -52,6 +53,16 @@ module Const : sig
     | Float of float  (** float constants *)
 end
 
+module Lang : sig
+  type t = Java | Hack [@@deriving equal]
+
+  val of_string : string -> t option [@@warning "-32"]
+
+  val to_string : t -> string [@@warning "-32"]
+end
+
+module SilProcname = Procname
+
 module Procname : sig
   type kind = Virtual | NonVirtual
 
@@ -61,6 +72,8 @@ module Procname : sig
 
   type t =
     {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
+
+  val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
 end
 
 module Pvar : sig
@@ -100,7 +113,7 @@ module Instr : sig
 end
 
 module Terminator : sig
-  type node_call = {label: NodeName.t; ssa_args: Ident.t list}
+  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t = Ret of Exp.t | Jump of node_call list  (** non empty list *) | Throw of Exp.t
 end
@@ -129,10 +142,26 @@ module Struct : sig
   type t = {name: TypeName.t; fields: Fieldname.t list; methods: Procname.t list}
 end
 
+module Attr : sig
+  type t = {name: string; value: string; loc: Location.t}
+
+  val name : t -> string [@@warning "-32"]
+
+  val value : t -> string [@@warning "-32"]
+
+  val pp : F.formatter -> t -> unit [@@warning "-32"]
+
+  val pp_with_loc : F.formatter -> t -> unit [@@warning "-32"]
+end
+
 module Module : sig
   type decl = Global of Pvar.t | Struct of Struct.t | Procname of Procname.t | Proc of Procdesc.t
 
-  type t = {decls: decl list; sourcefile: SourceFile.t}
+  type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
+
+  val lang : t -> Lang.t option [@@warning "-32"]
+
+  val pp : F.formatter -> t -> unit [@@warning "-32"]
 
   val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
   (** generate a .sil file with name [filename] containing all the functions in the given cfg *)

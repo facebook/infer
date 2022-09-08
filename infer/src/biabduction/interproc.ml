@@ -630,6 +630,8 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
             Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
         | Erlang ->
             L.die InternalError "Erlang not supported"
+        | Hack ->
+            L.die InternalError "Hack not supported"
       in
       Prop.mk_ptsto_lvar tenv Prop.Fld_init Predicates.inst_formal (pv, texp, None)
     in

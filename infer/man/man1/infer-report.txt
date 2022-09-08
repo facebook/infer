@@ -270,6 +270,7 @@ OPTIONS
            default),
              PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
              PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default),
+             PULSE_UNNECESSARY_COPY_RETURN (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              REGEX_OP_ON_UI_THREAD (enabled by default),

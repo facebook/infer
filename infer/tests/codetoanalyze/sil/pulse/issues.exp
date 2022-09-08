@@ -1,0 +1,1 @@
+basic.sil, basic_flow, 8, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from __taint_source with kind Simple,passed as argument #0 to __taint_sink with kind Simple]

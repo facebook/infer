@@ -44,6 +44,11 @@ val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
 val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
 
+val get_copied_return :
+  AbstractValue.t -> t -> (AbstractValue.t * bool * Attribute.CopyOrigin.t * Location.t) option
+
+val remove_copied_return : AbstractValue.t -> t -> t
+
 val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
 val is_copied_from_const_ref : AbstractValue.t -> t -> bool
@@ -84,6 +89,15 @@ val mark_as_end_of_collection : AbstractValue.t -> t -> t
 val is_end_of_collection : AbstractValue.t -> t -> bool
 
 val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
+
+val add_copied_return :
+     AbstractValue.t
+  -> source:AbstractValue.t
+  -> is_const_ref:bool
+  -> Attribute.CopyOrigin.t
+  -> Location.t
+  -> t
+  -> t
 
 val pp : F.formatter -> t -> unit
 

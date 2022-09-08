@@ -13,7 +13,7 @@ module Hashtbl = Caml.Hashtbl
 exception ToSilTransformationError of (F.formatter -> unit -> unit)
 
 module Location = struct
-  type t = Known of {line: int; col: int} | Unknown
+  type t = Known of {line: int; col: int} | Unknown [@@deriving compare]
 
   let known ~line ~col = Known {line; col}
 
@@ -33,6 +33,13 @@ module Location = struct
 
   let of_sil ({line; col} : Location.t) =
     if Int.(line = -1 && col = -1) then Known {line; col} else Unknown
+
+
+  module Set = Caml.Set.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+  end)
 end
 
 module type NAME = sig
@@ -184,7 +191,19 @@ module Typ = struct
         F.fprintf fmt "%a[]" pp typ
 end
 
-module Ident = struct
+module Ident : sig
+  type t
+
+  val to_sil : t -> Ident.t
+
+  val of_int : int -> t
+
+  val of_sil : Ident.t -> t
+
+  val pp : F.formatter -> t -> unit
+
+  module Map : Caml.Map.S with type key = t
+end = struct
   type t = int
 
   let to_sil id = Ident.create Ident.knormal id
@@ -199,6 +218,8 @@ module Ident = struct
 
 
   let pp fmt id = F.fprintf fmt "n%d" id
+
+  module Map = Caml.Map.Make (Int)
 end
 
 module SilConst = Const
@@ -243,6 +264,16 @@ module Const = struct
         F.fprintf fmt "\"%s\"" str
     | Float f ->
         F.pp_print_float fmt f
+end
+
+module Lang = struct
+  type t = Java | Hack [@@deriving equal]
+
+  let of_string s =
+    match String.lowercase s with "java" -> Some Java | "hack" -> Some Hack | _ -> None
+
+
+  let to_string = function Java -> "java" | Hack -> "hack"
 end
 
 let pp_list_with_comma pp fmt l = Pp.seq ~sep:", " pp fmt l
@@ -458,21 +489,32 @@ module Procname = struct
     match enclosing_class with TopLevel -> Map.Poly.find binop_inverse_map name.value | _ -> None
 
 
-  let to_sil {qualified_name; formals_types; result_type} : Procname.t =
-    let class_name =
-      TypeName.to_java_sil
-        ( match qualified_name.enclosing_class with
-        | TopLevel ->
-            TypeName.of_java_name toplevel_classname
-        | Enclosing tname ->
-            tname )
-    in
-    let result_type = Typ.to_sil result_type in
-    let return_type = Some result_type in
+  let to_sil lang {qualified_name; formals_types; result_type} : Procname.t =
     let method_name = qualified_name.name.ProcBaseName.value in
-    let formals_types = List.map ~f:Typ.to_sil formals_types in
-    let kind = Procname.Java.Non_Static (* FIXME when handling inheritance *) in
-    Procname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
+    match (lang : Lang.t) with
+    | Java ->
+        let class_name =
+          TypeName.to_java_sil
+            ( match qualified_name.enclosing_class with
+            | TopLevel ->
+                TypeName.of_java_name toplevel_classname
+            | Enclosing tname ->
+                tname )
+        in
+        let result_type = Typ.to_sil result_type in
+        let return_type = Some result_type in
+        let formals_types = List.map ~f:Typ.to_sil formals_types in
+        let kind = Procname.Java.Non_Static (* FIXME when handling inheritance *) in
+        Procname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
+    | Hack ->
+        let class_name =
+          match qualified_name.enclosing_class with
+          | TopLevel ->
+              None
+          | Enclosing name ->
+              Some name.value
+        in
+        Procname.make_hack ~class_name ~function_name:method_name
 
 
   let kind_to_sil_callflag = function
@@ -491,13 +533,13 @@ module Pvar = struct
 
   let is_global pvar = match pvar.kind with Global -> true | _ -> false
 
-  let to_sil {name; kind} =
+  let to_sil lang {name; kind} =
     let mangled = Mangled.from_string name.value in
     match kind with
     | Global ->
         Pvar.mk_global mangled
     | Local procname ->
-        let pname = Procname.to_sil procname in
+        let pname = Procname.to_sil lang procname in
         Pvar.mk mangled pname
 
 
@@ -541,14 +583,14 @@ module Struct = struct
     ; fields: Fieldname.t list
     ; methods: Procname.t list (* currently only the toplevel class will contain methods *) }
 
-  let to_sil tenv {name; fields; methods} =
+  let to_sil lang tenv {name; fields; methods} =
     let name = TypeName.to_java_sil name in
     let fields =
       List.map fields ~f:(fun fname ->
           (Fieldname.to_sil fname, Typ.to_sil fname.Fieldname.typ, Annot.Item.empty) )
     in
     (* FIXME: generate static fields *)
-    let methods = List.map methods ~f:Procname.to_sil in
+    let methods = List.map methods ~f:(Procname.to_sil lang) in
     ignore (Tenv.mk_struct tenv ~fields ~methods name)
 
 
@@ -717,7 +759,19 @@ module Exp = struct
 
   and pp_list fmt l = F.fprintf fmt "(%a)" (pp_list_with_comma pp) l
 
-  let to_sil decls_env procname exp =
+  let rec do_not_contain_regular_call exp =
+    match exp with
+    | Var _ | Lvar _ | Const _ ->
+        true
+    | Field {exp} | Cast (_, exp) ->
+        do_not_contain_regular_call exp
+    | Index (exp1, exp2) ->
+        do_not_contain_regular_call exp1 && do_not_contain_regular_call exp2
+    | Call {proc; args} ->
+        Procname.is_not_regular_proc proc && List.for_all args ~f:do_not_contain_regular_call
+
+
+  let to_sil lang decls_env procname exp =
     let rec aux e : Exp.t =
       match e with
       | Var id ->
@@ -730,7 +784,7 @@ module Exp = struct
             | None ->
                 {name; kind= Local procname}
           in
-          Lvar (Pvar.to_sil pvar)
+          Lvar (Pvar.to_sil lang pvar)
       | Field {exp; tname; fname} -> (
         match Decls.get_fieldname decls_env tname fname with
         | None ->
@@ -819,23 +873,43 @@ module Instr = struct
         L.die InternalError "Translation of a metadata instructions not supported"
 
 
-  let to_sil decls_env procname i : Sil.instr =
+  (* to be ready, an instruction should satisfy 2 properties:
+      1) regular calls should only appear as top level expr of Let instruction
+      2) Let instruction should only have this kind of expression as argument *)
+  let is_ready_for_to_sil_conversion i =
+    match i with
+    | Load {exp} ->
+        Exp.do_not_contain_regular_call exp
+    | Store {exp1; exp2} ->
+        Exp.do_not_contain_regular_call exp1 && Exp.do_not_contain_regular_call exp2
+    | Prune {exp} ->
+        Exp.do_not_contain_regular_call exp
+    | Let {exp= Call {proc; args= []}} when Procname.is_allocate_builtin proc ->
+        true
+    | Let {exp= Call {proc; args}} ->
+        (not (Procname.is_not_regular_proc proc))
+        && List.for_all args ~f:Exp.do_not_contain_regular_call
+    | Let {exp= _} ->
+        false
+
+
+  let to_sil lang decls_env procname i : Sil.instr =
     let sourcefile = decls_env.Decls.sourcefile in
     match i with
     | Load {id; exp; typ; loc} ->
         let typ = Typ.to_sil typ in
         let id = Ident.to_sil id in
-        let e = Exp.to_sil decls_env procname exp in
+        let e = Exp.to_sil lang decls_env procname exp in
         let loc = Location.to_sil sourcefile loc in
         Load {id; e; typ; root_typ= typ; loc}
     | Store {exp1; typ; exp2; loc} ->
-        let e1 = Exp.to_sil decls_env procname exp1 in
+        let e1 = Exp.to_sil lang decls_env procname exp1 in
         let typ = Typ.to_sil typ in
-        let e2 = Exp.to_sil decls_env procname exp2 in
+        let e2 = Exp.to_sil lang decls_env procname exp2 in
         let loc = Location.to_sil sourcefile loc in
         Store {e1; root_typ= typ; typ; e2; loc}
     | Prune {exp; b; loc} ->
-        let e = Exp.to_sil decls_env procname exp in
+        let e = Exp.to_sil lang decls_env procname exp in
         let loc = Location.to_sil sourcefile loc in
         Prune (e, loc, b, Ik_if {terminated= false})
     | Let {id; exp= Call {proc; args= []}; loc} when Procname.is_allocate_builtin proc ->
@@ -861,10 +935,10 @@ module Instr = struct
                    (fun fmt () ->
                      F.fprintf fmt "the expression in %a should start with a regular call" pp i ) )
         in
-        let pname = Procname.to_sil procname in
+        let pname = Procname.to_sil lang procname in
         let formals_types = List.map procname.formals_types ~f:Typ.to_sil in
         let result_type = Typ.to_sil procname.result_type in
-        let args = List.map ~f:(Exp.to_sil decls_env procname) args in
+        let args = List.map ~f:(Exp.to_sil lang decls_env procname) args in
         let args =
           match List.zip args formals_types with
           | Ok l ->
@@ -883,7 +957,7 @@ module Instr = struct
 end
 
 module Terminator = struct
-  type node_call = {label: NodeName.t; ssa_args: Ident.t list}
+  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t = Ret of Exp.t | Jump of node_call list | Throw of Exp.t
 
@@ -896,11 +970,15 @@ module Terminator = struct
           | [] ->
               NodeName.pp fmt label
           | _ ->
-              F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Ident.pp) ssa_args
+              F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Exp.pp) ssa_args
         in
         F.fprintf fmt "jmp %a" (pp_list_with_comma pp_block_call) l
     | Throw e ->
         F.fprintf fmt "throw %a" Exp.pp e
+
+
+  let do_not_contain_regular_call t =
+    match t with Ret exp | Throw exp -> Exp.do_not_contain_regular_call exp | Jump _ -> true
 
 
   let of_sil decls tenv label_of_node ~opt_last succs =
@@ -924,20 +1002,32 @@ module Node = struct
     ; last_loc: Location.t
     ; label_loc: Location.t }
 
-  let to_sil decls_env procname pdesc node =
+  (* see the specification of Instr.is_ready_for_to_sil_conversion above *)
+  let is_ready_for_to_sil_conversion node =
+    Terminator.do_not_contain_regular_call node.last
+    && List.for_all node.instrs ~f:Instr.is_ready_for_to_sil_conversion
+
+
+  let to_sil lang decls_env procname pdesc node =
     if not (List.is_empty node.ssa_parameters) then
       raise
         (ToSilTransformationError
            (fun fmt () ->
              F.fprintf fmt "Node %a should not have SSA parameters" NodeName.pp node.label ) ) ;
-    let instrs = List.map ~f:(Instr.to_sil decls_env procname) node.instrs in
+    let instrs = List.map ~f:(Instr.to_sil lang decls_env procname) node.instrs in
     let loc = Location.to_sil decls_env.Decls.sourcefile node.label_loc in
     let nkind = Procdesc.Node.Stmt_node MethodBody in
     Procdesc.create_node pdesc loc nkind instrs
 
 
   let pp fmt node =
-    F.fprintf fmt "@\n@[<v 4>#%a:" NodeName.pp node.label ;
+    let pp_label_with_ssa_params fmt =
+      if List.is_empty node.ssa_parameters then F.fprintf fmt "#%a:" NodeName.pp node.label
+      else
+        F.fprintf fmt "#%a(%a):" NodeName.pp node.label (pp_list_with_comma Ident.pp)
+          node.ssa_parameters
+    in
+    F.fprintf fmt "@\n@[<v 4>%t" pp_label_with_ssa_params ;
     List.iter ~f:(F.fprintf fmt "@\n%a" Instr.pp) node.instrs ;
     F.fprintf fmt "@\n%a" Terminator.pp node.last ;
     if not (List.is_empty node.exn_succs) then
@@ -986,39 +1076,55 @@ module Procdesc = struct
     ; params: VarName.t list
     ; exit_loc: Location.t }
 
-  let to_sil decls_env cfgs {procname; nodes; start; params; exit_loc} =
+  let is_ready_for_to_sil_conversion {nodes} =
+    List.for_all nodes ~f:Node.is_ready_for_to_sil_conversion
+
+
+  let to_sil lang decls_env cfgs {procname; nodes; start; params; exit_loc} =
     let sourcefile = decls_env.Decls.sourcefile in
-    let sil_procname = Procname.to_sil procname in
-    let pattributes = ProcAttributes.default sourcefile sil_procname in
-    let locals =
-      match
-        List.map2 procname.formals_types params ~f:(fun typ vname ->
-            let name = Mangled.from_string vname.VarName.value in
-            let typ = Typ.to_sil typ in
-            ProcAttributes.
-              {name; typ; modify_in_block= false; is_constexpr= false; is_declared_unused= false} )
-      with
+    let sil_procname = Procname.to_sil lang procname in
+    let sil_ret_type = Typ.to_sil procname.result_type in
+    let definition_loc = Location.to_sil sourcefile procname.qualified_name.name.loc in
+    let formals =
+      let mk_formal typ vname =
+        let name = Mangled.from_string vname.VarName.value in
+        let typ = Typ.to_sil typ in
+        (name, typ, Annot.Item.empty)
+      in
+      match List.map2 procname.formals_types params ~f:mk_formal with
       | Ok l ->
           l
       | Unequal_lengths ->
           L.die InternalError "procname %a has not the same number of arg names and arg types"
             Procname.pp_qualified_name procname.qualified_name
     in
-    let () = pattributes.locals <- locals in
+    let pattributes =
+      { (ProcAttributes.default sourcefile sil_procname) with
+        is_defined= true
+      ; formals
+      ; locals= [] (* Locals are not yet supported *)
+      ; ret_type= sil_ret_type
+      ; loc= definition_loc }
+    in
     let pdesc = Cfg.create_proc_desc cfgs pattributes in
+    (* Create standalone start and end nodes. Note that SIL start node does not correspond to the start node in
+       Textual. The latter is more like a _first node_. *)
+    let start_node = Procdesc.create_node pdesc definition_loc Procdesc.Node.Start_node [] in
+    Procdesc.set_start_node pdesc start_node ;
+    let exit_loc = Location.to_sil sourcefile exit_loc in
+    let exit_node = Procdesc.create_node pdesc exit_loc Procdesc.Node.Exit_node [] in
+    Procdesc.set_exit_node pdesc exit_node ;
     (* FIXME: special exit nodes should be added *)
     let node_map : (string, Node.t * Procdesc.Node.t) Hashtbl.t = Hashtbl.create 17 in
     List.iter nodes ~f:(fun node ->
-        let data = (node, Node.to_sil decls_env procname pdesc node) in
+        let data = (node, Node.to_sil lang decls_env procname pdesc node) in
         let key = node.Node.label.value in
         ignore (Hashtbl.replace node_map key data) ) ;
     ( match Hashtbl.find_opt node_map start.value with
-    | Some (_, start_node) ->
-        Procdesc.set_start_node pdesc start_node
+    | Some (_, first_node) ->
+        Procdesc.node_set_succs pdesc start_node ~normal:[first_node] ~exn:[]
     | None ->
         L.die InternalError "start node %a npt found" NodeName.pp start ) ;
-    let exit_loc = Location.to_sil sourcefile exit_loc in
-    let exit_node = Procdesc.create_node pdesc exit_loc Procdesc.Node.Exit_node [] in
     (* TODO: register this exit node *)
     let normal_succ : Terminator.t -> Procdesc.Node.t list = function
       | Ret _ ->
@@ -1086,10 +1192,86 @@ module Procdesc = struct
     {procname; nodes; start; params; exit_loc}
 end
 
+module Attr = struct
+  type t = {name: string; value: string; loc: Location.t}
+
+  let name {name} = name
+
+  let value {value} = value
+
+  let source_language = "source_language"
+
+  let mk_source_language value =
+    {name= source_language; value= Lang.to_string value; loc= Location.Unknown}
+
+
+  let pp fmt {name; value} = F.fprintf fmt "%s = \"%s\"" name value
+
+  let pp_with_loc fmt t = F.fprintf fmt "%a: %a" Location.pp t.loc pp t
+end
+
+module SsaVerification = struct
+  type error = SsaError of {id: Ident.t; locations: Location.Set.t}
+
+  let pp_error fmt error =
+    match error with
+    | SsaError {id; locations} ->
+        let pp_location fmt loc = F.fprintf fmt "[%a]" Location.pp loc in
+        F.fprintf fmt "ident %a is defined more than once at locations %a" Ident.pp id
+          (F.pp_print_list ~pp_sep:(fun fmt () -> F.pp_print_string fmt ", ") pp_location)
+          (Location.Set.elements locations)
+
+
+  let run (pdesc : Procdesc.t) =
+    let collect seen id loc =
+      match Ident.Map.find_opt id seen with
+      | None ->
+          Ident.Map.add id (Location.Set.singleton loc) seen
+      | Some locations ->
+          Ident.Map.add id (Location.Set.add loc locations) seen
+    in
+    let collect_defs_in_instr seen (instr : Instr.t) =
+      match instr with
+      | Load {id; loc} | Let {id; loc} ->
+          collect seen id loc
+      | Store _ | Prune _ ->
+          seen
+    in
+    let collect_defs_in_phi_args seen loc (ssa_parameters : Ident.t list) =
+      List.fold ssa_parameters ~init:seen ~f:(fun seen id -> collect seen id loc)
+    in
+    let collect_defs_in_node seen (node : Node.t) =
+      let seen = collect_defs_in_phi_args seen node.label_loc node.ssa_parameters in
+      List.fold node.instrs ~init:seen ~f:collect_defs_in_instr
+    in
+    let seen = List.fold pdesc.nodes ~f:collect_defs_in_node ~init:Ident.Map.empty in
+    let errors =
+      Ident.Map.fold
+        (fun id locations errors ->
+          if Location.Set.cardinal locations > 1 then SsaError {id; locations} :: errors else errors
+          )
+        seen []
+    in
+    if not (List.is_empty errors) then
+      let pp fmt () =
+        F.fprintf fmt "%a"
+          (F.pp_print_list ~pp_sep:(fun fmt () -> F.pp_print_string fmt "\n  ") pp_error)
+          errors
+      in
+      raise (ToSilTransformationError pp)
+end
+
 module Module = struct
   type decl = Global of Pvar.t | Struct of Struct.t | Procname of Procname.t | Proc of Procdesc.t
 
-  type t = {decls: decl list; sourcefile: SourceFile.t}
+  type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
+
+  let lang {attrs} =
+    let lang_attr =
+      List.find attrs ~f:(fun (attr : Attr.t) -> String.equal attr.name Attr.source_language)
+    in
+    lang_attr |> Option.bind ~f:(fun x -> Attr.value x |> Lang.of_string)
+
 
   let make_decls {decls; sourcefile} =
     let decls_env = Decls.init sourcefile in
@@ -1109,23 +1291,34 @@ module Module = struct
 
 
   let to_sil module_ =
-    let decls_env = make_decls module_ in
-    let cfgs = Cfg.create () in
-    let tenv = Tenv.create () in
-    List.iter module_.decls ~f:(fun decl ->
-        match decl with
-        | Global _ ->
-            ()
-        | Struct strct ->
-            Struct.to_sil tenv strct
-        | Procname _ ->
-            ()
-        | Proc pdesc ->
-            Procdesc.to_sil decls_env cfgs pdesc ) ;
-    (cfgs, tenv)
+    match lang module_ with
+    | None ->
+        raise
+          (ToSilTransformationError
+             (fun fmt _ -> F.fprintf fmt "Missing or unsupported source_language attribute") )
+    | Some lang ->
+        let decls_env = make_decls module_ in
+        let cfgs = Cfg.create () in
+        let tenv = Tenv.create () in
+        List.iter module_.decls ~f:(fun decl ->
+            match decl with
+            | Global _ ->
+                ()
+            | Struct strct ->
+                Struct.to_sil lang tenv strct
+            | Procname _ ->
+                ()
+            | Proc pdesc ->
+                if not (Procdesc.is_ready_for_to_sil_conversion pdesc) then
+                  (* we only run SSA verification if the to_sil conversion needs
+                     extra transformation, because some .sil files that are generated by
+                     Java examples are not in SSA *)
+                  SsaVerification.run pdesc ;
+                Procdesc.to_sil lang decls_env cfgs pdesc ) ;
+        (cfgs, tenv)
 
 
-  let of_sil ~sourcefile tenv cfg =
+  let of_sil ~sourcefile ~lang tenv cfg =
     let env = Decls.init sourcefile in
     let decls =
       Cfg.fold_sorted cfg ~init:[] ~f:(fun decls pdesc ->
@@ -1139,8 +1332,11 @@ module Module = struct
     let decls =
       Decls.fold_procnames env ~init:decls ~f:(fun decls procname -> Procname procname :: decls)
     in
-    {decls; sourcefile}
+    let attrs = [Attr.mk_source_language lang] in
+    {attrs; decls; sourcefile}
 
+
+  let pp_attr fmt attr = F.fprintf fmt "attribute %a@\n@\n" Attr.pp attr
 
   let pp_decl fmt = function
     | Global pvar ->
@@ -1153,7 +1349,10 @@ module Module = struct
         F.fprintf fmt "type %a@\n@\n" Struct.pp struct_
 
 
-  let pp fmt module_ = List.iter ~f:(pp_decl fmt) module_.decls
+  let pp fmt module_ =
+    List.iter ~f:(pp_attr fmt) module_.attrs ;
+    List.iter ~f:(pp_decl fmt) module_.decls
+
 
   let pp_copyright fmt =
     F.fprintf fmt "// \n" ;
@@ -1169,7 +1368,7 @@ module Module = struct
         let fmt = F.formatter_of_out_channel oc in
         let sourcefile = SourceFile.create filename in
         pp_copyright fmt ;
-        pp fmt (of_sil ~sourcefile tenv cfg) ;
+        pp fmt (of_sil ~sourcefile ~lang:Java tenv cfg) ;
         Format.pp_print_flush fmt () )
 end
 
