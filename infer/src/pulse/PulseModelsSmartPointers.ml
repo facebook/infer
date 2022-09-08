@@ -232,17 +232,12 @@ module SharedPtr = struct
     SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
 
 
-  let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
+  let copy_constructor (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
       model =
    fun ({path; location} as model_data) astate ->
-    let op1 = Formula.AbstractValueOperand (fst this) in
-    let op2 = Formula.AbstractValueOperand (fst other) in
-    (* self-assignment *)
-    let astate_equals = PulseArithmetic.and_equal op1 op2 astate >>|| ExecutionDomain.continue in
-    let<**> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in
-    let astate_not_equals = destructor arg ~desc model_data astate_not_equals in
-    let astate_not_equals =
-      List.concat_map astate_not_equals ~f:(fun exec_state_result ->
+    let astate = destructor arg ~desc model_data astate in
+    let astate =
+      List.concat_map astate ~f:(fun exec_state_result ->
           let<*> exec_state = exec_state_result in
           match exec_state with
           | ContinueProgram astate ->
@@ -290,6 +285,18 @@ module SharedPtr = struct
           | _ ->
               [Ok exec_state] )
     in
+    astate
+
+
+  let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
+      model =
+   fun model_data astate ->
+    let op1 = Formula.AbstractValueOperand (fst this) in
+    let op2 = Formula.AbstractValueOperand (fst other) in
+    (* self-assignment *)
+    let astate_equals = PulseArithmetic.and_equal op1 op2 astate >>|| ExecutionDomain.continue in
+    let<**> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in
+    let astate_not_equals = copy_constructor arg other ~desc model_data astate_not_equals in
     SatUnsat.to_list astate_equals @ astate_not_equals
 
 
@@ -318,15 +325,26 @@ module SharedPtr = struct
             [Ok exec_state] )
 
 
-  let assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc : model =
-   fun ({callee_procname} as model_data) ->
+  let is_rvalue callee_procname arg_index =
     let formals = IRAttributes.load_formal_types callee_procname in
-    let other_typ = List.nth formals 1 in
-    match other_typ with
-    | Some {Typ.desc= Tptr (_, Pk_rvalue_reference)} ->
-        move_assignment this other ~desc:(desc ^ " (move)") model_data
-    | _ ->
-        copy_assignment arg other ~desc:(desc ^ " (copy)") model_data
+    let other_typ = List.nth formals arg_index in
+    match other_typ with Some {Typ.desc= Tptr (_, Pk_rvalue_reference)} -> true | _ -> false
+
+
+  let copy_move_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
+      : model =
+   fun ({callee_procname} as model_data) ->
+    if is_rvalue callee_procname 1 then
+      move_assignment this other ~desc:(desc ^ " (move)") model_data
+    else copy_assignment arg other ~desc:(desc ^ " (copy)") model_data
+
+
+  let copy_move_constructor (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
+      : model =
+   fun ({callee_procname} as model_data) ->
+    if is_rvalue callee_procname 1 then
+      move_assignment this other ~desc:(desc ^ " (move)") model_data
+    else copy_constructor arg other ~desc:(desc ^ " (copy)") model_data
 
 
   let use_count this ~desc : model =
@@ -554,10 +572,10 @@ let matchers : matcher list =
     $--> SharedPtr.default_constructor ~desc:"std::shared_ptr::shared_ptr()"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
-    $--> SharedPtr.assignment ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
+    $--> SharedPtr.copy_move_constructor ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
   ; -"std" &:: "shared_ptr" &:: "operator=" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
-    $--> SharedPtr.assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
+    $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg_payload $+ capt_arg_payload
     $--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
   ; -"std" &:: "shared_ptr" &:: "~shared_ptr" $ capt_arg
