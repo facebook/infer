@@ -240,8 +240,8 @@ terminator:
 node_call:
   | label=nname
     { {label; ssa_args=[]} }
-  | label=nname LPAREN l=separated_nonempty_list(COMMA, LOCAL) RPAREN
-    { {label; ssa_args=List.map ~f:Ident.of_int l} }
+  | label=nname LPAREN ssa_args=separated_nonempty_list(COMMA, expression) RPAREN
+    { {label; ssa_args} }
 
 opt_handlers:
   | { [] }

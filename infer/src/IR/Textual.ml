@@ -957,7 +957,7 @@ module Instr = struct
 end
 
 module Terminator = struct
-  type node_call = {label: NodeName.t; ssa_args: Ident.t list}
+  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t = Ret of Exp.t | Jump of node_call list | Throw of Exp.t
 
@@ -970,7 +970,7 @@ module Terminator = struct
           | [] ->
               NodeName.pp fmt label
           | _ ->
-              F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Ident.pp) ssa_args
+              F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Exp.pp) ssa_args
         in
         F.fprintf fmt "jmp %a" (pp_list_with_comma pp_block_call) l
     | Throw e ->
@@ -1021,7 +1021,13 @@ module Node = struct
 
 
   let pp fmt node =
-    F.fprintf fmt "@\n@[<v 4>#%a:" NodeName.pp node.label ;
+    let pp_label_with_ssa_params fmt =
+      if List.is_empty node.ssa_parameters then F.fprintf fmt "#%a:" NodeName.pp node.label
+      else
+        F.fprintf fmt "#%a(%a):" NodeName.pp node.label (pp_list_with_comma Ident.pp)
+          node.ssa_parameters
+    in
+    F.fprintf fmt "@\n@[<v 4>%t" pp_label_with_ssa_params ;
     List.iter ~f:(F.fprintf fmt "@\n%a" Instr.pp) node.instrs ;
     F.fprintf fmt "@\n%a" Terminator.pp node.last ;
     if not (List.is_empty node.exn_succs) then
