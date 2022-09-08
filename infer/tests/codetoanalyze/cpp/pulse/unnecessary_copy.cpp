@@ -422,9 +422,11 @@ class MyValueOr {
     }
   }
 
-  Arr get_arr_implicit_copy() const { return get_a_ref(); }
+  Arr get_arr_implicit_cpy() const { return get_a_ref(); }
 
-  std::shared_ptr<Arr> copy_shared_ptr() const { return shared_ptr; }
+  std::shared_ptr<Arr> cpy_shared_ptr() const { return shared_ptr; }
+
+  Arr intentional_copy() const { return get_a_ref(); }
 };
 
 void call_value_or_bad(const MyValueOr& c) {
@@ -438,10 +440,12 @@ void call_value_or_ok(const MyValueOr& c) {
   g.arr[0] = 42;
 }
 
-void call_get_arr_implicit_copy_bad(const MyValueOr& c) {
-  Arr g = c.get_arr_implicit_copy();
+void call_get_arr_implicit_cpy_bad(const MyValueOr& c) {
+  Arr g = c.get_arr_implicit_cpy();
 }
 
-void call_copy_shared_ptr_ok(const MyValueOr& c) {
-  auto g = c.copy_shared_ptr();
+void call_cpy_shared_ptr_ok(const MyValueOr& c) { auto g = c.cpy_shared_ptr(); }
+
+void call_intentional_copy_ok(const MyValueOr& c) {
+  auto g = c.intentional_copy();
 }

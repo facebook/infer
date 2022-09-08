@@ -70,6 +70,10 @@ let is_cheap_to_copy tenv typ =
   || is_known_cheap_copy typ
 
 
+let has_copy_in str = String.is_substring (String.lowercase str) ~substring:"copy"
+
+let has_copy_in_name pname = has_copy_in (Procname.get_method pname)
+
 let get_return_param pdesc =
   let attrs = Procdesc.get_attributes pdesc in
   if attrs.ProcAttributes.has_added_return_param then
@@ -159,7 +163,8 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
           , (Const (Cfun procname) | Closure {name= procname})
           , (Exp.Var copy_var, copy_type) :: (source_exp, source_typ) :: _ )
           when (not (is_cheap_to_copy tenv copy_type))
-               && not (Typ.is_pointer_to_smart_pointer copy_type) -> (
+               && (not (Typ.is_pointer_to_smart_pointer copy_type))
+               && not (has_copy_in_name (Procdesc.get_proc_name proc_desc)) -> (
             let default = (astate_non_disj, exec_state) in
             match (copy_check_fn procname, get_return_param proc_desc) with
             | Some from, Some return_param -> (
