@@ -60,7 +60,7 @@ val of_abductive_access_result :
   -> 'a t
 
 val ignore_leaks :
-     ( AbductiveDomain.summary
+     ( AbductiveDomain.Summary.t
      , [< `MemoryLeak of
           AbductiveDomain.Summary.t * AbductiveDomain.t * Attribute.allocator * Trace.t * Location.t
        | `JavaResourceLeak of

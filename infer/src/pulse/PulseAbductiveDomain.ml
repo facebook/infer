@@ -1401,6 +1401,7 @@ module Summary = struct
         check_retain_cycles ~dead_addresses tenv
           {astate_before_filter with decompiler= astate0.decompiler}
       with
+      | Error (assignment_traces, value, path, location) ->
           Error
             (`RetainCycle (astate, astate_before_filter, assignment_traces, value, path, location))
       | Ok () -> (
