@@ -185,6 +185,7 @@ module Attribute = struct
   let isl_abduced_rank = Variants.islabduced.rank
 
   let java_resource_released_rank = Variants.javaresourcereleased.rank
+
   let csharp_resource_released_rank = Variants.csharpresourcereleased.rank
 
   let must_be_initialized_rank = Variants.mustbeinitialized.rank
@@ -464,9 +465,9 @@ module Attribute = struct
         L.die InternalError "Unexpected attribute %a in the summary of %a" pp attr Procname.pp
           proc_name
     | JavaResourceReleased ->
-            JavaResourceReleased
+        JavaResourceReleased
     | CSharpResourceReleased ->
-            CSharpResourceReleased
+        CSharpResourceReleased
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | AlwaysReachable
@@ -488,8 +489,7 @@ module Attribute = struct
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _ ->
         true
-    | JavaResource _, _
-    | CSharpResource _, _ ->
+    | JavaResource _, _ | CSharpResource _, _ ->
         is_released
     | _ ->
         false
@@ -525,9 +525,9 @@ module Attribute = struct
     | TaintSanitized set when TaintSanitizedSet.is_empty set ->
         L.die InternalError "Unexpected attribute %a." pp attr
     | JavaResourceReleased ->
-            Some JavaResourceReleased
+        Some JavaResourceReleased
     | CSharpResourceReleased ->
-            Some CSharpResourceReleased
+        Some CSharpResourceReleased
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Allocated _
@@ -688,6 +688,7 @@ module Attributes = struct
     || mem_by_rank Attribute.csharp_resource_released_rank attrs
     || mem_by_rank Attribute.propagate_taint_from_rank attrs
 
+
   let is_always_reachable = mem_by_rank Attribute.always_reachable_rank
 
   let is_uninitialized = mem_by_rank Attribute.uninitialized_rank
@@ -772,7 +773,8 @@ module Attributes = struct
     Option.value_map ~default:None allocated_opt ~f:(fun (allocator, _) ->
         let invalidation = get_invalid attributes in
         let is_released =
-            is_java_resource_released attributes || is_csharp_resource_released attributes in
+          is_java_resource_released attributes || is_csharp_resource_released attributes
+        in
         if Attribute.alloc_free_match allocator invalidation is_released then None
         else allocated_opt )
 

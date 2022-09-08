@@ -440,8 +440,8 @@ let csharp_resource_release ~recursive address astate =
     if_valid_access_then_eval field_addr Dereference astate
   in
   let rec loop seen obj astate =
-    if AbstractValue.Set.mem obj seen || AddressAttributes.is_csharp_resource_released obj astate then
-      astate
+    if AbstractValue.Set.mem obj seen || AddressAttributes.is_csharp_resource_released obj astate
+    then astate
     else
       let astate = AddressAttributes.csharp_resource_release obj astate in
       match if_valid_field_then_load obj ModeledField.delegated_release astate with

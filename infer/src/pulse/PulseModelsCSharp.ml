@@ -13,7 +13,10 @@ open PulseModelsImport
 module StringSet = Caml.Set.Make (String)
 
 let mk_csharp_field namespace clazz field =
-  Fieldname.make (Typ.CSharpClass (CSharpClassName.make ~namespace:(Some namespace) ~classname:clazz)) field
+  Fieldname.make
+    (Typ.CSharpClass (CSharpClassName.make ~namespace:(Some namespace) ~classname:clazz))
+    field
+
 
 let write_field path field new_val location addr astate =
   let* astate, field_addr =
@@ -46,6 +49,7 @@ let call_may_throw_exception (exn : CSharpClassName.t) : model =
   let<*> astate = PulseOperations.write_deref path location ~ref ~obj astate in
   [Ok (ExceptionRaised astate)]
 
+
 (* let throw : model = fun _ astate -> [Ok (ExceptionRaised astate)] *)
 
 module Collection = struct
@@ -57,7 +61,9 @@ module Collection = struct
 
   let snd_field = mk_csharp_field namespace_name class_name "__infer_model_backing_collection_snd"
 
-  let is_empty_field = mk_csharp_field namespace_name class_name "__infer_model_backing_collection_empty"
+  let is_empty_field =
+    mk_csharp_field namespace_name class_name "__infer_model_backing_collection_empty"
+
 
   let init ~desc this : model =
    fun {path; location} astate ->
@@ -233,7 +239,7 @@ module Collection = struct
       PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
       >>== PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand elem)
-            (AbstractValueOperand snd_val)
+             (AbstractValueOperand snd_val)
       >>|| ExecutionDomain.continue
     in
     SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
@@ -314,21 +320,21 @@ module Collection = struct
       PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
         (AbstractValueOperand fst_val) astate
       >>== PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand elem)
-            (AbstractValueOperand snd_val)
+             (AbstractValueOperand snd_val)
       >>|| ExecutionDomain.continue
     in
     (* case 2: given element is equal to fst_field *)
     let astate2 =
       PulseArithmetic.and_positive found_val astate
       >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
-            (AbstractValueOperand fst_val)
+             (AbstractValueOperand fst_val)
       >>|| ExecutionDomain.continue
     in
     (* case 3: given element is equal to snd_field *)
     let astate3 =
       PulseArithmetic.and_positive found_val astate
       >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand elem)
-            (AbstractValueOperand snd_val)
+             (AbstractValueOperand snd_val)
       >>|| ExecutionDomain.continue
     in
     SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
@@ -387,7 +393,8 @@ module Resource = struct
     let exn_state =
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
           call_may_throw_exception (CSharpClassName.from_string cn) model_data astate )
-    in delegated_state @ exn_state
+    in
+    delegated_state @ exn_state
 
 
   let _allocate ~exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
@@ -397,43 +404,52 @@ module Resource = struct
 
 
   let _update_result_ok_state ~(f : AbductiveDomain.t -> AbductiveDomain.t)
-      (results : ExecutionDomain.t AccessResult.t list) :
-          ExecutionDomain.t AccessResult.t list =
-              List.map results ~f:(PulseResult.map
-                  ~f:(function
-                      | ContinueProgram astate -> ContinueProgram (f astate)
-                      | result -> result)) (* I think this function needs to match all the cases *)
+      (results : ExecutionDomain.t AccessResult.t list) : ExecutionDomain.t AccessResult.t list =
+    List.map results
+      ~f:
+        (PulseResult.map ~f:(function
+          | ContinueProgram astate ->
+              ContinueProgram (f astate)
+          | result ->
+              result ) )
+
+
+  (* I think this function needs to match all the cases *)
 
   let model_with_analysis args
       {analysis_data= {analyze_dependency; tenv; proc_desc}; path; callee_procname; location; ret}
-          astate = 
-              let actuals = List.map args
-                ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} -> (arg_payload, typ) )
-              in
-              let callee_data = analyze_dependency callee_procname in
-              (* let _ = Printf.printf "analysis occurs here.  Found callee_data for %s? : %b \n" *)
-              (*     (Procname.to_string callee_procname) (Option.is_some callee_data) *)
-              (* in *)
-              match callee_data with
-              | Some _ -> (* if we have what we need for a callee match, use it *)
-                  PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
-                    ~callee_data location callee_procname ~ret ~actuals
-                    ~formals_opt:None ~call_kind:`ResolvedProcname astate
-                  |> fst
-              | None -> Basic.ok_continue astate (* is this too generic? *)
+      astate =
+    let actuals =
+      List.map args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+          (arg_payload, typ) )
+    in
+    let callee_data = analyze_dependency callee_procname in
+    (* let _ = Printf.printf "analysis occurs here.  Found callee_data for %s? : %b \n" *)
+    (*     (Procname.to_string callee_procname) (Option.is_some callee_data) *)
+    (* in *)
+    match callee_data with
+    | Some _ ->
+        (* if we have what we need for a callee match, use it *)
+        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location
+          callee_procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+        |> fst
+    | None ->
+        Basic.ok_continue astate (* is this too generic? *)
 
-  let allocate_with_analysis 
-      (ProcnameDispatcher.Call.FuncArg.{arg_payload=this_arg_payload} as this_arg) arguments :
-          model =
-      fun model_data astate ->
-          (* this (probably) marks the this_arg as allocated, and is passed to the calls *)
-          let allocated_astate = allocate_state this_arg_payload model_data astate in
-          model_with_analysis (this_arg :: arguments) model_data allocated_astate
-          (* Doesn't use allocate_aux, but given the parameters allocate_aux would have been given,
-             it reduces to the same thing. *)
-    
 
-          (* this doesn't even check if the resource is allocated!? *)
+  let allocate_with_analysis
+      (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_arg_payload} as this_arg) arguments :
+      model =
+   fun model_data astate ->
+    (* this (probably) marks the this_arg as allocated, and is passed to the calls *)
+    let allocated_astate = allocate_state this_arg_payload model_data astate in
+    model_with_analysis (this_arg :: arguments) model_data allocated_astate
+
+
+  (* Doesn't use allocate_aux, but given the parameters allocate_aux would have been given,
+     it reduces to the same thing. *)
+
+  (* this doesn't even check if the resource is allocated!? *)
   let use ~exn_class_name : model =
     let exn = CSharpClassName.from_string exn_class_name in
     fun model_data astate ->
@@ -443,21 +459,22 @@ module Resource = struct
   let _release ~exn_class_name this : model =
    fun model_data astate ->
     let ok_state =
-        PulseOperations.csharp_resource_release ~recursive:true (fst this) astate
-              |> Basic.ok_continue
+      PulseOperations.csharp_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
     in
     let exn_state =
       Option.value_map exn_class_name ~default:[] ~f:(fun cn ->
           call_may_throw_exception (CSharpClassName.from_string cn) model_data astate )
-    in ok_state @ exn_state
+    in
+    ok_state @ exn_state
 
-  let release_with_analysis 
-      (ProcnameDispatcher.Call.FuncArg.{arg_payload=this_arg_payload} as this_arg) :
-          model =
-      fun model_data astate ->
-          let released_astate = PulseOperations.csharp_resource_release
-                                  ~recursive:true (fst this_arg_payload) astate in
-          model_with_analysis [ this_arg ] model_data released_astate
+
+  let release_with_analysis
+      (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_arg_payload} as this_arg) : model =
+   fun model_data astate ->
+    let released_astate =
+      PulseOperations.csharp_resource_release ~recursive:true (fst this_arg_payload) astate
+    in
+    model_with_analysis [this_arg] model_data released_astate
 
 
   let _release_this_only this : model =
@@ -497,26 +514,27 @@ let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model =
   in
   astate_null @ astate_not_null
 
-let iDisposablesIgnore = 
-    [ "System.IO.MemoryStream"
-    ; "System.IO.StringReader"
-    ; "System.IO.StringWriter" ]
+
+let iDisposablesIgnore =
+  ["System.IO.MemoryStream"; "System.IO.StringReader"; "System.IO.StringWriter"]
 
 
-let input_resource_usage_modeled =
-    StringSet.of_list [ "WriteByte"; "Write"; "Read" ]
+let input_resource_usage_modeled = StringSet.of_list ["WriteByte"; "Write"; "Read"]
 
 let implements_dictionary tenv name =
-    let collection_type = "System.Collections.IDictionary" in
-    PatternMatch.CSharp.implements collection_type tenv name
+  let collection_type = "System.Collections.IDictionary" in
+  PatternMatch.CSharp.implements collection_type tenv name
+
 
 let implements_collection tenv name =
-    let collection_type = "System.Collections.Generic.ICollection`1<!0>" in
-    PatternMatch.CSharp.implements collection_type tenv name
+  let collection_type = "System.Collections.Generic.ICollection`1<!0>" in
+  PatternMatch.CSharp.implements collection_type tenv name
+
 
 let implements_disposable_not_enumerator tenv name =
-    PatternMatch.CSharp.implements "System.IDisposable" tenv name &&
-    not (PatternMatch.CSharp.implements "System.Collections.Generic.IEnumerator`1<!0>" tenv name)
+  PatternMatch.CSharp.implements "System.IDisposable" tenv name
+  && not (PatternMatch.CSharp.implements "System.Collections.Generic.IEnumerator`1<!0>" tenv name)
+
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
@@ -529,31 +547,32 @@ let matchers : matcher list =
     $--> string_is_null_or_whitespace ~desc:"String.IsNullOrEmpty"
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Diagnostics.Debug")
     &:: "Assert" <>$ capt_arg $--> Basic.assert_
-  (* IDisposables that take care of passed resource (stream) *)
-  ; +map_context_tenv (PatternMatch.CSharp.implements_one_of
-      [ "System.IO.StreamReader"
-      ; "System.IO.StreamWriter"
-      ; "System.IO.BinaryReader"
-      ; "System.IO.BinaryWriter"
-      ; "System.Net.Http.HttpClient"
-        ])
+    (* IDisposables that take care of passed resource (stream) *)
+  ; +map_context_tenv
+       (PatternMatch.CSharp.implements_one_of
+          [ "System.IO.StreamReader"
+          ; "System.IO.StreamWriter"
+          ; "System.IO.BinaryReader"
+          ; "System.IO.BinaryWriter"
+          ; "System.Net.Http.HttpClient" ] )
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:None ()
-  (* Things that may throw an exception *)
+    (* Things that may throw an exception *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Net.Sockets.NetworkStream")
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:(Some "System.IO.IOException") ()
-  (* If a stream function is used, like Read, model the possibility for an exception *)
+    (* If a stream function is used, like Read, model the possibility for an exception *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.Stream")
     &::+ (fun _ function_name -> StringSet.mem function_name input_resource_usage_modeled)
-    <>$ any_arg $+...$--> Resource.use ~exn_class_name:"System.IO.IOException"
-  (* Some IDisposables that don't _need_ to be disposed, so we treat them as nops *)
+    <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"System.IO.IOException"
+    (* Some IDisposables that don't _need_ to be disposed, so we treat them as nops *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
     &:: ".ctor" <>$ any_arg $+...$--> Basic.skip
-  (* Base case for IDisposables:
-      model the allocation and deallocation and if code exists analyze it.
-      we don't model enumerators, as they are an exception to the general IDisposable rule,
-        instead we want to analyze the code for the enumerator *)
+    (* Base case for IDisposables:
+        model the allocation and deallocation and if code exists analyze it.
+        we don't model enumerators, as they are an exception to the general IDisposable rule,
+          instead we want to analyze the code for the enumerator *)
   ; +map_context_tenv implements_disposable_not_enumerator
     &:: ".ctor" <>$ capt_arg $++$--> Resource.allocate_with_analysis
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IDisposable")
@@ -562,16 +581,16 @@ let matchers : matcher list =
     &:: "Dispose" <>$ capt_arg $--> Resource.release_with_analysis
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IAsyncDisposable")
     &:: "DisposeAsync" <>$ capt_arg $--> Resource.release_with_analysis
-
-  (* Models for collections and dictionaries *)
+    (* Models for collections and dictionaries *)
   ; +map_context_tenv implements_collection
     &:: ".ctor" $ capt_arg_payload
     $--> Collection.init ~desc:"Collection..ctor()"
-  ; +map_context_tenv implements_dictionary 
+  ; +map_context_tenv implements_dictionary
     &:: "Add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $--> Collection.put ~desc:"Dictionary.Add()"
   ; +map_context_tenv implements_dictionary
-    &:: "get_Item" <>$ capt_arg_payload $+ capt_arg_payload $--> Collection.get ~desc:"Dictionary.[]"
+    &:: "get_Item" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> Collection.get ~desc:"Dictionary.[]"
   ; +map_context_tenv implements_collection
     &:: "Add" $ capt_arg_payload $+ capt_arg_payload
     $--> Collection.add ~desc:"Collection.Add"
@@ -584,10 +603,8 @@ let matchers : matcher list =
   ; +map_context_tenv implements_collection
     &:: "Clear" $ capt_arg_payload
     $--> Collection.clear ~desc:"Collection.Clear()"
-
     (* This is needed for constructors that call out to the base constructor for objects. *)
     (* In particular, it was added for analyzing the constructors of IDisposables,
        otherwise the allocation of the IDisposable is lost at the call to the Object..ctor *)
   ; +map_context_tenv (fun _ -> String.equal "System.Object")
-    &:: ".ctor" <>$ any_arg $--> Basic.skip
-    ]
+    &:: ".ctor" <>$ any_arg $--> Basic.skip ]

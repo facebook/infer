@@ -123,8 +123,10 @@ type t =
       ; location: Location.t }
   | ErlangError of ErlangError.t
   | ReadUninitializedValue of read_uninitialized_value
-  | JavaResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
-  | CSharpResourceLeak of {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | JavaResourceLeak of
+      {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | CSharpResourceLeak of
+      {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t
@@ -736,9 +738,9 @@ let get_issue_type ~latent issue_type =
         IssueType.pulse_memory_leak_cpp
     | JavaResource _ | CSharpResource _ | ObjCAlloc ->
         L.die InternalError
-          "Memory leaks should not have a Java resource, C sharp, or Objective-C alloc as allocator" )
-  | JavaResourceLeak _, false
-  | CSharpResourceLeak _, false ->
+          "Memory leaks should not have a Java resource, C sharp, or Objective-C alloc as allocator"
+    )
+  | JavaResourceLeak _, false | CSharpResourceLeak _, false ->
       IssueType.pulse_resource_leak
   | RetainCycle _, false ->
       IssueType.retain_cycle
