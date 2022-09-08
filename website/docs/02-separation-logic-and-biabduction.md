@@ -160,9 +160,9 @@ logic. Assume we have the following spec for a function
 ---
 
 and by analyzing the caller function, we compute that before the call of
-<Math code="\\( f \\)" />, the formula <Math code="\\( CallingState \\)" />
-hold. Then to utilize the specification of <Math code="\\( f \\)" /> the
-following implication must holds:
+<Math code="\\( f \\)" />, the formula <Math code="\\( CallingState \\)" /> 
+holds. Then to utilize the specification of <Math code="\\( f \\)" /> the
+following implication must hold:
 
 ---
 
