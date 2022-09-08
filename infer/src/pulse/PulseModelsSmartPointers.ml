@@ -232,17 +232,12 @@ module SharedPtr = struct
     SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
 
 
-  let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
+  let copy_constructor (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
       model =
    fun ({path; location} as model_data) astate ->
-    let op1 = Formula.AbstractValueOperand (fst this) in
-    let op2 = Formula.AbstractValueOperand (fst other) in
-    (* self-assignment *)
-    let astate_equals = PulseArithmetic.and_equal op1 op2 astate >>|| ExecutionDomain.continue in
-    let<**> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in
-    let astate_not_equals = destructor arg ~desc model_data astate_not_equals in
-    let astate_not_equals =
-      List.concat_map astate_not_equals ~f:(fun exec_state_result ->
+    let astate = destructor arg ~desc model_data astate in
+    let astate =
+      List.concat_map astate ~f:(fun exec_state_result ->
           let<*> exec_state = exec_state_result in
           match exec_state with
           | ContinueProgram astate ->
@@ -290,6 +285,18 @@ module SharedPtr = struct
           | _ ->
               [Ok exec_state] )
     in
+    astate
+
+
+  let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
+      model =
+   fun model_data astate ->
+    let op1 = Formula.AbstractValueOperand (fst this) in
+    let op2 = Formula.AbstractValueOperand (fst other) in
+    (* self-assignment *)
+    let astate_equals = PulseArithmetic.and_equal op1 op2 astate >>|| ExecutionDomain.continue in
+    let<**> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in
+    let astate_not_equals = copy_constructor arg other ~desc model_data astate_not_equals in
     SatUnsat.to_list astate_equals @ astate_not_equals
 
 
@@ -318,15 +325,26 @@ module SharedPtr = struct
             [Ok exec_state] )
 
 
-  let assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc : model =
-   fun ({callee_procname} as model_data) ->
+  let is_rvalue callee_procname arg_index =
     let formals = IRAttributes.load_formal_types callee_procname in
-    let other_typ = List.nth formals 1 in
-    match other_typ with
-    | Some {Typ.desc= Tptr (_, Pk_rvalue_reference)} ->
-        move_assignment this other ~desc:(desc ^ " (move)") model_data
-    | _ ->
-        copy_assignment arg other ~desc:(desc ^ " (copy)") model_data
+    let other_typ = List.nth formals arg_index in
+    match other_typ with Some {Typ.desc= Tptr (_, Pk_rvalue_reference)} -> true | _ -> false
+
+
+  let copy_move_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
+      : model =
+   fun ({callee_procname} as model_data) ->
+    if is_rvalue callee_procname 1 then
+      move_assignment this other ~desc:(desc ^ " (move)") model_data
+    else copy_assignment arg other ~desc:(desc ^ " (copy)") model_data
+
+
+  let copy_move_constructor (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
+      : model =
+   fun ({callee_procname} as model_data) ->
+    if is_rvalue callee_procname 1 then
+      move_assignment this other ~desc:(desc ^ " (move)") model_data
+    else copy_constructor arg other ~desc:(desc ^ " (copy)") model_data
 
 
   let use_count this ~desc : model =
@@ -352,53 +370,18 @@ module SharedPtr = struct
             [Ok exec_state] )
 
 
-  let match_arguments actuals (proc : Procname.t) : bool =
-    let candidate = IRAttributes.load_formal_types proc in
-    (* Check if the formal arguments of the candidate function bind the actual arguments *)
-    List.equal Typ.compatible_match candidate actuals
-
-
-  let call_constructor class_name actuals args exp
-      {analysis_data; dispatch_call_eval_args; path; location; ret} astate =
-    let candidates = Tenv.find_cpp_constructor analysis_data.tenv class_name in
-    match List.find candidates ~f:(match_arguments actuals) with
-    | Some constructor ->
-        L.d_printfln "Constructor found: %a" Procname.pp_unique_id constructor ;
-        dispatch_call_eval_args analysis_data path ret exp
-          (List.map args ~f:(fun x ->
-               (x.PulseAliasSpecialization.FuncArg.exp, x.PulseAliasSpecialization.FuncArg.typ) ) )
-          args location CallFlags.default astate (Some constructor)
-    | None ->
-        (* In theory, with a precise overloading resolution, it shouldn't go here *)
-        L.d_printfln "Constructor not found" ;
-        astate |> Basic.ok_continue
-
-
-  let alloc_value_address this (typ : Typ.t) ~desc {analysis_data; path; location} astate =
-    (* alloc an address for some object *)
-    let value_address = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
-    let astate =
-      PulseTaintOperations.taint_allocation analysis_data.tenv path location ~typ_desc:typ.desc
-        ~alloc_desc:desc ~allocator:(Some CppNew) (fst value_address) astate
-    in
-    let astate = PulseOperations.add_dynamic_type typ (fst value_address) astate in
-    let+* astate = PulseArithmetic.and_positive (fst value_address) astate in
-    let+ astate, _ = write_value path location this ~value:value_address ~desc astate in
-    (astate, value_address)
-
-
   let make_shared
       (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list) ~desc :
       model =
    fun ({callee_procname; path; location} as model_data) astate ->
-    let this, args, actuals =
+    let this, args_without_this, actuals =
       match
         ( args |> List.last
         , args |> List.drop_last
         , IRAttributes.load_formal_types callee_procname |> List.drop_last )
       with
-      | Some this, Some args, Some formals ->
-          (this, args, formals)
+      | Some this, Some args_without_this, Some formals ->
+          (this, args_without_this, formals)
       | _ ->
           L.die InternalError "Not enough arguments to call make_shared"
     in
@@ -414,14 +397,15 @@ module SharedPtr = struct
     match typ.desc with
     | Tstruct class_name ->
         (* assign the value pointer to the field of the shared_ptr *)
-        let<**> astate, value_address = alloc_value_address this ~desc typ model_data astate in
+        let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
+        let<*> astate, _ = write_value path location this ~value:value_address ~desc astate in
         let typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
         (* dereferences the actual arguments if they are primitive types.
            In fact, when primitive types are passed in a function call, the frontend seems to dereference them.
            We have to simulate this part when we call the constructor.
         *)
-        let<*> astate, args =
-          PulseResult.list_fold args ~init:(astate, [])
+        let<*> astate, args_without_this =
+          PulseResult.list_fold (List.rev args_without_this) ~init:(astate, [])
             ~f:(fun
                  (astate, rev_func_args)
                  (ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= value} as arg)
@@ -437,31 +421,34 @@ module SharedPtr = struct
                   , ProcnameDispatcher.Call.FuncArg.{exp; arg_payload= new_payload; typ}
                     :: rev_func_args ) )
         in
-        let args = List.rev args in
         (* We need an expression corresponding to the value of the argument we pass to
            the constructor. See e.g. the comment in UniquePtr.destructor as well. *)
         let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-        let args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list =
-          {typ; exp= fake_exp; arg_payload= value_address} :: args
+        let args =
+          {ProcnameDispatcher.Call.FuncArg.typ; exp= fake_exp; arg_payload= value_address}
+          :: args_without_this
         in
         (* create the list of types of the actual arguments of the constructor
            Note that these types are the formal arguments of make_shared *)
         let actuals = typ :: actuals in
-        call_constructor class_name actuals args fake_exp model_data astate
-    | _ ->
-        let () = L.d_printfln "Class not found" in
-        if Int.equal (List.length actuals) 0 then
-          (* assign the value pointer to the field of the shared_ptr *)
-          let<**> astate, value_address = alloc_value_address this ~desc typ model_data astate in
-          let<++> astate =
-            assign_constant path location ~ref:value_address ~constant:IntLit.zero ~desc astate
-          in
-          astate
-        else
-          let<+> astate, _ =
-            write_value path location this ~value:(List.nth_exn args 0).arg_payload ~desc astate
-          in
-          astate
+        Basic.call_constructor class_name actuals args fake_exp model_data astate
+    | _ -> (
+        L.d_printfln "std::make_shared called on non-class type, assuming primitive type" ;
+        match args_without_this with
+        | [] ->
+            (* assign the value pointer to the field of the shared_ptr *)
+            let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
+            let<*> astate, _ = write_value path location this ~value:value_address ~desc astate in
+            let<++> astate =
+              assign_constant path location ~ref:value_address ~constant:IntLit.zero ~desc astate
+            in
+            astate
+        | first_arg :: _ ->
+            let<**> astate, address =
+              Basic.deep_copy path location ~value:first_arg.arg_payload ~desc astate
+            in
+            let<+> astate, _ = write_value path location this ~value:address ~desc astate in
+            astate )
 end
 
 module UniquePtr = struct
@@ -585,10 +572,10 @@ let matchers : matcher list =
     $--> SharedPtr.default_constructor ~desc:"std::shared_ptr::shared_ptr()"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
-    $--> SharedPtr.assignment ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
+    $--> SharedPtr.copy_move_constructor ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
   ; -"std" &:: "shared_ptr" &:: "operator=" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
-    $--> SharedPtr.assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
+    $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg_payload $+ capt_arg_payload
     $--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
   ; -"std" &:: "shared_ptr" &:: "~shared_ptr" $ capt_arg

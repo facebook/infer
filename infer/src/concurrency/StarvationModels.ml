@@ -416,6 +416,7 @@ let is_java_main_method (pname : Procname.t) =
     match (pname : Procname.t) with
     | C _
     | Erlang _
+    | Hack _
     | Linters_dummy_method
     | Block _
     | ObjC_Cpp _

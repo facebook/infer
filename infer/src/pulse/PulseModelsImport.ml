@@ -7,6 +7,7 @@
 
 open! IStd
 module IRAttributes = Attributes
+module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -111,6 +112,28 @@ module Basic = struct
     shallow_copy path location event ret_id dest_pointer_hist src_pointer_hist astate
 
 
+  let deep_copy path location ~value ~desc astate =
+    let address = (AbstractValue.mk_fresh (), Hist.add_call path location desc (snd value)) in
+    let=* astate, value_deref =
+      PulseOperations.eval_access path Read location value Dereference astate
+    in
+    let=* astate = PulseOperations.write_deref path location ~ref:address ~obj:value_deref astate in
+    let++ astate = PulseArithmetic.and_positive (fst address) astate in
+    (astate, address)
+
+
+  let alloc_value_address (typ : Typ.t) ~desc {analysis_data; path; location} astate =
+    (* alloc an address for some object *)
+    let value_address = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
+    let astate =
+      PulseTaintOperations.taint_allocation analysis_data.tenv path location ~typ_desc:typ.desc
+        ~alloc_desc:desc ~allocator:(Some CppNew) (fst value_address) astate
+    in
+    let astate = PulseOperations.add_dynamic_type typ (fst value_address) astate in
+    let++ astate = PulseArithmetic.and_positive (fst value_address) astate in
+    (astate, value_address)
+
+
   let early_exit : model =
    fun {analysis_data= {tenv; proc_desc}; location} astate ->
     let open SatUnsat.Import in
@@ -213,6 +236,36 @@ module Basic = struct
           (Typ.pp_desc (Pp.html Black))
           typ.Typ.desc ;
         ok_continue astate
+
+
+  let match_args_of_single_proc comparator actuals (proc : Procname.t) : bool =
+    (* Check if the formal arguments of the function 'proc' bind the actual arguments *)
+    let formals = IRAttributes.load_formal_types proc in
+    List.equal comparator formals actuals
+
+
+  let match_args_of_procedures comparators actuals procedures =
+    (* Check if there is any procedure in procedures where the formal arguments bind the actual arguments.
+       It tries multiple-levels of comparators (e.g., strict, loose),
+            and return the function found firstly that matches with a stricter comparator.*)
+    List.find_map comparators ~f:(fun c ->
+        List.find procedures ~f:(match_args_of_single_proc c actuals) )
+
+
+  let call_constructor class_name actuals args exp
+      {analysis_data; dispatch_call_eval_args; path; location; ret} astate =
+    let candidates = Tenv.find_cpp_constructor analysis_data.tenv class_name in
+    match match_args_of_procedures Typ.overloading_resolution actuals candidates with
+    | Some constructor ->
+        L.d_printfln "Constructor found: %a" Procname.pp_unique_id constructor ;
+        dispatch_call_eval_args analysis_data path ret exp
+          (List.map args ~f:(fun x ->
+               (x.PulseAliasSpecialization.FuncArg.exp, x.PulseAliasSpecialization.FuncArg.typ) ) )
+          args location CallFlags.default astate (Some constructor)
+    | None ->
+        (* In theory, with a precise overloading resolution, it shouldn't go here *)
+        L.d_printfln "Constructor not found" ;
+        astate |> ok_continue
 
 
   let free_or_delete operation invalidation

@@ -18,6 +18,7 @@
 
 %token AMPERSAND
 %token ASSIGN
+%token ATTRIBUTE
 %token COLON
 %token COMMA
 %token DECLARE
@@ -58,6 +59,7 @@
 %token <string> STRING
 
 %start <SourceFile.t -> Textual.Module.t> main
+%type <Attr.t> attribute
 %type <Module.decl> declaration
 %type <Procname.qualified_name> qualified_pname
 %type <ProcBaseName.t> pname
@@ -95,8 +97,8 @@
 %%
 
 main:
-  | l=declaration* EOF
-    { (fun sourcefile -> { decls=l; sourcefile}) }
+  | attrs=attribute* decls=declaration* EOF
+    { (fun sourcefile -> { attrs; decls; sourcefile }) }
 
 pname:
   | id=IDENT
@@ -123,6 +125,10 @@ qualified_pname:
     { {enclosing_class=Enclosing tname; name} }
   | name=pname
     { {enclosing_class=TopLevel; name} }
+
+attribute:
+  | ATTRIBUTE name=IDENT EQ value=STRING
+    { {name; value; loc=location_of_pos $startpos} }
 
 declaration:
   | GLOBAL name=vname
@@ -234,8 +240,8 @@ terminator:
 node_call:
   | label=nname
     { {label; ssa_args=[]} }
-  | label=nname LPAREN l=separated_nonempty_list(COMMA, LOCAL) RPAREN
-    { {label; ssa_args=List.map ~f:Ident.of_int l} }
+  | label=nname LPAREN ssa_args=separated_nonempty_list(COMMA, expression) RPAREN
+    { {label; ssa_args} }
 
 opt_handlers:
   | { [] }

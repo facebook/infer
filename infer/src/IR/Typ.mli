@@ -273,8 +273,8 @@ val equal_name : name -> name -> bool
 val equal_ignore_quals : t -> t -> bool
 (** Equality for types, but ignoring quals in it. *)
 
-val compatible_match : t -> t -> bool
-(** [compatible_match t1 t2] checks whether t1 can be converted into t2 *)
+val overloading_resolution : (t -> t -> bool) list
+(** [overloading_resolution] is a list of predicates that compare whether a type T1 binds a type T2. *)
 
 val pp_full : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type with all the details. *)
@@ -321,6 +321,8 @@ val is_cpp_class : t -> bool
 val is_pointer_to_cpp_class : t -> bool
 
 val is_pointer_to_objc_non_tagged_class : t -> bool
+
+val is_pointer_to_smart_pointer : t -> bool
 
 val is_pointer_to_void : t -> bool
 

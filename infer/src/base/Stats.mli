@@ -22,10 +22,6 @@ val incr_summary_cache_misses : unit -> unit
 
 val incr_ondemand_procs_analyzed : unit -> unit
 
-val incr_ondemand_local_cache_hits : unit -> unit
-
-val incr_ondemand_local_cache_misses : unit -> unit
-
 val add_to_proc_locker_lock_time : ExecutionDuration.t -> unit
 
 val add_to_proc_locker_unlock_time : ExecutionDuration.t -> unit
