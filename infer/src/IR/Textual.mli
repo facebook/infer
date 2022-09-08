@@ -113,7 +113,7 @@ module Instr : sig
 end
 
 module Terminator : sig
-  type node_call = {label: NodeName.t; ssa_args: Ident.t list}
+  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t = Ret of Exp.t | Jump of node_call list  (** non empty list *) | Throw of Exp.t
 end

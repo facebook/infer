@@ -35,9 +35,7 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
            Diagnostic.UnnecessaryCopy {copied_into; typ; location; copied_location; from}
          in
          PulseReport.report
-           ~is_suppressed:
-             ( String.is_substring copy_name ~substring:"copy"
-             || String.is_substring copy_name ~substring:"Copy" )
+           ~is_suppressed:(PulseNonDisjunctiveOperations.has_copy_in copy_name)
            ~latent:false proc_desc err_log diagnostic )
 
 
