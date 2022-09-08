@@ -479,6 +479,8 @@ let mk_ptsto_exp_footprint analysis_data pname tenv orig_prop (lexp, typ) max_st
         Subtype.subtypes
     | Erlang ->
         L.die InternalError "Erlang not supported"
+    | Hack ->
+        L.die InternalError "Hack not supported"
   in
   let create_ptsto footprint_part off0 =
     match (root, off0, typ.Typ.desc) with

@@ -1,5 +1,16 @@
 /* @generated */
 digraph cfg {
+"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_1" [label="1: Start objc_blockA.capture_1\nFormals:  d:D*\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+	
+
+	 "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_1" -> "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" ;
+"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_2" [label="2: Exit objc_blockA.capture_1 \n  " color=yellow style=filled]
+	
+
+"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&self:A* [line 46, column 5]\n  n$2=*&d:D* [line 46, column 13]\n  *n$1._data:D*=n$2 [line 46, column 5]\n " shape="box"]
+	
+
+	 "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" -> "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_2" ;
 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -38,17 +49,6 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_1" [label="1: Start objc_blockA.capture_1\nFormals:  d:D*\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
-	
-
-	 "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_1" -> "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" ;
-"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_2" [label="2: Exit objc_blockA.capture_1 \n  " color=yellow style=filled]
-	
-
-"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&self:A* [line 46, column 5]\n  n$2=*&d:D* [line 46, column 13]\n  *n$1._data:D*=n$2 [line 46, column 5]\n " shape="box"]
-	
-
-	 "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" -> "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_2" ;
 "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_1" [label="1: Start A.capture\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -71,20 +71,20 @@ digraph cfg {
 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" [label="2: Exit A.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" [label="3:  Call dealloc \n   n$7=*&self:A* [line 50, column 1]\n  n$8=*n$7._data:D* [line 50, column 1]\n  n$9=_fun_D.dealloc(n$8:D*) [line 50, column 1]\n  n$10=*&self:A* [line 50, column 1]\n  n$11=*n$10._b:B* [line 50, column 1]\n  n$12=_fun_B.dealloc(n$11:B*) [line 50, column 1]\n " shape="box"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" [label="3:  Call dealloc \n   n$0=*&self:A* [line 50, column 1]\n  n$1=*n$0._data:D* [line 50, column 1]\n  n$2=_fun_D.dealloc(n$1:D*) [line 50, column 1]\n  n$3=*&self:A* [line 50, column 1]\n  n$4=*n$3._b:B* [line 50, column 1]\n  n$5=_fun_B.dealloc(n$4:B*) [line 50, column 1]\n " shape="box"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
-"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" [label="4:  Call dealloc \n   n$13=*&self:A* [line 38, column 1]\n  n$14=_fun___objc_get_ref_count(n$13:A*) [line 38, column 1]\n  n$15=_fun___objc_set_ref_count(n$13:A*,(n$14 - 1):unsigned int) [line 38, column 1]\n  n$16=_fun___objc_get_ref_count(n$13:A*) [line 38, column 1]\n " shape="box"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" [label="4:  Call dealloc \n   n$6=*&self:A* [line 38, column 1]\n  n$7=_fun___objc_get_ref_count(n$6:A*) [line 38, column 1]\n  n$8=_fun___objc_set_ref_count(n$6:A*,(n$7 - 1):unsigned int) [line 38, column 1]\n  n$9=_fun___objc_get_ref_count(n$6:A*) [line 38, column 1]\n " shape="box"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" ;
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" ;
-"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$16 == 0), true); [line 38, column 1]\n " shape="invhouse"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$9 == 0), true); [line 38, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" ;
-"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$16 != 0), false); [line 38, column 1]\n " shape="invhouse"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$9 != 0), false); [line 38, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
@@ -95,20 +95,20 @@ digraph cfg {
 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" [label="3:  Call dealloc \n   n$0=*&self:B* [line 31, column 1]\n  n$1=*n$0._d:D* [line 31, column 1]\n  n$2=_fun_D.dealloc(n$1:D*) [line 31, column 1]\n " shape="box"]
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" [label="3:  Call dealloc \n   n$10=*&self:B* [line 31, column 1]\n  n$11=*n$10._d:D* [line 31, column 1]\n  n$12=_fun_D.dealloc(n$11:D*) [line 31, column 1]\n " shape="box"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" [label="4:  Call dealloc \n   n$3=*&self:B* [line 21, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:B*) [line 21, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:B*,(n$4 - 1):unsigned int) [line 21, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:B*) [line 21, column 1]\n " shape="box"]
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" [label="4:  Call dealloc \n   n$13=*&self:B* [line 21, column 1]\n  n$14=_fun___objc_get_ref_count(n$13:B*) [line 21, column 1]\n  n$15=_fun___objc_set_ref_count(n$13:B*,(n$14 - 1):unsigned int) [line 21, column 1]\n  n$16=_fun___objc_get_ref_count(n$13:B*) [line 21, column 1]\n " shape="box"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" ;
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 21, column 1]\n " shape="invhouse"]
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$16 == 0), true); [line 21, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 21, column 1]\n " shape="invhouse"]
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$16 != 0), false); [line 21, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" ;

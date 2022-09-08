@@ -21,6 +21,6 @@ parse_transform(Forms, Options) ->
     {outdir, BeamDir} = lists:keyfind(outdir, 1, Options),
     BeamFilePath = filename:join(BeamDir, FileName ++ ".beam"),
     {ok, Handle} = file:open(ListPath, [append]),
-    io:format(Handle, "~p.~n", [BeamFilePath]),
+    io:format(Handle, "~s~n", [BeamFilePath]),
     file:close(Handle),
     Forms.

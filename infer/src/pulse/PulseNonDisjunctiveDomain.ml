@@ -42,7 +42,11 @@ end
 
 type copy_spec_t =
   | Copied of
-      {typ: Typ.t; location: Location.t; heap: BaseMemory.t; from: PulseAttribute.CopyOrigin.t}
+      { typ: Typ.t
+      ; location: Location.t
+      ; copied_location: Location.t option
+      ; heap: BaseMemory.t
+      ; from: PulseAttribute.CopyOrigin.t }
   | Modified
 [@@deriving equal]
 
@@ -259,7 +263,7 @@ let get_copied = function
       in
       let is_captured copy_into =
         match (copy_into : PulseAttribute.CopiedInto.t) with
-        | IntoVar (ProgramVar pvar) ->
+        | IntoVar {copied_var= ProgramVar pvar} ->
             Captured.mem pvar captured
         | _ ->
             false
@@ -269,9 +273,9 @@ let get_copied = function
           match copy_spec with
           | Modified ->
               acc
-          | Copied {location; typ= copied_typ; from} ->
+          | Copied {location; copied_location; typ= copied_typ; from} ->
               if CopiedSet.mem copied_into modified || is_captured copied_into then acc
-              else (copied_into, copied_typ, location, from) :: acc )
+              else (copied_into, copied_typ, location, copied_location, from) :: acc )
         copy_map []
 
 
@@ -289,12 +293,17 @@ let get_const_refable_parameters = function
         parameter_map []
 
 
-let add_var_elt copied_var ~source_addr_opt (res : copy_spec_t) astate =
+let add_var_elt copied_var ~source_addr_opt ~source_opt (res : copy_spec_t) astate =
   { astate with
-    copy_map= CopyMap.add {copied_into= IntoVar copied_var; source_addr_opt} res astate.copy_map }
+    copy_map=
+      CopyMap.add
+        {copied_into= IntoVar {copied_var; source_opt}; source_addr_opt}
+        res astate.copy_map }
 
 
-let add_var copied_var ~source_addr_opt res = map (add_var_elt copied_var ~source_addr_opt res)
+let add_var copied_var ~source_addr_opt ~source_opt res =
+  map (add_var_elt copied_var ~source_addr_opt ~source_opt res)
+
 
 let add_field_elt copied_field ~source_opt (res : copy_spec_t) astate =
   { astate with

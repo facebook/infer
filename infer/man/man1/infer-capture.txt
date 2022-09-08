@@ -156,6 +156,10 @@ BUCK OPTIONS
            Depth of dependencies used by the --buck-compilation-database deps
            option. By default, all recursive dependencies are captured.
 
+       --buck-erlang
+           Activates: Buck integration for Erlang. (Conversely:
+           --no-buck-erlang)
+
        --buck-java-flavor
            Activates: Buck integration for Java which uses the buck flavor
            #infer-java-capture instead of genrules like buck-java.

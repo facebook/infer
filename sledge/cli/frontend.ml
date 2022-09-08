@@ -98,98 +98,6 @@ let get_debug_loc_directory llv =
 
 module StringS = HashSet.Make (String)
 
-(** Modeling functions by other functions. Functions starting with the
-    __sledge_ prefix are model functions. If both foo and __sledge_foo
-    exist, then foo would not be translated and the llair name of
-    __sledge_foo appearing in the symbols table would be foo. As of now,
-    there is no attempt to check that both foo and __sledge_foo are
-    type-compatible. *)
-module Model : sig
-  val modelee : string -> string option
-  (** [modelee name] is [Some modelee_name] if [name] is the name of a model
-      of [modelee_name], and [None] if [name] is not the name of a model. *)
-
-  val has_model : string -> bool
-  (** [has_model name] holds if there is a model function for [name]. *)
-
-  val init : Llvm.llmodule -> unit
-  (** Initialize the module state. Must be called before [has_model]. *)
-end = struct
-  let modeled = StringS.create 0
-  let model_prefix = "__sledge_"
-
-  (* Scans name from [from_idx] to [to_idx], expecting to encounter (len,
-     id) blocks (as a concatenation of the respective strings), and returns
-     the len component corresponding to the pair where id is at [to_idx]
-     (plus the accumulator [idlen]). If the scan fails, returns -1. *)
-  let rec extract_model_name_len name ~from_idx ~to_idx ~idlen =
-    let c = String.get name from_idx in
-    let is_digit = Char.('0' <= c && c <= '9') in
-    if from_idx > to_idx then -1
-    else if is_digit then
-      (* Continue by accumulating the length of the current block. *)
-      extract_model_name_len name ~from_idx:(from_idx + 1) ~to_idx
-        ~idlen:((idlen * 10) + Char.to_int c - Char.to_int '0')
-    else if from_idx == to_idx then idlen
-    else
-      (* Move to the next block. *)
-      extract_model_name_len name ~from_idx:(from_idx + idlen) ~to_idx
-        ~idlen:0
-
-  (* This is specific to the mangling schemes of Clang and GCC. We want to
-     replace, for example, 12__sledge_foo by 3foo. *)
-  let modelee name =
-    let mangled_symbol_prefix = "_ZN" in
-    let model_prefix_idx = String.find ~sub:model_prefix name in
-    if
-      model_prefix_idx == -1
-      || not (String.prefix ~pre:mangled_symbol_prefix name)
-    then None
-    else
-      (* 12 in our example. *)
-      let model_name_len =
-        extract_model_name_len name
-          ~from_idx:(String.length mangled_symbol_prefix)
-          ~to_idx:model_prefix_idx ~idlen:0
-      in
-      if model_name_len == -1 then (
-        warn "Unable to transform %s to modelee!" name () ;
-        None (* __sledge_foo in our example. *) )
-      else
-        let model_name =
-          String.sub name ~pos:model_prefix_idx ~len:model_name_len
-        in
-        (* 12__sledge_foo in our example. *)
-        let mangled_model_name =
-          Printf.sprintf "%d%s" model_name_len model_name
-        in
-        (* foo in our example. *)
-        let modelee_func_name =
-          String.replace ~which:`Left ~sub:model_prefix ~by:String.empty
-            model_name
-        in
-        (* 3foo in our example. *)
-        let mangled_modelee_name =
-          Printf.sprintf "%d%s"
-            (String.length modelee_func_name)
-            modelee_func_name
-        in
-        let result =
-          String.replace ~which:`Left ~sub:mangled_model_name
-            ~by:mangled_modelee_name name
-        in
-        Some result
-
-  let has_model = StringS.mem modeled
-
-  let init llmodule =
-    Llvm.iter_functions
-      (fun llf ->
-        modelee (Llvm.value_name llf)
-        |> Option.iter ~f:(StringS.insert modeled) )
-      llmodule
-end
-
 open struct
   open struct
     let loc_of_global g =
@@ -261,10 +169,7 @@ open struct
                     (* escape to avoid clash with names of anonymous
                        values *)
                     "\"" ^ name ^ "\""
-                | None ->
-                    (* Associate model functions with the names of the
-                       functions they are modeling. *)
-                    Option.value (Model.modelee name) ~default:name )
+                | None -> name )
           in
           let id = 1 + SymTbl.length sym_tbl in
           SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
@@ -1735,9 +1640,7 @@ let transform ~internalize ~preserve_fns ~opt_level ~size_level :
   let pm = Llvm.PassManager.create () in
   let should_preserve_fn =
     let fns = Config.find_list "entry-points" @ preserve_fns in
-    fun x ->
-      List.exists ~f:(String.equal x) fns
-      || Option.is_some (Model.modelee x)
+    fun x -> List.exists ~f:(String.equal x) fns
   in
   (* Apply "noinline" attribute to each function marked for preservation in
      [preserve_fns], suppressing optimizations that inline the function at
@@ -1833,7 +1736,6 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
     ~f:(Llvm_bitwriter.write_bitcode_file llmodule)
     dump_bitcode
   |> ignore ;
-  Model.init llmodule ;
   scan_names_and_locs llmodule ;
   let lldatalayout =
     Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule)
@@ -1858,7 +1760,6 @@ let translate ~internalize ~preserve_fns ~opt_level ~size_level
           String.prefix name ~pre:"__llair_"
           || String.prefix name ~pre:"llvm."
           || Option.is_some (Intrinsic.of_name name)
-          || Model.has_model name
         then functions
         else
           let typ = xlate_type x (Llvm.type_of llf) in

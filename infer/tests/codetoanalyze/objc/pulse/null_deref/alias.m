@@ -130,3 +130,45 @@ void test_alias_in_block_specialization_good(void) {
   }
   x = *ptr;
 }
+
+void test_alias_then_block_specialization(void (^incr_deref)(int*),
+                                          int* ptr,
+                                          int* ptr2) {
+  (*ptr)++;
+  (*ptr2)++;
+  incr_deref(ptr);
+}
+
+void test_alias_then_block_specialization_bad(void) {
+  int x = 0;
+  int* ptr = &x;
+  void (^incr_deref)(int*) = ^(int*) {
+  };
+  if (x == 0) {
+    incr_deref = ^(int* ptr2) {
+      (*ptr2)++;
+    };
+  }
+  test_alias_then_block_specialization(incr_deref, ptr, ptr);
+  if (x == 3) {
+    ptr = NULL;
+  }
+  x = *ptr;
+}
+
+void test_alias_then_block_specialization_good(void) {
+  int x = 0;
+  int* ptr = &x;
+  void (^incr_deref)(int*) = ^(int*) {
+  };
+  if (x == 0) {
+    incr_deref = ^(int* ptr2) {
+      (*ptr2)++;
+    };
+  }
+  test_alias_then_block_specialization(incr_deref, ptr, ptr);
+  if (x != 3) {
+    ptr = NULL;
+  }
+  x = *ptr;
+}

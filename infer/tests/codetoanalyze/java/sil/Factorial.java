@@ -19,5 +19,4 @@ class Factorial{
     };
     return fact;
   }
-
 }

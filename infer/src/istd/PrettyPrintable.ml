@@ -274,6 +274,8 @@ module type PPUniqRankSet = sig
 
   val remove : elt -> t -> t
 
+  val remove_by_rank : rank -> t -> t
+
   val mem : elt -> t -> bool
 
   val update : elt -> t -> t
@@ -353,7 +355,9 @@ module MakePPUniqRankSet
     if print_rank then Map.pp fmt map else pp_collection ~pp_item:Val.pp fmt (elements map)
 
 
-  let remove value map = Map.remove (Val.to_rank value) map
+  let remove_by_rank rank map = Map.remove rank map
+
+  let remove value map = remove_by_rank (Val.to_rank value) map
 
   let mem value map = Map.mem (Val.to_rank value) map
 

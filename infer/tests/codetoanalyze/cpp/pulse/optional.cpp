@@ -8,7 +8,6 @@
 #include <vector>
 #include <string>
 #include <memory>
-
 namespace folly {
 
 template <class Value>
@@ -32,6 +31,8 @@ class Optional {
   constexpr Optional(const None&) noexcept;
 
   constexpr Optional(const Value& newValue);
+
+  constexpr Optional(Value&& newValue);
 
   void assign(const None&);
 
@@ -67,6 +68,22 @@ class Optional {
 };
 } // namespace folly
 
+struct Integer {
+  int field;
+
+  Integer(int x = 0) : field(x) {}
+  int get() const { return field; }
+};
+
+int call_constructors() {
+  // Since in this file we define only the interface of Optional, we need
+  // to call some methods to ensure that they are actually compiled (and thus
+  // analyzed).
+  Integer x(5);
+  Integer y(x);
+  Integer z(std::move(x));
+}
+
 int not_none_ok() {
   folly::Optional<int> foo{5};
   return foo.value();
@@ -74,7 +91,7 @@ int not_none_ok() {
 
 // missing a more precise model for
 // constructing an optional from a value
-int not_none_check_value_ok_FP() {
+int not_none_check_value0_ok() {
   folly::Optional<int> foo{5};
   int x = foo.value();
   if (x != 5) {
@@ -82,6 +99,59 @@ int not_none_check_value_ok_FP() {
     return foo.value();
   }
   return x;
+}
+
+int not_none_check_value1_ok() {
+  int p = 5;
+  folly::Optional<int> foo{p};
+  p++;
+  int x = foo.value();
+  if (x != 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return x;
+}
+
+int not_none_check_value2_ok() {
+  auto p = Integer{5};
+  folly::Optional<Integer> foo{p};
+  p.field += 1;
+  if (foo.value().get() != 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_check_value0_bad() {
+  folly::Optional<int> foo{5};
+  if (foo.value() == 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_check_value1_bad() {
+  auto p = Integer{5};
+  folly::Optional<Integer> foo{p};
+  if (foo.value().get() == 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_check_value2_bad() {
+  auto p = Integer{5};
+  folly::Optional<Integer> foo{p};
+  p.field += 1;
+  if (foo.value().get() == 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
 }
 
 int none_check_ok() {
@@ -97,7 +167,27 @@ int none_no_check_bad() {
   return foo.value();
 }
 
-int none_copy_ok() {
+int not_none_copy0_ok() {
+  folly::Optional<int> foo{5};
+  folly::Optional<int> bar{foo};
+  if (foo.value() != 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_copy0_bad() {
+  folly::Optional<int> foo{5};
+  folly::Optional<int> bar{foo};
+  if (foo.value() == 5) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
+int not_none_copy_ok() {
   folly::Optional<int> foo{5};
   folly::Optional<int> bar{foo};
   return bar.value();
@@ -131,6 +221,22 @@ int assign2_bad() {
   foo = folly::none;
   sum += foo.value();
   return sum;
+}
+
+int has_value_ok() {
+  folly::Optional<int> foo{0};
+  if (!foo.has_value() || foo.value() != 0) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+}
+
+int has_value_bad() {
+  folly::Optional<int> foo{0};
+  if (foo.has_value() && foo.value() == 0) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
 }
 
 struct State {
@@ -180,7 +286,7 @@ int value_or_check_empty_ok() {
   return -1;
 }
 
-int FP_value_or_check_value_ok() {
+int value_or_check_value_ok() {
   folly::Optional<int> foo{5};
   int x = foo.value_or(0);
   if (x != 5) {
@@ -210,7 +316,6 @@ std::string get_optional_string_wrapper_ok() {
   return StringWrapper::get_optional().value().x.data();
 }
 
-
 struct Container final {
   std::vector<int> _vec;
 
@@ -231,9 +336,6 @@ struct Container final {
   }
 };
 
-
-
-
 struct Node {
   std::shared_ptr<int> shared;
 
@@ -245,7 +347,7 @@ struct Node {
   }
 };
 
-int FP_smart_pointer(const Node& node) {
+int smart_pointer(const Node& node) {
   if (node.getShared().has_value()) {
     return *(node.getShared().value());
   }

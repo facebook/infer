@@ -1,27 +1,5 @@
 /* @generated */
 digraph cfg {
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals:  <_Nullable> my_block1:_fn_(*) <_Nullable> my_block2:_fn_(*) <_Nonnull> a:A*\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_2" [label="2: Exit foo \n  " color=yellow style=filled]
-	
-
-"foo.acbd18db4cc2f85cedef654fccc4a4d8_3" [label="3:  Call n$0 \n   n$0=*&my_block1:_fn_(*) [line 16, column 3]\n  n$1=n$0(22:int) objc_block [line 16, column 3]\n " shape="box"]
-	
-
-	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
-"p.83878c91171338902e0fe0fb97a8c47a_1" [label="1: Start p\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "p.83878c91171338902e0fe0fb97a8c47a_1" -> "p.83878c91171338902e0fe0fb97a8c47a_3" ;
-"p.83878c91171338902e0fe0fb97a8c47a_2" [label="2: Exit p \n  " color=yellow style=filled]
-	
-
-"p.83878c91171338902e0fe0fb97a8c47a_3" [label="3:  Return Stmt \n   *&return:int=0 [line 13, column 11]\n " shape="box"]
-	
-
-	 "p.83878c91171338902e0fe0fb97a8c47a_3" -> "p.83878c91171338902e0fe0fb97a8c47a_2" ;
 "objc_blockA.bar2_3(class A).d749ef9e4d7f0a45237d8fe9e40fc593_1" [label="1: Start objc_blockA.bar2_3\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
@@ -77,6 +55,28 @@ digraph cfg {
 	
 
 	 "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_3" -> "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_2" ;
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals:  <_Nullable> my_block1:_fn_(*) <_Nullable> my_block2:_fn_(*) <_Nonnull> a:A*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_2" [label="2: Exit foo \n  " color=yellow style=filled]
+	
+
+"foo.acbd18db4cc2f85cedef654fccc4a4d8_3" [label="3:  Call n$0 \n   n$0=*&my_block1:_fn_(*) [line 16, column 3]\n  n$1=n$0(22:int) objc_block [line 16, column 3]\n " shape="box"]
+	
+
+	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_2" ;
+"p.83878c91171338902e0fe0fb97a8c47a_1" [label="1: Start p\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "p.83878c91171338902e0fe0fb97a8c47a_1" -> "p.83878c91171338902e0fe0fb97a8c47a_3" ;
+"p.83878c91171338902e0fe0fb97a8c47a_2" [label="2: Exit p \n  " color=yellow style=filled]
+	
+
+"p.83878c91171338902e0fe0fb97a8c47a_3" [label="3:  Return Stmt \n   *&return:int=0 [line 13, column 11]\n " shape="box"]
+	
+
+	 "p.83878c91171338902e0fe0fb97a8c47a_3" -> "p.83878c91171338902e0fe0fb97a8c47a_2" ;
 "bar2#A#[instance].2f0519276ed04788653f2f680698efeb_1" [label="1: Start A.bar2\nFormals:  self:A*\nLocals:  \n  " color=yellow style=filled]
 	
 

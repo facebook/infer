@@ -405,7 +405,7 @@ module CppSanitizer = struct
     | EscapeSQL  (** escape string to sanitize SQL queries *)
     | EscapeURL  (** escape string to sanitize URLs (e.g., prevent injecting GET/POST params) *)
     | All  (** sanitizes all forms of taint *)
-  [@@deriving compare, equal]
+  [@@deriving compare, equal, show {with_path= false}]
 
   let of_string = function
     | "EscapeShell" ->
@@ -432,17 +432,6 @@ module CppSanitizer = struct
         if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then Some kind
         else None )
       external_sanitizers
-
-
-  let pp fmt = function
-    | EscapeShell ->
-        F.pp_print_string fmt "EscapeShell"
-    | EscapeSQL ->
-        F.pp_print_string fmt "EscapeSQL"
-    | EscapeURL ->
-        F.pp_print_string fmt "EscapeURL"
-    | All ->
-        F.pp_print_string fmt "All"
 end
 
 include TaintTrace.Make (struct

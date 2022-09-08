@@ -8,3 +8,5 @@
 open! IStd
 
 val capture : command:string -> args:string list -> unit
+
+val capture_buck : command:string -> args:string list -> unit

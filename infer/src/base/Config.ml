@@ -52,6 +52,7 @@ type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
+  ; propagaters: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }
@@ -866,6 +867,10 @@ and buck_mode =
      clang targets, as per Buck's $(i,#compilation-database) flavor."
     ~symbols:[("no-deps", `NoDeps); ("deps", `DepsTmp)]
   |> ignore ;
+  CLOpt.mk_bool ~long:"buck-erlang"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    ~f:(set_mode `Erlang) "Buck integration for Erlang."
+  |> ignore ;
   CLOpt.mk_bool ~long:"buck-java-flavor"
     ~in_help:InferCommand.[(Capture, manual_buck)]
     ~f:(set_mode `JavaFlavor)
@@ -901,8 +906,8 @@ and capture_block_list =
      the javac integration for now)."
 
 
-and capture_textual_sil =
-  CLOpt.mk_path_opt ~long:"capture-textual-sil" ~meta:"path"
+and capture_textual =
+  CLOpt.mk_path_opt ~long:"capture-textual" ~meta:"path"
     "Generate a SIL program from a textual representation given in a .sil file."
 
 
@@ -1027,6 +1032,18 @@ and clang_yojson_file =
 
 
 and classpath = CLOpt.mk_string_opt ~long:"classpath" "Specify the Java classpath"
+
+and compaction_if_heap_greater_equal_to_GB =
+  CLOpt.mk_int ~long:"compaction-if-heap-greater-equal-to-GB" ~default:8 ~meta:"int"
+    "An analysis worker will trigger compaction if its heap size is equal or great to this value \
+     in Gigabytes. Defaults to 8"
+
+
+and compaction_minimum_interval_s =
+  CLOpt.mk_int ~long:"compaction-minimum-interval-s" ~default:15 ~meta:"int"
+    "An analysis worker will only trigger compaction if this amount of time (in seconds) has \
+     elapsed since last compaction. Defaults to 15"
+
 
 and compilation_database =
   CLOpt.mk_path_list ~long:"compilation-database" ~deprecated:["-clang-compilation-db-files"]
@@ -1443,6 +1460,12 @@ and dump_duplicate_symbols =
 and dump_textual =
   CLOpt.mk_path_opt ~long:"dump-textual" ~meta:"path"
     "Generate a SIL program from the captured target. The target has to be a single Java file."
+
+
+and dynamic_dispatch_json_file_path =
+  CLOpt.mk_path_opt ~long:"dynamic-dispatch-json-file-path"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    "Dynamic dispatch file path to get the JSON used for method name substitution"
 
 
 and eradicate_condition_redundant =
@@ -2294,6 +2317,13 @@ and pulse_taint_sanitizers =
      the fields format documentation."
 
 
+and pulse_taint_propagaters =
+  CLOpt.mk_json ~long:"pulse-taint-propagaters"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Quick way to specify simple propagaters as a JSON objects. See $(b,--pulse-taint-sources) for \
+     the fields format documentation."
+
+
 and pulse_taint_sinks =
   CLOpt.mk_json ~long:"pulse-taint-sinks"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -2321,7 +2351,7 @@ and pulse_taint_sources =
       ("Simple" by default).
   - "taint_target":
       where the taint should be applied in the procedure.
-      - "ReturnValue": (default for taint sources)
+      - "ReturnValue": (default for taint sources and propagaters)
       - "AllArguments": (default for taint sanitizers and sinks)
       - ["ArgumentPositions", [<int list>]]:
           argument positions given by index (zero-indexed)
@@ -2346,8 +2376,8 @@ and pulse_taint_config =
   CLOpt.mk_path_list ~long:"pulse-taint-config"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Path to a taint analysis configuration file. This file can define $(b,--pulse-taint-sources), \
-     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
-     $(b,--pulse-taint-data-flow-kinds)."
+     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), \
+     $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds)."
 
 
 and pulse_widen_threshold =
@@ -3255,6 +3285,8 @@ and buck_mode : BuckMode.t option =
       Some (ClangCompilationDB DepsAllDepths)
   | `ClangCompilationDB `DepsTmp, Some depth ->
       Some (ClangCompilationDB (DepsUpToDepth depth))
+  | `Erlang, _ ->
+      Some Erlang
   | `JavaFlavor, _ ->
       Some JavaFlavor
 
@@ -3263,7 +3295,7 @@ and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and capture = !capture
 
-and capture_textual_sil = !capture_textual_sil
+and capture_textual = !capture_textual
 
 and capture_block_list = !capture_block_list
 
@@ -3321,6 +3353,10 @@ and clang_isystem_to_override_regex = Option.map ~f:Str.regexp !clang_isystem_to
 and clang_libcxx_include_to_override_regex = !clang_libcxx_include_to_override_regex
 
 and classpath = !classpath
+
+and compaction_if_heap_greater_equal_to_GB = !compaction_if_heap_greater_equal_to_GB
+
+and compaction_minimum_interval_s = !compaction_minimum_interval_s
 
 and config_impact_config_field_patterns =
   RevList.rev_map !config_impact_config_field_patterns ~f:Re.Str.regexp
@@ -3403,6 +3439,8 @@ and dotty_cfg_libs = !dotty_cfg_libs
 and dump_duplicate_symbols = !dump_duplicate_symbols
 
 and dump_textual = !dump_textual
+
+and dynamic_dispatch_json_file_path = !dynamic_dispatch_json_file_path
 
 and eradicate_condition_redundant = !eradicate_condition_redundant
 
@@ -3740,6 +3778,7 @@ and pulse_taint_config =
     in
     { sources= mk_matchers pulse_taint_sources
     ; sanitizers= mk_matchers pulse_taint_sanitizers
+    ; propagaters= mk_matchers pulse_taint_propagaters
     ; sinks= mk_matchers pulse_taint_sinks
     ; policies=
         Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies)
@@ -3768,6 +3807,7 @@ and pulse_taint_config =
       let combine_matchers = combine_fields Pulse_config_j.matchers_of_string in
       { sources= combine_matchers "pulse-taint-sources" taint_config.sources
       ; sanitizers= combine_matchers "pulse-taint-sanitizers" taint_config.sanitizers
+      ; propagaters= combine_matchers "pulse-taint-propagaters" taint_config.propagaters
       ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
       ; policies=
           combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"

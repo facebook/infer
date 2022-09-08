@@ -169,6 +169,10 @@ OPTIONS
            option. By default, all recursive dependencies are captured.       
     See also infer-capture(1).
 
+       --buck-erlang
+           Activates: Buck integration for Erlang. (Conversely:
+           --no-buck-erlang)           See also infer-capture(1).
+
        --buck-java-flavor
            Activates: Buck integration for Java which uses the buck flavor
            #infer-java-capture instead of genrules like buck-java.
@@ -599,7 +603,9 @@ OPTIONS
              PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by
            default),
+             PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
              PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default),
+             PULSE_UNNECESSARY_COPY_RETURN (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              REGEX_OP_ON_UI_THREAD (enabled by default),
@@ -651,6 +657,10 @@ OPTIONS
            Activates: Dump all symbols with the same name that are defined in
            more than one file. (Conversely: --no-dump-duplicate-symbols)       
     See also infer-capture(1).
+
+       --dynamic-dispatch-json-file-path path
+           Dynamic dispatch file path to get the JSON used for method name
+           substitution           See also infer-analyze(1).
 
        --enable-issue-type +issue_type
            Show reports coming from this type of issue. By default, all issue
@@ -1161,8 +1171,9 @@ OPTIONS
        --pulse-taint-config +path
            Path to a taint analysis configuration file. This file can define
            --pulse-taint-sources, --pulse-taint-sanitizers,
-           --pulse-taint-sinks, --pulse-taint-policies, and
-           --pulse-taint-data-flow-kinds.           See also infer-analyze(1).
+           --pulse-taint-sanitizers, --pulse-taint-sinks,
+           --pulse-taint-policies, and --pulse-taint-data-flow-kinds.       
+    See also infer-analyze(1).
 
        --pulse-taint-data-flow-kinds json
            Specify which taint kinds should be used for data flow reporting
@@ -1189,6 +1200,11 @@ OPTIONS
                                "sanitizer_kinds": ["Simple"] }]
            }
            See also infer-analyze(1).
+
+       --pulse-taint-propagaters json
+           Quick way to specify simple propagaters as a JSON objects. See
+           --pulse-taint-sources for the fields format documentation.       
+    See also infer-analyze(1).
 
        --pulse-taint-sanitizers json
            Quick way to specify simple sanitizers as a JSON objects. See
@@ -1222,7 +1238,8 @@ OPTIONS
                  ("Simple" by default).
              - "taint_target":
                  where the taint should be applied in the procedure.
-                 - "ReturnValue": (default for taint sources)
+                 - "ReturnValue": (default for taint sources and
+           propagaters)
                  - "AllArguments": (default for taint sanitizers and sinks)
                  - ["ArgumentPositions", [<int list>]]:
                      argument positions given by index (zero-indexed)

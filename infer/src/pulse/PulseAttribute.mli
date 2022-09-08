@@ -60,7 +60,7 @@ end
 
 module CopiedInto : sig
   type t =
-    | IntoVar of Var.t
+    | IntoVar of {copied_var: Var.t; source_opt: Pvar.t option}
     | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
   [@@deriving compare, equal]
 
@@ -74,6 +74,9 @@ type t =
   | AlwaysReachable
   | Closure of Procname.t
   | CopiedInto of CopiedInto.t  (** records the copied var/field for each source address *)
+  | CopiedReturn of
+      {source: AbstractValue.t; is_const_ref: bool; from: CopyOrigin.t; copied_location: Location.t}
+      (** records the copied value for the return address *)
   | DynamicType of Typ.t
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
@@ -85,6 +88,7 @@ type t =
   | CSharpResourceReleased
   | PropagateTaintFrom of taint_in list
   | RefCounted
+  | ReturnedFromUnknown of AbstractValue.t list
   | SourceOriginOfCopy of {source: PulseAbstractValue.t; is_const_ref: bool}
       (** records the source value for a given copy to lookup the appropriate heap in non-disj
           domain *)
@@ -123,9 +127,15 @@ module Attributes : sig
 
   val get_copied_into : t -> CopiedInto.t option
 
+  val get_copied_return : t -> (AbstractValue.t * bool * CopyOrigin.t * Location.t) option
+
+  val remove_copied_return : t -> t
+
   val get_source_origin_of_copy : t -> (PulseAbstractValue.t * bool) option
 
   val get_allocation : t -> (allocator * Trace.t) option
+
+  val remove_allocation : t -> t
 
   val is_ref_counted : t -> bool
 
@@ -143,14 +153,26 @@ module Attributes : sig
 
   val get_tainted : t -> TaintedSet.t
 
+  val remove_tainted : t -> t
+
   val get_propagate_taint_from : t -> taint_in list option
+
+  val remove_propagate_taint_from : t -> t
+
+  val get_returned_from_unknown : t -> AbstractValue.t list option
 
   val get_taint_sanitized : t -> TaintSanitizedSet.t
 
+  val remove_taint_sanitized : t -> t
+
   val get_isl_abduced : t -> Trace.t option
+
+  val remove_isl_abduced : t -> t
 
   val get_must_be_valid :
     t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
+
+  val remove_must_be_valid : t -> t
 
   val get_must_not_be_tainted : t -> TaintSinkSet.t
 
@@ -165,6 +187,8 @@ module Attributes : sig
   val is_std_vector_reserved : t -> bool
 
   val is_uninitialized : t -> bool
+
+  val remove_uninitialized : t -> t
 
   val get_must_be_initialized : t -> (Timestamp.t * Trace.t) option
 

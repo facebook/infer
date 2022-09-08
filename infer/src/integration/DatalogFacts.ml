@@ -25,7 +25,7 @@ let one_fact_to_report fmt (jsonbug : Jsonbug_t.jsonbug) =
   if String.equal jsonbug.bug_type "DATALOG_FACT" then
     let fields = List.drop (String.split ~on:' ' (String.drop_suffix jsonbug.qualifier 1)) 1 in
     let pp_sep fmt () = F.fprintf fmt "\t" in
-    let pp_field fmt field = F.fprintf fmt "\"%s\"" field in
+    let pp_field fmt field = F.fprintf fmt "%s" field in
     let pp_fields = F.pp_print_list ~pp_sep pp_field in
     F.fprintf fmt "%a@." pp_fields fields
 

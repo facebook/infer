@@ -12,6 +12,40 @@ open! IStd
 module F = Format
 module L = Logging
 
+(** do a compaction only if a sufficient amount of time has passed since last compaction *)
+let compaction_minimum_interval_ns =
+  Int64.(of_int Config.compaction_minimum_interval_s * of_int 1000_000_000)
+
+
+(** do a compaction if heap size over this value *)
+let compaction_if_heap_greater_equal_to_words =
+  (* we don't try hard to avoid overflow, apart from assuming that word size
+     divides 1024 perfectly, thus multiplying with a smaller factor *)
+  Config.compaction_if_heap_greater_equal_to_GB * 1024 * 1024 * (1024 / Sys.word_size)
+
+
+let do_compaction_if_needed =
+  let last_compaction_time = ref (Mtime_clock.counter ()) in
+  let time_since_last_compaction_is_over_threshold () =
+    let ns_since_last_compaction =
+      Mtime_clock.count !last_compaction_time |> Mtime.Span.to_uint64_ns
+    in
+    Int64.(ns_since_last_compaction >= compaction_minimum_interval_ns)
+  in
+  fun () ->
+    let stat = Caml.Gc.quick_stat () in
+    let heap_words = stat.Caml.Gc.heap_words in
+    if
+      heap_words >= compaction_if_heap_greater_equal_to_words
+      && time_since_last_compaction_is_over_threshold ()
+    then (
+      L.log_task "Triggering compaction, heap size= %d GB@\n"
+        (heap_words * Sys.word_size / 1024 / 1024 / 1024) ;
+      Gc.compact () ;
+      last_compaction_time := Mtime_clock.counter () )
+    else ()
+
+
 let clear_caches_except_lrus () =
   Summary.OnDisk.clear_cache () ;
   Procname.SQLite.clear_cache () ;
@@ -19,10 +53,7 @@ let clear_caches_except_lrus () =
   Attributes.clear_cache ()
 
 
-let clear_caches () =
-  Ondemand.LocalCache.clear () ;
-  clear_caches_except_lrus ()
-
+let clear_caches () = clear_caches_except_lrus ()
 
 let proc_name_of_uid uid =
   match Attributes.load_from_uid uid with
@@ -62,15 +93,20 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
   in
   fun target ->
     let exe_env = Exe_env.mk () in
-    (* clear cache for each source file to avoid it growing unboundedly *)
+    let result =
+      match target with
+      | Procname procname ->
+          analyze_proc_name exe_env procname
+      | ProcUID proc_uid ->
+          proc_name_of_uid proc_uid |> analyze_proc_name exe_env
+      | File source_file ->
+          analyze_source_file exe_env source_file
+    in
+    (* clear cache for each source file to avoid it growing unboundedly; we do it here to
+       release memory before potentially going idle *)
     clear_caches_except_lrus () ;
-    match target with
-    | Procname procname ->
-        analyze_proc_name exe_env procname
-    | ProcUID proc_uid ->
-        proc_name_of_uid proc_uid |> analyze_proc_name exe_env
-    | File source_file ->
-        analyze_source_file exe_env source_file
+    do_compaction_if_needed () ;
+    result
 
 
 let source_file_should_be_analyzed ~changed_files source_file =
@@ -222,7 +258,6 @@ let invalidate_changed_procedures changed_files =
     let invalidated_nodes =
       CallGraph.fold_flagged reverse_callgraph
         ~f:(fun node acc ->
-          Ondemand.LocalCache.remove node.pname ;
           Summary.OnDisk.delete node.pname ;
           acc + 1 )
         0

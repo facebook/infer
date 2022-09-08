@@ -20,17 +20,22 @@ let pp_clang_compilation_db_deps fmt = function
       F.pp_print_string fmt "DepsAllDepths"
 
 
-type t = ClangV2 | ClangFlavors | ClangCompilationDB of clang_compilation_db_deps | JavaFlavor
+type t =
+  | ClangV2
+  | ClangFlavors
+  | ClangCompilationDB of clang_compilation_db_deps
+  | Erlang
+  | JavaFlavor
 
 let is_clang_compilation_db = function
   | ClangCompilationDB _ ->
       true
-  | ClangV2 | ClangFlavors | JavaFlavor ->
+  | ClangV2 | ClangFlavors | Erlang | JavaFlavor ->
       false
 
 
 let is_clang_flavors = function
   | ClangFlavors ->
       true
-  | ClangV2 | ClangCompilationDB _ | JavaFlavor ->
+  | ClangV2 | ClangCompilationDB _ | Erlang | JavaFlavor ->
       false

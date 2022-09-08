@@ -207,7 +207,7 @@ val capture : bool
 
 val capture_block_list : string option
 
-val capture_textual_sil : string option
+val capture_textual : string option
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
@@ -240,6 +240,10 @@ val clang_libcxx_include_to_override_regex : string option
 val classpath : string option
 
 val command : InferCommand.t
+
+val compaction_if_heap_greater_equal_to_GB : int
+
+val compaction_minimum_interval_s : int
 
 val config_impact_config_field_patterns : Re.Str.regexp list
 
@@ -314,6 +318,8 @@ val dotty_cfg_libs : bool
 val dump_duplicate_symbols : bool
 
 val dump_textual : string option
+
+val dynamic_dispatch_json_file_path : string option
 
 val eradicate_condition_redundant : bool
 
@@ -587,6 +593,7 @@ val pulse_skip_procedures : Str.regexp option
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
+  ; propagaters: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }
@@ -733,7 +740,7 @@ val starvation_whole_program : bool
 
 val subtype_multirange : bool
 
-val summaries_caches_max_size : int
+val summaries_caches_max_size : int [@@warning "-32"]
 
 val suppress_lint_ignore_types : bool
 

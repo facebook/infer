@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 module Location : sig
   type t
@@ -52,15 +53,27 @@ module Const : sig
     | Float of float  (** float constants *)
 end
 
+module Lang : sig
+  type t = Java | Hack [@@deriving equal]
+
+  val of_string : string -> t option [@@warning "-32"]
+
+  val to_string : t -> string [@@warning "-32"]
+end
+
+module SilProcname = Procname
+
 module Procname : sig
-  type proc_kind = Virtual | NonVirtual
+  type kind = Virtual | NonVirtual
 
-  type kind =
-    | Builtin  (** it models a specific langage feature not directly expressible in Sil *)
-    | SilInstr  (** it will be turned into unop/binop SIL expression during translation *)
-    | Proc of {pkind: proc_kind}  (** it has been defined by the programmer *)
+  type enclosing_class = TopLevel | Enclosing of TypeName.t
 
-  type t = {name: ProcBaseName.t; targs: Typ.t list; tres: Typ.t; kind: kind}
+  type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
+
+  type t =
+    {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
+
+  val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
 end
 
 module Pvar : sig
@@ -82,7 +95,7 @@ module Exp : sig
         (** field offset, fname must be declared in type tname *)
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
-    | Call of {proc: ProcBaseName.t; args: t list}
+    | Call of {proc: Procname.qualified_name; args: t list}
     | Cast of Typ.t * t
 end
 
@@ -117,17 +130,38 @@ module Node : sig
 end
 
 module Procdesc : sig
-  type t = {procname: Procname.t; nodes: Node.t list; start: NodeName.t; params: VarName.t list}
+  type t =
+    { procname: Procname.t
+    ; nodes: Node.t list
+    ; start: NodeName.t
+    ; params: VarName.t list
+    ; exit_loc: Location.t }
 end
 
 module Struct : sig
-  type t = {name: TypeName.t; fields: Fieldname.t list}
+  type t = {name: TypeName.t; fields: Fieldname.t list; methods: Procname.t list}
+end
+
+module Attr : sig
+  type t = {name: string; value: string; loc: Location.t}
+
+  val name : t -> string [@@warning "-32"]
+
+  val value : t -> string [@@warning "-32"]
+
+  val pp : F.formatter -> t -> unit [@@warning "-32"]
+
+  val pp_with_loc : F.formatter -> t -> unit [@@warning "-32"]
 end
 
 module Module : sig
   type decl = Global of Pvar.t | Struct of Struct.t | Procname of Procname.t | Proc of Procdesc.t
 
-  type t = {decls: decl list; sourcefile: SourceFile.t}
+  type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
+
+  val lang : t -> Lang.t option [@@warning "-32"]
+
+  val pp : F.formatter -> t -> unit [@@warning "-32"]
 
   val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
   (** generate a .sil file with name [filename] containing all the functions in the given cfg *)
@@ -142,3 +176,5 @@ module Verification : sig
 
   val run : Module.t -> error list
 end
+
+exception ToSilTransformationError of (Format.formatter -> unit -> unit)

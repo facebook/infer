@@ -12,29 +12,15 @@ type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal]
 
 type fields = field list [@@deriving equal]
 
-type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal, compare]
-
-let pp_java_class_kind fmt kind =
-  F.pp_print_string fmt
-    ( match kind with
-    | Interface ->
-        "Interface"
-    | AbstractClass ->
-        "AbstractClass"
-    | NormalClass ->
-        "NormalClass" )
-
+type java_class_kind = Interface | AbstractClass | NormalClass
+[@@deriving equal, compare, show {with_path= false}]
 
 type java_class_info =
   { kind: java_class_kind  (** class kind in Java *)
   ; loc: Location.t option
         (** None should correspond to rare cases when it was impossible to fetch the location in
             source file *) }
-[@@deriving equal]
-
-let pp_java_class_info fmt {kind; loc} =
-  F.fprintf fmt "{kind= %a; loc= %a}" pp_java_class_kind kind (Pp.option Location.pp) loc
-
+[@@deriving equal, show {with_path= false}]
 
 let pp_java_class_info_opt fmt jopt = Pp.option pp_java_class_info fmt jopt
 

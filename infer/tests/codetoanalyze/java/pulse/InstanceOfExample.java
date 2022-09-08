@@ -82,6 +82,68 @@ public class InstanceOfExample {
     }
   }
 
+  public void testInstanceOfPersonLatent(Person p) {
+    if (p instanceof Person) {
+      Object o = null;
+      o.toString();
+    }
+  }
+
+  public void testInstanceOfStudentLatent(Person p) {
+    if (p instanceof Student) {
+      Object o = null;
+      o.toString();
+    }
+  }
+
+  public void testNotInstanceOfPersonLatent(Person p) {
+    if (!(p instanceof Person)) { // true if p is null
+      Object o = null;
+      o.toString();
+    }
+  }
+
+  public void FP_testNotInstanceOfPersonNotNullOk(Person p) {
+    if (p != null && !(p instanceof Person)) { // must be false
+      Object o = null;
+      o.toString();
+    }
+  }
+
+  public void testInstanceOfAndNotInstanceOfPersonOk(Person p) {
+    if (p instanceof Person) {
+      if (!(p instanceof Person)) {
+        Object o = null;
+        o.toString();
+      }
+    }
+  }
+
+  public void testNotInstanceOfAndInstanceOfPersonOk(Person p) {
+    if (!(p instanceof Person)) {
+      if (p instanceof Person) {
+        Object o = null;
+        o.toString();
+      }
+    }
+  }
+
+  public void FP_testSubclassOk(Person p) {
+    if (p instanceof Faculty) {
+      if (!(p instanceof Person)) { // must be false
+        Object o = null;
+        o.toString();
+      }
+    }
+  }
+
+  public void FP_testUnrelatedOk(Person p) {
+    if (p instanceof Faculty && p instanceof Student) {
+      Object o = null;
+      o.toString();
+    }
+  }
+
   public void checkInstanceArray(Object array) {
     Object o = null;
     if (array instanceof int[]) {

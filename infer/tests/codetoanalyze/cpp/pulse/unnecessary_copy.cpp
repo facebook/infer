@@ -7,6 +7,7 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <list>
 
 struct Arr {
   int arr[2];
@@ -116,6 +117,8 @@ class Vec {
 
  public:
   std::vector<int> vec;
+  std::list<Arr> my_list;
+
   Vec() {
     for (int i = 1; i <= 3; i++) {
       vec.push_back(i);
@@ -128,6 +131,13 @@ class Vec {
   }
 
   int get(int i) const { return vec[i]; }
+
+  void source_modified_via_unmodeled_ok() {
+    auto arr = my_list.front(); // result of unknown call on source is copied
+    my_list.pop_front();
+    // when checking for modifications, we need to check that arr is propagated
+    // from my_list which is modified
+  }
 };
 
 void copy_own_vec_bad() {
@@ -389,3 +399,49 @@ struct CheapToCopy {
 
 void cheap_to_copy_ok(CheapToCopy source) { auto c = source; }
 }; // namespace my_proj
+
+void unnecessary_copy_initializer_list(std::vector<int> c1,
+                                       std::vector<int> c2) {
+  for (const auto& c : {c1, c2}) {
+  }
+  // fix here is not to add & but use ptrs
+  // for (const auto* c : { &c1, &c2 }) // use *c
+}
+
+class MyValueOr {
+  bool b;
+  Arr& value;
+  std::shared_ptr<Arr> shared_ptr;
+
+ public:
+  Arr value_or(const Arr& default_value) const {
+    if (b) {
+      return value;
+    } else {
+      return default_value;
+    }
+  }
+
+  Arr get_arr_implicit_copy() const { return get_a_ref(); }
+
+  std::shared_ptr<Arr> copy_shared_ptr() const { return shared_ptr; }
+};
+
+void call_value_or_bad(const MyValueOr& c) {
+  const static Arr f{};
+  Arr g = c.value_or(f);
+}
+
+void call_value_or_ok(const MyValueOr& c) {
+  const static Arr f{};
+  Arr g = c.value_or(f);
+  g.arr[0] = 42;
+}
+
+void call_get_arr_implicit_copy_bad(const MyValueOr& c) {
+  Arr g = c.get_arr_implicit_copy();
+}
+
+void call_copy_shared_ptr_ok(const MyValueOr& c) {
+  auto g = c.copy_shared_ptr();
+}

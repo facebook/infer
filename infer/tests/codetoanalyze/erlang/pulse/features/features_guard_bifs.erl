@@ -4,6 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 
 -module(features_guard_bifs).
+-include("../../common.hrl").
 
 -export([
     test_is_list3_nomodule_Bad/0,
@@ -40,7 +41,11 @@
     test_accepts_integer1_Ok/0,
     test_accepts_integer2_Bad/0,
     test_accepts_integer_nomodule1_Ok/0,
-    test_accepts_integer_nomodule2_Bad/0
+    test_accepts_integer_nomodule2_Bad/0,
+    test_incompatible1_Ok/1,
+    test_incompatible1_Latent/1,
+    fp_test_incompatible2_Ok/1,
+    test_incompatible2_Latent/1
 ]).
 
 accepts_map(M) when erlang:is_map(M) -> ok.
@@ -138,3 +143,16 @@ accepts_integer_nomodule(X) when is_integer(X) -> ok.
 test_accepts_integer_nomodule1_Ok() -> accepts_integer_nomodule(182).
 
 test_accepts_integer_nomodule2_Bad() -> accepts_integer_nomodule(not_an_int).
+
+test_incompatible1_Ok(X) ->
+    ?ASSERT_EQUAL(false, is_map(X) and not is_map(X)).
+
+test_incompatible1_Latent(X) ->
+    ?CRASH_IF_EQUAL(false, is_map(X) and not is_map(X)).
+
+% FP: T128591527
+fp_test_incompatible2_Ok(X) ->
+    ?ASSERT_EQUAL(false, is_map(X) and is_atom(X)).
+
+test_incompatible2_Latent(X) ->
+    ?CRASH_IF_EQUAL(false, is_map(X) and is_atom(X)).

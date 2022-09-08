@@ -12,7 +12,8 @@ module MF = MarkupFormatter
 let describe_pname = MF.wrap_monospaced Procname.pp
 
 module ThreadDomain = struct
-  type t = UnknownThread | UIThread | BGThread | AnyThread [@@deriving compare, equal]
+  type t = UnknownThread | UIThread | BGThread | AnyThread
+  [@@deriving compare, equal, show {with_path= false}]
 
   let bottom = UnknownThread
 
@@ -32,19 +33,6 @@ module ThreadDomain = struct
   let leq ~lhs ~rhs = equal (join lhs rhs) rhs
 
   let widen ~prev ~next ~num_iters:_ = join prev next
-
-  let pp fmt st =
-    ( match st with
-    | UnknownThread ->
-        "UnknownThread"
-    | UIThread ->
-        "UIThread"
-    | BGThread ->
-        "BGThread"
-    | AnyThread ->
-        "AnyThread" )
-    |> F.pp_print_string fmt
-
 
   (** Can two thread statuses occur in parallel? Only [UIThread, UIThread] is forbidden. In
       addition, this is monotonic wrt the lattice (increasing either argument cannot transition from
