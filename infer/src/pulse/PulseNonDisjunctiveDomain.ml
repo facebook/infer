@@ -42,7 +42,11 @@ end
 
 type copy_spec_t =
   | Copied of
-      {typ: Typ.t; location: Location.t; heap: BaseMemory.t; from: PulseAttribute.CopyOrigin.t}
+      { typ: Typ.t
+      ; location: Location.t
+      ; copied_location: Location.t option
+      ; heap: BaseMemory.t
+      ; from: PulseAttribute.CopyOrigin.t }
   | Modified
 [@@deriving equal]
 
@@ -269,9 +273,9 @@ let get_copied = function
           match copy_spec with
           | Modified ->
               acc
-          | Copied {location; typ= copied_typ; from} ->
+          | Copied {location; copied_location; typ= copied_typ; from} ->
               if CopiedSet.mem copied_into modified || is_captured copied_into then acc
-              else (copied_into, copied_typ, location, from) :: acc )
+              else (copied_into, copied_typ, location, copied_location, from) :: acc )
         copy_map []
 
 

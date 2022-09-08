@@ -14,7 +14,7 @@ int std_not_none_ok() {
   return foo.value();
 }
 
-int std_not_none_check_value_ok_FP() {
+int std_not_none_check_value_ok() {
   std::optional<int> foo{5};
   int x = foo.value();
   if (x != 5) {
@@ -92,7 +92,7 @@ void std_emplace(std::optional<State> state) {
   auto pos = state->vec.begin();
 }
 
-void FN_std_operator_arrow_bad() { std_emplace(std::nullopt); }
+void std_operator_arrow_bad() { std_emplace(std::nullopt); }
 
 int std_value_or_check_empty_ok() {
   std::optional<int> foo{std::nullopt};
@@ -102,7 +102,7 @@ int std_value_or_check_empty_ok() {
   return -1;
 }
 
-int FP_std_value_or_check_value_ok() {
+int std_value_or_check_value_ok() {
   std::optional<int> foo{5};
   int x = foo.value_or(0);
   if (x != 5) {
