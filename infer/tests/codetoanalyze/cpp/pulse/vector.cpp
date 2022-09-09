@@ -59,6 +59,48 @@ void FN_push_back0_bad() {
   return 0;
 }
 
+// missing a more precise model for vector::size
+int FP_size0_ok() {
+  std::vector<int> v;
+  if (v.size() != 0) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+// missing a more precise model for vector::size
+int FP_size1_ok() {
+  std::vector<int> v;
+  v.push_back(0);
+  v.push_back(42);
+  if (v.size() != 2) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int size0_bad() {
+  std::vector<int> v;
+  if (v.size() == 0) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int size1_bad() {
+  std::vector<int> v;
+  v.push_back(0);
+  v.push_back(42);
+  if (v.size() == 2) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
   int* y = elt;
