@@ -24,7 +24,8 @@ typedef void (^InferTaintBlock)(InferTaint*);
 + (void)twoSinks:(NSObject*)param;
 + (void)twoKindSink:(NSObject*)param;
 + (void)notASink:(NSObject*)param;
-+ (void)call_block:(InferTaintBlock)completion;
++ (void)callBlockUnknown:(InferTaintBlock)completion;
++ (void)callBlockWithSourceBad:(InferTaintBlock)completion;
 @end
 
 @implementation InferTaint
@@ -67,6 +68,11 @@ typedef void (^InferTaintBlock)(InferTaint*);
 + (void)notASink:(NSObject*)param {
 }
 
++ (void)callBlockWithSourceBad:(InferTaintBlock)completion {
+  NSObject* source = [InferTaint source];
+  completion(source);
+}
+
 @end
 
 void callSinkDirectBad() {
@@ -103,7 +109,7 @@ void callNonSinkOnSourceOk() {
 void taintSourceParameterBad(InferTaint* source) { [InferTaint sink:source]; }
 
 void taintSourceParameterBlockBad() {
-  [InferTaint call_block:^(InferTaint* source) {
+  [InferTaint callBlockUnknown:^(InferTaint* source) {
     [InferTaint sink:source];
   }];
 }
@@ -155,12 +161,12 @@ void clashingBlockNameOk(NSObject* tainted) {
 }
 
 void taintSourceParameterBlockIndirect(InferTaintBlock completion) {
-  [InferTaint call_block:^(InferTaint* source) {
+  [InferTaint callBlockWithSourceBad:^(InferTaint* source) {
     completion(source);
   }];
 }
 
-void taintSourceParameterBlockIndirectBad_FN() {
+void taintSourceParameterBlockIndirectSink() {
   taintSourceParameterBlockIndirect(^(InferTaint* arg) {
     [InferTaint sink:arg];
   });
