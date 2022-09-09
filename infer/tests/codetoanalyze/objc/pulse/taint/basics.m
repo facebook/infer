@@ -7,6 +7,10 @@
 
 #import <Foundation/Foundation.h>
 
+@class InferTaint;
+
+typedef void (^InferTaintBlock)(InferTaint*);
+
 @interface InferTaint : NSObject
 
 @property(nonatomic, assign) NSObject* obj;
@@ -20,7 +24,7 @@
 + (void)twoSinks:(NSObject*)param;
 + (void)twoKindSink:(NSObject*)param;
 + (void)notASink:(NSObject*)param;
-+ (void)call_block:(void (^)(InferTaint*))completion;
++ (void)call_block:(InferTaintBlock)completion;
 @end
 
 @implementation InferTaint
@@ -148,4 +152,16 @@ void clashingBlockNameOk(NSObject* tainted) {
   ^void(NSObject* obj) {
     [InferTaint sink:obj];
   };
+}
+
+void taintSourceParameterBlockIndirect(InferTaintBlock completion) {
+  [InferTaint call_block:^(InferTaint* source) {
+    completion(source);
+  }];
+}
+
+void taintSourceParameterBlockIndirectBad_FN() {
+  taintSourceParameterBlockIndirect(^(InferTaint* arg) {
+    [InferTaint sink:arg];
+  });
 }
