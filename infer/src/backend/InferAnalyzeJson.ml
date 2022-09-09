@@ -691,10 +691,7 @@ let parse_tenv (json : Safe.t) =
   tenv
 
 
-let clear_caches () =
-  Summary.OnDisk.clear_cache () ;
-  Procname.SQLite.clear_cache ()
-
+let clear_caches () = Summary.OnDisk.clear_cache ()
 
 let analyze_json cfg_json tenv_json =
   clear_caches () ;
