@@ -57,44 +57,41 @@ let assign_non_empty_value ProcnameDispatcher.Call.FuncArg.{arg_payload= this} ~
   astate
 
 
-let assign_precise_value ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= this_payload}
+let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= this_payload} as this)
     (ProcnameDispatcher.Call.FuncArg.{arg_payload= other_payload} as other) ~desc : model =
  (* This model marks the optional object to be non-empty by storing value. *)
  fun ({callee_procname; path; location} as model_data) astate ->
-  let typ =
-    match (Typ.strip_ptr typ).desc with
-    | Typ.Tstruct (CppClass {template_spec_info= Template {args= [TType t]}}) ->
-        t
+  match ((Typ.strip_ptr typ).desc, IRAttributes.load_formal_types callee_procname |> List.last) with
+  (* typ is the template argument *)
+  | Typ.Tstruct (CppClass {template_spec_info= Template {args= [TType typ]}}), Some actual -> (
+    match typ.desc with
+    | Tstruct class_name ->
+        (* assign the value pointer to the field of the shared_ptr *)
+        let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
+        let<*> astate, _ =
+          write_value path location this_payload ~value:value_address ~desc astate
+        in
+        let typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
+        (* We need an expression corresponding to the value of the argument we pass to
+           the constructor. *)
+        let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
+        let args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list =
+          {typ; exp= fake_exp; arg_payload= value_address} :: [other]
+        in
+        (* create the list of types of the actual arguments of the constructor *)
+        let actuals = [typ; actual] in
+        Basic.call_constructor class_name actuals args fake_exp model_data astate
     | _ ->
-        L.die InternalError "Cannot find template arguments of Optional"
-  in
-  match typ.desc with
-  | Tstruct class_name ->
-      let actual =
-        match IRAttributes.load_formal_types callee_procname |> List.last with
-        | Some actual ->
-            actual
-        | None ->
-            L.die InternalError "Not enough arguments to call the constructor for Optional"
-      in
-      (* assign the value pointer to the field of the shared_ptr *)
-      let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
-      let<*> astate, _ = write_value path location this_payload ~value:value_address ~desc astate in
-      let typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
-      (* We need an expression corresponding to the value of the argument we pass to
-         the constructor. *)
-      let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-      let args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list =
-        {typ; exp= fake_exp; arg_payload= value_address} :: [other]
-      in
-      (* create the list of types of the actual arguments of the constructor *)
-      let actuals = [typ; actual] in
-      Basic.call_constructor class_name actuals args fake_exp model_data astate
+        L.d_printfln "Class not found" ;
+        let<**> astate, address = Basic.deep_copy path location ~value:other_payload ~desc astate in
+        let<+> astate, _ = write_value path location this_payload ~value:address ~desc astate in
+        astate )
   | _ ->
-      let () = L.d_printfln "Class not found" in
-      let<**> astate, address = Basic.deep_copy path location ~value:other_payload ~desc astate in
-      let<+> astate, _ = write_value path location this_payload ~value:address ~desc astate in
-      astate
+      (* if the model cannot find a template argument and/or the formal parameters,
+         it just marks the object non-empty *)
+      assign_non_empty_value this
+        ~desc:(desc ^ " (cannot find template argument and/or formal parameters)")
+        model_data astate
 
 
 let assign_value (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list)
@@ -105,7 +102,8 @@ let assign_value (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecializa
   | this :: _ ->
       assign_non_empty_value this ~desc:(desc ^ " (non-empty value)")
   | _ ->
-      L.die InternalError "Not enough arguments to call the constructor for Optional"
+      L.internal_error "Not enough arguments to call the constructor for Optional" ;
+      Basic.skip
 
 
 let copy_assignment this init ~desc : model =
