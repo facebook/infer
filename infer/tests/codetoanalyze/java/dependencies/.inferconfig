@@ -1,0 +1,32 @@
+{
+    "enable-issue-type": [
+        "TAINT_ERROR"
+    ],
+    "pulse-taint-sources": [
+        {
+            "class_names": ["lib.Framework"],
+            "method_names": ["source"]
+        },
+        {
+            "class_names": ["my.Application"],
+            "method_names": ["source"]
+        }
+    ],
+    "pulse-taint-sinks": [
+        {
+            "class_names": ["lib.Framework"],
+            "method_names": ["sink"],
+            "taint_target": ["ArgumentPositions", [0]]
+        },
+        {
+            "class_names": ["my.Application"],
+            "method_names": ["sink"],
+            "taint_target": ["ArgumentPositions", [1]]
+        },
+        {
+            "class_names": ["java.io.FileInputStream"],
+            "method_names": ["<init>"],
+            "taint_target": ["ArgumentPositions", [1]]
+        }
+    ]
+}
