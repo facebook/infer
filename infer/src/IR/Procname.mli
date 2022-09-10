@@ -302,13 +302,7 @@ module Map : PrettyPrintable.PPMap with type key = t
 (** Sets of proc names. *)
 module Set : PrettyPrintable.PPSet with type elt = t
 
-module SQLite : sig
-  val serialize : t -> Sqlite3.Data.t
-
-  val deserialize : Sqlite3.Data.t -> t
-
-  val clear_cache : unit -> unit
-end
+module SQLite : SqliteUtils.Data with type t = t
 
 module SQLiteList : SqliteUtils.Data with type t = t list
 
