@@ -337,12 +337,17 @@ module Tableau = struct
 
   let do_pivot u l ((v, _) as v_coeff) t =
     let l_v = LinArith.pivot v_coeff (LinArith.subtract l (LinArith.of_var u)) in
-    Var.Map.map
-      (fun l ->
-        LinArith.subst_variables l ~f:(fun v' ->
-            if Var.equal v v' then LinSubst l_v else VarSubst v' ) )
-      t
-    |> Var.Map.add v l_v
+    let t =
+      Var.Map.filter_map
+        (fun _ l ->
+          let l' =
+            LinArith.subst_variables l ~f:(fun v' ->
+                if Var.equal v v' then LinSubst l_v else VarSubst v' )
+          in
+          Option.some_if (not (LinArith.is_minimized l')) l' )
+        t
+    in
+    if LinArith.is_minimized l_v then t else Var.Map.add v l_v t
 
 
   let pivot_unbounded_with_positive_coeff t u l =
