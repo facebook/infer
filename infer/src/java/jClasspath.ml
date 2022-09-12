@@ -161,10 +161,13 @@ let search_classes path =
   Utils.directory_fold
     (fun accu p ->
       let paths, classes = accu in
-      if Filename.check_suffix p "class" then add_class paths classes p
-      else if Filename.check_suffix p "jar" then
-        (add_root_path p paths, collect_classnames classes p)
-      else accu )
+      match Filename.split_extension p with
+      | _, Some "class" ->
+          add_class paths classes p
+      | _, Some ("jar" | "war") ->
+          (add_root_path p paths, collect_classnames classes p)
+      | _ ->
+          accu )
     (String.Set.empty, JBasics.ClassSet.empty)
     path
 
