@@ -62,3 +62,7 @@ val get_const_refable_parameters : t -> (Var.t * Typ.t * Location.t) list
 val is_checked_via_dtor : Var.t -> t -> bool
 
 val set_captured_variables : Exp.t -> t -> t
+
+val set_locked : t -> t
+
+val is_locked : t -> bool

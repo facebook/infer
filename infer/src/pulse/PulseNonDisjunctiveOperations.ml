@@ -164,7 +164,8 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
           , (Exp.Var copy_var, copy_type) :: (source_exp, source_typ) :: _ )
           when (not (is_cheap_to_copy tenv copy_type))
                && (not (Typ.is_pointer_to_smart_pointer copy_type))
-               && not (has_copy_in_name (Procdesc.get_proc_name proc_desc)) -> (
+               && (not (has_copy_in_name (Procdesc.get_proc_name proc_desc)))
+               && not (NonDisjDomain.is_locked astate_non_disj) -> (
             let default = (astate_non_disj, exec_state) in
             match (copy_check_fn procname, get_return_param proc_desc) with
             | Some from, Some return_param -> (
@@ -211,10 +212,15 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
   aux (get_modeled_as_returning_copy_opt, List.rev) astate_n astates
 
 
+let is_lock pname = String.equal (Procname.get_method pname) "lock"
+
 let add_copied_return path location call_exp actuals astates astate_non_disj =
   let default = (astate_non_disj, astates) in
   match (call_exp : Exp.t) with
-  | Const (Cfun procname) | Closure {name= procname} -> (
+  | (Const (Cfun procname) | Closure {name= procname}) when is_lock procname ->
+      (NonDisjDomain.set_locked astate_non_disj, astates)
+  | (Const (Cfun procname) | Closure {name= procname})
+    when not (NonDisjDomain.is_locked astate_non_disj) -> (
     match (Option.map (Procdesc.load procname) ~f:Procdesc.get_attributes, List.last actuals) with
     | Some attrs, Some ((Exp.Lvar ret_pvar as ret), copy_type) when attrs.has_added_return_param ->
         let copied_var = Var.of_pvar ret_pvar in

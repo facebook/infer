@@ -408,10 +408,13 @@ void unnecessary_copy_initializer_list(std::vector<int> c1,
   // for (const auto* c : { &c1, &c2 }) // use *c
 }
 
+class LockedPtr {};
+
 class MyValueOr {
   bool b;
   Arr& value;
   std::shared_ptr<Arr> shared_ptr;
+  LockedPtr lock();
 
  public:
   Arr value_or(const Arr& default_value) const {
@@ -427,6 +430,11 @@ class MyValueOr {
   std::shared_ptr<Arr> cpy_shared_ptr() const { return shared_ptr; }
 
   Arr intentional_copy() const { return get_a_ref(); }
+
+  Arr intentional_cpy_under_lock() {
+    auto l = lock();
+    return value;
+  }
 };
 
 void call_value_or_bad(const MyValueOr& c) {
@@ -448,4 +456,8 @@ void call_cpy_shared_ptr_ok(const MyValueOr& c) { auto g = c.cpy_shared_ptr(); }
 
 void call_intentional_copy_ok(const MyValueOr& c) {
   auto g = c.intentional_copy();
+}
+
+void call_intentional_cpy_under_lock_ok(MyValueOr c) {
+  auto g = c.intentional_cpy_under_lock();
 }
