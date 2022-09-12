@@ -92,7 +92,7 @@ let build_from_sources sources =
   L.progress
     "Built call graph in %a, from %d total procs, %d reachable defined procs and takes %d bytes@."
     Mtime.Span.pp (Mtime_clock.count time0) n_captured (CallGraph.n_procs g)
-    (Obj.(reachable_words (repr g)) * (Sys.word_size / 8)) ;
+    (Obj.(reachable_words (repr g)) * (Sys.word_size_in_bits / 8)) ;
   g
 
 

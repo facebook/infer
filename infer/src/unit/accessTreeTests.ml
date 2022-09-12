@@ -10,7 +10,11 @@ module F = Format
 
 (* string set domain we use to ensure we're getting the expected traces *)
 module MockTraceDomain = struct
-  include AbstractDomain.FiniteSet (String)
+  include AbstractDomain.FiniteSet (struct
+    include String
+
+    let pp = F.pp_print_string
+  end)
 
   let top_str = "T"
 

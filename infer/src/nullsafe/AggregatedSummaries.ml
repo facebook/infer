@@ -99,7 +99,7 @@ let rec register_ancestors user_defined_class map =
   match JavaClassName.get_outer_class_name user_defined_class with
   | Some outer_class ->
       (* add to the map if not added and to the same for parent *)
-      update_in_map outer_class ~update:ident map |> register_ancestors outer_class
+      update_in_map outer_class ~update:Fn.id map |> register_ancestors outer_class
   | None ->
       map
 
