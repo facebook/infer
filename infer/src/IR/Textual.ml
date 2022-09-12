@@ -591,7 +591,7 @@ module Struct = struct
     in
     (* FIXME: generate static fields *)
     let methods = List.map methods ~f:(Procname.to_sil lang) in
-    ignore (Tenv.mk_struct tenv ~fields ~methods name)
+    Tenv.mk_struct tenv ~fields ~methods name |> ignore
 
 
   let of_sil name sil_struct =
@@ -636,14 +636,16 @@ module Decls = struct
 
 
   let declare_global decls (pvar : Pvar.t) =
-    ignore (VarName.Hashtbl.replace decls.globals pvar.name pvar)
+    VarName.Hashtbl.replace decls.globals pvar.name pvar |> ignore
 
 
   let declare_procname decls (pname : Procname.t) =
-    ignore (QualifiedNameHashtbl.replace decls.procnames pname.qualified_name pname)
+    QualifiedNameHashtbl.replace decls.procnames pname.qualified_name pname |> ignore
 
 
-  let declare_struct decls (s : Struct.t) = ignore (TypeName.Hashtbl.replace decls.structs s.name s)
+  let declare_struct decls (s : Struct.t) =
+    TypeName.Hashtbl.replace decls.structs s.name s |> ignore
+
 
   let declare_struct_from_tenv decls tenv tname =
     match TypeName.Hashtbl.find_opt decls.structs tname with
@@ -1119,7 +1121,7 @@ module Procdesc = struct
     List.iter nodes ~f:(fun node ->
         let data = (node, Node.to_sil lang decls_env procname pdesc node) in
         let key = node.Node.label.value in
-        ignore (Hashtbl.replace node_map key data) ) ;
+        Hashtbl.replace node_map key data |> ignore ) ;
     ( match Hashtbl.find_opt node_map start.value with
     | Some (_, first_node) ->
         Procdesc.node_set_succs pdesc start_node ~normal:[first_node] ~exn:[]
