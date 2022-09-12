@@ -435,6 +435,11 @@ class MyValueOr {
     auto l = lock();
     return value;
   }
+
+  Arr no_cpy_NRVO() const {
+    Arr x;
+    return x;
+  }
 };
 
 void call_value_or_bad(const MyValueOr& c) {
@@ -461,3 +466,5 @@ void call_intentional_copy_ok(const MyValueOr& c) {
 void call_intentional_cpy_under_lock_ok(MyValueOr c) {
   auto g = c.intentional_cpy_under_lock();
 }
+
+void call_no_cpy_NRVO_ok(const MyValueOr& c) { auto g = c.no_cpy_NRVO(); }

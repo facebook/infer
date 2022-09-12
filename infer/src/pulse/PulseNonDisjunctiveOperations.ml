@@ -85,6 +85,8 @@ let is_copy_legit copied_var =
   Var.appears_in_source_code copied_var && not (Var.is_global copied_var)
 
 
+let is_local_variable = function Exp.Lvar pvar -> Pvar.is_local pvar | _ -> false
+
 let add_copies tenv proc_desc path location call_exp actuals astates astate_non_disj =
   let aux (copy_check_fn, args_map_fn) init astates =
     List.fold_map astates ~init ~f:(fun astate_non_disj (exec_state : ExecutionDomain.t) ->
@@ -165,7 +167,8 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
           when (not (is_cheap_to_copy tenv copy_type))
                && (not (Typ.is_pointer_to_smart_pointer copy_type))
                && (not (has_copy_in_name (Procdesc.get_proc_name proc_desc)))
-               && not (NonDisjDomain.is_locked astate_non_disj) -> (
+               && (not (NonDisjDomain.is_locked astate_non_disj))
+               && not (is_local_variable source_exp) -> (
             let default = (astate_non_disj, exec_state) in
             match (copy_check_fn procname, get_return_param proc_desc) with
             | Some from, Some return_param -> (
