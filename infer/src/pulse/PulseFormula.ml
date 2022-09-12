@@ -108,9 +108,10 @@ module LinArith : sig
   (** [true] iff all the variables involved in the expression satisfy {!Var.is_restricted} *)
 
   val solve_for_unrestricted : Var.t -> t -> (Var.t * t) option
-  (** if [l] contains an unrestricted variable then [solve_for_unrestricted u l] is [Some (x, l')]
-      where [x] is the smallest unrestricted variable in [l] and [u=l <=> x=l']. If there are no
-      unrestricted variables in [l] then [solve_for_unrestricted u l] is [None]. Assumes [u∉l]. *)
+  (** if [l] contains at least one unrestricted variable then [solve_for_unrestricted u l] is
+      [Some (x, l')] where [x] is the smallest unrestricted variable in [l] and [u=l <=> x=l']. If
+      there are no unrestricted variables in [l] then [solve_for_unrestricted u l] is [None].
+      Assumes [u∉l]. *)
 
   val pivot : Var.t * Q.t -> t -> t
   (** [pivot (v, q) l] assumes [v] appears in [l] with coefficient [q] and returns [l'] such that
@@ -272,12 +273,14 @@ end = struct
 
   (** {2 Tableau-Specific Operations} *)
 
-  let is_restricted (_, vs) = VarMap.for_all (fun v _ -> Var.is_restricted v) vs
-
-  let solve_for_unrestricted w l =
+  let is_restricted l =
     (* HACK: unrestricted variables come first so we first test if there exists any unrestricted
        variable in the map by checking its min element *)
-    if VarMap.min_binding_opt (snd l) |> Option.exists ~f:(fun (v, _) -> Var.is_unrestricted v) then (
+    not (VarMap.min_binding_opt (snd l) |> Option.exists ~f:(fun (v, _) -> Var.is_unrestricted v))
+
+
+  let solve_for_unrestricted w l =
+    if not (is_restricted l) then (
       match solve_eq l (of_var w) with
       | Unsat | Sat None ->
           None
