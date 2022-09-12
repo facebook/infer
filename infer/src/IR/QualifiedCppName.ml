@@ -42,11 +42,11 @@ let append_template_args_to_last quals ~args =
 
 let to_list = List.rev
 
-let to_rev_list = ident
+let to_rev_list = Fn.id
 
 let of_list = List.rev
 
-let of_rev_list = ident
+let of_rev_list = Fn.id
 
 let cpp_separator = "::"
 

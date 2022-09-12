@@ -6,8 +6,9 @@
  *)
 
 open! IStd
-open PulseBasicInterface
+module F = Format
 module L = Logging
+open PulseBasicInterface
 
 type value = AbstractValue.t [@@deriving compare, equal]
 
@@ -20,10 +21,10 @@ let pp_comma_seq f xs = Pp.comma_seq ~print_env:Pp.text_break f xs
 
 let pp_event f = function
   | ArrayWrite {aw_array; aw_index} ->
-      Format.fprintf f "@[ArrayWrite %a[%a]@]" AbstractValue.pp aw_array AbstractValue.pp aw_index
+      F.fprintf f "@[ArrayWrite %a[%a]@]" AbstractValue.pp aw_array AbstractValue.pp aw_index
   | Call {return; arguments; procname} ->
       let procname = Procname.hashable_name procname (* as in [static_match] *) in
-      Format.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option AbstractValue.pp) return procname
+      F.fprintf f "@[call@ %a=%s(%a)@]" (Pp.option AbstractValue.pp) return procname
         (pp_comma_seq AbstractValue.pp) arguments
 
 
@@ -86,7 +87,7 @@ module Constraint : sig
 
   val prune_path : t -> Formula.t -> Formula.t SatUnsat.t
 
-  val pp : Format.formatter -> t -> unit
+  val pp : F.formatter -> t -> unit
 end = struct
   type predicate = Binop.t * Formula.operand * Formula.operand [@@deriving compare, equal]
 
@@ -165,7 +166,7 @@ end = struct
 
 
   let pp_predicate f (op, l, r) =
-    Format.fprintf f "@[%a%a%a@]" PulseFormula.pp_operand l Binop.pp op PulseFormula.pp_operand r
+    F.fprintf f "@[%a%a%a@]" PulseFormula.pp_operand l Binop.pp op PulseFormula.pp_operand r
 
 
   let pp = Pp.seq ~sep:"∧" pp_predicate
@@ -204,21 +205,21 @@ and simple_state =
 (* TODO: limit the number of simple_states to some configurable number (default ~5) *)
 type state = simple_state list [@@deriving compare, equal]
 
-let pp_mapping f (x, value) = Format.fprintf f "@[%s↦%a@]@," x AbstractValue.pp value
+let pp_mapping f (x, value) = F.fprintf f "@[%s↦%a@]@," x AbstractValue.pp value
 
-let pp_memory f memory = Format.fprintf f "@[<2>[%a]@]" (pp_comma_seq pp_mapping) memory
+let pp_memory f memory = F.fprintf f "@[<2>[%a]@]" (pp_comma_seq pp_mapping) memory
 
 let pp_configuration f {vertex; memory} =
-  Format.fprintf f "@[{ topl-config@;vertex=%d@;memory=%a }@]" vertex pp_memory memory
+  F.fprintf f "@[{ topl-config@;vertex=%d@;memory=%a }@]" vertex pp_memory memory
 
 
 let pp_simple_state f {pre; post; pruned} =
-  Format.fprintf f "@[<2>{ topl-simple-state@;pre=%a@;post=%a@;pruned=(%a) }@]" pp_configuration pre
+  F.fprintf f "@[<2>{ topl-simple-state@;pre=%a@;post=%a@;pruned=(%a) }@]" pp_configuration pre
     pp_configuration post Constraint.pp pruned
 
 
 let pp_state f state =
-  Format.fprintf f "@[<v2>{len=%d;content=@;@[<2>[ %a ]@]}@]" (List.length state)
+  F.fprintf f "@[<v2>{len=%d;content=@;@[<2>[ %a ]@]}@]" (List.length state)
     (pp_comma_seq pp_simple_state) state
 
 
@@ -298,7 +299,9 @@ let apply_action tcontext assignments memory =
 type tcontext = (ToplAst.variable_name * AbstractValue.t) list
 
 let pp_tcontext f tcontext =
-  Format.fprintf f "@[[%a]@]" (pp_comma_seq (Pp.pair ~fst:String.pp ~snd:AbstractValue.pp)) tcontext
+  F.fprintf f "@[[%a]@]"
+    (pp_comma_seq (Pp.pair ~fst:F.pp_print_string ~snd:AbstractValue.pp))
+    tcontext
 
 
 let static_match_array_write arr index label : tcontext option =
@@ -372,7 +375,7 @@ module Debug = struct
     let pp f i = ToplAutomaton.pp_tindex (Topl.automaton ()) f i in
     if Config.trace_topl && not (List.is_empty unseen) then
       L.user_warning "@[<v>@[<v2>The following Topl transitions never match:@;%a@]@;@]"
-        (Format.pp_print_list pp) unseen
+        (F.pp_print_list pp) unseen
 
 
   let dropped_disjuncts_count = ref 0
@@ -618,10 +621,10 @@ let filter_for_summary ~get_dynamic_type path_condition state =
 let description_of_step_data step_data =
   ( match step_data with
   | SmallStep (Call {procname}) | LargeStep (procname, _) ->
-      Format.fprintf Format.str_formatter "@[call to %a@]" Procname.pp procname
+      F.fprintf F.str_formatter "@[call to %a@]" Procname.pp procname
   | SmallStep (ArrayWrite _) ->
-      Format.fprintf Format.str_formatter "@[write to array@]" ) ;
-  Format.flush_str_formatter ()
+      F.fprintf F.str_formatter "@[write to array@]" ) ;
+  F.flush_str_formatter ()
 
 
 let report_errors proc_desc err_log state =

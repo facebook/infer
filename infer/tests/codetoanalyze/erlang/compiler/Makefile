@@ -11,11 +11,11 @@ include $(TESTS_DIR)/base.make
 
 default: test
 
-$(TESTS_DIR)/$(TEST_REL_DIR)/issues.exp.test: $(SOURCES)
+issues.exp.test: $(SOURCES)
 	./run.escript $^ > $@
 
 .PHONY: test
-test: $(TESTS_DIR)/$(TEST_REL_DIR)/issues.exp.test
+test: issues.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp,$(TEST_REL_DIR)/issues.exp.test)
 

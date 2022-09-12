@@ -1223,7 +1223,7 @@ struct
       D.call ThreadID.init ~summaries ~globals ~actuals ~areturn ~formals
         ~freturn ~locals (D.init pgm.globals)
     in
-    Goal.initialize ~pgm ~entry goal ;
+    Goal.initialize ~pgm ~entry:name goal ;
     Work.init state entry goal
 
   let exec_pgm pgm goal =

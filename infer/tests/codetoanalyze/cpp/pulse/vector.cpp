@@ -101,6 +101,36 @@ int size1_bad() {
   return 0;
 }
 
+// missing a more precise model for vector::empty
+int FP_empty0_ok() {
+  std::vector<int> v;
+  if (!v.empty()) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+// missing a more precise model for vector::empty and push_back
+int FP_empty1_ok() {
+  std::vector<int> v;
+  v.push_back(0);
+  if (v.empty()) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int empty0_bad() {
+  std::vector<int> v;
+  if (v.empty()) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
 void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   int* elt = &vec[1];
   int* y = elt;

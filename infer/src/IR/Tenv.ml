@@ -229,12 +229,12 @@ let store_global tenv =
      frontend and backend run in the same process *)
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
-      (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
+      (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
   let tenv = Normalizer.normalize tenv in
   HashNormalizer.reset_all_normalizers () ;
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
-      (Obj.(reachable_words (repr tenv)) * (Sys.word_size / 8)) ;
+      (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
   global_tenv := Some tenv ;
   store_to_filename tenv global_tenv_path
 

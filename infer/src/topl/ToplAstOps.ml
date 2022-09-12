@@ -6,22 +6,23 @@
  *)
 
 open! IStd
+module F = Format
 
 let pp_pattern f (pattern : ToplAst.label_pattern) =
   match pattern with
   | ArrayWritePattern ->
-      Format.fprintf f "#ArrayWrite"
+      F.fprintf f "#ArrayWrite"
   | ProcedureNamePattern procedure_name ->
-      Format.fprintf f "\"%s\"" procedure_name
+      F.fprintf f "\"%s\"" procedure_name
 
 
 let pp_constant f (constant : ToplAst.constant) =
-  match constant with LiteralInt x -> Format.fprintf f "%d" x
+  match constant with LiteralInt x -> F.fprintf f "%d" x
 
 
-let pp_register = String.pp
+let pp_register = F.pp_print_string
 
-let pp_variable = String.pp
+let pp_variable = F.pp_print_string
 
 let pp_value f (value : ToplAst.value) =
   match value with
@@ -36,25 +37,25 @@ let pp_value f (value : ToplAst.value) =
 let pp_binop f (binop : ToplAst.binop) =
   match binop with
   | OpEq ->
-      Format.fprintf f "=="
+      F.fprintf f "=="
   | OpNe ->
-      Format.fprintf f "!="
+      F.fprintf f "!="
   | OpGe ->
-      Format.fprintf f ">="
+      F.fprintf f ">="
   | OpGt ->
-      Format.fprintf f ">"
+      F.fprintf f ">"
   | OpLe ->
-      Format.fprintf f "<="
+      F.fprintf f "<="
   | OpLt ->
-      Format.fprintf f "<"
+      F.fprintf f "<"
 
 
 let pp_predicate f (predicate : ToplAst.predicate) =
   match predicate with
   | Binop (op, l, r) ->
-      Format.fprintf f "@[%a%a%a@]@," pp_value l pp_binop op pp_value r
+      F.fprintf f "@[%a%a%a@]@," pp_value l pp_binop op pp_value r
   | Value v ->
-      Format.fprintf f "@[%a@]" pp_value v
+      F.fprintf f "@[%a@]" pp_value v
 
 
 let pp_condition f (condition : ToplAst.condition) =
@@ -62,11 +63,11 @@ let pp_condition f (condition : ToplAst.condition) =
   | [] ->
       ()
   | predicates ->
-      Format.fprintf f "@ @[when@ %a@]" (Pp.seq ~sep:" && " pp_predicate) predicates
+      F.fprintf f "@ @[when@ %a@]" (Pp.seq ~sep:" && " pp_predicate) predicates
 
 
 let pp_assignment f (register, variable) =
-  Format.fprintf f "@,@[%a=%a@]" pp_register register pp_variable variable
+  F.fprintf f "@,@[%a=%a@]" pp_register register pp_variable variable
 
 
 let pp_action f action =
@@ -74,7 +75,7 @@ let pp_action f action =
   | [] ->
       ()
   | assignments ->
-      Format.fprintf f "@ @[=>@ %a@]" (Pp.seq ~sep:"; " pp_assignment) assignments
+      F.fprintf f "@ @[=>@ %a@]" (Pp.seq ~sep:"; " pp_assignment) assignments
 
 
 let pp_arguments f arguments =
@@ -82,13 +83,13 @@ let pp_arguments f arguments =
   | None ->
       ()
   | Some arguments ->
-      Format.fprintf f "(%a)" (Pp.seq ~sep:"," pp_variable) arguments
+      F.fprintf f "(%a)" (Pp.seq ~sep:"," pp_variable) arguments
 
 
 let pp_raw_label f {ToplAst.pattern; arguments; condition; action} =
-  Format.fprintf f "@[%a%a@,%a%a@]" pp_pattern pattern pp_arguments arguments pp_condition condition
+  F.fprintf f "@[%a%a@,%a%a@]" pp_pattern pattern pp_arguments arguments pp_condition condition
     pp_action action
 
 
 let pp_label f label =
-  match label with None -> Format.fprintf f "*" | Some raw_label -> pp_raw_label f raw_label
+  match label with None -> F.fprintf f "*" | Some raw_label -> pp_raw_label f raw_label

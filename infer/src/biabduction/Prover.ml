@@ -19,9 +19,13 @@ let decrease_indent_when_exception thunk =
     IExn.reraise_after exn ~f:(fun () -> L.d_decrease_indent ())
 
 
-let compute_max_from_nonempty_int_list l = uw (List.max_elt ~compare:IntLit.compare_value l)
+let compute_max_from_nonempty_int_list l =
+  Option.value_exn (List.max_elt ~compare:IntLit.compare_value l)
 
-let compute_min_from_nonempty_int_list l = uw (List.min_elt ~compare:IntLit.compare_value l)
+
+let compute_min_from_nonempty_int_list l =
+  Option.value_exn (List.min_elt ~compare:IntLit.compare_value l)
+
 
 let rec list_rev_acc acc = function [] -> acc | x :: l -> list_rev_acc (x :: acc) l
 
