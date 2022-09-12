@@ -16,7 +16,7 @@ module Q = QSafeCapped
 module Z = ZSafe
 open SatUnsat.Import
 
-(** a humble debug mechanism: set [debug] to [true] and run [make -C infer/src test] to see the
+(** a humble debug mechanism: set [debug] to [true] and run [make -C infer/src runtest] to see the
     arithmetic engine at work in more details *)
 module Debug = struct
   (** change this to [true] for more debug information *)
@@ -24,7 +24,14 @@ module Debug = struct
 
   let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
 
-  let p fmt = if debug then F.printf fmt else F.ifprintf dummy_formatter fmt
+  let p fmt =
+    if debug then
+      F.kasprintf
+        (fun s ->
+          L.d_str s ;
+          F.printf "%s" s )
+        fmt
+    else F.ifprintf dummy_formatter fmt
 end
 
 type function_symbol = Unknown of Var.t | Procname of Procname.t
@@ -541,6 +548,8 @@ module Term = struct
     | IsInt t ->
         F.fprintf fmt "is_int(%a)" (pp_no_paren pp_var) t
 
+
+  let pp = pp_paren ~needs_paren
 
   let of_q q = Const q
 
@@ -1140,7 +1149,7 @@ module Term = struct
     let pp_with_pp_var pp_var fmt m =
       Pp.collection ~sep:"∧"
         ~fold:(IContainer.fold_of_pervasives_map_fold fold)
-        ~pp_item:(fun fmt (term, var) -> F.fprintf fmt "%a=%a" (pp_no_paren pp_var) term pp_var var)
+        ~pp_item:(fun fmt (term, var) -> F.fprintf fmt "%a=%a" (pp pp_var) term pp_var var)
         fmt m
 
 
@@ -1711,7 +1720,7 @@ module Formula = struct
           (* [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≥0 (and so are all possible
              values of all [vi]s since they are restricted variables), hence any possible value
              of [w] is ≥0 so [w ≥ 0] is a tautologie and we can just discard the atom *)
-          Debug.p "Tautologie@\n" ;
+          Debug.p "Tautology@\n" ;
           Sat (phi, new_eqs) )
         else
           (* [w = l] is feasible and not a tautologie (and [l] is restricted), add to the
@@ -1779,7 +1788,7 @@ module Formula = struct
 
     (** same as {!solve_normalized_eq_no_lin} but also adds linear to [phi.linear_eqs] *)
     and solve_normalized_term_eq ~fuel new_eqs (t : Term.t) v phi =
-      Debug.p "solve_normalized_term_eq: %a=%a in %a@\n" (Term.pp_no_paren Var.pp) t Var.pp v
+      Debug.p "solve_normalized_term_eq: %a=%a in %a@\n" (Term.pp Var.pp) t Var.pp v
         (pp_with_pp_var Var.pp) phi ;
       match t with
       | Linear l when LinArith.get_as_var l |> Option.is_some ->
@@ -1923,8 +1932,7 @@ module Formula = struct
 
 
     let and_var_term ~fuel v t (phi, new_eqs) =
-      Debug.p "and_var_term: %a=%a in %a@\n" Var.pp v (Term.pp_no_paren Var.pp) t
-        (pp_with_pp_var Var.pp) phi ;
+      Debug.p "and_var_term: %a=%a in %a@\n" Var.pp v (Term.pp Var.pp) t (pp_with_pp_var Var.pp) phi ;
       let* (t' : Term.t) = normalize_var_const phi t |> Atom.eval_term in
       let v' = (get_repr phi v :> Var.t) in
       (* check if unsat given what we know of [v'] and [t'], in other words be at least as
@@ -2274,6 +2282,7 @@ module DynamicTypes = struct
 end
 
 let normalize tenv ~get_dynamic_type formula =
+  Debug.p "normalizing now@\n" ;
   let open SatUnsat.Import in
   let* formula, new_eqs = DynamicTypes.simplify tenv ~get_dynamic_type formula in
   let+ phi, new_eqs = Formula.Normalizer.normalize (formula.phi, new_eqs) in
