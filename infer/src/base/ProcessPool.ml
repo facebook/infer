@@ -180,7 +180,7 @@ let wait_for_updates pool buffer =
 
 let killall pool ~slot status =
   Array.iter pool.slots ~f:(fun {pid} ->
-      match Signal.send Signal.term (`Pid pid) with `Ok | `No_such_process -> () ) ;
+      match Signal_unix.send Signal.term (`Pid pid) with `Ok | `No_such_process -> () ) ;
   Array.iter pool.slots ~f:(fun {pid} ->
       try Unix.wait (`Pid pid) |> ignore
       with Unix.Unix_error (ECHILD, _, _) ->

@@ -79,7 +79,7 @@ h1 { font-size:14pt }
   let open_out source path =
     let full_fname = get_full_fname source path in
     let fd =
-      Unix.openfile (DB.filename_to_string full_fname) ~mode:Unix.[O_WRONLY; O_APPEND] ~perm:0o777
+      Unix.openfile (DB.filename_to_string full_fname) ~mode:[O_WRONLY; O_APPEND] ~perm:0o777
     in
     let outc = Unix.out_channel_of_descr fd in
     let fmt = F.formatter_of_out_channel outc in

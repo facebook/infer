@@ -334,7 +334,7 @@ let get_ikind_opt {desc} = match desc with Tint ikind -> Some ikind | _ -> None
 (* TODO: size_t should be implementation-dependent. *)
 let size_t = IULong
 
-let escape pe = if Pp.equal_print_kind pe.Pp.kind Pp.HTML then Escape.escape_xml else ident
+let escape pe = if Pp.equal_print_kind pe.Pp.kind Pp.HTML then Escape.escape_xml else Fn.id
 
 (** Pretty print a type with all the details, using the C syntax. *)
 let rec pp_full pe f typ =

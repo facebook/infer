@@ -312,7 +312,7 @@ let realpath ?(warn_on_error = true) path =
 
 
 (* never closed *)
-let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
+let devnull = lazy (Unix.openfile "/dev/null" ~mode:[O_WRONLY])
 
 let suppress_stderr2 f2 x1 x2 =
   let restore_stderr src =
@@ -346,7 +346,7 @@ let rec rmtree name =
       rmdir dir
   | _ ->
       Unix.unlink name
-  | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
+  | exception Unix.Unix_error (ENOENT, _, _) ->
       ()
 
 

@@ -98,9 +98,7 @@ let clean_compilation_command mode =
 let reset_duplicates_file () =
   let start = ResultsDir.get_path DuplicateFunctions in
   let delete () = Unix.unlink start in
-  let create () =
-    Unix.close (Unix.openfile ~perm:0o0666 ~mode:[Unix.O_CREAT; Unix.O_WRONLY] start)
-  in
+  let create () = Unix.close (Unix.openfile ~perm:0o0666 ~mode:[O_CREAT; O_WRONLY] start) in
   if ISys.file_exists start then delete () ;
   create ()
 
@@ -376,8 +374,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
 let error_no_buck_mode_specified () =
   L.die UserError
     "`buck` command detected on the command line but no Buck integration has been selected. Please \
-     specify `--buck-clang`, `--buck-java`, or `--buck-compilation-database`. See `infer capture \
-     --help` for more information."
+     specify `--buck-clang`, `--buck-java`, `--buck-erlang`, or `--buck-compilation-database`. See \
+     `infer capture --help` for more information."
 
 
 let assert_supported_build_system build_system =
