@@ -1662,40 +1662,41 @@ module Formula = struct
         | Some v' ->
             merge_vars ~fuel new_eqs (v :> Var.t) v' phi
         | None -> (
-            if (not force_no_tableau) && Var.is_restricted v && LinArith.is_restricted l then
-              (* linear equalities between restricted variables belong in the [tableau] instead of
-                 [linear_eqs], except if [force_no_tableau] is set *)
-              solve_tableau_restricted_eq ~fuel new_eqs v l phi
-            else
-              match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
-              | None ->
-                  (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
-                  let+ phi, new_eqs =
-                    solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) (v :> Var.t) phi
-                  in
-                  let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
-                  (* this can break the (as a result non-)invariant that variables in the domain of
-                     [linear_eqs] do not appear in the range of [linear_eqs] *)
-                  ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
-              | Some l' ->
-                  (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
-                     do not record these anywhere (except when their consequence can be recorded as [y =
-                     l''] or [y = y'], we could potentially discover the same equality over and over and
-                     diverge otherwise. Or could we?) *)
-                  (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
-                     normalize it, and replace [v]'s current binding *)
-                  let l'' = normalize_linear phi l' in
-                  let phi =
-                    if phys_equal l' l'' then phi
-                    else {phi with linear_eqs= Var.Map.add (v :> Var.t) l'' phi.linear_eqs}
-                  in
-                  if fuel > 0 then (
-                    L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
-                    solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l'' phi )
-                  else (
-                    (* [fuel = 0]: give up simplifying further for fear of diverging *)
-                    L.d_printfln "Ran out of fuel solving linear equality" ;
-                    Sat (phi, new_eqs) ) ) )
+            let* phi, new_eqs =
+              if (not force_no_tableau) && Var.is_restricted v && LinArith.is_restricted l then
+                (* linear equalities between restricted variables can be forwarded to [tableau] *)
+                solve_tableau_restricted_eq ~fuel new_eqs v l phi
+              else Sat (phi, new_eqs)
+            in
+            match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
+            | None ->
+                (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
+                let+ phi, new_eqs =
+                  solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) (v :> Var.t) phi
+                in
+                let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
+                (* this can break the (as a result non-)invariant that variables in the domain of
+                   [linear_eqs] do not appear in the range of [linear_eqs] *)
+                ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
+            | Some l' ->
+                (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
+                   do not record these anywhere (except when their consequence can be recorded as [y =
+                   l''] or [y = y'], we could potentially discover the same equality over and over and
+                   diverge otherwise. Or could we?) *)
+                (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
+                   normalize it, and replace [v]'s current binding *)
+                let l'' = normalize_linear phi l' in
+                let phi =
+                  if phys_equal l' l'' then phi
+                  else {phi with linear_eqs= Var.Map.add (v :> Var.t) l'' phi.linear_eqs}
+                in
+                if fuel > 0 then (
+                  L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
+                  solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l'' phi )
+                else (
+                  (* [fuel = 0]: give up simplifying further for fear of diverging *)
+                  L.d_printfln "Ran out of fuel solving linear equality" ;
+                  Sat (phi, new_eqs) ) ) )
 
 
     (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; don't use directly
@@ -1888,6 +1889,9 @@ module Formula = struct
           solve_normalized_lin_eq ~fuel new_eqs l_v (LinArith.of_var v) phi
       | None ->
           (* [l] can go into the tableau as it contains only restricted (non-negative) variables *)
+          let* phi, new_eqs =
+            solve_normalized_lin_eq ~force_no_tableau:true ~fuel new_eqs l (LinArith.of_var w) phi
+          in
           solve_tableau_restricted_eq ~fuel new_eqs w l phi
 
 

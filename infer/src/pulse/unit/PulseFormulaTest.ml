@@ -363,8 +363,8 @@ let%test_module "inequalities" =
         {|
         conditions: (empty)
         phi: var_eqs: a3=z ∧ a2=y ∧ a1=x
-             && linear_eqs: v6 = a1 + a2 ∧ v7 = -a2 + a3
-             && term_eqs: [a1 + a2]=v6∧[-a2 + a3]=v7
+             && linear_eqs: a2 = a3 + a5 +3 ∧ a1 = -a3 + a4 + -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
+             && term_eqs: [-a5 -3]=v7∧[-a3 + a4 + -a5 -1]=a1∧[a4 +2]=v6∧[a3 + a5 +3]=a2
              && tableau: a4 = a1 + a3 + a5 +1 ∧ a2 = a3 + a5 +3
              && intervals: x≥0 ∧ y≥0 ∧ z≥0 ∧ v6≥2 ∧ v7≤-3 |}]
 
@@ -375,6 +375,21 @@ let%test_module "inequalities" =
     let%expect_test "contradiction using pivot" =
       normalize (x >= i 0 && y >= i 0 && z >= i 0 && x + y <= i 2 && y - z >= i 3) ;
       [%expect {|unsat|}]
+
+    let%expect_test "constant propagation to tableau" =
+      normalize (x < i 34 && y < i 2 * x && x = i 32 && y = i 64) ;
+      [%expect {|unsat|}]
+
+    let%expect_test "tableau simplified away by constant propagation" =
+      normalize (x < i 34 && y <= i 2 * x && x = i 32 && y = i 64) ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: var_eqs: y=v6
+             && linear_eqs: a2 = 0 ∧ a1 = 1 ∧ x = 32 ∧ y = 64
+             && term_eqs: 0=a2∧1=a1∧32=x∧64=y
+             && tableau: a1 = -1/2·a2 +1
+             && intervals: x=32 ∧ y=64|}]
   end )
 
 let%test_module "intervals" =
@@ -390,5 +405,10 @@ let%test_module "intervals" =
       [%expect
         {|
         conditions: (empty)
-        phi: var_eqs: a1=x && tableau: a2 = -a1 +2 && intervals: x=2 && atoms: {[a1] ≠ 0}∧{[a1] ≠ 1} |}]
+        phi: var_eqs: a1=x
+             && linear_eqs: a1 = -a2 +2
+             && term_eqs: [-a2 +2]=a1
+             && tableau: a2 = -a1 +2 ∧ a1 = -a2 +2
+             && intervals: x=2
+             && atoms: {[a1] ≠ 0}∧{[a1] ≠ 1} |}]
   end )

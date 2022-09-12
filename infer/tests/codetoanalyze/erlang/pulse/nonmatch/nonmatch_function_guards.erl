@@ -14,7 +14,7 @@
     test_accepts_all_basic2_Ok/0,
     test_accepts_all_tricky_Ok/0,
     test_accepts_all_tricky2_Ok/0,
-    fp_test_accepts_all_tricky3_Ok/0,
+    test_accepts_all_tricky3_Ok/0,
     test_possible_exception_Ok/0,
     test_possible_exception_Bad/0,
     fn_test_possible_exception2_Bad/0
@@ -69,7 +69,7 @@ test_accepts_all_tricky2_Ok() ->
     accepts_all_tricky2(0),
     accepts_all_tricky2(1).
 
-fp_test_accepts_all_tricky3_Ok() ->
+test_accepts_all_tricky3_Ok() ->
     fplatent_accepts_all_tricky3(0),
     fplatent_accepts_all_tricky3(1).
 
