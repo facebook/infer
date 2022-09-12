@@ -564,38 +564,6 @@ struct
         | `Both (d1, d2) -> Some (Int.max d1 d2) )
   end
 
-  module Hist = struct
-    (** a history is a current instruction pointer and some list of
-        predecessors. [preds] are empty iff this is an entrypoint. *)
-    type t = {curr: Llair.IP.t; preds: t iarray} [@@deriving sexp_of]
-
-    let init ip = {curr= ip; preds= IArray.empty}
-    let extend curr preds = {curr; preds= IArray.of_list preds}
-
-    let dump h fs =
-      (* todo: output nicely-formatted DAG; just printing a single
-         arbitrarily-chosen witness path from the root for now. *)
-      let path =
-        let rec path_impl h =
-          let tail =
-            if IArray.is_empty h.preds then []
-            else path_impl (IArray.get h.preds 0)
-          in
-          if Llair.IP.index h.curr = 0 || IArray.length h.preds > 1 then
-            h.curr :: tail
-          else tail
-        in
-        path_impl >> List.rev
-      in
-      let pp_ip fs ip =
-        let open Llair in
-        Format.fprintf fs "%a%a%a" FuncName.pp (IP.block ip).parent.name
-          IP.pp ip Loc.pp (IP.loc ip)
-      in
-      Format.fprintf fs "@[<v 2>Witness Trace:@ %a@]" (List.pp "@ " pp_ip)
-        (path h)
-  end
-
   type switches = int [@@deriving compare, equal, sexp_of]
 
   (** Abstract memory, control, and history state, with a slot used for the
@@ -611,7 +579,7 @@ struct
     ; switches: switches  (** count of preceding context switches *)
     ; depths: Depths.t  (** count of retreating edge crossings *)
     ; goal: Goal.t  (** goal for symbolic execution exploration *)
-    ; history: Hist.t  (** DAG history of executions to this point *) }
+    ; history: History.t  (** DAG history of executions to this point *) }
   [@@deriving sexp_of]
 
   (** An abstract machine state consists of the instruction pointer of the
@@ -716,7 +684,7 @@ struct
         across several executions that share the same execution history. *)
     module Joinable = struct
       module Elt = struct
-        type t = {state: D.t; depths: Depths.t; history: Hist.t [@ignore]}
+        type t = {state: D.t; depths: Depths.t; history: History.t [@ignore]}
         [@@deriving compare, equal, sexp_of]
       end
 
@@ -801,7 +769,7 @@ struct
       let depths = Depths.empty in
       let queue = Queue.create () in
       let cursor = Cursor.empty in
-      let history = Hist.init ip in
+      let history = History.init ip in
       enqueue depth
         {ctrl= edge; state; threads; switches; depths; goal; history}
         (queue, cursor)
@@ -894,7 +862,7 @@ struct
           dequeue (queue, cursor)
       | Some ((switches, ip, threads, goal), next_states, cursor) ->
           let state, depths, histories, edges = Joinable.join next_states in
-          let history = Hist.extend ip.ip histories in
+          let history = History.extend ip.ip histories in
           [%Dbg.info
             " %i,%i: %a <-t%i- {@[%a@]}%a" switches top.ctrl.depth IP.pp ip
               ip.tid
@@ -948,7 +916,7 @@ struct
     if goal != ams.goal && Goal.reached goal then
       Report.reached_goal
         ~dp_goal:(fun fs -> Goal.pp fs goal)
-        ~dp_witness:(Hist.dump (Hist.extend ip [history])) ;
+        ~dp_witness:(History.dump (History.extend ip [history])) ;
     let dnf_states =
       if Config.function_summaries then D.dnf state
       else Iter.singleton state
@@ -998,7 +966,7 @@ struct
     if goal != ams.goal && Goal.reached goal then
       Report.reached_goal
         ~dp_goal:(fun fs -> Goal.pp fs goal)
-        ~dp_witness:(Hist.dump (Hist.extend ip [history])) ;
+        ~dp_witness:(History.dump (History.extend ip [history])) ;
     let summarize post_state =
       if not Config.function_summaries then post_state
       else
@@ -1180,7 +1148,7 @@ struct
         if not (D.is_unsat state) then
           Report.alarm
             (Alarm.v Abort loc Llair.Term.pp term D.pp state)
-            ~dp_witness:(Hist.dump ams.history) ;
+            ~dp_witness:(History.dump ams.history) ;
         wl
     | Unreachable -> wl
 
@@ -1202,7 +1170,7 @@ struct
               Work.add {ams with ctrl= edge; state} wl
             else exec_ip pgm {ams with ctrl= {ams.ctrl with ip}; state} wl
         | Error alarm ->
-            Report.alarm alarm ~dp_witness:(Hist.dump ams.history) ;
+            Report.alarm alarm ~dp_witness:(History.dump ams.history) ;
             wl )
     | None ->
         [%Dbg.info
