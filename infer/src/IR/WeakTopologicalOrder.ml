@@ -67,7 +67,7 @@ module Partition = struct
                   | Node {node= head; next= rest} ->
                       cb (Component {head; rest; next}) ) )
     in
-    expand_aux ~cb:IStd.ident partition
+    expand_aux ~cb:Fn.id partition
 
 
   let rec pp ~prefix ~pp_node fmt = function

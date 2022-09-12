@@ -74,7 +74,7 @@ let run_gradle ~prog ~args =
 
 let capture_gradle_target (out_dir, (javac_data : javac_data)) =
   let tmpfile, oc =
-    Core.Filename.open_temp_file ~in_dir:(ResultsDir.get_path Temporary) "gradle_files" ""
+    Filename.open_temp_file ~in_dir:(ResultsDir.get_path Temporary) "gradle_files" ""
   in
   List.iter javac_data.files ~f:(fun file ->
       Out_channel.output_string oc (Escape.escape_shell file) ;

@@ -11,7 +11,7 @@ module L = Logging
 let get_path entry = ResultsDirEntryName.get_path ~results_dir:Config.results_dir entry
 
 module RunState = struct
-  let run_time_string = Time.now () |> Time.to_string
+  let run_time_string = Time.now () |> Time.to_string_utc
 
   let state0 =
     let open Runstate_t in

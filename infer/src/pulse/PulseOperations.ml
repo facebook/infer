@@ -546,7 +546,7 @@ let check_address_escape escape_location proc_desc address history astate =
   in
   let check_address_of_cpp_temporary () =
     AddressAttributes.find_opt address astate
-    |> Option.fold_result ~init:() ~f:(fun () attrs ->
+    |> Option.value_map ~default:(Result.Ok ()) ~f:(fun attrs ->
            IContainer.iter_result ~fold:Attributes.fold attrs ~f:(fun attr ->
                match attr with
                | Attribute.AddressOfCppTemporary (variable, _)

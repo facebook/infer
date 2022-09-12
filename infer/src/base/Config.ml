@@ -3148,7 +3148,7 @@ let post_parsing_initialization command_opt =
   F.set_margin !margin ;
   let set_gc_params () =
     let ctrl = Gc.get () in
-    let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size in
+    let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size_in_bits in
     let new_size nMb = max ctrl.minor_heap_size (words_of_Mb nMb) in
     (* increase the minor heap size *)
     let minor_heap_size = new_size 8 in
@@ -3178,7 +3178,7 @@ let post_parsing_initialization command_opt =
   | Linters ->
       disable_all_checkers () ;
       capture := false ;
-      enable_checker Linters
+      enable_checker Checker.Linters
   | Checkers ->
       () ) ;
   Option.value ~default:InferCommand.Run command_opt
