@@ -14,7 +14,7 @@ module type S = sig
   val reached : t -> bool
   val update_after_call : Llair.FuncName.t -> t -> t
   val update_after_retn : Llair.FuncName.t -> t -> t
-  val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit
+  val initialize : pgm:Llair.program -> entry:Llair.FuncName.t -> t -> unit
 end
 
 module Undirected = struct
@@ -30,18 +30,12 @@ module Undirected = struct
 end
 
 module Sparse_trace = struct
-  type direction = Call | Retn [@@deriving compare, equal, sexp_of]
-
-  type checkpoint = direction * Llair.FuncName.t
+  type checkpoint = [`Call of Llair.FuncName.t | `Retn of Llair.FuncName.t]
   [@@deriving compare, equal, sexp_of]
 
-  let pp_checkpoint ppf (dir, fn) =
-    let dir_string = match dir with Call -> "" | Retn -> "retn:" in
-    Format.fprintf ppf "%s%a" dir_string Llair.FuncName.pp fn
-
-  let is_call (dir, _) = match dir with Call -> true | Retn -> false
-  let is_ret = is_call >> not
-  let function_of_cp (_, f) = f
+  let pp_checkpoint ppf = function
+    | `Call f -> Llair.FuncName.pp ppf f
+    | `Retn f -> Format.fprintf ppf "retn:%a" Llair.FuncName.pp f
 
   type t = {cursor: int; trace: checkpoint iarray}
   [@@deriving compare, equal, sexp_of]
@@ -60,8 +54,8 @@ module Sparse_trace = struct
       cursor < IArray.length trace
       &&
       match IArray.get trace cursor with
-      | Call, fn' -> Llair.FuncName.equal fn fn'
-      | Retn, _ -> false
+      | `Call fn' -> Llair.FuncName.equal fn fn'
+      | `Retn _ -> false
     then (
       [%Dbg.info "reached %a in %a" Llair.FuncName.pp fn pp goal] ;
       {goal with cursor= cursor + 1} )
@@ -72,10 +66,10 @@ module Sparse_trace = struct
       cursor < IArray.length trace
       &&
       match IArray.get trace cursor with
-      | Call, _ -> false
-      | Retn, fn' -> Llair.FuncName.equal fn fn'
+      | `Call _ -> false
+      | `Retn fn' -> Llair.FuncName.equal fn fn'
     then (
-      [%Dbg.info "reached %a in %a" pp_checkpoint (Retn, fn) pp goal] ;
+      [%Dbg.info "reached %a in %a" pp_checkpoint (`Retn fn) pp goal] ;
       {goal with cursor= cursor + 1} )
     else goal
 
@@ -98,7 +92,7 @@ module Sparse_trace = struct
     if List.is_empty src_trace then
       raise (Invalid_trace "Malformed trace: src_trace must not be empty") ;
     let src_trace_fns = List.map ~f:lookup src_trace in
-    let src_calls = List.map ~f:(fun f -> (Call, f)) src_trace_fns in
+    let src_calls = List.map ~f:(fun f -> `Call f) src_trace_fns in
     let trace =
       IArray.of_list
       @@
@@ -106,73 +100,40 @@ module Sparse_trace = struct
       else
         List.(
           let src_rets =
-            drop 1 src_trace_fns |> map ~f:(fun f -> (Retn, f)) |> rev
+            drop 1 src_trace_fns |> map ~f:(fun f -> `Retn f) |> rev
           in
           let snk_calls =
-            drop 1 snk_trace |> map ~f:(fun f -> (Call, lookup f))
+            drop 1 snk_trace |> map ~f:(fun f -> `Call (lookup f))
           in
           src_calls @ src_rets @ snk_calls)
     in
     {cursor= 0; trace}
 
-  let src_trace =
-    IArray.to_iter
-    >> Iter.(take_while ~f:is_call >> map ~f:function_of_cp)
-    >> IArray.of_iter
-
-  let snk_trace =
-    IArray.to_iter
-    >> Iter.(
-         drop_while ~f:is_call
-         >> drop_while ~f:is_ret
-         >> map ~f:function_of_cp)
-    >> IArray.of_iter
-
   let initialize ~pgm ~entry {trace; _} =
-    let src_trace = src_trace trace in
-    let snk_trace = snk_trace trace in
-    match
-      Llair.Program.compute_distances ~entry ~src_trace ~snk_trace pgm
-    with
+    match Llair.Distance_tabulation.top_down pgm ~entry trace with
     | Result.Ok _ -> ()
     | Result.Error dp_path -> Report.unreachable_goal ~dp_path
 
-  let dist_to_next_checkpoint (({cursor; _} as goal), block) =
-    if reached goal then 0
+  let dist_to_goal (goal, block_opt) =
+    if reached goal then Int.max_int
     else
-      Option.value ~default:Int.max_int
-        (Int.Map.find cursor block.Llair.checkpoint_dists)
+      match block_opt with
+      | Some b -> b.Llair.goal_distance
+      | None -> Int.max_int
 
   type status = t * Llair.block option
 
   let status t b = (t, b)
 
-  (** Compare using trace progress first, then using distance to next
-      checkpoint if trace progress is equal. Note that [(g,blk)] <
-      [(g',blk')] if we should prioritize a worklist element at [blk] with
-      goal [g] over one at [blk'] with [g']. So, this effects a depth-first
-      search currently, greedily prioritizing whichever element is closest
-      to reaching the goal. *)
+  (** Compare statuses first by goal-trace progress, then by distance to the
+      trace's "accept state". Note that [(g,blk)] < [(g',blk')] if we should
+      prioritize a worklist element at [blk] with goal [g] over one at
+      [blk'] with [g']. So, this effects a depth-first search, greedily
+      prioritizing whichever element is closest to reaching the goal. Blocks
+      from which there is no path to the goal or the goal has already been
+      reached are given maximal distance. *)
   let compare_status =
     let open Ord.Infix in
-    (* [dist_to_next_checkpoint] yields [Int.max_int] when we don't know of
-       any path to the next checkpoint, and [b]/[b'] are [None] when a
-       thread is terminated. So, this orders (1) states with shorter paths
-       to the checkpoint <= (2) states with longer paths to the checkpoint
-       <= (3) states with no known paths to the checkpoint <= (4) states in
-       terminated threads. *)
-    let compare_dist_to_next_checkpoint (g, b) (g', b') =
-      match (b, b') with
-      | None, None -> 0
-      | None, _ -> 1
-      | _, None -> -1
-      | Some b, Some b' ->
-          if b == b' then 0
-          else
-            let d = dist_to_next_checkpoint (g, b) in
-            let d' = dist_to_next_checkpoint (g', b') in
-            Int.compare d d'
-    in
     (Int.compare >|= fun (g, _) -> g.cursor)
-    @? compare_dist_to_next_checkpoint
+    @? (Int.compare >|= dist_to_goal)
 end
