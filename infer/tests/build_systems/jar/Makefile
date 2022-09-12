@@ -16,6 +16,6 @@ CLEAN_EXTRA = $(TARGET)
 include $(TESTS_DIR)/infer.make
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
-	$(QUIET)cd $(MVN_DIR) && $(MVN) clean install
+	$(QUIET)cd $(MVN_DIR) && $(MVN) --quiet clean install
 	$(call silent_on_success,Testing mvn Java integration: $*,\
 		$(INFER_BIN) --generated-classes $(JAR_FILE) --sourcepath $(MVN_DIR))
