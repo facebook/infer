@@ -1913,17 +1913,23 @@ module Formula = struct
     let and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
 
     let normalize_linear_eqs (phi0, new_eqs) =
-      Var.Map.fold
-        (fun v l acc ->
-          let* changed, ((_, new_eqs) as phi_new_eqs) = acc in
-          let l' = normalize_linear phi0 l in
-          let+ phi', new_eqs' = and_var_linarith v l' phi_new_eqs in
-          let changed', new_eqs' =
-            if phys_equal l l' then (changed, new_eqs) else (true, new_eqs')
-          in
-          (changed', (phi', new_eqs')) )
-        phi0.linear_eqs
-        (Sat (false, ({phi0 with linear_eqs= Var.Map.empty}, new_eqs)))
+      let one_linear_relation ~normalize linear_eqs changed_phi_new_eqs =
+        Var.Map.fold
+          (fun v l acc ->
+            let* changed, ((_, new_eqs) as phi_new_eqs) = acc in
+            let l' = normalize phi0 l in
+            let+ phi', new_eqs' = and_var_linarith v l' phi_new_eqs in
+            let changed', new_eqs' =
+              if phys_equal l l' then (changed, new_eqs) else (true, new_eqs')
+            in
+            (changed', (phi', new_eqs')) )
+          linear_eqs changed_phi_new_eqs
+      in
+      one_linear_relation ~normalize:normalize_linear phi0.linear_eqs
+        (Sat (false, ({phi0 with linear_eqs= Var.Map.empty; tableau= Var.Map.empty}, new_eqs)))
+      |> one_linear_relation
+           ~normalize:(fun phi l -> normalize_linear phi l |> normalize_restricted phi)
+           phi0.tableau
 
 
     (* TODO: should we check if [φ ⊢ atom] (i.e. whether [φ ∧ ¬atom] is unsat) in [normalize_atom],
@@ -2013,7 +2019,6 @@ module Formula = struct
         L.d_printfln "ran out of fuel when normalizing" ;
         Sat phi_new_eqs0 )
       else
-        (* NOTE: [phi.tableau] is eagerly normalized so no further normalization needed here *)
         let* new_linear_eqs, phi_new_eqs' =
           let* new_linear_eqs_from_linear, phi_new_eqs = normalize_linear_eqs phi_new_eqs0 in
           if new_linear_eqs_from_linear && fuel > 0 then
