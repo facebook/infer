@@ -262,7 +262,9 @@ ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck_java_flavor
 endif
 ifneq ($(MVN),no)
-BUILD_SYSTEMS_TESTS += mvn
+BUILD_SYSTEMS_TESTS += \
+	mvn \
+	jar
 endif
 endif # BUILD_JAVA_ANALYZERS
 
