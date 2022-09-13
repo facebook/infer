@@ -110,7 +110,7 @@ module Sparse_trace = struct
     {cursor= 0; trace}
 
   let initialize ~pgm ~entry {trace; _} =
-    match Llair.Distance_tabulation.top_down pgm ~entry trace with
+    match Distances.top_down pgm ~entry trace with
     | Result.Ok _ -> ()
     | Result.Error dp_path -> Report.unreachable_goal ~dp_path
 
