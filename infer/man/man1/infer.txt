@@ -1201,8 +1201,8 @@ OPTIONS
            }
            See also infer-analyze(1).
 
-       --pulse-taint-propagaters json
-           Quick way to specify simple propagaters as a JSON objects. See
+       --pulse-taint-propagators json
+           Quick way to specify simple propagators as a JSON objects. See
            --pulse-taint-sources for the fields format documentation.       
     See also infer-analyze(1).
 
@@ -1239,7 +1239,7 @@ OPTIONS
              - "taint_target":
                  where the taint should be applied in the procedure.
                  - "ReturnValue": (default for taint sources and
-           propagaters)
+           propagators)
                  - "AllArguments": (default for taint sanitizers and sinks)
                  - ["ArgumentPositions", [<int list>]]:
                      argument positions given by index (zero-indexed)

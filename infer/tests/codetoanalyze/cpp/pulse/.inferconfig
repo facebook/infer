@@ -93,9 +93,9 @@
        "taint_target": "ReturnValue"
      }
   ],
-  "pulse-taint-propagaters": [
+  "pulse-taint-propagators": [
     {
-      "procedure": "basics::Obj::propagater",
+      "procedure": "basics::Obj::propagator",
       "taint_target": ["ArgumentPositions", [1]]
     }
   ]
