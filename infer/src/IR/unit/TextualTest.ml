@@ -20,12 +20,12 @@ let parse_module text =
 let%test_module "parsing" =
   ( module struct
     let text =
-      {| 
+      {|
        attribute source_language = "hack"
        attribute source_file = "original.hack"
-       
+
        attribute source_language = "java" // Won't have an effect
-       
+
        define nothing(): void {
          #node0:
            ret null
@@ -94,4 +94,79 @@ let%test_module "to_sil" =
       with ToSilTransformationError pp_msg ->
         pp_msg F.std_formatter () ;
         [%expect {| Missing or unsupported source_language attribute |}]
+  end )
+
+let%test_module "transformation" =
+  ( module struct
+    let input_text =
+      {|
+        declare g1(int) : int
+
+        declare g2(int) : int
+
+        declare g3(int) : int
+
+        declare m(int, int) : int
+
+        define f(x: int, y: int) : int {
+          #entry:
+              n0:int = load &x
+              n1:int = load &y
+              n3 = __sil_mult_int(g3(n0), m(g1(n0), g2(n1)))
+              n4 = m(n0, g3(n1))
+              jmp lab1(g1(n3), g3(n0)), lab2(g2(n3), g3(n0))
+          #lab1(n6, n7):
+              n8 = __sil_mult_int(n6, n7)
+              jmp lab
+          #lab2(n10, n11):
+              ret g3(m(n10, n11))
+          #lab:
+              throw g1(n8)
+        } |}
+
+
+    let%expect_test _ =
+      let module_ = parse_module input_text |> Transformation.remove_internal_calls in
+      F.printf "%a" Module.pp module_ ;
+      [%expect
+        {|
+        declare g1(int) : int
+
+        declare g2(int) : int
+
+        declare g3(int) : int
+
+        declare m(int, int) : int
+
+        define f(x: int, y: int) : int {
+          #entry:
+              n0:int = load &x
+              n1:int = load &y
+              n12 = g3(n0)
+              n13 = g1(n0)
+              n14 = g2(n1)
+              n15 = m(n13, n14)
+              n3 = __sil_mult_int(n12, n15)
+              n16 = g3(n1)
+              n4 = m(n0, n16)
+              n17 = g1(n3)
+              n18 = g3(n0)
+              n19 = g2(n3)
+              n20 = g3(n0)
+              jmp lab1(n17, n18), lab2(n19, n20)
+
+          #lab1(n6, n7):
+              n8 = __sil_mult_int(n6, n7)
+              jmp lab
+
+          #lab2(n10, n11):
+              n21 = m(n10, n11)
+              n22 = g3(n21)
+              ret n22
+
+          #lab:
+              n23 = g1(n8)
+              throw n23
+
+        } |}]
   end )

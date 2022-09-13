@@ -203,6 +203,15 @@ module Ident : sig
   val pp : F.formatter -> t -> unit
 
   module Map : Caml.Map.S with type key = t
+
+  module Set : Caml.Set.S with type elt = t
+
+  (* We assume idents are totally ordered.
+     [next id] returns an ident that is strictly greater than [id] wrt this order. *)
+  val next : t -> t
+
+  (* [fresh set] returns an ident that is strictly greater than all idents in [set] *)
+  val fresh : Set.t -> t
 end = struct
   type t = int
 
@@ -220,6 +229,11 @@ end = struct
   let pp fmt id = F.fprintf fmt "n%d" id
 
   module Map = Caml.Map.Make (Int)
+  module Set = Caml.Set.Make (Int)
+
+  let fresh set = 1 + Set.max_elt set
+
+  let next i = i + 1
 end
 
 module SilConst = Const
@@ -1155,6 +1169,15 @@ module Procdesc = struct
     F.fprintf fmt "@]\n}@\n@\n"
 
 
+  (* returns all the idents that are defined in the procdesc *)
+  let collect_ident_defs {nodes} : Ident.Set.t =
+    let open Ident in
+    List.fold nodes ~init:Set.empty ~f:(fun set (node : Node.t) ->
+        let set = List.fold node.ssa_parameters ~init:set ~f:(fun set id -> Set.add id set) in
+        List.fold node.instrs ~init:set ~f:(fun set (instr : Instr.t) ->
+            match instr with Load {id} | Let {id} -> Set.add id set | Store _ | Prune _ -> set ) )
+
+
   let make_label_of_node () =
     let open Procdesc in
     let tbl = NodeHash.create 17 in
@@ -1292,6 +1315,14 @@ module Module = struct
     decls_env
 
 
+  let map_procs ~f _module =
+    let decls =
+      List.map _module.decls ~f:(fun decl ->
+          match decl with Proc pdesc -> Proc (f pdesc) | Global _ | Struct _ | Procname _ -> decl )
+    in
+    {_module with decls}
+
+
   let to_sil module_ =
     match lang module_ with
     | None ->
@@ -1372,6 +1403,102 @@ module Module = struct
         pp_copyright fmt ;
         pp fmt (of_sil ~sourcefile ~lang:Java tenv cfg) ;
         Format.pp_print_flush fmt () )
+end
+
+module Transformation = struct
+  let remove_internal_calls _module =
+    let module State = struct
+      type t = {instrs_rev: Instr.t list; fresh_ident: Ident.t}
+
+      let push_instr instr state = {state with instrs_rev= instr :: state.instrs_rev}
+
+      let incr_fresh state = {state with fresh_ident= Ident.next state.fresh_ident}
+    end in
+    let rec flatten_exp (exp : Exp.t) state : Exp.t * State.t =
+      match exp with
+      | Var _ | Lvar _ | Const _ ->
+          (exp, state)
+      | Field f ->
+          let exp, state = flatten_exp f.exp state in
+          (Field {f with exp}, state)
+      | Index (exp1, exp2) ->
+          let exp1, state = flatten_exp exp1 state in
+          let exp2, state = flatten_exp exp2 state in
+          (Index (exp1, exp2), state)
+      | Call {proc; args} ->
+          let args, state = flatten_exp_list args state in
+          if Procname.is_sil_instr proc then (Call {proc; args}, state)
+          else
+            let fresh = state.State.fresh_ident in
+            let new_instr : Instr.t =
+              Let {id= fresh; exp= Call {proc; args}; loc= Location.Unknown}
+            in
+            (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
+      | Cast (typ, exp) ->
+          let exp, state = flatten_exp exp state in
+          (Cast (typ, exp), state)
+    and flatten_exp_list exp_list state =
+      let exp_list, state =
+        List.fold exp_list ~init:([], state) ~f:(fun (args, state) exp ->
+            let exp, state = flatten_exp exp state in
+            (exp :: args, state) )
+      in
+      (List.rev exp_list, state)
+    in
+    let flatten_in_instr (instr : Instr.t) state : State.t =
+      match instr with
+      | Load args ->
+          let exp, state = flatten_exp args.exp state in
+          State.push_instr (Load {args with exp}) state
+      | Store args ->
+          let exp1, state = flatten_exp args.exp1 state in
+          let exp2, state = flatten_exp args.exp2 state in
+          State.push_instr (Store {args with exp1; exp2}) state
+      | Prune args ->
+          let exp, state = flatten_exp args.exp state in
+          State.push_instr (Prune {args with exp}) state
+      | Let {id; exp= Call {proc; args}; loc} when not (Procname.is_sil_instr proc) ->
+          let args, state = flatten_exp_list args state in
+          State.push_instr (Let {id; exp= Call {proc; args}; loc}) state
+      | Let {id; exp; loc} ->
+          let exp, state = flatten_exp exp state in
+          State.push_instr (Let {id; exp; loc}) state
+    in
+    let flatten_in_terminator (last : Terminator.t) state : Terminator.t * State.t =
+      match last with
+      | Ret exp ->
+          let exp, state = flatten_exp exp state in
+          (Ret exp, state)
+      | Jump node_calls ->
+          let node_calls_rev, state =
+            List.fold node_calls ~init:([], state)
+              ~f:(fun (node_calls, state) {Terminator.label; ssa_args} ->
+                let ssa_args, state = flatten_exp_list ssa_args state in
+                ({Terminator.label; ssa_args} :: node_calls, state) )
+          in
+          (Jump (List.rev node_calls_rev), state)
+      | Throw exp ->
+          let exp, state = flatten_exp exp state in
+          (Throw exp, state)
+    in
+    let flatten_node (node : Node.t) fresh_ident : Node.t * Ident.t =
+      let state =
+        let init : State.t = {instrs_rev= []; fresh_ident} in
+        List.fold node.instrs ~init ~f:(fun state instr -> flatten_in_instr instr state)
+      in
+      let last, ({instrs_rev; fresh_ident} : State.t) = flatten_in_terminator node.last state in
+      ({node with last; instrs= List.rev instrs_rev}, fresh_ident)
+    in
+    let flatten_pdesc (pdesc : Procdesc.t) =
+      let fresh = Procdesc.collect_ident_defs pdesc |> Ident.fresh in
+      let _, rev_nodes =
+        List.fold pdesc.nodes ~init:(fresh, []) ~f:(fun (fresh, instrs) node ->
+            let node, fresh = flatten_node node fresh in
+            (fresh, node :: instrs) )
+      in
+      {pdesc with nodes= List.rev rev_nodes}
+    in
+    Module.map_procs ~f:flatten_pdesc _module
 end
 
 module Verification = struct

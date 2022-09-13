@@ -177,4 +177,16 @@ module Verification : sig
   val run : Module.t -> error list
 end
 
+module Transformation : sig
+  (* generates enough intermediate Let instructions to make the procdesc free
+     of sub-expressions containing regular calls.
+     Example:
+       n2 = m(n0, g3(n1))
+     -->
+       n3 = g3(n1)
+       n2 = m(n0, n3)
+  *)
+  val remove_internal_calls : Module.t -> Module.t
+end
+
 exception ToSilTransformationError of (Format.formatter -> unit -> unit)
