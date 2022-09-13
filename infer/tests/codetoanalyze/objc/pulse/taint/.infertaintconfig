@@ -31,6 +31,7 @@
       { "procedure": "clashingBlockNameOk",
         "taint_target": ["ArgumentPositions",[0]],
         "kinds": ["SimpleSource"] },
+      {"procedure": "tainted_array", "kinds": ["SimpleSource"]},
       {"procedure": "tainted_dictionary", "kinds": ["SimpleSource"]},
       {"procedure": "tainted_set", "kinds": ["SimpleSource"]},
       {"procedure": "create_tainted", "kinds": ["SimpleSource"]},
@@ -55,10 +56,65 @@
         "method_names": ["sink:"],
         "kinds": ["SimpleSink"],
         "taint_target": ["ArgumentPositions", [0]] },
+      {"procedure": "testNSArray_sink", "kinds": ["SimpleSink"]},
       {"procedure": "testNSDictionary_sink", "kinds": ["SimpleSink"]},
       {"procedure": "testNSSet_sink", "kinds": ["SimpleSink"]}
   ],
   "pulse-taint-propagators": [
+      {
+        "class_names": ["NSArray"],
+        "taint_target": "ReturnValue",
+        "method_names":
+          [ "arrayWithArray:", "arrayWithObject:", "arrayWithObjects:", "arrayWithObjects:count:"
+          , "initWithArray:", "initWithArray:copyItems:", "initWithObjects:", "initWithObjects:count:"
+          , "containsObject:", "count", "firstObject", "lastObject"
+          , "objectAtIndex:", "objectAtIndexedSubscript:", "objectsAtIndexes:"
+          , "objectEnumerator", "reverseObjectEnumerator"
+          , "indexOfObject:", "indexOfObject:inRange:", "indexOfObjectIdenticalTo:", "indexOfObjectIdenticalTo:inRange:"
+          , "indexOfObjectPassingTest:", "indexOfObjectWithOptions:passingTest:", "indexOfObjectAtIndexes:options:passingTest:"
+          , "indexesOfObjectsPassingTest:", "indexesOfObjectsWithOptions:passingTest:", "indexesOfObjectsAtIndexes:options:passingTest:"
+          , "indexOfObject:inSortedRange:options:usingComparator:"
+          , "firstObjectCommonWithArray:", "isEqualToArray:"
+          , "arrayByAddingObject:", "arrayByAddingObjectsFromArray:", "filteredArrayUsingPredicate:", "subarrayWithRange:"
+          , "sortedArrayHint", "sortedArrayUsingFunction:context:", "sortedArrayUsingFunction:context:hint:"
+          , "sortedArrayUsingDescriptors:", "sortedArrayUsingSelector:", "sortedArrayUsingComparator:"
+          , "sortedArrayWithOptions:usingComparator:"
+          , "componentsJoinedByString:"
+          , "description", "descriptionWithLocale:", "descriptionWithLocale:indent:"
+          , "pathsMatchingExtensions:"
+          , "valueForKey:"
+          , "shuffledArray" , "shuffledArrayWithRandomSource:"
+          , "differenceFromArray:", "differenceFromArray:withOptions:", "differenceFromArray:withOptions:usingEquivalenceTest:"
+          , "initWithCoder:"
+          , "initWithContentsOfURL:error:"
+          , "writeToURL:error:", "arrayByApplyingDifference:"
+          , "arrayWithContentsOfURL:error:"
+          ]
+      },
+      {
+        "class_names": ["NSArray"],
+        "taint_target": ["ArgumentPositions", [0]],
+        "method_names":
+          [ "makeObjectsPerformSelector:", "makeObjectsPerformSelector:withObject:"
+          , "enumerateObjectsUsingBlock:", "enumerateObjectsWithOptions:usingBlock:"
+          , "enumerateObjectsAtIndexes:options:usingBlock:", "setValue:forKey:"
+          ]
+      },
+      {
+        "class_names": ["NSArray"],
+        "taint_target": ["ArgumentPositions", [1]],
+        "method_names": ["getObjects:range:"]
+      },
+      {
+        "class_names": ["NSArray"],
+        "taint_target": ["ArgumentPositions", [1,2]],
+        "method_names": ["writeToURL:error:"]
+      },
+      {
+        "class_names": ["NSArray"],
+        "taint_target": ["ArgumentPositions", [2]],
+        "method_names": ["initWithContentsOfURL:error:", "arrayWithContentsOfURL:error:"]
+      },
       {
         "class_names": ["NSDictionary"],
         "taint_target": "ReturnValue",
