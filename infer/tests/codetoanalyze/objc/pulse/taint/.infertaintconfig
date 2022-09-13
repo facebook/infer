@@ -30,7 +30,10 @@
       {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]},
       { "procedure": "clashingBlockNameOk",
         "taint_target": ["ArgumentPositions",[0]],
-        "kinds": ["SimpleSource"] }
+        "kinds": ["SimpleSource"] },
+      {"procedure": "tainted_dictionary", "kinds": ["SimpleSource"]},
+      {"procedure": "create_tainted", "kinds": ["SimpleSource"]},
+      {"procedure": "create_tainted_id", "kinds": ["SimpleSource"]}
   ],
   "pulse-taint-sinks": [
       { "class_names": ["InferTaint"],
@@ -50,6 +53,51 @@
       { "class_names": ["MailboxTaint"],
         "method_names": ["sink:"],
         "kinds": ["SimpleSink"],
-        "taint_target": ["ArgumentPositions", [0]] }
+        "taint_target": ["ArgumentPositions", [0]] },
+      {"procedure": "testNSDictionary_sink", "kinds": ["SimpleSink"]}
+  ],
+  "pulse-taint-propagators": [
+      {
+        "class_names": ["NSDictionary"],
+        "taint_target": "ReturnValue",
+        "method_names":
+          [ "dictionaryWithObjects:forKeys:", "dictionaryWithObjects:forKeys:count:"
+          , "initWithObjects:forKeys:", "initWithObjects:forKeys:count:"
+          , "dictionaryWithObjectsAndKeys:", "initWithObjectsAndKeys:", "dictionaryWithObject:forKey:"
+          , "dictionaryWithDictionary:", "initWithDictionary:", "initWithDictionary:copyItems:"
+          , "dictionaryWithContentsOfURL:error:"
+          , "initWithCoder:"
+          , "sharedKeySetForKeys:"
+          , "count"
+          , "isEqualToDictionary:"
+          , "allKeys", "allKeysForObject:", "allValues", "valueForKey:"
+          , "objectsForKeys:notFoundMarker:", "objectForKey:", "objectForKeyedSubscript:"
+          , "keyEnumerator", "objectEnumerator"
+          , "countByEnumeratingWithState:objects:count:"
+          , "keysSortedByValueUsingSelector:", "keysSortedByValueUsingComparator:", "keysSortedByValueWithOptions:usingComparator:"
+          , "keysOfEntriesPassingTest:", "keysOfEntriesWithOptions:passingTest:"
+          , "writeToURL:error:"
+          , "fileSize", "fileType", "fileCreationDate", "fileModificationDate" ,"filePosixPermissions"
+          , "fileOwnerAccountID", "fileOwnerAccountName", "fileGroupOwnerAccountID", "fileGroupOwnerAccountName"
+          , "fileExtensionHidden", "fileIsImmutable", "fileIsAppendOnly", "fileSystemFileNumber", "fileSystemNumber"
+          , "fileHFSTypeCode", "fileHFSCreatorCode"
+          , "description", "descriptionInStringsFileFormat:", "descriptionWithLocale:", "descriptionWithLocale:indent:"
+          ]
+      },
+      {
+        "class_names": ["NSDictionary"],
+        "taint_target": ["ArgumentPositions", [0]],
+        "method_names": ["enumerateKeysAndObjectsUsingBlock:", "enumerateKeysAndObjectsWithOptions:usingBlock:"]
+      },
+      {
+        "class_names": ["NSDictionary"],
+        "taint_target": ["ArgumentPositions", [1,2]],
+        "method_names": ["getObjects:andKeys:count:", "writeToURL:error:"]
+      },
+      {
+        "class_names": ["NSDictionary"],
+        "taint_target": ["ArgumentPositions", [2]],
+        "method_names": ["countByEnumeratingWithState:objects:count:"]
+      }
   ]
 }
