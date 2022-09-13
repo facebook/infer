@@ -78,7 +78,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '11'
-        if: runner.os == 'macOS'
 
       - name: Get OS version
         uses: sersoft-gmbh/os-version-action@v1
