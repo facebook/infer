@@ -187,6 +187,8 @@ module Transformation : sig
        n2 = m(n0, n3)
   *)
   val remove_internal_calls : Module.t -> Module.t
+
+  val let_propagation : Module.t -> Module.t
 end
 
 exception ToSilTransformationError of (Format.formatter -> unit -> unit)

@@ -192,7 +192,7 @@ module Typ = struct
 end
 
 module Ident : sig
-  type t
+  type t [@@deriving equal]
 
   val to_sil : t -> Ident.t
 
@@ -213,7 +213,7 @@ module Ident : sig
   (* [fresh set] returns an ident that is strictly greater than all idents in [set] *)
   val fresh : Set.t -> t
 end = struct
-  type t = int
+  type t = int [@@deriving equal]
 
   let to_sil id = Ident.create Ident.knormal id
   (* TODO: check the Ident generator is ready *)
@@ -832,6 +832,57 @@ module Exp = struct
           Cast (Typ.to_sil typ, aux exp)
     in
     aux exp
+
+
+  let vars exp =
+    let rec aux acc exp =
+      match exp with
+      | Var id ->
+          Ident.Set.add id acc
+      | Lvar _ | Const _ ->
+          acc
+      | Field {exp} ->
+          aux acc exp
+      | Index (exp1, exp2) ->
+          aux (aux acc exp1) exp2
+      | Call {args} ->
+          List.fold args ~init:acc ~f:aux
+      | Cast (_, exp) ->
+          aux acc exp
+    in
+    aux Ident.Set.empty exp
+
+
+  let rec subst_one exp ~id ~by =
+    match exp with
+    | Var id' when Ident.equal id id' ->
+        by
+    | Var _ | Lvar _ | Const _ ->
+        exp
+    | Field f ->
+        Field {f with exp= subst_one f.exp ~id ~by}
+    | Index (exp1, exp2) ->
+        Index (subst_one exp1 ~id ~by, subst_one exp2 ~id ~by)
+    | Call f ->
+        Call {f with args= List.map f.args ~f:(fun exp -> subst_one exp ~id ~by)}
+    | Cast (typ, exp) ->
+        Cast (typ, subst_one exp ~id ~by)
+
+
+  let rec subst exp eqs =
+    match exp with
+    | Var id ->
+        Ident.Map.find_opt id eqs |> Option.value ~default:exp
+    | Lvar _ | Const _ ->
+        exp
+    | Field f ->
+        Field {f with exp= subst f.exp eqs}
+    | Index (exp1, exp2) ->
+        Index (subst exp1 eqs, subst exp2 eqs)
+    | Call f ->
+        Call {f with args= List.map f.args ~f:(fun exp -> subst exp eqs)}
+    | Cast (typ, exp) ->
+        Cast (typ, subst exp eqs)
 end
 
 module Instr = struct
@@ -970,6 +1021,18 @@ module Instr = struct
           (ToSilTransformationError
              (fun fmt () ->
                F.fprintf fmt "the expression in %a should start with a regular call" pp i ) )
+
+
+  let subst instr eqs =
+    match instr with
+    | Load args ->
+        Load {args with exp= Exp.subst args.exp eqs}
+    | Store args ->
+        Store {args with exp1= Exp.subst args.exp1 eqs; exp2= Exp.subst args.exp2 eqs}
+    | Prune args ->
+        Prune {args with exp= Exp.subst args.exp eqs}
+    | Let args ->
+        Let {args with exp= Exp.subst args.exp eqs}
 end
 
 module Terminator = struct
@@ -1006,6 +1069,19 @@ module Terminator = struct
     | Some sil_instr ->
         let pp_sil_instr fmt instr = Sil.pp_instr ~print_types:false Pp.text fmt instr in
         L.die InternalError "Unexpected instruction %a at end of block" pp_sil_instr sil_instr
+
+
+  let subst t eqs =
+    match t with
+    | Ret exp ->
+        Ret (Exp.subst exp eqs)
+    | Jump node_call_list ->
+        let f {label; ssa_args} =
+          {label; ssa_args= List.map ssa_args ~f:(fun exp -> Exp.subst exp eqs)}
+        in
+        Jump (List.map node_call_list ~f)
+    | Throw exp ->
+        Throw (Exp.subst exp eqs)
 end
 
 module Node = struct
@@ -1082,6 +1158,19 @@ module Node = struct
     let last_loc = Node.get_last_loc node |> Location.of_sil in
     let label_loc = Node.get_loc node |> Location.of_sil in
     {label; ssa_parameters= []; exn_succs; last; instrs; last_loc; label_loc}
+
+
+  let subst node eqs =
+    let rev_instrs =
+      List.fold node.instrs ~init:[] ~f:(fun rev_instrs (instr : Instr.t) ->
+          match instr with
+          | Let {id} when Ident.Map.mem id eqs ->
+              rev_instrs
+          | _ ->
+              Instr.subst instr eqs :: rev_instrs )
+    in
+    let instrs = List.rev rev_instrs in
+    {node with last= Terminator.subst node.last eqs; instrs}
 end
 
 module Procdesc = struct
@@ -1171,12 +1260,17 @@ module Procdesc = struct
 
   (* returns all the idents that are defined in the procdesc *)
   let collect_ident_defs {nodes} : Ident.Set.t =
-    let open Ident in
-    List.fold nodes ~init:Set.empty ~f:(fun set (node : Node.t) ->
-        let set = List.fold node.ssa_parameters ~init:set ~f:(fun set id -> Set.add id set) in
+    List.fold nodes ~init:Ident.Set.empty ~f:(fun set (node : Node.t) ->
+        let set = List.fold node.ssa_parameters ~init:set ~f:(fun set id -> Ident.Set.add id set) in
         List.fold node.instrs ~init:set ~f:(fun set (instr : Instr.t) ->
-            match instr with Load {id} | Let {id} -> Set.add id set | Store _ | Prune _ -> set ) )
+            match instr with
+            | Load {id} | Let {id} ->
+                Ident.Set.add id set
+            | Store _ | Prune _ ->
+                set ) )
 
+
+  let subst pdesc eqs = {pdesc with nodes= List.map pdesc.nodes ~f:(fun node -> Node.subst node eqs)}
 
   let make_label_of_node () =
     let open Procdesc in
@@ -1499,6 +1593,86 @@ module Transformation = struct
       {pdesc with nodes= List.rev rev_nodes}
     in
     Module.map_procs ~f:flatten_pdesc _module
+
+
+  (* TODO (T131910123): replace with STORE+LOAD transform *)
+  let let_propagation module_ =
+    let get id ident_map =
+      try Ident.Map.find id ident_map
+      with Caml.Not_found ->
+        L.die InternalError "Textual.let_propagation.get failed: unknown identifier %a" Ident.pp id
+    in
+    let build_equations pdesc : Exp.t Ident.Map.t =
+      (* we collect all rule of the form [id = exp] where [exp] is not a regular call nor an
+         allocation *)
+      List.fold pdesc.Procdesc.nodes ~init:Ident.Map.empty ~f:(fun eqs (node : Node.t) ->
+          List.fold node.instrs ~init:eqs ~f:(fun eqs (instr : Instr.t) ->
+              match instr with
+              | Load _ | Store _ | Prune _ ->
+                  eqs
+              | Let {exp= Call {proc}} when not (Procname.is_sil_instr proc) ->
+                  eqs
+              | Let {id; exp} ->
+                  Ident.Map.add id exp eqs ) )
+    in
+    let compute_dependencies equations : Ident.Set.t Ident.Map.t =
+      (* for each equation we record which equation it depends on for its evaluation *)
+      let domain =
+        Ident.Map.fold (fun id _ set -> Ident.Set.add id set) equations Ident.Set.empty
+      in
+      let vars exp = Ident.Set.inter (Exp.vars exp) domain in
+      Ident.Map.map vars equations
+    in
+    let sort_equations equations dependencies : Ident.t list =
+      (* returns a topological sorted list of identifiers such that if the equation of [id1] depends
+          on [id2], then [id1] is after [id2] in the list.
+         [dependencies] must be equal to [compute_dependencies equations] *)
+      let init = (Ident.Map.empty, []) in
+      let rec visit id ((status, sorted_idents) as state) =
+        match Ident.Map.find_opt id status with
+        | Some `VisitInProgress ->
+            L.die InternalError
+              "Textual transformation error: sort_equation was given a set of equations with \
+               cyclic dependencies"
+        | Some `VisitCompleted ->
+            state
+        | None ->
+            let status = Ident.Map.add id `VisitInProgress status in
+            let vars = get id dependencies in
+            let status, sorted_idents = Ident.Set.fold visit vars (status, sorted_idents) in
+            (Ident.Map.add id `VisitCompleted status, id :: sorted_idents)
+      in
+      let _, sorted_idents =
+        Ident.Map.fold
+          (fun id _ ((status, _) as state) ->
+            if Ident.Map.mem id status then state else visit id state )
+          equations init
+      in
+      List.rev sorted_idents
+    in
+    let transform pdesc =
+      let equations = build_equations pdesc in
+      let dependencies = compute_dependencies equations in
+      let sorted = sort_equations equations dependencies in
+      (* we saturate the equation set (id1, exp1), .. (idn, expn) by rewriting
+         enough in each expi such that none depends on id1, .., idn at the end *)
+      let saturated_equations =
+        List.fold sorted ~init:Ident.Map.empty ~f:(fun saturated_equations id ->
+            let eq = get id equations in
+            let vars = get id dependencies in
+            let saturated_eq =
+              Ident.Set.fold
+                (fun id' exp ->
+                  (* thanks to the topological sort, id' has already been processed *)
+                  let saturated_eq' = get id' saturated_equations in
+                  Exp.subst_one exp ~id:id' ~by:saturated_eq' )
+                vars eq
+            in
+            Ident.Map.add id saturated_eq saturated_equations )
+      in
+      Procdesc.subst pdesc saturated_equations
+    in
+    Module.map_procs ~f:transform module_
 end
 
 module Verification = struct

@@ -96,7 +96,7 @@ let%test_module "to_sil" =
         [%expect {| Missing or unsupported source_language attribute |}]
   end )
 
-let%test_module "transformation" =
+let%test_module "remove_internal_calls transformation" =
   ( module struct
     let input_text =
       {|
@@ -180,4 +180,41 @@ let%test_module "transformation" =
               ret null
 
         } |}]
+  end )
+
+let%test_module "let_propagation transformation" =
+  ( module struct
+    let input_text =
+      {|
+
+        define f(x: int, y: int) : int {
+          #entry:
+              n0:int = load &x
+              n1:int = load &y
+              n3 = __sil_mult_int(n0, n1)
+              n4 = __sil_neg(n3, n0)
+              jmp lab(n4)
+          #lab(n5):
+              n6 = __sil_neg(n1)
+              n7 = __sil_plusa(n6, n3)
+              n8 = 42 // dead
+              ret n7
+        } |}
+
+
+    let%expect_test _ =
+      let module_ = parse_module input_text |> Transformation.let_propagation in
+      F.printf "%a" Module.pp module_ ;
+      [%expect
+        {|
+          define f(x: int, y: int) : int {
+            #entry:
+                n0:int = load &x
+                n1:int = load &y
+                jmp lab(__sil_neg(__sil_mult_int(n0, n1), n0))
+
+            #lab(n5):
+                ret __sil_plusa(__sil_neg(n1), __sil_mult_int(n0, n1))
+
+          } |}]
   end )

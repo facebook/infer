@@ -70,6 +70,7 @@ let capture ?source_path textual_path =
       ()
   | Ok module_ -> (
       let module_ = Textual.Transformation.remove_internal_calls module_ in
+      let module_ = Textual.Transformation.let_propagation module_ in
       let source_file = module_.sourcefile in
       DB.Results_dir.init source_file ;
       try
