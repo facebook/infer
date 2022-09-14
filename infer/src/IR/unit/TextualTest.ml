@@ -122,7 +122,12 @@ let%test_module "transformation" =
               ret g3(m(n10, n11))
           #lab:
               throw g1(n8)
-        } |}
+        }
+
+        define empty() : void {
+          #entry:
+              ret null
+        }|}
 
 
     let%expect_test _ =
@@ -167,6 +172,12 @@ let%test_module "transformation" =
           #lab:
               n23 = g1(n8)
               throw n23
+
+        }
+
+        define empty() : void {
+          #entry:
+              ret null
 
         } |}]
   end )

@@ -231,7 +231,7 @@ end = struct
   module Map = Caml.Map.Make (Int)
   module Set = Caml.Set.Make (Int)
 
-  let fresh set = 1 + Set.max_elt set
+  let fresh set = 1 + (Set.max_elt_opt set |> Option.value ~default:(-1))
 
   let next i = i + 1
 end
