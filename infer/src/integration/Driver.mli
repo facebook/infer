@@ -45,8 +45,7 @@ val run_prologue : mode -> unit
 val capture : changed_files:SourceFile.Set.t option -> mode -> unit
 (** run the capture for the given mode *)
 
-val analyze_and_report :
-  ?suppress_console_report:bool -> changed_files:SourceFile.Set.t option -> mode -> unit
+val analyze_and_report : changed_files:SourceFile.Set.t option -> mode -> unit
 (** run the analysis for the given mode *)
 
 val run_epilogue : unit -> unit
