@@ -1087,7 +1087,7 @@ end
 module Node = struct
   type t =
     { label: NodeName.t
-    ; ssa_parameters: Ident.t list
+    ; ssa_parameters: (Ident.t * Typ.t) list
     ; exn_succs: NodeName.t list
     ; last: Terminator.t
     ; instrs: Instr.t list
@@ -1116,7 +1116,8 @@ module Node = struct
     let pp_label_with_ssa_params fmt =
       if List.is_empty node.ssa_parameters then F.fprintf fmt "#%a:" NodeName.pp node.label
       else
-        F.fprintf fmt "#%a(%a):" NodeName.pp node.label (pp_list_with_comma Ident.pp)
+        let pp_param fmt (id, typ) = F.fprintf fmt "%a: %a" Ident.pp id Typ.pp typ in
+        F.fprintf fmt "#%a(%a):" NodeName.pp node.label (pp_list_with_comma pp_param)
           node.ssa_parameters
     in
     F.fprintf fmt "@\n@[<v 4>%t" pp_label_with_ssa_params ;
@@ -1261,7 +1262,9 @@ module Procdesc = struct
   (* returns all the idents that are defined in the procdesc *)
   let collect_ident_defs {nodes} : Ident.Set.t =
     List.fold nodes ~init:Ident.Set.empty ~f:(fun set (node : Node.t) ->
-        let set = List.fold node.ssa_parameters ~init:set ~f:(fun set id -> Ident.Set.add id set) in
+        let set =
+          List.fold node.ssa_parameters ~init:set ~f:(fun set (id, _) -> Ident.Set.add id set)
+        in
         List.fold node.instrs ~init:set ~f:(fun set (instr : Instr.t) ->
             match instr with
             | Load {id} | Let {id} ->
@@ -1356,11 +1359,7 @@ module SsaVerification = struct
       | Store _ | Prune _ ->
           seen
     in
-    let collect_defs_in_phi_args seen loc (ssa_parameters : Ident.t list) =
-      List.fold ssa_parameters ~init:seen ~f:(fun seen id -> collect seen id loc)
-    in
     let collect_defs_in_node seen (node : Node.t) =
-      let seen = collect_defs_in_phi_args seen node.label_loc node.ssa_parameters in
       List.fold node.instrs ~init:seen ~f:collect_defs_in_instr
     in
     let seen = List.fold pdesc.nodes ~f:collect_defs_in_node ~init:Ident.Map.empty in

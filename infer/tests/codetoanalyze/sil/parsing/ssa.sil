@@ -11,15 +11,14 @@ define f(x: int, y: int) : void {
     n1:int = load &x
     jmp lab1, lab2
   #lab1:
-    n2 = __sil_plusA(n0, n1)
+    n2 = __sil_plusa(n0, n1)
     jmp lab3(n2)
   #lab2:
     n3 = __sil_mult(n0, n1)
     jmp lab3(n3)
-  #lab3(n4):
+  #lab3(n4: int):
     ret n4
 
 }
 
-declare __sil_plusA(int, int): int
-declare __sil_mult(int, int): int
+

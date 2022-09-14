@@ -115,10 +115,10 @@ let%test_module "remove_internal_calls transformation" =
               n3 = __sil_mult_int(g3(n0), m(g1(n0), g2(n1)))
               n4 = m(n0, g3(n1))
               jmp lab1(g1(n3), g3(n0)), lab2(g2(n3), g3(n0))
-          #lab1(n6, n7):
+          #lab1(n6: int, n7: int):
               n8 = __sil_mult_int(n6, n7)
               jmp lab
-          #lab2(n10, n11):
+          #lab2(n10: int, n11: int):
               ret g3(m(n10, n11))
           #lab:
               throw g1(n8)
@@ -160,11 +160,11 @@ let%test_module "remove_internal_calls transformation" =
               n20 = g3(n0)
               jmp lab1(n17, n18), lab2(n19, n20)
 
-          #lab1(n6, n7):
+          #lab1(n6: int, n7: int):
               n8 = __sil_mult_int(n6, n7)
               jmp lab
 
-          #lab2(n10, n11):
+          #lab2(n10: int, n11: int):
               n21 = m(n10, n11)
               n22 = g3(n21)
               ret n22
@@ -194,7 +194,7 @@ let%test_module "let_propagation transformation" =
               n3 = __sil_mult_int(n0, n1)
               n4 = __sil_neg(n3, n0)
               jmp lab(n4)
-          #lab(n5):
+          #lab(n5: int):
               n6 = __sil_neg(n1)
               n7 = __sil_plusa(n6, n3)
               n8 = 42 // dead
@@ -213,7 +213,7 @@ let%test_module "let_propagation transformation" =
                 n1:int = load &y
                 jmp lab(__sil_neg(__sil_mult_int(n0, n1), n0))
 
-            #lab(n5):
+            #lab(n5: int):
                 ret __sil_plusa(__sil_neg(n1), __sil_mult_int(n0, n1))
 
           } |}]

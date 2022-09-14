@@ -121,7 +121,7 @@ end
 module Node : sig
   type t =
     { label: NodeName.t
-    ; ssa_parameters: Ident.t list
+    ; ssa_parameters: (Ident.t * Typ.t) list
     ; exn_succs: NodeName.t list  (** successor exception nodes *)
     ; last: Terminator.t
     ; instrs: Instr.t list
