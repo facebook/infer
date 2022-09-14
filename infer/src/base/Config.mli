@@ -345,6 +345,8 @@ val fcp_syntax_only : bool
 
 val file_renamings : string option
 
+val files_to_analyze_index : string option
+
 val filter_paths : bool
 
 val filtering : bool

@@ -45,7 +45,7 @@ let debug () =
           ~f:(if Config.procedures_summary_json then f_json else f_console_output)
       else if Config.procedures_call_graph then
         let files_to_graph =
-          match SourceFile.read_config_changed_files () with
+          match SourceFile.read_config_files_to_analyze () with
           | Some file_set ->
               SourceFile.Set.elements file_set
           | None ->

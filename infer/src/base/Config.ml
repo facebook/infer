@@ -1544,6 +1544,15 @@ and file_renamings =
     "JSON with a list of file renamings to use while computing differential reports"
 
 
+and files_to_analyze_index =
+  CLOpt.mk_path_opt ~long:"files-to-analyze-index"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~meta:"file"
+    "File containing a list of source files where analysis should start from. When used, the set \
+     of files given to this argument must be a subset of that passed to $(b,--changed-files-index) \
+     (which must be specified)."
+
+
 and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true
     "Apply filters specified in $(b,--report_*) options. Disable for debugging."
@@ -3467,6 +3476,8 @@ and fcp_apple_clang = !fcp_apple_clang
 and fcp_syntax_only = !fcp_syntax_only
 
 and file_renamings = !file_renamings
+
+and files_to_analyze_index = !files_to_analyze_index
 
 and filter_paths = !filter_paths
 

@@ -132,6 +132,12 @@ OPTIONS
            Activates: Enable eradicate and disable all other checkers
            (Conversely: --no-eradicate-only)
 
+       --files-to-analyze-index file
+           File containing a list of source files where analysis should start
+           from. When used, the set of files given to this argument must be a
+           subset of that passed to --changed-files-index (which must be
+           specified).
+
        --no-fragment-retains-view
            Deactivates: checker fragment-retains-view: Detects when Android
            fragments are not explicitly nullified before becoming

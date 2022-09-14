@@ -710,6 +710,12 @@ OPTIONS
            JSON with a list of file renamings to use while computing
            differential reports           See also infer-reportdiff(1).
 
+       --files-to-analyze-index file
+           File containing a list of source files where analysis should start
+           from. When used, the set of files given to this argument must be a
+           subset of that passed to --changed-files-index (which must be
+           specified).           See also infer-analyze(1).
+
        --no-filtering,-F
            Deactivates: Do not show the experimental and block listed issue
            types (Conversely: --filtering | -f)           See also infer-report(1).
