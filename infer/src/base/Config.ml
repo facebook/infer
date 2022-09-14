@@ -2384,9 +2384,13 @@ and pulse_taint_data_flow_kinds =
 and pulse_taint_config =
   CLOpt.mk_path_list ~long:"pulse-taint-config"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Path to a taint analysis configuration file. This file can define $(b,--pulse-taint-sources), \
-     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), \
-     $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds)."
+    "Path to a taint analysis configuration file or a directory containing such files. This file \
+     can define $(b,--pulse-taint-sources), $(b,--pulse-taint-sanitizers), \
+     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
+     $(b,--pulse-taint-data-flow-kinds).\n\
+     If a path to a directory is given then the configuration files must have the `.json` \
+     extension. Any other file will be ignored. The subdirectories will be explored and must \
+     follow the same convention."
 
 
 and pulse_widen_threshold =
@@ -3797,35 +3801,50 @@ and pulse_taint_config =
         Pulse_config_j.data_flow_kinds_of_string
           (Yojson.Basic.to_string !pulse_taint_data_flow_kinds) }
   in
+  let explore_file taint_config filepath =
+    let json_list =
+      match Utils.read_json_file filepath with
+      | Ok json ->
+          Yojson.Basic.Util.to_assoc json
+      | Error msg ->
+          L.die ExternalError "Could not read or parse Infer Pulse JSON config in %s:@\n%s@."
+            filepath msg
+    in
+    let combine_fields parser fieldname old_entries =
+      match List.find json_list ~f:(fun (key, _) -> String.equal fieldname key) with
+      | None ->
+          old_entries
+      | Some (_, taint_json) ->
+          let new_entries = parser (Yojson.Basic.to_string taint_json) in
+          new_entries @ old_entries
+    in
+    let combine_matchers = combine_fields Pulse_config_j.matchers_of_string in
+    { sources= combine_matchers "pulse-taint-sources" taint_config.sources
+    ; sanitizers= combine_matchers "pulse-taint-sanitizers" taint_config.sanitizers
+    ; propagators= combine_matchers "pulse-taint-propagators" taint_config.propagators
+    ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
+    ; policies=
+        combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"
+          taint_config.policies
+    ; data_flow_kinds=
+        combine_fields Pulse_config_j.data_flow_kinds_of_string "pulse-taint-data-flow-kinds"
+          taint_config.data_flow_kinds }
+  in
   List.fold (RevList.to_list !pulse_taint_config) ~init:base_taint_config
-    ~f:(fun taint_config filepath ->
-      let json_list =
-        match Utils.read_json_file filepath with
-        | Ok json ->
-            Yojson.Basic.Util.to_assoc json
-        | Error msg ->
-            L.die ExternalError "Could not read or parse Infer Pulse JSON config in %s:@\n%s@."
-              filepath msg
-      in
-      let combine_fields parser fieldname old_entries =
-        match List.find json_list ~f:(fun (key, _) -> String.equal fieldname key) with
-        | None ->
-            old_entries
-        | Some (_, taint_json) ->
-            let new_entries = parser (Yojson.Basic.to_string taint_json) in
-            new_entries @ old_entries
-      in
-      let combine_matchers = combine_fields Pulse_config_j.matchers_of_string in
-      { sources= combine_matchers "pulse-taint-sources" taint_config.sources
-      ; sanitizers= combine_matchers "pulse-taint-sanitizers" taint_config.sanitizers
-      ; propagators= combine_matchers "pulse-taint-propagators" taint_config.propagators
-      ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
-      ; policies=
-          combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"
-            taint_config.policies
-      ; data_flow_kinds=
-          combine_fields Pulse_config_j.data_flow_kinds_of_string "pulse-taint-data-flow-kinds"
-            taint_config.data_flow_kinds } )
+    ~f:(fun taint_config path ->
+      match (Unix.stat path).st_kind with
+      | S_DIR ->
+          Utils.fold_files ~init:taint_config
+            ~f:(fun taint_config filepath ->
+              if Filename.check_suffix filepath "json" then explore_file taint_config filepath
+              else taint_config )
+            ~path
+      | S_REG ->
+          explore_file taint_config path
+      | _ ->
+          taint_config
+      | exception Unix.Unix_error (ENOENT, _, _) ->
+          taint_config )
 
 
 and pulse_widen_threshold = !pulse_widen_threshold

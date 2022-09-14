@@ -363,10 +363,14 @@ OPTIONS
            Regex of procedures that should not be analyzed by Pulse.
 
        --pulse-taint-config +path
-           Path to a taint analysis configuration file. This file can define
-           --pulse-taint-sources, --pulse-taint-sanitizers,
-           --pulse-taint-sanitizers, --pulse-taint-sinks,
-           --pulse-taint-policies, and --pulse-taint-data-flow-kinds.
+           Path to a taint analysis configuration file or a directory
+           containing such files. This file can define --pulse-taint-sources,
+           --pulse-taint-sanitizers, --pulse-taint-sanitizers,
+           --pulse-taint-sinks, --pulse-taint-policies, and
+           --pulse-taint-data-flow-kinds.           If a path to a directory is given then the configuration files
+           must have the `.json` extension. Any other file will be ignored.
+           The subdirectories will be explored and must follow the same
+           convention.
 
        --pulse-taint-data-flow-kinds json
            Specify which taint kinds should be used for data flow reporting

@@ -1,0 +1,63 @@
+{
+  "pulse-taint-policies": [
+    { "short_description": "Simple Test",
+      "taint_flows": [
+        { "source_kinds": ["SecondSimpleSource"],
+          "sanitizer_kinds": ["SimpleSanitizer"],
+          "sink_kinds": ["SecondSimpleSink"]
+        }
+      ]
+    },
+    { "short_description": "Input Create to Handler",
+      "taint_flows": [
+        { "source_kinds": ["InputCreate"],
+          "sink_kinds": ["Handler"]
+        }
+      ]
+    }
+  ],
+  "pulse-taint-sources": [
+      { "class_names": ["InferTaint"],
+        "method_names": ["taintsArg:"],
+        "kinds": ["SecondSimpleSource"],
+        "taint_target": ["ArgumentPositions", [0]]
+      },
+      { "class_names": ["MailboxTaint"],
+        "method_names": ["source"],
+        "kinds": ["SimpleSource"] },
+      {"procedure": "AttributedStringProviderInputCreate", "kinds": ["InputCreate"]},
+      {"procedure": "StringProviderInputCreate", "kinds": ["InputCreate"]},
+      {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]},
+      { "procedure": "clashingBlockNameOk",
+        "taint_target": ["ArgumentPositions",[0]],
+        "kinds": ["SimpleSource"] },
+      {"procedure": "tainted_array", "kinds": ["SimpleSource"]},
+      {"procedure": "tainted_dictionary", "kinds": ["SimpleSource"]},
+      {"procedure": "tainted_set", "kinds": ["SimpleSource"]},
+      {"procedure": "create_tainted", "kinds": ["SimpleSource"]},
+      {"procedure": "create_tainted_id", "kinds": ["SimpleSource"]}
+  ],
+  "pulse-taint-sinks": [
+      { "class_names": ["InferTaint"],
+        "method_names": ["twoKindSink:"],
+        "kinds": ["SimpleSink","SecondSimpleSink"],
+        "taint_target": ["ArgumentPositions", [0]]
+      },
+      { "procedure": "HandleIntentForKey",
+        "kinds": ["Handler"],
+        "taint_target": ["ArgumentPositions", [2]] },
+      { "procedure": "HandleIntent",
+        "kinds": ["Handler"],
+        "taint_target": ["ArgumentPositions", [2]] },
+      { "procedure": "VaultOpenAppleMapForAddress",
+        "kinds": ["Handler"],
+        "taint_target": ["ArgumentPositions", [0]] },
+      { "class_names": ["MailboxTaint"],
+        "method_names": ["sink:"],
+        "kinds": ["SimpleSink"],
+        "taint_target": ["ArgumentPositions", [0]] },
+      {"procedure": "testNSArray_sink", "kinds": ["SimpleSink"]},
+      {"procedure": "testNSDictionary_sink", "kinds": ["SimpleSink"]},
+      {"procedure": "testNSSet_sink", "kinds": ["SimpleSink"]}
+  ]
+}
