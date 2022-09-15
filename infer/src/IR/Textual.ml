@@ -380,7 +380,8 @@ module Procname = struct
         (* FIXME when adding inheritance *)
         {qualified_name; formals_types; result_type; kind}
     | _ ->
-        L.die InternalError "Non-Java procname should not appear in Java mode"
+        L.die InternalError "Non-Java procname %a should not appear in Java mode" Procname.describe
+          pname
 
 
   let make_toplevel_name name : qualified_name = {enclosing_class= TopLevel; name}
@@ -791,7 +792,7 @@ module Exp = struct
         Procname.pp_qualified_name fmt proc ;
         pp_list fmt args
     | Cast (typ, e) ->
-        F.fprintf fmt "(%a %a)" Typ.pp typ pp e
+        F.fprintf fmt "(%a: %a)" pp e Typ.pp typ
 
 
   and pp_list fmt l = F.fprintf fmt "(%a)" (pp_list_with_comma pp) l
