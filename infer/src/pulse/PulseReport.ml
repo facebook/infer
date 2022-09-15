@@ -156,7 +156,7 @@ let summary_of_error_post tenv proc_desc location mk_error astate =
 
 let summary_error_of_error tenv proc_desc location (error : AccessResult.error) : _ SatUnsat.t =
   match error with
-  | Summary (error, summary) ->
+  | WithSummary (error, summary) ->
       Sat (error, summary)
   | PotentialInvalidAccess {astate} | ReportableError {astate} | ISLError {astate} ->
       summary_of_error_post tenv proc_desc location (fun summary -> (error, summary)) astate
@@ -211,7 +211,7 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
           if Config.pulse_report_latent_issues then
             report_latent_issue ~is_suppressed proc_desc err_log latent_issue ;
           Some (LatentAbortProgram {astate= summary; latent_issue}) )
-  | Summary _ ->
+  | WithSummary _ ->
       (* impossible thanks to prior application of [summary_error_of_error] *)
       assert false
 

@@ -232,14 +232,14 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                   L.d_printfln ~color:Red "issue is now manifest, emitting an error" ;
                   Sat
                     (AccessResult.of_error_f
-                       (Summary
+                       (WithSummary
                           (ReportableError {diagnostic; astate= astate_post_call}, astate_summary)
                        )
                        ~f:(fun _ ->
                          L.die InternalError
                            "LatentAbortProgram cannot be applied to non-fatal errors" ) )
               | `ISLDelay astate ->
-                  Sat (FatalError (Summary (ISLError {astate}, astate_summary), [])) )
+                  Sat (FatalError (WithSummary (ISLError {astate}, astate_summary), [])) )
           | LatentInvalidAccess
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
@@ -290,7 +290,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                       DecompilerExpr.pp address_callee DecompilerExpr.pp address_caller ;
                     Sat
                       (FatalError
-                         ( Summary
+                         ( WithSummary
                              ( ReportableError
                                  { diagnostic=
                                      AccessToInvalidAddress
