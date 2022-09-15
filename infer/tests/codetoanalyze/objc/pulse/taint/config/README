@@ -2,8 +2,8 @@ One can write taintconfig files in this directoy and its subdirectories rather
 than bulk all the taint configuration in one big file. The only condition for a
 taintconfig file to be accounted for is that it has the `.json` extension.
 Consequently, any file with a `.json` extension will be considered to be a
-configuration file and any other file (like the current one) will be ignored
+configuration file and any other file (like the current one) will be ignored.
 
 The infertaintconfig.json file replaces the basic .infertaintconfig that existed
 before and the NSLib directory contains the taintcondifg files for the NS
-library
+library.

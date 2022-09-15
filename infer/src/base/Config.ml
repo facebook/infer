@@ -2386,7 +2386,7 @@ and pulse_taint_config =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Path to a taint analysis configuration file or a directory containing such files. This file \
      can define $(b,--pulse-taint-sources), $(b,--pulse-taint-sanitizers), \
-     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
+     $(b,--pulse-taint-propagators), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
      $(b,--pulse-taint-data-flow-kinds).\n\
      If a path to a directory is given then the configuration files must have the `.json` \
      extension. Any other file will be ignored. The subdirectories will be explored and must \

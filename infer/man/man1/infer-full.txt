@@ -1177,7 +1177,7 @@ OPTIONS
        --pulse-taint-config +path
            Path to a taint analysis configuration file or a directory
            containing such files. This file can define --pulse-taint-sources,
-           --pulse-taint-sanitizers, --pulse-taint-sanitizers,
+           --pulse-taint-sanitizers, --pulse-taint-propagators,
            --pulse-taint-sinks, --pulse-taint-policies, and
            --pulse-taint-data-flow-kinds.           If a path to a directory is given then the configuration files
            must have the `.json` extension. Any other file will be ignored.
