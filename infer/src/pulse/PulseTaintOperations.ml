@@ -215,9 +215,9 @@ let sanitizer_matchers =
     Config.pulse_taint_config.sanitizers
 
 
-let propagater_matchers =
-  matcher_of_config ~default_taint_target:`ReturnValue ~option_name:"--pulse-taint-propagaters"
-    Config.pulse_taint_config.propagaters
+let propagator_matchers =
+  matcher_of_config ~default_taint_target:`ReturnValue ~option_name:"--pulse-taint-propagators"
+    Config.pulse_taint_config.propagators
 
 
 let procedure_matches tenv matchers proc_name actuals =
@@ -629,11 +629,11 @@ let propagate_to path location v values call astate =
       astate )
 
 
-let taint_propagaters tenv path location return ~has_added_return_param proc_name actuals astate =
+let taint_propagators tenv path location return ~has_added_return_param proc_name actuals astate =
   let astate, tainted =
-    get_tainted tenv propagater_matchers return ~has_added_return_param proc_name actuals astate
+    get_tainted tenv propagator_matchers return ~has_added_return_param proc_name actuals astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate (_propagater, ((v, _history), _)) ->
+  List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _)) ->
       let other_actuals =
         List.filter actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
             not (AbstractValue.equal v actual) )
@@ -827,7 +827,7 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
       in
       let astate, call_was_unknown =
         let new_astate =
-          taint_propagaters tenv path location (Some return) ~has_added_return_param proc_name
+          taint_propagators tenv path location (Some return) ~has_added_return_param proc_name
             actuals astate
         in
         (new_astate, call_was_unknown && phys_equal astate new_astate)

@@ -829,7 +829,7 @@ Definition prog_ok_def:
      ∀fname dec.
        alookup p fname = Some dec ⇒
        every (\b. fst b = None ⇔ (snd b).h = Entry) dec.blocks) ∧
-     ((* The blocks in a definition have distinct labels.*)
+     ((* The blocks in a definition have distinct labels. *)
       every (\(fname,dec). all_distinct (map fst dec.blocks)) p) ∧
      (* There is a main function *)
      (∃dec. alookup p (Fn "main") = Some dec) ∧

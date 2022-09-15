@@ -203,7 +203,7 @@ Definition le_read_num_def:
 End
 
 (* Return len bytes that are the little-endian encoding of the argument number,
- * assuming that it fits*)
+ * assuming that it fits *)
 Definition le_write_num_def:
   le_write_num len n =
     let (l : word8 list) = map n2w (n2l 256 n) in

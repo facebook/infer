@@ -14,6 +14,6 @@ define f(x: int, y: int) : void {
     n0 = 1
     n1 = 2
     ret null
-  #lab2(n1):
+  #lab2(n1: int):
     ret n1
 }

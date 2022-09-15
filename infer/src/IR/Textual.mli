@@ -121,7 +121,7 @@ end
 module Node : sig
   type t =
     { label: NodeName.t
-    ; ssa_parameters: Ident.t list
+    ; ssa_parameters: (Ident.t * Typ.t) list
     ; exn_succs: NodeName.t list  (** successor exception nodes *)
     ; last: Terminator.t
     ; instrs: Instr.t list
@@ -175,6 +175,22 @@ module Verification : sig
   val pp_error : SourceFile.t -> Format.formatter -> error -> unit
 
   val run : Module.t -> error list
+end
+
+module Transformation : sig
+  (* generates enough intermediate Let instructions to make the procdesc free
+     of sub-expressions containing regular calls.
+     Example:
+       n2 = m(n0, g3(n1))
+     -->
+       n3 = g3(n1)
+       n2 = m(n0, n3)
+  *)
+  val remove_internal_calls : Module.t -> Module.t
+
+  val let_propagation : Module.t -> Module.t
+
+  val out_of_ssa : Module.t -> Module.t
 end
 
 exception ToSilTransformationError of (Format.formatter -> unit -> unit)

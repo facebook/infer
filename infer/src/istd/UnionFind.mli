@@ -53,7 +53,6 @@ module Make
       smallest representative not in the domain of [subst] for each class. Classes without any such
       elements are kept intact. *)
 
-  val filter_morphism : f:(X.t -> bool) -> t -> t
-  (** only keep items satisfying [f], assuming that [f] is invariant under the relation, i.e. that
-      if [f x] and [x=y] according to the relation then [f y] *)
+  val filter : f:(X.t -> bool) -> t -> t
+  (** only keep items satisfying [f] *)
 end
