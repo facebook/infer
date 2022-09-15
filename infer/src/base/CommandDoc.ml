@@ -308,14 +308,17 @@ $(b,infer) $(i,[options])|}
 let report =
   mk_command_doc ~title:"Infer Reporting" ~short_description:"compute and manipulate infer reports"
     ~synopsis:
-      {|$(b,infer) $(b,report) $(b,--issues-tests)
+      {|$(b,infer) $(b,report)
+$(b,infer) $(b,report) $(b,--issues-tests)
 $(b,infer) $(b,report) $(b,--cost-issues-tests)
 $(b,infer) $(b,report) $(b,--config-impact-issues-tests)
 $(b,infer) $(b,report) $(b,--merge-report) $(i,dir1) $(i,...) $(b,--merge-report) $(i,dirN)|}
     ~description:
       [ `P
-          "Write out issues in a format suitable for tests, or merge multiple JSON reports in one \
-           with $(b,--merge-report)." ]
+          "When used without parameters, generate report output in Json. With a $(b, --tests) \
+           parameter,\n\
+          \          write out issues in a format suitable for tests. With $(b,--merge-report), \
+           merge multiple JSON reports in one." ]
     ~see_also:InferCommand.[ReportDiff; Run]
 
 

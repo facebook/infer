@@ -2,6 +2,7 @@ NAME
        infer-report - compute and manipulate infer reports
 
 SYNOPSIS
+       infer report
        infer report --issues-tests
        infer report --cost-issues-tests
        infer report --config-impact-issues-tests
@@ -9,8 +10,9 @@ SYNOPSIS
 
 
 DESCRIPTION
-       Write out issues in a format suitable for tests, or merge multiple
-       JSON reports in one with --merge-report.
+       When used without parameters, generate report output in Json. With a
+       --tests parameter, write out issues in a format suitable for tests.
+       With --merge-report, merge multiple JSON reports in one.
 
 
 
