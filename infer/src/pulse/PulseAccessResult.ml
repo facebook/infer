@@ -21,6 +21,10 @@ type error =
   | ISLError of {astate: AbductiveDomain.t}
   | WithSummary of error * AbductiveDomain.Summary.t
 
+let with_summary result =
+  PulseResult.map_error result ~f:(fun (error, summary) -> WithSummary (error, summary))
+
+
 let rec is_fatal = function
   | PotentialInvalidAccess _ | ISLError _ ->
       true
@@ -75,7 +79,7 @@ let of_abductive_result abductive_result =
 
 let of_abductive_summary_error = function
   | `PotentialInvalidAccessSummary (summary, astate, address, must_be_valid) ->
-      WithSummary (PotentialInvalidAccess {astate; address; must_be_valid}, summary)
+      (PotentialInvalidAccess {astate; address; must_be_valid}, summary)
 
 
 let of_abductive_summary_result abductive_summary_result =

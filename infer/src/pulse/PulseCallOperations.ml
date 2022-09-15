@@ -208,6 +208,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
               (Procdesc.get_attributes caller_proc_desc)
               call_loc astate_post_call
             >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+            >>| AccessResult.with_summary
           in
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ | ISLLatentMemoryError _ ->
@@ -311,6 +312,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
             (Procdesc.get_attributes caller_proc_desc)
             call_loc astate
           >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+          >>| AccessResult.with_summary
           >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 

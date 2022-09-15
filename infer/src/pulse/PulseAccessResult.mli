@@ -19,8 +19,14 @@ type error =
   | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
   | ISLError of {astate: AbductiveDomain.t}
   | WithSummary of error * AbductiveDomain.Summary.t
+      (** An error for which the summary corresponding to the abstract state has already been
+          computed, to avoid having to compute the summary for a given abstract state multiple
+          times. For convenience this is part of the [error] datatype but the invariant that an
+          [error] within a [WithSummary (error, summary)] cannot itself be a [WithSummary _]. *)
 
 type 'a t = ('a, error) PulseResult.t
+
+val with_summary : ('a, error * AbductiveDomain.Summary.t) PulseResult.t -> 'a t
 
 (** Intermediate datatype since {!AbductiveDomain} cannot refer to this module without creating a
     circular dependency.
@@ -45,11 +51,12 @@ val of_result : (AbductiveDomain.t, error) result -> AbductiveDomain.t t
 
 val of_error_f : error -> f:(error -> 'a) -> 'a t
 
-val of_abductive_summary_error : [< abductive_summary_error] -> error
+val of_abductive_summary_error : [< abductive_summary_error] -> error * AbductiveDomain.Summary.t
 
 val of_abductive_result : ('a, [< abductive_error]) result -> 'a t
 
-val of_abductive_summary_result : ('a, [< abductive_summary_error]) result -> 'a t
+val of_abductive_summary_result :
+  ('a, [< abductive_summary_error]) result -> ('a, error * AbductiveDomain.Summary.t) PulseResult.t
 
 val of_abductive_access_result :
      Trace.t

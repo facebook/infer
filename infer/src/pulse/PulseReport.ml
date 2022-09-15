@@ -147,9 +147,8 @@ let summary_of_error_post tenv proc_desc location mk_error astate =
       (* ignore the error we wanted to report (with [mk_error]): the abstract state contained a
          potential error already so report [error] instead *)
       Sat
-        ( AccessResult.of_abductive_summary_error
-            (`PotentialInvalidAccessSummary (summary, astate, addr, trace))
-        , summary )
+        (AccessResult.of_abductive_summary_error
+           (`PotentialInvalidAccessSummary (summary, astate, addr, trace)) )
   | Unsat ->
       Unsat
 
