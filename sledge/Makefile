@@ -82,7 +82,8 @@ test:
 
 .PHONY: ci-test
 ci-test: exes
-	dune build @_build/debug/fmt @_build/debug/runtest
+	dune build @_build/debug/fmt @_build/debug/runtest _build/release/sledge-help.txt
+	git diff --quiet sledge-help.txt
 	$(MAKE) --no-print-directory -C test ci-test
 
 .PHONY: clean
