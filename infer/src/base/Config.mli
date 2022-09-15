@@ -762,7 +762,7 @@ val topl_max_conjuncts : int
 
 val topl_max_disjuncts : int
 
-val topl_properties : string list
+val topl_properties : ToplAst.t list
 
 val trace_absarray : bool
 
