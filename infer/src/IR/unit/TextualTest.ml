@@ -207,14 +207,73 @@ let%test_module "let_propagation transformation" =
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
+        define f(x: int, y: int) : int {
+          #entry:
+              n0:int = load &x
+              n1:int = load &y
+              jmp lab(__sil_neg(__sil_mult_int(n0, n1), n0))
+
+          #lab(n5: int):
+              ret __sil_plusa(__sil_neg(n1), __sil_mult_int(n0, n1))
+
+        } |}]
+  end )
+
+let%test_module "out-of-ssa transformation" =
+  ( module struct
+    let input_text =
+      {|
           define f(x: int, y: int) : int {
             #entry:
                 n0:int = load &x
                 n1:int = load &y
-                jmp lab(__sil_neg(__sil_mult_int(n0, n1), n0))
+                jmp lab1(n0, n1), lab3(n1, __sil_mult_int(n1, n0))
 
-            #lab(n5: int):
-                ret __sil_plusa(__sil_neg(n1), __sil_mult_int(n0, n1))
+            #lab1(n2: int, n3: int):
+                jmp lab2(n3, n2)
+
+            #lab2(n4: int, n5: int):
+                ret __sil_plusa(n4, n5)
+
+            #lab3(n6: int, n7: int):
+                jmp lab2(n6, n7)
+
+        } |}
+
+
+    let%expect_test _ =
+      let module_ = parse_module input_text |> Transformation.out_of_ssa in
+      F.printf "%a" Module.pp module_ ;
+      [%expect
+        {|
+          define f(x: int, y: int) : int {
+            #entry:
+                n0:int = load &x
+                n1:int = load &y
+                store &__SSA2 <- n0:int
+                store &__SSA3 <- n1:int
+                store &__SSA6 <- n1:int
+                store &__SSA7 <- __sil_mult_int(n1, n0):int
+                jmp lab1, lab3
+
+            #lab1:
+                n2:int = load &__SSA2
+                n3:int = load &__SSA3
+                store &__SSA4 <- n3:int
+                store &__SSA5 <- n2:int
+                jmp lab2
+
+            #lab2:
+                n4:int = load &__SSA4
+                n5:int = load &__SSA5
+                ret __sil_plusa(n4, n5)
+
+            #lab3:
+                n6:int = load &__SSA6
+                n7:int = load &__SSA7
+                store &__SSA4 <- n6:int
+                store &__SSA5 <- n7:int
+                jmp lab2
 
           } |}]
   end )

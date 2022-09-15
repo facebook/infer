@@ -55,10 +55,15 @@ module type COMMON_NAME = sig
   val pp : F.formatter -> t -> unit
 
   module Hashtbl : Hashtbl.S with type key = t
+
+  module Map : Caml.Map.S with type key = t
+
+  module Set : Caml.Set.S with type elt = t
 end
 
 module Name : COMMON_NAME = struct
-  type t = {value: string; loc: Location.t [@equal.ignore] [@hash.ignore]} [@@deriving equal, hash]
+  type t = {value: string; loc: Location.t [@compare.ignore] [@equal.ignore] [@hash.ignore]}
+  [@@deriving compare, equal, hash]
 
   let replace_dot_with_2colons str = String.substr_replace_all str ~pattern:"." ~with_:"::"
 
@@ -72,6 +77,18 @@ module Name : COMMON_NAME = struct
     let equal = equal
 
     let hash = hash
+  end)
+
+  module Map = Caml.Map.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+  end)
+
+  module Set = Caml.Set.Make (struct
+    type nonrec t = t
+
+    let compare = compare
   end)
 end
 
@@ -196,6 +213,8 @@ module Ident : sig
 
   val to_sil : t -> Ident.t
 
+  val to_ssa_var : t -> VarName.t
+
   val of_int : int -> t
 
   val of_sil : Ident.t -> t
@@ -217,6 +236,8 @@ end = struct
 
   let to_sil id = Ident.create Ident.knormal id
   (* TODO: check the Ident generator is ready *)
+
+  let to_ssa_var id = Printf.sprintf "__SSA%d" id |> VarName.of_java_name
 
   let of_int id = id
 
@@ -1670,6 +1691,72 @@ module Transformation = struct
             Ident.Map.add id saturated_eq saturated_equations )
       in
       Procdesc.subst pdesc saturated_equations
+    in
+    Module.map_procs ~f:transform module_
+
+
+  let out_of_ssa module_ =
+    let transform (pdesc : Procdesc.t) : Procdesc.t =
+      let get_node : NodeName.t -> Node.t =
+        let map =
+          List.fold pdesc.nodes ~init:NodeName.Map.empty ~f:(fun map (node : Node.t) ->
+              NodeName.Map.add node.label node map )
+        in
+        fun node ->
+          try NodeName.Map.find node map
+          with Caml.Not_found -> L.die InternalError "Textual.remove_ssa_params internal error"
+      in
+      let zip_ssa_args call_location (node_call : Terminator.node_call) (end_node : Node.t) :
+          Instr.t list =
+        match
+          List.map2 end_node.ssa_parameters node_call.ssa_args ~f:(fun (id, typ) exp2 ->
+              let var_name = Ident.to_ssa_var id in
+              Instr.Store {exp1= Lvar var_name; typ; exp2; loc= Location.Unknown} )
+        with
+        | Ok equations ->
+            equations
+        | Unequal_lengths ->
+            L.die InternalError
+              "Jmp arguments at %a and block parameters at %a should have the same size" Location.pp
+              call_location Location.pp end_node.label_loc
+      in
+      let build_assignements (start_node : Node.t) : Instr.t list =
+        match (start_node.last : Terminator.t) with
+        | Ret _ | Throw _ ->
+            []
+        | Jump node_calls ->
+            List.fold node_calls ~init:[] ~f:(fun instrs (node_call : Terminator.node_call) ->
+                let end_node : Node.t = get_node node_call.label in
+                if List.is_empty end_node.ssa_parameters then instrs
+                else
+                  let let_instrs = zip_ssa_args start_node.last_loc node_call end_node in
+                  List.rev_append let_instrs instrs )
+      in
+      let terminator_remove_args (terminator : Terminator.t) : Terminator.t =
+        let node_call_remove_args (node_call : Terminator.node_call) : Terminator.node_call =
+          {node_call with ssa_args= []}
+        in
+        match terminator with
+        | Ret _ | Throw _ ->
+            terminator
+        | Jump node_calls ->
+            Jump (List.map node_calls ~f:node_call_remove_args)
+      in
+      let nodes =
+        List.map pdesc.nodes ~f:(fun node ->
+            let rev_instrs = build_assignements node in
+            let load_param (id, typ) : Instr.t =
+              Load {id; exp= Lvar (Ident.to_ssa_var id); typ; loc= Location.Unknown}
+            in
+            let prefix = List.map node.Node.ssa_parameters ~f:load_param in
+            let last = terminator_remove_args node.Node.last in
+            let instrs =
+              if List.is_empty rev_instrs then prefix @ node.Node.instrs
+              else prefix @ node.Node.instrs @ List.rev rev_instrs
+            in
+            ({node with instrs; ssa_parameters= []; last} : Node.t) )
+      in
+      {pdesc with nodes}
     in
     Module.map_procs ~f:transform module_
 end

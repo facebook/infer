@@ -20,5 +20,3 @@ define f(x: int, y: int) : void {
     ret n4
 
 }
-
-
