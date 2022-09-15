@@ -277,8 +277,10 @@ let add_const_refable_parameters procdesc tenv astates astate_non_disj =
             && (not (is_cheap_to_copy tenv typ))
             && not (Var.is_cpp_unnamed_param var)
           then
+            (* [&] is added by the frontend and type is pass-by-value anyways so strip it *)
             NonDisjDomain.add_parameter var
-              (NonDisjDomain.Unmodified {heap= (disjunct.post :> BaseDomain.t).heap; typ; location})
+              (NonDisjDomain.Unmodified
+                 {heap= (disjunct.post :> BaseDomain.t).heap; typ= Typ.strip_ptr typ; location} )
               astate_non_disj
           else astate_non_disj ) )
 
