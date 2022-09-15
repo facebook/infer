@@ -8,18 +8,15 @@
 open! IStd
 open PulseModelsImport
 open PulseBasicInterface
-open PulseOperationResult.Import
+open PulseDomainInterface
 
 val load_field :
-     PulsePathContext.t
+     PathContext.t
   -> Fieldname.t
   -> Location.t
   -> AbstractValue.t * ValueHistory.t
-  -> PulseAbductiveDomain.t
-  -> ( PulseAbductiveDomain.t
-       * (AbstractValue.t * ValueHistory.t)
-       * (AbstractValue.t * ValueHistory.t)
-     , base_error )
-     pulse_result
+  -> AbductiveDomain.t
+  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t) * (AbstractValue.t * ValueHistory.t))
+     AccessResult.t
 
 val matchers : matcher list
