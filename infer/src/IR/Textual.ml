@@ -944,7 +944,6 @@ module Instr = struct
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
         let procname = TypeName.of_sil_typ_name name |> Procname.make_allocate in
-        let () = Decls.declare_procname decls procname in
         Let
           { id= Ident.of_sil id
           ; exp= Call {proc= procname.Procname.qualified_name; args= []}
