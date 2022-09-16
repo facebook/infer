@@ -252,6 +252,8 @@ let get env x =
 let set = List.Assoc.add ~equal:String.equal
 
 let binop_to : ToplAst.binop -> Binop.t = function
+  | LeadsTo ->
+      L.die InternalError "not yet supported"
   | OpEq ->
       Eq
   | OpNe ->

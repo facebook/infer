@@ -637,7 +637,7 @@ struct
 
       let pp ppf {ctrl= {edge; depth}; threads; switches; goal} =
         Format.fprintf ppf "%i,%i: %a %a %a" switches depth Edge.pp edge
-          Threads.pp threads Goal.pp goal
+          Threads.pp threads Goal.pp_short goal
 
       let goal_status x =
         Goal.status x.goal (Thread.ip x.ctrl.edge.dst |>= Llair.IP.block)
@@ -862,6 +862,10 @@ struct
           dequeue (queue, cursor)
       | Some ((switches, ip, threads, goal), next_states, cursor) ->
           let state, depths, histories, edges = Joinable.join next_states in
+          [%Dbg.info
+            "(dist: %i; goal state: %a) %a"
+              Llair.((IP.block ip.ip).goal_distance)
+              Goal.pp_short goal Llair.Block.pp_ident (Llair.IP.block ip.ip)] ;
           let history = History.extend ip.ip histories in
           [%Dbg.info
             " %i,%i: %a <-t%i- {@[%a@]}%a" switches top.ctrl.depth IP.pp ip

@@ -36,6 +36,7 @@ rule raw_token = parse
   | ' '+ { raw_token lexbuf }
   | "->" { ARROW }
   | "=>" { ARROWARROW }
+  | "~~>"{ LEADSTO }
   | ':'  { COLON }
   | ":=" { COLONEQ }
   | ';'  { SEMI }

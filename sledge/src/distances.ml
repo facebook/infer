@@ -196,6 +196,8 @@ module Summary = struct
       ( {shortest_path= n'; auto_state= a'; dists= d'; checkpoint_dists= c'}
       as s' ) =
     if s == s' then s
+    else if a > a' then s
+    else if a < a' then s'
     else
       { shortest_path= Int.min n n'
       ; auto_state= Automaton_state.join a a'
@@ -210,20 +212,22 @@ module Summary = struct
       {s with dists; shortest_path}
 
   let apply ~summary absstate =
-    let dists =
-      let open Distance_map in
-      join absstate.dists
-        (add_pointwise ~n:absstate.shortest_path summary.dists)
-    in
-    let checkpoint_dists =
-      let open Checkpoint_dists in
-      join absstate.checkpoint_dists
-        (add_pointwise ~n:absstate.shortest_path summary.checkpoint_dists)
-    in
-    { shortest_path= absstate.shortest_path + summary.shortest_path
-    ; dists
-    ; auto_state= summary.auto_state
-    ; checkpoint_dists }
+    if Automaton_state.is_accepting absstate.auto_state then absstate
+    else
+      let dists =
+        let open Distance_map in
+        join summary.dists
+          (add_pointwise ~n:summary.shortest_path absstate.dists)
+      in
+      let checkpoint_dists =
+        let open Checkpoint_dists in
+        join absstate.checkpoint_dists
+          (add_pointwise ~n:absstate.shortest_path summary.checkpoint_dists)
+      in
+      { shortest_path= absstate.shortest_path + summary.shortest_path
+      ; dists
+      ; auto_state= summary.auto_state
+      ; checkpoint_dists }
 
   let hit_checkpoint absstate =
     let checkpoint_dists =
