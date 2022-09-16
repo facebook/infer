@@ -26,6 +26,7 @@
 %token GT
 %token LC
 %token LE
+%token LEADSTO
 %token LP
 %token LT
 %token MESSAGE
@@ -95,6 +96,7 @@ predop:
   | NE { ToplAst.OpNe }
   | LT { ToplAst.OpLt }
   | LE { ToplAst.OpLe }
+  | LEADSTO { ToplAst.LeadsTo }
   | GT { ToplAst.OpGt }
   | GE { ToplAst.OpGe }
 
