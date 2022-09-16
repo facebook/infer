@@ -867,7 +867,7 @@ let with_html_debug_node node ~desc ~f =
 let initial tenv proc_name proc_attrs =
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_name proc_attrs
-    |> PulseObjectiveCSummary.initial_with_positive_self proc_name proc_attrs
+    |> PulseSummary.initial_with_positive_self proc_name proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_name proc_attrs
   in
   [(ContinueProgram initial_astate, PathContext.initial)]
@@ -935,7 +935,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
               exit_function analysis_data exit_location posts non_disj_astate
             in
             let objc_nil_summary =
-              PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_name proc_attrs
+              PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
             in
             let summary =
               Option.to_list objc_nil_summary

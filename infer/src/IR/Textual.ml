@@ -98,12 +98,16 @@ module FieldBaseName : COMMON_NAME = Name
 
 let builtin_allocate_prefix = "__sil_allocate_"
 
+let builtin_allocate_array = "__sil_allocate_array"
+
 module TypeName : sig
   include COMMON_NAME
 
   val of_sil_typ_name : Typ.Name.t -> t
 
   val to_java_sil : t -> Typ.Name.t
+
+  val java_lang_object : Typ.Name.t
 
   val allocate_buitin_to_java_sil : ProcBaseName.t -> Typ.Name.t
 end = struct
@@ -122,6 +126,8 @@ end = struct
   let string_to_java_sil string : Typ.Name.t =
     JavaClass (replace_2colons_with_dot string |> JavaClassName.from_string)
 
+
+  let java_lang_object : Typ.Name.t = JavaClass (JavaClassName.from_string "java.lang.Object")
 
   let to_java_sil {value} : Typ.Name.t = string_to_java_sil value
 
@@ -398,6 +404,12 @@ module Procname = struct
     make_builtin ~name ~formals_types:[] ~result_type:(Ptr (Struct tname))
 
 
+  let make_allocate_array (typ : Typ.t) =
+    (* TODO: make usage of the content type in the procedure name *)
+    let name : ProcBaseName.t = {value= builtin_allocate_array; loc= Location.Unknown} in
+    make_builtin ~name ~formals_types:[] ~result_type:(Ptr (Array typ))
+
+
   let unop_table : (Unop.t * string) list =
     [(Neg, "__sil_neg"); (BNot, "__sil_bnot"); (LNot, "__sil_lnot")]
 
@@ -501,12 +513,24 @@ module Procname = struct
 
   let binop_inverse_map = inverse_assoc_list binop_table |> Map.Poly.of_alist_exn
 
-  let is_allocate_builtin ({enclosing_class; name} : qualified_name) =
+  let is_allocate_object_builtin ({enclosing_class; name} : qualified_name) =
     match enclosing_class with
     | TopLevel ->
         String.is_prefix ~prefix:builtin_allocate_prefix name.value
     | _ ->
         false
+
+
+  let is_allocate_array_builtin ({enclosing_class; name} : qualified_name) =
+    match enclosing_class with
+    | TopLevel ->
+        String.equal builtin_allocate_array name.value
+    | _ ->
+        false
+
+
+  let is_allocate_builtin qualified_name =
+    is_allocate_object_builtin qualified_name || is_allocate_array_builtin qualified_name
 
 
   let is_sil_instr ({enclosing_class; name} : qualified_name) =
@@ -948,6 +972,13 @@ module Instr = struct
           { id= Ident.of_sil id
           ; exp= Call {proc= procname.Procname.qualified_name; args= []}
           ; loc= Location.Unknown }
+    | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ}, _) :: _, _, _)
+      when String.equal (SilProcname.to_simplified_string pname) "__new_array()" ->
+        let procname = Typ.of_sil typ |> Procname.make_allocate_array in
+        Let
+          { id= Ident.of_sil id
+          ; exp= Call {proc= procname.Procname.qualified_name; args= []}
+          ; loc= Location.Unknown }
     | Call ((id, _), Const (Cfun pname), args, _, _) ->
         let procname = Procname.of_sil pname in
         let () = Decls.declare_procname decls procname in
@@ -1000,7 +1031,7 @@ module Instr = struct
         let e = Exp.to_sil lang decls_env procname exp in
         let loc = Location.to_sil sourcefile loc in
         Prune (e, loc, b, Ik_if {terminated= false})
-    | Let {id; exp= Call {proc; args= []}; loc} when Procname.is_allocate_builtin proc ->
+    | Let {id; exp= Call {proc; args= []}; loc} when Procname.is_allocate_object_builtin proc ->
         let typ = SilTyp.mk_struct (TypeName.allocate_buitin_to_java_sil proc.name) in
         let sizeof =
           SilExp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
@@ -1010,6 +1041,19 @@ module Instr = struct
         let ret = Ident.to_sil id in
         let loc = Location.to_sil sourcefile loc in
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new) in
+        Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
+    | Let {id; exp= Call {proc; args= [exp]}; loc} when Procname.is_allocate_array_builtin proc ->
+        let element_typ = SilTyp.mk_struct TypeName.java_lang_object in
+        let typ = SilTyp.mk_array element_typ in
+        let e = Exp.to_sil lang decls_env procname exp in
+        let sizeof =
+          SilExp.Sizeof {typ; nbytes= None; dynamic_length= Some e; subtype= Subtype.exact}
+        in
+        let class_type = SilTyp.mk_ptr typ in
+        let args = [(sizeof, class_type)] in
+        let ret = Ident.to_sil id in
+        let loc = Location.to_sil sourcefile loc in
+        let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new_array) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
     | Let {id; exp= Call {proc; args}; loc} ->
         let ret = Ident.to_sil id in

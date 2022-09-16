@@ -390,13 +390,13 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
       let<++> astate_unknown =
-        PulseObjectiveCSummary.append_objc_actual_self_positive proc_name proc_attrs
-          (List.hd actuals) astate_unknown
+        PulseSummary.append_objc_actual_self_positive proc_name proc_attrs (List.hd actuals)
+          astate_unknown
       in
       astate_unknown
     in
     let result_unknown_nil, contradiction =
-      PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_name proc_attrs
+      PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
       |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
              call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
                proc_attrs [nil_summary] astate )
