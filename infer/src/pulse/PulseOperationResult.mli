@@ -57,23 +57,26 @@ module Import : sig
 
   val ( >>>= ) : ('ok, 'err) PulseResult.t -> ('ok -> ('okk, 'err) t) -> ('okk, 'err) t
 
-  val ( let<*> ) : 'a AccessResult.t -> ('a -> 'b AccessResult.t list) -> 'b AccessResult.t list
-  (** monadic "bind" but not really that turns an [AccessResult.t] into a list of [AccessResult.t]s
-      (not really because the first type is not an [AccessResult.t list] but just an
-      [AccessResult.t]) *)
+  val ( let<*> ) :
+       ('a, 'err) PulseResult.t
+    -> ('a -> ('b, 'err) PulseResult.t list)
+    -> ('b, 'err) PulseResult.t list
+  (** monadic "bind" but not really that turns an [PulseResult.t] into a list of [PulseResult.t]s
+      (not really because the first type is not an [PulseResult.t list] but just an [PulseResult.t]) *)
 
-  val ( let<**> ) : 'a access_t -> ('a -> 'b AccessResult.t list) -> 'b AccessResult.t list
+  val ( let<**> ) :
+    ('a, 'err) t -> ('a -> ('b, 'err) PulseResult.t list) -> ('b, 'err) PulseResult.t list
 
   val ( let<+> ) :
-       'a AccessResult.t
+       ('a, 'err) PulseResult.t
     -> ('a -> 'abductive_domain_t)
-    -> 'abductive_domain_t ExecutionDomain.base_t AccessResult.t list
-  (** monadic "map" but even less really that turns an [AccessResult.t] into an analysis result *)
+    -> ('abductive_domain_t ExecutionDomain.base_t, 'err) PulseResult.t list
+  (** monadic "map" but even less really that turns a [PulseResult.t] into an analysis result *)
 
   val ( let<++> ) :
-       'a access_t
+       ('a, 'err) t
     -> ('a -> 'abductive_domain_t)
-    -> 'abductive_domain_t ExecutionDomain.base_t AccessResult.t list
+    -> ('abductive_domain_t ExecutionDomain.base_t, 'err) PulseResult.t list
 
   (** {2 Imported types for ease of use and so we can write variants without the corresponding
       module prefix} *)
