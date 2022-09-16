@@ -79,6 +79,7 @@ let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.
     let open SatUnsat.Import in
     AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
     >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+    >>| AccessResult.with_summary
   in
   ExecutionDomain.LatentInvalidAccess
     { astate= summary
@@ -99,7 +100,8 @@ let mk_nil_messaging_summary tenv proc_name (proc_attrs : ProcAttributes.t) =
         (let** astate = mk_nil_messaging_summary_aux tenv proc_name proc_attrs in
          let open SatUnsat.Import in
          AbductiveDomain.Summary.of_post tenv proc_name proc_attrs proc_attrs.loc astate
-         >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result )
+         >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+         >>| AccessResult.with_summary )
         |> PulseOperationResult.sat_ok
       with
       | Some summary ->

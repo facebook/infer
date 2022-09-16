@@ -45,7 +45,7 @@ let debug () =
           ~f:(if Config.procedures_summary_json then f_json else f_console_output)
       else if Config.procedures_call_graph then
         let files_to_graph =
-          match SourceFile.read_config_changed_files () with
+          match SourceFile.read_config_files_to_analyze () with
           | Some file_set ->
               SourceFile.Set.elements file_set
           | None ->
@@ -240,10 +240,7 @@ let report () =
     , Config.pulse_report_flows_to_taint_sink )
   with
   | None, None, None, false, [], None, None ->
-      L.die UserError
-        "Expected at least one of '--issues-tests', '--cost-issues-tests', \
-         '--config-impact-issues-tests', '--simple-lineage-json-report', '--merge-report', \
-         '--pulse-report-flows-from-taint-source', or '--pulse-report-flows-to-taint-sink'.@\n"
+      Driver.report ()
   | _, _, _, _, [], Some _, Some _ ->
       L.die UserError
         "Only one of '--pulse-report-flows-from-taint-source' and \
@@ -256,7 +253,7 @@ let report () =
       Option.iter taint_source
         ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:FromSource) ;
       Option.iter taint_sink ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:ToSink)
-  | None, None, None, false, _, None, None ->
+  | None, None, None, false, _ :: _, None, None ->
       merge_reports ()
   | _, _, _, _, _ :: _, _, _ ->
       L.die UserError

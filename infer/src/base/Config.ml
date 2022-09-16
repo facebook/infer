@@ -52,7 +52,7 @@ type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
-  ; propagaters: Pulse_config_t.matchers
+  ; propagators: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }
@@ -1544,6 +1544,15 @@ and file_renamings =
     "JSON with a list of file renamings to use while computing differential reports"
 
 
+and files_to_analyze_index =
+  CLOpt.mk_path_opt ~long:"files-to-analyze-index"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~meta:"file"
+    "File containing a list of source files where analysis should start from. When used, the set \
+     of files given to this argument must be a subset of that passed to $(b,--changed-files-index) \
+     (which must be specified)."
+
+
 and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true
     "Apply filters specified in $(b,--report_*) options. Disable for debugging."
@@ -2317,10 +2326,10 @@ and pulse_taint_sanitizers =
      the fields format documentation."
 
 
-and pulse_taint_propagaters =
-  CLOpt.mk_json ~long:"pulse-taint-propagaters"
+and pulse_taint_propagators =
+  CLOpt.mk_json ~long:"pulse-taint-propagators"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Quick way to specify simple propagaters as a JSON objects. See $(b,--pulse-taint-sources) for \
+    "Quick way to specify simple propagators as a JSON objects. See $(b,--pulse-taint-sources) for \
      the fields format documentation."
 
 
@@ -2351,7 +2360,7 @@ and pulse_taint_sources =
       ("Simple" by default).
   - "taint_target":
       where the taint should be applied in the procedure.
-      - "ReturnValue": (default for taint sources and propagaters)
+      - "ReturnValue": (default for taint sources and propagators)
       - "AllArguments": (default for taint sanitizers and sinks)
       - ["ArgumentPositions", [<int list>]]:
           argument positions given by index (zero-indexed)
@@ -2375,9 +2384,13 @@ and pulse_taint_data_flow_kinds =
 and pulse_taint_config =
   CLOpt.mk_path_list ~long:"pulse-taint-config"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Path to a taint analysis configuration file. This file can define $(b,--pulse-taint-sources), \
-     $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), \
-     $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds)."
+    "Path to a taint analysis configuration file or a directory containing such files. This file \
+     can define $(b,--pulse-taint-sources), $(b,--pulse-taint-sanitizers), \
+     $(b,--pulse-taint-propagators), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
+     $(b,--pulse-taint-data-flow-kinds).\n\
+     If a path to a directory is given then the configuration files must have the `.json` \
+     extension. Any other file will be ignored. The subdirectories will be explored and must \
+     follow the same convention."
 
 
 and pulse_widen_threshold =
@@ -3468,6 +3481,8 @@ and fcp_syntax_only = !fcp_syntax_only
 
 and file_renamings = !file_renamings
 
+and files_to_analyze_index = !files_to_analyze_index
+
 and filter_paths = !filter_paths
 
 and filtering = !filtering
@@ -3778,7 +3793,7 @@ and pulse_taint_config =
     in
     { sources= mk_matchers pulse_taint_sources
     ; sanitizers= mk_matchers pulse_taint_sanitizers
-    ; propagaters= mk_matchers pulse_taint_propagaters
+    ; propagators= mk_matchers pulse_taint_propagators
     ; sinks= mk_matchers pulse_taint_sinks
     ; policies=
         Pulse_config_j.taint_policies_of_string (Yojson.Basic.to_string !pulse_taint_policies)
@@ -3786,35 +3801,50 @@ and pulse_taint_config =
         Pulse_config_j.data_flow_kinds_of_string
           (Yojson.Basic.to_string !pulse_taint_data_flow_kinds) }
   in
+  let explore_file taint_config filepath =
+    let json_list =
+      match Utils.read_json_file filepath with
+      | Ok json ->
+          Yojson.Basic.Util.to_assoc json
+      | Error msg ->
+          L.die ExternalError "Could not read or parse Infer Pulse JSON config in %s:@\n%s@."
+            filepath msg
+    in
+    let combine_fields parser fieldname old_entries =
+      match List.find json_list ~f:(fun (key, _) -> String.equal fieldname key) with
+      | None ->
+          old_entries
+      | Some (_, taint_json) ->
+          let new_entries = parser (Yojson.Basic.to_string taint_json) in
+          new_entries @ old_entries
+    in
+    let combine_matchers = combine_fields Pulse_config_j.matchers_of_string in
+    { sources= combine_matchers "pulse-taint-sources" taint_config.sources
+    ; sanitizers= combine_matchers "pulse-taint-sanitizers" taint_config.sanitizers
+    ; propagators= combine_matchers "pulse-taint-propagators" taint_config.propagators
+    ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
+    ; policies=
+        combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"
+          taint_config.policies
+    ; data_flow_kinds=
+        combine_fields Pulse_config_j.data_flow_kinds_of_string "pulse-taint-data-flow-kinds"
+          taint_config.data_flow_kinds }
+  in
   List.fold (RevList.to_list !pulse_taint_config) ~init:base_taint_config
-    ~f:(fun taint_config filepath ->
-      let json_list =
-        match Utils.read_json_file filepath with
-        | Ok json ->
-            Yojson.Basic.Util.to_assoc json
-        | Error msg ->
-            L.die ExternalError "Could not read or parse Infer Pulse JSON config in %s:@\n%s@."
-              filepath msg
-      in
-      let combine_fields parser fieldname old_entries =
-        match List.find json_list ~f:(fun (key, _) -> String.equal fieldname key) with
-        | None ->
-            old_entries
-        | Some (_, taint_json) ->
-            let new_entries = parser (Yojson.Basic.to_string taint_json) in
-            new_entries @ old_entries
-      in
-      let combine_matchers = combine_fields Pulse_config_j.matchers_of_string in
-      { sources= combine_matchers "pulse-taint-sources" taint_config.sources
-      ; sanitizers= combine_matchers "pulse-taint-sanitizers" taint_config.sanitizers
-      ; propagaters= combine_matchers "pulse-taint-propagaters" taint_config.propagaters
-      ; sinks= combine_matchers "pulse-taint-sinks" taint_config.sinks
-      ; policies=
-          combine_fields Pulse_config_j.taint_policies_of_string "pulse-taint-policies"
-            taint_config.policies
-      ; data_flow_kinds=
-          combine_fields Pulse_config_j.data_flow_kinds_of_string "pulse-taint-data-flow-kinds"
-            taint_config.data_flow_kinds } )
+    ~f:(fun taint_config path ->
+      match (Unix.stat path).st_kind with
+      | S_DIR ->
+          Utils.fold_files ~init:taint_config
+            ~f:(fun taint_config filepath ->
+              if Filename.check_suffix filepath "json" then explore_file taint_config filepath
+              else taint_config )
+            ~path
+      | S_REG ->
+          explore_file taint_config path
+      | _ ->
+          taint_config
+      | exception Unix.Unix_error (ENOENT, _, _) ->
+          taint_config )
 
 
 and pulse_widen_threshold = !pulse_widen_threshold
@@ -3993,7 +4023,21 @@ and topl_max_conjuncts = !topl_max_conjuncts
 
 and topl_max_disjuncts = !topl_max_disjuncts
 
-and topl_properties = RevList.to_list !topl_properties
+and topl_properties =
+  let parse topl_file =
+    let f ch =
+      let lexbuf = Lexing.from_channel ch in
+      try ToplParser.properties (ToplLexer.token ()) lexbuf
+      with ToplParser.Error ->
+        let Lexing.{pos_lnum; pos_bol; pos_cnum; _} = Lexing.lexeme_start_p lexbuf in
+        let col = pos_cnum - pos_bol + 1 in
+        L.die UserError "@[%s:%d:%d: topl parse error@]@\n@?" topl_file pos_lnum col
+    in
+    try In_channel.with_file topl_file ~f
+    with Sys_error msg -> L.die UserError "@[topl:%s: %s@]@\n@?" topl_file msg
+  in
+  List.concat_map ~f:parse (RevList.to_list !topl_properties)
+
 
 and trace_error = !trace_error
 

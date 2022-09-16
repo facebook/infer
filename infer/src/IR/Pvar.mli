@@ -11,7 +11,7 @@
 open! IStd
 module F = Format
 
-type translation_unit = SourceFile.t option [@@deriving compare]
+type translation_unit = SourceFile.t option
 
 (** Type for program variables. There are 4 kinds of variables:
 

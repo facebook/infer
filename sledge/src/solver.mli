@@ -16,6 +16,9 @@ val infer_frame : Sh.t -> Var.Set.t -> Sh.t -> Xsh.t option Var.Fresh.m
     extension of it satisfying [q], such that the combination (with [xs]
     projected out) satisfies [p]. *)
 
+val strong_infer_frame : bool ref
+(** enable fallback to Z3 before failing infer_frame queries *)
+
 (**/**)
 
 val dump_query : int ref

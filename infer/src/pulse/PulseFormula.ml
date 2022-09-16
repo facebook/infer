@@ -2446,49 +2446,64 @@ end = struct
     ; atoms= subst_var_atoms subst atoms }
 
 
+  let extend_with_restricted_reps_of keep var_eqs =
+    VarUF.fold_congruences var_eqs ~init:keep ~f:(fun acc (repr, vs) ->
+        let repr = (repr :> Var.t) in
+        if
+          Var.is_restricted repr
+          && Var.Set.exists (fun v -> Var.is_unrestricted v && Var.Set.mem v keep) vs
+        then Var.Set.add repr acc
+        else acc )
+
+
   let eliminate_vars ~keep formula =
-    let subst =
-      VarUF.reorient formula.phi.var_eqs ~should_keep:(fun x ->
-          (* TODO: we could probably be less coarse than keeping *all* restricted variables. This
-             ensures that substituting in the tableau doesn't introduce unrestricted variables in
-             the tableau. Also, getting rid of restricted variables risks losing information: if
-             [x=u] with [u] restricted then [x≥0]. *)
-          Var.is_restricted x || Var.Set.mem x keep )
-    in
+    (* Beware of not losing information: if [x=u] with [u] is restricted then [x≥0], so extend [keep] accordingly. *)
+    let keep = extend_with_restricted_reps_of keep formula.phi.var_eqs in
+    let subst = VarUF.reorient formula.phi.var_eqs ~should_keep:(fun x -> Var.Set.mem x keep) in
     try Sat {conditions= formula.conditions; phi= subst_var_phi subst formula.phi}
     with Contradiction -> Unsat
 end
 
 module DeadVariables = struct
-  (** Intermediate step of [simplify]: build an (undirected) graph between variables where an edge
-      between two variables means that they appear together in an atom, a linear equation, or an
-      equivalence class. *)
+  (** Intermediate step of [simplify]: build a directed graph between variables:
+
+      - when two variables are in an atom or a linear equation, there are bi-directional edges
+        between them,
+      - when a restricted variable is a representative of a unrestricted variable, there is an edge
+        from the variable to representative. *)
   let build_var_graph phi =
-    (* pretty naive representation of an undirected graph: a map where a vertex maps to the set of
-       destination vertices and each edge has its symmetric in the map *)
+    (* a map where a vertex maps to the set of destination vertices *)
     (* unused but can be useful for debugging *)
     let _pp_graph fmt graph =
       Caml.Hashtbl.iter (fun v vs -> F.fprintf fmt "%a->{%a}" Var.pp v Var.Set.pp vs) graph
     in
     (* 16 because why not *)
     let graph = Caml.Hashtbl.create 16 in
-    (* add edges between all pairs of [vs] *)
-    let add_all vs =
-      (* add [src->vs] to [graph] (but not the symmetric edges) *)
-      let add_set graph src vs =
-        let dest =
-          match Caml.Hashtbl.find_opt graph src with
-          | None ->
-              vs
-          | Some dest0 ->
-              Var.Set.union vs dest0
-        in
-        Caml.Hashtbl.replace graph src dest
+    (* add [src->vs] to [graph] (but not the symmetric edges) *)
+    let add_set src vs =
+      let dest =
+        match Caml.Hashtbl.find_opt graph src with
+        | None ->
+            vs
+        | Some dest0 ->
+            Var.Set.union vs dest0
       in
-      Var.Set.iter (fun v -> add_set graph v vs) vs
+      Caml.Hashtbl.replace graph src dest
     in
+    (* add edges between all pairs of [vs] *)
+    let add_all vs = Var.Set.iter (fun v -> add_set v vs) vs in
+    (* add an edge *)
+    let add src v = add_set src (Var.Set.singleton v) in
     Container.iter ~fold:VarUF.fold_congruences phi.Formula.var_eqs
-      ~f:(fun ((repr : VarUF.repr), vs) -> add_all (Var.Set.add (repr :> Var.t) vs)) ;
+      ~f:(fun ((repr : VarUF.repr), vs) ->
+        let repr = (repr :> Var.t) in
+        Var.Set.iter
+          (fun v ->
+            (* HACK: no need to check the converse ([v] restricted and [repr] unrestricted) since
+               restricted variables always come before unrestricted ones in the [Var] order and
+               [repr] comes before [v] by construction *)
+            if Var.is_unrestricted v && Var.is_restricted repr then add v repr )
+          vs ) ;
     Var.Map.iter
       (fun v l ->
         LinArith.get_variables l
@@ -2551,9 +2566,7 @@ module DeadVariables = struct
     let vars_to_keep = get_reachable_from var_graph keep in
     L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
     let simplify_phi phi =
-      let var_eqs =
-        VarUF.filter_morphism ~f:(fun x -> Var.Set.mem x vars_to_keep) phi.Formula.var_eqs
-      in
+      let var_eqs = VarUF.filter ~f:(fun x -> Var.Set.mem x vars_to_keep) phi.Formula.var_eqs in
       let linear_eqs =
         Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.linear_eqs
       in

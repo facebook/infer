@@ -9,7 +9,7 @@
 
 open Var.Fresh.Import
 
-(* Theory equation solver state ==========================================*)
+(* Theory equation solver state ======================================== *)
 
 type oriented_equality = {var: Trm.t; rep: Trm.t}
 
@@ -29,7 +29,7 @@ let pp ppf = function
              Format.fprintf ppf "@[%a = %a@]" Trm.pp a Trm.pp b ) )
         pending
 
-(* Solving equations =====================================================*)
+(* Solving equations ==================================================== *)
 
 (** prefer representative terms that are minimal in the order s.t. Var <
     Extract < Concat < others, then using height of sequence nesting, and

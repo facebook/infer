@@ -132,6 +132,12 @@ OPTIONS
            Activates: Enable eradicate and disable all other checkers
            (Conversely: --no-eradicate-only)
 
+       --files-to-analyze-index file
+           File containing a list of source files where analysis should start
+           from. When used, the set of files given to this argument must be a
+           subset of that passed to --changed-files-index (which must be
+           specified).
+
        --no-fragment-retains-view
            Deactivates: checker fragment-retains-view: Detects when Android
            fragments are not explicitly nullified before becoming
@@ -357,10 +363,14 @@ OPTIONS
            Regex of procedures that should not be analyzed by Pulse.
 
        --pulse-taint-config +path
-           Path to a taint analysis configuration file. This file can define
-           --pulse-taint-sources, --pulse-taint-sanitizers,
-           --pulse-taint-sanitizers, --pulse-taint-sinks,
-           --pulse-taint-policies, and --pulse-taint-data-flow-kinds.
+           Path to a taint analysis configuration file or a directory
+           containing such files. This file can define --pulse-taint-sources,
+           --pulse-taint-sanitizers, --pulse-taint-propagators,
+           --pulse-taint-sinks, --pulse-taint-policies, and
+           --pulse-taint-data-flow-kinds.           If a path to a directory is given then the configuration files
+           must have the `.json` extension. Any other file will be ignored.
+           The subdirectories will be explored and must follow the same
+           convention.
 
        --pulse-taint-data-flow-kinds json
            Specify which taint kinds should be used for data flow reporting
@@ -386,8 +396,8 @@ OPTIONS
                                "sanitizer_kinds": ["Simple"] }]
            }
 
-       --pulse-taint-propagaters json
-           Quick way to specify simple propagaters as a JSON objects. See
+       --pulse-taint-propagators json
+           Quick way to specify simple propagators as a JSON objects. See
            --pulse-taint-sources for the fields format documentation.
 
        --pulse-taint-sanitizers json
@@ -421,7 +431,7 @@ OPTIONS
              - "taint_target":
                  where the taint should be applied in the procedure.
                  - "ReturnValue": (default for taint sources and
-           propagaters)
+           propagators)
                  - "AllArguments": (default for taint sanitizers and sinks)
                  - ["ArgumentPositions", [<int list>]]:
                      argument positions given by index (zero-indexed)

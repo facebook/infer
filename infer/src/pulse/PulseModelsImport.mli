@@ -92,14 +92,14 @@ module Basic : sig
     -> value:AbstractValue.t * ValueHistory.t
     -> desc:string
     -> AbductiveDomain.t
-    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t), base_error) PulseOperationResult.t
+    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.access_t
 
   val alloc_value_address :
        Typ.t
     -> desc:string
     -> model_data
     -> AbductiveDomain.t
-    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t), base_error) PulseOperationResult.t
+    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.access_t
 
   val early_exit : model
 

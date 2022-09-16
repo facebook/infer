@@ -78,7 +78,7 @@
 %type <NodeName.t list> opt_handlers
 %type <Node.t> block
 %type <Terminator.node_call> node_call
-%type <NodeName.t * Ident.t list> label
+%type <NodeName.t * (Ident.t * Typ.t) list> label
 %type <Module.decl list> list(declaration)
 %type <Instr.t list> list(instruction)
 %type <Exp.t list> loption(separated_nonempty_list(COMMA,expression))
@@ -88,7 +88,6 @@
 %type <(Typ.t * VarName.t) list> loption(separated_nonempty_list(COMMA,typed_var))
 %type <(Typ.t * FieldBaseName.t) list> loption(separated_nonempty_list(SEMICOLON,typed_field))
 %type <Node.t list> nonempty_list(block)
-%type <int list> separated_nonempty_list(COMMA,LOCAL)
 %type <Exp.t list> separated_nonempty_list(COMMA,expression)
 %type <NodeName.t list> separated_nonempty_list(COMMA,nname)
 %type <Terminator.node_call list> separated_nonempty_list(COMMA,node_call)
@@ -189,6 +188,10 @@ typed_var:
   | name=vname COLON typ=typ
     { (typ, name) }
 
+typed_ident:
+  | id=LOCAL COLON typ=typ
+    { (Ident.of_int id, typ) }
+
 block:
   | lab=label instrs=instruction* last=terminator exn_succs=opt_handlers
     {
@@ -201,9 +204,9 @@ label:
   | label=LABEL COLON
     { let label : NodeName.t = { value=label; loc=location_of_pos $startpos(label)} in
       label, [] }
-  | label=LABEL LPAREN l=separated_nonempty_list(COMMA, LOCAL) RPAREN COLON
+  | label=LABEL LPAREN l=separated_nonempty_list(COMMA, typed_ident) RPAREN COLON
     { let label : NodeName.t = { value=label; loc=location_of_pos $startpos(label)} in
-      label, List.map ~f:Ident.of_int l }
+      label, l }
 
 const:
   | INTEGER

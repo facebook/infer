@@ -333,8 +333,8 @@ end
 
 module JsonConfigImpactPrinter = MakeJsonListPrinter (JsonConfigImpactPrinterElt)
 
-let is_in_changed_files {Location.file} =
-  match SourceFile.read_config_changed_files () with
+let is_in_files_to_analyze {Location.file} =
+  match SourceFile.read_config_files_to_analyze () with
   | None ->
       (* when Config.changed_files_index is not given *)
       true
@@ -356,7 +356,7 @@ let collect_issues proc_name proc_location_opt err_log issues_acc =
 
 
 let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
-  if (not (Cost.is_report_suppressed proc_name)) && is_in_changed_files loc then
+  if (not (Cost.is_report_suppressed proc_name)) && is_in_files_to_analyze loc then
     JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
 
 
@@ -367,7 +367,7 @@ let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile
        || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file
        || ConfigImpactAnalysis.is_in_strict_beta_mode_paths loc.Location.file
        || ExternalConfigImpactData.is_in_config_data_file proc_name )
-    && is_in_changed_files loc
+    && is_in_files_to_analyze loc
   then
     if ConfigImpactPostProcess.is_in_gated_classes proc_name then ()
       (* Ignore reporting methods of gated classes *)

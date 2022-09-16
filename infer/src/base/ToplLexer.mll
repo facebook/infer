@@ -8,7 +8,7 @@
   open !IStd
   open ToplParser
 
-  module L = Logging
+  exception ToplLexerBug
 
   let new_line x y lexbuf =
     let m = x |> String.filter ~f:(Char.equal '\n') |> String.length in
@@ -69,7 +69,7 @@ rule raw_token = parse
     let scheduled_rc = ref 0 in
     let last_indent () = match !indents with
       | x :: _ -> x
-      | [] -> L.(die InternalError) "ToplLexer.indents should be nonempty"
+      | [] -> raise ToplLexerBug (* !indents should be nonempty *)
     in
     let add_indent n = indents := n :: !indents in
     let rec drop_to_indent n = match !indents with

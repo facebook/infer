@@ -192,13 +192,12 @@ struct
                 clazz subst )
 
 
-  let filter_morphism ~f uf =
+  let filter ~f uf =
     let classes =
-      UF.Map.filter
-        (fun x _ ->
-          (* here we take advantage of the fact [f] is transitively closed already to drop
-             entire classes at once iff their representative does not satisfy [f] *)
-          f (x :> X.t) )
+      UF.Map.filter_map
+        (fun repr clazz ->
+          let clazz = XSet.filter f clazz in
+          if XSet.is_empty clazz && not (f (repr :> X.t)) then None else Some clazz )
         uf.classes
     in
     (* rebuild [reprs] directly from [classes]: does path compression and garbage collection on the

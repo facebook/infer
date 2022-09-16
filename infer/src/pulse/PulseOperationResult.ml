@@ -133,7 +133,7 @@ module Import = struct
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
     | ISLError of {astate: AbductiveDomain.t}
-    | Summary of base_error * AbductiveDomain.Summary.t
+    | WithSummary of base_error * AbductiveDomain.Summary.t
 end
 
 open Import
