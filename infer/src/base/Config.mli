@@ -345,6 +345,8 @@ val fcp_syntax_only : bool
 
 val file_renamings : string option
 
+val files_to_analyze_index : string option
+
 val filter_paths : bool
 
 val filtering : bool
@@ -593,7 +595,7 @@ val pulse_skip_procedures : Str.regexp option
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers
-  ; propagaters: Pulse_config_t.matchers
+  ; propagators: Pulse_config_t.matchers
   ; sinks: Pulse_config_t.matchers
   ; policies: Pulse_config_t.taint_policies
   ; data_flow_kinds: string list }
@@ -760,7 +762,7 @@ val topl_max_conjuncts : int
 
 val topl_max_disjuncts : int
 
-val topl_properties : string list
+val topl_properties : ToplAst.t list
 
 val trace_absarray : bool
 

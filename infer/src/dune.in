@@ -67,6 +67,8 @@ let if_platform_env_and_not_byte_mode s =
       ""
 
 
+let verbose = match Sys.getenv_opt "VERBOSE" with Some "1" -> "-verbose" | _ -> ""
+
 let infer_exe_stanza =
   Printf.sprintf
     {|(executable
@@ -76,7 +78,7 @@ let infer_exe_stanza =
  (flags (:standard
      -open Core -open IStdlib -open IStd -open IBase -open IR -open Backend -open Integration
      -open Biabduction -open TestDeterminators -open ClangFrontend
-     %s -open JavaFrontend %s))
+     %s -open JavaFrontend %s %s))
  (libraries %s core IStdlib IBase IR Backend Integration Biabduction TestDeterminators ClangFrontend)
  (link_flags %s)
  (preprocess (pps ppx_compare))
@@ -84,7 +86,7 @@ let infer_exe_stanza =
      )|}
     (if clang then "" else "-open ClangFrontendStubs")
     (if java then "" else "-open JavaFrontendStubs")
-    extlib_if_java
+    verbose extlib_if_java
     (if_platform_env_and_not_byte_mode "(:include linking-flags.sexp)")
 
 
@@ -96,14 +98,14 @@ let inferunit_stanza =
  (modules Inferunit)
  (flags (:standard
      -open Core -open IStdlib -open IStd -open IBase -open Backend -open Integration
-     -open UnitTests -open NullsafeUnitTests -open ClangFrontend %s))
+     -open UnitTests -open NullsafeUnitTests -open ClangFrontend %s %s))
  (libraries %s oUnit core IStdlib IBase Backend Integration UnitTests NullsafeUnitTests %s)
  (link_flags %s)
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
      )|}
     (if clang then "-open ClangUnitTests" else "-open ClangFrontendStubs")
-    extlib_if_java
+    verbose extlib_if_java
     (if clang then "ClangUnitTests" else "")
     (if_platform_env_and_not_byte_mode "(:include linking-flags.sexp)")
 
@@ -114,13 +116,13 @@ let infertop_stanza =
  (name infertop)
  (modes byte_complete)
  (modules Infertop)
- (flags (:standard -open Core -open IStdlib -open IStd))
+ (flags (:standard -open Core -open IStdlib -open IStd %s))
  (libraries %s utop Absint ATDGenerated Backend IBase Biabduction BO Checkers Concurrency Costlib CStubs IR IStdlib Labs Dotnet Nullsafe Pulselib Quandary Integration TestDeterminators Topllib UnitTests)
  (link_flags (-linkall -warn-error -31))
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
      )|}
-    extlib_if_java
+    verbose extlib_if_java
 
 
 let inferCreateTraceViewLinks_stanza =
@@ -129,12 +131,13 @@ let inferCreateTraceViewLinks_stanza =
  (name InferCreateTraceViewLinks)
  (modes byte_complete exe)
  (modules InferCreateTraceViewLinks)
- (flags (:standard -open Core -open IStdlib -open IStd -open ATDGenerated -open IBase))
+ (flags (:standard -open Core -open IStdlib -open IStd -open ATDGenerated -open IBase %s))
  (libraries core async IStdlib ATDGenerated IBase)
  (link_flags %s)
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
    )|}
+    verbose
     (if_platform_env_and_not_byte_mode "(:include linking-flags-tv.sexp)")
 
 

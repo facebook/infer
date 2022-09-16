@@ -28,7 +28,7 @@ class Obj {
   static std::string sanitizer2(const std::string& input) {
     return input.substr();
   }
-  static std::string propagater(std::string& input, std::string& output);
+  static std::string propagator(std::string& input, std::string& output);
 
   std::string field1;
   std::string field2;
@@ -235,24 +235,24 @@ void ret_void_ok() { return; }
 
 void ret_void_transitive_ok() { return ret_void_ok(); }
 
-void via_propagater_bad(Obj* obj) {
+void via_propagator_bad(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string propagated("");
-  std::string unpropagated = Obj::propagater(source, propagated);
+  std::string unpropagated = Obj::propagator(source, propagated);
   obj->string_sink(propagated);
 }
 
-void via_propagater_ok1(Obj* obj) {
+void via_propagator_ok1(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string propagated("");
-  std::string unpropagated = Obj::propagater(source, propagated);
+  std::string unpropagated = Obj::propagator(source, propagated);
   obj->string_sink(unpropagated);
 }
 
-void via_propagater_ok2(Obj* obj) {
+void via_propagator_ok2(Obj* obj) {
   std::string propagated = obj->string_source(0);
   std::string source("");
-  std::string unpropagated = Obj::propagater(source, propagated);
+  std::string unpropagated = Obj::propagator(source, propagated);
   obj->string_sink(source);
 }
 

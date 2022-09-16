@@ -10,6 +10,23 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+class A {
+ public:
+  int this_notnull_ok() {
+    if (!this) {
+      int* q = nullptr;
+      return *q;
+    }
+    return 0;
+  }
+  int this_notnull_bad() {
+    if (this) {
+      int* q = nullptr;
+      return *q;
+    }
+    return 0;
+  }
+};
 
 void assign_zero_ok() {
   int x[2];

@@ -15,6 +15,7 @@ module type S = sig
       executions that end in a terminated thread. *)
 
   val pp : t pp
+  val pp_short : t pp
 
   val reached : t -> bool
   (** True iff the goal has been reached and there is no more work to do. *)
@@ -25,7 +26,7 @@ module type S = sig
   val update_after_retn : Llair.FuncName.t -> t -> t
   (** Update the goal, having returned from the given Llair function. *)
 
-  val initialize : pgm:Llair.program -> entry:Llair.block -> t -> unit
+  val initialize : pgm:Llair.program -> entry:Llair.FuncName.t -> t -> unit
   (** Perform any upfront metadata computation and decorate [pgm] with it. *)
 end
 
@@ -33,6 +34,9 @@ module Undirected : S with type t = unit
 
 module Sparse_trace : sig
   include S
+
+  type checkpoint = [`Call of Llair.FuncName.t | `Retn of Llair.FuncName.t]
+  [@@deriving equal]
 
   (** Raised when [of_fns_exn] is called on invalid arguments, either
       because of a malformed trace or a function name not corresponding to

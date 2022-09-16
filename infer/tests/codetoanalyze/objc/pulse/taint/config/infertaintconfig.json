@@ -30,7 +30,12 @@
       {"procedure": "ProviderInputCreate", "kinds": ["InputCreate"]},
       { "procedure": "clashingBlockNameOk",
         "taint_target": ["ArgumentPositions",[0]],
-        "kinds": ["SimpleSource"] }
+        "kinds": ["SimpleSource"] },
+      {"procedure": "tainted_array", "kinds": ["SimpleSource"]},
+      {"procedure": "tainted_dictionary", "kinds": ["SimpleSource"]},
+      {"procedure": "tainted_set", "kinds": ["SimpleSource"]},
+      {"procedure": "create_tainted", "kinds": ["SimpleSource"]},
+      {"procedure": "create_tainted_id", "kinds": ["SimpleSource"]}
   ],
   "pulse-taint-sinks": [
       { "class_names": ["InferTaint"],
@@ -50,6 +55,9 @@
       { "class_names": ["MailboxTaint"],
         "method_names": ["sink:"],
         "kinds": ["SimpleSink"],
-        "taint_target": ["ArgumentPositions", [0]] }
+        "taint_target": ["ArgumentPositions", [0]] },
+      {"procedure": "testNSArray_sink", "kinds": ["SimpleSink"]},
+      {"procedure": "testNSDictionary_sink", "kinds": ["SimpleSink"]},
+      {"procedure": "testNSSet_sink", "kinds": ["SimpleSink"]}
   ]
 }

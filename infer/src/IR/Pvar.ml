@@ -12,7 +12,7 @@ open! IStd
 module L = Logging
 module F = Format
 
-type translation_unit = SourceFile.t option [@@deriving compare, equal]
+type translation_unit = SourceFile.t option
 
 (** Kind of global variables *)
 type pvar_kind =
@@ -22,7 +22,7 @@ type pvar_kind =
   | Abduced_ref_param of Procname.t * int * Location.t
       (** synthetic variable to represent param passed by reference *)
   | Global_var of
-      { translation_unit: translation_unit
+      { translation_unit: translation_unit [@ignore]
       ; is_constexpr: bool (* is it compile constant? *)
       ; is_ice: bool (* is it integral constant expression? *)
       ; is_pod: bool

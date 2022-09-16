@@ -18,7 +18,7 @@ type constant = LiteralInt of int
 type value = Constant of constant | Register of register_name | Binding of variable_name
 
 type binop = (* all return booleans *)
-  | OpEq | OpNe | OpGe | OpGt | OpLe | OpLt
+  | LeadsTo | OpEq | OpNe | OpGe | OpGt | OpLe | OpLt
 
 type predicate = Binop of binop * value * value | Value of (* bool *) value
 

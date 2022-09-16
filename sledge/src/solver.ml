@@ -10,6 +10,9 @@
 open Fol
 open Symbolic_heap
 
+(** enable fallback to Z3 before failing infer_frame queries *)
+let strong_infer_frame = ref true
+
 module Goal = struct
   (** Excision judgment
 
@@ -871,8 +874,10 @@ let excise_dnf : Sh.t -> Var.Set.t -> Sh.t -> Sh.t option Var.Fresh.m =
           | Ok remainder -> `Stop (Some remainder)
           | Error goal -> `Continue (goal :: failed_goals) )
         ~finish:(fun failed_goals ->
-          List.find_map failed_goals ~f:(fun failed_goal ->
-              excise_strong failed_goal vx ) )
+          if not !strong_infer_frame then None
+          else
+            List.find_map failed_goals ~f:(fun failed_goal ->
+                excise_strong failed_goal vx ) )
     in
     Sh.Set.add remainder remainders
   in

@@ -3,6 +3,12 @@
 ; This source code is licensed under the MIT license found in the
 ; LICENSE file in the root directory of this source tree.
 
+(ocamllex ToplLexer)
+
+(menhir
+ (flags --unused-token INDENT --explain)
+ (modules ToplParser))
+
 (library
  (name IBase)
  (public_name infer.IBase)
@@ -12,7 +18,8 @@
  (libraries cmdliner core bheap memtrace mtime.clock.os parmap re sqlite3 zip
    ATDGenerated IStdlib OpenSource)
  (preprocess
-  (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_sexp_conv))
+  (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_hash
+    ppx_sexp_conv))
  (preprocessor_deps
   (glob_files ../../documentation/checkers/*.md)
   (glob_files ../../documentation/issues/*.md)))

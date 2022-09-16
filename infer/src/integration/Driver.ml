@@ -98,9 +98,7 @@ let clean_compilation_command mode =
 let reset_duplicates_file () =
   let start = ResultsDir.get_path DuplicateFunctions in
   let delete () = Unix.unlink start in
-  let create () =
-    Unix.close (Unix.openfile ~perm:0o0666 ~mode:[Unix.O_CREAT; Unix.O_WRONLY] start)
-  in
+  let create () = Unix.close (Unix.openfile ~perm:0o0666 ~mode:[O_CREAT; O_WRONLY] start) in
   if ISys.file_exists start then delete () ;
   create ()
 
@@ -223,7 +221,7 @@ let execute_analyze_json () =
       ()
 
 
-let report ?(suppress_console = false) () =
+let report () =
   let issues_json = ResultsDir.get_path ReportJson in
   let costs_json = ResultsDir.get_path ReportCostsJson in
   let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
@@ -234,10 +232,8 @@ let report ?(suppress_console = false) () =
     (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
     Utils.with_file_out (Config.results_dir ^/ "bugs.txt") ~f:(fun outc ->
         Out_channel.output_string outc "The contents of this file have moved to report.txt.\n" ) ;
-    TextReport.create_from_json
-      ~quiet:(Config.quiet || suppress_console)
-      ~console_limit:Config.report_console_limit ~report_txt:(ResultsDir.get_path ReportText)
-      ~report_json:issues_json ;
+    TextReport.create_from_json ~quiet:Config.quiet ~console_limit:Config.report_console_limit
+      ~report_txt:(ResultsDir.get_path ReportText) ~report_json:issues_json ;
     if Config.pmd_xml then
       XMLReport.write ~xml_path:(ResultsDir.get_path ReportXML) ~json_path:issues_json ;
     if Config.sarif then
@@ -255,11 +251,11 @@ let report ?(suppress_console = false) () =
 
 
 (* shadowed for tracing *)
-let report ?suppress_console () =
+let report () =
   GCStats.log_f ~name:"report" Analysis
   @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"report" ())) ;
-  report ?suppress_console () ;
+  report () ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
@@ -279,7 +275,7 @@ let error_nothing_to_analyze mode =
   L.progress "There was nothing to analyze.@."
 
 
-let analyze_and_report ?suppress_console_report ~changed_files mode =
+let analyze_and_report ~changed_files mode =
   let should_analyze, should_report =
     match (Config.command, mode) with
     | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode) ->
@@ -315,12 +311,12 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
     else (
       execute_analyze ~changed_files ;
       if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ) ;
-  if should_report && Config.report then report ?suppress_console:suppress_console_report ()
+  if should_report && Config.report then report ()
 
 
-let analyze_and_report ?suppress_console_report ~changed_files mode =
+let analyze_and_report ~changed_files mode =
   ScubaLogging.execute_with_time_logging "analyze_and_report" (fun () ->
-      analyze_and_report ?suppress_console_report ~changed_files mode )
+      analyze_and_report ~changed_files mode )
 
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
@@ -376,8 +372,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
 let error_no_buck_mode_specified () =
   L.die UserError
     "`buck` command detected on the command line but no Buck integration has been selected. Please \
-     specify `--buck-clang`, `--buck-java`, or `--buck-compilation-database`. See `infer capture \
-     --help` for more information."
+     specify `--buck-clang`, `--buck-java`, `--buck-erlang`, or `--buck-compilation-database`. See \
+     `infer capture --help` for more information."
 
 
 let assert_supported_build_system build_system =

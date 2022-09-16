@@ -10,7 +10,7 @@
 open Var.Fresh.Import
 open Exp
 
-(* Solution Substitutions ================================================*)
+(* Solution Substitutions =============================================== *)
 
 module Subst : sig
   type t = Trm.t Trm.Map.t [@@deriving compare, equal, sexp]
@@ -174,7 +174,7 @@ end = struct
     else partition_valid_ empty xs s
 end
 
-(* Equality classes ======================================================*)
+(* Equality classes ===================================================== *)
 
 module Cls : sig
   type t [@@deriving compare, equal, sexp]
@@ -203,7 +203,7 @@ end = struct
   let pp_raw fs es = pp_full ~pre:"{@[" ~suf:"@]}" ~sep:",@ " Trm.pp fs es
 end
 
-(* Use lists / Super-expressions =========================================*)
+(* Use lists / Super-expressions ======================================== *)
 
 module Use : sig
   type t [@@deriving compare, equal, sexp]
@@ -224,7 +224,7 @@ end = struct
   let iter_of_opt o = Iter.flat_map ~f:to_iter (Iter.of_opt o)
 end
 
-(* Conjunctions of atomic formula assumptions ============================*)
+(* Conjunctions of atomic formula assumptions =========================== *)
 
 (** See also {!invariant} which checks many of the representation
     invariants. *)
@@ -282,7 +282,7 @@ type t =
             added once invariants are reestablished. *) }
 [@@deriving compare, equal, sexp]
 
-(* Pretty-printing =======================================================*)
+(* Pretty-printing ====================================================== *)
 
 let pp_eq fs (e, f) = Format.fprintf fs "@[%a = %a@]" Trm.pp e Trm.pp f
 
@@ -369,7 +369,7 @@ let ppx var_strength fs clss noneqs =
 
 let pp_diff_cls = Trm.Map.pp_diff ~eq:Cls.equal Trm.pp Cls.pp Cls.pp_diff
 
-(* Basic representation queries ==========================================*)
+(* Basic representation queries ========================================= *)
 
 (** test if a term is in the carrier *)
 let in_car a x =
@@ -394,7 +394,7 @@ let cls_of a' x = Trm.Map.find a' x.cls |> Option.value ~default:Cls.empty
 let rep_cls_of a' x = Cls.add a' (cls_of a' x)
 let use_of a' x = Trm.Map.find a' x.use |> Option.value ~default:Use.empty
 
-(* Normalization and Canonization ========================================*)
+(* Normalization and Canonization ======================================= *)
 
 (** [apply x a], the [x]-representative of [a], is [a'] obtained by simply
     looking up [a] in [x.rep]. Therefore [x ⊢ a=a'], and
@@ -508,7 +508,7 @@ let canon x a =
         || fail "canon %a ≠ %a@ %a" Trm.pp a'' Trm.pp a' pp_raw x () ) )
   @@ fun () -> canon x a
 
-(* Invariant =============================================================*)
+(* Invariant ============================================================ *)
 
 let congruent x a b =
   let norm_trms x e = Trm.map ~f:(Subst.norm x) e in
@@ -627,7 +627,7 @@ let invariant x =
                || fail "not congruent %a@ %a in@ @[%a@]" Trm.pp a Trm.pp b
                     pp_raw x () ) ) )
 
-(* Extending the carrier =================================================*)
+(* Extending the carrier ================================================ *)
 
 (** [add_use_of ~sup ~sub'] adds [sup] as a use of [sub'], assuming that
     there exists a subterm [sub] of [sup] such that [apply x sub = sub']. *)
@@ -683,7 +683,7 @@ let canon_extend x a =
   let a' = canon x a in
   (a', extend a' x)
 
-(* Propagation ===========================================================*)
+(* Propagation ========================================================== *)
 
 let propagate_use x0 t u x =
   [%dbg]
@@ -827,7 +827,7 @@ let propagate x =
     ~retn:(pp_xs_diff x)
   @@ fun vx -> propagate_ x vx
 
-(* Core operations =======================================================*)
+(* Core operations ====================================================== *)
 
 let empty =
   { sat= true
@@ -858,7 +858,7 @@ let and_eq a b x =
     let b', x = canon_extend x b in
     if Trm.equal a' b' then x else merge a' b' x vx
 
-(* Exposed interface =====================================================*)
+(* Exposed interface ==================================================== *)
 
 let is_empty {sat; rep} =
   sat && Trm.Map.for_alli rep ~f:(fun ~key:a ~data:a' -> Trm.equal a a')
@@ -1025,7 +1025,7 @@ let apply_and_elim xs s x =
     if is_unsat x then (unsat, Var.Set.empty)
     else (x, Var.Set.diff xs (fv x))
 
-(* Existential Witnessing and Elimination ================================*)
+(* Existential Witnessing and Elimination =============================== *)
 
 let subst_invariant xs s0 s =
   assert (s0 == s || not (Subst.equal s0 s)) ;
@@ -1338,7 +1338,7 @@ let solve_for xs ?(not_ito = Var.Set.empty) r vx =
   let classes, subst = solve_classes xs ~not_ito (r.cls, Subst.empty) vx in
   solve_for_xs r xs (classes, subst) |> snd
 
-(* Replay debugging ======================================================*)
+(* Replay debugging ===================================================== *)
 
 type call =
   | Add of Formula.t * t * Var.Context.t

@@ -186,6 +186,9 @@ let analyze =
   and no_simplify_states =
     flag "no-simplify-states" no_arg
       ~doc:"do not simplify states during symbolic execution"
+  and no_strong_infer_frame =
+    flag "no-strong-infer-frame" no_arg
+      ~doc:"do not fallback to Z3 before failing infer_frame queries"
   and stats =
     flag "stats" no_arg ~doc:"output performance statistics to stderr"
   and dump_query =
@@ -226,6 +229,7 @@ let analyze =
     Llair.cct_schedule_points := cct_schedule_points ;
     Symbolic_heap.do_normalize := normalize_states ;
     Domain_sh.simplify_states := not no_simplify_states ;
+    Solver.strong_infer_frame := not no_strong_infer_frame ;
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     Option.iter dump_simplify ~f:(fun n ->
         Symbolic_heap.Xsh.dump_simplify := n ) ;

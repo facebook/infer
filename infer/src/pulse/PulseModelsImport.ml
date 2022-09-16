@@ -143,6 +143,7 @@ module Basic = struct
         (Procdesc.get_attributes proc_desc)
         location astate
       >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+      >>| AccessResult.with_summary
     with
     | Unsat ->
         []

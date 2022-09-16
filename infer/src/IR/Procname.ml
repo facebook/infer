@@ -1451,28 +1451,9 @@ let to_filename pname =
   DB.append_crc_cutoff proc_id |> fst
 
 
-module SQLite = struct
-  module T = struct
-    type nonrec t = t [@@deriving compare]
-
-    let hash = hash
-
-    let sexp_of_t p = Sexp.Atom (F.asprintf "%a" pp p)
-  end
-
-  module Serializer = SqliteUtils.MarshalledDataNOTForComparison (T)
-
-  let pname_to_key = Base.Hashtbl.create (module T)
-
-  let serialize pname =
-    let default () = Serializer.serialize pname in
-    Base.Hashtbl.find_or_add pname_to_key pname ~default
-
-
-  let deserialize = Serializer.deserialize
-
-  let clear_cache () = Base.Hashtbl.clear pname_to_key
-end
+module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
+  type nonrec t = t
+end)
 
 module SQLiteList = SqliteUtils.MarshalledDataNOTForComparison (struct
   type nonrec t = t list
