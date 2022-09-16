@@ -221,7 +221,7 @@ let execute_analyze_json () =
       ()
 
 
-let report ?(suppress_console = false) () =
+let report () =
   let issues_json = ResultsDir.get_path ReportJson in
   let costs_json = ResultsDir.get_path ReportCostsJson in
   let config_impact_json = ResultsDir.get_path ReportConfigImpactJson in
@@ -232,10 +232,8 @@ let report ?(suppress_console = false) () =
     (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
     Utils.with_file_out (Config.results_dir ^/ "bugs.txt") ~f:(fun outc ->
         Out_channel.output_string outc "The contents of this file have moved to report.txt.\n" ) ;
-    TextReport.create_from_json
-      ~quiet:(Config.quiet || suppress_console)
-      ~console_limit:Config.report_console_limit ~report_txt:(ResultsDir.get_path ReportText)
-      ~report_json:issues_json ;
+    TextReport.create_from_json ~quiet:Config.quiet ~console_limit:Config.report_console_limit
+      ~report_txt:(ResultsDir.get_path ReportText) ~report_json:issues_json ;
     if Config.pmd_xml then
       XMLReport.write ~xml_path:(ResultsDir.get_path ReportXML) ~json_path:issues_json ;
     if Config.sarif then
