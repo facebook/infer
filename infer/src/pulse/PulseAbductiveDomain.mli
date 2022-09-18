@@ -162,6 +162,11 @@ module AddressAttributes : sig
 
   val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
 
+  val get_copied_return :
+    AbstractValue.t -> t -> (AbstractValue.t * bool * Attribute.CopyOrigin.t * Location.t) option
+
+  val remove_copied_return : AbstractValue.t -> t -> t
+
   val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
   val get_taint_sources_and_sanitizers :
@@ -178,6 +183,15 @@ module AddressAttributes : sig
   val std_vector_reserve : AbstractValue.t -> t -> t
 
   val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
+
+  val add_copied_return :
+       AbstractValue.t
+    -> source:AbstractValue.t
+    -> is_const_ref:bool
+    -> Attribute.CopyOrigin.t
+    -> Location.t
+    -> t
+    -> t
 
   val find_opt : AbstractValue.t -> t -> Attributes.t option
 

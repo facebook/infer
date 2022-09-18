@@ -42,7 +42,11 @@ end
 
 type copy_spec_t =
   | Copied of
-      {typ: Typ.t; location: Location.t; heap: BaseMemory.t; from: PulseAttribute.CopyOrigin.t}
+      { typ: Typ.t
+      ; location: Location.t
+      ; copied_location: Location.t option
+      ; heap: BaseMemory.t
+      ; from: PulseAttribute.CopyOrigin.t }
   | Modified
 [@@deriving equal]
 
@@ -122,22 +126,24 @@ end)
 
 module CopyMap = AbstractDomain.Map (CopyVar) (CopySpec)
 module ParameterMap = AbstractDomain.Map (ParameterVar) (ParameterSpec)
+module Locked = AbstractDomain.BooleanOr
 
 type elt =
   { copy_map: CopyMap.t
   ; parameter_map: ParameterMap.t
   ; destructor_checked: DestructorChecked.t
-  ; captured: Captured.t }
+  ; captured: Captured.t
+  ; locked: Locked.t }
 
 type t = V of elt | Top
 
 let pp f = function
-  | V {copy_map; parameter_map; destructor_checked; captured} ->
+  | V {copy_map; parameter_map; destructor_checked; captured; locked} ->
       F.fprintf f
         "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[captured: \
-         %a@]@]"
+         %a@],@ @[locked: %a@]@]"
         CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
-        Captured.pp captured
+        Captured.pp captured Locked.pp locked
   | Top ->
       AbstractDomain.TopLiftedUtils.pp_top f
 
@@ -153,6 +159,7 @@ let leq ~lhs ~rhs =
       && ParameterMap.leq ~lhs:lhs.parameter_map ~rhs:rhs.parameter_map
       && DestructorChecked.leq ~lhs:lhs.destructor_checked ~rhs:rhs.destructor_checked
       && Captured.leq ~lhs:lhs.captured ~rhs:rhs.captured
+      && Locked.leq ~lhs:lhs.locked ~rhs:rhs.locked
 
 
 let join x y =
@@ -164,7 +171,8 @@ let join x y =
         { copy_map= CopyMap.join x.copy_map y.copy_map
         ; parameter_map= ParameterMap.join x.parameter_map y.parameter_map
         ; destructor_checked= DestructorChecked.join x.destructor_checked y.destructor_checked
-        ; captured= Captured.join x.captured y.captured }
+        ; captured= Captured.join x.captured y.captured
+        ; locked= Locked.join x.locked y.locked }
 
 
 let widen ~prev ~next ~num_iters =
@@ -179,7 +187,8 @@ let widen ~prev ~next ~num_iters =
         ; destructor_checked=
             DestructorChecked.widen ~prev:prev.destructor_checked ~next:next.destructor_checked
               ~num_iters
-        ; captured= Captured.widen ~prev:prev.captured ~next:next.captured ~num_iters }
+        ; captured= Captured.widen ~prev:prev.captured ~next:next.captured ~num_iters
+        ; locked= Locked.widen ~prev:prev.locked ~next:next.locked ~num_iters }
 
 
 let bottom =
@@ -187,17 +196,18 @@ let bottom =
     { copy_map= CopyMap.empty
     ; parameter_map= ParameterMap.empty
     ; destructor_checked= DestructorChecked.empty
-    ; captured= Captured.empty }
+    ; captured= Captured.empty
+    ; locked= Locked.bottom }
 
 
 let is_bottom = function
   | Top ->
       false
-  | V {copy_map; parameter_map; destructor_checked; captured} ->
+  | V {copy_map; parameter_map; destructor_checked; captured; locked} ->
       CopyMap.is_bottom copy_map
       && ParameterMap.is_bottom parameter_map
       && DestructorChecked.is_bottom destructor_checked
-      && Captured.is_bottom captured
+      && Captured.is_bottom captured && Locked.is_bottom locked
 
 
 let top = Top
@@ -269,9 +279,9 @@ let get_copied = function
           match copy_spec with
           | Modified ->
               acc
-          | Copied {location; typ= copied_typ; from} ->
+          | Copied {location; copied_location; typ= copied_typ; from} ->
               if CopiedSet.mem copied_into modified || is_captured copied_into then acc
-              else (copied_into, copied_typ, location, from) :: acc )
+              else (copied_into, copied_typ, location, copied_location, from) :: acc )
         copy_map []
 
 
@@ -335,3 +345,9 @@ let set_captured_variables_elt exp astate =
 
 
 let set_captured_variables exp = map (set_captured_variables_elt exp)
+
+let set_locked_elt astate = {astate with locked= true}
+
+let set_locked = map set_locked_elt
+
+let is_locked = function Top -> true | V {locked} -> locked

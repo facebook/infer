@@ -134,9 +134,9 @@ and block = private
   ; mutable parent: func
   ; mutable sort_index: int
         (** Position in a topological order, ignoring [retreating] edges. *)
-  ; mutable checkpoint_dists: int Int.Map.t
-        (** Distances from this block to some [Sparse_trace.t]'s
-            checkpoints, as computed by [Program.compute_distances]. *) }
+  ; mutable goal_distance: int
+        (** An upper bound on the distance from this block to the end of the
+            current goal trace, measured in blocks. *) }
 
 (** A function is a control-flow graph with distinguished entry block, whose
     parameters are the function parameters. *)
@@ -259,7 +259,9 @@ module Block : sig
   type t = block [@@deriving compare, equal, sexp_of]
 
   val pp : t pp
+  val pp_ident : t pp
   val mk : lbl:label -> cmnd:cmnd -> term:term -> block
+  val set_goal_distance : int -> t -> unit
 
   module Map : Map.S with type key := t
   module Tbl : HashTable.S with type key := t
@@ -324,18 +326,4 @@ module Program : sig
   include Invariant.S with type t := t
 
   val mk : globals:GlobalDefn.t list -> functions:func list -> t
-
-  val compute_distances :
-       entry:block
-    -> src_trace:FuncName.t iarray
-    -> snk_trace:FuncName.t iarray
-    -> t
-    -> (unit, Format.formatter -> unit) result
-  (** Compute static distance heuristics along the trace defined by
-      [src_trace] and [snk_trace]. For each step, we compute the distance to
-      the next checkpoint for every block on a path from the previous to the
-      next checkpoint, storing the results in the [checkpoint_dists] field
-      of those blocks. Returns [Ok ()] if a path was found and written to
-      block metadata, and [Error dp_path] otherwise, with [dp_path] a
-      delayed printer describing the specific path that could not be found. *)
 end

@@ -605,6 +605,7 @@ OPTIONS
            default),
              PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
              PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default),
+             PULSE_UNNECESSARY_COPY_RETURN (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              REGEX_OP_ON_UI_THREAD (enabled by default),
@@ -708,6 +709,12 @@ OPTIONS
        --file-renamings path
            JSON with a list of file renamings to use while computing
            differential reports           See also infer-reportdiff(1).
+
+       --files-to-analyze-index file
+           File containing a list of source files where analysis should start
+           from. When used, the set of files given to this argument must be a
+           subset of that passed to --changed-files-index (which must be
+           specified).           See also infer-analyze(1).
 
        --no-filtering,-F
            Deactivates: Do not show the experimental and block listed issue
@@ -1168,11 +1175,15 @@ OPTIONS
     See also infer-analyze(1).
 
        --pulse-taint-config +path
-           Path to a taint analysis configuration file. This file can define
-           --pulse-taint-sources, --pulse-taint-sanitizers,
-           --pulse-taint-sanitizers, --pulse-taint-sinks,
-           --pulse-taint-policies, and --pulse-taint-data-flow-kinds.       
-    See also infer-analyze(1).
+           Path to a taint analysis configuration file or a directory
+           containing such files. This file can define --pulse-taint-sources,
+           --pulse-taint-sanitizers, --pulse-taint-propagators,
+           --pulse-taint-sinks, --pulse-taint-policies, and
+           --pulse-taint-data-flow-kinds.           If a path to a directory is given then the configuration files
+           must have the `.json` extension. Any other file will be ignored.
+           The subdirectories will be explored and must follow the same
+           convention.
+           See also infer-analyze(1).
 
        --pulse-taint-data-flow-kinds json
            Specify which taint kinds should be used for data flow reporting
@@ -1200,8 +1211,8 @@ OPTIONS
            }
            See also infer-analyze(1).
 
-       --pulse-taint-propagaters json
-           Quick way to specify simple propagaters as a JSON objects. See
+       --pulse-taint-propagators json
+           Quick way to specify simple propagators as a JSON objects. See
            --pulse-taint-sources for the fields format documentation.       
     See also infer-analyze(1).
 
@@ -1238,7 +1249,7 @@ OPTIONS
              - "taint_target":
                  where the taint should be applied in the procedure.
                  - "ReturnValue": (default for taint sources and
-           propagaters)
+           propagators)
                  - "AllArguments": (default for taint sanitizers and sinks)
                  - ["ArgumentPositions", [<int list>]]:
                      argument positions given by index (zero-indexed)
@@ -1863,6 +1874,15 @@ INTERNAL OPTIONS
        --classpath-reset
            Cancel the effect of --classpath.
 
+       --compaction-if-heap-greater-equal-to-GB int
+           An analysis worker will trigger compaction if its heap size is
+           equal or great to this value in Gigabytes. Defaults to 8
+
+       --compaction-minimum-interval-s int
+           An analysis worker will only trigger compaction if this amount of
+           time (in seconds) has elapsed since last compaction. Defaults to
+           15
+
        --compilation-database-escaped-reset
            Set --compilation-database-escaped to the empty list.
 
@@ -2050,6 +2070,9 @@ INTERNAL OPTIONS
 
        --file-renamings-reset
            Cancel the effect of --file-renamings.
+
+       --files-to-analyze-index-reset
+           Cancel the effect of --files-to-analyze-index.
 
        --no-filter-paths
            Deactivates: Apply filters specified in --report_* options.

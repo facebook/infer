@@ -35,6 +35,11 @@ let fold_folders ~init ~f ~path =
   fold_file_tree ~init ~f_dir:f ~f_reg ~path
 
 
+let fold_files ~init ~f ~path =
+  let f_dir acc _ignore_dir = acc in
+  fold_file_tree ~init ~f_dir ~f_reg:f ~path
+
+
 (** recursively find all files in [path] with names ending in [extension] *)
 let find_files ~path ~extension =
   let f_dir acc _ignore_dir = acc in
@@ -312,7 +317,7 @@ let realpath ?(warn_on_error = true) path =
 
 
 (* never closed *)
-let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
+let devnull = lazy (Unix.openfile "/dev/null" ~mode:[O_WRONLY])
 
 let suppress_stderr2 f2 x1 x2 =
   let restore_stderr src =
@@ -346,7 +351,7 @@ let rec rmtree name =
       rmdir dir
   | _ ->
       Unix.unlink name
-  | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
+  | exception Unix.Unix_error (ENOENT, _, _) ->
       ()
 
 

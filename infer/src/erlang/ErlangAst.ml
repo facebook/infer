@@ -71,7 +71,7 @@ type literal = Atom of string | Char of string | Float of float | Int of string 
 
 (** {2 S8.4: Expressions} *)
 
-type body = expression list [@@deriving sexp_of]
+type body = expression list
 
 and simple_expression =
   | BinaryOperator of expression * binary_operator * expression
@@ -92,7 +92,7 @@ and simple_expression =
   | ListComprehension of {expression: expression; qualifiers: qualifier list}
   | Literal of literal
   | Map of {map: expression option; updates: association list}
-  | Match of {pattern: pattern; body: (* body is a pattern within patterns *) expression}
+  | Match of {pattern: expression; body: (* body is a pattern within patterns *) expression}
   | Nil
   | Receive of {cases: case_clause list; timeout: timeout option}
   | RecordAccess of {record: expression; name: record_name; field: string}
@@ -102,41 +102,33 @@ and simple_expression =
   | Tuple of expression list
   | UnaryOperator of unary_operator * expression
   | Variable of {vname: string; mutable scope: (Procname.t option[@sexp.opaque])}
-[@@deriving sexp_of]
 
-and expression = {location: location; simple_expression: simple_expression} [@@deriving sexp_of]
+and expression = {location: location; simple_expression: simple_expression}
 
 and qualifier =
-  | BitsGenerator of {pattern: pattern; expression: expression}
+  | BitsGenerator of {pattern: expression; expression: expression}
   | Filter of expression
-  | Generator of {pattern: pattern; expression: expression}
-[@@deriving sexp_of]
+  | Generator of {pattern: expression; expression: expression}
 
-and timeout = {time: expression; handler: body} [@@deriving sexp_of]
+and timeout = {time: expression; handler: body}
 
 and bin_element =
   {expression: expression; size: expression option; types: type_specifier list option}
-[@@deriving sexp_of]
 
 (* A [None] field stands for _, which means "all other fields". *)
-and record_update = {field: string option; expression: expression} [@@deriving sexp_of]
+and record_update = {field: string option; expression: expression}
 
-and association = {kind: association_kind; key: expression; value: expression} [@@deriving sexp_of]
-
-and pattern = expression [@@deriving sexp_of]
-
-and guard_test = expression [@@deriving sexp_of]
+and association = {kind: association_kind; key: expression; value: expression}
 
 (** {2 S8.5 Clauses} *)
 
-and 'pat clause = {location: location; patterns: 'pat list; guards: guard_test list list; body: body}
-[@@deriving sexp_of]
+and 'pat clause = {location: location; patterns: 'pat list; guards: expression list list; body: body}
 
-and case_clause = pattern clause [@@deriving sexp_of]
+and case_clause = expression clause
 
-and catch_clause = catch_pattern clause [@@deriving sexp_of]
+and catch_clause = catch_pattern clause
 
-and catch_pattern = {exception_: exception_; pattern: pattern; variable: string}
+and catch_pattern = {exception_: exception_; pattern: expression; variable: string}
 [@@deriving sexp_of]
 
 (** {2 S8.7 Types} *)

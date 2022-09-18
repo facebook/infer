@@ -53,6 +53,16 @@ module Const : sig
     | Float of float  (** float constants *)
 end
 
+module Lang : sig
+  type t = Java | Hack [@@deriving equal]
+
+  val of_string : string -> t option [@@warning "-32"]
+
+  val to_string : t -> string [@@warning "-32"]
+end
+
+module SilProcname = Procname
+
 module Procname : sig
   type kind = Virtual | NonVirtual
 
@@ -62,6 +72,8 @@ module Procname : sig
 
   type t =
     {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
+
+  val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
 end
 
 module Pvar : sig
@@ -101,7 +113,7 @@ module Instr : sig
 end
 
 module Terminator : sig
-  type node_call = {label: NodeName.t; ssa_args: Ident.t list}
+  type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t = Ret of Exp.t | Jump of node_call list  (** non empty list *) | Throw of Exp.t
 end
@@ -109,7 +121,7 @@ end
 module Node : sig
   type t =
     { label: NodeName.t
-    ; ssa_parameters: Ident.t list
+    ; ssa_parameters: (Ident.t * Typ.t) list
     ; exn_succs: NodeName.t list  (** successor exception nodes *)
     ; last: Terminator.t
     ; instrs: Instr.t list
@@ -128,14 +140,6 @@ end
 
 module Struct : sig
   type t = {name: TypeName.t; fields: Fieldname.t list; methods: Procname.t list}
-end
-
-module Lang : sig
-  type t = Java | Hack [@@deriving equal]
-
-  val of_string : string -> t option [@@warning "-32"]
-
-  val to_string : t -> string [@@warning "-32"]
 end
 
 module Attr : sig
@@ -171,6 +175,22 @@ module Verification : sig
   val pp_error : SourceFile.t -> Format.formatter -> error -> unit
 
   val run : Module.t -> error list
+end
+
+module Transformation : sig
+  (* generates enough intermediate Let instructions to make the procdesc free
+     of sub-expressions containing regular calls.
+     Example:
+       n2 = m(n0, g3(n1))
+     -->
+       n3 = g3(n1)
+       n2 = m(n0, n3)
+  *)
+  val remove_internal_calls : Module.t -> Module.t
+
+  val let_propagation : Module.t -> Module.t
+
+  val out_of_ssa : Module.t -> Module.t
 end
 
 exception ToSilTransformationError of (Format.formatter -> unit -> unit)

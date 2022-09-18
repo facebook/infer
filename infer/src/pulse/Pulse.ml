@@ -29,13 +29,13 @@ let report_topl_errors proc_desc err_log summary =
 
 let report_unnecessary_copies proc_desc err_log non_disj_astate =
   PulseNonDisjunctiveDomain.get_copied non_disj_astate
-  |> List.iter ~f:(fun (copied_into, typ, location, from) ->
+  |> List.iter ~f:(fun (copied_into, typ, location, copied_location, from) ->
          let copy_name = Format.asprintf "%a" Attribute.CopiedInto.pp copied_into in
-         let diagnostic = Diagnostic.UnnecessaryCopy {copied_into; typ; location; from} in
+         let diagnostic =
+           Diagnostic.UnnecessaryCopy {copied_into; typ; location; copied_location; from}
+         in
          PulseReport.report
-           ~is_suppressed:
-             ( String.is_substring copy_name ~substring:"copy"
-             || String.is_substring copy_name ~substring:"Copy" )
+           ~is_suppressed:(PulseNonDisjunctiveOperations.has_copy_in copy_name)
            ~latent:false proc_desc err_log diagnostic )
 
 
@@ -773,7 +773,12 @@ module PulseTransferFunctions = struct
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
           in
           let astate_n, astates =
-            PulseNonDisjunctiveOperations.add_copies tenv path loc call_exp actuals astates astate_n
+            PulseNonDisjunctiveOperations.add_copies tenv proc_desc path loc call_exp actuals
+              astates astate_n
+          in
+          let astate_n, astates =
+            PulseNonDisjunctiveOperations.add_copied_return path loc call_exp actuals astates
+              astate_n
           in
           (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
@@ -862,7 +867,7 @@ let with_html_debug_node node ~desc ~f =
 let initial tenv proc_name proc_attrs =
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_name proc_attrs
-    |> PulseObjectiveCSummary.initial_with_positive_self proc_name proc_attrs
+    |> PulseSummary.initial_with_positive_self proc_name proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_name proc_attrs
   in
   [(ContinueProgram initial_astate, PathContext.initial)]
@@ -930,7 +935,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
               exit_function analysis_data exit_location posts non_disj_astate
             in
             let objc_nil_summary =
-              PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_name proc_attrs
+              PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
             in
             let summary =
               Option.to_list objc_nil_summary

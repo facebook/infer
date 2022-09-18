@@ -157,20 +157,13 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
 let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
     callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals astate =
   let open ExecutionDomain in
-  let ( let* ) x f =
-    SatUnsat.bind
-      (fun result ->
-        PulseResult.map result ~f |> PulseResult.map ~f:SatUnsat.sat |> PulseResult.of_some
-        |> SatUnsat.of_option |> SatUnsat.map PulseResult.join )
-      x
-  in
   let map_call_result ~is_isl_error_prepost callee_summary ~f =
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary path ~is_isl_error_prepost callee_pname call_loc ~callee_summary
         ~captured_formals ~captured_actuals ~formals ~actuals astate
     in
     let sat_unsat =
-      let* post, return_val_opt, subst = sat_unsat in
+      let** post, return_val_opt, subst = sat_unsat in
       let post =
         match return_val_opt with
         | Some return_val_hist ->
@@ -201,13 +194,14 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   | LatentAbortProgram {astate}
   | LatentInvalidAccess {astate} ->
       map_call_result ~is_isl_error_prepost:false astate ~f:(fun subst astate_post_call ->
-          let* astate_summary =
+          let** astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post tenv
               (Procdesc.get_proc_name caller_proc_desc)
               (Procdesc.get_attributes caller_proc_desc)
               call_loc astate_post_call
             >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+            >>| AccessResult.with_summary
           in
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ | ISLLatentMemoryError _ ->
@@ -232,14 +226,14 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                   L.d_printfln ~color:Red "issue is now manifest, emitting an error" ;
                   Sat
                     (AccessResult.of_error_f
-                       (Summary
+                       (WithSummary
                           (ReportableError {diagnostic; astate= astate_post_call}, astate_summary)
                        )
                        ~f:(fun _ ->
                          L.die InternalError
                            "LatentAbortProgram cannot be applied to non-fatal errors" ) )
               | `ISLDelay astate ->
-                  Sat (FatalError (Summary (ISLError {astate}, astate_summary), [])) )
+                  Sat (FatalError (WithSummary (ISLError {astate}, astate_summary), [])) )
           | LatentInvalidAccess
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
@@ -290,7 +284,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                       DecompilerExpr.pp address_callee DecompilerExpr.pp address_caller ;
                     Sat
                       (FatalError
-                         ( Summary
+                         ( WithSummary
                              ( ReportableError
                                  { diagnostic=
                                      AccessToInvalidAddress
@@ -311,6 +305,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
             (Procdesc.get_attributes caller_proc_desc)
             call_loc astate
           >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
+          >>| AccessResult.with_summary
           >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 
@@ -388,13 +383,13 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
       let<++> astate_unknown =
-        PulseObjectiveCSummary.append_objc_actual_self_positive proc_name proc_attrs
-          (List.hd actuals) astate_unknown
+        PulseSummary.append_objc_actual_self_positive proc_name proc_attrs (List.hd actuals)
+          astate_unknown
       in
       astate_unknown
     in
     let result_unknown_nil, contradiction =
-      PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_name proc_attrs
+      PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
       |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
              call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
                proc_attrs [nil_summary] astate )

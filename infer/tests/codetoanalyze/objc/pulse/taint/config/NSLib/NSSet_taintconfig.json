@@ -1,0 +1,37 @@
+{
+  "pulse-taint-propagators": [
+      {
+        "class_names": ["NSSet"],
+        "taint_target": "ReturnValue",
+        "method_names":
+          [ "setWithArray:", "setWithObject:", "setWithObjects:", "setWithObjects:count:"
+          , "setByAddingObject:", "setByAddingObjectsFromSet:", "setByAddingObjectsFromArray:"
+          , "initWithArray:", "initWithObjects:", "initWithObjects:count:"
+          , "initWithSet:", "initWithSet:copyItems:"
+          , "count", "allObjects", "anyObject", "containsObject:"
+          , "filteredSetUsingPredicate:"
+          , "makeObjectsPerformSelector:", "makeObjectsPerformSelector:withObject:"
+          , "member:", "objectEnumerator"
+          , "objectsPassingTest:", "objectsWithOptions:passingTest:"
+          , "isSubsetOfSet:", "intersectsSet:", "isEqualToSet:", "valueForKey:", "setValue:forKey:"
+          , "sortedArrayUsingDescriptors:"
+          , "description", "descriptionWithLocale:"
+          , "initWithCoder:", "setWithCollectionViewIndexPath:", "setWithCollectionViewIndexPaths:"
+          , "enumerateIndexPathsWithOptions:usingBlock:"
+          ]
+      },
+      {
+        "class_names": ["NSSet"],
+        "taint_target": ["ArgumentPositions", [0]],
+        "method_names":
+          [ "makeObjectsPerformSelector:", "enumerateObjectsUsingBlock:"
+          , "enumerateObjectsWithOptions:usingBlock:", "setValue:forKey:"
+          ]
+      },
+      {
+        "class_names": ["NSSet"],
+        "taint_target": ["ArgumentPositions", [0, 2]],
+        "method_names": ["makeObjectsPerformSelector:withObject:"]
+      }
+  ]
+}

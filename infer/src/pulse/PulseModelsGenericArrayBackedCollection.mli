@@ -31,7 +31,7 @@ val element :
   -> AbstractValue.t * ValueHistory.t
   -> AbstractValue.t
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t), base_error) pulse_result
+  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
 val eval_element :
      PathContext.t
@@ -46,7 +46,7 @@ val eval_pointer_to_last_element :
   -> Location.t
   -> AbstractValue.t * ValueHistory.t
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t), base_error) pulse_result
+  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
 val eval_is_empty :
      PathContext.t
@@ -73,5 +73,5 @@ module Iterator : sig
     -> init:AbstractValue.t * ValueHistory.t
     -> ref:AbstractValue.t * ValueHistory.t
     -> AbductiveDomain.t
-    -> (AbductiveDomain.t, base_error) pulse_result
+    -> AbductiveDomain.t AccessResult.t
 end

@@ -53,8 +53,6 @@ include struct
     ; mutable summary_cache_hits: int
     ; mutable summary_cache_misses: int
     ; mutable ondemand_procs_analyzed: int
-    ; mutable ondemand_local_cache_hits: int
-    ; mutable ondemand_local_cache_misses: int
     ; mutable proc_locker_lock_time: ExecutionDuration.t
     ; mutable proc_locker_unlock_time: ExecutionDuration.t
     ; mutable restart_scheduler_useful_time: ExecutionDuration.t
@@ -75,8 +73,6 @@ let global_stats =
   ; summary_cache_hits= 0
   ; summary_cache_misses= 0
   ; ondemand_procs_analyzed= 0
-  ; ondemand_local_cache_hits= 0
-  ; ondemand_local_cache_misses= 0
   ; proc_locker_lock_time= ExecutionDuration.zero
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
@@ -110,10 +106,6 @@ let incr_summary_cache_hits () = incr Fields.summary_cache_hits
 let incr_summary_cache_misses () = incr Fields.summary_cache_misses
 
 let incr_ondemand_procs_analyzed () = incr Fields.ondemand_procs_analyzed
-
-let incr_ondemand_local_cache_hits () = incr Fields.ondemand_local_cache_hits
-
-let incr_ondemand_local_cache_misses () = incr Fields.ondemand_local_cache_misses
 
 let add_to_proc_locker_lock_time execution_duration =
   add Fields.proc_locker_lock_time execution_duration
@@ -158,8 +150,6 @@ let copy from ~into : unit =
       ; summary_cache_hits
       ; summary_cache_misses
       ; ondemand_procs_analyzed
-      ; ondemand_local_cache_hits
-      ; ondemand_local_cache_misses
       ; proc_locker_lock_time
       ; proc_locker_unlock_time
       ; restart_scheduler_useful_time
@@ -172,9 +162,8 @@ let copy from ~into : unit =
   in
   Fields.Direct.set_all_mutable_fields into ~longest_proc_duration_heap ~summary_file_try_load
     ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed
-    ~ondemand_local_cache_hits ~ondemand_local_cache_misses ~proc_locker_lock_time
-    ~proc_locker_unlock_time ~restart_scheduler_useful_time ~restart_scheduler_total_time
-    ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
+    ~proc_locker_lock_time ~proc_locker_unlock_time ~restart_scheduler_useful_time
+    ~restart_scheduler_total_time ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
     ~pulse_captured_vars_length_contradictions ~pulse_summaries_count
 
 
@@ -187,9 +176,6 @@ let merge stats1 stats2 =
   ; summary_cache_hits= stats1.summary_cache_hits + stats2.summary_cache_hits
   ; summary_cache_misses= stats1.summary_cache_misses + stats2.summary_cache_misses
   ; ondemand_procs_analyzed= stats1.ondemand_procs_analyzed + stats2.ondemand_procs_analyzed
-  ; ondemand_local_cache_hits= stats1.ondemand_local_cache_hits + stats2.ondemand_local_cache_hits
-  ; ondemand_local_cache_misses=
-      stats1.ondemand_local_cache_misses + stats2.ondemand_local_cache_misses
   ; proc_locker_lock_time=
       ExecutionDuration.add stats1.proc_locker_lock_time stats2.proc_locker_lock_time
   ; proc_locker_unlock_time=
@@ -219,8 +205,6 @@ let initial =
   ; summary_cache_hits= 0
   ; summary_cache_misses= 0
   ; ondemand_procs_analyzed= 0
-  ; ondemand_local_cache_hits= 0
-  ; ondemand_local_cache_misses= 0
   ; proc_locker_lock_time= ExecutionDuration.zero
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
@@ -268,8 +252,6 @@ let pp f stats =
       ~summary_read_from_disk:(pp_int_field stats f)
       ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses f)
       ~summary_cache_misses:(pp_int_field stats f) ~ondemand_procs_analyzed:(pp_int_field stats f)
-      ~ondemand_local_cache_hits:(pp_cache_hits stats stats.ondemand_local_cache_misses f)
-      ~ondemand_local_cache_misses:(pp_int_field stats f)
       ~proc_locker_lock_time:(pp_execution_duration_field stats f)
       ~proc_locker_unlock_time:(pp_execution_duration_field stats f)
       ~restart_scheduler_useful_time:(pp_execution_duration_field stats f)
@@ -311,8 +293,7 @@ let log_to_scuba stats =
     Fields.to_list ~longest_proc_duration_heap:create_longest_proc_duration_heap
       ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
       ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
-      ~ondemand_procs_analyzed:create_counter ~ondemand_local_cache_hits:create_counter
-      ~ondemand_local_cache_misses:create_counter ~proc_locker_lock_time:create_time_entry
+      ~ondemand_procs_analyzed:create_counter ~proc_locker_lock_time:create_time_entry
       ~proc_locker_unlock_time:create_time_entry ~restart_scheduler_useful_time:create_time_entry
       ~restart_scheduler_total_time:create_time_entry ~pulse_aliasing_contradictions:create_counter
       ~pulse_args_length_contradictions:create_counter

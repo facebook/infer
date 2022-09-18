@@ -122,6 +122,11 @@ module Attribute = struct
     | AlwaysReachable
     | Closure of Procname.t
     | CopiedInto of CopiedInto.t
+    | CopiedReturn of
+        { source: AbstractValue.t
+        ; is_const_ref: bool
+        ; from: CopyOrigin.t
+        ; copied_location: Location.t }
     | DynamicType of Typ.t
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
@@ -162,6 +167,8 @@ module Attribute = struct
   let closure_rank = Variants.closure.rank
 
   let copied_into_rank = Variants.copiedinto.rank
+
+  let copied_return_rank = Variants.copiedreturn.rank
 
   let copy_origin_rank = Variants.sourceoriginofcopy.rank
 
@@ -241,6 +248,10 @@ module Attribute = struct
         Procname.pp f pname
     | CopiedInto copied_into ->
         CopiedInto.pp f copied_into
+    | CopiedReturn {source; is_const_ref; from; copied_location} ->
+        F.fprintf f "CopiedReturn (%a%t by %a at %a)" AbstractValue.pp source
+          (fun f -> if is_const_ref then F.pp_print_string f ":const&")
+          CopyOrigin.pp from Location.pp copied_location
     | DynamicType typ ->
         F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
     | EndOfCollection ->
@@ -302,6 +313,7 @@ module Attribute = struct
     | AlwaysReachable
     | Closure _
     | CopiedInto _
+    | CopiedReturn _
     | DynamicType _
     | EndOfCollection
     | JavaResourceReleased
@@ -328,6 +340,7 @@ module Attribute = struct
     | AlwaysReachable
     | Closure _
     | CopiedInto _
+    | CopiedReturn _
     | DynamicType _
     | EndOfCollection
     | ISLAbduced _
@@ -361,6 +374,7 @@ module Attribute = struct
     | Allocated _
     | AlwaysReachable
     | Closure _
+    | CopiedReturn _
     | DynamicType _
     | EndOfCollection
     | Invalid _
@@ -392,6 +406,8 @@ module Attribute = struct
     match attr with
     | Allocated (proc_name, trace) ->
         Allocated (proc_name, add_call_to_trace trace)
+    | CopiedReturn {source; is_const_ref; from; copied_location} ->
+        CopiedReturn {source= subst source; is_const_ref; from; copied_location}
     | Invalid (invalidation, trace) ->
         Invalid (invalidation, add_call_to_trace trace)
     | ISLAbduced trace ->
@@ -480,6 +496,8 @@ module Attribute = struct
       else AbstractValue.Set.fold (fun v list -> f_out v :: list) values' [] |> Option.some
     in
     match attr with
+    | CopiedReturn {source} ->
+        Option.some_if (f_keep source) attr
     | PropagateTaintFrom taints_in ->
         filter_aux taints_in ~f_in:(fun {v} -> v) ~f_out:(fun v -> {v})
         |> Option.map ~f:(fun taints_in -> PropagateTaintFrom taints_in)
@@ -618,6 +636,14 @@ module Attributes = struct
     get_by_rank Attribute.copied_into_rank ~dest:(function [@warning "-8"]
         | CopiedInto copied_into -> copied_into )
 
+
+  let get_copied_return =
+    get_by_rank Attribute.copied_return_rank ~dest:(function [@warning "-8"]
+        | CopiedReturn {source; is_const_ref; from; copied_location} ->
+        (source, is_const_ref, from, copied_location) )
+
+
+  let remove_copied_return = remove_by_rank Attribute.copied_return_rank
 
   let get_source_origin_of_copy =
     get_by_rank Attribute.copy_origin_rank ~dest:(function [@warning "-8"]

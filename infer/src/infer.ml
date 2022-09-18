@@ -15,7 +15,7 @@ module Cmd = InferCommandImplementation
 let run driver_mode =
   let open Driver in
   run_prologue driver_mode ;
-  let changed_files = SourceFile.read_config_changed_files () in
+  let changed_files = SourceFile.read_config_files_to_analyze () in
   InferAnalyze.invalidate_changed_procedures changed_files ;
   capture driver_mode ~changed_files ;
   analyze_and_report driver_mode ~changed_files ;

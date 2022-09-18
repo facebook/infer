@@ -104,7 +104,7 @@ let add_or_get_build_report_path args =
   (build_report_path, before_build @ ["build"] @ after_build)
 
 
-let save_beams_from_report build_report_path beam_list_path =
+let save_beams_from_report ~buck_root ~build_report_path beam_list_path =
   let report =
     match Utils.read_json_file build_report_path with
     | Ok json ->
@@ -128,7 +128,7 @@ let save_beams_from_report build_report_path beam_list_path =
         strings
   in
   let get_beams beams dir =
-    let ebin_dir = dir ^/ "ebin" in
+    let ebin_dir = buck_root ^/ dir ^/ "ebin" in
     match Sys.is_directory ebin_dir with
     | `Yes ->
         let new_beams = Utils.find_files ~path:ebin_dir ~extension:".beam" in
@@ -148,7 +148,7 @@ let run_in_dir ~dir ~prog ~args =
   Sys.chdir here
 
 
-let process_beams ~command beam_list_path =
+let process_beams ~buck_root beam_list_path =
   Option.iter ~f:parse_translate_store Config.erlang_ast_dir ;
   if not Config.erlang_skip_compile then (
     let jsonast_dir =
@@ -161,11 +161,6 @@ let process_beams ~command beam_list_path =
         ["--list"; beam_list_path; "--specs-only"; "--otp"; jsonast_dir]
       else ["--list"; beam_list_path; jsonast_dir]
     in
-    let buck_root =
-      String.strip
-        (Process.create_process_and_wait_with_output ~prog:command ~args:["root"] ReadStdout)
-    in
-    Sys.chdir buck_root ;
     (* extract.escript prints a warning to stdout if the abstract forms are missing,
        but keeps going *)
     run_in_dir ~dir:buck_root ~prog ~args ;
@@ -257,5 +252,9 @@ let capture_buck ~command ~args =
   let build_report_path, args = add_or_get_build_report_path args in
   run_buck ~command ~args |> ignore ;
   let beam_list_path = ResultsDir.get_path Temporary ^/ "beams.list" in
-  save_beams_from_report build_report_path beam_list_path ;
-  process_beams ~command beam_list_path
+  let buck_root =
+    String.strip
+      (Process.create_process_and_wait_with_output ~prog:command ~args:["root"] ReadStdout)
+  in
+  save_beams_from_report ~buck_root ~build_report_path beam_list_path ;
+  process_beams ~buck_root beam_list_path

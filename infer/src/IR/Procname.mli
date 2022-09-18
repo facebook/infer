@@ -302,13 +302,7 @@ module Map : PrettyPrintable.PPMap with type key = t
 (** Sets of proc names. *)
 module Set : PrettyPrintable.PPSet with type elt = t
 
-module SQLite : sig
-  val serialize : t -> Sqlite3.Data.t
-
-  val deserialize : Sqlite3.Data.t -> t
-
-  val clear_cache : unit -> unit
-end
+module SQLite : SqliteUtils.Data with type t = t
 
 module SQLiteList : SqliteUtils.Data with type t = t list
 
@@ -337,6 +331,9 @@ val make_csharp :
 
 val make_erlang : module_name:string -> function_name:string -> arity:int -> t
 (** Create an Erlang procedure name. *)
+
+val make_hack : class_name:string option -> function_name:string -> t
+(** Create a Hack procedure name. *)
 
 val make_objc_dealloc : Typ.Name.t -> t
 (** Create a Objective-C dealloc name. This is a destructor for an Objective-C class. This procname

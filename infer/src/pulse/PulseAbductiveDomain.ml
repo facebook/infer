@@ -351,6 +351,14 @@ module AddressAttributes = struct
     BaseAddressAttributes.get_copied_into addr (astate.post :> base_domain).attrs
 
 
+  let get_copied_return addr astate =
+    BaseAddressAttributes.get_copied_return addr (astate.post :> base_domain).attrs
+
+
+  let remove_copied_return addr astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.remove_copied_return addr)
+
+
   let get_must_be_valid addr astate =
     BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs
 
@@ -417,6 +425,11 @@ module AddressAttributes = struct
 
   let is_end_of_collection addr astate =
     BaseAddressAttributes.is_end_of_collection addr (astate.post :> base_domain).attrs
+
+
+  let add_copied_return addr ~source ~is_const_ref from location astate =
+    map_post_attrs astate
+      ~f:(BaseAddressAttributes.add_copied_return addr ~source ~is_const_ref from location)
 
 
   let abduce_and_add value attrs astate =

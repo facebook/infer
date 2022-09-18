@@ -9,6 +9,21 @@ include Core
 
 [@@@warning "-32"]
 
+(* easier to write Unix than Core_unix *)
+module Unix = Core_unix
+
+(* we don't care about the _unix distinction *)
+module Filename = struct
+  include Filename
+  include Filename_unix
+end
+
+(* we don't care about the _unix distinction *)
+module Sys = struct
+  include Sys
+  include Sys_unix
+end
+
 (* Compare police: generic compare mostly disabled. *)
 let compare = No_polymorphic_compare.compare
 

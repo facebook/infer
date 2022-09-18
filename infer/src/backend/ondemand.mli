@@ -18,14 +18,6 @@ val analyze_proc_name_no_caller : Exe_env.t -> Procname.t -> Summary.t option
     [callee_pname] triggered by the top-level of a file-level checker. This must not be used in any
     other context, as this will break incremental analysis. *)
 
-module LocalCache : sig
-  val clear : unit -> unit
-  (** Empty the cache of ondemand results *)
-
-  val remove : Procname.t -> unit
-  (** Remove an element from the cache of ondemand results *)
-end
-
 val analyze_file : Exe_env.t -> SourceFile.t -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given file. *)
 

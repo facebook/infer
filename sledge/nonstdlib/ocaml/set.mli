@@ -160,7 +160,7 @@ module type S =
        that satisfy predicate [f]. If [f] satisfies every element in [s],
        [s] is returned unchanged (the result of the function is then
        physically equal to [s]).
-       @before 4.03 Physical equality was not ensured.*)
+       @before 4.03 Physical equality was not ensured. *)
 
     val filter_map: (elt -> elt option) -> t -> t
     (** [filter_map f s] returns the set of all [v] such that

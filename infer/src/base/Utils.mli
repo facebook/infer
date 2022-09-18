@@ -11,6 +11,9 @@ open! IStd
 val fold_folders : init:'acc -> f:('acc -> string -> 'acc) -> path:string -> 'acc
 (** recursively traverse a path for folders, returning results by a given fold function *)
 
+val fold_files : init:'acc -> f:('acc -> string -> 'acc) -> path:string -> 'acc
+(** recursively traverse a path for files, returning results by a given fold function *)
+
 val find_files : path:string -> extension:string -> string list
 (** recursively find all files in [path] with names ending in [extension] *)
 

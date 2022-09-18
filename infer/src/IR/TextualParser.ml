@@ -69,6 +69,9 @@ let capture ?source_path textual_path =
   | Error () ->
       ()
   | Ok module_ -> (
+      let module_ = Textual.Transformation.remove_internal_calls module_ in
+      let module_ = Textual.Transformation.let_propagation module_ in
+      let module_ = Textual.Transformation.out_of_ssa module_ in
       let source_file = module_.sourcefile in
       DB.Results_dir.init source_file ;
       try
@@ -79,6 +82,7 @@ let capture ?source_path textual_path =
           Config.debug_mode || Config.testing_mode || Config.frontend_tests
           || Option.is_some Config.icfg_dotty_outfile
         then DotCfg.emit_frontend_cfg source_file cfg ;
+        Tenv.store_global tenv ;
         ()
       with Textual.ToSilTransformationError pp ->
         L.external_error
