@@ -157,20 +157,13 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
 let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
     callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals astate =
   let open ExecutionDomain in
-  let ( let* ) x f =
-    SatUnsat.bind
-      (fun result ->
-        PulseResult.map result ~f |> PulseResult.map ~f:SatUnsat.sat |> PulseResult.of_some
-        |> SatUnsat.of_option |> SatUnsat.map PulseResult.join )
-      x
-  in
   let map_call_result ~is_isl_error_prepost callee_summary ~f =
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary path ~is_isl_error_prepost callee_pname call_loc ~callee_summary
         ~captured_formals ~captured_actuals ~formals ~actuals astate
     in
     let sat_unsat =
-      let* post, return_val_opt, subst = sat_unsat in
+      let** post, return_val_opt, subst = sat_unsat in
       let post =
         match return_val_opt with
         | Some return_val_hist ->
@@ -201,7 +194,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   | LatentAbortProgram {astate}
   | LatentInvalidAccess {astate} ->
       map_call_result ~is_isl_error_prepost:false astate ~f:(fun subst astate_post_call ->
-          let* astate_summary =
+          let** astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post tenv
               (Procdesc.get_proc_name caller_proc_desc)
