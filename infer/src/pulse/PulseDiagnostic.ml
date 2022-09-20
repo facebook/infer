@@ -494,8 +494,8 @@ let get_message diagnostic =
   | UnnecessaryCopy {copied_into; typ; location; copied_location= None; from} -> (
       let open PulseAttribute in
       let suppression_msg =
-        "If this copy was intentional, consider adding the word `copy` into the variable name to \
-         suppress this warning"
+        "If this copy was intentional, consider calling `folly::copy` to make it explicit and \
+         hence suppress the warning"
       in
       let suggestion_msg =
         match (from : CopyOrigin.t) with
