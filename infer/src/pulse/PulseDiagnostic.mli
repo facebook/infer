@@ -82,7 +82,7 @@ type t =
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
       ; location: Location.t (* the location to report the issue *)
-      ; copied_location: Location.t option
+      ; copied_location: (Procname.t * Location.t) option
             (* [copied_location] has a value when the copied location is different to where to
                report: e.g. this is the case for returning copied values. *)
       ; from: PulseAttribute.CopyOrigin.t }

@@ -135,7 +135,7 @@ type t =
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
       ; location: Location.t
-      ; copied_location: Location.t option
+      ; copied_location: (Procname.t * Location.t) option
       ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
@@ -179,7 +179,7 @@ let pp fmt diagnostic =
       { copied_into: PulseAttribute.CopiedInto.t
       ; typ: Typ.t
       ; location: Location.t
-      ; copied_location: Location.t option
+      ; copied_location: (Procname.t * Location.t) option
       ; from: PulseAttribute.CopyOrigin.t } ->
       F.fprintf fmt
         "UnnecessaryCopy {@[copied_into=%a;@;typ=%a;@;location:%a;@;copied_location:%a@;from=%a@]}"
@@ -187,8 +187,8 @@ let pp fmt diagnostic =
         (fun fmt -> function
           | None ->
               F.pp_print_string fmt "none"
-          | Some location ->
-              Location.pp fmt location )
+          | Some (callee, location) ->
+              F.fprintf fmt "%a,%a" Procname.pp callee Location.pp location )
         copied_location PulseAttribute.CopyOrigin.pp from
 
 
@@ -483,7 +483,15 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a (%a)" DecompilerExpr.pp expr Taint.pp source
         Taint.pp sink pp_flow_kind flow_kind
-  | UnnecessaryCopy {copied_into; typ; location; copied_location; from} -> (
+  | UnnecessaryCopy {copied_into; typ; copied_location= Some (callee, {file; line})} ->
+      let open PulseAttribute in
+      F.asprintf
+        "the return value `%a` with type `%a` is not modified after it is copied in the callee \
+         `%a` at `%a:%d`. Please check if we can avoid the copy, e.g. by changing the return type \
+         of `%a` or by revising the function body of it."
+        CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Procname.pp callee SourceFile.pp file
+        line Procname.pp callee
+  | UnnecessaryCopy {copied_into; typ; location; copied_location= None; from} -> (
       let open PulseAttribute in
       let suppression_msg =
         "If this copy was intentional, consider adding the word `copy` into the variable name to \
@@ -496,18 +504,17 @@ let get_message diagnostic =
         | CopyAssignment ->
             "try getting a reference to it or move it if possible"
       in
-      let copied_location = Option.value copied_location ~default:location in
       match copied_into with
       | IntoVar {source_opt= None} ->
           F.asprintf
             "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid \
              the copy, %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
-            copied_location suggestion_msg suppression_msg
+            location suggestion_msg suppression_msg
       | IntoVar {source_opt= Some pvar} ->
           F.asprintf "variable `%a` with type `%a` is %a unnecessarily into an intermediate on %a."
             Pvar.pp_value pvar (Typ.pp_full Pp.text) typ CopyOrigin.pp from Location.pp_line
-            copied_location
+            location
       | IntoField {field; source_opt} -> (
           let advice = "Rather than copying into the field, consider moving into it instead." in
           match source_opt with
@@ -683,7 +690,7 @@ let get_trace = function
       [ Errlog.make_trace_element nesting location
           (F.asprintf "%a here" PulseAttribute.CopyOrigin.pp from)
           [] ]
-  | UnnecessaryCopy {location; copied_location= Some copied_location; from} ->
+  | UnnecessaryCopy {location; copied_location= Some (_, copied_location); from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location (F.asprintf "returned here") []
       ; Errlog.make_trace_element nesting copied_location
