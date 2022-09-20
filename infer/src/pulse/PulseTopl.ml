@@ -63,7 +63,9 @@ module Constraint : sig
 
   type t [@@deriving compare, equal]
 
-  val make : Binop.t -> Formula.operand -> Formula.operand -> predicate
+  type operator = LeadsTo | NotLeadsTo | Builtin of Binop.t
+
+  val make : operator -> Formula.operand -> Formula.operand -> predicate
 
   val true_ : t
 
@@ -89,7 +91,9 @@ module Constraint : sig
 
   val pp : F.formatter -> t -> unit
 end = struct
-  type predicate = Binop.t * Formula.operand * Formula.operand [@@deriving compare, equal]
+  type operator = LeadsTo | NotLeadsTo | Builtin of Binop.t [@@deriving compare, equal]
+
+  type predicate = operator * Formula.operand * Formula.operand [@@deriving compare, equal]
 
   type t = predicate list [@@deriving compare, equal]
 
@@ -99,7 +103,7 @@ end = struct
 
   let is_trivially_true (predicate : predicate) =
     match predicate with
-    | Eq, AbstractValueOperand l, AbstractValueOperand r when AbstractValue.equal l r ->
+    | Builtin Eq, AbstractValueOperand l, AbstractValueOperand r when AbstractValue.equal l r ->
         true
     | _ ->
         false
@@ -117,19 +121,23 @@ end = struct
 
   let negate_predicate (predicate : predicate) : predicate =
     match predicate with
-    | Eq, l, r ->
-        (Ne, l, r)
-    | Ne, l, r ->
-        (Eq, l, r)
-    | Ge, l, r ->
-        (Lt, r, l)
-    | Gt, l, r ->
-        (Le, r, l)
-    | Le, l, r ->
-        (Gt, r, l)
-    | Lt, l, r ->
-        (Ge, r, l)
-    | _ ->
+    | LeadsTo, l, r ->
+        (NotLeadsTo, l, r)
+    | NotLeadsTo, l, r ->
+        (LeadsTo, l, r)
+    | Builtin Eq, l, r ->
+        (Builtin Ne, l, r)
+    | Builtin Ne, l, r ->
+        (Builtin Eq, l, r)
+    | Builtin Ge, l, r ->
+        (Builtin Lt, r, l)
+    | Builtin Gt, l, r ->
+        (Builtin Le, r, l)
+    | Builtin Le, l, r ->
+        (Builtin Gt, r, l)
+    | Builtin Lt, l, r ->
+        (Builtin Ge, r, l)
+    | Builtin _, _, _ ->
         L.die InternalError
           "PulseTopl.negate_predicate should handle all outputs of PulseTopl.binop_to"
 
@@ -157,16 +165,34 @@ end = struct
 
   let substitute = sub_list substitute_predicate
 
-  let prune_path constr path_condition =
+  let prune_path constr path =
     let open SatUnsat.Import in
-    let f path_condition (op, l, r) =
-      Formula.prune_binop ~negated:false op l r path_condition >>| fst
+    let f pulse_formula predicate =
+      match predicate with
+      | Builtin op, l, r ->
+          Formula.prune_binop ~negated:false op l r pulse_formula >>| fst
+      | LeadsTo, _, _ ->
+          (* TODO: For now, this considers LeadsTo as always satisfiable. *)
+          Sat pulse_formula
+      | NotLeadsTo, _, _ ->
+          (* TODO: For now, this considers NotLeadsTo as always unsatisfiable. *)
+          Unsat
     in
-    SatUnsat.list_fold ~init:path_condition ~f constr
+    SatUnsat.list_fold ~init:path ~f constr
+
+
+  let pp_operator f operator =
+    match operator with
+    | Builtin op ->
+        F.fprintf f "@[%a@]" Binop.pp op
+    | LeadsTo ->
+        F.fprintf f "~~>"
+    | NotLeadsTo ->
+        F.fprintf f "!~>"
 
 
   let pp_predicate f (op, l, r) =
-    F.fprintf f "@[%a%a%a@]" PulseFormula.pp_operand l Binop.pp op PulseFormula.pp_operand r
+    F.fprintf f "@[%a%a%a@]" PulseFormula.pp_operand l pp_operator op PulseFormula.pp_operand r
 
 
   let pp = Pp.seq ~sep:"∧" pp_predicate
@@ -202,7 +228,6 @@ and simple_state =
 [@@deriving compare, equal]
 
 (* TODO: include a hash of the automaton in a summary to avoid caching problems. *)
-(* TODO: limit the number of simple_states to some configurable number (default ~5) *)
 type state = simple_state list [@@deriving compare, equal]
 
 let pp_mapping f (x, value) = F.fprintf f "@[%s↦%a@]@," x AbstractValue.pp value
@@ -251,21 +276,21 @@ let get env x =
 
 let set = List.Assoc.add ~equal:String.equal
 
-let binop_to : ToplAst.binop -> Binop.t = function
+let binop_to : ToplAst.binop -> Constraint.operator = function
   | LeadsTo ->
-      L.die InternalError "not yet supported"
+      LeadsTo
   | OpEq ->
-      Eq
+      Builtin Eq
   | OpNe ->
-      Ne
+      Builtin Ne
   | OpGe ->
-      Ge
+      Builtin Ge
   | OpGt ->
-      Gt
+      Builtin Gt
   | OpLe ->
-      Le
+      Builtin Le
   | OpLt ->
-      Lt
+      Builtin Lt
 
 
 let eval_guard memory tcontext guard : Constraint.t =
@@ -288,7 +313,7 @@ let eval_guard memory tcontext guard : Constraint.t =
     | Value v ->
         let v = operand_of_value v in
         let one = Formula.ConstOperand (Cint IntLit.one) in
-        Constraint.and_predicate (Constraint.make Binop.Ne v one) pruned
+        Constraint.and_predicate (Constraint.make (Builtin Ne) v one) pruned
   in
   List.fold ~init:Constraint.true_ ~f:conjoin_predicate guard
 
@@ -581,7 +606,7 @@ let large_step ~call_location ~callee_proc_name ~substitution ~keep ~get_dynamic
            equalities, because a growing [pruned] leads to quadratic behaviour. *)
         let mk_eq val1 val2 =
           let op x = Formula.AbstractValueOperand x in
-          Constraint.make Binop.Eq (op val1) (op val2)
+          Constraint.make (Builtin Eq) (op val1) (op val2)
         in
         let f (sub, eqs) (reg1, val1) (reg2, val2) =
           if not (String.equal reg1 reg2) then
