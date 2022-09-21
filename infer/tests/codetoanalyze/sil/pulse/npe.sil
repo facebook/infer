@@ -1,0 +1,138 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+attribute source_language = "java"
+
+type cell = { value:int; next: *cell }
+
+type list = { header: *cell }
+
+define basic_bad(l: *list) : void {
+  #entry:
+    n0 = null
+    n1: *cell = load n0.list.header
+    ret null
+}
+
+define if_test_lt_ok(l: *list) : void {
+  #entry:
+    n4 = 2
+    n5 = __sil_lt(n4, 3)
+    jmp then, else
+  #then:
+    prune n5
+    ret null
+  #else:
+    prune __sil_lnot(n5)
+    n0 = null
+    n1: *cell = load n0.list.header
+    ret null
+}
+
+define if_test_lt_bad(l: *list) : void {
+  #entry:
+    n4 = 2
+    n5 = __sil_lt(n4, 3)
+    jmp then, else
+  #then:
+    prune n5
+    n0 = null
+    n1: *cell = load n0.list.header
+    ret null
+  #else:
+    prune __sil_lnot(n5)
+    ret null
+}
+
+define if_test_eq_ok(l: *list) : void {
+  #entry:
+    n4 = 2
+    n5 = __sil_eq(n4, 2)
+    jmp then, else
+  #then:
+    prune n5
+    ret null
+  #else:
+    prune __sil_lnot(n5)
+    n0 = null
+    n1: *cell = load n0.list.header
+    ret null
+}
+
+define if_test_eq_bad(l: *list) : void {
+  #entry:
+    n4 = 2
+    n5 = __sil_eq(n4, 2)
+    jmp then, else
+  #then:
+    prune n5
+    n0 = null
+    n1: *cell = load n0.list.header
+    ret null
+  #else:
+    prune __sil_lnot(n5)
+    ret null
+}
+
+define conditional_latent(n: int) : void {
+  #entry:
+    n4 : int = load &n
+    n5 = __sil_eq(n4, 2)
+    jmp then, else
+  #then:
+    prune n5
+    n0 = null
+    n1: *cell = load n0.list.header
+    ret null
+  #else:
+    prune __sil_lnot(n5)
+    ret null
+}
+
+define call_ok() : void {
+  #entry:
+    n1 = conditional_latent(1)
+    ret null
+}
+
+define call_bad() : void {
+  #entry:
+    n1 = conditional_latent(2)
+    ret null
+}
+
+define store_bad(l1: *list, l2: *list) : void {
+  #entry:
+    n0: *list = load &l1
+    store n0.list.header <- null: *cell
+    n1: *cell = load n0.list.header
+    // n1 == null
+    n2: *list = load &l2
+    store n2.list.header <- n1: *cell
+    n3: *cell = load n2.list.header
+    // n3 == null
+    n4: int = load n3.cell.value
+    ret null
+}
+
+define array_bad(a: (*cell)[]) : void {
+  #entry:
+    n0 = __sil_allocate_cell()
+    store &a[0] <- null: *cell
+    store &a[1] <- n0: *cell
+    n1: *cell = load &a[0]
+    n2: int = load n1.cell.value
+    ret null
+}
+
+define array_ok(a: (*cell)[]) : void {
+  #entry:
+    n0 = __sil_allocate_cell()
+    store &a[0] <- null: *cell
+    store &a[1] <- n0: *cell
+    n1: *cell = load &a[1]
+    n2: int = load n1.cell.value
+    ret null
+}

@@ -1,0 +1,12 @@
+property PairReach
+  message "A pair of dirty things end up in the sink"
+  prefix "reach"
+  start -> start: *
+  start -> trackOne: "source/0"(Ret) => one := Ret
+  trackOne -> trackTwo: "source/0"(Ret) when Ret != one => two := Ret    // See NOTE
+  trackTwo -> error: "sink/1"(Arg, Ret) when Arg ~~> one && Arg ~~> two
+
+
+// NOTE
+//    The requirement is that the two dirty objects are distinct. But, they can both be structurally
+//    equal. For example, two Erlang objects representing the same atom. (See also T131914815.)

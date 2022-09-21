@@ -44,7 +44,7 @@ type copy_spec_t =
   | Copied of
       { typ: Typ.t
       ; location: Location.t
-      ; copied_location: Location.t option
+      ; copied_location: (Procname.t * Location.t) option
       ; heap: BaseMemory.t
       ; from: PulseAttribute.CopyOrigin.t }
   | Modified

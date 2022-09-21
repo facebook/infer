@@ -66,8 +66,13 @@ let command ~summary ?readme param =
            \"-\""
     and append_report =
       flag "append-report" no_arg ~doc:"append to report file"
+    and unbuffered =
+      flag "unbuffered" no_arg ~doc:"disable buffering of stdout and stderr"
     in
     Dbg.init ~colors ?margin ~config () ;
+    if unbuffered then (
+      Out_channel.set_buffered stdout false ;
+      Out_channel.set_buffered stderr false ) ;
     Option.iter ~f:(Report.init ~append:append_report) report
   in
   Llair.Loc.root := Some (Unix.realpath (Sys.getcwd ())) ;
@@ -381,12 +386,8 @@ let readme () =
 
 ;;
 Memtrace.trace_if_requested ()
-
 ;;
-if Version.debug then (
-  Printexc.record_backtrace true ;
-  Out_channel.set_buffered stderr false )
-
+if Version.debug then Printexc.record_backtrace true
 ;;
 Stdlib.Sys.catch_break true
 

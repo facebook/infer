@@ -546,7 +546,9 @@ module Block = struct
   let pp = pp_block
 
   let pp_ident fs b =
-    Format.fprintf fs "%a#%s" FuncName.pp b.parent.name b.lbl
+    if String.is_empty b.lbl then
+      Format.fprintf fs "%a" FuncName.pp b.parent.name
+    else Format.fprintf fs "%a%%%s" FuncName.pp b.parent.name b.lbl
 
   let mk ~lbl ~cmnd ~term = {dummy_block with lbl; cmnd; term}
   let set_goal_distance dist block = block.goal_distance <- dist
@@ -746,6 +748,7 @@ module Func = struct
       in
       IArray.fold ~f:locals_block cfg (locals_block entry Reg.Set.empty)
     in
+    let entry = {entry with lbl= ""} in
     let func = {name; formals; freturn; fthrow; locals; entry; loc} in
     let seen = BlockS.create (IArray.length cfg) in
     let rec resolve_parent_and_jumps ancestors src =

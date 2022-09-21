@@ -54,6 +54,7 @@ Build a buck target and report the included bitcode files.
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"
   [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit
 
 
@@ -77,6 +78,7 @@ Link code in a buck target to a single LLVM bitcode module. This also internaliz
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"
   [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit
 
 
@@ -153,6 +155,7 @@ Analyze LLVM bitcode. This is a convenience wrapper for the sequence `sledge llv
                                switches, a negative bound is never hit and leads
                                to unbounded exploration
   [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit
 
 
@@ -189,6 +192,7 @@ Translate LLVM bitcode to LLAIR. The <input> file must contain LLVM bitcode in e
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"
   [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit
 
 
@@ -227,6 +231,7 @@ The <input> file must be LLVM bitcode.
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"
   [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit
 
 
@@ -278,6 +283,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                                switches, a negative bound is never hit and leads
                                to unbounded exploration
   [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit
 
 
@@ -299,6 +305,7 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"
   [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit
 
 
@@ -318,6 +325,7 @@ The <input> file is interpreted as an SMT-LIB 2 benchmark.
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"
   [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit
 
 
