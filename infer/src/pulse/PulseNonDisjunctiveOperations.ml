@@ -129,7 +129,8 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
         match ((call_exp : Exp.t), args_map_fn actuals) with
         | ( (Const (Cfun procname) | Closure {name= procname})
           , ((Exp.Lvar copy_pvar | Exp.Lindex (Exp.Lvar copy_pvar, _)), copy_type) :: rest_args )
-          when not (is_cheap_to_copy tenv copy_type) ->
+          when (not (is_cheap_to_copy tenv copy_type))
+               && not (NonDisjDomain.is_locked astate_non_disj) ->
             let* from = copy_check_fn procname in
             let copied_var = Var.of_pvar copy_pvar in
             let copied, disjunct, source_addr_typ_opt =
