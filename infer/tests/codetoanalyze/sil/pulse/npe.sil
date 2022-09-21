@@ -136,3 +136,27 @@ define array_ok(a: (*cell)[]) : void {
     n2: int = load n1.cell.value
     ret null
 }
+
+define return_null_ok(): void {
+  #entry:
+    ret null
+}
+
+define return_cell_ok(): void {
+  #entry:
+    ret __sil_allocate_cell()
+}
+
+define call_and_npe_bad() : void {
+  #entry:
+    n0 = return_null_ok()
+    n1: int = load n0.cell.value
+    ret null
+}
+
+define call_and_no_npe_ok() : void {
+  #entry:
+    n0 = return_cell_ok()
+    n1: int = load n0.cell.value
+    ret null
+}
