@@ -367,6 +367,7 @@ codetoanalyze/cpp/pulse/unknown_functions.cpp, call_init_with_pointer_value_bad,
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_decl_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, source_mod_param_ok_FP, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_in_branch_bad, 3, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, multiple_copies_bad, 2, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, multiple_copies_bad, 4, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, get_first_elem, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter a]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_via_constructor_read_bad, 2, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here]
