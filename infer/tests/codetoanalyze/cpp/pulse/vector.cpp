@@ -59,8 +59,7 @@ void FN_push_back0_bad() {
   return 0;
 }
 
-// missing a more precise model for vector::size
-int FP_size0_ok() {
+int size0_ok() {
   std::vector<int> v;
   if (v.size() != 0) {
     int* q = nullptr;
@@ -69,11 +68,44 @@ int FP_size0_ok() {
   return 0;
 }
 
-// missing a more precise model for vector::size
-int FP_size1_ok() {
+int size1_ok() {
   std::vector<int> v;
   v.push_back(0);
   v.push_back(42);
+  if (v.size() != 2) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int size2_ok() {
+  std::vector<int> v;
+  v.push_back(0);
+  v.push_back(42);
+  std::vector<int> v_copy{v};
+  if (v_copy.size() != 2) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int size3_ok() {
+  std::vector<int> v;
+  v.push_back(0);
+  std::vector<int> v_copy{v};
+  v.push_back(0);
+  if (v.size() != 2 || v_copy.size() != 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+// missing a more precise model for std::initializer_list
+int FP_size4_ok() {
+  std::vector<int> v{0, 42};
   if (v.size() != 2) {
     int* q = nullptr;
     return *q;
@@ -101,8 +133,19 @@ int size1_bad() {
   return 0;
 }
 
-// missing a more precise model for vector::empty
-int FP_empty0_ok() {
+int size2_bad() {
+  std::vector<int> v;
+  v.push_back(0);
+  std::vector<int> v_copy{v};
+  v_copy.push_back(0);
+  if (v.size() == 1 && v_copy.size() == 2) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int empty0_ok() {
   std::vector<int> v;
   if (!v.empty()) {
     int* q = nullptr;
@@ -111,8 +154,7 @@ int FP_empty0_ok() {
   return 0;
 }
 
-// missing a more precise model for vector::empty and push_back
-int FP_empty1_ok() {
+int empty1_ok() {
   std::vector<int> v;
   v.push_back(0);
   if (v.empty()) {

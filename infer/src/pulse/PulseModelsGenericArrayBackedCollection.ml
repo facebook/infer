@@ -15,7 +15,25 @@ let field = Fieldname.make PulseOperations.pulse_model_type "backing_array"
 
 let last_field = Fieldname.make PulseOperations.pulse_model_type "past_the_end"
 
-let is_empty = Fieldname.make PulseOperations.pulse_model_type "is_empty"
+let size_field = Fieldname.make PulseOperations.pulse_model_type "_size"
+
+let size_access = HilExp.Access.FieldAccess size_field
+
+let to_internal_size path mode location value astate =
+  PulseOperations.eval_access path mode location value size_access astate
+
+
+let to_internal_size_deref path mode location value astate =
+  let* astate, pointer = to_internal_size path Read location value astate in
+  PulseOperations.eval_access path mode location pointer Dereference astate
+
+
+let assign_size_constant path location this ~constant ~desc astate =
+  let value = (AbstractValue.mk_fresh (), Hist.single_call path location desc) in
+  let=* astate, size_pointer = to_internal_size path Read location this astate in
+  let=* astate = PulseOperations.write_deref path location ~ref:size_pointer ~obj:value astate in
+  PulseArithmetic.and_eq_int (fst value) constant astate
+
 
 let access = HilExp.Access.FieldAccess field
 
@@ -42,8 +60,53 @@ let eval_pointer_to_last_element path location collection astate =
   (astate, pointer)
 
 
-let eval_is_empty path location collection astate =
-  PulseOperations.eval_deref_access path Write location collection (FieldAccess is_empty) astate
+let increase_size path location this ~desc astate =
+  let incremented_size = AbstractValue.mk_fresh () in
+  let=* astate, (size_addr, hist) = to_internal_size path Read location this astate in
+  let=* astate, (size_value, _) = to_internal_size_deref path Read location this astate in
+  let hist = Hist.add_call path location desc hist in
+  (* compute the increased ref count *)
+  let+* astate, incremented_size =
+    PulseArithmetic.eval_binop incremented_size (PlusA None) (AbstractValueOperand size_value)
+      (ConstOperand (Cint (IntLit.of_int 1)))
+      astate
+  in
+  (* update the size count *)
+  PulseOperations.write_deref path location ~ref:(size_addr, hist) ~obj:(incremented_size, hist)
+    astate
+
+
+let default_constructor this ~desc : model =
+ fun {path; location} astate ->
+  let<++> astate = assign_size_constant path location this ~constant:IntLit.zero ~desc astate in
+  astate
+
+
+let empty this ~desc : model =
+ fun {path; location; ret= ret_id, _} astate ->
+  let ret_addr = AbstractValue.mk_fresh () in
+  let<*> astate, (value_addr, _) = to_internal_size_deref path Read location this astate in
+  let result_non_empty =
+    PulseArithmetic.prune_positive value_addr astate
+    >>== PulseArithmetic.prune_eq_zero ret_addr
+    >>|| PulseOperations.write_id ret_id
+           (ret_addr, Hist.single_call path location ~more:"non-empty case" desc)
+    >>|| ExecutionDomain.continue
+  in
+  let result_empty =
+    PulseArithmetic.prune_eq_zero value_addr astate
+    >>== PulseArithmetic.prune_positive ret_addr
+    >>|| PulseOperations.write_id ret_id
+           (ret_addr, Hist.single_call path location ~more:"empty case" desc)
+    >>|| ExecutionDomain.continue
+  in
+  SatUnsat.to_list result_non_empty @ SatUnsat.to_list result_empty
+
+
+let size this ~desc : model =
+ fun {path; location; ret= ret_id, _} astate ->
+  let<+> astate, (value_addr, value_hist) = to_internal_size_deref path Read location this astate in
+  PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
 
 
 module Iterator = struct
