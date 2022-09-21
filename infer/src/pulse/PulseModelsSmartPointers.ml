@@ -253,6 +253,11 @@ module SharedPtr = struct
                 let=* astate, (pointer, int_hist) =
                   to_internal_count_deref path Read location other astate
                 in
+                let=* astate, count =
+                  PulseOperations.eval_access path Read location (pointer, int_hist) Dereference
+                    astate
+                in
+                let** astate = PulseArithmetic.and_nonnegative (fst count) astate in
                 (* copy the pointer to ref count*)
                 let=* astate =
                   PulseOperations.write_deref path location ~ref:(this_internal_count, int_hist)

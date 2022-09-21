@@ -226,6 +226,31 @@ int make_shared_ptr_use_ok() {
   return x->get();
 }
 
+int take_shared_ptr_as_arg(std::shared_ptr<int> s_ptr) { return 0; }
+
+std::unique_ptr<int> take_shared_ptr_get_fresh_unique_ptr(
+    std::shared_ptr<int> s_ptr) {
+  take_shared_ptr_as_arg(s_ptr);
+  return std::unique_ptr<int>(new int(42));
+}
+
+int passed_shared_ptr_around_ok(std::shared_ptr<int> s_ptr) {
+  std::unique_ptr<int> u_ptr = take_shared_ptr_get_fresh_unique_ptr(s_ptr);
+  return *u_ptr;
+}
+
+std::unique_ptr<int> get_unique_ptr_from_shared(std::shared_ptr<int> s_ptr) {
+  // takes a shared_ptr and creates a unique_ptr that manage the same pointer
+  return std::unique_ptr<int>(s_ptr.get());
+}
+
+int doubly_managed_ptr_bad() {
+  std::shared_ptr<int> s_ptr = std::make_shared<int>(42);
+  std::unique_ptr<int> u_ptr = get_unique_ptr_from_shared(s_ptr);
+  // u_ptr and s_ptr manage the same pointer, which is deleted twice
+  return *u_ptr;
+}
+
 struct B {
   ~B();
 };
