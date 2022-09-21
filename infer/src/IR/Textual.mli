@@ -97,6 +97,9 @@ module Exp : sig
     | Const of Const.t
     | Call of {proc: Procname.qualified_name; args: t list}
     | Cast of Typ.t * t
+
+  (* logical not ! *)
+  val not : t -> t
 end
 
 module Instr : sig
@@ -105,7 +108,7 @@ module Instr : sig
         (** id <- *exp with *exp:typ *)
     | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
         (** *exp1 <- exp2 with exp2:typ *)
-    | Prune of {exp: Exp.t; b: bool; loc: Location.t}  (** assume exp==b *)
+    | Prune of {exp: Exp.t; loc: Location.t}  (** assume exp *)
     | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}  (** id = exp *)
   (* Remark that because Sil operations (add, mult...) are calls, we let the Textual programmer put
      expression in local variables, while SIL forbid that. The to_sil transformation will have to

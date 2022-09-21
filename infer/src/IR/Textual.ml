@@ -768,6 +768,8 @@ module Exp = struct
     | Call of {proc: Procname.qualified_name; args: t list}
     | Cast of Typ.t * t
 
+  let not exp = Call {proc= Procname.of_unop Unop.LNot; args= [exp]}
+
   let rec of_sil decls tenv (e : Exp.t) =
     match e with
     | Var id ->
@@ -935,7 +937,7 @@ module Instr = struct
   type t =
     | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
     | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
-    | Prune of {exp: Exp.t; b: bool; loc: Location.t}
+    | Prune of {exp: Exp.t; loc: Location.t}
     | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}
 
   let pp fmt = function
@@ -963,8 +965,8 @@ module Instr = struct
         let exp2 = Exp.of_sil decls tenv e2 in
         let loc = Location.Unknown in
         Store {exp1; typ; exp2; loc}
-    | Prune (e, _, b, _) ->
-        Prune {exp= Exp.of_sil decls tenv e; b; loc= Location.Unknown}
+    | Prune (e, _, _, _) ->
+        Prune {exp= Exp.of_sil decls tenv e; loc= Location.Unknown}
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
         let procname = TypeName.of_sil_typ_name name |> Procname.make_allocate in
@@ -1027,10 +1029,10 @@ module Instr = struct
         let e2 = Exp.to_sil lang decls_env procname exp2 in
         let loc = Location.to_sil sourcefile loc in
         Store {e1; root_typ= typ; typ; e2; loc}
-    | Prune {exp; b; loc} ->
+    | Prune {exp; loc} ->
         let e = Exp.to_sil lang decls_env procname exp in
         let loc = Location.to_sil sourcefile loc in
-        Prune (e, loc, b, Ik_if {terminated= false})
+        Prune (e, loc, true, Ik_if {terminated= false})
     | Let {id; exp= Call {proc; args= []}; loc} when Procname.is_allocate_object_builtin proc ->
         let typ = SilTyp.mk_struct (TypeName.allocate_buitin_to_java_sil proc.name) in
         let sizeof =
