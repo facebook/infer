@@ -2093,17 +2093,31 @@ module Formula = struct
 
 
     let normalize_intervals phi =
-      let intervals =
-        Var.Map.fold
-          (fun v interval intervals' ->
-            (* TODO: should do interval intersection when we have several intervals for the same
-               equivalence class of variables, i.e. first try to read from the [intervals'] map and
-               if we already had an interval then intersect it with the current one. If empty then
-               produce Unsat. *)
-            Var.Map.add (get_repr phi v :> Var.t) interval intervals' )
-          phi.intervals Var.Map.empty
-      in
-      {phi with intervals}
+      let exception FoundUnsat in
+      try
+        let intervals =
+          Var.Map.fold
+            (fun v interval intervals' ->
+              let v' = (get_repr phi v :> Var.t) in
+              let interval' =
+                match Var.Map.find_opt v' intervals' with
+                | None ->
+                    interval
+                | Some interval' -> (
+                  (* already had another interval from another representative of the same
+                     equivalence class of [v], the value is in the intersection *)
+                  match CItv.intersection interval interval' with
+                  | None ->
+                      (* empty intersection *)
+                      raise FoundUnsat
+                  | Some interval'' ->
+                      interval'' )
+              in
+              Var.Map.add v' interval' intervals' )
+            phi.intervals Var.Map.empty
+        in
+        Sat {phi with intervals}
+      with FoundUnsat -> Unsat
 
 
     let rec normalize_with_fuel ~fuel phi_new_eqs0 =
@@ -2120,8 +2134,8 @@ module Formula = struct
             Sat (true, phi_new_eqs)
           else
             let* new_linear_eqs_from_terms, phi_new_eqs = normalize_term_eqs ~fuel phi_new_eqs in
-            let+ new_linear_eqs_from_atoms, (phi, new_eqs) = normalize_atoms phi_new_eqs in
-            let phi = normalize_intervals phi in
+            let* new_linear_eqs_from_atoms, (phi, new_eqs) = normalize_atoms phi_new_eqs in
+            let+ phi = normalize_intervals phi in
             ( new_linear_eqs_from_linear || new_linear_eqs_from_terms || new_linear_eqs_from_atoms
             , (phi, new_eqs) )
         in

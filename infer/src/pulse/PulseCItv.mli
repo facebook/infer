@@ -20,6 +20,9 @@ val is_not_equal_to_zero : t -> bool
 
 val pp : F.formatter -> t -> unit
 
+val intersection : t -> t -> t option
+(** [None] if the intersection is empty *)
+
 type abduction_result =
   | Unsatisfiable  (** the assertion is never true given the parameters *)
   | Satisfiable of t option * t option

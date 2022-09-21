@@ -421,6 +421,18 @@ let%test_module "intervals" =
              && tableau: a1 = -a2 +2
              && intervals: a1=2
              && atoms: {[a1] ≠ 0}∧{[a1] ≠ 1} |}]
+
+    let%expect_test "interval intersection" =
+      normalize (x >= i 0 && x < i 3 && x <> i 0 && y >= i 2 && y < i 10 && x = y) ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: var_eqs: a1=x=y
+             && linear_eqs: a3 = -a4 +7 ∧ a2 = a4 -7 ∧ a1 = -a4 +9
+             && term_eqs: [a4 -7]=a2∧[-a4 +7]=a3∧[-a4 +9]=a1
+             && tableau: a4 = -a3 +7 ∧ a2 = -a3 ∧ a1 = -a4 +9
+             && intervals: a1=2
+             && atoms: {[a1] ≠ 0} |}]
   end )
 
 let%test_module "conjunctive normal form" =
