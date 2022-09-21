@@ -435,12 +435,7 @@ let%test_module "conjunctive normal form" =
     (* same as above with <> 0 instead of = 1 *)
     let%expect_test _ =
       normalize (and_ (ge x (i 0)) (lt x (i 0)) <> i 0) ;
-      [%expect
-        {|
-        conditions: (empty)
-        phi: term_eqs: ([x]<0)=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
-             && intervals: v8≠0
-             && atoms: {[v8] ≠ 0}|}]
+      [%expect {|unsat|}]
 
     let%expect_test "¬ (x ≠ 0 ∨ x > 0 ∨ x < 0) <=> x = 0" =
       normalize (or_ (ne x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
@@ -466,7 +461,8 @@ let%test_module "conjunctive normal form" =
       [%expect
         {|
           conditions: (empty)
-          phi: term_eqs: (0<[x])=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
-               && intervals: v8≠0
-               && atoms: {[v8] ≠ 0}|}]
+          phi: var_eqs: a10=a8=a6=a4=a2=x ∧ a9=a7=a5=a3=a1 ∧ v6=v7=v8
+               && linear_eqs: a11 = a12 -1 ∧ a10 = a11 +1 ∧ a9 = a10 -1 ∧ a7 = a10 -1 ∧ v6 = 1
+               && term_eqs: 1=v6∧[a10 -1]=a9∧[a12 -1]=a11∧[a11 +1]=a10∧(0<[a10])=v6∧(0≤[a10])=v6
+               && intervals: v8≠0|}]
   end )
