@@ -2073,7 +2073,9 @@ end
 
 type t =
   { conditions: Atom.Set.t
-        (** collection of conditions that have been assumed (via [PRUNE] CFG nodes) along the path *)
+        (** collection of conditions that have been assumed (via [PRUNE] CFG nodes) along the path.
+            Note that these conditions are *not* normalized w.r.t. [phi]: [phi] already contains
+            them so normalization w.r.t. [phi] would make them trivially true most of the time. *)
   ; phi: Formula.t
         (** the arithmetic constraints of the current symbolic state; true in both the pre and post
             since abstract values [Var.t] have immutable semantics *) }
@@ -2396,10 +2398,11 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
 
 
 module QuantifierElimination : sig
-  val eliminate_vars : keep:Var.Set.t -> t -> t SatUnsat.t
-  (** [eliminate_vars ~keep φ] substitutes every variable [x] in [φ] with [x'] whenever [x'] is a
-      distinguished representative of the equivalence class of [x] in [φ] such that
-      [x' ∈ keep_pre ∪ keep_post] *)
+  val eliminate_vars : precondition_vocabulary:Var.Set.t -> keep:Var.Set.t -> t -> t SatUnsat.t
+  (** [eliminate_vars ~precondition_vocabulary ~keep formula] substitutes every variable [x] in
+      [formula.phi] with [x'] whenever [x'] is a distinguished representative of the equivalence
+      class of [x] in [formula.phi] such that [x' ∈ keep_pre ∪ keep_post]. It also similarly
+      substitutes variables in [formula.conditions] that are not in [precondition_vocabulary]. *)
 end = struct
   exception Contradiction
 
@@ -2430,10 +2433,32 @@ end = struct
 
 
   let subst_var_atoms subst atoms =
+    Atom.Set.map (fun atom -> Atom.subst_variables ~f:(targetted_subst_var subst) atom) atoms
+
+
+  let subst_var_atoms_for_conditions ~precondition_vocabulary subst atoms =
     Atom.Set.fold
-      (fun atom atoms ->
-        let atom' = Atom.subst_variables ~f:(targetted_subst_var subst) atom in
-        Atom.Set.add atom' atoms )
+      (fun atom atoms' ->
+        let changed, atom' =
+          Atom.fold_subst_variables atom ~init:false ~f:(fun changed v ->
+              if Var.Set.mem v precondition_vocabulary then (changed, VarSubst v)
+              else
+                (* [v] is not mentioned in the precondition but maybe call sites can still affect its
+                   truth value if it is related to other values from the precondition via other
+                   atoms. Substitute [v] by its canonical representative otherwise the atom will
+                   become truly dead as it will mention a variable that is not to be kept. *)
+                let v' = subst_f subst v in
+                ((not (Var.equal v v')) || changed, VarSubst v') )
+        in
+        if changed then
+          match Atom.eval atom' with
+          | True ->
+              atoms'
+          | False ->
+              raise Contradiction
+          | Atom atom' ->
+              Atom.Set.add atom' atoms'
+        else Atom.Set.add atom' atoms' )
       atoms Atom.Set.empty
 
 
@@ -2456,11 +2481,15 @@ end = struct
         else acc )
 
 
-  let eliminate_vars ~keep formula =
+  let eliminate_vars ~precondition_vocabulary ~keep formula =
     (* Beware of not losing information: if [x=u] with [u] is restricted then [x≥0], so extend [keep] accordingly. *)
     let keep = extend_with_restricted_reps_of keep formula.phi.var_eqs in
     let subst = VarUF.reorient formula.phi.var_eqs ~should_keep:(fun x -> Var.Set.mem x keep) in
-    try Sat {conditions= formula.conditions; phi= subst_var_phi subst formula.phi}
+    try
+      Sat
+        { conditions=
+            subst_var_atoms_for_conditions ~precondition_vocabulary subst formula.conditions
+        ; phi= subst_var_phi subst formula.phi }
     with Contradiction -> Unsat
 end
 
@@ -2605,7 +2634,7 @@ let simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep formula =
   L.d_printfln_escaped "@[Simplifying %a@,wrt %a (keep), with prunables=%a@]" pp formula Var.Set.pp
     keep Var.Set.pp precondition_vocabulary ;
   (* get rid of as many variables as possible *)
-  let* formula = QuantifierElimination.eliminate_vars ~keep formula in
+  let* formula = QuantifierElimination.eliminate_vars ~precondition_vocabulary ~keep formula in
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
      eliminate even more variables *)
   let+ formula, live_vars = DeadVariables.eliminate ~precondition_vocabulary ~keep formula in
