@@ -1,6 +1,8 @@
 basic.sil, basic_flow, 8, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from __taint_source with kind Simple,passed as argument #0 to __taint_sink with kind Simple]
 npe.sil, $TOPLEVEL$CLASS$.basic_bad(list):void, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,invalid access occurs here]
+npe.sil, $TOPLEVEL$CLASS$.if_test_lt_ok(list):void, 11, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.if_test_lt_bad(list):void, 8, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,invalid access occurs here]
+npe.sil, $TOPLEVEL$CLASS$.if_test_eq_ok(list):void, 11, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.if_test_eq_bad(list):void, 8, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.conditional_latent(int):void, 8, NULLPTR_DEREFERENCE_LATENT, no_bucket, ERROR, [is assigned to the null pointer,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.call_bad():void, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [calling context starts here,in call to `void $TOPLEVEL$CLASS$.conditional_latent(int)`,null pointer dereference part of the trace starts here,is assigned to the null pointer,invalid access occurs here]

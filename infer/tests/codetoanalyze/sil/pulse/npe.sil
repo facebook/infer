@@ -25,7 +25,7 @@ define if_test_lt_ok(l: *list) : void {
     prune n5
     ret null
   #else:
-    prune __sil_lnot(n5)
+    prune ! n5
     n0 = null
     n1: *cell = load n0.list.header
     ret null
@@ -42,7 +42,7 @@ define if_test_lt_bad(l: *list) : void {
     n1: *cell = load n0.list.header
     ret null
   #else:
-    prune __sil_lnot(n5)
+    prune ! n5
     ret null
 }
 
@@ -55,7 +55,7 @@ define if_test_eq_ok(l: *list) : void {
     prune n5
     ret null
   #else:
-    prune __sil_lnot(n5)
+    prune ! n5
     n0 = null
     n1: *cell = load n0.list.header
     ret null
@@ -72,7 +72,7 @@ define if_test_eq_bad(l: *list) : void {
     n1: *cell = load n0.list.header
     ret null
   #else:
-    prune __sil_lnot(n5)
+    prune ! n5
     ret null
 }
 
@@ -87,7 +87,7 @@ define conditional_latent(n: int) : void {
     n1: *cell = load n0.list.header
     ret null
   #else:
-    prune __sil_lnot(n5)
+    prune ! n5
     ret null
 }
 
