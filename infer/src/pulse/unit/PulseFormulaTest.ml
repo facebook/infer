@@ -239,10 +239,7 @@ let%test_module "normalization" =
       [%expect
         {|
         conditions: (empty)
-        phi: var_eqs: x=v6
-             && linear_eqs: x = 0 ∧ y = 1
-             && term_eqs: 0=x∧1=y
-             && intervals: x=0 ∧ y=1 ∧ v6=0|}]
+        phi: var_eqs: x=v6 && linear_eqs: x = 0 ∧ y = 1 && term_eqs: 0=x∧1=y && intervals: x=0 ∧ y=1|}]
 
     let%expect_test _ =
       normalize (x = i 0 && x < i 0) ;
@@ -272,7 +269,7 @@ let%test_module "normalization" =
         phi: var_eqs: v8=v9=v10
              && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
              && term_eqs: (-1)=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
-             && intervals: v10=0|}]
+             && intervals: v8=0|}]
 
     (* check that this becomes all linear equalities thanks to constant propagation *)
     let%expect_test _ =
@@ -284,7 +281,7 @@ let%test_module "normalization" =
              && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3
                              ∧ v7 = -1 ∧ v8 = 0
              && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
-             && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v10=0|}]
+             && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0|}]
 
     (* expected: [is_int(x)] and [is_int(y)] get simplified away, [is_int(z)] is kept around *)
     let%expect_test _ =
@@ -380,7 +377,7 @@ let%test_module "inequalities" =
         phi: var_eqs: a3=z ∧ a2=y ∧ a1=x
              && linear_eqs: a2 = a3 + a5 +3 ∧ a1 = -a3 + a4 + -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
              && term_eqs: [-a5 -3]=v7∧[-a3 + a4 + -a5 -1]=a1∧[a4 +2]=v6∧[a3 + a5 +3]=a2
-             && intervals: x≥0 ∧ y≥0 ∧ z≥0 ∧ v6≥2 ∧ v7≤-3 |}]
+             && intervals: a3≥0 ∧ a2≥0 ∧ a1≥0 ∧ v6≥2 ∧ v7≤-3 |}]
 
     let%expect_test "add to tableau with pivot then unsat" =
       normalize (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3) && y < i 1) ;
@@ -422,7 +419,7 @@ let%test_module "intervals" =
              && linear_eqs: a1 = -a2 +2
              && term_eqs: [-a2 +2]=a1
              && tableau: a1 = -a2 +2
-             && intervals: x=2
+             && intervals: a1=2
              && atoms: {[a1] ≠ 0}∧{[a1] ≠ 1} |}]
   end )
 
@@ -442,7 +439,7 @@ let%test_module "conjunctive normal form" =
       [%expect
         {|
           conditions: (empty)
-          phi: var_eqs: a2=a1=x=v6=v7=v8=v9=v10 && linear_eqs: a2 = 0 && term_eqs: 0=a2 && intervals: v10=0 |}]
+          phi: var_eqs: a2=a1=x=v6=v7=v8=v9=v10 && linear_eqs: a2 = 0 && term_eqs: 0=a2 && intervals: a2=0 |}]
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
       normalize (or_ (eq x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
@@ -453,7 +450,7 @@ let%test_module "conjunctive normal form" =
                && linear_eqs: a12 = -a11 ∧ a9 = -a10 ∧ a7 = -a10 ∧ v6 = 0
                && term_eqs: 0=v6∧[-a10]=a9∧[-a11]=a10∧(0<[a10])=v6∧([a10]<0)=v6∧([a12]=0)=v6
                && tableau: a11 = -a10 ∧ a9 = -a10 ∧ a7 = -a10
-               && intervals: v10=0
+               && intervals: v6=0
                && atoms: {[a12] ≠ 0}|}]
 
     let%expect_test _ =
@@ -464,5 +461,5 @@ let%test_module "conjunctive normal form" =
           phi: var_eqs: a10=a8=a6=a4=a2=x ∧ a9=a7=a5=a3=a1 ∧ v6=v7=v8
                && linear_eqs: a11 = a12 -1 ∧ a10 = a11 +1 ∧ a9 = a10 -1 ∧ a7 = a10 -1 ∧ v6 = 1
                && term_eqs: 1=v6∧[a10 -1]=a9∧[a12 -1]=a11∧[a11 +1]=a10∧(0<[a10])=v6∧(0≤[a10])=v6
-               && intervals: v8≠0|}]
+               && intervals: v6≠0|}]
   end )

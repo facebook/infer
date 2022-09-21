@@ -2092,6 +2092,20 @@ module Formula = struct
         (Sat (false, ({phi0 with term_eqs= Term.VarMap.empty}, new_eqs0)))
 
 
+    let normalize_intervals phi =
+      let intervals =
+        Var.Map.fold
+          (fun v interval intervals' ->
+            (* TODO: should do interval intersection when we have several intervals for the same
+               equivalence class of variables, i.e. first try to read from the [intervals'] map and
+               if we already had an interval then intersect it with the current one. If empty then
+               produce Unsat. *)
+            Var.Map.add (get_repr phi v :> Var.t) interval intervals' )
+          phi.intervals Var.Map.empty
+      in
+      {phi with intervals}
+
+
     let rec normalize_with_fuel ~fuel phi_new_eqs0 =
       if fuel < 0 then (
         L.d_printfln "ran out of fuel when normalizing" ;
@@ -2106,9 +2120,10 @@ module Formula = struct
             Sat (true, phi_new_eqs)
           else
             let* new_linear_eqs_from_terms, phi_new_eqs = normalize_term_eqs ~fuel phi_new_eqs in
-            let+ new_linear_eqs_from_atoms, phi_new_eqs = normalize_atoms phi_new_eqs in
+            let+ new_linear_eqs_from_atoms, (phi, new_eqs) = normalize_atoms phi_new_eqs in
+            let phi = normalize_intervals phi in
             ( new_linear_eqs_from_linear || new_linear_eqs_from_terms || new_linear_eqs_from_atoms
-            , phi_new_eqs )
+            , (phi, new_eqs) )
         in
         if new_linear_eqs then (
           L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
