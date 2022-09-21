@@ -69,6 +69,20 @@ let ( & ) f1 f2 phi = of_binop BAnd f1 f2 phi
 
 let ( mod ) f1 f2 phi = of_binop Mod f1 f2 phi
 
+let eq f1 f2 phi = of_binop Eq f1 f2 phi
+
+let ne f1 f2 phi = of_binop Ne f1 f2 phi
+
+let ge f1 f2 phi = of_binop Ge f1 f2 phi
+
+let gt f1 f2 phi = of_binop Gt f1 f2 phi
+
+let lt f1 f2 phi = of_binop Lt f1 f2 phi
+
+let and_ f1 f2 phi = of_binop LAnd f1 f2 phi
+
+let or_ f1 f2 phi = of_binop LOr f1 f2 phi
+
 let ( = ) f1 f2 phi =
   let* phi, op1 = f1 phi in
   let* phi, op2 = f2 phi in
@@ -409,4 +423,55 @@ let%test_module "intervals" =
              && tableau: a1 = -a2 +2
              && intervals: x=2
              && atoms: {[a1] ≠ 0}∧{[a1] ≠ 1} |}]
+  end )
+
+let%test_module "conjunctive normal form" =
+  ( module struct
+    let%expect_test _ =
+      normalize (and_ (ge x (i 0)) (lt x (i 0)) = i 1) ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: linear_eqs: v8 = 1
+             && term_eqs: 1=v8∧([x]<0)=v7∧(0≤[x])=v6∧([v6]∧[v7])=v8
+             && intervals: v8=1|}]
+
+    (* same as above with <> 0 instead of = 1 *)
+    let%expect_test _ =
+      normalize (and_ (ge x (i 0)) (lt x (i 0)) <> i 0) ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: term_eqs: ([x]<0)=v7∧(0≤[x])=v6∧([v6]∧[v7])=v8
+             && intervals: v8≠0
+             && atoms: {[v8] ≠ 0}|}]
+
+    let%expect_test "¬ (x ≠ 0 ∨ x > 0 ∨ x < 0) <=> x = 0" =
+      normalize (or_ (ne x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
+      [%expect
+        {|
+          conditions: (empty)
+          phi: linear_eqs: v10 = 0
+               && term_eqs: 0=v10∧(0<[x])=v7∧([x]<0)=v8∧([x]≠0)=v6∧([v6]∨[v9])=v10
+                            ∧([v7]∨[v8])=v9
+               && intervals: v10=0 |}]
+
+    let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
+      normalize (or_ (eq x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
+      [%expect
+        {|
+          conditions: (empty)
+          phi: linear_eqs: v10 = 0
+               && term_eqs: 0=v10∧(0<[x])=v7∧([x]<0)=v8∧([x]=0)=v6∧([v6]∨[v9])=v10
+                            ∧([v7]∨[v8])=v9
+               && intervals: v10=0|}]
+
+    let%expect_test _ =
+      normalize (and_ (ge x (i 0)) (gt x (i 0)) <> i 0) ;
+      [%expect
+        {|
+          conditions: (empty)
+          phi: term_eqs: (0<[x])=v7∧(0≤[x])=v6∧([v6]∧[v7])=v8
+               && intervals: v8≠0
+               && atoms: {[v8] ≠ 0}|}]
   end )
