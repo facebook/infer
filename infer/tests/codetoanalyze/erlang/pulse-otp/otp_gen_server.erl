@@ -6,12 +6,11 @@
 -module(otp_gen_server).
 
 -export([
-    fp_test_cast_Ok/0,
+    test_cast_Ok/0,
     test_cast_Bad/0
 ]).
 
-% FP: T115354480
-fp_test_cast_Ok() ->
+test_cast_Ok() ->
     ok = gen_server:cast(x, y).
 
 test_cast_Bad() ->

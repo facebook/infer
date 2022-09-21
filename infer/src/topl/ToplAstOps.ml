@@ -36,6 +36,8 @@ let pp_value f (value : ToplAst.value) =
 
 let pp_binop f (binop : ToplAst.binop) =
   match binop with
+  | LeadsTo ->
+      F.fprintf f "~~>"
   | OpEq ->
       F.fprintf f "=="
   | OpNe ->

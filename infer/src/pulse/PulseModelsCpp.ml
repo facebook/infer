@@ -379,25 +379,40 @@ module Vector = struct
           trace
 
 
-  let init_list_constructor this init_list : model =
+  let shallow_copy_init_list path location this init_list ~desc astate =
+    let event = Hist.call_event path location desc in
+    let* astate, init_copy = PulseOperations.shallow_copy path location init_list astate in
+    PulseOperations.write_deref_field path location ~ref:this GenericArrayBackedCollection.field
+      ~obj:(fst init_copy, Hist.add_event path event (snd init_copy))
+      astate
+
+
+  let init_list_constructor this init_list ~desc : model =
    fun {path; location} astate ->
-    let event = Hist.call_event path location "std::vector::vector()" in
-    let<*> astate, init_copy = PulseOperations.shallow_copy path location init_list astate in
-    let<+> astate =
-      PulseOperations.write_deref_field path location ~ref:this GenericArrayBackedCollection.field
-        ~obj:(fst init_copy, Hist.add_event path event (snd init_copy))
-        astate
+    (* missing a more precise model for std::initializer_list *)
+    let<**> astate =
+      GenericArrayBackedCollection.assign_size_constant path location this ~constant:IntLit.zero
+        ~desc astate
     in
+    let<+> astate = shallow_copy_init_list path location this init_list ~desc astate in
     astate
 
 
-  let init_copy_constructor this init_vector : model =
-   fun ({path; location} as model_data) astate ->
+  let init_copy_constructor this init_vector ~desc : model =
+   fun {path; location} astate ->
     let<*> astate, init_list =
       PulseOperations.eval_deref_access path Read location init_vector
         (FieldAccess GenericArrayBackedCollection.field) astate
     in
-    init_list_constructor this init_list model_data astate
+    let<*> astate, other_size =
+      GenericArrayBackedCollection.to_internal_size_deref path Read location init_vector astate
+    in
+    let<*> astate =
+      PulseOperations.write_deref_field path location ~ref:this
+        GenericArrayBackedCollection.size_field ~obj:other_size astate
+    in
+    let<+> astate = shallow_copy_init_list path location this init_list ~desc astate in
+    astate
 
 
   let invalidate_references vector_f vector : model =
@@ -482,10 +497,11 @@ module Vector = struct
     astate
 
 
-  let push_back vector : model =
+  let push_back vector ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
+    let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
     let<+> astate =
-      let hist = Hist.single_call path location "std::vector::push_back()" in
+      let hist = Hist.single_call path location desc in
       if AddressAttributes.is_std_vector_reserved (fst vector) astate then
         (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
            (a perfect analysis would also make sure we don't exceed the reserved size) *)
@@ -495,17 +511,8 @@ module Vector = struct
         reallocate_internal_array path hist vector PushBack location astate
     in
     PulseOperations.write_id ret_id
-      (fst vector, Hist.add_call path location "std::vector::push_back()" (snd vector))
+      (fst vector, Hist.add_call path location desc (snd vector))
       astate
-
-
-  let empty vector : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let crumb = Hist.call_event path location "std::vector::empty()" in
-    let<+> astate, (value_addr, value_hist) =
-      GenericArrayBackedCollection.eval_is_empty path location vector astate
-    in
-    PulseOperations.write_id ret_id (value_addr, Hist.add_event path crumb value_hist) astate
 end
 
 let get_cpp_matchers config ~model =
@@ -598,12 +605,14 @@ let matchers : matcher list =
     <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t
   ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> Pair.make_pair
+  ; -"std" &:: "vector" &:: "vector" $ capt_arg_payload
+    $--> GenericArrayBackedCollection.default_constructor ~desc:"std::vector::vector()"
   ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
-    $+...$--> Vector.init_list_constructor
+    $+...$--> Vector.init_list_constructor ~desc:"std::vector::vector()"
   ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "vector")
-    $+...$--> Vector.init_copy_constructor
+    $+...$--> Vector.init_copy_constructor ~desc:"std::vector::vector()"
   ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
     $+...$--> Vector.invalidate_references Assign
   ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
@@ -624,8 +633,12 @@ let matchers : matcher list =
     $--> Vector.at ~desc:"std::vector::at()"
   ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
     $--> Vector.invalidate_references ShrinkToFit
-  ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload $+...$--> Vector.push_back
-  ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload $+...$--> Vector.empty
+  ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload
+    $+...$--> Vector.push_back ~desc:"std::vector::push_back()"
+  ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload
+    $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
+  ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
+    $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
   ; -"std" &:: "integral_constant" < any_typ &+ capt_int
     >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
     <>--> Basic.return_int ~desc:"std::integral_constant"

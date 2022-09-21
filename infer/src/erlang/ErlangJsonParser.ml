@@ -595,9 +595,8 @@ let rec to_type json : Ast.type_ option =
   | `List [`String "type"; _anno; `String "reference"; `List []] ->
       Some Ast.Reference
   | `List [`String "type"; _anno; `String "string"; `List []] ->
-      (* Strings are described in the Erlang reference as being like user defined types *)
-      (* https://www.erlang.org/doc/reference_manual/typespec.html#types-and-their-syntax *)
-      Some (Ast.UserDefined "string")
+      (* string() is [char()] but we don't support char() yet. *)
+      Some (Ast.List (Proper Unsupported))
   | `List [`String "type"; _anno; `String "tuple"; `String "any"] ->
       Some (Ast.Tuple AnySize)
   | `List [`String "type"; _anno; `String "tuple"; args_json] ->

@@ -254,7 +254,7 @@ let add_copied_return path location call_exp actuals astates astate_non_disj =
                      { heap= (disjunct.post :> BaseDomain.t).heap
                      ; typ= Typ.strip_ptr copy_type
                      ; location
-                     ; copied_location= Some copied_location
+                     ; copied_location= Some (procname, copied_location)
                      ; from } )
                   astate_non_disj
               in

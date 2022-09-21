@@ -15,6 +15,7 @@ module type S = sig
       executions that end in a terminated thread. *)
 
   val pp : t pp
+  val pp_short : t pp
 
   val reached : t -> bool
   (** True iff the goal has been reached and there is no more work to do. *)

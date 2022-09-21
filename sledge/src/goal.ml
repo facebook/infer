@@ -11,6 +11,7 @@ module type S = sig
 
   val status : t -> Llair.block option -> status
   val pp : t pp
+  val pp_short : t pp
   val reached : t -> bool
   val update_after_call : Llair.FuncName.t -> t -> t
   val update_after_retn : Llair.FuncName.t -> t -> t
@@ -23,6 +24,7 @@ module Undirected = struct
 
   let status _ _ = ()
   let pp _ppf _ = ()
+  let pp_short = pp
   let reached _ = false
   let update_after_call _ _ = ()
   let update_after_retn _ _ = ()
@@ -41,12 +43,13 @@ module Sparse_trace = struct
   [@@deriving compare, equal, sexp_of]
 
   let pp ppf {cursor; trace} =
-    Format.fprintf ppf "[" ;
+    Format.fprintf ppf "[@[<hov>" ;
     IArray.iteri trace ~f:(fun idx cp ->
         let arrow = if Int.equal cursor idx then "*->" else "->" in
         Format.fprintf ppf "%s@,%a" arrow pp_checkpoint cp ) ;
-    Format.fprintf ppf "]"
+    Format.fprintf ppf "@]]"
 
+  let pp_short ppf {cursor; _} = Int.pp ppf cursor
   let reached {cursor; trace} = Int.equal cursor (IArray.length trace)
 
   let update_after_call fn ({cursor; trace} as goal) =
