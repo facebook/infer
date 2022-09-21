@@ -124,13 +124,19 @@ module LinArith : sig
   (** [pivot (v, q) l] assumes [v] appears in [l] with coefficient [q] and returns [l'] such that
       [l' = -(1/q)·(l - q·v)]*)
 
-  val is_minimized : t -> bool
-  (** [true] iff all the coefficients are positive, hence the constant part is a lower bound of the
-      value of the linear expression (assuming all variables are restricted) *)
+  val classify_minimized_maximized :
+       t
+    -> [ `Minimized
+         (** all the coefficients are positive, hence the constant part is a lower bound of the
+             value of the linear expression (assuming all variables are restricted) *)
+       | `Maximized
+         (** all the coefficients are negative, hence the constant part is an upper bound of the
+             value of the linear expression (assuming all variables are restricted) *)
+       | `Neither
+       | `Constant  (** no variables in this linear expression *) ]
 
-  val is_maximized : t -> bool
-  (** [true] iff all the coefficients are negative, hence the constant part is an upper bound of the
-      value of the linear expression (assuming all variables are restricted) *)
+  val is_minimized : t -> bool
+  (** [is_minimized l] iff [classify_minimized_maximized l] is either [`Minimized] or [`Constant] *)
 end = struct
   (* define our own var map to get a custom order: we want to place unrestricted variables first in
      the map so that [solve_for_unrestricted] can be implemented in terms of [solve_eq] easily *)
@@ -297,9 +303,30 @@ end = struct
     else None
 
 
-  let is_minimized (_, vs) = VarMap.for_all (fun _ c -> Q.(c >= zero)) vs
+  let classify_minimized_maximized (_, vs) =
+    let all_pos, all_neg =
+      VarMap.fold
+        (fun _ coeff (all_pos, all_neg) ->
+          (Q.(coeff >= zero) && all_pos, Q.(coeff <= zero) && all_neg) )
+        vs (true, true)
+    in
+    match (all_pos, all_neg) with
+    | true, true ->
+        `Constant
+    | true, false ->
+        `Minimized
+    | false, true ->
+        `Maximized
+    | false, false ->
+        `Neither
 
-  let is_maximized (_, vs) = VarMap.for_all (fun _ c -> Q.(c <= zero)) vs
+
+  let is_minimized l =
+    match classify_minimized_maximized l with
+    | `Minimized | `Constant ->
+        true
+    | `Maximized | `Neither ->
+        false
 end
 
 let pp_var_map ~arrow pp_val pp_var fmt m =
@@ -1786,25 +1813,28 @@ module Formula = struct
     and solve_tableau_restricted_eq ~fuel new_eqs w l phi =
       Debug.p "tableau %a = %a@\n" Var.pp w (LinArith.pp Var.pp) l ;
       let l_c = LinArith.get_constant_part l in
-      if Q.(l_c >= zero) then (
-        if LinArith.is_minimized l then (
+      let l_c_sign =
+        if Q.(l_c > zero) then `Positive else if Q.(l_c = zero) then `Zero else `Negative
+      in
+      match (l_c_sign, LinArith.classify_minimized_maximized l) with
+      | (`Positive | `Zero), (`Minimized | `Constant) ->
           (* [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≥0 (and so are all possible
              values of all [vi]s since they are restricted variables), hence any possible value
              of [w] is ≥0 so [w ≥ 0] is a tautologie and we can just discard the atom *)
           Debug.p "Tautology@\n" ;
-          Sat (phi, new_eqs) )
-        else
+          Sat (phi, new_eqs)
+      | (`Positive | `Zero), (`Maximized | `Neither) ->
           (* [w = l] is feasible and not a tautologie (and [l] is restricted), add to the
              tableau *)
           let tableau = Var.Map.add w l phi.tableau in
           Debug.p "Add to tableau@\n" ;
-          Sat ({phi with tableau}, new_eqs) )
-      else if LinArith.is_maximized l then (
-        (* [l_c < 0], [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≤0 so [l] denotes
-           only negative values, hence cannot be ≥0: contradiction *)
-        Debug.p "Contradiction!@\n" ;
-        Unsat )
-      else
+          Sat ({phi with tableau}, new_eqs)
+      | `Negative, (`Maximized | `Constant) ->
+          (* [l_c < 0], [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≤0 so [l] denotes
+             only negative values, hence cannot be ≥0: contradiction *)
+          Debug.p "Contradiction!@\n" ;
+          Unsat
+      | `Negative, (`Minimized | `Neither) -> (
         (* stuck, let's pivot to try to add a feasible equality to the tableau; there are two ways
            to pivot in \[2\] *)
         match Tableau.pivot_unbounded_with_positive_coeff phi.tableau w l with
@@ -1833,7 +1863,7 @@ module Formula = struct
             else (
               L.debug Analysis Verbose "Ran out of fuel pivoting the tableau %a@\n"
                 (Tableau.pp Var.pp) phi.tableau ;
-              Sat (phi, new_eqs) )
+              Sat (phi, new_eqs) ) )
 
 
     (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; assumes that
