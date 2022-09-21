@@ -260,7 +260,8 @@ let%test_module "normalization" =
         phi: linear_eqs: x = -v6 + v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
              && term_eqs: 0=v10∧[-v6 + v8 -1]=x∧[v8 -1]=v7∧([z]×[v8])=v9
                           ∧([v]×[y])=v6∧([v9]÷[w])=v10
-             && intervals: v10=0 |}]
+             && intervals: v10=0
+             && atoms: {[v9]÷[w] = 0} |}]
 
     (* check that this becomes all linear equalities *)
     let%expect_test _ =
@@ -429,12 +430,7 @@ let%test_module "conjunctive normal form" =
   ( module struct
     let%expect_test _ =
       normalize (and_ (ge x (i 0)) (lt x (i 0)) = i 1) ;
-      [%expect
-        {|
-        conditions: (empty)
-        phi: linear_eqs: v8 = 1
-             && term_eqs: 1=v8∧([x]<0)=v7∧(0≤[x])=v6∧([v6]∧[v7])=v8
-             && intervals: v8=1|}]
+      [%expect {|unsat|}]
 
     (* same as above with <> 0 instead of = 1 *)
     let%expect_test _ =
@@ -442,7 +438,7 @@ let%test_module "conjunctive normal form" =
       [%expect
         {|
         conditions: (empty)
-        phi: term_eqs: ([x]<0)=v7∧(0≤[x])=v6∧([v6]∧[v7])=v8
+        phi: term_eqs: ([x]<0)=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
              && intervals: v8≠0
              && atoms: {[v8] ≠ 0}|}]
 
@@ -451,27 +447,26 @@ let%test_module "conjunctive normal form" =
       [%expect
         {|
           conditions: (empty)
-          phi: linear_eqs: v10 = 0
-               && term_eqs: 0=v10∧(0<[x])=v7∧([x]<0)=v8∧([x]≠0)=v6∧([v6]∨[v9])=v10
-                            ∧([v7]∨[v8])=v9
-               && intervals: v10=0 |}]
+          phi: var_eqs: a2=a1=x=v6=v7=v8=v9=v10 && linear_eqs: a2 = 0 && term_eqs: 0=a2 && intervals: v10=0 |}]
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
       normalize (or_ (eq x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
       [%expect
         {|
           conditions: (empty)
-          phi: linear_eqs: v10 = 0
-               && term_eqs: 0=v10∧(0<[x])=v7∧([x]<0)=v8∧([x]=0)=v6∧([v6]∨[v9])=v10
-                            ∧([v7]∨[v8])=v9
-               && intervals: v10=0|}]
+          phi: var_eqs: a12=a10=a8=a6=a4=a2=x ∧ a9=a7=a5=a3=a1 ∧ v6=v7=v8=v9=v10
+               && linear_eqs: a12 = -a11 ∧ a9 = -a10 ∧ a7 = -a10 ∧ v6 = 0
+               && term_eqs: 0=v6∧[-a10]=a9∧[-a11]=a10∧(0<[a10])=v6∧([a10]<0)=v6∧([a12]=0)=v6
+               && tableau: a11 = -a10 ∧ a9 = -a10 ∧ a7 = -a10
+               && intervals: v10=0
+               && atoms: {[a12] ≠ 0}|}]
 
     let%expect_test _ =
       normalize (and_ (ge x (i 0)) (gt x (i 0)) <> i 0) ;
       [%expect
         {|
           conditions: (empty)
-          phi: term_eqs: (0<[x])=v7∧(0≤[x])=v6∧([v6]∧[v7])=v8
+          phi: term_eqs: (0<[x])=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
                && intervals: v8≠0
                && atoms: {[v8] ≠ 0}|}]
   end )

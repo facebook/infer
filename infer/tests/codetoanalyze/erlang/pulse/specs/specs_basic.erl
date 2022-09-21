@@ -39,7 +39,7 @@
     test_union1_Ok/1,
     test_map_Latent/1,
     test_map_Ok/1,
-    fp_test_bool6_Ok/1,
+    test_bool6_Ok/1,
     test_bool5_Latent/1,
     test_bool4_Latent/1,
     fp_test_bool3_Ok/1,
@@ -102,9 +102,8 @@ test_bool4_Latent(true) -> ok.
 -spec test_bool5_Latent(boolean()) -> any().
 test_bool5_Latent(false) -> ok.
 
-% T115354480
--spec fp_test_bool6_Ok(boolean()) -> any().
-fp_test_bool6_Ok(X) when is_boolean(X) -> ok.
+-spec test_bool6_Ok(boolean()) -> any().
+test_bool6_Ok(X) when is_boolean(X) -> ok.
 
 -spec test_map_Ok(map()) -> any().
 test_map_Ok(X) when is_map(X) -> ok.
