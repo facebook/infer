@@ -586,6 +586,8 @@ end
 
 let instr_is_return = function Sil.Store {e1= Lvar v} -> Pvar.is_return v | _ -> false
 
+module SilPvar = Pvar
+
 module Pvar = struct
   type kind = Global | Local of Procname.t
 
@@ -1127,6 +1129,19 @@ module Terminator = struct
     match t with Ret exp | Throw exp -> Exp.do_not_contain_regular_call exp | Jump _ -> true
 
 
+  let to_sil lang decls_env procname pdesc loc t : Sil.instr option =
+    match t with
+    | Ret exp ->
+        let ret_var = SilPvar.get_ret_pvar (Procname.to_sil lang procname) in
+        let ret_type = Procdesc.get_ret_type pdesc in
+        let e2 = Exp.to_sil lang decls_env procname exp in
+        Some (Sil.Store {e1= SilExp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2; loc})
+    | Jump _ ->
+        None
+    | Throw _ ->
+        None (* TODO (T132392184) *)
+
+
   let of_sil decls tenv label_of_node ~opt_last succs =
     match opt_last with
     | None ->
@@ -1174,6 +1189,9 @@ module Node = struct
            (fun fmt () ->
              F.fprintf fmt "Node %a should not have SSA parameters" NodeName.pp node.label ) ) ;
     let instrs = List.map ~f:(Instr.to_sil lang decls_env procname) node.instrs in
+    let last_loc = Location.to_sil decls_env.Decls.sourcefile node.last_loc in
+    let last = Terminator.to_sil lang decls_env procname pdesc last_loc node.last in
+    let instrs = Option.value_map ~default:instrs ~f:(fun instr -> instrs @ [instr]) last in
     let loc = Location.to_sil decls_env.Decls.sourcefile node.label_loc in
     let nkind = Procdesc.Node.Stmt_node MethodBody in
     Procdesc.create_node pdesc loc nkind instrs
@@ -1302,7 +1320,6 @@ module Procdesc = struct
     let normal_succ : Terminator.t -> Procdesc.Node.t list = function
       | Ret _ ->
           [exit_node]
-      (* FIXME: generate a ret assignment *)
       | Jump l ->
           List.map
             ~f:(fun ({label} : Terminator.node_call) -> Hashtbl.find node_map label.value |> snd)
