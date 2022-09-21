@@ -1817,6 +1817,15 @@ module Formula = struct
         if Q.(l_c > zero) then `Positive else if Q.(l_c = zero) then `Zero else `Negative
       in
       match (l_c_sign, LinArith.classify_minimized_maximized l) with
+      | `Zero, (`Maximized | `Constant) ->
+          (* [w = k1·v1 + ... + kn·vn], all coeffs [ki] are ≤0, so [w] = [v1] = ... = [vn] = 0. *)
+          let* phi, new_eqs =
+            solve_normalized_lin_eq ~force_no_tableau:true ~fuel new_eqs (LinArith.of_var w)
+              (LinArith.of_q Q.zero) phi
+          in
+          LinArith.get_variables l
+          |> SatUnsat.seq_fold ~init:(phi, new_eqs) ~f:(fun (phi, new_eqs) v ->
+                 merge_vars ~fuel new_eqs w v phi )
       | (`Positive | `Zero), (`Minimized | `Constant) ->
           (* [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≥0 (and so are all possible
              values of all [vi]s since they are restricted variables), hence any possible value

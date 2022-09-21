@@ -427,12 +427,10 @@ let%test_module "intervals" =
       [%expect
         {|
         conditions: (empty)
-        phi: var_eqs: a1=x=y
-             && linear_eqs: a3 = -a4 +7 ∧ a2 = a4 -7 ∧ a1 = -a4 +9
-             && term_eqs: [a4 -7]=a2∧[-a4 +7]=a3∧[-a4 +9]=a1
-             && tableau: a4 = -a3 +7 ∧ a2 = -a3 ∧ a1 = -a4 +9
-             && intervals: a1=2
-             && atoms: {[a1] ≠ 0} |}]
+        phi: var_eqs: a3=a2 ∧ a1=x=y
+             && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
+             && term_eqs: 0=a3∧2=a1∧7=a4
+             && intervals: a1=2 |}]
   end )
 
 let%test_module "conjunctive normal form" =
@@ -455,15 +453,7 @@ let%test_module "conjunctive normal form" =
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
       normalize (or_ (eq x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
-      [%expect
-        {|
-          conditions: (empty)
-          phi: var_eqs: a12=a10=a8=a6=a4=a2=x ∧ a9=a7=a5=a3=a1 ∧ v6=v7=v8=v9=v10
-               && linear_eqs: a12 = -a11 ∧ a9 = -a10 ∧ a7 = -a10 ∧ v6 = 0
-               && term_eqs: 0=v6∧[-a10]=a9∧[-a11]=a10∧(0<[a10])=v6∧([a10]<0)=v6∧([a12]=0)=v6
-               && tableau: a11 = -a10 ∧ a9 = -a10 ∧ a7 = -a10
-               && intervals: v6=0
-               && atoms: {[a12] ≠ 0}|}]
+      [%expect {|unsat|}]
 
     let%expect_test _ =
       normalize (and_ (ge x (i 0)) (gt x (i 0)) <> i 0) ;
