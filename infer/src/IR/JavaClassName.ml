@@ -11,7 +11,8 @@ module L = Logging
 
 (** invariant: if [package = Some str] then [not (String.equal str "")]. [classname] appears first
     so that the comparator fails earlier *)
-type t = {classname: string; package: string option} [@@deriving compare, equal, yojson_of]
+type t = {classname: string; package: string option}
+[@@deriving compare, equal, yojson_of, sexp, hash]
 
 module Map = Caml.Map.Make (struct
   type nonrec t = t [@@deriving compare]

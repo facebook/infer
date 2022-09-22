@@ -237,7 +237,7 @@ type t =
   | ObjC_Cpp of ObjC_Cpp.t
   | WithAliasingParameters of t * Mangled.t list list
   | WithFunctionParameters of t * FunctionParameters.t list
-[@@deriving compare, yojson_of]
+[@@deriving compare, yojson_of, sexp, hash]
 
 val base_of : t -> t
 (** if a procedure has been specialised, return the original one, otherwise itself *)

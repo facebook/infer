@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t [@@deriving compare, equal, yojson_of]
+type t [@@deriving compare, equal, yojson_of, sexp, hash]
 
 val make : namespace:string option -> classname:string -> t
 
