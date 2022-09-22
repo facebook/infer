@@ -226,9 +226,6 @@ val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)
 
-val get_reachable : t -> AbstractValue.Set.t
-(** Return the addresses reachable from pre or post. *)
-
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
@@ -336,14 +333,12 @@ module Summary : sig
 end
 
 module Topl : sig
-  val small_step : Location.t -> keep:AbstractValue.Set.t -> PulseTopl.event -> t -> t
+  val small_step : Location.t -> PulseTopl.event -> t -> t
 
   val large_step :
        call_location:Location.t
     -> callee_proc_name:Procname.t
     -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
-    -> keep:AbstractValue.Set.t
-    -> path_condition:Formula.t
     -> callee_summary:PulseTopl.state
     -> t
     -> t

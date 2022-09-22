@@ -1028,12 +1028,6 @@ let get_unreachable_attributes {post} =
     (post :> BaseDomain.t).attrs []
 
 
-let get_reachable {pre; post} =
-  let pre_keep = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
-  let post_keep = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
-  AbstractValue.Set.union pre_keep post_keep
-
-
 let should_havoc_if_unknown () =
   if Language.curr_language_is Java then `ShouldOnlyHavocResources else `ShouldHavoc
 
@@ -1285,6 +1279,13 @@ let canonicalize astate =
   {astate with pre; post}
 
 
+let topl_view : t -> PulseTopl.pulse_state = function
+  | {pre; post; path_condition} ->
+      let pulse_pre = (pre :> BaseDomain.t) in
+      let pulse_post = (post :> BaseDomain.t) in
+      {pulse_pre; pulse_post; path_condition}
+
+
 let filter_for_summary tenv proc_name astate0 =
   let open SatUnsat.Import in
   L.d_printfln "Canonicalizing...@\n" ;
@@ -1295,14 +1296,7 @@ let filter_for_summary tenv proc_name astate0 =
      to restore their initial values at the end of the function. Removing them altogether achieves
      this. *)
   let astate = restore_formals_for_summary astate_before_filter in
-  let astate =
-    { astate with
-      topl=
-        PulseTopl.filter_for_summary
-          ~get_dynamic_type:
-            (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
-          astate.path_condition astate.topl }
-  in
+  let astate = {astate with topl= PulseTopl.filter_for_summary (topl_view astate) astate.topl} in
   let astate, pre_live_addresses, post_live_addresses, dead_addresses =
     discard_unreachable_ ~for_summary:true astate
   in
@@ -1321,9 +1315,7 @@ let filter_for_summary tenv proc_name astate0 =
       astate.path_condition
   in
   let live_addresses = AbstractValue.Set.union live_addresses live_via_arithmetic in
-  ( { astate with
-      path_condition
-    ; topl= PulseTopl.simplify ~keep:live_addresses ~get_dynamic_type ~path_condition astate.topl }
+  ( {astate with path_condition; topl= PulseTopl.simplify (topl_view astate) astate.topl}
   , live_addresses
   , (* we could filter out the [live_addresses] if needed; right now they might overlap *)
     dead_addresses
@@ -1463,23 +1455,15 @@ module Summary = struct
 end
 
 module Topl = struct
-  let small_step loc ~keep event astate =
-    { astate with
-      topl=
-        PulseTopl.small_step loc ~keep
-          ~get_dynamic_type:
-            (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
-          ~path_condition:astate.path_condition event astate.topl }
+  let small_step loc event astate =
+    {astate with topl= PulseTopl.small_step loc (topl_view astate) event astate.topl}
 
 
-  let large_step ~call_location ~callee_proc_name ~substitution ~keep ~path_condition
-      ~callee_summary astate =
+  let large_step ~call_location ~callee_proc_name ~substitution ~callee_summary astate =
     { astate with
       topl=
-        PulseTopl.large_step ~call_location ~callee_proc_name ~substitution ~keep
-          ~get_dynamic_type:
-            (BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs)
-          ~path_condition ~callee_summary astate.topl }
+        PulseTopl.large_step ~call_location ~callee_proc_name ~substitution (topl_view astate)
+          ~callee_summary astate.topl }
 
 
   let get {topl} = topl
