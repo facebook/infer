@@ -7,7 +7,7 @@
 
 -export([
     test_record6_Latent/1,
-    fp_test_record5_Ok/1,
+    test_record5_Ok/1,
     test_record4_Latent/1,
     test_record3_Latent/1,
     test_record2_Latent/1,
@@ -39,14 +39,14 @@
     test_union1_Ok/1,
     test_map_Latent/1,
     test_map_Ok/1,
-    fp_test_bool6_Ok/1,
+    test_bool6_Ok/1,
     test_bool5_Latent/1,
     test_bool4_Latent/1,
     fp_test_bool3_Ok/1,
     test_bool2_Latent/1,
     test_bool1_Ok/1,
     test_atom_literal4_Latent/1,
-    fp_test_atom_literal3_Ok/1,
+    test_atom_literal3_Ok/1,
     test_atom_literal2_Latent/1,
     test_atom_literal1_Ok/1,
     test_atom3_Latent/1,
@@ -80,9 +80,8 @@ test_atom_literal1_Ok(X) when is_atom(X) -> ok.
 
 test_atom_literal2_Latent(X) when is_atom(X) -> ok.
 
-% T115354480
--spec fp_test_atom_literal3_Ok('ok') -> any().
-fp_test_atom_literal3_Ok(ok) -> ok.
+-spec test_atom_literal3_Ok('ok') -> any().
+test_atom_literal3_Ok(ok) -> ok.
 
 test_atom_literal4_Latent(ok) -> ok.
 
@@ -102,9 +101,8 @@ test_bool4_Latent(true) -> ok.
 -spec test_bool5_Latent(boolean()) -> any().
 test_bool5_Latent(false) -> ok.
 
-% T115354480
--spec fp_test_bool6_Ok(boolean()) -> any().
-fp_test_bool6_Ok(X) when is_boolean(X) -> ok.
+-spec test_bool6_Ok(boolean()) -> any().
+test_bool6_Ok(X) when is_boolean(X) -> ok.
 
 -spec test_map_Ok(map()) -> any().
 test_map_Ok(X) when is_map(X) -> ok.
@@ -198,9 +196,8 @@ test_record3_Latent({_, _}) -> ok.
 -spec test_record4_Latent(#car{}) -> any().
 test_record4_Latent({_, _, _, _}) -> ok.
 
-% T115354480
--spec fp_test_record5_Ok(#car{}) -> any().
-fp_test_record5_Ok({car, _, _}) -> ok.
+-spec test_record5_Ok(#car{}) -> any().
+test_record5_Ok({car, _, _}) -> ok.
 
 -spec test_record6_Latent(#car{}) -> any().
 test_record6_Latent({not_a_car, _, _}) -> ok.

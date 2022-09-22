@@ -47,3 +47,11 @@ let list_fold l ~init ~f =
 let to_list sat_unsat = sat sat_unsat |> Option.to_list
 
 let filter l = List.filter_map l ~f:sat
+
+let seq_fold seq ~init ~f =
+  let open Import in
+  Caml.Seq.fold_left
+    (fun accum x ->
+      let* accum in
+      f accum x )
+    (Sat init) seq

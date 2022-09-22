@@ -12,7 +12,7 @@ type copy_spec_t =
   | Copied of
       { typ: Typ.t
       ; location: Location.t (* the location to report the issue *)
-      ; copied_location: Location.t option
+      ; copied_location: (Procname.t * Location.t) option
             (* [copied_location] has a value when the copied location is different to where to
                report: e.g. this is the case for returning copied values. *)
       ; heap: BaseMemory.t
@@ -53,7 +53,7 @@ val get_copied :
   -> ( PulseAttribute.CopiedInto.t
      * Typ.t
      * Location.t
-     * Location.t option
+     * (Procname.t * Location.t) option
      * PulseAttribute.CopyOrigin.t )
      list
 

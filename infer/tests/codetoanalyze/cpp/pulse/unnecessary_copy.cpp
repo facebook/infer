@@ -440,6 +440,11 @@ class MyValueOr {
     Arr x;
     return x;
   }
+
+  void suppress_intentional_cpy_under_lock(Arr src) {
+    auto l = lock();
+    auto tgt = src;
+  }
 };
 
 void call_value_or_bad(const MyValueOr& c) {

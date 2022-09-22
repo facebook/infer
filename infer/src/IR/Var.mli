@@ -9,7 +9,8 @@ open! IStd
 
 (** Single abstraction for all the kinds of variables in SIL *)
 
-type t = private LogicalVar of Ident.t | ProgramVar of Pvar.t [@@deriving compare, yojson_of]
+type t = private LogicalVar of Ident.t | ProgramVar of Pvar.t
+[@@deriving compare, yojson_of, sexp, hash]
 
 val equal : t -> t -> bool
 

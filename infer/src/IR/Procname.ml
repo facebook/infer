@@ -16,7 +16,7 @@ type detail_level = Verbose | Non_verbose | Simple | NameOnly
 let is_verbose v = match v with Verbose -> true | _ -> false
 
 module CSharp = struct
-  type kind = Non_Static | Static [@@deriving compare, equal, yojson_of]
+  type kind = Non_Static | Static [@@deriving compare, equal, yojson_of, sexp, hash]
 
   type t =
     { method_name: string
@@ -24,7 +24,7 @@ module CSharp = struct
     ; class_name: Typ.Name.t
     ; return_type: Typ.t option (* option because constructors have no return type *)
     ; kind: kind }
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let ensure_csharp_type t =
     if not (Typ.is_csharp_type t) then
@@ -107,7 +107,7 @@ module Java = struct
     | Non_Static
         (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
     | Static  (** in Java, procedures called with invokestatic *)
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   (** Type of java procedure names. *)
   type t =
@@ -116,7 +116,7 @@ module Java = struct
     ; class_name: Typ.Name.t
     ; return_type: Typ.t option (* option because constructors have no return type *)
     ; kind: kind }
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let ensure_java_type t =
     if not (Typ.is_java_type t) then
@@ -289,7 +289,7 @@ module Parameter = struct
   (** Type for parameters in clang procnames, [Some name] means the parameter is of type pointer to
       struct, with [name] being the name of the struct, [None] means the parameter is of some other
       type. *)
-  type clang_parameter = Typ.Name.t option [@@deriving compare, equal, yojson_of]
+  type clang_parameter = Typ.Name.t option [@@deriving compare, equal, yojson_of, sexp, hash]
 
   (** Type for parameters in procnames, for java and clang. *)
   type t =
@@ -334,7 +334,7 @@ module ObjC_Cpp = struct
     | CPPDestructor of {mangled: string option}
     | ObjCClassMethod
     | ObjCInstanceMethod
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   type t =
     { class_name: Typ.Name.t
@@ -342,7 +342,7 @@ module ObjC_Cpp = struct
     ; method_name: string
     ; parameters: Parameter.clang_parameter list
     ; template_args: Typ.template_spec_info }
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let make class_name method_name kind template_args parameters =
     {class_name; method_name; kind; template_args; parameters}
@@ -452,7 +452,7 @@ module C = struct
     ; mangled: string option
     ; parameters: Parameter.clang_parameter list
     ; template_args: Typ.template_spec_info }
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let c name mangled parameters template_args =
     {name; mangled= Some mangled; parameters; template_args}
@@ -497,7 +497,7 @@ end
 
 module Erlang = struct
   type t = {module_name: string; function_name: string; arity: int}
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let pp_general arity_sep verbosity fmt {module_name; function_name; arity} =
     match verbosity with
@@ -554,10 +554,10 @@ module Block = struct
   type block_type =
     | InOuterScope of {outer_scope: block_type; block_index: int}
     | SurroundingProc of {class_name: Typ.name option; name: string}
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   type t = {block_type: block_type; parameters: Parameter.clang_parameter list}
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let make_surrounding class_name name parameters =
     {block_type= SurroundingProc {class_name; name}; parameters}
@@ -611,7 +611,7 @@ module Block = struct
 end
 
 module FunctionParameters = struct
-  type t = FunPtr of C.t | Block of Block.t [@@deriving compare, equal, yojson_of]
+  type t = FunPtr of C.t | Block of Block.t [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let pp verbose f = function
     | FunPtr c ->
@@ -621,7 +621,8 @@ module FunctionParameters = struct
 end
 
 module Hack = struct
-  type t = {class_name: string option; function_name: string} [@@deriving compare, equal, yojson_of]
+  type t = {class_name: string option; function_name: string}
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let pp verbosity fmt t =
     match verbosity with
@@ -647,7 +648,7 @@ type t =
   | ObjC_Cpp of ObjC_Cpp.t
   | WithAliasingParameters of t * Mangled.t list list
   | WithFunctionParameters of t * FunctionParameters.t list
-[@@deriving compare, equal, yojson_of]
+[@@deriving compare, equal, yojson_of, sexp, hash]
 
 let rec is_c = function
   | C _ ->

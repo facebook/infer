@@ -9,9 +9,9 @@ open! IStd
 module F = Format
 
 type 'typ_name t_ = {class_name: 'typ_name; field_name: string}
-[@@deriving compare, equal, yojson_of]
+[@@deriving compare, equal, yojson_of, sexp, hash]
 
-type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of]
+type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of, sexp, hash]
 
 let pp f fld = F.pp_print_string f fld.field_name
 

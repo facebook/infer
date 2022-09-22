@@ -31,6 +31,16 @@ let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
   else astate
 
 
+(** if the procedure has a variadic number of arguments, its known [formals] will be less than the
+    [actuals] we get but currently there is no support for handling the remaining arguments (the
+    ones in [...]) so we just drop them *)
+let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
+  let proc_attrs = Option.bind ~f:IRAttributes.load proc_name_opt in
+  if Option.exists proc_attrs ~f:(fun {ProcAttributes.is_variadic} -> is_variadic) then
+    List.take actuals (List.length formals)
+  else actuals
+
+
 let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) callee_pname_opt
     ~ret ~actuals ~formals_opt ({AbductiveDomain.post} as astate) =
   let hist =
@@ -141,36 +151,32 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
   | None ->
       havoc_actuals_without_typ_info astate
   | Some formals -> (
-    match
-      List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->
-          havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
-    with
-    | Unequal_lengths ->
-        L.d_printfln "ERROR: formals have length %d but actuals have length %d"
-          (List.length formals) (List.length actuals) ;
-        havoc_actuals_without_typ_info astate
-    | Ok result ->
-        result ) )
+      let actuals = trim_actuals_if_var_arg callee_pname_opt ~actuals ~formals in
+      match
+        List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->
+            havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
+      with
+      | Unequal_lengths ->
+          L.d_printfln "ERROR: formals have length %d but actuals have length %d"
+            (List.length formals) (List.length actuals) ;
+          havoc_actuals_without_typ_info astate
+      | Ok result ->
+          result ) )
   |> add_skipped_proc
 
 
 let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
     callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals astate =
   let open ExecutionDomain in
-  let ( let* ) x f =
-    SatUnsat.bind
-      (fun result ->
-        PulseResult.map result ~f |> PulseResult.map ~f:SatUnsat.sat |> PulseResult.of_some
-        |> SatUnsat.of_option |> SatUnsat.map PulseResult.join )
-      x
-  in
   let map_call_result ~is_isl_error_prepost callee_summary ~f =
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary path ~is_isl_error_prepost callee_pname call_loc ~callee_summary
-        ~captured_formals ~captured_actuals ~formals ~actuals astate
+        ~captured_formals ~captured_actuals ~formals
+        ~actuals:(trim_actuals_if_var_arg (Some callee_pname) ~actuals ~formals)
+        astate
     in
     let sat_unsat =
-      let* post, return_val_opt, subst = sat_unsat in
+      let** post, return_val_opt, subst = sat_unsat in
       let post =
         match return_val_opt with
         | Some return_val_hist ->
@@ -201,7 +207,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   | LatentAbortProgram {astate}
   | LatentInvalidAccess {astate} ->
       map_call_result ~is_isl_error_prepost:false astate ~f:(fun subst astate_post_call ->
-          let* astate_summary =
+          let** astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post tenv
               (Procdesc.get_proc_name caller_proc_desc)
@@ -390,13 +396,13 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
       let<++> astate_unknown =
-        PulseObjectiveCSummary.append_objc_actual_self_positive proc_name proc_attrs
-          (List.hd actuals) astate_unknown
+        PulseSummary.append_objc_actual_self_positive proc_name proc_attrs (List.hd actuals)
+          astate_unknown
       in
       astate_unknown
     in
     let result_unknown_nil, contradiction =
-      PulseObjectiveCSummary.mk_nil_messaging_summary tenv proc_name proc_attrs
+      PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
       |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
              call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
                proc_attrs [nil_summary] astate )

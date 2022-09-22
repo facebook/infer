@@ -40,3 +40,22 @@ void unnecessary_intermetidate_copy(const A& my_a) {
   // have const A&
   get_size(my_a);
 }
+
+class MyValueOr {
+  bool b;
+  A& value;
+
+ public:
+  A value_or(const A& default_value) const {
+    if (b) {
+      return value;
+    } else {
+      return default_value;
+    }
+  }
+};
+
+void call_value_or_bad(const MyValueOr& c) {
+  const static A f{};
+  A g = c.value_or(f);
+}

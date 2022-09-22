@@ -20,7 +20,7 @@ type t =
             (** path relative to the workspace of the project root with respect to which the source
                 file was captured *)
       ; rel_path: string  (** path of the source file relative to the project root *) }
-[@@deriving compare, equal, sexp_of]
+[@@deriving compare, equal, sexp, hash]
 
 module OrderedSourceFile = struct
   type nonrec t = t [@@deriving compare]

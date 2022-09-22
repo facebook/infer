@@ -228,9 +228,9 @@ instruction:
   | STORE exp1=expression ASSIGN exp2=expression COLON typ=typ
     { Store {exp1; exp2; typ; loc=location_of_pos $startpos } }
   | PRUNE exp=expression
-    { Prune {exp; b= true; loc=location_of_pos $startpos} }
+    { Prune {exp; loc=location_of_pos $startpos} }
   | PRUNE NOT exp=expression
-    { Prune {exp; b= false; loc=location_of_pos $startpos} }
+    { Prune {exp=Exp.not exp; loc=location_of_pos $startpos} }
   | id=LOCAL EQ exp=expression
     { Let { id= Ident.of_int id; exp; loc=location_of_pos $startpos } }
 
