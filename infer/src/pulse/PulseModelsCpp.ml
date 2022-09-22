@@ -497,6 +497,12 @@ module Vector = struct
     astate
 
 
+  let pop_back vector ~desc : model =
+   fun {path; location} astate ->
+    let<++> astate = GenericArrayBackedCollection.decrease_size path location vector ~desc astate in
+    astate
+
+
   let push_back vector ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
     let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
@@ -635,6 +641,8 @@ let matchers : matcher list =
     $--> Vector.invalidate_references ShrinkToFit
   ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload
     $+...$--> Vector.push_back ~desc:"std::vector::push_back()"
+  ; -"std" &:: "vector" &:: "pop_back" <>$ capt_arg_payload
+    $+...$--> Vector.pop_back ~desc:"std::vector::pop_back()"
   ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload
     $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
   ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
