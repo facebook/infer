@@ -59,8 +59,12 @@ include (* ocaml ignores the warning suppression at toplevel, hence the [include
   sig
   [@@@warning "-60"]
 
+  type empty = |
+
+  module Empty : S with type t = empty
+
   (** a trivial domain *)
-  module Empty : S with type t = unit
+  module Unit : S with type t = unit
 end
 
 (** A domain with an explicit bottom value *)
