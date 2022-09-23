@@ -12,7 +12,7 @@ type t =
   { file: SourceFile.t  (** The name of the source file *)
   ; line: int  (** The line number. -1 means "do not know" *)
   ; col: int  (** The column number. -1 means "do not know" *) }
-[@@deriving compare, equal, sexp_of]
+[@@deriving compare, equal, sexp, hash]
 
 let none file = {line= -1; col= -1; file}
 

@@ -10,7 +10,8 @@ module F = Format
 
 (** Single abstraction for all the kinds of variables in SIL *)
 
-type t = LogicalVar of Ident.t | ProgramVar of Pvar.t [@@deriving compare, equal, yojson_of]
+type t = LogicalVar of Ident.t | ProgramVar of Pvar.t
+[@@deriving compare, equal, yojson_of, sexp, hash]
 
 let equal = [%compare.equal: t]
 

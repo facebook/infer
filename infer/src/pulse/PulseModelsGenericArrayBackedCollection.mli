@@ -60,6 +60,14 @@ val increase_size :
   -> AbductiveDomain.t
   -> (AbductiveDomain.t, base_error) PulseOperationResult.t
 
+val decrease_size :
+     PathContext.t
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> desc:string
+  -> AbductiveDomain.t
+  -> (AbductiveDomain.t, base_error) PulseOperationResult.t
+
 val empty : AbstractValue.t * ValueHistory.t -> desc:string -> model
 
 val default_constructor : AbstractValue.t * ValueHistory.t -> desc:string -> model

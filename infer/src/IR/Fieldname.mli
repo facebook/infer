@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 (** Names for fields of class/struct/union *)
-type t [@@deriving compare, equal, yojson_of]
+type t [@@deriving compare, equal, yojson_of, sexp, hash]
 
 val loose_compare : t -> t -> int
 (** Similar to compare, but addresses [CStruct x] and [CppClass x] as equal. *)

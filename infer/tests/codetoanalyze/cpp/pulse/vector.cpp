@@ -113,6 +113,18 @@ int FP_size4_ok() {
   return 0;
 }
 
+int size5_ok() {
+  std::vector<int> v;
+  v.push_back(0);
+  v.push_back(0);
+  v.pop_back();
+  if (v.size() != 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
 int size0_bad() {
   std::vector<int> v;
   if (v.size() == 0) {
@@ -158,6 +170,17 @@ int empty1_ok() {
   std::vector<int> v;
   v.push_back(0);
   if (v.empty()) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int empty2_ok() {
+  std::vector<int> v;
+  v.push_back(0);
+  v.pop_back();
+  if (!v.empty()) {
     int* q = nullptr;
     return *q;
   }

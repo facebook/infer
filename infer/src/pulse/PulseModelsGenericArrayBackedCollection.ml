@@ -60,20 +60,26 @@ let eval_pointer_to_last_element path location collection astate =
   (astate, pointer)
 
 
-let increase_size path location this ~desc astate =
-  let incremented_size = AbstractValue.mk_fresh () in
+let binop_size path location this ~desc binop astate =
+  let new_size = AbstractValue.mk_fresh () in
   let=* astate, (size_addr, hist) = to_internal_size path Read location this astate in
   let=* astate, (size_value, _) = to_internal_size_deref path Read location this astate in
   let hist = Hist.add_call path location desc hist in
-  (* compute the increased ref count *)
-  let+* astate, incremented_size =
-    PulseArithmetic.eval_binop incremented_size (PlusA None) (AbstractValueOperand size_value)
+  let+* astate, new_size =
+    PulseArithmetic.eval_binop new_size binop (AbstractValueOperand size_value)
       (ConstOperand (Cint (IntLit.of_int 1)))
       astate
   in
   (* update the size count *)
-  PulseOperations.write_deref path location ~ref:(size_addr, hist) ~obj:(incremented_size, hist)
-    astate
+  PulseOperations.write_deref path location ~ref:(size_addr, hist) ~obj:(new_size, hist) astate
+
+
+let increase_size path location this ~desc astate =
+  binop_size path location this ~desc (PlusA None) astate
+
+
+let decrease_size path location this ~desc astate =
+  binop_size path location this ~desc (MinusA None) astate
 
 
 let default_constructor this ~desc : model =

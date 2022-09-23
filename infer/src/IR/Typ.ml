@@ -54,7 +54,7 @@ type ikind =
   | IULongLong  (** [unsigned long long] (or [unsigned int64_] on Microsoft Visual C) *)
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
-[@@deriving compare, equal, yojson_of]
+[@@deriving compare, equal, yojson_of, sexp, hash]
 
 let ikind_to_string = function
   | IChar ->
@@ -128,7 +128,7 @@ let ikind_is_char = function IChar | ISChar | IUChar -> true | _ -> false
 
 (** Kinds of floating-point numbers *)
 type fkind = FFloat  (** [float] *) | FDouble  (** [double] *) | FLongDouble  (** [long double] *)
-[@@deriving compare, equal, yojson_of]
+[@@deriving compare, equal, yojson_of, sexp, hash]
 
 let fkind_to_string = function
   | FFloat ->
@@ -147,7 +147,7 @@ type ptr_kind =
   | Pk_objc_weak  (** Obj-C __weak pointer *)
   | Pk_objc_unsafe_unretained  (** Obj-C __unsafe_unretained pointer *)
   | Pk_objc_autoreleasing  (** Obj-C __autoreleasing pointer *)
-[@@deriving compare, equal, yojson_of]
+[@@deriving compare, equal, yojson_of, sexp, hash]
 
 let ptr_kind_string = function
   | Pk_lvalue_reference ->
@@ -169,7 +169,7 @@ module T = struct
      inconsistent for the same type depending on compilation units. *)
   type type_quals =
     {is_const: bool; is_restrict: bool; is_trivially_copyable: bool [@ignore]; is_volatile: bool}
-  [@@deriving compare, equal, yojson_of]
+  [@@deriving compare, equal, yojson_of, sexp, hash]
 
   (** types for sil (structured) expressions *)
   type t = {desc: desc; quals: type_quals}
@@ -195,6 +195,7 @@ module T = struct
     | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t
     | ObjcProtocol of QualifiedCppName.t
+  [@@deriving hash, sexp]
 
   and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
 
@@ -417,7 +418,7 @@ let desc_to_string desc =
 
 
 module Name = struct
-  type t = name [@@deriving compare, equal, yojson_of]
+  type t = name [@@deriving compare, equal, yojson_of, sexp, hash]
 
   (* NOTE: When a same struct type is used in C/C++/ObjC/ObjC++, their struct types may different,
      eg [CStruct] in C, but [CppClass] in C++.  On the other hand, since [Fieldname.t] includes the
