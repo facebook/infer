@@ -739,6 +739,8 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 endif
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/annotations/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/annotations/'
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/config/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/config/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/bin/' || \
@@ -776,6 +778,10 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/wrappers/javac \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/wrappers/
 endif
+	find infer/config/ -type d -print0 | xargs -0 -I \{\} \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/\{\}
+	find infer/config/ -type f -print0 | xargs -0 -I \{\} \
+	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/erlang/erlang.sh \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/erlang/
