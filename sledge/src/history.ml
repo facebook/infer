@@ -32,8 +32,11 @@ let dump h fs =
   in
   let pp_ip fs ip =
     let open Llair in
-    Format.fprintf fs "%a%a%a" FuncName.pp (IP.block ip).parent.name IP.pp
-      ip Loc.pp (IP.loc ip)
+    let block = IP.block ip in
+    Format.fprintf fs "#%-8i%a%a" block.sort_index FuncName.pp
+      block.parent.name Loc.pp (IP.loc ip)
   in
-  Format.fprintf fs "@[<v 2>Witness Trace:@ %a@]" (List.pp "@ " pp_ip)
-    (path h)
+  let pp_path fs =
+    List.iteri ~f:(fun idx ip -> Format.fprintf fs "@ %i:\t%a" idx pp_ip ip)
+  in
+  Format.fprintf fs "@[<v 2>Witness Trace:%a@]" pp_path (path h)
