@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) --print-types
+INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) --print-types --pulse-max-disjuncts 60
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard */*.erl)

@@ -8,8 +8,9 @@
 (** An execution history is a current instruction pointer and some
     predecessors. [preds] are empty iff this is an entrypoint. *)
 
-type t = {curr: Llair.ip; preds: t iarray} [@@deriving sexp_of]
+type t = Init | Step of {curr: Llair.ip; preds: t iarray}
+[@@deriving sexp_of]
 
-val init : Llair.ip -> t
+val init : t
 val extend : Llair.ip -> t list -> t
 val dump : t -> Format.formatter -> unit

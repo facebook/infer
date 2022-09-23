@@ -26,6 +26,9 @@ class A {
     }
     return 0;
   }
+  static int expect_notnull_ok(A* a) { return a->return_zero(); }
+  static int call_null_arg_bad() { return expect_notnull_ok(nullptr); }
+  int return_zero() { return 0; }
 };
 
 void assign_zero_ok() {

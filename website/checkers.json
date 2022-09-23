@@ -1,6 +1,5 @@
 {
-  "README":
-    "This is a @generated file, run `make doc-publish` from the root of the infer repository to generate it",
+  "README": "This is a @generated file, run `make doc-publish` from the root of the infer repository to generate it",
   "doc_entries": [
     "all-checkers", "all-issue-types", "checker-annotation-reachability",
     "checker-biabduction", "checker-bufferoverrun",
