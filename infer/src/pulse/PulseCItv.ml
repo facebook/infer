@@ -176,16 +176,21 @@ let is_not_equal_to_zero = function
       false
 
 
-let has_empty_intersection a1 a2 =
+let intersection a1 a2 =
   match (a1, a2) with
-  | Outside _, Outside _ ->
-      false
+  | Outside (lower1, upper1), Outside (lower2, upper2) ->
+      Some (outside (IntLit.min lower1 lower2) (IntLit.max upper1 upper2))
   | Between (lower1, upper1), Between (lower2, upper2) ->
-      Bound.lt upper1 lower2 || Bound.lt upper2 lower1
+      let lower = Bound.max lower1 lower2 in
+      let upper = Bound.min upper1 upper2 in
+      if Bound.lt upper lower then None else Some (between lower upper)
   | Between (lower1, upper1), Outside (l2, u2) | Outside (l2, u2), Between (lower1, upper1) ->
-      (* is \[l1, u1\] inside \[l2, u2\]? *)
-      Bound.le (Int l2) lower1 && Bound.ge (Int u2) upper1
+      let lower = if Bound.le lower1 (Int l2) then lower1 else Bound.max lower1 (Int u2) in
+      let upper = if Bound.ge upper1 (Int u2) then upper1 else Bound.min (Int l2) upper1 in
+      if Bound.lt upper lower then None else Some (between lower upper)
 
+
+let has_empty_intersection a1 a2 = Option.is_none (intersection a1 a2)
 
 let add_int a i =
   match a with

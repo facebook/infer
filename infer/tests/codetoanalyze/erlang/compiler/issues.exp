@@ -1,6 +1,6 @@
 ----- otp_gen_server -----
-otp_gen_server:fp_test_cast_Ok/0: ok
 otp_gen_server:test_cast_Bad/0: badmatch
+otp_gen_server:test_cast_Ok/0: ok
 
 ----- otp_lists -----
 otp_lists:fp_test_any1_Ok/0: ok

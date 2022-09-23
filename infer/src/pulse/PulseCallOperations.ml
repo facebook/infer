@@ -31,6 +31,16 @@ let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
   else astate
 
 
+(** if the procedure has a variadic number of arguments, its known [formals] will be less than the
+    [actuals] we get but currently there is no support for handling the remaining arguments (the
+    ones in [...]) so we just drop them *)
+let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
+  let proc_attrs = Option.bind ~f:IRAttributes.load proc_name_opt in
+  if Option.exists proc_attrs ~f:(fun {ProcAttributes.is_variadic} -> is_variadic) then
+    List.take actuals (List.length formals)
+  else actuals
+
+
 let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) callee_pname_opt
     ~ret ~actuals ~formals_opt ({AbductiveDomain.post} as astate) =
   let hist =
@@ -141,16 +151,17 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
   | None ->
       havoc_actuals_without_typ_info astate
   | Some formals -> (
-    match
-      List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->
-          havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
-    with
-    | Unequal_lengths ->
-        L.d_printfln "ERROR: formals have length %d but actuals have length %d"
-          (List.length formals) (List.length actuals) ;
-        havoc_actuals_without_typ_info astate
-    | Ok result ->
-        result ) )
+      let actuals = trim_actuals_if_var_arg callee_pname_opt ~actuals ~formals in
+      match
+        List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->
+            havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
+      with
+      | Unequal_lengths ->
+          L.d_printfln "ERROR: formals have length %d but actuals have length %d"
+            (List.length formals) (List.length actuals) ;
+          havoc_actuals_without_typ_info astate
+      | Ok result ->
+          result ) )
   |> add_skipped_proc
 
 
@@ -160,7 +171,9 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   let map_call_result ~is_isl_error_prepost callee_summary ~f =
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary path ~is_isl_error_prepost callee_pname call_loc ~callee_summary
-        ~captured_formals ~captured_actuals ~formals ~actuals astate
+        ~captured_formals ~captured_actuals ~formals
+        ~actuals:(trim_actuals_if_var_arg (Some callee_pname) ~actuals ~formals)
+        astate
     in
     let sat_unsat =
       let** post, return_val_opt, subst = sat_unsat in

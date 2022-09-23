@@ -48,7 +48,21 @@ module type S = sig
   val widen : prev:t -> next:t -> num_iters:int -> t
 end
 
-module Empty : S with type t = unit = struct
+type empty = |
+
+module Empty : S with type t = empty = struct
+  type t = empty
+
+  let leq ~(lhs : t) ~rhs:_ = match lhs with _ -> .
+
+  let pp _fmt (x : t) = match x with _ -> .
+
+  let join (x : t) _ = match x with _ -> .
+
+  let widen ~(prev : t) ~next:_ = match prev with _ -> .
+end
+
+module Unit : S with type t = unit = struct
   type t = unit
 
   let leq ~lhs:() ~rhs:() = true

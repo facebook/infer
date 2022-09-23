@@ -586,6 +586,8 @@ end
 
 let instr_is_return = function Sil.Store {e1= Lvar v} -> Pvar.is_return v | _ -> false
 
+module SilPvar = Pvar
+
 module Pvar = struct
   type kind = Global | Local of Procname.t
 
@@ -768,6 +770,8 @@ module Exp = struct
     | Call of {proc: Procname.qualified_name; args: t list}
     | Cast of Typ.t * t
 
+  let not exp = Call {proc= Procname.of_unop Unop.LNot; args= [exp]}
+
   let rec of_sil decls tenv (e : Exp.t) =
     match e with
     | Var id ->
@@ -935,7 +939,7 @@ module Instr = struct
   type t =
     | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
     | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
-    | Prune of {exp: Exp.t; b: bool; loc: Location.t}
+    | Prune of {exp: Exp.t; loc: Location.t}
     | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}
 
   let pp fmt = function
@@ -963,8 +967,8 @@ module Instr = struct
         let exp2 = Exp.of_sil decls tenv e2 in
         let loc = Location.Unknown in
         Store {exp1; typ; exp2; loc}
-    | Prune (e, _, b, _) ->
-        Prune {exp= Exp.of_sil decls tenv e; b; loc= Location.Unknown}
+    | Prune (e, _, _, _) ->
+        Prune {exp= Exp.of_sil decls tenv e; loc= Location.Unknown}
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
         let procname = TypeName.of_sil_typ_name name |> Procname.make_allocate in
@@ -1027,10 +1031,10 @@ module Instr = struct
         let e2 = Exp.to_sil lang decls_env procname exp2 in
         let loc = Location.to_sil sourcefile loc in
         Store {e1; root_typ= typ; typ; e2; loc}
-    | Prune {exp; b; loc} ->
+    | Prune {exp; loc} ->
         let e = Exp.to_sil lang decls_env procname exp in
         let loc = Location.to_sil sourcefile loc in
-        Prune (e, loc, b, Ik_if {terminated= false})
+        Prune (e, loc, true, Ik_if {terminated= false})
     | Let {id; exp= Call {proc; args= []}; loc} when Procname.is_allocate_object_builtin proc ->
         let typ = SilTyp.mk_struct (TypeName.allocate_buitin_to_java_sil proc.name) in
         let sizeof =
@@ -1125,6 +1129,19 @@ module Terminator = struct
     match t with Ret exp | Throw exp -> Exp.do_not_contain_regular_call exp | Jump _ -> true
 
 
+  let to_sil lang decls_env procname pdesc loc t : Sil.instr option =
+    match t with
+    | Ret exp ->
+        let ret_var = SilPvar.get_ret_pvar (Procname.to_sil lang procname) in
+        let ret_type = Procdesc.get_ret_type pdesc in
+        let e2 = Exp.to_sil lang decls_env procname exp in
+        Some (Sil.Store {e1= SilExp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2; loc})
+    | Jump _ ->
+        None
+    | Throw _ ->
+        None (* TODO (T132392184) *)
+
+
   let of_sil decls tenv label_of_node ~opt_last succs =
     match opt_last with
     | None ->
@@ -1172,6 +1189,9 @@ module Node = struct
            (fun fmt () ->
              F.fprintf fmt "Node %a should not have SSA parameters" NodeName.pp node.label ) ) ;
     let instrs = List.map ~f:(Instr.to_sil lang decls_env procname) node.instrs in
+    let last_loc = Location.to_sil decls_env.Decls.sourcefile node.last_loc in
+    let last = Terminator.to_sil lang decls_env procname pdesc last_loc node.last in
+    let instrs = Option.value_map ~default:instrs ~f:(fun instr -> instrs @ [instr]) last in
     let loc = Location.to_sil decls_env.Decls.sourcefile node.label_loc in
     let nkind = Procdesc.Node.Stmt_node MethodBody in
     Procdesc.create_node pdesc loc nkind instrs
@@ -1300,7 +1320,6 @@ module Procdesc = struct
     let normal_succ : Terminator.t -> Procdesc.Node.t list = function
       | Ret _ ->
           [exit_node]
-      (* FIXME: generate a ret assignment *)
       | Jump l ->
           List.map
             ~f:(fun ({label} : Terminator.node_call) -> Hashtbl.find node_map label.value |> snd)

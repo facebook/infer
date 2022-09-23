@@ -600,6 +600,10 @@ let matchers : matcher list =
     StringSet.of_list
       ["add"; "addAll"; "append"; "delete"; "remove"; "replace"; "poll"; "put"; "putAll"]
   in
+  let cpp_push_back_without_desc vector : model =
+   fun ({callee_procname} as model_data) astate ->
+    Cplusplus.Vector.push_back vector ~desc:(Procname.to_string callee_procname) model_data astate
+  in
   let map_context_tenv f (x, _) = f x in
   [ +BuiltinDecl.(match_builtin __java_throw) <>--> throw
   ; +BuiltinDecl.(match_builtin __unwrap_exception)
@@ -711,7 +715,7 @@ let matchers : matcher list =
     $--> Collection.clear ~desc:"Collection.clear()"
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
-    <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
+    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "<init>" <>$ capt_arg_payload
     $--> Collection.init ~desc:"Map.init()"
@@ -734,16 +738,16 @@ let matchers : matcher list =
     $--> Collection.clear ~desc:"Map.clear()"
   ; +map_context_tenv PatternMatch.Java.implements_queue
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
-    <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
+    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
   ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
-    <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
+    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
   ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
     &:: "setLength" <>$ capt_arg_payload
     $+...$--> Cplusplus.Vector.invalidate_references ShrinkToFit
   ; +map_context_tenv (PatternMatch.Java.implements_lang "String")
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
-    <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
+    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
     &:: "<init>" $ capt_arg_payload $+ capt_arg_payload $--> Integer.init
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
@@ -761,7 +765,7 @@ let matchers : matcher list =
   ; +map_context_tenv PatternMatch.Java.implements_iterator
     &:: "remove" <>$ capt_arg_payload $+...$--> Iterator.remove ~desc:"remove"
   ; +map_context_tenv PatternMatch.Java.implements_map
-    &:: "putAll" <>$ capt_arg_payload $+...$--> Cplusplus.Vector.push_back
+    &:: "putAll" <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
   ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Cplusplus.Vector.reserve
   ; -"std" &:: "vector" &:: "size" &--> Basic.nondet ~desc:"std::vector::size"
   ; +map_context_tenv PatternMatch.Java.implements_collection
