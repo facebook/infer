@@ -273,6 +273,8 @@ val is_destructor : t -> bool
 
 val is_java_static_method : t -> bool
 
+val is_java_instance_method : t -> bool
+
 val is_java_access_method : t -> bool
 
 val is_java_class_initializer : t -> bool

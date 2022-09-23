@@ -226,6 +226,8 @@ module Java = struct
 
   let is_static {kind} = match kind with Static -> true | _ -> false
 
+  let is_instance x = not (is_static x)
+
   let is_lambda {method_name} = String.is_prefix ~prefix:"lambda$" method_name
 
   let is_generated {method_name} = String.is_prefix ~prefix:"$" method_name
@@ -809,6 +811,8 @@ let is_c_method t = match base_of t with ObjC_Cpp _ -> true | _ -> false
 let is_java_lift f t = match base_of t with Java java_pname -> f java_pname | _ -> false
 
 let is_java_static_method = is_java_lift Java.is_static
+
+let is_java_instance_method = is_java_lift Java.is_instance
 
 let is_java_access_method = is_java_lift Java.is_access_method
 
