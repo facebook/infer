@@ -7,23 +7,26 @@
 
 (** An execution history is a current instruction pointer and some
     predecessors. [preds] are empty iff this is an entrypoint. *)
-type t = {curr: Llair.IP.t; preds: t iarray} [@@deriving sexp_of]
+type t = Init | Step of {curr: Llair.IP.t; preds: t iarray}
+[@@deriving sexp_of]
 
-let init ip = {curr= ip; preds= IArray.empty}
-let extend curr preds = {curr; preds= IArray.of_list preds}
+let init = Init
+let extend curr preds = Step {curr; preds= IArray.of_list preds}
 
 let dump h fs =
   (* todo: output nicely-formatted DAG; just printing a single
      arbitrarily-chosen witness path from the root for now. *)
   let path =
-    let rec path_impl h =
-      let tail =
-        if IArray.is_empty h.preds then []
-        else path_impl (IArray.get h.preds 0)
-      in
-      if Llair.IP.index h.curr = 0 || IArray.length h.preds > 1 then
-        h.curr :: tail
-      else tail
+    let rec path_impl = function
+      | Init -> []
+      | Step {curr; preds} ->
+          let tail =
+            if IArray.is_empty preds then []
+            else path_impl (IArray.get preds 0)
+          in
+          if Llair.IP.index curr = 0 || IArray.length preds > 1 then
+            curr :: tail
+          else tail
     in
     path_impl >> List.rev
   in

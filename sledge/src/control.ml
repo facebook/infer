@@ -769,7 +769,7 @@ struct
       let depths = Depths.empty in
       let queue = Queue.create () in
       let cursor = Cursor.empty in
-      let history = History.init ip in
+      let history = History.init in
       enqueue depth
         {ctrl= edge; state; threads; switches; depths; goal; history}
         (queue, cursor)
