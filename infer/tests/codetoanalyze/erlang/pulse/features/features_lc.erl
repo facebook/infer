@@ -9,7 +9,7 @@
     test_empty_Ok/0,
     test_empty_Bad/0,
     test_simple1_Ok/0,
-    fn_test_simple1a_Bad/0,
+    test_simple1a_Bad/0,
     test_simple1_Bad/0,
     test_simple2_Ok/0,
     test_simple2_Bad/0,
@@ -51,8 +51,7 @@ test_simple1_Ok() ->
         _ -> warn(1)
     end.
 
-% TODO: T101559895
-fn_test_simple1a_Bad() ->
+test_simple1a_Bad() ->
     L = [X || X <- [3]],
     case L of
         [4] -> ok
