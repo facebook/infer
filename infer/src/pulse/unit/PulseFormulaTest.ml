@@ -412,9 +412,7 @@ let%test_module "intervals" =
     (* same as above but we stop earlier to see that intervals infer that [x = 2] *)
     let%expect_test "integer equality consequence" =
       simplify ~keep:[x_var] (x >= i 0 && x < i 3 && x <> i 0 && x <> i 1) ;
-      [%expect
-        {|
-        conditions: (empty) phi: var_eqs: a1=x && linear_eqs: a1 = 2 && term_eqs: 2=a1 && intervals: a1=2 |}]
+      [%expect {|conditions: (empty) phi: linear_eqs: x = 2 && term_eqs: 2=x && intervals: x=2|}]
 
     let%expect_test "interval intersection" =
       normalize (x >= i 0 && x < i 3 && x <> i 0 && y >= i 2 && y < i 10 && x = y) ;

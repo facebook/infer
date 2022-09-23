@@ -2632,19 +2632,30 @@ end = struct
     ; atoms= subst_var_atoms subst atoms }
 
 
-  let extend_with_restricted_reps_of keep var_eqs =
-    VarUF.fold_congruences var_eqs ~init:keep ~f:(fun acc (repr, vs) ->
+  let extend_with_restricted_reps_of keep formula =
+    (* extending [keep] with a restricted variable [a] when there is [x∈keep] such that [x=a] so
+       that we remember that [x≥0] is not interesting if we know the more precise fact that [x=c]
+       for some constant [c≥0]. Furthermore, we don't need to check that [c≥0] when we find that
+       [x=a=c] because [c<0] would be a contradiction already detected by the tableau at an earlier
+       step. *)
+    let is_constant repr =
+      Var.Map.find_opt repr formula.phi.linear_eqs
+      |> Option.exists ~f:(fun linear -> LinArith.get_as_const linear |> Option.is_some)
+    in
+    VarUF.fold_congruences formula.phi.var_eqs ~init:keep ~f:(fun acc (repr, vs) ->
         let repr = (repr :> Var.t) in
         if
           Var.is_restricted repr
+          && (not (is_constant repr))
           && Var.Set.exists (fun v -> Var.is_unrestricted v && Var.Set.mem v keep) vs
         then Var.Set.add repr acc
         else acc )
 
 
   let eliminate_vars ~precondition_vocabulary ~keep formula =
-    (* Beware of not losing information: if [x=u] with [u] is restricted then [x≥0], so extend [keep] accordingly. *)
-    let keep = extend_with_restricted_reps_of keep formula.phi.var_eqs in
+    (* Beware of not losing information: if [x=u] with [u] is restricted then [x≥0], so extend
+       [keep] accordingly. *)
+    let keep = extend_with_restricted_reps_of keep formula in
     let subst = VarUF.reorient formula.phi.var_eqs ~should_keep:(fun x -> Var.Set.mem x keep) in
     try
       Sat
