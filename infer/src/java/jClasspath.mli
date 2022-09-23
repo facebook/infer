@@ -10,7 +10,7 @@ open! IStd
 open Javalib_pack
 
 (** map entry for source files with potential basename collision within the same compiler call *)
-type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
+type file_entry = Singleton of SourceFile.t | Duplicate of (string list * SourceFile.t) list
 
 type t =
   { classpath_channel: Javalib.class_path
