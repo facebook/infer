@@ -11,6 +11,7 @@ Supported languages:
 - C/C++/ObjC: Experimental
 - C#/.Net: No
 - Erlang: Experimental
+- Hack: No
 - Java: Experimental
 
 # Topl
