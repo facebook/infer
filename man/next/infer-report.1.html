@@ -45,7 +45,8 @@ compute and manipulate infer reports</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer report
---issues-tests <br>
+<br>
+infer report --issues-tests <br>
 infer report --cost-issues-tests <br>
 infer report --config-impact-issues-tests <br>
 infer report --merge-report</b> <i>dir1 ...</i>
@@ -56,9 +57,11 @@ infer report --merge-report</b> <i>dir1 ...</i>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Write out
-issues in a format suitable for tests, or merge multiple
-JSON reports in one with <b>--merge-report</b>.</p>
+<p style="margin-left:11%; margin-top: 1em">When used
+without parameters, generate report output in Json. With a
+<b>--tests</b> parameter, write out issues in a format
+suitable for tests. With <b>--merge-report</b>, merge
+multiple JSON reports in one.</p>
 
 <h2>OPTIONS
 <a name="OPTIONS"></a>
@@ -394,7 +397,10 @@ PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
 <br>
 PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by <br>
 default), <br>
+PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
+<br>
 PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_RETURN (disabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
