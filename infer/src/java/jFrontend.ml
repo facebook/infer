@@ -203,12 +203,13 @@ let should_capture package_opt source_basename classname node =
   | None ->
       false
   | Some found_basename -> (
-    match package_opt with
-    | None ->
-        String.equal found_basename source_basename
-    | Some pkg ->
-        List.equal String.equal pkg (JBasics.cn_package classname)
-        && String.equal found_basename source_basename )
+      String.equal found_basename source_basename
+      &&
+      match package_opt with
+      | None ->
+          true
+      | Some pkg ->
+          List.equal String.equal pkg (JBasics.cn_package classname) )
 
 
 (* Computes the control - flow graph and call - graph of a given source file.
