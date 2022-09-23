@@ -33,7 +33,7 @@ let alarm_count = ref 0
 let alarm alrm ~dp_witness =
   Int.incr alarm_count ;
   Format.printf "@\n@[<v 2>%a@]@." Alarm.pp alrm ;
-  [%Dbg.printf "@\n@[<v 2> %t@ %a@]@." dp_witness Alarm.pp_trace alrm] ;
+  Format.printf "@\n@[<v 2> %t@ %a@]@." dp_witness Alarm.pp_trace alrm ;
   Stop.on_alarm alrm
 
 let unknown_call call =
@@ -49,7 +49,7 @@ let unknown_call call =
   Stop.on_unknown_call ()
 
 let reached_goal ~dp_goal ~dp_witness =
-  [%Dbg.printf "@\n@[<v 2> %t@ %t@]@." dp_witness dp_goal] ;
+  Format.printf "@\n@[<v 2> %t@ %t@]@." dp_witness dp_goal ;
   Stop.on_reached_goal ~dp_witness !steps ()
 
 let unreachable_goal ~dp_path =
