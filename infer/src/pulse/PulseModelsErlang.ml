@@ -969,16 +969,29 @@ module BIF = struct
    fun {location; path; ret= ret_id, _} astate ->
     let cons_typ = Typ.mk_struct (ErlangType Cons) in
     let nil_typ = Typ.mk_struct (ErlangType Nil) in
-    let is_cons = AbstractValue.mk_fresh () in
-    let is_nil = AbstractValue.mk_fresh () in
-    let is_list = AbstractValue.mk_fresh () in
-    let<**> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
-    let<**> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
-    let<**> astate, is_list =
-      PulseArithmetic.eval_binop is_list Binop.LOr (AbstractValueOperand is_cons)
-        (AbstractValueOperand is_nil) astate
+    let astate_is_cons =
+      let is_cons = AbstractValue.mk_fresh () in
+      let<**> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
+      let<**> astate = PulseArithmetic.prune_positive is_cons astate in
+      Atoms.write_return_from_bool path location is_cons ret_id astate
     in
-    Atoms.write_return_from_bool path location is_list ret_id astate
+    let astate_is_nil =
+      let is_nil = AbstractValue.mk_fresh () in
+      let<**> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
+      let<**> astate = PulseArithmetic.prune_positive is_nil astate in
+      Atoms.write_return_from_bool path location is_nil ret_id astate
+    in
+    let astate_not_list =
+      let is_cons = AbstractValue.mk_fresh () in
+      let is_nil = AbstractValue.mk_fresh () in
+      let<**> astate = PulseArithmetic.and_equal_instanceof is_cons list_val cons_typ astate in
+      let<**> astate = PulseArithmetic.prune_eq_zero is_cons astate in
+      let<**> astate = PulseArithmetic.and_equal_instanceof is_nil list_val nil_typ astate in
+      let<**> astate = PulseArithmetic.prune_eq_zero is_nil astate in
+      (* At this point, both [is_cons] and [is_nil] are false so we can return any of them. *)
+      Atoms.write_return_from_bool path location is_nil ret_id astate
+    in
+    astate_is_cons @ astate_is_nil @ astate_not_list
 
 
   let is_map x : model = has_type x Map
