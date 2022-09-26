@@ -175,7 +175,8 @@ let create_specialized_procdesc callee_pname ~extra_formals_to_closures ~capture
                   in
                   let specialized_pdesc = Procdesc.from_proc_attributes new_attributes in
                   Procdesc.deep_copy_code_from_pdesc ~orig_pdesc ~dest_pdesc:specialized_pdesc ;
-                  IRAttributes.store ~proc_desc:(Some specialized_pdesc) new_attributes ;
+                  IRAttributes.store ~proc_desc:(Some specialized_pdesc) new_attributes
+                    ~analysis:true ;
                   Some specialized_pname )
                 else (* No procdesc to specialize: not defined *)
                   None )

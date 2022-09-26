@@ -10,14 +10,20 @@ module F = Format
 module L = Logging
 
 let get_all ~filter () =
-  let db = Database.get_database CaptureDatabase in
-  let stmt = Sqlite3.prepare db "SELECT proc_attributes FROM procedures" in
-  SqliteUtils.result_fold_rows db ~log:"reading all procedure names" stmt ~init:[]
-    ~f:(fun rev_results stmt ->
-      let attrs = Sqlite3.column stmt 0 |> ProcAttributes.SQLite.deserialize in
-      let source_file = attrs.ProcAttributes.translation_unit in
-      let proc_name = ProcAttributes.get_proc_name attrs in
-      if filter source_file proc_name then proc_name :: rev_results else rev_results )
+  let query_str = "SELECT proc_attributes FROM procedures" in
+  let adb = Database.get_database AnalysisDatabase in
+  let cdb = Database.get_database CaptureDatabase in
+  let adb_stmt = Sqlite3.prepare adb query_str in
+  let cdb_stmt = Sqlite3.prepare cdb query_str in
+  let run_query_fold db log stmt init =
+    SqliteUtils.result_fold_rows db ~log stmt ~init ~f:(fun rev_results stmt ->
+        let attrs = Sqlite3.column stmt 0 |> ProcAttributes.SQLite.deserialize in
+        let source_file = attrs.ProcAttributes.translation_unit in
+        let proc_name = ProcAttributes.get_proc_name attrs in
+        if filter source_file proc_name then proc_name :: rev_results else rev_results )
+  in
+  run_query_fold cdb "reading all procedure names capturedb" cdb_stmt []
+  |> run_query_fold adb "reading all procedure names analysisdb" adb_stmt
 
 
 let select_proc_names_interactive ~filter =

@@ -167,7 +167,7 @@ let create_specialized_procdesc callee_pname callee_pdesc aliases =
           PvarSpecialization.exec_instr specialized_pname instr )
     in
     if has_changed then (
-      IRAttributes.store ~proc_desc:(Some specialized_pdesc) new_attributes ;
+      IRAttributes.store ~proc_desc:(Some specialized_pdesc) new_attributes ~analysis:true ;
       Some specialized_pname )
     else None
 

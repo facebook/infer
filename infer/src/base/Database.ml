@@ -82,6 +82,7 @@ let create_tables ?(prefix = "") db = function
       create_procedures_table ~prefix db ;
       create_source_files_table ~prefix db
   | AnalysisDatabase ->
+      create_procedures_table ~prefix db ;
       create_specs_tables ~prefix db
 
 

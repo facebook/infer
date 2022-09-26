@@ -11,7 +11,7 @@ module F = Format
 
 module Implementation = struct
   let replace_attributes =
-    let attribute_replace_statement =
+    let do_attribute_replace_statement db =
       (* The innermost SELECT returns 1 iff there is a row with the same procedure uid but which is strictly
          more defined than the one we are trying to store. This is either because the stored proc has a CFG
          and ours doesn't, or because the procedures are equally (un)defined but the attributes of the stored
@@ -21,7 +21,7 @@ module Implementation = struct
          nothing. *)
       (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
          values so the lexicographic ordering for (:cgf, :proc_attributes) is done by hand *)
-      Database.register_statement CaptureDatabase
+      Database.register_statement db
         {|
           INSERT OR REPLACE INTO procedures
           SELECT :uid, :pattr, :cfg, :callees
@@ -38,17 +38,23 @@ module Implementation = struct
           )
         |}
     in
-    fun ~proc_uid ~proc_attributes ~cfg ~callees ->
-      Database.with_registered_statement attribute_replace_statement ~f:(fun db replace_stmt ->
-          Sqlite3.bind replace_stmt 1 (* :proc_uid *) (Sqlite3.Data.TEXT proc_uid)
-          |> SqliteUtils.check_result_code db ~log:"replace bind proc_uid" ;
-          Sqlite3.bind replace_stmt 2 (* :pattr *) proc_attributes
-          |> SqliteUtils.check_result_code db ~log:"replace bind proc proc_attributes" ;
-          Sqlite3.bind replace_stmt 3 (* :cfg *) cfg
-          |> SqliteUtils.check_result_code db ~log:"replace bind cfg" ;
-          Sqlite3.bind replace_stmt 4 (* :callees *) callees
-          |> SqliteUtils.check_result_code db ~log:"replace bind callees" ;
-          SqliteUtils.result_unit db ~finalize:false ~log:"replace_attributes" replace_stmt )
+    let attribute_replace_statement_adb = do_attribute_replace_statement AnalysisDatabase in
+    let attribute_replace_statement_cdb = do_attribute_replace_statement CaptureDatabase in
+    fun ~proc_uid ~proc_attributes ~cfg ~callees ~analysis ->
+      let run_query stmt =
+        Database.with_registered_statement stmt ~f:(fun db replace_stmt ->
+            Sqlite3.bind replace_stmt 1 (* :proc_uid *) (Sqlite3.Data.TEXT proc_uid)
+            |> SqliteUtils.check_result_code db ~log:"replace bind proc_uid" ;
+            Sqlite3.bind replace_stmt 2 (* :pattr *) proc_attributes
+            |> SqliteUtils.check_result_code db ~log:"replace bind proc proc_attributes" ;
+            Sqlite3.bind replace_stmt 3 (* :cfg *) cfg
+            |> SqliteUtils.check_result_code db ~log:"replace bind cfg" ;
+            Sqlite3.bind replace_stmt 4 (* :callees *) callees
+            |> SqliteUtils.check_result_code db ~log:"replace bind callees" ;
+            SqliteUtils.result_unit db ~finalize:false ~log:"replace_attributes" replace_stmt )
+      in
+      if analysis then run_query attribute_replace_statement_adb
+      else run_query attribute_replace_statement_cdb
 
 
   let add_source_file =
@@ -245,7 +251,8 @@ module Command = struct
         { proc_uid: string
         ; proc_attributes: Sqlite3.Data.t
         ; cfg: Sqlite3.Data.t
-        ; callees: Sqlite3.Data.t }
+        ; callees: Sqlite3.Data.t
+        ; analysis: bool }
     | ResetCaptureTables
     | Terminate
 
@@ -293,8 +300,8 @@ module Command = struct
         Implementation.merge infer_deps_file
     | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
         Implementation.store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary
-    | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees} ->
-        Implementation.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees
+    | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis} ->
+        Implementation.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis
     | ResetCaptureTables ->
         Implementation.reset_capture_tables ()
     | Terminate ->
@@ -432,8 +439,8 @@ let start () = Server.start ()
 
 let stop () = try Server.send Command.Terminate with Unix.Unix_error _ -> ()
 
-let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees =
-  perform (ReplaceAttributes {proc_uid; proc_attributes; cfg; callees})
+let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis =
+  perform (ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis})
 
 
 let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =

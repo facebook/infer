@@ -932,12 +932,21 @@ module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
 end)
 
 let load =
-  let load_statement =
-    Database.register_statement CaptureDatabase "SELECT cfg FROM procedures WHERE proc_uid = :k"
+  let load_statement db =
+    Database.register_statement db "SELECT cfg FROM procedures WHERE proc_uid = :k"
   in
+  let load_statement_adb = load_statement AnalysisDatabase in
+  let load_statement_cdb = load_statement CaptureDatabase in
   fun pname ->
-    Database.with_registered_statement load_statement ~f:(fun db stmt ->
-        Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id pname))
-        |> SqliteUtils.check_result_code db ~log:"load bind proc_uid" ;
-        SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
-        |> Option.bind ~f:SQLite.deserialize )
+    let run_query stmt =
+      Database.with_registered_statement stmt ~f:(fun db stmt ->
+          Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id pname))
+          |> SqliteUtils.check_result_code db ~log:"load bind proc_uid" ;
+          SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
+          |> Option.bind ~f:SQLite.deserialize )
+    in
+    (* Since the procedure table can be updated in the analysis phase,
+       we need to query both databases, analysisdb first *)
+    IOption.if_none_evalopt
+      ~f:(fun () -> run_query load_statement_cdb)
+      (run_query load_statement_adb)

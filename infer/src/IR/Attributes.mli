@@ -9,7 +9,7 @@
 
 open! IStd
 
-val store : proc_desc:Procdesc.t option -> ProcAttributes.t -> unit
+val store : proc_desc:Procdesc.t option -> ProcAttributes.t -> analysis:bool -> unit
 (** Save .attr file for the procedure into the attributes database. *)
 
 val load_from_uid : string -> ProcAttributes.t option

@@ -16,6 +16,7 @@ val replace_attributes :
   -> proc_attributes:Sqlite3.Data.t
   -> cfg:Sqlite3.Data.t
   -> callees:Sqlite3.Data.t
+  -> analysis:bool
   -> unit
 
 val add_source_file :
