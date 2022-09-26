@@ -917,10 +917,13 @@ struct
     ;
     let ip = Llair.IP.mk entry in
     let goal = Goal.update_after_call name ams.goal in
-    if goal != ams.goal && Goal.reached goal then
-      Report.reached_goal
-        ~dp_goal:(fun fs -> Goal.pp fs goal)
-        ~dp_witness:(History.dump (History.extend ip [history])) ;
+    ( if goal != ams.goal && Goal.reached goal then
+      let dp_witness fs =
+        History.dump (History.extend ip [history]) fs ;
+        Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
+      in
+      Report.reached_goal ~dp_goal:(fun fs -> Goal.pp fs goal) ~dp_witness
+    ) ;
     let dnf_states =
       if Config.function_summaries then D.dnf state
       else Iter.singleton state
@@ -967,10 +970,13 @@ struct
     [%Dbg.call fun {pf} -> pf " t%i@ from: %a" tid Llair.FuncName.pp name]
     ;
     let goal = Goal.update_after_retn name ams.goal in
-    if goal != ams.goal && Goal.reached goal then
-      Report.reached_goal
-        ~dp_goal:(fun fs -> Goal.pp fs goal)
-        ~dp_witness:(History.dump (History.extend ip [history])) ;
+    ( if goal != ams.goal && Goal.reached goal then
+      let dp_witness fs =
+        History.dump (History.extend ip [history]) fs ;
+        Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
+      in
+      Report.reached_goal ~dp_goal:(fun fs -> Goal.pp fs goal) ~dp_witness
+    ) ;
     let summarize post_state =
       if not Config.function_summaries then post_state
       else
