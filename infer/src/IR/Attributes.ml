@@ -9,10 +9,11 @@ open! IStd
 
 let find =
   let select_statement =
-    ResultsDatabase.register_statement "SELECT proc_attributes FROM procedures WHERE proc_uid = :k"
+    Database.register_statement CaptureDatabase
+      "SELECT proc_attributes FROM procedures WHERE proc_uid = :k"
   in
   fun proc_uid ->
-    ResultsDatabase.with_registered_statement select_statement ~f:(fun db select_stmt ->
+    Database.with_registered_statement select_statement ~f:(fun db select_stmt ->
         Sqlite3.bind select_stmt 1 (Sqlite3.Data.TEXT proc_uid)
         |> SqliteUtils.check_result_code db ~log:"find bind proc name" ;
         SqliteUtils.result_single_column_option ~finalize:false ~log:"Attributes.find" db

@@ -7,14 +7,18 @@
 
 open! IStd
 
+type id =
+  | CaptureDatabase  (** the capture databse **)
+  | AnalysisDatabase  (** the analysis/summaries database **)
+
 val schema_hum : string
 (** some human-readable string describing the tables *)
 
-val create_tables : ?prefix:string -> Sqlite3.db -> unit
+val create_tables : ?prefix:string -> Sqlite3.db -> id -> unit
 
-val get_database : unit -> Sqlite3.db
-(** The results database. You should always use this function to access the database, as the
-    connection to it may change during the execution (see [new_database_connection]). *)
+val get_database : id -> Sqlite3.db
+(** You should always use this function to access the database, as the connection to it may change
+    during the execution (see [new_database_connection]). *)
 
 val new_database_connection : unit -> unit
 (** Closes the previous connection to the database (if any), and opens a new one. Needed after calls
@@ -28,7 +32,7 @@ val create_db : unit -> unit
 
 type registered_stmt
 
-val register_statement : ('a, unit, string, registered_stmt) Base.format4 -> 'a
+val register_statement : id -> ('a, unit, string, registered_stmt) Base.format4 -> 'a
 (** Return a function unit -> Sqlite3.stmt that can be called (once the DB has been initialized) to
     get the prepared statement corresponding to the current DB connection. Use this to prepare
     statements only once per DB connection.

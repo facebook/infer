@@ -18,8 +18,8 @@ module RunState = struct
     { run_sequence= []
     ; results_dir_format=
         Printf.sprintf "db_filename: %s\ndb_schema: %s"
-          (ResultsDirEntryName.get_path ~results_dir:"infer-out" CaptureDB)
-          ResultsDatabase.schema_hum
+          (ResultsDirEntryName.get_path ~results_dir:"infer-out" AnalysisDB)
+          Database.schema_hum
     ; should_merge_capture= false }
 
 
@@ -81,9 +81,9 @@ module RunState = struct
 end
 
 let is_results_dir () =
-  let capture_db_path = get_path CaptureDB in
-  let has_all_markers = Sys.is_file capture_db_path = `Yes in
-  Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" capture_db_path)
+  let results_db_path = get_path AnalysisDB in
+  let has_all_markers = Sys.is_file results_db_path = `Yes in
+  Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" results_db_path)
 
 
 let non_empty_directory_exists results_dir =
@@ -107,8 +107,8 @@ let remove_results_dir () =
 let prepare_logging_and_db () =
   L.setup_log_file () ;
   PerfEvent.init () ;
-  if Sys.is_file (get_path CaptureDB) <> `Yes then ResultsDatabase.create_db () ;
-  ResultsDatabase.new_database_connection ()
+  if Sys.is_file (get_path AnalysisDB) <> `Yes then Database.create_db () ;
+  Database.new_database_connection ()
 
 
 let create_results_dir () =
@@ -152,6 +152,6 @@ let scrub_for_caching () =
   in
   if cache_capture then DBWriter.canonicalize () ;
   (* make sure we are done with the database *)
-  ResultsDatabase.db_close () ;
+  Database.db_close () ;
   List.iter ~f:Utils.rmtree
     (ResultsDirEntryName.to_delete_before_caching_capture ~results_dir:Config.results_dir)

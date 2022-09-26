@@ -21,7 +21,7 @@ module Implementation = struct
          nothing. *)
       (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
          values so the lexicographic ordering for (:cgf, :proc_attributes) is done by hand *)
-      ResultsDatabase.register_statement
+      Database.register_statement CaptureDatabase
         {|
           INSERT OR REPLACE INTO procedures
           SELECT :uid, :pattr, :cfg, :callees
@@ -39,8 +39,7 @@ module Implementation = struct
         |}
     in
     fun ~proc_uid ~proc_attributes ~cfg ~callees ->
-      ResultsDatabase.with_registered_statement attribute_replace_statement
-        ~f:(fun db replace_stmt ->
+      Database.with_registered_statement attribute_replace_statement ~f:(fun db replace_stmt ->
           Sqlite3.bind replace_stmt 1 (* :proc_uid *) (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"replace bind proc_uid" ;
           Sqlite3.bind replace_stmt 2 (* :pattr *) proc_attributes
@@ -54,14 +53,14 @@ module Implementation = struct
 
   let add_source_file =
     let source_file_store_statement =
-      ResultsDatabase.register_statement
+      Database.register_statement CaptureDatabase
         {|
           INSERT OR REPLACE INTO source_files
           VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured)
         |}
     in
     fun ~source_file ~tenv ~integer_type_widths ~proc_names ->
-      ResultsDatabase.with_registered_statement source_file_store_statement ~f:(fun db store_stmt ->
+      Database.with_registered_statement source_file_store_statement ~f:(fun db store_stmt ->
           Sqlite3.bind store_stmt 1 source_file
           (* :source *)
           |> SqliteUtils.check_result_code db ~log:"store bind source file" ;
@@ -81,7 +80,7 @@ module Implementation = struct
 
 
   let mark_all_source_files_stale () =
-    ResultsDatabase.get_database ()
+    Database.get_database CaptureDatabase
     |> SqliteUtils.exec ~stmt:"UPDATE source_files SET freshly_captured = 0" ~log:"mark_all_stale"
 
 
@@ -90,7 +89,7 @@ module Implementation = struct
        sub-table and the main one, and applying the same "more defined" logic as in [replace_attributes] in the
        cases where a proc_name is present in both the sub-table and the main one (main.proc_uid !=
        NULL). All the rows that pass this filter are inserted/updated into the main table. *)
-    ResultsDatabase.get_database ()
+    Database.get_database CaptureDatabase
     |> SqliteUtils.exec
          ~log:(Printf.sprintf "copying procedures of database '%s'" db_file)
          ~stmt:
@@ -115,7 +114,7 @@ module Implementation = struct
 
 
   let merge_source_files_table ~db_file =
-    ResultsDatabase.get_database ()
+    Database.get_database CaptureDatabase
     |> SqliteUtils.exec
          ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
          ~stmt:
@@ -137,7 +136,7 @@ module Implementation = struct
     let db_file = ResultsDirEntryName.get_path ~results_dir:infer_out_src CaptureDB in
     if not (ISys.file_exists db_file) then
       L.die InternalError "Tried to merge in DB at %s but path does not exist.@\n" db_file ;
-    let main_db = ResultsDatabase.get_database () in
+    let main_db = Database.get_database CaptureDatabase in
     SqliteUtils.exec main_db
       ~stmt:(Printf.sprintf "ATTACH '%s' AS attached" db_file)
       ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
@@ -148,24 +147,24 @@ module Implementation = struct
 
 
   let merge infer_deps_file =
-    let main_db = ResultsDatabase.get_database () in
+    let main_db = Database.get_database CaptureDatabase in
     SqliteUtils.exec main_db ~stmt:"ATTACH ':memory:' AS memdb" ~log:"attaching memdb" ;
-    ResultsDatabase.create_tables ~prefix:"memdb." main_db ;
+    Database.create_tables ~prefix:"memdb." main_db CaptureDatabase ;
     Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
     copy_to_main main_db ;
     SqliteUtils.exec main_db ~stmt:"DETACH memdb" ~log:"detaching memdb"
 
 
   let canonicalize () =
-    ResultsDatabase.get_database ()
+    Database.get_database AnalysisDatabase
     |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
 
 
   let reset_capture_tables () =
-    let db = ResultsDatabase.get_database () in
+    let db = Database.get_database CaptureDatabase in
     SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
     SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"DROP TABLE source_files" ;
-    ResultsDatabase.create_tables db
+    Database.create_tables db CaptureDatabase
 
 
   module IntHash = Caml.Hashtbl.Make (Int)
@@ -184,7 +183,7 @@ module Implementation = struct
 
   let store_spec =
     let store_statement =
-      ResultsDatabase.register_statement
+      Database.register_statement AnalysisDatabase
         {|
           INSERT OR REPLACE INTO specs
           VALUES (:proc_uid, :proc_name, :analysis_summary, :report_summary)
@@ -196,7 +195,7 @@ module Implementation = struct
       |> Option.value_map ~default:0 ~f:(( + ) 1)
       (* [default] is 0 as we are only counting overwrites *)
       |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
-      ResultsDatabase.with_registered_statement store_statement ~f:(fun db store_stmt ->
+      Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
           Sqlite3.bind store_stmt 1 (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"store spec bind proc_uid" ;
           Sqlite3.bind store_stmt 2 proc_name
@@ -210,18 +209,18 @@ module Implementation = struct
 
   let delete_spec =
     let delete_statement =
-      ResultsDatabase.register_statement "DELETE FROM specs WHERE proc_uid = :k"
+      Database.register_statement AnalysisDatabase "DELETE FROM specs WHERE proc_uid = :k"
     in
     fun ~proc_uid ->
-      ResultsDatabase.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
+      Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
           Sqlite3.bind delete_stmt 1 (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_uid" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db delete_stmt )
 
 
   let delete_all_specs () =
-    ResultsDatabase.get_database ()
-    |> SqliteUtils.exec ~log:"drop procedures table" ~stmt:"DELETE FROM specs"
+    Database.get_database AnalysisDatabase
+    |> SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs"
 end
 
 module Command = struct

@@ -10,7 +10,7 @@ module F = Format
 module L = Logging
 
 let get_all ~filter () =
-  let db = ResultsDatabase.get_database () in
+  let db = Database.get_database CaptureDatabase in
   let stmt = Sqlite3.prepare db "SELECT proc_attributes FROM procedures" in
   SqliteUtils.result_fold_rows db ~log:"reading all procedure names" stmt ~init:[]
     ~f:(fun rev_results stmt ->
@@ -62,7 +62,7 @@ let select_proc_names_interactive ~filter =
 
 let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_cond ~proc_attributes
     ~proc_cfg fmt () =
-  let db = ResultsDatabase.get_database () in
+  let db = Database.get_database CaptureDatabase in
   let deserialize_bool_int = function
     | Sqlite3.Data.INT int64 -> (
       match Int64.to_int_exn int64 with 0 -> false | _ -> true )

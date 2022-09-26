@@ -8,7 +8,7 @@
 open! IStd
 
 let scan_model_proc_names () =
-  let db = ResultsDatabase.get_database () in
+  let db = Database.get_database AnalysisDatabase in
   Sqlite3.prepare db "SELECT proc_uid FROM model_specs"
   |> SqliteUtils.result_fold_single_column_rows db ~log:"scan model procnames"
        ~init:String.Set.empty ~f:(fun acc proc_uid_sqlite ->

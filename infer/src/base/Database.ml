@@ -8,6 +8,8 @@
 open! IStd
 module L = Logging
 
+type id = CaptureDatabase | AnalysisDatabase
+
 (** cannot use {!ResultsDir.get_path} due to circular dependency so re-implement it *)
 let results_dir_get_path entry = ResultsDirEntryName.get_path ~results_dir:Config.results_dir entry
 
@@ -75,14 +77,17 @@ let create_specs_tables ~prefix db =
   SqliteUtils.exec db ~log:"creating model specs table" ~stmt:(model_specs_schema prefix)
 
 
-let create_tables ?(prefix = "") db =
-  create_procedures_table ~prefix db ;
-  create_source_files_table ~prefix db ;
-  create_specs_tables ~prefix db
+let create_tables ?(prefix = "") db = function
+  | CaptureDatabase ->
+      create_procedures_table ~prefix db ;
+      create_source_files_table ~prefix db
+  | AnalysisDatabase ->
+      create_specs_tables ~prefix db
 
 
-let load_model_specs db =
-  if Config.is_checker_enabled Biabduction && not Config.biabduction_models_mode then
+let load_model_specs db = function
+  | AnalysisDatabase
+    when Config.is_checker_enabled Biabduction && not Config.biabduction_models_mode -> (
     try
       let time0 = Mtime_clock.counter () in
       SqliteUtils.exec db ~log:"begin transaction" ~stmt:"BEGIN IMMEDIATE TRANSACTION" ;
@@ -91,15 +96,28 @@ let load_model_specs db =
       SqliteUtils.exec db ~log:"commit transaction" ~stmt:"COMMIT" ;
       L.debug Capture Quiet "Loading models took %a@." Mtime.Span.pp (Mtime_clock.count time0)
     with Sys_error _ ->
-      L.die ExternalError "Could not load model file %s@." Config.biabduction_models_sql
+      L.die ExternalError "Could not load model file %s@." Config.biabduction_models_sql )
+  | _ ->
+      ()
 
 
-let create_db () =
-  let temp_db = Filename.temp_file ~in_dir:(results_dir_get_path Temporary) "results.db" ".tmp" in
+let get_dbpath = function
+  | AnalysisDatabase ->
+      ResultsDirEntryName.AnalysisDB
+  | CaptureDatabase ->
+      ResultsDirEntryName.CaptureDB
+
+
+let do_create_db id =
+  let temp_db =
+    Filename.temp_file ~in_dir:(results_dir_get_path Temporary)
+      (match id with CaptureDatabase -> "capture.db" | AnalysisDatabase -> "results.db")
+      ".tmp"
+  in
   let db = Sqlite3.db_open ~mutex:`FULL temp_db in
   SqliteUtils.exec db ~log:"sqlite page size"
     ~stmt:(Printf.sprintf "PRAGMA page_size=%d" Config.sqlite_page_size) ;
-  create_tables db ;
+  create_tables db id ;
   (* This should be the default but better be sure, otherwise we cannot access the database concurrently. This has to happen before setting WAL mode. *)
   SqliteUtils.exec db ~log:"locking mode=NORMAL" ~stmt:"PRAGMA locking_mode=NORMAL" ;
   ( match Config.sqlite_vfs with
@@ -110,23 +128,49 @@ let create_db () =
       (* Can't use WAL with custom VFS *)
       () ) ;
   (* load biabduction models *)
-  load_model_specs db ;
+  load_model_specs db id ;
   SqliteUtils.db_close db ;
-  try Sys.rename temp_db (results_dir_get_path CaptureDB)
+  try Sys.rename temp_db (results_dir_get_path (get_dbpath id))
   with Sys_error _ -> (* lost the race, doesn't matter *) ()
 
 
-let new_db_callbacks = ref []
+let create_db () = List.iter ~f:do_create_db [CaptureDatabase; AnalysisDatabase]
 
-let on_new_database_connection ~f = new_db_callbacks := f :: !new_db_callbacks
+let new_capture_db_callbacks = ref []
 
-let close_db_callbacks = ref []
+let new_results_db_callbacks = ref []
 
-let on_close_database ~f = close_db_callbacks := f :: !close_db_callbacks
+let get_new_db_callbacks = function
+  | CaptureDatabase ->
+      new_capture_db_callbacks
+  | AnalysisDatabase ->
+      new_results_db_callbacks
+
+
+let on_new_database_connection id ~f =
+  let callbacks = get_new_db_callbacks id in
+  callbacks := f :: !callbacks
+
+
+let close_capture_db_callbacks = ref []
+
+let close_results_db_callbacks = ref []
+
+let get_close_db_callbacks = function
+  | CaptureDatabase ->
+      close_capture_db_callbacks
+  | AnalysisDatabase ->
+      close_results_db_callbacks
+
+
+let on_close_database id ~f =
+  let callbacks = get_close_db_callbacks id in
+  callbacks := f :: !callbacks
+
 
 type registered_stmt = unit -> Sqlite3.stmt * Sqlite3.db
 
-let register_statement =
+let register_statement id =
   let k stmt0 =
     let stmt_ref = ref None in
     let new_statement db =
@@ -136,10 +180,10 @@ let register_statement =
           L.die InternalError "Could not prepare the following statement:@\n%s@\nReason: %s" stmt0
             error
       in
-      on_close_database ~f:(fun _ -> SqliteUtils.finalize db ~log:"db close callback" stmt) ;
+      on_close_database id ~f:(fun _ -> SqliteUtils.finalize db ~log:"db close callback" stmt) ;
       stmt_ref := Some (stmt, db)
     in
-    on_new_database_connection ~f:new_statement ;
+    on_new_database_connection id ~f:new_statement ;
     fun () ->
       match !stmt_ref with
       | None ->
@@ -161,23 +205,27 @@ let with_registered_statement get_stmt ~f =
   result
 
 
-let do_db_close db =
-  List.iter ~f:(fun callback -> callback db) !close_db_callbacks ;
-  close_db_callbacks := [] ;
+let do_db_close db close_callbacks =
+  List.iter ~f:(fun callback -> callback db) !close_callbacks ;
+  close_callbacks := [] ;
   SqliteUtils.db_close db
 
 
 module UnsafeDatabaseRef : sig
-  val get_database : unit -> Sqlite3.db
+  val get_database : id -> Sqlite3.db
 
   val db_close : unit -> unit
 
   val new_database_connection : unit -> unit
 end = struct
-  let database : Sqlite3.db option ref = ref None
+  let capture_database : Sqlite3.db option ref = ref None
 
-  let get_database () =
-    match !database with
+  let results_database : Sqlite3.db option ref = ref None
+
+  let get_db = function CaptureDatabase -> capture_database | AnalysisDatabase -> results_database
+
+  let get_database id =
+    match !(get_db id) with
     | Some db ->
         db
     | None ->
@@ -187,23 +235,33 @@ end = struct
 
 
   let db_close () =
-    Option.iter !database ~f:do_db_close ;
-    database := None
+    List.iter
+      ~f:(fun id ->
+        let db = get_db id in
+        let callbacks = get_close_db_callbacks id in
+        Option.iter !db ~f:(fun db -> do_db_close db callbacks) ;
+        db := None )
+      [CaptureDatabase; AnalysisDatabase]
 
 
-  let new_database_connection () =
-    (* we always want at most one connection alive throughout the lifetime of the module *)
-    db_close () ;
+  let do_new_database id =
     let db =
       Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs
-        (results_dir_get_path CaptureDB)
+        (results_dir_get_path (get_dbpath id))
     in
     Sqlite3.busy_timeout db Config.sqlite_lock_timeout ;
     SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
     SqliteUtils.exec db ~log:"sqlite cache size"
       ~stmt:(Printf.sprintf "PRAGMA cache_size=%i" Config.sqlite_cache_size) ;
-    database := Some db ;
-    List.iter ~f:(fun callback -> callback db) !new_db_callbacks
+    let db_ref = get_db id in
+    db_ref := Some db ;
+    List.iter ~f:(fun callback -> callback db) !(get_new_db_callbacks id)
+
+
+  let new_database_connection () =
+    (* we always want at most one connection alive throughout the lifetime of the module *)
+    db_close () ;
+    List.iter ~f:do_new_database [CaptureDatabase; AnalysisDatabase]
 end
 
 include UnsafeDatabaseRef

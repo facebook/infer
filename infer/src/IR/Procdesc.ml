@@ -933,10 +933,10 @@ end)
 
 let load =
   let load_statement =
-    ResultsDatabase.register_statement "SELECT cfg FROM procedures WHERE proc_uid = :k"
+    Database.register_statement CaptureDatabase "SELECT cfg FROM procedures WHERE proc_uid = :k"
   in
   fun pname ->
-    ResultsDatabase.with_registered_statement load_statement ~f:(fun db stmt ->
+    Database.with_registered_statement load_statement ~f:(fun db stmt ->
         Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id pname))
         |> SqliteUtils.check_result_code db ~log:"load bind proc_uid" ;
         SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
