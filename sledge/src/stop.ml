@@ -24,8 +24,7 @@ let on_alarm a =
   | Alarm.Invalid_memory_access -> on_invalid_memory_access () ) ;
   Dbg.kprintf __FUNCTION__ (fun _ -> raise Stop) ""
 
-let on_reached_goal steps ~dp_witness _ =
-  [%Dbg.printf "%t" dp_witness] ;
+let on_reached_goal steps _ =
   Dbg.kprintf __FUNCTION__ (fun _ -> raise (Reached_goal {steps})) ""
 
 let on_unreachable_goal ~dp_path =

@@ -917,7 +917,11 @@ struct
     ;
     let ip = Llair.IP.mk entry in
     let goal = Goal.update_after_call name ams.goal in
-    ( if goal != ams.goal && Goal.reached goal then
+    let goal_progressed = goal != ams.goal in
+    let history =
+      if goal_progressed then History.progress_goal history else history
+    in
+    ( if goal_progressed && Goal.reached goal then
       let dp_witness fs =
         History.dump (History.extend ip [history]) fs ;
         Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
@@ -948,8 +952,9 @@ struct
             let edge =
               {dst= Runnable {ip; stk; tid}; src; retreating= recursive}
             in
-            Work.add {ams with ctrl= edge; state; goal} wl
-        | Some post -> exec_jump return {ams with state= post; goal} wl )
+            Work.add {ams with ctrl= edge; state; goal; history} wl
+        | Some post ->
+            exec_jump return {ams with state= post; goal; history} wl )
     |>
     [%Dbg.retn fun {pf} _ -> pf ""]
 
@@ -970,7 +975,11 @@ struct
     [%Dbg.call fun {pf} -> pf " t%i@ from: %a" tid Llair.FuncName.pp name]
     ;
     let goal = Goal.update_after_retn name ams.goal in
-    ( if goal != ams.goal && Goal.reached goal then
+    let goal_progressed = goal != ams.goal in
+    let history =
+      if goal_progressed then History.progress_goal history else history
+    in
+    ( if goal_progressed && Goal.reached goal then
       let dp_witness fs =
         History.dump (History.extend ip [history]) fs ;
         Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
@@ -1003,7 +1012,11 @@ struct
         in
         let retn_state = D.retn tid formals freturn from_call post_state in
         exec_jump retn_site
-          {ams with ctrl= {ams.ctrl with stk}; state= retn_state; goal}
+          { ams with
+            ctrl= {ams.ctrl with stk}
+          ; state= retn_state
+          ; goal
+          ; history }
           wl
     | None ->
         summarize exit_state |> ignore ;
@@ -1011,7 +1024,8 @@ struct
         Work.add
           { ams with
             ctrl= {dst= Terminated (tc, tid); src= block; retreating= false}
-          ; goal }
+          ; goal
+          ; history }
           wl )
     |>
     [%Dbg.retn fun {pf} _ -> pf ""]
