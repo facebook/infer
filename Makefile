@@ -171,7 +171,10 @@ endif # BUILD_ERLANG_ANALYZERS
 
 ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS),Linux+yes)
 ifneq ($(HACKC),no)
-DIRECT_TESTS += hack_capture
+DIRECT_TESTS += \
+  hack_capture \
+  hack_pulse \
+
 endif
 endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
 
