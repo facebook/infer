@@ -109,7 +109,7 @@ let get_dbpath = function
       ResultsDirEntryName.CaptureDB
 
 
-let do_create_db id =
+let create_db id =
   let temp_db =
     Filename.temp_file ~in_dir:(results_dir_get_path Temporary)
       (match id with CaptureDatabase -> "capture.db" | AnalysisDatabase -> "results.db")
@@ -135,17 +135,15 @@ let do_create_db id =
   with Sys_error _ -> (* lost the race, doesn't matter *) ()
 
 
-let create_db () = List.iter ~f:do_create_db [CaptureDatabase; AnalysisDatabase]
+let new_analysis_db_callbacks = ref []
 
 let new_capture_db_callbacks = ref []
 
-let new_results_db_callbacks = ref []
-
 let get_new_db_callbacks = function
+  | AnalysisDatabase ->
+      new_analysis_db_callbacks
   | CaptureDatabase ->
       new_capture_db_callbacks
-  | AnalysisDatabase ->
-      new_results_db_callbacks
 
 
 let on_new_database_connection id ~f =
@@ -153,15 +151,15 @@ let on_new_database_connection id ~f =
   callbacks := f :: !callbacks
 
 
+let close_analysis_db_callbacks = ref []
+
 let close_capture_db_callbacks = ref []
 
-let close_results_db_callbacks = ref []
-
 let get_close_db_callbacks = function
+  | AnalysisDatabase ->
+      close_analysis_db_callbacks
   | CaptureDatabase ->
       close_capture_db_callbacks
-  | AnalysisDatabase ->
-      close_results_db_callbacks
 
 
 let on_close_database id ~f =

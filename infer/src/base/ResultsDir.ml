@@ -81,7 +81,7 @@ module RunState = struct
 end
 
 let is_results_dir () =
-  let results_db_path = get_path AnalysisDB in
+  let results_db_path = get_path CaptureDB in
   let has_all_markers = Sys.is_file results_db_path = `Yes in
   Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s' not found" results_db_path)
 
@@ -107,7 +107,8 @@ let remove_results_dir () =
 let prepare_logging_and_db () =
   L.setup_log_file () ;
   PerfEvent.init () ;
-  if Sys.is_file (get_path AnalysisDB) <> `Yes then Database.create_db () ;
+  if Sys.is_file (get_path AnalysisDB) <> `Yes then Database.create_db AnalysisDatabase ;
+  if Sys.is_file (get_path CaptureDB) <> `Yes then Database.create_db CaptureDatabase ;
   Database.new_database_connection ()
 
 

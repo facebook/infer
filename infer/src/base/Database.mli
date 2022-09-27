@@ -27,7 +27,7 @@ val new_database_connection : unit -> unit
 val db_close : unit -> unit
 (** close the current connection to the database *)
 
-val create_db : unit -> unit
+val create_db : id -> unit
 (** create the database file and initialize all the necessary tables *)
 
 type registered_stmt
