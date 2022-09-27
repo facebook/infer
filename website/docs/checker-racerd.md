@@ -11,6 +11,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: Yes
 - Erlang: No
+- Hack: No
 - Java: Yes
 
 RacerD finds data races in your C++/Objective C and Java code. This page gives a more in-depth

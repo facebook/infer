@@ -248,7 +248,6 @@ features_lambdas:test_scopes3_Bad/0: badmatch
 features_lambdas:test_scopes4_Ok/0: ok
 
 ----- features_lc -----
-features_lc:fn_test_simple1a_Bad/0: case_clause
 features_lc:fn_test_two_gen1_Bad/0: function_clause
 features_lc:fn_test_two_gen2_Bad/0: function_clause
 features_lc:test_empty_Bad/0: function_clause
@@ -259,6 +258,7 @@ features_lc:test_filtered2_Bad/0: function_clause
 features_lc:test_filtered2_Ok/0: ok
 features_lc:test_simple1_Bad/0: function_clause
 features_lc:test_simple1_Ok/0: ok
+features_lc:test_simple1a_Bad/0: case_clause
 features_lc:test_simple2_Bad/0: function_clause
 features_lc:test_simple2_Ok/0: ok
 features_lc:test_simple3_Bad/0: function_clause
@@ -272,6 +272,7 @@ features_lc:test_two_gen2_Ok/0: ok
 features_lists:fn_test_listadd4_Bad/0: expected_crash
 features_lists:fn_test_listappend4_Bad/0: expected_crash
 features_lists:fn_test_reverse4_Bad/0: expected_crash
+features_lists:fp_test_listappend7_Ok/0: ok
 features_lists:fp_test_listappend8_Ok/0: ok
 features_lists:fp_test_listsub1_Ok/0: ok
 features_lists:fp_test_listsub2_Ok/0: ok
@@ -309,7 +310,6 @@ features_lists:test_listappend5_Bad/0: badarg
 features_lists:test_listappend6_Bad/0: badarg
 features_lists:test_listappend6_Ok/0: ok
 features_lists:test_listappend7_Bad/0: badarg
-features_lists:test_listappend7_Ok/0: ok
 features_lists:test_listappend8_Bad/0: badarg
 features_lists:test_listappend9_Ok/0: ok
 features_lists:test_listforeach_returnvalue_Bad/0: expected_crash

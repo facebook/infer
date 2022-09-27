@@ -196,22 +196,32 @@ let get_location = function
   | AccessToInvalidAddress {calling_context= []; access_trace}
   | ReadUninitializedValue {calling_context= []; trace= access_trace} ->
       Trace.get_outer_location access_trace
+  | ErlangError (Badarg {location; calling_context= []})
+  | ErlangError (Badkey {location; calling_context= []})
+  | ErlangError (Badmap {location; calling_context= []})
+  | ErlangError (Badmatch {location; calling_context= []})
+  | ErlangError (Badrecord {location; calling_context= []})
+  | ErlangError (Case_clause {location; calling_context= []})
+  | ErlangError (Function_clause {location; calling_context= []})
+  | ErlangError (If_clause {location; calling_context= []})
+  | ErlangError (Try_clause {location; calling_context= []}) ->
+      location
   | AccessToInvalidAddress {calling_context= (_, location) :: _}
-  | ReadUninitializedValue {calling_context= (_, location) :: _} ->
+  | ReadUninitializedValue {calling_context= (_, location) :: _}
+  | ErlangError (Badarg {calling_context= (_, location) :: _})
+  | ErlangError (Badkey {calling_context= (_, location) :: _})
+  | ErlangError (Badmap {calling_context= (_, location) :: _})
+  | ErlangError (Badmatch {calling_context= (_, location) :: _})
+  | ErlangError (Badrecord {calling_context= (_, location) :: _})
+  | ErlangError (Case_clause {calling_context= (_, location) :: _})
+  | ErlangError (Function_clause {calling_context= (_, location) :: _})
+  | ErlangError (If_clause {calling_context= (_, location) :: _})
+  | ErlangError (Try_clause {calling_context= (_, location) :: _}) ->
       (* report at the call site that triggers the bug *) location
   | ConstRefableParameter {location}
   | MemoryLeak {location}
   | ResourceLeak {location}
   | RetainCycle {location}
-  | ErlangError (Badarg {location})
-  | ErlangError (Badkey {location})
-  | ErlangError (Badmap {location})
-  | ErlangError (Badmatch {location})
-  | ErlangError (Badrecord {location})
-  | ErlangError (Case_clause {location})
-  | ErlangError (Function_clause {location})
-  | ErlangError (If_clause {location})
-  | ErlangError (Try_clause {location})
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
   | UnnecessaryCopy {location} ->

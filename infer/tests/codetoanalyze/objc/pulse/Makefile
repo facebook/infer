@@ -10,7 +10,7 @@ INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
 --pulse-report-issues-for-tests --pulse-inline-global-init-func-pointer \
 --function-pointer-specialization \
 --report-suppress-errors SENSITIVE_DATA_FLOW --report-suppress-errors DATA_FLOW_TO_SINK \
---pulse-taint-config ../.infertaintconfig --pulse-taint-config taint/config
+--pulse-taint-config ../.infertaintconfig --pulse-taint-config taint/.infertaintconfig
 
 INFERPRINT_OPTIONS = --issues-tests
 

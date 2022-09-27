@@ -11,16 +11,19 @@ let buck_infer_deps_file_name = "infer-deps.txt"
 
 type id =
   | AllocationTraces
+  | AnalysisDB
+  | AnalysisDBShm
+  | AnalysisDBWal
   | CaptureDB
   | CaptureDBShm
   | CaptureDBWal
   | CaptureDependencies
   | ChangedFunctions
   | ChangedFunctionsTempResults
+  | DatalogFacts
   | Debug
   | Differential
   | DuplicateFunctions
-  | DatalogFacts
   | JavaClassnamesCache
   | JavaGlobalTypeEnvironment
   | LintDotty
@@ -64,23 +67,38 @@ let of_id = function
       ; kind= Directory
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
+  | AnalysisDB ->
+      { rel_path= "results.db"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
+  | AnalysisDBShm ->
+      { rel_path= "results.db-shm"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
+  | AnalysisDBWal ->
+      { rel_path= "results.db-wal"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
   | CaptureDependencies ->
       { rel_path= buck_infer_deps_file_name
       ; kind= File
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
   | CaptureDB ->
-      { rel_path= "results.db"
+      { rel_path= "capture.db"
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Keep }
   | CaptureDBShm ->
-      { rel_path= "results.db-shm"
+      { rel_path= "capture.db-shm"
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }
   | CaptureDBWal ->
-      { rel_path= "results.db-wal"
+      { rel_path= "capture.db-wal"
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }

@@ -1271,29 +1271,59 @@ module Procdesc = struct
     List.for_all nodes ~f:Node.is_ready_for_to_sil_conversion
 
 
-  let to_sil lang decls_env cfgs {procname; nodes; start; params; exit_loc} =
+  let build_formals {procname; params} =
+    let mk_formal typ vname =
+      let name = Mangled.from_string vname.VarName.value in
+      let typ = Typ.to_sil typ in
+      (name, typ, Annot.Item.empty)
+    in
+    match List.map2 procname.formals_types params ~f:mk_formal with
+    | Ok l ->
+        l
+    | Unequal_lengths ->
+        L.die InternalError "procname %a has not the same number of arg names and arg types"
+          Procname.pp_qualified_name procname.qualified_name
+
+
+  let build_formals_and_locals pdesc =
+    let formals = build_formals pdesc in
+    let make_var_data name typ : ProcAttributes.var_data =
+      {name; typ; modify_in_block= false; is_constexpr= false; is_declared_unused= false}
+    in
+    let seen_from_formals : Mangled.Set.t =
+      List.fold formals ~init:Mangled.Set.empty ~f:(fun set (name, _, _) ->
+          Mangled.Set.add name set )
+    in
+    let _, locals =
+      List.fold pdesc.nodes ~init:(seen_from_formals, []) ~f:(fun acc (node : Node.t) ->
+          List.fold node.instrs ~init:acc ~f:(fun (seen, locals) (instr : Instr.t) ->
+              match instr with
+              | Store {exp1= Lvar var_name; typ} ->
+                  let name = Mangled.from_string var_name.value in
+                  if Mangled.Set.mem name seen then (seen, locals)
+                  else
+                    let typ = Typ.to_sil typ in
+                    (Mangled.Set.add name seen, make_var_data name typ :: locals)
+                  (* FIXME: check that we don't miss variables that would be inside other left
+                     values like [Field] or [Index], or wait for adding locals declarations
+                     (see T131910123) *)
+              | Store _ | Load _ | Prune _ | Let _ ->
+                  (seen, locals) ) )
+    in
+    (formals, locals)
+
+
+  let to_sil lang decls_env cfgs ({procname; nodes; start; exit_loc} as pdesc) =
     let sourcefile = decls_env.Decls.sourcefile in
     let sil_procname = Procname.to_sil lang procname in
     let sil_ret_type = Typ.to_sil procname.result_type in
     let definition_loc = Location.to_sil sourcefile procname.qualified_name.name.loc in
-    let formals =
-      let mk_formal typ vname =
-        let name = Mangled.from_string vname.VarName.value in
-        let typ = Typ.to_sil typ in
-        (name, typ, Annot.Item.empty)
-      in
-      match List.map2 procname.formals_types params ~f:mk_formal with
-      | Ok l ->
-          l
-      | Unequal_lengths ->
-          L.die InternalError "procname %a has not the same number of arg names and arg types"
-            Procname.pp_qualified_name procname.qualified_name
-    in
+    let formals, locals = build_formals_and_locals pdesc in
     let pattributes =
       { (ProcAttributes.default sourcefile sil_procname) with
         is_defined= true
       ; formals
-      ; locals= [] (* Locals are not yet supported *)
+      ; locals
       ; ret_type= sil_ret_type
       ; loc= definition_loc }
     in

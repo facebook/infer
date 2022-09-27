@@ -13,6 +13,7 @@ Supported languages:
 - C/C++/ObjC: No
 - C#/.Net: No
 - Erlang: No
+- Hack: No
 - Java: Yes
 
 > "I call it my billion-dollar mistake. It was the invention of the null

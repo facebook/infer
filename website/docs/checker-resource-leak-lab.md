@@ -11,6 +11,7 @@ Supported languages:
 - C/C++/ObjC: No
 - C#/.Net: Yes
 - Erlang: No
+- Hack: No
 - Java: Yes
 
 This toy checker does nothing by default. Hack on it to make it report resource leaks! See the [lab instructions](https://github.com/facebook/infer/blob/main/infer/src/labs/README.md).

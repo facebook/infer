@@ -33,6 +33,22 @@ public class NullPointerExceptions {
   class A {
     int x;
 
+    int thisNotNullOk() {
+      if (this == null) {
+        A a = null;
+        return a.x;
+      }
+      return 0;
+    }
+
+    int thisNotNullBad() {
+      if (this != null) {
+        A a = null;
+        return a.x;
+      }
+      return 0;
+    }
+
     public void method() {}
   }
 
