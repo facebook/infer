@@ -379,6 +379,9 @@ val is_constructor : t -> bool
 val is_csharp : t -> bool
 (** Check if this is a CSharp procedure name. *)
 
+val is_hack : t -> bool
+(** Check if this is a Hack procedure name. *)
+
 val is_java : t -> bool
 (** Check if this is a Java procedure name. *)
 
