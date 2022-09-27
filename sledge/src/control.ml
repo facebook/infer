@@ -557,11 +557,7 @@ struct
     let empty = M.empty
     let find = M.find
     let add = M.add
-
-    let join x y =
-      M.merge x y ~f:(fun _ -> function
-        | `Left d | `Right d -> Some d
-        | `Both (d1, d2) -> Some (Int.max d1 d2) )
+    let join = M.union ~f:(fun _ d1 d2 -> Some (Int.max d1 d2))
   end
 
   type switches = int [@@deriving compare, equal, sexp_of]
