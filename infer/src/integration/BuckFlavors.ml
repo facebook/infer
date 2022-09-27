@@ -43,7 +43,7 @@ let get_all_infer_deps_under_buck_out () =
   Utils.fold_folders ~init:[] ~path:(Config.project_root ^/ Config.buck_out) ~f:(fun acc dir ->
       if
         String.is_substring dir ~substring:"infer-out"
-        && ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:dir CaptureDB)
+        && ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:dir AnalysisDB)
       then Printf.sprintf "\t\t%s" dir :: acc
       else acc )
   |> List.dedup_and_sort ~compare:String.compare

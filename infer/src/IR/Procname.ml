@@ -795,6 +795,8 @@ let is_destructor t =
 
 let is_csharp t = match base_of t with CSharp _ -> true | _ -> false
 
+let is_hack t = match base_of t with Hack _ -> true | _ -> false
+
 let is_java t = match base_of t with Java _ -> true | _ -> false
 
 let as_java_exn ~explanation t =

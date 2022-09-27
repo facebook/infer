@@ -131,6 +131,8 @@ Analyze LLVM bitcode. This is a convenience wrapper for the sequence `sledge llv
                                progress. When an execution is found that visits
                                each function in order, terminate if
                                "Stop.on_reached_goal" is being traced.
+  [-llair-output <file>]     . write generated textual LLAIR to <file>, or to
+                               standard output if "-"
   [-loop-bound <int>], -bound
                              . limit execution exploration to <int> loop
                                iterations, a negative bound is never hit and
@@ -185,6 +187,8 @@ Translate LLVM bitcode to LLAIR. The <input> file must contain LLVM bitcode in e
                                progress. When an execution is found that visits
                                each function in order, terminate if
                                "Stop.on_reached_goal" is being traced.
+  [-llair-output <file>]     . write generated textual LLAIR to <file>, or to
+                               standard output if "-"
   [-margin <cols>]           . wrap debug tracing at <cols> columns
   [-no-internalize]          . do not internalize all functions except the entry
                                points specified in the config file
@@ -223,7 +227,7 @@ The <input> file must be LLVM bitcode.
                                each function in order, terminate if
                                "Stop.on_reached_goal" is being traced.
   [-llair-output <file>]     . write generated textual LLAIR to <file>, or to
-                               standard output if omitted
+                               standard output if "-"
   [-margin <cols>]           . wrap debug tracing at <cols> columns
   [-no-internalize]          . do not internalize all functions except the entry
                                points specified in the config file
@@ -262,6 +266,8 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                                progress. When an execution is found that visits
                                each function in order, terminate if
                                "Stop.on_reached_goal" is being traced.
+  [-llair-output <file>]     . write generated textual LLAIR to <file>, or to
+                               standard output if "-"
   [-loop-bound <int>], -bound
                              . limit execution exploration to <int> loop
                                iterations, a negative bound is never hit and
@@ -299,8 +305,15 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
 
   [-append-report]           . append to report file
   [-colors]                  . enable printing in colors
+  [-goal-trace <file>]       . specify a trace to try to explore, in the form of
+                               a file containing one LLVM function name per
+                               line. If provided, translation avoids inlining
+                               traced functions and analysis prioritizes trace
+                               progress. When an execution is found that visits
+                               each function in order, terminate if
+                               "Stop.on_reached_goal" is being traced.
   [-llair-output <file>]     . write generated textual LLAIR to <file>, or to
-                               standard output if omitted
+                               standard output if "-"
   [-margin <cols>]           . wrap debug tracing at <cols> columns
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"

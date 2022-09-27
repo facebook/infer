@@ -22,7 +22,7 @@ module Loader = struct
     let empties = ref 0 in
     let proc_index = Procname.Hash.create 11 in
     let source_index = SourceFile.Hash.create 11 in
-    let db = ResultsDatabase.get_database () in
+    let db = Database.get_database CaptureDatabase in
     let stmt = Sqlite3.prepare db "SELECT source_file, procedure_names FROM source_files" in
     SqliteUtils.result_fold_rows db ~log:"loading procname to source index" stmt ~init:()
       ~f:(fun () stmt ->

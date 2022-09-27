@@ -183,7 +183,7 @@ module OnDisk = struct
     let analysis_summary_column = 0 in
     let report_summary_column = 1 in
     let load_spec ~load_statement proc_name =
-      ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
+      Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
           Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
           |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
           SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
@@ -198,7 +198,7 @@ module OnDisk = struct
     in
     let spec_of_procname =
       let load_statement =
-        ResultsDatabase.register_statement
+        Database.register_statement AnalysisDatabase
           "SELECT analysis_summary, report_summary FROM specs WHERE proc_uid = :k"
       in
       fun proc_name ->
@@ -209,7 +209,7 @@ module OnDisk = struct
     in
     let spec_of_model =
       let load_statement =
-        ResultsDatabase.register_statement
+        Database.register_statement AnalysisDatabase
           "SELECT analysis_summary, report_summary FROM model_specs WHERE proc_uid = :k"
       in
       fun proc_name -> load_spec ~load_statement proc_name
@@ -281,7 +281,7 @@ module OnDisk = struct
   let delete_all ~filter () = Procedures.get_all ~filter () |> List.iter ~f:delete
 
   let iter_filtered_specs ~filter ~f =
-    let db = ResultsDatabase.get_database () in
+    let db = Database.get_database AnalysisDatabase in
     let dummy_source_file = SourceFile.invalid __FILE__ in
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
     Sqlite3.prepare db
@@ -297,7 +297,7 @@ module OnDisk = struct
 
 
   let iter_filtered_report_summaries ~filter ~f =
-    let db = ResultsDatabase.get_database () in
+    let db = Database.get_database AnalysisDatabase in
     let dummy_source_file = SourceFile.invalid __FILE__ in
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
     Sqlite3.prepare db "SELECT proc_name, report_summary FROM specs ORDER BY proc_uid ASC"

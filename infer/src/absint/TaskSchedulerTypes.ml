@@ -10,4 +10,4 @@ type target =
   | Procname of Procname.t
   | File of SourceFile.t
   | ProcUID of string
-      (** matches primary key of [procedures] and [specs] tables; see [ResultsDatabase.ml] *)
+      (** matches primary key of [procedures] and [specs] tables; see [Database.ml] *)

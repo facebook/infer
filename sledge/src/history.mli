@@ -8,9 +8,23 @@
 (** An execution history is a current instruction pointer and some
     predecessors. [preds] are empty iff this is an entrypoint. *)
 
-type t = Init | Step of {curr: Llair.ip; preds: t iarray}
+type t =
+  | Init
+  | Step of {curr: Llair.ip; preds: t iarray}
+  | Goal_progress of t
 [@@deriving sexp_of]
 
 val init : t
+(** Initial (empty) history. *)
+
 val extend : Llair.ip -> t list -> t
-val dump : t -> Format.formatter -> unit
+(** Extend some list of predecessor histories with one step of progress at
+    the given instruction pointer. *)
+
+val progress_goal : t -> t
+(** Decorate the history with an indication that progress has been made
+    toward some goal. *)
+
+val dump : ?show_root:bool -> t -> Format.formatter -> unit
+(** Dump a human-readable representation of the history to the given
+    formatter, with an indication of the goal-trace root if [show_root]. *)

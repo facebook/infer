@@ -24,12 +24,12 @@ module IntegerWidths = struct
   end)
 
   let load_statement =
-    ResultsDatabase.register_statement
+    Database.register_statement CaptureDatabase
       "SELECT integer_type_widths FROM source_files WHERE source_file = :k"
 
 
   let load source =
-    ResultsDatabase.with_registered_statement load_statement ~f:(fun db load_stmt ->
+    Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
         SourceFile.SQLite.serialize source
         |> Sqlite3.bind load_stmt 1
         |> SqliteUtils.check_result_code db ~log:"load bind source file" ;

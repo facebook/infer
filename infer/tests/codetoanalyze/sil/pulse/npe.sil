@@ -160,3 +160,19 @@ define call_and_no_npe_ok() : void {
     n1: int = load n0.cell.value
     ret null
 }
+
+define load_bad() : void {
+  #entry:
+    store &local <- null: *cell
+    n0: *cell = load &local
+    n1: int = load n0.cell.value
+    ret null
+}
+
+define load_internal_bad() : void {
+  #entry:
+    store &local.cell.next <- null: *cell
+    n0: *cell = load &local.cell.next
+    n1: int = load n0.cell.value
+    ret null
+}
