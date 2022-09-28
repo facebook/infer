@@ -171,3 +171,39 @@ void taintSourceParameterBlockIndirectSink() {
     [InferTaint sink:arg];
   });
 }
+
+@protocol TaintProtocol
+- (void)callsSink:(NSObject*)param;
+@end
+
+@interface ImplementsTaintProtocol : NSObject<TaintProtocol>
+@end
+
+@implementation ImplementsTaintProtocol : NSObject
+
+- (void)callsSink:(NSObject*)param {
+  [InferTaint sink:param];
+}
+@end
+
+@interface InterfaceWithProtocolProperty : NSObject
+@property(nonatomic, readonly) id<TaintProtocol> protocolProperty;
+- (instancetype)initWithArg:(id<TaintProtocol>)arg;
+@end
+
+@implementation InterfaceWithProtocolProperty : NSObject
+
+- (instancetype)initWithArg:(id<TaintProtocol>)arg {
+  _protocolProperty = arg;
+  return self;
+}
+@end
+
+void taintSourceParameterBlockIndirectSinkProtocol_FN() {
+  ImplementsTaintProtocol* itp = [ImplementsTaintProtocol alloc];
+  InterfaceWithProtocolProperty* iwpp =
+      [[InterfaceWithProtocolProperty alloc] initWithArg:itp];
+  taintSourceParameterBlockIndirect(^(InferTaint* arg) {
+    [iwpp.protocolProperty callsSink:arg];
+  });
+}
