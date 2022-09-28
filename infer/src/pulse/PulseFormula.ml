@@ -669,6 +669,40 @@ module Term = struct
 
   let is_non_zero_const = function Const c -> Q.is_not_zero c | _ -> false
 
+  let has_known_non_boolean_type = function
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _
+    | And _
+    | Or _
+    | Not _
+    | IsInstanceOf _
+    | IsInt _
+    | Var _ ->
+        false
+    | Linear l ->
+        Option.is_none (LinArith.get_as_var l)
+    | Const c ->
+        not Q.(c = zero || c = one)
+    | String _
+    | Procname _
+    | FunctionApplication _
+    | Add _
+    | Minus _
+    | Mult _
+    | DivI _
+    | DivF _
+    | Mod _
+    | BitAnd _
+    | BitOr _
+    | BitNot _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _ ->
+        true
+
+
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
     match t with
@@ -1309,7 +1343,8 @@ module Atom = struct
   (** [atoms_of_term ~negated t] is [Some \[atom1; ..; atomN\]] if [t] (or [¬t] if [negated]) is
       (mostly syntactically) equivalent to [atom1 ∧ .. ∧ atomN]. For example
       [atoms_of_term ~negated:false (Equal (Or (x, Not y), 0))] should be
-      [\[Equal (x, 0); Equal (y, 1)\]].
+      [\[Equal (x, 0); NotEqual (y, 0)\]]. When the term [y] is known as a boolean, it generates a
+      preciser atom [Equal (y, 1)].
 
       [is_neq_zero] is a function that can tell if a term is known to be [≠0], and [force_to_atom]
       can be used to force converting the term into an atom even if it does not make it simpler or
@@ -1345,7 +1380,12 @@ module Atom = struct
           (* NOTE: [Not (Or _)] is taken care of by term normalization so no need to handle it here *)
           aux ~negated:(not negated) ~force_to_atom t
       | t ->
-          if force_to_atom then Some [Equal (t, if negated then Term.zero else Term.one)] else None
+          if force_to_atom then
+            Some
+              [ ( if negated then Equal (t, Term.zero)
+                else if Term.has_known_non_boolean_type t then NotEqual (t, Term.zero)
+                else Equal (t, Term.one) ) ]
+          else None
     in
     aux ~negated ~force_to_atom t
     |> Option.map ~f:(fun atoms ->
@@ -1358,9 +1398,10 @@ module Atom = struct
   and get_as_embedded_atoms ~is_neq_zero atom =
     let of_terms is_equal t c =
       let negated =
-        (* [atom = 0] or [atom ≠ 1] means [atom] is false, [atom ≠ 0] or [atom = 1] means [atom]
-           is true *)
-        (is_equal && Q.is_zero c) || ((not is_equal) && Q.is_one c)
+        (* [atom = 0] or [atom ≠ 1] when [atom] is boolean means [atom] is false, [atom ≠ 0] or
+           [atom = 1] means [atom] is true *)
+        (is_equal && Q.is_zero c)
+        || ((not is_equal) && (not (Term.has_known_non_boolean_type t)) && Q.is_one c)
       in
       atoms_of_term ~is_neq_zero ~negated t
     in

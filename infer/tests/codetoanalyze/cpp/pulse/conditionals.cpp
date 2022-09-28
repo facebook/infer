@@ -118,3 +118,18 @@ void minus_test_ok(int* x) {
     *x = 42;
   }
 }
+
+void binary_and_ok(int* x) {
+  free(x);
+  if (10 & 9) {
+  } else {
+    *x = 42;
+  }
+}
+
+void binary_and_bad(int* x) {
+  free(x);
+  if (10 & 9) {
+    *x = 42;
+  }
+}
