@@ -1,17 +1,31 @@
 {
   "pulse-taint-policies": [
-    { "short_description": "Simple Test",
+    {
+      "short_description": "Simple Test",
       "taint_flows": [
-        { "source_kinds": ["SecondSimpleSource"],
-          "sanitizer_kinds": ["SimpleSanitizer"],
-          "sink_kinds": ["SecondSimpleSink"]
+        {
+          "source_kinds": [
+            "SecondSimpleSource"
+          ],
+          "sanitizer_kinds": [
+            "SimpleSanitizer"
+          ],
+          "sink_kinds": [
+            "SecondSimpleSink"
+          ]
         }
       ]
     },
-    { "short_description": "Input Create to Handler",
+    {
+      "short_description": "Input Create to Handler",
       "taint_flows": [
-        { "source_kinds": ["InputCreate"],
-          "sink_kinds": ["Handler"]
+        {
+          "source_kinds": [
+            "InputCreate"
+          ],
+          "sink_kinds": [
+            "Handler"
+          ]
         }
       ]
     }
@@ -49,6 +63,12 @@
       { "procedure": "HandleIntent",
         "kinds": ["Handler"],
         "taint_target": ["ArgumentPositions", [2]] },
+      { "procedure": "dispatched",
+        "kinds": ["Handler"],
+        "taint_target": ["ArgumentPositions", [1]] },
+      { "procedure": "dispatchedWithMock",
+        "kinds": ["Handler"],
+        "taint_target": ["ArgumentPositions", [1]] },
       { "procedure": "VaultOpenAppleMapForAddress",
         "kinds": ["Handler"],
         "taint_target": ["ArgumentPositions", [0]] },
