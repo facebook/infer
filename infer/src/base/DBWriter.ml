@@ -187,6 +187,25 @@ module Implementation = struct
     L.debug Analysis Quiet "Detected %d spec overwrittes.@\n" overwrites
 
 
+  let store_issue_log =
+    let store_statement =
+      Database.register_statement AnalysisDatabase
+        {|
+          INSERT OR REPLACE INTO issue_logs
+          VALUES (:checker, :source_file, :issue_log)
+        |}
+    in
+    fun ~source_file ~checker ~issue_log ->
+      Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
+          Sqlite3.bind store_stmt 1 (Sqlite3.Data.TEXT checker)
+          |> SqliteUtils.check_result_code db ~log:"store issuelog bind checker" ;
+          Sqlite3.bind store_stmt 2 source_file
+          |> SqliteUtils.check_result_code db ~log:"store issuelog bind source_file" ;
+          Sqlite3.bind store_stmt 3 issue_log
+          |> SqliteUtils.check_result_code db ~log:"store issuelog bind issue_log" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"store issuelog" db store_stmt )
+
+
   let store_spec =
     let store_statement =
       Database.register_statement AnalysisDatabase
@@ -242,6 +261,7 @@ module Command = struct
     | Handshake
     | MarkAllSourceFilesStale
     | Merge of {infer_deps_file: string}
+    | StoreIssueLog of {checker: string; source_file: Sqlite3.Data.t; issue_log: Sqlite3.Data.t}
     | StoreSpec of
         { proc_uid: string
         ; proc_name: Sqlite3.Data.t
@@ -275,6 +295,8 @@ module Command = struct
         "ReplaceAttributes"
     | ResetCaptureTables ->
         "ResetCaptureTables"
+    | StoreIssueLog _ ->
+        "StoreIssueLog"
     | StoreSpec _ ->
         "StoreSpec"
     | Terminate ->
@@ -298,6 +320,8 @@ module Command = struct
         Implementation.mark_all_source_files_stale ()
     | Merge {infer_deps_file} ->
         Implementation.merge infer_deps_file
+    | StoreIssueLog {checker; source_file; issue_log} ->
+        Implementation.store_issue_log ~checker ~source_file ~issue_log
     | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
         Implementation.store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary
     | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis} ->
@@ -454,6 +478,10 @@ let merge ~infer_deps_file = perform (Merge {infer_deps_file})
 let canonicalize () = perform Checkpoint
 
 let reset_capture_tables () = perform ResetCaptureTables
+
+let store_issue_log ~checker ~source_file ~issue_log =
+  perform (StoreIssueLog {checker; source_file; issue_log})
+
 
 let store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary =
   perform (StoreSpec {proc_uid; proc_name; analysis_summary; report_summary})

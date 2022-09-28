@@ -27,13 +27,10 @@ type id =
   | JavaClassnamesCache  (** used when capturing Java jar dependencies *)
   | JavaGlobalTypeEnvironment  (** internal {!Tenv.t} object corresponding to the whole project *)
   | LintDotty  (** directory of linters' dotty debug output for CTL evaluation *)
-  | LintIssues  (** directory of linters' issues *)
   | Logs  (** log file *)
-  | NullsafeFileIssues  (** file-wide issues of the nullsafe analysis *)
   | PerfEvents  (** file containing events for performance profiling *)
   | ProcnamesLocks
       (** directory of per-{!Procname.t} file locks, used by the analysis scheduler in certain modes *)
-  | RacerDIssues  (** directory of issues reported by the RacerD analysis *)
   | ReportConfigImpactJson  (** reports of the config impact analysis *)
   | ReportCostsJson  (** reports of the costs analysis *)
   | ReportHtml  (** directory of the HTML report *)
@@ -43,17 +40,12 @@ type id =
   | ReportXML  (** a PMD-style XML version of [report.json] *)
   | RetainCycles  (** directory of retain cycles dotty files *)
   | RunState  (** internal data about the last infer run *)
-  | StarvationIssues  (** directory of issues reported by the starvation analysis *)
   | Temporary  (** directory containing temp files *)
   | TestDeterminatorReport  (** the report produced by the test determinator capture mode *)
   | TestDeterminatorTempResults  (** a directory for temporary [TestDeterminatorReport] files *)
 
 val get_path : results_dir:string -> id -> string
 (** the absolute path for the given entry *)
-
-val get_issues_directories : unit -> id list
-(** all the entries that correspond to directories containing temporary issue logs for certain
-    analyses *)
 
 val to_delete_before_incremental_capture_and_analysis : results_dir:string -> string list
 (** utility for {!ResultsDir.scrub_for_incremental}, you probably want to use that instead *)

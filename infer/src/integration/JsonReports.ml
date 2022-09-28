@@ -396,10 +396,8 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf ~config_impact_out
           ~config_impact:(config_impact_opt, config_impact_outf)
           err_log !all_issues ) ;
   (* Issues that are generated and stored outside of summaries by linter and checkers *)
-  List.iter (ResultsDirEntryName.get_issues_directories ()) ~f:(fun dir_name ->
-      IssueLog.load dir_name
-      |> IssueLog.iter ~f:(fun proc_name errlog ->
-             all_issues := collect_issues proc_name None errlog !all_issues ) ) ;
+  IssueLog.iter_all_issues ~f:(fun _checker proc_name errlog ->
+      all_issues := collect_issues proc_name None errlog !all_issues ) ;
   let all_issues = Issue.sort_filter_issues !all_issues in
   List.iter all_issues ~f:(fun {Issue.proc_name; proc_location_opt; err_key; err_data} ->
       let error_filter = mk_error_filter filters proc_name in

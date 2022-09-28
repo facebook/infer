@@ -57,11 +57,26 @@ let specs_schema prefix =
     prefix
 
 
+let issues_schema =
+  {|
+      CREATE TABLE IF NOT EXISTS issue_logs
+        ( checker STRING NOT NULL
+        , source_file TEXT NOT NULL
+        , issue_log BLOB NOT NULL
+        , PRIMARY KEY (checker, source_file)
+        )
+    |}
+
+
 let model_specs_schema prefix = specs_schema (prefix ^ "model_")
 
 let schema_hum =
   String.concat ~sep:";\n"
-    [procedures_schema ""; source_files_schema ""; specs_schema ""; model_specs_schema ""]
+    [ procedures_schema ""
+    ; source_files_schema ""
+    ; specs_schema ""
+    ; model_specs_schema ""
+    ; issues_schema ]
 
 
 let create_procedures_table ~prefix db =
@@ -74,7 +89,8 @@ let create_source_files_table ~prefix db =
 
 let create_specs_tables ~prefix db =
   SqliteUtils.exec db ~log:"creating specs table" ~stmt:(specs_schema prefix) ;
-  SqliteUtils.exec db ~log:"creating model specs table" ~stmt:(model_specs_schema prefix)
+  SqliteUtils.exec db ~log:"creating model specs table" ~stmt:(model_specs_schema prefix) ;
+  SqliteUtils.exec db ~log:"creating issue logs table" ~stmt:issues_schema
 
 
 let create_tables ?(prefix = "") db = function

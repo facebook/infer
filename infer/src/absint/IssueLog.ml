@@ -23,49 +23,34 @@ let get_or_add ~proc m =
       (m, errlog)
 
 
-let issues_serializer : Errlog.t Procname.Map.t Serialization.serializer =
-  Serialization.create_serializer Serialization.Key.issues
+module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
+  type nonrec t = t
+end)
+
+let store ~checker ~file m =
+  if not (Procname.Map.is_empty m) then
+    DBWriter.store_issue_log ~checker:(Checker.get_id checker)
+      ~source_file:(SourceFile.SQLite.serialize file)
+      ~issue_log:(SQLite.serialize m)
 
 
-let iter ~f m = Procname.Map.iter f m
-
-let store ~entry ~file m =
-  if not (Procname.Map.is_empty m) then (
-    let abbrev_source_file = DB.source_file_encoding file in
-    let issues_dir = ResultsDir.get_path entry in
-    Utils.create_dir issues_dir ;
-    let filename =
-      DB.filename_from_string (Filename.concat issues_dir (abbrev_source_file ^ ".issue"))
-    in
-    Serialization.write_to_file issues_serializer filename ~data:m )
-
-
-(** Load issues from the given file *)
-let load_issues issues_file = Serialization.read_from_file issues_serializer issues_file
-
-(** Load all the issues in the given dir and update the issues map *)
-let load entry =
-  let issues_dir = ResultsDir.get_path entry in
-  let load_issues_to_map init issues_file =
-    let file = DB.filename_from_string (Filename.concat issues_dir issues_file) in
-    load_issues file
-    |> Option.fold ~init ~f:(fun acc map ->
-           Procname.Map.merge
-             (fun _ issues1 issues2 ->
-               match (issues1, issues2) with
-               | Some issues1, Some issues2 ->
-                   Errlog.update issues1 issues2 ;
-                   Some issues1
-               | Some issues1, None ->
-                   Some issues1
-               | None, Some issues2 ->
-                   Some issues2
-               | None, None ->
-                   None )
-             acc map )
+let iter_issue_logs =
+  let select_statement =
+    Database.register_statement AnalysisDatabase "SELECT checker, issue_log FROM issue_logs"
   in
-  match Sys.readdir issues_dir with
-  | children ->
-      Array.fold children ~init:empty ~f:load_issues_to_map
-  | exception Sys_error _ ->
-      empty
+  fun ~f ->
+    Database.with_registered_statement select_statement ~f:(fun db stmt ->
+        SqliteUtils.result_fold_rows ~init:() ~finalize:false db ~log:"IssueLog.fold_issue_logs"
+          stmt ~f:(fun () stmt ->
+            let checker : Checker.t =
+              match[@warning "-8"] Sqlite3.column stmt 0 with
+              | Sqlite3.Data.TEXT checker_str ->
+                  Checker.from_id checker_str |> Option.value_exn
+            in
+            let issue_log : t = Sqlite3.column stmt 1 |> SQLite.deserialize in
+            f checker issue_log ) )
+
+
+let iter_all_issues ~f =
+  iter_issue_logs ~f:(fun checker issue_log ->
+      Procname.Map.iter (fun procname errlog -> f checker procname errlog) issue_log )
