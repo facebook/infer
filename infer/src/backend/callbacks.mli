@@ -43,8 +43,7 @@ val register_procedure_callback :
   checker_name:string -> ?dynamic_dispatch:bool -> Language.t -> proc_callback_t -> unit
 (** Register a procedure callback (see details above) *)
 
-val register_file_callback :
-  checker_name:string -> Language.t -> file_callback_t -> issue_dir:ResultsDirEntryName.id -> unit
+val register_file_callback : checker:Checker.t -> Language.t -> file_callback_t -> unit
 (** Register a file callback (see details above). [issues_dir] must be unique for this type of
     checker. *)
 
