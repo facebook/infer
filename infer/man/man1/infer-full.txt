@@ -1563,6 +1563,11 @@ OPTIONS
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
 
+       --timeout float
+           Time after which any checker (except biabduction) should give up
+           analysing the current function or method, in seconds       
+    See also infer-analyze(1) and infer-run(1).
+
        --top-longest-proc-duration-size int
            Number of procedures for which we track longest analysis duration
            info.           See also infer-analyze(1).
@@ -2589,6 +2594,9 @@ INTERNAL OPTIONS
        --testing-mode
            Activates: Mode for testing, where no headers are translated, and
            dot files are created (clang only) (Conversely: --no-testing-mode)
+
+       --timeout-reset
+           Cancel the effect of --timeout.
 
        --top-longest-proc-duration-size-reset
            Cancel the effect of --top-longest-proc-duration-size.

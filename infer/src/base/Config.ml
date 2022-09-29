@@ -2868,6 +2868,13 @@ and test_determinator =
      $(b,--profiler-samples) flags, which specify the relevant arguments."
 
 
+and timeout =
+  CLOpt.mk_float_opt ~long:"timeout"
+    ~in_help:[(Analyze, manual_generic); (Run, manual_generic)]
+    "Time after which any checker (except biabduction) should give up analysing the current \
+     function or method, in seconds"
+
+
 and topl_max_conjuncts =
   CLOpt.mk_int ~long:"topl-max-conjuncts" ~default:20
     "Stop tracking states that have at least $(i,int) conjuncts"
@@ -4020,6 +4027,8 @@ and profiler_samples = !profiler_samples
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
+
+and timeout = !timeout
 
 and top_longest_proc_duration_size = !top_longest_proc_duration_size
 

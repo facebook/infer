@@ -756,6 +756,8 @@ val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Basic.t
 
+val timeout : float option
+
 val top_longest_proc_duration_size : int option
 
 val topl_max_conjuncts : int

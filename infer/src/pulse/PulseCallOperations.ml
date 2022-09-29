@@ -378,7 +378,9 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
           | contradiction, _ ->
               contradiction
         in
-        (* apply all pre/post specs *)
+        (* apply one pre/post spec, check for timeouts in-between each pre/post spec from the callee
+           *)
+        Timer.check_timeout () ;
         match
           apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state
             ~captured_formals ~captured_actuals ~formals ~actuals ~ret astate

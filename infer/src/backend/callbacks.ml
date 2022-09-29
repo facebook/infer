@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 type proc_callback_args = {summary: Summary.t; exe_env: Exe_env.t}
 
@@ -49,7 +50,15 @@ let iterate_procedure_callbacks exe_env summary =
               log_begin_event logger ~name:checker_name ~categories:["backend"]
                 ~arguments:[("proc", `String (Procname.to_string proc_name))]
                 () )) ;
-        let summary = callback {summary; exe_env} in
+        let summary =
+          Timer.protect
+            ~f:(fun () -> callback {summary; exe_env})
+            ~on_timeout:(fun span ->
+              L.debug Analysis Quiet "TIMEOUT in %s after %fs of CPU time analyzing %a:%a@\n"
+                checker_name span SourceFile.pp (Procdesc.get_attributes proc_desc).translation_unit
+                Procname.pp proc_name ;
+              summary )
+        in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
         summary )
       else summary )
