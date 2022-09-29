@@ -42,7 +42,9 @@ let resume (t : state) =
 
 let check_timeout timeout =
   let span = get () in
-  if Float.(span >. timeout) then raise (Timeout span)
+  if Float.(span >. timeout) then (
+    Stats.incr_timeouts () ;
+    raise (Timeout span) )
 
 
 let check_timeout () = Option.iter ~f:check_timeout Config.timeout
