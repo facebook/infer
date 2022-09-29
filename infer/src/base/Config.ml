@@ -2857,6 +2857,12 @@ and subtype_multirange =
     "Use the multirange subtyping domain. Used in the Java frontend and in biabduction."
 
 
+and suffix_match_changed_file =
+  CLOpt.mk_bool ~long:"postfix-match-changed-file"
+  ~default:false
+    "Match changed file name by suffix part of the file name."
+
+
 and summaries_caches_max_size =
   CLOpt.mk_int ~long:"summaries-caches-max-size" ~default:500
     "The maximum amount of elements the summaries LRU caches can hold"
@@ -4009,6 +4015,8 @@ and starvation_strict_mode = !starvation_strict_mode
 and starvation_whole_program = !starvation_whole_program
 
 and subtype_multirange = !subtype_multirange
+
+and suffix_match_changed_file = !suffix_match_changed_file
 
 and summaries_caches_max_size = !summaries_caches_max_size
 
