@@ -607,7 +607,7 @@ end = struct
         loc_map SourceFile.Map.empty
     in
     SourceFile.Map.iter
-      (fun file loc_map -> issue_log_of loc_map |> IssueLog.store ~entry:StarvationIssues ~file)
+      (fun file loc_map -> issue_log_of loc_map |> IssueLog.store ~checker:Starvation ~file)
       source_map
 end
 

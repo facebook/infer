@@ -360,10 +360,14 @@ let lib_dir = bin_dir ^/ Filename.parent_dir_name ^/ "lib"
 
 let etc_dir = bin_dir ^/ Filename.parent_dir_name ^/ "etc"
 
+let config_dir = bin_dir ^/ Filename.parent_dir_name ^/ "config"
+
 (** Path to the database dump with model summaries *)
 let biabduction_models_sql = lib_dir ^/ "models.sql"
 
 let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
+
+let pulse_default_taint_config = config_dir ^/ "taint"
 
 (* Normalize the path *)
 
@@ -2864,6 +2868,13 @@ and test_determinator =
      $(b,--profiler-samples) flags, which specify the relevant arguments."
 
 
+and timeout =
+  CLOpt.mk_float_opt ~long:"timeout"
+    ~in_help:[(Analyze, manual_generic); (Run, manual_generic)]
+    "Time after which any checker (except biabduction) should give up analysing the current \
+     function or method, in seconds"
+
+
 and topl_max_conjuncts =
   CLOpt.mk_int ~long:"topl-max-conjuncts" ~default:20
     "Stop tracking states that have at least $(i,int) conjuncts"
@@ -3830,8 +3841,8 @@ and pulse_taint_config =
         combine_fields Pulse_config_j.data_flow_kinds_of_string "pulse-taint-data-flow-kinds"
           taint_config.data_flow_kinds }
   in
-  List.fold (RevList.to_list !pulse_taint_config) ~init:base_taint_config
-    ~f:(fun taint_config path ->
+  List.fold (pulse_default_taint_config :: RevList.to_list !pulse_taint_config)
+    ~init:base_taint_config ~f:(fun taint_config path ->
       match (Unix.stat path).st_kind with
       | S_DIR ->
           Utils.fold_files ~init:taint_config
@@ -4016,6 +4027,8 @@ and profiler_samples = !profiler_samples
 and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
+
+and timeout = !timeout
 
 and top_longest_proc_duration_size = !top_longest_proc_duration_size
 

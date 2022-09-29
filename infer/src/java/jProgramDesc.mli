@@ -9,7 +9,9 @@
 open! IStd
 open Javalib_pack
 
-type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
+module Classmap : Caml.Hashtbl.S with type key = JBasics.class_name
+
+type classmap = JCode.jcode Javalib.interface_or_class Classmap.t
 
 type t
 
@@ -18,8 +20,6 @@ val get_classmap : t -> classmap
 val set_java_location : t -> JBasics.class_name -> Location.t -> unit
 
 val get_java_location : t -> JBasics.class_name -> Location.t option
-
-val mem_classmap : JBasics.class_name -> t -> bool
 
 val load : JClasspath.t -> t
 (** load a java program *)

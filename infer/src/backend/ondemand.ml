@@ -49,7 +49,8 @@ type global_state =
   ; pulse_address_generator: PulseAbstractValue.State.t
   ; absint_state: AnalysisState.t
   ; biabduction_state: State.t
-  ; taskbar_nesting: int }
+  ; taskbar_nesting: int
+  ; checker_timer_state: Timer.state }
 
 let save_global_state () =
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
@@ -67,7 +68,8 @@ let save_global_state () =
   ; pulse_address_generator= PulseAbstractValue.State.get ()
   ; absint_state= AnalysisState.save ()
   ; biabduction_state= State.save_state ()
-  ; taskbar_nesting= !nesting }
+  ; taskbar_nesting= !nesting
+  ; checker_timer_state= Timer.suspend () }
 
 
 let restore_global_state st =
@@ -90,7 +92,8 @@ let restore_global_state st =
         !ProcessPoolState.update_status new_t0 status ;
         (new_t0, status) ) ;
   Timeout.resume_previous_timeout () ;
-  nesting := st.taskbar_nesting
+  nesting := st.taskbar_nesting ;
+  Timer.resume st.checker_timer_state
 
 
 (** reference to log errors only at the innermost recursive call *)
@@ -167,7 +170,6 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     log_elapsed_time () ;
     new_summary
   in
-  let old_state = save_global_state () in
   let initial_callee_summary = preprocess () in
   let attributes = Procdesc.get_attributes callee_pdesc in
   try
@@ -176,7 +178,6 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
       else initial_callee_summary
     in
     let final_callee_summary = postprocess callee_summary in
-    restore_global_state old_state ;
     (* don't forget to reset this so we output messages for future errors too *)
     logged_error := false ;
     final_callee_summary
@@ -186,7 +187,6 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
         match exn with
         | RestartSchedulerException.ProcnameAlreadyLocked _ ->
             clear_actives () ;
-            restore_global_state old_state ;
             true
         | exn ->
             if not !logged_error then (
@@ -196,7 +196,6 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
                 source_file Procname.pp callee_pname Location.pp_file_pos location
                 (Exn.to_string exn) ;
               logged_error := true ) ;
-            restore_global_state old_state ;
             not Config.keep_going ) ;
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Procname.pp
       callee_pname (Exn.to_string exn) backtrace ;
@@ -275,12 +274,27 @@ let analyze_callee exe_env ?caller_summary callee_pname =
         summ_opt
     | None when procedure_should_be_analyzed callee_pname ->
         get_proc_desc callee_pname
-        |> Option.map ~f:(fun callee_pdesc ->
+        |> Option.bind ~f:(fun callee_pdesc ->
                RestartScheduler.lock_exn callee_pname ;
+               let previous_global_state = save_global_state () in
                let callee_summary =
-                 run_proc_analysis exe_env
-                   ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-                   callee_pdesc
+                 protect
+                   ~f:(fun () ->
+                     Timer.protect
+                       ~f:(fun () ->
+                         Some
+                           (run_proc_analysis exe_env
+                              ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
+                              callee_pdesc ) )
+                       ~on_timeout:(fun span ->
+                         L.debug Analysis Quiet
+                           "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
+                            (pre-analysis timeout?)@\n"
+                           span SourceFile.pp
+                           (Procdesc.get_attributes callee_pdesc).translation_unit Procname.pp
+                           callee_pname ;
+                         None ) )
+                   ~finally:(fun () -> restore_global_state previous_global_state)
                in
                RestartScheduler.unlock callee_pname ;
                callee_summary )

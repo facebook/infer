@@ -111,14 +111,15 @@ let of_posts tenv proc_desc err_log location posts =
 
 let mk_objc_self_pvar proc_name = Pvar.mk Mangled.self proc_name
 
-let mk_cpp_this_pvar proc_name = Pvar.mk Mangled.this proc_name
+let mk_this_pvar proc_name = Pvar.mk Mangled.this proc_name
 
 let find_self proc_name (proc_attrs : ProcAttributes.t) =
   if Procname.is_objc_instance_method proc_name then Some (mk_objc_self_pvar proc_name)
+  else if Procname.is_java_instance_method proc_name then Some (mk_this_pvar proc_name)
   else
     match proc_attrs.clang_method_kind with
     | CPP_INSTANCE ->
-        Some (mk_cpp_this_pvar proc_name)
+        Some (mk_this_pvar proc_name)
     | _ ->
         None
 
@@ -235,10 +236,16 @@ let mk_objc_nil_messaging_summary tenv proc_name (proc_attrs : ProcAttributes.t)
   else None
 
 
-let prune_positive_allocated_self location self_address astate =
+let positive_allocated_self proc_name location self_address astate =
   (* it's important to do the prune *first* before the dereference to detect contradictions if the
      address is equal to 0 *)
-  PulseArithmetic.prune_positive (fst self_address) astate
+  let set_positive_self =
+    if Procname.is_objc_method proc_name then
+      (* for objc the method is called only if self>0, so we use prune_positive instead of and_positive*)
+      PulseArithmetic.prune_positive
+    else PulseArithmetic.and_positive
+  in
+  set_positive_self (fst self_address) astate
   >>|= PulseOperations.eval_access PathContext.initial Read location self_address Dereference
   >>|| fst
 
@@ -251,7 +258,7 @@ let initial_with_positive_self proc_name (proc_attrs : ProcAttributes.t) initial
           PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar self_var)
             initial_astate
         in
-        prune_positive_allocated_self proc_attrs.loc self_address astate
+        positive_allocated_self proc_name proc_attrs.loc self_address astate
       in
       match PulseOperationResult.sat_ok result with
       | Some astate ->
@@ -268,6 +275,6 @@ let initial_with_positive_self proc_name (proc_attrs : ProcAttributes.t) initial
 let append_objc_actual_self_positive proc_name (proc_attrs : ProcAttributes.t) self_actual astate =
   match self_actual with
   | Some (self, _) when Procname.is_objc_instance_method proc_name ->
-      prune_positive_allocated_self proc_attrs.loc self astate
+      positive_allocated_self proc_name proc_attrs.loc self astate
   | _ ->
       Sat (Ok astate)

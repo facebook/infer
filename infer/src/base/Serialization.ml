@@ -22,7 +22,7 @@ module Key = struct
 
   (** Current keys for various serializable objects. The keys are computed using the [generate_keys]
       function below *)
-  let tenv, issues = ({name= "tenv"; key= 425184201}, {name= "issues"; key= 852343110})
+  let tenv = {name= "tenv"; key= 425184201}
 end
 
 (** version of the binary files, to be incremented for each change *)

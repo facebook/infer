@@ -27,9 +27,10 @@ let delete_array deleted_arg : model =
 let new_ type_name : model =
  fun model_data astate ->
   let<++> astate =
-    (* Java and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
+    (* Java, Hack and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
        builtin for [\[Class new\]]) *)
-    if Procname.is_java @@ Procdesc.get_proc_name model_data.analysis_data.proc_desc then
+    let pdesc = Procdesc.get_proc_name model_data.analysis_data.proc_desc in
+    if Procname.is_java pdesc || Procname.is_hack pdesc then
       Basic.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new" model_data astate
     else
       (* C++ *)
@@ -42,8 +43,9 @@ let new_ type_name : model =
 let new_array type_name : model =
  fun model_data astate ->
   let<++> astate =
-    (* Java and C++ [new\[\]] share the same builtin *)
-    if Procname.is_java @@ Procdesc.get_proc_name model_data.analysis_data.proc_desc then
+    (* Java, Hack and C++ [new\[\]] share the same builtin *)
+    let pdesc = Procdesc.get_proc_name model_data.analysis_data.proc_desc in
+    if Procname.is_java pdesc || Procname.is_hack pdesc then
       Basic.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new[]" model_data astate
     else
       (* C++ *)

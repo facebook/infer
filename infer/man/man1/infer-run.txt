@@ -154,6 +154,10 @@ OPTIONS
            SQLite page size in bytes, must be a power of two between 512 and
            65536.
 
+       --timeout float
+           Time after which any checker (except biabduction) should give up
+           analysing the current function or method, in seconds
+
        --version
            Print version information and exit
 

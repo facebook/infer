@@ -585,10 +585,12 @@ module Term = struct
 
   let of_q q = Const q
 
+  let of_intlit i = IntLit.to_big_int i |> Q.of_bigint |> of_q
+
   let of_const (c : Const.t) =
     match c with
     | Cint i ->
-        IntLit.to_big_int i |> Q.of_bigint |> of_q
+        of_intlit i
     | Cfloat f ->
         Q.of_float f |> of_q
     | Cfun proc_name ->
@@ -666,6 +668,40 @@ module Term = struct
   let is_zero = function Const c -> Q.is_zero c | _ -> false
 
   let is_non_zero_const = function Const c -> Q.is_not_zero c | _ -> false
+
+  let has_known_non_boolean_type = function
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _
+    | And _
+    | Or _
+    | Not _
+    | IsInstanceOf _
+    | IsInt _
+    | Var _ ->
+        false
+    | Linear l ->
+        Option.is_none (LinArith.get_as_var l)
+    | Const c ->
+        not Q.(c = zero || c = one)
+    | String _
+    | Procname _
+    | FunctionApplication _
+    | Add _
+    | Minus _
+    | Mult _
+    | DivI _
+    | DivF _
+    | Mod _
+    | BitAnd _
+    | BitOr _
+    | BitNot _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _ ->
+        true
+
 
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
@@ -777,7 +813,7 @@ module Term = struct
     try
       Sat
         (map_direct_subterms t ~f:(fun t' ->
-             match f t' with Unsat -> raise FoundUnsat | Sat t'' -> t'' ) )
+             match f t' with Unsat -> raise_notrace FoundUnsat | Sat t'' -> t'' ) )
     with FoundUnsat -> Unsat
 
 
@@ -866,7 +902,7 @@ module Term = struct
       conv2 Q.to_bigint Q.to_bigint (Option.map ~f:Q.of_bigint) q1 q2 f |> Option.join
     in
     let exception Undefined in
-    let or_raise = function Some q -> q | None -> raise Undefined in
+    let or_raise = function Some q -> q | None -> raise_notrace Undefined in
     let eval_const_shallow_or_raise t0 =
       match t0 with
       | Const _ | Var _ | IsInstanceOf _ | String _ | Procname _ | FunctionApplication _ ->
@@ -893,7 +929,7 @@ module Term = struct
       | DivI (t1, t2) | DivF (t1, t2) ->
           q_map2 t1 t2 (fun c1 c2 ->
               let open Option.Monad_infix in
-              if Q.is_zero c2 then raise Undefined
+              if Q.is_zero c2 then raise_notrace Undefined
               else
                 match t0 with
                 | DivI _ ->
@@ -904,7 +940,8 @@ module Term = struct
                     (* DivF *) Q.(c1 / c2) )
       | Mod (t1, t2) ->
           q_map2 t1 t2 (fun c1 c2 ->
-              if Q.is_zero c2 then raise Undefined else map_z_z_opt c1 c2 Z.( mod ) |> or_raise )
+              if Q.is_zero c2 then raise_notrace Undefined
+              else map_z_z_opt c1 c2 Z.( mod ) |> or_raise )
       | Not t' ->
           q_predicate_map t' Q.is_zero
       | And (t1, t2) ->
@@ -1001,7 +1038,7 @@ module Term = struct
           simplify_shallow_or_raise (Minus t)
       | (DivI (_, Const c) | DivF (_, Const c)) when Q.is_zero c ->
           (* [t / 0 = undefined] *)
-          raise Undefined
+          raise_notrace Undefined
       | DivI (Minus t1, Minus t2) ->
           (* [(-t1) / (-t2) = t1 / t2] *)
           simplify_shallow_or_raise (DivI (t1, t2))
@@ -1032,12 +1069,12 @@ module Term = struct
         match Q.to_int q with
         | None ->
             (* overflows or otherwise undefined, propagate puzzlement *)
-            raise Undefined
+            raise_notrace Undefined
         | Some i -> (
             if i >= 64 then (* assume 64-bit or fewer architecture *) zero
             else if i < 0 then
               (* this is undefined, maybe we should report a bug here *)
-              raise Undefined
+              raise_notrace Undefined
             else
               let factor = Const Q.(of_int 1 lsl i) in
               match[@warning "-8"] t with
@@ -1307,7 +1344,8 @@ module Atom = struct
   (** [atoms_of_term ~negated t] is [Some \[atom1; ..; atomN\]] if [t] (or [¬t] if [negated]) is
       (mostly syntactically) equivalent to [atom1 ∧ .. ∧ atomN]. For example
       [atoms_of_term ~negated:false (Equal (Or (x, Not y), 0))] should be
-      [\[Equal (x, 0); Equal (y, 1)\]].
+      [\[Equal (x, 0); NotEqual (y, 0)\]]. When the term [y] is known as a boolean, it generates a
+      preciser atom [Equal (y, 1)].
 
       [is_neq_zero] is a function that can tell if a term is known to be [≠0], and [force_to_atom]
       can be used to force converting the term into an atom even if it does not make it simpler or
@@ -1343,7 +1381,12 @@ module Atom = struct
           (* NOTE: [Not (Or _)] is taken care of by term normalization so no need to handle it here *)
           aux ~negated:(not negated) ~force_to_atom t
       | t ->
-          if force_to_atom then Some [Equal (t, if negated then Term.zero else Term.one)] else None
+          if force_to_atom then
+            Some
+              [ ( if negated then Equal (t, Term.zero)
+                else if Term.has_known_non_boolean_type t then NotEqual (t, Term.zero)
+                else Equal (t, Term.one) ) ]
+          else None
     in
     aux ~negated ~force_to_atom t
     |> Option.map ~f:(fun atoms ->
@@ -1356,9 +1399,10 @@ module Atom = struct
   and get_as_embedded_atoms ~is_neq_zero atom =
     let of_terms is_equal t c =
       let negated =
-        (* [atom = 0] or [atom ≠ 1] means [atom] is false, [atom ≠ 0] or [atom = 1] means [atom]
-           is true *)
-        (is_equal && Q.is_zero c) || ((not is_equal) && Q.is_one c)
+        (* [atom = 0] or [atom ≠ 1] when [atom] is boolean means [atom] is false, [atom ≠ 0] or
+           [atom = 1] means [atom] is true *)
+        (is_equal && Q.is_zero c)
+        || ((not is_equal) && (not (Term.has_known_non_boolean_type t)) && Q.is_one c)
       in
       atoms_of_term ~is_neq_zero ~negated t
     in
@@ -1511,7 +1555,7 @@ module Atom = struct
     let exception FoundUnsat in
     try
       map_terms atom ~f:(fun t ->
-          match eval_term ~is_neq_zero t with Sat t' -> t' | Unsat -> raise FoundUnsat )
+          match eval_term ~is_neq_zero t with Sat t' -> t' | Unsat -> raise_notrace FoundUnsat )
       |> eval_with_normalized_terms ~is_neq_zero
     with FoundUnsat -> Unsat
 
@@ -2148,7 +2192,7 @@ module Formula = struct
                   match CItv.intersection interval interval' with
                   | None ->
                       (* empty intersection *)
-                      raise FoundUnsat
+                      raise_notrace FoundUnsat
                   | Some interval'' ->
                       interval'' )
               in
@@ -2267,7 +2311,7 @@ module Intervals = struct
 
   let update_formula formula intervals = {formula with phi= {formula.phi with intervals}}
 
-  let and_binop ~negated binop op1 op2 formula =
+  let and_binop ~negated binop op1 op2 (formula, new_eqs) =
     let intervals = formula.phi.intervals in
     let v1_opt, i1_opt = interval_and_var_of_operand intervals op1 in
     let v2_opt, i2_opt = interval_and_var_of_operand intervals op2 in
@@ -2275,14 +2319,21 @@ module Intervals = struct
     | Unsatisfiable ->
         Unsat
     | Satisfiable (i1_better_opt, i2_better_opt) ->
-        let refine v_opt i_better_opt intervals =
+        let refine v_opt i_better_opt formula_new_eqs =
           Option.both v_opt i_better_opt
-          |> Option.fold ~init:intervals ~f:(fun intervals (v, i_better) ->
-                 Var.Map.add v i_better intervals )
+          |> Option.fold ~init:(Sat formula_new_eqs) ~f:(fun formula_new_eqs (v, i_better) ->
+                 let* formula, new_eqs = formula_new_eqs in
+                 let+ phi, new_eqs =
+                   match CItv.to_singleton i_better with
+                   | None ->
+                       Sat (formula.phi, new_eqs)
+                   | Some i ->
+                       Formula.Normalizer.and_var_term v (Term.of_intlit i) (formula.phi, new_eqs)
+                 in
+                 let intervals = Var.Map.add v i_better intervals in
+                 ({formula with phi= {phi with intervals}}, new_eqs) )
         in
-        let intervals = refine v1_opt i1_better_opt intervals in
-        let intervals = refine v2_opt i2_better_opt intervals in
-        Sat (update_formula formula intervals)
+        refine v1_opt i1_better_opt (formula, new_eqs) >>= refine v2_opt i2_better_opt
 
 
   let binop v bop op_lhs op_rhs formula =
@@ -2320,9 +2371,10 @@ module Intervals = struct
 end
 
 let and_mk_atom binop op1 op2 formula =
-  let* formula = Intervals.and_binop ~negated:false binop op1 op2 formula in
+  let* formula, new_eqs = Intervals.and_binop ~negated:false binop op1 op2 (formula, []) in
   let atom = (mk_atom_of_binop binop) (Term.of_operand op1) (Term.of_operand op2) in
-  and_atom atom formula
+  let+ formula, new_eqs' = and_atom atom formula in
+  (formula, List.rev_append new_eqs new_eqs')
 
 
 let and_equal op1 op2 formula = and_mk_atom Eq op1 op2 formula
@@ -2376,7 +2428,6 @@ let prune_atoms atoms formula_new_eqs =
 
 
 let prune_binop ~negated (bop : Binop.t) x y formula =
-  let* formula = Intervals.and_binop ~negated bop x y formula in
   let tx = Term.of_operand x in
   let ty = Term.of_operand y in
   let t = Term.of_binop bop tx ty in
@@ -2386,7 +2437,11 @@ let prune_binop ~negated (bop : Binop.t) x y formula =
       (Atom.atoms_of_term ~is_neq_zero:(Formula.is_neq_zero formula.phi) ~force_to_atom:true
          ~negated t )
   in
-  prune_atoms atoms (formula, [])
+  (* NOTE: [Intervals.and_binop] may tip off the rest of the formula about the new equality so it's
+     important to do [prune_atoms] *first* otherwise it might become trivial. For instance adding [x
+     = 4] would prune [4 = 4] and so not add anything to [formula.conditions] instead of adding [x =
+     4]. *)
+  prune_atoms atoms (formula, []) >>= Intervals.and_binop ~negated bop x y
 
 
 module DynamicTypes = struct
@@ -2465,7 +2520,7 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
   (* propagate [Unsat] faster using this exception *)
   let exception Contradiction in
   let sat_value_exn (norm : 'a SatUnsat.t) =
-    match norm with Unsat -> raise Contradiction | Sat x -> x
+    match norm with Unsat -> raise_notrace Contradiction | Sat x -> x
   in
   let and_var_eqs var_eqs_foreign acc_phi_new_eqs =
     VarUF.fold_congruences var_eqs_foreign ~init:acc_phi_new_eqs
@@ -2532,7 +2587,7 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
   (* propagate [Unsat] faster using this exception *)
   let exception Contradiction in
   let sat_value_exn (norm : 'a SatUnsat.t) =
-    match norm with Unsat -> raise Contradiction | Sat x -> x
+    match norm with Unsat -> raise_notrace Contradiction | Sat x -> x
   in
   let add_conditions conditions_foreign init =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold conditions_foreign ~init
@@ -2565,7 +2620,7 @@ end = struct
         | Unsat ->
             L.d_printfln "Contradiction found: %a=%a became %a=%a with is Unsat" Var.pp x
               (LinArith.pp Var.pp) l Var.pp x' (LinArith.pp Var.pp) l' ;
-            raise Contradiction
+            raise_notrace Contradiction
         | Sat None ->
             new_map
         | Sat (Some (x'', l'')) ->
@@ -2603,7 +2658,7 @@ end = struct
         if changed then
           match Atom.eval ~is_neq_zero:(fun _ -> false) atom' with
           | Unsat ->
-              raise Contradiction
+              raise_notrace Contradiction
           | Sat atoms'' ->
               Atom.Set.add_seq (Caml.List.to_seq atoms'') atoms'
         else Atom.Set.add atom' atoms' )
@@ -2619,19 +2674,30 @@ end = struct
     ; atoms= subst_var_atoms subst atoms }
 
 
-  let extend_with_restricted_reps_of keep var_eqs =
-    VarUF.fold_congruences var_eqs ~init:keep ~f:(fun acc (repr, vs) ->
+  let extend_with_restricted_reps_of keep formula =
+    (* extending [keep] with a restricted variable [a] when there is [x∈keep] such that [x=a] so
+       that we remember that [x≥0] is not interesting if we know the more precise fact that [x=c]
+       for some constant [c≥0]. Furthermore, we don't need to check that [c≥0] when we find that
+       [x=a=c] because [c<0] would be a contradiction already detected by the tableau at an earlier
+       step. *)
+    let is_constant repr =
+      Var.Map.find_opt repr formula.phi.linear_eqs
+      |> Option.exists ~f:(fun linear -> LinArith.get_as_const linear |> Option.is_some)
+    in
+    VarUF.fold_congruences formula.phi.var_eqs ~init:keep ~f:(fun acc (repr, vs) ->
         let repr = (repr :> Var.t) in
         if
           Var.is_restricted repr
+          && (not (is_constant repr))
           && Var.Set.exists (fun v -> Var.is_unrestricted v && Var.Set.mem v keep) vs
         then Var.Set.add repr acc
         else acc )
 
 
   let eliminate_vars ~precondition_vocabulary ~keep formula =
-    (* Beware of not losing information: if [x=u] with [u] is restricted then [x≥0], so extend [keep] accordingly. *)
-    let keep = extend_with_restricted_reps_of keep formula.phi.var_eqs in
+    (* Beware of not losing information: if [x=u] with [u] is restricted then [x≥0], so extend
+       [keep] accordingly. *)
+    let keep = extend_with_restricted_reps_of keep formula in
     let subst = VarUF.reorient formula.phi.var_eqs ~should_keep:(fun x -> Var.Set.mem x keep) in
     try
       Sat

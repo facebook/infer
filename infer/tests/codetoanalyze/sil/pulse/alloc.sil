@@ -1,0 +1,15 @@
+attribute source_language = "hack"
+
+type T = { }
+
+define object() : void {
+  #entry:
+    n0 = __sil_allocate_T()
+    ret null
+}
+
+define array() : void {
+  #entry:
+    n0 = __sil_allocate_array(10)
+    ret null
+}

@@ -834,7 +834,7 @@ module PulseTransferFunctions = struct
           "OOM danger: heap size is %d words, more than the specified threshold of %d words. \
            Aborting the analysis of the procedure %a to avoid running out of memory.@\n"
           heap_size max_heap_size Procname.pp pname ;
-        raise AboutToOOM
+        raise_notrace AboutToOOM
     | _ ->
         () ) ;
     let astates, path, astate_n =

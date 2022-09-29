@@ -16,6 +16,7 @@ val replace_attributes :
   -> proc_attributes:Sqlite3.Data.t
   -> cfg:Sqlite3.Data.t
   -> callees:Sqlite3.Data.t
+  -> analysis:bool
   -> unit
 
 val add_source_file :
@@ -48,3 +49,6 @@ val store_spec :
 val delete_spec : proc_uid:string -> unit
 
 val delete_all_specs : unit -> unit
+
+val store_issue_log :
+  checker:string -> source_file:Sqlite3.Data.t -> issue_log:Sqlite3.Data.t -> unit

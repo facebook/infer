@@ -54,7 +54,7 @@
     test_listappend5_Bad/0,
     test_listappend6_Ok/0,
     test_listappend6_Bad/0,
-    test_listappend7_Ok/0,
+    fp_test_listappend7_Ok/0,
     test_listappend7_Bad/0,
     fp_test_listappend8_Ok/0,
     test_listappend8_Bad/0,
@@ -286,7 +286,7 @@ test_listappend6_Ok() ->
 test_listappend6_Bad() ->
     one() ++ [].
 
-test_listappend7_Ok() ->
+fp_test_listappend7_Ok() ->
     L = "sjhdkjxmcxc" ++ [1,2,3,4,5],
     ?ASSERT_EQUAL([115,106,104,100,107,106,120,109,99,120,99,1,2,3,4,5], L).
 

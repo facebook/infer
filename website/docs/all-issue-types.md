@@ -2171,6 +2171,11 @@ See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 Reported as "Unnecessary Copy Assignment Movable" by [pulse](/docs/next/checker-pulse).
 
 See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable).
+## PULSE_UNNECESSARY_COPY_INTERMEDIATE
+
+Reported as "Unnecessary Copy Intermediate" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 ## PULSE_UNNECESSARY_COPY_MOVABLE
 
 Reported as "Unnecessary Copy Movable" by [pulse](/docs/next/checker-pulse).
@@ -2202,6 +2207,29 @@ class Test {
 };
 
 ```
+## PULSE_UNNECESSARY_COPY_RETURN
+
+Reported as "Unnecessary Copy Return" by [pulse](/docs/next/checker-pulse).
+
+This is similar to [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy), but reported when a callee returns a copied value and it is not modified in its caller.  We may be able to return const-ref typed value or try `std::move` to avoid the copy.
+
+For example,
+
+```cpp
+class MyClass {
+  T v;
+ public:
+  T get() {
+    return v; // v is copied here, which is avoidable.
+  }
+};
+
+void caller(MyClass obj) {
+  T x = obj.get();
+  std::cout << x; // x is not modified.
+}
+```
+
 ## PURE_FUNCTION
 
 Reported as "Pure Function" by [purity](/docs/next/checker-purity).

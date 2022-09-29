@@ -8,6 +8,11 @@
 #import <Foundation/Foundation.h>
 
 void HandleIntentForKey(NSString* key, NSString* context, NSObject* input) {}
+void UselessPrefix_HandleIntentForKey(NSString* key,
+                                      NSString* context,
+                                      NSObject* input) {}
+
+void dispatched(NSString* context, NSObject* input) {}
 
 extern NSString* AttributedStringProviderInputCreate() { return @"input"; }
 
@@ -21,8 +26,11 @@ NSString* taintInterprocBad() {
 
   for (NSString* textResult in matches) {
     HandleIntentForKey(
-        @"key", @"context", (NSObject*)AttributedStringProviderInput());
+        @"dispatch_1", @"context", (NSObject*)AttributedStringProviderInput());
   };
+
+  UselessPrefix_HandleIntentForKey(
+      @"dispatch_1", @"context", (NSObject*)AttributedStringProviderInput());
 
   return @"string";
 }

@@ -24,8 +24,8 @@ test: issues.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
 
-issues.exp.test: $(SOURCES) $(INFER_BIN)
-	@for f in $(SOURCES); do $(INFER_BIN) capture --hackc-binary $(HACKC) -- hackc $${f}; done >& $@
+issues.exp.test: $(SOURCES) $(INFER_BIN) $(HACKC)
+	$(INFER_BIN) capture --hackc-binary $(HACKC) -- hackc $(SOURCES) >& $@
 
 .PHONY: replace
 replace: issues.exp.test

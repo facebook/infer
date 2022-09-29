@@ -258,6 +258,16 @@ disable all other checkers (Conversely:
 <b>--no-eradicate-only</b>)</p>
 
 
+<p style="margin-left:11%;"><b>--files-to-analyze-index</b>
+<i>file</i></p>
+
+<p style="margin-left:17%;">File containing a list of
+source files where analysis should start from. When used,
+the set of files given to this argument must be a subset of
+that passed to <b>--changed-files-index</b> (which must be
+specified).</p>
+
+
 <p style="margin-left:11%;"><b>--no-fragment-retains-view</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker
@@ -648,15 +658,21 @@ not be analyzed by Pulse.</p>
 <i>+path</i></p>
 
 <p style="margin-left:17%;">Path to a taint analysis
-configuration file. This file can define
-<b>--pulse-taint-sources</b>,
-<b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
-<b>--pulse-taint-policies</b>, and
-<b>--pulse-taint-data-flow-kinds</b>.</p>
+configuration file or a directory containing such files.
+This file can define <b>--pulse-taint-sources</b>,
+<b>--pulse-taint-sanitizers</b>,
+<b>--pulse-taint-propagators</b>,
+<b>--pulse-taint-sinks</b>, <b>--pulse-taint-policies</b>,
+and <b>--pulse-taint-data-flow-kinds</b>.</p>
 
-
-<p style="margin-left:11%;"><b>--pulse-taint-data-flow-kinds</b>
-<i>json</i></p>
+<p style="margin-left:11%;">If a path to a directory is
+given then the configuration files <br>
+must have the &lsquo;.json&lsquo; extension. Any other file
+will be ignored. <br>
+The subdirectories will be explored and must follow the same
+<br>
+convention. <b><br>
+--pulse-taint-data-flow-kinds</b> <i>json</i></p>
 
 <p style="margin-left:17%;">Specify which taint kinds
 should be used for data flow reporting only. If a source has
@@ -693,7 +709,16 @@ enabled: <br>
 &quot;sink_kinds&quot;: [&quot;Simple&quot;], <br>
 &quot;sanitizer_kinds&quot;: [&quot;Simple&quot;] }] <br>
 } <b><br>
---pulse-taint-sanitizers</b> <i>json</i></p>
+--pulse-taint-propagators</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+propagators as a JSON objects. See
+<b>--pulse-taint-sources</b> for the fields format
+documentation.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-taint-sanitizers</b>
+<i>json</i></p>
 
 <p style="margin-left:17%;">Quick way to specify simple
 sanitizers as a JSON objects. See
@@ -738,7 +763,9 @@ to specify flows between sources/sanitizers/sinks <br>
 (&quot;Simple&quot; by default). <br>
 - &quot;taint_target&quot;: <br>
 where the taint should be applied in the procedure. <br>
-- &quot;ReturnValue&quot;: (default for taint sources) <br>
+- &quot;ReturnValue&quot;: (default for taint sources and
+<br>
+propagators) <br>
 - &quot;AllArguments&quot;: (default for taint sanitizers
 and sinks) <br>
 - [&quot;ArgumentPositions&quot;, [&lt;int list&gt;]]: <br>
@@ -936,13 +963,6 @@ temporal properties over multiple objects. (Conversely:
 disable all other checkers (Conversely:
 <b>--no-topl-only</b>)</p>
 
-
-<p style="margin-left:11%;"><b>--topl-skip-report-calls</b>
-<i>regex</i></p>
-
-<p style="margin-left:17%;">Regex of procedures whose calls
-should be skipped from the reported trace.</p>
-
 <p style="margin-left:11%;"><b>--uninit</b></p>
 
 <p style="margin-left:17%;">Activates: checker uninit:
@@ -1086,6 +1106,13 @@ each analysis has to model.</p>
 <p style="margin-left:17%;">Specify scope guard classes
 that can be read only by destructors without being reported
 as dead stores.</p>
+
+
+<p style="margin-left:11%;"><b>--dynamic-dispatch-json-file-path</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Dynamic dispatch file path to
+get the JSON used for method name substitution</p>
 
 
 <p style="margin-left:11%;"><b>--liveness-dangerous-classes</b>

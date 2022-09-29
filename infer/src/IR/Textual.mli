@@ -118,7 +118,11 @@ end
 module Terminator : sig
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
-  type t = Ret of Exp.t | Jump of node_call list  (** non empty list *) | Throw of Exp.t
+  type t =
+    | Ret of Exp.t
+    | Jump of node_call list  (** non empty list *)
+    | Throw of Exp.t
+    | Unreachable
 end
 
 module Node : sig

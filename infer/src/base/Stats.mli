@@ -40,6 +40,8 @@ val add_pulse_summaries_count : int -> unit
 
 val add_proc_duration : string -> int -> unit
 
+val incr_timeouts : unit -> unit
+
 val reset : unit -> unit
 (** reset all stats *)
 

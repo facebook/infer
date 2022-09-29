@@ -11,6 +11,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: No
+- Hack: No
 - Java: No
 
 This checker checks that an Objective-C block that is passed as a parameter

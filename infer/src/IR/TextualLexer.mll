@@ -113,6 +113,8 @@ rule main = parse
         { TRUE }
   | "type"
         { TYPE }
+  | "unreachable"
+        { UNREACHABLE }
   | "void"
         { VOID }
 

@@ -865,8 +865,3 @@ let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate0 =
          from %a"
         Procname.pp proc_name AbductiveDomain.pp astate0 ;
       astate0
-
-
-let dynamic_dispatch_map =
-  (fun x -> match x with Some y -> Some (Yojson.Basic.from_file y) | None -> None)
-    Config.dynamic_dispatch_json_file_path

@@ -312,6 +312,13 @@ default, all recursive dependencies are captured.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--buck-erlang</b></p>
+
+<p style="margin-left:17%;">Activates: Buck integration for
+Erlang. (Conversely: <b>--no-buck-erlang</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --buck-java-flavor</b></p>
 
 <p style="margin-left:17%;">Activates: Buck integration for
@@ -961,7 +968,10 @@ PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
 <br>
 PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by <br>
 default), <br>
+PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
+<br>
 PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_RETURN (disabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
@@ -1016,6 +1026,13 @@ with the same name that are defined in more than one file.
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--dynamic-dispatch-json-file-path</b> <i>path</i></p>
+
+<p style="margin-left:17%;">Dynamic dispatch file path to
+get the JSON used for method name substitution</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --enable-issue-type</b> <i>+issue_type</i></p>
 
 <p style="margin-left:17%;">Show reports coming from this
@@ -1101,6 +1118,16 @@ renamings to use while computing differential reports</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-reportdiff</b>(1). <b><br>
+--files-to-analyze-index</b> <i>file</i></p>
+
+<p style="margin-left:17%;">File containing a list of
+source files where analysis should start from. When used,
+the set of files given to this argument must be a subset of
+that passed to <b>--changed-files-index</b> (which must be
+specified).</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --no-filtering</b>,<b>-F</b></p>
 
 <p style="margin-left:17%;">Deactivates: Do not show the
@@ -1938,14 +1965,21 @@ not be analyzed by Pulse.</p>
 --pulse-taint-config</b> <i>+path</i></p>
 
 <p style="margin-left:17%;">Path to a taint analysis
-configuration file. This file can define
-<b>--pulse-taint-sources</b>,
-<b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
-<b>--pulse-taint-policies</b>, and
-<b>--pulse-taint-data-flow-kinds</b>.</p>
+configuration file or a directory containing such files.
+This file can define <b>--pulse-taint-sources</b>,
+<b>--pulse-taint-sanitizers</b>,
+<b>--pulse-taint-propagators</b>,
+<b>--pulse-taint-sinks</b>, <b>--pulse-taint-policies</b>,
+and <b>--pulse-taint-data-flow-kinds</b>.</p>
 
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
+<p style="margin-left:11%;">If a path to a directory is
+given then the configuration files <br>
+must have the &lsquo;.json&lsquo; extension. Any other file
+will be ignored. <br>
+The subdirectories will be explored and must follow the same
+<br>
+convention. <br>
+See also <b>infer-analyze</b>(1). <b><br>
 --pulse-taint-data-flow-kinds</b> <i>json</i></p>
 
 <p style="margin-left:17%;">Specify which taint kinds
@@ -1985,6 +2019,15 @@ enabled: <br>
 &quot;sanitizer_kinds&quot;: [&quot;Simple&quot;] }] <br>
 } <br>
 See also <b>infer-analyze</b>(1). <b><br>
+--pulse-taint-propagators</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+propagators as a JSON objects. See
+<b>--pulse-taint-sources</b> for the fields format
+documentation.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-taint-sanitizers</b> <i>json</i></p>
 
 <p style="margin-left:17%;">Quick way to specify simple
@@ -2032,7 +2075,9 @@ to specify flows between sources/sanitizers/sinks <br>
 (&quot;Simple&quot; by default). <br>
 - &quot;taint_target&quot;: <br>
 where the taint should be applied in the procedure. <br>
-- &quot;ReturnValue&quot;: (default for taint sources) <br>
+- &quot;ReturnValue&quot;: (default for taint sources and
+<br>
+propagators) <br>
 - &quot;AllArguments&quot;: (default for taint sanitizers
 and sinks) <br>
 - [&quot;ArgumentPositions&quot;, [&lt;int list&gt;]]: <br>
@@ -2624,13 +2669,6 @@ temporal properties over multiple objects. (Conversely:
 <p style="margin-left:17%;">Activates: Enable topl and
 disable all other checkers (Conversely:
 <b>--no-topl-only</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---topl-skip-report-calls</b> <i>regex</i></p>
-
-<p style="margin-left:17%;">Regex of procedures whose calls
-should be skipped from the reported trace.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>

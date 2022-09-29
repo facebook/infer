@@ -234,8 +234,6 @@ end = struct
     List.filter ~f:is_live_predicate constr
 end
 
-type predicate = Binop.t * Formula.operand * Formula.operand [@@deriving compare]
-
 type step =
   { step_location: Location.t
   ; step_predecessor: simple_state  (** state before this step *)

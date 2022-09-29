@@ -9,13 +9,13 @@ module F = Format
 module L = Logging
 
 let select_existing_statement =
-  ResultsDatabase.register_statement
+  Database.register_statement CaptureDatabase
     "SELECT type_environment, procedure_names FROM source_files WHERE source_file = :source AND \
      freshly_captured = 1"
 
 
 let get_existing_data source_file =
-  ResultsDatabase.with_registered_statement select_existing_statement ~f:(fun db stmt ->
+  Database.with_registered_statement select_existing_statement ~f:(fun db stmt ->
       SourceFile.SQLite.serialize source_file
       |> Sqlite3.bind stmt 1
       (* :source *)
@@ -64,7 +64,7 @@ let add source_file cfg tenv integer_type_widths =
 
 
 let get_all ~filter () =
-  let db = ResultsDatabase.get_database () in
+  let db = Database.get_database CaptureDatabase in
   (* we could also register this statement but it's typically used only once per run so just prepare
      it inside the function *)
   Sqlite3.prepare db "SELECT source_file FROM source_files"
@@ -76,12 +76,12 @@ let get_all ~filter () =
 
 
 let load_proc_names_statement =
-  ResultsDatabase.register_statement
+  Database.register_statement CaptureDatabase
     "SELECT procedure_names FROM source_files WHERE source_file = :k"
 
 
 let proc_names_of_source source =
-  ResultsDatabase.with_registered_statement load_proc_names_statement ~f:(fun db load_stmt ->
+  Database.with_registered_statement load_proc_names_statement ~f:(fun db load_stmt ->
       SourceFile.SQLite.serialize source
       |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
@@ -90,16 +90,18 @@ let proc_names_of_source source =
       |> Option.value_map ~default:[] ~f:Procname.SQLiteList.deserialize )
 
 
-let is_non_empty_statement = ResultsDatabase.register_statement "SELECT 1 FROM source_files LIMIT 1"
+let is_non_empty_statement =
+  Database.register_statement CaptureDatabase "SELECT 1 FROM source_files LIMIT 1"
+
 
 let is_empty () =
-  ResultsDatabase.with_registered_statement is_non_empty_statement ~f:(fun db stmt ->
+  Database.with_registered_statement is_non_empty_statement ~f:(fun db stmt ->
       SqliteUtils.result_single_column_option ~finalize:false ~log:"SourceFiles.is_empty" db stmt
       |> Option.is_none )
 
 
 let is_freshly_captured_statement =
-  ResultsDatabase.register_statement
+  Database.register_statement CaptureDatabase
     "SELECT freshly_captured FROM source_files WHERE source_file = :k"
 
 
@@ -109,7 +111,7 @@ let deserialize_freshly_captured = function[@warning "-8"]
 
 
 let is_freshly_captured source =
-  ResultsDatabase.with_registered_statement is_freshly_captured_statement ~f:(fun db load_stmt ->
+  Database.with_registered_statement is_freshly_captured_statement ~f:(fun db load_stmt ->
       SourceFile.SQLite.serialize source
       |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
@@ -121,7 +123,7 @@ let is_freshly_captured source =
 let mark_all_stale () = DBWriter.mark_all_source_files_stale ()
 
 let select_all_source_files_statement =
-  ResultsDatabase.register_statement
+  Database.register_statement CaptureDatabase
     {|
   SELECT source_file
   , type_environment
@@ -150,7 +152,7 @@ let pp_all ~filter ~type_environment ~procedure_names ~freshly_captured fmt () =
          Format.pp_print_bool )
       3
   in
-  ResultsDatabase.with_registered_statement select_all_source_files_statement ~f:(fun db stmt ->
+  Database.with_registered_statement select_all_source_files_statement ~f:(fun db stmt ->
       let pp fmt column =
         let source_file = SourceFile.SQLite.deserialize column in
         if filter source_file then pp_row stmt fmt source_file

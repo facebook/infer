@@ -627,11 +627,11 @@ exception NoLeak
 let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
   (* stop as soon as we find out that all locations that could potentially cause a leak are still
      live *)
-  if AbstractValue.Set.is_empty potential_leak_addrs then raise NoLeak ;
+  if AbstractValue.Set.is_empty potential_leak_addrs then raise_notrace NoLeak ;
   let potential_leaks = ref potential_leak_addrs in
   let mark_reachable addr =
     potential_leaks := AbstractValue.Set.remove addr !potential_leaks ;
-    if AbstractValue.Set.is_empty !potential_leaks then raise NoLeak
+    if AbstractValue.Set.is_empty !potential_leaks then raise_notrace NoLeak
   in
   let pre = (astate.AbductiveDomain.pre :> BaseDomain.t) in
   let post = (astate.AbductiveDomain.post :> BaseDomain.t) in

@@ -11,6 +11,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: Yes
 - Erlang: No
+- Hack: No
 - Java: Yes
 
 Read more about its foundations in the [Separation Logic and Biabduction page](separation-logic-and-bi-abduction).

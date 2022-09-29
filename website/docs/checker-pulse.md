@@ -11,6 +11,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: Experimental
+- Hack: No
 - Java: Yes
 
 ## What is Infer:Pulse?
@@ -175,7 +176,9 @@ The following issue types are reported by this checker:
 - [PULSE_UNNECESSARY_COPY](/docs/next/all-issue-types#pulse_unnecessary_copy)
 - [PULSE_UNNECESSARY_COPY_ASSIGNMENT](/docs/next/all-issue-types#pulse_unnecessary_copy_assignment)
 - [PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE](/docs/next/all-issue-types#pulse_unnecessary_copy_assignment_movable)
+- [PULSE_UNNECESSARY_COPY_INTERMEDIATE](/docs/next/all-issue-types#pulse_unnecessary_copy_intermediate)
 - [PULSE_UNNECESSARY_COPY_MOVABLE](/docs/next/all-issue-types#pulse_unnecessary_copy_movable)
+- [PULSE_UNNECESSARY_COPY_RETURN](/docs/next/all-issue-types#pulse_unnecessary_copy_return)
 - [RETAIN_CYCLE](/docs/next/all-issue-types#retain_cycle)
 - [SENSITIVE_DATA_FLOW](/docs/next/all-issue-types#sensitive_data_flow)
 - [STACK_VARIABLE_ADDRESS_ESCAPE](/docs/next/all-issue-types#stack_variable_address_escape)

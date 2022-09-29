@@ -198,26 +198,18 @@ let create_icfg source_file program tenv icfg cn node =
 
 (* returns true for the set of classes that are selected to be translated in the given
    program *)
-let should_capture program package_opt source_basename node =
-  let classname = Javalib.get_name node in
-  let match_package pkg cn =
-    match JTransType.package_to_string (JBasics.cn_package cn) with
-    | None ->
-        String.equal pkg ""
-    | Some found_pkg ->
-        String.equal found_pkg pkg
-  in
-  if JProgramDesc.mem_classmap classname program then
-    match Javalib.get_sourcefile node with
-    | None ->
-        false
-    | Some found_basename -> (
+let should_capture package_opt source_basename classname node =
+  match Javalib.get_sourcefile node with
+  | None ->
+      false
+  | Some found_basename -> (
+      String.equal found_basename source_basename
+      &&
       match package_opt with
       | None ->
-          String.equal found_basename source_basename
+          true
       | Some pkg ->
-          match_package pkg classname && String.equal found_basename source_basename )
-  else false
+          List.equal String.equal pkg (JBasics.cn_package classname) )
 
 
 (* Computes the control - flow graph and call - graph of a given source file.
@@ -226,16 +218,16 @@ let should_capture program package_opt source_basename node =
 let compute_source_icfg program tenv source_basename package_opt source_file =
   let icfg = {JContext.cfg= Cfg.create (); tenv} in
   let select test procedure cn node =
-    if test node then try procedure cn node with Bir.Subroutine -> ()
+    if test cn node then try procedure cn node with Bir.Subroutine -> ()
   in
   (* we must set the java location for all classes in the source file before translation *)
   if Config.java_source_parser_experimental then
     JSourceLocations.collect_class_location program source_file
   else JSourceFileInfo.collect_class_location program source_file ;
   let () =
-    JBasics.ClassMap.iter
+    JProgramDesc.Classmap.iter
       (select
-         (should_capture program package_opt source_basename)
+         (should_capture package_opt source_basename)
          (create_icfg source_file program tenv icfg) )
       (JProgramDesc.get_classmap program)
   in

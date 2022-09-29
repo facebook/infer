@@ -11,6 +11,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: No
+- Hack: No
 - Java: Yes
 
 This checker detects opportunities to hoist function calls that are invariant to outside of loop bodies. The hoisting analysis relies on [purity](/docs/next/checker-purity) analysis to determine whather a function is pure or not.

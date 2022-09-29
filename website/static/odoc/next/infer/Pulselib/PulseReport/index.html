@@ -9,8 +9,9 @@
   <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IR/Procdesc/index.html#type-t">IR.Procdesc.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../Absint/Errlog/index.html#type-t">Absint.Errlog.t</a> <span class="arrow">&#45;&gt;</span></span>
-  <span><a href="../PulseAccessResult/index.html#type-summary_error">PulseDomainInterface.AccessResult.summary_error</a> <span class="arrow">&#45;&gt;</span></span>
-  <span><a href="../PulseExecutionDomain/index.html#type-summary">PulseDomainInterface.ExecutionDomain.summary</a> option</span></span></code></div><div class="spec-doc"><p><code>None</code> means that the execution can continue but we could not compute the continuation state (because this only takes a <code>AccessResult.error</code>, which doesn't have the ok state)</p></div></div><div class="odoc-spec"><div class="spec value" id="val-report_result" class="anchored"><a href="#val-report_result" class="anchor"></a><code><span><span class="keyword">val</span> report_result : 
+  <span><span>(<a href="../PulseAccessResult/index.html#type-error">PulseDomainInterface.AccessResult.error</a>
+   * <a href="../PulseAbductiveDomain/Summary/index.html#type-t">PulseDomainInterface.AbductiveDomain.Summary.t</a>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="type-var">_</span> <a href="../PulseExecutionDomain/index.html#type-base_t">PulseDomainInterface.ExecutionDomain.base_t</a></span> option</span></span></code></div><div class="spec-doc"><p><code>None</code> means that the execution can continue but we could not compute the continuation state (because this only takes a <code>AccessResult.error</code>, which doesn't have the ok state)</p></div></div><div class="odoc-spec"><div class="spec value" id="val-report_result" class="anchored"><a href="#val-report_result" class="anchor"></a><code><span><span class="keyword">val</span> report_result : 
   <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IR/Procdesc/index.html#type-t">IR.Procdesc.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../Absint/Errlog/index.html#type-t">Absint.Errlog.t</a> <span class="arrow">&#45;&gt;</span></span>

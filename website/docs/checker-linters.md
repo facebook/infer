@@ -13,6 +13,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: No
+- Hack: No
 - Java: No
 
 For C/C++ and Objective-C languages, we provide a linters framework. These are

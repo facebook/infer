@@ -107,6 +107,15 @@ let unmarshal file () =
   In_channel.with_open_bin file (fun ic : Llair.program ->
       Marshal.from_channel ic )
 
+let generate_llair llair_output program =
+  match llair_output with
+  | None -> ()
+  | Some "-" -> Format.printf "%a@." Llair.Program.pp program
+  | Some file ->
+      Out_channel.with_open_bin file (fun oc ->
+          let fs = Format.formatter_of_out_channel oc in
+          Format.fprintf fs "%a@." Llair.Program.pp program )
+
 let entry_points = Config.find_list "entry-points"
 
 let used_globals pgm entry_points preanalyze =
@@ -129,7 +138,7 @@ let used_globals pgm entry_points preanalyze =
       (Llair.Global.Set.of_iter
          (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)) )
 
-type common = {goal_trace: string list option}
+type common = {goal_trace: string list option; llair_output: string option}
 
 let common : common param =
   let%map_open goal_trace =
@@ -144,8 +153,13 @@ let common : common param =
          prioritizes trace progress. When an execution is found that \
          visits each function in order, terminate if \
          \"Stop.on_reached_goal\" is being traced."
+  and llair_output =
+    flag "llair-output" (optional string)
+      ~doc:
+        "<file> write generated textual LLAIR to <file>, or to standard \
+         output if \"-\""
   in
-  {goal_trace}
+  {goal_trace; llair_output}
 
 let analyze =
   let%map_open loop_bound =
@@ -203,9 +217,10 @@ let analyze =
     flag "dump-simplify" (optional int)
       ~doc:"<int> dump simplify query <int> and halt"
   in
-  fun {goal_trace} program () ->
+  fun {goal_trace; llair_output} program () ->
     Timer.enabled := stats ;
     let pgm = program () in
+    generate_llair llair_output pgm ;
     let globals = used_globals pgm entry_points preanalyze_globals in
     let module Config = struct
       let loop_bound = if loop_bound < 0 then Int.max_int else loop_bound
@@ -263,22 +278,16 @@ let analyze_cmd =
   in
   command ~summary ~readme param
 
-let disassemble =
-  let%map_open llair_output =
-    flag "llair-output" (optional string)
-      ~doc:
-        "<file> write generated textual LLAIR to <file>, or to standard \
-         output if omitted"
+let disassemble :
+    (common -> (unit -> Llair.program) -> unit -> Report.status) param =
+  Command.Param.return
+  @@ fun {llair_output} program () ->
+  let program = program () in
+  let llair_output =
+    match llair_output with None -> Some "-" | _ -> llair_output
   in
-  fun program () ->
-    let pgm = program () in
-    ( match llair_output with
-    | None -> Format.printf "%a@." Llair.Program.pp pgm
-    | Some file ->
-        Out_channel.with_open_bin file (fun oc ->
-            let fs = Format.formatter_of_out_channel oc in
-            Format.fprintf fs "%a@." Llair.Program.pp pgm ) ) ;
-    Report.Ok
+  generate_llair llair_output program ;
+  Report.Ok
 
 let disassemble_cmd =
   let summary = "print LLAIR code in textual form" in
@@ -288,7 +297,7 @@ let disassemble_cmd =
   in
   let param =
     let open Command.Param in
-    anon ("<input>" %: string) >>| unmarshal |*> disassemble
+    anon ("<input>" %: string) >>| unmarshal |*> (common |*> disassemble)
   in
   command ~summary ~readme param
 
@@ -318,13 +327,14 @@ let translate : (common -> string -> unit -> Llair.program) param =
         "do not internalize all functions except the entry points \
          specified in the config file"
   in
-  fun {goal_trace} bitcode_input () ->
+  fun {goal_trace; llair_output} bitcode_input () ->
     let preserve_fns = Option.value ~default:[] goal_trace in
     let program =
       Frontend.translate ~internalize:(not no_internalize) ~preserve_fns
         ~opt_level ~size_level bitcode_input ?dump_bitcode
     in
     Option.iter ~f:(marshal program) output ;
+    generate_llair llair_output program ;
     program
 
 let llvm_grp =
@@ -346,7 +356,7 @@ let llvm_grp =
       "translate LLVM bitcode to LLAIR and print in textual form"
     in
     let readme () = "The <input> file must be LLVM bitcode." in
-    let param = common |*> translate_input |*> disassemble in
+    let param = common |*> translate_input *|> disassemble in
     command ~summary ~readme param
   in
   let analyze_cmd =
