@@ -49,6 +49,7 @@
 %token THROW
 %token TRUE
 %token TYPE
+%token UNREACHABLE
 %token VOID
 
 %token <string> IDENT
@@ -239,6 +240,8 @@ terminator:
     { Ret e }
   | JMP l=separated_list(COMMA, node_call)
     { Jump l }
+  | UNREACHABLE
+    { Unreachable }
   | THROW e=expression
     { Throw e }
 

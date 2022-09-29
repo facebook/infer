@@ -1107,7 +1107,7 @@ end
 module Terminator = struct
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
-  type t = Ret of Exp.t | Jump of node_call list | Throw of Exp.t
+  type t = Ret of Exp.t | Jump of node_call list | Throw of Exp.t | Unreachable
 
   let pp fmt = function
     | Ret e ->
@@ -1123,10 +1123,16 @@ module Terminator = struct
         F.fprintf fmt "jmp %a" (pp_list_with_comma pp_block_call) l
     | Throw e ->
         F.fprintf fmt "throw %a" Exp.pp e
+    | Unreachable ->
+        F.pp_print_string fmt "unreachable"
 
 
   let do_not_contain_regular_call t =
-    match t with Ret exp | Throw exp -> Exp.do_not_contain_regular_call exp | Jump _ -> true
+    match t with
+    | Ret exp | Throw exp ->
+        Exp.do_not_contain_regular_call exp
+    | Jump _ | Unreachable ->
+        true
 
 
   let to_sil lang decls_env procname pdesc loc t : Sil.instr option =
@@ -1140,6 +1146,8 @@ module Terminator = struct
         None
     | Throw _ ->
         None (* TODO (T132392184) *)
+    | Unreachable ->
+        None
 
 
   let of_sil decls tenv label_of_node ~opt_last succs =
@@ -1164,6 +1172,8 @@ module Terminator = struct
         Jump (List.map node_call_list ~f)
     | Throw exp ->
         Throw (Exp.subst exp eqs)
+    | Unreachable ->
+        t
 end
 
 module Node = struct
@@ -1356,6 +1366,8 @@ module Procdesc = struct
             l
       | Throw _ ->
           L.die InternalError "TODO: implement throw"
+      | Unreachable ->
+          []
     in
     Hashtbl.iter
       (fun _ ((node : Node.t), sil_node) ->
@@ -1687,6 +1699,8 @@ module Transformation = struct
       | Throw exp ->
           let exp, state = flatten_exp exp state in
           (Throw exp, state)
+      | Unreachable ->
+          (last, state)
     in
     let flatten_node (node : Node.t) fresh_ident : Node.t * Ident.t =
       let state =
@@ -1815,7 +1829,7 @@ module Transformation = struct
       in
       let build_assignements (start_node : Node.t) : Instr.t list =
         match (start_node.last : Terminator.t) with
-        | Ret _ | Throw _ ->
+        | Ret _ | Throw _ | Unreachable ->
             []
         | Jump node_calls ->
             List.fold node_calls ~init:[] ~f:(fun instrs (node_call : Terminator.node_call) ->
@@ -1830,7 +1844,7 @@ module Transformation = struct
           {node_call with ssa_args= []}
         in
         match terminator with
-        | Ret _ | Throw _ ->
+        | Ret _ | Throw _ | Unreachable ->
             terminator
         | Jump node_calls ->
             Jump (List.map node_calls ~f:node_call_remove_args)
@@ -1926,6 +1940,8 @@ module Verification = struct
             List.fold ~init:errors ~f l
         | Ret e | Throw e ->
             verify_exp errors e
+        | Unreachable ->
+            errors
       in
       let verify_node errors ({instrs; last} : Node.t) =
         let errors = List.fold ~f:verify_instr ~init:errors instrs in
