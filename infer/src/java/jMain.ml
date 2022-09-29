@@ -47,7 +47,7 @@ let capture_libs program tenv =
         store_icfg fake_source_file cfg ;
         JFrontend.cache_classname cn
   in
-  JBasics.ClassMap.iter (capture_class tenv) (JProgramDesc.get_classmap program)
+  JProgramDesc.Classmap.iter (capture_class tenv) (JProgramDesc.get_classmap program)
 
 
 (* load a stored global tenv if the file is found, and create a new one otherwise *)

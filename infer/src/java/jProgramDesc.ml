@@ -14,7 +14,15 @@ let javalib_get_class = Utils.suppress_stderr2 Javalib.get_class
 
 type callee_status = Translated | Missing of JBasics.class_name * JBasics.method_signature
 
-type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
+module Classmap = Caml.Hashtbl.Make (struct
+  type t = JBasics.class_name
+
+  let equal = JBasics.cn_equal
+
+  let hash = JBasics.cn_hash
+end)
+
+type classmap = JCode.jcode Javalib.interface_or_class Classmap.t
 
 (** We store for each classname the location of its declaration. This map is filled during
     JFrontend.compute_source_icfg and then it is used in JTransType.get_class_struct_typ before we
@@ -23,7 +31,7 @@ type java_location_map = Location.t JBasics.ClassMap.t
 
 type t =
   { classpath_channel: Javalib.class_path
-  ; mutable classmap: classmap
+  ; classmap: classmap
   ; mutable java_location_map: java_location_map
   ; callees: callee_status Procname.Hash.t }
 
@@ -37,21 +45,16 @@ let get_java_location program cn =
   try Some (JBasics.ClassMap.find cn program.java_location_map) with Caml.Not_found -> None
 
 
-let mem_classmap cn program = JBasics.ClassMap.mem cn program.classmap
-
-let get_classpath_channel program = program.classpath_channel
-
 let add_class cn jclass program =
+  let add = Classmap.replace program.classmap in
   (* [prefix] must be a fresh class name *)
   let prefix = JBasics.cn_name cn ^ Config.java_lambda_marker_infix in
   (* we rewrite each class to replace invokedynamic (closure construction)
      with equivalent old-style Java code that implements a suitable Java interface *)
   let rewritten_jclass, new_classes = Javalib.remove_invokedynamics jclass ~prefix in
-  program.classmap <- JBasics.ClassMap.add cn rewritten_jclass program.classmap ;
+  add cn rewritten_jclass ;
   (* the rewrite will generate new classes and we add them to the program *)
-  JBasics.ClassMap.iter
-    (fun cn jcl -> program.classmap <- JBasics.ClassMap.add cn jcl program.classmap)
-    new_classes ;
+  JBasics.ClassMap.iter add new_classes ;
   rewritten_jclass
 
 
@@ -68,10 +71,10 @@ let iter_missing_callees program ~f =
 
 
 let lookup_node cn program =
-  try Some (JBasics.ClassMap.find cn (get_classmap program))
+  try Some (Classmap.find program.classmap cn)
   with Caml.Not_found -> (
     try
-      let jclass = javalib_get_class (get_classpath_channel program) cn in
+      let jclass = javalib_get_class program.classpath_channel cn in
       Some (add_class cn jclass program)
     with
     | JBasics.No_class_found _ ->
@@ -86,7 +89,7 @@ let load JClasspath.{classpath_channel; classes} =
   L.(debug Capture Medium) "loading program ... %!" ;
   let program =
     { classpath_channel
-    ; classmap= JBasics.ClassMap.empty
+    ; classmap= Classmap.create 128
     ; java_location_map= JBasics.ClassMap.empty
     ; callees= Procname.Hash.create 128 }
   in

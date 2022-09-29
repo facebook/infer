@@ -59,8 +59,6 @@ val expr_type : JContext.t -> JBir.expr -> Typ.t
 val cast_type : JBir.conv -> Typ.t
 (** translates a conversion type from Java to Sil. *)
 
-val package_to_string : string list -> string option
-
 val create_array_type : Typ.t -> int -> Typ.t
 (** [create_array_type typ dim] creates an array type with dimension dim and content typ *)
 
