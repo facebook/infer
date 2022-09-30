@@ -322,15 +322,12 @@ let pp_list_with_comma pp fmt l = Pp.seq ~sep:", " pp fmt l
 module SilProcname = Procname
 
 module Procname = struct
-  type kind = Virtual | NonVirtual [@@deriving equal]
-
   type enclosing_class = TopLevel | Enclosing of TypeName.t [@@deriving equal, hash]
 
   type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
   [@@deriving equal, hash]
 
-  type t =
-    {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
+  type t = {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t}
 
   let toplevel_classname = "$TOPLEVEL$CLASS$"
 
@@ -365,10 +362,6 @@ module Procname = struct
   let of_sil (pname : Procname.t) =
     match pname with
     | Java jpname ->
-        let kind =
-          if Procname.Java.is_static jpname then NonVirtual
-          else Virtual (* FIXME: we do not handle virtuall call yet *)
-        in
         let enclosing_class =
           Enclosing (TypeName.of_java_name (Procname.Java.get_class_name jpname))
         in
@@ -384,7 +377,7 @@ module Procname = struct
         in
         let result_type = Procname.Java.get_return_typ jpname |> Typ.of_sil in
         (* FIXME when adding inheritance *)
-        {qualified_name; formals_types; result_type; kind}
+        {qualified_name; formals_types; result_type}
     | _ ->
         L.die InternalError "Non-Java procname %a should not appear in Java mode" Procname.describe
           pname
@@ -394,7 +387,7 @@ module Procname = struct
 
   let make_builtin ~name ~formals_types ~result_type =
     let qualified_name : qualified_name = make_toplevel_name name in
-    {qualified_name; formals_types; result_type; kind= NonVirtual}
+    {qualified_name; formals_types; result_type}
 
 
   let make_allocate (tname : TypeName.t) =
@@ -575,13 +568,6 @@ module Procname = struct
               Some name.value
         in
         Procname.make_hack ~class_name ~function_name:method_name
-
-
-  let kind_to_sil_callflag = function
-    | Virtual ->
-        {CallFlags.default with cf_virtual= true}
-    | _ ->
-        CallFlags.default
 end
 
 let instr_is_return = function Sil.Store {e1= Lvar v} -> Pvar.is_return v | _ -> false
@@ -1083,7 +1069,7 @@ module Instr = struct
               L.die UserError "the call %a has been given a wrong number of arguments" pp i
         in
         let loc = Location.to_sil sourcefile loc in
-        let cflag = Procname.kind_to_sil_callflag procname.kind in
+        let cflag = CallFlags.default in
         Call ((ret, result_type), Const (Cfun pname), args, loc, cflag)
     | Let _ ->
         raise

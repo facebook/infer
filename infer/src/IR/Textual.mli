@@ -64,14 +64,11 @@ end
 module SilProcname = Procname
 
 module Procname : sig
-  type kind = Virtual | NonVirtual
-
   type enclosing_class = TopLevel | Enclosing of TypeName.t
 
   type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
 
-  type t =
-    {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
+  type t = {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t}
 
   val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
 end

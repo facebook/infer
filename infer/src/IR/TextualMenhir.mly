@@ -143,18 +143,14 @@ declaration:
       Struct {name; fields; methods=[]} }
   | DECLARE qualified_name=qualified_pname LPAREN
             formals_types = separated_list(COMMA, typ) RPAREN COLON result_type=typ
-    { let kind : Procname.kind = NonVirtual in
-      let pname : Procname.t = {qualified_name; formals_types; result_type; kind}
-      (* FIXME: deals with virutal kind *) in
+    { let pname : Procname.t = {qualified_name; formals_types; result_type} in
       Procname pname
     }
   | DEFINE qualified_name=qualified_pname LPAREN
            params = separated_list(COMMA, typed_var) RPAREN COLON result_type=typ
                          LBRACKET nodes=block+ RBRACKET
     { let formals_types = List.map ~f:fst params in
-      let kind : Procname.kind = NonVirtual in
-      let procname : Procname.t = {qualified_name; formals_types; result_type; kind}
-      (* FIXME:: deals with virtual kind *) in
+      let procname : Procname.t = {qualified_name; formals_types; result_type} in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:snd params in
       let exit_loc = location_of_pos $endpos in

@@ -73,8 +73,7 @@ let%test_module "procnames" =
               { enclosing_class= TopLevel
               ; name= {value= "toplevel"; loc= Location.known ~line:0 ~col:0} }
           ; formals_types= []
-          ; result_type= Typ.Void
-          ; kind= NonVirtual }
+          ; result_type= Typ.Void }
       in
       let as_java = Procname.to_sil Lang.Java toplevel_proc in
       let as_hack = Procname.to_sil Lang.Hack toplevel_proc in
