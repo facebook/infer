@@ -28,7 +28,9 @@ val add_source_file :
 
 val mark_all_source_files_stale : unit -> unit
 
-val merge : infer_deps_file:string -> unit
+val merge_captures : infer_deps_file:string -> unit
+
+val merge_report_summaries : infer_outs:string list -> unit
 
 val canonicalize : unit -> unit
 (** put the database on disk in deterministic form *)

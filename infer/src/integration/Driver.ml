@@ -116,8 +116,8 @@ let check_xcpretty () =
 
 
 let capture ~changed_files mode =
-  if not (List.is_empty Config.merge_infer_out) then (
-    let expanded_args = Utils.inline_argument_files Config.merge_infer_out in
+  if not (List.is_empty Config.merge_capture) then (
+    let expanded_args = Utils.inline_argument_files Config.merge_capture in
     let infer_deps_file = ResultsDir.get_path CaptureDependencies in
     List.map expanded_args ~f:(fun dir -> Printf.sprintf "-\t-\t%s" dir)
     |> Out_channel.write_lines infer_deps_file ;
@@ -292,7 +292,7 @@ let analyze_and_report ~changed_files mode =
   let should_analyze = should_analyze && Config.capture in
   let should_merge =
     match mode with
-    | _ when Config.merge || not (List.is_empty Config.merge_infer_out) ->
+    | _ when Config.merge || not (List.is_empty Config.merge_capture) ->
         (* [--merge] overrides other behaviors *)
         true
     | Analyze | Buck2 _ | BuckClangFlavor _ | BuckJavaFlavor _ | Gradle _ ->
