@@ -746,6 +746,11 @@ end
 module SilExp = Exp
 
 module Exp = struct
+  (* TODO(T133190934) *)
+  type call_kind = Virtual | NonVirtual
+
+  let call_kind_is_virtual = function Virtual -> true | NonVirtual -> false
+
   type t =
     | Var of Ident.t
     | Lvar of VarName.t
@@ -753,10 +758,14 @@ module Exp = struct
     | Index of t * t
     (*  | Sizeof of sizeof_data *)
     | Const of Const.t
-    | Call of {proc: Procname.qualified_name; args: t list}
+    | Call of {proc: Procname.qualified_name; args: t list; kind: call_kind}
     | Cast of Typ.t * t
 
-  let not exp = Call {proc= Procname.of_unop Unop.LNot; args= [exp]}
+  let call_non_virtual proc args = Call {proc; args; kind= NonVirtual}
+
+  let call_virtual proc recv args = Call {proc; args= recv :: args; kind= Virtual}
+
+  let not exp = call_non_virtual (Procname.of_unop Unop.LNot) [exp]
 
   let rec of_sil decls tenv (e : Exp.t) =
     match e with
@@ -764,10 +773,10 @@ module Exp = struct
         Var (Ident.of_sil id)
     | UnOp (o, e, _) ->
         let pname = Procname.of_unop o in
-        Call {proc= pname; args= [of_sil decls tenv e]}
+        call_non_virtual pname [of_sil decls tenv e]
     | BinOp (o, e1, e2) ->
         let pname = Procname.of_binop o in
-        Call {proc= pname; args= [of_sil decls tenv e1; of_sil decls tenv e2]}
+        call_non_virtual pname [of_sil decls tenv e1; of_sil decls tenv e2]
     | Exn _ ->
         L.die InternalError "Exp Exn translation not supported"
     | Closure _ ->
@@ -802,9 +811,16 @@ module Exp = struct
         F.fprintf fmt "%a[%a]" pp e1 pp e2
     | Const c ->
         Const.pp fmt c
-    | Call {proc; args} ->
-        Procname.pp_qualified_name fmt proc ;
-        pp_list fmt args
+    | Call {proc; args; kind} -> (
+      match kind with
+      | Virtual -> (
+        match args with
+        | recv :: other ->
+            F.fprintf fmt "%a.%a%a" pp recv Procname.pp_qualified_name proc pp_list other
+        | _ ->
+            L.die InternalError "virtual call with 0 args: %a" Procname.pp_qualified_name proc )
+      | NonVirtual ->
+          F.fprintf fmt "%a%a" Procname.pp_qualified_name proc pp_list args )
     | Cast (typ, e) ->
         F.fprintf fmt "(%a: %a)" pp e Typ.pp typ
 
@@ -960,22 +976,23 @@ module Instr = struct
         let procname = TypeName.of_sil_typ_name name |> Procname.make_allocate in
         Let
           { id= Ident.of_sil id
-          ; exp= Call {proc= procname.Procname.qualified_name; args= []}
+          ; exp= Exp.call_non_virtual procname.Procname.qualified_name []
           ; loc= Location.Unknown }
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new_array()" ->
         let procname = Typ.of_sil typ |> Procname.make_allocate_array in
         Let
           { id= Ident.of_sil id
-          ; exp= Call {proc= procname.Procname.qualified_name; args= []}
+          ; exp= Exp.call_non_virtual procname.Procname.qualified_name []
           ; loc= Location.Unknown }
-    | Call ((id, _), Const (Cfun pname), args, _, _) ->
+    | Call ((id, _), Const (Cfun pname), args, _, call_flags) ->
         let procname = Procname.of_sil pname in
         let () = Decls.declare_procname decls procname in
         let proc = procname.qualified_name in
         let args = List.map ~f:(fun (e, _) -> Exp.of_sil decls tenv e) args in
         let loc = Location.Unknown in
-        Let {id= Ident.of_sil id; exp= Call {proc; args}; loc}
+        let kind = if call_flags.cf_virtual then Exp.Virtual else Exp.NonVirtual in
+        Let {id= Ident.of_sil id; exp= Call {proc; args; kind}; loc}
     | Call _ ->
         L.die InternalError "Translation of a SIL call that is not const not supported"
     | Metadata _ ->
@@ -1045,7 +1062,7 @@ module Instr = struct
         let loc = Location.to_sil sourcefile loc in
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new_array) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
-    | Let {id; exp= Call {proc; args}; loc} ->
+    | Let {id; exp= Call {proc; args; kind}; loc} ->
         let ret = Ident.to_sil id in
         let procname =
           match Decls.get_procname decls_env proc with
@@ -1069,7 +1086,8 @@ module Instr = struct
               L.die UserError "the call %a has been given a wrong number of arguments" pp i
         in
         let loc = Location.to_sil sourcefile loc in
-        let cflag = CallFlags.default in
+        let cf_virtual = Exp.call_kind_is_virtual kind in
+        let cflag = {CallFlags.default with cf_virtual} in
         Call ((ret, result_type), Const (Cfun pname), args, loc, cflag)
     | Let _ ->
         raise
@@ -1630,13 +1648,13 @@ module Transformation = struct
           let exp1, state = flatten_exp exp1 state in
           let exp2, state = flatten_exp exp2 state in
           (Index (exp1, exp2), state)
-      | Call {proc; args} ->
+      | Call {proc; args; kind} ->
           let args, state = flatten_exp_list args state in
-          if Procname.is_sil_instr proc then (Call {proc; args}, state)
+          if Procname.is_sil_instr proc then (Call {proc; args; kind}, state)
           else
             let fresh = state.State.fresh_ident in
             let new_instr : Instr.t =
-              Let {id= fresh; exp= Call {proc; args}; loc= Location.Unknown}
+              Let {id= fresh; exp= Call {proc; args; kind}; loc= Location.Unknown}
             in
             (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
       | Cast (typ, exp) ->
@@ -1662,9 +1680,9 @@ module Transformation = struct
       | Prune args ->
           let exp, state = flatten_exp args.exp state in
           State.push_instr (Prune {args with exp}) state
-      | Let {id; exp= Call {proc; args}; loc} when not (Procname.is_sil_instr proc) ->
+      | Let {id; exp= Call {proc; args; kind}; loc} when not (Procname.is_sil_instr proc) ->
           let args, state = flatten_exp_list args state in
-          State.push_instr (Let {id; exp= Call {proc; args}; loc}) state
+          State.push_instr (Let {id; exp= Call {proc; args; kind}; loc}) state
       | Let {id; exp; loc} ->
           let exp, state = flatten_exp exp state in
           State.push_instr (Let {id; exp; loc}) state

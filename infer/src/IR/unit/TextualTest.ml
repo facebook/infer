@@ -10,10 +10,12 @@ open Textual
 module F = Format
 
 let parse_module text =
-  match TextualParser.parse_string (SourceFile.create "dummy.sil") text with
+  let source = SourceFile.create "dummy.sil" in
+  match TextualParser.parse_string source text with
   | Ok m ->
       m
-  | _ ->
+  | Error es ->
+      List.iter es ~f:(fun e -> F.printf "%a" (TextualParser.pp_error source) e) ;
       raise (Failure "Couldn't parse a module")
 
 
@@ -51,17 +53,47 @@ let%test_module "parsing" =
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
-          attribute source_language = "hack"
+         attribute source_language = "hack"
 
-          attribute source_file = "original.hack"
+         attribute source_file = "original.hack"
 
-          attribute source_language = "java"
+         attribute source_language = "java"
 
-          define nothing() : void {
-            #node0:
-                ret null
+         define nothing() : void {
+           #node0:
+               ret null
 
-          } |}]
+         } |}]
+
+    let text =
+      {|
+       attribute source_language = "hack"
+
+       declare HackMixed.foo(*HackMixed, int): int
+
+       define foo(x: *HackMixed): int {
+       #b0:
+         n0:*HackMixed = load &x
+         ret n0.HackMixed.foo(42)
+       }
+       |}
+
+
+    let%expect_test _ =
+      let m = parse_module text in
+      F.printf "%a" Module.pp m ;
+      [%expect
+        {|
+        attribute source_language = "hack"
+
+        declare HackMixed.foo(*HackMixed, int) : int
+
+        define foo(x: *HackMixed) : int {
+          #b0:
+              n0:*HackMixed = load &x
+              ret n0.HackMixed.foo(42)
+
+        } |}]
   end )
 
 let%test_module "procnames" =

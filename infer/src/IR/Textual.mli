@@ -85,6 +85,8 @@ module Fieldname : sig
 end
 
 module Exp : sig
+  type call_kind = Virtual | NonVirtual
+
   type t =
     | Var of Ident.t  (** pure variable: it is not an lvalue *)
     | Lvar of VarName.t  (** the address of a program variable *)
@@ -92,8 +94,10 @@ module Exp : sig
         (** field offset, fname must be declared in type tname *)
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
-    | Call of {proc: Procname.qualified_name; args: t list}
+    | Call of {proc: Procname.qualified_name; args: t list; kind: call_kind}
     | Cast of Typ.t * t
+
+  val call_virtual : Procname.qualified_name -> t -> t list -> t
 
   (* logical not ! *)
   val not : t -> t

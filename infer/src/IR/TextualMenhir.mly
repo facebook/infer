@@ -264,6 +264,8 @@ expression:
   | c=const
     { Const c }
   | proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
-    { Call {proc; args} }
+    { Call {proc; args; kind= Exp.NonVirtual} }
+  | recv=expression DOT proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
+    { Exp.call_virtual proc recv args }
   | LPAREN e=expression COLON t=typ RPAREN
     { Cast (t, e) }
