@@ -63,7 +63,7 @@ let verbose = Config.trace_error
 let find_struct_by_value_assignment node pvar =
   if Pvar.is_frontend_tmp pvar then
     let find_instr node = function
-      | Sil.Call (_, Const (Cfun pname), args, loc, cf) -> (
+      | Sil.Call (_, (Const (Cfun pname) | Closure {name= pname}), args, loc, cf) -> (
         match List.last args with
         | Some (Exp.Lvar last_arg, _) when Pvar.equal pvar last_arg ->
             Some (node, pname, loc, cf)
@@ -86,14 +86,19 @@ let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t opti
           Exp.d_exp e ;
           L.d_ln () ) ;
         exp_lv_dexp_ tenv seen node e
-    | Sil.Call ((id0, _), Exp.Const (Const.Cfun pn), (e, _) :: _, _, _)
+    | Sil.Call ((id0, _), (Exp.Const (Const.Cfun pn) | Closure {name= pn}), (e, _) :: _, _, _)
       when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
         if verbose then (
           L.d_str "find_normal_variable_load cast on " ;
           Exp.d_exp e ;
           L.d_ln () ) ;
         exp_rv_dexp_ tenv seen node e
-    | Sil.Call ((id0, _), (Exp.Const (Const.Cfun pname) as fun_exp), args, loc, call_flags)
+    | Sil.Call
+        ( (id0, _)
+        , ((Exp.Const (Const.Cfun pname) | Closure {name= pname}) as fun_exp)
+        , args
+        , loc
+        , call_flags )
       when Ident.equal id id0 ->
         if verbose then (
           L.d_str "find_normal_variable_load function call " ;
@@ -895,7 +900,7 @@ let explain_access_ proc_name tenv ?(use_buckets = false) ?(outermost_array = fa
           Exp.d_exp e ;
           L.d_ln () ) ;
         Some e
-    | Some (Sil.Call (_, Exp.Const (Const.Cfun fn), [(e, _)], _, _))
+    | Some (Sil.Call (_, (Exp.Const (Const.Cfun fn) | Closure {name= fn}), [(e, _)], _, _))
       when List.exists ~f:(Procname.equal fn)
              [BuiltinDecl.free; BuiltinDecl.__delete; BuiltinDecl.__delete_array] ->
         if verbose then (

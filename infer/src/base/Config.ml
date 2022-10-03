@@ -1872,8 +1872,8 @@ and merge =
     "Merge the captured results directories specified in the dependency file."
 
 
-and merge_infer_out =
-  CLOpt.mk_string_list ~long:"merge-infer-out"
+and merge_capture =
+  CLOpt.mk_string_list ~deprecated:["-merge-infer-out"] ~long:"merge-capture"
     ~in_help:InferCommand.[(Capture, manual_generic)]
     "Specifies an Infer results directory. The files and procedures captured in it will be merged \
      together into the results directory specified with $(b, -o). Relative paths are interpreted \
@@ -1886,6 +1886,13 @@ and merge_report =
     "Specifies an Infer results directory. The reports stored in JSON files in all specified \
      results directories will be merged together and deduplicated before being stored in the main \
      results directory."
+
+
+and merge_report_summaries =
+  CLOpt.mk_string_list ~long:"merge-report-summaries"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    "Specifies an Infer results directory. The report summaries in all specified results \
+     directories will be merged together and deduplicated before reporting is done."
 
 
 and method_decls_info =
@@ -3614,9 +3621,11 @@ and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
 
 and merge = !merge
 
-and merge_infer_out = RevList.to_list !merge_infer_out
+and merge_capture = RevList.to_list !merge_capture
 
 and merge_report = RevList.to_list !merge_report
+
+and merge_report_summaries = RevList.to_list !merge_report_summaries
 
 and method_decls_info = !method_decls_info
 

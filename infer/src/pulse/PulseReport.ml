@@ -96,7 +96,8 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ConstRefableParameter _
   | ErlangError _
   | MemoryLeak _
-  | ResourceLeak _
+  | JavaResourceLeak _
+  | CSharpResourceLeak _
   | RetainCycle _
   | ReadUninitializedValue _
   | StackVariableAddressEscape _
@@ -138,7 +139,10 @@ let summary_of_error_post tenv proc_desc location mk_error astate =
       location astate
   with
   | Sat (Ok summary)
-  | Sat (Error (`MemoryLeak (summary, _, _, _, _)) | Error (`ResourceLeak (summary, _, _, _, _)))
+  | Sat
+      ( Error (`MemoryLeak (summary, _, _, _, _))
+      | Error (`JavaResourceLeak (summary, _, _, _, _))
+      | Error (`CSharpResourceLeak (summary, _, _, _, _)) )
   | Sat (Error (`RetainCycle (summary, _, _, _, _, _))) ->
       (* ignore potential memory leaks: error'ing in the middle of a function will typically produce
          spurious leaks *)

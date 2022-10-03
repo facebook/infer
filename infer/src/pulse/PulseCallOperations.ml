@@ -65,6 +65,8 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
     | Typ.Tstruct (Typ.CppClass {name})
       when QualifiedCppName.Match.match_qualifiers matches_iter name ->
         `ShouldHavoc
+    | Tptr _ when Language.curr_language_is CIL ->
+        `DoNotHavoc
     | Tptr _ when not (is_ptr_to_const formal_typ_opt) ->
         AbductiveDomain.should_havoc_if_unknown ()
     | _ ->

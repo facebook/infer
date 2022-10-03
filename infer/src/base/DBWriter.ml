@@ -143,22 +143,74 @@ module Implementation = struct
     if not (ISys.file_exists db_file) then
       L.die InternalError "Tried to merge in DB at %s but path does not exist.@\n" db_file ;
     let main_db = Database.get_database CaptureDatabase in
-    SqliteUtils.exec main_db
-      ~stmt:(Printf.sprintf "ATTACH '%s' AS attached" db_file)
-      ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
-    merge_procedures_table ~db_file ;
-    merge_source_files_table ~db_file ;
-    SqliteUtils.exec main_db ~stmt:"DETACH attached"
-      ~log:(Printf.sprintf "detaching database '%s'" db_file)
+    SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
+        merge_procedures_table ~db_file ;
+        merge_source_files_table ~db_file )
 
 
-  let merge infer_deps_file =
+  let merge_captures infer_deps_file =
     let main_db = Database.get_database CaptureDatabase in
-    SqliteUtils.exec main_db ~stmt:"ATTACH ':memory:' AS memdb" ~log:"attaching memdb" ;
-    Database.create_tables ~prefix:"memdb." main_db CaptureDatabase ;
-    Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
-    copy_to_main main_db ;
-    SqliteUtils.exec main_db ~stmt:"DETACH memdb" ~log:"detaching memdb"
+    SqliteUtils.with_attached_db main_db ~db_file:":memory:" ~db_name:"memdb" ~f:(fun () ->
+        Database.create_tables ~prefix:"memdb." main_db CaptureDatabase ;
+        Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
+        copy_to_main main_db )
+
+
+  let merge_report_summaries_in_specs_table ~db_file =
+    (* NB [NULL] is used to skip reading/writing analysis summaries *)
+    Database.get_database AnalysisDatabase
+    |> SqliteUtils.exec
+         ~log:(Printf.sprintf "copying specs of database '%s'" db_file)
+         ~stmt:
+           {|
+              INSERT OR REPLACE INTO specs
+              SELECT
+                sub.proc_uid,
+                sub.proc_name,
+                NULL,
+                sub.report_summary
+              FROM (
+                attached.specs AS sub
+                LEFT OUTER JOIN specs AS main
+                ON sub.proc_uid = main.proc_uid )
+              WHERE
+                main.proc_uid IS NULL
+                OR
+                main.report_summary >= sub.report_summary
+            |}
+
+
+  let merge_issues_table ~db_file =
+    Database.get_database AnalysisDatabase
+    |> SqliteUtils.exec
+         ~log:(Printf.sprintf "copying issues of database '%s'" db_file)
+         ~stmt:
+           {|
+              INSERT OR REPLACE INTO issue_logs
+              SELECT
+                sub.checker,
+                sub.source_file,
+                sub.issue_log
+              FROM (
+                attached.issue_logs AS sub
+                LEFT OUTER JOIN issue_logs AS main
+                ON (sub.checker = main.checker AND sub.source_file = main.source_file) )
+              WHERE
+                main.checker IS NULL
+                OR
+                main.source_file IS NULL
+                OR
+                main.issue_log >= sub.issue_log
+            |}
+
+
+  let merge_report_summaries infer_outs =
+    let main_db = Database.get_database AnalysisDatabase in
+    List.iter infer_outs ~f:(fun results_dir ->
+        let db_file = ResultsDirEntryName.get_path ~results_dir AnalysisDB in
+        SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
+            merge_report_summaries_in_specs_table ~db_file ;
+            merge_issues_table ~db_file ) )
 
 
   let canonicalize () =
@@ -260,7 +312,8 @@ module Command = struct
     | DeleteSpec of {proc_uid: string}
     | Handshake
     | MarkAllSourceFilesStale
-    | Merge of {infer_deps_file: string}
+    | MergeCaptures of {infer_deps_file: string}
+    | MergeReportSummaries of {infer_outs: string list}
     | StoreIssueLog of {checker: string; source_file: Sqlite3.Data.t; issue_log: Sqlite3.Data.t}
     | StoreSpec of
         { proc_uid: string
@@ -289,8 +342,10 @@ module Command = struct
         "Handshake"
     | MarkAllSourceFilesStale ->
         "MarkAllSourceFilesStale"
-    | Merge _ ->
-        "Merge"
+    | MergeCaptures _ ->
+        "MergeCaptures"
+    | MergeReportSummaries _ ->
+        "MergeReportSummaries"
     | ReplaceAttributes _ ->
         "ReplaceAttributes"
     | ResetCaptureTables ->
@@ -318,8 +373,10 @@ module Command = struct
         ()
     | MarkAllSourceFilesStale ->
         Implementation.mark_all_source_files_stale ()
-    | Merge {infer_deps_file} ->
-        Implementation.merge infer_deps_file
+    | MergeCaptures {infer_deps_file} ->
+        Implementation.merge_captures infer_deps_file
+    | MergeReportSummaries {infer_outs} ->
+        Implementation.merge_report_summaries infer_outs
     | StoreIssueLog {checker; source_file; issue_log} ->
         Implementation.store_issue_log ~checker ~source_file ~issue_log
     | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
@@ -473,7 +530,9 @@ let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
 
 let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
 
-let merge ~infer_deps_file = perform (Merge {infer_deps_file})
+let merge_captures ~infer_deps_file = perform (MergeCaptures {infer_deps_file})
+
+let merge_report_summaries ~infer_outs = perform (MergeReportSummaries {infer_outs})
 
 let canonicalize () = perform Checkpoint
 

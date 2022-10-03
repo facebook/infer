@@ -1,2 +1,0 @@
-build_systems/merge-infer-out/A.java, codetoanalyze.java.infer.A.aDivideByZero():int, 3, DIVIDE_BY_ZERO, no_bucket, ERROR, [start of procedure aDivideByZero()]
-build_systems/merge-infer-out/B.java, codetoanalyze.java.infer.B.bDivideByZero():int, 3, DIVIDE_BY_ZERO, no_bucket, ERROR, [start of procedure bDivideByZero()]

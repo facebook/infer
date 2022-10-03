@@ -25,6 +25,7 @@ module Attribute = struct
     | CppNew
     | CppNewArray
     | JavaResource of JavaClassName.t
+    | CSharpResource of CSharpClassName.t
     | ObjCAlloc
   [@@deriving compare, equal]
 
@@ -42,7 +43,9 @@ module Attribute = struct
     | CppNewArray ->
         F.fprintf fmt "new[]"
     | JavaResource class_name ->
-        F.fprintf fmt "resource %a" JavaClassName.pp class_name
+        F.fprintf fmt "java resource %a" JavaClassName.pp class_name
+    | CSharpResource class_name ->
+        F.fprintf fmt "csharp resource %a" CSharpClassName.pp class_name
     | ObjCAlloc ->
         F.fprintf fmt "alloc"
 
@@ -135,6 +138,7 @@ module Attribute = struct
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | MustNotBeTainted of TaintSinkSet.t
     | JavaResourceReleased
+    | CSharpResourceReleased
     | PropagateTaintFrom of taint_in list
       (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
          retain [v1] to [vn], in fact they should be collected
@@ -181,6 +185,8 @@ module Attribute = struct
   let isl_abduced_rank = Variants.islabduced.rank
 
   let java_resource_released_rank = Variants.javaresourcereleased.rank
+
+  let csharp_resource_released_rank = Variants.csharpresourcereleased.rank
 
   let must_be_initialized_rank = Variants.mustbeinitialized.rank
 
@@ -276,6 +282,8 @@ module Attribute = struct
         F.fprintf f "MustNotBeTainted%a" TaintSinkSet.pp sinks
     | JavaResourceReleased ->
         F.pp_print_string f "Released"
+    | CSharpResourceReleased ->
+        F.pp_print_string f "Released"
     | PropagateTaintFrom taints_in ->
         F.fprintf f "PropagateTaintFrom([%a])" (Pp.seq ~sep:";" pp_taint_in) taints_in
     | RefCounted ->
@@ -317,6 +325,7 @@ module Attribute = struct
     | DynamicType _
     | EndOfCollection
     | JavaResourceReleased
+    | CSharpResourceReleased
     | PropagateTaintFrom _
     | ReturnedFromUnknown _
     | SourceOriginOfCopy _
@@ -346,6 +355,7 @@ module Attribute = struct
     | ISLAbduced _
     | Invalid _
     | JavaResourceReleased
+    | CSharpResourceReleased
     | PropagateTaintFrom _
     | RefCounted
     | ReturnedFromUnknown _
@@ -378,11 +388,12 @@ module Attribute = struct
     | DynamicType _
     | EndOfCollection
     | Invalid _
+    | JavaResourceReleased
+    | CSharpResourceReleased
     | ISLAbduced _
     | MustBeInitialized _
     | MustBeValid _
     | MustNotBeTainted _
-    | JavaResourceReleased
     | PropagateTaintFrom _
     | RefCounted
     | ReturnedFromUnknown _
@@ -453,13 +464,16 @@ module Attribute = struct
     | CopiedInto _ | SourceOriginOfCopy _ ->
         L.die InternalError "Unexpected attribute %a in the summary of %a" pp attr Procname.pp
           proc_name
+    | JavaResourceReleased ->
+        JavaResourceReleased
+    | CSharpResourceReleased ->
+        CSharpResourceReleased
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | AlwaysReachable
       | Closure _
       | DynamicType _
       | EndOfCollection
-      | JavaResourceReleased
       | RefCounted
       | StdMoved
       | StdVectorReserve
@@ -475,7 +489,7 @@ module Attribute = struct
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _ ->
         true
-    | JavaResource _, _ ->
+    | JavaResource _, _ | CSharpResource _, _ ->
         is_released
     | _ ->
         false
@@ -510,6 +524,10 @@ module Attribute = struct
         L.die InternalError "Unexpected attribute %a." pp attr
     | TaintSanitized set when TaintSanitizedSet.is_empty set ->
         L.die InternalError "Unexpected attribute %a." pp attr
+    | JavaResourceReleased ->
+        Some JavaResourceReleased
+    | CSharpResourceReleased ->
+        Some CSharpResourceReleased
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | Allocated _
@@ -523,7 +541,6 @@ module Attribute = struct
       | MustBeInitialized _
       | MustBeValid _
       | MustNotBeTainted _
-      | JavaResourceReleased
       | RefCounted
       | SourceOriginOfCopy _
       | StdMoved
@@ -615,6 +632,8 @@ module Attributes = struct
 
   let is_java_resource_released = mem_by_rank Attribute.java_resource_released_rank
 
+  let is_csharp_resource_released = mem_by_rank Attribute.csharp_resource_released_rank
+
   let get_must_be_valid =
     get_by_rank Attribute.must_be_valid_rank ~dest:(function [@warning "-8"]
         | Attribute.MustBeValid (timestamp, trace, reason) -> (timestamp, trace, reason) )
@@ -666,6 +685,7 @@ module Attributes = struct
     || mem_by_rank Attribute.invalid_rank attrs
     || mem_by_rank Attribute.unknown_effect_rank attrs
     || mem_by_rank Attribute.java_resource_released_rank attrs
+    || mem_by_rank Attribute.csharp_resource_released_rank attrs
     || mem_by_rank Attribute.propagate_taint_from_rank attrs
 
 
@@ -752,7 +772,9 @@ module Attributes = struct
     let allocated_opt = get_allocation attributes in
     Option.value_map ~default:None allocated_opt ~f:(fun (allocator, _) ->
         let invalidation = get_invalid attributes in
-        let is_released = is_java_resource_released attributes in
+        let is_released =
+          is_java_resource_released attributes || is_csharp_resource_released attributes
+        in
         if Attribute.alloc_free_match allocator invalidation is_released then None
         else allocated_opt )
 

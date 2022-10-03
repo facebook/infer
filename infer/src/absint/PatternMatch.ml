@@ -96,6 +96,10 @@ module CSharp = struct
   let implements interface tenv typename =
     let is_interface s _ = String.equal interface (Typ.Name.name s) in
     supertype_exists tenv is_interface (Typ.Name.CSharp.from_string typename)
+
+
+  let implements_one_of interfaces tenv typename =
+    List.exists interfaces ~f:(fun interface -> implements interface tenv typename)
 end
 
 module Java = struct
