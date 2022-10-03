@@ -457,6 +457,8 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
     let astate =
       if Attributes.is_java_resource_released attrs_post_caller then
         PulseOperations.java_resource_release ~recursive:true addr_caller call_state.astate
+      else if Attributes.is_csharp_resource_released attrs_post_caller then
+        PulseOperations.csharp_resource_release ~recursive:true addr_caller call_state.astate
       else call_state.astate
     in
     let astate =

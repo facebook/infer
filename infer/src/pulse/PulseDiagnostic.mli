@@ -70,7 +70,10 @@ type t =
       ; location: Location.t }
   | ErlangError of ErlangError.t
   | ReadUninitializedValue of read_uninitialized_value
-  | ResourceLeak of {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | JavaResourceLeak of
+      {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | CSharpResourceLeak of
+      {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t

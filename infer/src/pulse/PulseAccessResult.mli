@@ -70,8 +70,10 @@ val ignore_leaks :
      ( AbductiveDomain.Summary.t
      , [< `MemoryLeak of
           AbductiveDomain.Summary.t * AbductiveDomain.t * Attribute.allocator * Trace.t * Location.t
-       | `ResourceLeak of
+       | `JavaResourceLeak of
          AbductiveDomain.Summary.t * AbductiveDomain.t * JavaClassName.t * Trace.t * Location.t
+       | `CSharpResourceLeak of
+         AbductiveDomain.Summary.t * AbductiveDomain.t * CSharpClassName.t * Trace.t * Location.t
        | `RetainCycle of
          AbductiveDomain.Summary.t
          * AbductiveDomain.t

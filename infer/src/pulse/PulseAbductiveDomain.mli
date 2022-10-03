@@ -144,6 +144,10 @@ module AddressAttributes : sig
 
   val is_java_resource_released : AbstractValue.t -> t -> bool
 
+  val csharp_resource_release : AbstractValue.t -> t -> t
+
+  val is_csharp_resource_released : AbstractValue.t -> t -> bool
+
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
   val add_ref_counted : AbstractValue.t -> t -> t
@@ -289,7 +293,8 @@ module Summary : sig
     -> Location.t
     -> t
     -> ( summary
-       , [> `ResourceLeak of summary * t * JavaClassName.t * Trace.t * Location.t
+       , [> `JavaResourceLeak of summary * t * JavaClassName.t * Trace.t * Location.t
+         | `CSharpResourceLeak of summary * t * CSharpClassName.t * Trace.t * Location.t
          | `RetainCycle of
            summary * t * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t
          | `MemoryLeak of summary * t * Attribute.allocator * Trace.t * Location.t

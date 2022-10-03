@@ -23,6 +23,7 @@ type allocator =
   | CppNew
   | CppNewArray
   | JavaResource of JavaClassName.t
+  | CSharpResource of CSharpClassName.t
   | ObjCAlloc
 [@@deriving equal]
 
@@ -84,6 +85,7 @@ type t =
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
   | MustNotBeTainted of TaintSinkSet.t
   | JavaResourceReleased
+  | CSharpResourceReleased
   | PropagateTaintFrom of taint_in list
   | RefCounted
   | ReturnedFromUnknown of AbstractValue.t list
@@ -142,6 +144,8 @@ module Attributes : sig
   val get_dynamic_type : t -> Typ.t option
 
   val is_java_resource_released : t -> bool
+
+  val is_csharp_resource_released : t -> bool
 
   val is_end_of_collection : t -> bool
 
