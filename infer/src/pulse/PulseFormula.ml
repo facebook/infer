@@ -669,6 +669,40 @@ module Term = struct
 
   let is_non_zero_const = function Const c -> Q.is_not_zero c | _ -> false
 
+  let has_known_non_boolean_type = function
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _
+    | And _
+    | Or _
+    | Not _
+    | IsInstanceOf _
+    | IsInt _
+    | Var _ ->
+        false
+    | Linear l ->
+        Option.is_none (LinArith.get_as_var l)
+    | Const c ->
+        not Q.(c = zero || c = one)
+    | String _
+    | Procname _
+    | FunctionApplication _
+    | Add _
+    | Minus _
+    | Mult _
+    | DivI _
+    | DivF _
+    | Mod _
+    | BitAnd _
+    | BitOr _
+    | BitNot _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _ ->
+        true
+
+
   (** Fold [f] on the strict sub-terms of [t], if any. Preserve physical equality if [f] does. *)
   let fold_map_direct_subterms t ~init ~f =
     match t with
@@ -779,7 +813,7 @@ module Term = struct
     try
       Sat
         (map_direct_subterms t ~f:(fun t' ->
-             match f t' with Unsat -> raise FoundUnsat | Sat t'' -> t'' ) )
+             match f t' with Unsat -> raise_notrace FoundUnsat | Sat t'' -> t'' ) )
     with FoundUnsat -> Unsat
 
 
@@ -868,7 +902,7 @@ module Term = struct
       conv2 Q.to_bigint Q.to_bigint (Option.map ~f:Q.of_bigint) q1 q2 f |> Option.join
     in
     let exception Undefined in
-    let or_raise = function Some q -> q | None -> raise Undefined in
+    let or_raise = function Some q -> q | None -> raise_notrace Undefined in
     let eval_const_shallow_or_raise t0 =
       match t0 with
       | Const _ | Var _ | IsInstanceOf _ | String _ | Procname _ | FunctionApplication _ ->
@@ -895,7 +929,7 @@ module Term = struct
       | DivI (t1, t2) | DivF (t1, t2) ->
           q_map2 t1 t2 (fun c1 c2 ->
               let open Option.Monad_infix in
-              if Q.is_zero c2 then raise Undefined
+              if Q.is_zero c2 then raise_notrace Undefined
               else
                 match t0 with
                 | DivI _ ->
@@ -906,7 +940,8 @@ module Term = struct
                     (* DivF *) Q.(c1 / c2) )
       | Mod (t1, t2) ->
           q_map2 t1 t2 (fun c1 c2 ->
-              if Q.is_zero c2 then raise Undefined else map_z_z_opt c1 c2 Z.( mod ) |> or_raise )
+              if Q.is_zero c2 then raise_notrace Undefined
+              else map_z_z_opt c1 c2 Z.( mod ) |> or_raise )
       | Not t' ->
           q_predicate_map t' Q.is_zero
       | And (t1, t2) ->
@@ -1003,7 +1038,7 @@ module Term = struct
           simplify_shallow_or_raise (Minus t)
       | (DivI (_, Const c) | DivF (_, Const c)) when Q.is_zero c ->
           (* [t / 0 = undefined] *)
-          raise Undefined
+          raise_notrace Undefined
       | DivI (Minus t1, Minus t2) ->
           (* [(-t1) / (-t2) = t1 / t2] *)
           simplify_shallow_or_raise (DivI (t1, t2))
@@ -1034,12 +1069,12 @@ module Term = struct
         match Q.to_int q with
         | None ->
             (* overflows or otherwise undefined, propagate puzzlement *)
-            raise Undefined
+            raise_notrace Undefined
         | Some i -> (
             if i >= 64 then (* assume 64-bit or fewer architecture *) zero
             else if i < 0 then
               (* this is undefined, maybe we should report a bug here *)
-              raise Undefined
+              raise_notrace Undefined
             else
               let factor = Const Q.(of_int 1 lsl i) in
               match[@warning "-8"] t with
@@ -1309,7 +1344,8 @@ module Atom = struct
   (** [atoms_of_term ~negated t] is [Some \[atom1; ..; atomN\]] if [t] (or [¬t] if [negated]) is
       (mostly syntactically) equivalent to [atom1 ∧ .. ∧ atomN]. For example
       [atoms_of_term ~negated:false (Equal (Or (x, Not y), 0))] should be
-      [\[Equal (x, 0); Equal (y, 1)\]].
+      [\[Equal (x, 0); NotEqual (y, 0)\]]. When the term [y] is known as a boolean, it generates a
+      preciser atom [Equal (y, 1)].
 
       [is_neq_zero] is a function that can tell if a term is known to be [≠0], and [force_to_atom]
       can be used to force converting the term into an atom even if it does not make it simpler or
@@ -1345,7 +1381,12 @@ module Atom = struct
           (* NOTE: [Not (Or _)] is taken care of by term normalization so no need to handle it here *)
           aux ~negated:(not negated) ~force_to_atom t
       | t ->
-          if force_to_atom then Some [Equal (t, if negated then Term.zero else Term.one)] else None
+          if force_to_atom then
+            Some
+              [ ( if negated then Equal (t, Term.zero)
+                else if Term.has_known_non_boolean_type t then NotEqual (t, Term.zero)
+                else Equal (t, Term.one) ) ]
+          else None
     in
     aux ~negated ~force_to_atom t
     |> Option.map ~f:(fun atoms ->
@@ -1358,9 +1399,10 @@ module Atom = struct
   and get_as_embedded_atoms ~is_neq_zero atom =
     let of_terms is_equal t c =
       let negated =
-        (* [atom = 0] or [atom ≠ 1] means [atom] is false, [atom ≠ 0] or [atom = 1] means [atom]
-           is true *)
-        (is_equal && Q.is_zero c) || ((not is_equal) && Q.is_one c)
+        (* [atom = 0] or [atom ≠ 1] when [atom] is boolean means [atom] is false, [atom ≠ 0] or
+           [atom = 1] means [atom] is true *)
+        (is_equal && Q.is_zero c)
+        || ((not is_equal) && (not (Term.has_known_non_boolean_type t)) && Q.is_one c)
       in
       atoms_of_term ~is_neq_zero ~negated t
     in
@@ -1513,7 +1555,7 @@ module Atom = struct
     let exception FoundUnsat in
     try
       map_terms atom ~f:(fun t ->
-          match eval_term ~is_neq_zero t with Sat t' -> t' | Unsat -> raise FoundUnsat )
+          match eval_term ~is_neq_zero t with Sat t' -> t' | Unsat -> raise_notrace FoundUnsat )
       |> eval_with_normalized_terms ~is_neq_zero
     with FoundUnsat -> Unsat
 
@@ -2150,7 +2192,7 @@ module Formula = struct
                   match CItv.intersection interval interval' with
                   | None ->
                       (* empty intersection *)
-                      raise FoundUnsat
+                      raise_notrace FoundUnsat
                   | Some interval'' ->
                       interval'' )
               in
@@ -2478,7 +2520,7 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
   (* propagate [Unsat] faster using this exception *)
   let exception Contradiction in
   let sat_value_exn (norm : 'a SatUnsat.t) =
-    match norm with Unsat -> raise Contradiction | Sat x -> x
+    match norm with Unsat -> raise_notrace Contradiction | Sat x -> x
   in
   let and_var_eqs var_eqs_foreign acc_phi_new_eqs =
     VarUF.fold_congruences var_eqs_foreign ~init:acc_phi_new_eqs
@@ -2545,7 +2587,7 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
   (* propagate [Unsat] faster using this exception *)
   let exception Contradiction in
   let sat_value_exn (norm : 'a SatUnsat.t) =
-    match norm with Unsat -> raise Contradiction | Sat x -> x
+    match norm with Unsat -> raise_notrace Contradiction | Sat x -> x
   in
   let add_conditions conditions_foreign init =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold conditions_foreign ~init
@@ -2578,7 +2620,7 @@ end = struct
         | Unsat ->
             L.d_printfln "Contradiction found: %a=%a became %a=%a with is Unsat" Var.pp x
               (LinArith.pp Var.pp) l Var.pp x' (LinArith.pp Var.pp) l' ;
-            raise Contradiction
+            raise_notrace Contradiction
         | Sat None ->
             new_map
         | Sat (Some (x'', l'')) ->
@@ -2616,7 +2658,7 @@ end = struct
         if changed then
           match Atom.eval ~is_neq_zero:(fun _ -> false) atom' with
           | Unsat ->
-              raise Contradiction
+              raise_notrace Contradiction
           | Sat atoms'' ->
               Atom.Set.add_seq (Caml.List.to_seq atoms'') atoms'
         else Atom.Set.add atom' atoms' )

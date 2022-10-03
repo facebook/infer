@@ -25,3 +25,15 @@ define f(x: int, y: float, n: *node) : void {
   #lab2:
     jmp
 }
+
+define unreachable_example(i: int) : void {
+  #entry:
+    n0: int = load &i
+    jmp then, else
+  #then:
+    prune __sil_lt(n0, 0)
+    ret null
+  #else:
+    prune ! __sil_lt(n0, 0)
+    unreachable
+}

@@ -964,7 +964,7 @@ OPTIONS
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
 
-       --merge-infer-out +string
+       --merge-capture +string
            Specifies an Infer results directory. The files and procedures
            captured in it will be merged together into the results directory
            specified with -o. Relative paths are interpreted as relative to
@@ -975,6 +975,11 @@ OPTIONS
            files in all specified results directories will be merged together
            and deduplicated before being stored in the main results
            directory.           See also infer-report(1).
+
+       --merge-report-summaries +string
+           Specifies an Infer results directory. The report summaries in all
+           specified results directories will be merged together and
+           deduplicated before reporting is done.           See also infer-report(1).
 
        --no-parameter-not-null-checked
            Deactivates: checker parameter-not-null-checked: An
@@ -1562,6 +1567,11 @@ OPTIONS
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe           See also infer-analyze(1).
+
+       --timeout float
+           Time after which any checker (except biabduction) should give up
+           analysing the current function or method, in seconds       
+    See also infer-analyze(1) and infer-run(1).
 
        --top-longest-proc-duration-size int
            Number of procedures for which we track longest analysis duration
@@ -2197,11 +2207,14 @@ INTERNAL OPTIONS
        --memtrace-sampling-rate-reset
            Cancel the effect of --memtrace-sampling-rate.
 
-       --merge-infer-out-reset
-           Set --merge-infer-out to the empty list.
+       --merge-capture-reset
+           Set --merge-capture to the empty list.
 
        --merge-report-reset
            Set --merge-report to the empty list.
+
+       --merge-report-summaries-reset
+           Set --merge-report-summaries to the empty list.
 
        --method-decls-info method_decls_info.json
            Specifies the file containing the method declarations info (eg.
@@ -2589,6 +2602,9 @@ INTERNAL OPTIONS
        --testing-mode
            Activates: Mode for testing, where no headers are translated, and
            dot files are created (clang only) (Conversely: --no-testing-mode)
+
+       --timeout-reset
+           Cancel the effect of --timeout.
 
        --top-longest-proc-duration-size-reset
            Cancel the effect of --top-longest-proc-duration-size.

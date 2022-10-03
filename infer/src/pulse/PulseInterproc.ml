@@ -103,7 +103,7 @@ let raise_if_unsat contradiction = function
   | Sat x ->
       x
   | Unsat ->
-      raise (Contradiction contradiction)
+      raise_notrace (Contradiction contradiction)
 
 
 let fold_globals_of_stack ({PathContext.timestamp} as path) call_loc stack call_state ~f =
@@ -154,7 +154,9 @@ let visit call_state ~pre ~addr_callee ~addr_hist_caller =
              variables, but record that they are equal. *)
           BaseMemory.mem addr_callee pre.BaseDomain.heap
           && BaseMemory.mem addr_callee' pre.BaseDomain.heap
-        then raise (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'; call_state}))
+        then
+          raise_notrace
+            (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'; call_state}))
         else and_aliasing_arith ~addr_callee:addr_callee' ~addr_caller0:addr_caller call_state
     | _ ->
         call_state
@@ -265,7 +267,7 @@ let materialize_pre_for_captured_vars callee_proc_name call_location ~pre ~captu
         materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state )
   with
   | Unequal_lengths ->
-      raise (Contradiction (CapturedFormalActualLength {captured_formals; captured_actuals}))
+      raise_notrace (Contradiction (CapturedFormalActualLength {captured_formals; captured_actuals}))
   | Ok result ->
       result
 
@@ -280,7 +282,7 @@ let materialize_pre_for_parameters callee_proc_name call_location ~pre ~formals 
         materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state )
   with
   | Unequal_lengths ->
-      raise (Contradiction (FormalActualLength {formals; actuals}))
+      raise_notrace (Contradiction (FormalActualLength {formals; actuals}))
   | Ok result ->
       result
 
@@ -372,7 +374,7 @@ let apply_arithmetic_constraints pre_or_post {PathContext.timestamp} callee_proc
               }
             else if Attributes.is_uninitialized caller_attrs then
               one_address_sat callee_attrs addr_hist_caller call_state
-            else raise (Contradiction ISLPreconditionMismatch)
+            else raise_notrace (Contradiction ISLPreconditionMismatch)
         | _ ->
             call_state )
       call_state.subst call_state

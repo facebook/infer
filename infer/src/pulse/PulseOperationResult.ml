@@ -23,7 +23,7 @@ module Import = struct
         (fun result ->
           Sat
             (let* x = result in
-             match (f x : _ SatUnsat.t) with Sat y -> y | Unsat -> raise Unsat ) )
+             match (f x : _ SatUnsat.t) with Sat y -> y | Unsat -> raise_notrace Unsat ) )
         sat_result
     with Unsat -> SatUnsat.Unsat
 

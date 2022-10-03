@@ -12,6 +12,8 @@
 
 void HandleIntent(NSString* key, NSString* context, NSObject* input) {}
 
+void dispatchedWithMock(NSString* context, NSObject* input) {}
+
 extern NSString* StringProviderInputCreate() { return @"input"; }
 
 static NSString* AttributedStringProviderInput() {
@@ -26,7 +28,8 @@ NSString* taintInterprocWithMockBad() {
   NSArray<NSString*>* const matches = @[ @"1", @"2" ];
 
   for (NSString* textResult in matches) {
-    HandleIntent(@"key", @"context", (NSObject*)StringProviderInputCreate());
+    HandleIntent(
+        @"dispatch_1", @"context", (NSObject*)StringProviderInputCreate());
   };
 
   return @"string";

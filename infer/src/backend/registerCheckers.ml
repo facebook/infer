@@ -14,7 +14,7 @@ module F = Format
 type callback_fun =
   | Procedure of Callbacks.proc_callback_t
   | DynamicDispatch of Callbacks.proc_callback_t
-  | File of {callback: Callbacks.file_callback_t; issue_dir: ResultsDirEntryName.id}
+  | File of Callbacks.file_callback_t
 
 let interprocedural payload_field checker =
   Procedure (CallbackOfChecker.interprocedural_with_field payload_field checker)
@@ -48,9 +48,7 @@ let interprocedural3 payload_field1 payload_field2 payload_field3 ~set_payload c
        ~set_payload checker )
 
 
-let file issue_dir payload_field checker =
-  File {callback= CallbackOfChecker.interprocedural_file payload_field checker; issue_dir}
-
+let file payload_field checker = File (CallbackOfChecker.interprocedural_file payload_field checker)
 
 let intraprocedural checker = Procedure (CallbackOfChecker.intraprocedural checker)
 
@@ -100,9 +98,7 @@ let all_checkers =
   ; { checker= Starvation
     ; callbacks=
         (let starvation = interprocedural Payloads.Fields.starvation Starvation.analyze_procedure in
-         let starvation_file_reporting =
-           file StarvationIssues Payloads.Fields.starvation Starvation.reporting
-         in
+         let starvation_file_reporting = file Payloads.Fields.starvation Starvation.reporting in
          [ (starvation, Java)
          ; (starvation_file_reporting, Java)
          ; (starvation, Clang)
@@ -143,7 +139,7 @@ let all_checkers =
   ; { checker= RacerD
     ; callbacks=
         (let racerd_proc = interprocedural Payloads.Fields.racerd RacerDProcAnalysis.analyze in
-         let racerd_file = file RacerDIssues Payloads.Fields.racerd RacerDFileAnalysis.analyze in
+         let racerd_file = file Payloads.Fields.racerd RacerDFileAnalysis.analyze in
          [ (racerd_proc, Clang)
          ; (racerd_proc, Java)
          ; (racerd_proc, CIL)
@@ -184,8 +180,7 @@ let all_checkers =
   ; { checker= Eradicate
     ; callbacks=
         [ (intraprocedural_with_payload Payloads.Fields.nullsafe Eradicate.analyze_procedure, Java)
-        ; (file NullsafeFileIssues Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, Java) ]
-    }
+        ; (file Payloads.Fields.nullsafe FileLevelAnalysis.analyze_file, Java) ] }
   ; { checker= Biabduction
     ; callbacks=
         (let biabduction =
@@ -228,8 +223,8 @@ let register checkers =
       | DynamicDispatch procedure_cb ->
           Callbacks.register_procedure_callback ~checker_name:name ~dynamic_dispatch:true language
             procedure_cb
-      | File {callback; issue_dir} ->
-          Callbacks.register_file_callback ~checker_name:name language callback ~issue_dir
+      | File callback ->
+          Callbacks.register_file_callback ~checker language callback
     in
     List.iter ~f:register_callback callbacks
   in

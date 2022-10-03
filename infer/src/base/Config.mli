@@ -452,9 +452,11 @@ val memtrace_sampling_rate : float
 
 val merge : bool
 
-val merge_infer_out : string list
+val merge_capture : string list
 
 val merge_report : string list
+
+val merge_report_summaries : string list
 
 val method_decls_info : string option
 
@@ -755,6 +757,8 @@ val export_changed_functions : bool
 val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Basic.t
+
+val timeout : float option
 
 val top_longest_proc_duration_size : int option
 

@@ -60,7 +60,8 @@ include struct
     ; mutable pulse_aliasing_contradictions: int
     ; mutable pulse_args_length_contradictions: int
     ; mutable pulse_captured_vars_length_contradictions: int
-    ; mutable pulse_summaries_count: int PulseSumCountMap.t }
+    ; mutable pulse_summaries_count: int PulseSumCountMap.t
+    ; mutable timeouts: int }
   [@@deriving fields]
 end
 
@@ -80,7 +81,8 @@ let global_stats =
   ; pulse_aliasing_contradictions= 0
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
-  ; pulse_summaries_count= PulseSumCountMap.empty }
+  ; pulse_summaries_count= PulseSumCountMap.empty
+  ; timeouts= 0 }
 
 
 let get () = global_stats
@@ -143,6 +145,8 @@ let add_proc_duration pname duration_ms =
       heap )
 
 
+let incr_timeouts () = incr Fields.timeouts
+
 let copy from ~into : unit =
   let { longest_proc_duration_heap
       ; summary_file_try_load
@@ -157,14 +161,15 @@ let copy from ~into : unit =
       ; pulse_aliasing_contradictions
       ; pulse_args_length_contradictions
       ; pulse_captured_vars_length_contradictions
-      ; pulse_summaries_count } =
+      ; pulse_summaries_count
+      ; timeouts } =
     from
   in
   Fields.Direct.set_all_mutable_fields into ~longest_proc_duration_heap ~summary_file_try_load
     ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed
     ~proc_locker_lock_time ~proc_locker_unlock_time ~restart_scheduler_useful_time
     ~restart_scheduler_total_time ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
-    ~pulse_captured_vars_length_contradictions ~pulse_summaries_count
+    ~pulse_captured_vars_length_contradictions ~pulse_summaries_count ~timeouts
 
 
 let merge stats1 stats2 =
@@ -195,7 +200,8 @@ let merge stats1 stats2 =
   ; pulse_summaries_count=
       PulseSumCountMap.merge
         (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
-        stats1.pulse_summaries_count stats2.pulse_summaries_count }
+        stats1.pulse_summaries_count stats2.pulse_summaries_count
+  ; timeouts= stats1.timeouts + stats2.timeouts }
 
 
 let initial =
@@ -212,7 +218,8 @@ let initial =
   ; pulse_aliasing_contradictions= 0
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
-  ; pulse_summaries_count= PulseSumCountMap.empty }
+  ; pulse_summaries_count= PulseSumCountMap.empty
+  ; timeouts= 0 }
 
 
 let reset () = copy initial ~into:global_stats
@@ -260,6 +267,7 @@ let pp f stats =
       ~pulse_args_length_contradictions:(pp_int_field stats f)
       ~pulse_captured_vars_length_contradictions:(pp_int_field stats f)
       ~pulse_summaries_count:(pp_pulse_summaries_count stats f)
+      ~timeouts:(pp_int_field stats f)
   in
   F.fprintf f "@[Backend stats:@\n@[<v2>  %t@]@]@." (pp_stats stats)
 
@@ -298,7 +306,7 @@ let log_to_scuba stats =
       ~restart_scheduler_total_time:create_time_entry ~pulse_aliasing_contradictions:create_counter
       ~pulse_args_length_contradictions:create_counter
       ~pulse_captured_vars_length_contradictions:create_counter
-      ~pulse_summaries_count:create_pulse_summaries_count_entry
+      ~pulse_summaries_count:create_pulse_summaries_count_entry ~timeouts:create_counter
     |> List.concat
   in
   ScubaLogging.log_many entries

@@ -281,6 +281,8 @@ struct
             (post_astate, n_disjuncts) )
           else (
             L.d_printfln "@[<v2>Executing instruction from disjunct #%d@;" i ;
+            (* check timeout once per disjunct to execute instead of once for all disjuncts *)
+            Timer.check_timeout () ;
             let disjuncts', non_disj' =
               T.exec_instr (pre_disjunct, non_disj) analysis_data node instr
             in
@@ -417,6 +419,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
       let result =
         try
           let post = TransferFunctions.exec_instr pre proc_data node idx instr in
+          Timer.check_timeout () ;
           (* don't forget to reset this so we output messages for future errors too *)
           logged_error := false ;
           Ok post
@@ -431,7 +434,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
           post
       | Error (exn, backtrace, instr) ->
           ( match exn with
-          | RestartSchedulerException.ProcnameAlreadyLocked _ ->
+          | RestartSchedulerException.ProcnameAlreadyLocked _ | Timer.Timeout _ ->
               (* this isn't an error; don't log it *)
               ()
           | _ ->

@@ -1,0 +1,8 @@
+{
+    "HandleIntentForKey": {
+        "dispatch_1": "dispatched"
+    },
+    "HandleIntent": {
+        "dispatch_1": "dispatchedWithMock"
+    }
+}

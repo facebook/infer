@@ -44,7 +44,7 @@ let canonicalize ~get_var_repr stack =
               "CONTRADICTION: %a = %a makes two stack variables' addresses equal (%a=%a) in %a@\n"
               AbstractValue.pp addr AbstractValue.pp addr' AbstractValue.pp addr Var.pp var M.pp
               stack ;
-            raise AliasingContradiction ) ;
+            raise_notrace AliasingContradiction ) ;
           let allocated =
             if Var.is_pvar var then AbstractValue.Set.add addr' allocated else allocated
           in

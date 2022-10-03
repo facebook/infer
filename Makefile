@@ -171,7 +171,10 @@ endif # BUILD_ERLANG_ANALYZERS
 
 ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS),Linux+yes)
 ifneq ($(HACKC),no)
-DIRECT_TESTS += hack_capture
+DIRECT_TESTS += \
+  hack_capture \
+  hack_pulse \
+
 endif
 endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
 
@@ -189,7 +192,7 @@ BUILD_SYSTEMS_TESTS += \
   javac \
   resource_leak_exception_lines \
   racerd_dedup \
-  merge-infer-out \
+  merge-capture \
 
 COST_TESTS += \
   java_hoistingExpensive \

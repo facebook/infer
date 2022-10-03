@@ -64,14 +64,11 @@ end
 module SilProcname = Procname
 
 module Procname : sig
-  type kind = Virtual | NonVirtual
-
   type enclosing_class = TopLevel | Enclosing of TypeName.t
 
   type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
 
-  type t =
-    {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
+  type t = {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t}
 
   val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
 end
@@ -88,6 +85,8 @@ module Fieldname : sig
 end
 
 module Exp : sig
+  type call_kind = Virtual | NonVirtual
+
   type t =
     | Var of Ident.t  (** pure variable: it is not an lvalue *)
     | Lvar of VarName.t  (** the address of a program variable *)
@@ -95,8 +94,10 @@ module Exp : sig
         (** field offset, fname must be declared in type tname *)
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
-    | Call of {proc: Procname.qualified_name; args: t list}
+    | Call of {proc: Procname.qualified_name; args: t list; kind: call_kind}
     | Cast of Typ.t * t
+
+  val call_virtual : Procname.qualified_name -> t -> t list -> t
 
   (* logical not ! *)
   val not : t -> t
@@ -118,7 +119,11 @@ end
 module Terminator : sig
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
-  type t = Ret of Exp.t | Jump of node_call list  (** non empty list *) | Throw of Exp.t
+  type t =
+    | Ret of Exp.t
+    | Jump of node_call list  (** non empty list *)
+    | Throw of Exp.t
+    | Unreachable
 end
 
 module Node : sig

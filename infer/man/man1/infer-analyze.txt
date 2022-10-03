@@ -545,6 +545,10 @@ OPTIONS
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)
 
+       --timeout float
+           Time after which any checker (except biabduction) should give up
+           analysing the current function or method, in seconds
+
        --top-longest-proc-duration-size int
            Number of procedures for which we track longest analysis duration
            info.

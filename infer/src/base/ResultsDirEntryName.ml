@@ -27,12 +27,9 @@ type id =
   | JavaClassnamesCache
   | JavaGlobalTypeEnvironment
   | LintDotty
-  | LintIssues
   | Logs
-  | NullsafeFileIssues
   | PerfEvents
   | ProcnamesLocks
-  | RacerDIssues
   | ReportConfigImpactJson
   | ReportCostsJson
   | ReportHtml
@@ -42,7 +39,6 @@ type id =
   | ReportXML
   | RetainCycles
   | RunState
-  | StarvationIssues
   | Temporary
   | TestDeterminatorReport
   | TestDeterminatorTempResults
@@ -50,7 +46,7 @@ type id =
 
 type cleanup_action = Delete | Keep [@@deriving equal]
 
-type entry_kind = Directory | File | IssuesDirectory [@@deriving equal]
+type entry_kind = Directory | File [@@deriving equal]
 
 type t =
   { rel_path: string  (** path inside infer-out/ *)
@@ -147,20 +143,10 @@ let of_id = function
       ; kind= Directory
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }
-  | LintIssues ->
-      { rel_path= "lint_issues"
-      ; kind= IssuesDirectory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete }
   | Logs ->
       { rel_path= "logs"
       ; kind= File
       ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete }
-  | NullsafeFileIssues ->
-      { rel_path= "nullsafe_file_level"
-      ; kind= IssuesDirectory
-      ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
   | PerfEvents ->
       { rel_path= "perf_events.json"
@@ -170,11 +156,6 @@ let of_id = function
   | ProcnamesLocks ->
       { rel_path= "procnames_locks"
       ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete }
-  | RacerDIssues ->
-      { rel_path= "racerd"
-      ; kind= IssuesDirectory
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
   | ReportConfigImpactJson ->
@@ -222,11 +203,6 @@ let of_id = function
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }
-  | StarvationIssues ->
-      { rel_path= "starvation_issues"
-      ; kind= IssuesDirectory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete }
   | Temporary ->
       { rel_path= "tmp"
       ; kind= Directory
@@ -262,9 +238,3 @@ let to_delete_before_incremental_capture_and_analysis ~results_dir =
 let to_delete_before_caching_capture ~results_dir =
   get_filtered_paths ~results_dir ~f:(fun {before_caching_capture; _} ->
       equal_cleanup_action before_caching_capture Delete )
-
-
-let get_issues_directories () =
-  List.filter all_of_id ~f:(fun id ->
-      let entry = of_id id in
-      equal_entry_kind entry.kind IssuesDirectory )
