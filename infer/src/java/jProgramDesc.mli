@@ -17,6 +17,8 @@ type t
 
 val get_classmap : t -> classmap
 
+val get_matching_class_names : t -> string -> JBasics.ClassSet.t
+
 val set_java_location : t -> JBasics.class_name -> Location.t -> unit
 
 val get_java_location : t -> JBasics.class_name -> Location.t option
@@ -24,7 +26,8 @@ val get_java_location : t -> JBasics.class_name -> Location.t option
 val load : JClasspath.t -> t
 (** load a java program *)
 
-val lookup_node : JBasics.class_name -> t -> JCode.jcode Javalib.interface_or_class option
+val lookup_node :
+  ?store:bool -> JBasics.class_name -> t -> JCode.jcode Javalib.interface_or_class option
 (** retrieve a Java node from the classname *)
 
 val add_missing_callee : t -> Procname.t -> JBasics.class_name -> JBasics.method_signature -> unit
