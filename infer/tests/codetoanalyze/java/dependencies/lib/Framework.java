@@ -27,8 +27,10 @@ public class Framework {
 
     public static String readFile(String s) throws IOException {
         try (FileInputStream inputStream = new FileInputStream(s)) {
-            String content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            return content;
+            int length = 10;
+            byte[] input = new byte[length];
+            inputStream.read(input, 0, length);
+            return new String(input);
         }
     }
 
