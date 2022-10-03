@@ -4148,12 +4148,6 @@ let clang_frontend_action_string =
   String.concat ~sep:", " text
 
 
-(* Specify treatment of dynamic dispatch in Java code: false 'none' treats dynamic dispatch as
-   a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the
-   JVM semantics and creates procedure descriptions during symbolic execution using the type
-   information found in the abstract state *)
-let dynamic_dispatch = is_checker_enabled Biabduction
-
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =
   RevList.exists external_java_packages ~f:(fun (prefix : string) ->
