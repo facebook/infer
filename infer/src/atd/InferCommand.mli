@@ -8,7 +8,6 @@
 (** Main modes of operation for infer *)
 type t =
   | Analyze  (** analyze previously captured source files *)
-  | AnalyzeJson  (** analyze captured cfg and tenv json files *)
   | Capture
       (** capture compilation commands and translate source files into infer's intermediate language *)
   | Compile

@@ -73,8 +73,8 @@ let loc_trace_to_jsonbug_record trace_list ekind =
       record_list
 
 
-let should_report issue_type error_desc =
-  if (not Config.filtering) || Language.curr_language_is CIL then true
+let should_report proc_name issue_type error_desc =
+  if (not Config.filtering) || Language.equal (Procname.get_language proc_name) CIL then true
   else
     let issue_type_is_null_deref =
       let null_deref_issue_types =
@@ -189,7 +189,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
     if
       error_filter source_file err_key.issue_type
       && should_report_proc_name
-      && should_report err_key.issue_type err_key.err_desc
+      && should_report proc_name err_key.issue_type err_key.err_desc
       && not (is_in_clang_header source_file)
     then
       let severity = IssueType.string_of_severity err_key.severity in

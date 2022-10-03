@@ -7,6 +7,10 @@
 
 open! IStd
 
-(** Main module for the analyzejson analysis after the capture phase *)
+(** Function modules for the json analysis in the capture phase *)
 
-val analyze_json : string -> string -> unit
+val parse_tenv : Yojson.Safe.t -> Tenv.t
+
+val parse_cfg : Yojson.Safe.t -> Cfg.t
+
+val store : Cfg.t -> unit

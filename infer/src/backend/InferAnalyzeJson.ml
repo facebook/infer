@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Main module for the analyzejson analysis after the capture phase *)
+(** Function modules for the json analysis in the capture phase *)
 
 open! IStd
 open Yojson
@@ -679,6 +679,22 @@ let parse_cfg (json : Safe.t) =
   cfg
 
 
+let add_proc_to_cfg source_file pname pdesc map =
+  let cfg = SourceFile.Map.find_opt source_file map |> IOption.if_none_eval ~f:Cfg.create in
+  Procname.Hash.add cfg pname pdesc ;
+  SourceFile.Map.add source_file cfg map
+
+
+let store cfg =
+  let save_proc procname proc_desc cfg_map =
+    let attributes = Procdesc.get_attributes proc_desc in
+    let source_file = attributes.loc.Location.file in
+    add_proc_to_cfg source_file procname proc_desc cfg_map
+  in
+  let cfg_map = Procname.Hash.fold save_proc cfg SourceFile.Map.empty in
+  SourceFile.Map.iter (fun sf mapped_cfg -> SourceFiles.add sf mapped_cfg Tenv.Global None) cfg_map
+
+
 let parse_tenv_type (json : Safe.t) tenv =
   let tn = parse_typename (member "type_name" json) in
   let fields, statics, supers, methods, annots = parse_struct (member "type_struct" json) in
@@ -689,34 +705,3 @@ let parse_tenv (json : Safe.t) =
   let tenv = Tenv.create () in
   List.iter ~f:(fun entry -> parse_tenv_type entry tenv) (to_list json) ;
   tenv
-
-
-let clear_caches () = Summary.OnDisk.clear_cache ()
-
-let analyze_json cfg_json tenv_json =
-  clear_caches () ;
-  InferAnalyze.register_active_checkers () ;
-  if not Config.continue_analysis then
-    if Config.reanalyze then (
-      L.progress "Invalidating procedures to be reanalyzed@." ;
-      Summary.OnDisk.delete_all ~filter:(Lazy.force Filtering.procedures_filter) () ;
-      L.progress "Done@." )
-    else if not Config.incremental_analysis then DBWriter.delete_all_specs () ;
-  Printexc.record_backtrace true ;
-  let tenv = parse_tenv (Yojson.Safe.from_file tenv_json) in
-  let cfg = parse_cfg (Yojson.Safe.from_file cfg_json) in
-  let source_file = SourceFile.create ~warn_on_error:false "./Program.cs" in
-  (* let source_dir = DB.source_dir_from_source_file source_file in
-     Utils.create_dir (DB.source_dir_to_string source_dir) ;
-     let tenv_file = DB.source_dir_get_internal_file source_dir ".tenv" in
-     let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
-     Tenv.store_to_filename tenv tenv_file ; *)
-  Tenv.store_global tenv ;
-  Cfg.store source_file cfg ;
-  SourceFiles.add source_file cfg Tenv.Global None ;
-  (*Cfg.print_cfg_procs cfg ;*)
-  Language.curr_language := Language.CIL ;
-  let exe_env = Exe_env.mk () in
-  Ondemand.analyze_file exe_env source_file ;
-  if Config.write_html then Printer.write_all_html_files source_file ;
-  ()

@@ -498,7 +498,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | AnalyzeJson | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -917,7 +917,7 @@ and capture_textual =
 
 and cfg_json =
   CLOpt.mk_path_opt ~long:"cfg-json"
-    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~in_help:InferCommand.[(Capture, manual_generic)]
     ~meta:"file" "Path to CFG json file"
 
 
@@ -1227,7 +1227,7 @@ and ( biabduction_write_dotty
         match command with
         | Debug | Explore | Help ->
             None
-        | (Analyze | AnalyzeJson | Capture | Compile | Report | ReportDiff | Run) as command ->
+        | (Analyze | Capture | Compile | Report | ReportDiff | Run) as command ->
             Some (command, manual_generic) )
   in
   let biabduction_write_dotty =
@@ -2910,7 +2910,7 @@ and starvation_strict_mode =
 
 and tenv_json =
   CLOpt.mk_path_opt ~long:"tenv-json"
-    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~in_help:InferCommand.[(Capture, manual_generic)]
     ~meta:"file" "Path to TEnv json file"
 
 

@@ -244,7 +244,7 @@ OPTIONS
            issue was filtered.           See also infer-report(1) and infer-run(1).
 
        --cfg-json file
-           Path to CFG json file           See also infer-analyzejson(1).
+           Path to CFG json file           See also infer-capture(1).
 
        --changed-files-index file
            Specify the file containing the list of source files from which
@@ -373,9 +373,8 @@ OPTIONS
            Activates: Debug mode (also sets --debug-level 2,
            --developer-mode, --print-buckets, --print-types,
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
-           --write-html) (Conversely: --no-debug | -G)           See also infer-analyze(1), infer-analyzejson(1),
-           infer-capture(1), infer-compile(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           --write-html) (Conversely: --no-debug | -G)           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
@@ -383,27 +382,23 @@ OPTIONS
       - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
-           See also infer-analyze(1), infer-analyzejson(1),
-           infer-capture(1), infer-compile(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
-           values.           See also infer-analyze(1), infer-analyzejson(1),
-           infer-capture(1), infer-compile(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
-           values.           See also infer-analyze(1), infer-analyzejson(1),
-           infer-capture(1), infer-compile(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --debug-level-linters int
            Debug level for the linters. See --debug-level for accepted
-           values.           See also infer-analyze(1), infer-analyzejson(1),
-           infer-capture(1), infer-compile(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-report(1), infer-reportdiff(1), and infer-run(1).
 
        --no-deduplicate
            Deactivates: Apply issue-specific deduplication during analysis
@@ -771,9 +766,8 @@ OPTIONS
     See also infer-capture(1).
 
        --help
-           Show this manual           See also infer-analyze(1), infer-analyzejson(1),
-           infer-capture(1), infer-compile(1), infer-debug(1),
-           infer-explore(1), infer-help(1), infer-report(1),
+           Show this manual           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-checker +checker-id
@@ -783,16 +777,14 @@ OPTIONS
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
            plain if the environment variable TERM is "dumb" or undefined, and
-           to pager otherwise.           See also infer-analyze(1), infer-analyzejson(1),
-           infer-capture(1), infer-compile(1), infer-debug(1),
-           infer-explore(1), infer-help(1), infer-report(1),
+           to pager otherwise.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
-           section           See also infer-analyze(1), infer-analyzejson(1),
-           infer-capture(1), infer-compile(1), infer-debug(1),
-           infer-explore(1), infer-help(1), infer-report(1),
+           section           See also infer-analyze(1), infer-capture(1), infer-compile(1),
+           infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
            infer-reportdiff(1), and infer-run(1).
 
        --help-issue-type +UNIQUE_ID
@@ -1562,7 +1554,7 @@ OPTIONS
            (Conversely: --no-starvation-only)           See also infer-analyze(1).
 
        --tenv-json file
-           Path to TEnv json file           See also infer-analyzejson(1).
+           Path to TEnv json file           See also infer-capture(1).
 
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
@@ -1715,9 +1707,9 @@ FILES
 
 
 SEE ALSO
-       infer-analyze(1), infer-analyzejson(1), infer-capture(1),
-       infer-compile(1), infer-debug(1), infer-explore(1), infer-help(1),
-       infer-report(1), infer-reportdiff(1), infer-run(1)
+       infer-analyze(1), infer-capture(1), infer-compile(1), infer-debug(1),
+       infer-explore(1), infer-help(1), infer-report(1), infer-reportdiff(1),
+       infer-run(1)
 
 
 

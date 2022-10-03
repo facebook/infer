@@ -13,7 +13,6 @@ open! IStd
 (** based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
-  | AnalyzeJson
   | Ant of {prog: string; args: string list}
   | Buck2 of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
@@ -25,6 +24,7 @@ type mode =
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
+  | JsonSIL of {cfg_json: string; tenv_json: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Rebar3 of {args: string list}
