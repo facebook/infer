@@ -147,7 +147,8 @@ module Procdesc : sig
 end
 
 module Struct : sig
-  type t = {name: TypeName.t; fields: Fieldname.t list; methods: Procname.t list}
+  type t =
+    {name: TypeName.t; supers: TypeName.t list; fields: Fieldname.t list; methods: Procname.t list}
 end
 
 module Attr : sig

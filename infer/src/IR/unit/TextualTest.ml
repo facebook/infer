@@ -94,6 +94,25 @@ let%test_module "parsing" =
               ret n0.HackMixed.foo(42)
 
         } |}]
+
+    let text =
+      {|
+       type A = {f1: int; f2: int}
+       type B {f3: bool}
+       type C extends A, B {f4: bool}
+      |}
+
+
+    let%expect_test _ =
+      let m = parse_module text in
+      F.printf "%a" Module.pp m ;
+      [%expect
+        {|
+        type A = {f1: int; f2: int}
+
+        type B = {f3: bool}
+
+        type C extends A, B = {f4: bool} |}]
   end )
 
 let%test_module "procnames" =

@@ -625,14 +625,18 @@ module Fieldname = struct
   let pp fmt {name; typ} = F.fprintf fmt "%a: %a" FieldBaseName.pp name Typ.pp typ
 end
 
+module SilStruct = Struct
+
 module Struct = struct
   type t =
     { name: TypeName.t
+    ; supers: TypeName.t list
     ; fields: Fieldname.t list
     ; methods: Procname.t list (* currently only the toplevel class will contain methods *) }
 
   let to_sil lang tenv {name; fields; methods} =
     let name = TypeName.to_java_sil name in
+    (* TODO(arr): translate supers *)
     let fields =
       List.map fields ~f:(fun fname ->
           (Fieldname.to_sil fname, Typ.to_sil fname.Fieldname.typ, Annot.Item.empty) )
@@ -642,21 +646,29 @@ module Struct = struct
     Tenv.mk_struct tenv ~fields ~methods name |> ignore
 
 
-  let of_sil name sil_struct =
+  let of_sil name (sil_struct : SilStruct.t) =
     let of_sil_field (fieldname, typ, _) =
       let typ = Typ.of_sil typ in
       Fieldname.of_sil fieldname typ
     in
-    let fields = sil_struct.Struct.fields @ sil_struct.Struct.statics in
+    let supers = sil_struct.supers |> List.map ~f:TypeName.of_sil_typ_name in
+    let fields = SilStruct.(sil_struct.fields @ sil_struct.statics) in
     let fields = List.map ~f:of_sil_field fields in
-    {name; fields; methods= []}
+    {name; supers; fields; methods= []}
 
 
-  let pp fmt {name; fields} =
+  let pp fmt {name; supers; fields} =
     let pp_fields =
-      Pp.seq ~print_env:Pp.text_break ~sep:";" (fun fmt -> F.fprintf fmt " %a" Fieldname.pp)
+      Pp.seq ~print_env:Pp.text_break ~sep:";" (fun fmt -> F.fprintf fmt "%a" Fieldname.pp)
     in
-    F.fprintf fmt "%a = {@[<hov>%a@] }" TypeName.pp name pp_fields fields
+    let pp_supers =
+      Pp.seq ~print_env:Pp.text_break ~sep:"," (fun fmt -> F.fprintf fmt "%a" TypeName.pp)
+    in
+    if List.is_empty supers then
+      F.fprintf fmt "%a = {@[<hov>%a@]}" TypeName.pp name pp_fields fields
+    else
+      F.fprintf fmt "%a extends @[<hov>%a@] = {@[<hov>%a@]}" TypeName.pp name pp_supers supers
+        pp_fields fields
 end
 
 module Decls = struct
