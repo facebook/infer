@@ -228,12 +228,10 @@ let compute_source_icfg program tenv source_basename package_opt source_file =
   if Config.java_source_parser_experimental then
     JSourceLocations.collect_class_location program source_file
   else JSourceFileInfo.collect_class_location program source_file ;
-  let () =
-    let test = should_capture package_opt source_basename in
-    let procedure = create_icfg source_file program tenv icfg in
-    let f = select test procedure in
-    JBasics.ClassSet.iter f (JProgramDesc.get_matching_class_names program source_basename)
+  let create =
+    select (should_capture package_opt source_basename) (create_icfg source_file program tenv icfg)
   in
+  List.iter ~f:create (JProgramDesc.get_matching_class_names program source_basename) ;
   icfg.JContext.cfg
 
 
