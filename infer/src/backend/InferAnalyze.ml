@@ -110,14 +110,13 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
 
 let source_file_should_be_analyzed ~changed_files source_file =
   (* whether [fname] is one of the [changed_files] *)
-  let is_changed_file = 
-    if Config.suffix_match_changed_file then
-      let suffix_pattern file = ".*\\" ^ SourceFile.to_rel_path file ^ "$"  in
-      let build_regex file = List.rev_map [(suffix_pattern file)] ~f:Str.regexp in
-      let path_ends_with file = SourceFile.is_matching (build_regex file) source_file in
+  let is_changed_file =
+    if Config.suffix_match_changed_files then
+      let path_ends_with file =
+        String.is_suffix ~suffix:(SourceFile.to_rel_path file) (SourceFile.to_rel_path source_file)
+      in
       Option.map changed_files ~f:(SourceFile.Set.exists path_ends_with)
-    else
-      Option.map changed_files ~f:(SourceFile.Set.mem source_file)
+    else Option.map changed_files ~f:(SourceFile.Set.mem source_file)
   in
   let check_modified () =
     let modified = SourceFiles.is_freshly_captured source_file in
