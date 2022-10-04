@@ -121,6 +121,8 @@ let to_simplified_string ({class_name; field_name} : t) =
         Some (CSharpClassName.classname name)
     | ErlangType _ ->
         None
+    | HackClass name ->
+        Some (HackClassName.classname name)
     | JavaClass name ->
         Some (JavaClassName.classname name)
   in

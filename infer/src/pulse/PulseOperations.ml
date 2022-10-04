@@ -430,6 +430,31 @@ let java_resource_release ~recursive address astate =
   loop AbstractValue.Set.empty address astate
 
 
+let csharp_resource_release ~recursive address astate =
+  let if_valid_access_then_eval addr access astate =
+    Option.map (Memory.find_edge_opt addr access astate) ~f:fst
+  in
+  let if_valid_field_then_load obj field astate =
+    let open IOption.Let_syntax in
+    let* field_addr = if_valid_access_then_eval obj (FieldAccess field) astate in
+    if_valid_access_then_eval field_addr Dereference astate
+  in
+  let rec loop seen obj astate =
+    if AbstractValue.Set.mem obj seen || AddressAttributes.is_csharp_resource_released obj astate
+    then astate
+    else
+      let astate = AddressAttributes.csharp_resource_release obj astate in
+      match if_valid_field_then_load obj ModeledField.delegated_release astate with
+      | Some delegation ->
+          (* beware: if the field is not valid, a regular call to CSharp.load_field will generate a
+             fresh abstract value and we will loop forever, even if we use the [seen] set *)
+          if recursive then loop (AbstractValue.Set.add obj seen) delegation astate else astate
+      | None ->
+          astate
+  in
+  loop AbstractValue.Set.empty address astate
+
+
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate
 
 let add_ref_counted address astate = AddressAttributes.add_ref_counted address astate

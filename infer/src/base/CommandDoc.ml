@@ -60,28 +60,6 @@ $(b,infer) $(i,[options])|}
     ~see_also:InferCommand.[Report; Run]
 
 
-let analyze_json =
-  mk_command_doc ~title:"Infer JSON Analysis"
-    ~short_description:"analyze the cfg and tenv json files captured by infersharp"
-    ~synopsis:
-      {|$(b,infer) $(b,analyzejson) $(b,--debug) $(b,--cfg-json) $(i,[options])
-    $(b,--tenv-json) $(i,[options]))|}
-    ~description:
-      [ `P
-          "Analyze the cfg and tenv json files captured in the project results directory and \
-           report." ]
-    ~examples:
-      [ `P
-          "To analyze cfg json and tenv json, one should start with configuring infer environment \
-           and then run analyzejson command, for instance:"
-      ; `Pre
-          {|  infer capture
-  mkdir infer-out/captured
-  infer analyzejson --debug --cfg-json [path_to_cfg.json] --tenv-json [path_to_tenv.json]|}
-      ]
-    ~see_also:InferCommand.[Report; Run]
-
-
 let capture =
   mk_command_doc ~title:"Infer Compilation Capture"
     ~short_description:"capture source files for later analysis"
@@ -97,13 +75,14 @@ $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,javac) $(i,...)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,make)/$(b,clang)/$(b,gcc) $(i,...)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,mvn)/$(b,mvnw) $(i,...)
 $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,ndk-build) $(i,...)
-$(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) $(b,xcodebuild) $(i,...)|}
+$(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) $(b,xcodebuild) $(i,...)
+$(b,infer) $(b,capture) $(b,--cfg-json) $(i,file.json) $(b,--tenv-json) $(i,file.json) $(i,[options])|}
     ~description:
       [ `P
-          "Capture the build command or compilation database specified on the command line: infer \
-           intercepts calls to the compiler to read source files, translate them into infer's \
-           intermediate representation, and store the result of the translation in the results \
-           directory." ]
+          "Capture the build command, compilation database, or cfg/tenv json files specified on \
+           the command line: infer intercepts calls to the compiler to read source files, \
+           translate them into infer's intermediate representation, and store the result of the \
+           translation in the results directory." ]
     ~see_also:InferCommand.[Analyze; Compile; Run]
 
 
@@ -368,7 +347,6 @@ let command_to_data =
   in
   let open InferCommand in
   [ mk Analyze analyze
-  ; mk AnalyzeJson analyze_json
   ; mk Capture capture
   ; mk Compile compile
   ; mk Debug debug

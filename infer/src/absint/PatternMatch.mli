@@ -27,6 +27,8 @@ val is_subtype_of_str : Tenv.t -> Typ.Name.t -> string -> bool
 
 module CSharp : sig
   val implements : string -> Tenv.t -> string -> bool
+
+  val implements_one_of : string list -> Tenv.t -> string -> bool
 end
 
 module Java : sig

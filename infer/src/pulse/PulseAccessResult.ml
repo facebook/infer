@@ -58,7 +58,8 @@ type abductive_summary_error =
 let ignore_leaks = function
   | Ok astate
   | Error (`MemoryLeak (astate, _, _, _, _))
-  | Error (`ResourceLeak (astate, _, _, _, _))
+  | Error (`JavaResourceLeak (astate, _, _, _, _))
+  | Error (`CSharpResourceLeak (astate, _, _, _, _))
   | Error (`RetainCycle (astate, _, _, _, _, _)) ->
       Ok astate
   | Error #abductive_summary_error as result ->

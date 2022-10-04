@@ -14,17 +14,22 @@ SYNOPSIS
        infer capture [options] -- mvn/mvnw ...
        infer capture [options] -- ndk-build ...
        infer capture [--no-xcpretty] [options] -- xcodebuild ...
+       infer capture --cfg-json file.json --tenv-json file.json [options]
 
 
 DESCRIPTION
-       Capture the build command or compilation database specified on the
-       command line: infer intercepts calls to the compiler to read source
-       files, translate them into infer's intermediate representation, and
-       store the result of the translation in the results directory.
+       Capture the build command, compilation database, or cfg/tenv json
+       files specified on the command line: infer intercepts calls to the
+       compiler to read source files, translate them into infer's
+       intermediate representation, and store the result of the translation
+       in the results directory.
 
 
 
 OPTIONS
+       --cfg-json file
+           Path to CFG json file
+
        --continue
            Activates: Continue the capture for the reactive analysis,
            increasing the changed files/procedures. (If a procedure was
@@ -118,6 +123,9 @@ OPTIONS
        --sqlite-page-size int
            SQLite page size in bytes, must be a power of two between 512 and
            65536.
+
+       --tenv-json file
+           Path to TEnv json file
 
        --workspace path
            Specifies the root of the workspace, which is a directory

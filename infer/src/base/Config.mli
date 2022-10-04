@@ -802,8 +802,6 @@ val xcpretty : bool
 
 (** {2 Configuration values derived from command-line options} *)
 
-val dynamic_dispatch : bool
-
 val toplevel_results_dir : string
 (** In some integrations, eg Buck, infer subprocesses started by the build system (started by the
     toplevel infer process) will have their own results directory; this points to the results

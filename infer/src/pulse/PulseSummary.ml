@@ -50,10 +50,16 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
                 {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}}
             , summary )
           |> Option.value ~default:(continue_program summary)
-      | Error (`ResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
+      | Error (`JavaResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
           PulseReport.report_summary_error tenv proc_desc err_log
             ( ReportableError
-                {astate; diagnostic= ResourceLeak {class_name; allocation_trace; location}}
+                {astate; diagnostic= JavaResourceLeak {class_name; allocation_trace; location}}
+            , summary )
+          |> Option.value ~default:(continue_program summary)
+      | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
+          PulseReport.report_summary_error tenv proc_desc err_log
+            ( ReportableError
+                {astate; diagnostic= CSharpResourceLeak {class_name; allocation_trace; location}}
             , summary )
           |> Option.value ~default:(continue_program summary)
       | Error (`PotentialInvalidAccessSummary (summary, astate, address, must_be_valid)) -> (

@@ -112,6 +112,7 @@ and name =
   | CppClass of {name: QualifiedCppName.t; template_spec_info: template_spec_info; is_union: bool}
   | CSharpClass of CSharpClassName.t
   | ErlangType of ErlangTypeName.t
+  | HackClass of HackClassName.t
   | JavaClass of JavaClassName.t
   | ObjcClass of QualifiedCppName.t  (** ObjC class *)
   | ObjcProtocol of QualifiedCppName.t
