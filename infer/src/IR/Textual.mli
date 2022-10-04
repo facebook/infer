@@ -8,6 +8,14 @@
 open! IStd
 module F = Format
 
+module Lang : sig
+  type t = Java | Hack [@@deriving equal]
+
+  val of_string : string -> t option [@@warning "-32"]
+
+  val to_string : t -> string [@@warning "-32"]
+end
+
 module Location : sig
   type t
 
@@ -51,14 +59,6 @@ module Const : sig
     | Null
     | Str of string  (** string constants *)
     | Float of float  (** float constants *)
-end
-
-module Lang : sig
-  type t = Java | Hack [@@deriving equal]
-
-  val of_string : string -> t option [@@warning "-32"]
-
-  val to_string : t -> string [@@warning "-32"]
 end
 
 module SilProcname = Procname

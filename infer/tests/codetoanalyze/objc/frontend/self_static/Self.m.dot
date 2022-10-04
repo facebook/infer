@@ -222,16 +222,16 @@ digraph cfg {
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
-"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" [label="4:  Call dealloc \n   n$0=*&self:A* [line 40, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:A*) [line 40, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:A*,(n$1 - 1):unsigned int) [line 40, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:A*) [line 40, column 1]\n " shape="box"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" [label="4:  Call dealloc \n   n$4=*&self:A* [line 40, column 1]\n  n$5=_fun___objc_get_ref_count(n$4:A*) [line 40, column 1]\n  n$6=_fun___objc_set_ref_count(n$4:A*,(n$5 - 1):unsigned int) [line 40, column 1]\n  n$7=_fun___objc_get_ref_count(n$4:A*) [line 40, column 1]\n " shape="box"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" ;
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_4" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" ;
-"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 40, column 1]\n " shape="invhouse"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$7 == 0), true); [line 40, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_5" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_3" ;
-"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 40, column 1]\n " shape="invhouse"]
+"dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$7 != 0), false); [line 40, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_6" -> "dealloc#A#[instance].cb1004dc8428c0dcd735a40b9258fa61_2" ;
@@ -316,16 +316,16 @@ digraph cfg {
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" [label="4:  Call dealloc \n   n$4=*&self:B* [line 17, column 1]\n  n$5=_fun___objc_get_ref_count(n$4:B*) [line 17, column 1]\n  n$6=_fun___objc_set_ref_count(n$4:B*,(n$5 - 1):unsigned int) [line 17, column 1]\n  n$7=_fun___objc_get_ref_count(n$4:B*) [line 17, column 1]\n " shape="box"]
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" [label="4:  Call dealloc \n   n$0=*&self:B* [line 17, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:B*) [line 17, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:B*,(n$1 - 1):unsigned int) [line 17, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:B*) [line 17, column 1]\n " shape="box"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" ;
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$7 == 0), true); [line 17, column 1]\n " shape="invhouse"]
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 17, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$7 != 0), false); [line 17, column 1]\n " shape="invhouse"]
+"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 17, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" ;

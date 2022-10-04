@@ -12,6 +12,16 @@ module Hashtbl = Caml.Hashtbl
 
 exception ToSilTransformationError of (F.formatter -> unit -> unit)
 
+module Lang = struct
+  type t = Java | Hack [@@deriving equal]
+
+  let of_string s =
+    match String.lowercase s with "java" -> Some Java | "hack" -> Some Hack | _ -> None
+
+
+  let to_string = function Java -> "java" | Hack -> "hack"
+end
+
 module Location = struct
   type t = Known of {line: int; col: int} | Unknown [@@deriving compare]
 
@@ -103,9 +113,9 @@ let builtin_allocate_array = "__sil_allocate_array"
 module TypeName : sig
   include COMMON_NAME
 
-  val of_sil_typ_name : Typ.Name.t -> t
+  val of_sil : Typ.Name.t -> t
 
-  val to_java_sil : t -> Typ.Name.t
+  val to_sil : Lang.t -> t -> Typ.Name.t
 
   val java_lang_object : Typ.Name.t
 
@@ -113,7 +123,7 @@ module TypeName : sig
 end = struct
   include Name
 
-  let of_sil_typ_name (tname : Typ.Name.t) =
+  let of_sil (tname : Typ.Name.t) =
     match tname with
     | JavaClass name ->
         of_java_name (JavaClassName.to_string name)
@@ -129,7 +139,13 @@ end = struct
 
   let java_lang_object : Typ.Name.t = JavaClass (JavaClassName.from_string "java.lang.Object")
 
-  let to_java_sil {value} : Typ.Name.t = string_to_java_sil value
+  let to_sil (lang : Lang.t) {value} : Typ.Name.t =
+    match lang with
+    | Java ->
+        string_to_java_sil value
+    | Hack ->
+        HackClass (HackClassName.make value)
+
 
   let allocate_buitin_to_java_sil (proc : ProcBaseName.t) : Typ.Name.t =
     let prefix_length = String.length builtin_allocate_prefix in
@@ -150,7 +166,7 @@ module SilTyp = Typ
 module Typ = struct
   type t = Int | Float | Null | Void | Ptr of t | Struct of TypeName.t | Array of t
 
-  let rec to_sil typ : Typ.t =
+  let rec to_sil lang typ : Typ.t =
     let quals = Typ.mk_type_quals () in
     let desc : Typ.desc =
       match typ with
@@ -163,11 +179,11 @@ module Typ = struct
       | Void ->
           Tvoid
       | Ptr t ->
-          Tptr (to_sil t, Pk_pointer)
+          Tptr (to_sil lang t, Pk_pointer)
       | Struct name ->
-          Typ.Tstruct (TypeName.to_java_sil name)
+          Typ.Tstruct (TypeName.to_sil lang name)
       | Array t ->
-          Tarray {elt= to_sil t; length= None; stride= None}
+          Tarray {elt= to_sil lang t; length= None; stride= None}
     in
     {desc; quals}
 
@@ -187,7 +203,7 @@ module Typ = struct
     | Tptr (_, _) ->
         L.die InternalError "Textual conversion: this ptr type should not appear in Java"
     | Tstruct name ->
-        Struct (TypeName.of_sil_typ_name name)
+        Struct (TypeName.of_sil name)
     | TVar _ ->
         L.die InternalError "Textual conversion: TVar type should not appear in Java"
     | Tarray {elt} ->
@@ -307,16 +323,6 @@ module Const = struct
         F.pp_print_float fmt f
 end
 
-module Lang = struct
-  type t = Java | Hack [@@deriving equal]
-
-  let of_string s =
-    match String.lowercase s with "java" -> Some Java | "hack" -> Some Hack | _ -> None
-
-
-  let to_string = function Java -> "java" | Hack -> "hack"
-end
-
 let pp_list_with_comma pp fmt l = Pp.seq ~sep:", " pp fmt l
 
 module SilProcname = Procname
@@ -372,7 +378,7 @@ module Procname = struct
           if Procname.Java.is_static jpname then formals_types
           else
             let typ = Procname.Java.get_class_type_name jpname in
-            let this_type = Typ.(Ptr (Struct (TypeName.of_sil_typ_name typ))) in
+            let this_type = Typ.(Ptr (Struct (TypeName.of_sil typ))) in
             this_type :: formals_types
         in
         let result_type = Procname.Java.get_return_typ jpname |> Typ.of_sil in
@@ -547,16 +553,16 @@ module Procname = struct
     match (lang : Lang.t) with
     | Java ->
         let class_name =
-          TypeName.to_java_sil
+          TypeName.to_sil lang
             ( match qualified_name.enclosing_class with
             | TopLevel ->
                 TypeName.of_java_name toplevel_classname
             | Enclosing tname ->
                 tname )
         in
-        let result_type = Typ.to_sil result_type in
+        let result_type = Typ.to_sil lang result_type in
         let return_type = Some result_type in
-        let formals_types = List.map ~f:Typ.to_sil formals_types in
+        let formals_types = List.map ~f:(Typ.to_sil lang) formals_types in
         let kind = Procname.Java.Non_Static (* FIXME when handling inheritance *) in
         Procname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
     | Hack ->
@@ -612,13 +618,13 @@ end
 module Fieldname = struct
   type t = {name: FieldBaseName.t; typ: Typ.t; enclosing_type: TypeName.t}
 
-  let to_sil {name; enclosing_type} =
-    Fieldname.make (TypeName.to_java_sil enclosing_type) name.value
+  let to_sil lang {name; enclosing_type} =
+    Fieldname.make (TypeName.to_sil lang enclosing_type) name.value
 
 
   let of_sil f typ =
     let name = Fieldname.get_field_name f |> FieldBaseName.of_java_name in
-    let enclosing_type = Fieldname.get_class_name f |> TypeName.of_sil_typ_name in
+    let enclosing_type = Fieldname.get_class_name f |> TypeName.of_sil in
     {name; typ; enclosing_type}
 
 
@@ -634,16 +640,16 @@ module Struct = struct
     ; fields: Fieldname.t list
     ; methods: Procname.t list (* currently only the toplevel class will contain methods *) }
 
-  let to_sil lang tenv {name; fields; methods} =
-    let name = TypeName.to_java_sil name in
-    (* TODO(arr): translate supers *)
+  let to_sil lang tenv {name; supers; fields; methods} =
+    let name = TypeName.to_sil lang name in
+    let supers = List.map supers ~f:(TypeName.to_sil lang) in
     let fields =
       List.map fields ~f:(fun fname ->
-          (Fieldname.to_sil fname, Typ.to_sil fname.Fieldname.typ, Annot.Item.empty) )
+          (Fieldname.to_sil lang fname, Typ.to_sil lang fname.Fieldname.typ, Annot.Item.empty) )
     in
     (* FIXME: generate static fields *)
     let methods = List.map methods ~f:(Procname.to_sil lang) in
-    Tenv.mk_struct tenv ~fields ~methods name |> ignore
+    Tenv.mk_struct tenv ~fields ~methods ~supers name |> ignore
 
 
   let of_sil name (sil_struct : SilStruct.t) =
@@ -651,7 +657,7 @@ module Struct = struct
       let typ = Typ.of_sil typ in
       Fieldname.of_sil fieldname typ
     in
-    let supers = sil_struct.supers |> List.map ~f:TypeName.of_sil_typ_name in
+    let supers = sil_struct.supers |> List.map ~f:TypeName.of_sil in
     let fields = SilStruct.(sil_struct.fields @ sil_struct.statics) in
     let fields = List.map ~f:of_sil_field fields in
     {name; supers; fields; methods= []}
@@ -712,7 +718,8 @@ module Decls = struct
     | Some _ ->
         ()
     | None -> (
-        let sil_tname = TypeName.to_java_sil tname in
+        let sil_tname = TypeName.to_sil Lang.Java tname in
+        (* FIXME make it not Java-specific *)
         match Tenv.lookup tenv sil_tname with
         | None ->
             L.die InternalError "Java type %a not found in type environment" SilTyp.Name.pp
@@ -870,7 +877,7 @@ module Exp = struct
         | None ->
             L.die InternalError "field %a has not been declared" FieldBaseName.pp fname
         | Some field ->
-            Lfield (aux exp, Fieldname.to_sil field, Typ.to_sil field.typ) )
+            Lfield (aux exp, Fieldname.to_sil lang field, Typ.to_sil lang field.typ) )
       | Index (exp1, exp2) ->
           Lindex (aux exp1, aux exp2)
       | Const const ->
@@ -885,7 +892,7 @@ module Exp = struct
                  (fun fmt () -> F.fprintf fmt "%a contains a call inside a sub-expression" pp exp)
               )
         | None, Some unop, None, [exp] ->
-            UnOp (unop, aux exp, Some (Typ.to_sil Int)) (* FIXME: fix the typ *)
+            UnOp (unop, aux exp, Some (Typ.to_sil lang Int)) (* FIXME: fix the typ *)
         | None, None, Some binop, [exp1; exp2] ->
             BinOp (binop, aux exp1, aux exp2)
         | _, _, _, _ ->
@@ -893,7 +900,7 @@ module Exp = struct
               Procname.pp_qualified_name proc
             (* FIXME: transform instruction to put call at head of expressions *) )
       | Cast (typ, exp) ->
-          Cast (Typ.to_sil typ, aux exp)
+          Cast (Typ.to_sil lang typ, aux exp)
     in
     aux exp
 
@@ -985,7 +992,7 @@ module Instr = struct
         Prune {exp= Exp.of_sil decls tenv e; loc= Location.Unknown}
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
-        let procname = TypeName.of_sil_typ_name name |> Procname.make_allocate in
+        let procname = TypeName.of_sil name |> Procname.make_allocate in
         Let
           { id= Ident.of_sil id
           ; exp= Exp.call_non_virtual procname.Procname.qualified_name []
@@ -1035,14 +1042,14 @@ module Instr = struct
     let sourcefile = decls_env.Decls.sourcefile in
     match i with
     | Load {id; exp; typ; loc} ->
-        let typ = Typ.to_sil typ in
+        let typ = Typ.to_sil lang typ in
         let id = Ident.to_sil id in
         let e = Exp.to_sil lang decls_env procname exp in
         let loc = Location.to_sil sourcefile loc in
         Load {id; e; typ; root_typ= typ; loc}
     | Store {exp1; typ; exp2; loc} ->
         let e1 = Exp.to_sil lang decls_env procname exp1 in
-        let typ = Typ.to_sil typ in
+        let typ = Typ.to_sil lang typ in
         let e2 = Exp.to_sil lang decls_env procname exp2 in
         let loc = Location.to_sil sourcefile loc in
         Store {e1; root_typ= typ; typ; e2; loc}
@@ -1087,8 +1094,8 @@ module Instr = struct
                      F.fprintf fmt "the expression in %a should start with a regular call" pp i ) )
         in
         let pname = Procname.to_sil lang procname in
-        let formals_types = List.map procname.formals_types ~f:Typ.to_sil in
-        let result_type = Typ.to_sil procname.result_type in
+        let formals_types = List.map procname.formals_types ~f:(Typ.to_sil lang) in
+        let result_type = Typ.to_sil lang procname.result_type in
         let args = List.map ~f:(Exp.to_sil lang decls_env procname) args in
         let args =
           match List.zip args formals_types with
@@ -1297,10 +1304,10 @@ module Procdesc = struct
     List.for_all nodes ~f:Node.is_ready_for_to_sil_conversion
 
 
-  let build_formals {procname; params} =
+  let build_formals lang {procname; params} =
     let mk_formal typ vname =
       let name = Mangled.from_string vname.VarName.value in
-      let typ = Typ.to_sil typ in
+      let typ = Typ.to_sil lang typ in
       (name, typ, Annot.Item.empty)
     in
     match List.map2 procname.formals_types params ~f:mk_formal with
@@ -1311,8 +1318,8 @@ module Procdesc = struct
           Procname.pp_qualified_name procname.qualified_name
 
 
-  let build_formals_and_locals pdesc =
-    let formals = build_formals pdesc in
+  let build_formals_and_locals lang pdesc =
+    let formals = build_formals lang pdesc in
     let make_var_data name typ : ProcAttributes.var_data =
       {name; typ; modify_in_block= false; is_constexpr= false; is_declared_unused= false}
     in
@@ -1328,7 +1335,7 @@ module Procdesc = struct
                   let name = Mangled.from_string var_name.value in
                   if Mangled.Set.mem name seen then (seen, locals)
                   else
-                    let typ = Typ.to_sil typ in
+                    let typ = Typ.to_sil lang typ in
                     (Mangled.Set.add name seen, make_var_data name typ :: locals)
                   (* FIXME: check that we don't miss variables that would be inside other left
                      values like [Field] or [Index], or wait for adding locals declarations
@@ -1342,9 +1349,9 @@ module Procdesc = struct
   let to_sil lang decls_env cfgs ({procname; nodes; start; exit_loc} as pdesc) =
     let sourcefile = decls_env.Decls.sourcefile in
     let sil_procname = Procname.to_sil lang procname in
-    let sil_ret_type = Typ.to_sil procname.result_type in
+    let sil_ret_type = Typ.to_sil lang procname.result_type in
     let definition_loc = Location.to_sil sourcefile procname.qualified_name.name.loc in
-    let formals, locals = build_formals_and_locals pdesc in
+    let formals, locals = build_formals_and_locals lang pdesc in
     let pattributes =
       { (ProcAttributes.default sourcefile sil_procname) with
         is_defined= true
