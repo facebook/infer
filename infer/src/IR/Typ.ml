@@ -192,6 +192,7 @@ module T = struct
         {name: QualifiedCppName.t; template_spec_info: template_spec_info; is_union: bool [@ignore]}
     | CSharpClass of CSharpClassName.t
     | ErlangType of ErlangTypeName.t
+    | HackClass of HackClassName.t
     | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t
     | ObjcProtocol of QualifiedCppName.t
@@ -379,6 +380,8 @@ and pp_name_c_syntax pe f = function
       F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec_info
   | ErlangType name ->
       ErlangTypeName.pp f name
+  | HackClass name ->
+      HackClassName.pp f name
   | JavaClass name ->
       JavaClassName.pp f name
   | CSharpClass name ->
@@ -469,6 +472,12 @@ module Name = struct
         1
     | ObjcProtocol name1, ObjcProtocol name2 ->
         QualifiedCppName.compare_name name1 name2
+    | HackClass name1, HackClass name2 ->
+        HackClassName.compare name1 name2
+    | HackClass _, _ ->
+        -1
+    | _, HackClass _ ->
+        1
 
 
   let hash = Hashtbl.hash
@@ -479,7 +488,7 @@ module Name = struct
     | CppClass {name; template_spec_info} ->
         let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) template_spec_info in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
-    | JavaClass _ | CSharpClass _ | ErlangType _ ->
+    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ ->
         QualifiedCppName.empty
 
 
@@ -488,7 +497,7 @@ module Name = struct
         name
     | CppClass {name} ->
         name
-    | JavaClass _ | CSharpClass _ | ErlangType _ ->
+    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ ->
         QualifiedCppName.empty
 
 
@@ -511,6 +520,8 @@ module Name = struct
         CSharpClassName.to_string name
     | ErlangType name ->
         ErlangTypeName.to_string name
+    | HackClass name ->
+        HackClassName.to_string name
 
 
   let pp fmt tname =
@@ -523,6 +534,8 @@ module Name = struct
           "class"
       | ErlangType _ ->
           "erlang"
+      | HackClass _ ->
+          "hack"
       | ObjcProtocol _ ->
           "protocol"
     in
@@ -670,7 +683,13 @@ module Name = struct
 
     let normalize t =
       match t with
-      | CStruct _ | CUnion _ | CppClass _ | ErlangType _ | ObjcClass _ | ObjcProtocol _ ->
+      | CStruct _
+      | CUnion _
+      | CppClass _
+      | ErlangType _
+      | HackClass _
+      | ObjcClass _
+      | ObjcProtocol _ ->
           t
       | JavaClass java_class_name ->
           let java_class_name' = JavaClassName.Normalizer.normalize java_class_name in

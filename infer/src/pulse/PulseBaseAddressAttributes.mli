@@ -30,6 +30,8 @@ val always_reachable : AbstractValue.t -> t -> t
 
 val java_resource_release : AbstractValue.t -> t -> t
 
+val csharp_resource_release : AbstractValue.t -> t -> t
+
 val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
 val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) result
@@ -79,6 +81,8 @@ val get_written_to : AbstractValue.t -> t -> Trace.t option
 val std_vector_reserve : AbstractValue.t -> t -> t
 
 val is_java_resource_released : AbstractValue.t -> t -> bool
+
+val is_csharp_resource_released : AbstractValue.t -> t -> bool
 
 val is_std_moved : AbstractValue.t -> t -> bool
 

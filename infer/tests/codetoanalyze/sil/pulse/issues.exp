@@ -9,3 +9,4 @@ npe.sil, $TOPLEVEL$CLASS$.array_bad(cell[]):void, 6, NULLPTR_DEREFERENCE, no_buc
 npe.sil, $TOPLEVEL$CLASS$.call_and_npe_bad():void, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `void $TOPLEVEL$CLASS$.return_null_ok()`,is assigned to the null pointer,returned,return from call to `void $TOPLEVEL$CLASS$.return_null_ok()`,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.load_bad():void, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.load_internal_bad():void, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+virt.sil, plusBad, -32, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,when calling `plus` here,parameter `arg1` of plus,when calling `value` here,parameter `this` of value,invalid access occurs here]

@@ -8,6 +8,14 @@
 open! IStd
 module F = Format
 
+module Lang : sig
+  type t = Java | Hack [@@deriving equal]
+
+  val of_string : string -> t option [@@warning "-32"]
+
+  val to_string : t -> string [@@warning "-32"]
+end
+
 module Location : sig
   type t
 
@@ -53,25 +61,14 @@ module Const : sig
     | Float of float  (** float constants *)
 end
 
-module Lang : sig
-  type t = Java | Hack [@@deriving equal]
-
-  val of_string : string -> t option [@@warning "-32"]
-
-  val to_string : t -> string [@@warning "-32"]
-end
-
 module SilProcname = Procname
 
 module Procname : sig
-  type kind = Virtual | NonVirtual
-
   type enclosing_class = TopLevel | Enclosing of TypeName.t
 
   type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
 
-  type t =
-    {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t; kind: kind}
+  type t = {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t}
 
   val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
 end
@@ -88,6 +85,8 @@ module Fieldname : sig
 end
 
 module Exp : sig
+  type call_kind = Virtual | NonVirtual
+
   type t =
     | Var of Ident.t  (** pure variable: it is not an lvalue *)
     | Lvar of VarName.t  (** the address of a program variable *)
@@ -95,8 +94,10 @@ module Exp : sig
         (** field offset, fname must be declared in type tname *)
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
-    | Call of {proc: Procname.qualified_name; args: t list}
+    | Call of {proc: Procname.qualified_name; args: t list; kind: call_kind}
     | Cast of Typ.t * t
+
+  val call_virtual : Procname.qualified_name -> t -> t list -> t
 
   (* logical not ! *)
   val not : t -> t
@@ -146,7 +147,8 @@ module Procdesc : sig
 end
 
 module Struct : sig
-  type t = {name: TypeName.t; fields: Fieldname.t list; methods: Procname.t list}
+  type t =
+    {name: TypeName.t; supers: TypeName.t list; fields: Fieldname.t list; methods: Procname.t list}
 end
 
 module Attr : sig

@@ -26,6 +26,7 @@
 %token DOT
 %token EOF
 %token EQ
+%token EXTENDS
 %token FALSE
 %token FLOAT
 %token GLOBAL
@@ -95,6 +96,12 @@
 %type <Typ.t list> separated_nonempty_list(COMMA,typ)
 %type <(Typ.t * VarName.t) list> separated_nonempty_list(COMMA,typed_var)
 %type <(Typ.t * FieldBaseName.t) list> separated_nonempty_list(SEMICOLON,typed_field)
+%type <TypeName.t list> extends
+%type <Attr.t list> list(attribute)
+%type <TypeName.t list option> option(extends)
+%type <Ident.t * Typ.t> typed_ident
+%type <(Ident.t * Typ.t) list> separated_nonempty_list(COMMA,typed_ident)
+%type <TypeName.t list> separated_nonempty_list(COMMA,tname)
 
 %%
 
@@ -132,29 +139,30 @@ attribute:
   | ATTRIBUTE name=IDENT EQ value=STRING
     { {name; value; loc=location_of_pos $startpos} }
 
+extends:
+  | EXTENDS supers=separated_nonempty_list(COMMA,tname)
+  { supers }
+
 declaration:
   | GLOBAL name=vname
     { let pvar : Pvar.t = {name; kind=Global} in
       Global pvar }
-  | TYPE name=tname EQ LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
+  | TYPE name=tname supers=extends? ioption(EQ) LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
     { let fields =
         List.map l ~f:(fun (typ, name_f) ->
                         {Fieldname.name=name_f; typ; enclosing_type=name}) in
-      Struct {name; fields; methods=[]} }
+      let supers = Option.value supers ~default:[] in
+      Struct {name; supers; fields; methods=[]} }
   | DECLARE qualified_name=qualified_pname LPAREN
             formals_types = separated_list(COMMA, typ) RPAREN COLON result_type=typ
-    { let kind : Procname.kind = NonVirtual in
-      let pname : Procname.t = {qualified_name; formals_types; result_type; kind}
-      (* FIXME: deals with virutal kind *) in
+    { let pname : Procname.t = {qualified_name; formals_types; result_type} in
       Procname pname
     }
   | DEFINE qualified_name=qualified_pname LPAREN
            params = separated_list(COMMA, typed_var) RPAREN COLON result_type=typ
                          LBRACKET nodes=block+ RBRACKET
     { let formals_types = List.map ~f:fst params in
-      let kind : Procname.kind = NonVirtual in
-      let procname : Procname.t = {qualified_name; formals_types; result_type; kind}
-      (* FIXME:: deals with virtual kind *) in
+      let procname : Procname.t = {qualified_name; formals_types; result_type} in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:snd params in
       let exit_loc = location_of_pos $endpos in
@@ -268,6 +276,8 @@ expression:
   | c=const
     { Const c }
   | proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
-    { Call {proc; args} }
+    { Call {proc; args; kind= Exp.NonVirtual} }
+  | recv=expression DOT proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
+    { Exp.call_virtual proc recv args }
   | LPAREN e=expression COLON t=typ RPAREN
     { Cast (t, e) }

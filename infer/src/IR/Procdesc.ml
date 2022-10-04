@@ -589,6 +589,8 @@ let get_static_callees pdesc =
         match instr with
         | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
             Procname.Set.add callee_pn acc
+        | Sil.Call (_, Exp.Closure {name}, _, _, _) ->
+            Procname.Set.add name acc
         | _ ->
             acc )
   in

@@ -259,6 +259,9 @@ let resolve_method ~method_exists tenv class_name proc_name =
           | CStruct _ | CUnion _ | CppClass _ ->
               (* multiple inheritance possible, search all supers *)
               class_struct.supers
+          | HackClass _ ->
+              (* super-classes, super-interfaces, and traits are modelled via multiple inheritance *)
+              class_struct.supers
           | JavaClass _ ->
               (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
               class_struct.supers

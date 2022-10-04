@@ -63,6 +63,8 @@ rule main = parse
         { DECLARE }
   | "define"
         { DEFINE }
+  | "extends"
+        { EXTENDS }
   | "."
         { DOT }
   | "="

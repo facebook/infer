@@ -78,7 +78,7 @@ let merge_captured_targets () =
   L.progress "Merging captured Buck targets...@\n%!" ;
   let infer_deps_file = ResultsDir.get_path CaptureDependencies in
   let tenv_merger_child = TenvMerger.start infer_deps_file in
-  DBWriter.merge ~infer_deps_file ;
+  DBWriter.merge_captures ~infer_deps_file ;
   TenvMerger.wait tenv_merger_child ;
   let targets_num =
     let counter = ref 0 in

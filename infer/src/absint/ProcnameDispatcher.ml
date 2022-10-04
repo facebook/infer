@@ -57,6 +57,8 @@ let templated_name_of_class_name class_name =
       (QualifiedCppName.of_list [CSharpClassName.to_string mangled_name], [])
   | ErlangType mangled_name ->
       (QualifiedCppName.of_list [ErlangTypeName.to_string mangled_name], [])
+  | HackClass mangled_name ->
+      (QualifiedCppName.of_list (HackClassName.components mangled_name), [])
 
 
 let templated_name_of_java java =

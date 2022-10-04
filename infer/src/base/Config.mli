@@ -452,9 +452,11 @@ val memtrace_sampling_rate : float
 
 val merge : bool
 
-val merge_infer_out : string list
+val merge_capture : string list
 
 val merge_report : string list
+
+val merge_report_summaries : string list
 
 val method_decls_info : string option
 
@@ -801,8 +803,6 @@ val xcode_isysroot_suffix : string option
 val xcpretty : bool
 
 (** {2 Configuration values derived from command-line options} *)
-
-val dynamic_dispatch : bool
 
 val toplevel_results_dir : string
 (** In some integrations, eg Buck, infer subprocesses started by the build system (started by the

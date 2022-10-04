@@ -29,8 +29,8 @@ let new_ type_name : model =
   let<++> astate =
     (* Java, Hack and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
        builtin for [\[Class new\]]) *)
-    let pdesc = Procdesc.get_proc_name model_data.analysis_data.proc_desc in
-    if Procname.is_java pdesc || Procname.is_hack pdesc then
+    let proc_name = Procdesc.get_proc_name model_data.analysis_data.proc_desc in
+    if Procname.is_java proc_name || Procname.is_csharp proc_name || Procname.is_hack proc_name then
       Basic.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new" model_data astate
     else
       (* C++ *)

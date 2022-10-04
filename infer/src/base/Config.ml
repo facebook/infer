@@ -498,7 +498,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | AnalyzeJson | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Debug | Explore | Help | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -917,7 +917,7 @@ and capture_textual =
 
 and cfg_json =
   CLOpt.mk_path_opt ~long:"cfg-json"
-    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~in_help:InferCommand.[(Capture, manual_generic)]
     ~meta:"file" "Path to CFG json file"
 
 
@@ -1227,7 +1227,7 @@ and ( biabduction_write_dotty
         match command with
         | Debug | Explore | Help ->
             None
-        | (Analyze | AnalyzeJson | Capture | Compile | Report | ReportDiff | Run) as command ->
+        | (Analyze | Capture | Compile | Report | ReportDiff | Run) as command ->
             Some (command, manual_generic) )
   in
   let biabduction_write_dotty =
@@ -1872,8 +1872,8 @@ and merge =
     "Merge the captured results directories specified in the dependency file."
 
 
-and merge_infer_out =
-  CLOpt.mk_string_list ~long:"merge-infer-out"
+and merge_capture =
+  CLOpt.mk_string_list ~deprecated:["-merge-infer-out"] ~long:"merge-capture"
     ~in_help:InferCommand.[(Capture, manual_generic)]
     "Specifies an Infer results directory. The files and procedures captured in it will be merged \
      together into the results directory specified with $(b, -o). Relative paths are interpreted \
@@ -1886,6 +1886,13 @@ and merge_report =
     "Specifies an Infer results directory. The reports stored in JSON files in all specified \
      results directories will be merged together and deduplicated before being stored in the main \
      results directory."
+
+
+and merge_report_summaries =
+  CLOpt.mk_string_list ~long:"merge-report-summaries"
+    ~in_help:InferCommand.[(Report, manual_generic)]
+    "Specifies an Infer results directory. The report summaries in all specified results \
+     directories will be merged together and deduplicated before reporting is done."
 
 
 and method_decls_info =
@@ -2909,7 +2916,7 @@ and starvation_strict_mode =
 
 and tenv_json =
   CLOpt.mk_path_opt ~long:"tenv-json"
-    ~in_help:InferCommand.[(AnalyzeJson, manual_generic)]
+    ~in_help:InferCommand.[(Capture, manual_generic)]
     ~meta:"file" "Path to TEnv json file"
 
 
@@ -3620,9 +3627,11 @@ and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
 
 and merge = !merge
 
-and merge_infer_out = RevList.to_list !merge_infer_out
+and merge_capture = RevList.to_list !merge_capture
 
 and merge_report = RevList.to_list !merge_report
+
+and merge_report_summaries = RevList.to_list !merge_report_summaries
 
 and method_decls_info = !method_decls_info
 
@@ -4146,12 +4155,6 @@ let clang_frontend_action_string =
   in
   String.concat ~sep:", " text
 
-
-(* Specify treatment of dynamic dispatch in Java code: false 'none' treats dynamic dispatch as
-   a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the
-   JVM semantics and creates procedure descriptions during symbolic execution using the type
-   information found in the abstract state *)
-let dynamic_dispatch = is_checker_enabled Biabduction
 
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =
