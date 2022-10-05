@@ -20,3 +20,5 @@ val false_ : t
 val of_bool : bool -> t
 val is_true : t -> bool
 val is_false : t -> bool
+
+module Tbl : HashTable.S with type key := Z.t

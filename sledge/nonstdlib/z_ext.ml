@@ -19,3 +19,4 @@ let is_true = Z.equal true_
 let is_false = Z.equal false_
 
 include Z
+module Tbl = HashTable.Make (Z)

@@ -19,22 +19,25 @@ module Automaton_state = struct
   let trace : checkpoint iarray ref = ref IArray.empty
   let set_sparse_trace st = trace := st
 
-  type t = int [@@deriving equal]
+  type t = int [@@deriving compare, equal, sexp_of]
 
   module Map = Int.Map
 
   (** Because there are always exactly [IArray.length !trace + 1] automaton
       states, we can represent a "table" keyed on automaton states using an
       array of that length. *)
-  module Tbl = struct
+  module Tbl : sig
+    type 'a t
+
+    val create : unit -> _ t
+    val find_or_add : 'a t -> int -> default:(unit -> 'a) -> 'a
+  end = struct
     type 'a t = 'a option array
 
     let create () = Array.init (IArray.length !trace + 1) ~f:(fun _ -> None)
-    let find = Array.get
-    let set tbl key data = Array.set tbl key (Some data)
 
     let find_or_add tbl key ~default =
-      match find tbl key with
+      match Array.get tbl key with
       | Some data -> data
       | None ->
           let data = default () in
@@ -79,7 +82,7 @@ module Distance_map = struct
       map, if the difference in their [max] field is equal to the pointwise
       difference between each of their offsets. This requires [equal] below
       to do some extra work, but no additional allocation is required. *)
-  type t = {max: int; offsets: int Map.t}
+  type t = {max: int; offsets: int Map.t} [@@deriving compare, sexp_of]
 
   let equal dm dm' =
     dm == dm'
@@ -142,7 +145,7 @@ end
 module Checkpoint_dists = struct
   open Automaton_state.Map
 
-  type t = int Automaton_state.Map.t [@@deriving equal]
+  type t = int Automaton_state.Map.t [@@deriving compare, equal, sexp_of]
 
   let pp = pp Int.pp Int.pp
   let init = empty
@@ -152,6 +155,68 @@ module Checkpoint_dists = struct
     add ~key:auto_state ~data:shortest_path
 
   let add_pointwise ~n = map ~f:(Int.add n)
+end
+
+(** Constant propagation machinery, used to distinguish summaries that take
+    an early exit with some error code from "successful" executions that
+    reach a non-error-state/non-constant-return exit. *)
+module Constant_prop = struct
+  (** A standard constant propagation domain to track registers that hold
+      compile-time constant integers. *)
+  module Env = struct
+    module T = struct
+      open Reg.Map
+
+      type nonrec t = Z.t t [@@deriving compare, equal, sexp_of]
+
+      let init = empty
+
+      let join =
+        merge ~f:(fun _ -> function
+          | `Both (c, c') -> if Z.equal c c' then Some c else None
+          | _ -> None )
+
+      let set reg const_val env =
+        update reg env ~f:(fun _ -> Some const_val)
+
+      let find = find
+      let pp = pp Reg.pp Z.pp
+
+      let interpret cmnd env =
+        IArray.fold cmnd env ~f:(fun instr consts ->
+            match instr with
+            | Move {reg_exps; _} ->
+                IArray.fold reg_exps consts ~f:(fun (reg, exp) consts ->
+                    match exp with
+                    | Exp.Integer {data; _} -> set reg data consts
+                    | _ -> consts )
+            | Load {reg; _}
+             |AtomicRMW {reg; _}
+             |AtomicCmpXchg {reg; _}
+             |Alloc {reg; _}
+             |Nondet {reg= Some reg; _}
+             |Builtin {reg= Some reg; _} ->
+                remove reg consts
+            | _ -> consts )
+    end
+
+    include T
+    module Map = Map.Make (T)
+  end
+
+  (** Separately from the constant-propagation abstract domain, we
+      optionally tag procedure summaries with their integer-constant return
+      value. *)
+  module Retn_value = struct
+    type t = Z.t option [@@deriving equal]
+
+    let top = None
+    let join l r = if Option.equal Z.equal l r then l else None
+
+    let pp ppf = function
+      | Some x -> Format.fprintf ppf "retn: %a" Z.pp x
+      | _ -> Format.fprintf ppf "retn: any"
+  end
 end
 
 (** A [summary] is composed of
@@ -165,93 +230,210 @@ end
     current location, and
 
     (4) the lengths of the shortest paths to each trace checkpoint that has
-    already been reached from the program entry. *)
-module Summary = struct
-  (* Summaries and their basic operations: join, transfer, apply, etc. *)
+    already been reached from the program entry.
 
-  type summary =
-    { shortest_path: int
-    ; auto_state: Automaton_state.t
-    ; dists: Distance_map.t
-    ; checkpoint_dists: Checkpoint_dists.t }
+    (5) the integer-constant return value associated with that summary,
+    optionally *)
+module Summary = struct
+  module Dist_info = struct
+    type t =
+      { shortest_path: int
+      ; auto_state: Automaton_state.t
+      ; dists: Distance_map.t
+      ; checkpoint_dists: Checkpoint_dists.t }
+    [@@deriving compare, equal, sexp_of]
+
+    let join
+        ( {shortest_path= n; auto_state= a; dists= d; checkpoint_dists= c}
+        as di )
+        ( { shortest_path= n'
+          ; auto_state= a'
+          ; dists= d'
+          ; checkpoint_dists= c' } as di' ) =
+      if di == di' then di
+      else if a > a' then di
+      else if a < a' then di'
+      else
+        { shortest_path= Int.min n n'
+        ; auto_state= Automaton_state.join a a'
+        ; dists= Distance_map.join d d'
+        ; checkpoint_dists= Checkpoint_dists.join c c' }
+
+    let pp ppf {shortest_path; auto_state; dists; checkpoint_dists} =
+      Format.fprintf ppf
+        "@[<v 4>Distance Computation Summary@ shortest path: %i@ next \
+         trace checkpoint: %a@ distances: %a@ checkpoint distances: %a@]"
+        shortest_path Automaton_state.pp auto_state Distance_map.pp dists
+        Checkpoint_dists.pp checkpoint_dists
+  end
+
+  (* Summaries and their basic operations: join, transfer, apply, etc. *)
+  type summary = {di: Dist_info.t; retn: Constant_prop.Retn_value.t}
   [@@deriving equal]
+
+  type absstate = {di: Dist_info.t; consts: Constant_prop.Env.t}
+  [@@deriving compare, equal, sexp_of]
 
   type t = Summary of summary | Bottom [@@deriving equal]
 
-  let pp ppf {shortest_path; auto_state; dists; checkpoint_dists} =
-    Format.fprintf ppf
-      "@[<v 4>Distance Computation Summary@ shortest path: %i@ next trace \
-       checkpoint: %a@ distances: %a@ checkpoint distances: %a@]"
-      shortest_path Automaton_state.pp auto_state Distance_map.pp dists
-      Checkpoint_dists.pp checkpoint_dists
+  let summ_of_absstate return_exp_opt absstate =
+    let retn =
+      let* return_exp = return_exp_opt in
+      match return_exp with
+      | Exp.Integer {data; _} -> Some data
+      | Exp.Reg _ as r ->
+          let* reg = Reg.of_exp r in
+          Constant_prop.Env.find reg absstate.consts
+      | _ -> None
+    in
+    Summary {di= absstate.di; retn}
 
   let init auto_state =
-    { shortest_path= 0
-    ; auto_state
-    ; dists= Distance_map.init
-    ; checkpoint_dists= Checkpoint_dists.init }
+    let di =
+      { Dist_info.shortest_path= 0
+      ; auto_state
+      ; dists= Distance_map.init
+      ; checkpoint_dists= Checkpoint_dists.init }
+    in
+    {di; consts= Constant_prop.Env.init}
 
-  let join
-      ({shortest_path= n; auto_state= a; dists= d; checkpoint_dists= c} as s)
-      ( {shortest_path= n'; auto_state= a'; dists= d'; checkpoint_dists= c'}
-      as s' ) =
-    if s == s' then s
-    else if a > a' then s
-    else if a < a' then s'
+  let join_summary {di; retn} {di= di'; retn= retn'} =
+    { di= Dist_info.join di di'
+    ; retn= Constant_prop.Retn_value.join retn retn' }
+
+  let join_absstate {di; consts} {di= di'; consts= consts'} =
+    { di= Dist_info.join di di'
+    ; consts= Constant_prop.Env.join consts consts' }
+
+  let join x x' =
+    match (x, x') with
+    | Summary s, Summary s' -> Summary (join_summary s s')
+    | (Summary _ as s), _ | _, (Summary _ as s) -> s
+    | _ -> Bottom
+
+  let pp_summary ppf {di; retn} =
+    Format.fprintf ppf "Distance Summary (%a): %a"
+      Constant_prop.Retn_value.pp retn Dist_info.pp di
+
+  let pp ppf = function
+    | Bottom -> Format.fprintf ppf "Distance Summary: BOTTOM"
+    | Summary s -> pp_summary ppf s
+
+  (** A disjunction of abstract states, such that no two disjuncts share the
+      same [consts] information. When a disjunction is [update]d with a new
+      abstract state, it is added as a disjunct if it has a new [consts] or
+      joined onto the existing state for that [consts] otherwise. *)
+  module Disjunction : sig
+    type t
+
+    val pp : t pp
+    val iter : t -> absstate iter
+    val singleton : absstate -> t
+    val update : absstate -> t -> t
+    val to_absstate : t -> absstate
+    val get_state_by_consts : Constant_prop.Env.t -> t -> absstate option
+  end = struct
+    include Constant_prop.Env.Map
+
+    type nonrec t = absstate t
+
+    let singleton absstate = singleton absstate.consts absstate
+
+    let join_opt absstate = function
+      | None -> Some absstate
+      | Some absstate' -> Some (join_absstate absstate' absstate)
+
+    let update absstate = update absstate.consts ~f:(join_opt absstate)
+
+    (* [get_exn] is safe here because it is impossible to construct an empty
+       disjunction *)
+    let to_absstate disj =
+      fold disj None ~f:(fun ~key:_ ~data -> join_opt data)
+      |> Option.get_exn
+
+    let pp ppf disj =
+      Format.fprintf ppf "@[<v 2>disjunction: {" ;
+      iteri disj ~f:(fun ~key ~(data : absstate) ->
+          Format.fprintf ppf "@ CONSTS(%a) -> %a" Constant_prop.Env.pp key
+            Dist_info.pp data.di ) ;
+      Format.fprintf ppf "}@]"
+
+    let get_state_by_consts = find
+    let iter disj f = iter disj ~f
+  end
+
+  let intraproc_transfer ~block (absstate : absstate) =
+    if Automaton_state.is_accepting absstate.di.auto_state then absstate
     else
-      { shortest_path= Int.min n n'
-      ; auto_state= Automaton_state.join a a'
-      ; dists= Distance_map.join d d'
-      ; checkpoint_dists= Checkpoint_dists.join c c' }
+      let dists = Distance_map.visit block absstate.di.dists in
+      let shortest_path = absstate.di.shortest_path + 1 in
+      let consts = Constant_prop.Env.interpret block.cmnd absstate.consts in
+      {di= {absstate.di with dists; shortest_path}; consts}
 
-  let intraproc_transfer ~block s =
-    if Automaton_state.is_accepting s.auto_state then s
-    else
-      let dists = Distance_map.visit block s.dists in
-      let shortest_path = s.shortest_path + 1 in
-      {s with dists; shortest_path}
-
-  let apply ~summary absstate =
-    if Automaton_state.is_accepting absstate.auto_state then absstate
+  let apply (summary : summary) areturn (absstate : absstate) =
+    if Automaton_state.is_accepting absstate.di.auto_state then absstate
     else
       let dists =
         let open Distance_map in
-        join summary.dists
-          (add_pointwise ~n:summary.shortest_path absstate.dists)
+        join summary.di.dists
+          (add_pointwise ~n:summary.di.shortest_path absstate.di.dists)
       in
       let checkpoint_dists =
         let open Checkpoint_dists in
-        join absstate.checkpoint_dists
-          (add_pointwise ~n:absstate.shortest_path summary.checkpoint_dists)
+        join absstate.di.checkpoint_dists
+          (add_pointwise ~n:absstate.di.shortest_path
+             summary.di.checkpoint_dists )
       in
-      { shortest_path= absstate.shortest_path + summary.shortest_path
-      ; dists
-      ; auto_state= summary.auto_state
-      ; checkpoint_dists }
+      let consts =
+        let* retn_val = summary.retn in
+        let+ retn_reg = areturn in
+        Constant_prop.Env.set retn_reg retn_val absstate.consts
+      in
+      { di=
+          { shortest_path=
+              absstate.di.shortest_path + summary.di.shortest_path
+          ; auto_state= summary.di.auto_state
+          ; dists
+          ; checkpoint_dists }
+      ; consts= Option.value consts ~default:absstate.consts }
 
-  let hit_checkpoint absstate =
+  let hit_checkpoint (absstate : absstate) =
     let checkpoint_dists =
-      Checkpoint_dists.hit_checkpoint absstate.auto_state
-        absstate.shortest_path absstate.checkpoint_dists
+      Checkpoint_dists.hit_checkpoint absstate.di.auto_state
+        absstate.di.shortest_path absstate.di.checkpoint_dists
     in
-    {absstate with checkpoint_dists; auto_state= absstate.auto_state + 1}
+    { absstate with
+      di=
+        { absstate.di with
+          checkpoint_dists
+        ; auto_state= absstate.di.auto_state + 1 } }
 
   (* Machinery to deal with pausing/restarting _intraprocedural_ analyses
      during tabulation without performing redundant work. We associate a
      (mutable) invariant map and worklist with each intraprocedural analysis
      problem (indexed by function name and initial automaton state). *)
   type intraproc_work =
-    {state: summary; loc: Block.t; check_convergence: bool}
+    {state: absstate; loc: Block.t; check_convergence: bool}
 
   let intraproc_work ?(check_convergence = true) state loc =
     {state; loc; check_convergence}
 
   type intraproc_state =
-    {worklist: intraproc_work Stack.t; invariant_map: summary Block.Tbl.t}
+    { worklist: intraproc_work Stack.t
+    ; invariant_map: Disjunction.t Block.Tbl.t }
+
+  let set_invariant_map {invariant_map; _} block state =
+    Block.Tbl.update invariant_map block ~f:(function
+      | None -> Some (Disjunction.singleton state)
+      | Some disj -> Some (Disjunction.update state disj) )
 
   let intraproc_analyses :
       intraproc_state Automaton_state.Tbl.t FuncName.Tbl.t =
     FuncName.Tbl.create ()
+
+  (** an upper bound on the number of constant-return disjuncts
+      distinguished in each [proc_summaries] record *)
+  let max_const_retn_disjuncts = 3
 
   let intraproc_analysis f a =
     let analyses_over_f =
@@ -263,32 +445,60 @@ module Summary = struct
 
   (* Interprocedural analysis: summary queries and tabulation *)
 
-  (* The tabulation algorithm's summary table, supporting memoization and
-     lookup. *)
+  (** For a given procedure/automaton-state, we can have multiple partial
+      summaries distinguished by their integer-constant return values
+      ([const_retns]), along with at most one summary with unknown return
+      value ([unknown_retn]); each [proc_summaries] record is a mutable
+      representation of such a collection of partial summaries *)
+  type proc_summaries =
+    {const_retns: summary Z.Tbl.t; mutable unknown_retn: t option}
 
-  let summary_table : t Automaton_state.Tbl.t FuncName.Tbl.t =
+  (** The tabulation algorithm's summary table, supporting memoization and
+      lookup. *)
+  let summary_table : proc_summaries Automaton_state.Tbl.t FuncName.Tbl.t =
     FuncName.Tbl.create ()
 
-  let memoize f a summary =
+  let memoize f a (new_summ : t) =
     let summaries_of_f =
       FuncName.Tbl.find_or_add summary_table f
         ~default:Automaton_state.Tbl.create
     in
-    Automaton_state.Tbl.set summaries_of_f a summary
+    let summs =
+      Automaton_state.Tbl.find_or_add summaries_of_f a ~default:(fun _ ->
+          { const_retns= Z.Tbl.create ~size:max_const_retn_disjuncts ()
+          ; unknown_retn= None } )
+    in
+    match new_summ with
+    | Summary ({retn= Some const_retn; _} as summ)
+      when Z.Tbl.length summs.const_retns < max_const_retn_disjuncts ->
+        [%Dbg.info
+          "memoizing %a as const_retn: %a" FuncName.pp f pp_summary summ] ;
+        Z.Tbl.update summs.const_retns const_retn ~f:(function
+          | Some existing_summ -> Some (join_summary existing_summ summ)
+          | None -> Some summ )
+    | _ ->
+        [%Dbg.info
+          "memoizing %a as unknown retn: %a" FuncName.pp f pp new_summ] ;
+        summs.unknown_retn <-
+          ( match summs.unknown_retn with
+          | Some existing_summ -> Some (join existing_summ new_summ)
+          | None -> Some new_summ )
 
-  let lookup_summary f a =
+  let lookup_summaries f a =
     let summaries_of_f =
       FuncName.Tbl.find_or_add summary_table f
         ~default:Automaton_state.Tbl.create
     in
-    Automaton_state.Tbl.find summaries_of_f a
+    Automaton_state.Tbl.find_or_add summaries_of_f a ~default:(fun _ ->
+        { const_retns= Z.Tbl.create ~size:max_const_retn_disjuncts ()
+        ; unknown_retn= None } )
 
   exception Summary_query of (FuncName.t * Automaton_state.t)
 
-  let lookup_summary_exn f a =
-    match lookup_summary f a with
-    | Some s -> s
-    | None -> raise_notrace (Summary_query (f, a))
+  let lookup_summaries_exn f a =
+    match lookup_summaries f a with
+    | {unknown_retn= Some _; _} as s -> s
+    | _ -> raise_notrace (Summary_query (f, a))
 
   (** Interprocedural worklist, consisting of two types of work: "Summarize"
       work elements require computing a summary of some function in some
@@ -320,34 +530,45 @@ module Summary = struct
     let pop = Stack.pop
   end
 
-  let summarize_call callee absstate =
+  let summarize_call callee areturn (absstate : absstate) =
     let prestate =
-      if Automaton_state.call_is_next callee absstate.auto_state then
+      if Automaton_state.call_is_next callee absstate.di.auto_state then
         hit_checkpoint absstate
       else absstate
     in
-    match lookup_summary callee prestate.auto_state with
-    | Some (Summary summary) ->
-        let poststate = apply ~summary prestate in
-        let res =
-          if Automaton_state.retn_is_next callee poststate.auto_state then
-            hit_checkpoint poststate
-          else poststate
+    let {const_retns; unknown_retn} =
+      lookup_summaries callee prestate.di.auto_state
+    in
+    match unknown_retn with
+    | None -> Error (callee, prestate.di.auto_state)
+    | Some unknown_retn_summary ->
+        let summaries =
+          match unknown_retn_summary with
+          | Summary s -> Iter.cons s (Z.Tbl.values const_retns)
+          | Bottom -> Z.Tbl.values const_retns
         in
-        Ok (Summary res)
-    | Some Bottom -> Ok Bottom
-    | None -> Error (callee, prestate.auto_state)
+        Ok
+          ( unknown_retn_summary
+          , Iter.map summaries ~f:(fun summary ->
+                let poststate = apply summary areturn prestate in
+                if
+                  Automaton_state.retn_is_next callee
+                    poststate.di.auto_state
+                then hit_checkpoint poststate
+                else poststate ) )
 
   (** Compute and return a summary of the given [func] in the given
       [init_state]. Raises a [Summary_query] if a callee summary is required
       that has not yet been computed. *)
-  let summarize func init_state worklist =
+  let summarize func (init_state : absstate) worklist =
     if
-      Automaton_state.is_accepting init_state.auto_state
+      Automaton_state.is_accepting init_state.di.auto_state
       || Func.is_undefined func
-    then Summary init_state
+    then Summary {di= init_state.di; retn= Constant_prop.Retn_value.top}
     else
-      let analysis = intraproc_analysis func.name init_state.auto_state in
+      let analysis =
+        intraproc_analysis func.name init_state.di.auto_state
+      in
       let push absstate block =
         Stack.push (intraproc_work absstate block) analysis.worklist
       in
@@ -356,81 +577,122 @@ module Summary = struct
         let {state= worklist_absstate; loc= block; check_convergence} =
           Stack.pop analysis.worklist
         in
-        let state, converged =
-          let new_state = intraproc_transfer ~block worklist_absstate in
-          match Block.Tbl.find analysis.invariant_map block with
-          | None -> (new_state, false)
-          | Some old_state ->
-              let joined_absstate = join old_state new_state in
-              (joined_absstate, equal_summary joined_absstate old_state)
-        in
-        if (not check_convergence) || not converged then (
-          ( match block.term with
-          | Switch {tbl; els; _} ->
-              IArray.iter tbl ~f:(fun (_, jmp) -> push state jmp.dst) ;
-              push state els.dst
-          | Iswitch {tbl; _} ->
-              IArray.iter tbl ~f:(fun jmp -> push state jmp.dst)
-          | Return _ | Throw _ | Abort _ | Unreachable -> ()
-          | Call {callee; return; _} -> (
-              (* Summarize a procedure call using existing summaries if
-                 possible, raising a [Summary_query] if one or more is
-                 missing. Push a [Fix] element onto the interprocedural
-                 worklist if [callee] is recursive. *)
-              let call {func= callee; _} =
-                let is_recursive () =
-                  let directly =
-                    FuncName.equal func.name callee.name
-                    && Automaton_state.equal init_state.auto_state
-                         state.auto_state
-                  in
-                  let mutually () =
-                    Worklist.contains callee.name state.auto_state worklist
-                  in
-                  directly || mutually ()
-                in
-                let interproc_fixed_point prev_summary =
-                  let fix_on_call =
-                    Worklist.Fix
-                      { caller_name= func.name
-                      ; caller_state= init_state.auto_state
-                      ; callee_name= callee.name
-                      ; callee_state= state.auto_state
-                      ; prev_summary }
-                  in
-                  Stack.push fix_on_call worklist
-                in
-                match summarize_call callee.name state with
-                | Ok Bottom -> ()
-                | Ok (Summary s as summ) ->
-                    if is_recursive () then interproc_fixed_point summ ;
-                    push s return.dst
-                | Error sq ->
-                    if is_recursive () then interproc_fixed_point Bottom
-                    else (
-                      (* re-add the current worklist element so as to
-                         continue from the same point once the requisite
-                         summary is computed *)
-                      push worklist_absstate block ;
-                      raise_notrace (Summary_query sq) )
-              in
-              match callee with
-              | Direct f -> call f
-              | Indirect {candidates; _} -> IArray.iter candidates ~f:call
-              | Intrinsic _ -> push state return.dst ) ) ;
-          Block.Tbl.set analysis.invariant_map ~key:block ~data:state )
+        ignore
+        @@ let+ state, converged =
+             let+ new_state =
+               let transfer_res =
+                 intraproc_transfer ~block worklist_absstate
+               in
+               match block.term with
+               | Return {exp; _} -> (
+                 match summ_of_absstate exp transfer_res with
+                 | Summary {retn= Some _; _} as s ->
+                     memoize func.name init_state.di.auto_state s ;
+                     None
+                 | _ -> Some transfer_res )
+               | _ -> Some transfer_res
+             in
+             match
+               Block.Tbl.find analysis.invariant_map block
+               >>= Disjunction.get_state_by_consts new_state.consts
+             with
+             | None -> (new_state, false)
+             | Some old_state ->
+                 let joined_absstate = join_absstate old_state new_state in
+                 (joined_absstate, equal_absstate joined_absstate old_state)
+           in
+           if (not check_convergence) || not converged then (
+             ( match block.term with
+             | Switch {key; tbl; els; _} ->
+                 let match_const : Exp.t -> [`Match | `Nonmatch | `Unknown]
+                     =
+                   let const_key =
+                     let* key_reg = Reg.of_exp key in
+                     Constant_prop.Env.find key_reg state.consts
+                   in
+                   fun case_exp ->
+                     match const_key with
+                     | None -> `Unknown
+                     | Some const_key -> (
+                       match case_exp with
+                       | Exp.Integer {data} ->
+                           if Z.equal data const_key then `Match
+                           else `Nonmatch
+                       | _ -> `Unknown )
+                 in
+                 let may_not_match = ref (IArray.is_empty tbl) in
+                 IArray.iter tbl ~f:(fun (case, jmp) ->
+                     match match_const case with
+                     | `Nonmatch -> may_not_match := true
+                     | `Match -> push state jmp.dst
+                     | `Unknown ->
+                         may_not_match := true ;
+                         push state jmp.dst ) ;
+                 if !may_not_match then push state els.dst
+             | Iswitch {tbl; _} ->
+                 IArray.iter tbl ~f:(fun jmp -> push state jmp.dst)
+             | Return _ | Throw _ | Abort _ | Unreachable -> ()
+             | Call {callee; return; areturn; _} -> (
+                 (* Summarize a procedure call using existing summaries if
+                    possible, raising a [Summary_query] if one or more is
+                    missing. Push a [Fix] element onto the interprocedural
+                    worklist if [callee] is recursive. *)
+                 let call {func= callee; _} =
+                   let is_recursive () =
+                     let directly =
+                       FuncName.equal func.name callee.name
+                       && Automaton_state.equal init_state.di.auto_state
+                            state.di.auto_state
+                     in
+                     let mutually () =
+                       Worklist.contains callee.name state.di.auto_state
+                         worklist
+                     in
+                     directly || mutually ()
+                   in
+                   let interproc_fixed_point prev_summary =
+                     let fix_on_call =
+                       Worklist.Fix
+                         { caller_name= func.name
+                         ; caller_state= init_state.di.auto_state
+                         ; callee_name= callee.name
+                         ; callee_state= state.di.auto_state
+                         ; prev_summary }
+                     in
+                     Stack.push fix_on_call worklist
+                   in
+                   match summarize_call callee.name areturn state with
+                   | Ok (prev_summary, retn_states) ->
+                       if is_recursive () then
+                         interproc_fixed_point prev_summary ;
+                       retn_states (fun retn_state ->
+                           push retn_state return.dst )
+                   | Error sq ->
+                       if is_recursive () then interproc_fixed_point Bottom
+                       else (
+                         (* re-add the current worklist element so as to
+                            continue from the same point once the requisite
+                            summary is computed *)
+                         push worklist_absstate block ;
+                         raise_notrace (Summary_query sq) )
+                 in
+                 match callee with
+                 | Direct f -> call f
+                 | Indirect {candidates; _} ->
+                     IArray.iter candidates ~f:call
+                 | Intrinsic _ -> push state return.dst ) ) ;
+             set_invariant_map analysis block state )
       done ;
       Func.fold_cfg func Bottom ~f:(fun block acc_summary ->
           match block.term with
-          | Return _ -> (
+          | Return {exp; _} ->
               let return_state =
                 Block.Tbl.find analysis.invariant_map block
-                |> Option.map_or ~default:Bottom ~f:(fun s -> Summary s)
+                |> Option.map_or ~default:Bottom ~f:(fun disj ->
+                       [%Dbg.info "Return state: %a" Disjunction.pp disj] ;
+                       summ_of_absstate exp (Disjunction.to_absstate disj) )
               in
-              match (acc_summary, return_state) with
-              | Summary acc, Summary curr -> Summary (join acc curr)
-              | (Summary _ as s), _ | _, (Summary _ as s) -> s
-              | _, _ -> Bottom )
+              join acc_summary return_state
           | _ -> acc_summary )
 
   let top_down pgm ~entry =
@@ -443,7 +705,7 @@ module Summary = struct
           ; callee_name= callee_f
           ; callee_state= callee_a
           ; prev_summary } ->
-          let curr_summary = lookup_summary callee_f callee_a in
+          let {unknown_retn; _} = lookup_summaries callee_f callee_a in
           (* If there has been no change in the summary for which a fixed
              point is requested, then analysis has converged and there's
              nothing to do.
@@ -456,19 +718,20 @@ module Summary = struct
              Otherwise, propagate any new dataflow to each recursive return
              site in the intraprocedural analysis for this summary and
              continue. *)
-          if Option.exists curr_summary ~f:(equal prev_summary) then ()
+          if Option.exists unknown_retn ~f:(equal prev_summary) then ()
           else
             let caller = FuncName.Map.find_exn caller_f pgm.functions in
             let intraproc_state = intraproc_analysis caller_f caller_a in
             Func.fold_cfg caller () ~f:(fun blk () ->
                 let resummarize_call () =
                   Block.Tbl.get intraproc_state.invariant_map blk
-                  |> Option.iter ~f:(fun absstate ->
-                         let work =
-                           intraproc_work ~check_convergence:false absstate
-                             blk
-                         in
-                         Stack.push work intraproc_state.worklist )
+                  |> Option.iter ~f:(fun disj ->
+                         Disjunction.iter disj (fun absstate ->
+                             let work =
+                               intraproc_work ~check_convergence:false
+                                 absstate blk
+                             in
+                             Stack.push work intraproc_state.worklist ) )
                 in
                 let is_recursive_callee {func; _} =
                   FuncName.equal callee_f func.name
@@ -481,7 +744,7 @@ module Summary = struct
                       resummarize_call ()
                 | _ -> () )
       | Summarize (f, a) -> (
-        match lookup_summary f a with
+        match (lookup_summaries f a).unknown_retn with
         | Some _ ->
             ()
             (* this summary has already been computed on some other path *)
@@ -494,10 +757,18 @@ module Summary = struct
           with Summary_query (callee_f, callee_a) ->
             Worklist.push f a callee_f callee_a worklist ) )
     done ;
-    match lookup_summary_exn entry 0 with
-    | Summary main_summary ->
-        [%Dbg.info "main summary: %a" pp main_summary] ;
-        Ok main_summary
+    let {const_retns; unknown_retn} = lookup_summaries_exn entry 0 in
+    let combined_summary =
+      Option.get_exn unknown_retn
+      |> Z.Tbl.fold const_retns ~f:(fun ~key:_ ~data -> function
+           | Bottom -> Summary data
+           | Summary s -> Summary (join_summary s data) )
+    in
+    match combined_summary with
+    | Summary s ->
+        [%Dbg.info
+          "Combined summary of %a:@\n%a" FuncName.pp entry pp_summary s] ;
+        Ok s
     | _ -> Error (Format.dprintf "No path found through entrypoint func")
 end
 
@@ -505,11 +776,11 @@ let top_down pgm ~entry sparse_trace =
   Automaton_state.set_sparse_trace sparse_trace ;
   let ( let* ) = Result.bind in
   let* summ = Summary.top_down pgm ~entry in
-  if Automaton_state.is_accepting summ.auto_state then
+  if Automaton_state.is_accepting summ.di.auto_state then
     Ok
-      (Distance_map.iteri summ.dists ~f:(fun ~key:block ~data:dist ->
+      (Distance_map.iteri summ.di.dists ~f:(fun ~key:block ~data:dist ->
            Block.set_goal_distance dist block ) )
   else
     Error
       (Format.dprintf "Unable to find a path to trace checkpoint %a"
-         Automaton_state.pp summ.auto_state )
+         Automaton_state.pp summ.di.auto_state )
