@@ -14,6 +14,8 @@ val update_status : (Mtime.t -> string -> unit) ref
 (** Ping the task bar whenever a new task is started with the start time and a description for the
     task *)
 
+val update_heap_words : (unit -> unit) ref
+
 val get_pid : unit -> Pid.t
 
 val reset_pid : unit -> unit
