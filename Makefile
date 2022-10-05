@@ -962,7 +962,7 @@ ifeq ($(OPAM_PIN_OCAMLFORMAT),yes)
 	  $(OPAM) install ocamlformat --yes)
 endif
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
-	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-depext user-setup $(OPAM_DEV_DEPS))
+	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-depexts user-setup $(OPAM_DEV_DEPS))
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
 	  echo '$(TERM_INFO)*** Installing GNU sed$(TERM_RESET)' >&2; \
 	  brew install gnu-sed; \

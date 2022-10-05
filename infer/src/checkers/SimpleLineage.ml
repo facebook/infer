@@ -1149,72 +1149,61 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
-let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  let proc_size = Procdesc.size proc_desc in
-  let too_big =
-    Option.exists ~f:(fun limit -> proc_size > limit) Config.simple_lineage_max_cfg_size
-  in
-  let is_synthetic =
-    (* Ignore bodies synthesized by frontend for spec-only functions. *)
-    (Procdesc.get_attributes proc_desc).ProcAttributes.is_synthetic_method
-  in
-  if is_synthetic then None
-  else if too_big then (
-    L.user_warning "Skipped large (%d) procedure (%a)@." proc_size Procname.pp
-      (Procdesc.get_proc_name proc_desc) ;
-    None )
-  else
-    let cfg = CFG.from_pdesc proc_desc in
-    let initial =
-      let formals = get_formals proc_desc in
-      let captured = get_captured proc_desc in
-      let start_node = CFG.start_node cfg in
-      let add_arg last_writes arg = Domain.Real.LastWrites.add arg start_node last_writes in
-      let last_writes =
-        List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg (captured @ formals)
-      in
-      let local_edges =
-        let add_flow ~source local_edges var =
-          LineageGraph.add_flow ~kind:Direct ~node:start_node ~source
-            ~target:(Local (Variable var, start_node))
-            local_edges
-        in
-        let add_arg_flow i = add_flow ~source:(Argument i) in
-        let add_cap_flow i = add_flow ~source:(Captured i) in
-        let local_edges = [] in
-        let local_edges = List.foldi ~init:local_edges ~f:add_arg_flow formals in
-        let local_edges = List.foldi ~init:local_edges ~f:add_cap_flow captured in
-        local_edges
-      in
-      let has_unsupported_features = false in
-      ((last_writes, has_unsupported_features), local_edges)
+let actual_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+  let cfg = CFG.from_pdesc proc_desc in
+  let initial =
+    let formals = get_formals proc_desc in
+    let captured = get_captured proc_desc in
+    let start_node = CFG.start_node cfg in
+    let add_arg last_writes arg = Domain.Real.LastWrites.add arg start_node last_writes in
+    let last_writes =
+      List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg (captured @ formals)
     in
-    let invmap = Analyzer.exec_pdesc analysis_data ~initial proc_desc in
-    let (exit_last_writes, exit_has_unsupported_features), _ =
-      match Analyzer.InvariantMap.find_opt (PPNode.id (CFG.exit_node cfg)) invmap with
-      | None ->
-          L.die InternalError "no post for exit_node?"
-      | Some {AbstractInterpreter.State.post} ->
-          post
+    let local_edges =
+      let add_flow ~source local_edges var =
+        LineageGraph.add_flow ~kind:Direct ~node:start_node ~source
+          ~target:(Local (Variable var, start_node))
+          local_edges
+      in
+      let add_arg_flow i = add_flow ~source:(Argument i) in
+      let add_cap_flow i = add_flow ~source:(Captured i) in
+      let local_edges = [] in
+      let local_edges = List.foldi ~init:local_edges ~f:add_arg_flow formals in
+      let local_edges = List.foldi ~init:local_edges ~f:add_cap_flow captured in
+      local_edges
     in
+    let has_unsupported_features = false in
+    ((last_writes, has_unsupported_features), local_edges)
+  in
+  let invmap = Analyzer.exec_pdesc analysis_data ~initial proc_desc in
+  let (exit_last_writes, exit_has_unsupported_features), _ =
+    match Analyzer.InvariantMap.find_opt (PPNode.id (CFG.exit_node cfg)) invmap with
+    | None ->
+        L.die InternalError "no post for exit_node?"
+    | Some {AbstractInterpreter.State.post} ->
+        post
+  in
+  let graph =
+    let collect _nodeid {AbstractInterpreter.State.post} edges =
+      let _last_writes, post_edges = post in
+      post_edges :: edges
+    in
+    let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
+    let add_ret_edge local_edges ret_node =
+      LineageGraph.add_flow ~kind:Direct ~node:ret_node
+        ~source:(Local (Variable ret_var, ret_node))
+        ~target:Return local_edges
+    in
+    let graph = Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat in
     let graph =
-      let collect _nodeid {AbstractInterpreter.State.post} edges =
-        let _last_writes, post_edges = post in
-        post_edges :: edges
-      in
-      let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
-      let add_ret_edge local_edges ret_node =
-        LineageGraph.add_flow ~kind:Direct ~node:ret_node
-          ~source:(Local (Variable ret_var, ret_node))
-          ~target:Return local_edges
-      in
-      let graph = Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat in
-      let graph =
-        List.fold ~init:graph ~f:add_ret_edge
-          (Domain.Real.LastWrites.get_all ret_var exit_last_writes)
-      in
-      graph
+      List.fold ~init:graph ~f:add_ret_edge
+        (Domain.Real.LastWrites.get_all ret_var exit_last_writes)
     in
-    let summary = Summary.make exit_has_unsupported_features proc_desc graph in
-    if Config.simple_lineage_json_report then Summary.report summary proc_desc ;
-    Some summary
+    graph
+  in
+  let summary = Summary.make exit_has_unsupported_features proc_desc graph in
+  if Config.simple_lineage_json_report then Summary.report summary proc_desc ;
+  Some summary
+
+
+let checker = SimpleLineageUtils.skip_unwanted actual_checker

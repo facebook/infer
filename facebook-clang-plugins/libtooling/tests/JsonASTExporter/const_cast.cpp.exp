@@ -357,7 +357,6 @@
                             "column" : 33
                           },
                           {
-                            "column" : 33
                           }
                         ]
                       },
@@ -452,7 +451,6 @@
                                 "column" : 33
                               },
                               {
-                                "column" : 33
                               }
                             ]
                           },
@@ -539,7 +537,6 @@
                             "column" : 3
                           },
                           {
-                            "column" : 3
                           }
                         ]
                       },
@@ -643,10 +640,8 @@
             "pointer" : 31,
             "source_range" : [
               {
-                "column" : 19
               },
               {
-                "column" : 19
               }
             ]
           },

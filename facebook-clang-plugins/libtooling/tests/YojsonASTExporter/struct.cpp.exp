@@ -365,10 +365,8 @@
                         "parent_pointer" : 17,
                         "source_range" : (
                           {
-                            "column" : 10
                           },
                           {
-                            "column" : 10
                           }
                         ),
                         "is_implicit" : true,
@@ -398,10 +396,8 @@
                             "pointer" : 22,
                             "source_range" : (
                               {
-                                "column" : 10
                               },
                               {
-                                "column" : 10
                               }
                             )
                           },
@@ -418,10 +414,8 @@
                         "parent_pointer" : 17,
                         "source_range" : (
                           {
-                            "column" : 10
                           },
                           {
-                            "column" : 10
                           }
                         ),
                         "is_implicit" : true,
@@ -449,10 +443,8 @@
                               "pointer" : 25,
                               "source_range" : (
                                 {
-                                  "column" : 10
                                 },
                                 {
-                                  "column" : 10
                                 }
                               )
                             },
@@ -481,10 +473,8 @@
                         "parent_pointer" : 17,
                         "source_range" : (
                           {
-                            "column" : 10
                           },
                           {
-                            "column" : 10
                           }
                         ),
                         "is_implicit" : true,
@@ -512,10 +502,8 @@
                               "pointer" : 29,
                               "source_range" : (
                                 {
-                                  "column" : 10
                                 },
                                 {
-                                  "column" : 10
                                 }
                               )
                             },
@@ -573,7 +561,6 @@
                         "column" : 5
                       },
                       {
-                        "column" : 5
                       }
                     )
                   },
@@ -633,10 +620,8 @@
                         "pointer" : 32,
                         "source_range" : (
                           {
-                            "column" : 5
                           },
                           {
-                            "column" : 5
                           }
                         )
                       },
@@ -720,7 +705,6 @@
                     "column" : 16
                   },
                   {
-                    "column" : 16
                   }
                 )
               },
@@ -742,7 +726,6 @@
                     "column" : 21
                   },
                   {
-                    "column" : 21
                   }
                 )
               },
@@ -902,10 +885,8 @@
             "pointer" : 44,
             "source_range" : (
               {
-                "column" : 12
               },
               {
-                "column" : 12
               }
             )
           },
@@ -1019,10 +1000,8 @@
                 "pointer" : 49,
                 "source_range" : (
                   {
-                    "column" : 24
                   },
                   {
-                    "column" : 24
                   }
                 )
               },

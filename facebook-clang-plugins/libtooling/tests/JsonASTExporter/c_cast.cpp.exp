@@ -148,10 +148,8 @@
             "pointer" : 9,
             "source_range" : [
               {
-                "column" : 9
               },
               {
-                "column" : 9
               }
             ]
           },
@@ -214,10 +212,8 @@
                 "pointer" : 13,
                 "source_range" : [
                   {
-                    "column" : 16
                   },
                   {
-                    "column" : 16
                   }
                 ]
               },
@@ -227,10 +223,8 @@
                     "pointer" : 14,
                     "source_range" : [
                       {
-                        "column" : 16
                       },
                       {
-                        "column" : 16
                       }
                     ]
                   },
@@ -240,10 +234,8 @@
                         "pointer" : 15,
                         "source_range" : [
                           {
-                            "column" : 16
                           },
                           {
-                            "column" : 16
                           }
                         ]
                       },
@@ -366,7 +358,6 @@
                     "column" : 15
                   },
                   {
-                    "column" : 15
                   }
                 ]
               },
@@ -376,10 +367,8 @@
                     "pointer" : 19,
                     "source_range" : [
                       {
-                        "column" : 15
                       },
                       {
-                        "column" : 15
                       }
                     ]
                   },
@@ -389,10 +378,8 @@
                         "pointer" : 20,
                         "source_range" : [
                           {
-                            "column" : 15
                           },
                           {
-                            "column" : 15
                           }
                         ]
                       },

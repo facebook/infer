@@ -27,6 +27,7 @@ type multiline_info =
   ; jobs_statuses: string Array.t
         (** array of size [jobs] with a description of what the process is doing *)
   ; jobs_start_times: Mtime.t Array.t  (** array of size [jobs] of start times for each process *)
+  ; heap_words: int option Array.t  (** array of size [jobs] of heap words for each process *)
   ; start_time: Mtime_clock.counter  (** time since the creation of the task bar *)
   ; mutable tasks_done: int
   ; mutable tasks_total: int }
@@ -87,16 +88,42 @@ let draw_top_bar fmt ~term_width ~total ~finished ~elapsed =
   F.fprintf fmt "%s\n" erase_eol
 
 
-let draw_job_status fmt ~term_width ~draw_time t ~status ~t0 =
+let print_heap_words =
+  let word_size_byte = Word_size.(num_bits word_size) / 8 in
+  let hundred_k = 1024 * 100 in
+  fun fmt -> function
+    | None ->
+        F.fprintf fmt "[     ]"
+    | Some heap_words ->
+        let bytes = heap_words * word_size_byte in
+        if bytes < hundred_k then F.fprintf fmt "[%4.1fK]" Float.(of_int bytes / 1024.0)
+        else
+          let kilo_bytes = bytes / 1024 in
+          if kilo_bytes < hundred_k then F.fprintf fmt "[%4.1fM]" Float.(of_int kilo_bytes / 1024.0)
+          else
+            let mega_bytes = kilo_bytes / 1024 in
+            if mega_bytes < hundred_k then
+              F.fprintf fmt "[%4.1fG]" Float.(of_int mega_bytes / 1024.0)
+            else
+              let giga_bytes = mega_bytes / 1024 in
+              F.fprintf fmt "[%4dG]" giga_bytes
+
+
+let draw_job_status fmt ~term_width ~draw_time t ~status ~t0 ~heap_words =
   let length = ref 0 in
   let job_prefix_size = String.length job_prefix in
   if term_width > job_prefix_size then (
     F.fprintf fmt "%s" (ANSITerminal.(sprintf [Bold; magenta]) "%s" job_prefix) ;
     length := !length + job_prefix_size ) ;
-  let time_width = 4 + (* actually drawing the time *) 3 (* "[] " *) in
+  let time_width = 4 + (* actually drawing the time *) 4 (* "[s] " *) in
   if draw_time && term_width > time_width + job_prefix_size then (
     let time_running = Mtime.span t0 t |> Mtime.Span.to_s in
-    F.fprintf fmt "[%4.1fs] " time_running ;
+    F.fprintf fmt "[%4.1fs]" time_running ;
+    (let heap_words_width = 7 in
+     if term_width > heap_words_width + time_width + job_prefix_size then (
+       print_heap_words fmt heap_words ;
+       length := !length + heap_words_width ) ) ;
+    F.fprintf fmt " " ;
     length := !length + time_width ) ;
   F.fprintf fmt "%s%s\n" (String.prefix status (term_width - !length)) erase_eol
 
@@ -116,8 +143,12 @@ let refresh_multiline task_bar =
     task_bar.jobs > 1
   in
   let now = Mtime_clock.now () in
-  Array.iter2_exn task_bar.jobs_statuses task_bar.jobs_start_times ~f:(fun status t0 ->
-      draw_job_status F.err_formatter ~term_width ~draw_time now ~status ~t0 ) ;
+  for i = 0 to task_bar.jobs - 1 do
+    let status = task_bar.jobs_statuses.(i) in
+    let t0 = task_bar.jobs_start_times.(i) in
+    let heap_words = task_bar.heap_words.(i) in
+    draw_job_status F.err_formatter ~term_width ~draw_time now ~status ~t0 ~heap_words
+  done ;
   let lines_printed =
     let progress_bar = if should_draw_progress_bar then 1 else 0 in
     task_bar.jobs + progress_bar
@@ -140,6 +171,7 @@ let create ~jobs =
         { jobs
         ; jobs_statuses= Array.create ~len:jobs "idle"
         ; jobs_start_times= Array.create ~len:jobs t0
+        ; heap_words= Array.create ~len:jobs None
         ; start_time= Mtime_clock.counter ()
         ; tasks_done= 0
         ; tasks_total= 0 }
@@ -148,16 +180,25 @@ let create ~jobs =
       MultiLine task_bar
 
 
-let update_status_multiline task_bar ~slot:job t0 status =
+let update_status_multiline task_bar ~slot:job t0 ?heap_words status =
   task_bar.jobs_statuses.(job) <- status ;
   task_bar.jobs_start_times.(job) <- t0 ;
+  if Option.is_some heap_words then task_bar.heap_words.(job) <- heap_words ;
   ()
 
 
-let update_status task_bar ~slot t0 status =
+let update_status task_bar ~slot t0 ?heap_words status =
   match task_bar with
   | MultiLine t ->
-      update_status_multiline t ~slot t0 status
+      update_status_multiline t ~slot t0 ?heap_words status
+  | NonInteractive | Quiet ->
+      ()
+
+
+let update_heap_words task_bar ~slot heap_words =
+  match task_bar with
+  | MultiLine t ->
+      t.heap_words.(slot) <- Some heap_words
   | NonInteractive | Quiet ->
       ()
 

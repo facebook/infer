@@ -339,10 +339,8 @@
             "pointer" : 14,
             "source_range" : (
               {
-                "column" : 9
               },
               {
-                "column" : 9
               }
             )
           },
@@ -352,10 +350,8 @@
                 "pointer" : 15,
                 "source_range" : (
                   {
-                    "column" : 9
                   },
                   {
-                    "column" : 9
                   }
                 )
               },

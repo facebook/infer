@@ -223,6 +223,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   // print out deltas from then on out.
   const char *LastLocFilename;
   unsigned LastLocLine;
+  unsigned LastLocColumn;
 
   // The \c FullComment parent of the comment being dumped.
   const FullComment *FC;
@@ -245,6 +246,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
             Comment::NoCommentKind, SourceLocation(), SourceLocation())),
         LastLocFilename(""),
         LastLocLine(~0U),
+        LastLocColumn(~0U),
         FC(0),
         NamePrint(Context.getSourceManager(), OF) {}
 
@@ -583,14 +585,17 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
     OF.emitInteger(PLoc.getLine());
     OF.emitTag("column");
     OF.emitInteger(PLoc.getColumn());
-  } else {
+  } else if (PLoc.getColumn() != LastLocColumn) {
     ObjectScope Scope(OF, 1);
     OF.emitTag("column");
     OF.emitInteger(PLoc.getColumn());
+  } else {
+    ObjectScope Scope(OF, 0);
+    return;
   }
   LastLocFilename = PLoc.getFilename();
   LastLocLine = PLoc.getLine();
-  // TODO: lastLocColumn
+  LastLocColumn = PLoc.getColumn();
 }
 
 //@atd type source_range = (source_location * source_location)
