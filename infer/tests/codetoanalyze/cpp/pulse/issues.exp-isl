@@ -34,6 +34,7 @@ codetoanalyze/cpp/pulse/closures.cpp, struct_capture_by_val_bad, 7, NULLPTR_DERE
 codetoanalyze/cpp/pulse/closures.cpp, struct_capture_by_val_ok_FP, 7, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/closures.cpp, call_argument, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter f]
 codetoanalyze/cpp/pulse/closures.cpp, update_inside_lambda_as_argument_ok_FP, 1, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `update_inside_lambda_as_argument`,is assigned to the null pointer,assigned,returned,return from call to `update_inside_lambda_as_argument`,invalid access occurs here]
+codetoanalyze/cpp/pulse/closures.cpp, FP_update_inside_lambda_visible_outside_ok, 10, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the constant 7,assigned,taking "then" branch,is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/conditional_temporaries.cpp, condtemp::Counter::Counter, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter name_]
 codetoanalyze/cpp/pulse/conditional_temporaries.cpp, condtemp::X::__infer_inner_destructor_~X, 1, NULLPTR_DEREFERENCE_LATENT, no_bucket, ERROR, [*** SUPPRESSED ***,source of the null value part of the trace starts here,is assigned to the null pointer,null pointer dereference part of the trace starts here,when calling `condtemp::X::name` here,invalid access occurs here]
 codetoanalyze/cpp/pulse/conditional_temporaries.cpp, condtemp::copy, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter x]
