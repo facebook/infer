@@ -51,6 +51,7 @@ depends: [
   "expect_test_helpers_core" {= "v0.15.0"}
   "extlib" {= "1.7.9"}
   "fieldslib" {= "v0.15.0"}
+  "fmt" {= "0.9.0"}
   "int_repr" {= "v0.15.0"}
   "integers" {= "0.7.0"}
   "iter" {= "1.5"}
