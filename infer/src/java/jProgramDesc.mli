@@ -17,6 +17,8 @@ type t
 
 val get_classmap : t -> classmap
 
+val get_matching_class_names : t -> string -> JBasics.class_name list
+
 val set_java_location : t -> JBasics.class_name -> Location.t -> unit
 
 val get_java_location : t -> JBasics.class_name -> Location.t option

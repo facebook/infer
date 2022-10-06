@@ -217,20 +217,21 @@ let should_capture package_opt source_basename classname node =
    source file. *)
 let compute_source_icfg program tenv source_basename package_opt source_file =
   let icfg = {JContext.cfg= Cfg.create (); tenv} in
-  let select test procedure cn node =
-    if test cn node then try procedure cn node with Bir.Subroutine -> ()
+  let select test procedure cn =
+    match JProgramDesc.lookup_node cn program with
+    | None ->
+        ()
+    | Some node -> (
+        if test cn node then try procedure cn node with Bir.Subroutine -> () )
   in
   (* we must set the java location for all classes in the source file before translation *)
   if Config.java_source_parser_experimental then
     JSourceLocations.collect_class_location program source_file
   else JSourceFileInfo.collect_class_location program source_file ;
-  let () =
-    JProgramDesc.Classmap.iter
-      (select
-         (should_capture package_opt source_basename)
-         (create_icfg source_file program tenv icfg) )
-      (JProgramDesc.get_classmap program)
+  let create =
+    select (should_capture package_opt source_basename) (create_icfg source_file program tenv icfg)
   in
+  List.iter ~f:create (JProgramDesc.get_matching_class_names program source_basename) ;
   icfg.JContext.cfg
 
 

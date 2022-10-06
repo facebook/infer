@@ -38,6 +38,7 @@ type t =
   | DOTNETResourceLeaks
   | SIOF
   | SimpleLineage
+  | SimpleShape
   | SelfInBlock
   | Starvation
   | Topl
@@ -419,6 +420,14 @@ let config_unsafe checker =
       ; support= mk_support_func ~erlang:Support ()
       ; short_documentation= "Computes a dataflow graph"
       ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= false
+      ; activates= [] }
+  | SimpleShape ->
+      { id= "simple-shape"
+      ; kind= Internal
+      ; support= mk_support_func ~erlang:Support ()
+      ; short_documentation= "Computes simple shape informations to be used in the Lineage analysis"
+      ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= false
       ; activates= [] }
   | SelfInBlock ->
