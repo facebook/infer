@@ -166,20 +166,16 @@ end = struct
         let new_id = Union_find.get shape in
         let fields = Hashtbl.find shape_fields id in
         let fields' = Hashtbl.find shape_fields id' in
-        match (fields, fields') with
-        | None, None ->
-            (* None of the unified id had fields => no field to add to the new shape *)
-            ()
-        | Some f, None | None, Some f ->
-            (* We do not know if the new shape id after unifying them is the one that used to have
-               fields, so we explicitly set it *)
-            Hashtbl.set shape_fields ~key:new_id ~data:f
-        | Some fields, Some fields' ->
-            (* Both unified shapes had field: unify them before adding the result to the unified id *)
-            (* Should we remove old shape entries? This could potentially reduce the memory footprint but
-               preliminary experiments seem to show that it is not needed (and extra care has to be taken to not
-               remove it before trying to access its definition). *)
-            Hashtbl.set shape_fields ~key:new_id ~data:(unify_fields env fields fields')
+        let new_fields =
+          (* Get the existing fields from the unified ids, unifying them if they both had some *)
+          Option.merge ~f:(unify_fields env) fields fields'
+        in
+        (* Remove the fields from the old ids since they won't be needed anymore after they are
+           unified *)
+        Hashtbl.remove shape_fields id ;
+        Hashtbl.remove shape_fields id' ;
+        (* Add the new fields to the new id *)
+        Option.iter ~f:(fun data -> Hashtbl.set shape_fields ~key:new_id ~data) new_fields
 
 
     and unify_fields env fields fields' =
