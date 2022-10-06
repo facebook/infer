@@ -72,6 +72,18 @@ module Shape : sig
         the result). *)
   end
 end = struct
+  let pp_hashtbl pp_key pp_value fmt hashtbl =
+    let sep = Fmt.any ";@ " in
+    let pp_binding pp_key pp_value fmt (key, value) =
+      Format.fprintf fmt "@[%a -> %a@]" pp_key key pp_value value
+    in
+    Format.fprintf fmt "@[(%a)@]"
+      (Fmt.iter_bindings ~sep
+         (fun f -> Hashtbl.iteri ~f:(fun ~key ~data -> f key data))
+         (pp_binding pp_key pp_value) )
+      hashtbl
+
+
   module Env = struct
     (** A shape id is what links variables to defined fields. It is a unique identifier to which a
         set of fields is associated, and that will be indirectly assigned to every variable.
@@ -95,15 +107,6 @@ end = struct
 
     let create () =
       {var_shape= Hashtbl.create (module Var); shape_fields= Hashtbl.create (module Shape_id)}
-
-
-    let pp_hashtbl pp_key pp_value fmt hashtbl =
-      let pp_binding fmt (key, value) =
-        Format.fprintf fmt "@[%a -> %a@]" pp_key key pp_value value
-      in
-      Format.fprintf fmt "@[(%a)@]"
-        (Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ";@ ") pp_binding)
-        (Hashtbl.to_alist hashtbl)
 
 
     let pp_shape fmt x = Shape_id.pp fmt (Union_find.get x)
