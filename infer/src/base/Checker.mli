@@ -37,6 +37,7 @@ type t =
   | DOTNETResourceLeaks
   | SIOF
   | SimpleLineage
+  | SimpleShape
   | SelfInBlock
   | Starvation
   | Topl

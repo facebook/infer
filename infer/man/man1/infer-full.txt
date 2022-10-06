@@ -2520,6 +2520,11 @@ INTERNAL OPTIONS
        --simple-lineage-max-cfg-size-reset
            Cancel the effect of --simple-lineage-max-cfg-size.
 
+       --simple-shape
+           Activates: checker simple-shape: Computes simple shape
+           informations to be used in the Lineage analysis (Conversely:
+           --no-simple-shape)
+
        --siof-safe-methods-reset
            Set --siof-safe-methods to the empty list.
 
