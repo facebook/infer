@@ -1149,7 +1149,7 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
-let actual_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let cfg = CFG.from_pdesc proc_desc in
   let initial =
     let formals = get_formals proc_desc in
@@ -1206,4 +1206,4 @@ let actual_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   Some summary
 
 
-let checker = SimpleLineageUtils.skip_unwanted actual_checker
+let checker = SimpleLineageUtils.skip_unwanted unskipped_checker
