@@ -411,10 +411,20 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
     L.d_printfln_escaped "%t" pp_all
 
 
+  let call_once_in_ten =
+    let n = ref 0 in
+    fun ~f () ->
+      if !n >= 10 then (
+        f () ;
+        n := 0 )
+      else incr n
+
+
   let exec_node_instrs old_state_opt ~pp_instr proc_data node pre =
     let instrs = CFG.instrs node in
     if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
     let exec_instr idx pre instr =
+      call_once_in_ten ~f:!ProcessPoolState.update_heap_words () ;
       AnalysisState.set_instr instr ;
       let result =
         try

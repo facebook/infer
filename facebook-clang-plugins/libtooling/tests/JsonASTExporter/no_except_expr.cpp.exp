@@ -167,7 +167,6 @@
             "column" : 28
           },
           {
-            "column" : 28
           }
         ]
       }
@@ -270,7 +269,6 @@
                                     "column" : 30
                                   },
                                   {
-                                    "column" : 30
                                   }
                                 ]
                               },
@@ -280,10 +278,8 @@
                                     "pointer" : 19,
                                     "source_range" : [
                                       {
-                                        "column" : 30
                                       },
                                       {
-                                        "column" : 30
                                       }
                                     ]
                                   },

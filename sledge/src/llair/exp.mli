@@ -111,6 +111,8 @@ module Reg : sig
     val pp : t pp
   end
 
+  module Map : Map.S with type key := t
+
   val pp : t pp
 
   include Invariant.S with type t := t

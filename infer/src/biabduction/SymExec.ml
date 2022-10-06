@@ -1015,9 +1015,7 @@ let resolve_and_analyze_no_dynamic_dispatch {InterproceduralAnalysis.analyze_dep
 
 let resolve_and_analyze_clang analysis_data prop_r n_actual_params callee_pname call_flags =
   if
-    Config.dynamic_dispatch
-    && (not (is_variadic_procname callee_pname))
-    && Procname.is_objc_method callee_pname
+    ((not (is_variadic_procname callee_pname)) && Procname.is_objc_method callee_pname)
     || Procname.is_objc_block callee_pname
     (* to be extended to other methods *)
   then
@@ -1161,7 +1159,7 @@ let rec sym_exec
         exec_builtin (call_args prop_ callee_pname actual_params ret_id_typ loc)
     | None -> (
       match callee_pname with
-      | Java callee_pname_java when Config.dynamic_dispatch -> (
+      | Java callee_pname_java -> (
           let norm_prop, norm_args' = normalize_params analysis_data prop_ actual_params in
           let norm_args = call_constructor_url_update_args callee_pname norm_args' in
           let exec_skip_call ~reason skipped_pname ret_annots ret_type =
@@ -1187,33 +1185,6 @@ let rec sym_exec
                 let ret_annots = proc_attrs.ProcAttributes.ret_annots in
                 exec_skip_call ~reason resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
             ) )
-      | Java callee_pname_java ->
-          let norm_prop, norm_args = normalize_params analysis_data prop_ actual_params in
-          let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
-          let resolved_pnames =
-            resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags
-          in
-          let exec_one_pname pname =
-            let exec_skip_call ~reason ret_annots ret_type =
-              skip_call ~reason norm_prop path pname ret_annots loc ret_id_typ ret_type
-                url_handled_args
-            in
-            match analyze_dependency pname with
-            | None ->
-                let ret_typ = Procname.Java.get_return_typ callee_pname_java in
-                let ret_annots = load_ret_annots callee_pname in
-                exec_skip_call ~reason:"unknown method" ret_annots ret_typ
-            | Some ((callee_proc_desc, _) as callee_summary) -> (
-              match reason_to_skip ~callee_desc:(`Summary callee_summary) with
-              | None ->
-                  let handled_args = call_args norm_prop pname url_handled_args ret_id_typ loc in
-                  proc_call callee_summary handled_args
-              | Some reason ->
-                  let proc_attrs = Procdesc.get_attributes callee_proc_desc in
-                  let ret_annots = proc_attrs.ProcAttributes.ret_annots in
-                  exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type )
-          in
-          List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
       | CSharp callee_pname_csharp ->
           let norm_prop, norm_args = normalize_params analysis_data prop_ actual_params in
           let url_handled_args = call_constructor_url_update_args callee_pname norm_args in

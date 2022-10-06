@@ -1859,7 +1859,6 @@
             "column" : 13
           },
           {
-            "column" : 13
           }
         ],
         "is_implicit" : true,
@@ -1880,10 +1879,8 @@
               "pointer" : 90,
               "source_range" : [
                 {
-                  "column" : 13
                 },
                 {
-                  "column" : 13
                 }
               ]
             }
@@ -1960,7 +1957,6 @@
                   "column" : 13
                 },
                 {
-                  "column" : 13
                 }
               ]
             }
@@ -2356,7 +2352,6 @@
                                             "column" : 51
                                           },
                                           {
-                                            "column" : 51
                                           }
                                         ]
                                       },
@@ -2366,10 +2361,8 @@
                                             "pointer" : 118,
                                             "source_range" : [
                                               {
-                                                "column" : 51
                                               },
                                               {
-                                                "column" : 51
                                               }
                                             ]
                                           },
@@ -2546,7 +2539,6 @@
                                                 "column" : 51
                                               },
                                               {
-                                                "column" : 51
                                               }
                                             ]
                                           },
@@ -2556,10 +2548,8 @@
                                                 "pointer" : 118,
                                                 "source_range" : [
                                                   {
-                                                    "column" : 51
                                                   },
                                                   {
-                                                    "column" : 51
                                                   }
                                                 ]
                                               },

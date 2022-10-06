@@ -325,10 +325,8 @@
                                             "pointer" : 21,
                                             "source_range" : (
                                               {
-                                                "column" : 26
                                               },
                                               {
-                                                "column" : 26
                                               }
                                             )
                                           },
@@ -367,7 +365,6 @@
                                         "column" : 12
                                       },
                                       {
-                                        "column" : 12
                                       }
                                     ),
                                     "is_implicit" : true
@@ -442,10 +439,8 @@
                                                     "pointer" : 21,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 26
                                                       },
                                                       {
-                                                        "column" : 26
                                                       }
                                                     )
                                                   },
@@ -552,7 +547,6 @@
                                             "column" : 12
                                           },
                                           {
-                                            "column" : 12
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -584,10 +578,8 @@
                                         "parent_pointer" : 23,
                                         "source_range" : (
                                           {
-                                            "column" : 12
                                           },
                                           {
-                                            "column" : 12
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -615,10 +607,8 @@
                                               "pointer" : 34,
                                               "source_range" : (
                                                 {
-                                                  "column" : 12
                                                 },
                                                 {
-                                                  "column" : 12
                                                 }
                                               )
                                             },
@@ -647,10 +637,8 @@
                                         "parent_pointer" : 23,
                                         "source_range" : (
                                           {
-                                            "column" : 12
                                           },
                                           {
-                                            "column" : 12
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -680,10 +668,8 @@
                                               "pointer" : 38,
                                               "source_range" : (
                                                 {
-                                                  "column" : 12
                                                 },
                                                 {
-                                                  "column" : 12
                                                 }
                                               )
                                             },
@@ -707,10 +693,8 @@
                                             "pointer" : 40,
                                             "source_range" : (
                                               {
-                                                "column" : 12
                                               },
                                               {
-                                                "column" : 12
                                               }
                                             )
                                           },
@@ -919,10 +903,8 @@
                                                 "pointer" : 21,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 26
                                                   },
                                                   {
-                                                    "column" : 26
                                                   }
                                                 )
                                               },
@@ -961,7 +943,6 @@
                                             "column" : 12
                                           },
                                           {
-                                            "column" : 12
                                           }
                                         ),
                                         "is_implicit" : true
@@ -1036,10 +1017,8 @@
                                                         "pointer" : 21,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 26
                                                           },
                                                           {
-                                                            "column" : 26
                                                           }
                                                         )
                                                       },
@@ -1146,7 +1125,6 @@
                                                 "column" : 12
                                               },
                                               {
-                                                "column" : 12
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -1178,10 +1156,8 @@
                                             "parent_pointer" : 23,
                                             "source_range" : (
                                               {
-                                                "column" : 12
                                               },
                                               {
-                                                "column" : 12
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -1209,10 +1185,8 @@
                                                   "pointer" : 34,
                                                   "source_range" : (
                                                     {
-                                                      "column" : 12
                                                     },
                                                     {
-                                                      "column" : 12
                                                     }
                                                   )
                                                 },
@@ -1241,10 +1215,8 @@
                                             "parent_pointer" : 23,
                                             "source_range" : (
                                               {
-                                                "column" : 12
                                               },
                                               {
-                                                "column" : 12
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -1274,10 +1246,8 @@
                                                   "pointer" : 38,
                                                   "source_range" : (
                                                     {
-                                                      "column" : 12
                                                     },
                                                     {
-                                                      "column" : 12
                                                     }
                                                   )
                                                 },
@@ -1301,10 +1271,8 @@
                                                 "pointer" : 40,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 12
                                                   },
                                                   {
-                                                    "column" : 12
                                                   }
                                                 )
                                               },
@@ -1483,7 +1451,6 @@
                                         "column" : 16
                                       },
                                       {
-                                        "column" : 16
                                       }
                                     )
                                   },
@@ -1521,7 +1488,6 @@
                                         "column" : 19
                                       },
                                       {
-                                        "column" : 19
                                       }
                                     )
                                   },
@@ -1531,10 +1497,8 @@
                                         "pointer" : 50,
                                         "source_range" : (
                                           {
-                                            "column" : 19
                                           },
                                           {
-                                            "column" : 19
                                           }
                                         )
                                       },
@@ -1609,10 +1573,8 @@
                                             "pointer" : 53,
                                             "source_range" : (
                                               {
-                                                "column" : 38
                                               },
                                               {
-                                                "column" : 38
                                               }
                                             )
                                           },
@@ -1622,10 +1584,8 @@
                                                 "pointer" : 54,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 38
                                                   },
                                                   {
-                                                    "column" : 38
                                                   }
                                                 )
                                               },
@@ -1690,7 +1650,6 @@
                                         "column" : 14
                                       },
                                       {
-                                        "column" : 14
                                       }
                                     ),
                                     "is_implicit" : true
@@ -1793,10 +1752,8 @@
                                                     "pointer" : 53,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 38
                                                       },
                                                       {
-                                                        "column" : 38
                                                       }
                                                     )
                                                   },
@@ -1806,10 +1763,8 @@
                                                         "pointer" : 54,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 38
                                                           },
                                                           {
-                                                            "column" : 38
                                                           }
                                                         )
                                                       },
@@ -1871,7 +1826,6 @@
                                             "column" : 16
                                           },
                                           {
-                                            "column" : 16
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -1901,7 +1855,6 @@
                                             "column" : 19
                                           },
                                           {
-                                            "column" : 19
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -1932,7 +1885,6 @@
                                             "column" : 14
                                           },
                                           {
-                                            "column" : 14
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -1964,10 +1916,8 @@
                                         "parent_pointer" : 56,
                                         "source_range" : (
                                           {
-                                            "column" : 14
                                           },
                                           {
-                                            "column" : 14
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -1995,10 +1945,8 @@
                                               "pointer" : 66,
                                               "source_range" : (
                                                 {
-                                                  "column" : 14
                                                 },
                                                 {
-                                                  "column" : 14
                                                 }
                                               )
                                             },
@@ -2027,10 +1975,8 @@
                                         "parent_pointer" : 56,
                                         "source_range" : (
                                           {
-                                            "column" : 14
                                           },
                                           {
-                                            "column" : 14
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -2060,10 +2006,8 @@
                                               "pointer" : 70,
                                               "source_range" : (
                                                 {
-                                                  "column" : 14
                                                 },
                                                 {
-                                                  "column" : 14
                                                 }
                                               ),
                                               "is_used" : true,
@@ -2089,10 +2033,8 @@
                                             "pointer" : 72,
                                             "source_range" : (
                                               {
-                                                "column" : 14
                                               },
                                               {
-                                                "column" : 14
                                               }
                                             )
                                           },
@@ -2120,10 +2062,8 @@
                                             }>,
                                             "source_range" : (
                                               {
-                                                "column" : 14
                                               },
                                               {
-                                                "column" : 14
                                               }
                                             ),
                                             "init_expr" : <"MemberExpr" : (
@@ -2131,10 +2071,8 @@
                                                 "pointer" : 73,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 14
                                                   },
                                                   {
-                                                    "column" : 14
                                                   }
                                                 )
                                               },
@@ -2144,10 +2082,8 @@
                                                     "pointer" : 74,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 14
                                                       },
                                                       {
-                                                        "column" : 14
                                                       }
                                                     )
                                                   },
@@ -2157,10 +2093,8 @@
                                                         "pointer" : 75,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 14
                                                           },
                                                           {
-                                                            "column" : 14
                                                           }
                                                         )
                                                       },
@@ -2262,10 +2196,8 @@
                                             }>,
                                             "source_range" : (
                                               {
-                                                "column" : 14
                                               },
                                               {
-                                                "column" : 14
                                               }
                                             ),
                                             "init_expr" : <"ImplicitCastExpr" : (
@@ -2273,10 +2205,8 @@
                                                 "pointer" : 76,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 14
                                                   },
                                                   {
-                                                    "column" : 14
                                                   }
                                                 )
                                               },
@@ -2286,10 +2216,8 @@
                                                     "pointer" : 77,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 14
                                                       },
                                                       {
-                                                        "column" : 14
                                                       }
                                                     )
                                                   },
@@ -2299,10 +2227,8 @@
                                                         "pointer" : 78,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 14
                                                           },
                                                           {
-                                                            "column" : 14
                                                           }
                                                         )
                                                       },
@@ -2312,10 +2238,8 @@
                                                             "pointer" : 79,
                                                             "source_range" : (
                                                               {
-                                                                "column" : 14
                                                               },
                                                               {
-                                                                "column" : 14
                                                               }
                                                             )
                                                           },
@@ -2478,7 +2402,6 @@
                                             "column" : 16
                                           },
                                           {
-                                            "column" : 16
                                           }
                                         )
                                       },
@@ -2504,7 +2427,6 @@
                                             "column" : 19
                                           },
                                           {
-                                            "column" : 19
                                           }
                                         )
                                       }
@@ -2645,7 +2567,6 @@
                                             "column" : 16
                                           },
                                           {
-                                            "column" : 16
                                           }
                                         )
                                       },
@@ -2683,7 +2604,6 @@
                                             "column" : 19
                                           },
                                           {
-                                            "column" : 19
                                           }
                                         )
                                       },
@@ -2693,10 +2613,8 @@
                                             "pointer" : 50,
                                             "source_range" : (
                                               {
-                                                "column" : 19
                                               },
                                               {
-                                                "column" : 19
                                               }
                                             )
                                           },
@@ -2771,10 +2689,8 @@
                                                 "pointer" : 53,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 38
                                                   },
                                                   {
-                                                    "column" : 38
                                                   }
                                                 )
                                               },
@@ -2784,10 +2700,8 @@
                                                     "pointer" : 54,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 38
                                                       },
                                                       {
-                                                        "column" : 38
                                                       }
                                                     )
                                                   },
@@ -2852,7 +2766,6 @@
                                             "column" : 14
                                           },
                                           {
-                                            "column" : 14
                                           }
                                         ),
                                         "is_implicit" : true
@@ -2955,10 +2868,8 @@
                                                         "pointer" : 53,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 38
                                                           },
                                                           {
-                                                            "column" : 38
                                                           }
                                                         )
                                                       },
@@ -2968,10 +2879,8 @@
                                                             "pointer" : 54,
                                                             "source_range" : (
                                                               {
-                                                                "column" : 38
                                                               },
                                                               {
-                                                                "column" : 38
                                                               }
                                                             )
                                                           },
@@ -3033,7 +2942,6 @@
                                                 "column" : 16
                                               },
                                               {
-                                                "column" : 16
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -3063,7 +2971,6 @@
                                                 "column" : 19
                                               },
                                               {
-                                                "column" : 19
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -3094,7 +3001,6 @@
                                                 "column" : 14
                                               },
                                               {
-                                                "column" : 14
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -3126,10 +3032,8 @@
                                             "parent_pointer" : 56,
                                             "source_range" : (
                                               {
-                                                "column" : 14
                                               },
                                               {
-                                                "column" : 14
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -3157,10 +3061,8 @@
                                                   "pointer" : 66,
                                                   "source_range" : (
                                                     {
-                                                      "column" : 14
                                                     },
                                                     {
-                                                      "column" : 14
                                                     }
                                                   )
                                                 },
@@ -3189,10 +3091,8 @@
                                             "parent_pointer" : 56,
                                             "source_range" : (
                                               {
-                                                "column" : 14
                                               },
                                               {
-                                                "column" : 14
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -3222,10 +3122,8 @@
                                                   "pointer" : 70,
                                                   "source_range" : (
                                                     {
-                                                      "column" : 14
                                                     },
                                                     {
-                                                      "column" : 14
                                                     }
                                                   ),
                                                   "is_used" : true,
@@ -3251,10 +3149,8 @@
                                                 "pointer" : 72,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 14
                                                   },
                                                   {
-                                                    "column" : 14
                                                   }
                                                 )
                                               },
@@ -3282,10 +3178,8 @@
                                                 }>,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 14
                                                   },
                                                   {
-                                                    "column" : 14
                                                   }
                                                 ),
                                                 "init_expr" : <"MemberExpr" : (
@@ -3293,10 +3187,8 @@
                                                     "pointer" : 73,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 14
                                                       },
                                                       {
-                                                        "column" : 14
                                                       }
                                                     )
                                                   },
@@ -3306,10 +3198,8 @@
                                                         "pointer" : 74,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 14
                                                           },
                                                           {
-                                                            "column" : 14
                                                           }
                                                         )
                                                       },
@@ -3319,10 +3209,8 @@
                                                             "pointer" : 75,
                                                             "source_range" : (
                                                               {
-                                                                "column" : 14
                                                               },
                                                               {
-                                                                "column" : 14
                                                               }
                                                             )
                                                           },
@@ -3424,10 +3312,8 @@
                                                 }>,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 14
                                                   },
                                                   {
-                                                    "column" : 14
                                                   }
                                                 ),
                                                 "init_expr" : <"ImplicitCastExpr" : (
@@ -3435,10 +3321,8 @@
                                                     "pointer" : 76,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 14
                                                       },
                                                       {
-                                                        "column" : 14
                                                       }
                                                     )
                                                   },
@@ -3448,10 +3332,8 @@
                                                         "pointer" : 77,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 14
                                                           },
                                                           {
-                                                            "column" : 14
                                                           }
                                                         )
                                                       },
@@ -3461,10 +3343,8 @@
                                                             "pointer" : 78,
                                                             "source_range" : (
                                                               {
-                                                                "column" : 14
                                                               },
                                                               {
-                                                                "column" : 14
                                                               }
                                                             )
                                                           },
@@ -3474,10 +3354,8 @@
                                                                 "pointer" : 79,
                                                                 "source_range" : (
                                                                   {
-                                                                    "column" : 14
                                                                   },
                                                                   {
-                                                                    "column" : 14
                                                                   }
                                                                 )
                                                               },
@@ -3640,7 +3518,6 @@
                                                 "column" : 16
                                               },
                                               {
-                                                "column" : 16
                                               }
                                             )
                                           },
@@ -3666,7 +3543,6 @@
                                                 "column" : 19
                                               },
                                               {
-                                                "column" : 19
                                               }
                                             )
                                           }
@@ -3800,7 +3676,6 @@
                                         "column" : 28
                                       },
                                       {
-                                        "column" : 28
                                       }
                                     )
                                   },
@@ -3849,10 +3724,8 @@
                                             "pointer" : 90,
                                             "source_range" : (
                                               {
-                                                "column" : 42
                                               },
                                               {
-                                                "column" : 42
                                               }
                                             )
                                           },
@@ -3862,10 +3735,8 @@
                                                 "pointer" : 91,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 42
                                                   },
                                                   {
-                                                    "column" : 42
                                                   }
                                                 )
                                               },
@@ -3931,7 +3802,6 @@
                                         "column" : 23
                                       },
                                       {
-                                        "column" : 23
                                       }
                                     ),
                                     "is_implicit" : true
@@ -4006,10 +3876,8 @@
                                                     "pointer" : 90,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 42
                                                       },
                                                       {
-                                                        "column" : 42
                                                       }
                                                     )
                                                   },
@@ -4019,10 +3887,8 @@
                                                         "pointer" : 91,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 42
                                                           },
                                                           {
-                                                            "column" : 42
                                                           }
                                                         )
                                                       },
@@ -4085,7 +3951,6 @@
                                             "column" : 24
                                           },
                                           {
-                                            "column" : 24
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -4116,7 +3981,6 @@
                                             "column" : 23
                                           },
                                           {
-                                            "column" : 23
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -4148,10 +4012,8 @@
                                         "parent_pointer" : 95,
                                         "source_range" : (
                                           {
-                                            "column" : 23
                                           },
                                           {
-                                            "column" : 23
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -4179,10 +4041,8 @@
                                               "pointer" : 102,
                                               "source_range" : (
                                                 {
-                                                  "column" : 23
                                                 },
                                                 {
-                                                  "column" : 23
                                                 }
                                               )
                                             },
@@ -4211,10 +4071,8 @@
                                         "parent_pointer" : 95,
                                         "source_range" : (
                                           {
-                                            "column" : 23
                                           },
                                           {
-                                            "column" : 23
                                           }
                                         ),
                                         "is_implicit" : true,
@@ -4244,10 +4102,8 @@
                                               "pointer" : 106,
                                               "source_range" : (
                                                 {
-                                                  "column" : 23
                                                 },
                                                 {
-                                                  "column" : 23
                                                 }
                                               ),
                                               "is_used" : true,
@@ -4273,10 +4129,8 @@
                                             "pointer" : 108,
                                             "source_range" : (
                                               {
-                                                "column" : 23
                                               },
                                               {
-                                                "column" : 23
                                               }
                                             )
                                           },
@@ -4305,10 +4159,8 @@
                                             }>,
                                             "source_range" : (
                                               {
-                                                "column" : 23
                                               },
                                               {
-                                                "column" : 23
                                               }
                                             ),
                                             "init_expr" : <"ImplicitCastExpr" : (
@@ -4316,10 +4168,8 @@
                                                 "pointer" : 109,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 23
                                                   },
                                                   {
-                                                    "column" : 23
                                                   }
                                                 )
                                               },
@@ -4329,10 +4179,8 @@
                                                     "pointer" : 110,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 23
                                                       },
                                                       {
-                                                        "column" : 23
                                                       }
                                                     )
                                                   },
@@ -4342,10 +4190,8 @@
                                                         "pointer" : 111,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 23
                                                           },
                                                           {
-                                                            "column" : 23
                                                           }
                                                         )
                                                       },
@@ -4355,10 +4201,8 @@
                                                             "pointer" : 112,
                                                             "source_range" : (
                                                               {
-                                                                "column" : 23
                                                               },
                                                               {
-                                                                "column" : 23
                                                               }
                                                             )
                                                           },
@@ -4533,10 +4377,8 @@
                                                 "pointer" : 87,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 28
                                                   },
                                                   {
-                                                    "column" : 28
                                                   }
                                                 )
                                               },
@@ -4575,7 +4417,6 @@
                                             "column" : 24
                                           },
                                           {
-                                            "column" : 24
                                           }
                                         )
                                       }
@@ -4716,7 +4557,6 @@
                                             "column" : 28
                                           },
                                           {
-                                            "column" : 28
                                           }
                                         )
                                       },
@@ -4765,10 +4605,8 @@
                                                 "pointer" : 90,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 42
                                                   },
                                                   {
-                                                    "column" : 42
                                                   }
                                                 )
                                               },
@@ -4778,10 +4616,8 @@
                                                     "pointer" : 91,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 42
                                                       },
                                                       {
-                                                        "column" : 42
                                                       }
                                                     )
                                                   },
@@ -4847,7 +4683,6 @@
                                             "column" : 23
                                           },
                                           {
-                                            "column" : 23
                                           }
                                         ),
                                         "is_implicit" : true
@@ -4922,10 +4757,8 @@
                                                         "pointer" : 90,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 42
                                                           },
                                                           {
-                                                            "column" : 42
                                                           }
                                                         )
                                                       },
@@ -4935,10 +4768,8 @@
                                                             "pointer" : 91,
                                                             "source_range" : (
                                                               {
-                                                                "column" : 42
                                                               },
                                                               {
-                                                                "column" : 42
                                                               }
                                                             )
                                                           },
@@ -5001,7 +4832,6 @@
                                                 "column" : 24
                                               },
                                               {
-                                                "column" : 24
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -5032,7 +4862,6 @@
                                                 "column" : 23
                                               },
                                               {
-                                                "column" : 23
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -5064,10 +4893,8 @@
                                             "parent_pointer" : 95,
                                             "source_range" : (
                                               {
-                                                "column" : 23
                                               },
                                               {
-                                                "column" : 23
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -5095,10 +4922,8 @@
                                                   "pointer" : 102,
                                                   "source_range" : (
                                                     {
-                                                      "column" : 23
                                                     },
                                                     {
-                                                      "column" : 23
                                                     }
                                                   )
                                                 },
@@ -5127,10 +4952,8 @@
                                             "parent_pointer" : 95,
                                             "source_range" : (
                                               {
-                                                "column" : 23
                                               },
                                               {
-                                                "column" : 23
                                               }
                                             ),
                                             "is_implicit" : true,
@@ -5160,10 +4983,8 @@
                                                   "pointer" : 106,
                                                   "source_range" : (
                                                     {
-                                                      "column" : 23
                                                     },
                                                     {
-                                                      "column" : 23
                                                     }
                                                   ),
                                                   "is_used" : true,
@@ -5189,10 +5010,8 @@
                                                 "pointer" : 108,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 23
                                                   },
                                                   {
-                                                    "column" : 23
                                                   }
                                                 )
                                               },
@@ -5221,10 +5040,8 @@
                                                 }>,
                                                 "source_range" : (
                                                   {
-                                                    "column" : 23
                                                   },
                                                   {
-                                                    "column" : 23
                                                   }
                                                 ),
                                                 "init_expr" : <"ImplicitCastExpr" : (
@@ -5232,10 +5049,8 @@
                                                     "pointer" : 109,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 23
                                                       },
                                                       {
-                                                        "column" : 23
                                                       }
                                                     )
                                                   },
@@ -5245,10 +5060,8 @@
                                                         "pointer" : 110,
                                                         "source_range" : (
                                                           {
-                                                            "column" : 23
                                                           },
                                                           {
-                                                            "column" : 23
                                                           }
                                                         )
                                                       },
@@ -5258,10 +5071,8 @@
                                                             "pointer" : 111,
                                                             "source_range" : (
                                                               {
-                                                                "column" : 23
                                                               },
                                                               {
-                                                                "column" : 23
                                                               }
                                                             )
                                                           },
@@ -5271,10 +5082,8 @@
                                                                 "pointer" : 112,
                                                                 "source_range" : (
                                                                   {
-                                                                    "column" : 23
                                                                   },
                                                                   {
-                                                                    "column" : 23
                                                                   }
                                                                 )
                                                               },
@@ -5449,10 +5258,8 @@
                                                     "pointer" : 87,
                                                     "source_range" : (
                                                       {
-                                                        "column" : 28
                                                       },
                                                       {
-                                                        "column" : 28
                                                       }
                                                     )
                                                   },
@@ -5491,7 +5298,6 @@
                                                 "column" : 24
                                               },
                                               {
-                                                "column" : 24
                                               }
                                             )
                                           }
@@ -5570,10 +5376,8 @@
                     "pointer" : 116,
                     "source_range" : (
                       {
-                        "column" : 10
                       },
                       {
-                        "column" : 10
                       }
                     )
                   },

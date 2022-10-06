@@ -331,7 +331,6 @@
                       "column" : 8
                     },
                     {
-                      "column" : 8
                     }
                   ],
                   "is_implicit" : true,
@@ -360,10 +359,8 @@
                       "pointer" : 21,
                       "source_range" : [
                         {
-                          "column" : 8
                         },
                         {
-                          "column" : 8
                         }
                       ]
                     },
@@ -380,10 +377,8 @@
                   "parent_pointer" : 12,
                   "source_range" : [
                     {
-                      "column" : 8
                     },
                     {
-                      "column" : 8
                     }
                   ],
                   "is_implicit" : true,
@@ -410,10 +405,8 @@
                         "pointer" : 24,
                         "source_range" : [
                           {
-                            "column" : 8
                           },
                           {
-                            "column" : 8
                           }
                         ]
                       },
@@ -442,10 +435,8 @@
                   "parent_pointer" : 12,
                   "source_range" : [
                     {
-                      "column" : 8
                     },
                     {
-                      "column" : 8
                     }
                   ],
                   "is_implicit" : true,
@@ -472,10 +463,8 @@
                         "pointer" : 28,
                         "source_range" : [
                           {
-                            "column" : 8
                           },
                           {
-                            "column" : 8
                           }
                         ]
                       },
@@ -555,10 +544,8 @@
             "pointer" : 33,
             "source_range" : [
               {
-                "column" : 8
               },
               {
-                "column" : 8
               }
             ]
           },

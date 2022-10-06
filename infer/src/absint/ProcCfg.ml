@@ -296,28 +296,34 @@ module Exceptional = struct
   let wto (pdesc, _) = WTO.make pdesc
 end
 
-(** Forward CFG with exceptional control-flow for throw exception node only*)
-module ExceptionalThrowOnly = struct
+(** Forward CFG with exceptional control-flow for exception handler node only*)
+module ExceptionalHandlerOnly = struct
   include Exceptional
 
-  (** We fold the exception flow only when the throw node is encountered and exn is returned. Under
-      this circumstances, resources could be disposed in finaly black through exception sink node *)
+  (** We fold the exception flow only when the last exn node is not a exception sink node. Under
+      this circumstances, resources could be disposed in finaly block through exception flow *)
   let fold_normal_or_exn_succs fold_normal_alpha fold_exceptional t n ~init ~f =
     let choose_normal_or_exn_succs node =
-      let instrs = Procdesc.Node.get_instrs node in
-      (* Ensure throw exception node by verifying the third from the last instruction in the CFG
-         node has exception returned *)
-      let instr_count = Instrs.count instrs - 3 in
-      let get_last_instr () =
-        if instr_count >= 0 then Instrs.nth_exn instrs instr_count
-        else Instrs.last instrs |> Option.value ~default:Sil.skip_instr
+      let last_succs = List.last (Procdesc.Node.get_succs node) in
+      let last_exn one_node = List.last (Procdesc.Node.get_exn one_node) in
+      let exception_node_kind exn_node = Exceptional.Node.kind exn_node in
+      let is_last_exn_exception_handler =
+        match last_succs with
+        | Some succs -> (
+          match last_exn succs with
+          | Some last_exn_of_succs ->
+              Procdesc.Node.equal_nodekind (exception_node_kind node) Procdesc.Node.exn_handler_kind
+              && not
+                   (Procdesc.Node.equal_nodekind
+                      (exception_node_kind last_exn_of_succs)
+                      Procdesc.Node.exn_handler_kind )
+          | _ ->
+              false )
+        | _ ->
+            Procdesc.Node.equal_nodekind (exception_node_kind node) Procdesc.Node.exn_handler_kind
       in
-      let last_instr = get_last_instr () in
-      match last_instr with
-      | Sil.Store {e1= Exp.Lvar pvar; e2= Exp.Exn _} when Pvar.is_return pvar ->
-          fold_exceptional t node ~init ~f
-      | _ ->
-          fold_normal_alpha t node ~init ~f
+      if is_last_exn_exception_handler then fold_exceptional t node ~init ~f
+      else fold_normal_alpha t node ~init ~f
     in
     choose_normal_or_exn_succs n
 

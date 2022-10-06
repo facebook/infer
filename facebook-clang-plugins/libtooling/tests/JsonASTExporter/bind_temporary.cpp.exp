@@ -300,7 +300,6 @@
                 "column" : 8
               },
               {
-                "column" : 8
               }
             ],
             "is_implicit" : true,
@@ -327,10 +326,8 @@
                   "pointer" : 19,
                   "source_range" : [
                     {
-                      "column" : 8
                     },
                     {
-                      "column" : 8
                     }
                   ]
                 },

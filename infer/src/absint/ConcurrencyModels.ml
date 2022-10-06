@@ -345,6 +345,7 @@ let is_android_lifecycle_method tenv pname =
            | CppClass _
            | CSharpClass _
            | ErlangType _
+           | HackClass _
            | ObjcClass _
            | ObjcProtocol _ ->
                false

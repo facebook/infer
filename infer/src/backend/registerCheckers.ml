@@ -202,6 +202,10 @@ let all_checkers =
              Payloads.Fields.cost ConfigImpactAnalysis.checker
          in
          [(checker, Clang); (checker, Java)] ) }
+  ; { checker= SimpleShape
+    ; callbacks=
+        (let checker = intraprocedural SimpleShape.checker in
+         [(checker, Erlang)] ) }
   ; { checker= SimpleLineage
     ; callbacks=
         (let checker = interprocedural Payloads.Fields.simple_lineage SimpleLineage.checker in

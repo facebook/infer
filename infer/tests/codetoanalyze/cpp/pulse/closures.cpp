@@ -431,3 +431,17 @@ void capture_false_by_value_ok() {
   const auto& f = get_lambda(false);
   f();
 }
+
+int FP_update_inside_lambda_visible_outside_ok() {
+  int x = 0; // there are two variables x in the symbolic state `roots={ &x=v3,
+             // &x=v1 }`
+  auto f = [&xx = x]() {
+    xx++;
+  }; // one variable disappear because of dealloc instruction
+  x = 7; // again there are two variables x in the symbolic state
+  f();
+  if (x != 8) {
+    int* x = nullptr;
+    return *x;
+  }
+}
