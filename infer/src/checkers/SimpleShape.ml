@@ -72,15 +72,23 @@ module Shape : sig
         the result). *)
   end
 end = struct
-  let pp_hashtbl pp_key pp_value fmt hashtbl =
-    let sep = Fmt.any ";@ " in
-    let pp_binding pp_key pp_value fmt (key, value) =
-      Format.fprintf fmt "@[%a -> %a@]" pp_key key pp_value value
-    in
+  (* Pretty-printing *)
+
+  let pp_arrow = Fmt.any " ->@ "
+
+  let pp_colon = Fmt.any ":@ "
+
+  let pp_binding ~bind pp_key pp_value fmt (key, value) =
+    Format.fprintf fmt "@[%a%a%a@]" pp_key key bind () pp_value value
+
+
+  let pp_hashtbl ~bind pp_key pp_value fmt hashtbl =
+    let sep = Fmt.semi in
+    let pp_binding = pp_binding ~bind pp_key pp_value in
     Format.fprintf fmt "@[(%a)@]"
       (Fmt.iter_bindings ~sep
          (fun f -> Hashtbl.iteri ~f:(fun ~key ~data -> f key data))
-         (pp_binding pp_key pp_value) )
+         pp_binding )
       hashtbl
 
 
@@ -113,8 +121,9 @@ end = struct
 
     let pp fmt {var_shape; shape_fields} =
       Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPE@;@[%a@]@]@;@[<v4>SHAPE_FIELDS@;@[%a@]@]@]@;"
-        (pp_hashtbl Var.pp pp_shape) var_shape
-        (pp_hashtbl Shape_id.pp (pp_hashtbl Fieldname.pp pp_shape))
+        (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
+        var_shape
+        (pp_hashtbl ~bind:pp_arrow Shape_id.pp (pp_hashtbl ~bind:pp_colon Fieldname.pp pp_shape))
         shape_fields
 
 
