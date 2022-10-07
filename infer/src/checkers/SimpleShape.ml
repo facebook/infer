@@ -54,33 +54,41 @@ module Shape : sig
     val create : unit -> t
     (** Create a fresh environment with no known variable nor shape fields. *)
 
-    val var_shape : Var.t -> t -> shape
+    val var_shape : t -> Var.t -> shape
     (** Returns the shape of a variable. If the variable is unknown in the environment, a fresh
         shape will be created, associated to the variable, and returned.
 
         Will always return a fresh shape for the `_` anonymous erlang variable. *)
 
-    val field_shape : shape -> Fieldname.t -> t -> shape
+    val field_shape : t -> shape -> Fieldname.t -> shape
     (** Given a shape, a subscripted field and an environment, returns the shape of the field
         content. If this field is unknown for that shape in the environment, a fresh shape will be
         created, associated to the field and returned. *)
 
-    val unify : shape -> shape -> t -> unit
+    val unify : t -> shape -> shape -> unit
     (** Makes two shapes identical by merging their defined fields (unifying the shapes of common
         fields if needed) and making it so that they will both share the same identical set of
         fields in the future (one can now indifferently refer to any of the shapes as an alias of
         the result). *)
   end
 end = struct
-  let pp_hashtbl pp_key pp_value fmt hashtbl =
-    let sep = Fmt.any ";@ " in
-    let pp_binding pp_key pp_value fmt (key, value) =
-      Format.fprintf fmt "@[%a -> %a@]" pp_key key pp_value value
-    in
+  (* Pretty-printing *)
+
+  let pp_arrow = Fmt.any " ->@ "
+
+  let pp_colon = Fmt.any ":@ "
+
+  let pp_binding ~bind pp_key pp_value fmt (key, value) =
+    Format.fprintf fmt "@[%a%a%a@]" pp_key key bind () pp_value value
+
+
+  let pp_hashtbl ~bind pp_key pp_value fmt hashtbl =
+    let sep = Fmt.semi in
+    let pp_binding = pp_binding ~bind pp_key pp_value in
     Format.fprintf fmt "@[(%a)@]"
       (Fmt.iter_bindings ~sep
          (fun f -> Hashtbl.iteri ~f:(fun ~key ~data -> f key data))
-         (pp_binding pp_key pp_value) )
+         pp_binding )
       hashtbl
 
 
@@ -113,8 +121,9 @@ end = struct
 
     let pp fmt {var_shape; shape_fields} =
       Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPE@;@[%a@]@]@;@[<v4>SHAPE_FIELDS@;@[%a@]@]@]@;"
-        (pp_hashtbl Var.pp pp_shape) var_shape
-        (pp_hashtbl Shape_id.pp (pp_hashtbl Fieldname.pp pp_shape))
+        (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
+        var_shape
+        (pp_hashtbl ~bind:pp_arrow Shape_id.pp (pp_hashtbl ~bind:pp_colon Fieldname.pp pp_shape))
         shape_fields
 
 
@@ -123,7 +132,7 @@ end = struct
       Union_find.create id
 
 
-    let var_shape var {var_shape; _} =
+    let var_shape {var_shape; _} var =
       (* TODO T132509349 -- Hopefully temporary hack: always use fresh (empty) shapes for the anonymous
          variable (otherwise it could lead to spurious unifications between unrelated uses of this
          special variable, and transitively between actual variables). *)
@@ -131,7 +140,7 @@ end = struct
       else Hashtbl.find_or_add ~default:create_shape var_shape var
 
 
-    let field_shape shape fieldname {shape_fields; _} =
+    let field_shape {shape_fields; _} shape fieldname =
       (* Proceed in two steps: retrieve the field set of this shape or create it, then return the shape
          of the asked field or create it. *)
       let id = Union_find.get shape in
@@ -141,7 +150,7 @@ end = struct
       Hashtbl.find_or_add ~default:create_shape field_table fieldname
 
 
-    let rec unify shape shape' ({shape_fields; _} as env) =
+    let rec unify ({shape_fields; _} as env) shape shape' =
       (* We need to explicitly check that we are not trying to unify already unified classes to ensure
          termination. Otherwise, given a recursive shape such as [<0> -> { tail : <0> }], unifying
          [ <0> ] with itself would recursively try to unify its fields, therefore recursively
@@ -157,30 +166,26 @@ end = struct
         let new_id = Union_find.get shape in
         let fields = Hashtbl.find shape_fields id in
         let fields' = Hashtbl.find shape_fields id' in
-        match (fields, fields') with
-        | None, None ->
-            (* None of the unified id had fields => no field to add to the new shape *)
-            ()
-        | Some f, None | None, Some f ->
-            (* We do not know if the new shape id after unifying them is the one that used to have
-               fields, so we explicitly set it *)
-            Hashtbl.set shape_fields ~key:new_id ~data:f
-        | Some fields, Some fields' ->
-            (* Both unified shapes had field: unify them before adding the result to the unified id *)
-            (* Should we remove old shape entries? This could potentially reduce the memory footprint but
-               preliminary experiments seem to show that it is not needed (and extra care has to be taken to not
-               remove it before trying to access its definition). *)
-            Hashtbl.set shape_fields ~key:new_id ~data:(unify_fields fields fields' env)
+        let new_fields =
+          (* Get the existing fields from the unified ids, unifying them if they both had some *)
+          Option.merge ~f:(unify_fields env) fields fields'
+        in
+        (* Remove the fields from the old ids since they won't be needed anymore after they are
+           unified *)
+        Hashtbl.remove shape_fields id ;
+        Hashtbl.remove shape_fields id' ;
+        (* Add the new fields to the new id *)
+        Option.iter ~f:(fun data -> Hashtbl.set shape_fields ~key:new_id ~data) new_fields
 
 
-    and unify_fields fields fields' env =
+    and unify_fields env fields fields' =
       Hashtbl.merge
         ~f:(fun ~key:_ values ->
           match values with
           | `Left shape | `Right shape ->
               Some shape
           | `Both (shape, shape') ->
-              unify shape shape' env ;
+              unify env shape shape' ;
               Some shape )
         fields fields'
   end
@@ -225,12 +230,12 @@ struct
         (* We use fresh ids to represent shapes that do not hold fields. *)
         Shape.Env.create_shape ()
     | Var id ->
-        Shape.Env.var_shape (Var.of_id id) env
+        Shape.Env.var_shape env (Var.of_id id)
     | Lvar pvar ->
-        Shape.Env.var_shape (Var.of_pvar pvar) env
+        Shape.Env.var_shape env (Var.of_pvar pvar)
     | Lfield (e, fieldname, _) ->
         let shape_e = shape_expr e in
-        Shape.Env.field_shape shape_e fieldname env
+        Shape.Env.field_shape env shape_e fieldname
     | Sizeof {dynamic_length= None} ->
         Shape.Env.create_shape ()
     | UnOp (_, e, _) | Exn e | Cast (_, e) | Sizeof {dynamic_length= Some e} ->
@@ -253,9 +258,9 @@ struct
        Note that this might lead to over-approximating the field set of a variable that would be
        reassigned in the program with completely unrelated types. We believe that it does not happen
        with the Erlang translation anyway (and even then would not be a fundamental issue). *)
-    let var_shape = Shape.Env.var_shape var env in
+    let var_shape = Shape.Env.var_shape env var in
     let expr_shape = shape_expr rhs_exp in
-    Shape.Env.unify var_shape expr_shape env
+    Shape.Env.unify env var_shape expr_shape
 
 
   let procname_of_exp (e : Exp.t) : Procname.t option =

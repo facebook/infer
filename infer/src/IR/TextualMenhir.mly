@@ -33,6 +33,7 @@
 %token HANDLERS
 %token INT
 %token JMP
+%token LABRACKET
 %token LBRACKET
 %token LOAD
 %token LPAREN
@@ -40,6 +41,7 @@
 %token NULL
 %token NOT
 %token PRUNE
+%token RABRACKET
 %token RBRACKET
 %token RET
 %token RPAREN
@@ -145,8 +147,8 @@ extends:
 
 declaration:
   | GLOBAL name=vname
-    { let pvar : Pvar.t = {name; kind=Global} in
-      Global pvar }
+    { let global : Global.t = {name} in
+      Global global }
   | TYPE name=tname supers=extends? ioption(EQ) LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
     { let fields =
         List.map l ~f:(fun (typ, name_f) ->
@@ -279,5 +281,5 @@ expression:
     { Call {proc; args; kind= Exp.NonVirtual} }
   | recv=expression DOT proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
     { Exp.call_virtual proc recv args }
-  | LPAREN e=expression COLON t=typ RPAREN
-    { Cast (t, e) }
+  | LABRACKET typ=typ RABRACKET
+    { Typ typ }

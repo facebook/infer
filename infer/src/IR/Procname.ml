@@ -824,14 +824,18 @@ let is_java_anonymous_inner_class_method = is_java_lift Java.is_anonymous_inner_
 
 let is_java_autogen_method = is_java_lift Java.is_autogen_method
 
-let rec is_objc_helper ~f = function
+let rec on_objc_helper ~f ~default = function
   | ObjC_Cpp objc_cpp_pname ->
       f objc_cpp_pname
   | WithAliasingParameters (base, _) | WithFunctionParameters (base, _) ->
-      is_objc_helper ~f base
+      on_objc_helper ~f ~default base
   | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Linters_dummy_method ->
-      false
+      default
 
+
+let is_objc_helper ~f proc_name = on_objc_helper ~f ~default:false proc_name
+
+let get_objc_helper ~f proc_name = on_objc_helper ~f ~default:None proc_name
 
 let is_objc_method = is_objc_helper ~f:ObjC_Cpp.is_objc_method
 
@@ -847,6 +851,12 @@ let is_objc_init =
 
 let is_objc_instance_method =
   is_objc_helper ~f:(function {kind= ObjCInstanceMethod} -> true | _ -> false)
+
+
+let get_objc_class_name proc_name =
+  get_objc_helper proc_name ~f:(fun objc_cpp_pname ->
+      if ObjC_Cpp.is_objc_method objc_cpp_pname then Some (ObjC_Cpp.get_class_name objc_cpp_pname)
+      else None )
 
 
 let of_function_parameter = function

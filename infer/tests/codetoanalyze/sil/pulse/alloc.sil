@@ -4,12 +4,12 @@ type T = { }
 
 define object() : void {
   #entry:
-    n0 = __sil_allocate_T()
+    n0 = __sil_allocate(<T>)
     ret null
 }
 
 define array() : void {
   #entry:
-    n0 = __sil_allocate_array(10)
+    n0 = __sil_allocate_array(<int>,10)
     ret null
 }

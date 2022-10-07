@@ -310,12 +310,57 @@ module PulseTransferFunctions = struct
         astate
 
 
+  (* assume that virtual calls are only made on instance methods where it makes sense, in which case
+     the receiver is always the first argument if present *)
+  let get_receiver _proc_name actuals =
+    match actuals with receiver :: _ -> Some receiver | _ -> None
+
+
+  let get_dynamic_type_name astate v =
+    match AbductiveDomain.AddressAttributes.get_dynamic_type v astate with
+    | Some {desc= Tstruct name} ->
+        Some name
+    | Some t ->
+        L.d_printfln "dynamic type %a of %a is not a Tstruct" (Typ.pp_full Pp.text) t
+          AbstractValue.pp v ;
+        None
+    | None ->
+        L.d_printfln "no dynamic type found for %a" AbstractValue.pp v ;
+        None
+
+
+  let find_override tenv astate actuals proc_name =
+    let open IOption.Let_syntax in
+    let* {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} =
+      get_receiver proc_name actuals
+    in
+    let* type_name = get_dynamic_type_name astate receiver in
+    Tenv.resolve_method
+      ~method_exists:(fun proc_name methods -> List.mem ~equal:Procname.equal methods proc_name)
+      tenv type_name proc_name
+
+
+  let resolve_virtual_call tenv astate actuals proc_name_opt =
+    Option.map proc_name_opt ~f:(fun proc_name ->
+        match find_override tenv astate actuals proc_name with
+        | Some proc_name' ->
+            L.d_printfln "Dynamic dispatch: %a resolved to %a" Procname.pp proc_name Procname.pp
+              proc_name' ;
+            proc_name'
+        | None ->
+            proc_name )
+
+
   let rec dispatch_call_eval_args
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret call_exp
       actuals func_args call_loc flags astate callee_pname =
+    let callee_pname =
+      if flags.CallFlags.cf_virtual then resolve_virtual_call tenv astate func_args callee_pname
+      else callee_pname
+    in
     let astate =
       match (callee_pname, func_args) with
-      | Some callee_pname, [{PulseAliasSpecialization.FuncArg.arg_payload= arg, _}]
+      | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg, _}]
         when Procname.is_std_move callee_pname ->
           AddressAttributes.add_one arg StdMoved astate
       | _, _ ->

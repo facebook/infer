@@ -204,6 +204,9 @@ let matchers : matcher list =
         let s = Procname.to_string proc_name in
         Str.string_match r s 0 )
   in
+  let class_match_prefix prefix (_tenv, proc_name) _ =
+    Procname.get_objc_class_name proc_name |> Option.exists ~f:(String.is_prefix ~prefix)
+  in
   let map_context_tenv f (x, _) = f x in
   [ -"dispatch_sync" <>$ any_arg $++$--> call
   ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UITraitCollection")
@@ -221,7 +224,9 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __objc_get_ref_count) <>$ capt_arg_payload $--> get_ref_count
   ; +BuiltinDecl.(match_builtin __objc_set_ref_count)
     <>$ capt_arg_payload $+ capt_arg_payload $--> set_ref_count
-  ; -"NSObject" &:: "init" <>$ capt_arg_payload $--> Basic.id_first_arg ~desc:"NSObject.init"
+  ; +class_match_prefix "NS"
+    &:: "init" <>$ capt_arg_payload
+    $--> Basic.id_first_arg ~desc:"NSObject.init"
   ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
     &:: "stringWithUTF8String:" <>$ capt_arg_payload $--> construct_string
   ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")

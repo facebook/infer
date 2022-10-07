@@ -11,6 +11,7 @@ module L = Logging
 open PulseBasicInterface
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module BaseDomain = PulseBaseDomain
+module Memory = PulseBaseMemory
 
 type value = AbstractValue.t [@@deriving compare, equal]
 
@@ -183,12 +184,10 @@ end = struct
       match predicate with
       | Builtin op, l, r ->
           Formula.prune_binop ~negated:false op l r pulse_formula >>| fst
-      | LeadsTo, _l, _r ->
-          (* TODO: For now, this considers LeadsTo as always satisfiable. *)
+      | LeadsTo, _, _ | NotLeadsTo, _, _ ->
+          (* These are not evaluated on the path_condition, but should be evaluated after calling
+           * [prune_path], on [pulse_post] *)
           Sat pulse_formula
-      | NotLeadsTo, _, _ ->
-          (* TODO: For now, this considers NotLeadsTo as always unsatisfiable. *)
-          Unsat
     in
     SatUnsat.list_fold ~init:path ~f constr
 
@@ -196,12 +195,87 @@ end = struct
   (* TODO: Replace with a proper type environment. *)
   let default_tenv = Tenv.create ()
 
+  (** Use: [let rep = rep_of_new_eqs new_eqs in rep v]. Evaluating [rep_of_new_eqs new_eqs] is slow
+      but evaluating [rep v] is fast. Only [Formula.Equal] is used; e.g., [Formula.EqZero] is
+      dropped. *)
+  let rep_of_new_eqs (new_eqs : Formula.new_eq list) : value -> value =
+    let module UF =
+      UnionFind.Make
+        (struct
+          type t = value [@@deriving compare, equal]
+
+          let is_simpler_than _ _ = false
+        end)
+        (AbstractValue.Set)
+        (AbstractValue.Map)
+    in
+    let uf =
+      List.fold ~init:UF.empty new_eqs ~f:(fun uf -> function
+        | Formula.Equal (v1, v2) ->
+            let uf, _ = UF.union uf v1 v2 in
+            uf
+        | Formula.EqZero _ ->
+            uf )
+    in
+    fun v -> (UF.find uf v :> value)
+
+
+  (** Returns [true] only if the conjunction [pulse_state]∧[constr] is unsatisfiable. *)
   let is_unsat pulse_state constr =
-    let open SatUnsat.Import in
-    let get_dynamic_type = get_dynamic_type pulse_state in
-    pulse_state.path_condition |> prune_path constr
-    >>= Formula.normalize default_tenv ~get_dynamic_type
-    |> SatUnsat.sat |> Option.is_none
+    let leadsto heap source target =
+      let seen = ref AbstractValue.Set.empty in
+      let rec dfs value =
+        if AbstractValue.equal value target then true
+        else if AbstractValue.Set.mem value !seen then false
+        else (
+          seen := AbstractValue.Set.add value !seen ;
+          match Memory.find_opt value heap with
+          | None ->
+              false
+          | Some edges ->
+              Memory.Edges.exists edges ~f:(function _access, (to_value, _history) -> dfs to_value)
+          )
+      in
+      dfs source
+    in
+    let simplified =
+      let open SatUnsat.Import in
+      let* path_condition = prune_path constr pulse_state.path_condition in
+      let* path_condition, new_eqs =
+        let get_dynamic_type = get_dynamic_type pulse_state in
+        Formula.normalize default_tenv ~get_dynamic_type path_condition
+      in
+      let rep = rep_of_new_eqs new_eqs in
+      let incorporate_eq heap (eq : Formula.new_eq) =
+        match eq with
+        | Equal (v1, v2) ->
+            let w = rep v2 in
+            let* heap = Memory.subst_var (v1, w) heap in
+            let* heap = Memory.subst_var (v2, w) heap in
+            Sat heap
+        | EqZero _ ->
+            (* TODO: Detect more contradictions here. *)
+            Sat heap
+      in
+      let* heap = SatUnsat.list_fold ~init:pulse_state.pulse_post.heap ~f:incorporate_eq new_eqs in
+      (* Note: This checks that non/reachability is implied -- a stronger check. *)
+      let check_reachability path_condition predicate =
+        match predicate with
+        | LeadsTo, Formula.AbstractValueOperand l, Formula.AbstractValueOperand r ->
+            if leadsto heap (rep l) (rep r) then Sat path_condition else Unsat
+        | NotLeadsTo, Formula.AbstractValueOperand l, Formula.AbstractValueOperand r ->
+            if leadsto heap (rep l) (rep r) then Unsat else Sat path_condition
+        | LeadsTo, Formula.ConstOperand _, _
+        | LeadsTo, _, Formula.ConstOperand _
+        | NotLeadsTo, Formula.ConstOperand _, _
+        | NotLeadsTo, _, Formula.ConstOperand _ ->
+            Unsat (* TODO: disallow such cases by (OCaml) typing, and don't parse it *)
+        | _ ->
+            Sat path_condition
+      in
+      SatUnsat.list_fold ~init:path_condition ~f:check_reachability constr
+    in
+    Option.is_none (SatUnsat.sat simplified)
 
 
   let pp_operator f operator =
@@ -215,14 +289,14 @@ end = struct
 
 
   let pp_predicate f (op, l, r) =
-    F.fprintf f "@[%a%a%a@]" PulseFormula.pp_operand l pp_operator op PulseFormula.pp_operand r
+    F.fprintf f "@[%a%a%a@]" Formula.pp_operand l pp_operator op Formula.pp_operand r
 
 
   let pp = Pp.seq ~sep:"∧" pp_predicate
 
   let eliminate_exists ~keep constr =
     (* TODO(rgrigore): replace the current weak approximation *)
-    let is_live_operand : PulseFormula.operand -> bool = function
+    let is_live_operand : Formula.operand -> bool = function
       | AbstractValueOperand v ->
           AbstractValue.Set.mem v keep
       | ConstOperand _ ->

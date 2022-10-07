@@ -81,6 +81,8 @@ rule main = parse
         { INT }
   | "jmp"
         { JMP }
+  | "<"
+        { LABRACKET }
   | "{"
         { LBRACKET }
   | "("
@@ -95,6 +97,8 @@ rule main = parse
         { NOT }
   | "prune"
         { PRUNE }
+  | ">"
+        { RABRACKET }
   | "}"
         { RBRACKET }
   | "ret"

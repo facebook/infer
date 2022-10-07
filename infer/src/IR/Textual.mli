@@ -73,10 +73,8 @@ module Procname : sig
   val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
 end
 
-module Pvar : sig
-  type kind = Global | Local of Procname.t
-
-  type t = {name: VarName.t; kind: kind}
+module Global : sig
+  type t = {name: VarName.t}
 end
 
 module Fieldname : sig
@@ -95,7 +93,7 @@ module Exp : sig
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
     | Call of {proc: Procname.qualified_name; args: t list; kind: call_kind}
-    | Cast of Typ.t * t
+    | Typ of Typ.t
 
   val call_virtual : Procname.qualified_name -> t -> t list -> t
 
@@ -164,7 +162,11 @@ module Attr : sig
 end
 
 module Module : sig
-  type decl = Global of Pvar.t | Struct of Struct.t | Procname of Procname.t | Proc of Procdesc.t
+  type decl =
+    | Global of Global.t
+    | Struct of Struct.t
+    | Procname of Procname.t
+    | Proc of Procdesc.t
 
   type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
 
