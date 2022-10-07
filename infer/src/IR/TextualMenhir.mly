@@ -33,6 +33,7 @@
 %token HANDLERS
 %token INT
 %token JMP
+%token LABRACKET
 %token LBRACKET
 %token LOAD
 %token LPAREN
@@ -40,6 +41,7 @@
 %token NULL
 %token NOT
 %token PRUNE
+%token RABRACKET
 %token RBRACKET
 %token RET
 %token RPAREN
@@ -279,5 +281,5 @@ expression:
     { Call {proc; args; kind= Exp.NonVirtual} }
   | recv=expression DOT proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
     { Exp.call_virtual proc recv args }
-  | LPAREN e=expression COLON t=typ RPAREN
-    { Cast (t, e) }
+  | LABRACKET typ=typ RABRACKET
+    { Typ typ }

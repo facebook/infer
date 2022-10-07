@@ -95,7 +95,7 @@ module Exp : sig
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
     | Call of {proc: Procname.qualified_name; args: t list; kind: call_kind}
-    | Cast of Typ.t * t
+    | Typ of Typ.t
 
   val call_virtual : Procname.qualified_name -> t -> t list -> t
 

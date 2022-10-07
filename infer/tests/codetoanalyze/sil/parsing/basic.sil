@@ -37,3 +37,13 @@ define unreachable_example(i: int) : void {
     prune ! __sil_lt(n0, 0)
     unreachable
 }
+
+
+define type_as_expr() : void {
+  #entry:
+    n0 = __sil_allocate_array(<node>, 10)
+    n1 = __sil_allocate(<node>)
+    n2 = __sil_cast(<node>, n1)
+    n3 = __sil_allocate_array(<node>, 5, 3)
+    ret n2
+}

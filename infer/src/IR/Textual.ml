@@ -106,9 +106,11 @@ module ProcBaseName : COMMON_NAME = Name
 
 module FieldBaseName : COMMON_NAME = Name
 
-let builtin_allocate_prefix = "__sil_allocate_"
+let builtin_allocate = "__sil_allocate"
 
 let builtin_allocate_array = "__sil_allocate_array"
+
+let builtin_cast = "__sil_cast"
 
 module TypeName : sig
   include COMMON_NAME
@@ -116,10 +118,6 @@ module TypeName : sig
   val of_sil : Typ.Name.t -> t
 
   val to_sil : Lang.t -> t -> Typ.Name.t
-
-  val java_lang_object : Typ.Name.t
-
-  val allocate_buitin_to_java_sil : ProcBaseName.t -> Typ.Name.t
 end = struct
   include Name
 
@@ -137,24 +135,12 @@ end = struct
     JavaClass (replace_2colons_with_dot string |> JavaClassName.from_string)
 
 
-  let java_lang_object : Typ.Name.t = JavaClass (JavaClassName.from_string "java.lang.Object")
-
   let to_sil (lang : Lang.t) {value} : Typ.Name.t =
     match lang with
     | Java ->
         string_to_java_sil value
     | Hack ->
         HackClass (HackClassName.make value)
-
-
-  let allocate_buitin_to_java_sil (proc : ProcBaseName.t) : Typ.Name.t =
-    let prefix_length = String.length builtin_allocate_prefix in
-    let length = String.length proc.value in
-    let classname =
-      String.sub proc.value ~pos:prefix_length ~len:(length - prefix_length)
-      |> replace_2colons_with_dot
-    in
-    string_to_java_sil classname
 end
 
 module VarName : COMMON_NAME = Name
@@ -389,25 +375,16 @@ module Procname = struct
           pname
 
 
-  let make_toplevel_name name : qualified_name = {enclosing_class= TopLevel; name}
-
-  let make_builtin ~name ~formals_types ~result_type =
-    let qualified_name : qualified_name = make_toplevel_name name in
-    {qualified_name; formals_types; result_type}
+  let make_toplevel_name string loc : qualified_name =
+    let name : ProcBaseName.t = {value= string; loc} in
+    {enclosing_class= TopLevel; name}
 
 
-  let make_allocate (tname : TypeName.t) =
-    let name : ProcBaseName.t =
-      {value= builtin_allocate_prefix ^ tname.value; loc= Location.Unknown}
-    in
-    make_builtin ~name ~formals_types:[] ~result_type:(Ptr (Struct tname))
+  let allocate_object_name = make_toplevel_name builtin_allocate Location.Unknown
 
+  let allocate_array_name = make_toplevel_name builtin_allocate_array Location.Unknown
 
-  let make_allocate_array (typ : Typ.t) =
-    (* TODO: make usage of the content type in the procedure name *)
-    let name : ProcBaseName.t = {value= builtin_allocate_array; loc= Location.Unknown} in
-    make_builtin ~name ~formals_types:[] ~result_type:(Ptr (Array typ))
-
+  let cast_name = make_toplevel_name builtin_cast Location.Unknown
 
   let unop_table : (Unop.t * string) list =
     [(Neg, "__sil_neg"); (BNot, "__sil_bnot"); (LNot, "__sil_lnot")]
@@ -419,8 +396,7 @@ module Procname = struct
 
   let of_unop unop =
     let value = List.Assoc.find_exn ~equal:Unop.equal unop_table unop in
-    let name : ProcBaseName.t = {value; loc= Location.Unknown} in
-    make_toplevel_name name
+    make_toplevel_name value Location.Unknown
 
 
   let to_unop ({enclosing_class; name} : qualified_name) : Unop.t option =
@@ -506,33 +482,28 @@ module Procname = struct
 
   let of_binop binop =
     let value = Map.Poly.find_exn binop_map binop in
-    let name : ProcBaseName.t = {value; loc= Location.Unknown} in
-    make_toplevel_name name
+    make_toplevel_name value Location.Unknown
 
 
   let binop_inverse_map = inverse_assoc_list binop_table |> Map.Poly.of_alist_exn
 
-  let is_allocate_object_builtin ({enclosing_class; name} : qualified_name) =
-    match enclosing_class with
-    | TopLevel ->
-        String.is_prefix ~prefix:builtin_allocate_prefix name.value
-    | _ ->
-        false
+  let is_allocate_object_builtin qualified_name =
+    equal_qualified_name allocate_object_name qualified_name
 
 
-  let is_allocate_array_builtin ({enclosing_class; name} : qualified_name) =
-    match enclosing_class with
-    | TopLevel ->
-        String.equal builtin_allocate_array name.value
-    | _ ->
-        false
+  let is_allocate_array_builtin qualified_name =
+    equal_qualified_name allocate_array_name qualified_name
 
+
+  let is_cast_builtin qualified_name = equal_qualified_name cast_name qualified_name
 
   let is_allocate_builtin qualified_name =
     is_allocate_object_builtin qualified_name || is_allocate_array_builtin qualified_name
 
 
-  let is_sil_instr ({enclosing_class; name} : qualified_name) =
+  let is_side_effect_free_sil_expr ({enclosing_class; name} as qualified_name : qualified_name) =
+    is_cast_builtin qualified_name
+    ||
     match enclosing_class with
     | TopLevel ->
         let name = name.value in
@@ -542,7 +513,7 @@ module Procname = struct
         false
 
 
-  let is_not_regular_proc proc = is_allocate_builtin proc || is_sil_instr proc
+  let is_not_regular_proc proc = is_allocate_builtin proc || is_side_effect_free_sil_expr proc
 
   let to_binop ({enclosing_class; name} : qualified_name) : Binop.t option =
     match enclosing_class with TopLevel -> Map.Poly.find binop_inverse_map name.value | _ -> None
@@ -778,13 +749,15 @@ module Exp = struct
     (*  | Sizeof of sizeof_data *)
     | Const of Const.t
     | Call of {proc: Procname.qualified_name; args: t list; kind: call_kind}
-    | Cast of Typ.t * t
+    | Typ of Typ.t
 
   let call_non_virtual proc args = Call {proc; args; kind= NonVirtual}
 
   let call_virtual proc recv args = Call {proc; args= recv :: args; kind= Virtual}
 
   let not exp = call_non_virtual (Procname.of_unop Unop.LNot) [exp]
+
+  let cast typ exp = call_non_virtual Procname.cast_name [Typ typ; exp]
 
   let rec of_sil decls tenv (e : Exp.t) =
     match e with
@@ -803,7 +776,7 @@ module Exp = struct
     | Const c ->
         Const (Const.of_sil c)
     | Cast (typ, e) ->
-        Cast (Typ.of_sil typ, of_sil decls tenv e)
+        cast (Typ.of_sil typ) (of_sil decls tenv e)
     | Lvar pvar ->
         let pvar = Pvar.of_sil pvar in
         if Pvar.is_global pvar then Decls.declare_global decls pvar ;
@@ -840,17 +813,17 @@ module Exp = struct
             L.die InternalError "virtual call with 0 args: %a" Procname.pp_qualified_name proc )
       | NonVirtual ->
           F.fprintf fmt "%a%a" Procname.pp_qualified_name proc pp_list args )
-    | Cast (typ, e) ->
-        F.fprintf fmt "(%a: %a)" pp e Typ.pp typ
+    | Typ typ ->
+        F.fprintf fmt "<%a>" Typ.pp typ
 
 
   and pp_list fmt l = F.fprintf fmt "(%a)" (pp_list_with_comma pp) l
 
   let rec do_not_contain_regular_call exp =
     match exp with
-    | Var _ | Lvar _ | Const _ ->
+    | Var _ | Lvar _ | Const _ | Typ _ ->
         true
-    | Field {exp} | Cast (_, exp) ->
+    | Field {exp} ->
         do_not_contain_regular_call exp
     | Index (exp1, exp2) ->
         do_not_contain_regular_call exp1 && do_not_contain_regular_call exp2
@@ -882,6 +855,8 @@ module Exp = struct
           Lindex (aux exp1, aux exp2)
       | Const const ->
           Const (Const.to_sil const)
+      | Call {proc; args= [Typ typ; exp]} when Procname.is_cast_builtin proc ->
+          Cast (Typ.to_sil lang typ, aux exp)
       | Call {proc; args} -> (
         match
           (Decls.get_procname decls_env proc, Procname.to_unop proc, Procname.to_binop proc, args)
@@ -899,8 +874,8 @@ module Exp = struct
             L.die InternalError "Internal error: procname %a has an unexpected property"
               Procname.pp_qualified_name proc
             (* FIXME: transform instruction to put call at head of expressions *) )
-      | Cast (typ, exp) ->
-          Cast (Typ.to_sil lang typ, aux exp)
+      | Typ _ ->
+          L.die InternalError "Internal error: type expressions should not appear outside builtins"
     in
     aux exp
 
@@ -910,7 +885,7 @@ module Exp = struct
       match exp with
       | Var id ->
           Ident.Set.add id acc
-      | Lvar _ | Const _ ->
+      | Lvar _ | Const _ | Typ _ ->
           acc
       | Field {exp} ->
           aux acc exp
@@ -918,8 +893,6 @@ module Exp = struct
           aux (aux acc exp1) exp2
       | Call {args} ->
           List.fold args ~init:acc ~f:aux
-      | Cast (_, exp) ->
-          aux acc exp
     in
     aux Ident.Set.empty exp
 
@@ -928,7 +901,7 @@ module Exp = struct
     match exp with
     | Var id' when Ident.equal id id' ->
         by
-    | Var _ | Lvar _ | Const _ ->
+    | Var _ | Lvar _ | Const _ | Typ _ ->
         exp
     | Field f ->
         Field {f with exp= subst_one f.exp ~id ~by}
@@ -936,15 +909,13 @@ module Exp = struct
         Index (subst_one exp1 ~id ~by, subst_one exp2 ~id ~by)
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> subst_one exp ~id ~by)}
-    | Cast (typ, exp) ->
-        Cast (typ, subst_one exp ~id ~by)
 
 
   let rec subst exp eqs =
     match exp with
     | Var id ->
         Ident.Map.find_opt id eqs |> Option.value ~default:exp
-    | Lvar _ | Const _ ->
+    | Lvar _ | Const _ | Typ _ ->
         exp
     | Field f ->
         Field {f with exp= subst f.exp eqs}
@@ -952,8 +923,6 @@ module Exp = struct
         Index (subst exp1 eqs, subst exp2 eqs)
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> subst exp eqs)}
-    | Cast (typ, exp) ->
-        Cast (typ, subst exp eqs)
 end
 
 module Instr = struct
@@ -992,17 +961,19 @@ module Instr = struct
         Prune {exp= Exp.of_sil decls tenv e; loc= Location.Unknown}
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
-        let procname = TypeName.of_sil name |> Procname.make_allocate in
+        let typ = Typ.Struct (TypeName.of_sil name) in
         Let
           { id= Ident.of_sil id
-          ; exp= Exp.call_non_virtual procname.Procname.qualified_name []
+          ; exp= Exp.call_non_virtual Procname.allocate_object_name [Typ typ]
           ; loc= Location.Unknown }
-    | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ}, _) :: _, _, _)
+    | Call
+        ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ; dynamic_length= Some exp}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new_array()" ->
-        let procname = Typ.of_sil typ |> Procname.make_allocate_array in
+        let typ = Typ.of_sil typ in
         Let
           { id= Ident.of_sil id
-          ; exp= Exp.call_non_virtual procname.Procname.qualified_name []
+          ; exp=
+              Exp.call_non_virtual Procname.allocate_array_name [Typ typ; Exp.of_sil decls tenv exp]
           ; loc= Location.Unknown }
     | Call ((id, _), Const (Cfun pname), args, _, call_flags) ->
         let procname = Procname.of_sil pname in
@@ -1057,8 +1028,9 @@ module Instr = struct
         let e = Exp.to_sil lang decls_env procname exp in
         let loc = Location.to_sil sourcefile loc in
         Prune (e, loc, true, Ik_if {terminated= false})
-    | Let {id; exp= Call {proc; args= []}; loc} when Procname.is_allocate_object_builtin proc ->
-        let typ = SilTyp.mk_struct (TypeName.allocate_buitin_to_java_sil proc.name) in
+    | Let {id; exp= Call {proc; args= [Typ typ]}; loc} when Procname.is_allocate_object_builtin proc
+      ->
+        let typ = Typ.to_sil lang typ in
         let sizeof =
           SilExp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
         in
@@ -1068,13 +1040,15 @@ module Instr = struct
         let loc = Location.to_sil sourcefile loc in
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
-    | Let {id; exp= Call {proc; args= [exp]}; loc} when Procname.is_allocate_array_builtin proc ->
-        let element_typ = SilTyp.mk_struct TypeName.java_lang_object in
+    | Let {id; exp= Call {proc; args= Typ element_typ :: exp :: _}; loc}
+      when Procname.is_allocate_array_builtin proc ->
+        let element_typ = Typ.to_sil lang element_typ in
         let typ = SilTyp.mk_array element_typ in
         let e = Exp.to_sil lang decls_env procname exp in
         let sizeof =
           SilExp.Sizeof {typ; nbytes= None; dynamic_length= Some e; subtype= Subtype.exact}
         in
+        (* TODO(T133560394): check if we need to remove Array constructors in the type typ *)
         let class_type = SilTyp.mk_ptr typ in
         let args = [(sizeof, class_type)] in
         let ret = Ident.to_sil id in
@@ -1658,7 +1632,7 @@ module Transformation = struct
     end in
     let rec flatten_exp (exp : Exp.t) state : Exp.t * State.t =
       match exp with
-      | Var _ | Lvar _ | Const _ ->
+      | Var _ | Lvar _ | Const _ | Typ _ ->
           (exp, state)
       | Field f ->
           let exp, state = flatten_exp f.exp state in
@@ -1669,16 +1643,13 @@ module Transformation = struct
           (Index (exp1, exp2), state)
       | Call {proc; args; kind} ->
           let args, state = flatten_exp_list args state in
-          if Procname.is_sil_instr proc then (Call {proc; args; kind}, state)
+          if Procname.is_side_effect_free_sil_expr proc then (Call {proc; args; kind}, state)
           else
             let fresh = state.State.fresh_ident in
             let new_instr : Instr.t =
               Let {id= fresh; exp= Call {proc; args; kind}; loc= Location.Unknown}
             in
             (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
-      | Cast (typ, exp) ->
-          let exp, state = flatten_exp exp state in
-          (Cast (typ, exp), state)
     and flatten_exp_list exp_list state =
       let exp_list, state =
         List.fold exp_list ~init:([], state) ~f:(fun (args, state) exp ->
@@ -1699,7 +1670,8 @@ module Transformation = struct
       | Prune args ->
           let exp, state = flatten_exp args.exp state in
           State.push_instr (Prune {args with exp}) state
-      | Let {id; exp= Call {proc; args; kind}; loc} when not (Procname.is_sil_instr proc) ->
+      | Let {id; exp= Call {proc; args; kind}; loc}
+        when not (Procname.is_side_effect_free_sil_expr proc) ->
           let args, state = flatten_exp_list args state in
           State.push_instr (Let {id; exp= Call {proc; args; kind}; loc}) state
       | Let {id; exp; loc} ->
@@ -1760,7 +1732,7 @@ module Transformation = struct
               match instr with
               | Load _ | Store _ | Prune _ ->
                   eqs
-              | Let {exp= Call {proc}} when not (Procname.is_sil_instr proc) ->
+              | Let {exp= Call {proc}} when not (Procname.is_side_effect_free_sil_expr proc) ->
                   eqs
               | Let {id; exp} ->
                   Ident.Map.add id exp eqs ) )
@@ -1928,7 +1900,7 @@ module Verification = struct
     in
     let rec verify_exp errors (exp : Exp.t) =
       match exp with
-      | Var _ | Lvar _ | Const _ ->
+      | Var _ | Lvar _ | Const _ | Typ _ ->
           errors
       | Field {exp; tname; fname} ->
           let errors = verify_fieldname errors tname fname in
@@ -1939,8 +1911,6 @@ module Verification = struct
       | Call {proc; args} ->
           let errors = verify_procname errors proc in
           List.fold ~f:verify_exp ~init:errors args
-      | Cast (_, e) ->
-          verify_exp errors e
     in
     let verify_instr errors (instr : Instr.t) =
       match instr with
