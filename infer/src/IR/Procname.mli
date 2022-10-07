@@ -289,6 +289,8 @@ val is_objc_method : t -> bool
 val is_objc_instance_method : t -> bool
 (** Includes specialized objective-c instance methods*)
 
+val get_objc_class_name : t -> string option
+
 val is_std_move : t -> bool
 
 (** Hash tables with proc names as keys. *)
