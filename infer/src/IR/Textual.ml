@@ -143,7 +143,20 @@ end = struct
         HackClass (HackClassName.make value)
 end
 
-module VarName : COMMON_NAME = Name
+module VarName : sig
+  include COMMON_NAME
+
+  val of_pvar : Lang.t -> Pvar.t -> t
+end = struct
+  include Name
+
+  let of_pvar (lang : Lang.t) (pvar : Pvar.t) =
+    match lang with
+    | Java ->
+        Pvar.get_name pvar |> Mangled.to_string |> of_java_name
+    | Hack ->
+        L.die UserError "of_pvar conversion is not supported in Hack mode"
+end
 
 module NodeName : COMMON_NAME = Name
 
@@ -549,41 +562,12 @@ end
 
 let instr_is_return = function Sil.Store {e1= Lvar v} -> Pvar.is_return v | _ -> false
 
-module SilPvar = Pvar
+module Global = struct
+  type t = {name: VarName.t (* TODO (T132620101) add type *)}
 
-module Pvar = struct
-  type kind = Global | Local of Procname.t
-
-  type t = {name: VarName.t; kind: kind}
-
-  let is_global pvar = match pvar.kind with Global -> true | _ -> false
-
-  let to_sil lang {name; kind} =
+  let to_sil {name} =
     let mangled = Mangled.from_string name.value in
-    match kind with
-    | Global ->
-        Pvar.mk_global mangled
-    | Local procname ->
-        let pname = Procname.to_sil lang procname in
-        Pvar.mk mangled pname
-
-
-  let of_sil (pvar : Pvar.t) =
-    let name = Pvar.get_name pvar |> Mangled.to_string |> VarName.of_java_name in
-    let kind =
-      if Pvar.is_global pvar then Global
-      else if Pvar.is_local pvar then
-        match Pvar.get_declaring_function pvar with
-        | Some pname ->
-            Local (Procname.of_sil pname)
-        | _ ->
-            L.die InternalError
-              "Textual conversion of pvar: infeasible case because the var is local"
-      else
-        L.die InternalError
-          "Textual conversion of pvar: in Java frontend, only local and global are generated"
-    in
-    {name; kind}
+    Pvar.mk_global mangled
 end
 
 module Fieldname = struct
@@ -660,7 +644,7 @@ module Decls = struct
   end)
 
   type t =
-    { globals: Pvar.t VarName.Hashtbl.t
+    { globals: Global.t VarName.Hashtbl.t
     ; procnames: Procname.t QualifiedNameHashtbl.t
     ; structs: Struct.t TypeName.Hashtbl.t
     ; sourcefile: SourceFile.t }
@@ -672,8 +656,8 @@ module Decls = struct
     ; sourcefile }
 
 
-  let declare_global decls (pvar : Pvar.t) =
-    VarName.Hashtbl.replace decls.globals pvar.name pvar |> ignore
+  let declare_global decls (global : Global.t) =
+    VarName.Hashtbl.replace decls.globals global.name global |> ignore
 
 
   let declare_procname decls (pname : Procname.t) =
@@ -778,9 +762,11 @@ module Exp = struct
     | Cast (typ, e) ->
         cast (Typ.of_sil typ) (of_sil decls tenv e)
     | Lvar pvar ->
-        let pvar = Pvar.of_sil pvar in
-        if Pvar.is_global pvar then Decls.declare_global decls pvar ;
-        Lvar pvar.name
+        let name = VarName.of_pvar Lang.Java pvar in
+        ( if Pvar.is_global pvar then
+          let global : Global.t = {name} in
+          Decls.declare_global decls global ) ;
+        Lvar name
     | Lfield (e, f, typ) ->
         let typ = Typ.of_sil typ in
         let fieldname = Fieldname.of_sil f typ in
@@ -839,12 +825,14 @@ module Exp = struct
       | Lvar name ->
           let pvar : Pvar.t =
             match Decls.get_global decls_env name with
-            | Some pvar ->
-                pvar
+            | Some global ->
+                Global.to_sil global
             | None ->
-                {name; kind= Local procname}
+                let mangled = Mangled.from_string name.value in
+                let pname = Procname.to_sil lang procname in
+                Pvar.mk mangled pname
           in
-          Lvar (Pvar.to_sil lang pvar)
+          Lvar pvar
       | Field {exp; tname; fname} -> (
         match Decls.get_fieldname decls_env tname fname with
         | None ->
@@ -1135,7 +1123,7 @@ module Terminator = struct
   let to_sil lang decls_env procname pdesc loc t : Sil.instr option =
     match t with
     | Ret exp ->
-        let ret_var = SilPvar.get_ret_pvar (Procname.to_sil lang procname) in
+        let ret_var = Pvar.get_ret_pvar (Procname.to_sil lang procname) in
         let ret_type = Procdesc.get_ret_type pdesc in
         let e2 = Exp.to_sil lang decls_env procname exp in
         Some (Sil.Store {e1= SilExp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2; loc})
@@ -1431,7 +1419,7 @@ module Procdesc = struct
     in
     let start = start_node.label in
     let params =
-      List.map (P.get_pvar_formals pdesc) ~f:(fun (pvar, _) -> (Pvar.of_sil pvar).name)
+      List.map (P.get_pvar_formals pdesc) ~f:(fun (pvar, _) -> VarName.of_pvar Lang.Java pvar)
     in
     let exit_loc = Location.Unknown in
     {procname; nodes; start; params; exit_loc}
@@ -1503,7 +1491,11 @@ module SsaVerification = struct
 end
 
 module Module = struct
-  type decl = Global of Pvar.t | Struct of Struct.t | Procname of Procname.t | Proc of Procdesc.t
+  type decl =
+    | Global of Global.t
+    | Struct of Struct.t
+    | Procname of Procname.t
+    | Proc of Procdesc.t
 
   type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
 

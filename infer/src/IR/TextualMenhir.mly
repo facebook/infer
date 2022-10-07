@@ -147,8 +147,8 @@ extends:
 
 declaration:
   | GLOBAL name=vname
-    { let pvar : Pvar.t = {name; kind=Global} in
-      Global pvar }
+    { let global : Global.t = {name} in
+      Global global }
   | TYPE name=tname supers=extends? ioption(EQ) LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
     { let fields =
         List.map l ~f:(fun (typ, name_f) ->
