@@ -53,7 +53,7 @@ public class DefaultInInterface {
     System.out.println(aAorB.defaultMethod1().toString());
   }
 
-  static void FN_uncertainCallMethod2NPE(int i) {
+  static void uncertainCallMethod2NPE(int i) {
     A aAorB = new A();
     if (i > 0) { // feasible path
       aAorB = new B();

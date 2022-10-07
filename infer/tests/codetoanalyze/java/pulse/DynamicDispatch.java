@@ -120,13 +120,13 @@ public class DynamicDispatch {
       mField = t;
     }
 
-    static void dispatchOnFieldOK_FP() {
+    static void dispatchOnFieldOK() {
       Supertype subtype = new Subtype();
       WithField object = new WithField(subtype);
       object.mField.bar().toString();
     }
 
-    static void dispatchOnFieldBad_FN() {
+    static void dispatchOnFieldBad() {
       Supertype subtype = new Subtype();
       WithField object = new WithField(subtype);
       object.mField.foo().toString();
@@ -153,5 +153,61 @@ public class DynamicDispatch {
   void dynamicResolutionWithVariadicMethodBad() {
     Supertype subtype = new Subtype();
     variadicMethod(subtype, null, null).toString();
+  }
+}
+
+class InheritanceDispatch {
+  class A {
+    int foo() {
+      return 32;
+    }
+  }
+
+  class B extends A {
+    int foo() {
+      return 52;
+    }
+  }
+
+  class C extends B {}
+
+  A getB() {
+    return new B();
+  }
+
+  A getC() {
+    return new C();
+  }
+
+  void dispatch_to_B_ok() {
+    A b = getB();
+    if (b.foo() == 32) {
+      Object o = null;
+      o.toString();
+    }
+  }
+
+  void dispatch_to_B_bad() {
+    A b = getB();
+    if (b.foo() == 52) {
+      Object o = null;
+      o.toString();
+    }
+  }
+
+  void dispatch_to_A_bad() {
+    A a = new A();
+    if (a.foo() == 32) {
+      Object o = null;
+      o.toString();
+    }
+  }
+
+  void dispatch_to_C_bad() {
+    A c = getC();
+    if (c.foo() == 52) {
+      Object o = null;
+      o.toString();
+    }
   }
 }
