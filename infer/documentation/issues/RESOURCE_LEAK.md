@@ -150,7 +150,7 @@ NullPointerException.
 ### Nested_Allocations
 
 When a resource allocation is included as an argument to a constructor, if the
-constructor fails it can leave an an unreachable resource that no one can close.
+constructor fails it can leave an unreachable resource that no one can close.
 
 For example gzipOutputStream = new GZIPOutputStream(new FileOutputStream(out));
 is bad in case the outer constructor, GZIPOutputStream, throws an exception. In

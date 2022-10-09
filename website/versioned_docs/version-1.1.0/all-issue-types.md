@@ -777,7 +777,7 @@ class C {
 
 Action: The preferred action is to ensure that a null value is never returned by
 the method, by changing the code or changing annotations. If this cannot be
-done, add a @Nullable annotation to the the method declaration. This annotation
+done, add a @Nullable annotation to the method declaration. This annotation
 might trigger more warnings in the callers of method m, as the callers must now
 deal with null values.
 
@@ -1732,7 +1732,7 @@ NullPointerException.
 ### Nested_Allocations
 
 When a resource allocation is included as an argument to a constructor, if the
-constructor fails it can leave an an unreachable resource that no one can close.
+constructor fails it can leave an unreachable resource that no one can close.
 
 For example gzipOutputStream = new GZIPOutputStream(new FileOutputStream(out));
 is bad in case the outer constructor, GZIPOutputStream, throws an exception. In
