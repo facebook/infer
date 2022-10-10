@@ -731,7 +731,7 @@ let to_loc_form json : Ast.form option =
       (* _ can appear in record field initializers. Currently we generate a fresh ID
          per record, but if they are inlined, uniqueness is not guaranteed. We do not
          throw an exception because such cases actually appear in OTP code where we
-         process the records, but don't inline their field initializers. *)
+         process the records, but don't inline their field initializers. See T134336886.*)
       let gen_uniq = make_fresh_id_generator () in
       let* field_list = to_list ~f:(to_record_field gen_uniq) fields in
       form loc (Record {name; fields= field_list})
