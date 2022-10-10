@@ -313,6 +313,7 @@ module Reg = struct
   end
 
   module Map = Map
+  module Tbl = Tbl
 
   let invariant x =
     let@ () = Invariant.invariant [%here] x [%sexp_of: t] in

@@ -33,6 +33,7 @@ val is_empty : 'a t -> bool
 val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
 val contains_adjacent_duplicate : eq:('a -> 'a -> bool) -> 'a t -> bool
 val iter : 'a t -> f:('a -> unit) -> unit
+val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
 val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool

@@ -28,3 +28,6 @@ val progress_goal : t -> t
 val dump : ?show_root:bool -> t -> Format.formatter -> unit
 (** Dump a human-readable representation of the history to the given
     formatter, with an indication of the goal-trace root if [show_root]. *)
+
+val validate : t -> Format.formatter -> unit
+val dump_witness : string option ref

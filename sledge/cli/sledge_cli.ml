@@ -216,6 +216,9 @@ let analyze =
   and dump_simplify =
     flag "dump-simplify" (optional int)
       ~doc:"<int> dump simplify query <int> and halt"
+  and dump_witness =
+    flag "dump-witness" (optional string)
+      ~doc:"<file> dump goal witness trace to <file>"
   in
   fun {goal_trace; llair_output} program () ->
     Timer.enabled := stats ;
@@ -253,6 +256,7 @@ let analyze =
     Option.iter dump_query ~f:(fun n -> Solver.dump_query := n) ;
     Option.iter dump_simplify ~f:(fun n ->
         Symbolic_heap.Xsh.dump_simplify := n ) ;
+    History.dump_witness := dump_witness ;
     at_exit (fun () -> Report.coverage pgm) ;
     ( match goal_trace with
     | None ->
@@ -275,6 +279,28 @@ let analyze_cmd =
   let param =
     let open Command.Param in
     anon ("<input>" %: string) >>| unmarshal |*> (common |*> analyze)
+  in
+  command ~summary ~readme param
+
+let validate =
+  Command.Param.return
+  @@ fun history () ->
+  History.validate history Format.std_formatter ;
+  Report.Ok
+
+let validate_cmd =
+  let summary = "validate goal trace witness" in
+  let readme () =
+    "The <input> file must have been produced by `sledge analyze \
+     -dump-witness`."
+  in
+  let unmarshal file =
+    In_channel.with_open_bin file (fun ic : History.t ->
+        Marshal.from_channel ic )
+  in
+  let param =
+    let open Command.Param in
+    anon ("<input>" %: string) >>| unmarshal |*> validate
   in
   command ~summary ~readme param
 
@@ -407,5 +433,6 @@ Command.run ~version:Version.version ~build_info:Version.build_info
      [ ("buck", Sledge_buck.main ~command)
      ; ("llvm", llvm_grp)
      ; ("analyze", analyze_cmd)
+     ; ("validate", validate_cmd)
      ; ("disassemble", disassemble_cmd)
      ; ("smt", smt_cmd) ] )

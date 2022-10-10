@@ -43,3 +43,4 @@ end
 include module type of Infix
 module Set : NSSet.S with type elt = int
 module Map : NSMap.S with type key = int
+module Tbl : HashTable.S with type key = int
