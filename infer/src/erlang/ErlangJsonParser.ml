@@ -15,6 +15,13 @@ type json = Yojson.Safe.t
 
 type 'a parser = json -> 'a option
 
+let make_fresh_id_generator () =
+  let counter = ref 0 in
+  fun () ->
+    counter := !counter + 1 ;
+    !counter
+
+
 let unknown name json =
   L.debug Capture Verbose "ErlangAst.Parse: unknown %s: %s@." name (Yojson.Safe.show json) ;
   None
@@ -199,7 +206,7 @@ let to_function_reference json : Ast.function_reference option =
       unknown "function_reference" json
 
 
-let rec to_expression json : Ast.expression option =
+let rec to_expression (gen_uniq : unit -> int) json : Ast.expression option =
   let expr location simple_expression : Ast.expression option =
     Some {location; simple_expression}
   in
@@ -215,36 +222,36 @@ let rec to_expression json : Ast.expression option =
       expr loc (Literal (Atom atom))
   | `List [`String "bc"; anno; expression; qualifiers] ->
       let* loc = to_loc anno in
-      let* expression = to_expression expression in
-      let* qualifiers = to_list ~f:to_qualifier qualifiers in
+      let* expression = to_expression gen_uniq expression in
+      let* qualifiers = to_list ~f:(to_qualifier gen_uniq) qualifiers in
       expr loc (BitstringComprehension {expression; qualifiers})
   | `List [`String "bin"; anno; elements] ->
       let* loc = to_loc anno in
-      let* elements = to_list ~f:to_bin_element elements in
+      let* elements = to_list ~f:(to_bin_element gen_uniq) elements in
       expr loc (BitstringConstructor elements)
   | `List [`String "block"; anno; body] ->
       let* loc = to_loc anno in
-      let* body = to_body body in
+      let* body = to_body gen_uniq body in
       expr loc (Block body)
   | `List [`String "call"; anno; `List [`String "remote"; _anno2; module_; function_]; args] ->
       let* loc = to_loc anno in
-      let* module_ = to_expression module_ in
-      let* function_ = to_expression function_ in
-      let* args = to_body args in
+      let* module_ = to_expression gen_uniq module_ in
+      let* function_ = to_expression gen_uniq function_ in
+      let* args = to_body gen_uniq args in
       expr loc (Call {module_= Some module_; function_; args})
   | `List [`String "call"; anno; function_; args] ->
       let* loc = to_loc anno in
-      let* function_ = to_expression function_ in
-      let* args = to_body args in
+      let* function_ = to_expression gen_uniq function_ in
+      let* args = to_body gen_uniq args in
       expr loc (Call {module_= None; function_; args})
   | `List [`String "case"; anno; expression; cases] ->
       let* loc = to_loc anno in
-      let* expression = to_expression expression in
-      let* cases = to_list ~f:to_case_clause cases in
+      let* expression = to_expression gen_uniq expression in
+      let* cases = to_list ~f:(to_case_clause gen_uniq) cases in
       expr loc (Case {expression; cases})
   | `List [`String "catch"; anno; expression] ->
       let* loc = to_loc anno in
-      let* expression = to_expression expression in
+      let* expression = to_expression gen_uniq expression in
       expr loc (Catch expression)
   | `List [`String "char"; anno; charlit] ->
       let* loc = to_loc anno in
@@ -252,15 +259,15 @@ let rec to_expression json : Ast.expression option =
       expr loc (Literal (Char charlit))
   | `List [`String "cons"; anno; head; tail] ->
       let* loc = to_loc anno in
-      let* head = to_expression head in
-      let* tail = to_expression tail in
+      let* head = to_expression gen_uniq head in
+      let* tail = to_expression gen_uniq tail in
       expr loc (Cons {head; tail})
   | `List [`String "float"; anno; `Float floatlit] ->
       let* loc = to_loc anno in
       expr loc (Literal (Float floatlit))
   | `List [`String "fun"; anno; `List [`String "clauses"; cases]] ->
       let* loc = to_loc anno in
-      let* cases = to_list ~f:to_case_clause cases in
+      let* cases = to_list ~f:(to_case_clause gen_uniq) cases in
       expr loc (Lambda {name= None; cases; procname= None; captured= None})
   | `List [`String "fun"; anno; `List [`String "function"; function_; arity]] ->
       let* loc = to_loc anno in
@@ -275,7 +282,7 @@ let rec to_expression json : Ast.expression option =
       expr loc (Fun {module_; function_; arity})
   | `List [`String "if"; anno; cases] ->
       let* loc = to_loc anno in
-      let* cases = to_list ~f:to_case_clause cases in
+      let* cases = to_list ~f:(to_case_clause gen_uniq) cases in
       expr loc (If cases)
   | `List [`String "integer"; anno; intlit] ->
       let* loc = to_loc anno in
@@ -283,61 +290,61 @@ let rec to_expression json : Ast.expression option =
       expr loc (Literal (Int intlit))
   | `List [`String "lc"; anno; expression; qualifiers] ->
       let* loc = to_loc anno in
-      let* expression = to_expression expression in
-      let* qualifiers = to_list ~f:to_qualifier qualifiers in
+      let* expression = to_expression gen_uniq expression in
+      let* qualifiers = to_list ~f:(to_qualifier gen_uniq) qualifiers in
       expr loc (ListComprehension {expression; qualifiers})
   | `List [`String "map"; anno; map; updates] ->
       let* loc = to_loc anno in
-      let* map = to_expression map in
-      let* updates = to_list ~f:to_association updates in
+      let* map = to_expression gen_uniq map in
+      let* updates = to_list ~f:(to_association gen_uniq) updates in
       expr loc (Map {map= Some map; updates})
   | `List [`String "map"; anno; updates] ->
       let* loc = to_loc anno in
-      let* updates = to_list ~f:to_association updates in
+      let* updates = to_list ~f:(to_association gen_uniq) updates in
       expr loc (Map {map= None; updates})
   | `List [`String "match"; anno; pattern; body] ->
       let* loc = to_loc anno in
-      let* pattern = to_expression pattern in
-      let* body = to_expression body in
+      let* pattern = to_expression gen_uniq pattern in
+      let* body = to_expression gen_uniq body in
       expr loc (Match {pattern; body})
   | `List [`String "named_fun"; anno; `String name; cases] ->
       let* loc = to_loc anno in
-      let* cases = to_list ~f:to_case_clause cases in
+      let* cases = to_list ~f:(to_case_clause gen_uniq) cases in
       expr loc (Lambda {name= Some name; cases; procname= None; captured= None})
   | `List [`String "nil"; anno] ->
       let* loc = to_loc anno in
       expr loc Nil
   | `List [`String "op"; _anno; `String "+"; argument] ->
-      to_expression argument
+      to_expression gen_uniq argument
   | `List [`String "op"; anno; op; argument] ->
       let* loc = to_loc anno in
       let* op = to_unary_operator op in
-      let* argument = to_expression argument in
+      let* argument = to_expression gen_uniq argument in
       expr loc (UnaryOperator (op, argument))
   | `List [`String "op"; anno; op; left; right] ->
       let* loc = to_loc anno in
       let* op = to_binary_operator op in
-      let* left = to_expression left in
-      let* right = to_expression right in
+      let* left = to_expression gen_uniq left in
+      let* right = to_expression gen_uniq right in
       expr loc (BinaryOperator (left, op, right))
   | `List [`String "receive"; anno; cases; time; handler] ->
       let* loc = to_loc anno in
-      let* cases = to_list ~f:to_case_clause cases in
-      let* time = to_expression time in
-      let* handler = to_body handler in
+      let* cases = to_list ~f:(to_case_clause gen_uniq) cases in
+      let* time = to_expression gen_uniq time in
+      let* handler = to_body gen_uniq handler in
       expr loc (Receive {cases; timeout= Some {time; handler}})
   | `List [`String "receive"; anno; cases] ->
       let* loc = to_loc anno in
-      let* cases = to_list ~f:to_case_clause cases in
+      let* cases = to_list ~f:(to_case_clause gen_uniq) cases in
       expr loc (Receive {cases; timeout= None})
   | `List [`String "record"; anno; `String name; updates] ->
       let* loc = to_loc anno in
-      let* updates = to_list ~f:to_record_update updates in
+      let* updates = to_list ~f:(to_record_update gen_uniq) updates in
       expr loc (RecordUpdate {record= None; name; updates})
   | `List [`String "record"; anno; record; `String name; updates] ->
       let* loc = to_loc anno in
-      let* record = to_expression record in
-      let* updates = to_list ~f:to_record_update updates in
+      let* record = to_expression gen_uniq record in
+      let* updates = to_list ~f:(to_record_update gen_uniq) updates in
       expr loc (RecordUpdate {record= Some record; name; updates})
   | `List
       [ `String "record_field"
@@ -346,7 +353,7 @@ let rec to_expression json : Ast.expression option =
       ; `String name
       ; `List [`String "atom"; _anno; `String field] ] ->
       let* loc = to_loc anno in
-      let* record = to_expression record in
+      let* record = to_expression gen_uniq record in
       expr loc (RecordAccess {record; name; field})
   | `List
       [ `String "record_index"
@@ -363,118 +370,129 @@ let rec to_expression json : Ast.expression option =
       expr loc (Literal (String s))
   | `List [`String "try"; anno; body; ok_cases; catch_cases; after] ->
       let* loc = to_loc anno in
-      let* body = to_body body in
-      let* ok_cases = to_list ~f:to_case_clause ok_cases in
-      let* catch_cases = to_list ~f:to_catch_clause catch_cases in
-      let* after = to_body after in
+      let* body = to_body gen_uniq body in
+      let* ok_cases = to_list ~f:(to_case_clause gen_uniq) ok_cases in
+      let* catch_cases = to_list ~f:(to_catch_clause gen_uniq) catch_cases in
+      let* after = to_body gen_uniq after in
       expr loc (TryCatch {body; ok_cases; catch_cases; after})
   | `List [`String "tuple"; anno; tuple] ->
       let* loc = to_loc anno in
-      let* xs = to_list ~f:to_expression tuple in
+      let* xs = to_list ~f:(to_expression gen_uniq) tuple in
       expr loc (Tuple xs)
   | `List [`String "var"; anno; `String variable] ->
       let* loc = to_loc anno in
-      expr loc (Variable {vname= variable; scope= None})
+      let vname =
+        match variable with
+        | "_" ->
+            Printf.sprintf "__infer_erl_anonymous_%d" (gen_uniq ())
+        | _ ->
+            variable
+      in
+      expr loc (Variable {vname; scope= None})
   | _ ->
       unknown "expression" json
 
 
-and to_body json : Ast.expression list option = to_list ~f:to_expression json
+and to_body gen_uniq json : Ast.expression list option = to_list ~f:(to_expression gen_uniq) json
 
-and to_association json : Ast.association option =
+and to_association gen_uniq json : Ast.association option =
   match json with
   | `List [`String "map_field_assoc"; _anno; key; value] ->
-      let* key = to_expression key in
-      let* value = to_expression value in
+      let* key = to_expression gen_uniq key in
+      let* value = to_expression gen_uniq value in
       Some {Ast.kind= Arrow; key; value}
   | `List [`String "map_field_exact"; _anno; key; value] ->
-      let* key = to_expression key in
-      let* value = to_expression value in
+      let* key = to_expression gen_uniq key in
+      let* value = to_expression gen_uniq value in
       Some {Ast.kind= Exact; key; value}
   | _ ->
       unknown "association" json
 
 
-and to_record_update json : Ast.record_update option =
+and to_record_update gen_uniq json : Ast.record_update option =
   match json with
   | `List
       [ `String "record_field"
       ; _anno_update
       ; `List [`String "var"; _anno_field; `String "_"]
       ; expression ] ->
-      let* expression = to_expression expression in
+      let* expression = to_expression gen_uniq expression in
       Some {Ast.field= None; expression}
   | `List
       [ `String "record_field"
       ; _anno_update
       ; `List [`String "atom"; _anno_field; `String field]
       ; expression ] ->
-      let* expression = to_expression expression in
+      let* expression = to_expression gen_uniq expression in
       Some {Ast.field= Some field; expression}
   | _ ->
       unknown "record_update" json
 
 
-and to_bin_element json : Ast.bin_element option =
+and to_bin_element gen_uniq json : Ast.bin_element option =
   match json with
   | `List [`String "bin_element"; _anno; expression; size; (* TODO *) _type_specifier_list] ->
-      let* expression = to_expression expression in
-      let* size = default_or to_expression size in
+      let* expression = to_expression gen_uniq expression in
+      let* size = default_or (to_expression gen_uniq) size in
       Some {Ast.expression; size; types= None}
   | _ ->
       unknown "bin_element" json
 
 
-and to_catch_pattern json : Ast.catch_pattern option =
+and to_catch_pattern gen_uniq json : Ast.catch_pattern option =
   match json with
   | `List
       [ `String "tuple"
       ; _anno
       ; `List [exception_; pattern; `List [`String "var"; _var_anno; `String variable]] ] ->
       let* exception_ = to_exception exception_ in
-      let* pattern = to_expression pattern in
+      let* pattern = to_expression gen_uniq pattern in
       Some {Ast.exception_; pattern; variable}
   | _ ->
       unknown "catch_pattern" json
 
 
-and to_guards json : Ast.expression list list option =
-  let to_guard xs = to_list ~f:to_expression xs in
+and to_guards gen_uniq json : Ast.expression list list option =
+  let to_guard xs = to_list ~f:(to_expression gen_uniq) xs in
   to_list ~f:to_guard json
 
 
-and to_clause : 'pat. 'pat parser -> 'pat Ast.clause parser =
- fun to_pat json ->
+and to_clause : 'pat. (unit -> int) -> 'pat parser -> 'pat Ast.clause parser =
+ fun gen_uniq to_pat json ->
   match json with
   | `List [`String "clause"; anno; patterns; guards; body] ->
       let* location = to_loc anno in
       let* patterns = to_list ~f:to_pat patterns in
-      let* guards = to_guards guards in
+      let* guards = to_guards gen_uniq guards in
       let body = one_list body in
-      let* body = to_body body in
+      let* body = to_body gen_uniq body in
       Some {Ast.location; patterns; guards; body}
   | json ->
       unknown "clause" json
 
 
-and to_qualifier json : Ast.qualifier option =
+and to_qualifier gen_uniq json : Ast.qualifier option =
   match json with
   | `List [`String "b_generate"; _anno; pattern; expression] ->
-      let* pattern = to_expression pattern in
-      let* expression = to_expression expression in
+      let* pattern = to_expression gen_uniq pattern in
+      let* expression = to_expression gen_uniq expression in
       Some (Ast.BitsGenerator {pattern; expression})
   | `List [`String "generate"; _anno; pattern; expression] ->
-      let* pattern = to_expression pattern in
-      let* expression = to_expression expression in
+      let* pattern = to_expression gen_uniq pattern in
+      let* expression = to_expression gen_uniq expression in
       Some (Ast.Generator {pattern; expression})
   | filter ->
-      let* filter = to_expression filter in
+      let* filter = to_expression gen_uniq filter in
       Some (Ast.Filter filter)
 
 
-and to_case_clause json : Ast.case_clause option = to_clause to_expression json
+and to_case_clause gen_uniq json : Ast.case_clause option =
+  to_clause gen_uniq (to_expression gen_uniq) json
 
-and to_catch_clause json : Ast.catch_clause option = to_clause to_catch_pattern json
+
+and to_catch_clause gen_uniq json : Ast.catch_clause option =
+  to_clause gen_uniq (to_catch_pattern gen_uniq) json
+
 
 let to_function ~check_no_module json : Ast.function_ option =
   match json with
@@ -491,14 +509,14 @@ let to_function ~check_no_module json : Ast.function_ option =
       unknown "function" json
 
 
-let rec to_record_field json : Ast.record_field option =
+let rec to_record_field gen_uniq json : Ast.record_field option =
   match json with
   | `List [`String "record_field"; _; `List [`String "atom"; _; `String field_name]; expr] ->
-      Some {Ast.field_name; initializer_= to_expression expr}
+      Some {Ast.field_name; initializer_= to_expression gen_uniq expr}
   | `List [`String "record_field"; _; `List [`String "atom"; _; `String field_name]] ->
       Some {Ast.field_name; initializer_= None}
   | `List [`String "typed_record_field"; inner_record_field; _] ->
-      to_record_field inner_record_field
+      to_record_field gen_uniq inner_record_field
   | _ ->
       unknown "record_field" json
 
@@ -703,13 +721,19 @@ let to_loc_form json : Ast.form option =
       form loc (Export func_list)
   | `List [`String "function"; anno; `String function_; `Int arity; case_clause] ->
       let* loc = to_loc anno in
-      let* clauses = to_list ~f:to_case_clause case_clause in
+      let gen_uniq = make_fresh_id_generator () in
+      let* clauses = to_list ~f:(to_case_clause gen_uniq) case_clause in
       let function_ : Ast.function_reference = FunctionName function_ in
       let function_ : Ast.function_ = {module_= ModuleMissing; function_; arity} in
       form loc (Function {function_; clauses})
   | `List [`String "attribute"; anno; `String "record"; `List [`String name; fields]] ->
       let* loc = to_loc anno in
-      let* field_list = to_list ~f:to_record_field fields in
+      (* _ can appear in record field initializers. Currently we generate a fresh ID
+         per record, but if they are inlined, uniqueness is not guaranteed. We do not
+         throw an exception because such cases actually appear in OTP code where we
+         process the records, but don't inline their field initializers. *)
+      let gen_uniq = make_fresh_id_generator () in
+      let* field_list = to_list ~f:(to_record_field gen_uniq) fields in
       form loc (Record {name; fields= field_list})
   | `List [`String "attribute"; anno; `String "spec"; `List [func_json; specs_json]] ->
       let* loc = to_loc anno in
