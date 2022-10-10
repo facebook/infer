@@ -2379,6 +2379,8 @@ and pulse_taint_sources =
           all arguments except given indices (zero-indexed)
       - ["ArgumentMatchingTypes", [<type list>]]:
           arguments with types containing supplied strings
+      - ["Fields", [<(string * taint_target) list>]]:
+          fields given by name in return value, arguments or other fields
     $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).
   - "match_objc_blocks": boolean, "false" by default
       "true" if only Objective-C blocks should be matched.|}
