@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
 
 @interface InferTaint : NSObject
 
@@ -52,3 +52,49 @@ void taintSourceParameterBlockBad() {
     [InferTaint sink:source];
   }];
 }
+
+@interface Session
+- (NSArray<NSObject*>*)getSource;
+@end
+
+@implementation Session
+- (NSArray<NSObject*>*)getSource {
+  NSArray* ret = @[];
+  return ret;
+}
+
+@end
+
+@interface Helper : NSObject
+- (BOOL)b1;
+- (BOOL)b2;
+@end
+
+@implementation Helper {
+  Session* _session;
+  Helper* _helper;
+}
+
+- (BOOL)b1 {
+  return true;
+}
+
+- (BOOL)b2 {
+  return false;
+}
+
+- (BOOL)_isPositive {
+  return [[_session getSource] count] > 0;
+}
+
+- (void)taints_unrelated_field_ok_FP {
+  if ([self _isPositive]) {
+  } // in the state we have v, the result of [self _isPositive], which is
+    // tainted and equal to 0
+  if ([_helper b1]) { // nil spec is applied to b1, hence _helper becomes 0,
+                      // equal to v, and hence tainted
+  }
+  BOOL b = [_helper b2]; // sensitive data flow FP is reported because in
+                         // previous step _helper became tainted
+}
+@end
