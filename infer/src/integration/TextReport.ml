@@ -111,6 +111,7 @@ let pp_source_context ~indent fmt
 let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
   (* TOOD: possible optimisation: stream reading report.json to process each issue one by one *)
   let report = Atdgen_runtime.Util.Json.from_file Jsonbug_j.read_report report_json in
+  let log_issue ?style fmt = (if quiet then L.debug Analysis Quiet else L.result ?style) fmt in
   let one_issue_to_report_txt fmt ((_, (jsonbug : Jsonbug_t.jsonbug)) as jsonbug_n) =
     F.fprintf fmt "%a@\n%a@\n" pp_jsonbug_with_number jsonbug_n (pp_source_context ~indent:2)
       {Jsonbug_t.file= jsonbug.file; lnum= jsonbug.line; cnum= jsonbug.column; enum= -1}
@@ -129,40 +130,38 @@ let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
           | _ ->
               []
         in
-        L.result "%!" ;
-        L.result ~style "%a" pp_jsonbug jsonbug ;
-        L.result "%!" ;
-        L.result "@\n%a@\n" (pp_source_context ~indent:2)
+        log_issue "%!" ;
+        log_issue ~style "%a" pp_jsonbug jsonbug ;
+        log_issue "%!" ;
+        log_issue "@\n%a@\n" (pp_source_context ~indent:2)
           {Jsonbug_t.file= jsonbug.file; lnum= jsonbug.line; cnum= jsonbug.column; enum= -1}
   in
   Utils.with_file_out report_txt ~f:(fun report_txt_out ->
       let report_txt_fmt = F.formatter_of_out_channel report_txt_out in
-      if not quiet then L.result "@\n@[" ;
+      log_issue "@\n@[" ;
       let summary =
         List.foldi report ~init:(ReportSummary.mk_empty ()) ~f:(fun i summary jsonbug ->
             let summary' = ReportSummary.add_issue summary jsonbug in
             one_issue_to_report_txt report_txt_fmt (i, jsonbug) ;
-            if not quiet then one_issue_to_console ~console_limit i jsonbug ;
+            one_issue_to_console ~console_limit i jsonbug ;
             summary' )
       in
       let n_issues = summary.n_issues in
       if Int.equal n_issues 0 then (
-        if not quiet then (
-          L.result "%!" ;
-          L.result ~style:[Background Magenta; Bold; Foreground White] "  No issues found  " ;
-          L.result "@\n%!" ) ;
+        log_issue "%!" ;
+        log_issue ~style:[Background Magenta; Bold; Foreground White] "  No issues found  " ;
+        log_issue "@\n%!" ;
         F.pp_print_string report_txt_fmt "@\nNo issues found@\n" )
       else
         let s_of_issues = if n_issues > 1 then "s" else "" in
-        if not quiet then (
-          L.result "@\n%!" ;
-          L.result ~style:[Bold] "Found %d issue%s" n_issues s_of_issues ;
-          ( match console_limit with
-          | Some limit when n_issues >= limit ->
-              L.result " (console output truncated to %d, see '%s' for the full list)" limit
-                report_txt
-          | _ ->
-              () ) ;
-          L.result "@\n%a@]%!" ReportSummary.pp summary ) ;
+        log_issue "@\n%!" ;
+        log_issue ~style:[Bold] "Found %d issue%s" n_issues s_of_issues ;
+        ( match console_limit with
+        | Some limit when n_issues >= limit ->
+            log_issue " (console output truncated to %d, see '%s' for the full list)" limit
+              report_txt
+        | _ ->
+            () ) ;
+        log_issue "@\n%a@]%!" ReportSummary.pp summary ;
         F.fprintf report_txt_fmt "Found %d issue%s@\n%a%!" n_issues s_of_issues ReportSummary.pp
           summary )
