@@ -541,6 +541,7 @@ module UniquePtr = struct
 end
 
 let matchers : matcher list =
+  let is_shared_ptr _context s = String.equal s "shared_ptr" || String.equal s "shared_ptr" in
   let open ProcnameDispatcher.Call in
   [ (* matchers for unique_ptr *)
     -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload
@@ -573,33 +574,45 @@ let matchers : matcher list =
   ; -"std" &:: "unique_ptr" &:: "operator_bool" <>$ capt_arg_payload
     $--> operator_bool ~desc:"std::unique_ptr::operator_bool()"
     (* matchers for shared_ptr *)
+  ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg_payload
+    $--> SharedPtr.default_constructor ~desc:"std::shared_ptr::shared_ptr()"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg_payload
     $--> SharedPtr.default_constructor ~desc:"std::shared_ptr::shared_ptr()"
+  ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg
+    $+ capt_arg_payload_of_typ (-"std" &:: "__shared_ptr")
+    $--> SharedPtr.copy_move_constructor ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
     $--> SharedPtr.copy_move_constructor ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
+  ; -"std" &:: "__shared_ptr" &:: "operator=" $ capt_arg
+    $+ capt_arg_payload_of_typ (-"std" &:: "__shared_ptr")
+    $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
   ; -"std" &:: "shared_ptr" &:: "operator=" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
     $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
+  ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg_payload $+ capt_arg_payload
+    $--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg_payload $+ capt_arg_payload
     $--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
+  ; -"std" &:: "__shared_ptr" &:: "~__shared_ptr" $ capt_arg
+    $--> SharedPtr.destructor ~desc:"std::shared_ptr::~shared_ptr()"
   ; -"std" &:: "shared_ptr" &:: "~shared_ptr" $ capt_arg
     $--> SharedPtr.destructor ~desc:"std::shared_ptr::~shared_ptr()"
-  ; -"std" &:: "shared_ptr" &:: "use_count" $ capt_arg_payload
+  ; -"std" &::+ is_shared_ptr &:: "use_count" $ capt_arg_payload
     $--> SharedPtr.use_count ~desc:"std::shared_ptr::use_count()"
-  ; -"std" &:: "shared_ptr" &:: "reset" $ capt_arg $+ capt_arg_payload
+  ; -"std" &::+ is_shared_ptr &:: "reset" $ capt_arg $+ capt_arg_payload
     $--> SharedPtr.reset ~desc:"std::shared_ptr::reset(T*)"
-  ; -"std" &:: "shared_ptr" &:: "reset" $ capt_arg
+  ; -"std" &::+ is_shared_ptr &:: "reset" $ capt_arg
     $--> SharedPtr.default_reset ~desc:"std::shared_ptr::reset()"
-  ; -"std" &:: "shared_ptr" &:: "operator[]" $ capt_arg_payload $+ capt_arg_payload
+  ; -"std" &::+ is_shared_ptr &:: "operator[]" $ capt_arg_payload $+ capt_arg_payload
     $--> at ~desc:"std::shared_ptr::operator[]()"
-  ; -"std" &:: "shared_ptr" &:: "get" $ capt_arg_payload $--> get ~desc:"std::shared_ptr::get()"
-  ; -"std" &:: "shared_ptr" &:: "operator*" $ capt_arg_payload
+  ; -"std" &::+ is_shared_ptr &:: "get" $ capt_arg_payload $--> get ~desc:"std::shared_ptr::get()"
+  ; -"std" &::+ is_shared_ptr &:: "operator*" $ capt_arg_payload
     $--> dereference ~desc:"std::shared_ptr::operator*()"
-  ; -"std" &:: "shared_ptr" &:: "operator->" <>$ capt_arg_payload
+  ; -"std" &::+ is_shared_ptr &:: "operator->" <>$ capt_arg_payload
     $--> dereference ~desc:"std::shared_ptr::operator->()"
-  ; -"std" &:: "shared_ptr" &:: "swap" $ capt_arg_payload $+ capt_arg_payload
+  ; -"std" &::+ is_shared_ptr &:: "swap" $ capt_arg_payload $+ capt_arg_payload
     $--> swap ~desc:"std::shared_ptr::swap(std::shared_ptr<T>)"
-  ; -"std" &:: "shared_ptr" &:: "operator_bool" <>$ capt_arg_payload
+  ; -"std" &::+ is_shared_ptr &:: "operator_bool" <>$ capt_arg_payload
     $--> operator_bool ~desc:"std::shared_ptr::operator_bool()"
   ; -"std" &:: "make_shared" &++> SharedPtr.make_shared ~desc:"std::make_shared()" ]
