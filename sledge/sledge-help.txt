@@ -140,6 +140,9 @@ Analyze LLVM bitcode. This is a convenience wrapper for the sequence `sledge llv
                                iterations, a negative bound is never hit and
                                leads to unbounded exploration
   [-margin <cols>]           . wrap debug tracing at <cols> columns
+  [-max-disjuncts <int>]     . set an upper bound on the number of
+                               constant-return summary disjuncts in the distance
+                               heuristic pre-analysis
   [-no-internalize]          . do not internalize all functions except the entry
                                points specified in the config file
   [-no-simplify-states]      . do not simplify states during symbolic execution
@@ -192,6 +195,9 @@ Translate LLVM bitcode to LLAIR. The <input> file must contain LLVM bitcode in e
   [-llair-output <file>]     . write generated textual LLAIR to <file>, or to
                                standard output if "-"
   [-margin <cols>]           . wrap debug tracing at <cols> columns
+  [-max-disjuncts <int>]     . set an upper bound on the number of
+                               constant-return summary disjuncts in the distance
+                               heuristic pre-analysis
   [-no-internalize]          . do not internalize all functions except the entry
                                points specified in the config file
   [-output <file>]           . write generated binary LLAIR to <file>
@@ -231,6 +237,9 @@ The <input> file must be LLVM bitcode.
   [-llair-output <file>]     . write generated textual LLAIR to <file>, or to
                                standard output if "-"
   [-margin <cols>]           . wrap debug tracing at <cols> columns
+  [-max-disjuncts <int>]     . set an upper bound on the number of
+                               constant-return summary disjuncts in the distance
+                               heuristic pre-analysis
   [-no-internalize]          . do not internalize all functions except the entry
                                points specified in the config file
   [-output <file>]           . write generated binary LLAIR to <file>
@@ -276,6 +285,9 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                                iterations, a negative bound is never hit and
                                leads to unbounded exploration
   [-margin <cols>]           . wrap debug tracing at <cols> columns
+  [-max-disjuncts <int>]     . set an upper bound on the number of
+                               constant-return summary disjuncts in the distance
+                               heuristic pre-analysis
   [-no-simplify-states]      . do not simplify states during symbolic execution
   [-no-strong-infer-frame]   . do not fallback to Z3 before failing infer_frame
                                queries
@@ -338,6 +350,9 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
   [-llair-output <file>]     . write generated textual LLAIR to <file>, or to
                                standard output if "-"
   [-margin <cols>]           . wrap debug tracing at <cols> columns
+  [-max-disjuncts <int>]     . set an upper bound on the number of
+                               constant-return summary disjuncts in the distance
+                               heuristic pre-analysis
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"
   [-trace <spec>]            . enable debug tracing

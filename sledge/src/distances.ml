@@ -7,6 +7,10 @@
 
 open Llair
 
+(** an upper bound on the number of constant-return disjuncts distinguished
+    in each [proc_summaries] record *)
+let max_disjuncts = ref 3
+
 (** An automaton state in the sequence of calls and returns that the
     symbolic executor will attempt to follow. Represented as an integer and
     interpreted as an amount of progress through the shared ref [trace],
@@ -506,10 +510,6 @@ module Summary = struct
       intraproc_state Automaton_state.Tbl.t FuncName.Tbl.t =
     FuncName.Tbl.create ()
 
-  (** an upper bound on the number of constant-return disjuncts
-      distinguished in each [proc_summaries] record *)
-  let max_const_retn_disjuncts = 3
-
   let intraproc_analysis f a =
     let analyses_over_f =
       FuncName.Tbl.find_or_add intraproc_analyses f
@@ -540,12 +540,12 @@ module Summary = struct
     in
     let summs =
       Automaton_state.Tbl.find_or_add summaries_of_f a ~default:(fun _ ->
-          { const_retns= Z.Tbl.create ~size:max_const_retn_disjuncts ()
+          { const_retns= Z.Tbl.create ~size:!max_disjuncts ()
           ; unknown_retn= None } )
     in
     match new_summ with
     | Summary ({retn= Some const_retn; _} as summ)
-      when Z.Tbl.length summs.const_retns < max_const_retn_disjuncts ->
+      when Z.Tbl.length summs.const_retns < !max_disjuncts ->
         [%Dbg.info
           "memoizing %a as const_retn: %a" FuncName.pp f pp_summary summ] ;
         Z.Tbl.update summs.const_retns const_retn ~f:(function
@@ -565,7 +565,7 @@ module Summary = struct
         ~default:Automaton_state.Tbl.create
     in
     Automaton_state.Tbl.find_or_add summaries_of_f a ~default:(fun _ ->
-        { const_retns= Z.Tbl.create ~size:max_const_retn_disjuncts ()
+        { const_retns= Z.Tbl.create ~size:!max_disjuncts ()
         ; unknown_retn= None } )
 
   exception Summary_query of (FuncName.t * Automaton_state.t)

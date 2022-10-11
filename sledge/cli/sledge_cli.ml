@@ -138,7 +138,10 @@ let used_globals pgm entry_points preanalyze =
       (Llair.Global.Set.of_iter
          (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)) )
 
-type common = {goal_trace: string list option; llair_output: string option}
+type common =
+  { goal_trace: string list option
+  ; llair_output: string option
+  ; max_disjuncts: int }
 
 let common : common param =
   let%map_open goal_trace =
@@ -158,8 +161,14 @@ let common : common param =
       ~doc:
         "<file> write generated textual LLAIR to <file>, or to standard \
          output if \"-\""
+  and max_disjuncts =
+    flag "max-disjuncts"
+      (optional_with_default 3 int)
+      ~doc:
+        "<int> set an upper bound on the number of constant-return summary \
+         disjuncts in the distance heuristic pre-analysis"
   in
-  {goal_trace; llair_output}
+  {goal_trace; llair_output; max_disjuncts}
 
 let analyze =
   let%map_open loop_bound =
@@ -220,7 +229,7 @@ let analyze =
     flag "dump-witness" (optional string)
       ~doc:"<file> dump goal witness trace to <file>"
   in
-  fun {goal_trace; llair_output} program () ->
+  fun {goal_trace; llair_output; max_disjuncts} program () ->
     Timer.enabled := stats ;
     let pgm = program () in
     generate_llair llair_output pgm ;
@@ -257,6 +266,8 @@ let analyze =
     Option.iter dump_simplify ~f:(fun n ->
         Symbolic_heap.Xsh.dump_simplify := n ) ;
     History.dump_witness := dump_witness ;
+    Distances.max_disjuncts :=
+      if max_disjuncts < 0 then Int.max_int else max_disjuncts ;
     at_exit (fun () -> Report.coverage pgm) ;
     ( match goal_trace with
     | None ->
