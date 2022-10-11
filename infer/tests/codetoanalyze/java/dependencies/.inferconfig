@@ -1,6 +1,17 @@
 {
+    "biabduction": false,
+    "fragment-retains-view": false,
+    "inefficient-keyset-iterator": false,
+    "starvation": false,
+    "racerd": false,
+    "eradicate": false,
+    "pulse": true,
     "enable-issue-type": [
         "TAINT_ERROR"
+    ],
+    "disable-issue-type": [
+        "NULLPTR_DEREFERENCE",
+        "PULSE_RESOURCE_LEAK"
     ],
     "pulse-taint-sources": [
         {
@@ -24,7 +35,7 @@
             "taint_target": ["ArgumentPositions", [1]]
         },
         {
-            "class_names": ["java.io.FileInputStream"],
+            "class_names": ["lib.MyStream"],
             "method_names": ["<init>"],
             "taint_target": ["ArgumentPositions", [1]]
         }

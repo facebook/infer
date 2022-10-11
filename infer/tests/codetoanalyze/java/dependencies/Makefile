@@ -7,7 +7,8 @@ TESTS_DIR = ../../..
 INFER_OPTIONS = --debug-exceptions --pulse-only --dependencies
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = my/Application.java
+# CLEAN_EXTRA += $(wildcard lib/*.class) $(wildcard my/*.class)
 
 include $(TESTS_DIR)/javac.make
 
-infer-out/report.json: .inferconfig
+infer-out/report.json: $(SOURCES) .inferconfig

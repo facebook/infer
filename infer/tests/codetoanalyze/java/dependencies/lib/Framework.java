@@ -4,12 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
- package lib;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+package lib;
 
 public class Framework {
 
@@ -25,16 +20,13 @@ public class Framework {
         return source();
     }
 
-    public static String readFile(String s) throws IOException {
-        try (FileInputStream inputStream = new FileInputStream(s)) {
-            int length = 10;
-            byte[] input = new byte[length];
-            inputStream.read(input, 0, length);
-            return new String(input);
+    public static String readFile(String s) {
+        try (MyStream inputStream = new MyStream(s)) {
+            return inputStream.readContent();
         }
     }
 
-    public static String propagates(String s) {
+    public static String shouldPropagateTaint(String s) {
         return s;
     }
 
@@ -42,8 +34,7 @@ public class Framework {
         Left, Right
     }
 
-    public static String doesNotPropagate(String s) {
-        Value v = Value.valueOf(s);
+    public static String doesNotPropagateTaint(String s) {
         switch (Value.valueOf(s)) {
             case Left:
                 return "Left";
@@ -53,5 +44,4 @@ public class Framework {
                 return "Unknown";
         }
     }
-
 }
