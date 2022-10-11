@@ -11,6 +11,7 @@ type taint_target = [
  | ArgumentPositions of int list
  | AllArgumentsButPositions of int list
  | ArgumentsMatchingTypes of string list
+ | Fields of (string * taint_target) list
 ]
 
 type argument_constraint = { index: int; type_matches: string list }

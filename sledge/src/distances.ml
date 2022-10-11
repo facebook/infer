@@ -198,6 +198,81 @@ module Constant_prop = struct
              |Builtin {reg= Some reg; _} ->
                 remove reg consts
             | _ -> consts )
+
+      (** Evaluate a case of a LLAIR [Switch] block terminator, i.e. a
+          conditional jump, in the context of some constant propagation
+          [env].
+
+          The result is one or more of the following possibilities:
+
+          [`Match env'] indicates that the switch expression definitely
+          matches the case expression, and [env'] is [env] updated to
+          reflect any additional constant information inferred from the
+          match.
+
+          [`Nonmatch env'] is analogous, except that the switch expression
+          definitely does not match the case expression
+
+          [`Unknown] indicates that the analysis can't statically resolve
+          the jump nor infer any constant information. *)
+      let eval_switch env switch_exp case_exp :
+          [`Match of t | `Nonmatch of t | `Unknown] iter =
+        let const_of_exp e =
+          match e with
+          | Exp.Reg _ as r -> (
+            match
+              let* r = Exp.Reg.of_exp r in
+              find r env
+            with
+            | Some const -> Ok const
+            | None -> Error e )
+          | Exp.Integer {data} -> Ok data
+          | _ -> Error e
+        in
+        let match_binop l r ~consts ~const_and_reg =
+          match (const_of_exp l, const_of_exp r) with
+          | Ok l, Ok r -> consts l r
+          | Ok const, Error nonconst | Error nonconst, Ok const -> (
+            match Exp.Reg.of_exp nonconst with
+            | Some reg -> const_and_reg const reg
+            | None -> Iter.singleton `Unknown )
+          | _ -> Iter.singleton `Unknown
+        in
+        let eq =
+          match_binop
+            ~consts:(fun l r ->
+              Iter.singleton
+                (if Z.equal l r then `Match env else `Nonmatch env) )
+            ~const_and_reg:(fun const reg ->
+              let match_consts = set reg const env in
+              Iter.doubleton (`Match match_consts) (`Nonmatch env) )
+        in
+        let diseq =
+          match_binop
+            ~consts:(fun l r ->
+              Iter.singleton
+                (if Z.equal l r then `Nonmatch env else `Match env) )
+            ~const_and_reg:(fun const reg ->
+              let nonmatch_consts = set reg const env in
+              Iter.doubleton (`Match env) (`Nonmatch nonmatch_consts) )
+        in
+        match const_of_exp switch_exp with
+        | Ok switch_const ->
+            Iter.singleton
+              ( match const_of_exp case_exp with
+              | Ok case_const ->
+                  if Z.equal switch_const case_const then `Match env
+                  else `Nonmatch env
+              | _ -> `Unknown )
+        | Error Exp.(Ap2 (Eq, _, l, r)) ->
+            if Exp.is_true case_exp then eq l r
+            else if Exp.is_false case_exp then diseq l r
+            else Iter.singleton `Unknown
+        | Error Exp.(Ap2 (Dq, _, l, r)) ->
+            if Exp.is_true case_exp then diseq l r
+            else if Exp.is_false case_exp then eq l r
+            else Iter.singleton `Unknown
+        | _ -> Iter.singleton `Unknown
     end
 
     include T
@@ -604,31 +679,17 @@ module Summary = struct
            if (not check_convergence) || not converged then (
              ( match block.term with
              | Switch {key; tbl; els; _} ->
-                 let match_const : Exp.t -> [`Match | `Nonmatch | `Unknown]
-                     =
-                   let const_key =
-                     let* key_reg = Reg.of_exp key in
-                     Constant_prop.Env.find key_reg state.consts
-                   in
-                   fun case_exp ->
-                     match const_key with
-                     | None -> `Unknown
-                     | Some const_key -> (
-                       match case_exp with
-                       | Exp.Integer {data} ->
-                           if Z.equal data const_key then `Match
-                           else `Nonmatch
-                       | _ -> `Unknown )
-                 in
-                 let may_not_match = ref (IArray.is_empty tbl) in
+                 let has_unknown_branch = ref (IArray.is_empty tbl) in
                  IArray.iter tbl ~f:(fun (case, jmp) ->
-                     match match_const case with
-                     | `Nonmatch -> may_not_match := true
-                     | `Match -> push state jmp.dst
-                     | `Unknown ->
-                         may_not_match := true ;
-                         push state jmp.dst ) ;
-                 if !may_not_match then push state els.dst
+                     (Constant_prop.Env.eval_switch state.consts key case)
+                       (function
+                       | `Nonmatch consts ->
+                           push {state with consts} els.dst
+                       | `Match consts -> push {state with consts} jmp.dst
+                       | `Unknown ->
+                           has_unknown_branch := true ;
+                           push state jmp.dst ) ) ;
+                 if !has_unknown_branch then push state els.dst
              | Iswitch {tbl; _} ->
                  IArray.iter tbl ~f:(fun jmp -> push state jmp.dst)
              | Return _ | Throw _ | Abort _ | Unreachable -> ()

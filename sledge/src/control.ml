@@ -918,12 +918,15 @@ struct
       if goal_progressed then History.progress_goal history else history
     in
     ( if goal_progressed && Goal.reached goal then
+      let history = History.extend ip [history] in
       let dp_witness fs =
-        History.dump (History.extend ip [history]) fs ;
+        History.dump ~show_root:true history fs ;
         Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
       in
-      Report.reached_goal ~dp_goal:(fun fs -> Goal.pp fs goal) ~dp_witness
-    ) ;
+      Report.reached_goal
+        ~dp_goal:(fun fs -> Goal.pp fs goal)
+        ~dp_valid:(History.validate history)
+        ~dp_witness ) ;
     let dnf_states =
       if Config.function_summaries then D.dnf state
       else Iter.singleton state
@@ -976,12 +979,15 @@ struct
       if goal_progressed then History.progress_goal history else history
     in
     ( if goal_progressed && Goal.reached goal then
+      let history = History.extend ip [history] in
       let dp_witness fs =
-        History.dump (History.extend ip [history]) fs ;
+        History.dump history fs ;
         Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
       in
-      Report.reached_goal ~dp_goal:(fun fs -> Goal.pp fs goal) ~dp_witness
-    ) ;
+      Report.reached_goal
+        ~dp_goal:(fun fs -> Goal.pp fs goal)
+        ~dp_valid:(History.validate history)
+        ~dp_witness ) ;
     let summarize post_state =
       if not Config.function_summaries then post_state
       else

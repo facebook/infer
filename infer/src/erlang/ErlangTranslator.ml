@@ -1155,6 +1155,13 @@ and translate_expression_record_update (env : (_, _) Env.t) ret_var record name 
             (* (4) Check if there is an initializer *)
             match field_info.initializer_ with
             | Some expr ->
+                (* Warning: we are inlining the initializer expression here. If it has _ variable
+                   inside, it will crash because it doesn't have a scope. We could fix this by using
+                   the current function as scope. But then it would also not have a unique name:
+                   Erlang-syntactically distinct occurrences of _ are translated as _anon_1, _anon_2,
+                   ... to prevent them being considered as the same variable. However, this is done on
+                   the record level, so inlining them multiple times may yield non-unique variable names.
+                   See T134336886.*)
                 translate_expression_to_id env one_id expr
             | None ->
                 (* (5) Finally, it's undefined *)
@@ -1237,6 +1244,7 @@ and translate_expression_variable (env : (_, _) Env.t) ret_var vname scope : Blo
     | Some name ->
         name
     | None ->
+        (* This can happen for example if we have the _ variable in record field initializers. *)
         L.die InternalError "Scope not found for variable, probably missing annotation."
   in
   let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in

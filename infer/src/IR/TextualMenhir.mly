@@ -65,15 +65,15 @@
 %start <SourceFile.t -> Textual.Module.t> main
 %type <Attr.t> attribute
 %type <Module.decl> declaration
-%type <Procname.qualified_name> qualified_pname
-%type <ProcBaseName.t> pname
-%type <FieldBaseName.t> fname
+%type <qualified_procname> qualified_pname
+%type <ProcName.t> pname
+%type <FieldName.t> fname
 %type <NodeName.t> nname
 %type <TypeName.t> tname
 %type <VarName.t> vname
 %type <Typ.t> typ
 %type <Typ.t> base_typ
-%type <Typ.t * FieldBaseName.t> typed_field
+%type <Typ.t * FieldName.t> typed_field
 %type <Typ.t * VarName.t> typed_var
 %type <Instr.t> instruction
 %type <Terminator.t> terminator
@@ -90,14 +90,14 @@
 %type <Terminator.node_call list> loption(separated_nonempty_list(COMMA,node_call))
 %type <Typ.t list> loption(separated_nonempty_list(COMMA,typ))
 %type <(Typ.t * VarName.t) list> loption(separated_nonempty_list(COMMA,typed_var))
-%type <(Typ.t * FieldBaseName.t) list> loption(separated_nonempty_list(SEMICOLON,typed_field))
+%type <(Typ.t * FieldName.t) list> loption(separated_nonempty_list(SEMICOLON,typed_field))
 %type <Node.t list> nonempty_list(block)
 %type <Exp.t list> separated_nonempty_list(COMMA,expression)
 %type <NodeName.t list> separated_nonempty_list(COMMA,nname)
 %type <Terminator.node_call list> separated_nonempty_list(COMMA,node_call)
 %type <Typ.t list> separated_nonempty_list(COMMA,typ)
 %type <(Typ.t * VarName.t) list> separated_nonempty_list(COMMA,typed_var)
-%type <(Typ.t * FieldBaseName.t) list> separated_nonempty_list(SEMICOLON,typed_field)
+%type <(Typ.t * FieldName.t) list> separated_nonempty_list(SEMICOLON,typed_field)
 %type <TypeName.t list> extends
 %type <Attr.t list> list(attribute)
 %type <TypeName.t list option> option(extends)
@@ -149,26 +149,27 @@ declaration:
   | GLOBAL name=vname
     { let global : Global.t = {name} in
       Global global }
-  | TYPE name=tname supers=extends? ioption(EQ) LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
+  | TYPE enclosing_class=tname supers=extends? ioption(EQ) LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
     { let fields =
-        List.map l ~f:(fun (typ, name_f) ->
-                        {Fieldname.name=name_f; typ; enclosing_type=name}) in
+        List.map l ~f:(fun (typ, name) ->
+                        let qualified_name : qualified_fieldname = {name; enclosing_class} in
+                        {FieldDecl.qualified_name; typ}) in
       let supers = Option.value supers ~default:[] in
-      Struct {name; supers; fields; methods=[]} }
+      Struct {name=enclosing_class; supers; fields} }
   | DECLARE qualified_name=qualified_pname LPAREN
             formals_types = separated_list(COMMA, typ) RPAREN COLON result_type=typ
-    { let pname : Procname.t = {qualified_name; formals_types; result_type} in
-      Procname pname
+    { let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type} in
+      Procdecl procdecl
     }
   | DEFINE qualified_name=qualified_pname LPAREN
            params = separated_list(COMMA, typed_var) RPAREN COLON result_type=typ
                          LBRACKET nodes=block+ RBRACKET
     { let formals_types = List.map ~f:fst params in
-      let procname : Procname.t = {qualified_name; formals_types; result_type} in
+      let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type} in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:snd params in
       let exit_loc = location_of_pos $endpos in
-      Proc { procname; nodes; start= start_node.Node.label; params; exit_loc}
+      Proc { procdecl; nodes; start= start_node.Node.label; params; exit_loc}
     }
 
 base_typ:
@@ -271,8 +272,9 @@ expression:
     { Var (Ident.of_int id) }
   | AMPERSAND name=vname
     { Lvar name }
-  | exp=expression DOT tname=tname DOT fname=fname
-    { Field {exp; tname; fname} }
+  | exp=expression DOT enclosing_class=tname DOT name=fname
+    { let field : qualified_fieldname = {enclosing_class; name} in
+      Field {exp; field} }
   | e1=expression LSBRACKET e2=expression RSBRACKET
     { Index (e1, e2) }
   | c=const

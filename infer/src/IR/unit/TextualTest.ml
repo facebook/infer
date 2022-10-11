@@ -119,17 +119,17 @@ let%test_module "procnames" =
   ( module struct
     let%expect_test _ =
       let toplevel_proc =
-        Procname.
+        ProcDecl.
           { qualified_name=
               { enclosing_class= TopLevel
               ; name= {value= "toplevel"; loc= Location.known ~line:0 ~col:0} }
           ; formals_types= []
           ; result_type= Typ.Void }
       in
-      let as_java = Procname.to_sil Lang.Java toplevel_proc in
-      let as_hack = Procname.to_sil Lang.Hack toplevel_proc in
-      F.printf "%a@\n" SilProcname.pp as_java ;
-      F.printf "%a@\n" SilProcname.pp as_hack ;
+      let as_java = ProcDecl.to_sil Lang.Java toplevel_proc in
+      let as_hack = ProcDecl.to_sil Lang.Hack toplevel_proc in
+      F.printf "%a@\n" Procname.pp as_java ;
+      F.printf "%a@\n" Procname.pp as_hack ;
       [%expect {|
         void $TOPLEVEL$CLASS$.toplevel()
         toplevel |}]

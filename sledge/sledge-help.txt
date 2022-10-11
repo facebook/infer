@@ -15,6 +15,7 @@ The [-trace <spec>] argument of each subcommand enables debug tracing according 
   . disassemble              . translate LLVM bitcode to LLAIR and print in
                                textual form
   analyze                    . analyze LLAIR code
+  validate                   . validate goal trace witness
   disassemble                . print LLAIR code in textual form
   smt                        . process SMT-LIB benchmarks
   version                    . print version information
@@ -123,6 +124,7 @@ Analyze LLVM bitcode. This is a convenience wrapper for the sequence `sledge llv
   [-dump-bitcode <file>]     . write transformed LLVM bitcode to <file>
   [-dump-query <int>]        . dump solver query <int> and halt
   [-dump-simplify <int>]     . dump simplify query <int> and halt
+  [-dump-witness <file>]     . dump goal witness trace to <file>
   [-function-summaries]      . use function summaries (in development)
   [-goal-trace <file>]       . specify a trace to try to explore, in the form of
                                a file containing one LLVM function name per
@@ -258,6 +260,7 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                                (can be: globals, itv, sh, unit)
   [-dump-query <int>]        . dump solver query <int> and halt
   [-dump-simplify <int>]     . dump simplify query <int> and halt
+  [-dump-witness <file>]     . dump goal witness trace to <file>
   [-function-summaries]      . use function summaries (in development)
   [-goal-trace <file>]       . specify a trace to try to explore, in the form of
                                a file containing one LLVM function name per
@@ -288,6 +291,26 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
                              . limit execution exploration to <int> context
                                switches, a negative bound is never hit and leads
                                to unbounded exploration
+  [-trace <spec>]            . enable debug tracing
+  [-unbuffered]              . disable buffering of stdout and stderr
+  [-help], -?                . print this help text and exit
+
+
+====== sledge validate ======
+
+validate goal trace witness
+
+  sledge validate <input>
+
+The <input> file must have been produced by `sledge analyze -dump-witness`.
+
+=== flags ===
+
+  [-append-report]           . append to report file
+  [-colors]                  . enable printing in colors
+  [-margin <cols>]           . wrap debug tracing at <cols> columns
+  [-report <file>]           . write report sexp to <file>, or to standard error
+                               if "-"
   [-trace <spec>]            . enable debug tracing
   [-unbuffered]              . disable buffering of stdout and stderr
   [-help], -?                . print this help text and exit

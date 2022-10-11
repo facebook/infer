@@ -946,6 +946,15 @@ let drop_while seq ~f k =
 let pop seq =
   match head seq with Some x -> Some (x, drop 1 seq) | None -> None
 
+let pop_exn seq = (head_exn seq, drop 1 seq)
+
+let reduce seq ~f =
+  match pop seq with Some (x, seq) -> Some (fold seq x ~f) | None -> None
+
+let reduce_exn seq ~f =
+  let x, seq = pop_exn seq in
+  fold seq x ~f
+
 let rev seq =
   let l = MList.of_iter seq in
   fun k -> MList.iter_rev k l

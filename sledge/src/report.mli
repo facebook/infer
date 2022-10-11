@@ -18,6 +18,7 @@ val alarm : Alarm.t -> dp_witness:(Format.formatter -> unit) -> unit
 
 val reached_goal :
      dp_goal:(Format.formatter -> unit)
+  -> dp_valid:(Format.formatter -> unit)
   -> dp_witness:(Format.formatter -> unit)
   -> unit
 

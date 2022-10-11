@@ -1254,6 +1254,9 @@ OPTIONS
                      all arguments except given indices (zero-indexed)
                  - ["ArgumentMatchingTypes", [<type list>]]:
                      arguments with types containing supplied strings
+                 - ["Fields", [<(string * taint_target) list>]]:
+                     fields given by name in return value, arguments or
+           other fields
                N.B. for methods, index 0 is this/self.
              - "match_objc_blocks": boolean, "false" by default
                  "true" if only Objective-C blocks should be matched.

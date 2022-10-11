@@ -56,10 +56,11 @@ val length : 'a t -> int
 val get : 'a t -> int -> 'a
 val to_iter : 'a t -> 'a iter
 val iter : 'a t -> f:('a -> unit) -> unit
+val iter2_exn : 'a t -> 'b t -> f:('a -> 'b -> unit) -> unit
 val iteri : 'a t -> f:(int -> 'a -> unit) -> unit
 val exists : 'a t -> f:('a -> bool) -> bool
 val find : f:('a -> bool) -> 'a t -> 'a option
-val find_map : f:('a -> 'b option) -> 'a t -> 'b option
+val find_map : 'a t -> f:('a -> 'b option) -> 'b option
 val mem : 'a -> 'a t -> eq:('a -> 'a -> bool) -> bool
 val for_all : 'a t -> f:('a -> bool) -> bool
 val for_all2_exn : 'a t -> 'b t -> f:('a -> 'b -> bool) -> bool
