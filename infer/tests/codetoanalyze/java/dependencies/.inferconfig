@@ -9,10 +9,6 @@
     "enable-issue-type": [
         "TAINT_ERROR"
     ],
-    "disable-issue-type": [
-        "NULLPTR_DEREFERENCE",
-        "PULSE_RESOURCE_LEAK"
-    ],
     "pulse-taint-sources": [
         {
             "class_names": ["lib.Framework"],
