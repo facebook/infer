@@ -541,7 +541,7 @@ module UniquePtr = struct
 end
 
 let matchers : matcher list =
-  let is_shared_ptr _context s = String.equal s "shared_ptr" || String.equal s "shared_ptr" in
+  let is_shared_ptr _context s = String.equal s "shared_ptr" || String.equal s "__shared_ptr" in
   let open ProcnameDispatcher.Call in
   [ (* matchers for unique_ptr *)
     -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload
