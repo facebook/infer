@@ -118,6 +118,9 @@ module TypeName : sig
   val of_sil : Typ.Name.t -> t
 
   val to_sil : Lang.t -> t -> Typ.Name.t
+
+  (* returns the type name of a SIL global Pvar *)
+  val of_global_pvar : Lang.t -> Pvar.t -> t
 end = struct
   include Name
 
@@ -127,6 +130,14 @@ end = struct
         of_java_name (JavaClassName.to_string name)
     | _ ->
         L.die InternalError "Textual conversion: only Java expected here"
+
+
+  let of_global_pvar (lang : Lang.t) pvar =
+    match lang with
+    | Java ->
+        Pvar.get_name pvar |> Mangled.to_string |> of_java_name
+    | Hack ->
+        L.die UserError "of_global_pvar conversion is not supported in Hack mode"
 
 
   let replace_2colons_with_dot str = String.substr_replace_all str ~pattern:"::" ~with_:"."
@@ -566,11 +577,14 @@ end
 let instr_is_return = function Sil.Store {e1= Lvar v} -> Pvar.is_return v | _ -> false
 
 module Global = struct
-  type t = {name: VarName.t (* TODO (T132620101) add type *)}
+  type t = {name: VarName.t; typ: Typ.t}
 
   let to_sil {name} =
     let mangled = Mangled.from_string name.value in
     Pvar.mk_global mangled
+
+
+  let pp fmt {name; typ} = F.fprintf fmt "%a: %a" VarName.pp name Typ.pp typ
 end
 
 module FieldDecl = struct
@@ -766,7 +780,8 @@ module Exp = struct
     | Lvar pvar ->
         let name = VarName.of_pvar Lang.Java pvar in
         ( if Pvar.is_global pvar then
-          let global : Global.t = {name} in
+          let typ : Typ.t = Ptr (Struct (TypeName.of_global_pvar Lang.Java pvar)) in
+          let global : Global.t = {name; typ} in
           Decls.declare_global decls global ) ;
         Lvar name
     | Lfield (e, f, typ) ->
@@ -1585,8 +1600,8 @@ module Module = struct
   let pp_attr fmt attr = F.fprintf fmt "attribute %a@\n@\n" Attr.pp attr
 
   let pp_decl fmt = function
-    | Global pvar ->
-        F.fprintf fmt "global %a@\n@\n" VarName.pp pvar.name
+    | Global global ->
+        F.fprintf fmt "global %a@\n@\n" Global.pp global
     | Proc pdesc ->
         ProcDesc.pp fmt pdesc
     | Procdecl procdecl ->
