@@ -284,7 +284,12 @@ let wrap_in_scuba_log ~label ~log fmt =
   F.kasprintf wrapper fmt
 
 
-let result fmt = log ~to_console:true result_file_fmts fmt
+let result_string ?(style = []) s =
+  log ~to_console:false result_file_fmts "%s" s ;
+  ANSITerminal.print_string style s
+
+
+let result ?style fmt = F.kasprintf (fun s -> result_string ?style s) fmt
 
 let environment_info fmt = log ~to_console:false environment_info_file_fmts fmt
 

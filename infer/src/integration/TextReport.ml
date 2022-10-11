@@ -6,6 +6,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 
 [@@@warning "+9"]
 
@@ -128,15 +129,15 @@ let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
           | _ ->
               []
         in
-        F.printf "%!" ;
-        ANSITerminal.print_string style (F.asprintf "%a" pp_jsonbug jsonbug) ;
-        F.printf "%!" ;
-        F.printf "@\n%a@\n" (pp_source_context ~indent:2)
+        L.result "%!" ;
+        L.result ~style "%a" pp_jsonbug jsonbug ;
+        L.result "%!" ;
+        L.result "@\n%a@\n" (pp_source_context ~indent:2)
           {Jsonbug_t.file= jsonbug.file; lnum= jsonbug.line; cnum= jsonbug.column; enum= -1}
   in
   Utils.with_file_out report_txt ~f:(fun report_txt_out ->
       let report_txt_fmt = F.formatter_of_out_channel report_txt_out in
-      if not quiet then F.printf "@\n@[" ;
+      if not quiet then L.result "@\n@[" ;
       let summary =
         List.foldi report ~init:(ReportSummary.mk_empty ()) ~f:(fun i summary jsonbug ->
             let summary' = ReportSummary.add_issue summary jsonbug in
@@ -147,21 +148,21 @@ let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
       let n_issues = summary.n_issues in
       if Int.equal n_issues 0 then (
         if not quiet then (
-          F.printf "%!" ;
-          ANSITerminal.(printf [Background Magenta; Bold; Foreground White]) "  No issues found  " ;
-          F.printf "@\n%!" ) ;
+          L.result "%!" ;
+          L.result ~style:[Background Magenta; Bold; Foreground White] "  No issues found  " ;
+          L.result "@\n%!" ) ;
         F.pp_print_string report_txt_fmt "@\nNo issues found@\n" )
       else
         let s_of_issues = if n_issues > 1 then "s" else "" in
         if not quiet then (
-          F.printf "@\n%!" ;
-          ANSITerminal.(printf [Bold]) "Found %d issue%s" n_issues s_of_issues ;
+          L.result "@\n%!" ;
+          L.result ~style:[Bold] "Found %d issue%s" n_issues s_of_issues ;
           ( match console_limit with
           | Some limit when n_issues >= limit ->
-              F.printf " (console output truncated to %d, see '%s' for the full list)" limit
+              L.result " (console output truncated to %d, see '%s' for the full list)" limit
                 report_txt
           | _ ->
               () ) ;
-          F.printf "@\n%a@]%!" ReportSummary.pp summary ) ;
+          L.result "@\n%a@]%!" ReportSummary.pp summary ) ;
         F.fprintf report_txt_fmt "Found %d issue%s@\n%a%!" n_issues s_of_issues ReportSummary.pp
           summary )
