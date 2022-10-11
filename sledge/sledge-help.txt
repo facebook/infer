@@ -117,6 +117,10 @@ Analyze LLVM bitcode. This is a convenience wrapper for the sequence `sledge llv
   [-append-report]           . append to report file
   [-cct-schedule-points]     . context switch only at cct_point calls
   [-colors]                  . enable printing in colors
+  [-constprop-branch-inference]
+                             . infer integer-constant information from branch
+                               conditions during the distance heuristic
+                               pre-analysis
   [-domain <string>]         . select abstract domain; must be one of "sh"
                                (default, symbolic heap domain), "globals"
                                (used-globals domain), or "unit" (unit domain)
@@ -184,6 +188,10 @@ Translate LLVM bitcode to LLAIR. The <input> file must contain LLVM bitcode in e
   [-Oz]                      . like -Os but reduces code size further (default)
   [-append-report]           . append to report file
   [-colors]                  . enable printing in colors
+  [-constprop-branch-inference]
+                             . infer integer-constant information from branch
+                               conditions during the distance heuristic
+                               pre-analysis
   [-dump-bitcode <file>]     . write transformed LLVM bitcode to <file>
   [-goal-trace <file>]       . specify a trace to try to explore, in the form of
                                a file containing one LLVM function name per
@@ -226,6 +234,10 @@ The <input> file must be LLVM bitcode.
   [-Oz]                      . like -Os but reduces code size further (default)
   [-append-report]           . append to report file
   [-colors]                  . enable printing in colors
+  [-constprop-branch-inference]
+                             . infer integer-constant information from branch
+                               conditions during the distance heuristic
+                               pre-analysis
   [-dump-bitcode <file>]     . write transformed LLVM bitcode to <file>
   [-goal-trace <file>]       . specify a trace to try to explore, in the form of
                                a file containing one LLVM function name per
@@ -263,6 +275,10 @@ The <input> file must be binary LLAIR, such as produced by `sledge translate`.
   [-append-report]           . append to report file
   [-cct-schedule-points]     . context switch only at cct_point calls
   [-colors]                  . enable printing in colors
+  [-constprop-branch-inference]
+                             . infer integer-constant information from branch
+                               conditions during the distance heuristic
+                               pre-analysis
   [-domain <string>]         . select abstract domain; must be one of "sh"
                                (default, symbolic heap domain), "globals"
                                (used-globals domain), or "unit" (unit domain)
@@ -340,6 +356,10 @@ The <input> file must be LLAIR code, as produced by `sledge llvm translate`.
 
   [-append-report]           . append to report file
   [-colors]                  . enable printing in colors
+  [-constprop-branch-inference]
+                             . infer integer-constant information from branch
+                               conditions during the distance heuristic
+                               pre-analysis
   [-goal-trace <file>]       . specify a trace to try to explore, in the form of
                                a file containing one LLVM function name per
                                line. If provided, translation avoids inlining

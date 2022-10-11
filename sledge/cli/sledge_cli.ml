@@ -141,7 +141,8 @@ let used_globals pgm entry_points preanalyze =
 type common =
   { goal_trace: string list option
   ; llair_output: string option
-  ; max_disjuncts: int }
+  ; max_disjuncts: int
+  ; constprop_branches: bool }
 
 let common : common param =
   let%map_open goal_trace =
@@ -167,8 +168,13 @@ let common : common param =
       ~doc:
         "<int> set an upper bound on the number of constant-return summary \
          disjuncts in the distance heuristic pre-analysis"
+  and constprop_branches =
+    flag "constprop-branch-inference" no_arg
+      ~doc:
+        "infer integer-constant information from branch conditions during \
+         the distance heuristic pre-analysis"
   in
-  {goal_trace; llair_output; max_disjuncts}
+  {goal_trace; llair_output; max_disjuncts; constprop_branches}
 
 let analyze =
   let%map_open loop_bound =
@@ -229,10 +235,10 @@ let analyze =
     flag "dump-witness" (optional string)
       ~doc:"<file> dump goal witness trace to <file>"
   in
-  fun {goal_trace; llair_output; max_disjuncts} program () ->
+  fun common program () ->
     Timer.enabled := stats ;
     let pgm = program () in
-    generate_llair llair_output pgm ;
+    generate_llair common.llair_output pgm ;
     let globals = used_globals pgm entry_points preanalyze_globals in
     let module Config = struct
       let loop_bound = if loop_bound < 0 then Int.max_int else loop_bound
@@ -267,9 +273,10 @@ let analyze =
         Symbolic_heap.Xsh.dump_simplify := n ) ;
     History.dump_witness := dump_witness ;
     Distances.max_disjuncts :=
-      if max_disjuncts < 0 then Int.max_int else max_disjuncts ;
+      if common.max_disjuncts < 0 then Int.max_int else common.max_disjuncts ;
+    Distances.constprop_branches := common.constprop_branches ;
     at_exit (fun () -> Report.coverage pgm) ;
-    ( match goal_trace with
+    ( match common.goal_trace with
     | None ->
         let module Analysis = Control.Make (Config) (Domain) (Queue) in
         Analysis.exec_pgm pgm
