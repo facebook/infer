@@ -6,8 +6,8 @@
  *)
 
 open! IStd
-open Textual
 module F = Format
+open Textual
 
 let parse_module text =
   let source = SourceFile.create "dummy.sil" in

@@ -6,8 +6,8 @@
 (library
  (name IRTest)
  (flags
-  (:standard -open IR -open IStdlib -open IStd -open IBase))
- (libraries IStdlib IR)
+  (:standard -open IR -open Textuallib -open IStdlib -open IStd -open IBase))
+ (libraries IStdlib Textuallib)
  (preprocess
   (pps ppx_expect ppx_inline_test))
  (inline_tests))

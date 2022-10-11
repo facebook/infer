@@ -6,7 +6,7 @@
  */
 %{
 
-    open !IStd
+    open! IStd
     open Textual
 
     let location_of_pos pos : Location.t =
