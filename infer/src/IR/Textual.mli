@@ -26,15 +26,23 @@ module type NAME = sig
   type t = {value: string; loc: Location.t}
 end
 
-module ProcBaseName : NAME (* procedure names *)
+module ProcName : NAME (* procedure names, without their attachement type *)
 
 module VarName : NAME (* variables names *)
 
-module FieldBaseName : NAME (* field names, without their enclosing types *)
+module FieldName : NAME (* field names, without their enclosing types *)
 
 module NodeName : NAME (* node names, also called labels *)
 
 module TypeName : NAME (* structured value type name *)
+
+type enclosing_class = TopLevel | Enclosing of TypeName.t
+
+type qualified_procname = {enclosing_class: enclosing_class; name: ProcName.t}
+(* procedure name [name] is attached to the name space [enclosing_class] *)
+
+type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
+(* field name [name] must be declared in type [enclosing_class] *)
 
 module Typ : sig
   type t =
@@ -61,25 +69,18 @@ module Const : sig
     | Float of float  (** float constants *)
 end
 
-module SilProcname = Procname
+module ProcDecl : sig
+  type t = {qualified_name: qualified_procname; formals_types: Typ.t list; result_type: Typ.t}
 
-module Procname : sig
-  type enclosing_class = TopLevel | Enclosing of TypeName.t
-
-  type qualified_name = {enclosing_class: enclosing_class; name: ProcBaseName.t}
-
-  type t = {qualified_name: qualified_name; formals_types: Typ.t list; result_type: Typ.t}
-
-  val to_sil : Lang.t -> t -> SilProcname.t [@@warning "-32"]
+  val to_sil : Lang.t -> t -> Procname.t [@@warning "-32"]
 end
 
 module Global : sig
   type t = {name: VarName.t}
 end
 
-module Fieldname : sig
-  type t = {name: FieldBaseName.t; typ: Typ.t; enclosing_type: TypeName.t}
-  (* contrary to Sil, we put field types inside their name *)
+module FieldDecl : sig
+  type t = {qualified_name: qualified_fieldname; typ: Typ.t}
 end
 
 module Exp : sig
@@ -88,14 +89,13 @@ module Exp : sig
   type t =
     | Var of Ident.t  (** pure variable: it is not an lvalue *)
     | Lvar of VarName.t  (** the address of a program variable *)
-    | Field of {exp: t; tname: TypeName.t; fname: FieldBaseName.t}
-        (** field offset, fname must be declared in type tname *)
+    | Field of {exp: t; field: qualified_fieldname}  (** field offset *)
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
-    | Call of {proc: Procname.qualified_name; args: t list; kind: call_kind}
+    | Call of {proc: qualified_procname; args: t list; kind: call_kind}
     | Typ of Typ.t
 
-  val call_virtual : Procname.qualified_name -> t -> t list -> t
+  val call_virtual : qualified_procname -> t -> t list -> t
 
   (* logical not ! *)
   val not : t -> t
@@ -135,9 +135,9 @@ module Node : sig
     ; label_loc: Location.t  (** location of label in file *) }
 end
 
-module Procdesc : sig
+module ProcDesc : sig
   type t =
-    { procname: Procname.t
+    { procdecl: ProcDecl.t
     ; nodes: Node.t list
     ; start: NodeName.t
     ; params: VarName.t list
@@ -145,8 +145,7 @@ module Procdesc : sig
 end
 
 module Struct : sig
-  type t =
-    {name: TypeName.t; supers: TypeName.t list; fields: Fieldname.t list; methods: Procname.t list}
+  type t = {name: TypeName.t; supers: TypeName.t list; fields: FieldDecl.t list}
 end
 
 module Attr : sig
@@ -165,8 +164,8 @@ module Module : sig
   type decl =
     | Global of Global.t
     | Struct of Struct.t
-    | Procname of Procname.t
-    | Proc of Procdesc.t
+    | Procdecl of ProcDecl.t
+    | Proc of ProcDesc.t
 
   type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
 
