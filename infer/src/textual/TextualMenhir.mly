@@ -6,7 +6,7 @@
  */
 %{
 
-    open !IStd
+    open! IStd
     open Textual
 
     let location_of_pos pos : Location.t =
@@ -146,8 +146,8 @@ extends:
   { supers }
 
 declaration:
-  | GLOBAL name=vname
-    { let global : Global.t = {name} in
+  | GLOBAL name=vname COLON typ=typ
+    { let global : Global.t = {name; typ} in
       Global global }
   | TYPE enclosing_class=tname supers=extends? ioption(EQ) LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
     { let fields =

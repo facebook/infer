@@ -31,3 +31,9 @@ val top_down :
 (** Returns [Ok ()] if a path was found and written to block metadata, and
     [Error dp_path] otherwise, with [dp_path] a delayed printer describing
     the specific trace segment that could not be followed. *)
+
+val max_disjuncts : int ref
+(** An upper bound on the number of constant-return summary disjuncts. *)
+
+val constprop_branches : bool ref
+(** If true, infer integer constant information from branch conditions. *)

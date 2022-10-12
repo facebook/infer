@@ -76,7 +76,7 @@ module ProcDecl : sig
 end
 
 module Global : sig
-  type t = {name: VarName.t}
+  type t = {name: VarName.t; typ: Typ.t}
 end
 
 module FieldDecl : sig

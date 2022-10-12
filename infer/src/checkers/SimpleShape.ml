@@ -132,13 +132,7 @@ end = struct
       Union_find.create id
 
 
-    let var_shape {var_shape; _} var =
-      (* TODO T132509349 -- Hopefully temporary hack: always use fresh (empty) shapes for the anonymous
-         variable (otherwise it could lead to spurious unifications between unrelated uses of this
-         special variable, and transitively between actual variables). *)
-      if String.(Format.asprintf "%a" Var.pp var = "_") then create_shape ()
-      else Hashtbl.find_or_add ~default:create_shape var_shape var
-
+    let var_shape {var_shape; _} var = Hashtbl.find_or_add ~default:create_shape var_shape var
 
     let field_shape {shape_fields; _} shape fieldname =
       (* Proceed in two steps: retrieve the field set of this shape or create it, then return the shape

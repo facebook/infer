@@ -561,18 +561,26 @@ let validate_path ({ctx} as xcontext) path =
       [%Dbg.info " UNKNOWN: %s" msg] ;
       None
 
+exception Found of (Format.formatter -> unit)
+
+let jobs = ref 1
+
 let validate h =
   [%dbg]
     ~call:(fun {pf} -> pf " num paths: %i" (Iter.length (paths h)))
     ~retn:(fun {pf} dp -> pf "%t" dp)
   @@ fun () ->
-  match
-    Iter.find_map
-      ~f:(fun path -> validate_path (mk_xcontext ()) path)
-      (Iter.shuffle (paths h))
-  with
-  | Some dp -> dp
-  | None -> Format.dprintf "Validated: false"
+  let paths = Iter.(to_array (shuffle (map ~f:to_array (paths h)))) in
+  let gen_idx = Iter.(to_gen (0 -- (Array.length paths - 1))) in
+  let demux () =
+    match gen_idx () with Some i -> i | None -> raise Parany.End_of_input
+  in
+  let work i = validate_path (mk_xcontext ()) (Iter.of_array paths.(i)) in
+  let mux r = match r with Some dp -> raise (Found dp) | None -> () in
+  try
+    Parany.run !jobs ~demux ~work ~mux ;
+    Format.dprintf "Validated: false"
+  with Found dp -> dp
 
 let dump_witness = ref None
 

@@ -138,7 +138,11 @@ let used_globals pgm entry_points preanalyze =
       (Llair.Global.Set.of_iter
          (Iter.map ~f:(fun g -> g.name) (IArray.to_iter pgm.globals)) )
 
-type common = {goal_trace: string list option; llair_output: string option}
+type common =
+  { goal_trace: string list option
+  ; llair_output: string option
+  ; max_disjuncts: int
+  ; constprop_branches: bool }
 
 let common : common param =
   let%map_open goal_trace =
@@ -158,8 +162,19 @@ let common : common param =
       ~doc:
         "<file> write generated textual LLAIR to <file>, or to standard \
          output if \"-\""
+  and max_disjuncts =
+    flag "max-disjuncts"
+      (optional_with_default 3 int)
+      ~doc:
+        "<int> set an upper bound on the number of constant-return summary \
+         disjuncts in the distance heuristic pre-analysis"
+  and constprop_branches =
+    flag "constprop-branch-inference" no_arg
+      ~doc:
+        "infer integer-constant information from branch conditions during \
+         the distance heuristic pre-analysis"
   in
-  {goal_trace; llair_output}
+  {goal_trace; llair_output; max_disjuncts; constprop_branches}
 
 let analyze =
   let%map_open loop_bound =
@@ -220,10 +235,10 @@ let analyze =
     flag "dump-witness" (optional string)
       ~doc:"<file> dump goal witness trace to <file>"
   in
-  fun {goal_trace; llair_output} program () ->
+  fun common program () ->
     Timer.enabled := stats ;
     let pgm = program () in
-    generate_llair llair_output pgm ;
+    generate_llair common.llair_output pgm ;
     let globals = used_globals pgm entry_points preanalyze_globals in
     let module Config = struct
       let loop_bound = if loop_bound < 0 then Int.max_int else loop_bound
@@ -257,8 +272,11 @@ let analyze =
     Option.iter dump_simplify ~f:(fun n ->
         Symbolic_heap.Xsh.dump_simplify := n ) ;
     History.dump_witness := dump_witness ;
+    Distances.max_disjuncts :=
+      if common.max_disjuncts < 0 then Int.max_int else common.max_disjuncts ;
+    Distances.constprop_branches := common.constprop_branches ;
     at_exit (fun () -> Report.coverage pgm) ;
-    ( match goal_trace with
+    ( match common.goal_trace with
     | None ->
         let module Analysis = Control.Make (Config) (Domain) (Queue) in
         Analysis.exec_pgm pgm
@@ -283,10 +301,15 @@ let analyze_cmd =
   command ~summary ~readme param
 
 let validate =
-  Command.Param.return
-  @@ fun history () ->
-  History.validate history Format.std_formatter ;
-  Report.Ok
+  let%map_open jobs =
+    flag "jobs" ~aliases:["j"]
+      (optional_with_default 1 int)
+      ~doc:"<int> use the given number of parallel processes"
+  in
+  fun history () ->
+    History.jobs := jobs ;
+    History.validate history Format.std_formatter ;
+    Report.Ok
 
 let validate_cmd =
   let summary = "validate goal trace witness" in

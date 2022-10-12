@@ -7,6 +7,14 @@
 
 open Llair
 
+(** An upper bound on the number of constant-return disjuncts distinguished
+    in each [proc_summaries] record. *)
+let max_disjuncts = ref 3
+
+(** If true, infer integer constant information from branch conditions at
+    [Switch] block terminators. *)
+let constprop_branches = ref false
+
 (** An automaton state in the sequence of calls and returns that the
     symbolic executor will attempt to follow. Represented as an integer and
     interpreted as an amount of progress through the shared ref [trace],
@@ -506,10 +514,6 @@ module Summary = struct
       intraproc_state Automaton_state.Tbl.t FuncName.Tbl.t =
     FuncName.Tbl.create ()
 
-  (** an upper bound on the number of constant-return disjuncts
-      distinguished in each [proc_summaries] record *)
-  let max_const_retn_disjuncts = 3
-
   let intraproc_analysis f a =
     let analyses_over_f =
       FuncName.Tbl.find_or_add intraproc_analyses f
@@ -540,12 +544,12 @@ module Summary = struct
     in
     let summs =
       Automaton_state.Tbl.find_or_add summaries_of_f a ~default:(fun _ ->
-          { const_retns= Z.Tbl.create ~size:max_const_retn_disjuncts ()
+          { const_retns= Z.Tbl.create ~size:!max_disjuncts ()
           ; unknown_retn= None } )
     in
     match new_summ with
     | Summary ({retn= Some const_retn; _} as summ)
-      when Z.Tbl.length summs.const_retns < max_const_retn_disjuncts ->
+      when Z.Tbl.length summs.const_retns < !max_disjuncts ->
         [%Dbg.info
           "memoizing %a as const_retn: %a" FuncName.pp f pp_summary summ] ;
         Z.Tbl.update summs.const_retns const_retn ~f:(function
@@ -565,7 +569,7 @@ module Summary = struct
         ~default:Automaton_state.Tbl.create
     in
     Automaton_state.Tbl.find_or_add summaries_of_f a ~default:(fun _ ->
-        { const_retns= Z.Tbl.create ~size:max_const_retn_disjuncts ()
+        { const_retns= Z.Tbl.create ~size:!max_disjuncts ()
         ; unknown_retn= None } )
 
   exception Summary_query of (FuncName.t * Automaton_state.t)
@@ -679,17 +683,44 @@ module Summary = struct
            if (not check_convergence) || not converged then (
              ( match block.term with
              | Switch {key; tbl; els; _} ->
-                 let has_unknown_branch = ref (IArray.is_empty tbl) in
-                 IArray.iter tbl ~f:(fun (case, jmp) ->
-                     (Constant_prop.Env.eval_switch state.consts key case)
-                       (function
-                       | `Nonmatch consts ->
-                           push {state with consts} els.dst
-                       | `Match consts -> push {state with consts} jmp.dst
+                 if !constprop_branches then (
+                   let has_unknown_branch = ref (IArray.is_empty tbl) in
+                   IArray.iter tbl ~f:(fun (case, jmp) ->
+                       (Constant_prop.Env.eval_switch state.consts key case)
+                         (function
+                         | `Nonmatch consts ->
+                             push {state with consts} els.dst
+                         | `Match consts -> push {state with consts} jmp.dst
+                         | `Unknown ->
+                             has_unknown_branch := true ;
+                             push state jmp.dst ) ) ;
+                   if !has_unknown_branch then push state els.dst )
+                 else
+                   let match_const : Exp.t -> [`Match | `Nonmatch | `Unknown]
+                       =
+                     let const_key =
+                       let* key_reg = Reg.of_exp key in
+                       Constant_prop.Env.find key_reg state.consts
+                     in
+                     fun case_exp ->
+                       match const_key with
+                       | None -> `Unknown
+                       | Some const_key -> (
+                         match case_exp with
+                         | Exp.Integer {data} ->
+                             if Z.equal data const_key then `Match
+                             else `Nonmatch
+                         | _ -> `Unknown )
+                   in
+                   let may_not_match = ref (IArray.is_empty tbl) in
+                   IArray.iter tbl ~f:(fun (case, jmp) ->
+                       match match_const case with
+                       | `Nonmatch -> may_not_match := true
+                       | `Match -> push state jmp.dst
                        | `Unknown ->
-                           has_unknown_branch := true ;
-                           push state jmp.dst ) ) ;
-                 if !has_unknown_branch then push state els.dst
+                           may_not_match := true ;
+                           push state jmp.dst ) ;
+                   if !may_not_match then push state els.dst
              | Iswitch {tbl; _} ->
                  IArray.iter tbl ~f:(fun jmp -> push state jmp.dst)
              | Return _ | Throw _ | Abort _ | Unreachable -> ()
