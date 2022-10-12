@@ -67,7 +67,7 @@
  (library
   (name sledge)
   (public_name sledge)
-  (libraries mtime mtime.clock.os psq nonstdlib llair fol)
+  (libraries mtime mtime.clock.os parany psq nonstdlib llair fol)
   (flags
    (:standard -open NS))
   (preprocess

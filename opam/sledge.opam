@@ -24,6 +24,7 @@ depends: [
   "fpath"
   "memtrace"
   "mtime"
+  "parany"
   "ppx_compare"
   "ppxlib" {>= "0.21.0"}
   "psq"

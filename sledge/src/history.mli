@@ -30,4 +30,11 @@ val dump : ?show_root:bool -> t -> Format.formatter -> unit
     formatter, with an indication of the goal-trace root if [show_root]. *)
 
 val validate : t -> Format.formatter -> unit
+(** Search for a concrete execution witness of a history, and report it. *)
+
+val jobs : int ref
+(** Number of parallel processes [validate] will use. *)
+
 val dump_witness : string option ref
+(** Filename into which to write a serialized form of the history instead of
+    directly validating it. *)

@@ -301,10 +301,15 @@ let analyze_cmd =
   command ~summary ~readme param
 
 let validate =
-  Command.Param.return
-  @@ fun history () ->
-  History.validate history Format.std_formatter ;
-  Report.Ok
+  let%map_open jobs =
+    flag "jobs" ~aliases:["j"]
+      (optional_with_default 1 int)
+      ~doc:"<int> use the given number of parallel processes"
+  in
+  fun history () ->
+    History.jobs := jobs ;
+    History.validate history Format.std_formatter ;
+    Report.Ok
 
 let validate_cmd =
   let summary = "validate goal trace witness" in

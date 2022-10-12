@@ -336,6 +336,7 @@ The <input> file must have been produced by `sledge analyze -dump-witness`.
 
   [-append-report]           . append to report file
   [-colors]                  . enable printing in colors
+  [-jobs <int>], -j          . use the given number of parallel processes
   [-margin <cols>]           . wrap debug tracing at <cols> columns
   [-report <file>]           . write report sexp to <file>, or to standard error
                                if "-"
