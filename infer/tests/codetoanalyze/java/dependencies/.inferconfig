@@ -6,10 +6,6 @@
     "racerd": false,
     "eradicate": false,
     "pulse": true,
-    "disable-issue-type": [
-        "NULLPTR_DEREFERENCE_LATENT",
-        "PULSE_RESOURCE_LEAK"
-    ],
     "enable-issue-type": [
         "TAINT_ERROR"
     ],
