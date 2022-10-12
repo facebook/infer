@@ -38,6 +38,8 @@ let taint_target_matches tenv taint_target actual_index actual_typ =
       not (List.mem ~equal:Int.equal indices actual_index)
   | `ArgumentsMatchingTypes types ->
       type_matches tenv actual_typ types
+  | `Fields _ ->
+      false
 
 
 type procedure_matcher =
@@ -275,7 +277,8 @@ let procedure_matches tenv matchers proc_name actuals =
       else None )
 
 
-let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actuals astate =
+let get_tainted tenv path location matchers return_opt ~has_added_return_param proc_name actuals
+    astate =
   let matches = procedure_matches tenv matchers proc_name actuals in
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
   List.fold matches ~init:(astate, []) ~f:(fun acc matcher ->
@@ -284,48 +287,114 @@ let get_tainted tenv matchers return_opt ~has_added_return_param proc_name actua
             (arg_payload, typ) )
       in
       let {kinds} = matcher in
-      match matcher.target with
-      | `ReturnValue -> (
-          L.d_printf "matching return value... " ;
-          match return_opt with
-          | None ->
-              L.d_printfln "no match" ;
-              acc
-          | Some (return, return_typ) -> (
-              L.d_printfln "match! tainting return value" ;
-              let return_as_actual = if has_added_return_param then List.last actuals else None in
-              match return_as_actual with
-              | Some actual ->
-                  let astate, acc = acc in
-                  let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
-                  (astate, (taint, actual) :: acc)
+      let rec match_target acc = function
+        | `ReturnValue -> (
+            L.d_printf "matching return value... " ;
+            match return_opt with
+            | None ->
+                L.d_printfln "no match" ;
+                acc
+            | Some (return, return_typ) -> (
+                L.d_printfln "match! tainting return value" ;
+                let return_as_actual = if has_added_return_param then List.last actuals else None in
+                match return_as_actual with
+                | Some actual ->
+                    let astate, acc = acc in
+                    let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
+                    (astate, (taint, actual) :: acc)
+                | None ->
+                    let return = Var.of_id return in
+                    let astate =
+                      if Stack.mem return astate then astate
+                      else
+                        let ret_val = AbstractValue.mk_fresh () in
+                        Stack.add return (ret_val, ValueHistory.epoch) astate
+                    in
+                    Stack.find_opt return astate
+                    |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
+                           let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
+                           (astate, (taint, (return_value, return_typ)) :: tainted) ) ) )
+        | ( `AllArguments
+          | `ArgumentPositions _
+          | `AllArgumentsButPositions _
+          | `ArgumentsMatchingTypes _ ) as taint_target ->
+            L.d_printf "matching actuals... " ;
+            List.foldi actuals ~init:acc
+              ~f:(fun i ((astate, tainted) as acc) ((_, actual_typ) as actual_hist_and_typ) ->
+                if taint_target_matches tenv taint_target i actual_typ then (
+                  L.d_printfln "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
+                    actual_typ ;
+                  let taint = {Taint.proc_name; origin= Argument {index= i}; kinds} in
+                  (astate, (taint, actual_hist_and_typ) :: tainted) )
+                else (
+                  L.d_printfln "no match for #%d with type %a" i (Typ.pp_full Pp.text) actual_typ ;
+                  acc ) )
+        | `Fields fields ->
+            let type_check astate value typ fieldname =
+              (* Dereference the value as much as possible and verify the result
+                 is of structure type holding the expected fieldname. *)
+              let open IOption.Let_syntax in
+              let rec get_val_and_typ_name astate value typ =
+                match typ.Typ.desc with
+                | Tstruct typ_name | Tptr ({desc= Tstruct typ_name}, _) ->
+                    Some (astate, value, typ_name)
+                | Tptr (typ', _) ->
+                    let* astate, value =
+                      PulseOperations.eval_access path Read location value Dereference astate
+                      |> PulseResult.ok
+                    in
+                    get_val_and_typ_name astate value typ'
+                | _ ->
+                    None
+              in
+              let* astate, value, typ_name = get_val_and_typ_name astate value typ in
+              let+ field_typ =
+                let* {Struct.fields} = Tenv.lookup tenv typ_name in
+                List.find_map fields ~f:(fun (field, typ, _) ->
+                    if String.equal fieldname (Fieldname.get_field_name field) then Some typ
+                    else None )
+              in
+              (astate, value, typ_name, field_typ)
+            in
+            let move_taint_to_field ((astate, tainted) as acc) (taint, (value, typ)) fieldname =
+              (* Move the taint from [value] to [value]'s field [fieldname] *)
+              match type_check astate value typ fieldname with
               | None ->
-                  let return = Var.of_id return in
-                  let astate =
-                    if Stack.mem return astate then astate
-                    else
-                      let ret_val = AbstractValue.mk_fresh () in
-                      Stack.add return (ret_val, ValueHistory.epoch) astate
-                  in
-                  Stack.find_opt return astate
-                  |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
-                         let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
-                         (astate, (taint, (return_value, return_typ)) :: tainted) ) ) )
-      | ( `AllArguments
-        | `ArgumentPositions _
-        | `AllArgumentsButPositions _
-        | `ArgumentsMatchingTypes _ ) as taint_target ->
-          L.d_printf "matching actuals... " ;
-          List.foldi actuals ~init:acc
-            ~f:(fun i ((astate, tainted) as acc) ((_, actual_typ) as actual_hist_and_typ) ->
-              if taint_target_matches tenv taint_target i actual_typ then (
-                L.d_printfln "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
-                  actual_typ ;
-                let taint = {Taint.proc_name; origin= Argument {index= i}; kinds} in
-                (astate, (taint, actual_hist_and_typ) :: tainted) )
-              else (
-                L.d_printfln "no match for #%d with type %a" i (Typ.pp_full Pp.text) actual_typ ;
-                acc ) ) )
+                  (* The value cannot hold the expected field.
+                     This is a type mismatch and we need to inform the user. *)
+                  L.die UserError
+                    "Type error in taint configuration: Model for `%a`:Type `%a` does not have a \
+                     field `%s`"
+                    Procname.pp proc_name (Typ.pp_full Pp.text) typ fieldname
+              | Some (astate, value, typ_name, field_typ) ->
+                  Option.value ~default:acc
+                    (PulseResult.ok
+                       (let open PulseResult.Let_syntax in
+                       let* astate, ret_value =
+                         PulseOperations.eval_access path Read location value
+                           (FieldAccess (Fieldname.make typ_name fieldname))
+                           astate
+                       in
+                       let+ astate, ret_value =
+                         PulseOperations.eval_access path Read location ret_value Dereference astate
+                       in
+                       L.d_printfln "match! tainting field %s with type %a" fieldname
+                         (Typ.pp_full Pp.text) field_typ ;
+                       ( astate
+                       , ( Taint.{taint with origin= Field {name= fieldname; origin= taint.origin}}
+                         , (ret_value, field_typ) )
+                         :: tainted )) )
+            in
+            List.fold fields ~init:acc ~f:(fun ((astate, tainted) as acc) (fieldname, origin) ->
+                let astate', tainted' = match_target acc origin in
+                let new_taints, _ =
+                  List.split_n tainted' (List.length tainted' - List.length tainted)
+                in
+                let acc = if phys_equal astate' astate then acc else (astate', tainted) in
+                List.fold new_taints ~init:acc ~f:(fun acc taint ->
+                    move_taint_to_field acc taint fieldname ) )
+      in
+      match_target acc matcher.target )
 
 
 let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astate =
@@ -379,7 +448,8 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astat
 let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param proc_name
     actuals astate =
   let astate, tainted =
-    get_tainted tenv source_matchers return ~has_added_return_param proc_name actuals astate
+    get_tainted tenv path location source_matchers return ~has_added_return_param proc_name actuals
+      astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
       let hist =
@@ -414,7 +484,8 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
 
 let taint_sanitizers tenv path return ~has_added_return_param ~location proc_name actuals astate =
   let astate, tainted =
-    get_tainted tenv sanitizer_matchers return ~has_added_return_param proc_name actuals astate
+    get_tainted tenv path location sanitizer_matchers return ~has_added_return_param proc_name
+      actuals astate
   in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _)) ->
@@ -560,7 +631,8 @@ let should_ignore_all_flows_to proc_name =
 
 let taint_sinks tenv path location return ~has_added_return_param proc_name actuals astate =
   let astate, tainted =
-    get_tainted tenv sink_matchers return ~has_added_return_param proc_name actuals astate
+    get_tainted tenv path location sink_matchers return ~has_added_return_param proc_name actuals
+      astate
   in
   PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
       if should_ignore_all_flows_to proc_name then Ok astate
@@ -631,7 +703,8 @@ let propagate_to path location v values call astate =
 
 let taint_propagators tenv path location return ~has_added_return_param proc_name actuals astate =
   let astate, tainted =
-    get_tainted tenv propagator_matchers return ~has_added_return_param proc_name actuals astate
+    get_tainted tenv path location propagator_matchers return ~has_added_return_param proc_name
+      actuals astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _)) ->
       let other_actuals =

@@ -79,7 +79,8 @@ let setup () =
 
 
 let print_active_checkers () =
-  (if Config.print_active_checkers && Config.is_originator then L.result else L.environment_info)
+  ( if Config.print_active_checkers && Config.is_originator then L.result ~style:[]
+  else L.environment_info )
     "Active checkers: %a@."
     (Pp.seq ~sep:", " RegisterCheckers.pp_checker)
     (RegisterCheckers.get_active_checkers ())

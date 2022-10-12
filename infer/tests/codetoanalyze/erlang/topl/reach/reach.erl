@@ -3,7 +3,7 @@
 % This source code is licensed under the MIT license found in the
 % LICENSE file in the root directory of this source tree.
 -module(reach).
--export([test_a_Ok/0, test_b_Ok/0, test_c_Bad/0, fp_test_d_Ok/0]).
+-export([test_a_Ok/0, test_b_Ok/0, test_c_Bad/0, test_d_Ok/0]).
 
 test_a_Ok() ->
     _ = source(),
@@ -18,7 +18,7 @@ test_c_Bad() ->
     Y = source(),
     sink([X, Y]).
 
-fp_test_d_Ok() ->
+test_d_Ok() ->
     X = source(),
     _ = source(),
     sink([X, X]).

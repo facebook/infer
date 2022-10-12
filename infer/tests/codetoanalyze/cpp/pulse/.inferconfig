@@ -55,6 +55,20 @@
       "procedure": "basics::compound_stmt_taint_arg_bad",
       "kinds": ["SimpleSource"],
       "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "procedure": "int_source",
+      "kinds": ["Simple"]
+    },
+    {
+      "procedure": "taint_structure",
+      "kinds": ["Simple"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "procedure": "taint_manipulated",
+      "kinds": ["Simple"],
+      "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]
     }
     ],
   "pulse-taint-sinks": [
@@ -81,6 +95,15 @@
       "procedure": "basics::template_sink",
       "kinds": ["SimpleSink"],
       "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "procedure": "sink_int",
+      "kinds": ["Simple"]
+    },
+    {
+      "procedure": "sink_manipulated",
+      "kinds": ["Simple"],
+      "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]
     }
   ],
   "pulse-taint-sanitizers": [
@@ -91,12 +114,21 @@
      {
        "procedure": "basics::Obj::sanitizer2",
        "taint_target": "ReturnValue"
+     },
+     {
+       "procedure": "sanitize_manipulated",
+       "kinds": ["Simple"],
+       "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]
      }
   ],
   "pulse-taint-propagators": [
     {
       "procedure": "basics::Obj::propagator",
       "taint_target": ["ArgumentPositions", [1]]
+    },
+    {
+      "procedure": "propagate_to_manipulated",
+      "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]
     }
   ]
 }

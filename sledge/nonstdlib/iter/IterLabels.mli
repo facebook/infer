@@ -113,6 +113,14 @@ val fold : 'a t -> 's -> f:('a -> 's -> 's) -> 's
 val foldi : 'a t -> 's -> f:(int -> 'a -> 's -> 's) -> 's
 (** Fold over elements of the iterator and their index, consuming it *)
 
+val reduce : 'a t -> f:('a -> 'a -> 'a) -> 'a option
+(** Like fold but use the first element as the initial accumulator. *)
+
+val reduce_exn : 'a t -> f:('a -> 'a -> 'a) -> 'a
+(** Like fold but use the first element as the initial accumulator.
+
+    @raise Invalid_argument if the iterator is empty *)
+
 val fold_map : 'a t -> 's -> f:('a -> 's -> 'b * 's) -> 's * 'b t
 (** [fold_map seq s ~f] is like {!map}, but it carries some state as in
     {!fold}. The final state is returned. *)

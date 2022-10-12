@@ -532,6 +532,8 @@ end
 
 (** Basic-Blocks *)
 
+type ip = {block: block; index: int} [@@deriving compare, equal, sexp_of]
+
 module Block = struct
   module T = struct
     type t = block [@@deriving compare, equal, sexp_of]
@@ -552,9 +554,11 @@ module Block = struct
 
   let mk ~lbl ~cmnd ~term = {dummy_block with lbl; cmnd; term}
   let set_goal_distance dist block = block.goal_distance <- dist
-end
 
-type ip = {block: block; index: int} [@@deriving compare, equal, sexp_of]
+  let iter block =
+    let len = IArray.length block.cmnd in
+    Iter.map Iter.(0 -- len) ~f:(fun index -> {block; index})
+end
 
 module IP = struct
   type t = ip [@@deriving compare, equal, sexp_of]

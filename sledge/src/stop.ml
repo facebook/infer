@@ -28,7 +28,7 @@ let on_reached_goal steps _ =
   Dbg.kprintf __FUNCTION__ (fun _ -> raise (Reached_goal {steps})) ""
 
 let on_unreachable_goal ~dp_path =
-  [%Dbg.printf "%t" dp_path] ;
+  [%Dbg.printf "@\n%t" dp_path] ;
   Dbg.kprintf __FUNCTION__ (fun _ -> raise Unreachable_goal) ""
 
 let on_unimplemented feature _ =

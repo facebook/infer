@@ -262,6 +262,7 @@ module Block : sig
   val pp_ident : t pp
   val mk : lbl:label -> cmnd:cmnd -> term:term -> block
   val set_goal_distance : int -> t -> unit
+  val iter : t -> ip iter
 
   module Map : Map.S with type key := t
   module Tbl : HashTable.S with type key := t

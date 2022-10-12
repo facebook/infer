@@ -73,6 +73,12 @@ jobs:
         run: brew install automake jq ninja pkg-config lzlib zlib coreutils
         if: runner.os == 'macOS'
 
+      - name: Setup Java SDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '8'
+
       - name: Get OS version
         uses: sersoft-gmbh/os-version-action@v1
         id: os-version

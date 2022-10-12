@@ -49,7 +49,14 @@
       {"procedure": "tainted_dictionary", "kinds": ["SimpleSource"]},
       {"procedure": "tainted_set", "kinds": ["SimpleSource"]},
       {"procedure": "create_tainted", "kinds": ["SimpleSource"]},
-      {"procedure": "create_tainted_id", "kinds": ["SimpleSource"]}
+      {"procedure": "create_tainted_id", "kinds": ["SimpleSource"]},
+      {"procedure": "int_source", "kinds": ["Simple"]},
+      { "procedure": "taint_structure",
+        "kinds": ["Simple"],
+        "taint_target": ["ArgumentPositions", [0]]},
+      { "procedure": "taint_manipulated",
+        "kinds": ["Simple"],
+        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}
   ],
   "pulse-taint-sinks": [
       { "class_names": ["InferTaint"],
@@ -78,6 +85,19 @@
         "taint_target": ["ArgumentPositions", [0]] },
       {"procedure": "testNSArray_sink", "kinds": ["SimpleSink"]},
       {"procedure": "testNSDictionary_sink", "kinds": ["SimpleSink"]},
-      {"procedure": "testNSSet_sink", "kinds": ["SimpleSink"]}
+      {"procedure": "testNSSet_sink", "kinds": ["SimpleSink"]},
+      {"procedure": "sink_int", "kinds": ["Simple"]},
+      { "procedure": "sink_manipulated",
+        "kinds": ["Simple"],
+        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}
+  ],
+  "pulse-taint-sanitizers": [
+      { "procedure": "sanitize_manipulated",
+        "kinds": ["Simple"],
+        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}
+  ],
+  "pulse-taint-propagators": [
+      { "procedure": "propagate_to_manipulated",
+        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}
   ]
 }

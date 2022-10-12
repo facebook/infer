@@ -221,9 +221,6 @@ let report () =
   (* Post-process the report according to the user config.
      Do not bother calling the report hook when called from within Buck. *)
   if not Config.buck_cache_mode then (
-    (* Create a dummy bugs.txt file for backwards compatibility. TODO: Stop doing that one day. *)
-    Utils.with_file_out (Config.results_dir ^/ "bugs.txt") ~f:(fun outc ->
-        Out_channel.output_string outc "The contents of this file have moved to report.txt.\n" ) ;
     TextReport.create_from_json ~quiet:Config.quiet ~console_limit:Config.report_console_limit
       ~report_txt:(ResultsDir.get_path ReportText) ~report_json:issues_json ;
     if Config.pmd_xml then

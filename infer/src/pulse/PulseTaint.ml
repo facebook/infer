@@ -42,16 +42,22 @@ module Kind = struct
     F.fprintf fmt "%s%s" kind (if is_data_flow_only kind then " (data flow only)" else "")
 end
 
-type origin = Argument of {index: int} | ReturnValue | Allocation of {typ: string}
+type origin =
+  | Argument of {index: int}
+  | ReturnValue
+  | Allocation of {typ: string}
+  | Field of {name: string; origin: origin}
 [@@deriving compare, equal]
 
-let pp_origin fmt = function
+let rec pp_origin fmt = function
   | Argument {index} ->
       F.fprintf fmt "passed as argument #%d to" index
   | ReturnValue ->
       F.fprintf fmt "value returned from"
   | Allocation {typ} ->
       F.fprintf fmt "allocation of type %s by" typ
+  | Field {name; origin} ->
+      F.fprintf fmt "field %s of %a" name pp_origin origin
 
 
 type t = {kinds: Kind.t list; proc_name: Procname.t; origin: origin} [@@deriving compare, equal]

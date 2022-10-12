@@ -17,7 +17,11 @@
   ],
   "pulse-taint-sources": [
       { "procedure": "__infer_taint_source", "kinds": ["SimpleSource"] },
-      { "allocation": "NSObject", "kinds": ["InitSource"]}
+      { "allocation": "NSObject", "kinds": ["InitSource"]},
+      { "class_names": ["Session"],
+        "method_names": ["getSource"],
+        "kinds": ["SimpleSource"]
+      }
   ],
   "pulse-taint-sanitizers": [
       { "procedure": "__infer_taint_sanitizer", "kinds": ["SimpleSanitizer"] }
