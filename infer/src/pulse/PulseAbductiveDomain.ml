@@ -1209,7 +1209,57 @@ let get_stack_allocated {post} =
     (post :> BaseDomain.t).stack AbstractValue.Set.empty
 
 
+let check_new_eqs (eqs : Formula.new_eqs) =
+  (* We look only at Equal. *)
+  let eqs = List.filter_map ~f:(function Formula.Equal (a, b) -> Some (a, b) | _ -> None) eqs in
+  let values =
+    eqs
+    |> List.concat_map ~f:(fun (a, b) -> [a; b])
+    |> List.dedup_and_sort ~compare:AbstractValue.compare
+  in
+  (* We simulate left-to-right substitution. A pair [(a,b)] in [substs] means that [a] becomes [b]
+   * after substitution. *)
+  let substs =
+    let init = List.map ~f:(fun x -> (x, x)) values in
+    let apply_subst substs (a, b) =
+      List.map ~f:(function c, d when AbstractValue.equal d a -> (c, b) | s -> s) substs
+    in
+    List.fold ~init ~f:apply_subst eqs
+  in
+  (* And then we treat equalities as equalities, using union-find to find a rep. *)
+  let cls =
+    List.fold ~init:AbstractValue.Map.empty
+      ~f:(fun m v -> AbstractValue.Map.add v (Union_find.create v) m)
+      values
+  in
+  List.iter
+    ~f:(function
+      | a, b -> Union_find.union (AbstractValue.Map.find a cls) (AbstractValue.Map.find b cls) )
+    eqs ;
+  (* Finally, we check that for each pair of values the two approaches agree. *)
+  let pairs = List.cartesian_product values values in
+  List.iter pairs ~f:(function a, b ->
+      let equal_in_subst =
+        let aa = List.Assoc.find_exn ~equal:AbstractValue.equal substs a in
+        let bb = List.Assoc.find_exn ~equal:AbstractValue.equal substs b in
+        AbstractValue.equal aa bb
+      in
+      let equal_in_uf =
+        let aa = AbstractValue.Map.find a cls in
+        let bb = AbstractValue.Map.find b cls in
+        Union_find.same_class aa bb
+      in
+      if Bool.(equal_in_subst <> equal_in_uf) then (
+        F.fprintf F.str_formatter "@[<v>" ;
+        List.iter eqs ~f:(function x, y ->
+            F.fprintf F.str_formatter "@[%a -> %a@]@;" AbstractValue.pp x AbstractValue.pp y ) ;
+        F.fprintf F.str_formatter "@[See values %a %a: equal_in_subst=%b equal_in_uf=%b@]@;@]"
+          AbstractValue.pp a AbstractValue.pp b equal_in_subst equal_in_uf ;
+        L.die InternalError "%s" (F.flush_str_formatter ()) ) )
+
+
 let incorporate_new_eqs ~for_summary astate new_eqs =
+  if Config.pulse_sanity_checks then check_new_eqs new_eqs ;
   let stack_allocations = lazy (get_stack_allocated astate) in
   List.fold_until new_eqs ~init:(astate, None)
     ~finish:(fun astate_error -> Sat astate_error)

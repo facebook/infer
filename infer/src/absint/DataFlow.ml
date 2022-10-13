@@ -167,7 +167,7 @@ end
 
 (* MakeDF *)
 
-(** Example dataflow analysis: compute the the distance from a node to the start node. *)
+(** Example dataflow analysis: compute the distance from a node to the start node. *)
 let _test_dataflow proc_desc =
   let verbose = false in
   let module DFCount = MakeDF (struct

@@ -2434,6 +2434,10 @@ INTERNAL OPTIONS
            become manifest, when the latent issue itself is enabled.
            (Conversely: --pulse-report-latent-issues)
 
+       --pulse-sanity-checks
+           Activates: Enable expensive internal checks/assertions.
+           (Conversely: --no-pulse-sanity-checks)
+
        --pulse-scuba-logging
            Activates: Log unknown functions to scuba in pulse checkers; also
            sets --scuba-logging. (Conversely: --no-pulse-scuba-logging)

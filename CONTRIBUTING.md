@@ -158,7 +158,7 @@ module MF = MarkupFormatter
   `f`. For instance: `List.map : 'a list -> f:('a -> 'b) -> 'b list`.
 
 - In modules defining a type `t`, functions that take an argument of that type should generally have
-  that argument come first, except for for optional arguments: `val f : ?optional:bool -> t -> ...`.
+  that argument come first, except for optional arguments: `val f : ?optional:bool -> t -> ...`.
 
 - Use the `_hum` suffix to flag functions that output human-readable strings.
 

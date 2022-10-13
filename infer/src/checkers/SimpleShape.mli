@@ -7,4 +7,10 @@
 
 open! IStd
 
-val checker : IntraproceduralAnalysis.t -> unit
+module Summary : sig
+  type t
+
+  val pp : Format.formatter -> t -> unit
+end
+
+val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option

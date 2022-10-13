@@ -318,7 +318,7 @@ let deallocate_stack_vars tenv (p : 'a Prop.t) pvars =
     let do_var (v, freshv) =
       (* static locals are not stack-allocated *)
       if not (Pvar.is_static_local v) then
-        (* the address of a de-allocated stack var in in the post *)
+        (* the address of a de-allocated stack var is in the post *)
         if Ident.Set.mem freshv p'_fav then (
           stack_vars_address_in_post := v :: !stack_vars_address_in_post ;
           let pred = Predicates.Apred (Adangling DAaddr_stack_var, [Exp.Var freshv]) in
