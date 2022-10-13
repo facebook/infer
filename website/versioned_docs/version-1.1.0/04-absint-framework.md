@@ -40,7 +40,7 @@ it's trying to do, it's a fairly good place to look in order to understand both
 how to use the abstract interpretation framework and what SIL is.
 
 There are basically three important bits here: defining the domain, defining the
-transfer functions, and then passing the pieces to the framework to create an an
+transfer functions, and then passing the pieces to the framework to create an
 analysis. Let's break down the third bit:
 
 ```OCaml
