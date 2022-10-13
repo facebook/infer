@@ -182,14 +182,6 @@ let has_extension ~ext = function
       String.is_suffix path ~suffix:ext
 
 
-
-(* let create_classname_path, is_classname_path =
-    let ext = ".class" in
-    let create package class_name =
-      Filename.concat (List.fold ~f:Filename.concat ~init:Filename.root package) (class_name ^ ext) in
-    (create, has_extension ~ext) *)
-
-
 let pp fmt fname = Format.pp_print_string fmt (to_string fname)
 
 let to_abs_path fname =
