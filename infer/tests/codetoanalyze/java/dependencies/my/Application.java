@@ -42,5 +42,4 @@ public class Application {
     void shouldNotReportTaintPropagation() {
         sink(Framework.doesNotPropagateTaint(source()));
     }
-
 }

@@ -6,6 +6,9 @@
     "racerd": false,
     "eradicate": false,
     "pulse": true,
+    "report-block-list-path-regex": [
+        ".class$"
+    ],
     "enable-issue-type": [
         "TAINT_ERROR"
     ],
