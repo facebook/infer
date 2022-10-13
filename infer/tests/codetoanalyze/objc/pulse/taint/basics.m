@@ -172,6 +172,13 @@ void taintSourceParameterBlockIndirectSink() {
   });
 }
 
+void taintUnifiedValueGood_FP() {
+  NSObject* obj1 = NULL;
+  NSObject* obj2 = NULL;
+  [InferTaint taintsArg:obj1];
+  [InferTaint twoKindSink:obj2];
+}
+
 @protocol TaintProtocol
 - (void)callsSink:(NSObject*)param;
 @end
