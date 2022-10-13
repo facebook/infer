@@ -56,14 +56,14 @@ module type S = sig
   (** retrieve the trace associated with the given access path *)
 
   val add_node : AccessPath.Abs.t -> node -> t -> t
-  (** add the given access path to the tree and associate its last access with with the given node.
-      if any of the accesses in the path are not already present in the tree, they will be added
-      with with empty traces associated with each of the inner nodes. *)
+  (** add the given access path to the tree and associate its last access with the given node. if
+      any of the accesses in the path are not already present in the tree, they will be added with
+      empty traces associated with each of the inner nodes. *)
 
   val add_trace : AccessPath.Abs.t -> TraceDomain.t -> t -> t
-  (** add the given access path to the tree and associate its last access with with the given trace.
-      if any of the accesses in the path are not already present in the tree, they will be added
-      with with empty traces associated with each of the inner nodes. *)
+  (** add the given access path to the tree and associate its last access with the given trace. if
+      any of the accesses in the path are not already present in the tree, they will be added with
+      empty traces associated with each of the inner nodes. *)
 
   val node_join : node -> node -> node
   (** join two nodes *)

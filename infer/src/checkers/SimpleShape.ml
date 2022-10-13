@@ -71,7 +71,38 @@ module Shape : sig
         fields in the future (one can now indifferently refer to any of the shapes as an alias of
         the result). *)
   end
+
+  module Summary : sig
+    (** Summaries contain the result of the typing analysis of a function, including the types of
+        its local variables. They are to be used both for making this shape analysis interprocedural
+        (by relating the return types of callee functions to those of their parameters) and for
+        using its results later on subsequent analysis (in particular Lineage). *)
+    type t
+
+    val pp : Format.formatter -> t -> unit
+
+    val make : Env.t -> t
+    (** Makes a summary from a typing environment. Further updates to the environment will have no
+        effect on the summary. *)
+
+    val introduce : formals:Var.t list -> return:Var.t -> t -> Env.t -> Env.shape list * Env.shape
+    (** Generates fresh shapes into a typing environment for the formal parameters and the formal
+        return of a function. The summary of the function will be used to also introduce shapes for
+        the fields of these formal variables, and to link the parameters and/or the return value
+        together. The shapes will be returned, but not linked to any variable already present in the
+        environment and are to be unified with the actual parameters and return destination. *)
+  end
 end = struct
+  (* Hashtable from/to iterators *)
+
+  let iter_hashtbl htbl f = Hashtbl.iteri ~f:(fun ~key ~data -> f (key, data)) htbl
+
+  let caml_hashtbl_of_iter iter =
+    let r = Caml.Hashtbl.create 42 in
+    iter (fun (key, data) -> Caml.Hashtbl.add r key data) ;
+    r
+
+
   (* Pretty-printing *)
 
   let pp_arrow = Fmt.any " ->@ "
@@ -90,6 +121,12 @@ end = struct
          (fun f -> Hashtbl.iteri ~f:(fun ~key ~data -> f key data))
          pp_binding )
       hashtbl
+
+
+  let pp_caml_hashtbl ~bind pp_key pp_value fmt hashtbl =
+    let sep = Fmt.semi in
+    let pp_binding = pp_binding ~bind pp_key pp_value in
+    Format.fprintf fmt "@[(%a)@]" (Fmt.hashtbl ~sep pp_binding) hashtbl
 
 
   module Env = struct
@@ -120,7 +157,7 @@ end = struct
     let pp_shape fmt x = Shape_id.pp fmt (Union_find.get x)
 
     let pp fmt {var_shape; shape_fields} =
-      Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPE@;@[%a@]@]@;@[<v4>SHAPE_FIELDS@;@[%a@]@]@]@;"
+      Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPE@ @[%a@]@]@ @[<v4>SHAPE_FIELDS@ @[%a@]@]@]"
         (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
         var_shape
         (pp_hashtbl ~bind:pp_arrow Shape_id.pp (pp_hashtbl ~bind:pp_colon Fieldname.pp pp_shape))
@@ -183,6 +220,118 @@ end = struct
               Some shape )
         fields fields'
   end
+
+  module Summary = struct
+    (* A summary is similar to the (final) typing environment of a function, with two differences:
+        - It uses Caml's hashtables, that can safely be marshalled
+        - It "freezes" the union-find shapes into some fixed marshallable values (which are still
+          essentially shapes ids, but with a different types to prevent inadvertent mixings) *)
+
+    (* Shape_id for use within the summary -- incompatible with ids from the environment *)
+    module Shape_id = Id ()
+
+    (* Caml hashtables are marshallables, Core ones contain functional values *)
+    type fields = (Fieldname.t, Shape_id.t) Caml.Hashtbl.t
+
+    (** This is essentially a "frozen" and marshallable version of environments *)
+    type t =
+      { var_shape: (Var.t, Shape_id.t) Caml.Hashtbl.t
+      ; shape_fields: (Shape_id.t, fields) Caml.Hashtbl.t }
+
+    let pp fmt {var_shape; shape_fields} =
+      Format.fprintf fmt
+        "@[<v>@[<v4>SUMMARY VAR SHAPES@ @[%a@]@]@ @[<v4>SUMMARY SHAPES FIELDS@ @[%a@]@]@]"
+        (pp_caml_hashtbl ~bind:pp_arrow Var.pp Shape_id.pp)
+        var_shape
+        (pp_caml_hashtbl ~bind:pp_arrow Shape_id.pp
+           (pp_caml_hashtbl ~bind:pp_colon Fieldname.pp Shape_id.pp) )
+        shape_fields
+
+
+    let make {Env.var_shape; shape_fields} =
+      (* Making a summary from an environment essentially amounts to converting Env ids into Summary
+         ids and Env (Core) hashtables into Summary (Caml) hasthables. We keep an id translation
+         table that maps env ids into summary ids and generate a fresh summary id whenever we
+         encounter a new env id. *)
+      let id_translation_tbl = Hashtbl.create (module Env.Shape_id) in
+      let translate_shape_id env_shape_id =
+        Hashtbl.find_or_add id_translation_tbl ~default:Shape_id.create env_shape_id
+      in
+      let translate_shape env_shape = translate_shape_id (Union_find.get env_shape) in
+      let translate_fields fields =
+        iter_hashtbl fields
+        |> Iter.map2 (fun fieldname shape -> (fieldname, translate_shape shape))
+        |> caml_hashtbl_of_iter
+      in
+      let var_shape =
+        iter_hashtbl var_shape
+        |> Iter.map2 (fun var shape -> (var, translate_shape shape))
+        |> caml_hashtbl_of_iter
+      in
+      let shape_fields =
+        iter_hashtbl shape_fields
+        |> Iter.map2 (fun shape fields -> (translate_shape_id shape, translate_fields fields))
+        |> caml_hashtbl_of_iter
+      in
+      {var_shape; shape_fields}
+
+
+    (* Introducing a (callee) summary is not as simple as freezing an environment into a summary,
+       because the summary also contains shape fields of all the local variables of the callee that
+       we do not want to put into the caller environment. Therefore we proceed by only introducing
+       the shapes of some explicit variables (that will be the formals and return of the callee), and
+       recursively discovering and introducing their fields. *)
+    let rec introduce_shape id_translation_tbl shape_id shape_fields env_shape_fields =
+      (* Translate and introduce a shape from the summary into the environment shapes *)
+      match Hashtbl.find id_translation_tbl shape_id with
+      | Some env_shape ->
+          (* If the shape is already present in the table, then it has already been introduced
+             earlier. Just return its translation. *)
+          env_shape
+      | None ->
+          (* This is a new shape to translate. Create a fresh environment shape and populate it by
+             recursively introducing its fields. *)
+          let env_shape = Env.create_shape () in
+          Hashtbl.set id_translation_tbl ~key:shape_id ~data:env_shape ;
+          ( match Caml.Hashtbl.find_opt shape_fields shape_id with
+          | None ->
+              ()
+          | Some fields ->
+              Hashtbl.set env_shape_fields ~key:(Union_find.get env_shape)
+                ~data:(introduce_fields id_translation_tbl fields shape_fields env_shape_fields) ) ;
+          env_shape
+
+
+    and introduce_fields id_translation_tbl fields shape_fields env_shape_fields =
+      let env_fields = Hashtbl.create (module Fieldname) in
+      Caml.Hashtbl.iter
+        (fun fieldname shape_id ->
+          Hashtbl.set env_fields ~key:fieldname
+            ~data:(introduce_shape id_translation_tbl shape_id shape_fields env_shape_fields) )
+        fields ;
+      env_fields
+
+
+    let introduce_var ~var id_translation_tbl {var_shape; shape_fields}
+        {Env.shape_fields= env_shape_fields; _} =
+      introduce_shape id_translation_tbl (Caml.Hashtbl.find var_shape var) shape_fields
+        env_shape_fields
+
+
+    let introduce ~formals ~return summary env =
+      (* [id_translation_tbl] maps Ids from the summary to their translation as Ids in the
+         environment of the caller function. *)
+      let id_translation_tbl = Hashtbl.create (module Shape_id) in
+      (* We introduce into the (caller) environment the *formal* parameters and return value from the
+         (callee) summary. It will be the responsibility of the call-interpretation code to then
+         unify these formals with the actual parameters and ret_id that already live in the caller
+         environment. *)
+      let args_env_shapes =
+        List.map ~f:(fun arg -> introduce_var ~var:arg id_translation_tbl summary env) formals
+      in
+      let return_env_shape = introduce_var ~var:return id_translation_tbl summary env in
+      (args_env_shapes, return_env_shape)
+  end
 end
 
 (** As the environment works imperatively, we do not need to propagate it and therefore use a simple
@@ -192,15 +341,20 @@ end
     associated to the individual control flow vertices. *)
 module Domain = AbstractDomain.Unit
 
+module Summary = Shape.Summary
+
 module Report = struct
   (** A utility module for use while developing. This would likely be integrated within a proper
       Summary one when interprocedural analysis is supported. *)
 
-  let debug result proc_desc =
+  let debug result proc_desc summary =
     (* For now we just want to print environment somewhere to debug the analysis. *)
     let procname = Procdesc.get_proc_name proc_desc in
-    L.debug Analysis Verbose "@[<v>Result for procedure : %a@,@]" Procname.pp procname ;
-    L.debug Analysis Verbose "@[<v>%a@,@]" Shape.Env.pp result
+    L.debug Analysis Verbose "@[<v>@ @[<v2>" ;
+    L.debug Analysis Verbose "@[<v>Result for procedure : %a@]@ " Procname.pp procname ;
+    L.debug Analysis Verbose "@[<v2>LOCAL ENV:@ %a@]@ @ " Shape.Env.pp result ;
+    L.debug Analysis Verbose "@[<v2>SUMMARY:@ %a@]" Shape.Summary.pp summary ;
+    L.debug Analysis Verbose "@]@ @]"
 end
 
 (** Transfer functions to compute shapes. As the environment is an imperative structure, this module
@@ -213,7 +367,7 @@ struct
   module Domain = Domain
   module CFG = CFG
 
-  type analysis_data = IntraproceduralAnalysis.t
+  type analysis_data = Summary.t InterproceduralAnalysis.t
 
   let env = Env.env
 
@@ -262,16 +416,40 @@ struct
 
 
   (** Execute an instruction by mutating the environment *)
-  let exec_instr_unit _ (* {InterproceduralAnalysis.analyze_dependency} *) (instr : Sil.instr) =
+  let exec_instr_unit {InterproceduralAnalysis.analyze_dependency} (instr : Sil.instr) =
     match instr with
-    | Call ((_ret_id, _typ), fun_exp, _args, _location, _flags) ->
-        L.debug Analysis Verbose
-          "@[<v 2>SimpleShape: call detected (warning: not fully supported).@,\
-           Procedure: %a@,\
-           Procname: %a@]@,"
-          Exp.pp fun_exp
-          (Format.pp_print_option Procname.pp)
-          (procname_of_exp fun_exp)
+    | Call ((ret_id, _typ), fun_exp, args, _location, _flags) -> (
+      match Option.bind ~f:analyze_dependency (procname_of_exp fun_exp) with
+      | None ->
+          L.debug Analysis Verbose
+            "@[<v 2>SimpleShape: call of unknown function detected.@,\
+             Procedure: %a@,\
+             Procname: %a@]@,"
+            Exp.pp fun_exp
+            (Format.pp_print_option Procname.pp)
+            (procname_of_exp fun_exp)
+      | Some (proc_desc, summary) ->
+          (* Calling a known function:
+             1. We get the shape of the actual args and ret_id
+             2. We introduce into the environment the shapes of the formal args and return value of
+                the function, obtained from the summary.
+             3. We unify the actual and formal params/return together.
+             Eventually the ret_id shape will therefore correctly be related to the shapes of the
+             actual parameters of the function.
+          *)
+          let ret_id_shape = Shape.Env.var_shape env (Var.of_id ret_id) in
+          let actual_args_shapes = List.map ~f:(fun (exp, _typ) -> shape_expr exp) args in
+          let return = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
+          let formals =
+            List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar) (Procdesc.get_pvar_formals proc_desc)
+          in
+          let formal_shapes, returned_shape =
+            Shape.Summary.introduce ~return ~formals summary env
+          in
+          List.iter2_exn
+            ~f:(fun s1 s2 -> Shape.Env.unify env s1 s2)
+            actual_args_shapes formal_shapes ;
+          Shape.Env.unify env ret_id_shape returned_shape )
     | Prune (e, _, _, _) ->
         ignore (shape_expr e : Shape.Env.shape)
     | Metadata _ ->
@@ -305,16 +483,15 @@ module Analyzer () = struct
   include AbstractInterpreter.MakeRPO (TransferFunctions (Env))
 end
 
-let unskipped_checker ({IntraproceduralAnalysis.proc_desc} as analysis_data) =
+let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let module Analyzer = Analyzer () in
   let _invmap : Analyzer.invariant_map = Analyzer.exec_pdesc analysis_data ~initial:() proc_desc in
-  (* Just print the final environment in the debug logs for now *)
-  Report.debug Analyzer.Env.env proc_desc ;
-  ()
+  let summary = Shape.Summary.make Analyzer.Env.env in
+  (* Print the final environment in the debug logs for now *)
+  Report.debug Analyzer.Env.env proc_desc summary ;
+  Some summary
 
 
 let checker =
-  (* TODO when going interprocedural: Do not analyze the functions that will not be analyzed by
-     Lineage anyway (this is cumbersome to do with SimpleLineageUtils on the intraproc draft for
-     typing issues) *)
-  unskipped_checker
+  (* We skip the functions that would not be analysed by SimpleLineage anyway *)
+  SimpleLineageUtils.skip_unwanted unskipped_checker

@@ -327,7 +327,7 @@ let make_nullsafe_issue_if_reportable ~nullsafe_mode err_instance =
 
 
 let is_reportable ~nullsafe_mode err_instance =
-  (* Note: we don't fetch the whole info because the the class-level analysis breaks some
+  (* Note: we don't fetch the whole info because the class-level analysis breaks some
      assumptions of this function, and also for optimization purposes (saving some string
      manipulations). *)
   make_nullsafe_issue_if_reportable_lazy ~nullsafe_mode err_instance |> Option.is_some

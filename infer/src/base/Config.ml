@@ -2307,6 +2307,11 @@ and pulse_report_issues_for_tests =
     "Do not supress any of the issues found by Pulse."
 
 
+and pulse_sanity_checks =
+  CLOpt.mk_bool ~long:"pulse-sanity-checks" ~default:false
+    "Enable expensive internal checks/assertions."
+
+
 and pulse_skip_procedures =
   CLOpt.mk_string_opt ~long:"pulse-skip-procedures"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3801,6 +3806,8 @@ and pulse_report_flows_to_taint_sink = !pulse_report_flows_to_taint_sink
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
 and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
+
+and pulse_sanity_checks = !pulse_sanity_checks
 
 and pulse_scuba_logging = !pulse_scuba_logging
 

@@ -588,6 +588,8 @@ val pulse_report_latent_issues : bool
 
 val pulse_report_issues_for_tests : bool
 
+val pulse_sanity_checks : bool
+
 val pulse_recency_limit : int
 
 val pulse_scuba_logging : bool

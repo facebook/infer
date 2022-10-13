@@ -204,7 +204,7 @@ let all_checkers =
          [(checker, Clang); (checker, Java)] ) }
   ; { checker= SimpleShape
     ; callbacks=
-        (let checker = intraprocedural SimpleShape.checker in
+        (let checker = interprocedural Payloads.Fields.simple_shape SimpleShape.checker in
          [(checker, Erlang)] ) }
   ; { checker= SimpleLineage
     ; callbacks=
