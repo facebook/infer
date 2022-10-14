@@ -170,6 +170,26 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
 let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
     callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals astate =
   let open ExecutionDomain in
+  let copy_to_caller_return_variable astate return_val_opt =
+    (* Copies the return value of the callee into the return register of the caller.
+        We use this function when the callee throws an exception.
+        If the write_deref fails, or if the callee return value does not exist,
+        we simply return the original abstract state unchanged. *)
+    match return_val_opt with
+    | Some return_val_hist ->
+        let caller_return_var : Pvar.t = Procdesc.get_ret_var caller_proc_desc in
+        let (astate, caller_return_val_hist) : AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)
+            =
+          PulseOperations.eval_var path call_loc caller_return_var astate
+        in
+        let+ (astate : AbductiveDomain.t) =
+          PulseOperations.write_deref path call_loc ~ref:caller_return_val_hist ~obj:return_val_hist
+            astate
+        in
+        ExceptionRaised astate
+    | None ->
+        Ok (ExceptionRaised astate)
+  in
   let map_call_result ~is_isl_error_prepost callee_summary ~f =
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary path ~is_isl_error_prepost callee_pname call_loc ~callee_summary
@@ -193,22 +213,26 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                     ; timestamp } ) )
               post
       in
-      f subst post
+      f return_val_opt subst post
     in
     (sat_unsat, contradiction)
   in
   match callee_exec_state with
   | ContinueProgram astate ->
-      map_call_result ~is_isl_error_prepost:false astate ~f:(fun _subst astate ->
+      map_call_result ~is_isl_error_prepost:false astate ~f:(fun _return_val_opt _subst astate ->
           Sat (Ok (ContinueProgram astate)) )
   | ExceptionRaised astate ->
-      map_call_result ~is_isl_error_prepost:false astate ~f:(fun _subst astate ->
-          Sat (Ok (ExceptionRaised astate)) )
+      (* If the callee throws, then store the return value of the callee (the exception object)
+         in the return variable of the caller (using [copy_to_caller_return_variable])
+         ready to be accessed by the exception handler. *)
+      map_call_result ~is_isl_error_prepost:false astate ~f:(fun return_val_opt _subst astate ->
+          Sat (copy_to_caller_return_variable astate return_val_opt) )
   | AbortProgram astate
   | ExitProgram astate
   | LatentAbortProgram {astate}
   | LatentInvalidAccess {astate} ->
-      map_call_result ~is_isl_error_prepost:false astate ~f:(fun subst astate_post_call ->
+      map_call_result ~is_isl_error_prepost:false astate
+        ~f:(fun _return_val_opt subst astate_post_call ->
           let** astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post tenv
@@ -313,7 +337,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                              , astate_summary )
                          , [] ) ) ) ) )
   | ISLLatentMemoryError summary ->
-      map_call_result ~is_isl_error_prepost:true summary ~f:(fun _subst astate ->
+      map_call_result ~is_isl_error_prepost:true summary ~f:(fun _return_val_opt _subst astate ->
           let open SatUnsat.Import in
           AbductiveDomain.Summary.of_post tenv
             (Procdesc.get_proc_name caller_proc_desc)

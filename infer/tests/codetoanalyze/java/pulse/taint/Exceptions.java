@@ -117,8 +117,7 @@ class Exceptions {
     throw new RuntimeException(param.toString());
   }
 
-  // false negative; need to track flow into and out of exceptions to get this (t14159157)
-  public static void FN_callSinkWithSourceInsideExceptionObjectBad() {
+  public static void callSinkWithSourceInsideExceptionObjectBad() {
     try {
       doThrow(InferTaint.inferSecretSource());
     } catch (RuntimeException e) {
