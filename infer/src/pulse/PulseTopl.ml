@@ -397,6 +397,8 @@ let eval_guard memory tcontext guard : Constraint.t =
         AbstractValueOperand (get memory reg)
     | Binding v ->
         AbstractValueOperand (get tcontext v)
+    | FieldAccess _ ->
+        L.die InternalError "Field access is not yet supported" (* TODO *)
   in
   let conjoin_predicate pruned (predicate : ToplAst.predicate) =
     match predicate with

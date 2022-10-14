@@ -20,6 +20,7 @@
 %token COLON
 %token COLONEQ
 %token COMMA
+%token DOT
 %token EOF
 %token EQ
 %token GE
@@ -87,6 +88,7 @@ value:
     id=LID { ToplAst.Register id }
   | id=UID { ToplAst.Binding id }
   | x=INTEGER { ToplAst.Constant (LiteralInt x) (* (Exp.Const (Const.Cint (IntLit.of_int x)))*) }
+  | v=value DOT id=identifier { ToplAst.FieldAccess {value=v; field=id} }
   (* TODO(rgrigore): Add string literals. *)
 
 predop_value: o=predop v=value { (o, v) }

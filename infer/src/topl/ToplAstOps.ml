@@ -24,7 +24,9 @@ let pp_register = F.pp_print_string
 
 let pp_variable = F.pp_print_string
 
-let pp_value f (value : ToplAst.value) =
+let pp_fieldname = F.pp_print_string
+
+let rec pp_value f (value : ToplAst.value) =
   match value with
   | Constant c ->
       pp_constant f c
@@ -32,6 +34,8 @@ let pp_value f (value : ToplAst.value) =
       pp_register f r
   | Binding v ->
       pp_variable f v
+  | FieldAccess {value; field} ->
+      F.fprintf f "@[%a.%a@]@," pp_value value pp_fieldname field
 
 
 let pp_binop f (binop : ToplAst.binop) =

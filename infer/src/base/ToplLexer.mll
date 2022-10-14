@@ -44,6 +44,7 @@ rule raw_token = parse
   | '('  { LP }
   | ')'  { RP }
   | '*'  { STAR }
+  | '.'  { DOT }
   | '"'  (([^ '"' '\n' '\\'] | ('\\' _))* as x) '"' { STRING (unquote x) }
   | integer as x { INTEGER (int_of_string x) }
   | '<'  { LT }

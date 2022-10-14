@@ -1,3 +1,3 @@
 property Interval
   start -> start: *
-  start -> error: "foo:bar/1"(T, R) when 11 <= T && T <= 14
+  start -> error: "m:bar/1"(T, R) when 11 <= T.value && T.value <= 14

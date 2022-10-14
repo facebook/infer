@@ -13,9 +13,15 @@ type register_name = string [@@deriving compare, equal]
 
 type variable_name = string
 
+type field_name = string
+
 type constant = LiteralInt of int
 
-type value = Constant of constant | Register of register_name | Binding of variable_name
+type value =
+  | Constant of constant
+  | Register of register_name
+  | Binding of variable_name
+  | FieldAccess of {value: value; field: field_name}
 
 type binop = (* all return booleans *)
   | LeadsTo | OpEq | OpNe | OpGe | OpGt | OpLe | OpLt
