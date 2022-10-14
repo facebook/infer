@@ -267,7 +267,6 @@ codetoanalyze/c/bufferoverrun/prune_alias.c, call_latest_prune_join_3_Bad, 2, BU
 codetoanalyze/c/bufferoverrun/prune_alias.c, forget_locs_latest_prune, 9, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/prune_alias.c, call_forget_locs_latest_prune_Bad, 0, BUFFER_OVERRUN_L1, no_bucket, ERROR, [Call,<Offset trace>,Parameter `n`,<Length trace>,Array declaration,Array access: Offset: 10 Size: 5 by call to `forget_locs_latest_prune` ]
 codetoanalyze/c/bufferoverrun/prune_alias.c, not_prune_multiple1_Bad, 4, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: [0, 10] Size: 5]
-codetoanalyze/c/bufferoverrun/prune_alias.c, call_not_prune_multiple2_Bad, 2, BUFFER_OVERRUN_L2, no_bucket, ERROR, [Assignment,Call,<Offset trace>,Parameter `m`,<Length trace>,Array declaration,Array access: Offset: [0, 10] Size: 5 by call to `not_prune_multiple2` ]
 codetoanalyze/c/bufferoverrun/prune_alias.c, not_prune_multiple3_Bad, 7, BUFFER_OVERRUN_L2, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: [0, 10] Size: 5]
 codetoanalyze/c/bufferoverrun/prune_alias.c, unknown_alias_Good, 4, BUFFER_OVERRUN_U5, no_bucket, ERROR, [<Length trace>,Unknown value from: unknown1,Assignment,Array access: Offset: [-oo, +oo] Size: [0, +oo]]
 codetoanalyze/c/bufferoverrun/prune_alias.c, unknown_alias_Bad, 4, BUFFER_OVERRUN_U5, no_bucket, ERROR, [<Length trace>,Unknown value from: unknown1,Assignment,Array access: Offset: [-oo, +oo] Size: [0, +oo]]
