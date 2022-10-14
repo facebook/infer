@@ -24,71 +24,75 @@ let pp fmt pre_posts =
 
 let exec_summary_of_post_common tenv ~continue_program proc_desc err_log location
     (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
+  let summarize (astate : AbductiveDomain.t)
+      ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t) :
+      _ ExecutionDomain.base_t SatUnsat.t =
+    let open SatUnsat.Import in
+    let+ summary_result =
+      AbductiveDomain.Summary.of_post tenv
+        (Procdesc.get_proc_name proc_desc)
+        (Procdesc.get_attributes proc_desc)
+        location astate
+    in
+    match (summary_result : _ result) with
+    | Ok summary ->
+        exec_domain_of_summary summary
+    | Error (`RetainCycle (summary, astate, assignment_traces, value, path, location)) ->
+        PulseReport.report_summary_error tenv proc_desc err_log
+          ( ReportableError
+              {astate; diagnostic= RetainCycle {assignment_traces; value; path; location}}
+          , summary )
+        |> Option.value ~default:(exec_domain_of_summary summary)
+    | Error (`MemoryLeak (summary, astate, allocator, allocation_trace, location)) ->
+        PulseReport.report_summary_error tenv proc_desc err_log
+          ( ReportableError {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}}
+          , summary )
+        |> Option.value ~default:(exec_domain_of_summary summary)
+    | Error (`JavaResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
+        PulseReport.report_summary_error tenv proc_desc err_log
+          ( ReportableError
+              {astate; diagnostic= JavaResourceLeak {class_name; allocation_trace; location}}
+          , summary )
+        |> Option.value ~default:(exec_domain_of_summary summary)
+    | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
+        PulseReport.report_summary_error tenv proc_desc err_log
+          ( ReportableError
+              {astate; diagnostic= CSharpResourceLeak {class_name; allocation_trace; location}}
+          , summary )
+        |> Option.value ~default:(exec_domain_of_summary summary)
+    | Error (`PotentialInvalidAccessSummary (summary, astate, address, must_be_valid)) -> (
+      match
+        let open IOption.Let_syntax in
+        let* addr = DecompilerExpr.abstract_value_of_expr address in
+        let* _, attrs = AbductiveDomain.find_post_cell_opt addr (astate :> AbductiveDomain.t) in
+        Attributes.get_invalid attrs
+      with
+      | None ->
+          ExecutionDomain.LatentInvalidAccess
+            {astate= summary; address; must_be_valid; calling_context= []}
+      | Some (invalidation, invalidation_trace) ->
+          (* NOTE: this probably leads to the error being dropped as the access trace is unlikely to
+             contain the reason for invalidation and thus we will filter out the report. TODO:
+             figure out if that's a problem. *)
+          PulseReport.report_summary_error tenv proc_desc err_log
+            ( ReportableError
+                { diagnostic=
+                    AccessToInvalidAddress
+                      { calling_context= []
+                      ; invalid_address= address
+                      ; invalidation
+                      ; invalidation_trace
+                      ; access_trace= fst must_be_valid
+                      ; must_be_valid_reason= snd must_be_valid }
+                ; astate }
+            , summary )
+          |> Option.value ~default:(exec_domain_of_summary summary) )
+  in
   match exec_astate with
   | ExceptionRaised _ ->
       Unsat (* we do not propagate exception interproceduraly yet *)
-  | ContinueProgram astate -> (
-      let open SatUnsat.Import in
-      let+ summary_result =
-        AbductiveDomain.Summary.of_post tenv
-          (Procdesc.get_proc_name proc_desc)
-          (Procdesc.get_attributes proc_desc)
-          location astate
-      in
-      match (summary_result : _ result) with
-      | Ok summary ->
-          continue_program summary
-      | Error (`RetainCycle (summary, astate, assignment_traces, value, path, location)) ->
-          PulseReport.report_summary_error tenv proc_desc err_log
-            ( ReportableError
-                {astate; diagnostic= RetainCycle {assignment_traces; value; path; location}}
-            , summary )
-          |> Option.value ~default:(continue_program summary)
-      | Error (`MemoryLeak (summary, astate, allocator, allocation_trace, location)) ->
-          PulseReport.report_summary_error tenv proc_desc err_log
-            ( ReportableError
-                {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}}
-            , summary )
-          |> Option.value ~default:(continue_program summary)
-      | Error (`JavaResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
-          PulseReport.report_summary_error tenv proc_desc err_log
-            ( ReportableError
-                {astate; diagnostic= JavaResourceLeak {class_name; allocation_trace; location}}
-            , summary )
-          |> Option.value ~default:(continue_program summary)
-      | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
-          PulseReport.report_summary_error tenv proc_desc err_log
-            ( ReportableError
-                {astate; diagnostic= CSharpResourceLeak {class_name; allocation_trace; location}}
-            , summary )
-          |> Option.value ~default:(continue_program summary)
-      | Error (`PotentialInvalidAccessSummary (summary, astate, address, must_be_valid)) -> (
-        match
-          let open IOption.Let_syntax in
-          let* addr = DecompilerExpr.abstract_value_of_expr address in
-          let* _, attrs = AbductiveDomain.find_post_cell_opt addr (astate :> AbductiveDomain.t) in
-          Attributes.get_invalid attrs
-        with
-        | None ->
-            ExecutionDomain.LatentInvalidAccess
-              {astate= summary; address; must_be_valid; calling_context= []}
-        | Some (invalidation, invalidation_trace) ->
-            (* NOTE: this probably leads to the error being dropped as the access trace is unlikely to
-               contain the reason for invalidation and thus we will filter out the report. TODO:
-               figure out if that's a problem. *)
-            PulseReport.report_summary_error tenv proc_desc err_log
-              ( ReportableError
-                  { diagnostic=
-                      AccessToInvalidAddress
-                        { calling_context= []
-                        ; invalid_address= address
-                        ; invalidation
-                        ; invalidation_trace
-                        ; access_trace= fst must_be_valid
-                        ; must_be_valid_reason= snd must_be_valid }
-                  ; astate }
-              , summary )
-            |> Option.value ~default:(continue_program summary) ) )
+  | ContinueProgram astate ->
+      summarize astate ~exec_domain_of_summary:continue_program
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
   | AbortProgram astate ->
       Sat (AbortProgram astate)
