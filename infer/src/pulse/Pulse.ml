@@ -970,7 +970,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
     let exit_summaries_opt, exn_sink_summaries_opt =
       DisjunctiveAnalyzer.compute_post_including_exceptional analysis_data ~initial proc_desc
     in
-    let process_postconditions node posts_opt =
+    let process_postconditions node posts_opt ~convert_normal_to_exceptional =
       match posts_opt with
       | Some (posts, non_disj_astate) ->
           let node_loc = Procdesc.Node.get_loc node in
@@ -979,6 +979,12 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             (* Do final cleanup at the end of procdesc
                Forget path contexts on the way, we don't propagate them across functions *)
             exit_function analysis_data node_loc posts non_disj_astate
+          in
+          let posts =
+            if convert_normal_to_exceptional then
+              List.map posts ~f:(fun edomain ->
+                  match edomain with ContinueProgram x -> ExceptionRaised x | _ -> edomain )
+            else posts
           in
           let summary = PulseSummary.of_posts tenv proc_desc err_log node_loc posts in
           let is_exit_node =
@@ -1017,13 +1023,17 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
       match exn_sink_node_opt with
       | Some esink_node ->
           with_html_debug_node esink_node ~desc:"pulse summary creation (for exception sink node)"
-            ~f:(fun () -> process_postconditions esink_node exn_sink_summaries_opt)
+            ~f:(fun () ->
+              process_postconditions esink_node exn_sink_summaries_opt
+                ~convert_normal_to_exceptional:true )
       | None ->
           []
     in
     let exit_node = Procdesc.get_exit_node proc_desc in
     with_html_debug_node exit_node ~desc:"pulse summary creation" ~f:(fun () ->
-        let summaries_for_exit = process_postconditions exit_node exit_summaries_opt in
+        let summaries_for_exit =
+          process_postconditions exit_node exit_summaries_opt ~convert_normal_to_exceptional:false
+        in
         let exit_esink_summaries = summaries_for_exit @ summaries_at_exn_sink in
         report_on_and_return_summaries exit_esink_summaries ) )
   else None
