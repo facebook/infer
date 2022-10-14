@@ -23,7 +23,7 @@ type value =
   | Constant of constant
   | Register of register_name
   | Binding of variable_name
-  | FieldAccess of {value: value; class_: class_name; field: field_name}
+  | FieldAccess of {value: value; class_name: class_name; field_name: field_name}
 
 type binop = (* all return booleans *)
   | LeadsTo | OpEq | OpNe | OpGe | OpGt | OpLe | OpLt

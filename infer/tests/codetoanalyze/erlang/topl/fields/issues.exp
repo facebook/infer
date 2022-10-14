@@ -1,0 +1,2 @@
+topl_fields.erl, test_3_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to bar/1]
+topl_fields.erl, test_4_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to bar/1]

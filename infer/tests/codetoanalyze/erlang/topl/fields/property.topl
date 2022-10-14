@@ -1,0 +1,3 @@
+property Field
+  start -> start: *
+  start -> error: "topl_fields:bar/1"(T, R) when 11 <= T:Cons.head:Integer.value

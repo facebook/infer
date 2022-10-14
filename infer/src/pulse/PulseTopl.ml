@@ -12,6 +12,7 @@ open PulseBasicInterface
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module BaseDomain = PulseBaseDomain
 module Memory = PulseBaseMemory
+open IOption.Let_syntax
 
 type value = AbstractValue.t [@@deriving compare, equal]
 
@@ -82,6 +83,8 @@ module Constraint : sig
 
   val true_ : t
 
+  val false_ : t
+
   val and_predicate : predicate -> t -> t
 
   val and_constr : t -> t -> t
@@ -106,24 +109,36 @@ module Constraint : sig
 end = struct
   type operator = LeadsTo | NotLeadsTo | Builtin of Binop.t [@@deriving compare, equal]
 
-  type predicate = operator * Formula.operand * Formula.operand [@@deriving compare, equal]
+  type predicate = True | False | Binary of operator * Formula.operand * Formula.operand
+  [@@deriving compare, equal]
 
   type t = predicate list [@@deriving compare, equal]
 
-  let make binop lhs rhs = (binop, lhs, rhs)
+  let make binop lhs rhs = Binary (binop, lhs, rhs)
 
   let true_ = []
 
+  let false_ = [False]
+
   let is_trivially_true (predicate : predicate) =
     match predicate with
-    | Builtin Eq, AbstractValueOperand l, AbstractValueOperand r when AbstractValue.equal l r ->
+    | True ->
+        true
+    | Binary (Builtin Eq, AbstractValueOperand l, AbstractValueOperand r)
+      when AbstractValue.equal l r ->
         true
     | _ ->
         false
 
 
+  let is_trivially_false (predicate : predicate) (constr : predicate list) =
+    match predicate with False -> true | _ -> ( match constr with [False] -> true | _ -> false )
+
+
   let and_predicate predicate constr =
-    if is_trivially_true predicate then constr else predicate :: constr
+    if is_trivially_false predicate constr then [False]
+    else if is_trivially_true predicate then constr
+    else predicate :: constr
 
 
   let and_constr constr_a constr_b = List.rev_append constr_a constr_b
@@ -134,23 +149,27 @@ end = struct
 
   let negate_predicate (predicate : predicate) : predicate =
     match predicate with
-    | LeadsTo, l, r ->
-        (NotLeadsTo, l, r)
-    | NotLeadsTo, l, r ->
-        (LeadsTo, l, r)
-    | Builtin Eq, l, r ->
-        (Builtin Ne, l, r)
-    | Builtin Ne, l, r ->
-        (Builtin Eq, l, r)
-    | Builtin Ge, l, r ->
-        (Builtin Lt, r, l)
-    | Builtin Gt, l, r ->
-        (Builtin Le, r, l)
-    | Builtin Le, l, r ->
-        (Builtin Gt, r, l)
-    | Builtin Lt, l, r ->
-        (Builtin Ge, r, l)
-    | Builtin _, _, _ ->
+    | True ->
+        False
+    | False ->
+        True
+    | Binary (LeadsTo, l, r) ->
+        Binary (NotLeadsTo, l, r)
+    | Binary (NotLeadsTo, l, r) ->
+        Binary (LeadsTo, l, r)
+    | Binary (Builtin Eq, l, r) ->
+        Binary (Builtin Ne, l, r)
+    | Binary (Builtin Ne, l, r) ->
+        Binary (Builtin Eq, l, r)
+    | Binary (Builtin Ge, l, r) ->
+        Binary (Builtin Lt, r, l)
+    | Binary (Builtin Gt, l, r) ->
+        Binary (Builtin Le, r, l)
+    | Binary (Builtin Le, l, r) ->
+        Binary (Builtin Gt, r, l)
+    | Binary (Builtin Lt, l, r) ->
+        Binary (Builtin Ge, r, l)
+    | Binary (Builtin _, _, _) ->
         L.die InternalError
           "PulseTopl.negate_predicate should handle all outputs of PulseTopl.binop_to"
 
@@ -162,16 +181,16 @@ end = struct
   let substitute_predicate (sub, predicate) =
     let avo x : Formula.operand = AbstractValueOperand x in
     match (predicate : predicate) with
-    | op, AbstractValueOperand l, AbstractValueOperand r ->
+    | Binary (op, AbstractValueOperand l, AbstractValueOperand r) ->
         let sub, l = sub_value (sub, l) in
         let sub, r = sub_value (sub, r) in
-        (sub, (op, avo l, avo r))
-    | op, AbstractValueOperand l, r ->
+        (sub, Binary (op, avo l, avo r))
+    | Binary (op, AbstractValueOperand l, r) ->
         let sub, l = sub_value (sub, l) in
-        (sub, (op, avo l, r))
-    | op, l, AbstractValueOperand r ->
+        (sub, Binary (op, avo l, r))
+    | Binary (op, l, AbstractValueOperand r) ->
         let sub, r = sub_value (sub, r) in
-        (sub, (op, l, avo r))
+        (sub, Binary (op, l, avo r))
     | _ ->
         (sub, predicate)
 
@@ -182,12 +201,16 @@ end = struct
     let open SatUnsat.Import in
     let f pulse_formula predicate =
       match predicate with
-      | Builtin op, l, r ->
+      | Binary (Builtin op, l, r) ->
           Formula.prune_binop ~negated:false op l r pulse_formula >>| fst
-      | LeadsTo, _, _ | NotLeadsTo, _, _ ->
+      | Binary (LeadsTo, _, _) | Binary (NotLeadsTo, _, _) ->
           (* These are not evaluated on the path_condition, but should be evaluated after calling
            * [prune_path], on [pulse_post] *)
           Sat pulse_formula
+      | True ->
+          Sat pulse_formula
+      | False ->
+          Unsat
     in
     SatUnsat.list_fold ~init:path ~f constr
 
@@ -261,14 +284,14 @@ end = struct
       (* Note: This checks that non/reachability is implied -- a stronger check. *)
       let check_reachability path_condition predicate =
         match predicate with
-        | LeadsTo, Formula.AbstractValueOperand l, Formula.AbstractValueOperand r ->
+        | Binary (LeadsTo, Formula.AbstractValueOperand l, Formula.AbstractValueOperand r) ->
             if leadsto heap (rep l) (rep r) then Sat path_condition else Unsat
-        | NotLeadsTo, Formula.AbstractValueOperand l, Formula.AbstractValueOperand r ->
+        | Binary (NotLeadsTo, Formula.AbstractValueOperand l, Formula.AbstractValueOperand r) ->
             if leadsto heap (rep l) (rep r) then Unsat else Sat path_condition
-        | LeadsTo, Formula.ConstOperand _, _
-        | LeadsTo, _, Formula.ConstOperand _
-        | NotLeadsTo, Formula.ConstOperand _, _
-        | NotLeadsTo, _, Formula.ConstOperand _ ->
+        | Binary (LeadsTo, Formula.ConstOperand _, _)
+        | Binary (LeadsTo, _, Formula.ConstOperand _)
+        | Binary (NotLeadsTo, Formula.ConstOperand _, _)
+        | Binary (NotLeadsTo, _, Formula.ConstOperand _) ->
             Unsat (* TODO: disallow such cases by (OCaml) typing, and don't parse it *)
         | _ ->
             Sat path_condition
@@ -288,8 +311,14 @@ end = struct
         F.fprintf f "!~>"
 
 
-  let pp_predicate f (op, l, r) =
-    F.fprintf f "@[%a%a%a@]" Formula.pp_operand l pp_operator op Formula.pp_operand r
+  let pp_predicate f pred =
+    match pred with
+    | Binary (op, l, r) ->
+        F.fprintf f "@[%a%a%a@]" PulseFormula.pp_operand l pp_operator op PulseFormula.pp_operand r
+    | True ->
+        F.fprintf f "true"
+    | False ->
+        F.fprintf f "false"
 
 
   let pp = Pp.seq ~sep:"∧" pp_predicate
@@ -304,7 +333,9 @@ end = struct
       | FunctionApplicationOperand _ ->
           true
     in
-    let is_live_predicate (_op, l, r) = is_live_operand l && is_live_operand r in
+    let is_live_predicate pred =
+      match pred with Binary (_op, l, r) -> is_live_operand l && is_live_operand r | _ -> true
+    in
     List.filter ~f:is_live_predicate constr
 end
 
@@ -371,6 +402,30 @@ let get env x =
 
 let set = List.Assoc.add ~equal:String.equal
 
+let make_field class_name field_name : Fieldname.t =
+  match !Language.curr_language with
+  | Erlang -> (
+    match ErlangTypeName.from_string class_name with
+    | None ->
+        L.die UserError "Unknown/unsupported Erlang type %s" class_name
+    | Some typ ->
+        Fieldname.make (ErlangType typ) field_name )
+  | _ ->
+      L.die InternalError "Field access is not supported for current language (%s)"
+        (Language.to_string !Language.curr_language)
+
+
+let deref_field_access pulse_state value class_name field_name : value option =
+  (* Dereferencing is done in 2 steps: (v) --f-> (v1) --*-> (v2) *)
+  let heap = pulse_state.pulse_post.heap in
+  let* edges = Memory.find_opt value heap in
+  let field = make_field class_name field_name in
+  let* v1, _hist = Memory.Edges.find_opt (FieldAccess field) edges in
+  let* edges = Memory.find_opt v1 heap in
+  let* v2, _hist = Memory.Edges.find_opt Dereference edges in
+  Some v2
+
+
 let binop_to : ToplAst.binop -> Constraint.operator = function
   | LeadsTo ->
       LeadsTo
@@ -388,31 +443,44 @@ let binop_to : ToplAst.binop -> Constraint.operator = function
       Builtin Lt
 
 
-let eval_guard memory tcontext guard : Constraint.t =
-  let operand_of_value (value : ToplAst.value) : Formula.operand =
+let eval_guard pulse_state memory tcontext guard : Constraint.t =
+  let rec operand_of_value (value : ToplAst.value) : Formula.operand option =
     match value with
     | Constant (LiteralInt x) ->
-        ConstOperand (Cint (IntLit.of_int x))
+        Some (ConstOperand (Cint (IntLit.of_int x)))
     | Register reg ->
-        AbstractValueOperand (get memory reg)
+        Some (AbstractValueOperand (get memory reg))
     | Binding v ->
-        AbstractValueOperand (get tcontext v)
-    | FieldAccess _ ->
-        L.die InternalError "Field access is not yet supported" (* TODO *)
+        Some (AbstractValueOperand (get tcontext v))
+    | FieldAccess {value; class_name; field_name} -> (
+        let* value_op = operand_of_value value in
+        match value_op with
+        | Formula.AbstractValueOperand v ->
+            let* f = deref_field_access pulse_state v class_name field_name in
+            Some (Formula.AbstractValueOperand f)
+        | _ ->
+            (* TODO: enforce in parser and make this an internal error. *)
+            L.die UserError "Unsupported value for accessing field %s" field_name )
   in
-  let conjoin_predicate pruned (predicate : ToplAst.predicate) =
+  let conjoin_predicate (pruned : Constraint.t option) (predicate : ToplAst.predicate) =
     match predicate with
     | Binop (binop, l, r) ->
-        let l = operand_of_value l in
-        let r = operand_of_value r in
+        let* l = operand_of_value l in
+        let* r = operand_of_value r in
+        let* pruned in
         let binop = binop_to binop in
-        Constraint.and_predicate (Constraint.make binop l r) pruned
+        Some (Constraint.and_predicate (Constraint.make binop l r) pruned)
     | Value v ->
-        let v = operand_of_value v in
+        let* v = operand_of_value v in
+        let* pruned in
         let one = Formula.ConstOperand (Cint IntLit.one) in
-        Constraint.and_predicate (Constraint.make (Builtin Ne) v one) pruned
+        Some (Constraint.and_predicate (Constraint.make (Builtin Ne) v one) pruned)
   in
-  List.fold ~init:Constraint.true_ ~f:conjoin_predicate guard
+  match List.fold ~init:(Some Constraint.true_) ~f:conjoin_predicate guard with
+  | Some result ->
+      result
+  | None ->
+      Constraint.false_
 
 
 let apply_action tcontext assignments memory =
@@ -633,7 +701,7 @@ let small_step loc pulse_state event simple_states =
         [mk (not is_loop)]
     | Some label ->
         let memory = old.post.memory in
-        let pruned = eval_guard memory tcontext label.ToplAst.condition in
+        let pruned = eval_guard pulse_state memory tcontext label.ToplAst.condition in
         let memory = apply_action tcontext label.ToplAst.action memory in
         [mk ~memory ~pruned true]
   in

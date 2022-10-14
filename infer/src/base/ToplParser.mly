@@ -89,7 +89,7 @@ value:
   | id=UID { ToplAst.Binding id }
   | x=INTEGER { ToplAst.Constant (LiteralInt x) (* (Exp.Const (Const.Cint (IntLit.of_int x)))*) }
   | v=value COLON cid=identifier DOT fid=identifier
-    { ToplAst.FieldAccess {value=v; class_=cid; field=fid} }
+    { ToplAst.FieldAccess {value=v; class_name=cid; field_name=fid} }
   (* TODO(rgrigore): Add string literals. *)
 
 predop_value: o=predop v=value { (o, v) }

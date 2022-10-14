@@ -30,6 +30,27 @@ let pp f = function
 
 let to_string name = Format.asprintf "%a" pp name
 
+let from_string s =
+  let tuple_opt format =
+    try Scanf.sscanf s format (fun d -> Some (Tuple d)) with Scanf.Scan_failure _ -> None
+  in
+  match s with
+  | "ErlangAny" | "Any" ->
+      Some Any
+  | "ErlangAtom" | "Atom" ->
+      Some Atom
+  | "ErlangCons" | "Cons" ->
+      Some Cons
+  | "ErlangInteger" | "Integer" ->
+      Some Integer
+  | "ErlangMap" | "Map" ->
+      Some Map
+  | "ErlangNil" | "Nil" ->
+      Some Nil
+  | _ ->
+      Option.first_some (tuple_opt "ErlangTuple%d%!") (tuple_opt "Tuple%d%!")
+
+
 let atom_value = "value"
 
 let atom_hash = "hash"
