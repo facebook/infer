@@ -75,7 +75,8 @@ module Exec = struct
     let path = Loc.get_path loc in
     let allocsite =
       let represents_multiple_values = represents_multiple_values || not (Itv.is_one size) in
-      Allocsite.make pname ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values
+      Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num ~dimension
+        ~path ~represents_multiple_values
     in
     let mem =
       let arr =
@@ -128,8 +129,8 @@ module Exec = struct
             let stride = Option.map stride ~f:IntLit.to_int_exn in
             let allocsite =
               let represents_multiple_values = not (Itv.is_one length) in
-              Allocsite.make pname ~node_hash ~inst_num ~dimension ~path:field_path
-                ~represents_multiple_values
+              Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num
+                ~dimension ~path:field_path ~represents_multiple_values
             in
             let offset, size = (Itv.zero, length) in
             let v =
@@ -211,8 +212,8 @@ module Exec = struct
             let deref_path =
               Option.map ~f:(fun path -> Symb.SymbolPath.deref ~deref_kind path) path
             in
-            Allocsite.make pname ~node_hash ~inst_num:0 ~dimension:1 ~path:deref_path
-              ~represents_multiple_values:true
+            Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
+              ~dimension:1 ~path:deref_path ~represents_multiple_values:true
           in
           let v =
             if Language.curr_language_is Java then

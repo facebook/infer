@@ -17,6 +17,7 @@ module Allocsite = struct
     | Symbol of Symb.SymbolPath.partial
     | Known of
         { proc_name: string
+        ; caller_pname: Procname.t option
         ; node_hash: int
         ; inst_num: int
         ; dimension: int
@@ -50,8 +51,12 @@ module Allocsite = struct
         Symb.SymbolPath.pp_partial_paren ~paren fmt path
     | Known {path= Some path} when Config.bo_debug < 1 ->
         Symb.SymbolPath.pp_partial_paren ~paren fmt path
-    | Known {proc_name; node_hash; inst_num; dimension; path} ->
-        F.fprintf fmt "%s-%d-%d-%d" proc_name node_hash inst_num dimension ;
+    | Known {proc_name; caller_pname; node_hash; inst_num; dimension; path} ->
+        let pp_opt_pname fmt optpname =
+          Option.iter optpname ~f:(fun pname -> Procname.pp fmt pname)
+        in
+        F.fprintf fmt "%s-%a-%d-%d-%d" proc_name pp_opt_pname caller_pname node_hash inst_num
+          dimension ;
         Option.iter path ~f:(fun path ->
             F.fprintf fmt "(%a)" (Symb.SymbolPath.pp_partial_paren ~paren:false) path )
     | LiteralString s ->
@@ -68,15 +73,17 @@ module Allocsite = struct
 
   let make :
          Procname.t
+      -> caller_pname:Procname.t option
       -> node_hash:int
       -> inst_num:int
       -> dimension:int
       -> path:Symb.SymbolPath.partial option
       -> represents_multiple_values:bool
       -> t =
-   fun proc_name ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values ->
+   fun proc_name ~caller_pname ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values ->
     Known
       { proc_name= Procname.to_string proc_name
+      ; caller_pname
       ; node_hash
       ; inst_num
       ; dimension
@@ -610,6 +617,13 @@ module PowLoc = struct
         Loc.get_linked_list_next ~lhs ~rhs
     | _, _ ->
         None
+
+
+  let is_single_known_loc = function
+    | Bottom | Unknown _ ->
+        false
+    | Known ploc ->
+        Int.equal (LocSet.cardinal ploc) 1
 end
 
 let always_strong_update = false

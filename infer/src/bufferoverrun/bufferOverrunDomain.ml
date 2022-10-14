@@ -2335,11 +2335,15 @@ module MemReach = struct
    fun ~f -> transformi_mem ~f:(fun _ v -> f v)
 
 
+  (* TODO: it would probably make sense to use bot as a default value if locs contains a
+     single location that contain a star field (such location represents multiple values
+     but as opposed to a location representing all elements of an array, it would probably
+     make sense if their first of such location in a subprogram would be strong).*)
   let weak_update locs v m = transform_mem ~f:(fun v' -> Val.join v' v) locs m
 
-  let update_mem : PowLoc.t -> Val.t -> t -> t =
-   fun ploc v s ->
-    if can_strong_update ploc then strong_update ploc v s
+  let update_mem : ?force_strong_update:Bool.t -> PowLoc.t -> Val.t -> t -> t =
+   fun ?(force_strong_update = false) ploc v s ->
+    if force_strong_update || can_strong_update ploc then strong_update ploc v s
     else (
       L.d_printfln_escaped "Weak update for %a <- %a" PowLoc.pp ploc Val.pp v ;
       weak_update ploc v s )
@@ -2512,6 +2516,14 @@ module MemReach = struct
      | End ->
          add_cpp_iter_end_alias new_pvar m )
     |> Option.value ~default:m
+
+
+  let get_proc_desc m =
+    let oenv = GOption.value m.oenv in
+    oenv.proc_desc
+
+
+  let get_proc_name m = Procdesc.get_proc_name (get_proc_desc m)
 end
 
 module Mem = struct
@@ -2727,7 +2739,10 @@ module Mem = struct
     f_lift_default ~default:LocSet.empty (MemReach.get_reachable_locs_from formals locs)
 
 
-  let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> map ~f:(MemReach.update_mem ploc v)
+  let update_mem : ?force_strong_update:Bool.t -> PowLoc.t -> Val.t -> t -> t =
+   fun ?(force_strong_update = false) ploc v ->
+    map ~f:(MemReach.update_mem ~force_strong_update ploc v)
+
 
   let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
    fun ~f ploc -> map ~f:(MemReach.transform_mem ~f ploc)
@@ -2812,4 +2827,7 @@ module Mem = struct
 
   let propagate_cpp_iter_begin_or_end_alias ~new_pvar ~existing_pvar m =
     map m ~f:(MemReach.propagate_cpp_iter_begin_or_end_alias ~new_pvar ~existing_pvar)
+
+
+  let get_proc_name m = f_lift_default ~default:None (fun m -> Some (MemReach.get_proc_name m)) m
 end

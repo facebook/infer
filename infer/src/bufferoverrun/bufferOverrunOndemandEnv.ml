@@ -17,7 +17,8 @@ type t =
   ; may_last_field: SPath.partial -> bool
   ; entry_location: Location.t
   ; integer_type_widths: Typ.IntegerWidths.t
-  ; class_name: Typ.name option }
+  ; class_name: Typ.name option
+  ; proc_desc: Procdesc.t }
 
 let mk pdesc =
   let pname = Procdesc.get_proc_name pdesc in
@@ -92,4 +93,10 @@ let mk pdesc =
     in
     let entry_location = Procdesc.Node.get_loc (Procdesc.get_start_node pdesc) in
     let class_name = Procname.get_class_type_name pname in
-    {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths; class_name}
+    { tenv
+    ; typ_of_param_path
+    ; may_last_field
+    ; entry_location
+    ; integer_type_widths
+    ; class_name
+    ; proc_desc= pdesc }

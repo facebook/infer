@@ -80,7 +80,39 @@ module TransferFunctions = struct
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
             let locs = PowLoc.subst_loc loc eval_locpath in
             let v = Dom.Val.subst v eval_sym_trace location in
-            PowLoc.fold (fun loc acc -> Dom.Mem.add_heap loc v acc) locs acc )
+            (* Always do strong updates if the following two conditions hold
+               1) Context-sensitive allocsites are assumed: a single allocsite in a caller
+                  doesn't represent objects from different call contexts. For example:
+
+                 Arr1 = createArray (length1); – creates an array of length length1
+                 Arr2 = createArray (length2); – creates an array of length length2
+
+                 If it can happen that the allocsite representing an array created in
+                 createArray is imported as the same allocsite for both calls (Arr1 and
+                 Arr2 are then represented by the same allocsite), weak update has to be
+                 always performed.
+
+                 Currently, BO doesn't ensure this assumption, but frontend can ensure it
+                 by copying an allocsite imported from the callee to the new one after the
+                 call.
+
+                 BO could ensure this assumption by adding context sensitivity to allocsites
+                 (an identification of a caller and a call node) when importing then from a
+                 callee to a caller.
+
+               2) (2.A) Either it holds can_strong_update for imported locations or
+                 (2.B) the set of imported locations consists of a single known location
+                 and for locations representing multiple values it holds either that all the
+                 values they represent were updated or the location has unknown value. This holds
+                 when default value for a location is unknown and such location is always weekly
+                 updated. *)
+            Dom.Mem.update_mem
+              ~force_strong_update:
+                ( if Config.bo_context_sensitive_allocsites then
+                  if not Config.bo_bottom_as_default then PowLoc.is_single_known_loc locs
+                  else can_strong_update locs
+                else false )
+              locs v acc )
       in
       let reachable_locs = Dom.Mem.get_reachable_locs_from callee_formals locs callee_exit_mem in
       LocSet.fold copy (LocSet.diff reachable_locs formal_locs) mem
@@ -377,7 +409,7 @@ module TransferFunctions = struct
           let tgt_locs = Sem.eval_locs tgt_exp mem in
           let tgt_deref =
             let allocsite =
-              Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+              Allocsite.make pname ~caller_pname:None ~node_hash ~inst_num:1 ~dimension:1 ~path:None
                 ~represents_multiple_values:false
             in
             PowLoc.singleton (Loc.of_allocsite allocsite)

@@ -173,6 +173,8 @@ val bo_sound_unknown_sets_join : bool
 
 val bo_bottom_as_default : bool
 
+val bo_context_sensitive_allocsites : bool
+
 val bootclasspath : string option
 
 val buck : bool

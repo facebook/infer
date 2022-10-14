@@ -773,6 +773,13 @@ and bo_bottom_as_default =
     "Use bottom as a default value instead of unknown."
 
 
+and bo_context_sensitive_allocsites =
+  CLOpt.mk_bool ~default:false ~long:"bo-context-sensitive-allocsites"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Assume that different calls to the same function creating an allocsite results in different \
+     allocsites imported to the caller."
+
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -3303,6 +3310,8 @@ and bo_max_cfg_size = !bo_max_cfg_size
 and bo_sound_unknown_sets_join = !bo_sound_unknown_sets_join
 
 and bo_bottom_as_default = !bo_bottom_as_default
+
+and bo_context_sensitive_allocsites = !bo_context_sensitive_allocsites
 
 and buck = !buck
 
