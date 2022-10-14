@@ -22,7 +22,7 @@ let pp fmt pre_posts =
   F.close_box ()
 
 
-let exec_summary_of_post_common tenv ~continue_program proc_desc err_log location
+let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log location
     (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
   let summarize (astate : AbductiveDomain.t)
       ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t) :
@@ -89,8 +89,8 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
           |> Option.value ~default:(exec_domain_of_summary summary) )
   in
   match exec_astate with
-  | ExceptionRaised _ ->
-      Unsat (* we do not propagate exception interproceduraly yet *)
+  | ExceptionRaised astate ->
+      summarize astate ~exec_domain_of_summary:exception_raised
   | ContinueProgram astate ->
       summarize astate ~exec_domain_of_summary:continue_program
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
@@ -107,8 +107,9 @@ let exec_summary_of_post_common tenv ~continue_program proc_desc err_log locatio
 
 
 let force_exit_program tenv proc_desc err_log post =
-  exec_summary_of_post_common tenv proc_desc err_log post ~continue_program:(fun astate ->
-      ExitProgram astate )
+  exec_summary_of_post_common tenv proc_desc err_log post
+    ~continue_program:(fun astate -> ExitProgram astate)
+    ~exception_raised:(fun astate -> ExitProgram astate)
 
 
 let of_posts tenv proc_desc err_log location posts =
@@ -116,6 +117,7 @@ let of_posts tenv proc_desc err_log location posts =
       L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
       exec_summary_of_post_common tenv proc_desc err_log location exec_state
         ~continue_program:(fun astate -> ContinueProgram astate)
+        ~exception_raised:(fun astate -> ExceptionRaised astate)
       |> SatUnsat.sat )
 
 
