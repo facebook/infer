@@ -17,6 +17,8 @@ struct S {
   ~S() {}
 };
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreturn-stack-address"
 const int& return_literal_stack_reference_bad() { return 1; }
 
 const int& return_variable_stack_reference1_bad() {
@@ -29,6 +31,7 @@ const int& return_variable_stack_reference2_bad() {
   const int& y = x;
   return y;
 }
+#pragma clang diagnostic pop
 
 const int return_read_of_stack_reference_ok() {
   const int& x = 2;
@@ -82,10 +85,13 @@ const char* return_field_addr_ternary_ok() {
   return t ? *t : "";
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreturn-stack-address"
 int* return_stack_pointer_bad() {
   int x = 3;
   return &x;
 }
+#pragma clang diagnostic pop
 
 S* return_static_local_ok() {
   S* local;

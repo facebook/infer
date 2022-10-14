@@ -53,8 +53,8 @@ struct list {
 };
 
 void access_null_deref_bad() {
-  struct list* l = {NULL, 44};
-  l->next->next = NULL;
+  struct list l = {NULL, 44};
+  l.next->next = NULL;
 }
 
 void access_use_after_free_bad(struct list* l) {

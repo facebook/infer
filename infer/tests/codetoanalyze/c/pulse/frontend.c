@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 void assign_implicit_cast_ok() {
   bool* b = (bool*)malloc(sizeof(bool));

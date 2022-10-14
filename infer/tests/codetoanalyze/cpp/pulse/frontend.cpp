@@ -90,7 +90,7 @@ void conditional_construction_int_ptr_ok() {
   }
 }
 
-int conditional_expression_bad(bool b) {
+void conditional_expression_bad(bool b) {
   bool ok = false;
   ok = ok && b;
   if (!ok) {

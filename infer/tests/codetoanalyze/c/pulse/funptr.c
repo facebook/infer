@@ -6,7 +6,7 @@
  */
 #include <stddef.h>
 
-void do_nothing(int**) { return; }
+void do_nothing(int** _ptr) { return; }
 
 void assign_NULL(int** ptr) { *ptr = NULL; }
 

@@ -74,7 +74,8 @@ void temporary_in_while_condition_ok() {
   while (A(4).s_) {
   }
 
-  while (true && A(4).s_ && true) {}
+  while (true && A(4).s_ && true) {
+  }
 }
 
 void call_mk_UniquePtr_A_get_field_ok() { int x = A().s_; }

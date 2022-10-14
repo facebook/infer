@@ -125,7 +125,7 @@ int struct_inside_loop_continue_ok(std::vector<int> numbers) {
   return sum;
 }
 
-int return_from_inner_scope_ok(bool b) {
+void return_from_inner_scope_ok(bool b) {
   {
     A a = getA();
     if (b) {

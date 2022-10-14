@@ -50,7 +50,7 @@ int array_access0_ok() {
   std::unique_ptr<int[]> x(p);
   if (x[1] != 42) { // Should not report a NPE here as x[1] is equal to 42
     int* q = nullptr;
-    *q;
+    *q = 10;
   }
   return 0;
 }

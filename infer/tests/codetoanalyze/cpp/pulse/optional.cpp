@@ -8,6 +8,11 @@
 #include <vector>
 #include <string>
 #include <memory>
+
+// remove once we upgrade clang:
+// https://github.com/llvm/llvm-project/issues/37522
+#pragma clang diagnostic ignored "-Wundefined-inline"
+
 namespace folly {
 
 template <class Value>
@@ -75,7 +80,7 @@ struct Integer {
   int get() const { return field; }
 };
 
-int call_constructors() {
+void call_constructors() {
   // Since in this file we define only the interface of Optional, we need
   // to call some methods to ensure that they are actually compiled (and thus
   // analyzed).
@@ -229,6 +234,7 @@ int has_value_ok() {
     folly::Optional<int> foo{folly::none};
     return foo.value();
   }
+  return 0;
 }
 
 int has_value_bad() {
@@ -237,6 +243,7 @@ int has_value_bad() {
     folly::Optional<int> foo{folly::none};
     return foo.value();
   }
+  return 0;
 }
 
 struct State {

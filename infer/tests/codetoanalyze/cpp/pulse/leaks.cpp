@@ -54,10 +54,13 @@ void simple_new_array_delete_array_ok() {
   delete[] x;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmismatched-new-delete"
 void new_array_delete_bad() {
   X* x = new X[5];
   delete x;
 }
+#pragma clang diagnostic pop
 
 void unique_ptr_managed_ok() {
   struct UniquePtr<X> stack_allocated {

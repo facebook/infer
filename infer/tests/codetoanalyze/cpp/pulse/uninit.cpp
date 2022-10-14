@@ -88,6 +88,8 @@ class Uninit {
     int x = get_MyClass_infeasible_default().i;
   }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreturn-type"
   MyClass get_MyClass_feasible_default() {
     switch (get_my_enum()) {
       case (my_enum_1):
@@ -98,6 +100,7 @@ class Uninit {
         break;
     }
   }
+#pragma clang diagnostic pop
 
   void call_get_MyClass_feasible_default_bad() {
     int x = get_MyClass_feasible_default().i;

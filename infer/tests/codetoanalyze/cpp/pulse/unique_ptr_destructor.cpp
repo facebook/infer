@@ -52,7 +52,7 @@ int destructor4_ok() {
   return 0;
 }
 
-int destructor5_ok() {
+void destructor5_ok() {
   auto x = new std::unique_ptr<Y>(new Y());
   delete x;
 }
@@ -62,12 +62,12 @@ int destructor6_ok() {
   return 0;
 }
 
-int destructor7_ok() {
+void destructor7_ok() {
   auto x = std::unique_ptr<Y>(new Y());
   x.reset();
 }
 
-int destructor8_ok() {
+void destructor8_ok() {
   auto x = std::unique_ptr<Y>(new Y());
   x.reset(new Y());
 }
