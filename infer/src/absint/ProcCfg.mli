@@ -106,19 +106,19 @@ module DefaultNode : Node with type t = Procdesc.Node.t and type id = Procdesc.N
 module Normal :
   S with type t = Procdesc.t and module Node = DefaultNode and type instrs_dir = Instrs.not_reversed
 
-(** Forward .NET CFG with exceptional control-flow *)
-module ExceptionalHandlerOnly :
+module type ExceptionalS =
   S
     with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t
      and module Node = DefaultNode
      and type instrs_dir = Instrs.not_reversed
 
+(** Forward .NET CFG with exceptional control-flow *)
+module ExceptionalHandlerOnly : ExceptionalS
+
 (** Forward CFG with exceptional control-flow *)
-module Exceptional :
-  S
-    with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t
-     and module Node = DefaultNode
-     and type instrs_dir = Instrs.not_reversed
+module Exceptional : ExceptionalS
+
+module ExceptionalNoSinkToExitEdge : ExceptionalS
 
 (** Wrapper that reverses the direction of the CFG *)
 module Backward (Base : S with type instrs_dir = Instrs.not_reversed) :

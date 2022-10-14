@@ -49,7 +49,7 @@ let report_const_refable_parameters proc_desc err_log non_disj_astate =
 let heap_size () = (Gc.quick_stat ()).heap_words
 
 module PulseTransferFunctions = struct
-  module CFG = ProcCfg.Exceptional
+  module CFG = ProcCfg.ExceptionalNoSinkToExitEdge
   module DisjDomain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
   module NonDisjDomain = NonDisjDomain
 

@@ -199,6 +199,12 @@ module Normal = struct
   let wto = Procdesc.get_wto
 end
 
+module type ExceptionalS =
+  S
+    with type t = Procdesc.t * DefaultNode.t list Procdesc.IdMap.t
+     and module Node = DefaultNode
+     and type instrs_dir = Instrs.not_reversed
+
 (** Forward CFG with exceptional control-flow *)
 module Exceptional = struct
   module Node = DefaultNode
@@ -294,6 +300,10 @@ module Exceptional = struct
   end)
 
   let wto (pdesc, _) = WTO.make pdesc
+end
+
+module ExceptionalNoSinkToExitEdge : ExceptionalS = struct
+  include Exceptional
 end
 
 (** Forward CFG with exceptional control-flow for exception handler node only*)
