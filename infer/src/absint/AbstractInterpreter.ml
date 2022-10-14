@@ -60,6 +60,14 @@ module type S = sig
     -> Procdesc.t
     -> TransferFunctions.Domain.t option
 
+  val compute_post_including_exceptional :
+       ?do_narrowing:bool
+    -> ?pp_instr:(TransferFunctions.Domain.t -> Sil.instr -> (Format.formatter -> unit) option)
+    -> TransferFunctions.analysis_data
+    -> initial:TransferFunctions.Domain.t
+    -> Procdesc.t
+    -> TransferFunctions.Domain.t option * TransferFunctions.Domain.t option
+
   val exec_cfg :
        ?do_narrowing:bool
     -> TransferFunctions.CFG.t
@@ -562,6 +570,20 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
     let cfg = CFG.from_pdesc proc_desc in
     let inv_map = exec_cfg_internal ~pp_instr cfg analysis_data ~do_narrowing ~initial in
     extract_post (Node.id (CFG.exit_node cfg)) inv_map
+
+
+  (** compute and return the postconditions of [pdesc] at the exit node, and the exceptions sink
+      node *)
+  let make_compute_post_including_exceptional ~exec_cfg_internal ?(pp_instr = pp_sil_instr)
+      analysis_data ~do_narrowing ~initial proc_desc =
+    let cfg = CFG.from_pdesc proc_desc in
+    let inv_map = exec_cfg_internal ~pp_instr cfg analysis_data ~do_narrowing ~initial in
+    let post_at_exit = extract_post (Node.id (CFG.exit_node cfg)) inv_map in
+    let exn_sink_opt : Node.t option = CFG.exn_sink_node cfg in
+    let post_at_exn_sink =
+      Option.bind exn_sink_opt ~f:(fun exn_sink -> extract_post (Node.id exn_sink) inv_map)
+    in
+    (post_at_exit, post_at_exn_sink)
 end
 
 module MakeWithScheduler
@@ -611,6 +633,9 @@ struct
   let exec_pdesc ?do_narrowing:_ = make_exec_pdesc ~exec_cfg_internal ~do_narrowing:false
 
   let compute_post ?do_narrowing:_ = make_compute_post ~exec_cfg_internal ~do_narrowing:false
+
+  let compute_post_including_exceptional ?do_narrowing:_ =
+    make_compute_post_including_exceptional ~exec_cfg_internal ~do_narrowing:false
 end
 
 module MakeRPONode (T : NodeTransferFunctions) =
@@ -735,6 +760,9 @@ module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
   let exec_pdesc ?(do_narrowing = false) = make_exec_pdesc ~exec_cfg_internal ~do_narrowing
 
   let compute_post ?(do_narrowing = false) = make_compute_post ~exec_cfg_internal ~do_narrowing
+
+  let compute_post_including_exceptional ?(do_narrowing = false) =
+    make_compute_post_including_exceptional ~exec_cfg_internal ~do_narrowing
 end
 
 module MakeWTO (T : TransferFunctions.SIL) = MakeWTONode (SimpleNodeTransferFunctions (T))

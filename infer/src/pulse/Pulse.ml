@@ -967,37 +967,65 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
       with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
         ~f:(fun () -> (initial_disjuncts, initial_non_disj))
     in
-    match DisjunctiveAnalyzer.compute_post analysis_data ~initial proc_desc with
-    | Some (posts, non_disj_astate) ->
-        with_html_debug_node (Procdesc.get_exit_node proc_desc) ~desc:"pulse summary creation"
-          ~f:(fun () ->
-            let exit_location = Procdesc.get_exit_node proc_desc |> Procdesc.Node.get_loc in
-            let posts, non_disj_astate =
-              (* Do final cleanup at the end of procdesc
-                 Forget path contexts on the way, we don't propagate them across functions *)
-              exit_function analysis_data exit_location posts non_disj_astate
-            in
-            let objc_nil_summary =
-              PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
-            in
-            let summary =
-              Option.to_list objc_nil_summary
-              @ PulseSummary.of_posts tenv proc_desc err_log exit_location posts
-            in
-            report_topl_errors proc_desc err_log summary ;
-            report_unnecessary_copies proc_desc err_log non_disj_astate ;
-            report_const_refable_parameters proc_desc err_log non_disj_astate ;
-            if Config.trace_topl then
-              L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
-                !PulseTopl.Debug.dropped_disjuncts_count
-                Procname.pp_unique_id
-                (Procdesc.get_proc_name proc_desc) ;
-            if Config.pulse_scuba_logging then
-              ScubaLogging.log_count ~label:"pulse_summary" ~value:(List.length summary) ;
-            Stats.add_pulse_summaries_count (List.length summary) ;
-            Some summary )
-    | None ->
-        None )
+    let exit_summaries_opt, exn_sink_summaries_opt =
+      DisjunctiveAnalyzer.compute_post_including_exceptional analysis_data ~initial proc_desc
+    in
+    let process_postconditions node posts_opt =
+      match posts_opt with
+      | Some (posts, non_disj_astate) ->
+          let node_loc = Procdesc.Node.get_loc node in
+          let node_id = Procdesc.Node.get_id node in
+          let posts, non_disj_astate =
+            (* Do final cleanup at the end of procdesc
+               Forget path contexts on the way, we don't propagate them across functions *)
+            exit_function analysis_data node_loc posts non_disj_astate
+          in
+          let summary = PulseSummary.of_posts tenv proc_desc err_log node_loc posts in
+          let is_exit_node =
+            Procdesc.Node.equal_id node_id (Procdesc.Node.get_id (Procdesc.get_exit_node proc_desc))
+          in
+          let summary =
+            if is_exit_node then
+              let objc_nil_summary =
+                PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
+              in
+              Option.to_list objc_nil_summary @ summary
+            else summary
+          in
+          report_topl_errors proc_desc err_log summary ;
+          report_unnecessary_copies proc_desc err_log non_disj_astate ;
+          report_const_refable_parameters proc_desc err_log non_disj_astate ;
+          summary
+      | None ->
+          []
+    in
+    let report_on_and_return_summaries (summary : ExecutionDomain.summary list) :
+        ExecutionDomain.summary list option =
+      if Config.trace_topl then
+        L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
+          !PulseTopl.Debug.dropped_disjuncts_count
+          Procname.pp_unique_id
+          (Procdesc.get_proc_name proc_desc) ;
+      if Config.pulse_scuba_logging then
+        ScubaLogging.log_count ~label:"pulse_summary" ~value:(List.length summary) ;
+      Stats.add_pulse_summaries_count (List.length summary) ;
+      Some summary
+    in
+    let exn_sink_node_opt = Procdesc.get_exn_sink proc_desc in
+    let summaries_at_exn_sink : ExecutionDomain.summary list =
+      (* We extract postconditions from the exceptions sink. *)
+      match exn_sink_node_opt with
+      | Some esink_node ->
+          with_html_debug_node esink_node ~desc:"pulse summary creation (for exception sink node)"
+            ~f:(fun () -> process_postconditions esink_node exn_sink_summaries_opt)
+      | None ->
+          []
+    in
+    let exit_node = Procdesc.get_exit_node proc_desc in
+    with_html_debug_node exit_node ~desc:"pulse summary creation" ~f:(fun () ->
+        let summaries_for_exit = process_postconditions exit_node exit_summaries_opt in
+        let exit_esink_summaries = summaries_for_exit @ summaries_at_exn_sink in
+        report_on_and_return_summaries exit_esink_summaries ) )
   else None
 
 

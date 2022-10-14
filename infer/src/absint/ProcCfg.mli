@@ -89,6 +89,8 @@ module type S = sig
 
   val exit_node : t -> Node.t
 
+  val exn_sink_node : t -> Node.t option
+
   val proc_desc : t -> Procdesc.t
 
   val fold_nodes : (t, Node.t, 'accum) Container.fold
@@ -118,6 +120,7 @@ module ExceptionalHandlerOnly : ExceptionalS
 (** Forward CFG with exceptional control-flow *)
 module Exceptional : ExceptionalS
 
+(** Forward CFG with exceptional control-flow, but no edge from exceptions sink to exit node. *)
 module ExceptionalNoSinkToExitEdge : ExceptionalS
 
 (** Wrapper that reverses the direction of the CFG *)
