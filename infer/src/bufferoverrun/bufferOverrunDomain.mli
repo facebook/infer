@@ -470,6 +470,8 @@ module Mem : sig
 
   val unreachable : t
 
+  val is_reachable : t -> bool
+
   type get_summary = Procname.t -> no_oenv_t option
 
   val init : get_summary -> BufferOverrunOndemandEnv.t -> t

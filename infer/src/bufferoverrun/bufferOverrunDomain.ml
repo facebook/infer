@@ -2499,6 +2499,8 @@ module Mem = struct
 
   let unreachable : t = Unreachable
 
+  let is_reachable = function Reachable _ -> true | _ -> false
+
   let exc_raised : t = ExcRaised
 
   let leq ~lhs ~rhs =
