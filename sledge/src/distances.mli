@@ -34,6 +34,3 @@ val top_down :
 
 val max_disjuncts : int ref
 (** An upper bound on the number of constant-return summary disjuncts. *)
-
-val constprop_branches : bool ref
-(** If true, infer integer constant information from branch conditions. *)
