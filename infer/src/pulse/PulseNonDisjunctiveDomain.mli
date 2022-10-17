@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 module BaseMemory = PulseBaseMemory
 
 type copy_spec_t =
@@ -16,7 +17,7 @@ type copy_spec_t =
             (* [copied_location] has a value when the copied location is different to where to
                report: e.g. this is the case for returning copied values. *)
       ; heap: BaseMemory.t
-      ; from: PulseAttribute.CopyOrigin.t }
+      ; from: Attribute.CopyOrigin.t }
   | Modified
 
 type parameter_spec_t =
@@ -27,7 +28,7 @@ include AbstractDomain.WithBottomTop
 
 val add_var :
      Var.t
-  -> source_addr_opt:PulseAbstractValue.t option
+  -> source_addr_opt:AbstractValue.t option
   -> source_opt:Pvar.t option
   -> copy_spec_t
   -> t
@@ -41,8 +42,8 @@ val checked_via_dtor : Var.t -> t -> t
 
 val mark_copy_as_modified :
      is_modified:(BaseMemory.t -> bool)
-  -> copied_into:PulseAttribute.CopiedInto.t
-  -> source_addr_opt:PulseAbstractValue.t option
+  -> copied_into:Attribute.CopiedInto.t
+  -> source_addr_opt:AbstractValue.t option
   -> t
   -> t
 
@@ -50,11 +51,11 @@ val mark_parameter_as_modified : is_modified:(BaseMemory.t -> bool) -> var:Var.t
 
 val get_copied :
      t
-  -> ( PulseAttribute.CopiedInto.t
+  -> ( Attribute.CopiedInto.t
      * Typ.t
      * Location.t
      * (Procname.t * Location.t) option
-     * PulseAttribute.CopyOrigin.t )
+     * Attribute.CopyOrigin.t )
      list
 
 val get_const_refable_parameters : t -> (Var.t * Typ.t * Location.t) list

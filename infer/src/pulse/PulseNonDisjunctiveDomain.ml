@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+open PulseBasicInterface
 module BaseMemory = PulseBaseMemory
 
 (** Unnecessary copies are tracked in two places:
@@ -46,7 +47,7 @@ type copy_spec_t =
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; heap: BaseMemory.t
-      ; from: PulseAttribute.CopyOrigin.t }
+      ; from: Attribute.CopyOrigin.t }
   | Modified
 [@@deriving equal]
 
@@ -65,23 +66,23 @@ module CopySpec = MakeDomainFromTotalOrder (struct
 
   let pp fmt = function
     | Copied {typ; heap; location; from} ->
-        Format.fprintf fmt " %a (value of type %a) at %a with heap= %a" PulseAttribute.CopyOrigin.pp
-          from (Typ.pp Pp.text) typ Location.pp location BaseMemory.pp heap
+        Format.fprintf fmt "%a (value of type %a) at %a with heap= %a" Attribute.CopyOrigin.pp from
+          (Typ.pp Pp.text) typ Location.pp location BaseMemory.pp heap
     | Modified ->
         Format.fprintf fmt "modified"
 end)
 
 module CopyVar = struct
-  type t = {copied_into: PulseAttribute.CopiedInto.t; source_addr_opt: PulseAbstractValue.t option}
+  type t = {copied_into: Attribute.CopiedInto.t; source_addr_opt: AbstractValue.t option}
   [@@deriving compare]
 
   let pp fmt {copied_into; source_addr_opt} =
     match source_addr_opt with
     | Some source_addr ->
-        Format.fprintf fmt "%a copied with source_addr %a" PulseAttribute.CopiedInto.pp copied_into
-          PulseAbstractValue.pp source_addr
+        Format.fprintf fmt "%a copied with source_addr %a" Attribute.CopiedInto.pp copied_into
+          AbstractValue.pp source_addr
     | None ->
-        Format.fprintf fmt "%a copied" PulseAttribute.CopiedInto.pp copied_into
+        Format.fprintf fmt "%a copied" Attribute.CopiedInto.pp copied_into
 end
 
 type parameter_spec_t =
@@ -255,7 +256,7 @@ let checked_via_dtor_elt var astate =
 
 let checked_via_dtor var = map (checked_via_dtor_elt var)
 
-module CopiedSet = PrettyPrintable.MakePPSet (PulseAttribute.CopiedInto)
+module CopiedSet = PrettyPrintable.MakePPSet (Attribute.CopiedInto)
 
 let get_copied = function
   | Top ->
@@ -268,7 +269,7 @@ let get_copied = function
           copy_map CopiedSet.empty
       in
       let is_captured copy_into =
-        match (copy_into : PulseAttribute.CopiedInto.t) with
+        match (copy_into : Attribute.CopiedInto.t) with
         | IntoVar {copied_var= ProgramVar pvar} ->
             Captured.mem pvar captured
         | _ ->
