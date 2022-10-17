@@ -775,7 +775,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
               let obj_typ_no_ptr =
                 match sil_obj_type.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> sil_obj_type
               in
-              [create_sil_deref sil_obj_expr ~root_typ:obj_typ_no_ptr ~typ:sil_obj_type loc]
+              [create_sil_deref sil_obj_expr ~root_typ:obj_typ_no_ptr ~typ:obj_typ_no_ptr loc]
           | _ ->
               []
         in
