@@ -181,7 +181,7 @@ let%test_module "remove_internal_calls transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> Transformation.remove_internal_calls in
+      let module_ = parse_module input_text |> TextualTransform.remove_internal_calls in
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
@@ -253,7 +253,7 @@ let%test_module "let_propagation transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> Transformation.let_propagation in
+      let module_ = parse_module input_text |> TextualTransform.let_propagation in
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
@@ -292,7 +292,7 @@ let%test_module "out-of-ssa transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> Transformation.out_of_ssa in
+      let module_ = parse_module input_text |> TextualTransform.out_of_ssa in
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|

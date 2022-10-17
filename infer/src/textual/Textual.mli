@@ -79,11 +79,23 @@ module Typ : sig
 end
 
 module Ident : sig
-  type t
+  type t [@@deriving equal]
+
+  module Set : Caml.Set.S with type elt = t
+
+  module Map : Caml.Map.S with type key = t
 
   val of_int : int -> t
 
   val to_int : t -> int
+
+  val next : t -> t
+
+  val fresh : Set.t -> t
+
+  val to_ssa_var : t -> VarName.t
+
+  val pp : F.formatter -> t -> unit
 end
 
 module Const : sig
@@ -114,6 +126,8 @@ module ProcDecl : sig
   val allocate_array_name : qualified_procname
 
   val is_allocate_array_builtin : qualified_procname -> bool
+
+  val is_side_effect_free_sil_expr : qualified_procname -> bool
 
   val is_not_regular_proc : qualified_procname -> bool
 end
@@ -146,6 +160,8 @@ module Exp : sig
   val not : t -> t
 
   val cast : Typ.t -> t -> t
+
+  val vars : t -> Ident.Set.t
 
   val pp : F.formatter -> t -> unit
 end
@@ -232,22 +248,6 @@ module Module : sig
   val lang : t -> Lang.t option [@@warning "-32"]
 
   val pp : F.formatter -> t -> unit [@@warning "-32"]
-end
-
-module Transformation : sig
-  (* generates enough intermediate Let instructions to make the procdesc free
-     of sub-expressions containing regular calls.
-     Example:
-       n2 = m(n0, g3(n1))
-     -->
-       n3 = g3(n1)
-       n2 = m(n0, n3)
-  *)
-  val remove_internal_calls : Module.t -> Module.t
-
-  val let_propagation : Module.t -> Module.t
-
-  val out_of_ssa : Module.t -> Module.t
 end
 
 exception ToSilTransformationError of (Format.formatter -> unit -> unit)
