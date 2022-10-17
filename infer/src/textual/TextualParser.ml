@@ -9,11 +9,11 @@ open! IStd
 module F = Format
 module L = Logging
 
-type error = VerificationError of Textual.Verification.error | SyntaxError of string
+type error = VerificationError of TextualVerification.error | SyntaxError of string
 
 let pp_error sourcefile fmt = function
   | VerificationError err ->
-      Textual.Verification.pp_error sourcefile fmt err
+      TextualVerification.pp_error sourcefile fmt err
   | SyntaxError err ->
       F.fprintf fmt "%s" err
 
@@ -22,7 +22,7 @@ let parse_buf sourcefile filebuf =
   try
     let lexer = TextualLexer.main in
     let m = TextualMenhir.main lexer filebuf sourcefile in
-    let errors = Textual.Verification.run m in
+    let errors = TextualVerification.run m in
     if List.is_empty errors then Ok m else Error (List.map errors ~f:(fun x -> VerificationError x))
   with TextualMenhir.Error ->
     let pos = filebuf.Lexing.lex_curr_p in
@@ -75,7 +75,7 @@ let capture ?source_path textual_path =
       let source_file = module_.sourcefile in
       DB.Results_dir.init source_file ;
       try
-        let cfg, tenv = Textual.Module.to_sil module_ in
+        let cfg, tenv = TextualSil.module_to_sil module_ in
         SourceFiles.add source_file cfg (FileLocal tenv) None ;
         if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
         if

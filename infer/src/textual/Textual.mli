@@ -7,6 +7,9 @@
 
 open! IStd
 module F = Format
+module Hashtbl = Caml.Hashtbl
+module SilProcname = Procname
+module SilPvar = Pvar
 
 module Lang : sig
   type t = Java | Hack [@@deriving equal]
@@ -17,18 +20,35 @@ module Lang : sig
 end
 
 module Location : sig
-  type t
+  type t = Known of {line: int; col: int} | Unknown [@@deriving compare]
 
   val known : line:int -> col:int -> t
+
+  val pp : F.formatter -> t -> unit
 end
 
 module type NAME = sig
-  type t = {value: string; loc: Location.t}
+  type t = {value: string; loc: Location.t} [@@deriving equal, hash]
+
+  val of_java_name : string -> t
+
+  val pp : F.formatter -> t -> unit
+
+  module Hashtbl : Hashtbl.S with type key = t
+
+  module Map : Caml.Map.S with type key = t
+
+  module Set : Caml.Set.S with type elt = t
 end
 
 module ProcName : NAME (* procedure names, without their attachement type *)
 
-module VarName : NAME (* variables names *)
+module VarName : sig
+  (* variables names *)
+  include NAME
+
+  val of_pvar : Lang.t -> SilPvar.t -> t
+end
 
 module FieldName : NAME (* field names, without their enclosing types *)
 
@@ -39,7 +59,10 @@ module TypeName : NAME (* structured value type name *)
 type enclosing_class = TopLevel | Enclosing of TypeName.t
 
 type qualified_procname = {enclosing_class: enclosing_class; name: ProcName.t}
+[@@deriving equal, hash]
 (* procedure name [name] is attached to the name space [enclosing_class] *)
+
+val pp_qualified_procname : F.formatter -> qualified_procname -> unit
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
@@ -59,6 +82,8 @@ module Ident : sig
   type t
 
   val of_int : int -> t
+
+  val to_int : t -> int
 end
 
 module Const : sig
@@ -72,7 +97,25 @@ end
 module ProcDecl : sig
   type t = {qualified_name: qualified_procname; formals_types: Typ.t list; result_type: Typ.t}
 
-  val to_sil : Lang.t -> t -> Procname.t [@@warning "-32"]
+  val of_unop : Unop.t -> qualified_procname
+
+  val to_unop : qualified_procname -> Unop.t option
+
+  val of_binop : Binop.t -> qualified_procname
+
+  val to_binop : qualified_procname -> Binop.t option
+
+  val is_cast_builtin : qualified_procname -> bool
+
+  val allocate_object_name : qualified_procname
+
+  val is_allocate_object_builtin : qualified_procname -> bool
+
+  val allocate_array_name : qualified_procname
+
+  val is_allocate_array_builtin : qualified_procname -> bool
+
+  val is_not_regular_proc : qualified_procname -> bool
 end
 
 module Global : sig
@@ -84,7 +127,7 @@ module FieldDecl : sig
 end
 
 module Exp : sig
-  type call_kind = Virtual | NonVirtual
+  type call_kind = Virtual | NonVirtual [@@deriving equal]
 
   type t =
     | Var of Ident.t  (** pure variable: it is not an lvalue *)
@@ -95,10 +138,16 @@ module Exp : sig
     | Call of {proc: qualified_procname; args: t list; kind: call_kind}
     | Typ of Typ.t
 
+  val call_non_virtual : qualified_procname -> t list -> t
+
   val call_virtual : qualified_procname -> t -> t list -> t
 
   (* logical not ! *)
   val not : t -> t
+
+  val cast : Typ.t -> t -> t
+
+  val pp : F.formatter -> t -> unit
 end
 
 module Instr : sig
@@ -112,6 +161,8 @@ module Instr : sig
   (* Remark that because Sil operations (add, mult...) are calls, we let the Textual programmer put
      expression in local variables, while SIL forbid that. The to_sil transformation will have to
      inline these definitions. *)
+
+  val pp : F.formatter -> t -> unit
 end
 
 module Terminator : sig
@@ -133,6 +184,7 @@ module Node : sig
     ; instrs: Instr.t list
     ; last_loc: Location.t  (** location of last instruction in file *)
     ; label_loc: Location.t  (** location of label in file *) }
+  [@@deriving equal]
 end
 
 module ProcDesc : sig
@@ -142,6 +194,8 @@ module ProcDesc : sig
     ; start: NodeName.t
     ; params: VarName.t list
     ; exit_loc: Location.t }
+
+  val is_ready_for_to_sil_conversion : t -> bool
 end
 
 module Struct : sig
@@ -155,9 +209,15 @@ module Attr : sig
 
   val value : t -> string [@@warning "-32"]
 
+  val mk_source_language : Lang.t -> t
+
   val pp : F.formatter -> t -> unit [@@warning "-32"]
 
   val pp_with_loc : F.formatter -> t -> unit [@@warning "-32"]
+end
+
+module SsaVerification : sig
+  val run : ProcDesc.t -> unit
 end
 
 module Module : sig
@@ -172,19 +232,6 @@ module Module : sig
   val lang : t -> Lang.t option [@@warning "-32"]
 
   val pp : F.formatter -> t -> unit [@@warning "-32"]
-
-  val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
-  (** generate a .sil file with name [filename] containing all the functions in the given cfg *)
-
-  val to_sil : t -> Cfg.t * Tenv.t
-end
-
-module Verification : sig
-  type error
-
-  val pp_error : SourceFile.t -> Format.formatter -> error -> unit
-
-  val run : Module.t -> error list
 end
 
 module Transformation : sig
