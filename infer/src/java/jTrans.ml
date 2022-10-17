@@ -20,7 +20,7 @@ let get_location source_file impl pc =
     let ln = try JBir.get_source_line_number pc impl with Invalid_argument _ -> None in
     match ln with None -> 0 | Some n -> n
   in
-  {Location.line= line_number; col= -1; file= source_file}
+  {Location.line= line_number; col= -1; file= source_file; macro_file_opt= None; macro_line= -1}
 
 
 let get_start_location_heuristics =
@@ -64,7 +64,9 @@ let get_start_location_heuristics =
 
 let get_start_location source_file proc_name bytecode =
   let line_number = Option.value (JCode.get_source_line_number 0 bytecode) ~default:(-1) in
-  let loc = {Location.line= line_number; col= -1; file= source_file} in
+  let loc =
+    {Location.line= line_number; col= -1; file= source_file; macro_file_opt= None; macro_line= -1}
+  in
   get_start_location_heuristics ~default:loc proc_name
 
 
@@ -75,7 +77,7 @@ let get_exit_location source_file bytecode =
       ~f:(fun l -> Option.value_map ~f:snd ~default:(-1) (List.max_elt ~compare l))
       bytecode.JCode.c_line_number_table
   in
-  {Location.line= last_line_number; col= -1; file= source_file}
+  {Location.line= last_line_number; col= -1; file= source_file; macro_file_opt= None; macro_line= -1}
 
 
 let retrieve_fieldname fieldname =

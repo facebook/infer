@@ -11,10 +11,13 @@ module F = Format
 type t =
   { file: SourceFile.t  (** The name of the source file *)
   ; line: int  (** The line number. -1 means "do not know" *)
-  ; col: int  (** The column number. -1 means "do not know" *) }
+  ; col: int  (** The column number. -1 means "do not know" *)
+  ; macro_file_opt: SourceFile.t option
+        (** If the location is coming from macro expansion, the name of the file macro is defined in *)
+  ; macro_line: int  (** If the location is coming from macro expansion, the line number *) }
 [@@deriving compare, equal, sexp, hash]
 
-let none file = {line= -1; col= -1; file}
+let none file = {line= -1; col= -1; file; macro_file_opt= None; macro_line= -1}
 
 let dummy = none (SourceFile.invalid __FILE__)
 

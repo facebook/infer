@@ -75,26 +75,44 @@ let add_stmt_to_cache _path stmt = add_node_to_cache (`StmtNode stmt) stmtMap
 
 let add_type_to_cache _path c_type = add_node_to_cache (`TypeNode c_type) typeMap
 
-let previous_sloc = {Clang_ast_t.sl_file= None; sl_line= None; sl_column= None}
+let previous_sloc =
+  { Clang_ast_t.sl_file= None
+  ; sl_line= None
+  ; sl_column= None
+  ; sl_macro_file= None
+  ; sl_macro_line= None
+  ; sl_is_macro= false }
+
 
 let get_sloc current previous = match current with None -> previous | Some _ -> current
 
-let mutate_sloc sloc file line column =
+let mutate_sloc ~update_macro sloc file line column macro_file macro_line =
   let open Clang_ast_t in
   sloc.sl_file <- file ;
   sloc.sl_line <- line ;
-  sloc.sl_column <- column
+  sloc.sl_column <- column ;
+  if update_macro then (
+    sloc.sl_macro_file <- macro_file ;
+    sloc.sl_macro_line <- macro_line )
 
 
-let reset_sloc sloc = mutate_sloc sloc None None None
+let reset_sloc sloc = mutate_sloc ~update_macro:true sloc None None None None None
 
-let complete_source_location _path source_loc =
+let complete_source_location _ source_loc =
   let open Clang_ast_t in
   let file = get_sloc source_loc.sl_file previous_sloc.sl_file in
   let line = get_sloc source_loc.sl_line previous_sloc.sl_line in
+  let is_src_macro = source_loc.sl_is_macro in
+  let macro_file =
+    if is_src_macro then get_sloc source_loc.sl_macro_file previous_sloc.sl_macro_file else None
+  in
+  let macro_line =
+    if is_src_macro then get_sloc source_loc.sl_macro_line previous_sloc.sl_macro_line else None
+  in
   let column = get_sloc source_loc.sl_column previous_sloc.sl_column in
-  mutate_sloc source_loc file line column ;
-  mutate_sloc previous_sloc file line column
+  mutate_sloc ~update_macro:true source_loc file line column macro_file macro_line ;
+  mutate_sloc ~update_macro:source_loc.sl_is_macro previous_sloc file line column macro_file
+    macro_line
 
 
 let reset_cache () =

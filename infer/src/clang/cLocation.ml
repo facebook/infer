@@ -17,7 +17,9 @@ let clang_to_sil_location default_source_file clang_loc =
     Option.value_map ~default:default_source_file ~f:SourceFile.from_abs_path
       clang_loc.Clang_ast_t.sl_file
   in
-  Location.{line; col; file}
+  let macro_file_opt = Option.map ~f:SourceFile.from_abs_path clang_loc.Clang_ast_t.sl_macro_file in
+  let macro_line = Option.value ~default:(-1) clang_loc.Clang_ast_t.sl_macro_line in
+  Location.{line; col; file; macro_file_opt; macro_line}
 
 
 let matches_skip_translation_headers =

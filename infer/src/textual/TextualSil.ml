@@ -22,7 +22,7 @@ module LocationBridge = struct
 
   let to_sil file = function
     | Known {line; col} ->
-        BaseLocation.{line; col; file}
+        BaseLocation.{line; col; file; macro_file_opt= None; macro_line= -1}
     | Unknown ->
         BaseLocation.none file
 

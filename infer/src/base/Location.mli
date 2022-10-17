@@ -11,7 +11,10 @@ open! IStd
 type t =
   { file: SourceFile.t  (** The name of the source file *)
   ; line: int  (** The line number. -1 means "do not know" *)
-  ; col: int  (** The column number. -1 means "do not know" *) }
+  ; col: int  (** The column number. -1 means "do not know" *)
+  ; macro_file_opt: SourceFile.t option
+        (** If the location is coming from macro expansion, the name of the file macro is defined in *)
+  ; macro_line: int  (** If the location is coming from macro expansion, the line number *) }
 [@@deriving compare, sexp_of, sexp, hash]
 
 val equal : t -> t -> bool
