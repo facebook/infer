@@ -549,6 +549,25 @@ module Memory = struct
               |> BaseMemory.register_address addr_dst
             else (astate.pre :> base_domain).heap
           in
+          let astate =
+            (* This is the first time we are accessing addr_dst. Because it is accessed
+               via addr_src, it should be tainted the same as is addr_src. This is to be
+               consistent with how sources work: if addr_dst would have been accessed
+               before tainting addr_scr, then it would have been tainted as well *)
+            let taint_sources, taint_sanitizers =
+              AddressAttributes.get_taint_sources_and_sanitizers addr_src astate
+            in
+            let conditionally_add condition attr astate =
+              if condition then AddressAttributes.add_one addr_dst attr astate else astate
+            in
+            let open Attribute in
+            conditionally_add
+              (not (TaintedSet.is_empty taint_sources))
+              (Tainted taint_sources) astate
+            |> conditionally_add
+                 (not (TaintSanitizedSet.is_empty taint_sanitizers))
+                 (TaintSanitized taint_sanitizers)
+          in
           ( { post= PostDomain.update astate.post ~heap:post_heap
             ; pre= PreDomain.update astate.pre ~heap:foot_heap
             ; path_condition= astate.path_condition
