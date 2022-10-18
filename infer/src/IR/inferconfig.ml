@@ -322,7 +322,7 @@ let filters_from_inferconfig inferconfig : filters =
       SourceFile.is_matching (List.map ~f:Str.regexp inferconfig.allow_list)
     in
     let block_list_filter : path_filter =
-      SourceFile.is_matching (List.map ~f:(fun s -> L.progress "regexp: %s"Str.regexp inferconfig.block_list)
+      SourceFile.is_matching (List.map ~f:Str.regexp inferconfig.block_list)
     in
     let block_list_files_containing_filter : path_filter =
       FileContainsStringMatcher.create_matcher
