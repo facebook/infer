@@ -10,6 +10,177 @@ module L = Logging
 module F = Format
 
 module Implementation = struct
+  let add_source_file =
+    let source_file_store_statement =
+      Database.register_statement CaptureDatabase
+        {|
+          INSERT OR REPLACE INTO source_files
+          VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured)
+        |}
+    in
+    fun ~source_file ~tenv ~integer_type_widths ~proc_names ->
+      Database.with_registered_statement source_file_store_statement ~f:(fun db store_stmt ->
+          Sqlite3.bind store_stmt 1 source_file
+          (* :source *)
+          |> SqliteUtils.check_result_code db ~log:"store bind source file" ;
+          Sqlite3.bind store_stmt 2 tenv
+          (* :tenv *)
+          |> SqliteUtils.check_result_code db ~log:"store bind type environment" ;
+          Sqlite3.bind store_stmt 3 integer_type_widths
+          (* :integer_type_widths *)
+          |> SqliteUtils.check_result_code db ~log:"store bind integer type widths" ;
+          Sqlite3.bind store_stmt 4 proc_names
+          (* :proc_names *)
+          |> SqliteUtils.check_result_code db ~log:"store bind proc names" ;
+          Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
+          (* :freshly_captured *)
+          |> SqliteUtils.check_result_code db ~log:"store freshness" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )
+
+
+  let canonicalize () =
+    Database.get_database AnalysisDatabase
+    |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
+
+
+  let delete_all_specs () =
+    Database.get_database AnalysisDatabase
+    |> SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs"
+
+
+  let delete_spec =
+    let delete_statement =
+      Database.register_statement AnalysisDatabase "DELETE FROM specs WHERE proc_uid = :k"
+    in
+    fun ~proc_uid ->
+      Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
+          Sqlite3.bind delete_stmt 1 (Sqlite3.Data.TEXT proc_uid)
+          |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_uid" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"store spec" db delete_stmt )
+
+
+  let mark_all_source_files_stale () =
+    Database.get_database CaptureDatabase
+    |> SqliteUtils.exec ~stmt:"UPDATE source_files SET freshly_captured = 0" ~log:"mark_all_stale"
+
+
+  let merge_captures infer_deps_file =
+    let merge_procedures_table ~db_file =
+      (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
+         sub-table and the main one, and applying the same "more defined" logic as in [replace_attributes] in the
+         cases where a proc_name is present in both the sub-table and the main one (main.proc_uid !=
+         NULL). All the rows that pass this filter are inserted/updated into the main table. *)
+      Database.get_database CaptureDatabase
+      |> SqliteUtils.exec
+           ~log:(Printf.sprintf "copying procedures of database '%s'" db_file)
+           ~stmt:
+             {|
+              INSERT OR REPLACE INTO memdb.procedures
+              SELECT
+                sub.proc_uid,
+                sub.proc_attributes,
+                sub.cfg,
+                sub.callees
+              FROM (
+                attached.procedures AS sub
+                LEFT OUTER JOIN memdb.procedures AS main
+                ON sub.proc_uid = main.proc_uid )
+              WHERE
+                main.proc_uid IS NULL
+                OR
+                (main.cfg IS NOT NULL) < (sub.cfg IS NOT NULL)
+                OR
+                ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.proc_attributes < sub.proc_attributes)
+            |}
+    in
+    let merge_source_files_table ~db_file =
+      Database.get_database CaptureDatabase
+      |> SqliteUtils.exec
+           ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
+           ~stmt:
+             {|
+              INSERT OR REPLACE INTO memdb.source_files
+              SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
+              FROM attached.source_files
+            |}
+    in
+    let merge_db infer_out_src =
+      let db_file = ResultsDirEntryName.get_path ~results_dir:infer_out_src CaptureDB in
+      if not (ISys.file_exists db_file) then
+        L.die InternalError "Tried to merge in DB at %s but path does not exist.@\n" db_file ;
+      let main_db = Database.get_database CaptureDatabase in
+      SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
+          merge_procedures_table ~db_file ;
+          merge_source_files_table ~db_file )
+    in
+    let copy_to_main db =
+      SqliteUtils.exec db ~log:"Copying procedures into main db"
+        ~stmt:"INSERT OR REPLACE INTO procedures SELECT * FROM memdb.procedures" ;
+      SqliteUtils.exec db ~log:"Copying source_files into main db"
+        ~stmt:"INSERT OR REPLACE INTO source_files SELECT * FROM memdb.source_files"
+    in
+    let main_db = Database.get_database CaptureDatabase in
+    SqliteUtils.with_attached_db main_db ~db_file:":memory:" ~db_name:"memdb" ~f:(fun () ->
+        Database.create_tables ~prefix:"memdb." main_db CaptureDatabase ;
+        Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
+        copy_to_main main_db )
+
+
+  let merge_report_summaries infer_outs =
+    let merge_report_summaries_in_specs_table ~db_file =
+      (* NB [NULL] is used to skip reading/writing analysis summaries *)
+      Database.get_database AnalysisDatabase
+      |> SqliteUtils.exec
+           ~log:(Printf.sprintf "copying specs of database '%s'" db_file)
+           ~stmt:
+             {|
+              INSERT OR REPLACE INTO specs
+              SELECT
+                sub.proc_uid,
+                sub.proc_name,
+                NULL,
+                sub.report_summary
+              FROM (
+                attached.specs AS sub
+                LEFT OUTER JOIN specs AS main
+                ON sub.proc_uid = main.proc_uid )
+              WHERE
+                main.proc_uid IS NULL
+                OR
+                main.report_summary >= sub.report_summary
+            |}
+    in
+    let merge_issues_table ~db_file =
+      Database.get_database AnalysisDatabase
+      |> SqliteUtils.exec
+           ~log:(Printf.sprintf "copying issues of database '%s'" db_file)
+           ~stmt:
+             {|
+              INSERT OR REPLACE INTO issue_logs
+              SELECT
+                sub.checker,
+                sub.source_file,
+                sub.issue_log
+              FROM (
+                attached.issue_logs AS sub
+                LEFT OUTER JOIN issue_logs AS main
+                ON (sub.checker = main.checker AND sub.source_file = main.source_file) )
+              WHERE
+                main.checker IS NULL
+                OR
+                main.source_file IS NULL
+                OR
+                main.issue_log >= sub.issue_log
+            |}
+    in
+    let main_db = Database.get_database AnalysisDatabase in
+    List.iter infer_outs ~f:(fun results_dir ->
+        let db_file = ResultsDirEntryName.get_path ~results_dir AnalysisDB in
+        SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
+            merge_report_summaries_in_specs_table ~db_file ;
+            merge_issues_table ~db_file ) )
+
+
   let replace_attributes =
     let do_attribute_replace_statement db =
       (* The innermost SELECT returns 1 iff there is a row with the same procedure uid but which is strictly
@@ -57,167 +228,6 @@ module Implementation = struct
       else run_query attribute_replace_statement_cdb
 
 
-  let add_source_file =
-    let source_file_store_statement =
-      Database.register_statement CaptureDatabase
-        {|
-          INSERT OR REPLACE INTO source_files
-          VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured)
-        |}
-    in
-    fun ~source_file ~tenv ~integer_type_widths ~proc_names ->
-      Database.with_registered_statement source_file_store_statement ~f:(fun db store_stmt ->
-          Sqlite3.bind store_stmt 1 source_file
-          (* :source *)
-          |> SqliteUtils.check_result_code db ~log:"store bind source file" ;
-          Sqlite3.bind store_stmt 2 tenv
-          (* :tenv *)
-          |> SqliteUtils.check_result_code db ~log:"store bind type environment" ;
-          Sqlite3.bind store_stmt 3 integer_type_widths
-          (* :integer_type_widths *)
-          |> SqliteUtils.check_result_code db ~log:"store bind integer type widths" ;
-          Sqlite3.bind store_stmt 4 proc_names
-          (* :proc_names *)
-          |> SqliteUtils.check_result_code db ~log:"store bind proc names" ;
-          Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
-          (* :freshly_captured *)
-          |> SqliteUtils.check_result_code db ~log:"store freshness" ;
-          SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )
-
-
-  let mark_all_source_files_stale () =
-    Database.get_database CaptureDatabase
-    |> SqliteUtils.exec ~stmt:"UPDATE source_files SET freshly_captured = 0" ~log:"mark_all_stale"
-
-
-  let merge_procedures_table ~db_file =
-    (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
-       sub-table and the main one, and applying the same "more defined" logic as in [replace_attributes] in the
-       cases where a proc_name is present in both the sub-table and the main one (main.proc_uid !=
-       NULL). All the rows that pass this filter are inserted/updated into the main table. *)
-    Database.get_database CaptureDatabase
-    |> SqliteUtils.exec
-         ~log:(Printf.sprintf "copying procedures of database '%s'" db_file)
-         ~stmt:
-           {|
-              INSERT OR REPLACE INTO memdb.procedures
-              SELECT
-                sub.proc_uid,
-                sub.proc_attributes,
-                sub.cfg,
-                sub.callees
-              FROM (
-                attached.procedures AS sub
-                LEFT OUTER JOIN memdb.procedures AS main
-                ON sub.proc_uid = main.proc_uid )
-              WHERE
-                main.proc_uid IS NULL
-                OR
-                (main.cfg IS NOT NULL) < (sub.cfg IS NOT NULL)
-                OR
-                ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.proc_attributes < sub.proc_attributes)
-            |}
-
-
-  let merge_source_files_table ~db_file =
-    Database.get_database CaptureDatabase
-    |> SqliteUtils.exec
-         ~log:(Printf.sprintf "copying source_files of database '%s'" db_file)
-         ~stmt:
-           {|
-              INSERT OR REPLACE INTO memdb.source_files
-              SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
-              FROM attached.source_files
-            |}
-
-
-  let copy_to_main db =
-    SqliteUtils.exec db ~log:"Copying procedures into main db"
-      ~stmt:"INSERT OR REPLACE INTO procedures SELECT * FROM memdb.procedures" ;
-    SqliteUtils.exec db ~log:"Copying source_files into main db"
-      ~stmt:"INSERT OR REPLACE INTO source_files SELECT * FROM memdb.source_files"
-
-
-  let merge_db infer_out_src =
-    let db_file = ResultsDirEntryName.get_path ~results_dir:infer_out_src CaptureDB in
-    if not (ISys.file_exists db_file) then
-      L.die InternalError "Tried to merge in DB at %s but path does not exist.@\n" db_file ;
-    let main_db = Database.get_database CaptureDatabase in
-    SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
-        merge_procedures_table ~db_file ;
-        merge_source_files_table ~db_file )
-
-
-  let merge_captures infer_deps_file =
-    let main_db = Database.get_database CaptureDatabase in
-    SqliteUtils.with_attached_db main_db ~db_file:":memory:" ~db_name:"memdb" ~f:(fun () ->
-        Database.create_tables ~prefix:"memdb." main_db CaptureDatabase ;
-        Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
-        copy_to_main main_db )
-
-
-  let merge_report_summaries_in_specs_table ~db_file =
-    (* NB [NULL] is used to skip reading/writing analysis summaries *)
-    Database.get_database AnalysisDatabase
-    |> SqliteUtils.exec
-         ~log:(Printf.sprintf "copying specs of database '%s'" db_file)
-         ~stmt:
-           {|
-              INSERT OR REPLACE INTO specs
-              SELECT
-                sub.proc_uid,
-                sub.proc_name,
-                NULL,
-                sub.report_summary
-              FROM (
-                attached.specs AS sub
-                LEFT OUTER JOIN specs AS main
-                ON sub.proc_uid = main.proc_uid )
-              WHERE
-                main.proc_uid IS NULL
-                OR
-                main.report_summary >= sub.report_summary
-            |}
-
-
-  let merge_issues_table ~db_file =
-    Database.get_database AnalysisDatabase
-    |> SqliteUtils.exec
-         ~log:(Printf.sprintf "copying issues of database '%s'" db_file)
-         ~stmt:
-           {|
-              INSERT OR REPLACE INTO issue_logs
-              SELECT
-                sub.checker,
-                sub.source_file,
-                sub.issue_log
-              FROM (
-                attached.issue_logs AS sub
-                LEFT OUTER JOIN issue_logs AS main
-                ON (sub.checker = main.checker AND sub.source_file = main.source_file) )
-              WHERE
-                main.checker IS NULL
-                OR
-                main.source_file IS NULL
-                OR
-                main.issue_log >= sub.issue_log
-            |}
-
-
-  let merge_report_summaries infer_outs =
-    let main_db = Database.get_database AnalysisDatabase in
-    List.iter infer_outs ~f:(fun results_dir ->
-        let db_file = ResultsDirEntryName.get_path ~results_dir AnalysisDB in
-        SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
-            merge_report_summaries_in_specs_table ~db_file ;
-            merge_issues_table ~db_file ) )
-
-
-  let canonicalize () =
-    Database.get_database AnalysisDatabase
-    |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
-
-
   let reset_capture_tables () =
     let db = Database.get_database CaptureDatabase in
     SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
@@ -225,18 +235,11 @@ module Implementation = struct
     Database.create_tables db CaptureDatabase
 
 
-  module IntHash = Caml.Hashtbl.Make (Int)
-
-  let specs_overwrite_counts =
-    (* We don't want to keep all [proc_uid]s in memory just to keep an overwrite count,
-       so use a table keyed on their integer hashes; collisions will just lead to some noise. *)
-    IntHash.create 10
-
-
-  let log_specs_overwrite_counts () =
-    let overwrites = IntHash.fold (fun _hash count acc -> acc + count) specs_overwrite_counts 0 in
-    ScubaLogging.log_count ~label:"overwritten_specs" ~value:overwrites ;
-    L.debug Analysis Quiet "Detected %d spec overwrittes.@\n" overwrites
+  let shrink_analysis_db () =
+    let db = Database.get_database AnalysisDatabase in
+    SqliteUtils.exec db ~log:"nullify analysis summaries"
+      ~stmt:"UPDATE specs SET analysis_summary=NULL" ;
+    SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"VACUUM"
 
 
   let store_issue_log =
@@ -256,6 +259,14 @@ module Implementation = struct
           Sqlite3.bind store_stmt 3 issue_log
           |> SqliteUtils.check_result_code db ~log:"store issuelog bind issue_log" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store issuelog" db store_stmt )
+
+
+  module IntHash = Caml.Hashtbl.Make (Int)
+
+  let specs_overwrite_counts =
+    (* We don't want to keep all [proc_uid]s in memory just to keep an overwrite count,
+       so use a table keyed on their integer hashes; collisions will just lead to some noise. *)
+    IntHash.create 10
 
 
   let store_spec =
@@ -284,20 +295,10 @@ module Implementation = struct
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
 
 
-  let delete_spec =
-    let delete_statement =
-      Database.register_statement AnalysisDatabase "DELETE FROM specs WHERE proc_uid = :k"
-    in
-    fun ~proc_uid ->
-      Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
-          Sqlite3.bind delete_stmt 1 (Sqlite3.Data.TEXT proc_uid)
-          |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_uid" ;
-          SqliteUtils.result_unit ~finalize:false ~log:"store spec" db delete_stmt )
-
-
-  let delete_all_specs () =
-    Database.get_database AnalysisDatabase
-    |> SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs"
+  let terminate () =
+    let overwrites = IntHash.fold (fun _hash count acc -> acc + count) specs_overwrite_counts 0 in
+    ScubaLogging.log_count ~label:"overwritten_specs" ~value:overwrites ;
+    L.debug Analysis Quiet "Detected %d spec overwrittes.@\n" overwrites
 end
 
 module Command = struct
@@ -314,6 +315,7 @@ module Command = struct
     | MarkAllSourceFilesStale
     | MergeCaptures of {infer_deps_file: string}
     | MergeReportSummaries of {infer_outs: string list}
+    | ShrinkAnalysisDB
     | StoreIssueLog of {checker: string; source_file: Sqlite3.Data.t; issue_log: Sqlite3.Data.t}
     | StoreSpec of
         { proc_uid: string
@@ -350,6 +352,8 @@ module Command = struct
         "ReplaceAttributes"
     | ResetCaptureTables ->
         "ResetCaptureTables"
+    | ShrinkAnalysisDB ->
+        "ShrinkAnalysisDB"
     | StoreIssueLog _ ->
         "StoreIssueLog"
     | StoreSpec _ ->
@@ -377,6 +381,8 @@ module Command = struct
         Implementation.merge_captures infer_deps_file
     | MergeReportSummaries {infer_outs} ->
         Implementation.merge_report_summaries infer_outs
+    | ShrinkAnalysisDB ->
+        Implementation.shrink_analysis_db ()
     | StoreIssueLog {checker; source_file; issue_log} ->
         Implementation.store_issue_log ~checker ~source_file ~issue_log
     | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
@@ -386,7 +392,7 @@ module Command = struct
     | ResetCaptureTables ->
         Implementation.reset_capture_tables ()
     | Terminate ->
-        Implementation.log_specs_overwrite_counts ()
+        Implementation.terminate ()
 end
 
 type response = Ack | Error of (string * Caml.Printexc.raw_backtrace)
@@ -516,17 +522,15 @@ let use_daemon =
 
 let perform cmd = if Lazy.force use_daemon then Server.send cmd else Command.execute cmd
 
-let start () = Server.start ()
-
-let stop () = try Server.send Command.Terminate with Unix.Unix_error _ -> ()
-
-let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis =
-  perform (ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis})
-
-
 let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
   perform (AddSourceFile {source_file; tenv; integer_type_widths; proc_names})
 
+
+let canonicalize () = perform Checkpoint
+
+let delete_all_specs () = perform DeleteAllSpecs
+
+let delete_spec ~proc_uid = perform (DeleteSpec {proc_uid})
 
 let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
 
@@ -534,9 +538,17 @@ let merge_captures ~infer_deps_file = perform (MergeCaptures {infer_deps_file})
 
 let merge_report_summaries ~infer_outs = perform (MergeReportSummaries {infer_outs})
 
-let canonicalize () = perform Checkpoint
+let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis =
+  perform (ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis})
+
 
 let reset_capture_tables () = perform ResetCaptureTables
+
+let shrink_analysis_db () = perform ShrinkAnalysisDB
+
+let start () = Server.start ()
+
+let stop () = try Server.send Command.Terminate with Unix.Unix_error _ -> ()
 
 let store_issue_log ~checker ~source_file ~issue_log =
   perform (StoreIssueLog {checker; source_file; issue_log})
@@ -544,8 +556,3 @@ let store_issue_log ~checker ~source_file ~issue_log =
 
 let store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary =
   perform (StoreSpec {proc_uid; proc_name; analysis_summary; report_summary})
-
-
-let delete_spec ~proc_uid = perform (DeleteSpec {proc_uid})
-
-let delete_all_specs () = perform DeleteAllSpecs
