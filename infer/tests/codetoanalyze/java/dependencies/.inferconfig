@@ -7,7 +7,7 @@
     "eradicate": false,
     "pulse": true,
     "report-block-list-path-regex": [
-        ".*\.class$"
+        ".*\\.class$"
     ],
     "enable-issue-type": [
         "TAINT_ERROR"
