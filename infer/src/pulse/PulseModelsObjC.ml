@@ -80,21 +80,18 @@ let insertion_into_collection_key_or_value (value, value_hist) ~value_kind ~desc
   astate
 
 
-let read_from_collection (key, key_hist) ~desc : model =
+let read_from_collection (key, _key_hist) ~desc : model =
  fun {path; location; ret= ret_id, _} astate ->
   let event = Hist.call_event path location desc in
+  let ret_val = AbstractValue.mk_fresh () in
   let astate_nil =
-    let ret_val = AbstractValue.mk_fresh () in
     let<**> astate = PulseArithmetic.prune_eq_zero key astate in
     let<++> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
-    PulseOperations.write_id ret_id (ret_val, Hist.add_event path event key_hist) astate
+    PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate
   in
   let astate_not_nil =
-    let<**> astate = PulseArithmetic.prune_positive key astate in
-    let<+> astate, (ret_val, hist) =
-      PulseOperations.eval_access path Read location (key, key_hist) Dereference astate
-    in
-    PulseOperations.write_id ret_id (ret_val, Hist.add_event path event hist) astate
+    let<++> astate = PulseArithmetic.prune_positive key astate in
+    PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate
   in
   List.rev_append astate_nil astate_not_nil
 

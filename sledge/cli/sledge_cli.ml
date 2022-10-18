@@ -141,8 +141,7 @@ let used_globals pgm entry_points preanalyze =
 type common =
   { goal_trace: string list option
   ; llair_output: string option
-  ; max_disjuncts: int
-  ; constprop_branches: bool }
+  ; max_disjuncts: int }
 
 let common : common param =
   let%map_open goal_trace =
@@ -167,14 +166,11 @@ let common : common param =
       (optional_with_default 3 int)
       ~doc:
         "<int> set an upper bound on the number of constant-return summary \
-         disjuncts in the distance heuristic pre-analysis"
-  and constprop_branches =
-    flag "constprop-branch-inference" no_arg
-      ~doc:
-        "infer integer-constant information from branch conditions during \
-         the distance heuristic pre-analysis"
+         disjuncts in the distance heuristic pre-analysis.  If set to 0, \
+         disable constant propagation entirely; if set to a negative \
+         number, allow unboundedly-many disjuncts"
   in
-  {goal_trace; llair_output; max_disjuncts; constprop_branches}
+  {goal_trace; llair_output; max_disjuncts}
 
 let analyze =
   let%map_open loop_bound =
@@ -274,7 +270,6 @@ let analyze =
     History.dump_witness := dump_witness ;
     Distances.max_disjuncts :=
       if common.max_disjuncts < 0 then Int.max_int else common.max_disjuncts ;
-    Distances.constprop_branches := common.constprop_branches ;
     at_exit (fun () -> Report.coverage pgm) ;
     ( match common.goal_trace with
     | None ->

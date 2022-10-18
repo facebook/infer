@@ -139,8 +139,7 @@ let extract_mode_from_explicit_class_annotation tenv classname =
       else
         match Annotations.ia_find_nullsafe annots with
         | Some nullsafe_annot ->
-            Option.value_exn (of_annot nullsafe_annot)
-              ~message:"Unexpected change in @Nullsafe annotation format"
+            Option.value (of_annot nullsafe_annot) ~default:Default
         | _ ->
             Default )
   | None ->

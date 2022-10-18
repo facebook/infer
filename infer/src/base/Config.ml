@@ -2651,6 +2651,13 @@ and scuba_tags =
      <name>=(<value>,<value>,<value>|NONE)"
 
 
+and shrink_analysis_db =
+  CLOpt.mk_bool ~long:"shrink-analysis-db"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "After analysis, delete analysis summaries (but not report summaries) and vacuum analysis \
+     database."
+
+
 and simple_lineage_include_builtins =
   CLOpt.mk_bool ~long:"simple-lineage-include-builtins"
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
@@ -3955,6 +3962,8 @@ and select =
 
 
 and show_buckets = !print_buckets
+
+and shrink_analysis_db = !shrink_analysis_db
 
 and simple_lineage_include_builtins = !simple_lineage_include_builtins
 

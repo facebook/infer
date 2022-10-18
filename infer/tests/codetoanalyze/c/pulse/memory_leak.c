@@ -173,7 +173,7 @@ int alloc_ref_counted_bad() {
     p->data = 42;
     return p->data;
   } else {
-    return NULL;
+    return 0;
   }
 }
 

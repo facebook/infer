@@ -12,6 +12,7 @@
 
 extern void* __infer_taint_source();
 extern void __infer_taint_sink(void*);
+extern void __infer_taint_sink(int);
 
 namespace basics {
 
@@ -170,19 +171,19 @@ void via_passthrough_bad2(Obj* obj) {
 void taint_arg_source_bad() {
   int source = 1;
   Obj::taint_arg_source(&source);
-  __infer_taint_sink((void*)source);
+  __infer_taint_sink(source);
 }
 
 void taint_arg_source_ok() {
   int source;
   int ret = Obj::taint_arg_source(&source);
-  __infer_taint_sink((void*)ret); // return value is not a source
+  __infer_taint_sink(ret); // return value is not a source
 }
 
 // FP in C++11
 void via_sanitizer_ok1(Obj* obj) {
-  std::string* source = &obj->string_source(0);
-  std::string* sanitized = Obj::sanitizer1(source);
+  std::string source = obj->string_source(0);
+  std::string* sanitized = Obj::sanitizer1(&source);
   obj->string_sink(*sanitized);
 }
 
@@ -193,13 +194,13 @@ void via_sanitizer_ok2(Obj* obj) {
 }
 
 // FP in C++11
-std::string* implicit_sanitized_ok(Obj* obj) {
-  std::string* source = &obj->string_source(0);
-  std::string* sanitized = Obj::sanitizer1(source);
-  obj->string_sink(*source);
+void implicit_sanitized_ok(Obj* obj) {
+  std::string source = obj->string_source(0);
+  std::string* sanitized = Obj::sanitizer1(&source);
+  obj->string_sink(source);
 }
 
-std::string* unsanitized_bad(Obj* obj) {
+void unsanitized_bad(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string sanitized = Obj::sanitizer2(source);
   obj->string_sink(source);
@@ -220,9 +221,8 @@ struct node {
   struct node* next;
 };
 
-// we used to hang on this example before the widening operator was fixed
 void loop_ok(struct node* init) {
-  struct node* tmp = new node{.prev = nullptr, .prev = nullptr};
+  struct node* tmp = new node{.prev = nullptr, .next = nullptr};
 
   while (1) {
     tmp->next = init;

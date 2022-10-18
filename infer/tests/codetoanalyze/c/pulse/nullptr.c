@@ -130,7 +130,7 @@ void null_alias_bad(int* x) {
   *x = 42;
 }
 
-void dereference(int* p) { *p; }
+void dereference(int* p) { int i = *p; }
 
 void several_dereferences_ok(int* x, int* y, int* z) {
   int* p = x;

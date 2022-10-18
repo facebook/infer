@@ -225,6 +225,11 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   unsigned LastLocLine;
   unsigned LastLocColumn;
 
+  // Keep track of the last macro location we print out so that we can
+  // print out deltas from then on out.
+  const char *LastMacroLocFilename;
+  unsigned LastMacroLocLine;
+
   // The \c FullComment parent of the comment being dumped.
   const FullComment *FC;
 
@@ -247,6 +252,8 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
         LastLocFilename(""),
         LastLocLine(~0U),
         LastLocColumn(~0U),
+        LastMacroLocFilename(""),
+        LastMacroLocLine(~0U),
         FC(0),
         NamePrint(Context.getSourceManager(), OF) {}
 
@@ -260,6 +267,10 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   void dumpVersionTuple(const VersionTuple &VT);
 
   // Utilities
+  void dumpMacroLoc(bool is_macro,
+                    bool is_different_macro_file,
+                    bool is_different_macro_line,
+                    PresumedLoc MLoc);
   void dumpPointer(const void *Ptr);
   void dumpSourceRange(SourceRange R);
   void dumpSourceLocation(SourceLocation Loc);
@@ -547,11 +558,33 @@ void ASTExporter<ATDWriter>::dumpPointer(const void *Ptr) {
   writePointer(OF, Options.withPointers, Ptr);
 }
 
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpMacroLoc(bool is_macro,
+                                          bool is_different_macro_file,
+                                          bool is_different_macro_line,
+                                          PresumedLoc MLoc) {
+  if (is_macro) {
+    OF.emitFlag("is_macro", is_macro);
+    if (is_different_macro_file) {
+      OF.emitTag("macro_file");
+      OF.emitString(Options.normalizeSourcePath(MLoc.getFilename()));
+      OF.emitTag("macro_line");
+      OF.emitInteger(MLoc.getLine());
+    } else if (is_different_macro_line) {
+      OF.emitTag("macro_line");
+      OF.emitInteger(MLoc.getLine());
+    }
+  }
+}
+
 //@atd type source_file = string
 //@atd type source_location = {
 //@atd   ?file <ocaml mutable> : source_file option;
 //@atd   ?line <ocaml mutable> : int option;
 //@atd   ?column <ocaml mutable> : int option;
+//@atd   ~is_macro: bool;
+//@atd   ?macro_file <ocaml mutable> : source_file option;
+//@atd   ?macro_line <ocaml mutable> : int option;
 //@atd } <ocaml field_prefix="sl_" validator="Clang_ast_visit.visit_source_loc">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
@@ -563,14 +596,29 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
   // The general format we print out is filename:line:col, but we drop pieces
   // that haven't changed since the last loc printed.
   PresumedLoc PLoc = SM.getPresumedLoc(SpellingLoc);
+  PresumedLoc MLoc = SM.getPresumedLoc(SM.getSpellingLoc(Loc));
 
   if (PLoc.isInvalid()) {
     ObjectScope Scope(OF, 0);
     return;
   }
-
+  bool is_different_macro_file = false;
+  bool is_different_macro_line = false;
+  bool is_macro = Loc.isMacroID();
+  int macro_fields_count = 1;
+  if (is_macro) {
+    if (strcmp(MLoc.getFilename(), LastMacroLocFilename) != 0) {
+      is_different_macro_file = true;
+      macro_fields_count += 2;
+    } else if (MLoc.getLine() != LastMacroLocLine) {
+      is_different_macro_line = true;
+      macro_fields_count += 1;
+    }
+    LastMacroLocFilename = MLoc.getFilename();
+    LastMacroLocLine = MLoc.getLine();
+  }
   if (strcmp(PLoc.getFilename(), LastLocFilename) != 0) {
-    ObjectScope Scope(OF, 3);
+    ObjectScope Scope(OF, 3 + macro_fields_count);
     OF.emitTag("file");
     // Normalizing filenames matters because the current directory may change
     // during the compilation of large projects.
@@ -579,18 +627,26 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
     OF.emitInteger(PLoc.getLine());
     OF.emitTag("column");
     OF.emitInteger(PLoc.getColumn());
+    dumpMacroLoc(
+        is_macro, is_different_macro_file, is_different_macro_line, MLoc);
   } else if (PLoc.getLine() != LastLocLine) {
-    ObjectScope Scope(OF, 2);
+    ObjectScope Scope(OF, 2 + macro_fields_count);
     OF.emitTag("line");
     OF.emitInteger(PLoc.getLine());
     OF.emitTag("column");
     OF.emitInteger(PLoc.getColumn());
+    dumpMacroLoc(
+        is_macro, is_different_macro_file, is_different_macro_line, MLoc);
   } else if (PLoc.getColumn() != LastLocColumn) {
-    ObjectScope Scope(OF, 1);
+    ObjectScope Scope(OF, 1 + macro_fields_count);
     OF.emitTag("column");
     OF.emitInteger(PLoc.getColumn());
+    dumpMacroLoc(
+        is_macro, is_different_macro_file, is_different_macro_line, MLoc);
   } else {
-    ObjectScope Scope(OF, 0);
+    ObjectScope Scope(OF, macro_fields_count);
+    dumpMacroLoc(
+        is_macro, is_different_macro_file, is_different_macro_line, MLoc);
     return;
   }
   LastLocFilename = PLoc.getFilename();

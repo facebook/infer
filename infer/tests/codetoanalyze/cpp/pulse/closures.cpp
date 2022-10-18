@@ -84,7 +84,7 @@ void invoke_twice_ok() {
   }
 }
 
-std::function<int()> ref_capture_read_lambda_ok() {
+void ref_capture_read_lambda_ok() {
   std::function<int()> f;
   int ret;
   {
@@ -264,7 +264,7 @@ void capture_by_value_init_bad() {
 
 void capture_by_ref_init_ok() {
   int value = 5;
-  auto f = [& v = value]() -> int* { return new int(v); };
+  auto f = [&v = value]() -> int* { return new int(v); };
   value++;
   int* p = f();
   int* q = nullptr;
@@ -276,7 +276,7 @@ void capture_by_ref_init_ok() {
 
 void capture_by_ref_init_bad() {
   int value = 5;
-  auto f = [& v = value]() -> int* { return new int(v); };
+  auto f = [&v = value]() -> int* { return new int(v); };
   value++;
   int* p = f();
   int* q = nullptr;
@@ -388,7 +388,7 @@ void struct_capture_by_val_ok_FP() {
 
 S* update_inside_lambda_capture_and_init(S* s) {
   S* object = nullptr;
-  auto f = [& o = object](S* s) { o = s; };
+  auto f = [&o = object](S* s) { o = s; };
   f(s);
   return object;
 }
@@ -414,7 +414,7 @@ void call_argument(std::function<void(S*)> f, S* s) { f(s); }
 
 S* update_inside_lambda_as_argument(S* s) {
   S* object = nullptr;
-  auto f = [& o = object](S* s) { o = s; };
+  auto f = [&o = object](S* s) { o = s; };
   call_argument(f, s);
   return object;
 }
@@ -432,7 +432,7 @@ void capture_false_by_value_ok() {
   f();
 }
 
-int FP_update_inside_lambda_visible_outside_ok() {
+void FP_update_inside_lambda_visible_outside_ok() {
   int x = 0; // there are two variables x in the symbolic state `roots={ &x=v3,
              // &x=v1 }`
   auto f = [&xx = x]() {
@@ -441,7 +441,7 @@ int FP_update_inside_lambda_visible_outside_ok() {
   x = 7; // again there are two variables x in the symbolic state
   f();
   if (x != 8) {
-    int* x = nullptr;
-    return *x;
+    int* p = nullptr;
+    *p = 42;
   }
 }

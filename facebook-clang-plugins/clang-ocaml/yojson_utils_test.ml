@@ -8,7 +8,14 @@
 open Clang_ast_j
 open Yojson_utils
 
-let data = {sl_file= Some "foo"; sl_line= Some 1; sl_column= None}
+let data =
+  { sl_file= Some "foo"
+  ; sl_line= Some 1
+  ; sl_column= None
+  ; sl_macro_file= None
+  ; sl_macro_line= None
+  ; sl_is_macro= false }
+
 
 let basic_test pretty name =
   write_data_to_file ~pretty write_source_location name data ;

@@ -58,10 +58,8 @@ void free_if_deref_bad(int* x) {
   *x = 42;
 }
 
-// that was supposed to be a FP due to tricky arithmetic but inferbo is too
-// smart!
 void infeasible_tricky_ok(int* x) {
-  free_if(x, x == x);
+  free_if(x, 1);
   int y = 42;
   if (2 * y != y << 1) {
     free(x);
@@ -139,7 +137,7 @@ void int_under_cap_ok() {
   unsigned long one = 1;
   // 2^63
   unsigned long x = (one << 62) * 2;
-  if (x != (unsigned long)9223372036854775808) {
+  if (x != 9223372036854775808UL) {
     int* p = nullptr;
     *p = 42;
   }
@@ -163,12 +161,15 @@ void shift_equal_mult_by_power_of_two_ok(int x) {
   }
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshift-count-overflow"
 void shift_by_too_much_ok(int x) {
   if (x << 64 != 0 || x >> 4000 != 0) {
     int* p = nullptr;
     *p = 42;
   }
 }
+#pragma clang diagnostic pop
 
 void interproc_mult_ok(int v, int w) {
   if (mult(32, 52) != 1664 || mult(10, v) != 10 * v || mult(v, w) != v * w) {

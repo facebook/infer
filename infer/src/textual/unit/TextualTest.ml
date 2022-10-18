@@ -126,8 +126,8 @@ let%test_module "procnames" =
           ; formals_types= []
           ; result_type= Typ.Void }
       in
-      let as_java = ProcDecl.to_sil Lang.Java toplevel_proc in
-      let as_hack = ProcDecl.to_sil Lang.Hack toplevel_proc in
+      let as_java = TextualSil.proc_decl_to_sil Lang.Java toplevel_proc in
+      let as_hack = TextualSil.proc_decl_to_sil Lang.Hack toplevel_proc in
       F.printf "%a@\n" Procname.pp as_java ;
       F.printf "%a@\n" Procname.pp as_hack ;
       [%expect {|
@@ -140,7 +140,7 @@ let%test_module "to_sil" =
     let%expect_test _ =
       let no_lang = {|define nothing() : void { #node: ret null }|} in
       let m = parse_module no_lang in
-      try Module.to_sil m |> ignore
+      try TextualSil.module_to_sil m |> ignore
       with ToSilTransformationError pp_msg ->
         pp_msg F.std_formatter () ;
         [%expect {| Missing or unsupported source_language attribute |}]
@@ -181,7 +181,7 @@ let%test_module "remove_internal_calls transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> Transformation.remove_internal_calls in
+      let module_ = parse_module input_text |> TextualTransform.remove_internal_calls in
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
@@ -253,7 +253,7 @@ let%test_module "let_propagation transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> Transformation.let_propagation in
+      let module_ = parse_module input_text |> TextualTransform.let_propagation in
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
@@ -292,7 +292,7 @@ let%test_module "out-of-ssa transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> Transformation.out_of_ssa in
+      let module_ = parse_module input_text |> TextualTransform.out_of_ssa in
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|

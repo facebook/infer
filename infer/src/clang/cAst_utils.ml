@@ -66,7 +66,14 @@ let get_fresh_pointer () =
 
 
 let dummy_source_range () =
-  let dummy_source_loc = {Clang_ast_t.sl_file= None; sl_line= None; sl_column= None} in
+  let dummy_source_loc =
+    { Clang_ast_t.sl_file= None
+    ; sl_line= None
+    ; sl_column= None
+    ; sl_macro_file= None
+    ; sl_macro_line= None
+    ; sl_is_macro= false }
+  in
   (dummy_source_loc, dummy_source_loc)
 
 

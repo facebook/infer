@@ -215,11 +215,11 @@ namespace ns {
 
 template <typename X>
 X creates_copy(X a) {
-  // ....
+  return X{a};
 }
 } // namespace ns
 
-int copy_via_model_bad(Arr arr) {
+void copy_via_model_bad(Arr arr) {
   auto cpy = ns::creates_copy(arr); // creates copy (via model)
 }
 
@@ -277,7 +277,7 @@ void source_dispatch_non_const_fcn_bad_FN(std::set<int> source) {
                             // actually change this*
 }
 
-int iterator_ptr_modified_ok(const std::vector<int>& numbers) {
+void iterator_ptr_modified_ok(const std::vector<int>& numbers) {
   auto lDataValues = numbers;
   std::sort(lDataValues.begin(), lDataValues.end());
 }
@@ -417,6 +417,8 @@ class MyValueOr {
   LockedPtr lock();
 
  public:
+  MyValueOr();
+
   Arr value_or(const Arr& default_value) const {
     if (b) {
       return value;

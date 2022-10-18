@@ -34,6 +34,17 @@ module type S = sig
   (** compute and return the postcondition for the given {!Procdesc.t} starting from [initial].
       [pp_instr] is used for the debug HTML and passed as a hook to handle both SIL and HIL CFGs. *)
 
+  val compute_post_including_exceptional :
+       ?do_narrowing:bool
+    -> ?pp_instr:(TransferFunctions.Domain.t -> Sil.instr -> (Format.formatter -> unit) option)
+    -> TransferFunctions.analysis_data
+    -> initial:TransferFunctions.Domain.t
+    -> Procdesc.t
+    -> TransferFunctions.Domain.t option * TransferFunctions.Domain.t option
+  (** compute and return the postconditions of the exit node and the exceptions sink node for the
+      given {!Procdesc.t} starting from [initial] [pp_instr] is used for the debug HTML and passed
+      as a hook to handle both SIL and HIL CFGs. *)
+
   val exec_cfg :
        ?do_narrowing:bool
     -> TransferFunctions.CFG.t

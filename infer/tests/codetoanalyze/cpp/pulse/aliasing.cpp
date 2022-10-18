@@ -52,6 +52,8 @@ void diverge_before_null_deref_ok(int* x) {
 }
 
 // this test makes more sense in an inter-procedural setting
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-pointer-compare"
 void stack_addresses_are_not_null_ok() {
   int x;
   if (&x == nullptr) {
@@ -59,6 +61,7 @@ void stack_addresses_are_not_null_ok() {
     *p = 42;
   }
 }
+#pragma clang diagnostic pop
 
 void stack_addresses_are_distinct_ok() {
   int x;
