@@ -217,6 +217,7 @@ let analyze source_files_to_analyze =
         in
         (Stats.get (), gc_stats_in_fork)
       in
+      ScubaLogging.log_count ~label:"num_analysis_workers" ~value:Config.jobs ;
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue ~child_epilogue
         ~tasks:build_tasks_generator
     in
