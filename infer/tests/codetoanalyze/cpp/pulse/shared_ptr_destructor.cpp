@@ -50,7 +50,7 @@ int destructor4_ok() {
   auto p = new int(5);
   {
     std::shared_ptr<int> x(p);
-    *p;
+    int i = *p;
     {
       std::shared_ptr<int> y(x);
       if (*p == *y && *p == *x)
@@ -64,7 +64,7 @@ int destructor4_ok() {
   return 0;
 }
 
-int destructor5_ok() {
+void destructor5_ok() {
   auto x = new std::shared_ptr<Y>(new Y());
   delete x;
 }
@@ -74,12 +74,12 @@ int destructor6_ok() {
   return 0;
 }
 
-int destructor7_ok() {
+void destructor7_ok() {
   auto x = std::shared_ptr<Y>(new Y());
   x.reset();
 }
 
-int destructor8_ok() {
+void destructor8_ok() {
   auto x = std::shared_ptr<Y>(new Y());
   x.reset(new Y());
 }

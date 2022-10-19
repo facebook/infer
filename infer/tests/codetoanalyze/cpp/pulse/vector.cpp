@@ -47,8 +47,7 @@ int FP_push_back1_ok(int* value) {
   return *value;
 }
 
-// missing a more precise model for vector::push_back
-void FN_push_back0_bad() {
+int push_back0_bad() {
   std::vector<int> v;
   int n = 42;
   v.push_back(n);

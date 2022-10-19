@@ -16,56 +16,56 @@ namespace strings {
 
 void sprintf1_bad() {
   char laundered_source[50];
-  auto source = __infer_taint_source().c_str();
-  sprintf(laundered_source, "%s", source);
+  auto source = __infer_taint_source();
+  sprintf(laundered_source, "%s", source.c_str());
   __infer_taint_sink(laundered_source);
 }
 
 void sprintf2_bad() {
   char laundered_source[50];
-  auto source = __infer_taint_source().c_str();
-  sprintf(laundered_source, "%s%s%d", "a", source, 1);
+  auto source = __infer_taint_source();
+  sprintf(laundered_source, "%s%s%d", "a", source.c_str(), 1);
   __infer_taint_sink(laundered_source);
 }
 
 void strcpy1_bad() {
   char laundered_source[50];
-  auto source = __infer_taint_source().c_str();
-  auto copy = strcpy(laundered_source, source);
+  auto source = __infer_taint_source();
+  auto copy = strcpy(laundered_source, source.c_str());
   __infer_taint_sink(copy);
 }
 
 void strcpy2_bad() {
   char laundered_source[50];
-  auto source = __infer_taint_source().c_str();
-  strcpy(laundered_source, source);
+  auto source = __infer_taint_source();
+  strcpy(laundered_source, source.c_str());
   __infer_taint_sink(laundered_source);
 }
 
 void strncpy_bad() {
   char laundered_source[50];
-  auto source = __infer_taint_source().c_str();
-  strncpy(laundered_source, source, 50);
+  auto source = __infer_taint_source();
+  strncpy(laundered_source, source.c_str(), 50);
   __infer_taint_sink(laundered_source);
 }
 
 void memcpy_bad() {
   char laundered_source[50];
-  auto source = __infer_taint_source().c_str();
-  memcpy(laundered_source, source, 50);
+  auto source = __infer_taint_source();
+  memcpy(laundered_source, source.c_str(), 50);
   __infer_taint_sink(laundered_source);
 }
 
 void memmove_bad() {
   char laundered_source[50];
-  auto source = __infer_taint_source().c_str();
-  auto copy = (char*)memmove(laundered_source, source, 50);
+  auto source = __infer_taint_source();
+  auto copy = (char*)memmove(laundered_source, source.c_str(), 50);
   __infer_taint_sink(copy);
 }
 
 void memchr_bad() {
-  auto source = __infer_taint_source().c_str();
-  auto laundered_source = (char*)memchr(source, 'a', 10);
+  auto source = __infer_taint_source();
+  auto laundered_source = (char*)memchr(source.c_str(), 'a', 10);
   __infer_taint_sink(laundered_source);
 }
 

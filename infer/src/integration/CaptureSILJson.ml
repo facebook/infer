@@ -224,7 +224,9 @@ let parse_source_file (json : Safe.t) =
 let parse_location (json : Safe.t) =
   { Location.line= to_int (member "line" json)
   ; Location.col= to_int (member "col" json)
-  ; Location.file= parse_source_file (member "source_file" json) }
+  ; Location.file= parse_source_file (member "source_file" json)
+  ; macro_file_opt= None
+  ; macro_line= -1 }
 
 
 let rec parse_pvar (json : Safe.t) =

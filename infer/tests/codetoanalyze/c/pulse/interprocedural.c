@@ -50,7 +50,7 @@ void propagate_latent_3_latent(int a3) { propagate_latent_2_latent(a3); }
 void make_latent_manifest() { propagate_latent_3_latent(4); }
 
 int* return_first(int* x, int a, int** out) {
-  int w = x;
+  int* w = x;
   *out = w;
   return w;
 }
@@ -62,7 +62,7 @@ int* return_null(int** out) {
 }
 
 // make sure the trace has all the details
-int* follow_value_by_ref_bad() {
+void follow_value_by_ref_bad() {
   int* y;
   return_null(&y);
   int* z;
@@ -71,8 +71,8 @@ int* follow_value_by_ref_bad() {
 }
 
 // make sure the trace has all the details
-int* follow_value_by_ret_bad() {
-  int *dummy1, dummy2;
+void follow_value_by_ret_bad() {
+  int *dummy1, *dummy2;
   int* y = return_null(&dummy1);
   int* z = return_first(y, 12, &dummy2);
   *z = 42;
@@ -88,6 +88,7 @@ int* malloc_wrapper_2(int b) {
   if (b) {
     return malloc_wrapper_1();
   }
+  return NULL;
 }
 
 void free_wrapper(int* p, int b) {

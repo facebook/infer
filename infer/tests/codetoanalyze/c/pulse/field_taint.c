@@ -90,7 +90,7 @@ void test_taint_field_with_indirections_good(structure s) {
   sink_int((**s_ptr_ptr).other);
 }
 
-void test_taint_previously_unaccessed_fields_bad_FN(structure s) {
+void test_taint_previously_unaccessed_field_bad(structure s) {
   taint_structure(s);
   sink_int(s.manipulated);
 }

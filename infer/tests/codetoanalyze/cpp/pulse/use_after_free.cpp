@@ -11,7 +11,7 @@ int use_after_free_simple_bad(int* x) {
   return *x;
 }
 
-int double_free_simple_bad(int* x) {
+void double_free_simple_bad(int* x) {
   free(x);
   free(x);
 }

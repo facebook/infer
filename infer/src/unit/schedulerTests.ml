@@ -86,6 +86,8 @@ module MockProcCfg = struct
 
   let exit_node _ = assert false
 
+  let exn_sink_node _ = assert false
+
   let proc_desc _ = assert false
 
   let from_pdesc _ = assert false

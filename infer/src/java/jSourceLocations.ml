@@ -15,7 +15,7 @@ let collect_class_location (program : JProgramDesc.t) (file : SourceFile.t) =
     let cin = In_channel.create path in
     let filebuf = Lexing.from_channel cin in
     let action_on_class_location ~classname ~col ~line =
-      let loc : Location.t = {line; col; file} in
+      let loc : Location.t = {line; col; file; macro_file_opt= None; macro_line= -1} in
       let cn : JBasics.class_name = JBasics.make_cn classname in
       Logging.debug Capture Verbose "set_java_location %s with location %a@." (JBasics.cn_name cn)
         Location.pp_file_pos loc ;

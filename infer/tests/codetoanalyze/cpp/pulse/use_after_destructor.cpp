@@ -258,7 +258,6 @@ void destructor_order_empty_destructor_ok() {
   a.f = &b;
 }
 
-
 std::string mk_string();
 
 void variable_init_ternary_ok(bool b) {

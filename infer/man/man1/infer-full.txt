@@ -1395,6 +1395,11 @@ OPTIONS
            Activates: Enable self-in-block and disable all other checkers
            (Conversely: --no-self-in-block-only)           See also infer-analyze(1).
 
+       --shrink-analysis-db
+           Activates: After analysis, delete analysis summaries (but not
+           report summaries) and vacuum analysis database. (Conversely:
+           --no-shrink-analysis-db)           See also infer-analyze(1).
+
        --simple-lineage
            Activates: checker simple-lineage: Computes a dataflow graph
            (Conversely: --no-simple-lineage)           See also infer-analyze(1).

@@ -716,12 +716,20 @@ specs_basic:test_no_args_Ok/0: ok
 
 ----- specs_userdefined -----
 
------ m -----
-m:test_a_Ok/0: ok
-m:test_b_Bad/0: topl_error
-m:test_c_Bad/0: topl_error
-m:test_d_Ok/0: ok
-m:test_e_Bad/0: topl_error
+----- topl_fields -----
+topl_fields:test_1_Ok/0: ok
+topl_fields:test_2_Ok/0: ok
+topl_fields:test_3_Bad/0: topl_error
+topl_fields:test_4_Bad/0: topl_error
+topl_fields:test_5_Ok/0: ok
+topl_fields:test_6_Ok/0: topl_error
+
+----- topl_less -----
+topl_less:test_a_Ok/0: ok
+topl_less:test_b_Bad/0: topl_error
+topl_less:test_c_Bad/0: topl_error
+topl_less:test_d_Ok/0: ok
+topl_less:test_e_Bad/0: topl_error
 
 ----- topl_process -----
 topl_process:fp_test_3_Ok/0: ok

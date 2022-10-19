@@ -9,7 +9,14 @@ open Utils
 open Clang_ast_t
 open Clang_ast_proj
 
-let source_location ?file ?line ?column () = {sl_file= file; sl_line= line; sl_column= column}
+let source_location ?file ?line ?column ?macro_file ?macro_line ?(is_macro = false) () =
+  { sl_file= file
+  ; sl_line= line
+  ; sl_column= column
+  ; sl_macro_file= macro_file
+  ; sl_macro_line= macro_line
+  ; sl_is_macro= is_macro }
+
 
 let empty_source_location = source_location ()
 

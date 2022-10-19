@@ -307,7 +307,7 @@ module Cost = struct
       let trace =
         let marker_cost_trace msg cost_item =
           [ Errlog.make_trace_element 0
-              {Location.line; col= column; file= source_file}
+              {Location.line; col= column; file= source_file; macro_file_opt= None; macro_line= -1}
               (Format.asprintf "%s %a" msg CostItem.pp_cost_msg cost_item)
               [] ]
         in

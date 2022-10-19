@@ -558,6 +558,12 @@ let get_ret_var pdesc = Pvar.get_ret_pvar (get_proc_name pdesc)
 
 let get_start_node pdesc = pdesc.start_node
 
+(** We search all the procedure's nodes to find the exception sink. *)
+let get_exn_sink pdesc =
+  List.find (get_nodes pdesc) ~f:(fun node ->
+      Node.equal_nodekind (Node.get_kind node) Node.exn_sink_kind )
+
+
 (** Return [true] iff the procedure is defined, and not just declared *)
 let is_defined pdesc = pdesc.attributes.is_defined
 

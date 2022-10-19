@@ -7,6 +7,21 @@
 
 #import <Foundation/Foundation.h>
 
+typedef struct {
+  int x;
+} structure;
+
+void taint_strucuture(structure) {}
+void sink_ptr(void*) {}
+
+void cleanInternalPointerGood_FP(void) {
+  structure s = {0};
+  taint_structure(s);
+  s.x = 1;
+  int* ptr = &(s.x);
+  sink_ptr(ptr);
+}
+
 @class InferTaint;
 
 typedef void (^InferTaintBlock)(InferTaint*);

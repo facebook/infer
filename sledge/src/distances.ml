@@ -11,10 +11,6 @@ open Llair
     in each [proc_summaries] record. *)
 let max_disjuncts = ref 3
 
-(** If true, infer integer constant information from branch conditions at
-    [Switch] block terminators. *)
-let constprop_branches = ref false
-
 (** An automaton state in the sequence of calls and returns that the
     symbolic executor will attempt to follow. Represented as an integer and
     interpreted as an amount of progress through the shared ref [trace],
@@ -450,7 +446,10 @@ module Summary = struct
     else
       let dists = Distance_map.visit block absstate.di.dists in
       let shortest_path = absstate.di.shortest_path + 1 in
-      let consts = Constant_prop.Env.interpret block.cmnd absstate.consts in
+      let consts =
+        if !max_disjuncts = 0 then absstate.consts
+        else Constant_prop.Env.interpret block.cmnd absstate.consts
+      in
       {di= {absstate.di with dists; shortest_path}; consts}
 
   let apply (summary : summary) areturn (absstate : absstate) =
@@ -683,7 +682,10 @@ module Summary = struct
            if (not check_convergence) || not converged then (
              ( match block.term with
              | Switch {key; tbl; els; _} ->
-                 if !constprop_branches then (
+                 if !max_disjuncts = 0 then (
+                   IArray.iter tbl ~f:(fun (_, jmp) -> push state jmp.dst) ;
+                   push state els.dst )
+                 else
                    let has_unknown_branch = ref (IArray.is_empty tbl) in
                    IArray.iter tbl ~f:(fun (case, jmp) ->
                        (Constant_prop.Env.eval_switch state.consts key case)
@@ -694,33 +696,7 @@ module Summary = struct
                          | `Unknown ->
                              has_unknown_branch := true ;
                              push state jmp.dst ) ) ;
-                   if !has_unknown_branch then push state els.dst )
-                 else
-                   let match_const : Exp.t -> [`Match | `Nonmatch | `Unknown]
-                       =
-                     let const_key =
-                       let* key_reg = Reg.of_exp key in
-                       Constant_prop.Env.find key_reg state.consts
-                     in
-                     fun case_exp ->
-                       match const_key with
-                       | None -> `Unknown
-                       | Some const_key -> (
-                         match case_exp with
-                         | Exp.Integer {data} ->
-                             if Z.equal data const_key then `Match
-                             else `Nonmatch
-                         | _ -> `Unknown )
-                   in
-                   let may_not_match = ref (IArray.is_empty tbl) in
-                   IArray.iter tbl ~f:(fun (case, jmp) ->
-                       match match_const case with
-                       | `Nonmatch -> may_not_match := true
-                       | `Match -> push state jmp.dst
-                       | `Unknown ->
-                           may_not_match := true ;
-                           push state jmp.dst ) ;
-                   if !may_not_match then push state els.dst
+                   if !has_unknown_branch then push state els.dst
              | Iswitch {tbl; _} ->
                  IArray.iter tbl ~f:(fun jmp -> push state jmp.dst)
              | Return _ | Throw _ | Abort _ | Unreachable -> ()

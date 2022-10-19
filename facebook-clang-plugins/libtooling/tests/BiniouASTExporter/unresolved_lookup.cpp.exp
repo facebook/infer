@@ -42,9 +42,10 @@
               ({
                  #c3bbce7c: "tests/unresolved_lookup.cpp",
                  #c7b317f4: 7,
-                 #c68b4ed6: 1
+                 #c68b4ed6: 1,
+                 #21ac3408: unit
                },
-               { #c7b317f4: 12, #c68b4ed6: 1 })
+               { #c7b317f4: 12, #c68b4ed6: 1, #21ac3408: unit })
           },
           { #c8ff724b: "S", #2cdb06fb: [ "S" ] },
           { })>,

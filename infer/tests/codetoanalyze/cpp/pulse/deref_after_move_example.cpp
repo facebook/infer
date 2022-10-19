@@ -50,4 +50,4 @@ void deref_after_register_ok(std::unique_ptr<SimpleStruct> x) {
   int n = p->field;
 }
 
-} // namespace deref_after_mode_example
+} // namespace deref_after_move_example

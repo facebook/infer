@@ -262,9 +262,13 @@
                     "pointer" : 17,
                     "source_range" : (
                       {
-                        "column" : 11
+                        "column" : 11,
+                        "is_macro" : true,
+                        "macro_file" : "tests/generic_selector_expression.c",
+                        "macro_line" : 7
                       },
                       {
+                        "is_macro" : true
                       }
                     )
                   },
@@ -274,8 +278,10 @@
                         "pointer" : 18,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -285,8 +291,10 @@
                             "pointer" : 19,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -296,8 +304,11 @@
                                 "pointer" : 20,
                                 "source_range" : (
                                   {
+                                    "is_macro" : true,
+                                    "macro_line" : 12
                                   },
                                   {
+                                    "is_macro" : true
                                   }
                                 )
                               },
@@ -355,8 +366,11 @@
                         "pointer" : 21,
                         "source_range" : (
                           {
+                            "is_macro" : true,
+                            "macro_line" : 7
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -379,8 +393,10 @@
                         "pointer" : 22,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -403,8 +419,10 @@
                         "pointer" : 23,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -427,8 +445,10 @@
                         "pointer" : 24,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -459,8 +479,10 @@
                         "pointer" : 22,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -490,7 +512,8 @@
                         "column" : 3
                       },
                       {
-                        "column" : 11
+                        "column" : 11,
+                        "is_macro" : true
                       }
                     ),
                     "is_used" : true,
@@ -513,8 +536,10 @@
                         "pointer" : 17,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -524,8 +549,10 @@
                             "pointer" : 18,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -535,8 +562,10 @@
                                 "pointer" : 19,
                                 "source_range" : (
                                   {
+                                    "is_macro" : true
                                   },
                                   {
+                                    "is_macro" : true
                                   }
                                 )
                               },
@@ -546,8 +575,11 @@
                                     "pointer" : 20,
                                     "source_range" : (
                                       {
+                                        "is_macro" : true,
+                                        "macro_line" : 12
                                       },
                                       {
+                                        "is_macro" : true
                                       }
                                     )
                                   },
@@ -605,8 +637,11 @@
                             "pointer" : 21,
                             "source_range" : (
                               {
+                                "is_macro" : true,
+                                "macro_line" : 7
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -629,8 +664,10 @@
                             "pointer" : 22,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -653,8 +690,10 @@
                             "pointer" : 23,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -677,8 +716,10 @@
                             "pointer" : 24,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -709,8 +750,10 @@
                             "pointer" : 22,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -753,9 +796,11 @@
                     "pointer" : 27,
                     "source_range" : (
                       {
-                        "column" : 11
+                        "column" : 11,
+                        "is_macro" : true
                       },
                       {
+                        "is_macro" : true
                       }
                     )
                   },
@@ -765,8 +810,10 @@
                         "pointer" : 28,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -776,8 +823,10 @@
                             "pointer" : 29,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -787,8 +836,11 @@
                                 "pointer" : 30,
                                 "source_range" : (
                                   {
+                                    "is_macro" : true,
+                                    "macro_line" : 13
                                   },
                                   {
+                                    "is_macro" : true
                                   }
                                 )
                               },
@@ -846,8 +898,11 @@
                         "pointer" : 31,
                         "source_range" : (
                           {
+                            "is_macro" : true,
+                            "macro_line" : 7
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -870,8 +925,10 @@
                         "pointer" : 32,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -894,8 +951,10 @@
                         "pointer" : 33,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -918,8 +977,10 @@
                         "pointer" : 34,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -950,8 +1011,10 @@
                         "pointer" : 33,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -981,7 +1044,8 @@
                         "column" : 3
                       },
                       {
-                        "column" : 11
+                        "column" : 11,
+                        "is_macro" : true
                       }
                     ),
                     "is_used" : true,
@@ -1004,8 +1068,10 @@
                         "pointer" : 27,
                         "source_range" : (
                           {
+                            "is_macro" : true
                           },
                           {
+                            "is_macro" : true
                           }
                         )
                       },
@@ -1015,8 +1081,10 @@
                             "pointer" : 28,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -1026,8 +1094,10 @@
                                 "pointer" : 29,
                                 "source_range" : (
                                   {
+                                    "is_macro" : true
                                   },
                                   {
+                                    "is_macro" : true
                                   }
                                 )
                               },
@@ -1037,8 +1107,11 @@
                                     "pointer" : 30,
                                     "source_range" : (
                                       {
+                                        "is_macro" : true,
+                                        "macro_line" : 13
                                       },
                                       {
+                                        "is_macro" : true
                                       }
                                     )
                                   },
@@ -1096,8 +1169,11 @@
                             "pointer" : 31,
                             "source_range" : (
                               {
+                                "is_macro" : true,
+                                "macro_line" : 7
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -1120,8 +1196,10 @@
                             "pointer" : 32,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -1144,8 +1222,10 @@
                             "pointer" : 33,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -1168,8 +1248,10 @@
                             "pointer" : 34,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },
@@ -1200,8 +1282,10 @@
                             "pointer" : 33,
                             "source_range" : (
                               {
+                                "is_macro" : true
                               },
                               {
+                                "is_macro" : true
                               }
                             )
                           },

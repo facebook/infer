@@ -247,6 +247,9 @@ val get_captured : t -> CapturedVar.t list
 
 val get_exit_node : t -> Node.t
 
+val get_exn_sink : t -> Node.t option
+(** Return the exception sink node, if any. *)
+
 val get_formals : t -> (Mangled.t * Typ.t * Annot.Item.t) list
 (** Return name, type, and annotation of formal parameters *)
 

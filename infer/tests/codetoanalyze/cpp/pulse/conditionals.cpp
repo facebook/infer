@@ -32,21 +32,19 @@ bool equal_explicit(size_t x, size_t y) {
 }
 
 // need relational domain to give this a good spec
-bool equal(size_t x, size_t y) {
-  return x == y;
-}
+bool equal(size_t x, size_t y) { return x == y; }
 
 void unreachable_interproc_compare_ok(int* x, size_t y) {
   if (equal(y, 0)) {
     free(x);
   }
-  if (equal_explicit(y,1)) {
+  if (equal_explicit(y, 1)) {
     free(x);
   }
 }
 
-void compare_deref_ok(int *x) {
-  if (!equal((size_t) x,0)) {
+void compare_deref_ok(int* x) {
+  if (!equal((size_t)x, 0)) {
     *x = 42;
   }
 }
