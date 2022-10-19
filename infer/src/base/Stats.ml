@@ -20,26 +20,29 @@ module DurationItem = struct
 end
 
 module LongestProcDurationHeap = struct
-  include Binary_heap.Make (DurationItem)
+  module Heap = Binary_heap.Make (DurationItem)
 
-  let to_list heap = fold (fun elt acc -> elt :: acc) heap []
+  let to_list heap = Heap.fold (fun elt acc -> elt :: acc) heap []
 
   let update (new_elt : DurationItem.t) heap =
     Option.iter Config.top_longest_proc_duration_size ~f:(fun heap_size ->
-        if length heap < heap_size then add heap new_elt
-        else if new_elt.duration_ms > (minimum heap).duration_ms then (
-          remove heap ;
-          add heap new_elt ) )
+        if Heap.length heap < heap_size then Heap.add heap new_elt
+        else if new_elt.duration_ms > (Heap.minimum heap).duration_ms then (
+          Heap.remove heap ;
+          Heap.add heap new_elt ) )
 
 
   let merge heap1 heap2 =
-    iter (fun elt -> update elt heap1) heap2 ;
+    Heap.iter (fun elt -> update elt heap1) heap2 ;
     heap1
 
 
   let pp_sorted f heap =
-    let heap = to_list heap |> List.sort ~compare:(fun x y -> ~-(DurationItem.compare x y)) in
+    let heap = to_list heap |> List.sort ~compare:(fun x y -> DurationItem.compare y x) in
     F.fprintf f "%a" (F.pp_print_list ~pp_sep:(fun f () -> F.fprintf f ", ") DurationItem.pp) heap
+
+
+  include Heap
 end
 
 include struct
