@@ -453,10 +453,13 @@ module Server = struct
     socket
 
 
+  let remove_socket_file () =
+    in_results_dir ~f:(fun () -> if socket_exists () then Unix.unlink socket_name)
+
+
   let remove_socket socket =
-    in_results_dir ~f:(fun () ->
-        Unix.close socket ;
-        Unix.unlink socket_name )
+    in_results_dir ~f:(fun () -> Unix.close socket) ;
+    remove_socket_file ()
 
 
   (* Check whether we can create a socket to communicate with the asynchronous DBWriter process. *)
@@ -499,6 +502,8 @@ module Server = struct
     | `In_the_parent _child_pid ->
         send Command.Handshake
 end
+
+let remove_socket_file () = Server.remove_socket_file ()
 
 let use_daemon =
   lazy
