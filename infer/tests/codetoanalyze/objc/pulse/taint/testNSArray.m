@@ -104,8 +104,7 @@ void testNSArray_InitWithObjectsCountGood(void) {
   testNSArray_sink(&arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_ContainsObjectBadFN(void) {
+void testNSArray_ContainsObjectBad(void) {
   NSArray* array = [NSArray new];
   id arg = create_tainted_id();
   BOOL propagated = [array containsObject:arg];
@@ -119,8 +118,7 @@ void testNSArray_ContainsObjectGood(void) {
   testNSArray_sink(&arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_CountBadFN(void) {
+void testNSArray_CountBad(void) {
   NSArray* array = tainted_array();
   NSUInteger propagated = [array count];
   testNSArray_sink(&propagated);
@@ -142,15 +140,13 @@ void testNSArray_GetObjectsRangeGood(void) {
   testNSArray_sink((__bridge void*)(array));
 }
 
-// sink does not look inside the pointer
-void testNSArray_FirstObjectBadFN(void) {
+void testNSArray_FirstObjectBad(void) {
   NSArray* array = tainted_array();
   id propagated = [array firstObject];
   testNSArray_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSArray_LastObjectBadFN(void) {
+void testNSArray_LastObjectBad(void) {
   NSArray* array = tainted_array();
   id propagated = [array lastObject];
   testNSArray_sink(&propagated);
@@ -211,8 +207,7 @@ void testNSArray_ReverseObjectEnumeratorBad(void) {
   testNSArray_sink((__bridge void*)(propagated));
 }
 
-// sink does not look inside the pointer
-void testNSArray_IndexOfObjectBadFN(void) {
+void testNSArray_IndexOfObjectBad(void) {
   NSArray* array = [NSArray new];
   id arg = create_tainted_id();
   NSUInteger propagated = [array indexOfObject:arg];
@@ -226,8 +221,7 @@ void testNSArray_IndexOfObjectGood(void) {
   testNSArray_sink(&arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_IndexOfObjectInRangeBadFN(void) {
+void testNSArray_IndexOfObjectInRangeBad(void) {
   NSArray* array = [NSArray new];
   id arg = create_tainted_id();
   NSUInteger propagated = [array indexOfObject:arg inRange:*((NSRange*)&arg)];
@@ -241,8 +235,7 @@ void testNSArray_IndexOfObjectInRangeGood(void) {
   testNSArray_sink(&arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_IndexOfObjectIdenticalToBadFN(void) {
+void testNSArray_IndexOfObjectIdenticalToBad(void) {
   NSArray* array = [NSArray new];
   id arg = create_tainted_id();
   NSUInteger propagated = [array indexOfObjectIdenticalTo:arg];
@@ -256,8 +249,7 @@ void testNSArray_IndexOfObjectIdenticalToGood(void) {
   testNSArray_sink(&arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_IndexOfObjectIdenticalToInRangeBadFN(void) {
+void testNSArray_IndexOfObjectIdenticalToInRangeBad(void) {
   NSArray* array = [NSArray new];
   id arg = create_tainted_id();
   NSUInteger propagated = [array indexOfObjectIdenticalTo:arg
@@ -272,8 +264,7 @@ void testNSArray_IndexOfObjectIdenticalToInRangeGood(void) {
   testNSArray_sink(&arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_IndexOfObjectPassingTestBadFN(void) {
+void testNSArray_IndexOfObjectPassingTestBad(void) {
   NSArray* array = [NSArray new];
   void* arg = create_tainted();
   NSUInteger propagated = [array
@@ -293,8 +284,7 @@ void testNSArray_IndexOfObjectPassingTestGood(void) {
   testNSArray_sink(arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_IndexOfObjectWithOptionsPassingTestBadFN(void) {
+void testNSArray_IndexOfObjectWithOptionsPassingTestBad(void) {
   NSArray* array = [NSArray new];
   void* arg = create_tainted();
   NSUInteger propagated = [array
@@ -316,8 +306,7 @@ void testNSArray_IndexOfObjectWithOptionsPassingTestGood(void) {
   testNSArray_sink(arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_IndexOfObjectAtIndexesOptionsPassingTestBadFN(void) {
+void testNSArray_IndexOfObjectAtIndexesOptionsPassingTestBad(void) {
   NSArray* array = [NSArray new];
   void* arg = create_tainted();
   NSUInteger propagated = [array
@@ -410,8 +399,7 @@ void testNSArray_IndexesOfObjectsAtIndexesOptionsPassingTestGood(void) {
   testNSArray_sink(arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_IndexOfObjectInSortedRangeOptionsUsingComparatorBadFN(void) {
+void testNSArray_IndexOfObjectInSortedRangeOptionsUsingComparatorBad(void) {
   NSArray* array = [NSArray new];
   id arg = create_tainted_id();
   void* arg2 = create_tainted();
@@ -529,8 +517,7 @@ void testNSArray_EnumerateObjectsAtIndexesOptionsUsingBlockGood(void) {
   testNSArray_sink(arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_FirstObjectCommonWithArrayBadFN(void) {
+void testNSArray_FirstObjectCommonWithArrayBad(void) {
   NSArray* array = [NSArray new];
   NSArray* arg = tainted_array();
   id propagated = [array firstObjectCommonWithArray:arg];
@@ -544,8 +531,7 @@ void testNSArray_FirstObjectCommonWithArrayGood(void) {
   testNSArray_sink((__bridge void*)(arg));
 }
 
-// sink does not look inside the pointer
-void testNSArray_IsEqualToArrayBadFN(void) {
+void testNSArray_IsEqualToArrayBad(void) {
   NSArray* array = [NSArray new];
   NSArray* arg = tainted_array();
   BOOL propagated = [array isEqualToArray:arg];
@@ -798,8 +784,7 @@ void testNSArray_SetValueForKeyGood(void) {
   testNSArray_sink(&arg);
 }
 
-// sink does not look inside the pointer
-void testNSArray_ValueForKeyBadFN(void) {
+void testNSArray_ValueForKeyBad(void) {
   NSArray* array = [NSArray new];
   void* arg = create_tainted();
   id propagated = [array valueForKey:(__bridge NSString* _Nonnull)(arg)];
@@ -934,7 +919,6 @@ void testNSArray_WriteToURLErrorBad(void) {
   // FN: propagation does not go inside the pointer: &error is tainted, not
   // error
   testNSArray_sink((__bridge void*)(error));
-  // FN: sink does not look inside the pointer
   testNSArray_sink(&propagated);
 }
 

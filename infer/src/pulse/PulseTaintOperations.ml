@@ -577,7 +577,8 @@ let gather_taint_dependencies v astate =
   gather_taint_dependencies_aux [] v
 
 
-let check_flows_wrt_sink path location (sink, sink_trace) v astate =
+let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path location
+    (sink, sink_trace) v astate =
   let source_expr = Decompiler.find v astate in
   let mk_reportable_error diagnostic = [ReportableError {astate; diagnostic}] in
   let check_tainted_flows policy_violations_reported v astate =
@@ -613,8 +614,8 @@ let check_flows_wrt_sink path location (sink, sink_trace) v astate =
       sources (Ok policy_violations_reported)
   in
   let taint_dependencies = gather_taint_dependencies v astate in
-  let+ _, astate =
-    PulseResult.list_fold taint_dependencies ~init:(IntSet.empty, astate)
+  let+ policy_violations_reported, astate =
+    PulseResult.list_fold taint_dependencies ~init:(policy_violations_reported, astate)
       ~f:(fun (policy_violations_reported, astate) v ->
         let astate =
           AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
@@ -622,7 +623,7 @@ let check_flows_wrt_sink path location (sink, sink_trace) v astate =
         let+ policy_violations_reported = check_tainted_flows policy_violations_reported v astate in
         (policy_violations_reported, astate) )
   in
-  astate
+  (policy_violations_reported, astate)
 
 
 let should_ignore_all_flows_to proc_name =
@@ -638,10 +639,37 @@ let taint_sinks tenv path location return ~has_added_return_param proc_name actu
       if should_ignore_all_flows_to proc_name then Ok astate
       else
         let sink_trace = Trace.Immediate {location; history} in
-        let astate =
-          AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
+        let visited = ref AbstractValue.Set.empty in
+        let open PulseResult.Let_syntax in
+        let rec mark_sinked policy_violations_reported v astate =
+          if AbstractValue.Set.mem v !visited then Ok (policy_violations_reported, astate)
+          else (
+            visited := AbstractValue.Set.add v !visited ;
+            let astate =
+              AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
+            in
+            let res =
+              check_flows_wrt_sink ~policy_violations_reported path location (sink, sink_trace) v
+                astate
+            in
+            let* policy_violations_reported, astate = res in
+            match AbductiveDomain.Memory.find_opt v astate with
+            | None ->
+                Ok (policy_violations_reported, astate)
+            | Some edges ->
+                BaseMemory.Edges.fold edges ~init:res ~f:(fun res (access, (v, _)) ->
+                    match access with
+                    | HilExp.Access.FieldAccess fieldname
+                      when Fieldname.equal fieldname PulseOperations.ModeledField.internal_string
+                           || Fieldname.equal fieldname
+                                PulseOperations.ModeledField.internal_ref_count ->
+                        res
+                    | _ ->
+                        let* policy_violations_reported, astate = res in
+                        mark_sinked policy_violations_reported v astate ) )
         in
-        check_flows_wrt_sink path location (sink, sink_trace) v astate )
+        let+ _, astate = mark_sinked IntSet.empty v astate in
+        astate )
 
 
 let propagate_to path location v values call astate =

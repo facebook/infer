@@ -33,12 +33,13 @@ val taint_allocation :
   -> AbductiveDomain.t
 
 val check_flows_wrt_sink :
-     PathContext.t
+     ?policy_violations_reported:IntSet.t
+  -> PathContext.t
   -> Location.t
   -> Taint.t * Trace.t
   -> AbstractValue.t
   -> AbductiveDomain.t
-  -> AbductiveDomain.t AccessResult.t
+  -> (IntSet.t * AbductiveDomain.t) AccessResult.t
 
 val taint_initial :
   Tenv.t -> Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t

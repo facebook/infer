@@ -864,8 +864,11 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
         (fun Attribute.TaintSink.{sink; trace} astate_result ->
           let* astate = astate_result in
           let sink_and_trace = (sink, trace_via_call trace) in
-          PulseTaintOperations.check_flows_wrt_sink path call_location sink_and_trace addr_caller
-            astate )
+          let+ _, astate =
+            PulseTaintOperations.check_flows_wrt_sink path call_location sink_and_trace addr_caller
+              astate
+          in
+          astate )
         sinks astate_result )
     call_state.subst (Ok astate)
 

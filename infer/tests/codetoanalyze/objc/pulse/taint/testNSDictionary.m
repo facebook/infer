@@ -157,15 +157,13 @@ void testNSDictionary_SharedKeySetForKeysBad(void) {
   testNSDictionary_sink((__bridge void*)(propagated));
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_CountBadFN(void) {
+void testNSDictionary_CountBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   NSUInteger propagated = [dictionary count];
   testNSDictionary_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_IsEqualToDictionaryBadFN(void) {
+void testNSDictionary_IsEqualToDictionaryBad(void) {
   NSDictionary* dictionary = [NSDictionary new];
   NSDictionary* arg = tainted_dictionary();
   bool propagated = [dictionary isEqualToDictionary:arg];
@@ -456,7 +454,6 @@ void testNSDictionary_WriteToURLErrorBad(void) {
   // FN: propagation does not go inside the pointer: &error is tainted, not
   // error
   testNSDictionary_sink((__bridge void*)(error));
-  // FN: sink does not look inside the pointer
   testNSDictionary_sink(&propagated);
 }
 
@@ -468,8 +465,7 @@ void testNSDictionary_WriteToURLErrorGood(void) {
   testNSDictionary_sink((__bridge void*)(dictionary));
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FileSizeBadFN(void) {
+void testNSDictionary_FileSizeBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   unsigned long long propagated = [dictionary fileSize];
   testNSDictionary_sink(&propagated);
@@ -493,8 +489,7 @@ void testNSDictionary_FileModificationDateBad(void) {
   testNSDictionary_sink((__bridge void*)(propagated));
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FilePosixPermissionsBadFN(void) {
+void testNSDictionary_FilePosixPermissionsBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   NSUInteger propagated = [dictionary filePosixPermissions];
   testNSDictionary_sink(&propagated);
@@ -524,50 +519,43 @@ void testNSDictionary_FileGroupOwnerAccountNameBad(void) {
   testNSDictionary_sink((__bridge void*)(propagated));
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FileExtensionHiddenBadFN(void) {
+void testNSDictionary_FileExtensionHiddenBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   BOOL propagated = [dictionary fileExtensionHidden];
   testNSDictionary_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FileIsImmutableBadFN(void) {
+void testNSDictionary_FileIsImmutableBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   BOOL propagated = [dictionary fileIsImmutable];
   testNSDictionary_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FileIsAppendOnlyBadFN(void) {
+void testNSDictionary_FileIsAppendOnlyBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   BOOL propagated = [dictionary fileIsAppendOnly];
   testNSDictionary_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FileSystemFileNumberBadFN(void) {
+void testNSDictionary_FileSystemFileNumberBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   NSUInteger propagated = [dictionary fileSystemFileNumber];
   testNSDictionary_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FileSystemNumberBadFN(void) {
+void testNSDictionary_FileSystemNumberBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   NSInteger propagated = [dictionary fileSystemNumber];
   testNSDictionary_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FileHFSTypeCodeBadFN(void) {
+void testNSDictionary_FileHFSTypeCodeBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   OSType propagated = [dictionary fileHFSTypeCode];
   testNSDictionary_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSDictionary_FileHFSCreatorCodeBadFN(void) {
+void testNSDictionary_FileHFSCreatorCodeBad(void) {
   NSDictionary* dictionary = tainted_dictionary();
   OSType propagated = [dictionary fileHFSCreatorCode];
   testNSDictionary_sink(&propagated);
