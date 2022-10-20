@@ -131,8 +131,6 @@ void testNSDictionary_DictionaryWithContentsOfURLErrorBad(void) {
   NSError* error = [NSError new];
   NSDictionary* propagated = [NSDictionary dictionaryWithContentsOfURL:arg
                                                                  error:&error];
-  // FN: propagation does not go inside the pointer: &error is tainted, not
-  // error
   testNSDictionary_sink((__bridge void*)(error));
   testNSDictionary_sink((__bridge void*)(propagated));
 }
@@ -451,8 +449,6 @@ void testNSDictionary_WriteToURLErrorBad(void) {
   BOOL propagated =
       [dictionary writeToURL:(__bridge NSURL* _Nonnull)(arg) error:&error];
   testNSDictionary_sink(arg);
-  // FN: propagation does not go inside the pointer: &error is tainted, not
-  // error
   testNSDictionary_sink((__bridge void*)(error));
   testNSDictionary_sink(&propagated);
 }

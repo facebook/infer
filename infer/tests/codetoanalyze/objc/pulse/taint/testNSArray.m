@@ -895,8 +895,6 @@ void testNSArray_InitWithContentsOfURLErrorBad(void) {
   NSArray* propagated =
       [array initWithContentsOfURL:(__bridge NSURL* _Nonnull)(arg)
                              error:&error];
-  // FN: propagation does not go inside the pointer: &error is tainted, not
-  // error
   testNSArray_sink((__bridge void*)(error));
   testNSArray_sink((__bridge void*)(propagated));
 }
@@ -916,8 +914,6 @@ void testNSArray_WriteToURLErrorBad(void) {
   BOOL propagated =
       [array writeToURL:(__bridge NSURL* _Nonnull)(arg) error:&error];
   testNSArray_sink(arg);
-  // FN: propagation does not go inside the pointer: &error is tainted, not
-  // error
   testNSArray_sink((__bridge void*)(error));
   testNSArray_sink(&propagated);
 }
@@ -952,8 +948,6 @@ void testNSArray_ArrayWithContentsOfURLErrorBad(void) {
   NSArray* propagated =
       [NSArray arrayWithContentsOfURL:(__bridge NSURL* _Nonnull)(arg)
                                 error:&error];
-  // FN: propagation does not go inside the pointer: &error is tainted, not
-  // error
   testNSArray_sink((__bridge void*)(error));
   testNSArray_sink((__bridge void*)(propagated));
 }
