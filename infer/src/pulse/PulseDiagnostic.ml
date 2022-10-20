@@ -598,14 +598,12 @@ let invalidation_titles (invalidation : Invalidation.t) =
       ( "source of the constant value part of the trace starts here"
       , "constant value dereference part of the trace starts here" )
   | CFree
-  | CustomFree _
   | CppDelete
   | CppDeleteArray
   | EndIterator
   | GoneOutOfScope _
   | OptionalEmpty
-  | StdVector _
-  | JavaIterator _ ->
+  | StdVector _ ->
       ( "invalidation part of the trace starts here"
       , "use-after-lifetime part of the trace starts here" )
 

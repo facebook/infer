@@ -74,14 +74,12 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
     | ConstantDereference _ ->
         not (Trace.has_invalidation access_trace)
     | CFree
-    | CustomFree _
     | CppDelete
     | CppDeleteArray
     | EndIterator
     | GoneOutOfScope _
     | OptionalEmpty
-    | StdVector _
-    | JavaIterator _ ->
+    | StdVector _ ->
         false
   in
   if res then

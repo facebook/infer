@@ -37,13 +37,8 @@ let pp_std_vector_function f = function
       F.fprintf f "std::vector::shrink_to_fit"
 
 
-type java_iterator_function = Remove [@@deriving compare, equal]
-
-let pp_java_iterator_function f = function Remove -> F.pp_print_string f "Iterator.remove"
-
 type t =
   | CFree
-  | CustomFree of Procname.t
   | ConstantDereference of IntLit.t
   | CppDelete
   | CppDeleteArray
@@ -51,7 +46,6 @@ type t =
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
   | StdVector of std_vector_function
-  | JavaIterator of java_iterator_function
 [@@deriving compare, equal]
 
 type must_be_valid_reason =
@@ -79,7 +73,7 @@ let pp_must_be_valid_reason f = function
 
 let issue_type_of_cause ~latent invalidation must_be_valid_reason =
   match invalidation with
-  | CFree | CustomFree _ ->
+  | CFree ->
       IssueType.use_after_free ~latent
   | ConstantDereference i when IntLit.iszero i -> (
     match must_be_valid_reason with
@@ -103,7 +97,7 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
       IssueType.use_after_lifetime ~latent
   | OptionalEmpty ->
       IssueType.optional_empty_access ~latent
-  | JavaIterator _ | StdVector _ ->
+  | StdVector _ ->
       IssueType.vector_invalidation ~latent
 
 
@@ -121,8 +115,6 @@ let describe f cause =
   match cause with
   | CFree ->
       F.pp_print_string f "was invalidated by call to `free()`"
-  | CustomFree proc_name ->
-      F.fprintf f "was invalidated by call to `%a` (user config)" Procname.pp proc_name
   | ConstantDereference i when IntLit.iszero i ->
       F.pp_print_string f "is assigned to the null pointer"
   | ConstantDereference i ->
@@ -144,13 +136,11 @@ let describe f cause =
       F.pp_print_string f "is assigned an empty value"
   | StdVector std_vector_f ->
       F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
-  | JavaIterator java_iterator_f ->
-      F.fprintf f "was potentially invalidated by `%a()`" pp_java_iterator_function java_iterator_f
 
 
 let pp f invalidation =
   match invalidation with
-  | CFree | CustomFree _ ->
+  | CFree ->
       F.fprintf f "CFree(%a)" describe invalidation
   | ConstantDereference _ ->
       F.fprintf f "ConstantDereference(%a)" describe invalidation
@@ -160,5 +150,3 @@ let pp f invalidation =
       describe f invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation
-  | JavaIterator _ ->
-      F.fprintf f "JavaIterator(%a)" describe invalidation
