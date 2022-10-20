@@ -496,9 +496,10 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location proc_nam
           Attribute.TaintSanitized.
             {sanitizer; time_trace= Timestamp.trace0 path.PathContext.timestamp; trace}
         in
-        AbductiveDomain.AddressAttributes.add_one v
-          (TaintSanitized (Attribute.TaintSanitizedSet.singleton taint_sanitized))
-          astate )
+        taint_and_explore v astate ~taint:(fun v astate ->
+            AbductiveDomain.AddressAttributes.add_one v
+              (TaintSanitized (Attribute.TaintSanitizedSet.singleton taint_sanitized))
+              astate ) )
   in
   astate
 

@@ -18,6 +18,7 @@ void taint_manipulated_with_indirections(structure**);
 void sink_int(int);
 void sink_manipulated(structure);
 
+void sanitize_structure_ptr(structure*) {}
 void sanitize_manipulated(structure);
 
 void propagate_to_manipulated(structure, int);
@@ -64,6 +65,7 @@ void test_sanitize_field_good(structure s) {
   sanitize_manipulated(s);
   sink_manipulated(s);
 }
+
 void test_propagate_to_field_bad(structure s) {
   int tainted = int_source();
   propagate_to_manipulated(s, tainted);
@@ -88,4 +90,12 @@ void test_taint_field_with_indirections_good(structure s) {
   structure** s_ptr_ptr = &s_ptr;
   taint_manipulated_with_indirections(s_ptr_ptr);
   sink_int((**s_ptr_ptr).other);
+}
+
+void test_sanitize_content_good(structure s) {
+  s.other = int_source();
+  s.manipulated = int_source();
+  sanitize_structure_ptr(&s);
+  sink_int(s.other);
+  sink_int(s.manipulated);
 }
