@@ -252,9 +252,9 @@ let exec_instr proc_name closure_maps instr =
   let open Sil in
   let res =
     match instr with
-    | Load {id; e; root_typ; loc} ->
+    | Load {id; e; typ; loc} ->
         [ try_keep_original ~default:instr e (exec_exp proc_name e) ~f:(fun e' ->
-              Load {id; e= e'; root_typ; typ= root_typ; loc} ) ]
+              Load {id; e= e'; root_typ= typ; typ; loc} ) ]
     | Store {e1; root_typ; typ; e2; loc} ->
         [ try_keep_original2 ~default:instr e1 (exec_exp proc_name e1) e2 (exec_exp proc_name e2)
             ~f:(fun e1' e2' -> Store {e1= e1'; root_typ; typ; e2= e2'; loc}) ]

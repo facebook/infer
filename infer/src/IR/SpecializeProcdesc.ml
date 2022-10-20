@@ -65,18 +65,17 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
     | Sil.Load
         { id
         ; e= Exp.Lvar origin_pvar as origin_exp
-        ; root_typ= {Typ.desc= Tptr ({desc= Tstruct origin_typename}, Pk_pointer)}
+        ; typ= {Typ.desc= Tptr ({desc= Tstruct origin_typename}, Pk_pointer)}
         ; loc } ->
         let specialized_typname =
           try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions
           with Caml.Not_found -> origin_typename
         in
         subst_map := Ident.Map.add id specialized_typname !subst_map ;
-        let root_typ = mk_ptr_typ specialized_typname in
-        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ; typ= root_typ; loc})
+        let typ = mk_ptr_typ specialized_typname in
+        Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= typ; typ; loc})
     | Sil.Load
-        {id; e= Exp.Var origin_id as origin_exp; root_typ= {Typ.desc= Tstruct _} as origin_typ; loc}
-      ->
+        {id; e= Exp.Var origin_id as origin_exp; typ= {Typ.desc= Tstruct _} as origin_typ; loc} ->
         let updated_typ : Typ.t =
           try Typ.mk ~default:origin_typ (Tstruct (Ident.Map.find origin_id !subst_map))
           with Caml.Not_found -> origin_typ
@@ -84,7 +83,7 @@ let with_formals_types_proc callee_pdesc resolved_pdesc substitutions =
         Some (Sil.Load {id; e= convert_exp origin_exp; root_typ= updated_typ; typ= updated_typ; loc})
     | Sil.Load {id; e= origin_exp; root_typ; typ; loc} ->
         Some (Sil.Load {id; e= convert_exp origin_exp; root_typ; typ; loc})
-    | Sil.Store {e1= assignee_exp; root_typ= origin_typ; e2= origin_exp; loc} ->
+    | Sil.Store {e1= assignee_exp; typ= origin_typ; e2= origin_exp; loc} ->
         let set_instr =
           Sil.Store
             { e1= convert_exp assignee_exp
