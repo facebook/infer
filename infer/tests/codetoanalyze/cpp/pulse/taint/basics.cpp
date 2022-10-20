@@ -180,7 +180,6 @@ void taint_arg_source_ok() {
   __infer_taint_sink(ret); // return value is not a source
 }
 
-// FP in C++11
 void via_sanitizer_ok1(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string* sanitized = Obj::sanitizer1(&source);
@@ -193,7 +192,6 @@ void via_sanitizer_ok2(Obj* obj) {
   obj->string_sink(sanitized);
 }
 
-// FP in C++11
 void implicit_sanitized_ok(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string* sanitized = Obj::sanitizer1(&source);

@@ -574,8 +574,9 @@ let create_cm_procdesc source_file program icfg cm proc_name =
 
 let builtin_get_array_length = Exp.Const (Const.Cfun BuiltinDecl.__get_array_length)
 
-let create_sil_deref exp ~root_typ ~typ loc =
+let create_sil_deref (exp : Exp.t) ~typ loc =
   let no_id = Ident.create_none () in
+  let root_typ = typ in
   Sil.Load {id= no_id; e= exp; root_typ; typ; loc}
 
 
@@ -616,7 +617,7 @@ let rec expression (context : JContext.t) pc expr =
           let array_typ_no_ptr =
             match type_of_ex.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> type_of_ex
           in
-          let deref = create_sil_deref sil_ex ~root_typ:array_typ_no_ptr ~typ:type_of_expr loc in
+          let deref = create_sil_deref sil_ex ~typ:array_typ_no_ptr loc in
           let args = [(sil_ex, type_of_ex)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let ret_typ = Typ.mk (Tint IInt) in
@@ -661,9 +662,7 @@ let rec expression (context : JContext.t) pc expr =
       | JBir.ArrayLoad _ ->
           (* add an instruction that dereferences the array *)
           let array_typ = Typ.mk_array type_of_expr in
-          let deref_array_instr =
-            create_sil_deref sil_ex1 ~root_typ:array_typ ~typ:type_of_expr loc
-          in
+          let deref_array_instr = create_sil_deref sil_ex1 ~typ:array_typ loc in
           let id = Ident.create_fresh Ident.knormal in
           let load_instr =
             Sil.Load
@@ -682,7 +681,7 @@ let rec expression (context : JContext.t) pc expr =
       let sil_expr = Exp.Lfield (sil_expr, field_name, sil_type) in
       let tmp_id = Ident.create_fresh Ident.knormal in
       let lderef_instr =
-        Sil.Load {id= tmp_id; e= sil_expr; root_typ= sil_type; typ= type_of_expr; loc}
+        Sil.Load {id= tmp_id; e= sil_expr; root_typ= type_of_expr; typ= type_of_expr; loc}
       in
       (instrs @ [lderef_instr], Exp.Var tmp_id, type_of_expr)
   | JBir.StaticField (cn, fs) ->
@@ -702,7 +701,7 @@ let rec expression (context : JContext.t) pc expr =
         let sil_expr = Exp.Lfield (sil_expr, field_name, sil_type) in
         let tmp_id = Ident.create_fresh Ident.knormal in
         let lderef_instr =
-          Sil.Load {id= tmp_id; e= sil_expr; root_typ= sil_type; typ= type_of_expr; loc}
+          Sil.Load {id= tmp_id; e= sil_expr; root_typ= type_of_expr; typ= type_of_expr; loc}
         in
         (instrs @ [lderef_instr], Exp.Var tmp_id, type_of_expr)
 
@@ -777,7 +776,7 @@ let method_invocation (context : JContext.t) loc pc var_opt cn ms sil_obj_opt ex
               let obj_typ_no_ptr =
                 match sil_obj_type.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> sil_obj_type
               in
-              [create_sil_deref sil_obj_expr ~root_typ:obj_typ_no_ptr ~typ:obj_typ_no_ptr loc]
+              [create_sil_deref sil_obj_expr ~typ:obj_typ_no_ptr loc]
           | _ ->
               []
         in
@@ -972,7 +971,7 @@ let instruction (context : JContext.t) pc instr : translation =
         , CallFlags.default )
     in
     let typ_no_ptr = match sil_type.Typ.desc with Typ.Tptr (typ, _) -> typ | _ -> sil_type in
-    let deref_instr = create_sil_deref sil_expr ~root_typ:typ_no_ptr ~typ:sil_type loc in
+    let deref_instr = create_sil_deref sil_expr ~typ:typ_no_ptr loc in
     let node_kind = Procdesc.Node.Stmt_node node_desc in
     Instr (create_node node_kind (instrs @ [deref_instr; instr]))
   in
@@ -1064,11 +1063,9 @@ let instruction (context : JContext.t) pc instr : translation =
         let stml2, sil_expr_rhs, rhs_typ = expression context pc e_rhs in
         let field_name = get_field_name program false tenv cn fs in
         let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
-        let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Exp.Lfield (sil_expr_lhs, field_name, type_of_the_surrounding_class) in
         let sil_instr =
-          Sil.Store
-            {e1= expr_off; root_typ= type_of_the_root_of_e_lhs; typ= rhs_typ; e2= sil_expr_rhs; loc}
+          Sil.Store {e1= expr_off; root_typ= rhs_typ; typ= rhs_typ; e2= sil_expr_rhs; loc}
         in
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in
@@ -1083,11 +1080,9 @@ let instruction (context : JContext.t) pc instr : translation =
         let stml2, sil_expr_rhs, rhs_typ = expression context pc e_rhs in
         let field_name = get_field_name program true tenv cn fs in
         let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
-        let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Exp.Lfield (sil_expr_lhs, field_name, type_of_the_surrounding_class) in
         let sil_instr =
-          Sil.Store
-            {e1= expr_off; root_typ= type_of_the_root_of_e_lhs; typ= rhs_typ; e2= sil_expr_rhs; loc}
+          Sil.Store {e1= expr_off; root_typ= rhs_typ; typ= rhs_typ; e2= sil_expr_rhs; loc}
         in
         let node_kind = Procdesc.Node.Stmt_node MethodBody in
         let node = create_node node_kind (stml1 @ stml2 @ [sil_instr]) in

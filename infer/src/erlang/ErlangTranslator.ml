@@ -62,6 +62,12 @@ let update_location (loc : Ast.location) (env : (_, _) Env.t) =
   {env with location}
 
 
+let update_path (path : string) (env : (_, _) Env.t) =
+  let file = SourceFile.create path in
+  let location = {env.location with file} in
+  {env with location}
+
+
 let check_type env value typ : Block.t =
   let is_right_type_id = mk_fresh_id () in
   let start =
@@ -1424,19 +1430,25 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
 
 (** Translate forms of a module. *)
 let translate_module (env : (_, _) Env.t) module_ =
-  let f {Ast.location; simple_form} =
-    let env = update_location location env in
+  let f env {Ast.location; simple_form} =
+    let sub_env = update_location location env in
     match simple_form with
     | Function {function_; clauses} ->
-        translate_one_function env function_ clauses
+        translate_one_function sub_env function_ clauses ;
+        env
     | Type {name; type_} ->
-        translate_one_type env name type_
+        translate_one_type sub_env name type_ ;
+        env
     | Spec {function_; spec} ->
-        translate_one_spec env function_ spec
+        translate_one_spec sub_env function_ spec ;
+        env
+    | File {path} ->
+        update_path path env
     | _ ->
-        ()
+        env
   in
-  List.iter module_ ~f ;
+  (* Processing in order due to [file] attributes updating the path. *)
+  let env = List.fold_left module_ ~f ~init:env in
   DB.Results_dir.init env.location.file ;
   let tenv = Tenv.FileLocal (Tenv.create ()) in
   SourceFiles.add env.location.file env.cfg tenv None

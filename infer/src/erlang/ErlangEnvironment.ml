@@ -103,10 +103,8 @@ let initialize_environment module_ =
             L.die InternalError "repeated record: %s" name )
     | Module current_module ->
         {env with current_module}
-    | File {path} ->
-        let file = SourceFile.create path in
-        let location = Location.none file in
-        {env with location}
+    | File _ ->
+        env (* Handled during translation. *)
     | Function {function_; _} ->
         let key = UnqualifiedFunction.of_ast function_ in
         {env with functions= Set.add env.functions key}

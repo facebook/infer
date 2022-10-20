@@ -93,6 +93,9 @@
       {"procedure": "sink_ptr", "kinds": ["Simple"]}
   ],
   "pulse-taint-sanitizers": [
+      { "procedure": "sanitize_structure_ptr",
+        "kinds": ["Simple"],
+        "taint_target": ["ArgumentPositions", [0]] },
       { "procedure": "sanitize_manipulated",
         "kinds": ["Simple"],
         "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}

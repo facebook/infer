@@ -49,7 +49,7 @@ public class UserControlledStrings {
     return builder.command(clipboard.getText().toString());
   }
 
-  ProcessBuilder FN_clipboardToProcessBuilder4Bad(ProcessBuilder builder) {
+  ProcessBuilder clipboardToProcessBuilder4Bad(ProcessBuilder builder) {
     List<String> cmds = new ArrayList();
     cmds.add(clipboard.getText().toString());
     return builder.command(cmds);

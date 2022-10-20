@@ -484,7 +484,7 @@ module Attribute = struct
 
   let alloc_free_match allocator (invalidation : (Invalidation.t * Trace.t) option) is_released =
     match (allocator, invalidation) with
-    | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), Some ((CFree | CustomFree _), _)
+    | (CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _), Some (CFree, _)
     | CppNew, Some (CppDelete, _)
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _ ->

@@ -1799,6 +1799,12 @@ INTERNAL OPTIONS
        --capture-block-list-reset
            Cancel the effect of --capture-block-list.
 
+       --capture-doli path
+           Generate models from a DOLI representation given a .doli file.
+
+       --capture-doli-reset
+           Cancel the effect of --capture-doli.
+
        --capture-textual path
            Generate a SIL program from a textual representation given in a
            .sil file.
