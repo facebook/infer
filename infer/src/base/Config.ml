@@ -917,6 +917,11 @@ and capture_textual =
     "Generate a SIL program from a textual representation given in a .sil file."
 
 
+and capture_doli =
+  CLOpt.mk_path_opt ~long:"capture-doli" ~meta:"path"
+    "Generate models from a DOLI representation given a .doli file."
+
+
 and cfg_json =
   CLOpt.mk_path_opt ~long:"cfg-json"
     ~in_help:InferCommand.[(Capture, manual_generic)]
@@ -3344,6 +3349,8 @@ and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 and capture = !capture
 
 and capture_textual = !capture_textual
+
+and capture_doli = !capture_doli
 
 and capture_block_list = !capture_block_list
 
