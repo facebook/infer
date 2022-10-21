@@ -185,13 +185,13 @@ module AtomicInteger = struct
     load_instr "std::atomic<T>::operator_T()" this memory_ordering_opt
 
 
-  let store_backing_int path location this_address new_value astate =
+  let store_backing_int ({PathContext.timestamp} as path) location this_address new_value astate =
     let* astate, this =
       PulseOperations.eval_access path Read location this_address Dereference astate
     in
     let astate =
       AddressAttributes.add_one (fst this_address)
-        (WrittenTo (Trace.Immediate {location; history= ValueHistory.epoch}))
+        (WrittenTo (timestamp, Trace.Immediate {location; history= ValueHistory.epoch}))
         astate
     in
     let* astate, int_field =

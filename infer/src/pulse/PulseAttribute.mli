@@ -104,7 +104,7 @@ type t =
   | UnreachableAt of Location.t
       (** temporary marker to remember where a variable became unreachable; helps with accurately
           reporting leaks *)
-  | WrittenTo of Trace.t
+  | WrittenTo of Timestamp.t * Trace.t
 [@@deriving compare]
 
 val pp : F.formatter -> t -> unit
@@ -176,7 +176,7 @@ module Attributes : sig
 
   val get_must_not_be_tainted : t -> TaintSinkSet.t
 
-  val get_written_to : t -> Trace.t option
+  val get_written_to : t -> (Timestamp.t * Trace.t) option
 
   val is_always_reachable : t -> bool
 

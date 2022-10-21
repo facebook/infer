@@ -35,8 +35,7 @@ int source_mod_ok() {
   return cpy.arr[0];
 }
 
-// FP is due to incorrect frontend translation of Arr's copy constructor.
-int source_mod_param_ok_FP(Arr source) {
+int source_mod_param_ok(Arr source) {
   auto cpy = source;
   source.arr[0] = 9; // source is modified, so copy is not unnecessary as we
                      // can't just add &
@@ -475,3 +474,18 @@ void call_intentional_cpy_under_lock_ok(MyValueOr c) {
 }
 
 void call_no_cpy_NRVO_ok(const MyValueOr& c) { auto g = c.no_cpy_NRVO(); }
+
+class ClassWithoutConstructDef {
+  int __internal_field;
+  std::vector<int> __internal_vec;
+
+ public:
+  ClassWithoutConstructDef(const ClassWithoutConstructDef& src);
+  int* get_field_ref() { return &__internal_field; }
+};
+void assign_value_unknown(int* ref, int v);
+
+void modify_by_unknown_ok(const ClassWithoutConstructDef& src) {
+  ClassWithoutConstructDef tgt = src;
+  assign_value_unknown(tgt.get_field_ref(), 42);
+}

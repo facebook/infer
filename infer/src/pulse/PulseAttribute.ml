@@ -155,7 +155,7 @@ module Attribute = struct
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
-    | WrittenTo of Trace.t
+    | WrittenTo of Timestamp.t * Trace.t
   [@@deriving compare, equal, variants]
 
   type rank = int
@@ -307,8 +307,11 @@ module Attribute = struct
         F.fprintf f "UnknownEffect(%a, %a)" CallEvent.pp call ValueHistory.pp hist
     | UnreachableAt location ->
         F.fprintf f "UnreachableAt(%a)" Location.pp location
-    | WrittenTo trace ->
-        F.fprintf f "WrittenTo %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation")) trace
+    | WrittenTo (timestamp, trace) ->
+        F.fprintf f "WrittenTo (%d, %a)"
+          (timestamp :> int)
+          (Trace.pp ~pp_immediate:(pp_string_if_debug "mutation"))
+          trace
 
 
   let is_suitable_for_pre = function
@@ -459,8 +462,8 @@ module Attribute = struct
         TaintSanitized (TaintSanitizedSet.map add_call_to_taint_sanitized taint_sanitized)
     | UnknownEffect (call, hist) ->
         UnknownEffect (call, add_call_to_history hist)
-    | WrittenTo trace ->
-        WrittenTo (add_call_to_trace trace)
+    | WrittenTo (_timestamp, trace) ->
+        WrittenTo (timestamp, add_call_to_trace trace)
     | CopiedInto _ | SourceOriginOfCopy _ ->
         L.die InternalError "Unexpected attribute %a in the summary of %a" pp attr Procname.pp
           proc_name
@@ -642,8 +645,8 @@ module Attributes = struct
   let remove_must_be_valid = remove_by_rank Attribute.must_be_valid_rank
 
   let get_written_to =
-    get_by_rank Attribute.written_to_rank ~dest:(function [@warning "-8"] WrittenTo action ->
-        action )
+    get_by_rank Attribute.written_to_rank ~dest:(function [@warning "-8"]
+        | WrittenTo (timestamp, trace) -> (timestamp, trace) )
 
 
   let get_closure_proc_name =

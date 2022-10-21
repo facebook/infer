@@ -94,14 +94,14 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         in
         if
           Option.exists callee_pname_opt ~f:(fun p ->
-              Procname.is_constructor p || Procname.is_copy_assignment p )
+              Procname.is_constructor p || Procname.is_copy_assignment p || Procname.is_destructor p )
         then astate
         else
           (* record the [WrittenTo] attribute for all reachable values
              starting from actual argument so that we don't assume
              that they are not modified in the unnecessary copy analysis. *)
           let call_trace = Trace.Immediate {location= call_loc; history= hist} in
-          let written_attrs = Attributes.singleton (WrittenTo call_trace) in
+          let written_attrs = Attributes.singleton (WrittenTo (timestamp, call_trace)) in
           fold_on_reachable_from_arg astate (fun reachable_actual ->
               AddressAttributes.add_attrs reachable_actual written_attrs )
     | `DoNotHavoc ->

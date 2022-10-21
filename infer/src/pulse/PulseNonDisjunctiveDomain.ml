@@ -47,7 +47,8 @@ type copy_spec_t =
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; heap: BaseMemory.t
-      ; from: Attribute.CopyOrigin.t }
+      ; from: Attribute.CopyOrigin.t
+      ; timestamp: Timestamp.t }
   | Modified
 [@@deriving equal]
 
@@ -65,9 +66,10 @@ module CopySpec = MakeDomainFromTotalOrder (struct
 
 
   let pp fmt = function
-    | Copied {typ; heap; location; from} ->
-        Format.fprintf fmt "%a (value of type %a) at %a with heap= %a" Attribute.CopyOrigin.pp from
-          (Typ.pp Pp.text) typ Location.pp location BaseMemory.pp heap
+    | Copied {typ; heap; location; from; timestamp} ->
+        Format.fprintf fmt "%a (value of type %a) at %a with heap= %a (timestamp: %d)"
+          Attribute.CopyOrigin.pp from (Typ.pp Pp.text) typ Location.pp location BaseMemory.pp heap
+          (timestamp :> int)
     | Modified ->
         Format.fprintf fmt "modified"
 end)
@@ -221,7 +223,8 @@ let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_
   let copy_var = CopyVar.{copied_into; source_addr_opt} in
   let copy_map =
     match CopyMap.find_opt copy_var copy_map with
-    | Some (Copied {heap= copy_heap}) when is_modified copy_heap ->
+    | Some (Copied {heap= copy_heap; timestamp= copy_timestamp})
+      when is_modified copy_heap copy_timestamp ->
         Logging.d_printfln_escaped "Copy/source modified!" ;
         CopyMap.add copy_var Modified copy_map
     | _ ->
@@ -237,7 +240,7 @@ let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt =
 let mark_parameter_as_modified_elt ~is_modified ~var ({parameter_map} as astate) =
   let parameter_map =
     match ParameterMap.find_opt var parameter_map with
-    | Some (Unmodified {heap= copy_heap}) when is_modified copy_heap ->
+    | Some (Unmodified {heap= copy_heap}) when is_modified copy_heap Timestamp.t0 ->
         Logging.d_printfln_escaped "Parameter %a modified!" Var.pp var ;
         ParameterMap.add var Modified parameter_map
     | _ ->

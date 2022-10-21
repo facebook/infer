@@ -33,10 +33,12 @@ let try_eval path location e disjunct =
       None
 
 
-let get_copied_and_source copy_type path rest_args location from (disjunct : AbductiveDomain.t) =
+let get_copied_and_source copy_type ({PathContext.timestamp} as path) rest_args location from
+    (disjunct : AbductiveDomain.t) =
   let heap = (disjunct.post :> BaseDomain.t).heap in
   let copied =
-    NonDisjDomain.Copied {heap; typ= Typ.strip_ptr copy_type; location; copied_location= None; from}
+    NonDisjDomain.Copied
+      {heap; typ= Typ.strip_ptr copy_type; location; copied_location= None; from; timestamp}
   in
   let disjunct, source_addr_typ_opt =
     match rest_args with
@@ -256,7 +258,8 @@ let add_copied_return path location call_exp actuals astates astate_non_disj =
                      ; typ= Typ.strip_ptr copy_type
                      ; location
                      ; copied_location= Some (procname, copied_location)
-                     ; from } )
+                     ; from
+                     ; timestamp= path.PathContext.timestamp } )
                   astate_non_disj
               in
               (astate_non_disj, disjunct) )
@@ -286,28 +289,26 @@ let add_const_refable_parameters procdesc tenv astates astate_non_disj =
           else astate_non_disj ) )
 
 
-let get_matching_dest_addr_opt ~get_repr (edges_curr, attr_curr) edges_orig :
-    AbstractValue.t list option =
-  BaseMemory.Edges.fold edges_curr ~init:(Some []) ~f:(fun acc (access_curr, (addr_curr, _)) ->
-      match BaseMemory.Edges.find_opt access_curr edges_orig with
-      | Some (addr_orig, _) ->
-          if AbstractValue.equal (get_repr addr_curr) (get_repr addr_orig) then
-            Option.map acc ~f:(fun acc -> addr_curr :: acc)
-          else
-            (* mismatch for the addresses on the copy and the
-               current heap. *)
-            None
-      | _ ->
-          if Option.is_none (BaseAddressAttributes.get_written_to addr_curr attr_curr) then
-            (* address only occurs on the current heap, most likely it has been read since the copy.
-               Continue exploring the rest of the edges...*)
-            acc
-          else (* address is written since copied! *)
-            None )
+let is_matching_edges ~get_repr ~edges_curr ~edges_orig =
+  Option.value_map edges_orig ~default:true ~f:(fun edges_orig ->
+      BaseMemory.Edges.for_all edges_curr ~f:(fun (access_curr, (addr_curr, _)) ->
+          match BaseMemory.Edges.find_opt access_curr edges_orig with
+          | Some (addr_orig, _) ->
+              (* check matching for the addresses on the copy and the current heap. *)
+              AbstractValue.equal (get_repr addr_curr) (get_repr addr_orig)
+          | None ->
+              (* address only occurs on the current heap, most likely it has been read since the
+                 copy.  Continue exploring the rest of the edges...*)
+              true ) )
 
 
 let is_modified_since_detected addr ~is_param ~get_repr ~current_heap ~current_attrs ~copy_heap
-    ~source_addr_opt =
+    ~(copy_timestamp : Timestamp.t) ~source_addr_opt =
+  let is_written_after_copy addr =
+    BaseAddressAttributes.get_written_to addr current_attrs
+    |> Option.exists ~f:(fun ((timestamp : Timestamp.t), _) ->
+           (copy_timestamp :> int) < (timestamp :> int) )
+  in
   let rec aux ~addr_to_explore ~visited =
     match addr_to_explore with
     | [] ->
@@ -315,32 +316,26 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap ~current_a
     | addr :: addr_to_explore -> (
         if AbstractValue.Set.mem addr visited then aux ~addr_to_explore ~visited
         else
-          let copy_edges_opt = BaseMemory.find_opt addr copy_heap in
-          let current_edges_opt = BaseMemory.find_opt addr current_heap in
           let visited = AbstractValue.Set.add addr visited in
           let is_moved =
             (is_param || BaseAddressAttributes.is_copied_from_const_ref addr current_attrs)
             && BaseAddressAttributes.is_std_moved addr current_attrs
           in
-          is_moved
+          is_moved || is_written_after_copy addr
           ||
-          match (current_edges_opt, copy_edges_opt) with
-          | None, None ->
+          match BaseMemory.find_opt addr current_heap with
+          | None ->
               aux ~addr_to_explore ~visited
-          | Some edges_curr, None ->
-              BaseAddressAttributes.get_written_to addr current_attrs |> Option.is_some
+          | Some edges_curr ->
+              (not
+                 (is_matching_edges ~get_repr ~edges_curr
+                    ~edges_orig:(BaseMemory.find_opt addr copy_heap) ) )
               ||
               let addr_to_explore =
                 BaseMemory.Edges.fold edges_curr ~init:addr_to_explore ~f:(fun acc (_, (addr, _)) ->
                     addr :: acc )
               in
-              aux ~addr_to_explore ~visited
-          | None, Some _ ->
-              aux ~addr_to_explore ~visited
-          | Some edges_curr, Some edges_orig ->
-              get_matching_dest_addr_opt ~get_repr (edges_curr, current_attrs) edges_orig
-              |> Option.value_map ~default:true ~f:(fun matching_addr_list ->
-                     aux ~addr_to_explore:(matching_addr_list @ addr_to_explore) ~visited ) )
+              aux ~addr_to_explore ~visited )
   in
   (* check for modifications to values coming from addresses
      that is returned from unknown calls *)
@@ -354,7 +349,7 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap ~current_a
   aux ~addr_to_explore ~visited:AbstractValue.Set.empty
 
 
-let is_modified origin ~source_addr_opt address astate heap =
+let is_modified origin ~source_addr_opt address astate copy_heap copy_timestamp =
   let get_repr x = Formula.get_var_repr astate.AbductiveDomain.path_condition x in
   let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
   let current_attrs = (astate.AbductiveDomain.post :> BaseDomain.t).attrs in
@@ -369,10 +364,10 @@ let is_modified origin ~source_addr_opt address astate heap =
         heap
     in
     L.d_printfln_escaped "Current reachable heap %a" BaseMemory.pp (reachable_from current_heap) ;
-    L.d_printfln_escaped "%a reachable heap %a" pp_origin origin BaseMemory.pp (reachable_from heap)
-    ) ;
+    L.d_printfln_escaped "%a reachable heap %a" pp_origin origin BaseMemory.pp
+      (reachable_from copy_heap) ) ;
   is_modified_since_detected address ~is_param:(is_param origin) ~get_repr ~current_heap
-    ~copy_heap:heap ~current_attrs ~source_addr_opt
+    ~current_attrs ~copy_heap ~copy_timestamp ~source_addr_opt
 
 
 let mark_modified_address_at ~address ~source_addr_opt origin ~copied_into astate
