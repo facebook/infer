@@ -31,6 +31,10 @@ class Test {
   A mem_a;
 
   void unnecessary_copy_moveable_bad(A&& a) { mem_a = a; }
+
+  void intermediate_member_field_copy_bad() {
+    std::vector<A> singleton = {mem_a};
+  }
 };
 
 int get_size(A a) { return a.vec.size(); }

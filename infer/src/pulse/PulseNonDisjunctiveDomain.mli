@@ -7,6 +7,7 @@
 
 open! IStd
 open PulseBasicInterface
+module DecompilerExpr = PulseDecompilerExpr
 module BaseMemory = PulseBaseMemory
 
 type copy_spec_t =
@@ -30,7 +31,7 @@ include AbstractDomain.WithBottomTop
 val add_var :
      Var.t
   -> source_addr_opt:AbstractValue.t option
-  -> source_opt:Pvar.t option
+  -> source_opt:DecompilerExpr.source_expr option
   -> copy_spec_t
   -> t
   -> t

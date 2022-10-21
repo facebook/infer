@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 module BaseMemory = PulseBaseMemory
+module DecompilerExpr = PulseDecompilerExpr
 
 (** Unnecessary copies are tracked in two places:
 
