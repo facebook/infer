@@ -149,10 +149,15 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         havoc_actual_if_ptr actual_typ None astate )
   in
   L.d_printfln "skipping unknown procedure" ;
-  ( match formals_opt with
-  | None ->
+  ( match (actuals, formals_opt) with
+  | actual_typ :: _, _ when Option.exists callee_pname_opt ~f:Procname.is_constructor ->
+      (* when the callee is an unknown constructor, havoc the first arg (the constructed object)
+         only *)
+      let formal_typ_opt = Option.bind formals_opt ~f:List.hd |> Option.map ~f:snd in
+      havoc_actual_if_ptr actual_typ formal_typ_opt astate
+  | _, None ->
       havoc_actuals_without_typ_info astate
-  | Some formals -> (
+  | _, Some formals -> (
       let actuals = trim_actuals_if_var_arg callee_pname_opt ~actuals ~formals in
       match
         List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->

@@ -489,3 +489,10 @@ void modify_by_unknown_ok(const ClassWithoutConstructDef& src) {
   ClassWithoutConstructDef tgt = src;
   assign_value_unknown(tgt.get_field_ref(), 42);
 }
+
+void call_unknown_constructor_twice_ok(const ClassWithoutConstructDef& src) {
+  ClassWithoutConstructDef tgt = src;
+  assign_value_unknown(tgt.get_field_ref(), 42);
+  ClassWithoutConstructDef dummy = tgt;
+  assign_value_unknown(dummy.get_field_ref(), 42);
+}

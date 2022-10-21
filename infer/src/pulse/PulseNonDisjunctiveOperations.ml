@@ -397,14 +397,17 @@ let mark_modified_copies_and_parameters_with vars ~astate astate_n =
   in
   List.fold vars ~init:astate_n ~f:(fun astate_n var ->
       let astate_n = mark_modified_parameter var astate_n in
-      let res_opt =
-        let open IOption.Let_syntax in
+      (* mark modified copy when [var] is used as source *)
+      let astate_n =
+        (let open IOption.Let_syntax in
         let* source_addr, _ = Stack.find_opt var astate in
         let+ copied_into = AddressAttributes.get_copied_into source_addr astate in
         mark_modified_address_at ~address:source_addr ~source_addr_opt:(Some source_addr) Source
-          ~copied_into astate astate_n
+          ~copied_into astate astate_n)
+        |> Option.value ~default:astate_n
       in
-      match res_opt with Some res -> res | None -> mark_modified_copy var astate_n )
+      (* mark modified copy when [var] is used as target *)
+      mark_modified_copy var astate_n )
 
 
 let mark_modified_copies_and_parameters vars disjuncts astate_n =
