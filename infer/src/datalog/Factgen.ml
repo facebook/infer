@@ -98,20 +98,20 @@ let emit_procedure_level_facts ({IntraproceduralAnalysis.proc_desc} as analysis_
         when (not (is_builtin call_proc)) && is_static_call call_proc ->
           log_fact analysis_data (Fact.static_call proc_name loc ret_id call_proc) ~loc ;
           emit_call_moves analysis_data args call_proc proc_name loc ret_id
-      | Store {e1= Lvar pvar; root_typ= _; typ= _; e2= Var ret_id; loc} when Pvar.is_return pvar ->
+      | Store {e1= Lvar pvar; typ= _; e2= Var ret_id; loc} when Pvar.is_return pvar ->
           log_fact analysis_data (Fact.formal_return proc_name ret_id) ~loc
-      | Load {id= dest; e= Lfield (Var src, src_field, _); root_typ= _; typ= _; loc} ->
+      | Load {id= dest; e= Lfield (Var src, src_field, _); typ= _; loc} ->
           log_fact analysis_data (Fact.load_field proc_name dest src src_field) ~loc
-      | Store {e1= Lfield (Var dest, dest_field, _); root_typ= _; typ= _; e2= Var src; loc} ->
+      | Store {e1= Lfield (Var dest, dest_field, _); typ= _; e2= Var src; loc} ->
           log_fact analysis_data (Fact.store_field proc_name dest dest_field src) ~loc
-      | Load {id= dest; e= Lvar src_pvar; root_typ= _; typ= _; loc} ->
+      | Load {id= dest; e= Lvar src_pvar; typ= _; loc} ->
           log_fact analysis_data (Fact.move_load proc_name dest src_pvar) ~loc
-      | Store {e1= Lvar dest_pvar; root_typ= _; typ= _; e2= Var src; loc} ->
+      | Store {e1= Lvar dest_pvar; typ= _; e2= Var src; loc} ->
           log_fact analysis_data (Fact.move_store proc_name dest_pvar src) ~loc
       (* Unexpected instructions *)
-      | Store {e1= Lvar _; root_typ= _; typ= _; e2= Lvar _; loc}
-      | Store {e1= Lfield (Var _, _, _); root_typ= _; typ= _; e2= Lvar _; loc}
-      | Store {e1= Lfield (Var _, _, _); root_typ= _; typ= _; e2= Lfield (Var _, _, _); loc} ->
+      | Store {e1= Lvar _; typ= _; e2= Lvar _; loc}
+      | Store {e1= Lfield (Var _, _, _); typ= _; e2= Lvar _; loc}
+      | Store {e1= Lfield (Var _, _, _); typ= _; e2= Lfield (Var _, _, _); loc} ->
           die_on_instr instr loc
       (* Ignored instructions *)
       | Prune _ | Metadata _ | _ ->

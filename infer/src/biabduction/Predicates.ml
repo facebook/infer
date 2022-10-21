@@ -965,16 +965,16 @@ let instr_sub_ids ~sub_id_binders f (instr : Sil.instr) : Sil.instr =
     match exp_sub_ids f (Var id) with Var id' when not (Ident.equal id id') -> id' | _ -> id
   in
   match instr with
-  | Load {id; e= rhs_exp; root_typ; typ; loc} ->
+  | Load {id; e= rhs_exp; typ; loc} ->
       let id' = if sub_id_binders then sub_id id else id in
       let rhs_exp' = exp_sub_ids f rhs_exp in
       if phys_equal id' id && phys_equal rhs_exp' rhs_exp then instr
-      else Load {id= id'; e= rhs_exp'; root_typ; typ; loc}
-  | Store {e1= lhs_exp; root_typ; typ; e2= rhs_exp; loc} ->
+      else Load {id= id'; e= rhs_exp'; typ; loc}
+  | Store {e1= lhs_exp; typ; e2= rhs_exp; loc} ->
       let lhs_exp' = exp_sub_ids f lhs_exp in
       let rhs_exp' = exp_sub_ids f rhs_exp in
       if phys_equal lhs_exp' lhs_exp && phys_equal rhs_exp' rhs_exp then instr
-      else Store {e1= lhs_exp'; root_typ; typ; e2= rhs_exp'; loc}
+      else Store {e1= lhs_exp'; typ; e2= rhs_exp'; loc}
   | Call (((id, typ) as ret_id_typ), fun_exp, actuals, call_flags, loc) ->
       let ret_id' =
         if sub_id_binders then

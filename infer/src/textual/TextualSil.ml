@@ -424,13 +424,13 @@ module InstrBridge = struct
         let id = IdentBridge.to_sil id in
         let e = ExpBridge.to_sil lang decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
-        Load {id; e; typ; root_typ= typ; loc}
+        Load {id; e; typ; loc}
     | Store {exp1; typ; exp2; loc} ->
         let e1 = ExpBridge.to_sil lang decls_env procname exp1 in
         let typ = TypBridge.to_sil lang typ in
         let e2 = ExpBridge.to_sil lang decls_env procname exp2 in
         let loc = LocationBridge.to_sil sourcefile loc in
-        Store {e1; root_typ= typ; typ; e2; loc}
+        Store {e1; typ; e2; loc}
     | Prune {exp; loc} ->
         let e = ExpBridge.to_sil lang decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
@@ -507,7 +507,7 @@ module TerminatorBridge = struct
         let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang procname) in
         let ret_type = SilProcdesc.get_ret_type pdesc in
         let e2 = ExpBridge.to_sil lang decls_env procname exp in
-        Some (Sil.Store {e1= SilExp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2; loc})
+        Some (Sil.Store {e1= SilExp.Lvar ret_var; typ= ret_type; e2; loc})
     | Jump _ ->
         None
     | Throw _ ->

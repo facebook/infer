@@ -22,8 +22,8 @@ let make_load (env : (_, _) Env.t) id e typ =
   let procname = Procdesc.get_proc_name procdesc in
   let temp_pvar = Pvar.mk_tmp "LoadBlock" procname in
   let instructions =
-    [ Sil.Store {e1= Lvar temp_pvar; e2= e; root_typ= typ; typ; loc= env.location}
-    ; Sil.Load {id; e= Lvar temp_pvar; root_typ= typ; typ; loc= env.location} ]
+    [ Sil.Store {e1= Lvar temp_pvar; e2= e; typ; loc= env.location}
+    ; Sil.Load {id; e= Lvar temp_pvar; typ; loc= env.location} ]
   in
   make_stmt env ~kind:ErlangExpression instructions
 

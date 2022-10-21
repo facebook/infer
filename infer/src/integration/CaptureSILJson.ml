@@ -467,12 +467,12 @@ let parse_instr (json : Safe.t) =
     let i = parse_ident (member "identifier" json) in
     let e = parse_exp (member "expression" json) in
     let t = parse_sil_type_name (member "type" json) in
-    Sil.Load {id= i; e; root_typ= t; typ= t; loc= l}
+    Sil.Load {id= i; e; typ= t; loc= l}
   else if String.equal instr_kind "Store" then
     let e1 = parse_exp (member "lvalue" json) in
     let e2 = parse_exp (member "rvalue" json) in
     let t = parse_sil_type_name (member "type" json) in
-    Sil.Store {e1; root_typ= t; typ= t; e2; loc= l}
+    Sil.Store {e1; typ= t; e2; loc= l}
   else if String.equal instr_kind "Prune" then
     let e = parse_exp (member "condition" json) in
     let f = to_bool (member "true_branch" json) in

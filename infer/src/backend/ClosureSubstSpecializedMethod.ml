@@ -190,7 +190,7 @@ let closure_of_exp pname maps loc exp load_instrs =
         ~f:(fun (captured_vars, load_instrs) CapturedVar.{pvar; typ; capture_mode} ->
           let e = Exp.Lvar pvar in
           let id = Ident.create_fresh Ident.knormal in
-          let load_instr = Sil.Load {id; e; root_typ= typ; typ; loc} in
+          let load_instr = Sil.Load {id; e; typ; loc} in
           let captured_var = (Exp.Var id, pvar, typ, capture_mode) in
           (captured_var :: captured_vars, load_instr :: load_instrs) )
     in
@@ -254,10 +254,10 @@ let exec_instr proc_name closure_maps instr =
     match instr with
     | Load {id; e; typ; loc} ->
         [ try_keep_original ~default:instr e (exec_exp proc_name e) ~f:(fun e' ->
-              Load {id; e= e'; root_typ= typ; typ; loc} ) ]
-    | Store {e1; root_typ; typ; e2; loc} ->
+              Load {id; e= e'; typ; loc} ) ]
+    | Store {e1; typ; e2; loc} ->
         [ try_keep_original2 ~default:instr e1 (exec_exp proc_name e1) e2 (exec_exp proc_name e2)
-            ~f:(fun e1' e2' -> Store {e1= e1'; root_typ; typ; e2= e2'; loc}) ]
+            ~f:(fun e1' e2' -> Store {e1= e1'; typ; e2= e2'; loc}) ]
     | Call (ret_id_typ, origin_call_exp, origin_args, loc, call_flags) ->
         (* Call instr specialization. We want to:
            - When the function called is a known closure:

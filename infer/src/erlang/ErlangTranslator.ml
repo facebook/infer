@@ -470,7 +470,7 @@ and translate_pattern_variable (env : (_, _) Env.t) value vname scope : Block.t 
   let store : Sil.instr =
     let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
     let e2 : Exp.t = Var value in
-    Store {e1; root_typ= any_typ; typ= any_typ; e2; loc= env.location}
+    Store {e1; typ= any_typ; e2; loc= env.location}
   in
   let exit_success = Node.make_stmt env [store] in
   let exit_failure = Node.make_nop env in
@@ -600,9 +600,7 @@ and translate_expression env {Ast.location; simple_expression} =
   | Exp.Var _ ->
       expression_block
   | _ ->
-      let store_instr =
-        Sil.Store {e1= result; root_typ= any_typ; typ= any_typ; e2= Var ret_var; loc= env.location}
-      in
+      let store_instr = Sil.Store {e1= result; typ= any_typ; e2= Var ret_var; loc= env.location} in
       let store_block = Block.make_instruction env [store_instr] in
       Block.all env [expression_block; store_block]
 
@@ -851,9 +849,7 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt 
   let load_block, closure =
     let mk_capt_var (var : Pvar.t) =
       let id = mk_fresh_id () in
-      let instr =
-        Sil.Load {id; e= Exp.Lvar var; root_typ= any_typ; typ= any_typ; loc= env.location}
-      in
+      let instr = Sil.Load {id; e= Exp.Lvar var; typ= any_typ; loc= env.location} in
       (instr, (Exp.Var id, var, any_typ, CapturedVar.ByValue))
     in
     let instrs, captured_vars = List.unzip (List.map ~f:mk_capt_var captured_vars) in
@@ -1254,7 +1250,7 @@ and translate_expression_variable (env : (_, _) Env.t) ret_var vname scope : Blo
         L.die InternalError "Scope not found for variable, probably missing annotation."
   in
   let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
-  let load_instr = Sil.Load {id= ret_var; e; root_typ= any_typ; typ= any_typ; loc= env.location} in
+  let load_instr = Sil.Load {id= ret_var; e; typ= any_typ; loc= env.location} in
   Block.make_instruction env [load_instr]
 
 
@@ -1300,7 +1296,7 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
     let load (formal, typ, _) =
       let id = mk_fresh_id () in
       let pvar = Pvar.mk formal procname in
-      let load = Sil.Load {id; e= Exp.Lvar pvar; root_typ= typ; typ; loc= attributes.loc} in
+      let load = Sil.Load {id; e= Exp.Lvar pvar; typ; loc= attributes.loc} in
       (id, load)
     in
     List.unzip (List.map ~f:load attributes.formals)
@@ -1382,16 +1378,12 @@ let translate_one_type (env : (_, _) Env.t) name type_ =
   let body =
     let arg_id = mk_fresh_id () in
     let pvar = Pvar.mk formal procname in
-    let load_instr =
-      Sil.Load {id= arg_id; e= Exp.Lvar pvar; root_typ= any_typ; typ= any_typ; loc= attributes.loc}
-    in
+    let load_instr = Sil.Load {id= arg_id; e= Exp.Lvar pvar; typ= any_typ; loc= attributes.loc} in
     let load_block = Block.make_instruction env [load_instr] in
     let type_check_block, condition =
       ErlangTypes.type_condition env String.Map.empty (arg_id, type_)
     in
-    let store_instr =
-      Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= condition; loc= env.location}
-    in
+    let store_instr = Sil.Store {e1= ret_var; typ= any_typ; e2= condition; loc= env.location} in
     let store_block = Block.make_instruction env [store_instr] in
     Block.all env [load_block; type_check_block; store_block]
   in
@@ -1416,9 +1408,7 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
     let env = {env with procdesc= Env.Present procdesc; result= Env.Present ret_var} in
     let body =
       let ret_id = mk_fresh_id () in
-      let store_instr =
-        Sil.Store {e1= ret_var; root_typ= any_typ; typ= any_typ; e2= Var ret_id; loc= env.location}
-      in
+      let store_instr = Sil.Store {e1= ret_var; typ= any_typ; e2= Var ret_id; loc= env.location} in
       let prune_block = ErlangTypes.prune_spec_return env ret_id spec in
       let store_block = Block.make_instruction env [store_instr] in
       Block.all env [prune_block; store_block]

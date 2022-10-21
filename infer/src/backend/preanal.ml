@@ -188,29 +188,23 @@ module InlineJavaSyntheticMethods = struct
     in
     let do_instr instr =
       match (instr, etl) with
-      | ( Sil.Load {e= Exp.Lfield (Exp.Var _, fn, ft); root_typ; typ}
-        , [(* getter for fields *) (e1, _)] ) ->
-          let instr' =
-            Sil.Load {id= ret_id; e= Exp.Lfield (e1, fn, ft); root_typ; typ; loc= loc_call}
-          in
+      | Sil.Load {e= Exp.Lfield (Exp.Var _, fn, ft); typ}, [(* getter for fields *) (e1, _)] ->
+          let instr' = Sil.Load {id= ret_id; e= Exp.Lfield (e1, fn, ft); typ; loc= loc_call} in
           found instr instr'
-      | Sil.Load {e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ}, [] when Pvar.is_global pvar
-        ->
+      | Sil.Load {e= Exp.Lfield (Exp.Lvar pvar, fn, ft); typ}, [] when Pvar.is_global pvar ->
           (* getter for static fields *)
           let instr' =
-            Sil.Load
-              {id= ret_id; e= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ; loc= loc_call}
+            Sil.Load {id= ret_id; e= Exp.Lfield (Exp.Lvar pvar, fn, ft); typ; loc= loc_call}
           in
           found instr instr'
-      | ( Sil.Store {e1= Exp.Lfield (_, fn, ft); root_typ; typ}
-        , [(* setter for fields *) (e1, _); (e2, _)] ) ->
-          let instr' = Sil.Store {e1= Exp.Lfield (e1, fn, ft); root_typ; typ; e2; loc= loc_call} in
+      | Sil.Store {e1= Exp.Lfield (_, fn, ft); typ}, [(* setter for fields *) (e1, _); (e2, _)] ->
+          let instr' = Sil.Store {e1= Exp.Lfield (e1, fn, ft); typ; e2; loc= loc_call} in
           found instr instr'
-      | Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ}, [(e1, _)]
-        when Pvar.is_global pvar ->
+      | Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); typ}, [(e1, _)] when Pvar.is_global pvar
+        ->
           (* setter for static fields *)
           let instr' =
-            Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); root_typ; typ; e2= e1; loc= loc_call}
+            Sil.Store {e1= Exp.Lfield (Exp.Lvar pvar, fn, ft); typ; e2= e1; loc= loc_call}
           in
           found instr instr'
       | Sil.Call (_, Exp.Const (Const.Cfun pn), etl', _, cf), _

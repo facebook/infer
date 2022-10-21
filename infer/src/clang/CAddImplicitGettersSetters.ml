@@ -9,9 +9,7 @@ open! IStd
 
 let get_load_self_instr location (self, self_typ) fieldname =
   let id_self = Ident.create_fresh Ident.knormal in
-  let load_self_instr =
-    Sil.Load {id= id_self; e= Lvar self; root_typ= self_typ; typ= self_typ; loc= location}
-  in
+  let load_self_instr = Sil.Load {id= id_self; e= Lvar self; typ= self_typ; loc= location} in
   let class_typ = match self_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> self_typ in
   let field_exp = Exp.Lfield (Var id_self, fieldname, class_typ) in
   (field_exp, load_self_instr)
@@ -24,17 +22,16 @@ let objc_getter tenv proc_desc location self_with_typ (fieldname, field_typ, _) 
     match field_typ with
     | {Typ.desc= Tstruct ((CStruct _ | CppClass _) as struct_name)} ->
         let ret_param = Exp.Lvar (Pvar.get_ret_param_pvar (Procdesc.get_proc_name proc_desc)) in
-        Sil.Load {id= id_field; e= ret_param; root_typ= field_typ; typ= field_typ; loc= location}
+        Sil.Load {id= id_field; e= ret_param; typ= field_typ; loc= location}
         :: CStructUtils.struct_copy tenv location (Exp.Var id_field) field_exp ~typ:field_typ
              ~struct_name
     | _ ->
         let load_field_instr =
-          Sil.Load {id= id_field; e= field_exp; root_typ= field_typ; typ= field_typ; loc= location}
+          Sil.Load {id= id_field; e= field_exp; typ= field_typ; loc= location}
         in
         let exp_var = Exp.Lvar (Procdesc.get_ret_var proc_desc) in
         let return_exp =
-          Sil.Store
-            {e1= exp_var; root_typ= field_typ; typ= field_typ; e2= Exp.Var id_field; loc= location}
+          Sil.Store {e1= exp_var; typ= field_typ; e2= Exp.Var id_field; loc= location}
         in
         [load_field_instr; return_exp]
   in
@@ -49,12 +46,9 @@ let objc_setter tenv location self_with_typ (var, var_typ) (fieldname, field_typ
         CStructUtils.struct_copy tenv location field_exp (Exp.Lvar var) ~typ:field_typ ~struct_name
     | _ ->
         let id_field = Ident.create_fresh Ident.knormal in
-        let load_var_instr =
-          Sil.Load {id= id_field; e= Lvar var; root_typ= var_typ; typ= var_typ; loc= location}
-        in
+        let load_var_instr = Sil.Load {id= id_field; e= Lvar var; typ= var_typ; loc= location} in
         let store_exp =
-          Sil.Store
-            {e1= field_exp; root_typ= field_typ; typ= field_typ; e2= Exp.Var id_field; loc= location}
+          Sil.Store {e1= field_exp; typ= field_typ; e2= Exp.Var id_field; loc= location}
         in
         [load_var_instr; store_exp]
   in
