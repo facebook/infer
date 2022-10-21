@@ -605,7 +605,7 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
   bool is_different_macro_file = false;
   bool is_different_macro_line = false;
   bool is_macro = Loc.isMacroID();
-  int macro_fields_count = 1;
+  int macro_fields_count = is_macro;
   if (is_macro) {
     if (strcmp(MLoc.getFilename(), LastMacroLocFilename) != 0) {
       is_different_macro_file = true;
