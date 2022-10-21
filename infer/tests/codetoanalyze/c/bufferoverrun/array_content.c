@@ -46,7 +46,7 @@ int array_min_index_from_one(int* a, int length) {
 }
 
 /*
-  We need a either a narrowing or a relational domain to prove that
+  We need either a narrowing or a relational domain to prove that
   index_min < length
 */
 void call_array_min_index_from_one_good() {

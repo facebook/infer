@@ -30,7 +30,7 @@ The analysis computes symbolic upper bounds on the resource usage of programs—
 - 2) a loop bound analysis determines upper bounds for the number of iterations of loops and generates constraints for nodes in the control-flow graph
 - 3) a constraint solving step resolves the constraints generated in the second step and computes an upper bound on the execution cost.
 
-Most ideas behind this analysis is based on Stefan Bydge's PhD thesis [Static WCET Analysis based on Abstract Interpretation and Counting of Elements](https://www.semanticscholar.org/paper/Static-WCET-Analysis-Based-on-Abstract-and-Counting-Bygde/ee5157164d497725c1f42dc6c475a59a87c99957).
+Most ideas behind this analysis are based on Stefan Bydge's PhD thesis [Static WCET Analysis based on Abstract Interpretation and Counting of Elements](https://www.semanticscholar.org/paper/Static-WCET-Analysis-Based-on-Abstract-and-Counting-Bygde/ee5157164d497725c1f42dc6c475a59a87c99957).
 
 The analysis computes two things for each node in the CFG:
 - the cost of its instructions, i.e. how much one execution of this node costs,
@@ -39,7 +39,7 @@ The analysis computes two things for each node in the CFG:
 The total cost of the node is the scalar product of these two vectors. Then, these are passed to a constraint solver (part 3 above) that computes the execution cost of the procedure based on the incoming/outgoing edges.
 
 
-The results of the analysis are written into `costs-report.json` where for each procedure, we record the actual polynomial (for the exection cost) along with the degree of the polynomial, the procedure name, line number etc.
+The results of the analysis are written into `costs-report.json` where for each procedure, we record the actual polynomial (for the execution cost) along with the degree of the polynomial, the procedure name, line number etc.
 
 
 
@@ -84,7 +84,7 @@ void loop(ArrayList<Integer> list){
 where `foo` has a linear cost in its parameter, then Infer automatically detects that the complexity of loop has increased from `O(|list|)` to `O(|list|^2)` and then reports an [`EXECUTION_TIME_COMPLEXITY_INCREASE`](/docs/next/all-issue-types#execution_time_complexity_increase) issue.
 
 ## Differential mode
-Unlike other Infer analyses (which on reports found issues/bugs in `report.json` when running infer once), cost analysis also has a special mode that reports an issue for differential analysis (i.e. when comparing the analysis results on the original and the modified files). For each procedure, `costs-report.json` includes the actual polynomial (for the exection cost) along with the degree of the polynomial, the procedure name, line number etc. Then, in the differential mode, these `costs-report.json` files are compared. 
+Unlike other Infer analyses (which on reports found issues/bugs in `report.json` when running infer once), cost analysis also has a special mode that reports an issue for differential analysis (i.e. when comparing the analysis results on the original and the modified files). For each procedure, `costs-report.json` includes the actual polynomial (for the execution cost) along with the degree of the polynomial, the procedure name, line number etc. Then, in the differential mode, these `costs-report.json` files are compared. 
 
 Differential cost analysis in action:
 - first run infer's cost analysis on `File.java` and copy `inter-out/costs-report.json` to `previous-costs-report.json` (Note that the file should be copied outside the result directory because the directory will be removed in the second infer run.)

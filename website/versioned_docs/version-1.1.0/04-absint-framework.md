@@ -51,8 +51,8 @@ module CheckerAnalyzer =
 
 The `ProcCfg.Backward (ProcCfg.Exceptional)` part says: "I want the direction of
 iteration to be backward" (since liveness is a backward analysis), and "I want
-to the analysis to follow exceptional edges". For a forward analysis that
-ignores exceptional edges, you would do `ProcCfg.Normal` instead (and many other
+the analysis to follow exceptional edges". For a forward analysis that ignores
+exceptional edges, you would do `ProcCfg.Normal` instead (and many other
 combinations are possible; take a look at
 [ProcCfg.mli](https://github.com/facebook/infer/blob/main/infer/src/absint/ProcCfg.mli)
 for more). And finally, the `TransferFunctions` part says "Use the transfer

@@ -43,7 +43,7 @@ stipulates that they are separated and therefore the cells are allocated in two
 different parts of memory. In other words, <Math code="\\( * \\)" /> says that
 <Math code="\\(x\\)" /> and <Math code="\\(y\\)" /> do not hold the same value
 (i.e., these pointers are not aliased). The heaplet partitioning defined by the
-formula above can visualized like so:
+formula above can be visualized like so:
 
 ![](/img/SepSplit.jpg)
 

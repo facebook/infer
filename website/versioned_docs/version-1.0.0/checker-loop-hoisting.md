@@ -11,7 +11,7 @@ Supported languages:
 - C/C++/ObjC: Yes
 - Java: Yes
 
-This checker detects opportunities to hoist function calls that are invariant to outside of loop bodies. The hoisting analysis relies on [purity](/docs/1.0.0/checker-purity) analysis to determine whather a function is pure or not.
+This checker detects opportunities to hoist function calls that are invariant to outside of loop bodies. The hoisting analysis relies on [purity](/docs/1.0.0/checker-purity) analysis to determine whether a function is pure or not.
 
 It has an additional mode that reports [loop-invariant functions that are expensive](/docs/1.0.0/all-issue-types#expensive_loop_invariant_call) (i.e. at least linear). This is enabled by the flag `--hoisting-report-only-expensive`.
 

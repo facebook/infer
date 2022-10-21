@@ -41,7 +41,7 @@ that RacerD looks for: (1) Explicitly annotating a class/method with
 `@ThreadSafe` and (2) using a lock via the `synchronized` keyword. In both
 cases, RacerD will look for concurrency issues in the code containing the signal
 and all of its dependencies. In particular, it will report races between any
-non-`private` methods of the same class that can peform conflicting accesses.
+non-`private` methods of the same class that can perform conflicting accesses.
 Annotating a class/interface with `@ThreadSafe` also triggers checking for all
 of the subclasses of the class/implementations of the interface.
 
@@ -153,7 +153,7 @@ implementations of `I`.
 
 You might wonder why it's necessary to annotate `I` -- can't RacerD just look at
 all the implementations of `i` at the call site for `bar`? Although this is a
-fine idea idea in principle, it's a bad idea in practice due to a (a) separate
+fine idea in principle, it's a bad idea in practice due to a (a) separate
 compilation and (b) our diff-based deployment model. In the example above, the
 compiler doesn't have to know about all implementations (or indeed, any
 implementations) of `I` at the time it compiles this code, so there's no
@@ -293,7 +293,7 @@ of the methods cannot actually be called from outside the current class. One fix
 is making the method `private` to enforce this, but this might break unit tests
 that need to call the method in order to test it. In this case, the
 `@VisibleForTesting` annotation will allow RacerD to consider the method as
-effectively `private` will still allowing it to be called from the unit test:
+effectively `private` and will still allow it to be called from the unit test:
 
 ```
 @VisibleForTesting void setF() {
