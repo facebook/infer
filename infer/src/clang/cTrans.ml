@@ -5101,6 +5101,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPInteropDirective _
     | OMPIteratorExpr _
     | OMPMaskedDirective _
+    | OMPMaskedTaskLoopDirective _
+    | OMPMaskedTaskLoopSimdDirective _
     | OMPMasterDirective _
     | OMPMasterTaskLoopDirective _
     | OMPMasterTaskLoopSimdDirective _
@@ -5109,6 +5111,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPParallelDirective _
     | OMPParallelForDirective _
     | OMPParallelForSimdDirective _
+    | OMPParallelGenericLoopDirective _
+    | OMPParallelMaskedDirective _
+    | OMPParallelMaskedTaskLoopDirective _
+    | OMPParallelMaskedTaskLoopSimdDirective _
     | OMPParallelMasterDirective _
     | OMPParallelMasterTaskLoopDirective _
     | OMPParallelMasterTaskLoopSimdDirective _
@@ -5125,12 +5131,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPTargetParallelDirective _
     | OMPTargetParallelForDirective _
     | OMPTargetParallelForSimdDirective _
+    | OMPTargetParallelGenericLoopDirective _
     | OMPTargetSimdDirective _
     | OMPTargetTeamsDirective _
     | OMPTargetTeamsDistributeDirective _
     | OMPTargetTeamsDistributeParallelForDirective _
     | OMPTargetTeamsDistributeParallelForSimdDirective _
     | OMPTargetTeamsDistributeSimdDirective _
+    | OMPTargetTeamsGenericLoopDirective _
     | OMPTargetUpdateDirective _
     | OMPTaskDirective _
     | OMPTaskgroupDirective _
@@ -5143,6 +5151,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPTeamsDistributeParallelForDirective _
     | OMPTeamsDistributeParallelForSimdDirective _
     | OMPTeamsDistributeSimdDirective _
+    | OMPTeamsGenericLoopDirective _
     | OMPTileDirective _
     | OMPUnrollDirective _
     | PackExpansionExpr _
