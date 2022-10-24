@@ -99,16 +99,22 @@ let restore_global_state st =
 (** reference to log errors only at the innermost recursive call *)
 let logged_error = ref false
 
-let update_taskbar callee_pdesc =
-  let proc_name = Procdesc.get_proc_name callee_pdesc in
-  let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
+let update_taskbar proc_name_opt source_file_opt =
   let t0 = Mtime_clock.now () in
   let status =
-    let nesting =
-      if !nesting <= max_nesting_to_print then String.make !nesting '>'
-      else Printf.sprintf "%d>" !nesting
-    in
-    F.asprintf "%s%a: %a" nesting SourceFile.pp source_file Procname.pp proc_name
+    match (proc_name_opt, source_file_opt) with
+    | Some pname, Some src_file ->
+        let nesting =
+          if !nesting <= max_nesting_to_print then String.make !nesting '>'
+          else Printf.sprintf "%d>" !nesting
+        in
+        F.asprintf "%s%a: %a" nesting SourceFile.pp src_file Procname.pp pname
+    | Some pname, None ->
+        Procname.to_string pname
+    | None, Some src_file ->
+        SourceFile.to_string src_file
+    | None, None ->
+        "Unspecified task"
   in
   current_taskbar_status := Some (t0, status) ;
   !ProcessPoolState.update_status t0 status
@@ -137,7 +143,9 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
       Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
-    update_taskbar callee_pdesc ;
+    let proc_name = Procdesc.get_proc_name callee_pdesc in
+    let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
+    update_taskbar (Some proc_name) (Some source_file) ;
     Preanal.do_preanalysis exe_env callee_pdesc ;
     if Config.debug_mode then
       DotCfg.emit_proc_desc (Procdesc.get_attributes callee_pdesc).translation_unit callee_pdesc
@@ -325,9 +333,12 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
 
 (** Invoke all procedure-level and file-level callbacks on a given environment. *)
 let analyze_file exe_env source_file =
+  update_taskbar None (Some source_file) ;
   let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
   analyze_procedures exe_env procs_to_analyze (Some source_file)
 
 
 (** Invoke procedure callbacks on a given environment. *)
-let analyze_proc_name_toplevel exe_env proc_name = analyze_procedures exe_env [proc_name] None
+let analyze_proc_name_toplevel exe_env proc_name =
+  update_taskbar (Some proc_name) None ;
+  analyze_procedures exe_env [proc_name] None
