@@ -18,6 +18,9 @@ val is_equal_to_zero : t -> bool
 val is_not_equal_to_zero : t -> bool
 (** whether this is literally [≠0] *)
 
+val is_non_pointer : t -> bool
+(** whether both lb and ub are primitive integers *)
+
 val pp : F.formatter -> t -> unit
 
 val intersection : t -> t -> t option

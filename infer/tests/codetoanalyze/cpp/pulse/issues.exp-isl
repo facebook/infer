@@ -52,6 +52,7 @@ codetoanalyze/cpp/pulse/const_refable.cpp, std_pair_vector_bad, 0, PULSE_CONST_R
 codetoanalyze/cpp/pulse/const_refable.cpp, std_pair_string_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter p]
 codetoanalyze/cpp/pulse/const_refable.cpp, folly_optional_vector_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter vec_opt]
 codetoanalyze/cpp/pulse/const_refable.cpp, folly_optional_string_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter s_opt]
+codetoanalyze/cpp/pulse/const_refable.cpp, havoc_reachable_by_unknown_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter s]
 codetoanalyze/cpp/pulse/const_volatile_type.cpp, test_volatile1_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `std::unique_ptr::unique_ptr()` (modelled),is assigned to the null pointer,in call to `std::unique_ptr::unique_ptr(std::unique_ptr<T>)` (modelled),invalid access occurs here]
 codetoanalyze/cpp/pulse/const_volatile_type.cpp, test_volatile2_bad, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `std::unique_ptr::unique_ptr()` (modelled),is assigned to the null pointer,invalid access occurs here]
 codetoanalyze/cpp/pulse/const_volatile_type.cpp, test_volatile3_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `std::shared_ptr::shared_ptr()` (modelled),is assigned to the null pointer,in call to `std::shared_ptr::shared_ptr(std::shared_ptr<T>) (move)` (modelled),invalid access occurs here]

@@ -1697,6 +1697,14 @@ module Formula = struct
     || Atom.Set.mem (LessThan (Term.zero, t)) phi.atoms
 
 
+  let is_non_pointer {var_eqs; linear_eqs; intervals; atoms} var =
+    let repr = (VarUF.find var_eqs var :> Var.t) in
+    Option.exists (Var.Map.find_opt repr linear_eqs) ~f:(fun v ->
+        Option.is_some (LinArith.get_as_const v) )
+    || Option.exists (Var.Map.find_opt repr intervals) ~f:CItv.is_non_pointer
+    || Atom.Set.mem (Equal (IsInt (Var repr), Term.one)) atoms
+
+
   (** module that breaks invariants more often that the rest, with an interface that is safer to use *)
   module Normalizer : sig
     val and_var_linarith : Var.t -> LinArith.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
@@ -2862,6 +2870,8 @@ let is_known_zero formula v =
 
 
 let is_known_non_zero formula v = Formula.is_neq_zero formula.phi (Term.Var v)
+
+let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 
 let is_manifest ~is_allocated formula =
   Atom.Set.for_all
