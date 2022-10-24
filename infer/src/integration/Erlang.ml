@@ -30,12 +30,21 @@ let should_process filename =
 
 
 let parse_translate_store result_dir =
+  let otp_modules_file = Filename.concat result_dir "otp_modules.list" in
+  let otp_modules =
+    match Utils.read_file otp_modules_file with
+    | Ok modules ->
+        String.Set.of_list modules
+    | Error err ->
+        L.die InternalError "Error while loading list of OTP modules from file %s: %s@."
+          otp_modules_file err
+  in
   let process_one_ast json =
     match ErlangJsonParser.to_module json with
     | None ->
         false
     | Some ast -> (
-        let env = ErlangEnvironment.initialize_environment ast in
+        let env = ErlangEnvironment.initialize_environment ast otp_modules in
         match ErlangAstValidator.validate env ast with
         | true ->
             ErlangScopes.annotate_scopes env ast ;

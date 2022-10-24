@@ -39,6 +39,7 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
 type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
   ; current_module: module_name  (** used to qualify function names *)
+  ; is_otp: bool  (** does this module come from the OTP library *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
   ; types: Ast.type_ String.Map.t  (** user defined types *)
@@ -50,10 +51,11 @@ type ('procdesc, 'result) t =
   ; result: ('result[@sexp.opaque]) }
 [@@deriving sexp_of]
 
-let initialize_environment module_ =
+let initialize_environment module_ otp_modules =
   let init =
     { cfg= Cfg.create ()
     ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
+    ; is_otp= false
     ; functions= UnqualifiedFunction.Set.empty
     ; specs= UnqualifiedFunction.Map.empty
     ; types= String.Map.empty
@@ -102,7 +104,8 @@ let initialize_environment module_ =
         | `Duplicate ->
             L.die InternalError "repeated record: %s" name )
     | Module current_module ->
-        {env with current_module}
+        let is_otp = String.Set.mem otp_modules current_module in
+        {env with current_module; is_otp}
     | File _ ->
         env (* Handled during translation. *)
     | Function {function_; _} ->

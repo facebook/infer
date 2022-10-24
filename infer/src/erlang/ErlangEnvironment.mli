@@ -36,6 +36,7 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
 type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
   ; current_module: module_name  (** used to qualify function names *)
+  ; is_otp: bool  (** does this module come from the OTP library *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
   ; types: Ast.type_ String.Map.t  (** user defined types *)
@@ -47,7 +48,7 @@ type ('procdesc, 'result) t =
   ; result: ('result[@sexp.opaque]) }
 [@@deriving sexp_of]
 
-val initialize_environment : Ast.form list -> (absent, absent) t
+val initialize_environment : Ast.form list -> String.Set.t -> (absent, absent) t
 (** Entry point: go through the top-level forms in the module and initialize the environment. *)
 
 val typ_of_name : ErlangTypeName.t -> Typ.t
