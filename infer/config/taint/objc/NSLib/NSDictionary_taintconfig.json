@@ -34,6 +34,11 @@
       },
       {
         "class_names": ["NSDictionary"],
+        "taint_target": ["ArgumentPositions", [1]],
+        "method_names": ["dictionaryWithContentsOfURL:error:"]
+      },
+      {
+        "class_names": ["NSDictionary"],
         "taint_target": ["ArgumentPositions", [1,2]],
         "method_names": ["getObjects:andKeys:count:", "writeToURL:error:"]
       },

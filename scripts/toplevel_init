@@ -5,6 +5,7 @@
 #thread;;
 #require "ANSITerminal";;
 #require "atdgen";;
+#require "bheap";;
 #require "cmdliner";;
 #require "core.top";;
 #require "ctypes";;

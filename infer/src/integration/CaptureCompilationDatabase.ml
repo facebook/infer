@@ -21,7 +21,8 @@ let create_cmd (source_file, (compilation_data : CompilationDatabase.compilation
   ( source_file
   , { CompilationDatabase.directory= compilation_data.directory
     ; executable= swap_executable compilation_data.executable
-    ; escaped_arguments= ["@" ^ arg_file; "-fsyntax-only"] @ Config.clang_extra_flags } )
+    ; escaped_arguments=
+        ["@" ^ arg_file; "-fsyntax-only"; "-fno-builtin"] @ Config.clang_extra_flags } )
 
 
 let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =

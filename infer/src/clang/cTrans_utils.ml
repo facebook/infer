@@ -527,7 +527,7 @@ let create_call_to_objc_bridge_transfer sil_loc exp typ =
 
 let dereference_var_sil (exp, typ) sil_loc =
   let id = Ident.create_fresh Ident.knormal in
-  let sil_instr = Sil.Load {id; e= exp; root_typ= typ; typ; loc= sil_loc} in
+  let sil_instr = Sil.Load {id; e= exp; typ; loc= sil_loc} in
   (sil_instr, Exp.Var id)
 
 
@@ -688,8 +688,7 @@ let define_condition_side_effects ((e_cond_exp, e_cond_typ) as e_cond) instrs_co
   match e_cond_exp with
   | Exp.Lvar pvar ->
       let id = Ident.create_fresh Ident.knormal in
-      ( (Exp.Var id, e_cond_typ)
-      , [Sil.Load {id; e= Exp.Lvar pvar; root_typ= e_cond_typ; typ= e_cond_typ; loc= sil_loc}] )
+      ((Exp.Var id, e_cond_typ), [Sil.Load {id; e= Exp.Lvar pvar; typ= e_cond_typ; loc= sil_loc}])
   | _ ->
       (e_cond, instrs_cond)
 
@@ -716,7 +715,7 @@ module Self = struct
         in
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
-        (t', Exp.Var id, [Sil.Load {id; e; root_typ= t'; typ= t'; loc}])
+        (t', Exp.Var id, [Sil.Load {id; e; typ= t'; loc}])
       in
       Some (mk_trans_result (self_expr, typ) {empty_control with instrs})
     else None

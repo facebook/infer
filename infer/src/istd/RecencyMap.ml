@@ -31,6 +31,8 @@ module type S = sig
 
   val exists : t -> f:(key * value -> bool) -> bool
 
+  val for_all : t -> f:(key * value -> bool) -> bool
+
   val filter : t -> f:(key * value -> bool) -> t
 
   val find_opt : key -> t -> value option
@@ -156,6 +158,12 @@ module Make
     List.exists map.new_ ~f
     || List.exists map.old ~f:(fun binding ->
            if List.Assoc.mem ~equal:Key.equal map.new_ (fst binding) then false else f binding )
+
+
+  let for_all map ~f =
+    List.for_all map.new_ ~f
+    && List.for_all map.old ~f:(fun binding ->
+           List.Assoc.mem ~equal:Key.equal map.new_ (fst binding) || f binding )
 
 
   let filter map ~f =

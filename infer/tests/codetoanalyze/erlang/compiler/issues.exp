@@ -224,6 +224,9 @@ features_guard_bifs:test_is_map5_Bad/0: function_clause
 features_guard_bifs:test_is_map_nomodule_Bad/0: function_clause
 features_guard_bifs:test_is_map_nomodule_Ok/0: ok
 
+----- features_header_include -----
+features_header_include:test_trivial_fail_Bad/0: badmatch
+
 ----- features_if_expr -----
 features_if_expr:test_if_Bad/0: expected_crash
 features_if_expr:test_if_Ok/0: ok

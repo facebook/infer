@@ -42,7 +42,7 @@
       {
         "class_names": ["NSArray"],
         "taint_target": ["ArgumentPositions", [1]],
-        "method_names": ["getObjects:range:"]
+        "method_names": ["getObjects:range:", "arrayWithContentsOfURL:error:"]
       },
       {
         "class_names": ["NSArray"],
@@ -52,7 +52,7 @@
       {
         "class_names": ["NSArray"],
         "taint_target": ["ArgumentPositions", [2]],
-        "method_names": ["initWithContentsOfURL:error:", "arrayWithContentsOfURL:error:"]
+        "method_names": ["initWithContentsOfURL:error:"]
       }
   ]
 }

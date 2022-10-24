@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 
 # use our own clang's standard library so that the tests are uniform across distributions
-CLANG_OPTIONS = -x c++ -std=c++1y -isystem$(ROOT_DIR) -c --stdlib=libc++
+CLANG_OPTIONS = -x c++ -std=c++1y -nostdinc++ -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 INFER_OPTIONS = \
   --biabduction-only --biabduction-memleak-buckets cpp --debug-exceptions --report-custom-error \
   --project-root $(TESTS_DIR)

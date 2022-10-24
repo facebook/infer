@@ -28,10 +28,12 @@ let setup () =
   let db_start =
     let already_started = ref false in
     fun () ->
-      if (not !already_started) && Config.is_originator && Lazy.force DBWriter.use_daemon then (
-        DBWriter.start () ;
-        Epilogues.register ~f:DBWriter.stop ~description:"Stop Sqlite write daemon" ;
-        already_started := true )
+      if (not !already_started) && Config.is_originator then (
+        DBWriter.remove_socket_file () ;
+        if Lazy.force DBWriter.use_daemon then (
+          DBWriter.start () ;
+          Epilogues.register ~f:DBWriter.stop ~description:"Stop Sqlite write daemon" ;
+          already_started := true ) )
   in
   ( match Config.command with
   | Analyze ->
@@ -160,6 +162,8 @@ let () =
       if Config.java_source_parser_experimental then
         JSourceLocations.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
       else JSourceFileInfo.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
+  | _ when Option.is_some Config.capture_doli ->
+      DoliParser.run (Option.value_exn Config.capture_doli)
   | Analyze ->
       run Driver.Analyze
   | Capture | Compile | Run ->

@@ -260,6 +260,11 @@ $BUILD_BIN $BUILD_ARGS install
 popd # build
 popd # $TMP
 
+# On Linux, copy __config_site to install dirctory. This way we don't need additional -I statements
+if [ "$platform" = "Linux" ]; then
+    cp -f "$CLANG_PREFIX/include/x86_64-unknown-linux-gnu/c++/v1/__config_site" "$CLANG_PREFIX/include/c++/v1/__config_site"
+fi
+
 # delete libs not needed by Infer
 if [ "$KEEP_LIBS" != "yes" ]; then
     rm -v "$CLANG_PREFIX"/lib/libclang*

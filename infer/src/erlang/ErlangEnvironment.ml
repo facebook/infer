@@ -103,10 +103,8 @@ let initialize_environment module_ =
             L.die InternalError "repeated record: %s" name )
     | Module current_module ->
         {env with current_module}
-    | File {path} ->
-        let file = SourceFile.create path in
-        let location = Location.none file in
-        {env with location}
+    | File _ ->
+        env (* Handled during translation. *)
     | Function {function_; _} ->
         let key = UnqualifiedFunction.of_ast function_ in
         {env with functions= Set.add env.functions key}
@@ -164,9 +162,4 @@ let procname_for_user_type module_name name =
 let load_field_from_expr (env : (_, _) t) into_id expr field_name typ : Sil.instr =
   let any_typ = ptr_typ_of_name Any in
   let field = Fieldname.make (ErlangType typ) field_name in
-  Load
-    { id= into_id
-    ; e= Lfield (expr, field, typ_of_name typ)
-    ; root_typ= any_typ
-    ; typ= any_typ
-    ; loc= env.location }
+  Load {id= into_id; e= Lfield (expr, field, typ_of_name typ); typ= any_typ; loc= env.location}

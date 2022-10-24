@@ -23,12 +23,12 @@ void struct_source_bad() {
   __infer_taint_sink(*source);
 }
 
-void FN_struct_field_source_unique_pointer_bad() {
+void struct_field_source_unique_pointer_bad() {
   std::unique_ptr<mystruct> source(__infer_taint_source());
   __infer_taint_sink(*source);
 }
 
-void struct_field_source_bad_FN() {
+void struct_field_source_bad() {
   mystruct* tainted = __infer_taint_source();
   mystruct source;
   source.str = tainted->str;

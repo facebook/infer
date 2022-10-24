@@ -141,7 +141,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
 let clang_cc1_cmd_sanitizer cmd =
   let replace_args arg = function
     | Some override_regex when Str.string_match override_regex arg 0 ->
-        Config.fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "14.0.6" ^/ "include"
+        Config.fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "15.0.2" ^/ "include"
     | _ ->
         arg
   in
@@ -255,7 +255,8 @@ let with_plugin_args args =
   in
   (* add -O0 option to avoid compiler obfuscation of AST *)
   let args_after_rev =
-    [] |> argv_cons "-O0" |> argv_do_if Config.fcp_syntax_only (argv_cons "-fsyntax-only")
+    [] |> argv_cons "-O0" |> argv_cons "-fno-builtin"
+    |> argv_do_if Config.fcp_syntax_only (argv_cons "-fsyntax-only")
   in
   {args with argv= List.rev_append args_before_rev (args.argv @ List.rev args_after_rev)}
 

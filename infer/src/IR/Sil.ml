@@ -6,15 +6,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** The Smallfoot Intermediate Language *)
-
 open! IStd
 module F = Format
 module L = Logging
 
-(** {2 Programs and Types} *)
-
-(** Kind of prune instruction *)
 type if_kind =
   | Ik_bexp of {terminated: bool}
   | Ik_compexch
@@ -56,66 +51,32 @@ let is_terminated_if_kind = function
 
 type instr_metadata =
   | Abstract of Location.t
-      (** a good place to apply abstraction, mostly used in the biabduction analysis *)
-  | CatchEntry of {try_id: int; loc: Location.t}  (** entry of C++ catch blocks *)
+  | CatchEntry of {try_id: int; loc: Location.t}
   | EndBranches
-  | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
-  | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
-  | Skip  (** no-op *)
-  | TryEntry of {try_id: int; loc: Location.t}  (** entry of C++ try block *)
-  | TryExit of {try_id: int; loc: Location.t}  (** exit of C++ try block *)
-  | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t  (** stack variable declared *)
+  | ExitScope of Var.t list * Location.t
+  | Nullify of Pvar.t * Location.t
+  | Skip
+  | TryEntry of {try_id: int; loc: Location.t}
+  | TryExit of {try_id: int; loc: Location.t}
+  | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t
 [@@deriving compare, equal]
 
-(** An instruction. *)
 type instr =
-  (* Note for frontend writers:
-     [x] must be used in a subsequent instruction, otherwise the entire
-     `Load` instruction may be eliminated by copy-propagation. *)
-  | Load of {id: Ident.t; e: Exp.t; root_typ: Typ.t; typ: Typ.t; loc: Location.t}
-      (** Load a value from the heap into an identifier.
-
-          [id = *exp:typ(root_typ)] where
-
-          - [exp] is an expression denoting a heap address
-          - [typ] is typ of [exp] and [id]
-          - [root_typ] is the root type of [exp]
-
-          The [root_typ] is deprecated: it is broken in C/C++. We are removing [root_typ] in the
-          future, so please use [typ] instead. *)
-  | Store of {e1: Exp.t; root_typ: Typ.t; typ: Typ.t; e2: Exp.t; loc: Location.t}
-      (** Store the value of an expression into the heap.
-
-          [*exp1:typ(root_typ) = exp2] where
-
-          - [exp1] is an expression denoting a heap address
-          - [typ] is typ of [*exp1] and [exp2]
-          - [root_typ] is the root type of [exp1]
-          - [exp2] is the expression whose value is stored.
-
-          The [root_typ] is deprecated: it is broken in C/C++. We are removing [root_typ] in the
-          future, so please use [typ] instead. *)
+  | Load of {id: Ident.t; e: Exp.t; typ: Typ.t; loc: Location.t}
+  | Store of {e1: Exp.t; typ: Typ.t; e2: Exp.t; loc: Location.t}
   | Prune of Exp.t * Location.t * bool * if_kind
-      (** prune the state based on [exp=1], the boolean indicates whether true branch *)
   | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
-      (** [Call ((ret_id, ret_typ), e_fun, arg_ts, loc, call_flags)] represents an instruction
-          [ret_id = e_fun(arg_ts);] *)
   | Metadata of instr_metadata
-      (** hints about the program that are not strictly needed to understand its semantics, for
-          instance information about its original syntactic structure *)
 [@@deriving compare, equal]
 
 let skip_instr = Metadata Skip
 
-(** Check if an instruction is auxiliary, or if it comes from source instructions. *)
 let instr_is_auxiliary = function
   | Load _ | Store _ | Prune _ | Call _ ->
       false
   | Metadata _ ->
       true
 
-
-(** {2 Pretty Printing} *)
 
 let color_wrapper ~f = if Config.print_using_diff then Pp.color_wrapper ~f else f
 
@@ -134,7 +95,6 @@ let location_of_instr_metadata = function
       Location.dummy
 
 
-(** Get the location of the instruction *)
 let location_of_instr = function
   | Load {loc} | Store {loc} | Prune (_, loc, _, _) | Call (_, _, _, loc, _) ->
       loc
@@ -155,7 +115,6 @@ let exps_of_instr_metadata = function
       [Exp.Lvar pvar]
 
 
-(** get the expressions occurring in the instruction *)
 let exps_of_instr = function
   | Load {id; e} ->
       [Exp.Var id; e]
@@ -194,17 +153,14 @@ let pp_instr_metadata pe f = function
 
 let pp_instr ~print_types pe0 f instr =
   let pp_typ = if print_types then Typ.pp_full else Typ.pp in
-  let pp_root ~typ ~root_typ f =
-    if not (Typ.equal typ root_typ) then F.fprintf f "(root %a)" (pp_typ pe0) root_typ
-  in
   color_wrapper pe0 f instr ~f:(fun pe f instr ->
       match instr with
-      | Load {id; e; root_typ; typ; loc} ->
-          F.fprintf f "%a=*%a:%a%t [%a]" Ident.pp id (Exp.pp_diff ~print_types pe) e (pp_typ pe0)
-            typ (pp_root ~typ ~root_typ) Location.pp loc
-      | Store {e1; root_typ; typ; e2; loc} ->
-          F.fprintf f "*%a:%a%t=%a [%a]" (Exp.pp_diff ~print_types pe) e1 (pp_typ pe0) root_typ
-            (pp_root ~typ ~root_typ) (Exp.pp_diff ~print_types pe) e2 Location.pp loc
+      | Load {id; e; typ; loc} ->
+          F.fprintf f "%a=*%a:%a [%a]" Ident.pp id (Exp.pp_diff ~print_types pe) e (pp_typ pe0) typ
+            Location.pp loc
+      | Store {e1; typ; e2; loc} ->
+          F.fprintf f "*%a:%a=%a [%a]" (Exp.pp_diff ~print_types pe) e1 (pp_typ pe0) typ
+            (Exp.pp_diff ~print_types pe) e2 Location.pp loc
       | Prune (cond, loc, true_branch, _) ->
           F.fprintf f "PRUNE(%a, %b); [%a]" (Exp.pp_diff ~print_types pe) cond true_branch
             Location.pp loc
@@ -217,5 +173,4 @@ let pp_instr ~print_types pe0 f instr =
           pp_instr_metadata pe0 f metadata )
 
 
-(** Dump an instruction. *)
 let d_instr (i : instr) = L.d_pp_with_pe ~color:Pp.Green (pp_instr ~print_types:true) i

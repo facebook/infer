@@ -1144,10 +1144,19 @@ let rec sym_exec
   let call_args prop_ proc_name args ret_id_typ loc =
     {Builtin.instr; prop_; path; ret_id_typ; args; proc_name; loc; analysis_data}
   in
+  let root_type exp typ =
+    match (exp : Exp.t) with
+    | Lfield (_, f, _) ->
+        Fieldname.get_class_name f |> Typ.mk_struct
+    | _ ->
+        typ
+  in
   match instr with
-  | Sil.Load {id; e= rhs_exp; root_typ= typ; loc} ->
+  | Sil.Load {id; e= rhs_exp; typ; loc} ->
+      let typ = root_type rhs_exp typ in
       execute_load analysis_data id rhs_exp typ loc prop_ |> ret_old_path
-  | Sil.Store {e1= lhs_exp; root_typ= typ; e2= rhs_exp; loc} ->
+  | Sil.Store {e1= lhs_exp; typ; e2= rhs_exp; loc} ->
+      let typ = root_type lhs_exp typ in
       execute_store analysis_data lhs_exp typ rhs_exp loc prop_ |> ret_old_path
   | Sil.Prune (cond, _, _, _) ->
       let prop__ = Attribute.nullify_exp_with_objc_null tenv prop_ cond in
@@ -1555,7 +1564,7 @@ and check_variadic_sentinel ?(fails_on_nil = false) n_formals (sentinel, null_po
   let check_allocated result ((lexp, typ), i) =
     (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
-    let load_instr = Sil.Load {id= tmp_id_deref; e= lexp; root_typ= typ; typ; loc} in
+    let load_instr = Sil.Load {id= tmp_id_deref; e= lexp; typ; loc} in
     try instrs analysis_data (Instrs.singleton load_instr) result
     with e when Exception.exn_not_failure e ->
       IExn.reraise_if e ~f:(fun () -> fails_on_nil) ;

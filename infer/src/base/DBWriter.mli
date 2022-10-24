@@ -8,6 +8,10 @@
 
 open! IStd
 
+val remove_socket_file : unit -> unit
+(** deletes (unlinks) the file corresponding to the socket in the results dir if it exists; useful
+    to clean up stale state at the start of an infer execution *)
+
 val use_daemon : bool Lazy.t
 (** indicates that there should be a daemon running *)
 

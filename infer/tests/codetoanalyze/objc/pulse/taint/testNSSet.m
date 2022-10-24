@@ -156,8 +156,7 @@ void testNSSet_InitWithSetCopyItemsGood(void) {
   testNSSet_sink((__bridge void*)(arg));
 }
 
-// sink does not look inside the pointer
-void testNSSet_CountBadFN(void) {
+void testNSSet_CountBad(void) {
   NSSet* set = tainted_set();
   NSUInteger propagated = [set count];
   testNSSet_sink(&propagated);
@@ -169,15 +168,13 @@ void testNSSet_AllObjectsBad(void) {
   testNSSet_sink((__bridge void*)(propagated));
 }
 
-// sink does not look inside the pointer
-void testNSSet_AnyObjectBadFN(void) {
+void testNSSet_AnyObjectBad(void) {
   NSSet* set = tainted_set();
   id propagated = [set anyObject];
   testNSSet_sink(&propagated);
 }
 
-// sink does not look inside the pointer
-void testNSSet_ContainsObjectBadFN(void) {
+void testNSSet_ContainsObjectBad(void) {
   NSSet* set = [NSSet new];
   id arg = create_tainted_id();
   BOOL propagated = [set containsObject:arg];
@@ -237,8 +234,7 @@ void testNSSet_MakeObjectsPerformSelectorWithObjectGood(void) {
   testNSSet_sink(arg);
 }
 
-// sink does not look inside the pointer
-void testNSSet_MemberBadFN(void) {
+void testNSSet_MemberBad(void) {
   NSSet* set = [NSSet new];
   id arg = create_tainted_id();
   id propagated = [set member:arg];
@@ -332,8 +328,7 @@ void testNSSet_ObjectsWithOptionsPassingTestGood(void) {
   testNSSet_sink(arg);
 }
 
-// sink does not look inside the pointer
-void testNSSet_IsSubsetOfSetBadFN(void) {
+void testNSSet_IsSubsetOfSetBad(void) {
   NSSet* set = [NSSet new];
   NSSet* arg = tainted_set();
   BOOL propagated = [set isSubsetOfSet:arg];
@@ -347,8 +342,7 @@ void testNSSet_IsSubsetOfSetGood(void) {
   testNSSet_sink((__bridge void*)(set));
 }
 
-// sink does not look inside the pointer
-void testNSSet_IntersectsSetBadFN(void) {
+void testNSSet_IntersectsSetBad(void) {
   NSSet* set = [NSSet new];
   NSSet* arg = tainted_set();
   BOOL propagated = [set intersectsSet:arg];
@@ -362,8 +356,7 @@ void testNSSet_IntersectsSetGood(void) {
   testNSSet_sink((__bridge void*)(set));
 }
 
-// sink does not look inside the pointer
-void testNSSet_IsEqualToSetBadFN(void) {
+void testNSSet_IsEqualToSetBad(void) {
   NSSet* set = [NSSet new];
   NSSet* arg = tainted_set();
   BOOL propagated = [set isEqualToSet:arg];
@@ -377,8 +370,7 @@ void testNSSet_IsEqualToSetGood(void) {
   testNSSet_sink((__bridge void*)(set));
 }
 
-// sink does not look inside the pointer
-void testNSSet_ValueForKeyBadFN(void) {
+void testNSSet_ValueForKeyBad(void) {
   NSSet* set = [NSSet new];
   void* arg = create_tainted();
   id propagated = [set valueForKey:(__bridge NSString* _Nonnull)(arg)];
@@ -403,7 +395,7 @@ void testNSSet_SetValueForKeyBad(void) {
 void testNSSet_SetValueForKeyGood(void) {
   NSSet* set = tainted_set();
   id arg = create_untainted_id();
-  void* arg2 = create_tainted();
+  void* arg2 = create_untainted();
   [set setValue:arg forKey:(__bridge NSString* _Nonnull)(arg2)];
   testNSSet_sink(&arg);
   testNSSet_sink(&arg2);

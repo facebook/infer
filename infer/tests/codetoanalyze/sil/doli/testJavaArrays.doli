@@ -1,0 +1,20 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+// tests Java arrays
+
+//  parameter type is an array type
+in Java match { void  fun6tt(A[] a) throws A under className  } body { bodyStub }
+
+//  return type is array
+in Java match { B[]  fun6tt(A a) throws A.B<Y,? super C>.D<E>   under className } body { bodyStub }
+
+//  array and generic instantiations
+in Java match { A<B,G>[] fun6tt(A[] a, B[][] b)   under className  } body { bodyStub }
+
+// array type at the end of long path name
+in Java match { A<B,C<D,E>>.H.M<N>[] fun6tt(A a)  under className  } body { bodyStub }

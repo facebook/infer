@@ -1,0 +1,28 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+// tests comments and layout
+
+// all in one line
+in Java match { public void main33()  under name32a } body { bodyStub }
+
+// over several lines
+in ObjectiveC
+match // a one-line comment here
+   { objCSignStub  } body { bodyStub }
+in ObjectiveC match (* comment over
+   several
+   lines *)
+  { objCSignStub  }
+body
+  { bodyStub }
+
+in Java match { public (* comment *) void main33()  under name32a } body { bodyStub }
+in ObjectiveC match
+   { objCSignStub  }
+body
+   { bodyStub }

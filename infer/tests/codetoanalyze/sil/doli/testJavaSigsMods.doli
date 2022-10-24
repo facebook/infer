@@ -1,0 +1,18 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+// this file tests Java modifiers and return types
+
+// when there are two modifiers
+in Java match { public static typeA m()  under A } body { bodyStub }
+in Java match { public static void fun6y() under A } body { bodyStub }
+
+// when there is a space between the method name (m, here) anf the arguments (empty, here)
+in Java match { public static void m () under A } body { bodyStub }
+
+// when there are no modifiers
+in Java match { void de4()  under A6b } body { bodyStub }

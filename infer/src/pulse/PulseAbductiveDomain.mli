@@ -94,7 +94,8 @@ module Memory : sig
   module Edges = BaseMemory.Edges
 
   val add_edge :
-       AbstractValue.t * ValueHistory.t
+       PathContext.t
+    -> AbstractValue.t * ValueHistory.t
     -> Access.t
     -> AbstractValue.t * ValueHistory.t
     -> Location.t
@@ -245,7 +246,8 @@ val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
 val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)
 
-val set_post_cell : AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Location.t -> t -> t
+val set_post_cell :
+  PathContext.t -> AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Location.t -> t -> t
 (** directly set the edges and attributes for the given address, bypassing abduction altogether *)
 
 val incorporate_new_eqs :

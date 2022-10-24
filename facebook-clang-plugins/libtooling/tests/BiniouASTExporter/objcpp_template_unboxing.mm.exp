@@ -68,10 +68,9 @@
               ({
                  #c3bbce7c: "tests/objcpp_template_unboxing.mm",
                  #c7b317f4: 7,
-                 #c68b4ed6: 1,
-                 #21ac3408: unit
+                 #c68b4ed6: 1
                },
-               { #c7b317f4: 10, #c68b4ed6: 1, #21ac3408: unit })
+               { #c7b317f4: 10, #c68b4ed6: 1 })
           },
           { #c8ff724b: "box", #2cdb06fb: [ "box" ] },
           { })>,

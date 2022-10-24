@@ -75,11 +75,11 @@ module StructuredSil = struct
   let unknown_exp = var_of_str "__unknown__"
 
   let make_load ~rhs_typ lhs_id rhs_exp =
-    Cmd (Sil.Load {id= lhs_id; e= rhs_exp; root_typ= rhs_typ; typ= rhs_typ; loc= dummy_loc})
+    Cmd (Sil.Load {id= lhs_id; e= rhs_exp; typ= rhs_typ; loc= dummy_loc})
 
 
   let make_set ~rhs_typ ~lhs_exp ~rhs_exp =
-    Cmd (Sil.Store {e1= lhs_exp; root_typ= rhs_typ; typ= rhs_typ; e2= rhs_exp; loc= dummy_loc})
+    Cmd (Sil.Store {e1= lhs_exp; typ= rhs_typ; e2= rhs_exp; loc= dummy_loc})
 
 
   let make_call ?(procname = dummy_procname) ?return:return_opt args =

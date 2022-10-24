@@ -19,8 +19,8 @@ let struct_copy tenv loc e1 e2 ~typ ~struct_name =
             struct_copy_helper e1 e2 field_typ struct_name rev_acc
         | _ ->
             let id = Ident.create_fresh Ident.knormal in
-            Sil.Store {e1; root_typ= field_typ; typ= field_typ; e2= Exp.Var id; loc}
-            :: Sil.Load {id; e= e2; root_typ= field_typ; typ= field_typ; loc}
+            Sil.Store {e1; typ= field_typ; e2= Exp.Var id; loc}
+            :: Sil.Load {id; e= e2; typ= field_typ; loc}
             :: rev_acc )
   in
   if Exp.equal e1 e2 then [] else struct_copy_helper e1 e2 typ struct_name [] |> List.rev

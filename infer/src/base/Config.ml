@@ -429,16 +429,18 @@ let implicit_sdk_root =
         maybe_root )
 
 
+(** whether the infer executable looks like we are just running infer unit tests *)
+let is_running_unit_test =
+  String.is_substring ~substring:"inline_test_runner" exe_basename
+  || String.is_substring ~substring:"inferunit" exe_basename
+  || String.equal "run.exe" exe_basename
+  || String.equal "run.bc" exe_basename
+
+
 let startup_action =
   let open CLOpt in
   if infer_is_javac then Javac
-  else if
-    !Sys.interactive
-    || String.is_substring ~substring:"inline_test_runner" exe_basename
-    || String.is_substring ~substring:"inferunit" exe_basename
-    || String.equal "run.exe" exe_basename
-    || String.equal "run.bc" exe_basename
-  then NoParse
+  else if !Sys.interactive || is_running_unit_test then NoParse
   else if infer_is_clang then NoParse
   else InferCommand
 
@@ -913,6 +915,11 @@ and capture_block_list =
 and capture_textual =
   CLOpt.mk_path_opt ~long:"capture-textual" ~meta:"path"
     "Generate a SIL program from a textual representation given in a .sil file."
+
+
+and capture_doli =
+  CLOpt.mk_path_opt ~long:"capture-doli" ~meta:"path"
+    "Generate models from a DOLI representation given a .doli file."
 
 
 and cfg_json =
@@ -2891,6 +2898,7 @@ and test_determinator =
 
 and timeout =
   CLOpt.mk_float_opt ~long:"timeout"
+    ?default:(if is_running_unit_test then None else Some 120.0)
     ~in_help:[(Analyze, manual_generic); (Run, manual_generic)]
     "Time after which any checker (except biabduction) should give up analysing the current \
      function or method, in seconds"
@@ -3341,6 +3349,8 @@ and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 and capture = !capture
 
 and capture_textual = !capture_textual
+
+and capture_doli = !capture_doli
 
 and capture_block_list = !capture_block_list
 

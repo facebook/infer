@@ -520,10 +520,12 @@ module Memory = struct
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
-  let add_edge (addr, history) access new_addr_hist location astate =
+  let add_edge {PathContext.timestamp} (addr, history) access new_addr_hist location astate =
     map_post_heap astate ~f:(BaseMemory.add_edge addr access new_addr_hist)
     |> AddressAttributes.map_post_attrs
-         ~f:(BaseAddressAttributes.add_one addr (WrittenTo (Trace.Immediate {location; history})))
+         ~f:
+           (BaseAddressAttributes.add_one addr
+              (WrittenTo (timestamp, Trace.Immediate {location; history})) )
 
 
   let find_edge_opt address access astate =
@@ -912,7 +914,7 @@ let check_retain_cycles ~dead_addresses tenv astate =
     | None ->
         None
     | Some attributes ->
-        Attributes.get_written_to attributes
+        Attributes.get_written_to attributes |> Option.map ~f:snd
   in
   let compare_traces trace1 trace2 =
     let loc1 = Trace.get_outer_location trace1 in
@@ -1107,10 +1109,12 @@ let set_post_edges addr edges astate =
 
 let find_post_cell_opt addr {post} = BaseDomain.find_cell_opt addr (post :> BaseDomain.t)
 
-let set_post_cell (addr, history) (edges, attr_set) location astate =
+let set_post_cell {PathContext.timestamp} (addr, history) (edges, attr_set) location astate =
   set_post_edges addr edges astate
   |> AddressAttributes.map_post_attrs ~f:(fun attrs ->
-         BaseAddressAttributes.add_one addr (WrittenTo (Trace.Immediate {location; history})) attrs
+         BaseAddressAttributes.add_one addr
+           (WrittenTo (timestamp, Trace.Immediate {location; history}))
+           attrs
          |> BaseAddressAttributes.add addr attr_set )
 
 
