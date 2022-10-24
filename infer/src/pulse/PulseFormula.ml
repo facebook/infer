@@ -2853,7 +2853,7 @@ end
 let simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep formula =
   let open SatUnsat.Import in
   let* formula, new_eqs = normalize tenv ~get_dynamic_type formula in
-  L.d_printfln_escaped "@[Simplifying %a@,wrt %a (keep), with prunables=%a@]" pp formula Var.Set.pp
+  L.d_printfln_escaped "@[Simplifying %a@ wrt %a (keep),@ with prunables=%a@]" pp formula Var.Set.pp
     keep Var.Set.pp precondition_vocabulary ;
   (* get rid of as many variables as possible *)
   let* formula = QuantifierElimination.eliminate_vars ~precondition_vocabulary ~keep formula in

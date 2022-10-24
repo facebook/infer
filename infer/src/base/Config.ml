@@ -1842,6 +1842,11 @@ and margin =
     "Set right margin for the pretty printing functions"
 
 
+and margin_html =
+  CLOpt.mk_int ~long:"margin-html" ~default:200 ~meta:"int"
+    "Set margin for the pretty printing in html"
+
+
 and mask_sajwa_exceptions =
   CLOpt.mk_bool ~long:"mask-sawja-exceptions" ~default:true
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -3634,6 +3639,8 @@ and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
+
+and margin_html = !margin_html
 
 and mask_sajwa_exceptions = !mask_sajwa_exceptions
 

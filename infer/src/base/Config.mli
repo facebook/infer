@@ -444,6 +444,8 @@ val liveness_ignored_constant : string list
 
 val load_average : float option
 
+val margin_html : int
+
 val mask_sajwa_exceptions : bool
 
 val max_nesting : int option

@@ -2204,6 +2204,9 @@ INTERNAL OPTIONS
        --margin int
            Set right margin for the pretty printing functions
 
+       --margin-html int
+           Set margin for the pretty printing in html
+
        --max-jobs-reset
            Cancel the effect of --max-jobs.
 

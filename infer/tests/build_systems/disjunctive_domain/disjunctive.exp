@@ -8,27 +8,27 @@ three_branch:
   1 disjuncts:
   #0: 0
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 two_branch:
   1 disjuncts:
   #0: 0
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 four_branch:
   1 disjuncts:
   #0: 0
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 sequence:
   1 disjuncts:
   #0: two_branch0.0.three_branch1.0.four_branch2.0
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 loop:
   1 disjuncts:
   #0: two_branch0.0
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 
   No issues found  
 
@@ -41,13 +41,13 @@ three_branch:
   #1: 1
   #2: 2
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 two_branch:
   2 disjuncts:
   #0: 0
   #1: 1
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 four_branch:
   4 disjuncts:
   #0: 0
@@ -55,7 +55,7 @@ four_branch:
   #2: 2
   #3: 3
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 sequence:
   4 disjuncts:
   #0: two_branch0.0.three_branch1.0.four_branch3.0
@@ -63,7 +63,7 @@ sequence:
   #2: two_branch0.0.three_branch1.0.four_branch3.2
   #3: two_branch0.0.three_branch1.0.four_branch3.3
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 loop:
   4 disjuncts:
   #0: two_branch0.0
@@ -71,7 +71,7 @@ loop:
   #2: two_branch0.0.two_branch1.0
   #3: two_branch0.0.two_branch1.1
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 
   No issues found  
 
@@ -84,13 +84,13 @@ three_branch:
   #1: 1
   #2: 2
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 two_branch:
   2 disjuncts:
   #0: 0
   #1: 1
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 four_branch:
   4 disjuncts:
   #0: 0
@@ -98,7 +98,7 @@ four_branch:
   #2: 2
   #3: 3
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 sequence:
   10 disjuncts:
   #0: two_branch0.0.three_branch1.0.four_branch3.0
@@ -112,7 +112,7 @@ sequence:
   #8: two_branch0.0.three_branch1.2.four_branch5.0
   #9: two_branch0.0.three_branch1.2.four_branch5.1
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 loop:
   10 disjuncts:
   #0: two_branch0.0
@@ -126,6 +126,6 @@ loop:
   #8: two_branch0.0.two_branch1.1.two_branch4.0
   #9: two_branch0.0.two_branch1.1.two_branch4.1
   
- Non-disj state:⊥ 
+  Non-disj state: ⊥
 
   No issues found  

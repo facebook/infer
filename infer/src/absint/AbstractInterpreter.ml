@@ -257,8 +257,8 @@ struct
         List.iteri (List.rev disjuncts) ~f:(fun i disjunct ->
             F.fprintf f "#%d: @[%a@]@;" i T.DisjDomain.pp disjunct )
       in
-      F.fprintf f "@[<v>%d disjuncts:@;%a@]" (List.length disjuncts) pp_disjuncts disjuncts ;
-      F.fprintf f "\n Non-disj state:@[%a@]@;" T.NonDisjDomain.pp non_disj
+      F.fprintf f "@[<v>%d disjuncts:@;%a@;@[<hv 2>Non-disj state:@ %a@]@]" (List.length disjuncts)
+        pp_disjuncts disjuncts T.NonDisjDomain.pp non_disj
   end
 
   let filter_disjuncts ~f ((l, nd) : Domain.t) =
@@ -294,10 +294,10 @@ struct
             let disjuncts', non_disj' =
               T.exec_instr (pre_disjunct, non_disj) analysis_data node instr
             in
+            L.d_printfln "@]@\n" ;
             ( if Config.write_html then
               let n = List.length disjuncts' in
-              L.d_printfln "@]@\n@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s")
-            ) ;
+              L.d_printfln "@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
             let post_disj', n = Domain.join_up_to ~limit ~into:post disjuncts' in
             ((post_disj', non_disj' :: non_disj_astates), n) ) )
     in
