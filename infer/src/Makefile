@@ -113,7 +113,7 @@ check: $(SRC_BUILD_COMMON)
 
 .PHONY: watch
 watch: $(SRC_BUILD_COMMON)
-	$(DUNE_BUILD) --watch --terminal-persistence=clear-on-rebuild
+	$(DUNE_BUILD) --watch --terminal-persistence=clear-on-rebuild $(INFER_CONFIG_TARGETS)
 
 #### Aliases for building binaries ####
 
