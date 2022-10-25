@@ -56,7 +56,7 @@ module Implementation = struct
       Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
           Sqlite3.bind delete_stmt 1 (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_uid" ;
-          SqliteUtils.result_unit ~finalize:false ~log:"store spec" db delete_stmt )
+          SqliteUtils.result_unit ~finalize:false ~log:"delete spec" db delete_stmt )
 
 
   let mark_all_source_files_stale () =
