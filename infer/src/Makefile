@@ -108,8 +108,12 @@ doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(QUIET)cd .. && $(DUNE_BUILD) @doc
 
 .PHONY: check
-check: src_build_common
+check: $(SRC_BUILD_COMMON)
 	$(DUNE_BUILD) @check
+
+.PHONY: watch
+watch: $(SRC_BUILD_COMMON)
+	$(DUNE_BUILD) --watch --terminal-persistence=clear-on-rebuild
 
 #### Aliases for building binaries ####
 

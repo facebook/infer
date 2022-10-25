@@ -354,6 +354,10 @@ check: src_build_common
 	$(QUIET)$(call silent_on_success,Building artifacts for tooling support,\
 	$(MAKE_SOURCE) check)
 
+.PHONY: watch
+watch: src_build_common
+	$(MAKE_SOURCE) watch
+
 # deadcode analysis: only do the deadcode detection on Facebook builds and if GNU sed is available
 .PHONY: real_deadcode
 real_deadcode: src_build_common
