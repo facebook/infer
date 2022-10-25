@@ -2034,12 +2034,10 @@ INTERNAL OPTIONS
            Deactivates: Print the cfg of the code coming from the libraries
            (Conversely: --dotty-cfg-libs)
 
-       --dump-textual path
-           Generate a SIL program from the captured target. The target has to
-           be a single Java file.
-
-       --dump-textual-reset
-           Cancel the effect of --dump-textual.
+       --dump-textual
+           Activates: Generate a SIL program from the captured target. A
+           filename.sil file is generated for each filename.java file in the
+           target. (Conversely: --no-dump-textual)
 
        --dynamic-dispatch-json-file-path-reset
            Cancel the effect of --dynamic-dispatch-json-file-path.

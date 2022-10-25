@@ -36,6 +36,8 @@ type mode =
 
 val is_analyze_mode : mode -> bool
 
+val is_compatible_with_textual_generation : mode -> bool
+
 val mode_from_command_line : mode Lazy.t
 (** driver mode computed from the command-line arguments and settings in Config *)
 

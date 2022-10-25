@@ -37,6 +37,8 @@ type mode =
 
 let is_analyze_mode = function Analyze -> true | _ -> false
 
+let is_compatible_with_textual_generation = function Javac _ -> true | _ -> false
+
 let pp_mode fmt = function
   | Analyze ->
       F.fprintf fmt "Analyze driver mode"

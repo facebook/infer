@@ -319,7 +319,7 @@ val dotty_cfg_libs : bool
 
 val dump_duplicate_symbols : bool
 
-val dump_textual : string option
+val dump_textual : bool
 
 val dynamic_dispatch_json_file_path : string option
 

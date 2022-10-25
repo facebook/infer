@@ -1469,8 +1469,9 @@ and dump_duplicate_symbols =
 
 
 and dump_textual =
-  CLOpt.mk_path_opt ~long:"dump-textual" ~meta:"path"
-    "Generate a SIL program from the captured target. The target has to be a single Java file."
+  CLOpt.mk_bool ~long:"dump-textual"
+    "Generate a SIL program from the captured target. A $(i,filename.sil) file is generated for \
+     each $(i,filename.java) file in the target."
 
 
 and dynamic_dispatch_json_file_path =
