@@ -284,14 +284,9 @@ module Implementation = struct
       (* [default] is 0 as we are only counting overwrites *)
       |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
       Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
-          Sqlite3.bind store_stmt 1 (Sqlite3.Data.TEXT proc_uid)
-          |> SqliteUtils.check_result_code db ~log:"store spec bind proc_uid" ;
-          Sqlite3.bind store_stmt 2 proc_name
-          |> SqliteUtils.check_result_code db ~log:"store spec bind proc_name" ;
-          Sqlite3.bind store_stmt 3 analysis_summary
-          |> SqliteUtils.check_result_code db ~log:"store spec bind analysis_summary" ;
-          Sqlite3.bind store_stmt 4 report_summary
-          |> SqliteUtils.check_result_code db ~log:"store spec bind report_summary" ;
+          Sqlite3.bind_values store_stmt
+            [Sqlite3.Data.TEXT proc_uid; proc_name; analysis_summary; report_summary]
+          |> SqliteUtils.check_result_code db ~log:"store spec bind_values" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
 
 
