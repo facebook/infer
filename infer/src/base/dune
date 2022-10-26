@@ -19,7 +19,7 @@
    ATDGenerated IStdlib OpenSource)
  (preprocess
   (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_hash
-    ppx_sexp_conv))
+    ppx_sexp_conv ppx_variants_conv))
  (preprocessor_deps
   (glob_files ../../documentation/checkers/*.md)
   (glob_files ../../documentation/issues/*.md)))

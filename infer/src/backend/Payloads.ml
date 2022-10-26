@@ -37,37 +37,39 @@ let yojson_of_t {pulse} =
 
 type 'a pp = Pp.env -> F.formatter -> 'a -> unit
 
-type field = F : {field: (t, 'a option) Field.t; name: string; pp: 'a pp} -> field
+type field = F : {field: (t, 'a option) Field.t; payload_id: PayloadId.t; pp: 'a pp} -> field
 
 let fields =
-  let mk field name pp = F {field; name; pp= (fun _ -> pp)} in
-  let mk_pe field name pp = F {field; name; pp} in
+  let mk_pe field payload_id pp = F {field; payload_id; pp} in
+  let mk field payload_id pp = mk_pe field payload_id (fun _ -> pp) in
   Fields.to_list
-    ~annot_map:(fun f -> mk f "AnnotationReachability" AnnotationReachabilityDomain.pp)
-    ~biabduction:(fun f -> mk_pe f "Biabduction" BiabductionSummary.pp)
-    ~buffer_overrun_analysis:(fun f -> mk f "BufferOverrunAnalysis" BufferOverrunAnalysisSummary.pp)
-    ~buffer_overrun_checker:(fun f -> mk f "BufferOverrunChecker" BufferOverrunCheckerSummary.pp)
-    ~config_impact_analysis:(fun f -> mk f "ConfigImpactAnalysis" ConfigImpactAnalysis.Summary.pp)
-    ~cost:(fun f -> mk f "Cost" CostDomain.pp_summary)
-    ~disjunctive_demo:(fun f -> mk f "Disjunctive Demo" DisjunctiveDemo.pp_domain)
-    ~litho_required_props:(fun f -> mk f "Litho Required Props" LithoDomain.pp_summary)
-    ~pulse:(fun f -> mk f "Pulse" PulseSummary.pp)
-    ~purity:(fun f -> mk f "Purity" PurityDomain.pp_summary)
-    ~quandary:(fun f -> mk f "Quandary" QuandarySummary.pp)
-    ~racerd:(fun f -> mk f "RacerD" RacerDDomain.pp_summary)
-    ~lab_resource_leaks:(fun f -> mk f "Resource Leaks Lab" ResourceLeakDomain.pp)
-    ~dotnet_resource_leaks:(fun f -> mk f "DOTNET Resource Leaks" ResourceLeakCSDomain.Summary.pp)
-    ~siof:(fun f -> mk f "Siof" SiofDomain.Summary.pp)
-    ~simple_lineage:(fun f -> mk f "SimpleLineage" SimpleLineage.Summary.pp)
-    ~simple_shape:(fun f -> mk f "SimpleShape" SimpleShape.Summary.pp)
-    ~starvation:(fun f -> mk f "Starvation" StarvationDomain.pp_summary)
-    ~nullsafe:(fun f -> mk f "Nullsafe" NullsafeSummary.pp)
-    ~uninit:(fun f -> mk f "Uninitialised" UninitDomain.Summary.pp)
+    ~annot_map:(fun f -> mk f AnnotMap AnnotationReachabilityDomain.pp)
+    ~biabduction:(fun f -> mk_pe f Biabduction BiabductionSummary.pp)
+    ~buffer_overrun_analysis:(fun f -> mk f BufferOverrunAnalysis BufferOverrunAnalysisSummary.pp)
+    ~buffer_overrun_checker:(fun f -> mk f BufferOverrunChecker BufferOverrunCheckerSummary.pp)
+    ~config_impact_analysis:(fun f -> mk f ConfigImpactAnalysis ConfigImpactAnalysis.Summary.pp)
+    ~cost:(fun f -> mk f Cost CostDomain.pp_summary)
+    ~disjunctive_demo:(fun f -> mk f DisjunctiveDemo DisjunctiveDemo.pp_domain)
+    ~litho_required_props:(fun f -> mk f LithoRequiredProps LithoDomain.pp_summary)
+    ~pulse:(fun f -> mk f Pulse PulseSummary.pp)
+    ~purity:(fun f -> mk f Purity PurityDomain.pp_summary)
+    ~quandary:(fun f -> mk f Quandary QuandarySummary.pp)
+    ~racerd:(fun f -> mk f RacerD RacerDDomain.pp_summary)
+    ~lab_resource_leaks:(fun f -> mk f LabResourceLeaks ResourceLeakDomain.pp)
+    ~dotnet_resource_leaks:(fun f -> mk f DotnetResourceLeaks ResourceLeakCSDomain.Summary.pp)
+    ~siof:(fun f -> mk f SIOF SiofDomain.Summary.pp)
+    ~simple_lineage:(fun f -> mk f SimpleLineage SimpleLineage.Summary.pp)
+    ~simple_shape:(fun f -> mk f SimpleShape SimpleShape.Summary.pp)
+    ~starvation:(fun f -> mk f Starvation StarvationDomain.pp_summary)
+    ~nullsafe:(fun f -> mk f Nullsafe NullsafeSummary.pp)
+    ~uninit:(fun f -> mk f Uninit UninitDomain.Summary.pp)
 
 
 let pp pe f payloads =
-  List.iter fields ~f:(fun (F {field; name; pp}) ->
-      Field.get field payloads |> Option.iter ~f:(fun x -> F.fprintf f "%s: %a@\n" name (pp pe) x) )
+  List.iter fields ~f:(fun (F {field; payload_id; pp}) ->
+      Field.get field payloads
+      |> Option.iter ~f:(fun x ->
+             F.fprintf f "%s: %a@\n" (PayloadId.Variants.to_name payload_id) (pp pe) x ) )
 
 
 let empty =
