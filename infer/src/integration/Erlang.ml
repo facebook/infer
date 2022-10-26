@@ -51,7 +51,7 @@ let parse_translate_store result_dir =
             ErlangTranslator.translate_module env ast ;
             true
         | false ->
-            L.debug Capture Verbose "Invalid AST@." ;
+            L.debug Capture Verbose "Invalid AST for module %s@." env.current_module ;
             false )
   in
   let process_one_file json_file =
