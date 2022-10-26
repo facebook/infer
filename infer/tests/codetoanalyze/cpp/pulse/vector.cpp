@@ -347,3 +347,23 @@ void call_push_back_wrapper_ok() {
   push_back_wrapper();
   push_back_wrapper();
 }
+
+int emplace_back_size_ok() {
+  std::vector<int> v;
+  v.emplace_back(42);
+  if (v.size() != 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int emplace_back_size_bad() {
+  std::vector<int> v;
+  v.emplace_back(42);
+  if (v.size() == 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
