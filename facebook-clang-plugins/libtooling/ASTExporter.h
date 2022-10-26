@@ -596,7 +596,8 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
   // The general format we print out is filename:line:col, but we drop pieces
   // that haven't changed since the last loc printed.
   PresumedLoc PLoc = SM.getPresumedLoc(SpellingLoc);
-  PresumedLoc MLoc = SM.getPresumedLoc(SM.getSpellingLoc(Loc));
+  SourceLocation MSourceLoc = SM.getSpellingLoc(Loc);
+  PresumedLoc MLoc = SM.getPresumedLoc(MSourceLoc);
 
   if (PLoc.isInvalid()) {
     ObjectScope Scope(OF, 0);
@@ -604,7 +605,9 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
   }
   bool is_different_macro_file = false;
   bool is_different_macro_line = false;
-  bool is_macro = Loc.isMacroID();
+  bool is_macro = Loc.isMacroID() && !SM.isWrittenInBuiltinFile(MSourceLoc) &&
+                  !SM.isWrittenInCommandLineFile(MSourceLoc) &&
+                  !SM.isWrittenInScratchSpace(MSourceLoc);
   int macro_fields_count = is_macro;
   if (is_macro) {
     if (strcmp(MLoc.getFilename(), LastMacroLocFilename) != 0) {
