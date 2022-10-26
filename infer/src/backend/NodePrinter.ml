@@ -14,7 +14,7 @@ module L = Logging
 let new_session node =
   let pname = Procdesc.Node.get_proc_name node in
   let node_id = (Procdesc.Node.get_id node :> int) in
-  match Summary.OnDisk.get pname with
+  match Summary.OnDisk.get ~lazy_payloads:true pname with
   | None ->
       0
   | Some summary ->

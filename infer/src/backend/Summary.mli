@@ -53,7 +53,7 @@ module OnDisk : sig
   val clear_cache : unit -> unit
   (** Remove all the elements from the cache of summaries *)
 
-  val get : Procname.t -> t option
+  val get : lazy_payloads:bool -> Procname.t -> t option
   (** Return the summary option for the procedure name *)
 
   val reset : Procdesc.t -> t

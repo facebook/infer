@@ -51,4 +51,7 @@ module SQLite : sig
   (** the [rowid] corresponds to the procedure whose payloads should be lazily loaded. We pass the
       SQLite rowid directly to save a lookup in the index of procedure names given that this
       function is only called after the procedure has already been located in the table *)
+
+  val eager_load : Sqlite3.stmt -> first_column:int -> t
+  (** load all payload columns from the statement starting at [first_column] *)
 end

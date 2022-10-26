@@ -274,11 +274,11 @@ let get_proc_desc callee_pname =
   else Procdesc.load callee_pname
 
 
-let analyze_callee exe_env ?caller_summary callee_pname =
+let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
-    match Summary.OnDisk.get callee_pname with
+    match Summary.OnDisk.get ~lazy_payloads callee_pname with
     | Some _ as summ_opt ->
         summ_opt
     | None when procedure_should_be_analyzed callee_pname ->
@@ -312,11 +312,15 @@ let analyze_callee exe_env ?caller_summary callee_pname =
 
 
 let analyze_proc_name exe_env ~caller_summary callee_pname =
-  analyze_callee exe_env ~caller_summary callee_pname
+  analyze_callee ~lazy_payloads:false exe_env ~caller_summary callee_pname
 
 
 let analyze_proc_name_no_caller exe_env callee_pname =
-  analyze_callee exe_env ?caller_summary:None callee_pname
+  (* load payloads lazily (and thus field by field as needed): we are either doing a file analysis
+     and we don't want to load all payloads at once (to avoid high memory usage when only a few of
+     the payloads are actually needed), or we are starting a procedure analysis in which case we're
+     not interested in loading the summary if it has already been computed *)
+  analyze_callee ~lazy_payloads:true exe_env ?caller_summary:None callee_pname
 
 
 let analyze_procedures exe_env procs_to_analyze source_file_opt =

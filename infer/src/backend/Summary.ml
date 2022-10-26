@@ -159,46 +159,64 @@ module OnDisk = struct
 
 
   let spec_of_procname, spec_of_model =
-    let mk_load_stmt table =
+    let mk_lazy_load_stmt table =
       Database.register_statement AnalysisDatabase
         "SELECT rowid, report_summary, summary_metadata FROM %s WHERE proc_uid = :k"
         (Database.string_of_analysis_table table)
     in
-    let load_spec ~load_statement table proc_name =
+    let mk_eager_load_stmt table =
+      Database.register_statement AnalysisDatabase
+        "SELECT report_summary, summary_metadata, %s FROM %s WHERE proc_uid = :k"
+        (F.asprintf "%a" (Pp.seq ~sep:", " F.pp_print_string) PayloadId.database_fields)
+        (Database.string_of_analysis_table table)
+    in
+    let load_spec ~lazy_payloads ~load_statement table proc_name =
       Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
           Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
           |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
           SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
             ~read_row:(fun stmt ->
-              let rowid = Sqlite3.column_int64 stmt 0 in
-              let report_summary = Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize in
-              let summary_metadata = Sqlite3.column stmt 2 |> SummaryMetadata.SQLite.deserialize in
-              let payloads = Payloads.SQLite.lazy_load table ~rowid in
+              let offset = if lazy_payloads then (* column 0 holds [rowid] *) 1 else 0 in
+              let report_summary =
+                Sqlite3.column stmt (offset + 0) |> ReportSummary.SQLite.deserialize
+              in
+              let summary_metadata =
+                Sqlite3.column stmt (offset + 1) |> SummaryMetadata.SQLite.deserialize
+              in
+              let payloads =
+                if lazy_payloads then
+                  let rowid = Sqlite3.column_int64 stmt 0 in
+                  Payloads.SQLite.lazy_load table ~rowid
+                else
+                  (* NOTE: [offset] = 0 at this point *)
+                  Payloads.SQLite.eager_load ~first_column:(offset + 2) stmt
+              in
               mk_full_summary payloads report_summary summary_metadata ) )
     in
-    let spec_of_procname =
-      let table = Database.Specs in
-      let load_statement = mk_load_stmt table in
-      fun proc_name ->
-        BStats.incr_summary_file_try_load () ;
-        let opt = load_spec ~load_statement table proc_name in
-        if Option.is_some opt then BStats.incr_summary_read_from_disk () ;
+    let mk_load_spec (table : Database.analysis_table) =
+      let is_specs_table = match table with Specs -> true | BiabductionModelsSpecs -> false in
+      let lazy_load_statement = mk_lazy_load_stmt table in
+      let eager_load_statement = mk_eager_load_stmt table in
+      fun ~lazy_payloads proc_name ->
+        if is_specs_table then BStats.incr_summary_file_try_load () ;
+        let load_statement = if lazy_payloads then lazy_load_statement else eager_load_statement in
+        let opt = load_spec ~lazy_payloads ~load_statement table proc_name in
+        if is_specs_table && Option.is_some opt then BStats.incr_summary_read_from_disk () ;
         opt
     in
-    let spec_of_model =
-      let table = Database.BiabductionModelsSpecs in
-      let load_statement = mk_load_stmt table in
-      fun proc_name -> load_spec ~load_statement table proc_name
-    in
+    let spec_of_procname = mk_load_spec Specs in
+    let spec_of_model = mk_load_spec BiabductionModelsSpecs in
     (spec_of_procname, spec_of_model)
 
 
   (** Load procedure summary for the given procedure name and update spec table *)
-  let load_summary_to_spec_table proc_name =
+  let load_summary_to_spec_table ~lazy_payloads proc_name =
     let summ_opt =
-      match spec_of_procname proc_name with
+      match spec_of_procname ~lazy_payloads proc_name with
       | None when BiabductionModels.mem proc_name ->
-          spec_of_model proc_name
+          (* most of the time we don't run biabduction and it's the only analysis with non-NULL
+             specs in these models, so load lazily *)
+          spec_of_model ~lazy_payloads:true proc_name
       | summ_opt ->
           summ_opt
     in
@@ -206,21 +224,23 @@ module OnDisk = struct
     summ_opt
 
 
-  let get proc_name =
+  let get ~lazy_payloads proc_name =
     match Procname.Hash.find cache proc_name with
     | summary ->
         BStats.incr_summary_cache_hits () ;
         Some summary
     | exception Caml.Not_found ->
         BStats.incr_summary_cache_misses () ;
-        load_summary_to_spec_table proc_name
+        load_summary_to_spec_table ~lazy_payloads proc_name
 
 
   let get_model_proc_desc model_name =
     if not (BiabductionModels.mem model_name) then
       Logging.die InternalError "Requested summary of model that couldn't be found: %a@\n"
         Procname.pp model_name
-    else Option.map (get model_name) ~f:(fun (s : full_summary) -> s.proc_desc)
+    else
+      (* we only care about the proc_desc so load analysis payloads lazily (i.e. not at all) *)
+      Option.map (get ~lazy_payloads:true model_name) ~f:(fun (s : full_summary) -> s.proc_desc)
 
 
   (** Save summary for the procedure into the spec database *)

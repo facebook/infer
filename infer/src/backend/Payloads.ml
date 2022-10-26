@@ -108,9 +108,13 @@ module SQLite = struct
       types. *)
   let deserialize_payload_opt = function[@warning "-8"]
     | Sqlite3.Data.NULL ->
-        None
+        Lazy.from_val None
     | Sqlite3.Data.BLOB blob ->
-        Some (Marshal.from_string blob 0)
+        (* lazily deserialize the blob once we have it to save time in case it won't be used. This
+           can happen when payloads were loaded eagerly by one analysis when other active analyses
+           are not interested in the summaries for the same procedure, i.e. they don't have the same
+           dependencies *)
+        lazy (Some (Marshal.from_string blob 0))
 
 
   (** serialize a payload into the format described in {!deserialize_payload_opt} above *)
@@ -127,6 +131,29 @@ module SQLite = struct
        match the payloads *)
     List.map all_fields ~f:(fun (F {field}) -> Field.get field payloads |> serialize_payload_opt)
 
+
+  let make_eager =
+    let data_of_sqlite_column _field column =
+      ( (fun stmt ->
+          let sqlite_data = Sqlite3.column stmt column in
+          deserialize_payload_opt sqlite_data )
+      , column + 1 )
+    in
+    Fields.make_creator ~annot_map:data_of_sqlite_column ~biabduction:data_of_sqlite_column
+      ~buffer_overrun_analysis:data_of_sqlite_column ~buffer_overrun_checker:data_of_sqlite_column
+      ~config_impact_analysis:data_of_sqlite_column ~cost:data_of_sqlite_column
+      ~disjunctive_demo:data_of_sqlite_column ~litho_required_props:data_of_sqlite_column
+      ~pulse:data_of_sqlite_column ~purity:data_of_sqlite_column ~quandary:data_of_sqlite_column
+      ~racerd:data_of_sqlite_column ~lab_resource_leaks:data_of_sqlite_column
+      ~dotnet_resource_leaks:data_of_sqlite_column ~siof:data_of_sqlite_column
+      ~simple_lineage:data_of_sqlite_column ~simple_shape:data_of_sqlite_column
+      ~starvation:data_of_sqlite_column ~nullsafe:data_of_sqlite_column
+      ~uninit:data_of_sqlite_column
+
+
+  let eager_load stmt ~first_column = (make_eager first_column |> fst) stmt
+
+  (** {3 code for lazily loading payloads} *)
 
   (** SQLite statements to load a payload from either analysis table *)
   type load_statements =
@@ -155,7 +182,7 @@ module SQLite = struct
         Sqlite3.bind_int64 load_stmt 1 rowid
         |> SqliteUtils.check_result_code db ~log:"load payloads bind rowid" ;
         SqliteUtils.result_option ~finalize:false db ~log:"load payloads exec" load_stmt
-          ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> deserialize_payload_opt) )
+          ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> deserialize_payload_opt |> Lazy.force) )
     |> Option.join
 
 
