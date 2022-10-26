@@ -742,6 +742,10 @@ module ModuleBridge = struct
              (fun fmt _ -> F.fprintf fmt "Missing or unsupported source_language attribute") )
     | Some lang ->
         let decls_env = TextualDecls.make_decls module_ in
+        let module_ =
+          let open TextualTransform in
+          module_ |> remove_internal_calls |> let_propagation |> out_of_ssa
+        in
         let cfgs = Cfg.create () in
         let tenv = Tenv.create () in
         List.iter module_.decls ~f:(fun decl ->

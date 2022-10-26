@@ -69,9 +69,6 @@ let capture ?source_path textual_path =
   | Error () ->
       ()
   | Ok module_ -> (
-      let module_ = TextualTransform.remove_internal_calls module_ in
-      let module_ = TextualTransform.let_propagation module_ in
-      let module_ = TextualTransform.out_of_ssa module_ in
       let source_file = module_.sourcefile in
       DB.Results_dir.init source_file ;
       try
