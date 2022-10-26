@@ -91,3 +91,8 @@ let empty =
   ; starvation= None
   ; nullsafe= None
   ; uninit= None }
+
+
+module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
+  type nonrec t = t
+end)

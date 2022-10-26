@@ -235,11 +235,12 @@ module Implementation = struct
     Database.create_tables db CaptureDatabase
 
 
+  (** drop everything except reports *)
   let shrink_analysis_db () =
     let db = Database.get_database AnalysisDatabase in
     SqliteUtils.exec db ~log:"nullify analysis summaries"
-      ~stmt:"UPDATE specs SET analysis_summary=NULL" ;
-    SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"VACUUM"
+      ~stmt:"UPDATE specs SET summary_metadata=NULL, payloads=NULL" ;
+    SqliteUtils.exec db ~log:"vacuum analysis database" ~stmt:"VACUUM"
 
 
   let store_issue_log =
@@ -274,10 +275,10 @@ module Implementation = struct
       Database.register_statement AnalysisDatabase
         {|
           INSERT OR REPLACE INTO specs
-          VALUES (:proc_uid, :proc_name, :analysis_summary, :report_summary)
+          VALUES (:proc_uid, :proc_name, :report_summary, :summary_metadata, :payloads)
         |}
     in
-    fun ~proc_uid ~proc_name ~analysis_summary ~report_summary ->
+    fun ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata ->
       let proc_uid_hash = String.hash proc_uid in
       IntHash.find_opt specs_overwrite_counts proc_uid_hash
       |> Option.value_map ~default:0 ~f:(( + ) 1)
@@ -285,7 +286,7 @@ module Implementation = struct
       |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
       Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
           Sqlite3.bind_values store_stmt
-            [Sqlite3.Data.TEXT proc_uid; proc_name; analysis_summary; report_summary]
+            [Sqlite3.Data.TEXT proc_uid; proc_name; report_summary; summary_metadata; payloads]
           |> SqliteUtils.check_result_code db ~log:"store spec bind_values" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
 
@@ -315,8 +316,9 @@ module Command = struct
     | StoreSpec of
         { proc_uid: string
         ; proc_name: Sqlite3.Data.t
-        ; analysis_summary: Sqlite3.Data.t
-        ; report_summary: Sqlite3.Data.t }
+        ; payloads: Sqlite3.Data.t
+        ; report_summary: Sqlite3.Data.t
+        ; summary_metadata: Sqlite3.Data.t }
     | ReplaceAttributes of
         { proc_uid: string
         ; proc_attributes: Sqlite3.Data.t
@@ -380,8 +382,8 @@ module Command = struct
         Implementation.shrink_analysis_db ()
     | StoreIssueLog {checker; source_file; issue_log} ->
         Implementation.store_issue_log ~checker ~source_file ~issue_log
-    | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
-        Implementation.store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary
+    | StoreSpec {proc_uid; proc_name; payloads; report_summary; summary_metadata} ->
+        Implementation.store_spec ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata
     | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis} ->
         Implementation.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis
     | ResetCaptureTables ->
@@ -554,5 +556,5 @@ let store_issue_log ~checker ~source_file ~issue_log =
   perform (StoreIssueLog {checker; source_file; issue_log})
 
 
-let store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary =
-  perform (StoreSpec {proc_uid; proc_name; analysis_summary; report_summary})
+let store_spec ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata =
+  perform (StoreSpec {proc_uid; proc_name; payloads; report_summary; summary_metadata})

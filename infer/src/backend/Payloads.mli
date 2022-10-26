@@ -39,3 +39,5 @@ end
 val pp : Pp.env -> Format.formatter -> t -> unit
 
 val empty : t
+
+module SQLite : SqliteUtils.Data with type t = t

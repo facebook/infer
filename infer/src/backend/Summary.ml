@@ -119,20 +119,12 @@ module ReportSummary = struct
   end)
 end
 
-module AnalysisSummary = struct
-  type t =
-    { payloads: Payloads.t
-    ; sessions: int
-    ; stats: Stats.t
-    ; proc_desc: Procdesc.t
-    ; callee_pnames: Procname.Set.t }
+module SummaryMetadata = struct
+  type t = {sessions: int; stats: Stats.t; proc_desc: Procdesc.t; callee_pnames: Procname.Set.t}
+  [@@deriving fields]
 
   let of_full_summary (f : full_summary) : t =
-    { payloads= f.payloads
-    ; sessions= f.sessions
-    ; stats= f.stats
-    ; proc_desc= f.proc_desc
-    ; callee_pnames= f.callee_pnames }
+    {sessions= f.sessions; stats= f.stats; proc_desc= f.proc_desc; callee_pnames= f.callee_pnames}
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -140,13 +132,13 @@ module AnalysisSummary = struct
   end)
 end
 
-let mk_full_summary (report_summary : ReportSummary.t) (analysis_summary : AnalysisSummary.t) :
-    full_summary =
-  { payloads= analysis_summary.payloads
-  ; sessions= analysis_summary.sessions
-  ; stats= analysis_summary.stats
-  ; proc_desc= analysis_summary.proc_desc
-  ; callee_pnames= analysis_summary.callee_pnames
+let mk_full_summary payloads (report_summary : ReportSummary.t)
+    (summary_metadata : SummaryMetadata.t) : full_summary =
+  { payloads
+  ; sessions= summary_metadata.sessions
+  ; stats= summary_metadata.stats
+  ; proc_desc= summary_metadata.proc_desc
+  ; callee_pnames= summary_metadata.callee_pnames
   ; err_log= report_summary.err_log }
 
 
@@ -169,7 +161,7 @@ module OnDisk = struct
   let spec_of_procname, spec_of_model =
     let mk_load_stmt table =
       Database.register_statement AnalysisDatabase
-        "SELECT analysis_summary, report_summary FROM %s WHERE proc_uid = :k"
+        "SELECT report_summary, summary_metadata, payloads FROM %s WHERE proc_uid = :k"
         (Database.string_of_analysis_table table)
     in
     let load_spec ~load_statement proc_name =
@@ -178,9 +170,10 @@ module OnDisk = struct
           |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
           SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
             ~read_row:(fun stmt ->
-              let analysis_summary = Sqlite3.column stmt 0 |> AnalysisSummary.SQLite.deserialize in
-              let report_summary = Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize in
-              mk_full_summary report_summary analysis_summary ) )
+              let report_summary = Sqlite3.column stmt 0 |> ReportSummary.SQLite.deserialize in
+              let summary_metadata = Sqlite3.column stmt 1 |> SummaryMetadata.SQLite.deserialize in
+              let payloads = Sqlite3.column stmt 2 |> Payloads.SQLite.deserialize in
+              mk_full_summary payloads report_summary summary_metadata ) )
     in
     let spec_of_procname =
       let table = Database.Specs in
@@ -234,12 +227,13 @@ module OnDisk = struct
     let proc_name = get_proc_name summary in
     (* Make sure the summary in memory is identical to the saved one *)
     add proc_name summary ;
-    let analysis_summary = AnalysisSummary.of_full_summary summary in
     let report_summary = ReportSummary.of_full_summary summary in
+    let summary_metadata = SummaryMetadata.of_full_summary summary in
     DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
       ~proc_name:(Procname.SQLite.serialize proc_name)
-      ~analysis_summary:(AnalysisSummary.SQLite.serialize analysis_summary)
+      ~payloads:(Payloads.SQLite.serialize summary.payloads)
       ~report_summary:(ReportSummary.SQLite.serialize report_summary)
+      ~summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata)
 
 
   let reset proc_desc =
@@ -267,14 +261,16 @@ module OnDisk = struct
     let dummy_source_file = SourceFile.invalid __FILE__ in
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
     Sqlite3.prepare db
-      "SELECT proc_name, analysis_summary, report_summary FROM specs ORDER BY proc_uid ASC"
+      "SELECT proc_name, report_summary, summary_metadata, payloads FROM specs ORDER BY proc_uid \
+       ASC"
     |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
          ~f:(fun stmt ->
            let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
            if filter dummy_source_file proc_name then
-             let analysis_summary = Sqlite3.column stmt 1 |> AnalysisSummary.SQLite.deserialize in
-             let report_summary = Sqlite3.column stmt 2 |> ReportSummary.SQLite.deserialize in
-             let spec = mk_full_summary report_summary analysis_summary in
+             let report_summary = Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize in
+             let summary_metadata = Sqlite3.column stmt 2 |> SummaryMetadata.SQLite.deserialize in
+             let payloads = Sqlite3.column stmt 3 |> Payloads.SQLite.deserialize in
+             let spec = mk_full_summary payloads report_summary summary_metadata in
              f spec )
 
 
