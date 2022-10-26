@@ -41,19 +41,13 @@ module Stats = struct
     F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt failure_kind symops
 end
 
-include struct
-  (* ignore dead modules added by @@deriving fields *)
-  [@@@warning "-60"]
-
-  type t =
-    { payloads: Payloads.t
-    ; mutable sessions: int
-    ; stats: Stats.t
-    ; proc_desc: Procdesc.t
-    ; err_log: Errlog.t
-    ; mutable callee_pnames: Procname.Set.t }
-  [@@deriving fields]
-end
+type t =
+  { payloads: Payloads.t
+  ; mutable sessions: int
+  ; stats: Stats.t
+  ; proc_desc: Procdesc.t
+  ; err_log: Errlog.t
+  ; mutable callee_pnames: Procname.Set.t }
 
 let yojson_of_t {proc_desc; payloads} =
   [%yojson_of: Procname.t * Payloads.t] (Procdesc.get_proc_name proc_desc, payloads)
@@ -126,18 +120,12 @@ module ReportSummary = struct
 end
 
 module AnalysisSummary = struct
-  include struct
-    (* ignore dead modules added by @@deriving fields *)
-    [@@@warning "-60"]
-
-    type t =
-      { payloads: Payloads.t
-      ; mutable sessions: int
-      ; stats: Stats.t
-      ; proc_desc: Procdesc.t
-      ; mutable callee_pnames: Procname.Set.t }
-    [@@deriving fields]
-  end
+  type t =
+    { payloads: Payloads.t
+    ; sessions: int
+    ; stats: Stats.t
+    ; proc_desc: Procdesc.t
+    ; callee_pnames: Procname.Set.t }
 
   let of_full_summary (f : full_summary) : t =
     { payloads= f.payloads
