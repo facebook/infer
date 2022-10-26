@@ -11,7 +11,9 @@ INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
 --function-pointer-specialization \
 --report-suppress-errors SENSITIVE_DATA_FLOW --report-suppress-errors DATA_FLOW_TO_SINK \
 --pulse-taint-config ../.infertaintconfig --pulse-taint-config taint/.infertaintconfig \
---dynamic-dispatch-json-file-path taint/dispatch.json
+--dynamic-dispatch-json-file-path taint/dispatch.json \
+--pulse-model-return-first-arg "release\\|.*release:\\|release_fst\\|ModelClass.bridge:" \
+--pulse-model-return-this "ModelClass.initWith:"
 
 INFERPRINT_OPTIONS = --issues-tests
 

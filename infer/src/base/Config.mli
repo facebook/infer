@@ -570,6 +570,8 @@ val pulse_model_returns_copy_pattern : Str.regexp option
 
 val pulse_model_return_first_arg : Str.regexp option
 
+val pulse_model_return_this : Str.regexp option
+
 val pulse_model_return_nonnull : Str.regexp option
 
 val pulse_model_skip_pattern : Str.regexp option

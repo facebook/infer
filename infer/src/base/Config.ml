@@ -2252,7 +2252,15 @@ and pulse_model_return_nonnull =
 and pulse_model_return_first_arg =
   CLOpt.mk_string_opt ~long:"pulse-model-return-first-arg"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Regex of methods that should be modelled as returning the first argument in Pulse"
+    "Regex of methods that should be modelled as returning the first argument in Pulse in terms of \
+     the source language semantics. Languages supported: Java, C, Objective-C"
+
+
+and pulse_model_return_this =
+  CLOpt.mk_string_opt ~long:"pulse-model-return-this"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as returning the `this` or `self` argument of an \
+     instance method in Pulse. Languages supported: Java, Objective-C"
 
 
 and pulse_model_skip_pattern =
@@ -3782,6 +3790,8 @@ and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_
 and pulse_model_returns_copy_pattern = Option.map ~f:Str.regexp !pulse_model_returns_copy_pattern
 
 and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_first_arg
+
+and pulse_model_return_this = Option.map ~f:Str.regexp !pulse_model_return_this
 
 and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_nonnull
 
