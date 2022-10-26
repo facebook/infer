@@ -24,13 +24,14 @@ let iter_critical_pairs_of_summary f summary =
 
 let iter_critical_pairs_of_scheduled_work f (work_item : Domain.ScheduledWorkItem.t) =
   Summary.OnDisk.get work_item.procname
-  |> Option.bind ~f:(fun (summary : Summary.t) -> summary.payloads.starvation)
+  |> Option.bind ~f:(fun (summary : Summary.t) -> Lazy.force summary.payloads.starvation)
   |> Option.iter ~f:(iter_critical_pairs_of_summary (iter_scheduled_pair work_item f))
 
 
 let iter_summary ~f exe_env (summary : Summary.t) =
   let open Domain in
   Payloads.starvation summary.payloads
+  |> Lazy.force
   |> Option.iter ~f:(fun (payload : summary) ->
          let pname = Summary.get_proc_name summary in
          let tenv = Exe_env.get_proc_tenv exe_env pname in
@@ -72,7 +73,8 @@ let report exe_env work_set =
              Starvation.report_on_pair
                ~analyze_ondemand:(fun pname ->
                  Ondemand.analyze_proc_name exe_env ~caller_summary:summary pname
-                 |> Option.bind ~f:(fun summary -> summary.Summary.payloads.starvation) )
+                 |> Option.bind ~f:(fun summary -> Lazy.force summary.Summary.payloads.starvation)
+                 )
                tenv pattrs pair acc
            in
            Event.get_acquired_locks pair.elem.event

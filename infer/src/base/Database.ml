@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 
 type id = CaptureDatabase | AnalysisDatabase
@@ -56,10 +57,13 @@ let specs_schema table prefix =
         , proc_name BLOB NOT NULL
         , report_summary BLOB NOT NULL
         , summary_metadata BLOB
-        , payloads BLOB
+        , %s
         )
     |}
     prefix (string_of_analysis_table table)
+    (F.asprintf "%a"
+       (Pp.seq ~sep:", " (fun fmt payload_name -> F.fprintf fmt "%s BLOB" payload_name))
+       PayloadId.database_fields )
 
 
 let issues_schema prefix =

@@ -109,8 +109,8 @@ module ReportSummary = struct
 
   let of_full_summary (f : full_summary) : t =
     { loc= get_loc f
-    ; cost_opt= f.payloads.Payloads.cost
-    ; config_impact_opt= f.payloads.Payloads.config_impact_analysis
+    ; cost_opt= Lazy.force f.payloads.Payloads.cost
+    ; config_impact_opt= Lazy.force f.payloads.Payloads.config_impact_analysis
     ; err_log= f.err_log }
 
 
@@ -161,18 +161,19 @@ module OnDisk = struct
   let spec_of_procname, spec_of_model =
     let mk_load_stmt table =
       Database.register_statement AnalysisDatabase
-        "SELECT report_summary, summary_metadata, payloads FROM %s WHERE proc_uid = :k"
+        "SELECT rowid, report_summary, summary_metadata FROM %s WHERE proc_uid = :k"
         (Database.string_of_analysis_table table)
     in
-    let load_spec ~load_statement proc_name =
+    let load_spec ~load_statement table proc_name =
       Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
           Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
           |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
           SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
             ~read_row:(fun stmt ->
-              let report_summary = Sqlite3.column stmt 0 |> ReportSummary.SQLite.deserialize in
-              let summary_metadata = Sqlite3.column stmt 1 |> SummaryMetadata.SQLite.deserialize in
-              let payloads = Sqlite3.column stmt 2 |> Payloads.SQLite.deserialize in
+              let rowid = Sqlite3.column_int64 stmt 0 in
+              let report_summary = Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize in
+              let summary_metadata = Sqlite3.column stmt 2 |> SummaryMetadata.SQLite.deserialize in
+              let payloads = Payloads.SQLite.lazy_load table ~rowid in
               mk_full_summary payloads report_summary summary_metadata ) )
     in
     let spec_of_procname =
@@ -180,14 +181,14 @@ module OnDisk = struct
       let load_statement = mk_load_stmt table in
       fun proc_name ->
         BStats.incr_summary_file_try_load () ;
-        let opt = load_spec ~load_statement proc_name in
+        let opt = load_spec ~load_statement table proc_name in
         if Option.is_some opt then BStats.incr_summary_read_from_disk () ;
         opt
     in
     let spec_of_model =
       let table = Database.BiabductionModelsSpecs in
       let load_statement = mk_load_stmt table in
-      fun proc_name -> load_spec ~load_statement proc_name
+      fun proc_name -> load_spec ~load_statement table proc_name
     in
     (spec_of_procname, spec_of_model)
 
@@ -261,15 +262,19 @@ module OnDisk = struct
     let dummy_source_file = SourceFile.invalid __FILE__ in
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
     Sqlite3.prepare db
-      "SELECT proc_name, report_summary, summary_metadata, payloads FROM specs ORDER BY proc_uid \
-       ASC"
+      {|
+      SELECT rowid, proc_name, report_summary, summary_metadata
+      FROM specs
+      ORDER BY proc_uid ASC
+      |}
     |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
          ~f:(fun stmt ->
-           let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
+           let proc_name = Sqlite3.column stmt 1 |> Procname.SQLite.deserialize in
            if filter dummy_source_file proc_name then
-             let report_summary = Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize in
-             let summary_metadata = Sqlite3.column stmt 2 |> SummaryMetadata.SQLite.deserialize in
-             let payloads = Sqlite3.column stmt 3 |> Payloads.SQLite.deserialize in
+             let rowid = Sqlite3.column_int64 stmt 0 in
+             let report_summary = Sqlite3.column stmt 2 |> ReportSummary.SQLite.deserialize in
+             let summary_metadata = Sqlite3.column stmt 3 |> SummaryMetadata.SQLite.deserialize in
+             let payloads = Payloads.SQLite.lazy_load Specs ~rowid in
              let spec = mk_full_summary payloads report_summary summary_metadata in
              f spec )
 

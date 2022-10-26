@@ -9,37 +9,38 @@ open! IStd
 module F = Format
 
 type t =
-  { annot_map: AnnotationReachabilityDomain.t option
-  ; biabduction: BiabductionSummary.t option
-  ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option
-  ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option
-  ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option
-  ; cost: CostDomain.summary option
-  ; disjunctive_demo: DisjunctiveDemo.domain option
-  ; dotnet_resource_leaks: ResourceLeakCSDomain.summary option
-  ; lab_resource_leaks: ResourceLeakDomain.summary option
-  ; litho_required_props: LithoDomain.summary option
-  ; pulse: PulseSummary.t option
-  ; purity: PurityDomain.summary option
-  ; quandary: QuandarySummary.t option
-  ; racerd: RacerDDomain.summary option
-  ; siof: SiofDomain.Summary.t option
-  ; simple_lineage: SimpleLineage.Summary.t option
-  ; simple_shape: SimpleShape.Summary.t option
-  ; starvation: StarvationDomain.summary option
-  ; nullsafe: NullsafeSummary.t option
-  ; uninit: UninitDomain.Summary.t option }
+  { annot_map: AnnotationReachabilityDomain.t option Lazy.t
+  ; biabduction: BiabductionSummary.t option Lazy.t
+  ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t option Lazy.t
+  ; buffer_overrun_checker: BufferOverrunCheckerSummary.t option Lazy.t
+  ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option Lazy.t
+  ; cost: CostDomain.summary option Lazy.t
+  ; disjunctive_demo: DisjunctiveDemo.domain option Lazy.t
+  ; dotnet_resource_leaks: ResourceLeakCSDomain.summary option Lazy.t
+  ; lab_resource_leaks: ResourceLeakDomain.summary option Lazy.t
+  ; litho_required_props: LithoDomain.summary option Lazy.t
+  ; pulse: PulseSummary.t option Lazy.t
+  ; purity: PurityDomain.summary option Lazy.t
+  ; quandary: QuandarySummary.t option Lazy.t
+  ; racerd: RacerDDomain.summary option Lazy.t
+  ; siof: SiofDomain.Summary.t option Lazy.t
+  ; simple_lineage: SimpleLineage.Summary.t option Lazy.t
+  ; simple_shape: SimpleShape.Summary.t option Lazy.t
+  ; starvation: StarvationDomain.summary option Lazy.t
+  ; nullsafe: NullsafeSummary.t option Lazy.t
+  ; uninit: UninitDomain.Summary.t option Lazy.t }
 [@@deriving fields]
 
 let yojson_of_t {pulse} =
-  [%yojson_of: (string * PulseSummary.t option) list] [(Checker.get_id Pulse, pulse)]
+  [%yojson_of: (string * PulseSummary.t option) list] [(Checker.get_id Pulse, Lazy.force pulse)]
 
 
 type 'a pp = Pp.env -> F.formatter -> 'a -> unit
 
-type field = F : {field: (t, 'a option) Field.t; payload_id: PayloadId.t; pp: 'a pp} -> field
+type field =
+  | F : {field: (t, 'a option Lazy.t) Field.t; payload_id: PayloadId.t; pp: 'a pp} -> field
 
-let fields =
+let all_fields =
   let mk_pe field payload_id pp = F {field; payload_id; pp} in
   let mk field payload_id pp = mk_pe field payload_id (fun _ -> pp) in
   Fields.to_list
@@ -63,38 +64,120 @@ let fields =
     ~starvation:(fun f -> mk f Starvation StarvationDomain.pp_summary)
     ~nullsafe:(fun f -> mk f Nullsafe NullsafeSummary.pp)
     ~uninit:(fun f -> mk f Uninit UninitDomain.Summary.pp)
+  (* sorted to help serialization, see {!SQLite.serialize} below *)
+  |> List.sort ~compare:(fun (F {payload_id= payload_id1}) (F {payload_id= payload_id2}) ->
+         Int.compare
+           (PayloadId.Variants.to_rank payload_id1)
+           (PayloadId.Variants.to_rank payload_id2) )
 
 
 let pp pe f payloads =
-  List.iter fields ~f:(fun (F {field; payload_id; pp}) ->
-      Field.get field payloads
+  List.iter all_fields ~f:(fun (F {field; payload_id; pp}) ->
+      Field.get field payloads |> Lazy.force
       |> Option.iter ~f:(fun x ->
              F.fprintf f "%s: %a@\n" (PayloadId.Variants.to_name payload_id) (pp pe) x ) )
 
 
 let empty =
-  { annot_map= None
-  ; biabduction= None
-  ; buffer_overrun_analysis= None
-  ; buffer_overrun_checker= None
-  ; config_impact_analysis= None
-  ; cost= None
-  ; disjunctive_demo= None
-  ; dotnet_resource_leaks= None
-  ; lab_resource_leaks= None
-  ; litho_required_props= None
-  ; pulse= None
-  ; purity= None
-  ; quandary= None
-  ; racerd= None
-  ; siof= None
-  ; simple_lineage= None
-  ; simple_shape= None
-  ; starvation= None
-  ; nullsafe= None
-  ; uninit= None }
+  let no_payload = Lazy.from_val None in
+  { annot_map= no_payload
+  ; biabduction= no_payload
+  ; buffer_overrun_analysis= no_payload
+  ; buffer_overrun_checker= no_payload
+  ; config_impact_analysis= no_payload
+  ; cost= no_payload
+  ; disjunctive_demo= no_payload
+  ; dotnet_resource_leaks= no_payload
+  ; lab_resource_leaks= no_payload
+  ; litho_required_props= no_payload
+  ; pulse= no_payload
+  ; purity= no_payload
+  ; quandary= no_payload
+  ; racerd= no_payload
+  ; siof= no_payload
+  ; simple_lineage= no_payload
+  ; simple_shape= no_payload
+  ; starvation= no_payload
+  ; nullsafe= no_payload
+  ; uninit= no_payload }
 
 
-module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
-  type nonrec t = t
-end)
+module SQLite = struct
+  (** Each payload is stored in the DB as either [NULL] for the absence of payload, or the payload
+      itself. We cannot give a good type to this function because it deserializes several payload
+      types. *)
+  let deserialize_payload_opt = function[@warning "-8"]
+    | Sqlite3.Data.NULL ->
+        None
+    | Sqlite3.Data.BLOB blob ->
+        Some (Marshal.from_string blob 0)
+
+
+  (** serialize a payload into the format described in {!deserialize_payload_opt} above *)
+  let serialize_payload_opt payload_opt =
+    match Lazy.force payload_opt with
+    | None ->
+        Sqlite3.Data.NULL
+    | Some payload ->
+        Sqlite3.Data.BLOB (Marshal.to_string payload [])
+
+
+  let serialize payloads =
+    (* use [all_fields] to serialize in rank order so the column names (declared in {!Database})
+       match the payloads *)
+    List.map all_fields ~f:(fun (F {field}) -> Field.get field payloads |> serialize_payload_opt)
+
+
+  (** SQLite statements to load a payload from either analysis table *)
+  type load_statements =
+    {specs: Database.registered_stmt; model_specs: Database.registered_stmt; name: string}
+
+  (** all possible load statements for each payload type and analysis table, in a rank-indexed array *)
+  let all_load_statements =
+    let mk_load_statements payload_id =
+      let for_table table =
+        Database.register_statement AnalysisDatabase "SELECT %s FROM %s WHERE rowid = :k" payload_id
+          (Database.string_of_analysis_table table)
+      in
+      {specs= for_table Specs; model_specs= for_table BiabductionModelsSpecs; name= payload_id}
+    in
+    List.map PayloadId.database_fields ~f:mk_load_statements |> Array.of_list
+
+
+  let get_load_statement (table : Database.analysis_table) payload_id =
+    let {specs; model_specs} = all_load_statements.(PayloadId.Variants.to_rank payload_id) in
+    match table with Specs -> specs | BiabductionModelsSpecs -> model_specs
+
+
+  let load table ~rowid payload_id =
+    let load_statement = get_load_statement table payload_id in
+    Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
+        Sqlite3.bind_int64 load_stmt 1 rowid
+        |> SqliteUtils.check_result_code db ~log:"load payloads bind rowid" ;
+        SqliteUtils.result_option ~finalize:false db ~log:"load payloads exec" load_stmt
+          ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> deserialize_payload_opt) )
+    |> Option.join
+
+
+  let lazy_load table ~rowid =
+    { annot_map= lazy (load table ~rowid AnnotMap)
+    ; biabduction= lazy (load table ~rowid Biabduction)
+    ; buffer_overrun_analysis= lazy (load table ~rowid BufferOverrunAnalysis)
+    ; buffer_overrun_checker= lazy (load table ~rowid BufferOverrunChecker)
+    ; config_impact_analysis= lazy (load table ~rowid ConfigImpactAnalysis)
+    ; cost= lazy (load table ~rowid Cost)
+    ; disjunctive_demo= lazy (load table ~rowid DisjunctiveDemo)
+    ; dotnet_resource_leaks= lazy (load table ~rowid DotnetResourceLeaks)
+    ; lab_resource_leaks= lazy (load table ~rowid LabResourceLeaks)
+    ; litho_required_props= lazy (load table ~rowid LithoRequiredProps)
+    ; pulse= lazy (load table ~rowid Pulse)
+    ; purity= lazy (load table ~rowid Purity)
+    ; quandary= lazy (load table ~rowid Quandary)
+    ; racerd= lazy (load table ~rowid RacerD)
+    ; siof= lazy (load table ~rowid SIOF)
+    ; simple_lineage= lazy (load table ~rowid SimpleLineage)
+    ; simple_shape= lazy (load table ~rowid SimpleShape)
+    ; starvation= lazy (load table ~rowid Starvation)
+    ; nullsafe= lazy (load table ~rowid Nullsafe)
+    ; uninit= lazy (load table ~rowid Uninit) }
+end

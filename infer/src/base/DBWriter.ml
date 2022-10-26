@@ -239,7 +239,11 @@ module Implementation = struct
   let shrink_analysis_db () =
     let db = Database.get_database AnalysisDatabase in
     SqliteUtils.exec db ~log:"nullify analysis summaries"
-      ~stmt:"UPDATE specs SET summary_metadata=NULL, payloads=NULL" ;
+      ~stmt:
+        (Printf.sprintf "UPDATE specs SET summary_metadata=NULL, %s"
+           (F.asprintf "%a"
+              (Pp.seq ~sep:", " (fun fmt payload_name -> F.fprintf fmt "%s=NULL" payload_name))
+              PayloadId.database_fields ) ) ;
     SqliteUtils.exec db ~log:"vacuum analysis database" ~stmt:"VACUUM"
 
 
@@ -275,8 +279,11 @@ module Implementation = struct
       Database.register_statement AnalysisDatabase
         {|
           INSERT OR REPLACE INTO specs
-          VALUES (:proc_uid, :proc_name, :report_summary, :summary_metadata, :payloads)
+          VALUES (:proc_uid, :proc_name, :report_summary, :summary_metadata, %s)
         |}
+        (F.asprintf "%a"
+           (Pp.seq ~sep:", " (fun fmt payload_name -> F.fprintf fmt ":%s" payload_name))
+           PayloadId.database_fields )
     in
     fun ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata ->
       let proc_uid_hash = String.hash proc_uid in
@@ -286,7 +293,8 @@ module Implementation = struct
       |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
       Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
           Sqlite3.bind_values store_stmt
-            [Sqlite3.Data.TEXT proc_uid; proc_name; report_summary; summary_metadata; payloads]
+            ( Sqlite3.Data.TEXT proc_uid :: proc_name :: report_summary :: summary_metadata
+            :: payloads )
           |> SqliteUtils.check_result_code db ~log:"store spec bind_values" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
 
@@ -316,7 +324,7 @@ module Command = struct
     | StoreSpec of
         { proc_uid: string
         ; proc_name: Sqlite3.Data.t
-        ; payloads: Sqlite3.Data.t
+        ; payloads: Sqlite3.Data.t list
         ; report_summary: Sqlite3.Data.t
         ; summary_metadata: Sqlite3.Data.t }
     | ReplaceAttributes of

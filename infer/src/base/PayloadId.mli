@@ -29,3 +29,5 @@ type t =
   | Nullsafe
   | Uninit
 [@@deriving variants]
+
+val database_fields : string list

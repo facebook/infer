@@ -29,3 +29,5 @@ type t =
   | Nullsafe
   | Uninit
 [@@deriving variants]
+
+let database_fields = List.map ~f:fst Variants.descriptions

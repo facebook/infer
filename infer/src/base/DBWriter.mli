@@ -58,7 +58,7 @@ val store_issue_log :
 val store_spec :
      proc_uid:string
   -> proc_name:Sqlite3.Data.t
-  -> payloads:Sqlite3.Data.t
+  -> payloads:Sqlite3.Data.t list
   -> report_summary:Sqlite3.Data.t
   -> summary_metadata:Sqlite3.Data.t
   -> unit
