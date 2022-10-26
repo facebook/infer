@@ -97,6 +97,10 @@ module MakeDisjunctive
 module type TransferFunctionsWithExceptions = sig
   include TransferFunctions.SIL
 
+  val join_all : Domain.t list -> into:Domain.t option -> Domain.t option
+  (** Joins the abstract states from predecessors. It returns [None] when the given list is empty
+      and [into] is [None]. *)
+
   val filter_normal : Domain.t -> Domain.t
   (** Refines the abstract state to select non-exceptional concrete states. Should return bottom if
       no such states exist *)

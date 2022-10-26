@@ -38,8 +38,8 @@ N_disjuncts = 4
 three_branch:
   3 disjuncts:
   #0: 0
-  #1: 1
-  #2: 2
+  #1: 2
+  #2: 1
   
   Non-disj state: ⊥
 two_branch:
@@ -51,16 +51,16 @@ two_branch:
 four_branch:
   4 disjuncts:
   #0: 0
-  #1: 1
-  #2: 2
+  #1: 2
+  #2: 1
   #3: 3
   
   Non-disj state: ⊥
 sequence:
   4 disjuncts:
   #0: two_branch0.0.three_branch1.0.four_branch3.0
-  #1: two_branch0.0.three_branch1.0.four_branch3.1
-  #2: two_branch0.0.three_branch1.0.four_branch3.2
+  #1: two_branch0.0.three_branch1.0.four_branch3.2
+  #2: two_branch0.0.three_branch1.0.four_branch3.1
   #3: two_branch0.0.three_branch1.0.four_branch3.3
   
   Non-disj state: ⊥
@@ -81,8 +81,8 @@ N_disjuncts = 10
 three_branch:
   3 disjuncts:
   #0: 0
-  #1: 1
-  #2: 2
+  #1: 2
+  #2: 1
   
   Non-disj state: ⊥
 two_branch:
@@ -94,23 +94,23 @@ two_branch:
 four_branch:
   4 disjuncts:
   #0: 0
-  #1: 1
-  #2: 2
+  #1: 2
+  #2: 1
   #3: 3
   
   Non-disj state: ⊥
 sequence:
   10 disjuncts:
   #0: two_branch0.0.three_branch1.0.four_branch3.0
-  #1: two_branch0.0.three_branch1.0.four_branch3.1
-  #2: two_branch0.0.three_branch1.0.four_branch3.2
+  #1: two_branch0.0.three_branch1.0.four_branch3.2
+  #2: two_branch0.0.three_branch1.0.four_branch3.1
   #3: two_branch0.0.three_branch1.0.four_branch3.3
-  #4: two_branch0.0.three_branch1.1.four_branch4.0
-  #5: two_branch0.0.three_branch1.1.four_branch4.1
-  #6: two_branch0.0.three_branch1.1.four_branch4.2
-  #7: two_branch0.0.three_branch1.1.four_branch4.3
-  #8: two_branch0.0.three_branch1.2.four_branch5.0
-  #9: two_branch0.0.three_branch1.2.four_branch5.1
+  #4: two_branch0.0.three_branch1.2.four_branch4.0
+  #5: two_branch0.0.three_branch1.2.four_branch4.2
+  #6: two_branch0.0.three_branch1.2.four_branch4.1
+  #7: two_branch0.0.three_branch1.2.four_branch4.3
+  #8: two_branch0.0.three_branch1.1.four_branch5.0
+  #9: two_branch0.0.three_branch1.1.four_branch5.2
   
   Non-disj state: ⊥
 loop:
