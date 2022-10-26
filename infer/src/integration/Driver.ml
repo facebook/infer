@@ -31,7 +31,7 @@ type mode =
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {args: string list}
-  | Textual of {file: string}
+  | Textual of {files: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -77,8 +77,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
   | Hackc {args} ->
       F.fprintf fmt "Hackc driver mode:@\nargs = %a" Pp.cli_args args
-  | Textual {file} ->
-      F.fprintf fmt "Textual capture mode:@\nfile = %s" file
+  | Textual {files} ->
+      F.fprintf fmt "Textual capture mode:@\nfiles = %a" Pp.cli_args files
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -182,8 +182,10 @@ let capture ~changed_files mode =
     | Hackc {args} ->
         L.progress "Capturing in hackc mode...@." ;
         Hack.capture ~command:"hackc" ~args
-    | Textual {file} ->
-        TextualParser.capture file
+    | Textual {files} ->
+        L.progress "Capturing in textual mode...@." ;
+        let files = List.map files ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x) in
+        TextualParser.capture files
     | XcodeBuild {prog; args} ->
         L.progress "Capturing in xcodebuild mode...@." ;
         XcodeBuild.capture ~prog ~args
@@ -403,14 +405,14 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
   | [] -> (
     match (Config.clang_compilation_dbs, Config.capture_textual) with
-    | _ :: _, Some _ ->
+    | _ :: _, _ :: _ ->
         L.die UserError "Both --clang-compilation-dbs and --capture-textual are set."
-    | _ :: _, None ->
+    | _ :: _, [] ->
         assert_supported_mode `Clang "clang compilation database" ;
         ClangCompilationDB {db_files= Config.clang_compilation_dbs}
-    | [], Some textual_sil_file ->
-        Textual {file= textual_sil_file}
-    | [], None -> (
+    | [], _ :: _ ->
+        Textual {files= Config.capture_textual}
+    | [], [] -> (
       match (Config.cfg_json, Config.tenv_json) with
       | Some cfg_json, Some tenv_json ->
           JsonSIL {cfg_json; tenv_json}

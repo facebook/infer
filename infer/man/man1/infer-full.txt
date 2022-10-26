@@ -1805,12 +1805,12 @@ INTERNAL OPTIONS
        --capture-doli-reset
            Cancel the effect of --capture-doli.
 
-       --capture-textual path
-           Generate a SIL program from a textual representation given in a
-           .sil file.
+       --capture-textual +path
+           Generate a SIL program from a textual representation given in .sil
+           files.
 
        --capture-textual-reset
-           Cancel the effect of --capture-textual.
+           Set --capture-textual to the empty list.
 
        --no-censor-report-reset
            Set --no-censor-report to the empty list.

@@ -913,8 +913,8 @@ and capture_block_list =
 
 
 and capture_textual =
-  CLOpt.mk_path_opt ~long:"capture-textual" ~meta:"path"
-    "Generate a SIL program from a textual representation given in a .sil file."
+  CLOpt.mk_path_list ~long:"capture-textual" ~meta:"path"
+    "Generate a SIL program from a textual representation given in .sil files."
 
 
 and capture_doli =
@@ -3354,7 +3354,7 @@ and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and capture = !capture
 
-and capture_textual = !capture_textual
+and capture_textual = RevList.to_list !capture_textual
 
 and capture_doli = !capture_doli
 

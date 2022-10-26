@@ -207,7 +207,7 @@ val capture : bool
 
 val capture_block_list : string option
 
-val capture_textual : string option
+val capture_textual : string list
 
 val capture_doli : string option
 
