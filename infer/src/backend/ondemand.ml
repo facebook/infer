@@ -128,6 +128,7 @@ let analyze exe_env callee_summary =
 
 let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
+  let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in
     fun () ->
@@ -143,13 +144,11 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
       Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
-    let proc_name = Procdesc.get_proc_name callee_pdesc in
-    let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
-    update_taskbar (Some proc_name) (Some source_file) ;
+    let source_file = callee_attributes.ProcAttributes.translation_unit in
+    update_taskbar (Some callee_pname) (Some source_file) ;
     Preanal.do_preanalysis exe_env callee_pdesc ;
     if Config.debug_mode then
-      DotCfg.emit_proc_desc (Procdesc.get_attributes callee_pdesc).translation_unit callee_pdesc
-      |> ignore ;
+      DotCfg.emit_proc_desc callee_attributes.translation_unit callee_pdesc |> ignore ;
     let initial_callee_summary = Summary.OnDisk.reset callee_pdesc in
     add_active callee_pname ;
     initial_callee_summary
@@ -179,10 +178,9 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     new_summary
   in
   let initial_callee_summary = preprocess () in
-  let attributes = Procdesc.get_attributes callee_pdesc in
   try
     let callee_summary =
-      if attributes.ProcAttributes.is_defined then analyze exe_env initial_callee_summary
+      if callee_attributes.ProcAttributes.is_defined then analyze exe_env initial_callee_summary
       else initial_callee_summary
     in
     let final_callee_summary = postprocess callee_summary in
@@ -198,8 +196,8 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
             true
         | exn ->
             if not !logged_error then (
-              let source_file = attributes.ProcAttributes.translation_unit in
-              let location = attributes.ProcAttributes.loc in
+              let source_file = callee_attributes.ProcAttributes.translation_unit in
+              let location = callee_attributes.ProcAttributes.loc in
               L.internal_error "While analysing function %a:%a at %a, raised %s@\n" SourceFile.pp
                 source_file Procname.pp callee_pname Location.pp_file_pos location
                 (Exn.to_string exn) ;
