@@ -42,19 +42,23 @@ let source_files_schema prefix =
     prefix
 
 
-let specs_schema prefix =
+type analysis_table = Specs | BiabductionModelsSpecs
+
+let string_of_analysis_table = function Specs -> "specs" | BiabductionModelsSpecs -> "model_specs"
+
+let specs_schema table prefix =
   (* [proc_uid] is meant to only be used with [Procname.to_unique_id]
      [Marshal]ed values must never be used as keys. *)
   Printf.sprintf
     {|
-      CREATE TABLE IF NOT EXISTS %sspecs
+      CREATE TABLE IF NOT EXISTS %s%s
         ( proc_uid TEXT PRIMARY KEY NOT NULL
         , proc_name BLOB NOT NULL
         , analysis_summary BLOB
         , report_summary BLOB NOT NULL
         )
     |}
-    prefix
+    prefix (string_of_analysis_table table)
 
 
 let issues_schema prefix =
@@ -70,14 +74,12 @@ let issues_schema prefix =
     prefix
 
 
-let model_specs_schema prefix = specs_schema (prefix ^ "model_")
-
 let schema_hum =
   String.concat ~sep:";\n"
     [ procedures_schema ""
     ; source_files_schema ""
-    ; specs_schema ""
-    ; model_specs_schema ""
+    ; specs_schema Specs ""
+    ; specs_schema BiabductionModelsSpecs ""
     ; issues_schema "" ]
 
 
@@ -90,8 +92,9 @@ let create_source_files_table ~prefix db =
 
 
 let create_specs_tables ~prefix db =
-  SqliteUtils.exec db ~log:"creating specs table" ~stmt:(specs_schema prefix) ;
-  SqliteUtils.exec db ~log:"creating model specs table" ~stmt:(model_specs_schema prefix) ;
+  SqliteUtils.exec db ~log:"creating specs table" ~stmt:(specs_schema Specs prefix) ;
+  SqliteUtils.exec db ~log:"creating model specs table"
+    ~stmt:(specs_schema BiabductionModelsSpecs prefix) ;
   SqliteUtils.exec db ~log:"creating issue logs table" ~stmt:(issues_schema prefix)
 
 

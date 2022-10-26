@@ -167,28 +167,24 @@ module OnDisk = struct
 
 
   let spec_of_procname, spec_of_model =
-    (* both load queries must agree with these column numbers *)
-    let analysis_summary_column = 0 in
-    let report_summary_column = 1 in
+    let mk_load_stmt table =
+      Database.register_statement AnalysisDatabase
+        "SELECT analysis_summary, report_summary FROM %s WHERE proc_uid = :k"
+        (Database.string_of_analysis_table table)
+    in
     let load_spec ~load_statement proc_name =
       Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
           Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
           |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
           SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
             ~read_row:(fun stmt ->
-              let analysis_summary =
-                Sqlite3.column stmt analysis_summary_column |> AnalysisSummary.SQLite.deserialize
-              in
-              let report_summary =
-                Sqlite3.column stmt report_summary_column |> ReportSummary.SQLite.deserialize
-              in
+              let analysis_summary = Sqlite3.column stmt 0 |> AnalysisSummary.SQLite.deserialize in
+              let report_summary = Sqlite3.column stmt 1 |> ReportSummary.SQLite.deserialize in
               mk_full_summary report_summary analysis_summary ) )
     in
     let spec_of_procname =
-      let load_statement =
-        Database.register_statement AnalysisDatabase
-          "SELECT analysis_summary, report_summary FROM specs WHERE proc_uid = :k"
-      in
+      let table = Database.Specs in
+      let load_statement = mk_load_stmt table in
       fun proc_name ->
         BStats.incr_summary_file_try_load () ;
         let opt = load_spec ~load_statement proc_name in
@@ -196,10 +192,8 @@ module OnDisk = struct
         opt
     in
     let spec_of_model =
-      let load_statement =
-        Database.register_statement AnalysisDatabase
-          "SELECT analysis_summary, report_summary FROM model_specs WHERE proc_uid = :k"
-      in
+      let table = Database.BiabductionModelsSpecs in
+      let load_statement = mk_load_stmt table in
       fun proc_name -> load_spec ~load_statement proc_name
     in
     (spec_of_procname, spec_of_model)
