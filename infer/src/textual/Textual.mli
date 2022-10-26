@@ -202,6 +202,7 @@ module ProcDesc : sig
     ; nodes: Node.t list
     ; start: NodeName.t
     ; params: VarName.t list
+    ; locals: (VarName.t * Typ.t) list
     ; exit_loc: Location.t }
 
   val is_ready_for_to_sil_conversion : t -> bool

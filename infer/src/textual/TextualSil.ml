@@ -607,32 +607,14 @@ module ProcDescBridge = struct
           pp_qualified_procname procdecl.qualified_name
 
 
-  let build_formals_and_locals lang pdesc =
-    let formals = build_formals lang pdesc in
+  let build_locals lang {locals} =
     let make_var_data name typ : ProcAttributes.var_data =
       {name; typ; modify_in_block= false; is_constexpr= false; is_declared_unused= false}
     in
-    let seen_from_formals : Mangled.Set.t =
-      List.fold formals ~init:Mangled.Set.empty ~f:(fun set (name, _, _) ->
-          Mangled.Set.add name set )
-    in
-    let _, locals =
-      List.fold pdesc.nodes ~init:(seen_from_formals, []) ~f:(fun acc (node : Node.t) ->
-          List.fold node.instrs ~init:acc ~f:(fun (seen, locals) (instr : Instr.t) ->
-              match instr with
-              | Store {exp1= Lvar var_name; typ} ->
-                  let name = Mangled.from_string var_name.value in
-                  if Mangled.Set.mem name seen then (seen, locals)
-                  else
-                    let typ = TypBridge.to_sil lang typ in
-                    (Mangled.Set.add name seen, make_var_data name typ :: locals)
-                  (* FIXME: check that we don't miss variables that would be inside other left
-                     values like [Field] or [Index], or wait for adding locals declarations
-                     (see T131910123) *)
-              | Store _ | Load _ | Prune _ | Let _ ->
-                  (seen, locals) ) )
-    in
-    (formals, locals)
+    List.map locals ~f:(fun (var, typ) ->
+        let name = Mangled.from_string var.VarName.value in
+        let typ = TypBridge.to_sil lang typ in
+        make_var_data name typ )
 
 
   let to_sil lang decls_env cfgs ({procdecl; nodes; start; exit_loc} as pdesc) =
@@ -640,7 +622,8 @@ module ProcDescBridge = struct
     let sil_procname = ProcDeclBridge.to_sil lang procdecl in
     let sil_ret_type = TypBridge.to_sil lang procdecl.result_type in
     let definition_loc = LocationBridge.to_sil sourcefile procdecl.qualified_name.name.loc in
-    let formals, locals = build_formals_and_locals lang pdesc in
+    let formals = build_formals lang pdesc in
+    let locals = build_locals lang pdesc in
     let pattributes =
       { (ProcAttributes.default sourcefile sil_procname) with
         is_defined= true
@@ -727,8 +710,13 @@ module ProcDescBridge = struct
     let params =
       List.map (P.get_pvar_formals pdesc) ~f:(fun (pvar, _) -> VarNameBridge.of_pvar Lang.Java pvar)
     in
+    let locals =
+      P.get_locals pdesc
+      |> List.map ~f:(fun ({name; typ} : ProcAttributes.var_data) ->
+             (Mangled.to_string name |> VarName.of_java_name, TypBridge.of_sil typ) )
+    in
     let exit_loc = Location.Unknown in
-    {procdecl; nodes; start; params; exit_loc}
+    {procdecl; nodes; start; params; locals; exit_loc}
 end
 
 module ModuleBridge = struct

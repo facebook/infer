@@ -12,6 +12,7 @@ type node = { val: int; next: *node }
 declare cons(int, *node) : node
 
 define f(x: int, y: float, n: *node) : void {
+  local z: int, u: *int
   #entry:
     n0:int = load &y
     n1:int = load &n[1]
@@ -23,6 +24,8 @@ define f(x: int, y: float, n: *node) : void {
     store &x[1] <- n1:int
     ret n2
   #lab2:
+    store &z <- 1: int
+    store &u <- &z: *int
     jmp
 }
 

@@ -584,14 +584,18 @@ module ProcDesc = struct
     ; nodes: Node.t list
     ; start: NodeName.t
     ; params: VarName.t list
+    ; locals: (VarName.t * Typ.t) list
     ; exit_loc: Location.t }
 
   let is_ready_for_to_sil_conversion {nodes} =
     List.for_all nodes ~f:Node.is_ready_for_to_sil_conversion
 
 
-  let pp fmt {procdecl; nodes; params} =
+  let pp fmt {procdecl; nodes; params; locals} =
     F.fprintf fmt "@[<v 2>define %a {" (ProcDecl.pp_with_params params) procdecl ;
+    let pp_local fmt (var, typ) = F.fprintf fmt "%a: %a" VarName.pp var Typ.pp typ in
+    if not (List.is_empty locals) then
+      F.fprintf fmt "@\n@[<v 4>local %a@]" (pp_list_with_comma pp_local) locals ;
     List.iter ~f:(F.fprintf fmt "%a" Node.pp) nodes ;
     F.fprintf fmt "@]\n}@\n@\n"
 end

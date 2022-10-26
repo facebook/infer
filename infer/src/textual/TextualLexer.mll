@@ -89,6 +89,8 @@ rule main = parse
         { LPAREN }
   | "load"
         { LOAD }
+  | "local"
+        { LOCALKEYWORD }
   | "["
         { LSBRACKET }
   | "null"

@@ -45,6 +45,7 @@
     "global"
     "jmp"
     "load"
+    "local"
     "prune"
     "ret"
     "store"

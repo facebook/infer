@@ -36,6 +36,7 @@
 %token LABRACKET
 %token LBRACKET
 %token LOAD
+%token LOCALKEYWORD
 %token LPAREN
 %token LSBRACKET
 %token NULL
@@ -74,7 +75,7 @@
 %type <Typ.t> typ
 %type <Typ.t> base_typ
 %type <Typ.t * FieldName.t> typed_field
-%type <Typ.t * VarName.t> typed_var
+%type <VarName.t * Typ.t> typed_var
 %type <Instr.t> instruction
 %type <Terminator.t> terminator
 %type <Exp.t> expression
@@ -89,14 +90,14 @@
 %type <NodeName.t list> loption(separated_nonempty_list(COMMA,nname))
 %type <Terminator.node_call list> loption(separated_nonempty_list(COMMA,node_call))
 %type <Typ.t list> loption(separated_nonempty_list(COMMA,typ))
-%type <(Typ.t * VarName.t) list> loption(separated_nonempty_list(COMMA,typed_var))
+%type <(VarName.t * Typ.t) list> loption(separated_nonempty_list(COMMA,typed_var))
 %type <(Typ.t * FieldName.t) list> loption(separated_nonempty_list(SEMICOLON,typed_field))
 %type <Node.t list> nonempty_list(block)
 %type <Exp.t list> separated_nonempty_list(COMMA,expression)
 %type <NodeName.t list> separated_nonempty_list(COMMA,nname)
 %type <Terminator.node_call list> separated_nonempty_list(COMMA,node_call)
 %type <Typ.t list> separated_nonempty_list(COMMA,typ)
-%type <(Typ.t * VarName.t) list> separated_nonempty_list(COMMA,typed_var)
+%type <(VarName.t * Typ.t) list> separated_nonempty_list(COMMA,typed_var)
 %type <(Typ.t * FieldName.t) list> separated_nonempty_list(SEMICOLON,typed_field)
 %type <TypeName.t list> extends
 %type <Attr.t list> list(attribute)
@@ -163,14 +164,19 @@ declaration:
     }
   | DEFINE qualified_name=qualified_pname LPAREN
            params = separated_list(COMMA, typed_var) RPAREN COLON result_type=typ
-                         LBRACKET nodes=block+ RBRACKET
-    { let formals_types = List.map ~f:fst params in
+           LBRACKET locals = locals nodes=block+ RBRACKET
+    { let formals_types = List.map ~f:snd params in
       let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type} in
       let start_node = List.hd_exn nodes in
-      let params = List.map ~f:snd params in
+      let params = List.map ~f:fst params in
       let exit_loc = location_of_pos $endpos in
-      Proc { procdecl; nodes; start= start_node.Node.label; params; exit_loc}
+      Proc { procdecl; nodes; start= start_node.Node.label; params; locals; exit_loc}
     }
+
+locals:
+  | { [] }
+  | LOCALKEYWORD locals=separated_nonempty_list(COMMA, typed_var)
+    { locals }
 
 base_typ:
   | INT
@@ -198,7 +204,7 @@ typed_field:
 
 typed_var:
   | name=vname COLON typ=typ
-    { (typ, name) }
+    { (name, typ) }
 
 typed_ident:
   | id=LOCAL COLON typ=typ
