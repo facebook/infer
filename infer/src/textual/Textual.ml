@@ -9,8 +9,6 @@ open! IStd
 module F = Format
 module L = Logging
 module Hashtbl = Caml.Hashtbl
-module SilProcname = Procname
-module SilPvar = Pvar
 
 exception ToSilTransformationError of (F.formatter -> unit -> unit)
 
@@ -120,20 +118,7 @@ let pp_qualified_procname fmt ({enclosing_class; name} : qualified_procname) =
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
 
-module VarName : sig
-  include NAME
-
-  val of_pvar : Lang.t -> SilPvar.t -> t
-end = struct
-  include Name
-
-  let of_pvar (lang : Lang.t) (pvar : SilPvar.t) =
-    match lang with
-    | Java ->
-        SilPvar.get_name pvar |> Mangled.to_string |> of_java_name
-    | Hack ->
-        L.die UserError "of_pvar conversion is not supported in Hack mode"
-end
+module VarName : NAME = Name
 
 module NodeName : NAME = Name
 

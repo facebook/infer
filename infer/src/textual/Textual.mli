@@ -8,8 +8,6 @@
 open! IStd
 module F = Format
 module Hashtbl = Caml.Hashtbl
-module SilProcname = Procname
-module SilPvar = Pvar
 
 module Lang : sig
   type t = Java | Hack [@@deriving equal]
@@ -43,12 +41,7 @@ end
 
 module ProcName : NAME (* procedure names, without their attachement type *)
 
-module VarName : sig
-  (* variables names *)
-  include NAME
-
-  val of_pvar : Lang.t -> SilPvar.t -> t
-end
+module VarName : NAME (* variables names *)
 
 module FieldName : NAME (* field names, without their enclosing types *)
 

@@ -8,13 +8,15 @@
 open! IStd
 module L = Logging
 module BaseLocation = Location
-module SilTyp = Typ
-module SilIdent = Ident
 module SilConst = Const
-module SilFieldname = Fieldname
-module SilStruct = Struct
 module SilExp = Exp
+module SilFieldname = Fieldname
+module SilIdent = Ident
 module SilProcdesc = Procdesc
+module SilProcname = Procname
+module SilPvar = Pvar
+module SilStruct = Struct
+module SilTyp = Typ
 open Textual
 
 module LocationBridge = struct
@@ -29,6 +31,17 @@ module LocationBridge = struct
 
   let of_sil ({line; col} : BaseLocation.t) =
     if Int.(line = -1 && col = -1) then Known {line; col} else Unknown
+end
+
+module VarNameBridge = struct
+  open VarName
+
+  let of_pvar (lang : Lang.t) (pvar : SilPvar.t) =
+    match lang with
+    | Java ->
+        SilPvar.get_name pvar |> Mangled.to_string |> of_java_name
+    | Hack ->
+        L.die UserError "of_pvar conversion is not supported in Hack mode"
 end
 
 module TypeNameBridge = struct
@@ -294,7 +307,7 @@ module ExpBridge = struct
     | Cast (typ, e) ->
         cast (TypBridge.of_sil typ) (of_sil decls tenv e)
     | Lvar pvar ->
-        let name = VarName.of_pvar Lang.Java pvar in
+        let name = VarNameBridge.of_pvar Lang.Java pvar in
         ( if SilPvar.is_global pvar then
           let typ : Typ.t = Ptr (Struct (TypeNameBridge.of_global_pvar Lang.Java pvar)) in
           let global : Global.t = {name; typ} in
@@ -712,7 +725,7 @@ module ProcDescBridge = struct
     in
     let start = start_node.label in
     let params =
-      List.map (P.get_pvar_formals pdesc) ~f:(fun (pvar, _) -> VarName.of_pvar Lang.Java pvar)
+      List.map (P.get_pvar_formals pdesc) ~f:(fun (pvar, _) -> VarNameBridge.of_pvar Lang.Java pvar)
     in
     let exit_loc = Location.Unknown in
     {procdecl; nodes; start; params; exit_loc}
