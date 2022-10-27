@@ -9,8 +9,6 @@ open! IStd
 module F = Format
 module L = Logging
 module Hashtbl = Caml.Hashtbl
-module SilProcname = Procname
-module SilPvar = Pvar
 
 exception ToSilTransformationError of (F.formatter -> unit -> unit)
 
@@ -120,20 +118,7 @@ let pp_qualified_procname fmt ({enclosing_class; name} : qualified_procname) =
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
 
-module VarName : sig
-  include NAME
-
-  val of_pvar : Lang.t -> SilPvar.t -> t
-end = struct
-  include Name
-
-  let of_pvar (lang : Lang.t) (pvar : SilPvar.t) =
-    match lang with
-    | Java ->
-        SilPvar.get_name pvar |> Mangled.to_string |> of_java_name
-    | Hack ->
-        L.die UserError "of_pvar conversion is not supported in Hack mode"
-end
+module VarName : NAME = Name
 
 module NodeName : NAME = Name
 
@@ -599,14 +584,18 @@ module ProcDesc = struct
     ; nodes: Node.t list
     ; start: NodeName.t
     ; params: VarName.t list
+    ; locals: (VarName.t * Typ.t) list
     ; exit_loc: Location.t }
 
   let is_ready_for_to_sil_conversion {nodes} =
     List.for_all nodes ~f:Node.is_ready_for_to_sil_conversion
 
 
-  let pp fmt {procdecl; nodes; params} =
+  let pp fmt {procdecl; nodes; params; locals} =
     F.fprintf fmt "@[<v 2>define %a {" (ProcDecl.pp_with_params params) procdecl ;
+    let pp_local fmt (var, typ) = F.fprintf fmt "%a: %a" VarName.pp var Typ.pp typ in
+    if not (List.is_empty locals) then
+      F.fprintf fmt "@\n@[<v 4>local %a@]" (pp_list_with_comma pp_local) locals ;
     List.iter ~f:(F.fprintf fmt "%a" Node.pp) nodes ;
     F.fprintf fmt "@]\n}@\n@\n"
 end

@@ -30,11 +30,13 @@ type mode =
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {args: string list}
-  | Textual of {file: string}
+  | Textual of {files: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
 val is_analyze_mode : mode -> bool
+
+val is_compatible_with_textual_generation : mode -> bool
 
 val mode_from_command_line : mode Lazy.t
 (** driver mode computed from the command-line arguments and settings in Config *)

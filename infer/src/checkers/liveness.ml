@@ -239,6 +239,11 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
     Domain.(filter_exceptional astate |> exceptional_to_normal |> join astate_normal)
 
 
+  let join_all astates ~into =
+    List.fold astates ~init:into ~f:(fun acc astate ->
+        Some (Option.value_map acc ~default:astate ~f:(fun acc -> Domain.join acc astate)) )
+
+
   let filter_normal = Domain.filter_normal
 
   let filter_exceptional = Domain.filter_exceptional

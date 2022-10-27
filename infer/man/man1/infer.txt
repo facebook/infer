@@ -1124,11 +1124,17 @@ OPTIONS
 
        --pulse-model-return-first-arg string
            Regex of methods that should be modelled as returning the first
-           argument in Pulse           See also infer-analyze(1).
+           argument in Pulse in terms of the source language semantics.
+           Languages supported: Java, C, Objective-C           See also infer-analyze(1).
 
        --pulse-model-return-nonnull string
            Regex of methods that should be modelled as returning non-null in
            Pulse           See also infer-analyze(1).
+
+       --pulse-model-return-this string
+           Regex of methods that should be modelled as returning the `this`
+           or `self` argument of an instance method in Pulse. Languages
+           supported: Java, Objective-C           See also infer-analyze(1).
 
        --pulse-model-returns-copy-pattern string
            Regex of methods that should be modelled as creating copies in

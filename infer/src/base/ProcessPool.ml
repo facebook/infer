@@ -387,7 +387,7 @@ let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
   | `In_the_child ->
       Unix.close updates_r ;
       Unix.close to_child_w ;
-      (* Pin to a core. [setcore] does the modulo <number of cores> for us. *)
+      (* Pin to a core. [set_best_cpu_for_slot] does the modulo <number of cores> for us. *)
       Utils.set_best_cpu_for slot ;
       ProcessPoolState.in_child := true ;
       ProcessPoolState.reset_pid () ;

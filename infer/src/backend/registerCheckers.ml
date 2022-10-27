@@ -31,7 +31,8 @@ let interprocedural2 payload_field1 payload_field2 checker =
     (CallbackOfChecker.interprocedural
        ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
        ~get_payload:(fun payloads ->
-         (Field.get payload_field1 payloads, Field.get payload_field2 payloads) )
+         ( Field.get payload_field1 payloads |> Lazy.force
+         , Field.get payload_field2 payloads |> Lazy.force ) )
        ~set_payload:(fun payloads payload1 -> Field.fset payload_field1 payloads payload1)
        checker )
 
@@ -42,9 +43,9 @@ let interprocedural3 payload_field1 payload_field2 payload_field3 ~set_payload c
     (CallbackOfChecker.interprocedural
        ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
        ~get_payload:(fun payloads ->
-         ( Field.get payload_field1 payloads
-         , Field.get payload_field2 payloads
-         , Field.get payload_field3 payloads ) )
+         ( Field.get payload_field1 payloads |> Lazy.force
+         , Field.get payload_field2 payloads |> Lazy.force
+         , Field.get payload_field3 payloads |> Lazy.force ) )
        ~set_payload checker )
 
 
@@ -107,7 +108,7 @@ let all_checkers =
     ; callbacks=
         (let hoisting =
            interprocedural3
-             ~set_payload:(fun payloads () ->
+             ~set_payload:(fun payloads (_ : unit Lazy.t) ->
                (* this analysis doesn't produce additional payloads *) payloads )
              Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Payloads.Fields.cost
              Hoisting.checker

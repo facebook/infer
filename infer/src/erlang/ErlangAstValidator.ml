@@ -367,6 +367,6 @@ let validate_form env (form : Ast.form) =
       true
 
 
-let validate env module_ =
-  Logging.debug Capture Verbose "Validating AST@." ;
+let validate (env : (_, _) Env.t) module_ =
+  Logging.debug Capture Verbose "Validating AST of module %s@." env.current_module ;
   List.for_all ~f:(validate_form env) module_

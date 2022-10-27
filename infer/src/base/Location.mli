@@ -17,6 +17,8 @@ type t =
   ; macro_line: int  (** If the location is coming from macro expansion, the line number *) }
 [@@deriving compare, sexp_of, sexp, hash]
 
+val get_macro_file_line_opt : t -> (SourceFile.t * int) option
+
 val equal : t -> t -> bool
 
 val none : SourceFile.t -> t

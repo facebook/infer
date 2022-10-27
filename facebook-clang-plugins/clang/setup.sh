@@ -15,6 +15,7 @@ CLANG_SRC="${CLANG_SRC:-$SCRIPT_DIR/$CLANG_RELATIVE_SRC}"
 CLANG_PREFIX="$SCRIPT_DIR/install"
 CLANG_INSTALLED_VERSION_FILE="$SCRIPT_DIR/installed.version"
 PATCHELF=${PATCHELF:-patchelf}
+PLATFORM=$(uname)
 PLATFORM_ENV=${PLATFORM_ENV:-}
 STRIP=${STRIP:-strip}
 CMAKE=${CMAKE:-cmake}
@@ -156,9 +157,7 @@ if [[ x"$DESTDIR" != x ]]; then
     unset DESTDIR
 fi
 
-platform=`uname`
-
-if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
+if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
     CXXFLAGS="$CXXFLAGS -DHAVE_RPC_XDR_H=0 -D_GLIBCXX_INCLUDE_NEXT_C_HEADERS -Wl,-rpath-link,${PLATFORM_ENV}/lib"
 fi
 
@@ -178,7 +177,7 @@ CMAKE_ARGS=(
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;ARM;Mips"
 )
 
-if [ "$platform" = "Darwin" ]; then
+if [ "$PLATFORM" = "Darwin" ]; then
     CMAKE_ARGS+=(
       -DLLVM_ENABLE_LIBCXX=On
       -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS $CMAKE_SHARED_LINKER_FLAGS"
@@ -190,7 +189,7 @@ else
     )
 fi
 
-if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
+if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
     # Please note that this case only applies to infer/master platform builds
     # Prevent CMAKE from adding -isystem /usr/include for platform builds
     CMAKE_ARGS+=(
@@ -261,7 +260,7 @@ popd # build
 popd # $TMP
 
 # On Linux, copy __config_site to install dirctory. This way we don't need additional -I statements
-if [ "$platform" = "Linux" ]; then
+if [ "$PLATFORM" = "Linux" ]; then
     cp -f "$CLANG_PREFIX/include/x86_64-unknown-linux-gnu/c++/v1/__config_site" "$CLANG_PREFIX/include/c++/v1/__config_site"
 fi
 
@@ -275,7 +274,7 @@ fi
 set +e
 find "$CLANG_PREFIX"/{bin,lib} -type f -exec "$STRIP" -x \{\} \;
 
-if [[ "$platform" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]]; then
+if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]]; then
     # patch binaries to use platform_env rpath, ignore errors
     find "$CLANG_PREFIX"/{bin,lib} -type f -exec "$PATCHELF" --set-rpath "${PLATFORM_ENV}/lib" \{\} \;
 fi

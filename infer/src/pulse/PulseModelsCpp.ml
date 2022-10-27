@@ -505,7 +505,7 @@ module Vector = struct
     astate
 
 
-  let push_back vector ~desc : model =
+  let push_back_common vector ~vector_f ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
     let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
     let<+> astate =
@@ -515,12 +515,21 @@ module Vector = struct
            (a perfect analysis would also make sure we don't exceed the reserved size) *)
         Ok astate
       else
-        (* simulate a re-allocation of the underlying array every time an element is added *)
-        reallocate_internal_array path hist vector PushBack location astate
+        match vector_f with
+        | None ->
+            Ok astate
+        | Some vector_f ->
+            (* simulate a re-allocation of the underlying array every time an element is added *)
+            reallocate_internal_array path hist vector vector_f location astate
     in
     PulseOperations.write_id ret_id
       (fst vector, Hist.add_call path location desc (snd vector))
       astate
+
+
+  let push_back_cpp vector ~vector_f ~desc = push_back_common vector ~vector_f:(Some vector_f) ~desc
+
+  let push_back vector ~desc = push_back_common vector ~vector_f:None ~desc
 end
 
 let get_cpp_matchers config ~model =
@@ -632,7 +641,7 @@ let matchers : matcher list =
   ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
     $+...$--> Vector.invalidate_references Emplace
   ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
-    $+...$--> Vector.invalidate_references EmplaceBack
+    $+...$--> Vector.push_back_cpp ~vector_f:EmplaceBack ~desc:"std::vector::emplace_back()"
   ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
     $+...$--> Vector.invalidate_references Insert
   ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
@@ -642,7 +651,7 @@ let matchers : matcher list =
   ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
     $--> Vector.invalidate_references ShrinkToFit
   ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload
-    $+...$--> Vector.push_back ~desc:"std::vector::push_back()"
+    $+...$--> Vector.push_back_cpp ~vector_f:PushBack ~desc:"std::vector::push_back()"
   ; -"std" &:: "vector" &:: "pop_back" <>$ capt_arg_payload
     $+...$--> Vector.pop_back ~desc:"std::vector::pop_back()"
   ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload

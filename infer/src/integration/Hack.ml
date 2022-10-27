@@ -68,5 +68,8 @@ let capture ~command ~args =
   let result_dir = Filename.temp_dir ~in_dir command "sil" in
   let captured_files = compile Config.hackc_binary result_dir args in
   L.debug Capture Verbose "Translated into %d textual files@." (List.length captured_files) ;
-  List.iter captured_files ~f:(fun (source_path, textual_path) ->
-      TextualParser.capture ~source_path textual_path )
+  let captured_files =
+    List.map captured_files ~f:(fun (source_path, textual_path) ->
+        TextualParser.TextualFile.TranslatedFile {source_path; textual_path} )
+  in
+  TextualParser.capture captured_files

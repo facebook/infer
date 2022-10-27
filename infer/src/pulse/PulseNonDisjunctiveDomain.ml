@@ -68,7 +68,7 @@ module CopySpec = MakeDomainFromTotalOrder (struct
 
   let pp fmt = function
     | Copied {typ; heap; location; from; timestamp} ->
-        Format.fprintf fmt "%a (value of type %a) at %a with heap= %a (timestamp: %d)"
+        Format.fprintf fmt "@[%a (value of type %a) at %a@ with heap= %a@ (timestamp: %d)@]"
           Attribute.CopyOrigin.pp from (Typ.pp Pp.text) typ Location.pp location BaseMemory.pp heap
           (timestamp :> int)
     | Modified ->
@@ -108,8 +108,8 @@ module ParameterSpec = MakeDomainFromTotalOrder (struct
 
   let pp fmt = function
     | Unmodified {typ; heap; location} ->
-        Format.fprintf fmt "const refable (value of type %a) at %a with heap= %a" (Typ.pp Pp.text)
-          typ Location.pp location BaseMemory.pp heap
+        Format.fprintf fmt "@[const refable (value of type %a) at %a@ with heap= %a@]"
+          (Typ.pp Pp.text) typ Location.pp location BaseMemory.pp heap
     | Modified ->
         Format.fprintf fmt "modified"
 end)

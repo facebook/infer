@@ -9,21 +9,18 @@ INFER_OUT ?= infer-out$(TEST_SUFFIX)
 include $(TESTS_DIR)/base.make
 
 SOURCES = $(sort $(wildcard *.sil))
-LOGS = $(patsubst %.sil,%.log,$(SOURCES))
 
-# infer-outs from --capture-textual
-CAPTURE_DIR = capture-outs
+# infer-out from --capture-textual
+CAPTURE_DIR = infer-out-capture
+CAPTURE_CMD = $(patsubst %.sil, --capture-textual %.sil, $(SOURCES))
 
-CLEAN_EXTRA = $(CAPTURE_DIR) *.log
+CLEAN_EXTRA = $(CAPTURE_DIR)
 
-%.log: %.sil $(INFER_BIN)
-	$(INFER_BIN) --quiet --no-progress-bar -o "$(CAPTURE_DIR)/infer-out-$(basename $<)" --capture-textual $< &> $@
+issues.exp.test: $(SOURCES) $(INFER_BIN)
+	$(INFER_BIN) -j 1 --quiet --no-progress-bar -o $(CAPTURE_DIR) $(CAPTURE_CMD) &> $@
 
 .PHONY: compile
-compile: $(LOGS)
-
-issues.exp.test: $(LOGS)
-	cat $^ | awk '{gsub("$(realpath $(shell pwd))", "");print}' > $@
+compile: issues.exp.test
 
 .PHONY: test
 test: issues.exp.test

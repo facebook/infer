@@ -197,6 +197,35 @@ module Basic = struct
     astate
 
 
+  let id_first_arg_from_list ~desc args : model =
+   fun {path; callee_procname; location; ret= ret_id, _} astate ->
+    match args with
+    | _ :: arg :: _
+      when Procname.is_objc_instance_method callee_procname || Procname.is_java callee_procname ->
+        let arg_value, arg_history = arg.ProcnameDispatcher.Call.FuncArg.arg_payload in
+        let ret_value = (arg_value, Hist.add_call path location desc arg_history) in
+        PulseOperations.write_id ret_id ret_value astate |> ok_continue
+    | arg :: _ when Procname.is_c callee_procname || Procname.is_objc_class_method callee_procname
+      ->
+        let arg_value, arg_history = arg.ProcnameDispatcher.Call.FuncArg.arg_payload in
+        let ret_value = (arg_value, Hist.add_call path location desc arg_history) in
+        PulseOperations.write_id ret_id ret_value astate |> ok_continue
+    | _ ->
+        ok_continue astate
+
+
+  let return_this ~desc args : model =
+   fun {path; callee_procname; location; ret= ret_id, _} astate ->
+    match args with
+    | arg :: _
+      when Procname.is_objc_instance_method callee_procname || Procname.is_java callee_procname ->
+        let arg_value, arg_history = arg.ProcnameDispatcher.Call.FuncArg.arg_payload in
+        let ret_value = (arg_value, Hist.add_call path location desc arg_history) in
+        PulseOperations.write_id ret_id ret_value astate |> ok_continue
+    | _ ->
+        ok_continue astate
+
+
   let nondet ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
     PulseOperations.havoc_id ret_id (Hist.single_call path location desc) astate |> ok_continue
@@ -399,11 +428,12 @@ module Basic = struct
     ; +BuiltinDecl.(match_builtin __get_array_length) <>--> return_unknown_size ~desc:""
     ; +match_regexp_opt Config.pulse_model_return_nonnull
       &::.*--> return_positive ~desc:"modelled as returning not null due to configuration option"
+    ; +match_regexp_opt Config.pulse_model_return_this
+      &::.*++> return_this
+                 ~desc:"modelled as returning `this` or `self` due to configuration option"
     ; +match_regexp_opt Config.pulse_model_return_first_arg
-      &::+ (fun _ _ -> true)
-      <>$ capt_arg_payload
-      $+...$--> id_first_arg
-                  ~desc:"modelled as returning the first argument due to configuration option"
+      &::.*++> id_first_arg_from_list
+                 ~desc:"modelled as returning the first argument due to configuration option"
     ; +match_regexp_opt Config.pulse_model_skip_pattern
       &::.*++> unknown_call "modelled as skip due to configuration option" ]
 end

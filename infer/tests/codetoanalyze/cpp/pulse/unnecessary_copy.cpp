@@ -496,3 +496,8 @@ void call_unknown_constructor_twice_ok(const ClassWithoutConstructDef& src) {
   ClassWithoutConstructDef dummy = tgt;
   assign_value_unknown(dummy.get_field_ref(), 42);
 }
+
+#define LOCAL_MACRO(accessor) \
+  { auto cpy = (accessor); }
+
+void foo(std::vector<int> my_vec) { LOCAL_MACRO(my_vec); }

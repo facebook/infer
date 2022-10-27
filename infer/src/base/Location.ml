@@ -17,6 +17,10 @@ type t =
   ; macro_line: int  (** If the location is coming from macro expansion, the line number *) }
 [@@deriving compare, equal, sexp, hash]
 
+let get_macro_file_line_opt {macro_file_opt; macro_line} =
+  Option.map macro_file_opt ~f:(fun file -> (file, macro_line))
+
+
 let none file = {line= -1; col= -1; file; macro_file_opt= None; macro_line= -1}
 
 let dummy = none (SourceFile.invalid __FILE__)

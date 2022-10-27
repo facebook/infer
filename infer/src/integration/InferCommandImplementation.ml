@@ -24,7 +24,7 @@ let debug () =
       if Config.procedures_summary || Config.procedures_summary_json then
         let f_console_output proc_names =
           let pp_summary fmt proc_name =
-            match Summary.OnDisk.get proc_name with
+            match Summary.OnDisk.get ~lazy_payloads:false proc_name with
             | None ->
                 F.fprintf fmt "No summary found: %a@\n" Procname.pp proc_name
             | Some summary ->
@@ -33,7 +33,7 @@ let debug () =
           L.result "%t" (fun fmt -> List.iter proc_names ~f:(pp_summary fmt))
         in
         let json_of_summary proc_name =
-          Summary.OnDisk.get proc_name |> Option.map ~f:Summary.yojson_of_t
+          Summary.OnDisk.get ~lazy_payloads:false proc_name |> Option.map ~f:Summary.yojson_of_t
         in
         let f_json proc_names =
           Yojson.Safe.to_channel stdout (`List (List.filter_map ~f:json_of_summary proc_names)) ;

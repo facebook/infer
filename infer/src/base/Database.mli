@@ -11,6 +11,10 @@ type id =
   | CaptureDatabase  (** the capture databse **)
   | AnalysisDatabase  (** the analysis/summaries database **)
 
+type analysis_table = Specs | BiabductionModelsSpecs
+
+val string_of_analysis_table : analysis_table -> string
+
 val schema_hum : string
 (** some human-readable string describing the tables *)
 
