@@ -77,6 +77,54 @@ module TypeNameBridge = struct
         HackClass (HackClassName.make value)
 end
 
+let mangle_java_procname jpname =
+  let method_name =
+    match Procname.Java.get_method jpname with "<init>" -> "__sil_java_constructor" | s -> s
+  in
+  let parameter_types = Procname.Java.get_parameters jpname in
+  let rec pp_java_typ f ({desc} : SilTyp.t) =
+    let string_of_int (i : SilTyp.ikind) =
+      match i with
+      | IInt ->
+          "I"
+      | IBool ->
+          "B"
+      | ISChar ->
+          "C"
+      | IUShort ->
+          "S"
+      | ILong ->
+          "L"
+      | IShort ->
+          "S"
+      | _ ->
+          L.die InternalError "pp_java int"
+    in
+    let string_of_float (float : SilTyp.fkind) =
+      match float with FFloat -> "F" | FDouble -> "D" | _ -> L.die InternalError "pp_java float"
+    in
+    match desc with
+    | Tint ik ->
+        F.pp_print_string f (string_of_int ik)
+    | Tfloat fk ->
+        F.pp_print_string f (string_of_float fk)
+    | Tvoid ->
+        L.die InternalError "pp_java void"
+    | Tptr (typ, _) ->
+        pp_java_typ f typ
+    | Tstruct (JavaClass java_class_name) ->
+        JavaClassName.pp_with_verbosity ~verbose:true f java_class_name
+    | Tarray {elt} ->
+        F.fprintf f "A__%a" pp_java_typ elt
+    | _ ->
+        L.die InternalError "pp_java rec"
+  in
+  let rec pp_java_types fmt l =
+    match l with [] -> () | typ :: q -> F.fprintf fmt "_%a%a" pp_java_typ typ pp_java_types q
+  in
+  F.asprintf "%s%a" method_name pp_java_types parameter_types
+
+
 module TypBridge = struct
   open Typ
 
@@ -175,7 +223,7 @@ module ProcDeclBridge = struct
         let enclosing_class =
           Enclosing (TypeName.of_java_name (Procname.Java.get_class_name jpname))
         in
-        let name = Procname.Java.get_method jpname |> ProcName.of_java_name in
+        let name = mangle_java_procname jpname |> ProcName.of_java_name in
         let qualified_name : qualified_procname = {enclosing_class; name} in
         let formals_types = Procname.Java.get_parameters jpname |> List.map ~f:TypBridge.of_sil in
         let formals_types =

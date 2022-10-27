@@ -24,7 +24,7 @@ let whitespace = [' ' '\t']
 let whitespaces = whitespace*
 let eol = whitespace*("\r")?"\n" (* end of line *)
 let eol_comment = "//" [^'\n']*
-let id = ['a'-'z' 'A'-'Z' '_' '$'] (['a'-'z' 'A'-'Z' '0'-'9' '_' '$'] | "::")* | "<init>"
+let id = ['a'-'z' 'A'-'Z' '_' '$'] (['a'-'z' 'A'-'Z' '0'-'9' '_' '$'] | "::")* 
 
 let binary_numeral_prefix = "0" ("b"|"B")
 let hex_numeral_prefix = "0" ("x"|"X")
