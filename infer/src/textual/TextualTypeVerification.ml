@@ -17,7 +17,7 @@ module TypeNameBridge = struct
 
   (** the name of the Textual type of all types (do not ask what it the type of this type itself
       please...) *)
-  let sit_type_of_types = {value= "TYPE"; loc= Unknown}
+  let sil_type_of_types = {value= "TYPE"; loc= Unknown}
 end
 
 (** is it safe to assign a value of type [given] to a variable of type [assigned] *)
@@ -165,7 +165,7 @@ let get_location : Location.t monad = fun state -> (Value state.loc, state)
 
 let set_location loc : unit monad = fun state -> (Value (), {state with loc})
 
-let get_result_type : Typ.t monad = fun state -> (Value state.pdesc.procdecl.result_type, state)
+let get_result_type : Typ.t monad = fun state -> (Value state.pdesc.procdecl.result_type.typ, state)
 
 let typeof_ident id : (Typ.t * Location.t) monad =
  fun state ->
@@ -266,7 +266,9 @@ let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list) monad =
  fun state ->
   match TextualDecls.get_procname state.decls proc with
   | Some (procdecl : ProcDecl.t) ->
-      ret (procdecl.result_type, procdecl.formals_types) state
+      ret
+        (procdecl.result_type.typ, List.map procdecl.formals_types ~f:(fun {Typ.typ} -> typ))
+        state
   | None ->
       ret (typeof_reserved_proc proc) state
 
@@ -335,7 +337,7 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
       in
       ret result_type
   | Typ _ ->
-      ret (Typ.Struct TypeNameBridge.sit_type_of_types)
+      ret (Typ.Struct TypeNameBridge.sil_type_of_types)
 
 
 and typeof_allocate_builtin (proc : qualified_procname) args =
@@ -488,7 +490,7 @@ let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : error l
   let vars_with_params =
     match
       List.fold2 pdesc.params pdesc.procdecl.formals_types
-        ~f:(fun map vname typ -> VarName.Map.add vname typ map)
+        ~f:(fun map vname {Typ.typ} -> VarName.Map.add vname typ map)
         ~init:globals_types
     with
     | Ok map ->
@@ -499,7 +501,7 @@ let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : error l
           ProcDecl.pp pdesc.procdecl
   in
   let vars_with_locals =
-    List.fold pdesc.locals ~init:vars_with_params ~f:(fun map (vname, typ) ->
+    List.fold pdesc.locals ~init:vars_with_params ~f:(fun map (vname, {Typ.typ}) ->
         VarName.Map.add vname typ map )
   in
   let init : state =

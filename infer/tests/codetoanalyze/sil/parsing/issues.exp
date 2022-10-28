@@ -1,3 +1,6 @@
+Textual type error in file annotated.sil, line 21: expression &y has type *float, while a subtype of *int was expected
+Textual type error in file annotated.sil, line 22: expression &n has type **node, while a pointer of array type was expected
+Textual type error in file annotated.sil, line 23: expression n1 has type int, while a subtype of void was expected
 Textual type error in file basic.sil, line 17: expression &y has type *float, while a subtype of *int was expected
 Textual type error in file basic.sil, line 18: expression &n has type **node, while a pointer of array type was expected
 Textual type error in file basic.sil, line 20: expression n1 has type int, while a subtype of *node was expected

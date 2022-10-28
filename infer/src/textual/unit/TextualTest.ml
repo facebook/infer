@@ -23,10 +23,10 @@ let%test_module "parsing" =
   ( module struct
     let text =
       {|
-       attribute source_language = "hack"
-       attribute source_file = "original.hack"
+       .source_language = "hack"
+       .source_file = "original.hack"
 
-       attribute source_language = "java" // Won't have an effect
+       .source_language = "java" // Won't have an effect
 
        define nothing(): void {
          #node0:
@@ -41,9 +41,9 @@ let%test_module "parsing" =
       F.printf "%a" (Pp.seq ~sep:"\n" Attr.pp_with_loc) attrs ;
       [%expect
         {|
-        line 2, column 7: source_language = "hack"
-        line 3, column 7: source_file = "original.hack"
-        line 5, column 7: source_language = "java" |}] ;
+        line 2, column 7: .source_language = "hack"
+        line 3, column 7: .source_file = "original.hack"
+        line 5, column 7: .source_language = "java" |}] ;
       let lang = Option.value_exn (Module.lang module_) in
       F.printf "%s" (Lang.to_string lang) ;
       [%expect {| hack |}]
@@ -53,21 +53,21 @@ let%test_module "parsing" =
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
-         attribute source_language = "hack"
+        .source_language = "hack"
 
-         attribute source_file = "original.hack"
+        .source_file = "original.hack"
 
-         attribute source_language = "java"
+        .source_language = "java"
 
-         define nothing() : void {
-           #node0:
-               ret null
+        define nothing() : void {
+          #node0:
+              ret null
 
-         } |}]
+        } |}]
 
     let text =
       {|
-       attribute source_language = "hack"
+       .source_language = "hack"
 
        declare HackMixed.foo(*HackMixed, int): int
 
@@ -84,7 +84,7 @@ let%test_module "parsing" =
       F.printf "%a" Module.pp m ;
       [%expect
         {|
-        attribute source_language = "hack"
+        .source_language = "hack"
 
         declare HackMixed.foo(*HackMixed, int) : int
 
@@ -124,7 +124,8 @@ let%test_module "procnames" =
               { enclosing_class= TopLevel
               ; name= {value= "toplevel"; loc= Location.known ~line:0 ~col:0} }
           ; formals_types= []
-          ; result_type= Typ.Void }
+          ; result_type= Typ.mk_without_attributes Typ.Void
+          ; attributes= [] }
       in
       let as_java = TextualSil.proc_decl_to_sil Lang.Java toplevel_proc in
       let as_hack = TextualSil.proc_decl_to_sil Lang.Hack toplevel_proc in

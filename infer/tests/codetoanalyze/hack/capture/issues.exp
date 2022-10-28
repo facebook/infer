@@ -1,8 +1,5 @@
 Capturing in hackc mode...
-Textual type error in file snippets/hello-world.hack, line 8: expression hack_int(0) has type *Mixed, while a subtype of int was expected
-Textual type error in file snippets/hello-world.hack, line 8: expression hack_int(0) has type *Mixed, while a subtype of int was expected
-Textual type error in file snippets/hello-world.hack, line 10: expression "Hello, World!\n" has type *String, while a subtype of string was expected
-Textual type error in file snippets/noop.hack, line 8: expression hack_int(0) has type *Mixed, while a subtype of int was expected
-Textual type error in file snippets/noop.hack, line 8: expression hack_int(0) has type *Mixed, while a subtype of int was expected
-Textual type error in file snippets/ret_const.hack, line 8: expression hack_int(0) has type *Mixed, while a subtype of int was expected
-Textual type error in file snippets/ret_const.hack, line 8: expression hack_int(0) has type *Mixed, while a subtype of int was expected
+SIL syntax error in file snippets/empty.hack at line 1, column 0.
+SIL syntax error in file snippets/hello-world.hack at line 1, column 0.
+SIL syntax error in file snippets/noop.hack at line 1, column 0.
+SIL syntax error in file snippets/ret_const.hack at line 1, column 0.

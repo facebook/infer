@@ -133,6 +133,31 @@ module VarName : NAME = Name
 
 module NodeName : NAME = Name
 
+module Attr = struct
+  type t = {name: string; values: string list; loc: Location.t}
+
+  let name {name} = name
+
+  let values {values} = values
+
+  let source_language = "source_language"
+
+  let mk_source_language value =
+    {name= source_language; values= [Lang.to_string value]; loc= Location.Unknown}
+
+
+  let mk_static = {name= "static"; values= []; loc= Location.Unknown}
+
+  let mk_final = {name= "final"; values= []; loc= Location.Unknown}
+
+  let pp fmt {name; values} =
+    if List.is_empty values then F.fprintf fmt ".%s" name
+    else F.fprintf fmt ".%s = \"%a\"" name (Pp.comma_seq F.pp_print_string) values
+
+
+  let pp_with_loc fmt t = F.fprintf fmt "%a: %a" Location.pp t.loc pp t
+end
+
 module Typ = struct
   type t = Int | Float | Null | Void | Ptr of t | Struct of TypeName.t | Array of t
   [@@deriving equal]
@@ -155,6 +180,16 @@ module Typ = struct
         F.fprintf fmt "(*%a)[]" pp typ
     | Array typ ->
         F.fprintf fmt "%a[]" pp typ
+
+
+  type annotated = {typ: t; attributes: Attr.t list}
+
+  let pp_annotated fmt {typ; attributes} =
+    List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
+    pp fmt typ
+
+
+  let mk_without_attributes typ = {typ; attributes= []}
 end
 
 module Ident : sig
@@ -214,19 +249,26 @@ end
 let pp_list_with_comma pp fmt l = Pp.seq ~sep:", " pp fmt l
 
 module ProcDecl = struct
-  type t = {qualified_name: qualified_procname; formals_types: Typ.t list; result_type: Typ.t}
+  type t =
+    { qualified_name: qualified_procname
+    ; formals_types: Typ.annotated list
+    ; result_type: Typ.annotated
+    ; attributes: Attr.t list }
 
-  let pp fmt {qualified_name; formals_types; result_type} =
-    F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name (pp_list_with_comma Typ.pp)
-      formals_types Typ.pp result_type
+  let pp fmt {qualified_name; formals_types; result_type; attributes} =
+    List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
+    F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name
+      (pp_list_with_comma Typ.pp_annotated)
+      formals_types Typ.pp_annotated result_type
 
 
-  let pp_with_params params fmt {qualified_name; formals_types; result_type} =
-    let pp fmt (typ, id) = F.fprintf fmt "%a: %a" VarName.pp id Typ.pp typ in
+  let pp_with_params params fmt {qualified_name; formals_types; result_type; attributes} =
+    let pp fmt (typ, id) = F.fprintf fmt "%a: %a" VarName.pp id Typ.pp_annotated typ in
+    List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
     match List.zip formals_types params with
     | Ok args ->
         F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name (pp_list_with_comma pp)
-          args Typ.pp result_type
+          args Typ.pp_annotated result_type
     | _ ->
         L.die InternalError
           "Textual printing error: params has size %d and formals_types has size %d"
@@ -379,28 +421,33 @@ module ProcDecl = struct
 end
 
 module Global = struct
-  type t = {name: VarName.t; typ: Typ.t}
+  type t = {name: VarName.t; typ: Typ.t; attributes: Attr.t list}
 
-  let pp fmt {name; typ} = F.fprintf fmt "%a: %a" VarName.pp name Typ.pp typ
+  let pp fmt {name; typ; attributes} =
+    let annotated_typ : Typ.annotated = {typ; attributes} in
+    F.fprintf fmt "%a: %a" VarName.pp name Typ.pp_annotated annotated_typ
 end
 
 module FieldDecl = struct
-  type t = {qualified_name: qualified_fieldname; typ: Typ.t}
+  type t = {qualified_name: qualified_fieldname; typ: Typ.t; attributes: Attr.t list}
 
-  let pp fmt {qualified_name; typ} =
-    F.fprintf fmt "%a: %a" FieldName.pp qualified_name.name Typ.pp typ
+  let pp fmt {qualified_name; typ; attributes} =
+    let annotated_typ : Typ.annotated = {typ; attributes} in
+    F.fprintf fmt "%a: %a" FieldName.pp qualified_name.name Typ.pp_annotated annotated_typ
 end
 
 module Struct = struct
-  type t = {name: TypeName.t; supers: TypeName.t list; fields: FieldDecl.t list}
+  type t =
+    {name: TypeName.t; supers: TypeName.t list; fields: FieldDecl.t list; attributes: Attr.t list}
 
-  let pp fmt {name; supers; fields} =
+  let pp fmt {name; supers; fields; attributes} =
     let pp_fields =
       Pp.seq ~print_env:Pp.text_break ~sep:";" (fun fmt -> F.fprintf fmt "%a" FieldDecl.pp)
     in
     let pp_supers =
       Pp.seq ~print_env:Pp.text_break ~sep:"," (fun fmt -> F.fprintf fmt "%a" TypeName.pp)
     in
+    List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
     if List.is_empty supers then
       F.fprintf fmt "%a = {@[<hov>%a@]}" TypeName.pp name pp_fields fields
     else
@@ -596,7 +643,7 @@ module ProcDesc = struct
     ; nodes: Node.t list
     ; start: NodeName.t
     ; params: VarName.t list
-    ; locals: (VarName.t * Typ.t) list
+    ; locals: (VarName.t * Typ.annotated) list
     ; exit_loc: Location.t }
 
   let is_ready_for_to_sil_conversion {nodes} =
@@ -605,29 +652,13 @@ module ProcDesc = struct
 
   let pp fmt {procdecl; nodes; params; locals} =
     F.fprintf fmt "@[<v 2>define %a {" (ProcDecl.pp_with_params params) procdecl ;
-    let pp_local fmt (var, typ) = F.fprintf fmt "%a: %a" VarName.pp var Typ.pp typ in
+    let pp_local fmt (var, annotated_typ) =
+      F.fprintf fmt "%a: %a" VarName.pp var Typ.pp_annotated annotated_typ
+    in
     if not (List.is_empty locals) then
       F.fprintf fmt "@\n@[<v 4>local %a@]" (pp_list_with_comma pp_local) locals ;
     List.iter ~f:(F.fprintf fmt "%a" Node.pp) nodes ;
     F.fprintf fmt "@]\n}@\n@\n"
-end
-
-module Attr = struct
-  type t = {name: string; value: string; loc: Location.t}
-
-  let name {name} = name
-
-  let value {value} = value
-
-  let source_language = "source_language"
-
-  let mk_source_language value =
-    {name= source_language; value= Lang.to_string value; loc= Location.Unknown}
-
-
-  let pp fmt {name; value} = F.fprintf fmt "%s = \"%s\"" name value
-
-  let pp_with_loc fmt t = F.fprintf fmt "%a: %a" Location.pp t.loc pp t
 end
 
 module SsaVerification = struct
@@ -690,10 +721,10 @@ module Module = struct
     let lang_attr =
       List.find attrs ~f:(fun (attr : Attr.t) -> String.equal attr.name Attr.source_language)
     in
-    lang_attr |> Option.bind ~f:(fun x -> Attr.value x |> Lang.of_string)
+    lang_attr |> Option.bind ~f:(fun x -> Attr.values x |> List.hd |> Option.bind ~f:Lang.of_string)
 
 
-  let pp_attr fmt attr = F.fprintf fmt "attribute %a@\n@\n" Attr.pp attr
+  let pp_attr fmt attr = F.fprintf fmt "%a@\n@\n" Attr.pp attr
 
   let pp_decl fmt = function
     | Global global ->

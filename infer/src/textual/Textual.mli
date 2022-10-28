@@ -64,6 +64,24 @@ type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 
 val pp_qualified_fieldname : F.formatter -> qualified_fieldname -> unit
 
+module Attr : sig
+  type t = {name: string; values: string list; loc: Location.t}
+
+  val name : t -> string [@@warning "-32"]
+
+  val values : t -> string list [@@warning "-32"]
+
+  val mk_source_language : Lang.t -> t
+
+  val mk_static : t
+
+  val mk_final : t
+
+  val pp : F.formatter -> t -> unit [@@warning "-32"]
+
+  val pp_with_loc : F.formatter -> t -> unit [@@warning "-32"]
+end
+
 module Typ : sig
   type t =
     | Int  (** integer type *)
@@ -76,6 +94,10 @@ module Typ : sig
   [@@deriving equal]
 
   val pp : F.formatter -> t -> unit
+
+  type annotated = {typ: t; attributes: Attr.t list}
+
+  val mk_without_attributes : t -> annotated
 end
 
 module Ident : sig
@@ -107,7 +129,11 @@ module Const : sig
 end
 
 module ProcDecl : sig
-  type t = {qualified_name: qualified_procname; formals_types: Typ.t list; result_type: Typ.t}
+  type t =
+    { qualified_name: qualified_procname
+    ; formals_types: Typ.annotated list
+    ; result_type: Typ.annotated
+    ; attributes: Attr.t list }
 
   val pp : F.formatter -> t -> unit
 
@@ -135,11 +161,11 @@ module ProcDecl : sig
 end
 
 module Global : sig
-  type t = {name: VarName.t; typ: Typ.t}
+  type t = {name: VarName.t; typ: Typ.t; attributes: Attr.t list}
 end
 
 module FieldDecl : sig
-  type t = {qualified_name: qualified_fieldname; typ: Typ.t}
+  type t = {qualified_name: qualified_fieldname; typ: Typ.t; attributes: Attr.t list}
 end
 
 module Exp : sig
@@ -211,28 +237,15 @@ module ProcDesc : sig
     ; nodes: Node.t list
     ; start: NodeName.t
     ; params: VarName.t list
-    ; locals: (VarName.t * Typ.t) list
+    ; locals: (VarName.t * Typ.annotated) list
     ; exit_loc: Location.t }
 
   val is_ready_for_to_sil_conversion : t -> bool
 end
 
 module Struct : sig
-  type t = {name: TypeName.t; supers: TypeName.t list; fields: FieldDecl.t list}
-end
-
-module Attr : sig
-  type t = {name: string; value: string; loc: Location.t}
-
-  val name : t -> string [@@warning "-32"]
-
-  val value : t -> string [@@warning "-32"]
-
-  val mk_source_language : Lang.t -> t
-
-  val pp : F.formatter -> t -> unit [@@warning "-32"]
-
-  val pp_with_loc : F.formatter -> t -> unit [@@warning "-32"]
+  type t =
+    {name: TypeName.t; supers: TypeName.t list; fields: FieldDecl.t list; attributes: Attr.t list}
 end
 
 module SsaVerification : sig
