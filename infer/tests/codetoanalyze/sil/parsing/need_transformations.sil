@@ -1,19 +1,19 @@
 // Copyright (c) Facebook, Inc. and its affiliates.
-// 
+//
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
 attribute source_language = "hack"
 
-define f(x: int, y: int) : void {
+define f(x: int, y: int) : *int {
   #entry:
     n0 = &y
     n1 = &x
     jmp lab1, lab2(n0)
   #lab1:
-    n0 = 1
-    n1 = 2
+    n2 = 1
+    n3 = 2
     ret null
-  #lab2(n1: int):
+  #lab2(n1: *int):
     ret n1
 }

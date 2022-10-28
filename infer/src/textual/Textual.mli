@@ -23,6 +23,8 @@ module Location : sig
   val known : line:int -> col:int -> t
 
   val pp : F.formatter -> t -> unit
+
+  val pp_line : F.formatter -> t -> unit
 end
 
 module type NAME = sig
@@ -60,6 +62,8 @@ val pp_qualified_procname : F.formatter -> qualified_procname -> unit
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
 
+val pp_qualified_fieldname : F.formatter -> qualified_fieldname -> unit
+
 module Typ : sig
   type t =
     | Int  (** integer type *)
@@ -69,6 +73,9 @@ module Typ : sig
     | Ptr of t  (** pointer type *)
     | Struct of TypeName.t  (** structured value type name *)
     | Array of t  (** array type *)
+  [@@deriving equal]
+
+  val pp : F.formatter -> t -> unit
 end
 
 module Ident : sig
@@ -101,6 +108,8 @@ end
 
 module ProcDecl : sig
   type t = {qualified_name: qualified_procname; formals_types: Typ.t list; result_type: Typ.t}
+
+  val pp : F.formatter -> t -> unit
 
   val of_unop : Unop.t -> qualified_procname
 

@@ -75,6 +75,9 @@ module TypeNameBridge = struct
         string_to_java_sil value
     | Hack ->
         HackClass (HackClassName.make value)
+
+
+  let java_lang_object = of_java_name "java.lang.Object"
 end
 
 let mangle_java_procname jpname =
@@ -357,7 +360,7 @@ module ExpBridge = struct
     | Lvar pvar ->
         let name = VarNameBridge.of_pvar Lang.Java pvar in
         ( if SilPvar.is_global pvar then
-          let typ : Typ.t = Ptr (Struct (TypeNameBridge.of_global_pvar Lang.Java pvar)) in
+          let typ : Typ.t = Struct (TypeNameBridge.of_global_pvar Lang.Java pvar) in
           let global : Global.t = {name; typ} in
           TextualDecls.declare_global decls global ) ;
         Lvar name
@@ -739,6 +742,16 @@ module ProcDescBridge = struct
           res
 
 
+  let compute_java_locals_type (nodes : Node.t list) =
+    List.fold nodes ~init:VarName.Map.empty ~f:(fun init (node : Node.t) ->
+        List.fold node.instrs ~init ~f:(fun map (instr : Instr.t) ->
+            match instr with
+            | Store {exp1= Lvar var; typ} ->
+                VarName.Map.add var typ map
+            | Load _ | Store _ | Prune _ | Let _ ->
+                map ) )
+
+
   let of_sil decls tenv pdesc =
     let module P = SilProcdesc in
     let procdecl = P.get_proc_name pdesc |> ProcDeclBridge.of_sil in
@@ -758,10 +771,22 @@ module ProcDescBridge = struct
     let params =
       List.map (P.get_pvar_formals pdesc) ~f:(fun (pvar, _) -> VarNameBridge.of_pvar Lang.Java pvar)
     in
+    let java_locals_type = compute_java_locals_type nodes in
     let locals =
       P.get_locals pdesc
       |> List.map ~f:(fun ({name; typ} : ProcAttributes.var_data) ->
-             (Mangled.to_string name |> VarName.of_java_name, TypBridge.of_sil typ) )
+             let var = Mangled.to_string name |> VarName.of_java_name in
+             let typ =
+               if SilTyp.is_void typ then
+                 (* the Java frontend gives the void type to some local variables, but it does
+                    not makes sense. But this should be only the case for variable that are
+                    assigned once in the function, so we can easily collect the corresponding
+                    type with the function [compute_java_locals_type] above. *)
+                 VarName.Map.find_opt var java_locals_type
+                 |> Option.value ~default:Typ.(Ptr (Struct TypeNameBridge.java_lang_object))
+               else TypBridge.of_sil typ
+             in
+             (var, typ) )
     in
     let exit_loc = Location.Unknown in
     {procdecl; nodes; start; params; locals; exit_loc}

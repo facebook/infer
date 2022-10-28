@@ -1,5 +1,19 @@
+Textual type error in file basic.sil, line 17: expression &y has type *float, while a subtype of *int was expected
+Textual type error in file basic.sil, line 18: expression &n has type **node, while a pointer of array type was expected
+Textual type error in file basic.sil, line 20: expression n1 has type int, while a subtype of *node was expected
+Textual type error in file basic.sil, line 33: variable u has not been declared
+Textual type error in file basic.sil, line 34: ident n0 is given the type float, but it has already been given the type int at line 17
+Textual type error in file basic.sil, line 24: expression n0 has type int, while a subtype of float was expected
+Textual type error in file basic.sil, line 24: expression &x has type *int, while a supertype of *float was expected
+Textual type error in file basic.sil, line 25: expression n1 has type int, while a subtype of float was expected
+Textual type error in file basic.sil, line 25: expression &x has type *int, while a pointer of array type was expected
+Textual type error in file basic.sil, line 29: expression n3 has type *int[], while a pointer of struct type was expected
+Textual type error in file basic.sil, line 47: ident n1 is read before being written
+Textual type error in file basic.sil, line 58: builtin __sil_allocate is called with 2 arguments while it expects 1
+Textual type error in file basic.sil, line 59: expression n2 has type node, while a subtype of void was expected
 SIL syntax error in file error1.sil at line 13, column 4.
 SIL consistency error in file error2.sil, line 19, column 9: function g is not declared
 SIL consistency error in file error2.sil, line 18, column 13: field cell.n is not declared
 SIL consistency error in file error2.sil, line 15, column 8: label lab2 is not declared in function f
 SIL consistency error in file error_label.sil, line 16, column 8: label lab2 is not declared in function B.f
+Textual type error in file ssa.sil, line 20: expression n4 has type int, while a subtype of void was expected

@@ -11,7 +11,8 @@ type list = { header: *cell }
 
 define basic_bad(l: *list) : void {
   #entry:
-    n0 = null
+    store &l <- null: *list
+    n0: *list = load &l
     n1: *cell = load n0.list.header
     ret null
 }
@@ -26,7 +27,8 @@ define if_test_lt_ok(l: *list) : void {
     ret null
   #else:
     prune ! n5
-    n0 = null
+    store &l <- null: *list
+    n0: *list = load &l
     n1: *cell = load n0.list.header
     ret null
 }
@@ -38,7 +40,8 @@ define if_test_lt_bad(l: *list) : void {
     jmp then, else
   #then:
     prune n5
-    n0 = null
+    store &l <- null: *list
+    n0: *list = load &l
     n1: *cell = load n0.list.header
     ret null
   #else:
@@ -56,7 +59,8 @@ define if_test_eq_ok(l: *list) : void {
     ret null
   #else:
     prune ! n5
-    n0 = null
+    store &l <- null: *list
+    n0: *list = load &l
     n1: *cell = load n0.list.header
     ret null
 }
@@ -68,7 +72,8 @@ define if_test_eq_bad(l: *list) : void {
     jmp then, else
   #then:
     prune n5
-    n0 = null
+    store &l <- null: *list
+    n0: *list = load &l
     n1: *cell = load n0.list.header
     ret null
   #else:
@@ -77,13 +82,15 @@ define if_test_eq_bad(l: *list) : void {
 }
 
 define conditional_latent(n: int) : void {
+  local l: *list
   #entry:
     n4 : int = load &n
     n5 = __sil_eq(n4, 2)
     jmp then, else
   #then:
     prune n5
-    n0 = null
+    store &l <- null: *list
+    n0: *list = load &l
     n1: *cell = load n0.list.header
     ret null
   #else:
@@ -137,12 +144,12 @@ define array_ok(a: (*cell)[]) : void {
     ret null
 }
 
-define return_null_ok(): void {
+define return_null_ok(): *cell {
   #entry:
     ret null
 }
 
-define return_cell_ok(): void {
+define return_cell_ok(): *cell {
   #entry:
     n0 = __sil_allocate(<cell>)
     ret n0
@@ -163,17 +170,19 @@ define call_and_no_npe_ok() : void {
 }
 
 define load_bad() : void {
+  local locvar: *cell
   #entry:
-    store &localvar <- null: *cell
-    n0: *cell = load &localvar
+    store &locvar <- null: *cell
+    n0: *cell = load &locvar
     n1: int = load n0.cell.value
     ret null
 }
 
 define load_internal_bad() : void {
+  local locvar: cell
   #entry:
-    store &localvar.cell.next <- null: *cell
-    n0: *cell = load &localvar.cell.next
+    store &locvar.cell.next <- null: *cell
+    n0: *cell = load &locvar.cell.next
     n1: int = load n0.cell.value
     ret null
 }

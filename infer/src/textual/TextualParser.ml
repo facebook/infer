@@ -9,21 +9,29 @@ open! IStd
 module F = Format
 module L = Logging
 
-type error = VerificationError of TextualVerification.error | SyntaxError of string
+type error =
+  | VerificationError of TextualVerification.error
+  | SyntaxError of string
+  | TypeError of TextualTypeVerification.error
 
 let pp_error sourcefile fmt = function
   | VerificationError err ->
       TextualVerification.pp_error sourcefile fmt err
   | SyntaxError err ->
       F.fprintf fmt "%s" err
+  | TypeError err ->
+      TextualTypeVerification.pp_error sourcefile fmt err
 
 
 let parse_buf sourcefile filebuf =
   try
     let lexer = TextualLexer.main in
     let m = TextualMenhir.main lexer filebuf sourcefile in
-    let errors = TextualVerification.run m in
-    if List.is_empty errors then Ok m else Error (List.map errors ~f:(fun x -> VerificationError x))
+    let errors = TextualVerification.run m |> List.map ~f:(fun x -> VerificationError x) in
+    if List.is_empty errors then
+      let errors = TextualTypeVerification.run m |> List.map ~f:(fun x -> TypeError x) in
+      if List.is_empty errors then Ok m else Error errors
+    else Error errors
   with TextualMenhir.Error ->
     let pos = filebuf.Lexing.lex_curr_p in
     let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in

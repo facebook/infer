@@ -11,21 +11,27 @@ type node = { val: int; next: *node }
 
 declare cons(int, *node) : node
 
-define f(x: int, y: float, n: *node) : void {
-  local z: int, u: *int
+define f(x: int, y: float, n: *node, a: *int[]) : void {
+  local z: int
   #entry:
     n0:int = load &y
     n1:int = load &n[1]
-    n2 = f(3, 3.0, n1)
+    n3:*int[] = load &a
+    n2 = f(3, 3.0, n1, n3)
     jmp lab1
     .handlers lab1, lab2
   #lab1:
-    store &x <- n0:int
-    store &x[1] <- n1:int
+    store &x <- n0:float
+    store &x[1] <- n1:float
+    store n3[1] <- n1:int
+    n4: *node = load &n
+    store n4.node.val <- n1:int
+    store n3.node.val <- n1:int
     ret n2
   #lab2:
     store &z <- 1: int
     store &u <- &z: *int
+    n0 = 1.0
     jmp
 }
 
@@ -38,15 +44,17 @@ define unreachable_example(i: int) : void {
     ret null
   #else:
     prune ! __sil_lt(n0, 0)
+    n2 = n1
     unreachable
 }
 
 
 define type_as_expr() : void {
   #entry:
-    n0 = __sil_allocate_array(<node>, 10)
+    n0 = __sil_allocate_array(<node[]>, 10)
     n1 = __sil_allocate(<node>)
     n2 = __sil_cast(<node>, n1)
-    n3 = __sil_allocate_array(<node>, 5, 3)
+    n3 = __sil_allocate_array(<node[][]>, 5, 3)
+    n4 = __sil_allocate(<node>, 3)
     ret n2
 }

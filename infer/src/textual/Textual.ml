@@ -34,6 +34,13 @@ module Location = struct
         F.fprintf fmt "<unknown location>"
 
 
+  let pp_line fmt = function
+    | Known {line} ->
+        F.fprintf fmt "line %d" line
+    | Unknown ->
+        F.fprintf fmt "<unknown line>"
+
+
   module Set = Caml.Set.Make (struct
     type nonrec t = t
 
@@ -118,12 +125,17 @@ let pp_qualified_procname fmt ({enclosing_class; name} : qualified_procname) =
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
 
+let pp_qualified_fieldname fmt ({enclosing_class; name} : qualified_fieldname) =
+  F.fprintf fmt "%a%a" TypeName.pp enclosing_class FieldName.pp name
+
+
 module VarName : NAME = Name
 
 module NodeName : NAME = Name
 
 module Typ = struct
   type t = Int | Float | Null | Void | Ptr of t | Struct of TypeName.t | Array of t
+  [@@deriving equal]
 
   let rec pp fmt = function
     | Int ->
