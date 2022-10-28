@@ -1,10 +1,13 @@
-(*
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- *)
-open! IStd
+ */
+#include "a_b_c.h"
 
-val build : unit -> CallGraph.t
-(** Build the graph from the summaries in the .specs files *)
+int main() {
+  c();
+  b();
+  return 0;
+}

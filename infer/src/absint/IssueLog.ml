@@ -27,12 +27,32 @@ module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
   type nonrec t = t
 end)
 
+let is_stored =
+  let select_statement =
+    Database.register_statement AnalysisDatabase
+      {|
+           SELECT 1 FROM issue_logs
+           WHERE checker = :checker AND source_file = :source_file
+        |}
+  in
+  fun ~checker ~file ->
+    Database.with_registered_statement select_statement ~f:(fun db stmt ->
+        Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Checker.get_id checker))
+        |> SqliteUtils.check_result_code db ~log:"is_stored issuelog bind checker" ;
+        Sqlite3.bind stmt 2 (SourceFile.SQLite.serialize file)
+        |> SqliteUtils.check_result_code db ~log:"is_stored issuelog bind source_file" ;
+        SqliteUtils.result_single_column_option ~finalize:false ~log:"is_stored issuelog" db stmt )
+    |> Option.is_some
+
+
 let store ~checker ~file m =
   if not (Procname.Map.is_empty m) then
     DBWriter.store_issue_log ~checker:(Checker.get_id checker)
       ~source_file:(SourceFile.SQLite.serialize file)
       ~issue_log:(SQLite.serialize m)
 
+
+let invalidate file = DBWriter.delete_issue_logs ~source_file:(SourceFile.SQLite.serialize file)
 
 let iter_issue_logs =
   let select_statement =

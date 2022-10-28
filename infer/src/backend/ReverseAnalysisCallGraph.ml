@@ -6,12 +6,12 @@
  *)
 open! IStd
 
-let register_summary graph summary =
-  let caller_pname = Summary.get_proc_name summary in
-  let callee_pnames = summary.Summary.callee_pnames in
-  Procname.Set.iter
-    (fun callee_pname -> CallGraph.add_edge graph ~pname:callee_pname ~successor_pname:caller_pname)
-    callee_pnames
-
-
-let build graph = Summary.OnDisk.iter_specs ~f:(register_summary graph)
+let build () =
+  let graph = CallGraph.(create default_initial_capacity) in
+  Summary.OnDisk.iter_specs ~f:(fun summary ->
+      let caller = Summary.get_proc_name summary in
+      let callees = summary.callee_pnames in
+      Procname.Set.iter
+        (fun callee -> CallGraph.add_edge graph ~pname:callee ~successor_pname:caller)
+        callees ) ;
+  graph

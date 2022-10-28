@@ -27,6 +27,8 @@ val canonicalize : unit -> unit
 
 val delete_all_specs : unit -> unit
 
+val delete_issue_logs : source_file:Sqlite3.Data.t -> unit
+
 val delete_spec : proc_uid:string -> unit
 
 val mark_all_source_files_stale : unit -> unit
