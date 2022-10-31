@@ -144,13 +144,15 @@ module Implementation = struct
       |> SqliteUtils.exec
            ~log:(Printf.sprintf "copying specs of database '%s'" db_file)
            ~stmt:
-             {|
+             (Printf.sprintf
+                {|
               INSERT OR REPLACE INTO specs
               SELECT
                 sub.proc_uid,
                 sub.proc_name,
+                sub.report_summary,
                 NULL,
-                sub.report_summary
+                %s
               FROM (
                 attached.specs AS sub
                 LEFT OUTER JOIN specs AS main
@@ -160,6 +162,9 @@ module Implementation = struct
                 OR
                 main.report_summary >= sub.report_summary
             |}
+                ( List.length PayloadId.database_fields
+                |> List.init ~f:(fun _ -> "NULL")
+                |> String.concat ~sep:", " ) )
     in
     let merge_issues_table ~db_file =
       Database.get_database AnalysisDatabase
