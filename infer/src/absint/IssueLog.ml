@@ -54,6 +54,17 @@ let store ~checker ~file m =
 
 let invalidate file = DBWriter.delete_issue_logs ~source_file:(SourceFile.SQLite.serialize file)
 
+let invalidate_all ~procedures =
+  let open SourceFile.Set in
+  List.fold procedures ~init:empty ~f:(fun files proc ->
+      match Attributes.load proc with
+      | Some {translation_unit= file} ->
+          add file files
+      | None ->
+          files )
+  |> iter invalidate
+
+
 let iter_issue_logs =
   let select_statement =
     Database.register_statement AnalysisDatabase "SELECT checker, issue_log FROM issue_logs"

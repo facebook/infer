@@ -44,8 +44,9 @@ module Implementation = struct
 
 
   let delete_all_specs () =
-    Database.get_database AnalysisDatabase
-    |> SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs"
+    let db = Database.get_database AnalysisDatabase in
+    SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs" db ;
+    SqliteUtils.exec ~log:"drop issue_logs table" ~stmt:"DELETE FROM issue_logs" db
 
 
   let delete_issue_logs =

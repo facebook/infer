@@ -27,5 +27,8 @@ val store : checker:Checker.t -> file:SourceFile.t -> t -> unit
 val invalidate : SourceFile.t -> unit
 (** Delete any stored issues for the given [source_file] from the database. *)
 
+val invalidate_all : procedures:Procname.t list -> unit
+(** Delete any stored issues that depend on the given [procedures] from the database. *)
+
 val iter_all_issues : f:(Checker.t -> Procname.t -> Errlog.t -> unit) -> unit
 (** iterate over all stored issues from all registered checkers in arbitrary order *)
