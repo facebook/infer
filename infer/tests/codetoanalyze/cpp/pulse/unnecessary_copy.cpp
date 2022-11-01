@@ -389,6 +389,12 @@ class WrapperArr {
     hidden_arr_.arr[0] = 9; // copy can be modified since it will have the
                             // ownership of the object.
   }
+
+  void copy_assignment_from_this_ok() {
+    Arr local_arr; // default constructor is called
+    local_arr = hidden_arr_; // copy assignment operator is called but it is
+                             // from a member field which cannot be moved.
+  }
 };
 
 namespace my_proj {

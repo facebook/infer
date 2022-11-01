@@ -124,6 +124,16 @@ let continue_fold_map astates ~init ~f =
              (acc, ExecutionDomain.continue disjunct) ) )
 
 
+let is_copy_assigned_from_this ~from source_addr_typ_opt =
+  Attribute.CopyOrigin.equal from CopyAssignment
+  && Option.exists source_addr_typ_opt ~f:(fun (_, source_expr, _) ->
+         match source_expr with
+         | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
+             Pvar.is_this pvar
+         | _ ->
+             false )
+
+
 let add_copies tenv proc_desc path location call_exp actuals astates astate_non_disj =
   let open IOption.Let_syntax in
   let aux (copy_check_fn, args_map_fn) init astates =
@@ -148,7 +158,10 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
               | _ ->
                   None
             in
-            if Option.is_some source_opt || is_copy_legit then
+            if is_copy_assigned_from_this ~from source_addr_typ_opt then
+              (* If source is copy assigned from a member field, we cannot suggest move as other procedures might access it. *)
+              None
+            else if Option.is_some source_opt || is_copy_legit then
               let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
               let disjunct' =
                 Option.value_map source_addr_typ_opt ~default:disjunct
