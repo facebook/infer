@@ -106,7 +106,7 @@ module Closures = struct
                 astate_result )
 
 
-  let record {PathContext.timestamp; conditions} location pname captured astate =
+  let record ({PathContext.timestamp; conditions} as path) location pname captured astate =
     let captured_addresses =
       List.filter_map captured
         ~f:(fun (captured_as, (address_captured, trace_captured), typ, mode) ->
@@ -122,7 +122,7 @@ module Closures = struct
     in
     let fake_capture_edges = mk_capture_edges captured_addresses in
     let astate =
-      AbductiveDomain.set_post_cell closure_addr_hist
+      AbductiveDomain.set_post_cell path closure_addr_hist
         (fake_capture_edges, Attributes.singleton (Closure pname))
         location astate
     in
@@ -359,14 +359,14 @@ let havoc_id id loc_opt astate =
 
 let write_access path location addr_trace_ref access addr_trace_obj astate =
   check_addr_access path Write location addr_trace_ref astate
-  >>| Memory.add_edge addr_trace_ref access addr_trace_obj location
+  >>| Memory.add_edge path addr_trace_ref access addr_trace_obj location
 
 
 let write_access_biad_isl path location addr_trace_ref access addr_trace_obj astate =
   let astates = check_and_abduce_addr_access_isl path Write location addr_trace_ref astate in
   List.map astates ~f:(fun result ->
       let+ astate = result in
-      Memory.add_edge addr_trace_ref access addr_trace_obj location astate )
+      Memory.add_edge path addr_trace_ref access addr_trace_obj location astate )
 
 
 let write_deref path location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
@@ -493,7 +493,7 @@ let record_invalidation ({PathContext.timestamp; conditions} as path) access_pat
           (Invalidated (cause, location, timestamp))
           hist_obj
       in
-      Memory.add_edge pointer access (addr_obj, hist') location astate
+      Memory.add_edge path pointer access (addr_obj, hist') location astate
   | UntraceableAccess ->
       astate
 
@@ -555,7 +555,7 @@ let shallow_copy ({PathContext.timestamp} as path) location addr_hist astate =
     (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
   in
   ( Option.value_map cell_opt ~default:astate ~f:(fun cell ->
-        AbductiveDomain.set_post_cell copy cell location astate )
+        AbductiveDomain.set_post_cell path copy cell location astate )
   , copy )
 
 

@@ -27,6 +27,8 @@ val canonicalize : unit -> unit
 
 val delete_all_specs : unit -> unit
 
+val delete_issue_logs : source_file:Sqlite3.Data.t -> unit
+
 val delete_spec : proc_uid:string -> unit
 
 val mark_all_source_files_stale : unit -> unit
@@ -58,6 +60,7 @@ val store_issue_log :
 val store_spec :
      proc_uid:string
   -> proc_name:Sqlite3.Data.t
-  -> analysis_summary:Sqlite3.Data.t
+  -> payloads:Sqlite3.Data.t list
   -> report_summary:Sqlite3.Data.t
+  -> summary_metadata:Sqlite3.Data.t
   -> unit

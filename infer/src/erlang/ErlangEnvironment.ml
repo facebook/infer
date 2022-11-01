@@ -39,6 +39,7 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
 type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
   ; current_module: module_name  (** used to qualify function names *)
+  ; is_otp: bool  (** does this module come from the OTP library *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
   ; specs: Ast.spec UnqualifiedFunction.Map.t  (** map functions to their specs *)
   ; types: Ast.type_ String.Map.t  (** user defined types *)
@@ -50,10 +51,11 @@ type ('procdesc, 'result) t =
   ; result: ('result[@sexp.opaque]) }
 [@@deriving sexp_of]
 
-let initialize_environment module_ =
+let initialize_environment module_ otp_modules =
   let init =
     { cfg= Cfg.create ()
     ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
+    ; is_otp= false
     ; functions= UnqualifiedFunction.Set.empty
     ; specs= UnqualifiedFunction.Map.empty
     ; types= String.Map.empty
@@ -102,7 +104,8 @@ let initialize_environment module_ =
         | `Duplicate ->
             L.die InternalError "repeated record: %s" name )
     | Module current_module ->
-        {env with current_module}
+        let is_otp = String.Set.mem otp_modules current_module in
+        {env with current_module; is_otp}
     | File _ ->
         env (* Handled during translation. *)
     | Function {function_; _} ->
@@ -162,9 +165,4 @@ let procname_for_user_type module_name name =
 let load_field_from_expr (env : (_, _) t) into_id expr field_name typ : Sil.instr =
   let any_typ = ptr_typ_of_name Any in
   let field = Fieldname.make (ErlangType typ) field_name in
-  Load
-    { id= into_id
-    ; e= Lfield (expr, field, typ_of_name typ)
-    ; root_typ= any_typ
-    ; typ= any_typ
-    ; loc= env.location }
+  Load {id= into_id; e= Lfield (expr, field, typ_of_name typ); typ= any_typ; loc= env.location}

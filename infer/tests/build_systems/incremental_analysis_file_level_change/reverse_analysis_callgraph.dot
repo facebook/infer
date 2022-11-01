@@ -1,0 +1,14 @@
+
+digraph callgraph {
+  N1 [ label = "b", flag = false ];
+  N1 -> N2 ;
+
+  N0 [ label = "a", flag = false ];
+  N0 -> N1 ;
+
+  N2 [ label = "c", flag = false ];
+  N2 -> N3 ;
+
+  N3 [ label = "main", flag = true ];
+
+}

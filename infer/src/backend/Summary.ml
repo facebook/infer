@@ -41,19 +41,13 @@ module Stats = struct
     F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt failure_kind symops
 end
 
-include struct
-  (* ignore dead modules added by @@deriving fields *)
-  [@@@warning "-60"]
-
-  type t =
-    { payloads: Payloads.t
-    ; mutable sessions: int
-    ; stats: Stats.t
-    ; proc_desc: Procdesc.t
-    ; err_log: Errlog.t
-    ; mutable callee_pnames: Procname.Set.t }
-  [@@deriving fields]
-end
+type t =
+  { payloads: Payloads.t
+  ; mutable sessions: int
+  ; stats: Stats.t
+  ; proc_desc: Procdesc.t
+  ; err_log: Errlog.t
+  ; mutable callee_pnames: Procname.Set.t }
 
 let yojson_of_t {proc_desc; payloads} =
   [%yojson_of: Procname.t * Payloads.t] (Procdesc.get_proc_name proc_desc, payloads)
@@ -115,8 +109,8 @@ module ReportSummary = struct
 
   let of_full_summary (f : full_summary) : t =
     { loc= get_loc f
-    ; cost_opt= f.payloads.Payloads.cost
-    ; config_impact_opt= f.payloads.Payloads.config_impact_analysis
+    ; cost_opt= Lazy.force f.payloads.Payloads.cost
+    ; config_impact_opt= Lazy.force f.payloads.Payloads.config_impact_analysis
     ; err_log= f.err_log }
 
 
@@ -125,26 +119,12 @@ module ReportSummary = struct
   end)
 end
 
-module AnalysisSummary = struct
-  include struct
-    (* ignore dead modules added by @@deriving fields *)
-    [@@@warning "-60"]
-
-    type t =
-      { payloads: Payloads.t
-      ; mutable sessions: int
-      ; stats: Stats.t
-      ; proc_desc: Procdesc.t
-      ; mutable callee_pnames: Procname.Set.t }
-    [@@deriving fields]
-  end
+module SummaryMetadata = struct
+  type t = {sessions: int; stats: Stats.t; proc_desc: Procdesc.t; callee_pnames: Procname.Set.t}
+  [@@deriving fields]
 
   let of_full_summary (f : full_summary) : t =
-    { payloads= f.payloads
-    ; sessions= f.sessions
-    ; stats= f.stats
-    ; proc_desc= f.proc_desc
-    ; callee_pnames= f.callee_pnames }
+    {sessions= f.sessions; stats= f.stats; proc_desc= f.proc_desc; callee_pnames= f.callee_pnames}
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -152,13 +132,13 @@ module AnalysisSummary = struct
   end)
 end
 
-let mk_full_summary (report_summary : ReportSummary.t) (analysis_summary : AnalysisSummary.t) :
-    full_summary =
-  { payloads= analysis_summary.payloads
-  ; sessions= analysis_summary.sessions
-  ; stats= analysis_summary.stats
-  ; proc_desc= analysis_summary.proc_desc
-  ; callee_pnames= analysis_summary.callee_pnames
+let mk_full_summary payloads (report_summary : ReportSummary.t)
+    (summary_metadata : SummaryMetadata.t) : full_summary =
+  { payloads
+  ; sessions= summary_metadata.sessions
+  ; stats= summary_metadata.stats
+  ; proc_desc= summary_metadata.proc_desc
+  ; callee_pnames= summary_metadata.callee_pnames
   ; err_log= report_summary.err_log }
 
 
@@ -179,50 +159,64 @@ module OnDisk = struct
 
 
   let spec_of_procname, spec_of_model =
-    (* both load queries must agree with these column numbers *)
-    let analysis_summary_column = 0 in
-    let report_summary_column = 1 in
-    let load_spec ~load_statement proc_name =
+    let mk_lazy_load_stmt table =
+      Database.register_statement AnalysisDatabase
+        "SELECT rowid, report_summary, summary_metadata FROM %s WHERE proc_uid = :k"
+        (Database.string_of_analysis_table table)
+    in
+    let mk_eager_load_stmt table =
+      Database.register_statement AnalysisDatabase
+        "SELECT report_summary, summary_metadata, %s FROM %s WHERE proc_uid = :k"
+        (F.asprintf "%a" (Pp.seq ~sep:", " F.pp_print_string) PayloadId.database_fields)
+        (Database.string_of_analysis_table table)
+    in
+    let load_spec ~lazy_payloads ~load_statement table proc_name =
       Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
           Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
           |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
           SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
             ~read_row:(fun stmt ->
-              let analysis_summary =
-                Sqlite3.column stmt analysis_summary_column |> AnalysisSummary.SQLite.deserialize
-              in
+              let offset = if lazy_payloads then (* column 0 holds [rowid] *) 1 else 0 in
               let report_summary =
-                Sqlite3.column stmt report_summary_column |> ReportSummary.SQLite.deserialize
+                Sqlite3.column stmt (offset + 0) |> ReportSummary.SQLite.deserialize
               in
-              mk_full_summary report_summary analysis_summary ) )
+              let summary_metadata =
+                Sqlite3.column stmt (offset + 1) |> SummaryMetadata.SQLite.deserialize
+              in
+              let payloads =
+                if lazy_payloads then
+                  let rowid = Sqlite3.column_int64 stmt 0 in
+                  Payloads.SQLite.lazy_load table ~rowid
+                else
+                  (* NOTE: [offset] = 0 at this point *)
+                  Payloads.SQLite.eager_load ~first_column:(offset + 2) stmt
+              in
+              mk_full_summary payloads report_summary summary_metadata ) )
     in
-    let spec_of_procname =
-      let load_statement =
-        Database.register_statement AnalysisDatabase
-          "SELECT analysis_summary, report_summary FROM specs WHERE proc_uid = :k"
-      in
-      fun proc_name ->
-        BStats.incr_summary_file_try_load () ;
-        let opt = load_spec ~load_statement proc_name in
-        if Option.is_some opt then BStats.incr_summary_read_from_disk () ;
+    let mk_load_spec (table : Database.analysis_table) =
+      let is_specs_table = match table with Specs -> true | BiabductionModelsSpecs -> false in
+      let lazy_load_statement = mk_lazy_load_stmt table in
+      let eager_load_statement = mk_eager_load_stmt table in
+      fun ~lazy_payloads proc_name ->
+        if is_specs_table then BStats.incr_summary_file_try_load () ;
+        let load_statement = if lazy_payloads then lazy_load_statement else eager_load_statement in
+        let opt = load_spec ~lazy_payloads ~load_statement table proc_name in
+        if is_specs_table && Option.is_some opt then BStats.incr_summary_read_from_disk () ;
         opt
     in
-    let spec_of_model =
-      let load_statement =
-        Database.register_statement AnalysisDatabase
-          "SELECT analysis_summary, report_summary FROM model_specs WHERE proc_uid = :k"
-      in
-      fun proc_name -> load_spec ~load_statement proc_name
-    in
+    let spec_of_procname = mk_load_spec Specs in
+    let spec_of_model = mk_load_spec BiabductionModelsSpecs in
     (spec_of_procname, spec_of_model)
 
 
   (** Load procedure summary for the given procedure name and update spec table *)
-  let load_summary_to_spec_table proc_name =
+  let load_summary_to_spec_table ~lazy_payloads proc_name =
     let summ_opt =
-      match spec_of_procname proc_name with
+      match spec_of_procname ~lazy_payloads proc_name with
       | None when BiabductionModels.mem proc_name ->
-          spec_of_model proc_name
+          (* most of the time we don't run biabduction and it's the only analysis with non-NULL
+             specs in these models, so load lazily *)
+          spec_of_model ~lazy_payloads:true proc_name
       | summ_opt ->
           summ_opt
     in
@@ -230,21 +224,23 @@ module OnDisk = struct
     summ_opt
 
 
-  let get proc_name =
+  let get ~lazy_payloads proc_name =
     match Procname.Hash.find cache proc_name with
     | summary ->
         BStats.incr_summary_cache_hits () ;
         Some summary
     | exception Caml.Not_found ->
         BStats.incr_summary_cache_misses () ;
-        load_summary_to_spec_table proc_name
+        load_summary_to_spec_table ~lazy_payloads proc_name
 
 
   let get_model_proc_desc model_name =
     if not (BiabductionModels.mem model_name) then
       Logging.die InternalError "Requested summary of model that couldn't be found: %a@\n"
         Procname.pp model_name
-    else Option.map (get model_name) ~f:(fun (s : full_summary) -> s.proc_desc)
+    else
+      (* we only care about the proc_desc so load analysis payloads lazily (i.e. not at all) *)
+      Option.map (get ~lazy_payloads:true model_name) ~f:(fun (s : full_summary) -> s.proc_desc)
 
 
   (** Save summary for the procedure into the spec database *)
@@ -252,12 +248,13 @@ module OnDisk = struct
     let proc_name = get_proc_name summary in
     (* Make sure the summary in memory is identical to the saved one *)
     add proc_name summary ;
-    let analysis_summary = AnalysisSummary.of_full_summary summary in
     let report_summary = ReportSummary.of_full_summary summary in
+    let summary_metadata = SummaryMetadata.of_full_summary summary in
     DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
       ~proc_name:(Procname.SQLite.serialize proc_name)
-      ~analysis_summary:(AnalysisSummary.SQLite.serialize analysis_summary)
+      ~payloads:(Payloads.SQLite.serialize summary.payloads)
       ~report_summary:(ReportSummary.SQLite.serialize report_summary)
+      ~summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata)
 
 
   let reset proc_desc =
@@ -278,21 +275,27 @@ module OnDisk = struct
     DBWriter.delete_spec ~proc_uid:(Procname.to_unique_id pname)
 
 
-  let delete_all ~filter () = Procedures.get_all ~filter () |> List.iter ~f:delete
+  let delete_all ~procedures = List.iter ~f:delete procedures
 
   let iter_filtered_specs ~filter ~f =
     let db = Database.get_database AnalysisDatabase in
     let dummy_source_file = SourceFile.invalid __FILE__ in
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
     Sqlite3.prepare db
-      "SELECT proc_name, analysis_summary, report_summary FROM specs ORDER BY proc_uid ASC"
+      {|
+      SELECT rowid, proc_name, report_summary, summary_metadata
+      FROM specs
+      ORDER BY proc_uid ASC
+      |}
     |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over filtered specs")
          ~f:(fun stmt ->
-           let proc_name = Sqlite3.column stmt 0 |> Procname.SQLite.deserialize in
+           let proc_name = Sqlite3.column stmt 1 |> Procname.SQLite.deserialize in
            if filter dummy_source_file proc_name then
-             let analysis_summary = Sqlite3.column stmt 1 |> AnalysisSummary.SQLite.deserialize in
+             let rowid = Sqlite3.column_int64 stmt 0 in
              let report_summary = Sqlite3.column stmt 2 |> ReportSummary.SQLite.deserialize in
-             let spec = mk_full_summary report_summary analysis_summary in
+             let summary_metadata = Sqlite3.column stmt 3 |> SummaryMetadata.SQLite.deserialize in
+             let payloads = Payloads.SQLite.lazy_load Specs ~rowid in
+             let spec = mk_full_summary payloads report_summary summary_metadata in
              f spec )
 
 

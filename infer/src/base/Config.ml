@@ -913,8 +913,8 @@ and capture_block_list =
 
 
 and capture_textual =
-  CLOpt.mk_path_opt ~long:"capture-textual" ~meta:"path"
-    "Generate a SIL program from a textual representation given in a .sil file."
+  CLOpt.mk_path_list ~long:"capture-textual" ~meta:"path"
+    "Generate a SIL program from a textual representation given in .sil files."
 
 
 and capture_doli =
@@ -1469,8 +1469,9 @@ and dump_duplicate_symbols =
 
 
 and dump_textual =
-  CLOpt.mk_path_opt ~long:"dump-textual" ~meta:"path"
-    "Generate a SIL program from the captured target. The target has to be a single Java file."
+  CLOpt.mk_bool ~long:"dump-textual"
+    "Generate a SIL program from the captured target. A $(i,filename.sil) file is generated for \
+     each $(i,filename.java) file in the target."
 
 
 and dynamic_dispatch_json_file_path =
@@ -1840,6 +1841,11 @@ and load_average =
 and margin =
   CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100 ~meta:"int"
     "Set right margin for the pretty printing functions"
+
+
+and margin_html =
+  CLOpt.mk_int ~long:"margin-html" ~default:200 ~meta:"int"
+    "Set margin for the pretty printing in html"
 
 
 and mask_sajwa_exceptions =
@@ -2246,7 +2252,15 @@ and pulse_model_return_nonnull =
 and pulse_model_return_first_arg =
   CLOpt.mk_string_opt ~long:"pulse-model-return-first-arg"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Regex of methods that should be modelled as returning the first argument in Pulse"
+    "Regex of methods that should be modelled as returning the first argument in Pulse in terms of \
+     the source language semantics. Languages supported: Java, C, Objective-C"
+
+
+and pulse_model_return_this =
+  CLOpt.mk_string_opt ~long:"pulse-model-return-this"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Regex of methods that should be modelled as returning the `this` or `self` argument of an \
+     instance method in Pulse. Languages supported: Java, Objective-C"
 
 
 and pulse_model_skip_pattern =
@@ -3354,7 +3368,7 @@ and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and capture = !capture
 
-and capture_textual = !capture_textual
+and capture_textual = RevList.to_list !capture_textual
 
 and capture_doli = !capture_doli
 
@@ -3641,6 +3655,8 @@ and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
 
+and margin_html = !margin_html
+
 and mask_sajwa_exceptions = !mask_sajwa_exceptions
 
 and max_nesting = !max_nesting
@@ -3780,6 +3796,8 @@ and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_
 and pulse_model_returns_copy_pattern = Option.map ~f:Str.regexp !pulse_model_returns_copy_pattern
 
 and pulse_model_return_first_arg = Option.map ~f:Str.regexp !pulse_model_return_first_arg
+
+and pulse_model_return_this = Option.map ~f:Str.regexp !pulse_model_return_this
 
 and pulse_model_return_nonnull = Option.map ~f:Str.regexp !pulse_model_return_nonnull
 

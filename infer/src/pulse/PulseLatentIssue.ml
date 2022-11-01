@@ -104,9 +104,9 @@ let is_manifest astate =
 let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.t) =
   match diagnostic with
   | ConstRefableParameter _
-  | MemoryLeak _
-  | JavaResourceLeak _
   | CSharpResourceLeak _
+  | JavaResourceLeak _
+  | MemoryLeak _
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _

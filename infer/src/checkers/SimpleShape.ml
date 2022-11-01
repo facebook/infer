@@ -344,15 +344,14 @@ module Domain = AbstractDomain.Unit
 module Summary = Shape.Summary
 
 module Report = struct
-  (** A utility module for use while developing. This would likely be integrated within a proper
-      Summary one when interprocedural analysis is supported. *)
+  (** Reporting utility module. *)
 
-  let debug result proc_desc summary =
-    (* For now we just want to print environment somewhere to debug the analysis. *)
+  let debug proc_desc env summary =
+    (* Print both a local environment and a summary in the debug logs *)
     let procname = Procdesc.get_proc_name proc_desc in
     L.debug Analysis Verbose "@[<v>@ @[<v2>" ;
     L.debug Analysis Verbose "@[<v>Result for procedure : %a@]@ " Procname.pp procname ;
-    L.debug Analysis Verbose "@[<v2>LOCAL ENV:@ %a@]@ @ " Shape.Env.pp result ;
+    L.debug Analysis Verbose "@[<v2>LOCAL ENV:@ %a@]@ @ " Shape.Env.pp env ;
     L.debug Analysis Verbose "@[<v2>SUMMARY:@ %a@]" Shape.Summary.pp summary ;
     L.debug Analysis Verbose "@]@ @]"
 end
@@ -487,8 +486,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let module Analyzer = Analyzer () in
   let _invmap : Analyzer.invariant_map = Analyzer.exec_pdesc analysis_data ~initial:() proc_desc in
   let summary = Shape.Summary.make Analyzer.Env.env in
-  (* Print the final environment in the debug logs for now *)
-  Report.debug Analyzer.Env.env proc_desc summary ;
+  Report.debug proc_desc Analyzer.Env.env summary ;
   Some summary
 
 

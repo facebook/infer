@@ -6,6 +6,8 @@
 
 -mode(compile).
 
+-define(OTP_MODULES_LIST, "otp_modules.list").
+
 usage() ->
     Usage =
         [
@@ -42,7 +44,12 @@ do_main(["--otp" | Rest], SpecsOnly, Beams, Args) ->
 do_main([Arg | Rest], SpecsOnly, Beams, []) ->
     do_main(Rest, SpecsOnly, Beams, [Arg]);
 do_main([], _SpecsOnly, {FullBeams, SpecsOnlyBeams}, [OutDir]) ->
-    filelib:ensure_dir(filename:join(OutDir, dummy)),
+    OTPListFilePath = filename:join(OutDir, ?OTP_MODULES_LIST),
+    filelib:ensure_dir(OTPListFilePath),
+    OTPModulesList = lists:map(
+        fun(Path) -> filename:basename(Path, ".beam") ++ "\n" end, beams_from_otp()
+    ),
+    ok = file:write_file(OTPListFilePath, io_lib:fwrite(OTPModulesList, [])),
     gather(mapper(OutDir, SpecsOnlyBeams, true)),
     gather(mapper(OutDir, FullBeams, false));
 do_main(_, _, _, _) ->

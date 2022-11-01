@@ -1151,6 +1151,7 @@ module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
 let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let cfg = CFG.from_pdesc proc_desc in
+  let analysis_data = InterproceduralAnalysis.bind_payload analysis_data ~f:fst in
   let initial =
     let formals = get_formals proc_desc in
     let captured = get_captured proc_desc in

@@ -8,13 +8,15 @@
 open! IStd
 module L = Logging
 module BaseLocation = Location
-module SilTyp = Typ
-module SilIdent = Ident
 module SilConst = Const
-module SilFieldname = Fieldname
-module SilStruct = Struct
 module SilExp = Exp
+module SilFieldname = Fieldname
+module SilIdent = Ident
 module SilProcdesc = Procdesc
+module SilProcname = Procname
+module SilPvar = Pvar
+module SilStruct = Struct
+module SilTyp = Typ
 open Textual
 
 module LocationBridge = struct
@@ -29,6 +31,17 @@ module LocationBridge = struct
 
   let of_sil ({line; col} : BaseLocation.t) =
     if Int.(line = -1 && col = -1) then Known {line; col} else Unknown
+end
+
+module VarNameBridge = struct
+  open VarName
+
+  let of_pvar (lang : Lang.t) (pvar : SilPvar.t) =
+    match lang with
+    | Java ->
+        SilPvar.get_name pvar |> Mangled.to_string |> of_java_name
+    | Hack ->
+        L.die UserError "of_pvar conversion is not supported in Hack mode"
 end
 
 module TypeNameBridge = struct
@@ -62,7 +75,58 @@ module TypeNameBridge = struct
         string_to_java_sil value
     | Hack ->
         HackClass (HackClassName.make value)
+
+
+  let java_lang_object = of_java_name "java.lang.Object"
 end
+
+let mangle_java_procname jpname =
+  let method_name =
+    match Procname.Java.get_method jpname with "<init>" -> "__sil_java_constructor" | s -> s
+  in
+  let parameter_types = Procname.Java.get_parameters jpname in
+  let rec pp_java_typ f ({desc} : SilTyp.t) =
+    let string_of_int (i : SilTyp.ikind) =
+      match i with
+      | IInt ->
+          "I"
+      | IBool ->
+          "B"
+      | ISChar ->
+          "C"
+      | IUShort ->
+          "S"
+      | ILong ->
+          "L"
+      | IShort ->
+          "S"
+      | _ ->
+          L.die InternalError "pp_java int"
+    in
+    let string_of_float (float : SilTyp.fkind) =
+      match float with FFloat -> "F" | FDouble -> "D" | _ -> L.die InternalError "pp_java float"
+    in
+    match desc with
+    | Tint ik ->
+        F.pp_print_string f (string_of_int ik)
+    | Tfloat fk ->
+        F.pp_print_string f (string_of_float fk)
+    | Tvoid ->
+        L.die InternalError "pp_java void"
+    | Tptr (typ, _) ->
+        pp_java_typ f typ
+    | Tstruct (JavaClass java_class_name) ->
+        JavaClassName.pp_with_verbosity ~verbose:true f java_class_name
+    | Tarray {elt} ->
+        F.fprintf f "A__%a" pp_java_typ elt
+    | _ ->
+        L.die InternalError "pp_java rec"
+  in
+  let rec pp_java_types fmt l =
+    match l with [] -> () | typ :: q -> F.fprintf fmt "_%a%a" pp_java_typ typ pp_java_types q
+  in
+  F.asprintf "%s%a" method_name pp_java_types parameter_types
+
 
 module TypBridge = struct
   open Typ
@@ -109,6 +173,9 @@ module TypBridge = struct
         L.die InternalError "Textual conversion: TVar type should not appear in Java"
     | Tarray {elt} ->
         Array (of_sil elt)
+
+
+  let annotated_of_sil typ = of_sil typ |> mk_without_attributes
 end
 
 module IdentBridge = struct
@@ -162,19 +229,23 @@ module ProcDeclBridge = struct
         let enclosing_class =
           Enclosing (TypeName.of_java_name (Procname.Java.get_class_name jpname))
         in
-        let name = Procname.Java.get_method jpname |> ProcName.of_java_name in
+        let name = mangle_java_procname jpname |> ProcName.of_java_name in
         let qualified_name : qualified_procname = {enclosing_class; name} in
-        let formals_types = Procname.Java.get_parameters jpname |> List.map ~f:TypBridge.of_sil in
         let formals_types =
-          if Procname.Java.is_static jpname then formals_types
+          Procname.Java.get_parameters jpname |> List.map ~f:TypBridge.annotated_of_sil
+        in
+        let formals_types, (attributes : Attr.t list) =
+          if Procname.Java.is_static jpname then (formals_types, [Attr.mk_static])
           else
             let typ = Procname.Java.get_class_type_name jpname in
-            let this_type = Typ.(Ptr (Struct (TypeNameBridge.of_sil typ))) in
-            this_type :: formals_types
+            let this_type =
+              Typ.(Ptr (Struct (TypeNameBridge.of_sil typ))) |> Typ.mk_without_attributes
+            in
+            (this_type :: formals_types, [])
         in
-        let result_type = Procname.Java.get_return_typ jpname |> TypBridge.of_sil in
+        let result_type = Procname.Java.get_return_typ jpname |> TypBridge.annotated_of_sil in
         (* FIXME when adding inheritance *)
-        {qualified_name; formals_types; result_type}
+        {qualified_name; formals_types; result_type; attributes}
     | _ ->
         L.die InternalError "Non-Java procname %a should not appear in Java mode" Procname.describe
           pname
@@ -192,9 +263,11 @@ module ProcDeclBridge = struct
             | Enclosing tname ->
                 tname )
         in
-        let result_type = TypBridge.to_sil lang result_type in
+        let result_type = TypBridge.to_sil lang result_type.typ in
         let return_type = Some result_type in
-        let formals_types = List.map ~f:(TypBridge.to_sil lang) formals_types in
+        let formals_types =
+          List.map ~f:(fun ({typ} : Typ.annotated) -> TypBridge.to_sil lang typ) formals_types
+        in
         let kind = SilProcname.Java.Non_Static (* FIXME when handling inheritance *) in
         SilProcname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
     | Hack ->
@@ -225,11 +298,12 @@ module FieldDeclBridge = struct
       qualified_name.name.value
 
 
-  let of_sil f typ =
+  let of_sil f typ is_final =
     let name = SilFieldname.get_field_name f |> FieldName.of_java_name in
     let enclosing_class = SilFieldname.get_class_name f |> TypeNameBridge.of_sil in
     let qualified_name : qualified_fieldname = {name; enclosing_class} in
-    {qualified_name; typ}
+    let attributes = if is_final then [Attr.mk_final] else [] in
+    {qualified_name; typ; attributes}
 end
 
 module StructBridge = struct
@@ -247,14 +321,14 @@ module StructBridge = struct
 
 
   let of_sil name (sil_struct : SilStruct.t) =
-    let of_sil_field (fieldname, typ, _) =
+    let of_sil_field (fieldname, typ, annots) =
       let typ = TypBridge.of_sil typ in
-      FieldDeclBridge.of_sil fieldname typ
+      FieldDeclBridge.of_sil fieldname typ (Annot.Item.is_final annots)
     in
     let supers = sil_struct.supers |> List.map ~f:TypeNameBridge.of_sil in
     let fields = SilStruct.(sil_struct.fields @ sil_struct.statics) in
     let fields = List.map ~f:of_sil_field fields in
-    {name; supers; fields}
+    {name; supers; fields; attributes= []}
 end
 
 module ExpBridge = struct
@@ -294,15 +368,15 @@ module ExpBridge = struct
     | Cast (typ, e) ->
         cast (TypBridge.of_sil typ) (of_sil decls tenv e)
     | Lvar pvar ->
-        let name = VarName.of_pvar Lang.Java pvar in
+        let name = VarNameBridge.of_pvar Lang.Java pvar in
         ( if SilPvar.is_global pvar then
-          let typ : Typ.t = Ptr (Struct (TypeNameBridge.of_global_pvar Lang.Java pvar)) in
-          let global : Global.t = {name; typ} in
+          let typ : Typ.t = Struct (TypeNameBridge.of_global_pvar Lang.Java pvar) in
+          let global : Global.t = {name; typ; attributes= []} in
           TextualDecls.declare_global decls global ) ;
         Lvar name
     | Lfield (e, f, typ) ->
         let typ = TypBridge.of_sil typ in
-        let fielddecl = FieldDeclBridge.of_sil f typ in
+        let fielddecl = FieldDeclBridge.of_sil f typ false in
         let () = declare_struct_from_tenv decls tenv fielddecl.qualified_name.enclosing_class in
         Field {exp= of_sil decls tenv e; field= fielddecl.qualified_name}
     | Lindex (e1, e2) ->
@@ -424,13 +498,13 @@ module InstrBridge = struct
         let id = IdentBridge.to_sil id in
         let e = ExpBridge.to_sil lang decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
-        Load {id; e; typ; root_typ= typ; loc}
+        Load {id; e; typ; loc}
     | Store {exp1; typ; exp2; loc} ->
         let e1 = ExpBridge.to_sil lang decls_env procname exp1 in
         let typ = TypBridge.to_sil lang typ in
         let e2 = ExpBridge.to_sil lang decls_env procname exp2 in
         let loc = LocationBridge.to_sil sourcefile loc in
-        Store {e1; root_typ= typ; typ; e2; loc}
+        Store {e1; typ; e2; loc}
     | Prune {exp; loc} ->
         let e = ExpBridge.to_sil lang decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
@@ -475,8 +549,11 @@ module InstrBridge = struct
                      F.fprintf fmt "the expression in %a should start with a regular call" pp i ) )
         in
         let pname = ProcDeclBridge.to_sil lang procname in
-        let formals_types = List.map procname.formals_types ~f:(TypBridge.to_sil lang) in
-        let result_type = TypBridge.to_sil lang procname.result_type in
+        let formals_types =
+          List.map procname.formals_types ~f:(fun ({typ} : Typ.annotated) ->
+              TypBridge.to_sil lang typ )
+        in
+        let result_type = TypBridge.to_sil lang procname.result_type.typ in
         let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
         let args =
           match List.zip args formals_types with
@@ -507,7 +584,7 @@ module TerminatorBridge = struct
         let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang procname) in
         let ret_type = SilProcdesc.get_ret_type pdesc in
         let e2 = ExpBridge.to_sil lang decls_env procname exp in
-        Some (Sil.Store {e1= SilExp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2; loc})
+        Some (Sil.Store {e1= SilExp.Lvar ret_var; typ= ret_type; e2; loc})
     | Jump _ ->
         None
     | Throw _ ->
@@ -581,7 +658,7 @@ module ProcDescBridge = struct
   open ProcDesc
 
   let build_formals lang {procdecl; params} =
-    let mk_formal typ vname =
+    let mk_formal ({typ} : Typ.annotated) vname =
       let name = Mangled.from_string vname.VarName.value in
       let typ = TypBridge.to_sil lang typ in
       (name, typ, Annot.Item.empty)
@@ -594,40 +671,23 @@ module ProcDescBridge = struct
           pp_qualified_procname procdecl.qualified_name
 
 
-  let build_formals_and_locals lang pdesc =
-    let formals = build_formals lang pdesc in
+  let build_locals lang {locals} =
     let make_var_data name typ : ProcAttributes.var_data =
       {name; typ; modify_in_block= false; is_constexpr= false; is_declared_unused= false}
     in
-    let seen_from_formals : Mangled.Set.t =
-      List.fold formals ~init:Mangled.Set.empty ~f:(fun set (name, _, _) ->
-          Mangled.Set.add name set )
-    in
-    let _, locals =
-      List.fold pdesc.nodes ~init:(seen_from_formals, []) ~f:(fun acc (node : Node.t) ->
-          List.fold node.instrs ~init:acc ~f:(fun (seen, locals) (instr : Instr.t) ->
-              match instr with
-              | Store {exp1= Lvar var_name; typ} ->
-                  let name = Mangled.from_string var_name.value in
-                  if Mangled.Set.mem name seen then (seen, locals)
-                  else
-                    let typ = TypBridge.to_sil lang typ in
-                    (Mangled.Set.add name seen, make_var_data name typ :: locals)
-                  (* FIXME: check that we don't miss variables that would be inside other left
-                     values like [Field] or [Index], or wait for adding locals declarations
-                     (see T131910123) *)
-              | Store _ | Load _ | Prune _ | Let _ ->
-                  (seen, locals) ) )
-    in
-    (formals, locals)
+    List.map locals ~f:(fun (var, annotated_typ) ->
+        let name = Mangled.from_string var.VarName.value in
+        let typ = TypBridge.to_sil lang annotated_typ.Typ.typ in
+        make_var_data name typ )
 
 
   let to_sil lang decls_env cfgs ({procdecl; nodes; start; exit_loc} as pdesc) =
     let sourcefile = TextualDecls.source_file decls_env in
     let sil_procname = ProcDeclBridge.to_sil lang procdecl in
-    let sil_ret_type = TypBridge.to_sil lang procdecl.result_type in
+    let sil_ret_type = TypBridge.to_sil lang procdecl.result_type.typ in
     let definition_loc = LocationBridge.to_sil sourcefile procdecl.qualified_name.name.loc in
-    let formals, locals = build_formals_and_locals lang pdesc in
+    let formals = build_formals lang pdesc in
+    let locals = build_locals lang pdesc in
     let pattributes =
       { (ProcAttributes.default sourcefile sil_procname) with
         is_defined= true
@@ -695,6 +755,16 @@ module ProcDescBridge = struct
           res
 
 
+  let compute_java_locals_type (nodes : Node.t list) =
+    List.fold nodes ~init:VarName.Map.empty ~f:(fun init (node : Node.t) ->
+        List.fold node.instrs ~init ~f:(fun map (instr : Instr.t) ->
+            match instr with
+            | Store {exp1= Lvar var; typ} ->
+                VarName.Map.add var typ map
+            | Load _ | Store _ | Prune _ | Let _ ->
+                map ) )
+
+
   let of_sil decls tenv pdesc =
     let module P = SilProcdesc in
     let procdecl = P.get_proc_name pdesc |> ProcDeclBridge.of_sil in
@@ -712,10 +782,27 @@ module ProcDescBridge = struct
     in
     let start = start_node.label in
     let params =
-      List.map (P.get_pvar_formals pdesc) ~f:(fun (pvar, _) -> VarName.of_pvar Lang.Java pvar)
+      List.map (P.get_pvar_formals pdesc) ~f:(fun (pvar, _) -> VarNameBridge.of_pvar Lang.Java pvar)
+    in
+    let java_locals_type = compute_java_locals_type nodes in
+    let locals =
+      P.get_locals pdesc
+      |> List.map ~f:(fun ({name; typ} : ProcAttributes.var_data) ->
+             let var = Mangled.to_string name |> VarName.of_java_name in
+             let typ =
+               if SilTyp.is_void typ then
+                 (* the Java frontend gives the void type to some local variables, but it does
+                    not makes sense. But this should be only the case for variable that are
+                    assigned once in the function, so we can easily collect the corresponding
+                    type with the function [compute_java_locals_type] above. *)
+                 VarName.Map.find_opt var java_locals_type
+                 |> Option.value ~default:Typ.(Ptr (Struct TypeNameBridge.java_lang_object))
+               else TypBridge.of_sil typ
+             in
+             (var, Typ.mk_without_attributes typ) )
     in
     let exit_loc = Location.Unknown in
-    {procdecl; nodes; start; params; exit_loc}
+    {procdecl; nodes; start; params; locals; exit_loc}
 end
 
 module ModuleBridge = struct
@@ -729,6 +816,10 @@ module ModuleBridge = struct
              (fun fmt _ -> F.fprintf fmt "Missing or unsupported source_language attribute") )
     | Some lang ->
         let decls_env = TextualDecls.make_decls module_ in
+        let module_ =
+          let open TextualTransform in
+          module_ |> remove_internal_calls |> let_propagation |> out_of_ssa
+        in
         let cfgs = Cfg.create () in
         let tenv = Tenv.create () in
         List.iter module_.decls ~f:(fun decl ->

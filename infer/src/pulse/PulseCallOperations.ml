@@ -42,7 +42,7 @@ let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
 
 
 let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) callee_pname_opt
-    ~ret ~actuals ~formals_opt ({AbductiveDomain.post} as astate) =
+    ~ret ~actuals ~formals_opt ({AbductiveDomain.post; path_condition} as astate) =
   let hist =
     ValueHistory.singleton
       (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
@@ -94,16 +94,20 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         in
         if
           Option.exists callee_pname_opt ~f:(fun p ->
-              Procname.is_constructor p || Procname.is_copy_assignment p )
+              Procname.is_constructor p || Procname.is_copy_assignment p || Procname.is_destructor p )
         then astate
         else
           (* record the [WrittenTo] attribute for all reachable values
              starting from actual argument so that we don't assume
              that they are not modified in the unnecessary copy analysis. *)
           let call_trace = Trace.Immediate {location= call_loc; history= hist} in
-          let written_attrs = Attributes.singleton (WrittenTo call_trace) in
-          fold_on_reachable_from_arg astate (fun reachable_actual ->
-              AddressAttributes.add_attrs reachable_actual written_attrs )
+          let written_attrs = Attributes.singleton (WrittenTo (timestamp, call_trace)) in
+          fold_on_reachable_from_arg astate (fun reachable_actual acc ->
+              if Formula.is_known_non_pointer path_condition reachable_actual then
+                (* not add [WrittenTo] for the non-pointer value, because primitive constant value
+                   is immutable, i.e. cannot be modified. *)
+                acc
+              else AddressAttributes.add_attrs reachable_actual written_attrs acc )
     | `DoNotHavoc ->
         astate
     | `ShouldOnlyHavocResources ->
@@ -149,10 +153,15 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         havoc_actual_if_ptr actual_typ None astate )
   in
   L.d_printfln "skipping unknown procedure" ;
-  ( match formals_opt with
-  | None ->
+  ( match (actuals, formals_opt) with
+  | actual_typ :: _, _ when Option.exists callee_pname_opt ~f:Procname.is_constructor ->
+      (* when the callee is an unknown constructor, havoc the first arg (the constructed object)
+         only *)
+      let formal_typ_opt = Option.bind formals_opt ~f:List.hd |> Option.map ~f:snd in
+      havoc_actual_if_ptr actual_typ formal_typ_opt astate
+  | _, None ->
       havoc_actuals_without_typ_info astate
-  | Some formals -> (
+  | _, Some formals -> (
       let actuals = trim_actuals_if_var_arg callee_pname_opt ~actuals ~formals in
       match
         List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->

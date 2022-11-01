@@ -23,10 +23,10 @@ let%test_module "parsing" =
   ( module struct
     let text =
       {|
-       attribute source_language = "hack"
-       attribute source_file = "original.hack"
+       .source_language = "hack"
+       .source_file = "original.hack"
 
-       attribute source_language = "java" // Won't have an effect
+       .source_language = "java" // Won't have an effect
 
        define nothing(): void {
          #node0:
@@ -41,9 +41,9 @@ let%test_module "parsing" =
       F.printf "%a" (Pp.seq ~sep:"\n" Attr.pp_with_loc) attrs ;
       [%expect
         {|
-        line 2, column 7: source_language = "hack"
-        line 3, column 7: source_file = "original.hack"
-        line 5, column 7: source_language = "java" |}] ;
+        line 2, column 7: .source_language = "hack"
+        line 3, column 7: .source_file = "original.hack"
+        line 5, column 7: .source_language = "java" |}] ;
       let lang = Option.value_exn (Module.lang module_) in
       F.printf "%s" (Lang.to_string lang) ;
       [%expect {| hack |}]
@@ -53,21 +53,21 @@ let%test_module "parsing" =
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
-         attribute source_language = "hack"
+        .source_language = "hack"
 
-         attribute source_file = "original.hack"
+        .source_file = "original.hack"
 
-         attribute source_language = "java"
+        .source_language = "java"
 
-         define nothing() : void {
-           #node0:
-               ret null
+        define nothing() : void {
+          #node0:
+              ret null
 
-         } |}]
+        } |}]
 
     let text =
       {|
-       attribute source_language = "hack"
+       .source_language = "hack"
 
        declare HackMixed.foo(*HackMixed, int): int
 
@@ -84,7 +84,7 @@ let%test_module "parsing" =
       F.printf "%a" Module.pp m ;
       [%expect
         {|
-        attribute source_language = "hack"
+        .source_language = "hack"
 
         declare HackMixed.foo(*HackMixed, int) : int
 
@@ -124,7 +124,8 @@ let%test_module "procnames" =
               { enclosing_class= TopLevel
               ; name= {value= "toplevel"; loc= Location.known ~line:0 ~col:0} }
           ; formals_types= []
-          ; result_type= Typ.Void }
+          ; result_type= Typ.mk_without_attributes Typ.Void
+          ; attributes= [] }
       in
       let as_java = TextualSil.proc_decl_to_sil Lang.Java toplevel_proc in
       let as_hack = TextualSil.proc_decl_to_sil Lang.Hack toplevel_proc in
@@ -156,6 +157,8 @@ let%test_module "remove_internal_calls transformation" =
 
         declare g3(int) : int
 
+        declare g4(int) : *int
+
         declare m(int, int) : int
 
         define f(x: int, y: int) : int {
@@ -171,7 +174,7 @@ let%test_module "remove_internal_calls transformation" =
           #lab2(n10: int, n11: int):
               ret g3(m(n10, n11))
           #lab:
-              throw g1(n8)
+              throw g4(n8)
         }
 
         define empty() : void {
@@ -190,6 +193,8 @@ let%test_module "remove_internal_calls transformation" =
         declare g2(int) : int
 
         declare g3(int) : int
+
+        declare g4(int) : *int
 
         declare m(int, int) : int
 
@@ -220,7 +225,7 @@ let%test_module "remove_internal_calls transformation" =
               ret n22
 
           #lab:
-              n23 = g1(n8)
+              n23 = g4(n8)
               throw n23
 
         }
@@ -242,7 +247,7 @@ let%test_module "let_propagation transformation" =
               n0:int = load &x
               n1:int = load &y
               n3 = __sil_mult_int(n0, n1)
-              n4 = __sil_neg(n3, n0)
+              n4 = __sil_minusa(n3, n0)
               jmp lab(n4)
           #lab(n5: int):
               n6 = __sil_neg(n1)
@@ -261,7 +266,7 @@ let%test_module "let_propagation transformation" =
           #entry:
               n0:int = load &x
               n1:int = load &y
-              jmp lab(__sil_neg(__sil_mult_int(n0, n1), n0))
+              jmp lab(__sil_minusa(__sil_mult_int(n0, n1), n0))
 
           #lab(n5: int):
               ret __sil_plusa(__sil_neg(n1), __sil_mult_int(n0, n1))
@@ -296,34 +301,34 @@ let%test_module "out-of-ssa transformation" =
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
-          define f(x: int, y: int) : int {
-            #entry:
-                n0:int = load &x
-                n1:int = load &y
-                store &__SSA2 <- n0:int
-                store &__SSA3 <- n1:int
-                store &__SSA6 <- n1:int
-                store &__SSA7 <- __sil_mult_int(n1, n0):int
-                jmp lab1, lab3
+        define f(x: int, y: int) : int {
+          #entry:
+              n0:int = load &x
+              n1:int = load &y
+              store &__SSA2 <- n0:int
+              store &__SSA3 <- n1:int
+              store &__SSA6 <- n1:int
+              store &__SSA7 <- __sil_mult_int(n1, n0):int
+              jmp lab1, lab3
 
-            #lab1:
-                n2:int = load &__SSA2
-                n3:int = load &__SSA3
-                store &__SSA4 <- n3:int
-                store &__SSA5 <- n2:int
-                jmp lab2
+          #lab1:
+              n2:int = load &__SSA2
+              n3:int = load &__SSA3
+              store &__SSA4 <- n3:int
+              store &__SSA5 <- n2:int
+              jmp lab2
 
-            #lab2:
-                n4:int = load &__SSA4
-                n5:int = load &__SSA5
-                ret __sil_plusa(n4, n5)
+          #lab2:
+              n4:int = load &__SSA4
+              n5:int = load &__SSA5
+              ret __sil_plusa(n4, n5)
 
-            #lab3:
-                n6:int = load &__SSA6
-                n7:int = load &__SSA7
-                store &__SSA4 <- n6:int
-                store &__SSA5 <- n7:int
-                jmp lab2
+          #lab3:
+              n6:int = load &__SSA6
+              n7:int = load &__SSA7
+              store &__SSA4 <- n6:int
+              store &__SSA5 <- n7:int
+              jmp lab2
 
-          } |}]
+        } |}]
   end )

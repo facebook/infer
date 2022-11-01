@@ -106,10 +106,10 @@ module PvarSpecialization = struct
     match instr with
     | Load {id; e; typ; loc} ->
         try_keep_original ~default:instr e (exec_exp pname e) ~f:(fun e' ->
-            Load {id; e= e'; root_typ= typ; typ; loc} )
-    | Store {e1; root_typ; typ; e2; loc} ->
+            Load {id; e= e'; typ; loc} )
+    | Store {e1; typ; e2; loc} ->
         try_keep_original2 ~default:instr e1 (exec_exp pname e1) e2 (exec_exp pname e2)
-          ~f:(fun e1' e2' -> Store {e1= e1'; root_typ; typ; e2= e2'; loc})
+          ~f:(fun e1' e2' -> Store {e1= e1'; typ; e2= e2'; loc})
     | Call (ret_id_typ, call_exp, args, loc, call_flags) ->
         try_keep_original2 ~default:instr call_exp (exec_exp pname call_exp) args
           (exec_args pname args) ~f:(fun converted_call_exp converted_args ->

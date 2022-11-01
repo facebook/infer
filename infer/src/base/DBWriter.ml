@@ -44,8 +44,20 @@ module Implementation = struct
 
 
   let delete_all_specs () =
-    Database.get_database AnalysisDatabase
-    |> SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs"
+    let db = Database.get_database AnalysisDatabase in
+    SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs" db ;
+    SqliteUtils.exec ~log:"drop issue_logs table" ~stmt:"DELETE FROM issue_logs" db
+
+
+  let delete_issue_logs =
+    let delete_statement =
+      Database.register_statement AnalysisDatabase "DELETE FROM issue_logs WHERE source_file = :k"
+    in
+    fun ~source_file ->
+      Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
+          Sqlite3.bind delete_stmt 1 source_file
+          |> SqliteUtils.check_result_code db ~log:"delete issue_logs bind source_file" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"delete issue_logs" db delete_stmt )
 
 
   let delete_spec =
@@ -56,7 +68,7 @@ module Implementation = struct
       Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
           Sqlite3.bind delete_stmt 1 (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_uid" ;
-          SqliteUtils.result_unit ~finalize:false ~log:"store spec" db delete_stmt )
+          SqliteUtils.result_unit ~finalize:false ~log:"delete spec" db delete_stmt )
 
 
   let mark_all_source_files_stale () =
@@ -133,13 +145,15 @@ module Implementation = struct
       |> SqliteUtils.exec
            ~log:(Printf.sprintf "copying specs of database '%s'" db_file)
            ~stmt:
-             {|
+             (Printf.sprintf
+                {|
               INSERT OR REPLACE INTO specs
               SELECT
                 sub.proc_uid,
                 sub.proc_name,
+                sub.report_summary,
                 NULL,
-                sub.report_summary
+                %s
               FROM (
                 attached.specs AS sub
                 LEFT OUTER JOIN specs AS main
@@ -149,6 +163,9 @@ module Implementation = struct
                 OR
                 main.report_summary >= sub.report_summary
             |}
+                ( List.length PayloadId.database_fields
+                |> List.init ~f:(fun _ -> "NULL")
+                |> String.concat ~sep:", " ) )
     in
     let merge_issues_table ~db_file =
       Database.get_database AnalysisDatabase
@@ -235,11 +252,16 @@ module Implementation = struct
     Database.create_tables db CaptureDatabase
 
 
+  (** drop everything except reports *)
   let shrink_analysis_db () =
     let db = Database.get_database AnalysisDatabase in
     SqliteUtils.exec db ~log:"nullify analysis summaries"
-      ~stmt:"UPDATE specs SET analysis_summary=NULL" ;
-    SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"VACUUM"
+      ~stmt:
+        (Printf.sprintf "UPDATE specs SET summary_metadata=NULL, %s"
+           (F.asprintf "%a"
+              (Pp.seq ~sep:", " (fun fmt payload_name -> F.fprintf fmt "%s=NULL" payload_name))
+              PayloadId.database_fields ) ) ;
+    SqliteUtils.exec db ~log:"vacuum analysis database" ~stmt:"VACUUM"
 
 
   let store_issue_log =
@@ -274,24 +296,23 @@ module Implementation = struct
       Database.register_statement AnalysisDatabase
         {|
           INSERT OR REPLACE INTO specs
-          VALUES (:proc_uid, :proc_name, :analysis_summary, :report_summary)
+          VALUES (:proc_uid, :proc_name, :report_summary, :summary_metadata, %s)
         |}
+        (F.asprintf "%a"
+           (Pp.seq ~sep:", " (fun fmt payload_name -> F.fprintf fmt ":%s" payload_name))
+           PayloadId.database_fields )
     in
-    fun ~proc_uid ~proc_name ~analysis_summary ~report_summary ->
+    fun ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata ->
       let proc_uid_hash = String.hash proc_uid in
       IntHash.find_opt specs_overwrite_counts proc_uid_hash
       |> Option.value_map ~default:0 ~f:(( + ) 1)
       (* [default] is 0 as we are only counting overwrites *)
       |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
       Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
-          Sqlite3.bind store_stmt 1 (Sqlite3.Data.TEXT proc_uid)
-          |> SqliteUtils.check_result_code db ~log:"store spec bind proc_uid" ;
-          Sqlite3.bind store_stmt 2 proc_name
-          |> SqliteUtils.check_result_code db ~log:"store spec bind proc_name" ;
-          Sqlite3.bind store_stmt 3 analysis_summary
-          |> SqliteUtils.check_result_code db ~log:"store spec bind analysis_summary" ;
-          Sqlite3.bind store_stmt 4 report_summary
-          |> SqliteUtils.check_result_code db ~log:"store spec bind report_summary" ;
+          Sqlite3.bind_values store_stmt
+            ( Sqlite3.Data.TEXT proc_uid :: proc_name :: report_summary :: summary_metadata
+            :: payloads )
+          |> SqliteUtils.check_result_code db ~log:"store spec bind_values" ;
           SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
 
 
@@ -310,6 +331,7 @@ module Command = struct
         ; proc_names: Sqlite3.Data.t }
     | Checkpoint
     | DeleteAllSpecs
+    | DeleteIssueLogs of {source_file: Sqlite3.Data.t}
     | DeleteSpec of {proc_uid: string}
     | Handshake
     | MarkAllSourceFilesStale
@@ -320,8 +342,9 @@ module Command = struct
     | StoreSpec of
         { proc_uid: string
         ; proc_name: Sqlite3.Data.t
-        ; analysis_summary: Sqlite3.Data.t
-        ; report_summary: Sqlite3.Data.t }
+        ; payloads: Sqlite3.Data.t list
+        ; report_summary: Sqlite3.Data.t
+        ; summary_metadata: Sqlite3.Data.t }
     | ReplaceAttributes of
         { proc_uid: string
         ; proc_attributes: Sqlite3.Data.t
@@ -338,6 +361,8 @@ module Command = struct
         "Checkpoint"
     | DeleteAllSpecs ->
         "DeleteAllSpecs"
+    | DeleteIssueLogs _ ->
+        "DeleteIssueLogs"
     | DeleteSpec _ ->
         "DeleteSpec"
     | Handshake ->
@@ -371,6 +396,8 @@ module Command = struct
         Implementation.canonicalize ()
     | DeleteAllSpecs ->
         Implementation.delete_all_specs ()
+    | DeleteIssueLogs {source_file} ->
+        Implementation.delete_issue_logs ~source_file
     | DeleteSpec {proc_uid} ->
         Implementation.delete_spec ~proc_uid
     | Handshake ->
@@ -385,8 +412,8 @@ module Command = struct
         Implementation.shrink_analysis_db ()
     | StoreIssueLog {checker; source_file; issue_log} ->
         Implementation.store_issue_log ~checker ~source_file ~issue_log
-    | StoreSpec {proc_uid; proc_name; analysis_summary; report_summary} ->
-        Implementation.store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary
+    | StoreSpec {proc_uid; proc_name; payloads; report_summary; summary_metadata} ->
+        Implementation.store_spec ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata
     | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis} ->
         Implementation.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis
     | ResetCaptureTables ->
@@ -535,6 +562,8 @@ let canonicalize () = perform Checkpoint
 
 let delete_all_specs () = perform DeleteAllSpecs
 
+let delete_issue_logs ~source_file = perform (DeleteIssueLogs {source_file})
+
 let delete_spec ~proc_uid = perform (DeleteSpec {proc_uid})
 
 let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
@@ -559,5 +588,5 @@ let store_issue_log ~checker ~source_file ~issue_log =
   perform (StoreIssueLog {checker; source_file; issue_log})
 
 
-let store_spec ~proc_uid ~proc_name ~analysis_summary ~report_summary =
-  perform (StoreSpec {proc_uid; proc_name; analysis_summary; report_summary})
+let store_spec ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata =
+  perform (StoreSpec {proc_uid; proc_name; payloads; report_summary; summary_metadata})

@@ -94,3 +94,17 @@ int folly_optional_vector_bad(folly::Optional<std::vector<int>> vec_opt) {
 }
 
 int folly_optional_string_bad(folly::Optional<std::string> s_opt) { return 0; }
+
+struct StructWithInt {
+  int n;
+  std::vector<int> vec;
+};
+
+void havoc_ptr(int* p);
+
+// StructWithInt s is const refable since it is not modified
+void havoc_reachable_by_unknown_bad(int* p, StructWithInt s) {
+  if (s.n == 42 && *p == 42) {
+    havoc_ptr(p);
+  }
+}

@@ -11,7 +11,7 @@ open! IStd
     {!Callbacks.proc_callback_t} and friends. *)
 
 val mk_interprocedural_field_t :
-     (Payloads.t, 'payload option) Field.t
+     (Payloads.t, 'payload option Lazy.t) Field.t
   -> Exe_env.t
   -> Summary.t
   -> ?tenv:Tenv.t
@@ -21,21 +21,21 @@ val mk_interprocedural_field_t :
 val interprocedural :
      f_analyze_dep:(Procdesc.t -> 'payloads_orig -> (Procdesc.t * 'payloads) option)
   -> get_payload:(Payloads.t -> 'payloads_orig)
-  -> set_payload:(Payloads.t -> 'payload_checker -> Payloads.t)
+  -> set_payload:(Payloads.t -> 'payload_checker Lazy.t -> Payloads.t)
   -> ('payloads InterproceduralAnalysis.t -> 'payload_checker)
   -> Callbacks.proc_callback_t
 (** the general form of interprocedural checkers: can read and update several payloads, and massage
     analysis results (mostly used to join option types) *)
 
 val interprocedural_with_field :
-     (Payloads.t, 'payload option) Field.t
+     (Payloads.t, 'payload option Lazy.t) Field.t
   -> ('payload InterproceduralAnalysis.t -> 'payload option)
   -> Callbacks.proc_callback_t
 (** [interprocedural field checker] expects [checker] to compute a payload (option) suitable for
     [field], given an inter-procedural analysis of callees that computes the same payload type *)
 
 val interprocedural_file :
-     (Payloads.t, 'payload option) Field.t
+     (Payloads.t, 'payload option Lazy.t) Field.t
   -> ('payload InterproceduralAnalysis.file_t -> IssueLog.t)
   -> Callbacks.file_callback_t
 (** [interprocedural_file field checker] expects [checker] to compute an {!IssueLog.t} from the
@@ -47,13 +47,13 @@ val intraprocedural : (IntraproceduralAnalysis.t -> unit) -> Callbacks.proc_call
     any transitive dependencies to analyze a given procedure) *)
 
 val intraprocedural_with_field_dependency :
-     (Payloads.t, 'payload) Field.t
+     (Payloads.t, 'payload Lazy.t) Field.t
   -> (IntraproceduralAnalysis.t -> 'payload -> unit)
   -> Callbacks.proc_callback_t
 (** an intra-procedural analysis that depends on the summary payload found by another *)
 
 val intraprocedural_with_field :
-     (Payloads.t, 'payload option) Field.t
+     (Payloads.t, 'payload option Lazy.t) Field.t
   -> (IntraproceduralAnalysis.t -> 'payload option)
   -> Callbacks.proc_callback_t
 (** runs an intra-procedural analysis that nonetheless produces a payload *)

@@ -295,6 +295,7 @@ let get_struct_decls decl =
   | TypeAliasDecl _
   | TypeAliasTemplateDecl _
   | TypedefDecl _
+  | UnnamedGlobalConstantDecl _
   | UnresolvedUsingIfExistsDecl _
   | UnresolvedUsingTypenameDecl _
   | UnresolvedUsingValueDecl _

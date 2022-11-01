@@ -310,4 +310,6 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
     &:: "arrayWithObject:" <>$ capt_arg_payload
     $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSArray.arrayWithObject"
-  ]
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIViewController")
+    &:: "initWithNibName:bundle:" <>$ capt_arg_payload
+    $+...$--> Basic.id_first_arg ~desc:"UIViewController.initWithNibName:bundle:" ]

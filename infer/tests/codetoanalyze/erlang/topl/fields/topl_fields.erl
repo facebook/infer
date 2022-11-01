@@ -34,5 +34,6 @@ test_6_Ok() ->
 
 %%% Helpers below
 
+bar([[]]) -> ok; % to make test_6_Ok pass as 10 < [] would match otherwise
 bar([T | _]) when 10 < T -> error(topl_error);
 bar(_) -> ok.

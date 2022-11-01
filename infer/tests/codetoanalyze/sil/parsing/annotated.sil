@@ -1,0 +1,24 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "java"
+
+global I : .cool int
+
+type node = .implements = "I1", "I2" { val: .final int; next: .final *node }
+
+type node_bis .implements = "I1", "I2" {
+  val: .final int;
+  next: .final *node
+}
+
+declare cons(.foo int, .bar = "1" *node) : .foo .bar = "1", "2" .foo = "again" node
+
+define .private f(x: .param1 int, y: .param2 float, n: .param3 *node) : .res void {
+  #entry:
+    n0:int = load &y
+    n1:int = load &n[1]
+    ret n1
+}

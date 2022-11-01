@@ -37,12 +37,8 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
   (* this is removed in the true branches, and in the false branch of the last handler *)
   let id_exn_val = Ident.create_fresh Ident.knormal in
   let create_entry_node loc =
-    let instr_get_ret_val =
-      Sil.Load {id= id_ret_val; e= Exp.Lvar ret_var; root_typ= ret_type; typ= ret_type; loc}
-    in
-    let instr_deactivate_exn =
-      Sil.Store {e1= Exp.Lvar ret_var; root_typ= ret_type; typ= ret_type; e2= Exp.null; loc}
-    in
+    let instr_get_ret_val = Sil.Load {id= id_ret_val; e= Exp.Lvar ret_var; typ= ret_type; loc} in
+    let instr_deactivate_exn = Sil.Store {e1= Exp.Lvar ret_var; typ= ret_type; e2= Exp.null; loc} in
     let instr_unwrap_ret_val =
       let unwrap_builtin = Exp.Const (Const.Cfun BuiltinDecl.__unwrap_exception) in
       Sil.Call
@@ -110,20 +106,10 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
             in
             let instr_set_catch_var =
               let catch_var = JContext.set_pvar context handler.JBir.e_catch_var ret_type in
-              Sil.Store
-                { e1= Exp.Lvar catch_var
-                ; root_typ= ret_type
-                ; typ= ret_type
-                ; e2= Exp.Var id_exn_val
-                ; loc }
+              Sil.Store {e1= Exp.Lvar catch_var; typ= ret_type; e2= Exp.Var id_exn_val; loc}
             in
             let instr_rethrow_exn =
-              Sil.Store
-                { e1= Exp.Lvar ret_var
-                ; root_typ= ret_type
-                ; typ= ret_type
-                ; e2= Exp.Exn (Exp.Var id_exn_val)
-                ; loc }
+              Sil.Store {e1= Exp.Lvar ret_var; typ= ret_type; e2= Exp.Exn (Exp.Var id_exn_val); loc}
             in
             let node_kind_true =
               Procdesc.Node.Prune_node (true, if_kind, PruneNodeKind_ExceptionHandler)

@@ -46,7 +46,7 @@ let ignore_array_index (access : BaseMemory.Access.t) : unit HilExp.Access.t =
 let add_invalid_and_modified ~pvar ~access ~check_empty attrs access_list acc =
   let modified =
     Attributes.get_written_to attrs
-    |> Option.value_map ~default:[] ~f:(fun modified -> [ImpurityDomain.WrittenTo modified])
+    |> Option.value_map ~default:[] ~f:(fun (_, modified) -> [ImpurityDomain.WrittenTo modified])
   in
   let invalid_and_modified =
     match Attributes.get_invalid attrs with

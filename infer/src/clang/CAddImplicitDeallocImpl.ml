@@ -13,14 +13,12 @@ let get_dealloc_call_field (self_var, self_typ) location instrs (fieldname, fiel
       let field_class_dealloc_name = Procname.make_objc_dealloc name in
       let id_pvar = Ident.create_fresh Ident.knormal in
       let load_pvar_instr =
-        Sil.Load {id= id_pvar; e= Lvar self_var; root_typ= self_typ; typ= self_typ; loc= location}
+        Sil.Load {id= id_pvar; e= Lvar self_var; typ= self_typ; loc= location}
       in
       let id_field = Ident.create_fresh Ident.knormal in
       let class_typ = match self_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> self_typ in
       let e = Exp.Lfield (Var id_pvar, fieldname, class_typ) in
-      let load_field_instr =
-        Sil.Load {id= id_field; e; root_typ= field_typ; typ= field_typ; loc= location}
-      in
+      let load_field_instr = Sil.Load {id= id_field; e; typ= field_typ; loc= location} in
       let ret_id = Ident.create_fresh Ident.knormal in
       let call_instr =
         Sil.Call
@@ -43,7 +41,7 @@ let get_dealloc_call_field (self_var, self_typ) location instrs (fieldname, fiel
 let decrement_ref_count self_var self_typ location =
   let self_id = Ident.create_fresh Ident.knormal in
   let load_self_instr =
-    Sil.Load {id= self_id; e= Exp.Lvar self_var; root_typ= self_typ; typ= self_typ; loc= location}
+    Sil.Load {id= self_id; e= Exp.Lvar self_var; typ= self_typ; loc= location}
   in
   let self_var = Exp.Var self_id in
   let count_id = Ident.create_fresh Ident.knormal in

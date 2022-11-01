@@ -9,21 +9,29 @@ open! IStd
 module F = Format
 module L = Logging
 
-type error = VerificationError of TextualVerification.error | SyntaxError of string
+type error =
+  | VerificationError of TextualVerification.error
+  | SyntaxError of string
+  | TypeError of TextualTypeVerification.error
 
 let pp_error sourcefile fmt = function
   | VerificationError err ->
       TextualVerification.pp_error sourcefile fmt err
   | SyntaxError err ->
       F.fprintf fmt "%s" err
+  | TypeError err ->
+      TextualTypeVerification.pp_error sourcefile fmt err
 
 
 let parse_buf sourcefile filebuf =
   try
     let lexer = TextualLexer.main in
     let m = TextualMenhir.main lexer filebuf sourcefile in
-    let errors = TextualVerification.run m in
-    if List.is_empty errors then Ok m else Error (List.map errors ~f:(fun x -> VerificationError x))
+    let errors = TextualVerification.run m |> List.map ~f:(fun x -> VerificationError x) in
+    if List.is_empty errors then
+      let errors = TextualTypeVerification.run m |> List.map ~f:(fun x -> TypeError x) in
+      if List.is_empty errors then Ok m else Error errors
+    else Error errors
   with TextualMenhir.Error ->
     let pos = filebuf.Lexing.lex_curr_p in
     let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
@@ -46,16 +54,27 @@ let parse_chan sourcefile ic =
   parse_buf sourcefile filebuf
 
 
-let run ?source_path textual_path =
+module TextualFile = struct
+  type t = StandaloneFile of string | TranslatedFile of {source_path: string; textual_path: string}
+
+  let source_path = function
+    | StandaloneFile path ->
+        path
+    | TranslatedFile {source_path; _} ->
+        source_path
+
+
+  let content_path = function
+    | StandaloneFile path ->
+        path
+    | TranslatedFile {textual_path; _} ->
+        textual_path
+end
+
+let parse textual_file =
+  let sourcefile = SourceFile.create (TextualFile.source_path textual_file) in
+  let textual_path = TextualFile.content_path textual_file in
   let cin = In_channel.create textual_path in
-  let filename = Filename.basename textual_path in
-  let sourcefile =
-    match source_path with
-    | Some original ->
-        SourceFile.create original
-    | None ->
-        SourceFile.create filename
-  in
   let result =
     let print_errors errs = List.iter errs ~f:(L.external_error "%a" (pp_error sourcefile)) in
     parse_chan sourcefile cin |> Result.map_error ~f:print_errors
@@ -64,27 +83,26 @@ let run ?source_path textual_path =
   result
 
 
-let capture ?source_path textual_path =
-  match run ?source_path textual_path with
-  | Error () ->
-      ()
-  | Ok module_ -> (
-      let module_ = TextualTransform.remove_internal_calls module_ in
-      let module_ = TextualTransform.let_propagation module_ in
-      let module_ = TextualTransform.out_of_ssa module_ in
-      let source_file = module_.sourcefile in
-      DB.Results_dir.init source_file ;
-      try
-        let cfg, tenv = TextualSil.module_to_sil module_ in
-        SourceFiles.add source_file cfg (FileLocal tenv) None ;
-        if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
-        if
-          Config.debug_mode || Config.testing_mode || Config.frontend_tests
-          || Option.is_some Config.icfg_dotty_outfile
-        then DotCfg.emit_frontend_cfg source_file cfg ;
-        Tenv.store_global tenv ;
-        ()
-      with Textual.ToSilTransformationError pp ->
-        L.external_error
-          "%s: conversion from Textual to SIL failed because of an unsupported form\n  %a\n"
-          (Filename.basename textual_path) pp () )
+let capture textual_paths =
+  List.iter textual_paths ~f:(fun textual_path ->
+      match parse textual_path with
+      | Error _ ->
+          ()
+      | Ok module_ -> (
+          let source_file = module_.sourcefile in
+          DB.Results_dir.init source_file ;
+          try
+            let cfg, tenv = TextualSil.module_to_sil module_ in
+            SourceFiles.add source_file cfg (FileLocal tenv) None ;
+            if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
+            if
+              Config.debug_mode || Config.testing_mode || Config.frontend_tests
+              || Option.is_some Config.icfg_dotty_outfile
+            then DotCfg.emit_frontend_cfg source_file cfg ;
+            Tenv.store_global tenv ;
+            ()
+          with Textual.ToSilTransformationError pp ->
+            L.external_error
+              "%s: conversion from Textual to SIL failed because of an unsupported form\n  %a\n"
+              (Filename.basename (SourceFile.to_rel_path source_file))
+              pp () ) )

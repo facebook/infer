@@ -76,7 +76,7 @@ val add_ref_counted : AbstractValue.t -> t -> t
 
 val is_ref_counted : AbstractValue.t -> t -> bool
 
-val get_written_to : AbstractValue.t -> t -> Trace.t option
+val get_written_to : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option
 
 val std_vector_reserve : AbstractValue.t -> t -> t
 

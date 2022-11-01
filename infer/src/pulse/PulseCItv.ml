@@ -176,6 +176,8 @@ let is_not_equal_to_zero = function
       false
 
 
+let is_non_pointer = function Between (Int _, Int _) -> true | _ -> false
+
 let intersection a1 a2 =
   match (a1, a2) with
   | Outside (lower1, upper1), Outside (lower2, upper2) ->

@@ -99,16 +99,22 @@ let restore_global_state st =
 (** reference to log errors only at the innermost recursive call *)
 let logged_error = ref false
 
-let update_taskbar callee_pdesc =
-  let proc_name = Procdesc.get_proc_name callee_pdesc in
-  let source_file = (Procdesc.get_attributes callee_pdesc).ProcAttributes.translation_unit in
+let update_taskbar proc_name_opt source_file_opt =
   let t0 = Mtime_clock.now () in
   let status =
-    let nesting =
-      if !nesting <= max_nesting_to_print then String.make !nesting '>'
-      else Printf.sprintf "%d>" !nesting
-    in
-    F.asprintf "%s%a: %a" nesting SourceFile.pp source_file Procname.pp proc_name
+    match (proc_name_opt, source_file_opt) with
+    | Some pname, Some src_file ->
+        let nesting =
+          if !nesting <= max_nesting_to_print then String.make !nesting '>'
+          else Printf.sprintf "%d>" !nesting
+        in
+        F.asprintf "%s%a: %a" nesting SourceFile.pp src_file Procname.pp pname
+    | Some pname, None ->
+        Procname.to_string pname
+    | None, Some src_file ->
+        SourceFile.to_string src_file
+    | None, None ->
+        "Unspecified task"
   in
   current_taskbar_status := Some (t0, status) ;
   !ProcessPoolState.update_status t0 status
@@ -122,6 +128,7 @@ let analyze exe_env callee_summary =
 
 let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
+  let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in
     fun () ->
@@ -137,11 +144,11 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
       Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
-    update_taskbar callee_pdesc ;
+    let source_file = callee_attributes.ProcAttributes.translation_unit in
+    update_taskbar (Some callee_pname) (Some source_file) ;
     Preanal.do_preanalysis exe_env callee_pdesc ;
     if Config.debug_mode then
-      DotCfg.emit_proc_desc (Procdesc.get_attributes callee_pdesc).translation_unit callee_pdesc
-      |> ignore ;
+      DotCfg.emit_proc_desc callee_attributes.translation_unit callee_pdesc |> ignore ;
     let initial_callee_summary = Summary.OnDisk.reset callee_pdesc in
     add_active callee_pname ;
     initial_callee_summary
@@ -160,7 +167,10 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
     let payloads =
       let biabduction =
-        Some BiabductionSummary.{preposts= []; phase= summary.payloads.biabduction |> opt_get_phase}
+        Lazy.from_val
+          (Some
+             BiabductionSummary.
+               {preposts= []; phase= summary.payloads.biabduction |> Lazy.force |> opt_get_phase} )
       in
       {summary.payloads with biabduction}
     in
@@ -171,10 +181,9 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     new_summary
   in
   let initial_callee_summary = preprocess () in
-  let attributes = Procdesc.get_attributes callee_pdesc in
   try
     let callee_summary =
-      if attributes.ProcAttributes.is_defined then analyze exe_env initial_callee_summary
+      if callee_attributes.ProcAttributes.is_defined then analyze exe_env initial_callee_summary
       else initial_callee_summary
     in
     let final_callee_summary = postprocess callee_summary in
@@ -190,8 +199,8 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
             true
         | exn ->
             if not !logged_error then (
-              let source_file = attributes.ProcAttributes.translation_unit in
-              let location = attributes.ProcAttributes.loc in
+              let source_file = callee_attributes.ProcAttributes.translation_unit in
+              let location = callee_attributes.ProcAttributes.loc in
               L.internal_error "While analysing function %a:%a at %a, raised %s@\n" SourceFile.pp
                 source_file Procname.pp callee_pname Location.pp_file_pos location
                 (Exn.to_string exn) ;
@@ -265,11 +274,11 @@ let get_proc_desc callee_pname =
   else Procdesc.load callee_pname
 
 
-let analyze_callee exe_env ?caller_summary callee_pname =
+let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
-    match Summary.OnDisk.get callee_pname with
+    match Summary.OnDisk.get ~lazy_payloads callee_pname with
     | Some _ as summ_opt ->
         summ_opt
     | None when procedure_should_be_analyzed callee_pname ->
@@ -303,11 +312,15 @@ let analyze_callee exe_env ?caller_summary callee_pname =
 
 
 let analyze_proc_name exe_env ~caller_summary callee_pname =
-  analyze_callee exe_env ~caller_summary callee_pname
+  analyze_callee ~lazy_payloads:false exe_env ~caller_summary callee_pname
 
 
 let analyze_proc_name_no_caller exe_env callee_pname =
-  analyze_callee exe_env ?caller_summary:None callee_pname
+  (* load payloads lazily (and thus field by field as needed): we are either doing a file analysis
+     and we don't want to load all payloads at once (to avoid high memory usage when only a few of
+     the payloads are actually needed), or we are starting a procedure analysis in which case we're
+     not interested in loading the summary if it has already been computed *)
+  analyze_callee ~lazy_payloads:true exe_env ?caller_summary:None callee_pname
 
 
 let analyze_procedures exe_env procs_to_analyze source_file_opt =
@@ -317,17 +330,19 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
   in
   List.iter ~f:analyze_proc_name_call procs_to_analyze ;
   Option.iter source_file_opt ~f:(fun source_file ->
-      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
-  Option.iter source_file_opt ~f:(fun source_file ->
+      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ;
       Callbacks.iterate_file_callbacks_and_store_issues procs_to_analyze exe_env source_file ) ;
   Language.curr_language := saved_language
 
 
 (** Invoke all procedure-level and file-level callbacks on a given environment. *)
 let analyze_file exe_env source_file =
+  update_taskbar None (Some source_file) ;
   let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
   analyze_procedures exe_env procs_to_analyze (Some source_file)
 
 
 (** Invoke procedure callbacks on a given environment. *)
-let analyze_proc_name_toplevel exe_env proc_name = analyze_procedures exe_env [proc_name] None
+let analyze_proc_name_toplevel exe_env proc_name =
+  update_taskbar (Some proc_name) None ;
+  analyze_procedures exe_env [proc_name] None

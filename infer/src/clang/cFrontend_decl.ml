@@ -239,6 +239,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | TypeAliasDecl _
     | TypeAliasTemplateDecl _
     | TypedefDecl _
+    | UnnamedGlobalConstantDecl _
     | UnresolvedUsingIfExistsDecl _
     | UnresolvedUsingTypenameDecl _
     | UnresolvedUsingValueDecl _

@@ -18,7 +18,7 @@ type t = Builtin.registered
 let execute___builtin_va_arg {Builtin.analysis_data; prop_; path; args; loc} : Builtin.ret_typ =
   match args with
   | [(lexp3, typ3)] ->
-      let instr' = Sil.Store {e1= lexp3; root_typ= typ3; typ= typ3; e2= Exp.zero; loc} in
+      let instr' = Sil.Store {e1= lexp3; typ= typ3; e2= Exp.zero; loc} in
       SymExec.instrs ~mask_errors:true analysis_data (Instrs.singleton instr') [(prop_, path)]
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
@@ -606,12 +606,7 @@ let execute___cxx_typeid ({Builtin.analysis_data; prop_; args; loc} as r) : Buil
           in
           let typ_string = Typ.to_string typ in
           let set_instr =
-            Sil.Store
-              { e1= field_exp
-              ; root_typ= StdTyp.void
-              ; typ= StdTyp.void
-              ; e2= Exp.Const (Const.Cstr typ_string)
-              ; loc }
+            Sil.Store {e1= field_exp; typ= StdTyp.void; e2= Exp.Const (Const.Cstr typ_string); loc}
           in
           SymExec.instrs ~mask_errors:true analysis_data (Instrs.singleton set_instr) res
       | _ ->
@@ -751,7 +746,6 @@ let execute___infer_fail {Builtin.analysis_data= {tenv} as analysis_data; prop_;
   let set_instr =
     Sil.Store
       { e1= Exp.Lvar Predicates.custom_error
-      ; root_typ= StdTyp.void
       ; typ= StdTyp.void
       ; e2= Exp.Const (Const.Cstr error_str)
       ; loc }
@@ -771,7 +765,6 @@ let execute___assert_fail {Builtin.analysis_data; prop_; path; args; loc} : Buil
   let set_instr =
     Sil.Store
       { e1= Exp.Lvar Predicates.custom_error
-      ; root_typ= StdTyp.void
       ; typ= StdTyp.void
       ; e2= Exp.Const (Const.Cstr error_str)
       ; loc }

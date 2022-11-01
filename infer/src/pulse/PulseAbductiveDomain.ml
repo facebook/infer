@@ -520,10 +520,12 @@ module Memory = struct
     if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
-  let add_edge (addr, history) access new_addr_hist location astate =
+  let add_edge {PathContext.timestamp} (addr, history) access new_addr_hist location astate =
     map_post_heap astate ~f:(BaseMemory.add_edge addr access new_addr_hist)
     |> AddressAttributes.map_post_attrs
-         ~f:(BaseAddressAttributes.add_one addr (WrittenTo (Trace.Immediate {location; history})))
+         ~f:
+           (BaseAddressAttributes.add_one addr
+              (WrittenTo (timestamp, Trace.Immediate {location; history})) )
 
 
   let find_edge_opt address access astate =
@@ -912,7 +914,7 @@ let check_retain_cycles ~dead_addresses tenv astate =
     | None ->
         None
     | Some attributes ->
-        Attributes.get_written_to attributes
+        Attributes.get_written_to attributes |> Option.map ~f:snd
   in
   let compare_traces trace1 trace2 =
     let loc1 = Trace.get_outer_location trace1 in
@@ -1107,10 +1109,12 @@ let set_post_edges addr edges astate =
 
 let find_post_cell_opt addr {post} = BaseDomain.find_cell_opt addr (post :> BaseDomain.t)
 
-let set_post_cell (addr, history) (edges, attr_set) location astate =
+let set_post_cell {PathContext.timestamp} (addr, history) (edges, attr_set) location astate =
   set_post_edges addr edges astate
   |> AddressAttributes.map_post_attrs ~f:(fun attrs ->
-         BaseAddressAttributes.add_one addr (WrittenTo (Trace.Immediate {location; history})) attrs
+         BaseAddressAttributes.add_one addr
+           (WrittenTo (timestamp, Trace.Immediate {location; history}))
+           attrs
          |> BaseAddressAttributes.add addr attr_set )
 
 
@@ -1228,52 +1232,60 @@ let get_stack_allocated {post} =
     (post :> BaseDomain.t).stack AbstractValue.Set.empty
 
 
-let check_new_eqs (eqs : Formula.new_eqs) =
-  (* We look only at Equal. *)
-  let eqs = List.filter_map ~f:(function Formula.Equal (a, b) -> Some (a, b) | _ -> None) eqs in
+let check_new_eqs (eqs : Formula.new_eq list) =
+  let module V = struct
+    module K = struct
+      type t = AbstractValue.t option [@@deriving compare, equal]
+
+      let pp = Fmt.option ~none:(Fmt.any "0") AbstractValue.pp
+    end
+
+    include K
+    module Map = PrettyPrintable.MakePPMap (K)
+  end in
+  (* We build a more uniform representation of [new_eq]; [None] represents 0. *)
+  let eqs =
+    let f (e : Formula.new_eq) =
+      match e with Equal (a, b) -> (Some a, Some b) | EqZero a -> (Some a, None)
+    in
+    List.map ~f eqs
+  in
   let values =
-    eqs
-    |> List.concat_map ~f:(fun (a, b) -> [a; b])
-    |> List.dedup_and_sort ~compare:AbstractValue.compare
+    eqs |> List.concat_map ~f:(fun (a, b) -> [a; b]) |> List.dedup_and_sort ~compare:V.compare
   in
   (* We simulate left-to-right substitution. A pair [(a,b)] in [substs] means that [a] becomes [b]
    * after substitution. *)
   let substs =
     let init = List.map ~f:(fun x -> (x, x)) values in
     let apply_subst substs (a, b) =
-      List.map ~f:(function c, d when AbstractValue.equal d a -> (c, b) | s -> s) substs
+      List.map ~f:(function c, d when V.equal d a -> (c, b) | s -> s) substs
     in
     List.fold ~init ~f:apply_subst eqs
   in
   (* And then we treat equalities as equalities, using union-find to find a rep. *)
   let cls =
-    List.fold ~init:AbstractValue.Map.empty
-      ~f:(fun m v -> AbstractValue.Map.add v (Union_find.create v) m)
-      values
+    List.fold ~init:V.Map.empty ~f:(fun m v -> V.Map.add v (Union_find.create v) m) values
   in
-  List.iter
-    ~f:(function
-      | a, b -> Union_find.union (AbstractValue.Map.find a cls) (AbstractValue.Map.find b cls) )
-    eqs ;
+  List.iter ~f:(function a, b -> Union_find.union (V.Map.find a cls) (V.Map.find b cls)) eqs ;
   (* Finally, we check that for each pair of values the two approaches agree. *)
   let pairs = List.cartesian_product values values in
   List.iter pairs ~f:(function a, b ->
       let equal_in_subst =
-        let aa = List.Assoc.find_exn ~equal:AbstractValue.equal substs a in
-        let bb = List.Assoc.find_exn ~equal:AbstractValue.equal substs b in
-        AbstractValue.equal aa bb
+        let aa = List.Assoc.find_exn ~equal:V.equal substs a in
+        let bb = List.Assoc.find_exn ~equal:V.equal substs b in
+        V.equal aa bb
       in
       let equal_in_uf =
-        let aa = AbstractValue.Map.find a cls in
-        let bb = AbstractValue.Map.find b cls in
+        let aa = V.Map.find a cls in
+        let bb = V.Map.find b cls in
         Union_find.same_class aa bb
       in
       if Bool.(equal_in_subst <> equal_in_uf) then (
         F.fprintf F.str_formatter "@[<v>" ;
         List.iter eqs ~f:(function x, y ->
-            F.fprintf F.str_formatter "@[%a -> %a@]@;" AbstractValue.pp x AbstractValue.pp y ) ;
-        F.fprintf F.str_formatter "@[See values %a %a: equal_in_subst=%b equal_in_uf=%b@]@;@]"
-          AbstractValue.pp a AbstractValue.pp b equal_in_subst equal_in_uf ;
+            F.fprintf F.str_formatter "@[%a -> %a@]@;" V.pp x V.pp y ) ;
+        F.fprintf F.str_formatter "@[See values %a %a: equal_in_subst=%b equal_in_uf=%b@]@;@]" V.pp
+          a V.pp b equal_in_subst equal_in_uf ;
         L.die InternalError "%s" (F.flush_str_formatter ()) ) )
 
 

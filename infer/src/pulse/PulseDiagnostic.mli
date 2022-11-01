@@ -62,18 +62,18 @@ type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
+  | CSharpResourceLeak of
+      {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
+  | ErlangError of ErlangError.t
+  | JavaResourceLeak of
+      {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
+  | ReadUninitializedValue of read_uninitialized_value
   | RetainCycle of
       { assignment_traces: Trace.t list
       ; value: DecompilerExpr.t
       ; path: DecompilerExpr.t
       ; location: Location.t }
-  | ErlangError of ErlangError.t
-  | ReadUninitializedValue of read_uninitialized_value
-  | JavaResourceLeak of
-      {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
-  | CSharpResourceLeak of
-      {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t

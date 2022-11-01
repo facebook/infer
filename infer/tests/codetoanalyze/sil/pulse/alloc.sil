@@ -1,4 +1,4 @@
-attribute source_language = "hack"
+.source_language = "hack"
 
 type T = { }
 
