@@ -209,7 +209,10 @@ let all_checkers =
          [(checker, Erlang)] ) }
   ; { checker= SimpleLineage
     ; callbacks=
-        (let checker = interprocedural Payloads.Fields.simple_lineage SimpleLineage.checker in
+        (let checker =
+           interprocedural2 Payloads.Fields.simple_lineage Payloads.Fields.simple_shape
+             SimpleLineage.checker
+         in
          [(checker, Erlang)] ) } ]
 
 
