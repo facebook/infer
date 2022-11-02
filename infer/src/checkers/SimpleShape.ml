@@ -397,6 +397,54 @@ struct
         Shape.Env.create_shape ()
 
 
+  module CallModel = struct
+    let make_tuple ret_id args =
+      (* Unify the shapes of the fields of the return with the shapes of the arguments *)
+      let ret_shape = Shape.Env.var_shape env ret_id in
+      let tuple_type : Typ.name = ErlangType (Tuple (List.length args)) in
+      let fieldname i = Fieldname.make tuple_type (ErlangTypeName.tuple_elem (i + 1)) in
+      let ret_field_shape i = Shape.Env.field_shape env ret_shape (fieldname i) in
+      List.iteri ~f:(fun i arg -> Shape.Env.unify env (shape_expr arg) (ret_field_shape i)) args
+
+
+    let get_custom_model procname =
+      let models = [(BuiltinDecl.__erlang_make_tuple, make_tuple)] in
+      List.Assoc.find ~equal:Procname.equal models procname
+
+
+    let standard_model proc_desc summary ret_var args =
+      (* Standard call of a known function:
+         1. We get the shape of the actual args and ret_id
+         2. We introduce into the environment the shapes of the formal args and return value of
+            the function, obtained from the summary.
+         3. We unify the actual and formal params/return together.
+         Eventually the ret_id shape will therefore correctly be related to the shapes of the
+         actual parameters of the function.
+      *)
+      let ret_id_shape = Shape.Env.var_shape env ret_var in
+      let actual_args_shapes = List.map ~f:shape_expr args in
+      let return = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
+      let formals =
+        List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar) (Procdesc.get_pvar_formals proc_desc)
+      in
+      let formal_shapes, returned_shape = Shape.Summary.introduce ~return ~formals summary env in
+      List.iter2_exn ~f:(fun s1 s2 -> Shape.Env.unify env s1 s2) actual_args_shapes formal_shapes ;
+      Shape.Env.unify env ret_id_shape returned_shape
+
+
+    let exec analyze_dependency procname ret_var args =
+      match get_custom_model procname with
+      | Some model ->
+          model ret_var args
+      | None -> (
+        match analyze_dependency procname with
+        | Some (proc_desc, summary) ->
+            standard_model proc_desc summary ret_var args
+        | None ->
+            L.debug Analysis Verbose "@[<v2> SimpleShape: no model found for procname `%a`@]@,"
+              Procname.pp procname )
+  end
+
   let exec_assignment var rhs_exp =
     (* When assigning a value to a variable, we unify the current shape of that variable to the shape
        of the expression, thus merging together the fields that have been collected so far on both
@@ -418,37 +466,13 @@ struct
   let exec_instr_unit {InterproceduralAnalysis.analyze_dependency} (instr : Sil.instr) =
     match instr with
     | Call ((ret_id, _typ), fun_exp, args, _location, _flags) -> (
-      match Option.bind ~f:analyze_dependency (procname_of_exp fun_exp) with
+      match procname_of_exp fun_exp with
       | None ->
-          L.debug Analysis Verbose
-            "@[<v 2>SimpleShape: call of unknown function detected.@,\
-             Procedure: %a@,\
-             Procname: %a@]@,"
+          L.debug Analysis Verbose "@[<v>SimpleShape: call of unsupported expression `%a`.@]@,"
             Exp.pp fun_exp
-            (Format.pp_print_option Procname.pp)
-            (procname_of_exp fun_exp)
-      | Some (proc_desc, summary) ->
-          (* Calling a known function:
-             1. We get the shape of the actual args and ret_id
-             2. We introduce into the environment the shapes of the formal args and return value of
-                the function, obtained from the summary.
-             3. We unify the actual and formal params/return together.
-             Eventually the ret_id shape will therefore correctly be related to the shapes of the
-             actual parameters of the function.
-          *)
-          let ret_id_shape = Shape.Env.var_shape env (Var.of_id ret_id) in
-          let actual_args_shapes = List.map ~f:(fun (exp, _typ) -> shape_expr exp) args in
-          let return = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
-          let formals =
-            List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar) (Procdesc.get_pvar_formals proc_desc)
-          in
-          let formal_shapes, returned_shape =
-            Shape.Summary.introduce ~return ~formals summary env
-          in
-          List.iter2_exn
-            ~f:(fun s1 s2 -> Shape.Env.unify env s1 s2)
-            actual_args_shapes formal_shapes ;
-          Shape.Env.unify env ret_id_shape returned_shape )
+      | Some procname ->
+          let args = (* forget SIL types *) List.map ~f:fst args in
+          CallModel.exec analyze_dependency procname (Var.of_id ret_id) args )
     | Prune (e, _, _, _) ->
         ignore (shape_expr e : Shape.Env.shape)
     | Metadata _ ->
