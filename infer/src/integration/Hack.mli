@@ -7,4 +7,4 @@
 
 open! IStd
 
-val capture : command:string -> args:string list -> unit
+val capture : args:string list -> unit

@@ -7,30 +7,11 @@
 
 open! IStd
 module L = Logging
-
-let hack_source_ext = [".hack"; ".php"]
+module F = Format
 
 let textual_ext = ".sil"
 
 let textual_subcommand = "compile-infer"
-
-let is_source_file str = List.exists hack_source_ext ~f:(Filename.check_suffix str)
-
-(** Split args into options and filenames *)
-let process_args args =
-  let process_arg (filenames, options, has_textual_subcommand) arg =
-    if is_source_file arg then (arg :: filenames, options, has_textual_subcommand)
-    else if String.equal arg textual_subcommand then (filenames, arg :: options, true)
-    else (filenames, arg :: options, has_textual_subcommand)
-  in
-  let rev_sources, rev_options, has_textual_subcommand =
-    List.fold args ~init:([], [], false) ~f:process_arg
-  in
-  let rev_options =
-    if has_textual_subcommand then rev_options else textual_subcommand :: rev_options
-  in
-  (List.rev rev_options, List.rev rev_sources)
-
 
 (** Flatten a/b/c as a-b-c. Special dirs .. and . are abbreviated. *)
 let flatten_path path =
@@ -46,30 +27,123 @@ let to_textual_filename path =
   noext ^ textual_ext
 
 
-(** Compile a single source file saving intermediate textual in a temp .sil file. *)
-let compile_single compiler result_dir options source =
-  L.debug Capture Verbose "Running %s on %s@." compiler source ;
-  let args = options @ [source] in
-  let out_file = Filename.concat result_dir (to_textual_filename source) in
-  let textual = Process.create_process_and_wait_with_output ~prog:compiler ~args ReadStdout in
-  Out_channel.write_all out_file ~data:textual ;
-  (source, out_file)
-
-
-let compile compiler result_dir args =
-  let options, sources = process_args args in
-  let compile_source = compile_single compiler result_dir options in
-  (* This is a temporary solution until we have hackc handle multiple files in a reasonable way. *)
-  List.map sources ~f:compile_source
-
-
-let capture ~command ~args =
-  let in_dir = ResultsDir.get_path Temporary in
-  let result_dir = Filename.temp_dir ~in_dir command "sil" in
-  let captured_files = compile Config.hackc_binary result_dir args in
-  L.debug Capture Verbose "Translated into %d textual files@." (List.length captured_files) ;
-  let captured_files =
-    List.map captured_files ~f:(fun (source_path, textual_path) ->
-        TextualParser.TextualFile.TranslatedFile {source_path; textual_path} )
+let dump_textual_to_tmp_file source_path content =
+  let textual_filename = to_textual_filename source_path in
+  let out_file =
+    Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename "sil"
   in
-  TextualParser.capture captured_files
+  Out_channel.write_all out_file ~data:content
+
+
+module Marker = struct
+  type t = UnitStart | UnitEnd
+
+  let start_marker = "// TEXTUAL UNIT START"
+
+  let end_marker = "// TEXTUAL UNIT END"
+
+  let detect line =
+    match String.chop_prefix line ~prefix:start_marker with
+    | Some filename ->
+        Some (UnitStart, String.strip filename)
+    | _ -> (
+      match String.chop_prefix line ~prefix:end_marker with
+      | Some filename ->
+          Some (UnitEnd, String.strip filename)
+      | _ ->
+          None )
+end
+
+(** The structure of hackc output is as follows:
+
+    - START MARKER <source path>
+    - <content>
+    - END MARKER <source path>
+    - ... repeat
+
+    The function below processes such input from [chan] line by line and does some light-weight
+    error detection mainly to detect situations when different compilation units get mixed up in the
+    output (this shouldn't happen normally).
+
+    When the whole compilation unit has been accumulated, it calls [action]. *)
+let process_output chan ~action =
+  let module State = struct
+    type t =
+      | WaitForStart
+      | ReadingUnit of {filename: string; rev_lines: string list}
+      | ExtractedUnit of {filename: string; content: string}
+  end in
+  let open State in
+  (* Reading until we find first unit start marker *)
+  let rec step state line =
+    match state with
+    | WaitForStart -> (
+        if String.is_empty line then WaitForStart
+        else
+          match Marker.detect line with
+          | Some (UnitStart, filename) ->
+              ReadingUnit {filename; rev_lines= [line]}
+          | _ ->
+              L.user_warning "Unexpected line outside of a textual unit: %s@." line ;
+              WaitForStart )
+    | ReadingUnit {filename; rev_lines} -> (
+      (* We've detected a start marker and now accumulating the contents of the unit *)
+      match Marker.detect line with
+      | Some (UnitEnd, end_filename) when String.equal filename end_filename ->
+          (* Happy path; we've found a matching end marker *)
+          let content = List.rev (line :: rev_lines) |> String.concat ~sep:"\n" in
+          step (ExtractedUnit {filename; content}) line
+      | Some (UnitEnd, end_filename) ->
+          L.user_warning "Unexpected end of another unit: expected=%s, actual=%s@." filename
+            end_filename ;
+          WaitForStart
+      | Some (UnitStart, _) ->
+          L.user_warning "Unexpected start of another unit: %s@." line ;
+          step WaitForStart line
+      | _ ->
+          (* Accumulate lines in the state *)
+          ReadingUnit {filename; rev_lines= line :: rev_lines} )
+    | ExtractedUnit {filename; content} ->
+        action filename content ;
+        WaitForStart
+  in
+  let final_state = In_channel.fold_lines chan ~init:WaitForStart ~f:step in
+  match final_state with
+  | ReadingUnit {filename; _} ->
+      L.user_warning "Unfinished unit: %s@." filename
+  | _ ->
+      ()
+
+
+(** Run hackc [compiler] with [args] and consume results of translation from its stdout. We don't do
+    any pre-processing of [args] and let hackc deal with multiple files on its own. We also pipe
+    stderr into a temp file just in case. *)
+let compile compiler args =
+  let stderr_log = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "hackc" "stderr" in
+  let escaped_cmd = List.map ~f:Escape.escape_shell (compiler :: args) |> String.concat ~sep:" " in
+  let redirected_cmd = F.sprintf "exec %s 2>%s" escaped_cmd stderr_log in
+  let {Unix.Process_info.stdin; stdout; stderr; pid} =
+    Unix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
+  in
+  Unix.close stdin ;
+  Unix.close stderr ;
+  let chan = Unix.in_channel_of_descr stdout in
+  let n_captured = ref 0 in
+  process_output chan ~action:(fun source_path content ->
+      L.debug Capture Quiet "Capturing %s@." source_path ;
+      if Config.debug_mode then dump_textual_to_tmp_file source_path content ;
+      TextualParser.capture_one (TextualParser.TextualFile.TranslatedFile {source_path; content}) ;
+      n_captured := !n_captured + 1 ) ;
+  In_channel.close chan ;
+  match Unix.waitpid pid with
+  | Ok () ->
+      L.progress "Finished capture of %d files.@." !n_captured
+  | Error _ as status ->
+      L.die ExternalError "Error executing: %s@\n%s@\n" escaped_cmd
+        (Unix.Exit_or_signal.to_string_hum status)
+
+
+let capture ~args =
+  if List.exists args ~f:(fun arg -> String.equal arg textual_subcommand) then
+    compile Config.hackc_binary args
+  else L.die UserError "hackc command line is missing %s subcommand" textual_subcommand

@@ -181,7 +181,7 @@ let capture ~changed_files mode =
         Erlang.capture ~command:"erlc" ~args
     | Hackc {args} ->
         L.progress "Capturing in hackc mode...@." ;
-        Hack.capture ~command:"hackc" ~args
+        Hack.capture ~args
     | Textual {files} ->
         L.progress "Capturing in textual mode...@." ;
         let files = List.map files ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x) in

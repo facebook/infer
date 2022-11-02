@@ -25,7 +25,7 @@ test: issues.exp.test
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
 
 issues.exp.test: $(SOURCES) $(INFER_BIN) $(HACKC)
-	$(INFER_BIN) capture --hackc-binary $(HACKC) -- hackc $(SOURCES) >& $@
+	$(INFER_BIN) capture --hackc-binary $(HACKC) -- hackc compile-infer $(SOURCES) >& $@
 
 .PHONY: replace
 replace: issues.exp.test
