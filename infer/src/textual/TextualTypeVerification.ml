@@ -27,7 +27,9 @@ let rec compat ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
       true
   | Float, Float ->
       true
-  | Void, (Void | Null) ->
+  | Void, _ ->
+      true
+  | _, Void ->
       true
   | Ptr t1, Ptr t2 ->
       compat ~assigned:t1 ~given:t2

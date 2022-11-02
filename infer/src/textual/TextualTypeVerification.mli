@@ -24,8 +24,11 @@ open Textual
       ----------------------------
              t <= t
 
-      ---------------------------- (in order to end void function with [ret null])
-          Null <= Void
+      ----------------------------
+           t <= Void
+                                   ( Void acts as an escape hatch; we may make the
+      ----------------------------   type system stricter later on)
+            Void <= t
 
       ----------------------------
           Null <= *t
