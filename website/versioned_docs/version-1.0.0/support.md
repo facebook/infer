@@ -14,7 +14,7 @@ The [GitHub issues](https://github.com/facebook/Infer/issues) page is a good
 place to ask questions, find answers, and report issues.
 
 Please include as many details as possible when submitting a GitHub issue. If
-your are able to run Infer, please include the contents of
+you are able to run Infer, please include the contents of
 `infer-out/toplevel.log` in your report. If not, please include at least your
 operating system and the version of Infer that you are using.
 

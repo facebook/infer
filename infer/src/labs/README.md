@@ -1,6 +1,6 @@
 # Build your own Resource Leak analysis
 
-This is a lab exercise designed to take the participant through the basics of using the Infer.AI framework for building compositional abstract interpreters. We provide the skeleton for a simple intraprocedural resource leak analysis. During this exercise, you will identify limitations in the existing approach and work on extending it to a create a more powerful interprocedural analysis.
+This is a lab exercise designed to take the participant through the basics of using the Infer.AI framework for building compositional abstract interpreters. We provide the skeleton for a simple intraprocedural resource leak analysis. During this exercise, you will identify limitations in the existing approach and work on extending it to create a more powerful interprocedural analysis.
 
 The files to work on are [ResourceLeaks.ml](./ResourceLeaks.ml) and [ResourceLeakDomain.ml](./ResourceLeakDomain.ml), and their corresponding .mli files.
 
@@ -10,7 +10,7 @@ The solutions to the exercises can also be found in this directory, each in thei
 
 ### (a) With Docker...
 
-Using Docker is the fastest way: you do not need to clone the Infer repository and every thing is set up in the Docker image for you to start hacking on Infer straight away.
+Using Docker is the fastest way: you do not need to clone the Infer repository and everything is set up in the Docker image for you to start hacking on Infer straight away.
 
 1. Get Docker: https://www.docker.com/get-started
 
@@ -70,7 +70,7 @@ firefox infer-out/captured/*.html
 
 This helpful artifact shows the Infer warnings alongside the code they are complaining about. It also displays the CFG node(s) associated with each line of code. Clicking a CFG node shows the Infer IR associated with the node, and the pre/post state computed while analyzing the instruction. Come back to the debug HTML early and often when you can't understand what your analysis is doing--it will help!
 
-(c) The `Logging.d_printf`/`Logging.d_printfln` functions print to the debug HTML. The logging is contextual: it will print to the log for the CFG node that's being analyzed at the time the logging statement execute. Try adding `Logging.d_printfln "Hi Infer";` inside of the case for `Call` in [ResourceLeaks.ml](./ResourceLeaks.ml), recompiling/re-running. You should see the text you printed inside the appropriate CFG node log in the debug HTML.
+(c) The `Logging.d_printf`/`Logging.d_printfln` functions print to the debug HTML. The logging is contextual: it will print to the log for the CFG node that's being analyzed at the time the logging statement executes. Try adding `Logging.d_printfln "Hi Infer";` inside of the case for `Call` in [ResourceLeaks.ml](./ResourceLeaks.ml), recompiling/re-running. You should see the text you printed inside the appropriate CFG node log in the debug HTML.
 
 (d) The `Logging.debug_dev` function prints to the console. This can be useful for printing information that doesn't happen in the context of a particular CFG node (e.g., performing post-processing on a summary). Try adding `Logging.debug_dev "Hi Infer;"` to the `compute_post` function, recompile/re-run and see your text printed on the command line.
 
