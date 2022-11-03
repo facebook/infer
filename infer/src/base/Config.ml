@@ -3744,7 +3744,7 @@ and process_clang_ast = !process_clang_ast
 and progress_bar =
   if !progress_bar && not !quiet then
     match !progress_bar_style with
-    | `Auto when Unix.(isatty stdin && isatty stderr) ->
+    | `Auto when Unix.(isatty stdin && isatty stderr) && not (Utils.is_term_dumb ()) ->
         `MultiLine
     | `Auto ->
         `Plain

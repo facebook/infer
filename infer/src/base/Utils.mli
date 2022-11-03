@@ -166,3 +166,7 @@ val set_best_cpu_for : int -> unit
 
 val zip_fold_filenames : init:'a -> f:('a -> string -> 'a) -> zip_filename:string -> 'a
 (** fold over each filename in the given [zip_filename]. *)
+
+val is_term_dumb : unit -> bool
+(** Check if the terminal is "dumb" or otherwise has very limited functionality. For example, Emacs'
+    eshell reports itself as a dumb terminal. *)
