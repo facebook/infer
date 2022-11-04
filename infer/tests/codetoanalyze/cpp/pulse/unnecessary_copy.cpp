@@ -420,6 +420,7 @@ class MyValueOr {
   Arr& value;
   std::shared_ptr<Arr> shared_ptr;
   LockedPtr lock();
+  LockedPtr rlock();
 
  public:
   MyValueOr();
@@ -441,6 +442,12 @@ class MyValueOr {
   Arr intentional_cpy_under_lock() {
     auto l = lock();
     return value;
+  }
+
+  Arr intentional_cpy_under_rlock_ok() {
+    auto l = rlock();
+    auto result = value;
+    return result;
   }
 
   Arr no_cpy_NRVO() const {

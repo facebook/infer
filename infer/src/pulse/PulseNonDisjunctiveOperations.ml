@@ -239,7 +239,10 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
   aux (get_modeled_as_returning_copy_opt, List.rev) astate_n astates
 
 
-let is_lock pname = String.equal (Procname.get_method pname) "lock"
+let is_lock pname =
+  let method_name = Procname.get_method pname in
+  String.equal method_name "lock" || String.equal method_name "rlock"
+
 
 let add_copied_return path location call_exp actuals astates astate_non_disj =
   let open IOption.Let_syntax in
