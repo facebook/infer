@@ -75,11 +75,9 @@ let loc_trace_to_sarifbug_record trace_list =
   in
   let message description = {Sarifbug_j.text= description} in
   let region line_number column_number =
-    match column_number with
-    | -1 ->
-        {Sarifbug_j.startLine= line_number; startColumn= 1}
-    | _ ->
-        {Sarifbug_j.startLine= line_number; startColumn= column_number}
+    let line_num = match line_number with -1 | 0 -> 1 | _ -> line_number in
+    let column_num = match column_number with -1 | 0 -> 1 | _ -> column_number in
+    {Sarifbug_j.startLine= line_num; startColumn= column_num}
   in
   let physical_location filename line_number column_number =
     {Sarifbug_j.artifactLocation= file_loc filename; region= region line_number column_number}
