@@ -122,32 +122,39 @@ end
 
 module DestructorChecked = AbstractDomain.FiniteSet (Var)
 
-module Captured = AbstractDomain.FiniteSet (struct
-  include Pvar
+module Captured = struct
+  include AbstractDomain.FiniteSet (struct
+    include Pvar
 
-  let pp = Pvar.pp Pp.text
-end)
+    let pp = Pvar.pp Pp.text
+  end)
+
+  let mem_var var x =
+    match (var : Var.t) with ProgramVar pvar -> mem pvar x | LogicalVar _ -> false
+end
 
 module CopyMap = AbstractDomain.Map (CopyVar) (CopySpec)
 module ParameterMap = AbstractDomain.Map (ParameterVar) (ParameterSpec)
 module Locked = AbstractDomain.BooleanOr
+module Loads = AbstractDomain.FiniteSet (Var)
 
 type elt =
   { copy_map: CopyMap.t
   ; parameter_map: ParameterMap.t
   ; destructor_checked: DestructorChecked.t
   ; captured: Captured.t
-  ; locked: Locked.t }
+  ; locked: Locked.t
+  ; loads: Loads.t }
 
 type t = V of elt | Top
 
 let pp f = function
-  | V {copy_map; parameter_map; destructor_checked; captured; locked} ->
+  | V {copy_map; parameter_map; destructor_checked; captured; locked; loads} ->
       F.fprintf f
         "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[captured: \
-         %a@],@ @[locked: %a@]@]"
+         %a@],@ @[locked: %a@],@ @[loads: %a@]@]"
         CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
-        Captured.pp captured Locked.pp locked
+        Captured.pp captured Locked.pp locked Loads.pp loads
   | Top ->
       AbstractDomain.TopLiftedUtils.pp_top f
 
@@ -164,6 +171,7 @@ let leq ~lhs ~rhs =
       && DestructorChecked.leq ~lhs:lhs.destructor_checked ~rhs:rhs.destructor_checked
       && Captured.leq ~lhs:lhs.captured ~rhs:rhs.captured
       && Locked.leq ~lhs:lhs.locked ~rhs:rhs.locked
+      && Loads.leq ~lhs:lhs.loads ~rhs:rhs.loads
 
 
 let join x y =
@@ -176,7 +184,8 @@ let join x y =
         ; parameter_map= ParameterMap.join x.parameter_map y.parameter_map
         ; destructor_checked= DestructorChecked.join x.destructor_checked y.destructor_checked
         ; captured= Captured.join x.captured y.captured
-        ; locked= Locked.join x.locked y.locked }
+        ; locked= Locked.join x.locked y.locked
+        ; loads= Loads.join x.loads y.loads }
 
 
 let widen ~prev ~next ~num_iters =
@@ -192,7 +201,8 @@ let widen ~prev ~next ~num_iters =
             DestructorChecked.widen ~prev:prev.destructor_checked ~next:next.destructor_checked
               ~num_iters
         ; captured= Captured.widen ~prev:prev.captured ~next:next.captured ~num_iters
-        ; locked= Locked.widen ~prev:prev.locked ~next:next.locked ~num_iters }
+        ; locked= Locked.widen ~prev:prev.locked ~next:next.locked ~num_iters
+        ; loads= Loads.widen ~prev:prev.loads ~next:next.loads ~num_iters }
 
 
 let bottom =
@@ -201,17 +211,18 @@ let bottom =
     ; parameter_map= ParameterMap.empty
     ; destructor_checked= DestructorChecked.empty
     ; captured= Captured.empty
-    ; locked= Locked.bottom }
+    ; locked= Locked.bottom
+    ; loads= Loads.bottom }
 
 
 let is_bottom = function
   | Top ->
       false
-  | V {copy_map; parameter_map; destructor_checked; captured; locked} ->
+  | V {copy_map; parameter_map; destructor_checked; captured; locked; loads} ->
       CopyMap.is_bottom copy_map
       && ParameterMap.is_bottom parameter_map
       && DestructorChecked.is_bottom destructor_checked
-      && Captured.is_bottom captured && Locked.is_bottom locked
+      && Captured.is_bottom captured && Locked.is_bottom locked && Loads.is_bottom loads
 
 
 let top = Top
@@ -293,14 +304,16 @@ let get_copied = function
 let get_const_refable_parameters = function
   | Top ->
       []
-  | V {parameter_map} ->
+  | V {parameter_map; captured; loads} ->
       ParameterMap.fold
         (fun var (parameter_spec_t : ParameterSpec.t) acc ->
-          match parameter_spec_t with
-          | Modified ->
-              acc
-          | Unmodified {location; typ= copied_typ} ->
-              (var, copied_typ, location) :: acc )
+          if Loads.mem var loads || Captured.mem_var var captured then
+            match parameter_spec_t with
+            | Modified ->
+                acc
+            | Unmodified {location; typ= copied_typ} ->
+                (var, copied_typ, location) :: acc
+          else acc )
         parameter_map []
 
 
@@ -356,3 +369,7 @@ let set_locked_elt astate = {astate with locked= true}
 let set_locked = map set_locked_elt
 
 let is_locked = function Top -> true | V {locked} -> locked
+
+let set_load_elt var astate = {astate with loads= Loads.add var astate.loads}
+
+let set_load var = map (set_load_elt var)

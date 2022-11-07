@@ -70,3 +70,5 @@ val set_captured_variables : Exp.t -> t -> t
 val set_locked : t -> t
 
 val is_locked : t -> bool
+
+val set_load : Var.t -> t -> t

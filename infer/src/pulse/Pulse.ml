@@ -756,6 +756,13 @@ module PulseTransferFunctions = struct
             | _ ->
                 [astate]
           in
+          let astate_n =
+            match rhs_exp with
+            | Lvar pvar ->
+                NonDisjDomain.set_load (Var.of_pvar pvar) astate_n
+            | _ ->
+                astate_n
+          in
           (List.concat_map set_global_astates ~f:deref_rhs, path, astate_n)
       | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
           (* [*lhs_exp := rhs_exp] *)

@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <functional>
 
 struct Arr {
   int arr[2];
@@ -77,23 +78,39 @@ int std_pair_int_ok(std::pair<int, int> p) { return p.first; }
 
 int std_pair_vector_bad(std::pair<int, std::vector<int>> p) { return p.first; }
 
-int std_pair_string_bad(std::pair<std::string, std::string> p) { return 0; }
+std::string std_pair_string_bad(std::pair<std::string, std::string> p) {
+  return p.first;
+}
 
 namespace folly {
 template <class Value>
 class Optional {
  public:
   Optional(const Optional& src);
+  bool has_value();
 };
 } // namespace folly
 
-int folly_optional_int_ok(folly::Optional<int> n_opt) { return 0; }
-
-int folly_optional_vector_bad(folly::Optional<std::vector<int>> vec_opt) {
+int folly_optional_int_ok(folly::Optional<int> n_opt) {
+  if (n_opt.has_value()) {
+    return 42;
+  }
   return 0;
 }
 
-int folly_optional_string_bad(folly::Optional<std::string> s_opt) { return 0; }
+int folly_optional_vector_bad(folly::Optional<std::vector<int>> vec_opt) {
+  if (vec_opt.has_value()) {
+    return 42;
+  }
+  return 0;
+}
+
+int folly_optional_string_bad(folly::Optional<std::string> s_opt) {
+  if (s_opt.has_value()) {
+    return 42;
+  }
+  return 0;
+}
 
 struct StructWithInt {
   int n;
@@ -107,4 +124,23 @@ void havoc_reachable_by_unknown_bad(int* p, StructWithInt s) {
   if (s.n == 42 && *p == 42) {
     havoc_ptr(p);
   }
+}
+
+void dead_param_ok(folly::Optional<std::string> s_opt) {}
+
+void call_lambda(const std::function<void()>& f) { f(); }
+
+// This is TP in c++11.
+void captured_arr_bad_FN(Arr a) {
+  call_lambda([&a]() {});
+}
+
+// This is FP in c++11.
+void captured_arr_ok(Arr a) {
+  call_lambda([&a]() { a.arr[0] += 8; });
+}
+
+// This is TP in c++11.
+void captured_shared_ptr_bad_FN(std::shared_ptr<int> a) {
+  call_lambda([&a]() {});
 }
