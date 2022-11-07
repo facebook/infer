@@ -153,7 +153,7 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
               let* _, source_expr, _ = source_addr_typ_opt in
               match source_expr with
               | DecompilerExpr.SourceExpr (((PVar pvar, _) as source_expr), _)
-                when (not (Pvar.is_frontend_tmp pvar)) && not is_copy_legit ->
+                when (not (Pvar.is_frontend_tmp pvar || Pvar.is_this pvar)) && not is_copy_legit ->
                   Some source_expr
               | _ ->
                   None

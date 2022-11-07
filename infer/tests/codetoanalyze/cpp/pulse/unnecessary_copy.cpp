@@ -129,6 +129,10 @@ class Vec {
       vec.push_back(v.get(i));
   }
 
+  void setVec(std::vector<int> my_vec) { vec = std::move(my_vec); }
+
+  void intermediate_field_copy_ok() { setVec(vec); }
+
   int get(int i) const { return vec[i]; }
 
   void source_modified_via_unmodeled_ok() {
