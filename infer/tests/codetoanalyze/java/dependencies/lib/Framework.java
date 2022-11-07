@@ -12,36 +12,17 @@ public class Framework {
         return null;
     }
 
-    private static String source() {
-        return "AttackerControlled";
+    private static Str source() {
+        return Str.ATTACKER_CONTROLLED;
     }
 
-    public static String getString() {
+    public static Str getStr() {
         return source();
     }
 
-    public static String readFile(String s) {
+    public static Str readFile(Str s) {
         try (MyStream inputStream = new MyStream(s)) {
             return inputStream.readContent();
-        }
-    }
-
-    public static String shouldPropagateTaint(String s) {
-        return s;
-    }
-
-    enum Value {
-        Left, Right
-    }
-
-    public static String doesNotPropagateTaint(String s) {
-        switch (Value.valueOf(s)) {
-            case Left:
-                return "Left";
-            case Right:
-                return "Right";
-            default:
-                return "Unknown";
         }
     }
 }

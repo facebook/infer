@@ -10,13 +10,13 @@ import java.io.Closeable;
 
 public class MyStream implements Closeable {
 
-    String file;
+    Str file;
 
-    public MyStream(String s) {
+    public MyStream(Str s) {
         this.file = s;
     }
 
-    public String readContent() {
+    public Str readContent() {
         return this.file;
     }
 

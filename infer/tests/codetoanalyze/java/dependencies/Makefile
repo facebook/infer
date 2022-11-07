@@ -9,6 +9,8 @@ INFERPRINT_OPTIONS = --issues-tests
 SOURCES = my/Application.java
 CLEAN_EXTRA += $(wildcard my/*.class)
 
-include $(TESTS_DIR)/javac.make
+include $(TESTS_DIR)/infer.make
 
 infer-out/report.json: $(JAVA_DEPS) $(MAKEFILE_LIST) $(SOURCES) .inferconfig
+	$(QUIET)$(call silent_on_success,Testing infer with dependencies mode in $(TEST_REL_DIR),\
+	  $(INFER_BIN) --results-dir $(@D) $(INFER_OPTIONS) -- $(JAVAC) $(SOURCES))

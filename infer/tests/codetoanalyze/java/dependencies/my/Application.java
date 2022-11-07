@@ -7,39 +7,37 @@
 package my;
 
 import lib.Framework;
+import lib.Str;
 
 public class Application {
 
-    String indirectNPE() {
-        return Framework.returnNull().toString();
+    int indirectNPE() {
+        return Framework.returnNull().hashCode();
     }
 
-    void indirectTainFlow() {
-        String s = Framework.getString();
-        Framework.readFile(s);
+    Str source() {
+        return Str.ATTACKER_CONTROLLED;
     }
 
-    String source() {
-        return "AttackerControlled";
-    }
-
-    String propagate(String s) {
+    Str propagate(Str s) {
         return s;
     }
 
-    void sink(String s) {
+    void sink(Str s) {
         // do critical thing with s
     }
 
-    void simpleTaintExampe() {
-        sink(propagate(source()));
+    void indirectSource() {
+        sink(propagate(Framework.getStr()));
     }
 
-    void shouldReportTaintPropagation() {
-        sink(Framework.shouldPropagateTaint(source()));
+    void indirectSink() {
+        Str s = source();
+        Framework.readFile(s);
     }
 
-    void shouldNotReportTaintPropagation() {
-        sink(Framework.doesNotPropagateTaint(source()));
+    void indirectTaintFlow() {
+        Str s = Framework.getStr();
+        Framework.readFile(s);
     }
 }
