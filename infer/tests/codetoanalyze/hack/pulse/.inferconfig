@@ -1,8 +1,8 @@
 {
   "pulse-taint-sources": [
-    { "procedure": "_Htaint_source" }
+    { "procedure": "$root.taintSource" }
   ],
   "pulse-taint-sinks": [
-    { "procedure": "_Htaint_sink" }
+    { "procedure": "$root.taintSink" }
   ]
 }

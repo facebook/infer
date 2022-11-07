@@ -259,9 +259,10 @@ $BUILD_BIN $BUILD_ARGS install
 popd # build
 popd # $TMP
 
-# On Linux, copy __config_site to install dirctory. This way we don't need additional -I statements
-if [ "$PLATFORM" = "Linux" ]; then
-    cp -f "$CLANG_PREFIX/include/x86_64-unknown-linux-gnu/c++/v1/__config_site" "$CLANG_PREFIX/include/c++/v1/__config_site"
+# On Linux, copy __config_site to install directory. This way we don't need additional -I statements
+CONFIG_SITE="$CLANG_PREFIX/include/x86_64-unknown-linux-gnu/c++/v1/__config_site"
+if [[ "$PLATFORM" = "Linux" ]] && [[ -f "$CONFIG_SITE" ]]; then
+    cp -f "$CONFIG_SITE" "$CLANG_PREFIX/include/c++/v1/__config_site"
 fi
 
 # delete libs not needed by Infer

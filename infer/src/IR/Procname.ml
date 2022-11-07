@@ -1062,6 +1062,22 @@ let rec is_static = function
       is_static base
 
 
+let is_shared_ptr_observer =
+  let shared_ptr_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::shared_ptr"] in
+  let observer_methods = ["get"; "operator*"; "operator->"; "operator[]"; "operator_bool"] in
+  let rec aux pname =
+    match pname with
+    | ObjC_Cpp {class_name= CppClass {name}; method_name} ->
+        QualifiedCppName.Match.match_qualifiers shared_ptr_matcher name
+        && List.mem observer_methods method_name ~equal:String.equal
+    | WithAliasingParameters (pname, _) | WithFunctionParameters (pname, _) ->
+        aux pname
+    | _ ->
+        false
+  in
+  fun pname -> aux pname
+
+
 let get_global_name_of_initializer t =
   match base_of t with
   | C {name}

@@ -77,5 +77,6 @@ let iterate_file_callbacks_and_store_issues procedures exe_env source_file =
     List.iter (List.rev !file_callbacks_rev) ~f:(fun {checker; language; callback} ->
         if language_matches language then (
           Language.curr_language := language ;
-          let issue_log = callback environment in
-          IssueLog.store ~checker ~file:source_file issue_log ) )
+          if not (IssueLog.is_stored ~checker ~file:source_file) then
+            let issue_log = callback environment in
+            IssueLog.store ~checker ~file:source_file issue_log ) )

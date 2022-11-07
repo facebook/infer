@@ -129,6 +129,10 @@ class Vec {
       vec.push_back(v.get(i));
   }
 
+  void setVec(std::vector<int> my_vec) { vec = std::move(my_vec); }
+
+  void intermediate_field_copy_ok() { setVec(vec); }
+
   int get(int i) const { return vec[i]; }
 
   void source_modified_via_unmodeled_ok() {
@@ -389,6 +393,12 @@ class WrapperArr {
     hidden_arr_.arr[0] = 9; // copy can be modified since it will have the
                             // ownership of the object.
   }
+
+  void copy_assignment_from_this_ok() {
+    Arr local_arr; // default constructor is called
+    local_arr = hidden_arr_; // copy assignment operator is called but it is
+                             // from a member field which cannot be moved.
+  }
 };
 
 namespace my_proj {
@@ -414,6 +424,7 @@ class MyValueOr {
   Arr& value;
   std::shared_ptr<Arr> shared_ptr;
   LockedPtr lock();
+  LockedPtr rlock();
 
  public:
   MyValueOr();
@@ -435,6 +446,12 @@ class MyValueOr {
   Arr intentional_cpy_under_lock() {
     auto l = lock();
     return value;
+  }
+
+  Arr intentional_cpy_under_rlock_ok() {
+    auto l = rlock();
+    auto result = value;
+    return result;
   }
 
   Arr no_cpy_NRVO() const {

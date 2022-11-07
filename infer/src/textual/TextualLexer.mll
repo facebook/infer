@@ -57,8 +57,6 @@ rule main = parse
         { COLON } 
   | ","
         { COMMA }
-  | "attribute"
-        { ATTRIBUTE }
   | "declare"
         { DECLARE }
   | "define"

@@ -923,25 +923,23 @@ let check_retain_cycles ~dead_addresses tenv astate =
     if Int.equal compared_locs 0 then Trace.compare trace1 trace2 else compared_locs
   in
   (* remember explored adresses to avoid reexploring path without retain cycles *)
-  let checked = ref [] in
+  let checked = ref AbstractValue.Set.empty in
   let check_retain_cycle src_addr =
-    let rec contains_cycle decompiler assignment_traces seen addr cycle_addr =
+    let rec contains_cycle decompiler ~assignment_traces ~seen addr =
       (* [decompiler] is a decompiler filled during the look out for a cycle
          [assignment_traces] tracks the assignments met in the retain cycle
          [seen] tracks addresses met in the current path
          [addr] is the address to explore
       *)
-      if List.exists ~f:(AbstractValue.equal addr) !checked then Ok ()
+      if AbstractValue.Set.mem addr !checked then Ok ()
       else
         let value = Decompiler.find addr astate.decompiler in
         let is_known = not (DecompilerExpr.is_unknown value) in
-        let is_seen = List.exists ~f:(AbstractValue.equal addr) seen in
-        if
-          is_known && is_seen
-          && Option.value_map ~default:false
-               (AddressAttributes.find_opt addr astate)
-               ~f:Attributes.is_ref_counted
-        then
+        let is_seen = AbstractValue.Set.mem addr seen in
+        let is_ref_counted =
+          Option.exists ~f:Attributes.is_ref_counted (AddressAttributes.find_opt addr astate)
+        in
+        if is_known && is_seen && is_ref_counted then
           let assignment_traces = List.dedup_and_sort ~compare:compare_traces assignment_traces in
           match assignment_traces with
           | [] ->
@@ -951,11 +949,12 @@ let check_retain_cycles ~dead_addresses tenv astate =
               let path = Decompiler.find addr decompiler in
               Error (assignment_traces, value, path, location)
         else (
-          if (not is_known) && is_seen then
+          if is_seen && ((not is_known) || not is_ref_counted) then
             (* add the `UNKNOWN` address at which we have found a cycle to the [checked]
                list in case we would have a cycle of `UNKNOWN` addresses, to avoid
-               looping forever *)
-            checked := addr :: !checked ;
+               looping forever. Also add the not ref_counted addresses to checked, since
+               we could loop forever otherwise *)
+            checked := AbstractValue.Set.add addr !checked ;
           let res =
             match BaseMemory.find_opt addr (astate.post :> BaseDomain.t).heap with
             | None ->
@@ -983,15 +982,16 @@ let check_retain_cycles ~dead_addresses tenv astate =
                             Decompiler.add_access_source ~allow_cycle:true accessed_addr access
                               ~src:addr (astate.post :> base_domain).attrs decompiler
                           in
-                          contains_cycle decompiler assignment_traces (addr :: seen) accessed_addr
-                            cycle_addr
+                          let seen = AbstractValue.Set.add addr seen in
+                          contains_cycle decompiler ~assignment_traces ~seen accessed_addr
                         else Ok () )
           in
           (* all paths down [addr] have been explored *)
-          checked := addr :: !checked ;
+          checked := AbstractValue.Set.add addr !checked ;
           res )
     in
-    contains_cycle astate.decompiler [] [] src_addr None
+    let seen = AbstractValue.Set.empty in
+    contains_cycle astate.decompiler ~assignment_traces:[] ~seen src_addr
   in
   List.fold_result dead_addresses ~init:() ~f:(fun () addr ->
       match AddressAttributes.find_opt addr astate with

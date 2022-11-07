@@ -6,5 +6,5 @@
  *)
 open! IStd
 
-val build : CallGraph.t -> unit
+val build : unit -> CallGraph.t
 (** Build the graph from the summaries in the .specs files *)

@@ -19,11 +19,20 @@ compare_cg: $(PREVIOUS_REPORT)
 	  reverse_analysis_callgraph.dot,\
 	  reverse_analysis_callgraph.dot.test)
 
+.PHONY: compare_invalidation_stats
+compare_invalidation_stats: $(PREVIOUS_REPORT)
+	$(QUIET)$(call check_no_diff,\
+	invalidation_stats.exp,\
+	invalidation_stats.exp.test)
+
 replace_cg: $(PREVIOUS_REPORT)
 	$(COPY) reverse_analysis_callgraph.dot.test reverse_analysis_callgraph.dot
 
-test: compare_cg
-replace: replace_cg
+replace_invalidation_stats: $(PREVIOUS_REPORT)
+	$(COPY) invalidation_stats.exp.test invalidation_stats.exp
+
+test: compare_cg compare_invalidation_stats
+replace: replace_cg replace_invalidation_stats
 
 $(CURRENT_REPORT): $(INFER_CLANG_DEPS) $(SOURCES)
 	$(QUIET)$(REMOVE_DIR) src
@@ -38,6 +47,7 @@ $(PREVIOUS_REPORT): $(INFER_CLANG_DEPS) $(SOURCES) $(CURRENT_REPORT)
 	$(QUIET)$(REMOVE_DIR) $(PREVIOUS_DIR)
 	$(QUIET)$(COPY) -r $(CURRENT_DIR) $(PREVIOUS_DIR)
 	$(QUIET)$(REMOVE) $@
-	$(QUIET)$(INFER_BIN) -o $(PREVIOUS_DIR) $(INFER_OPTIONS) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac  src/*.java
+	$(QUIET)$(INFER_BIN) -o $(PREVIOUS_DIR) $(INFER_OPTIONS) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac  src/*.java 2>&1 \
+		| grep "Invalidated" > invalidation_stats.exp.test
 	$(QUIET)$(COPY) $(PREVIOUS_DIR)/reverse_analysis_callgraph.dot \
 	        reverse_analysis_callgraph.dot.test

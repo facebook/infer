@@ -534,3 +534,11 @@ let zip_fold_filenames ~init ~f ~zip_filename =
   let result = List.fold ~f:collect ~init (Zip.entries file_in) in
   Zip.close_in file_in ;
   result
+
+
+let is_term_dumb () =
+  match Sys.getenv "TERM" with
+  | Some kind when String.(equal "dumb" (lowercase kind)) ->
+      true
+  | _ ->
+      false

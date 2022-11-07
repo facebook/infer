@@ -66,8 +66,8 @@ module OnDisk : sig
   (** Delete the .specs file corresponding to the procname and remove its summary from the Summary
       cache *)
 
-  val delete_all : filter:Filtering.procedures_filter -> unit -> unit
-  (** Similar to [delete], but delete all procedure summaries that pass [filter] *)
+  val delete_all : procedures:Procname.t list -> unit
+  (** Similar to [delete], but delete all summaries for a list of [procedures] *)
 
   val iter_specs : f:(t -> unit) -> unit
   (** Iterates over all stored summaries *)

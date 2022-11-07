@@ -328,6 +328,8 @@ val pure_function : t
 
 val quandary_taint_error : t
 
+val readonly_shared_ptr_param : t
+
 val regex_op_on_ui_thread : t
 
 val resource_leak : t

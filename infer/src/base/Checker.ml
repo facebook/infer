@@ -421,7 +421,7 @@ let config_unsafe checker =
       ; short_documentation= "Computes a dataflow graph"
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; activates= [] }
+      ; activates= [SimpleShape] }
   | SimpleShape ->
       { id= "simple-shape"
       ; kind= Internal

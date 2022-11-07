@@ -51,9 +51,10 @@ duplicates.txt
 /infer/tests/build_systems/differential_*/**/Diff*.m
 /infer/tests/build_systems/fb_differential_*/**/Diff*.java
 /infer/tests/build_systems/fb_differential_*/**/Diff*.m
-/infer/tests/build_systems/incremental_analysis_remove_file/src
-/infer/tests/build_systems/incremental_analysis_cost_change/src
 /infer/tests/build_systems/incremental_analysis_add_procedure/src
+/infer/tests/build_systems/incremental_analysis_cost_change/src
+/infer/tests/build_systems/incremental_analysis_file_level_change/src
+/infer/tests/build_systems/incremental_analysis_remove_file/src
 /infer/tests/build_systems/java_test_determinator/*.test
 /infer/tests/build_systems/java_source_parser/*.test
 /infer/tests/codetoanalyze/dotnet/*/*.json

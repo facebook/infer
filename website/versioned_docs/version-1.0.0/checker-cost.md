@@ -23,7 +23,7 @@ cost analysis on File.java.
 ## How the analysis works
 
 
-Most ideas behind this analysis is based on Stefan Bydge's PhD thesis [Static WCET Analysis based on Abstract Interpretation and Counting of Elements](https://www.semanticscholar.org/paper/Static-WCET-Analysis-Based-on-Abstract-and-Counting-Bygde/ee5157164d497725c1f42dc6c475a59a87c99957).
+Most ideas behind this analysis are based on Stefan Bydge's PhD thesis [Static WCET Analysis based on Abstract Interpretation and Counting of Elements](https://www.semanticscholar.org/paper/Static-WCET-Analysis-Based-on-Abstract-and-Counting-Bygde/ee5157164d497725c1f42dc6c475a59a87c99957).
 
 The analysis computes two things for each node in the CFG:
 - the cost of its instructions, i.e. how much one execution of this node costs,
@@ -66,7 +66,7 @@ where `foo` has a linear cost in its parameter, then Infer automatically detects
 
 
 
-Unlike other Infer analyses (which report found issues/bugs when running infer once), cost analysis only reports an issue for differential analysis (i.e. when comparing the analysis results on the original and the modified files). Instead, infer writes the execution cost of the program into `infer-out/costs-report.json` file. For each procedure, `costs-report.json` includes the actual polynomial (for the exection cost) along with the degree of the polynomial, the procedure name, line number etc.
+Unlike other Infer analyses (which report found issues/bugs when running infer once), cost analysis only reports an issue for differential analysis (i.e. when comparing the analysis results on the original and the modified files). Instead, infer writes the execution cost of the program into `infer-out/costs-report.json` file. For each procedure, `costs-report.json` includes the actual polynomial (for the execution cost) along with the degree of the polynomial, the procedure name, line number etc.
 
 Differential cost analysis in action:
 - first run infer's cost analysis on `File.java` and rename `costs-report.json` (which is in `/infer-out`) to `previous-costs-report.json`

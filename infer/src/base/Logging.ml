@@ -371,11 +371,18 @@ let setup_log_file () =
            ============================================================"
 
 
+let add_init_printer fmt = format_of_string "%t" ^^ fmt
+
+let set_geometry f =
+  F.pp_set_geometry f ~max_indent:(Config.margin_html - 10) ~margin:Config.margin_html
+
+
 type delayed_prints = Buffer.t * F.formatter
 
 let new_delayed_prints () =
   let b = Buffer.create 16 in
   let f = F.formatter_of_buffer b in
+  set_geometry f ;
   (b, f)
 
 
@@ -421,18 +428,8 @@ let d_kfprintf ?color k f fmt =
 
 let d_iprintf fmt = Format.ikfprintf ignore Format.err_formatter fmt
 
-let add_init_printer fmt = format_of_string "%t" ^^ fmt
-
-let set_geometry f =
-  F.pp_set_geometry f ~max_indent:(Config.margin_html - 10) ~margin:Config.margin_html
-
-
 let d_kprintf ?color k fmt =
-  match get_f () with
-  | Some f ->
-      d_kfprintf ?color k f (add_init_printer fmt) set_geometry
-  | None ->
-      d_iprintf fmt
+  match get_f () with Some f -> d_kfprintf ?color k f fmt | None -> d_iprintf fmt
 
 
 let d_kasprintf k fmt =

@@ -124,6 +124,16 @@ let continue_fold_map astates ~init ~f =
              (acc, ExecutionDomain.continue disjunct) ) )
 
 
+let is_copy_assigned_from_this ~from source_addr_typ_opt =
+  Attribute.CopyOrigin.equal from CopyAssignment
+  && Option.exists source_addr_typ_opt ~f:(fun (_, source_expr, _) ->
+         match source_expr with
+         | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
+             Pvar.is_this pvar
+         | _ ->
+             false )
+
+
 let add_copies tenv proc_desc path location call_exp actuals astates astate_non_disj =
   let open IOption.Let_syntax in
   let aux (copy_check_fn, args_map_fn) init astates =
@@ -143,12 +153,15 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
               let* _, source_expr, _ = source_addr_typ_opt in
               match source_expr with
               | DecompilerExpr.SourceExpr (((PVar pvar, _) as source_expr), _)
-                when (not (Pvar.is_frontend_tmp pvar)) && not is_copy_legit ->
+                when (not (Pvar.is_frontend_tmp pvar || Pvar.is_this pvar)) && not is_copy_legit ->
                   Some source_expr
               | _ ->
                   None
             in
-            if Option.is_some source_opt || is_copy_legit then
+            if is_copy_assigned_from_this ~from source_addr_typ_opt then
+              (* If source is copy assigned from a member field, we cannot suggest move as other procedures might access it. *)
+              None
+            else if Option.is_some source_opt || is_copy_legit then
               let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
               let disjunct' =
                 Option.value_map source_addr_typ_opt ~default:disjunct
@@ -226,7 +239,10 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
   aux (get_modeled_as_returning_copy_opt, List.rev) astate_n astates
 
 
-let is_lock pname = String.equal (Procname.get_method pname) "lock"
+let is_lock pname =
+  let method_name = Procname.get_method pname in
+  String.equal method_name "lock" || String.equal method_name "rlock"
+
 
 let add_copied_return path location call_exp actuals astates astate_non_disj =
   let open IOption.Let_syntax in

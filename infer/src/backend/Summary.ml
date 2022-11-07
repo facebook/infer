@@ -275,7 +275,7 @@ module OnDisk = struct
     DBWriter.delete_spec ~proc_uid:(Procname.to_unique_id pname)
 
 
-  let delete_all ~filter () = Procedures.get_all ~filter () |> List.iter ~f:delete
+  let delete_all ~procedures = List.iter ~f:delete procedures
 
   let iter_filtered_specs ~filter ~f =
     let db = Database.get_database AnalysisDatabase in

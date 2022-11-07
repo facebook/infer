@@ -44,8 +44,20 @@ module Implementation = struct
 
 
   let delete_all_specs () =
-    Database.get_database AnalysisDatabase
-    |> SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs"
+    let db = Database.get_database AnalysisDatabase in
+    SqliteUtils.exec ~log:"drop specs table" ~stmt:"DELETE FROM specs" db ;
+    SqliteUtils.exec ~log:"drop issue_logs table" ~stmt:"DELETE FROM issue_logs" db
+
+
+  let delete_issue_logs =
+    let delete_statement =
+      Database.register_statement AnalysisDatabase "DELETE FROM issue_logs WHERE source_file = :k"
+    in
+    fun ~source_file ->
+      Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
+          Sqlite3.bind delete_stmt 1 source_file
+          |> SqliteUtils.check_result_code db ~log:"delete issue_logs bind source_file" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"delete issue_logs" db delete_stmt )
 
 
   let delete_spec =
@@ -133,13 +145,15 @@ module Implementation = struct
       |> SqliteUtils.exec
            ~log:(Printf.sprintf "copying specs of database '%s'" db_file)
            ~stmt:
-             {|
+             (Printf.sprintf
+                {|
               INSERT OR REPLACE INTO specs
               SELECT
                 sub.proc_uid,
                 sub.proc_name,
+                sub.report_summary,
                 NULL,
-                sub.report_summary
+                %s
               FROM (
                 attached.specs AS sub
                 LEFT OUTER JOIN specs AS main
@@ -149,6 +163,9 @@ module Implementation = struct
                 OR
                 main.report_summary >= sub.report_summary
             |}
+                ( List.length PayloadId.database_fields
+                |> List.init ~f:(fun _ -> "NULL")
+                |> String.concat ~sep:", " ) )
     in
     let merge_issues_table ~db_file =
       Database.get_database AnalysisDatabase
@@ -314,6 +331,7 @@ module Command = struct
         ; proc_names: Sqlite3.Data.t }
     | Checkpoint
     | DeleteAllSpecs
+    | DeleteIssueLogs of {source_file: Sqlite3.Data.t}
     | DeleteSpec of {proc_uid: string}
     | Handshake
     | MarkAllSourceFilesStale
@@ -343,6 +361,8 @@ module Command = struct
         "Checkpoint"
     | DeleteAllSpecs ->
         "DeleteAllSpecs"
+    | DeleteIssueLogs _ ->
+        "DeleteIssueLogs"
     | DeleteSpec _ ->
         "DeleteSpec"
     | Handshake ->
@@ -376,6 +396,8 @@ module Command = struct
         Implementation.canonicalize ()
     | DeleteAllSpecs ->
         Implementation.delete_all_specs ()
+    | DeleteIssueLogs {source_file} ->
+        Implementation.delete_issue_logs ~source_file
     | DeleteSpec {proc_uid} ->
         Implementation.delete_spec ~proc_uid
     | Handshake ->
@@ -539,6 +561,8 @@ let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
 let canonicalize () = perform Checkpoint
 
 let delete_all_specs () = perform DeleteAllSpecs
+
+let delete_issue_logs ~source_file = perform (DeleteIssueLogs {source_file})
 
 let delete_spec ~proc_uid = perform (DeleteSpec {proc_uid})
 

@@ -330,8 +330,7 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
   in
   List.iter ~f:analyze_proc_name_call procs_to_analyze ;
   Option.iter source_file_opt ~f:(fun source_file ->
-      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ) ;
-  Option.iter source_file_opt ~f:(fun source_file ->
+      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ;
       Callbacks.iterate_file_callbacks_and_store_issues procs_to_analyze exe_env source_file ) ;
   Language.curr_language := saved_language
 

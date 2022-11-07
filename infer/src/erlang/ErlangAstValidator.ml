@@ -8,6 +8,7 @@
 open! IStd
 module Ast = ErlangAst
 module Env = ErlangEnvironment
+module L = Logging
 
 (** Enforce additional invariants and constraints on the AST based on
     https://erlang.org/doc/apps/erts/absform.html *)
@@ -23,7 +24,7 @@ let pp_location (loc : Ast.location) =
 let validate_record_name (env : (_, _) Env.t) name =
   match String.Map.find env.records name with
   | None ->
-      Logging.debug Capture Verbose "Record definition not found for '%s'@." name ;
+      L.debug Capture Verbose "Record definition not found for '%s'@." name ;
       false
   | Some _ ->
       true
@@ -32,13 +33,12 @@ let validate_record_name (env : (_, _) Env.t) name =
 let validate_record_field (env : (_, _) Env.t) name field =
   match String.Map.find env.records name with
   | None ->
-      Logging.debug Capture Verbose "Record definition not found for '%s'@." name ;
+      L.debug Capture Verbose "Record definition not found for '%s'@." name ;
       false
   | Some record_info -> (
     match String.Map.find record_info.field_info field with
     | None ->
-        Logging.debug Capture Verbose "Record field '%s' not found in definition of '%s'@." field
-          name ;
+        L.debug Capture Verbose "Record field '%s' not found in definition of '%s'@." field name ;
         false
     | Some _ ->
         true )
@@ -89,7 +89,7 @@ let rec validate_pattern env (p : Ast.expression) =
       true
   | _ ->
       (* Everything else is invalid in a pattern *)
-      Logging.debug Capture Verbose "Invalid pattern at %s@." (pp_location p.location) ;
+      L.debug Capture Verbose "Invalid pattern at %s@." (pp_location p.location) ;
       false
 
 
@@ -173,7 +173,7 @@ let rec validate_guard_test env (gt : Ast.expression) =
       true
   | _ ->
       (* Everything else is invalid in a guard test *)
-      Logging.debug Capture Verbose "Invalid guard test at %s@." (pp_location gt.location) ;
+      L.debug Capture Verbose "Invalid guard test at %s@." (pp_location gt.location) ;
       false
 
 
@@ -318,7 +318,7 @@ let rec validate_type (type_ : Ast.type_) =
       List.for_all ~f:validate_type ts
   | Union [] ->
       (* A union is a list of types. This list should not be empty. *)
-      Logging.debug Capture Verbose "Invalid type: empty union@." ;
+      L.debug Capture Verbose "Invalid type: empty union@." ;
       false
   | Union ts ->
       List.for_all ~f:validate_type ts
@@ -340,7 +340,7 @@ let validate_spec_arities (func_arity : int) (spec : Ast.spec) =
     ~f:(fun ({arguments: _} : Ast.spec_disjunct) -> Int.equal (List.length arguments) func_arity)
     spec
   ||
-  ( Logging.debug Capture Verbose "Invalid spec: inconsistent arities in function spec@." ;
+  ( L.debug Capture Verbose "Invalid spec: inconsistent arities in function spec@." ;
     false )
 
 
@@ -350,17 +350,17 @@ let validate_form env (form : Ast.form) =
       validate_function env function_ clauses
   | Spec {spec= []; _} ->
       (* A function spec is a list of overloads. This list should not be empty *)
-      Logging.debug Capture Verbose "Invalid spec: empty list of overloads@." ;
+      L.debug Capture Verbose "Invalid spec: empty list of overloads@." ;
       false
   | Spec {function_= {arity; _}; spec} ->
       (validate_spec_arities arity spec && List.for_all ~f:validate_spec_disjunct spec)
       ||
-      ( Logging.debug Capture Verbose "Invalid spec@." ;
+      ( L.debug Capture Verbose "Invalid spec@." ;
         false )
   | Type {name; type_} ->
       validate_type type_
       ||
-      ( Logging.debug Capture Verbose "Invalid type: %s@." name ;
+      ( L.debug Capture Verbose "Invalid type: %s@." name ;
         false )
   (* TODO: validate other forms. *)
   | _ ->
@@ -368,5 +368,5 @@ let validate_form env (form : Ast.form) =
 
 
 let validate (env : (_, _) Env.t) module_ =
-  Logging.debug Capture Verbose "Validating AST of module %s@." env.current_module ;
+  L.debug Capture Verbose "Validating AST of module %s@." env.current_module ;
   List.for_all ~f:(validate_form env) module_

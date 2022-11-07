@@ -18,7 +18,6 @@
 
 %token AMPERSAND
 %token ASSIGN
-%token ATTRIBUTE
 %token COLON
 %token COMMA
 %token DECLARE
@@ -72,10 +71,13 @@
 %type <NodeName.t> nname
 %type <TypeName.t> tname
 %type <VarName.t> vname
+%type <Attr.t list> annots
+%type <Attr.t> annot
 %type <Typ.t> typ
+%type <Typ.annotated> annotated_typ
 %type <Typ.t> base_typ
-%type <Typ.t * FieldName.t> typed_field
-%type <VarName.t * Typ.t> typed_var
+%type <FieldName.t * Typ.annotated> typed_field
+%type <VarName.t * Typ.annotated> typed_var
 %type <Instr.t> instruction
 %type <Terminator.t> terminator
 %type <Exp.t> expression
@@ -84,27 +86,8 @@
 %type <Node.t> block
 %type <Terminator.node_call> node_call
 %type <NodeName.t * (Ident.t * Typ.t) list> label
-%type <Module.decl list> list(declaration)
-%type <Instr.t list> list(instruction)
-%type <Exp.t list> loption(separated_nonempty_list(COMMA,expression))
-%type <NodeName.t list> loption(separated_nonempty_list(COMMA,nname))
-%type <Terminator.node_call list> loption(separated_nonempty_list(COMMA,node_call))
-%type <Typ.t list> loption(separated_nonempty_list(COMMA,typ))
-%type <(VarName.t * Typ.t) list> loption(separated_nonempty_list(COMMA,typed_var))
-%type <(Typ.t * FieldName.t) list> loption(separated_nonempty_list(SEMICOLON,typed_field))
-%type <Node.t list> nonempty_list(block)
-%type <Exp.t list> separated_nonempty_list(COMMA,expression)
-%type <NodeName.t list> separated_nonempty_list(COMMA,nname)
-%type <Terminator.node_call list> separated_nonempty_list(COMMA,node_call)
-%type <Typ.t list> separated_nonempty_list(COMMA,typ)
-%type <(VarName.t * Typ.t) list> separated_nonempty_list(COMMA,typed_var)
-%type <(Typ.t * FieldName.t) list> separated_nonempty_list(SEMICOLON,typed_field)
 %type <TypeName.t list> extends
-%type <Attr.t list> list(attribute)
-%type <TypeName.t list option> option(extends)
 %type <Ident.t * Typ.t> typed_ident
-%type <(Ident.t * Typ.t) list> separated_nonempty_list(COMMA,typed_ident)
-%type <TypeName.t list> separated_nonempty_list(COMMA,tname)
 
 %%
 
@@ -139,34 +122,41 @@ qualified_pname:
     { {enclosing_class=TopLevel; name} }
 
 attribute:
-  | ATTRIBUTE name=IDENT EQ value=STRING
-    { {name; value; loc=location_of_pos $startpos} }
+  | DOT name=IDENT EQ value=STRING
+    { {name; values=[value]; loc=location_of_pos $startpos} }
 
 extends:
   | EXTENDS supers=separated_nonempty_list(COMMA,tname)
   { supers }
 
 declaration:
-  | GLOBAL name=vname COLON typ=typ
-    { let global : Global.t = {name; typ} in
+  | GLOBAL name=vname COLON annotated_typ=annotated_typ
+    { let typ = annotated_typ.Typ.typ in
+      let attributes = annotated_typ.Typ.attributes in
+      let global : Global.t = {name; typ; attributes} in
       Global global }
-  | TYPE enclosing_class=tname supers=extends? ioption(EQ) LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
+  | TYPE typ_name=tname supers=extends? ioption(EQ) attributes=annots
+         LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
     { let fields =
-        List.map l ~f:(fun (typ, name) ->
+        List.map l ~f:(fun (name, annotated_typ) ->
+                        let enclosing_class = typ_name in
                         let qualified_name : qualified_fieldname = {name; enclosing_class} in
-                        {FieldDecl.qualified_name; typ}) in
+                        let typ = annotated_typ.Typ.typ in
+                        let attributes = annotated_typ.Typ.attributes in
+                        {FieldDecl.qualified_name; typ; attributes}) in
       let supers = Option.value supers ~default:[] in
-      Struct {name=enclosing_class; supers; fields} }
-  | DECLARE qualified_name=qualified_pname LPAREN
-            formals_types = separated_list(COMMA, typ) RPAREN COLON result_type=typ
-    { let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type} in
+      Struct {name= typ_name; supers; fields; attributes} }
+  | DECLARE attributes=annots qualified_name=qualified_pname LPAREN
+            formals_types = separated_list(COMMA, annotated_typ)
+            RPAREN COLON result_type=annotated_typ
+    { let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type; attributes} in
       Procdecl procdecl
     }
-  | DEFINE qualified_name=qualified_pname LPAREN
-           params = separated_list(COMMA, typed_var) RPAREN COLON result_type=typ
+  | DEFINE attributes=annots qualified_name=qualified_pname LPAREN
+           params = separated_list(COMMA, typed_var) RPAREN COLON result_type=annotated_typ
            LBRACKET locals = locals nodes=block+ RBRACKET
     { let formals_types = List.map ~f:snd params in
-      let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type} in
+      let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type; attributes} in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:fst params in
       let exit_loc = location_of_pos $endpos in
@@ -198,13 +188,35 @@ typ:
   | STAR typ=typ
     { Ptr typ }
 
+%inline
+annots:
+  | l=annot*
+    { l }
+
+annot:
+  | DOT name=IDENT values=annot_value
+    { let loc = location_of_pos $startpos(name) in
+      {name; values; loc} }
+
+%inline
+annot_value:
+  |
+    { [] }
+  | EQ l = separated_nonempty_list(COMMA, STRING)
+    { l }
+
+
+annotated_typ:
+  | annots=annots typ=typ
+    { {attributes=annots; typ} }
+
 typed_field:
-  | name=fname COLON typ=typ
-    { (typ, name) }
+  | name=fname COLON annotated_typ=annotated_typ
+    { (name, annotated_typ) }
 
 typed_var:
-  | name=vname COLON typ=typ
-    { (name, typ) }
+  | name=vname COLON annotated_typ=annotated_typ
+    { (name, annotated_typ) }
 
 typed_ident:
   | id=LOCAL COLON typ=typ
