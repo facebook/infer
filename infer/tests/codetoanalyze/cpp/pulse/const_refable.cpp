@@ -11,6 +11,17 @@
 #include <vector>
 #include <functional>
 
+namespace folly {
+template <class Value>
+class Optional {
+ public:
+  Optional(const Optional& src);
+  bool has_value();
+};
+} // namespace folly
+
+namespace const_refable {
+
 struct Arr {
   int arr[2];
   std::vector<int> vec;
@@ -82,15 +93,6 @@ std::string std_pair_string_bad(std::pair<std::string, std::string> p) {
   return p.first;
 }
 
-namespace folly {
-template <class Value>
-class Optional {
- public:
-  Optional(const Optional& src);
-  bool has_value();
-};
-} // namespace folly
-
 int folly_optional_int_ok(folly::Optional<int> n_opt) {
   if (n_opt.has_value()) {
     return 42;
@@ -144,3 +146,5 @@ void captured_arr_ok(Arr a) {
 void captured_shared_ptr_bad_FN(std::shared_ptr<int> a) {
   call_lambda([&a]() {});
 }
+
+} // namespace const_refable
