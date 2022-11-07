@@ -946,6 +946,12 @@ let quandary_taint_error =
     ~user_documentation:"Generic taint error when nothing else fits."
 
 
+let readonly_shared_ptr_param =
+  register ~enabled:false ~id:"PULSE_READONLY_SHARED_PTR_PARAM" Error Pulse
+    ~hum:"Read-only Shared Parameter"
+    ~user_documentation:[%blob "../../documentation/issues/PULSE_READONLY_SHARED_PTR_PARAM.md"]
+
+
 let taint_error =
   register ~enabled:false ~hum:"Taint Error" ~id:"TAINT_ERROR" Error Pulse
     ~user_documentation:"A taint flow was detected from a source to a sink"

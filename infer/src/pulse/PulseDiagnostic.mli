@@ -68,6 +68,8 @@ type t =
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
+  | ReadonlySharedPtrParameter of
+      {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitializedValue of read_uninitialized_value
   | RetainCycle of
       { assignment_traces: Trace.t list

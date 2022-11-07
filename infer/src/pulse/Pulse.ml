@@ -39,11 +39,19 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
            ~latent:false proc_desc err_log diagnostic )
 
 
-let report_const_refable_parameters proc_desc err_log non_disj_astate =
+let report_unnecessary_parameter_copies proc_desc err_log non_disj_astate =
   PulseNonDisjunctiveDomain.get_const_refable_parameters non_disj_astate
   |> List.iter ~f:(fun (param, typ, location) ->
-         let diagnostic = Diagnostic.ConstRefableParameter {param; typ; location} in
-         PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic )
+         let diagnostic =
+           if Typ.is_shared_pointer typ then
+             if NonDisjDomain.is_lifetime_extended param non_disj_astate then None
+             else
+               let used_locations = NonDisjDomain.get_loaded_locations param non_disj_astate in
+               Some (Diagnostic.ReadonlySharedPtrParameter {param; typ; location; used_locations})
+           else Some (Diagnostic.ConstRefableParameter {param; typ; location})
+         in
+         Option.iter diagnostic ~f:(fun diagnostic ->
+             PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic ) )
 
 
 let heap_size () = (Gc.quick_stat ()).heap_words
@@ -759,7 +767,7 @@ module PulseTransferFunctions = struct
           let astate_n =
             match rhs_exp with
             | Lvar pvar ->
-                NonDisjDomain.set_load (Var.of_pvar pvar) astate_n
+                NonDisjDomain.set_load loc lhs_id (Var.of_pvar pvar) astate_n
             | _ ->
                 astate_n
           in
@@ -830,6 +838,7 @@ module PulseTransferFunctions = struct
             PulseNonDisjunctiveOperations.add_copied_return path loc call_exp actuals astates
               astate_n
           in
+          let astate_n = NonDisjDomain.set_passed_to loc call_exp actuals astate_n in
           (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
           let prune_result = PulseOperations.prune path loc ~condition astate in
@@ -1007,7 +1016,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
           in
           report_topl_errors proc_desc err_log summary ;
           report_unnecessary_copies proc_desc err_log non_disj_astate ;
-          report_const_refable_parameters proc_desc err_log non_disj_astate ;
+          report_unnecessary_parameter_copies proc_desc err_log non_disj_astate ;
           summary
       | None ->
           []

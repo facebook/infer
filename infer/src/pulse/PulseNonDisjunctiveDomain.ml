@@ -136,7 +136,36 @@ end
 module CopyMap = AbstractDomain.Map (CopyVar) (CopySpec)
 module ParameterMap = AbstractDomain.Map (ParameterVar) (ParameterSpec)
 module Locked = AbstractDomain.BooleanOr
-module Loads = AbstractDomain.FiniteSet (Var)
+
+module Loads = struct
+  module IdentToVars = AbstractDomain.FiniteMultiMap (Ident) (Var)
+  module LoadedVars = AbstractDomain.FiniteMultiMap (Var) (Location)
+  include AbstractDomain.PairWithBottom (IdentToVars) (LoadedVars)
+
+  let add loc ident var (ident_to_vars, loaded_vars) =
+    (IdentToVars.add ident var ident_to_vars, LoadedVars.add var loc loaded_vars)
+
+
+  let get_all ident (ident_to_vars, _) = IdentToVars.get_all ident ident_to_vars
+
+  let is_loaded var (_, loaded_vars) = LoadedVars.mem var loaded_vars
+
+  let get_loaded_locations var (_, loaded_vars) = LoadedVars.get_all var loaded_vars
+end
+
+module CalleeWithUnknown = struct
+  type t = V of Procname.t | Unknown [@@deriving compare]
+
+  let pp f = function V callee -> Procname.pp f callee | Unknown -> F.pp_print_string f "unknown"
+end
+
+module CalleeWithLoc = struct
+  type t = {callee: CalleeWithUnknown.t; loc: Location.t} [@@deriving compare]
+
+  let pp f {callee; loc} = F.fprintf f "%a at %a" CalleeWithUnknown.pp callee Location.pp loc
+end
+
+module PassedTo = AbstractDomain.FiniteMultiMap (Var) (CalleeWithLoc)
 
 type elt =
   { copy_map: CopyMap.t
@@ -144,17 +173,18 @@ type elt =
   ; destructor_checked: DestructorChecked.t
   ; captured: Captured.t
   ; locked: Locked.t
-  ; loads: Loads.t }
+  ; loads: Loads.t
+  ; passed_to: PassedTo.t }
 
 type t = V of elt | Top
 
 let pp f = function
-  | V {copy_map; parameter_map; destructor_checked; captured; locked; loads} ->
+  | V {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} ->
       F.fprintf f
         "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[captured: \
-         %a@],@ @[locked: %a@],@ @[loads: %a@]@]"
+         %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed to: %a@]@]"
         CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
-        Captured.pp captured Locked.pp locked Loads.pp loads
+        Captured.pp captured Locked.pp locked Loads.pp loads PassedTo.pp passed_to
   | Top ->
       AbstractDomain.TopLiftedUtils.pp_top f
 
@@ -172,6 +202,7 @@ let leq ~lhs ~rhs =
       && Captured.leq ~lhs:lhs.captured ~rhs:rhs.captured
       && Locked.leq ~lhs:lhs.locked ~rhs:rhs.locked
       && Loads.leq ~lhs:lhs.loads ~rhs:rhs.loads
+      && PassedTo.leq ~lhs:lhs.passed_to ~rhs:rhs.passed_to
 
 
 let join x y =
@@ -185,7 +216,8 @@ let join x y =
         ; destructor_checked= DestructorChecked.join x.destructor_checked y.destructor_checked
         ; captured= Captured.join x.captured y.captured
         ; locked= Locked.join x.locked y.locked
-        ; loads= Loads.join x.loads y.loads }
+        ; loads= Loads.join x.loads y.loads
+        ; passed_to= PassedTo.join x.passed_to y.passed_to }
 
 
 let widen ~prev ~next ~num_iters =
@@ -202,7 +234,8 @@ let widen ~prev ~next ~num_iters =
               ~num_iters
         ; captured= Captured.widen ~prev:prev.captured ~next:next.captured ~num_iters
         ; locked= Locked.widen ~prev:prev.locked ~next:next.locked ~num_iters
-        ; loads= Loads.widen ~prev:prev.loads ~next:next.loads ~num_iters }
+        ; loads= Loads.widen ~prev:prev.loads ~next:next.loads ~num_iters
+        ; passed_to= PassedTo.widen ~prev:prev.passed_to ~next:next.passed_to ~num_iters }
 
 
 let bottom =
@@ -212,17 +245,19 @@ let bottom =
     ; destructor_checked= DestructorChecked.empty
     ; captured= Captured.empty
     ; locked= Locked.bottom
-    ; loads= Loads.bottom }
+    ; loads= Loads.bottom
+    ; passed_to= PassedTo.bottom }
 
 
 let is_bottom = function
   | Top ->
       false
-  | V {copy_map; parameter_map; destructor_checked; captured; locked; loads} ->
+  | V {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} ->
       CopyMap.is_bottom copy_map
       && ParameterMap.is_bottom parameter_map
       && DestructorChecked.is_bottom destructor_checked
       && Captured.is_bottom captured && Locked.is_bottom locked && Loads.is_bottom loads
+      && PassedTo.is_bottom passed_to
 
 
 let top = Top
@@ -307,7 +342,7 @@ let get_const_refable_parameters = function
   | V {parameter_map; captured; loads} ->
       ParameterMap.fold
         (fun var (parameter_spec_t : ParameterSpec.t) acc ->
-          if Loads.mem var loads || Captured.mem_var var captured then
+          if Loads.is_loaded var loads || Captured.mem_var var captured then
             match parameter_spec_t with
             | Modified ->
                 acc
@@ -370,6 +405,72 @@ let set_locked = map set_locked_elt
 
 let is_locked = function Top -> true | V {locked} -> locked
 
-let set_load_elt var astate = {astate with loads= Loads.add var astate.loads}
+let set_load_elt loc ident var astate = {astate with loads= Loads.add loc ident var astate.loads}
 
-let set_load var = map (set_load_elt var)
+let set_load loc ident var = map (set_load_elt loc ident var)
+
+let get_loaded_locations var = function
+  | Top ->
+      []
+  | V {loads} ->
+      Loads.get_loaded_locations var loads
+
+
+let is_captured var astate =
+  match ((var : Var.t), astate) with
+  | LogicalVar _, _ ->
+      false
+  | ProgramVar x, V {captured} ->
+      Captured.mem x captured
+  | ProgramVar _, Top ->
+      true
+
+
+let set_passed_to_elt loc call_exp actuals ({loads; passed_to} as astate) =
+  let new_callee =
+    match (call_exp : Exp.t) with
+    | Const (Cfun callee) | Closure {name= callee} ->
+        CalleeWithUnknown.V callee
+    | _ ->
+        CalleeWithUnknown.Unknown
+  in
+  let vars =
+    List.fold actuals ~init:Var.Set.empty ~f:(fun acc (actual, _) ->
+        match (actual : Exp.t) with
+        | Var ident ->
+            List.fold (Loads.get_all ident loads) ~init:acc ~f:(fun acc var -> Var.Set.add var acc)
+        | _ ->
+            acc )
+  in
+  let passed_to =
+    Var.Set.fold (fun var acc -> PassedTo.add var {callee= new_callee; loc} acc) vars passed_to
+  in
+  {astate with passed_to}
+
+
+let set_passed_to loc call_exp actuals = map (set_passed_to_elt loc call_exp actuals)
+
+let get_passed_to var ~f = function
+  | Top ->
+      `Top
+  | V {passed_to} ->
+      let callees =
+        PassedTo.get_all var passed_to |> List.filter ~f:(fun {CalleeWithLoc.callee; _} -> f callee)
+      in
+      `PassedTo callees
+
+
+let is_lifetime_extended var astate =
+  is_captured var astate
+  ||
+  match
+    get_passed_to var astate ~f:(function
+      | CalleeWithUnknown.V callee ->
+          not (Procname.is_shared_ptr_observer callee)
+      | CalleeWithUnknown.Unknown ->
+          true )
+  with
+  | `Top ->
+      true
+  | `PassedTo callees ->
+      not (List.is_empty callees)

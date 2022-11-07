@@ -107,6 +107,7 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
   | CSharpResourceLeak _
   | JavaResourceLeak _
   | MemoryLeak _
+  | ReadonlySharedPtrParameter _
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _

@@ -296,6 +296,9 @@ val get_objc_class_name : t -> string option
 
 val is_std_move : t -> bool
 
+val is_shared_ptr_observer : t -> bool
+(** Check if it is C++ shared pointer observer, e.g. [std::shared_ptr::operator*] *)
+
 (** Hash tables with proc names as keys. *)
 module Hash : Caml.Hashtbl.S with type key = t
 

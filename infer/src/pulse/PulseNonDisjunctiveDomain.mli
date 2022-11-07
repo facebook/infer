@@ -71,4 +71,10 @@ val set_locked : t -> t
 
 val is_locked : t -> bool
 
-val set_load : Var.t -> t -> t
+val set_load : Location.t -> Ident.t -> Var.t -> t -> t
+
+val get_loaded_locations : Var.t -> t -> Location.t list
+
+val set_passed_to : Location.t -> Exp.t -> (Exp.t * Typ.t) list -> t -> t
+
+val is_lifetime_extended : Var.t -> t -> bool

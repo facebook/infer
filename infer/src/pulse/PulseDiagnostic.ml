@@ -121,6 +121,8 @@ type t =
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
+  | ReadonlySharedPtrParameter of
+      {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
   | ReadUninitializedValue of read_uninitialized_value
   | RetainCycle of
       { assignment_traces: Trace.t list
@@ -163,6 +165,12 @@ let pp fmt diagnostic =
       F.fprintf fmt "MemoryLeak {@[allocator=%a;@;allocation_trace=%a;@;location=%a@]}"
         Attribute.pp_allocator allocator (Trace.pp ~pp_immediate) allocation_trace Location.pp
         location
+  | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
+      F.fprintf fmt
+        "ReadonlySharedPtrParameter {@[param=%a;@;typ=%a;@;location=%a;@;used_locations=%a@]}"
+        Var.pp param (Typ.pp_full Pp.text) typ Location.pp location
+        (IList.pp_print_list ~max:10 ~pp_sep:(fun f () -> F.pp_print_string f ",") Location.pp)
+        used_locations
   | ReadUninitializedValue read_uninitialized_value ->
       F.fprintf fmt "ReadUninitializedValue %a" pp_read_uninitialized_value read_uninitialized_value
   | RetainCycle {assignment_traces; value; path; location} ->
@@ -228,6 +236,7 @@ let get_location = function
   | CSharpResourceLeak {location}
   | JavaResourceLeak {location}
   | MemoryLeak {location}
+  | ReadonlySharedPtrParameter {location}
   | RetainCycle {location}
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
@@ -263,6 +272,7 @@ let aborts_execution = function
   | CSharpResourceLeak _
   | JavaResourceLeak _
   | MemoryLeak _
+  | ReadonlySharedPtrParameter _
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
@@ -464,6 +474,24 @@ let get_message diagnostic =
       in
       F.asprintf "Memory dynamically allocated %a is not freed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
+  | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
+      let pp_used_locations f =
+        match used_locations with
+        | [] ->
+            ()
+        | _ :: _ ->
+            F.fprintf f " at %a"
+              (IList.pp_print_list ~max:3
+                 ~pp_sep:(fun f () -> F.pp_print_string f ", ")
+                 Location.pp_line )
+              used_locations
+      in
+      F.asprintf
+        "Function parameter `%a` with type `%a` is passed by-value but its lifetime is not \
+         extended inside the function on %a. This might result in an unnecessary copy at the \
+         callsite of this function. Consider passing a raw pointer instead and changing its usages \
+         if necessary%t."
+        Var.pp param (Typ.pp_full Pp.text) typ Location.pp_line location pp_used_locations
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
         Trace.find_map trace ~f:(function VariableDeclared (pvar, _, _) -> Some pvar | _ -> None)
@@ -700,6 +728,11 @@ let get_trace = function
              F.fprintf fmt "allocated by `%a` here" Attribute.pp_allocator allocator )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | ReadonlySharedPtrParameter {param; location; used_locations} ->
+      let nesting = 0 in
+      Errlog.make_trace_element nesting location (F.asprintf "Parameter %a" Var.pp param) []
+      :: List.map used_locations ~f:(fun used_location ->
+             Errlog.make_trace_element nesting used_location "used" [] )
   | ReadUninitializedValue {calling_context; trace} ->
       get_trace_calling_context calling_context
       @@ Trace.add_to_errlog ~nesting:0
@@ -777,6 +810,8 @@ let get_issue_type ~latent issue_type =
         L.die InternalError
           "Memory leaks should not have a Java resource, C sharp, or Objective-C alloc as allocator"
     )
+  | ReadonlySharedPtrParameter _, false ->
+      IssueType.readonly_shared_ptr_param
   | ReadUninitializedValue _, _ ->
       IssueType.uninitialized_value_pulse ~latent
   | RetainCycle _, false ->
@@ -805,6 +840,7 @@ let get_issue_type ~latent issue_type =
       | CSharpResourceLeak _
       | JavaResourceLeak _
       | MemoryLeak _
+      | ReadonlySharedPtrParameter _
       | RetainCycle _
       | StackVariableAddressEscape _
       | UnnecessaryCopy _ )
