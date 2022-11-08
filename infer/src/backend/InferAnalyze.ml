@@ -301,7 +301,16 @@ let main ~changed_files =
   let source_files = lazy (get_source_files_to_analyze ~changed_files) in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
+  let initial_spec_count =
+    if Config.incremental_analysis then Some (Summary.OnDisk.get_count ()) else None
+  in
   let backend_stats_list, gc_stats_list = analyze source_files in
+  if Config.incremental_analysis then (
+    let final_spec_count = Summary.OnDisk.get_count () in
+    let initial_spec_count = Option.value_exn initial_spec_count in
+    let specs_computed = final_spec_count - initial_spec_count in
+    L.progress "Incremental analysis: Computed %d procedure summaries.@." specs_computed ;
+    ScubaLogging.log_count ~label:"incremental_analysis.specs_computed" ~value:specs_computed ) ;
   Stats.log_aggregate backend_stats_list ;
   GCStats.log_aggregate ~prefix:"backend_stats." Analysis gc_stats_list ;
   let analysis_duration = ExecutionDuration.since start in

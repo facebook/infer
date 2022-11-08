@@ -327,4 +327,10 @@ module OnDisk = struct
 
 
   let iter_specs ~f = iter_filtered_specs ~filter:(fun _ _ -> true) ~f
+
+  let get_count () =
+    let db = Database.get_database AnalysisDatabase in
+    Sqlite3.prepare db "SELECT count(1) FROM specs"
+    |> SqliteUtils.result_single_column_option db ~log:"count specs"
+    |> function Some count -> Sqlite3.Data.to_int_exn count | _ -> 0
 end

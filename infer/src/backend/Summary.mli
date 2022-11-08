@@ -84,4 +84,7 @@ module OnDisk : sig
   (** Iterates over all analysis artefacts listed above, for each procedure *)
 
   val get_model_proc_desc : Procname.t -> Procdesc.t option
+
+  val get_count : unit -> int
+  (** Counts the summaries currently stored on disk. *)
 end
