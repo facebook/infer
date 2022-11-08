@@ -2403,7 +2403,7 @@ and pulse_taint_sources =
           argument positions given by index (zero-indexed)
       - ["AllArgumentsButPositions", [<int list>]]:
           all arguments except given indices (zero-indexed)
-      - ["ArgumentMatchingTypes", [<type list>]]:
+      - ["ArgumentsMatchingTypes", [<type list>]]:
           arguments with types containing supplied strings
       - ["Fields", [<(string * taint_target) list>]]:
           fields given by name in return value, arguments or other fields

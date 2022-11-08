@@ -620,7 +620,7 @@ OPTIONS
              STRONG_DELEGATE_WARNING (enabled by default),
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
-             TAINT_ERROR (disabled by default),
+             TAINT_ERROR (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
              UNINITIALIZED_VALUE (enabled by default),
@@ -1259,7 +1259,7 @@ OPTIONS
                      argument positions given by index (zero-indexed)
                  - ["AllArgumentsButPositions", [<int list>]]:
                      all arguments except given indices (zero-indexed)
-                 - ["ArgumentMatchingTypes", [<type list>]]:
+                 - ["ArgumentsMatchingTypes", [<type list>]]:
                      arguments with types containing supplied strings
                  - ["Fields", [<(string * taint_target) list>]]:
                      fields given by name in return value, arguments or

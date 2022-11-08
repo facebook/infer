@@ -953,7 +953,7 @@ let readonly_shared_ptr_param =
 
 
 let taint_error =
-  register ~enabled:false ~hum:"Taint Error" ~id:"TAINT_ERROR" Error Pulse
+  register ~hum:"Taint Error" ~id:"TAINT_ERROR" Error Pulse
     ~user_documentation:"A taint flow was detected from a source to a sink"
 
 
