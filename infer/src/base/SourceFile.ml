@@ -37,9 +37,11 @@ module Hash = Caml.Hashtbl.Make (struct
   let hash = Caml.Hashtbl.hash
 end)
 
-let project_root_real = Utils.realpath Config.project_root
+let realpath_if_exists path = try Utils.realpath path with Unix.Unix_error _ -> path
 
-let workspace_real = Option.map ~f:Utils.realpath Config.workspace
+let project_root_real = realpath_if_exists Config.project_root
+
+let workspace_real = Option.map ~f:realpath_if_exists Config.workspace
 
 let workspace_rel_root_opt =
   Option.bind workspace_real ~f:(fun workspace_real ->
