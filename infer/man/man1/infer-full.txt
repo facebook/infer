@@ -2607,6 +2607,12 @@ INTERNAL OPTIONS
            Deactivates: Use the multirange subtyping domain. Used in the Java
            frontend and in biabduction. (Conversely: --subtype-multirange)
 
+       --suffix-match-changed-files
+           Activates: When computing the set of files to analyze using
+           --changed-files-index, a file will be analyzed if a name in the
+           changed files index is a suffix of its name. (Conversely:
+           --no-suffix-match-changed-files)
+
        --summaries-caches-max-size int
            The maximum amount of elements the summaries LRU caches can hold
 
