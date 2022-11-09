@@ -13,12 +13,7 @@ type clang_compilation_db_deps = NoDependencies | DepsUpToDepth of int | DepsAll
 
 val pp_clang_compilation_db_deps : F.formatter -> clang_compilation_db_deps -> unit
 
-type t =
-  | ClangCompilationDB of clang_compilation_db_deps
-  | ClangFlavors
-  | ClangV2
-  | Erlang
-  | JavaFlavor
+type t = ClangCompilationDB of clang_compilation_db_deps | ClangFlavors | Erlang | JavaFlavor
 
 val pp : F.formatter -> t -> unit
 

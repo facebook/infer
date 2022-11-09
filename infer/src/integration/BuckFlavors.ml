@@ -11,14 +11,15 @@ module F = Format
 
 type flavored_arguments = {command: string; rev_not_targets: string list; targets: string list}
 
+(* buck1 only *)
 let add_flavors_to_buck_arguments buck_mode ~extra_flavors original_buck_args =
   let command, rev_not_targets, targets =
-    Buck.parse_command_and_targets buck_mode original_buck_args
+    Buck.parse_command_and_targets buck_mode V1 original_buck_args
   in
   let targets =
     List.rev_map targets ~f:(fun t ->
         Buck.Target.(
-          t |> of_string |> add_flavor ~extra_flavors buck_mode Config.command |> to_string) )
+          t |> of_string |> add_flavor_v1 ~extra_flavors buck_mode Config.command |> to_string) )
   in
   {command; rev_not_targets; targets}
 
@@ -26,7 +27,7 @@ let add_flavors_to_buck_arguments buck_mode ~extra_flavors original_buck_args =
 let capture_buck_args build_report_file =
   ("--build-report" :: build_report_file :: (if Config.keep_going then ["--keep-going"] else []))
   @ (match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [])
-  @ Buck.config ClangFlavors @ Config.buck_build_args
+  @ Buck.config_v1 ClangFlavors @ Config.buck_build_args
 
 
 let run_buck_build prog buck_build_args =
@@ -36,7 +37,7 @@ let run_buck_build prog buck_build_args =
       ~f:(fun acc arg -> Printf.sprintf "%s%c%s" acc CommandLineOption.env_var_sep arg)
   in
   let extend_env = [(CommandLineOption.args_env_var, infer_args)] in
-  Buck.wrap_buck_call ~extend_env ~label:"build" (prog :: buck_build_args) |> ignore
+  Buck.wrap_buck_call ~extend_env ~label:"build" V1 (prog :: buck_build_args) |> ignore
 
 
 let get_all_infer_deps_under_buck_out () =

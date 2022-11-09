@@ -238,7 +238,7 @@ let simplify_targets targets =
 let run_buck ~command ~args =
   let args_file = Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck" ".args" in
   Utils.with_file_out args_file ~f:(fun channel -> Out_channel.output_lines channel args) ;
-  Buck.wrap_buck_call ~label:"erlang" [command; "@" ^ args_file]
+  Buck.wrap_buck_call ~label:"erlang" V2 [command; "@" ^ args_file]
 
 
 let update_buck_targets ~command ~args =

@@ -382,21 +382,32 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Hack
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
-  | BBuck2 | BBuck ->
+  | BBuck ->
       let analyzer, build_string =
         match Config.buck_mode with
         | None ->
             error_no_buck_mode_specified ()
-        | Some ClangV2 ->
-            (`Clang, "buck2")
         | Some ClangFlavors ->
             (`Clang, "buck with flavors")
         | Some (ClangCompilationDB _) ->
             (`Clang, "buck compilation database")
-        | Some Erlang ->
-            (`Erlang, Config.string_of_build_system build_system)
         | Some JavaFlavor ->
             (`Java, Config.string_of_build_system build_system)
+        | Some Erlang ->
+            L.die UserError "Unsupported buck2 integration."
+      in
+      assert_supported_mode analyzer build_string
+  | BBuck2 ->
+      let analyzer, build_string =
+        match Config.buck_mode with
+        | None ->
+            error_no_buck_mode_specified ()
+        | Some ClangFlavors ->
+            (`Clang, Config.string_of_build_system build_system)
+        | Some Erlang ->
+            (`Erlang, Config.string_of_build_system build_system)
+        | Some (JavaFlavor | ClangCompilationDB _) ->
+            L.die UserError "Unsupported buck2 integration."
       in
       assert_supported_mode analyzer build_string
 
@@ -453,7 +464,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             error_no_buck_mode_specified ()
         | Some Erlang ->
             BuckErlang {prog; args}
-        | Some ClangV2 ->
+        | Some ClangFlavors ->
             Buck2 {build_cmd}
         | Some buck_mode ->
             L.die UserError "%a is not supported with buck2.@." BuckMode.pp buck_mode )

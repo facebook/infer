@@ -20,13 +20,14 @@ let run_buck2_build prog buck2_build_args =
       ~f:(fun acc arg -> Printf.sprintf "%s%c%s" acc CommandLineOption.env_var_sep arg)
   in
   let extend_env = [(CommandLineOption.args_env_var, infer_args)] in
-  Buck.wrap_buck_call ~extend_env ~buck_mode:ClangV2 ~label:"build" (prog :: buck2_build_args)
-  |> ignore
+  Buck.wrap_buck_call ~extend_env V2 ~label:"build" (prog :: buck2_build_args) |> ignore
 
 
 let capture build_cmd =
   let prog, buck2_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
-  let command, rev_not_targets, targets = Buck.parse_command_and_targets ClangV2 buck2_args in
+  let command, rev_not_targets, targets =
+    Buck.parse_command_and_targets ClangFlavors V2 buck2_args
+  in
   if not (List.is_empty targets) then (
     let all_args = List.rev_append rev_not_targets targets in
     let buck2_build_cmd =

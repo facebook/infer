@@ -24,7 +24,7 @@ let capture build_cmd =
   in
   let updated_buck_cmd =
     (* make buck tell us where in buck-out are the capture directories for merging *)
-    (prog :: command :: "--build-report" :: build_report_file :: Buck.config JavaFlavor)
+    (prog :: command :: "--build-report" :: build_report_file :: Buck.config_v1 JavaFlavor)
     @ Config.buck_build_args_no_inline
     @ Buck.store_args_in_file ~identifier:"java_flavor_build" all_args
   in
@@ -33,7 +33,7 @@ let capture build_cmd =
   if List.is_empty targets then L.external_warning "WARNING: found no buck targets to analyze.@."
   else
     let time0 = Mtime_clock.counter () in
-    Buck.wrap_buck_call ~label:"build" updated_buck_cmd |> ignore ;
+    Buck.wrap_buck_call ~label:"build" V1 updated_buck_cmd |> ignore ;
     let infer_deps_lines = BuckBuildReport.parse_infer_deps ~build_report_file in
     let infer_deps = ResultsDir.get_path CaptureDependencies in
     Utils.with_file_out infer_deps ~f:(fun out_channel ->

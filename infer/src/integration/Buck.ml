@@ -9,6 +9,8 @@ open! IStd
 module F = Format
 module L = Logging
 
+type version = V1 | V2
+
 let max_command_line_length = 50
 
 let buck_extra_java_args_env_var = "BUCK_EXTRA_JAVA_ARGS"
@@ -40,8 +42,8 @@ let store_args_in_file ~identifier args =
     To achieve this we need to do two things: (i) tell the JVM not to use signals, meaning it leaves
     the default handler for [SIGQUIT] in place; (ii) uninstall the default handler for [SIGQUIT]
     because now that the JVM doesn't touch it, it will lead to process death. *)
-let wrap_buck_call ?(extend_env = []) ?buck_mode ~label cmd =
-  let is_buck2 = match (buck_mode : BuckMode.t option) with Some ClangV2 -> true | _ -> false in
+let wrap_buck_call ?(extend_env = []) version ~label cmd =
+  let is_buck2 = match (version : version) with V1 -> false | V2 -> true in
   let stdout_file =
     let prefix = Printf.sprintf "%s_%s" (if is_buck2 then "buck2" else "buck") label in
     Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix ".stdout"
@@ -113,20 +115,20 @@ module Target = struct
     else {target with flavors= flavor :: target.flavors}
 
 
-  let add_flavor (mode : BuckMode.t) (command : InferCommand.t) ~extra_flavors target =
+  let add_flavor_v1 (mode : BuckMode.t) (command : InferCommand.t) ~extra_flavors target =
     let target = List.fold_left ~f:add_flavor_internal ~init:target extra_flavors in
     match (mode, command) with
     | ClangCompilationDB _, _ ->
         add_flavor_internal target "compilation-database"
-    | ClangV2, _ | ClangFlavors, Compile | Erlang, _ ->
+    | ClangFlavors, Compile | Erlang, _ ->
         target
-    | JavaFlavor, _ ->
-        add_flavor_internal target "infer-java-capture"
     | ClangFlavors, _ ->
         add_flavor_internal target "infer-capture-all"
+    | JavaFlavor, _ ->
+        add_flavor_internal target "infer-java-capture"
 end
 
-let config =
+let config_v1 =
   let clang_path =
     List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
   in
@@ -164,7 +166,7 @@ let config =
           get_java_flavor_config ()
       | ClangFlavors ->
           get_clang_flavor_config ()
-      | ClangV2 | ClangCompilationDB _ | Erlang ->
+      | ClangCompilationDB _ | Erlang ->
           []
     in
     List.fold args ~init:[] ~f:(fun acc f -> "--config" :: f :: acc)
@@ -248,7 +250,7 @@ module Query = struct
      }
      ]
   *)
-  let parse_query_output ?buck_mode output =
+  let parse_query_output ~buck_mode output =
     let get_target_srcs_assoc_list json =
       match json with
       | `Assoc fields ->
@@ -282,36 +284,29 @@ module Query = struct
       | _ ->
           acc
     in
-    match (buck_mode : BuckMode.t option) with
-    | Some JavaFlavor ->
+    match (buck_mode : BuckMode.t) with
+    | JavaFlavor ->
         String.concat output |> Yojson.Basic.from_string |> get_target_srcs_assoc_list
         |> List.fold ~init:[] ~f:process_target
     | _ ->
         output
 
 
-  let exec ?buck_mode expr =
+  let exec_v1 ~buck_mode expr =
     let query = F.asprintf "%a" pp expr in
-    let buck_config = Option.value_map buck_mode ~default:[] ~f:config in
+    let buck_config = config_v1 buck_mode in
     let buck_output_options =
-      match (buck_mode : BuckMode.t option) with
-      | Some JavaFlavor ->
+      match (buck_mode : BuckMode.t) with
+      | JavaFlavor ->
           ["--output-format"; "json"; "--output-attribute"; "srcs"]
       | _ ->
           []
     in
-    let is_buck2 = match (buck_mode : BuckMode.t option) with Some ClangV2 -> true | _ -> false in
-    let buck_cmd = if is_buck2 then "buck2" else "buck" in
     let bounded_args =
-      store_args_in_file ~identifier:(buck_cmd ^ "_query_args")
-        (buck_config @ buck_output_options @ [query])
+      store_args_in_file ~identifier:"buck_query_args" (buck_config @ buck_output_options @ [query])
     in
-    let cmd =
-      buck_cmd :: "query"
-      :: ( (if is_buck2 then Config.buck2_build_args_no_inline else Config.buck_build_args_no_inline)
-         @ bounded_args )
-    in
-    wrap_buck_call ~label:"query" ?buck_mode cmd |> parse_query_output ?buck_mode
+    let cmd = "buck" :: "query" :: (Config.buck_build_args_no_inline @ bounded_args) in
+    wrap_buck_call ~label:"query" V1 cmd |> parse_query_output ~buck_mode
 end
 
 let accepted_buck_commands = ["build"]
@@ -335,11 +330,12 @@ let parameters_with_argument =
   ; "--verbose" ]
 
 
-let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
+(* Not used with buck2 *)
+let get_accepted_buck_kinds_pattern_v1 (mode : BuckMode.t) =
   match mode with
   | ClangCompilationDB _ ->
       "^(apple|cxx)_(binary|library|test)$"
-  | ClangV2 | ClangFlavors ->
+  | ClangFlavors ->
       "^(apple|cxx)_(binary|library)$"
   | Erlang ->
       L.die InternalError "Not used"
@@ -347,10 +343,11 @@ let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
       "^(java|android)_library$"
 
 
-let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
+(* Not used for buck2 *)
+let resolve_pattern_targets_v1 (buck_mode : BuckMode.t) targets =
   targets |> List.rev_map ~f:Query.target |> Query.set
   |> ( match buck_mode with
-     | ClangV2 | ClangFlavors | ClangCompilationDB NoDependencies | Erlang ->
+     | ClangFlavors | ClangCompilationDB NoDependencies | Erlang ->
          Fn.id
      | JavaFlavor ->
          Query.deps Config.buck_java_flavor_dependency_depth
@@ -358,8 +355,8 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) targets =
          Query.deps None
      | ClangCompilationDB (DepsUpToDepth depth) ->
          Query.deps (Some depth) )
-  |> Query.kind ~pattern:(get_accepted_buck_kinds_pattern buck_mode)
-  |> Query.exec ~buck_mode
+  |> Query.kind ~pattern:(get_accepted_buck_kinds_pattern_v1 buck_mode)
+  |> Query.exec_v1 ~buck_mode
 
 
 type parsed_args =
@@ -383,7 +380,7 @@ let split_buck_command buck_cmd =
         accepted_buck_commands
 
 
-let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
+let parse_command_and_targets (buck_mode : BuckMode.t) (version : version) original_buck_args =
   let expanded_buck_args = Utils.inline_argument_files original_buck_args in
   let command, args = split_buck_command expanded_buck_args in
   let buck_targets_block_list_regexp =
@@ -415,17 +412,20 @@ let parse_command_and_targets (buck_mode : BuckMode.t) original_buck_args =
   in
   let parsed_args = parse_cmd_args empty_parsed_args args in
   let targets =
-    match (buck_mode, parsed_args) with
-    | ClangFlavors, {pattern_targets= []; alias_targets= []; normal_targets} ->
+    match (buck_mode, version, parsed_args) with
+    | ClangFlavors, _, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
-    | ClangV2, {pattern_targets; alias_targets; normal_targets} ->
+    | ClangFlavors, V2, {pattern_targets; alias_targets; normal_targets} ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
     | ( (ClangFlavors | ClangCompilationDB _ | JavaFlavor)
+      , V1
       , {pattern_targets; alias_targets; normal_targets} ) ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
-        |> resolve_pattern_targets buck_mode
-    | Erlang, _ ->
-        L.die InternalError "parse_command_and_targets should not be used for Erlang"
+        |> resolve_pattern_targets_v1 buck_mode
+    | _, _, _ ->
+        L.die InternalError "parse_command_and_targets should not be used for %a and buck%s"
+          BuckMode.pp buck_mode
+          (match version with V1 -> "1" | V2 -> "2")
   in
   let targets =
     Option.value_map ~default:targets
