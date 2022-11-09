@@ -30,7 +30,7 @@ let binary_numeral_prefix = "0" ("b"|"B")
 let hex_numeral_prefix = "0" ("x"|"X")
 let numeral_prefix = ['0'-'9'] | binary_numeral_prefix | hex_numeral_prefix
 let numeral_digit = ['0'-'9' 'a'-'f' 'A'-'F' '_']
-let integer_literal = numeral_prefix numeral_digit* ['l' 'L']?
+let integer_literal = '-'? numeral_prefix numeral_digit* ['l' 'L']?
 
 let digits = ['0'-'9']+
 let float_type_suffix = ['f' 'F' 'd' 'D']

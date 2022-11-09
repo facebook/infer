@@ -127,6 +127,32 @@ let%test_module "parsing" =
         .source_language = "hack"
 
         declare todo(...) : *Mixed |}]
+
+    let%expect_test "numbers lexing" =
+      let text =
+        {|
+         .source_language = "hack"
+         define foo() : int {
+         #entry:
+           n0 = 12
+           n1 = -42
+           ret n1
+         }
+         |}
+      in
+      let m = parse_module text in
+      F.printf "%a" Module.pp m ;
+      [%expect
+        {|
+        .source_language = "hack"
+
+        define foo() : int {
+          #entry:
+              n0 = 12
+              n1 = -42
+              ret n1
+
+        } |}]
   end )
 
 let%test_module "procnames" =
