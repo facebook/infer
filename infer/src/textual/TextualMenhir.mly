@@ -56,6 +56,7 @@
 %token UNREACHABLE
 %token VOID
 
+%token <string> ERROR
 %token <string> IDENT
 %token <int> LOCAL
 %token <Z.t> INTEGER

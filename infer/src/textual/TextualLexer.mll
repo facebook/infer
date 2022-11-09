@@ -144,6 +144,8 @@ rule main = parse
         { STRING s }
   | eof
         { EOF }
+  | _
+        { ERROR (Lexing.lexeme lexbuf) }
 
 
 {
