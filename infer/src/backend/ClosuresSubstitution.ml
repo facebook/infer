@@ -162,7 +162,13 @@ let replace_closure_param node (astate : Domain.t) (instr : Sil.instr) : Sil.ins
 
 
 let process_common replace_instr pdesc =
+  print_string("<<<SYH:ClosuresSubstitution.process_common>>>\n");
+
   let node_cfg = CFG.from_pdesc pdesc in
+
+  print_string("<<<SYH:I stopped here,continue with Analyzer.exec_cfg >>>\n");
+
+
   let map = Analyzer.exec_cfg node_cfg ~initial:Domain.empty () in
   let update_context = eval_instr in
   let context_at_node node = get_invariant_at_node map node in
@@ -172,6 +178,9 @@ let process_common replace_instr pdesc =
   ()
 
 
-let process_closure_call pdesc = process_common replace_closure_call pdesc
+let process_closure_call pdesc = 
+  print_string("<<<SYH:ClosuresSubstitution.process_closure_call>>>\n");
+
+  process_common replace_closure_call pdesc
 
 let process_closure_param pdesc = process_common replace_closure_param pdesc

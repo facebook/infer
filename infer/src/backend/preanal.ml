@@ -453,12 +453,16 @@ module NoReturn = struct
 end
 
 let do_preanalysis exe_env pdesc =
+  print_string("<<<SYH:preanal.do_preanalysis>>>\n");
+
   let tenv = Exe_env.get_proc_tenv exe_env (Procdesc.get_proc_name pdesc) in
   let proc_name = Procdesc.get_proc_name pdesc in
   if Procname.is_java proc_name || Procname.is_csharp proc_name then
     InlineJavaSyntheticMethods.process pdesc ;
   (* NOTE: It is important that this preanalysis stays before Liveness *)
   if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then (
+    print_string("<<<SYH:preanal.do_preanalysis1>>>\n");
+
     CCallSpecializedWithClosures.process pdesc ;
     (* Apply dynamic selection of copy and overriden methods *)
     ReplaceObjCMethodCall.process tenv pdesc proc_name ) ;

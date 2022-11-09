@@ -127,6 +127,7 @@ let analyze exe_env callee_summary =
 
 
 let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
+  print_string("<<<SYH:run_proc_analysis>>>\n");
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
@@ -143,6 +144,8 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
       (Option.map caller_pdesc ~f:Procdesc.get_proc_name)
       Procname.pp callee_pname ;
   let preprocess () =
+    print_string("<<<SYH:run_proc_analysis.preprocess()>>>\n");
+
     incr nesting ;
     let source_file = callee_attributes.ProcAttributes.translation_unit in
     update_taskbar (Some callee_pname) (Some source_file) ;
@@ -275,14 +278,17 @@ let get_proc_desc callee_pname =
 
 
 let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
-  print_string("<<<SYH:analyze_callee>>>\n");
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
     match Summary.OnDisk.get ~lazy_payloads callee_pname with
     | Some _ as summ_opt ->
+        print_string("<<<SYH:analyze_callee1>>>\n");
+
         summ_opt
     | None when procedure_should_be_analyzed callee_pname ->
+        print_string("<<<SYH:analyze_callee2>>>\n");
+
         get_proc_desc callee_pname
         |> Option.bind ~f:(fun callee_pdesc ->
                RestartScheduler.lock_exn callee_pname ;

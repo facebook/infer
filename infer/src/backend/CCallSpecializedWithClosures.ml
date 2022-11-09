@@ -34,6 +34,8 @@ let replace_with_specialize_methods instr =
 
 
 let process proc_desc =
+  print_string("<<<SYH:CCallSpecializedWithClosures.process>>>\n");
+
   (* For each procdesc:
      1. If we are a specialized procdesc:
       1.1. Copy original procdesc
