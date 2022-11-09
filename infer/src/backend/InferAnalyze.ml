@@ -63,6 +63,9 @@ let proc_name_of_uid uid =
 
 
 let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
+
+  print_string("<<<SYH:analyze_target>>>\n");
+
   let analyze_source_file exe_env source_file =
     DB.Results_dir.init source_file ;
     L.task_progress SourceFile.pp source_file ~f:(fun () ->
@@ -95,10 +98,15 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
     let result =
       match target with
       | Procname procname ->
+        print_string("<<<SYH:analyze_target-Procname>>>\n");
           analyze_proc_name exe_env procname
       | ProcUID proc_uid ->
+      print_string("<<<SYH:analyze_target-ProcUID>>>\n");
+
           proc_name_of_uid proc_uid |> analyze_proc_name exe_env
       | File source_file ->
+      print_string("<<<SYH:analyze_target-File>>>\n");
+
           analyze_source_file exe_env source_file
     in
     (* clear cache for each source file to avoid it growing unboundedly; we do it here to
@@ -130,6 +138,8 @@ let register_active_checkers () =
 
 
 let get_source_files_to_analyze ~changed_files =
+  print_string("<<<SYH:get_source_files_to_analyze>>>\n");
+
   let n_all_source_files = ref 0 in
   let n_source_files_to_analyze = ref 0 in
   let filter sourcefile =
@@ -168,17 +178,25 @@ let tasks_generator_builder_for sources =
 
 
 let analyze source_files_to_analyze =
+  print_string("<<<SYH:InferAnalyze.analyze>>>\n");
+
   if Config.is_checker_enabled ConfigImpactAnalysis then
     L.debug Analysis Quiet "Config impact strict mode: %a@." ConfigImpactAnalysis.pp_mode
       ConfigImpactAnalysis.mode ;
-  if Int.equal Config.jobs 1 then (
+  if Int.equal Config.jobs 1 then 
+
+  (
+    print_string("<<<SYH:InferAnalyze.analyze- run_sequentially>>>\n");
     let target_files =
       List.rev_map (Lazy.force source_files_to_analyze) ~f:(fun sf -> TaskSchedulerTypes.File sf)
     in
     let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
     Tasks.run_sequentially ~f:analyze_target target_files ;
     ([Stats.get ()], [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]) )
-  else (
+  else 
+
+  (
+    print_string("<<<SYH:InferAnalyze.analyze- Parallel>>>\n");
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
       tasks_generator_builder_for (Lazy.force source_files_to_analyze)
@@ -236,6 +254,8 @@ let analyze source_files_to_analyze =
 
 
 let invalidate_changed_procedures changed_files =
+  print_string("<<<SYH:invalidate_changed_procedures>>>\n");
+
   if Config.incremental_analysis then (
     let changed_files =
       match changed_files with
@@ -288,6 +308,8 @@ let invalidate_changed_procedures changed_files =
 
 
 let main ~changed_files =
+  print_string("<<<SYH:InferAnalyze.main>>>\n");
+
   let start = ExecutionDuration.counter () in
   register_active_checkers () ;
   if not Config.continue_analysis then
@@ -302,6 +324,7 @@ let main ~changed_files =
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
   let backend_stats_list, gc_stats_list = analyze source_files in
+  print_string("<<<SYH:backend_stats_list, gc_stats_list = analyze source_files>>>\n");
   Stats.log_aggregate backend_stats_list ;
   GCStats.log_aggregate ~prefix:"backend_stats." Analysis gc_stats_list ;
   let analysis_duration = ExecutionDuration.since start in

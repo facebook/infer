@@ -275,6 +275,7 @@ let get_proc_desc callee_pname =
 
 
 let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
+  print_string("<<<SYH:analyze_callee>>>\n");
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
@@ -324,6 +325,8 @@ let analyze_proc_name_no_caller exe_env callee_pname =
 
 
 let analyze_procedures exe_env procs_to_analyze source_file_opt =
+  print_string("<<<SYH:Ondemand.analyze_procedures>>>\n");
+
   let saved_language = !Language.curr_language in
   let analyze_proc_name_call pname =
     ignore (analyze_proc_name_no_caller exe_env pname : Summary.t option)
@@ -337,6 +340,7 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
 
 (** Invoke all procedure-level and file-level callbacks on a given environment. *)
 let analyze_file exe_env source_file =
+  print_string("<<<SYH:Ondemand.analyze_file>>>\n");
   update_taskbar None (Some source_file) ;
   let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
   analyze_procedures exe_env procs_to_analyze (Some source_file)
@@ -344,5 +348,6 @@ let analyze_file exe_env source_file =
 
 (** Invoke procedure callbacks on a given environment. *)
 let analyze_proc_name_toplevel exe_env proc_name =
+  print_string("<<<SYH:Ondemand.analyze_proc_name_toplevel>>>\n");
   update_taskbar (Some proc_name) None ;
   analyze_procedures exe_env [proc_name] None

@@ -210,6 +210,7 @@ let capture ~changed_files mode =
 
 
 let execute_analyze ~changed_files =
+    print_string("<<<SYH:execute_analyze>>>\n");
   GCStats.log_f ~name:"analysis_scheduler" Analysis
   @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"analyze" ())) ;
@@ -224,7 +225,9 @@ let report () =
   JsonReports.write_reports ~issues_json ~costs_json ~config_impact_json ;
   (* Post-process the report according to the user config.
      Do not bother calling the report hook when called from within Buck. *)
-  if not Config.buck_cache_mode then (
+  if not Config.buck_cache_mode then 
+  print_string("<<<SYH:Driver.report>>>\n");
+  (
     TextReport.create_from_json ~quiet:Config.quiet ~console_limit:Config.report_console_limit
       ~report_txt:(ResultsDir.get_path ReportText) ~report_json:issues_json ;
     if Config.pmd_xml then
@@ -269,6 +272,7 @@ let error_nothing_to_analyze mode =
 
 
 let analyze_and_report ~changed_files mode =
+
   let should_analyze, should_report =
     match (Config.command, mode) with
     | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode) ->
@@ -299,7 +303,9 @@ let analyze_and_report ~changed_files mode =
     ResultsDir.RunState.set_merge_capture false ) ;
   if should_analyze then
     if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
-    else (
+    else 
+    print_string("<<<SYH:analyze_and_report.should_analyze.not_is_empty>>>\n");
+    (
       execute_analyze ~changed_files ;
       if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ;
       if Config.shrink_analysis_db then DBWriter.shrink_analysis_db () ) ;
@@ -307,6 +313,8 @@ let analyze_and_report ~changed_files mode =
 
 
 let analyze_and_report ~changed_files mode =
+    print_string("<<<SYH:analyze_and_report2>>>\n");
+
   ScubaLogging.execute_with_time_logging "analyze_and_report" (fun () ->
       analyze_and_report ~changed_files mode )
 
@@ -452,6 +460,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       | BBuck2, _ ->
           Buck2 {build_cmd}
       | BClang, _ ->
+          print_string("<<<SYH:mode_of_build_command BClang>>>\n");
           Clang {compiler= Clang.Clang; prog; args}
       | BGradle, _ ->
           Gradle {prog; args}
@@ -499,6 +508,7 @@ let mode_from_command_line =
         assert_supported_mode `Java "Buck genrule" ;
         BuckGenrule {prog= path}
     | None ->
+        print_string("<<<SYH:mode_from_command_line>>>\n");
         mode_of_build_command Config.rest Config.buck_mode )
 
 
@@ -514,6 +524,8 @@ let run_prologue mode =
 
 
 let run_epilogue () =
+    print_string("<<<SYH:run_epilogue1>>>\n");
+
   if Config.is_originator then (
     if Config.fail_on_bug then fail_on_issue_epilogue () ;
     () ) ;
@@ -522,5 +534,7 @@ let run_epilogue () =
 
 
 let run_epilogue () =
+    print_string("<<<SYH:run_epilogue2>>>\n");
+
   GCStats.log ~name:"main_process_full" Analysis (GCStats.get ~since:ProgramStart) ;
   ScubaLogging.execute_with_time_logging "run_epilogue" run_epilogue

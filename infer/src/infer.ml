@@ -13,11 +13,13 @@ module Cmd = InferCommandImplementation
 (** Top-level driver that orchestrates build system integration, frontends, backend, and reporting *)
 
 let run driver_mode =
+  print_string("<<<SYH:driver_mode>>>\n");
   let open Driver in
   if Config.dump_textual && not (is_compatible_with_textual_generation driver_mode) then
     L.die UserError "ERROR: Textual generation is only allowed in Java mode currently" ;
   run_prologue driver_mode ;
   let changed_files = SourceFile.read_config_files_to_analyze () in
+  print_string("<<<SYH:driver_mode-changed_files>>>\n");
   InferAnalyze.invalidate_changed_procedures changed_files ;
   capture driver_mode ~changed_files ;
   analyze_and_report driver_mode ~changed_files ;

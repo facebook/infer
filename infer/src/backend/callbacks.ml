@@ -65,6 +65,7 @@ let iterate_procedure_callbacks exe_env summary =
 
 
 let iterate_file_callbacks_and_store_issues procedures exe_env source_file =
+  print_string("<<<SYH:iterate_file_callbacks_and_store_issues>>>\n");
   if not (List.is_empty !file_callbacks_rev) then
     let environment = {procedures; source_file; exe_env} in
     let language_matches language =

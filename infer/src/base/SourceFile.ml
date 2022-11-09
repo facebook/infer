@@ -309,6 +309,7 @@ let read_config_files_to_analyze =
       (let changed_files_opt = read_config_changed_files () in
        match (read_index Config.files_to_analyze_index, changed_files_opt) with
        | None, _ ->
+           print_string("<<<SYH:read_config_files_to_analyze>>>\n");
            changed_files_opt
        | Some _, None ->
            L.die UserError
