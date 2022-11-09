@@ -15,7 +15,7 @@ module F = Format
 type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
-  | Buck2 of {build_cmd: string list}
+  | Buck2Clang of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckErlang of {prog: string; args: string list}
@@ -44,8 +44,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Analyze driver mode"
   | Ant {prog; args} ->
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | Buck2 {build_cmd} ->
-      F.fprintf fmt "Buck2 driver mode: build_cmd = %a" Pp.cli_args build_cmd
+  | Buck2Clang {build_cmd} ->
+      F.fprintf fmt "Buck2/Clang driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckClangFlavor {build_cmd} ->
       F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckCompilationDB {deps; prog; args} ->
@@ -131,9 +131,9 @@ let capture ~changed_files mode =
     | Ant {prog; args} ->
         L.progress "Capturing in ant mode...@." ;
         Ant.capture ~prog ~args
-    | Buck2 {build_cmd} ->
+    | Buck2Clang {build_cmd} ->
         L.progress "Capturing in buck2 mode...@." ;
-        Buck2.capture build_cmd
+        Buck2Clang.capture build_cmd
     | BuckClangFlavor {build_cmd} ->
         L.progress "Capturing in buck mode...@." ;
         BuckFlavors.capture build_cmd
@@ -271,7 +271,7 @@ let error_nothing_to_analyze mode =
 let analyze_and_report ~changed_files mode =
   let should_analyze, should_report =
     match (Config.command, mode) with
-    | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang_flavors Config.buck_mode) ->
+    | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang Config.buck_mode) ->
         (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
         (false, false)
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
@@ -288,7 +288,7 @@ let analyze_and_report ~changed_files mode =
     | _ when Config.merge || not (List.is_empty Config.merge_capture) ->
         (* [--merge] overrides other behaviors *)
         true
-    | Analyze | Buck2 _ | BuckClangFlavor _ | BuckJavaFlavor _ | Gradle _ ->
+    | Analyze | Buck2Clang _ | BuckClangFlavor _ | BuckJavaFlavor _ | Gradle _ ->
         ResultsDir.RunState.get_merge_capture ()
     | _ ->
         false
@@ -387,7 +387,7 @@ let assert_supported_build_system build_system =
         match Config.buck_mode with
         | None ->
             error_no_buck_mode_specified ()
-        | Some ClangFlavors ->
+        | Some Clang ->
             (`Clang, "buck with flavors")
         | Some (ClangCompilationDB _) ->
             (`Clang, "buck compilation database")
@@ -402,7 +402,7 @@ let assert_supported_build_system build_system =
         match Config.buck_mode with
         | None ->
             error_no_buck_mode_specified ()
-        | Some ClangFlavors ->
+        | Some Clang ->
             (`Clang, Config.string_of_build_system build_system)
         | Some Erlang ->
             (`Erlang, Config.string_of_build_system build_system)
@@ -447,14 +447,14 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             error_no_buck_mode_specified ()
         | Some (ClangCompilationDB deps) ->
             BuckCompilationDB {deps; prog; args= List.append args Config.buck_build_args}
-        | Some ClangFlavors when Config.is_checker_enabled Linters ->
+        | Some Clang when Config.is_checker_enabled Linters ->
             L.user_warning
               "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
                set --no-linters to disable them and this warning.@." ;
             BuckClangFlavor {build_cmd}
         | Some JavaFlavor ->
             BuckJavaFlavor {build_cmd}
-        | Some ClangFlavors ->
+        | Some Clang ->
             BuckClangFlavor {build_cmd}
         | Some buck_mode ->
             L.die UserError "%a not supported in buck1.@." BuckMode.pp buck_mode )
@@ -464,8 +464,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             error_no_buck_mode_specified ()
         | Some Erlang ->
             BuckErlang {prog; args}
-        | Some ClangFlavors ->
-            Buck2 {build_cmd}
+        | Some Clang ->
+            Buck2Clang {build_cmd}
         | Some buck_mode ->
             L.die UserError "%a is not supported with buck2.@." BuckMode.pp buck_mode )
       | BClang ->

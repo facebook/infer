@@ -20,13 +20,13 @@ let pp_clang_compilation_db_deps fmt = function
       F.pp_print_string fmt "DepsAllDepths"
 
 
-type t = ClangCompilationDB of clang_compilation_db_deps | ClangFlavors | Erlang | JavaFlavor
+type t = ClangCompilationDB of clang_compilation_db_deps | Clang | Erlang | JavaFlavor
 
 let pp fmt = function
   | ClangCompilationDB clang_compilation_db_deps ->
       F.fprintf fmt "Clang compilation database (deps= %a)" pp_clang_compilation_db_deps
         clang_compilation_db_deps
-  | ClangFlavors ->
+  | Clang ->
       F.pp_print_string fmt "Clang"
   | Erlang ->
       F.pp_print_string fmt "Erlang/buck2"
@@ -37,12 +37,8 @@ let pp fmt = function
 let is_clang_compilation_db = function
   | ClangCompilationDB _ ->
       true
-  | ClangFlavors | Erlang | JavaFlavor ->
+  | Clang | Erlang | JavaFlavor ->
       false
 
 
-let is_clang_flavors = function
-  | ClangFlavors ->
-      true
-  | ClangCompilationDB _ | Erlang | JavaFlavor ->
-      false
+let is_clang = function Clang -> true | ClangCompilationDB _ | Erlang | JavaFlavor -> false

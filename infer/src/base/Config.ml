@@ -861,7 +861,7 @@ and buck_mode =
   in
   CLOpt.mk_bool ~deprecated:["-flavors"; "-use-flavors"] ~long:"buck-clang"
     ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~f:(set_mode `ClangFlavors)
+    ~f:(set_mode `Clang)
     "Buck integration for clang-based targets (C/C++/Objective-C/Objective-C++)."
   |> ignore ;
   CLOpt.mk_symbol_opt ~long:"buck-compilation-database" ~deprecated:["-use-compilation-database"]
@@ -3350,8 +3350,8 @@ and buck_mode : BuckMode.t option =
   match (!buck_mode, !buck_compilation_database_depth) with
   | `None, _ ->
       None
-  | `ClangFlavors, _ ->
-      Some ClangFlavors
+  | `Clang, _ ->
+      Some Clang
   | `ClangCompilationDB `NoDeps, _ ->
       Some (ClangCompilationDB NoDependencies)
   | `ClangCompilationDB `DepsTmp, None ->

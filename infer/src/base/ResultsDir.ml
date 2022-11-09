@@ -148,9 +148,7 @@ let scrub_for_incremental () =
 
 
 let scrub_for_caching () =
-  let cache_capture =
-    Config.genrule_mode || Option.exists Config.buck_mode ~f:BuckMode.is_clang_flavors
-  in
+  let cache_capture = Config.genrule_mode || Option.exists Config.buck_mode ~f:BuckMode.is_clang in
   if cache_capture then DBWriter.canonicalize () ;
   (* make sure we are done with the database *)
   Database.db_close () ;

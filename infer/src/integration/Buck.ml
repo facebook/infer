@@ -120,9 +120,9 @@ module Target = struct
     match (mode, command) with
     | ClangCompilationDB _, _ ->
         add_flavor_internal target "compilation-database"
-    | ClangFlavors, Compile | Erlang, _ ->
+    | Clang, Compile | Erlang, _ ->
         target
-    | ClangFlavors, _ ->
+    | Clang, _ ->
         add_flavor_internal target "infer-capture-all"
     | JavaFlavor, _ ->
         add_flavor_internal target "infer-java-capture"
@@ -164,7 +164,7 @@ let config_v1 =
       match (buck_mode : BuckMode.t) with
       | JavaFlavor ->
           get_java_flavor_config ()
-      | ClangFlavors ->
+      | Clang ->
           get_clang_flavor_config ()
       | ClangCompilationDB _ | Erlang ->
           []
@@ -335,7 +335,7 @@ let get_accepted_buck_kinds_pattern_v1 (mode : BuckMode.t) =
   match mode with
   | ClangCompilationDB _ ->
       "^(apple|cxx)_(binary|library|test)$"
-  | ClangFlavors ->
+  | Clang ->
       "^(apple|cxx)_(binary|library)$"
   | Erlang ->
       L.die InternalError "Not used"
@@ -347,7 +347,7 @@ let get_accepted_buck_kinds_pattern_v1 (mode : BuckMode.t) =
 let resolve_pattern_targets_v1 (buck_mode : BuckMode.t) targets =
   targets |> List.rev_map ~f:Query.target |> Query.set
   |> ( match buck_mode with
-     | ClangFlavors | ClangCompilationDB NoDependencies | Erlang ->
+     | Clang | ClangCompilationDB NoDependencies | Erlang ->
          Fn.id
      | JavaFlavor ->
          Query.deps Config.buck_java_flavor_dependency_depth
@@ -413,11 +413,11 @@ let parse_command_and_targets (buck_mode : BuckMode.t) (version : version) origi
   let parsed_args = parse_cmd_args empty_parsed_args args in
   let targets =
     match (buck_mode, version, parsed_args) with
-    | ClangFlavors, _, {pattern_targets= []; alias_targets= []; normal_targets} ->
+    | Clang, _, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
-    | ClangFlavors, V2, {pattern_targets; alias_targets; normal_targets} ->
+    | Clang, V2, {pattern_targets; alias_targets; normal_targets} ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
-    | ( (ClangFlavors | ClangCompilationDB _ | JavaFlavor)
+    | ( (Clang | ClangCompilationDB _ | JavaFlavor)
       , V1
       , {pattern_targets; alias_targets; normal_targets} ) ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
