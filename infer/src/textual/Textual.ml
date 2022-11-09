@@ -251,28 +251,31 @@ let pp_list_with_comma pp fmt l = Pp.seq ~sep:", " pp fmt l
 module ProcDecl = struct
   type t =
     { qualified_name: qualified_procname
-    ; formals_types: Typ.annotated list
+    ; formals_types: Typ.annotated list option
     ; result_type: Typ.annotated
     ; attributes: Attr.t list }
 
+  let formals_or_die ?(context = "<no context>") {qualified_name; formals_types; _} =
+    match formals_types with
+    | None ->
+        L.die InternalError "List of formals is unknown in %a: %s" pp_qualified_procname
+          qualified_name context
+    | Some formals ->
+        formals
+
+
+  let pp_formals fmt formals =
+    match formals with
+    | None ->
+        F.fprintf fmt "..."
+    | Some formals ->
+        pp_list_with_comma Typ.pp_annotated fmt formals
+
+
   let pp fmt {qualified_name; formals_types; result_type; attributes} =
     List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
-    F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name
-      (pp_list_with_comma Typ.pp_annotated)
-      formals_types Typ.pp_annotated result_type
-
-
-  let pp_with_params params fmt {qualified_name; formals_types; result_type; attributes} =
-    let pp fmt (typ, id) = F.fprintf fmt "%a: %a" VarName.pp id Typ.pp_annotated typ in
-    List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
-    match List.zip formals_types params with
-    | Ok args ->
-        F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name (pp_list_with_comma pp)
-          args Typ.pp_annotated result_type
-    | _ ->
-        L.die InternalError
-          "Textual printing error: params has size %d and formals_types has size %d"
-          (List.length params) (List.length formals_types)
+    F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name pp_formals formals_types
+      Typ.pp_annotated result_type
 
 
   let make_toplevel_name string loc : qualified_procname =
@@ -650,14 +653,30 @@ module ProcDesc = struct
     List.for_all nodes ~f:Node.is_ready_for_to_sil_conversion
 
 
-  let pp fmt {procdecl; nodes; params; locals} =
-    F.fprintf fmt "@[<v 2>define %a {" (ProcDecl.pp_with_params params) procdecl ;
+  let formals {procdecl; _} = ProcDecl.formals_or_die procdecl ~context:"ProcDesc must have formals"
+
+  let pp_signature fmt ({procdecl; params; _} as t) =
+    let pp fmt (typ, id) = F.fprintf fmt "%a: %a" VarName.pp id Typ.pp_annotated typ in
+    List.iter procdecl.attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
+    let formals_types = formals t in
+    match List.zip formals_types params with
+    | Ok args ->
+        F.fprintf fmt "%a(%a) : %a" pp_qualified_procname procdecl.qualified_name
+          (pp_list_with_comma pp) args Typ.pp_annotated procdecl.result_type
+    | _ ->
+        L.die InternalError
+          "Textual printing error: params has length %d and formals_types has length %d"
+          (List.length params) (List.length formals_types)
+
+
+  let pp fmt t =
+    F.fprintf fmt "@[<v 2>define %a {" pp_signature t ;
     let pp_local fmt (var, annotated_typ) =
       F.fprintf fmt "%a: %a" VarName.pp var Typ.pp_annotated annotated_typ
     in
-    if not (List.is_empty locals) then
-      F.fprintf fmt "@\n@[<v 4>local %a@]" (pp_list_with_comma pp_local) locals ;
-    List.iter ~f:(F.fprintf fmt "%a" Node.pp) nodes ;
+    if not (List.is_empty t.locals) then
+      F.fprintf fmt "@\n@[<v 4>local %a@]" (pp_list_with_comma pp_local) t.locals ;
+    List.iter ~f:(F.fprintf fmt "%a" Node.pp) t.nodes ;
     F.fprintf fmt "@]\n}@\n@\n"
 end
 

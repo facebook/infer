@@ -23,6 +23,7 @@
 %token DECLARE
 %token DEFINE
 %token DOT
+%token ELLIPSIS
 %token EOF
 %token EQ
 %token EXTENDS
@@ -149,14 +150,24 @@ declaration:
   | DECLARE attributes=annots qualified_name=qualified_pname LPAREN
             formals_types = separated_list(COMMA, annotated_typ)
             RPAREN COLON result_type=annotated_typ
-    { let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type; attributes} in
+    { let procdecl : ProcDecl.t =
+        {qualified_name; formals_types= Some formals_types; result_type; attributes} in
+      Procdecl procdecl
+    }
+  | DECLARE attributes=annots qualified_name=qualified_pname
+            LPAREN ELLIPSIS RPAREN COLON result_type=annotated_typ
+/* Declarations with an ellipsis is a temporary syntax to support declarations of external functions
+in Hack where formals number and types are unknown. */
+    { let procdecl : ProcDecl.t =
+        {qualified_name; formals_types= None; result_type; attributes} in
       Procdecl procdecl
     }
   | DEFINE attributes=annots qualified_name=qualified_pname LPAREN
            params = separated_list(COMMA, typed_var) RPAREN COLON result_type=annotated_typ
            LBRACKET locals = locals nodes=block+ RBRACKET
     { let formals_types = List.map ~f:snd params in
-      let procdecl : ProcDecl.t = {qualified_name; formals_types; result_type; attributes} in
+      let procdecl : ProcDecl.t =
+        {qualified_name; formals_types= Some formals_types; result_type; attributes} in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:fst params in
       let exit_loc = location_of_pos $endpos in

@@ -256,21 +256,23 @@ let typeof_const (const : Const.t) : Typ.t =
       Float
 
 
-let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list =
-  if ProcDecl.to_binop proc |> Option.is_some then (Int, [Int; Int])
-  else if ProcDecl.to_unop proc |> Option.is_some then (Int, [Int])
+let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list option =
+  if ProcDecl.to_binop proc |> Option.is_some then (Int, Some [Int; Int])
+  else if ProcDecl.to_unop proc |> Option.is_some then (Int, Some [Int])
   else
     L.die InternalError "procname %a should be user-declared or a builtin" pp_qualified_procname
       proc
 
 
-let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list) monad =
+(* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
+let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list option) monad =
  fun state ->
   match TextualDecls.get_procname state.decls proc with
   | Some (procdecl : ProcDecl.t) ->
-      ret
-        (procdecl.result_type.typ, List.map procdecl.formals_types ~f:(fun {Typ.typ} -> typ))
-        state
+      let formals_types =
+        Option.map procdecl.formals_types ~f:(List.map ~f:(fun {Typ.typ} -> typ))
+      in
+      ret (procdecl.result_type.typ, formals_types) state
   | None ->
       ret (typeof_reserved_proc proc) state
 
@@ -319,25 +321,29 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
       typeof_allocate_array_builtin proc args
   | Call {proc; args} when ProcDecl.is_cast_builtin proc ->
       typeof_cast_builtin proc args
-  | Call {proc; args} ->
+  | Call {proc; args} -> (
       let* result_type, formals_types = typeof_procname proc in
       let* loc = get_location in
-      let expected = List.length formals_types in
-      let given = List.length args in
-      let* () =
-        if not (Int.equal given expected) then
-          (* this situation can not happen for user-defined function because of
-             TextualVerification verification *)
-          add_error (WrongNumberBuiltinArgs {proc; expected; given; at_least= false; loc})
-        else ret ()
-      in
-      let* () =
-        iter2 args formals_types ~f:(fun exp assigned ->
-            typecheck_exp exp
-              ~check:(fun given -> compat ~assigned ~given)
-              ~expected:(SubTypeOf assigned) ~loc )
-      in
-      ret result_type
+      match formals_types with
+      | Some formals_types ->
+          let expected = List.length formals_types in
+          let given = List.length args in
+          let* () =
+            if not (Int.equal given expected) then
+              (* this situation can not happen for user-defined function because of
+                 TextualVerification verification *)
+              add_error (WrongNumberBuiltinArgs {proc; expected; given; at_least= false; loc})
+            else ret ()
+          in
+          let* () =
+            iter2 args formals_types ~f:(fun exp assigned ->
+                typecheck_exp exp
+                  ~check:(fun given -> compat ~assigned ~given)
+                  ~expected:(SubTypeOf assigned) ~loc )
+          in
+          ret result_type
+      | _ ->
+          ret result_type )
   | Typ _ ->
       ret (Typ.Struct TypeNameBridge.sil_type_of_types)
 
@@ -491,7 +497,7 @@ and visit_next () : unit monad =
 let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : error list =
   let vars_with_params =
     match
-      List.fold2 pdesc.params pdesc.procdecl.formals_types
+      List.fold2 pdesc.params (ProcDesc.formals pdesc)
         ~f:(fun map vname {Typ.typ} -> VarName.Map.add vname typ map)
         ~init:globals_types
     with

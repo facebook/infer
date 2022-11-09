@@ -131,9 +131,15 @@ end
 module ProcDecl : sig
   type t =
     { qualified_name: qualified_procname
-    ; formals_types: Typ.annotated list
+    ; formals_types: Typ.annotated list option
+          (** List of formal argument types or [None] when the formals are unknown. The latter is
+              possible only for external function declarations when translating from Hack and is
+              denoted with a special [...] syntax. Functions defined within a textual module always
+              have a known list of formal parameters. *)
     ; result_type: Typ.annotated
     ; attributes: Attr.t list }
+
+  val formals_or_die : ?context:string -> t -> Typ.annotated list
 
   val pp : F.formatter -> t -> unit
 
@@ -239,6 +245,8 @@ module ProcDesc : sig
     ; params: VarName.t list
     ; locals: (VarName.t * Typ.annotated) list
     ; exit_loc: Location.t }
+
+  val formals : t -> Typ.annotated list
 
   val is_ready_for_to_sil_conversion : t -> bool
 end

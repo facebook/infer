@@ -113,6 +113,20 @@ let%test_module "parsing" =
         type B = {f3: bool}
 
         type C extends A, B = {f4: bool} |}]
+
+    let%expect_test "ellipsis" =
+      let m =
+        parse_module
+          {|
+           .source_language = "hack"
+           declare todo(...): *Mixed
+           |}
+      in
+      F.printf "%a" Module.pp m ;
+      [%expect {|
+        .source_language = "hack"
+
+        declare todo(...) : *Mixed |}]
   end )
 
 let%test_module "procnames" =
@@ -123,7 +137,7 @@ let%test_module "procnames" =
           { qualified_name=
               { enclosing_class= TopLevel
               ; name= {value= "toplevel"; loc= Location.known ~line:0 ~col:0} }
-          ; formals_types= []
+          ; formals_types= Some []
           ; result_type= Typ.mk_without_attributes Typ.Void
           ; attributes= [] }
       in

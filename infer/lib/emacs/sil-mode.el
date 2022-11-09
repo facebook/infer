@@ -70,7 +70,7 @@
 	(function-regex (rx-to-string `(: (group ,sil--function-name-regex) "(")))
 	(number-regex (rx-to-string '(: symbol-start (+ num) symbol-end)))
 	(comment-regex "//.*$")
-	(important-punct-regex (rx-to-string '(| "*" "&")))
+	(important-punct-regex (rx-to-string '(| "*" "&" "...")))
 	)
     `((
        (,comment-regex 0 font-lock-comment-face)

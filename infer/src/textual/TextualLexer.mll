@@ -65,6 +65,8 @@ rule main = parse
         { EXTENDS }
   | "."
         { DOT }
+  | "..."
+        { ELLIPSIS }
   | "="
         { EQ }
   | "false"

@@ -78,6 +78,8 @@ module TypeNameBridge = struct
 
 
   let java_lang_object = of_java_name "java.lang.Object"
+
+  let hack_mixed = SilTyp.HackClass (HackClassName.make "Mixed")
 end
 
 let mangle_java_procname jpname =
@@ -176,6 +178,10 @@ module TypBridge = struct
 
 
   let annotated_of_sil typ = of_sil typ |> mk_without_attributes
+
+  let hack_mixed =
+    let mixed_struct = SilTyp.mk_struct TypeNameBridge.hack_mixed in
+    SilTyp.mk_ptr mixed_struct
 end
 
 module IdentBridge = struct
@@ -244,6 +250,7 @@ module ProcDeclBridge = struct
             (this_type :: formals_types, [])
         in
         let result_type = Procname.Java.get_return_typ jpname |> TypBridge.annotated_of_sil in
+        let formals_types = Some formals_types in
         (* FIXME when adding inheritance *)
         {qualified_name; formals_types; result_type; attributes}
     | _ ->
@@ -251,20 +258,23 @@ module ProcDeclBridge = struct
           pname
 
 
-  let to_sil lang {qualified_name; formals_types; result_type} : SilProcname.t =
-    let method_name = qualified_name.name.ProcName.value in
+  let to_sil lang t : SilProcname.t =
+    let method_name = t.qualified_name.name.ProcName.value in
     match (lang : Lang.t) with
     | Java ->
         let class_name =
           TypeNameBridge.to_sil lang
-            ( match qualified_name.enclosing_class with
+            ( match t.qualified_name.enclosing_class with
             | TopLevel ->
                 TypeName.of_java_name "$TOPLEVEL$CLASS$"
             | Enclosing tname ->
                 tname )
         in
-        let result_type = TypBridge.to_sil lang result_type.typ in
+        let result_type = TypBridge.to_sil lang t.result_type.typ in
         let return_type = Some result_type in
+        let formals_types =
+          ProcDecl.formals_or_die t ~context:"to_sil: Java formals must be defined"
+        in
         let formals_types =
           List.map ~f:(fun ({typ} : Typ.annotated) -> TypBridge.to_sil lang typ) formals_types
         in
@@ -272,7 +282,7 @@ module ProcDeclBridge = struct
         SilProcname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
     | Hack ->
         let class_name =
-          match qualified_name.enclosing_class with
+          match t.qualified_name.enclosing_class with
           | TopLevel ->
               None
           | Enclosing name ->
@@ -549,12 +559,22 @@ module InstrBridge = struct
                      F.fprintf fmt "the expression in %a should start with a regular call" pp i ) )
         in
         let pname = ProcDeclBridge.to_sil lang procname in
-        let formals_types =
-          List.map procname.formals_types ~f:(fun ({typ} : Typ.annotated) ->
-              TypBridge.to_sil lang typ )
-        in
         let result_type = TypBridge.to_sil lang procname.result_type.typ in
         let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
+        let formals_types =
+          match procname.formals_types with
+          | Some formals_types ->
+              List.map formals_types ~f:(fun ({typ} : Typ.annotated) -> TypBridge.to_sil lang typ)
+          | _ -> (
+            match lang with
+            | Lang.Hack ->
+                (* Declarations with unknown formals are expected in Hack. Assume that formal types
+                   are *Mixed and their number matches that of the arguments. *)
+                List.map args ~f:(fun _ -> TypBridge.hack_mixed)
+            | other ->
+                L.die InternalError "Unexpected unknown formals outside of Hack: %s"
+                  (Lang.to_string other) )
+        in
         let args =
           match List.zip args formals_types with
           | Ok l ->
@@ -657,13 +677,13 @@ end
 module ProcDescBridge = struct
   open ProcDesc
 
-  let build_formals lang {procdecl; params} =
+  let build_formals lang ({procdecl; params} as procdesc) =
     let mk_formal ({typ} : Typ.annotated) vname =
       let name = Mangled.from_string vname.VarName.value in
       let typ = TypBridge.to_sil lang typ in
       (name, typ, Annot.Item.empty)
     in
-    match List.map2 procdecl.formals_types params ~f:mk_formal with
+    match List.map2 (ProcDesc.formals procdesc) params ~f:mk_formal with
     | Ok l ->
         l
     | Unequal_lengths ->
