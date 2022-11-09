@@ -427,53 +427,59 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             Config.build_system_of_exe_name (Filename.basename prog)
       in
       assert_supported_build_system build_system ;
-      match ((build_system : Config.build_system), buck_mode) with
-      | BAnt, _ ->
+      match (build_system : Config.build_system) with
+      | BAnt ->
           Ant {prog; args}
-      | BBuck, None ->
-          error_no_buck_mode_specified ()
-      | BBuck, Some (ClangCompilationDB deps) ->
-          BuckCompilationDB {deps; prog; args= List.append args Config.buck_build_args}
-      | BBuck, Some ClangFlavors when Config.is_checker_enabled Linters ->
-          L.user_warning
-            "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
-             set --no-linters to disable them and this warning.@." ;
-          BuckClangFlavor {build_cmd}
-      | BBuck, Some Erlang ->
-          L.die UserError "Invalid buildsystem configuration.@."
-      | BBuck, Some JavaFlavor ->
-          BuckJavaFlavor {build_cmd}
-      | BBuck, Some ClangFlavors ->
-          BuckClangFlavor {build_cmd}
-      | BBuck, Some ClangV2 ->
-          L.die UserError "Invalid buildsystem configuration.@."
-      | BBuck2, Some Erlang ->
-          BuckErlang {prog; args}
-      | BBuck2, _ ->
-          Buck2 {build_cmd}
-      | BClang, _ ->
+      | BBuck -> (
+        match buck_mode with
+        | None ->
+            error_no_buck_mode_specified ()
+        | Some (ClangCompilationDB deps) ->
+            BuckCompilationDB {deps; prog; args= List.append args Config.buck_build_args}
+        | Some ClangFlavors when Config.is_checker_enabled Linters ->
+            L.user_warning
+              "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
+               set --no-linters to disable them and this warning.@." ;
+            BuckClangFlavor {build_cmd}
+        | Some JavaFlavor ->
+            BuckJavaFlavor {build_cmd}
+        | Some ClangFlavors ->
+            BuckClangFlavor {build_cmd}
+        | Some buck_mode ->
+            L.die UserError "%a not supported in buck1.@." BuckMode.pp buck_mode )
+      | BBuck2 -> (
+        match buck_mode with
+        | None ->
+            error_no_buck_mode_specified ()
+        | Some Erlang ->
+            BuckErlang {prog; args}
+        | Some ClangV2 ->
+            Buck2 {build_cmd}
+        | Some buck_mode ->
+            L.die UserError "%a is not supported with buck2.@." BuckMode.pp buck_mode )
+      | BClang ->
           Clang {compiler= Clang.Clang; prog; args}
-      | BGradle, _ ->
+      | BGradle ->
           Gradle {prog; args}
-      | BJava, _ ->
+      | BJava ->
           Javac {compiler= Javac.Java; prog; args}
-      | BJavac, _ ->
+      | BJavac ->
           Javac {compiler= Javac.Javac; prog; args}
-      | BMake, _ ->
+      | BMake ->
           Clang {compiler= Clang.Make; prog; args}
-      | BMvn, _ ->
+      | BMvn ->
           Maven {prog; args}
-      | BNdk, _ ->
+      | BNdk ->
           NdkBuild {build_cmd}
-      | BRebar3, _ ->
+      | BRebar3 ->
           Rebar3 {args}
-      | BErlc, _ ->
+      | BErlc ->
           Erlc {args}
-      | BHackc, _ ->
+      | BHackc ->
           Hackc {args}
-      | BXcode, _ when Config.xcpretty ->
+      | BXcode when Config.xcpretty ->
           XcodeXcpretty {prog; args}
-      | BXcode, _ ->
+      | BXcode ->
           XcodeBuild {prog; args} )
 
 

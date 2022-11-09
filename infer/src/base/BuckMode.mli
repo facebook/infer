@@ -14,11 +14,13 @@ type clang_compilation_db_deps = NoDependencies | DepsUpToDepth of int | DepsAll
 val pp_clang_compilation_db_deps : F.formatter -> clang_compilation_db_deps -> unit
 
 type t =
-  | ClangV2
-  | ClangFlavors
   | ClangCompilationDB of clang_compilation_db_deps
+  | ClangFlavors
+  | ClangV2
   | Erlang
   | JavaFlavor
+
+val pp : F.formatter -> t -> unit
 
 val is_clang_compilation_db : t -> bool
 
