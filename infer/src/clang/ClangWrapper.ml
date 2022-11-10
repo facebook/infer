@@ -131,7 +131,10 @@ let normalize ~prog ~args : action_item list =
 
 
 let exec_action_item ~prog ~args = function
+
   | ClangError error ->
+  print_string("<<<SYH:ClangWrapper.exec_action_item.ClangError>>>\n");
+
       (* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
          `clang -###` pretty much never fails, but warns of failures on stderr instead. *)
       L.(die UserError)
@@ -143,14 +146,23 @@ let exec_action_item ~prog ~args = function
          @\n\
          *** Infer needs a working compilation command to run." prog Pp.cli_args args error
   | ClangWarning warning ->
+  print_string("<<<SYH:ClangWrapper.exec_action_item.ClangWarning>>>\n");
+
       L.external_warning "%s@\n" warning
   | CanonicalCommand clang_cmd ->
+  print_string("<<<SYH:ClangWrapper.exec_action_item.CanonicalCommand>>>\n");
+
       Capture.capture clang_cmd
   | DriverCommand clang_cmd ->
+  print_string("<<<SYH:ClangWrapper.exec_action_item.DriverCommand>>>\n");
+
       if
         (not Config.skip_non_capture_clang_commands)
         || Option.exists Config.buck_mode ~f:BuckMode.is_clang_compilation_db
-      then Capture.run_clang clang_cmd Utils.echo_in
+      then 
+        (print_string("<<<SYH:ClangWrapper.exec_action_item.DriverCommand>>>\n");
+
+      Capture.run_clang clang_cmd Utils.echo_in)
       else
         L.debug Capture Quiet "Skipping seemingly uninteresting clang driver command %s@\n"
           (ClangCommand.command_to_run clang_cmd)
@@ -167,14 +179,19 @@ let exe ~prog ~args =
   let prog, should_run_original_command =
     match Config.fcp_apple_clang with
     | Some bin ->
+    print_string("<<<SYH:ClangWrapper.Some bin>>>\n");
+
         let bin_xx = bin ^ xx_suffix in
         L.(debug Capture Medium) "Will run Apple clang %s" bin_xx ;
         (bin_xx, true)
     | None ->
+    print_string("<<<SYH:ClangWrapper.None>>>\n");
+
         (clang_xx, false)
   in
   List.iter ~f:(exec_action_item ~prog ~args) commands ;
   if List.is_empty commands || should_run_original_command then (
+    print_string("<<<SYH:ClangWrapper.should_run_original_command>>>\n");
     if List.is_empty commands then
       (* No command to execute after -###, let's execute the original command
          instead.

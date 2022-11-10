@@ -166,9 +166,6 @@ let process_common replace_instr pdesc =
 
   let node_cfg = CFG.from_pdesc pdesc in
 
-  print_string("<<<SYH:I stopped here,continue with Analyzer.exec_cfg >>>\n");
-
-
   let map = Analyzer.exec_cfg node_cfg ~initial:Domain.empty () in
   let update_context = eval_instr in
   let context_at_node node = get_invariant_at_node map node in

@@ -10,6 +10,8 @@ open! IStd
 open Javalib_pack
 
 let collect_class_location (program : JProgramDesc.t) (file : SourceFile.t) =
+  print_string("<<<SYH:JSourceLocation.collect_class_location>>>\n");
+
   let path = SourceFile.to_abs_path file in
   if String.is_suffix path ~suffix:".java" then (
     let cin = In_channel.create path in
@@ -35,6 +37,8 @@ let collect_class_location (program : JProgramDesc.t) (file : SourceFile.t) =
 
 
 let debug_on_file path =
+  print_string("<<<SYH:JSourceLocation.debug_on_file>>>\n");
+
   if String.is_suffix path ~suffix:".java" then (
     let cin = In_channel.create path in
     let filebuf = Lexing.from_channel cin in

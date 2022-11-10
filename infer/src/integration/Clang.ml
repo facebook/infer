@@ -10,10 +10,16 @@ module L = Logging
 type compiler = Clang | Make [@@deriving compare]
 
 let capture compiler ~prog ~args =
+  print_string("<<<SYH:Clang.capture>>>\n");
+
   match compiler with
   | Clang ->
+  print_string("<<<SYH:Clang.capture.Clang>>>\n");
+
       ClangWrapper.exe ~prog ~args
   | Make -> (
+    print_string("<<<SYH:Clang.capture.Make>>>\n");
+
       let path_var = "PATH" in
       let old_path = Option.value ~default:"" (Sys.getenv path_var) in
       let new_path = Config.wrappers_dir ^ ":" ^ old_path in

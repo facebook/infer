@@ -19,9 +19,11 @@ let run driver_mode =
     L.die UserError "ERROR: Textual generation is only allowed in Java mode currently" ;
   run_prologue driver_mode ;
   let changed_files = SourceFile.read_config_files_to_analyze () in
-  print_string("<<<SYH:driver_mode-changed_files>>>\n");
+  print_string("------------invalidate_changed_procedures-----------\n");
   InferAnalyze.invalidate_changed_procedures changed_files ;
+  print_string("----------capture-------------\n");
   capture driver_mode ~changed_files ;
+  print_string("----------analyze_and_report-------------\n");
   analyze_and_report driver_mode ~changed_files ;
   run_epilogue ()
 
@@ -155,16 +157,23 @@ let () =
     Option.iter Config.scuba_execution_id ~f:(fun id -> L.progress "Execution ID %Ld@." id) ) ;
   ( match Config.command with
   | _ when Config.test_determinator && not Config.process_clang_ast ->
+      print_string("<<<SYH:infer-TestDeterminator>>>\n");
+
       TestDeterminator.compute_and_emit_test_to_run ()
   | _ when Option.is_some Config.java_debug_source_file_info ->
+        print_string("<<<SYH:infer-java_debug_source_file_info>>>\n");
       if Config.java_source_parser_experimental then
         JSourceLocations.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
       else JSourceFileInfo.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
   | _ when Option.is_some Config.capture_doli ->
+      print_string("<<<SYH:infer-DoliParser>>>\n");
       DoliParser.run (Option.value_exn Config.capture_doli)
   | Analyze ->
+  print_string("<<<SYH:infer-Analyze>>>\n");
       run Driver.Analyze
   | Capture | Compile | Run ->
+      print_string("<<<SYH:infer-Capture | Compile | Run>>>\n");
+
       run (Lazy.force Driver.mode_from_command_line)
   | Help ->
       Cmd.help ()

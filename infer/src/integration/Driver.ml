@@ -153,7 +153,7 @@ let capture ~changed_files mode =
         L.progress "Capturing for BuckJavaFlavor integration...@." ;
         BuckJavaFlavor.capture build_cmd
     | Clang {compiler; prog; args} ->
-        if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
+        if Config.is_originator then L.progress "Capturing in make/cc mode lueluelueluelye...@." ;
         Clang.capture compiler ~prog ~args
     | ClangCompilationDB {db_files} ->
         L.progress "Capturing using compilation database...@." ;
@@ -162,7 +162,7 @@ let capture ~changed_files mode =
         L.progress "Capturing in gradle mode...@." ;
         Gradle.capture ~prog ~args
     | Javac {compiler; prog; args} ->
-        if Config.is_originator then L.progress "Capturing in javac mode...@." ;
+        if Config.is_originator then L.progress "Capturing in javac mode lueluelueluelye ...@." ;
         Javac.capture compiler ~prog ~args
     | JsonSIL {cfg_json; tenv_json} ->
         L.progress "Capturing using JSON mode...@." ;
@@ -210,7 +210,6 @@ let capture ~changed_files mode =
 
 
 let execute_analyze ~changed_files =
-    print_string("<<<SYH:execute_analyze>>>\n");
   GCStats.log_f ~name:"analysis_scheduler" Analysis
   @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"analyze" ())) ;
@@ -304,8 +303,8 @@ let analyze_and_report ~changed_files mode =
   if should_analyze then
     if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else 
-    print_string("<<<SYH:analyze_and_report.should_analyze.not_is_empty>>>\n");
     (
+    print_string("<<<SYH:analyze_and_report.should_analyze.not_is_empty>>>\n");
       execute_analyze ~changed_files ;
       if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ;
       if Config.shrink_analysis_db then DBWriter.shrink_analysis_db () ) ;
@@ -313,7 +312,6 @@ let analyze_and_report ~changed_files mode =
 
 
 let analyze_and_report ~changed_files mode =
-    print_string("<<<SYH:analyze_and_report2>>>\n");
 
   ScubaLogging.execute_with_time_logging "analyze_and_report" (fun () ->
       analyze_and_report ~changed_files mode )

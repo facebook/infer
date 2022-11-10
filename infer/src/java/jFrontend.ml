@@ -216,6 +216,8 @@ let should_capture package_opt source_basename classname node =
    In the standard - mode, it translated all the classes of [program] that correspond to this
    source file. *)
 let compute_source_icfg program tenv source_basename package_opt source_file =
+  print_string("<<<SYH:JFrontend.compute_source_icfg>>>\n");
+
   let icfg = {JContext.cfg= Cfg.create (); tenv} in
   let select test procedure cn =
     match JProgramDesc.lookup_node cn program with

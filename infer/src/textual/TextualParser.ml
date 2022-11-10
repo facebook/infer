@@ -24,6 +24,8 @@ let pp_error sourcefile fmt = function
 
 
 let parse_buf sourcefile filebuf =
+  print_string("<<<SYH:parse_buf-TextualMenhir.main >>>\n");
+
   try
     let lexer = TextualLexer.main in
     let m = TextualMenhir.main lexer filebuf sourcefile in

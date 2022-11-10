@@ -178,7 +178,7 @@ let tasks_generator_builder_for sources =
 
 
 let analyze source_files_to_analyze =
-  print_string("<<<SYH:InferAnalyze.analyze>>>\n");
+  print_string("<<<SYH:InferAnalyse.analyze>>>\n");
 
   if Config.is_checker_enabled ConfigImpactAnalysis then
     L.debug Analysis Quiet "Config impact strict mode: %a@." ConfigImpactAnalysis.pp_mode

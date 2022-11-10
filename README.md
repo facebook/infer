@@ -22,3 +22,10 @@ Infer is MIT-licensed.
 
 Note: Enabling Java support may require you to download and install 
 components licensed under the GPL.
+
+
+
+./build-infer.sh java
+./build-infer.sh clang
+infer run -- javac examples/Hello.java
+infer/bin/infer run -- clang -c examples/Hello.c  

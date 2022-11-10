@@ -590,6 +590,9 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
   (* shadowed for HTML debug *)
   let exec_node ~pp_instr proc_data node ~is_loop_head ~is_narrowing astate_pre inv_map =
+    (*print_string("<<<SYH:AbstractInterpreter.exec_node >>>\n");
+    *)
+
     AnalysisCallbacks.html_debug_new_node_session (Node.underlying_node node)
       ~kind:(if is_narrowing then `ExecNodeNarrowing else `ExecNode)
       ~pp_name:(TransferFunctions.pp_session_name node)
@@ -660,6 +663,8 @@ struct
   include AbstractInterpreterCommon (NodeTransferFunctions)
 
   let rec exec_worklist ~pp_instr cfg analysis_data work_queue inv_map =
+(*    print_string("<<<SYH:AbstractInterpreter.exec_worklist >>>\n");
+*)
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
         exec_worklist ~pp_instr cfg analysis_data work_queue' inv_map
@@ -686,6 +691,8 @@ struct
 
   (** compute and return an invariant map for [cfg] *)
   let exec_cfg_internal ~pp_instr cfg analysis_data ~do_narrowing:_ ~initial =
+    print_string("<<<SYH:AbstractInterpreter.exec_cfg_internal >>>\n");
+
     let start_node = CFG.start_node cfg in
     let inv_map, _did_not_reach_fix_point =
       exec_node ~pp_instr analysis_data start_node ~is_loop_head:false ~is_narrowing:false initial
@@ -695,7 +702,10 @@ struct
     exec_worklist ~pp_instr cfg analysis_data work_queue inv_map
 
 
-  let exec_cfg ?do_narrowing:_ = exec_cfg_internal ~pp_instr:pp_sil_instr ~do_narrowing:false
+  let exec_cfg ?do_narrowing:_ = 
+    print_string("<<<SYH:AbstractInterpreter.exec_cfg1 >>>\n");
+
+    exec_cfg_internal ~pp_instr:pp_sil_instr ~do_narrowing:false
 
   let exec_pdesc ?do_narrowing:_ = make_exec_pdesc ~exec_cfg_internal ~do_narrowing:false
 

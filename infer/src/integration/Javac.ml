@@ -12,6 +12,7 @@ module F = Format
 type compiler = Java | Javac [@@deriving compare]
 
 let compile compiler build_prog build_args =
+  print_string("<<<SYH:JavaC.compile>>>\n");
   let prog, prog_args =
     match (compiler, Config.java_jar_compiler) with
     | _, None ->
@@ -113,6 +114,7 @@ let call_infer_javac_capture ~javac_args =
 
 
 let capture compiler ~prog ~args =
+  print_string("<<<SYH:JavaC.capture>>>\n");
   match (compiler, Config.capture_block_list) with
   (* Simulates Buck support for compilation commands with no source file *)
   | _ when Config.buck_cache_mode && no_source_file args ->

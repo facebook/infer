@@ -111,6 +111,8 @@ let do_all_files sources program =
 
 (* loads the source files and translates them *)
 let main load_sources_and_classes =
+  print_string("<<<SYH:jMain.main>>>\n");
+
   ( match (Config.biabduction_models_mode, ISys.file_exists Config.biabduction_models_jar) with
   | true, false ->
       ()
