@@ -1866,7 +1866,7 @@ module Call = struct
         $+...$--> NSCollection.create_from_array
       ; -"CFArrayCreateCopy" <>$ any_arg $+ capt_exp $!--> create_copy_array
       ; -"CFArrayGetCount" <>$ capt_exp $!--> NSCollection.size
-      ; -"CFArrayGetValueAtIndex" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
+      ; -"CFArrayGetValueAtIndex" <>$ capt_var $+ capt_exp $!--> NSCollection.get_at_index
       ; -"CFDictionaryGetCount" <>$ capt_exp $!--> NSCollection.size
       ; -"MCFArrayGetCount" <>$ capt_exp $!--> NSCollection.size
       ; +PatternMatch.ObjectiveC.implements "NSObject" &:: "init" <>$ capt_exp $--> id
@@ -1874,18 +1874,17 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.implements "NSObject" &:: "mutableCopy" <>$ capt_exp $--> id
       ; +PatternMatch.ObjectiveC.implements "NSArray" &:: "array" <>--> NSCollection.new_collection
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "firstObject" <>$ capt_var_exn $!--> NSCollection.get_first
+        &:: "firstObject" <>$ capt_var $!--> NSCollection.get_first
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "initWithDictionary:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
+        &:: "initWithDictionary:" <>$ capt_var $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "dictionaryWithDictionary:" <>$ capt_exp $--> NSCollection.new_collection_by_init
       ; +PatternMatch.ObjectiveC.implements "NSSet"
-        &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
+        &:: "initWithArray:" <>$ capt_var $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "initWithArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.copy
+        &:: "initWithArray:" <>$ capt_var $+ capt_exp $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "initWithArray:copyItems:" <>$ capt_var_exn $+ capt_exp $+ any_arg
-        $--> NSCollection.copy
+        &:: "initWithArray:copyItems:" <>$ capt_var $+ capt_exp $+ any_arg $--> NSCollection.copy
       ; +PatternMatch.ObjectiveC.implements_collection
         &:: "count" <>$ capt_exp $!--> NSCollection.size
       ; +PatternMatch.ObjectiveC.implements_collection
@@ -1893,7 +1892,7 @@ module Call = struct
       ; +PatternMatch.ObjectiveC.conforms_to ~protocol:"NSFastEnumeration"
         &:: "objectEnumerator" <>$ capt_exp $--> NSCollection.iterator
       ; +PatternMatch.ObjectiveC.implements "NSArray"
-        &:: "objectAtIndexedSubscript:" <>$ capt_var_exn $+ capt_exp $!--> NSCollection.get_at_index
+        &:: "objectAtIndexedSubscript:" <>$ capt_var $+ capt_exp $!--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSArray"
         &:: "arrayWithObjects:count:" <>$ capt_exp $+ capt_exp $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSArray"
@@ -1902,37 +1901,36 @@ module Call = struct
         &:: "arrayByAddingObjectsFromArray:" <>$ capt_exp $+ capt_exp
         $--> NSCollection.new_collection_by_add_all
       ; +PatternMatch.ObjectiveC.implements "NSEnumerator"
-        &:: "nextObject" <>$ capt_var_exn $--> NSCollection.next_object
+        &:: "nextObject" <>$ capt_var $--> NSCollection.next_object
       ; +PatternMatch.ObjectiveC.implements "NSFileManager"
         &:: "contentsOfDirectoryAtURL:includingPropertiesForKeys:options:error:"
         &--> NSCollection.new_collection
       ; +PatternMatch.ObjectiveC.implements "NSKeyedUnarchiver"
-        &:: "decodeObjectForKey:" $ capt_var_exn $+...$--> NSCollection.get_any_index
+        &:: "decodeObjectForKey:" $ capt_var $+...$--> NSCollection.get_any_index
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
-        &:: "initWithCapacity:" <>$ capt_var_exn $+ capt_exp
-        $--> NSCollection.new_collection_of_size
+        &:: "initWithCapacity:" <>$ capt_var $+ capt_exp $--> NSCollection.new_collection_of_size
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
-        &:: "addObject:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.add
+        &:: "addObject:" <>$ capt_var $+ capt_exp $--> NSCollection.add
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
-        &:: "removeLastObject" <>$ capt_var_exn $--> NSCollection.remove_last
+        &:: "removeLastObject" <>$ capt_var $--> NSCollection.remove_last
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
-        &:: "insertObject:atIndex:" <>$ capt_var_exn $+ any_arg $+ capt_exp
+        &:: "insertObject:atIndex:" <>$ capt_var $+ any_arg $+ capt_exp
         $--> NSCollection.add_at_index
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
-        &:: "removeObjectAtIndex:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.remove_at_index
+        &:: "removeObjectAtIndex:" <>$ capt_var $+ capt_exp $--> NSCollection.remove_at_index
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
-        &:: "removeAllObjects:" <>$ capt_var_exn $--> NSCollection.remove_all
+        &:: "removeAllObjects:" <>$ capt_var $--> NSCollection.remove_all
       ; +PatternMatch.ObjectiveC.implements "NSMutableArray"
-        &:: "addObjectsFromArray:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.addAll
+        &:: "addObjectsFromArray:" <>$ capt_var $+ capt_exp $--> NSCollection.addAll
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "dictionary" <>--> NSCollection.new_collection
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "dictionaryWithObjects:forKeys:count:" <>$ any_arg $+ capt_exp $+ capt_exp
         $--> NSCollection.create_from_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "objectForKeyedSubscript:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
+        &:: "objectForKeyedSubscript:" <>$ capt_var $+ capt_exp $--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
-        &:: "objectForKey:" <>$ capt_var_exn $+ capt_exp $--> NSCollection.get_at_index
+        &:: "objectForKey:" <>$ capt_var $+ capt_exp $--> NSCollection.get_at_index
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
         &:: "allKeys" <>$ capt_exp $--> create_copy_array
       ; +PatternMatch.ObjectiveC.implements "NSDictionary"
@@ -2104,26 +2102,26 @@ module Call = struct
       ; +PatternMatch.Java.implements_arrays &:: "copyOf" <>$ capt_exp $+ capt_exp $+...$--> copyOf
       ; (* model sets and maps as lists *)
         +PatternMatch.Java.implements_collection
-        &:: "<init>" <>$ capt_var_exn
+        &:: "<init>" <>$ capt_var
         $+ capt_exp_of_typ (+PatternMatch.Java.implements_collection)
         $--> Collection.init_with_arg
       ; +PatternMatch.Java.implements_collection
         &:: "<init>" <>$ any_arg $+ capt_exp $--> Collection.init_with_capacity
       ; +PatternMatch.Java.implements_collection
-        &:: "add" <>$ capt_var_exn $+ capt_exp $+ any_arg $--> Collection.add_at_index
+        &:: "add" <>$ capt_var $+ capt_exp $+ any_arg $--> Collection.add_at_index
       ; +PatternMatch.Java.implements_collection
-        &:: "add" <>$ capt_var_exn $+ capt_exp $--> Collection.add
+        &:: "add" <>$ capt_var $+ capt_exp $--> Collection.add
       ; +PatternMatch.Java.implements_collection
-        &:: "addAll" <>$ capt_var_exn $+ capt_exp $+ capt_exp $--> Collection.addAll_at_index
+        &:: "addAll" <>$ capt_var $+ capt_exp $+ capt_exp $--> Collection.addAll_at_index
       ; +PatternMatch.Java.implements_collection
-        &:: "addAll" <>$ capt_var_exn $+ capt_exp $--> Collection.addAll
+        &:: "addAll" <>$ capt_var $+ capt_exp $--> Collection.addAll
       ; +PatternMatch.Java.implements_collection
-        &:: "get" <>$ capt_var_exn $+ capt_exp $--> Collection.get_at_index
+        &:: "get" <>$ capt_var $+ capt_exp $--> Collection.get_at_index
       ; +PatternMatch.Java.implements_map &:: "get" <>$ capt_exp $+ any_arg $--> Collection.get_elem
       ; +PatternMatch.Java.implements_collection
-        &:: "remove" <>$ capt_var_exn $+ capt_exp $--> Collection.remove_at_index
+        &:: "remove" <>$ capt_var $+ capt_exp $--> Collection.remove_at_index
       ; +PatternMatch.Java.implements_collection
-        &:: "set" <>$ capt_var_exn $+ capt_exp $+ capt_exp $--> Collection.set_at_index
+        &:: "set" <>$ capt_var $+ capt_exp $+ capt_exp $--> Collection.set_at_index
       ; +PatternMatch.Java.implements_collection &:: "size" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.Java.implements_collection
         &:: "toArray" <>$ capt_exp $+...$--> create_copy_array
@@ -2236,9 +2234,9 @@ module Call = struct
         &:: "subList" <>$ any_arg $+ capt_exp $+ capt_exp $--> Collection.subList
       ; +PatternMatch.Java.implements_map &:: "entrySet" <>$ capt_exp $!--> Collection.iterator
       ; +PatternMatch.Java.implements_map &:: "keySet" <>$ capt_exp $!--> Collection.iterator
-      ; +PatternMatch.Java.implements_map &:: "put" <>$ capt_var_exn $+ any_arg $+ capt_exp
+      ; +PatternMatch.Java.implements_map &:: "put" <>$ capt_var $+ any_arg $+ capt_exp
         $--> Collection.put_with_elem
-      ; +PatternMatch.Java.implements_map &:: "putAll" <>$ capt_var_exn $+ capt_exp
+      ; +PatternMatch.Java.implements_map &:: "putAll" <>$ capt_var $+ capt_exp
         $--> Collection.putAll
       ; +PatternMatch.Java.implements_map &:: "size" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.Java.implements_map &:: "values" <>$ capt_exp $!--> Collection.iterator
@@ -2248,15 +2246,15 @@ module Call = struct
       ; +PatternMatch.Java.implements_nio "channels.FileChannel"
         &:: "read" <>$ any_arg $+ capt_exp $+ any_arg $--> FileChannel.read
       ; +PatternMatch.Java.implements_org_json "JSONArray"
-        &:: "<init>" <>$ capt_var_exn
+        &:: "<init>" <>$ capt_var
         $+ capt_exp_of_typ (+PatternMatch.Java.implements_collection)
         $--> Collection.init_with_arg
       ; +PatternMatch.Java.implements_org_json "JSONArray"
         &:: "length" <>$ capt_exp $!--> Collection.size
       ; +PatternMatch.Java.implements_org_json "JSONArray"
-        &:: "put" <>$ capt_var_exn $+...$--> Collection.put
+        &:: "put" <>$ capt_var $+...$--> Collection.put
       ; +PatternMatch.Java.implements_pseudo_collection
-        &:: "put" <>$ capt_var_exn $+ any_arg $+ any_arg $--> Collection.put
+        &:: "put" <>$ capt_var $+ any_arg $+ any_arg $--> Collection.put
       ; +PatternMatch.Java.implements_pseudo_collection
         &:: "size" <>$ capt_exp $!--> Collection.size
       ; (* Java linked list models *)

@@ -418,6 +418,8 @@ module Call = struct
 
     let arg_payload {arg_payload} = arg_payload
 
+    let is_var {exp} = match exp with Var _ -> true | _ -> false
+
     let get_var_exn {exp; typ} =
       match exp with
       | Exp.Var v ->
@@ -690,6 +692,12 @@ module Call = struct
     {match_arg}
 
 
+  (** Matches var *)
+  let match_var_arg : _ one_arg_matcher =
+    let match_arg _context arg = FuncArg.is_var arg in
+    {match_arg}
+
+
   (** Matches the type matched by the given path_matcher *)
   let match_typ :
          ('context, _, _, non_empty, 'arg_payload) path_matcher
@@ -812,9 +820,8 @@ module Call = struct
     {one_arg_matcher= match_any_arg; capture= capture_arg_exp}
 
 
-  let capt_var_exn : ('context, Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
-      =
-    {one_arg_matcher= match_any_arg; capture= capture_arg_var_exn}
+  let capt_var : ('context, Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg =
+    {one_arg_matcher= match_var_arg; capture= capture_arg_var_exn}
 
 
   let any_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= no_capture}
