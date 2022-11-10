@@ -141,6 +141,13 @@ module ModeledField = struct
   let delegated_release = Fieldname.make pulse_model_type "__infer_model_delegated_release"
 end
 
+let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate) =
+  let reachable_values =
+    BaseDomain.reachable_addresses_from (Caml.List.to_seq arg_values) (post :> BaseDomain.t)
+  in
+  AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
+
+
 let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
   let+ astate = check_addr_access path ?must_be_valid_reason mode location addr_hist astate in
   Memory.eval_edge addr_hist access astate
@@ -195,7 +202,13 @@ let eval path mode location exp0 astate =
               let++ astate, addr_trace = eval path Read capt_exp astate in
               (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
         in
-        Closures.record path location name (List.rev rev_captured) astate
+        let astate, v_hist = Closures.record path location name (List.rev rev_captured) astate in
+        let astate =
+          conservatively_initialize_args
+            (List.rev_map rev_captured ~f:(fun (_, (addr, _), _, _) -> addr))
+            astate
+        in
+        (astate, v_hist)
     | Const (Cfun proc_name) ->
         (* function pointers are represented as closures with no captured variables *)
         Sat (Ok (Closures.record path location proc_name [] astate))

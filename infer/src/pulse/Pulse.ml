@@ -235,7 +235,7 @@ module PulseTransferFunctions = struct
            L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
            let astate =
              let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
-             PulseCallOperations.conservatively_initialize_args arg_values astate
+             PulseOperations.conservatively_initialize_args arg_values astate
            in
            let<++> astate =
              PulseCallOperations.unknown_call path call_loc (SkippedUnknownCall call_exp)
@@ -393,7 +393,7 @@ module PulseTransferFunctions = struct
               List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value, _} ->
                   value )
             in
-            PulseCallOperations.conservatively_initialize_args arg_values astate
+            PulseOperations.conservatively_initialize_args arg_values astate
           in
           ( model
               { analysis_data

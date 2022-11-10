@@ -45,6 +45,9 @@ module ModeledField : sig
   (** Modeled field for resource release delegation *)
 end
 
+val conservatively_initialize_args : AbstractValue.t list -> t -> t
+(** Set all reachable values from the given list as initialized conservatively. *)
+
 val eval :
      PathContext.t
   -> access_mode

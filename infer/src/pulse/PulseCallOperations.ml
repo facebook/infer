@@ -357,13 +357,6 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 
-let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate) =
-  let reachable_values =
-    BaseDomain.reachable_addresses_from (Caml.List.to_seq arg_values) (post :> BaseDomain.t)
-  in
-  AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
-
-
 let ( let<**> ) x f =
   match x with
   | Unsat ->
@@ -456,7 +449,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
       L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let<**> astate_unknown =
-        conservatively_initialize_args arg_values astate
+        PulseOperations.conservatively_initialize_args arg_values astate
         |> unknown_call path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
              ~actuals ~formals_opt
       in

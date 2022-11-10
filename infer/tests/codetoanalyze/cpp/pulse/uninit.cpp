@@ -143,3 +143,11 @@ class Uninit2 {
     o.may_read_f2("");
   }
 };
+
+void unknown_call_lambda(std::function<void()> f);
+
+int init_by_capture_good() {
+  int x;
+  unknown_call_lambda([&]() { x = 42; });
+  return x;
+}
