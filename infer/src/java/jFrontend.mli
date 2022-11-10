@@ -9,7 +9,7 @@
 open! IStd
 open Javalib_pack
 
-val path_of_cached_classname : JBasics.class_name -> string
+val classname_path : JBasics.class_name -> string
 (** [path_of_cached_classname cn] returns the path of a cached classname *)
 
 val cache_classname : JBasics.class_name -> unit

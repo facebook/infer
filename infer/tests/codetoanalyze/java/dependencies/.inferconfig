@@ -1,0 +1,42 @@
+{
+    "biabduction": false,
+    "fragment-retains-view": false,
+    "inefficient-keyset-iterator": false,
+    "starvation": false,
+    "racerd": false,
+    "eradicate": false,
+    "pulse": true,
+    "report-block-list-path-regex": [
+        ".*\\.class$"
+    ],
+    "enable-issue-type": [
+        "TAINT_ERROR"
+    ],
+    "pulse-taint-sources": [
+        {
+            "class_names": ["lib.Framework"],
+            "method_names": ["source"]
+        },
+        {
+            "class_names": ["my.Application"],
+            "method_names": ["source"]
+        }
+    ],
+    "pulse-taint-sinks": [
+        {
+            "class_names": ["lib.Framework"],
+            "method_names": ["sink"],
+            "taint_target": ["ArgumentPositions", [0]]
+        },
+        {
+            "class_names": ["lib.MyStream"],
+            "method_names": ["<init>"],
+            "taint_target": ["ArgumentPositions", [1]]
+        },
+        {
+            "class_names": ["my.Application"],
+            "method_names": ["sink"],
+            "taint_target": ["ArgumentPositions", [1]]
+        }
+    ]
+}

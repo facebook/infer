@@ -115,37 +115,17 @@ let add_cmethod source_file program icfg cm proc_name =
             L.result "@\n" )
 
 
-let path_of_cached_classname cn =
-  let root_path = ResultsDir.get_path JavaClassnamesCache in
-  let package_path = List.fold ~f:Filename.concat ~init:root_path (JBasics.cn_package cn) in
-  Filename.concat package_path (JBasics.cn_simple_name cn ^ ".java")
+let classname_path cn =
+  let package_path = List.fold ~f:Filename.concat ~init:Filename.root (JBasics.cn_package cn) in
+  Filename.concat package_path (JBasics.cn_simple_name cn ^ ".class")
 
 
-let cache_classname cn =
-  let path = path_of_cached_classname cn in
-  let splitted_root_dir =
-    let rec split l p =
-      match p with
-      | p when String.equal p Filename.current_dir_name ->
-          l
-      | p when String.equal p Filename.dir_sep ->
-          l
-      | p ->
-          split (Filename.basename p :: l) (Filename.dirname p)
-    in
-    split [] (Filename.dirname path)
-  in
-  let rec mkdir l p =
-    let () = if not (ISys.file_exists p) then Unix.mkdir p ~perm:493 in
-    match l with [] -> () | d :: tl -> mkdir tl (Filename.concat p d)
-  in
-  mkdir splitted_root_dir Filename.dir_sep ;
-  let file_out = Out_channel.create path in
-  Out_channel.output_string file_out (string_of_float (Unix.time ())) ;
-  Out_channel.close file_out
+let cache_classname, is_classname_cached =
+  let translated_classnames = ref JBasics.ClassSet.empty in
+  let cache cn = translated_classnames := JBasics.ClassSet.add cn !translated_classnames
+  and is_cached cn = JBasics.ClassSet.mem cn !translated_classnames in
+  (cache, is_cached)
 
-
-let is_classname_cached cn = ISys.file_exists (path_of_cached_classname cn)
 
 let test_source_file_location source_file program cn node =
   let is_synthetic = function

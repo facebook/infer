@@ -24,7 +24,6 @@ type id =
   | Debug
   | Differential
   | DuplicateFunctions
-  | JavaClassnamesCache
   | JavaGlobalTypeEnvironment
   | LintDotty
   | Logs
@@ -125,11 +124,6 @@ let of_id = function
       ; before_caching_capture= Delete }
   | DatalogFacts ->
       { rel_path= "facts"
-      ; kind= Directory
-      ; before_incremental_analysis= Delete
-      ; before_caching_capture= Delete }
-  | JavaClassnamesCache ->
-      { rel_path= "classnames"
       ; kind= Directory
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }

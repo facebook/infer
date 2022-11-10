@@ -17,5 +17,5 @@ include $(TESTS_DIR)/infer.make
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(QUIET)cd $(MVN_DIR) && $(MVN) --quiet clean install
-	$(call silent_on_success,Testing mvn Java integration: $*,\
+	$(QUIET)$(call silent_on_success,Testing mvn Java integration: $*,\
 		$(INFER_BIN) --project-root $(TESTS_DIR) --generated-classes $(JAR_FILE) --sourcepath $(MVN_DIR))
