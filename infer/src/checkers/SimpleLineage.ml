@@ -24,6 +24,46 @@ let () =
     Logging.die InternalError "Field support is not implemented yet in lineage"
 
 
+module VariableIndex : sig
+  type t [@@deriving compare, equal]
+
+  val var : Var.t -> t
+
+  val get_var : t -> Var.t
+
+  val pvar : Pvar.t -> t
+
+  val ident : Ident.t -> t
+
+  val pp : Format.formatter -> t -> unit
+
+  val var_appears_in_source_code : t -> bool
+end = struct
+  (** A variable and a (possibly empty) list of fields *)
+
+  type t = Var.t * Fieldname.t list
+  (* The field list is reversed: x#a#b is represented as (x, [b, a]) *) [@@deriving compare, equal]
+
+  let rec pp_fields fmt = function
+    | [] ->
+        Format.fprintf fmt ""
+    | field :: fields ->
+        Format.fprintf fmt "%a#%a" pp_fields fields Fieldname.pp field
+
+
+  let var v = (v, [])
+
+  let get_var (v, _) = v
+
+  let pvar pvar = var (Var.of_pvar pvar)
+
+  let ident id = var (Var.of_id id)
+
+  let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var pp_fields fields
+
+  let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
+end
+
 module LineageGraph = struct
   (** INV: Constants occur only as sources of flow. NOTE: Constants are "local" because type [data]
       associates them with a location, in a proc. *)
@@ -31,7 +71,7 @@ module LineageGraph = struct
     | ConstantAtom of string
     | ConstantInt of string
     | ConstantString of string
-    | Variable of (Var.t[@sexp.opaque])
+    | VariableIndex of (VariableIndex.t[@sexp.opaque])
   [@@deriving compare, equal, sexp]
 
   type data =
@@ -93,8 +133,8 @@ module LineageGraph = struct
         Format.fprintf fmt "I(%s)" digits
     | ConstantString s ->
         Format.fprintf fmt "S(%s)" s
-    | Variable variable ->
-        Format.fprintf fmt "V(%a)" Var.pp variable
+    | VariableIndex variable ->
+        Format.fprintf fmt "V(%a)" VariableIndex.pp variable
 
 
   let pp_data fmt data =
@@ -386,8 +426,8 @@ module LineageGraph = struct
             Printf.sprintf "$cap%d" index
         | Return ->
             "$ret"
-        | Normal (Variable x) ->
-            Format.asprintf "%a" Var.pp x
+        | Normal (VariableIndex x) ->
+            Format.asprintf "%a" VariableIndex.pp x
         | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
             x
         | Function ->
@@ -399,8 +439,8 @@ module LineageGraph = struct
             Argument
         | Return ->
             Return
-        | Normal (Variable x) ->
-            if Var.appears_in_source_code x then UserVariable else TemporaryVariable
+        | Normal (VariableIndex x) ->
+            if VariableIndex.var_appears_in_source_code x then UserVariable else TemporaryVariable
         | Normal (ConstantAtom _) ->
             ConstantAtom
         | Normal (ConstantInt _) ->
@@ -654,8 +694,9 @@ module Summary = struct
     in
     let is_interesting_data (data : LineageGraph.data) =
       match data with
-      | Local (Variable var, _node) ->
-          Var.appears_in_source_code var && not (Var.Set.mem var special_variables)
+      | Local (VariableIndex var_idx, _node) ->
+          VariableIndex.var_appears_in_source_code var_idx
+          && not (Var.Set.mem (VariableIndex.get_var var_idx) special_variables)
       | Argument _ | Captured _ | Return | CapturedBy _ | ArgumentOf _ | ReturnOf _ ->
           true
       | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
@@ -782,7 +823,7 @@ end
 
 module Domain = struct
   module Real = struct
-    module LastWrites = AbstractDomain.FiniteMultiMap (Var) (PPNode)
+    module LastWrites = AbstractDomain.FiniteMultiMap (VariableIndex) (PPNode)
     module UnsupportedFeatures = AbstractDomain.BooleanOr
     include AbstractDomain.Pair (LastWrites) (UnsupportedFeatures)
   end
@@ -830,9 +871,9 @@ module TransferFunctions = struct
     let rec gather locals (e : Exp.t) =
       match e with
       | Lvar pvar ->
-          Local.Set.add locals (Variable (Var.of_pvar pvar))
+          Local.Set.add locals (VariableIndex (VariableIndex.pvar pvar))
       | Var id ->
-          Local.Set.add locals (Variable (Var.of_id id))
+          Local.Set.add locals (VariableIndex (VariableIndex.ident id))
       | Const (Cint x) ->
           Local.Set.add locals (ConstantInt (IntLit.to_string x))
       | Const (Cstr x) ->
@@ -857,7 +898,7 @@ module TransferFunctions = struct
   let captured_locals_of_exp (e : Exp.t) : Local.Set.t =
     let add locals {Exp.captured_vars} =
       List.fold captured_vars ~init:locals ~f:(fun locals (_exp, pvar, _typ, _mode) ->
-          Local.Set.add locals (Variable (Var.of_pvar pvar)) )
+          Local.Set.add locals (VariableIndex (VariableIndex.pvar pvar)) )
     in
     Sequence.fold ~init:Local.Set.empty ~f:add (Exp.closures e)
 
@@ -904,8 +945,8 @@ module TransferFunctions = struct
     match local with
     | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
         [LineageGraph.Local (local, here)]
-    | Variable variable ->
-        let source_nodes = Domain.Real.LastWrites.get_all variable last_writes in
+    | VariableIndex var_idx ->
+        let source_nodes = Domain.Real.LastWrites.get_all var_idx last_writes in
         List.map ~f:(fun node -> LineageGraph.Local (local, node)) source_nodes
 
 
@@ -924,7 +965,7 @@ module TransferFunctions = struct
     and closure astate ({name; captured_vars} : Exp.closure) =
       let one_var index ((last_writes, has_unsupported_features), local_edges)
           (_exp, pvar, _typ, _mode) =
-        let local : Local.t = Variable (Var.of_pvar pvar) in
+        let local : Local.t = VariableIndex (VariableIndex.pvar pvar) in
         let source_list = sources_of_local node last_writes local in
         let add_one_flow local_edges source =
           LineageGraph.add_flow ~kind:Direct ~node ~source
@@ -963,21 +1004,22 @@ module TransferFunctions = struct
     let last_writes, local_edges = astate in
     let local_edges =
       LineageGraph.add_flow ~kind:Return ~node ~source:(ReturnOf callee_pname)
-        ~target:(Local (Variable (Var.of_id ret_id), node))
+        ~target:(Local (VariableIndex (VariableIndex.ident ret_id), node))
         local_edges
     in
     (last_writes, local_edges)
 
 
-  let update_write kind ((write_var, write_node) : Var.t * PPNode.t) (read_set : Local.Set.t)
-      (((last_writes, has_unsupported_features), local_edges) : Domain.t) : Domain.t =
-    let target = LineageGraph.Local (Variable write_var, write_node) in
+  let update_write kind ((write_var, write_node) : VariableIndex.t * PPNode.t)
+      (read_set : Local.Set.t) (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
+      Domain.t =
+    let target = LineageGraph.Local (VariableIndex write_var, write_node) in
     let add_read local_edges (read_local : Local.t) =
       let sources =
         match read_local with
         | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
             [LineageGraph.Local (read_local, write_node)]
-        | Variable read_var ->
+        | VariableIndex read_var ->
             let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
             List.map ~f:(fun node -> LineageGraph.Local (read_local, node)) source_nodes
       in
@@ -1003,7 +1045,7 @@ module TransferFunctions = struct
       in
       free_locals_of_exp_list tito_exps
     in
-    update_write kind (Var.of_id ret_id, node) tito_locals astate
+    update_write kind (VariableIndex.ident ret_id, node) tito_locals astate
 
 
   let add_tito_all (kind : LineageGraph.FlowKind.t) (argument_list : Exp.t list) (ret_id : Ident.t)
@@ -1046,7 +1088,9 @@ module TransferFunctions = struct
       match args with
       | fun_ :: _ ->
           generic_call_model astate node analyze_dependency ret_id procname args
-          |> update_write DynamicCallFunction (Var.of_id ret_id, node) (free_locals_of_exp fun_)
+          |> update_write DynamicCallFunction
+               (VariableIndex.ident ret_id, node)
+               (free_locals_of_exp fun_)
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
 
@@ -1055,8 +1099,12 @@ module TransferFunctions = struct
       match args with
       | module_ :: fun_ :: _ ->
           generic_call_model astate node analyze_dependency ret_id procname args
-          |> update_write DynamicCallFunction (Var.of_id ret_id, node) (free_locals_of_exp fun_)
-          |> update_write DynamicCallModule (Var.of_id ret_id, node) (free_locals_of_exp module_)
+          |> update_write DynamicCallFunction
+               (VariableIndex.ident ret_id, node)
+               (free_locals_of_exp fun_)
+          |> update_write DynamicCallModule
+               (VariableIndex.ident ret_id, node)
+               (free_locals_of_exp module_)
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
 
@@ -1070,7 +1118,7 @@ module TransferFunctions = struct
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
       let sources = Local.Set.singleton (ConstantAtom atom_name) in
-      update_write LineageGraph.FlowKind.Direct (Var.of_id ret_id, node) sources astate
+      update_write LineageGraph.FlowKind.Direct (VariableIndex.ident ret_id, node) sources astate
 
 
     let custom_call_models =
@@ -1110,7 +1158,7 @@ module TransferFunctions = struct
 
 
   let add_lambda_edges (write_var, write_node) lambdas (real_state, local_edges) =
-    let target = LineageGraph.Local (Variable write_var, write_node) in
+    let target = LineageGraph.Local (VariableIndex write_var, write_node) in
     let add_one_lambda one_lambda local_edges =
       LineageGraph.add_flow ~kind:Direct ~node:write_node ~source:(Function one_lambda) ~target
         local_edges
@@ -1127,9 +1175,13 @@ module TransferFunctions = struct
         astate
     | Some written_var ->
         astate
-        |> update_write LineageGraph.FlowKind.Direct (written_var, node) free_locals
-        |> update_write LineageGraph.FlowKind.Capture (written_var, node) captured_locals
-        |> add_lambda_edges (written_var, node) lambdas
+        |> update_write LineageGraph.FlowKind.Direct
+             (VariableIndex.var written_var, node)
+             free_locals
+        |> update_write LineageGraph.FlowKind.Capture
+             (VariableIndex.var written_var, node)
+             captured_locals
+        |> add_lambda_edges (VariableIndex.var written_var, node) lambdas
 
 
   let exec_instr astate {InterproceduralAnalysis.analyze_dependency} node instr_index
@@ -1156,14 +1208,16 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
     let formals = get_formals proc_desc in
     let captured = get_captured proc_desc in
     let start_node = CFG.start_node cfg in
-    let add_arg last_writes arg = Domain.Real.LastWrites.add arg start_node last_writes in
+    let add_arg last_writes arg =
+      Domain.Real.LastWrites.add (VariableIndex.var arg) start_node last_writes
+    in
     let last_writes =
       List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg (captured @ formals)
     in
     let local_edges =
       let add_flow ~source local_edges var =
         LineageGraph.add_flow ~kind:Direct ~node:start_node ~source
-          ~target:(Local (Variable var, start_node))
+          ~target:(Local (VariableIndex (VariableIndex.var var), start_node))
           local_edges
       in
       let add_arg_flow i = add_flow ~source:(Argument i) in
@@ -1189,10 +1243,10 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
       let _last_writes, post_edges = post in
       post_edges :: edges
     in
-    let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
+    let ret_var = VariableIndex.pvar (Procdesc.get_ret_var proc_desc) in
     let add_ret_edge local_edges ret_node =
       LineageGraph.add_flow ~kind:Direct ~node:ret_node
-        ~source:(Local (Variable ret_var, ret_node))
+        ~source:(Local (VariableIndex ret_var, ret_node))
         ~target:Return local_edges
     in
     let graph = Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat in
