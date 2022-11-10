@@ -580,10 +580,12 @@ let matchers : matcher list =
     $--> SharedPtr.default_constructor ~desc:"std::shared_ptr::shared_ptr()"
   ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "__shared_ptr")
-    $--> SharedPtr.copy_move_constructor ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
+    $+...$--> SharedPtr.copy_move_constructor
+                ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
-    $--> SharedPtr.copy_move_constructor ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
+    $+...$--> SharedPtr.copy_move_constructor
+                ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
   ; -"std" &:: "__shared_ptr" &:: "operator=" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "__shared_ptr")
     $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
@@ -591,9 +593,9 @@ let matchers : matcher list =
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
     $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
   ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg_payload $+ capt_arg_payload
-    $--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
+    $+...$--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg_payload $+ capt_arg_payload
-    $--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
+    $+...$--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
   ; -"std" &:: "__shared_ptr" &:: "~__shared_ptr" $ capt_arg
     $--> SharedPtr.destructor ~desc:"std::shared_ptr::~shared_ptr()"
   ; -"std" &:: "shared_ptr" &:: "~shared_ptr" $ capt_arg
