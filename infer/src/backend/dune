@@ -8,12 +8,13 @@
  (public_name infer.Backend)
  (flags
   (:standard -open Core -open IStdlib -open IStd -open OpenSource -open
-    ATDGenerated -open IBase -open IR -open Absint -open Biabduction -open BO
-    -open Nullsafe -open Pulselib -open Checkers -open Costlib -open Quandary
-    -open Topllib -open Concurrency -open Labs -open Dotnet -open Datalog))
+    ATDGenerated -open IBase -open IR -open Textuallib -open Absint -open
+    Biabduction -open BO -open Nullsafe -open Pulselib -open Checkers -open
+    Costlib -open Quandary -open Topllib -open Concurrency -open Labs -open
+    Dotnet -open Datalog))
  (libraries core memtrace ocamlgraph IStdlib ATDGenerated IBase IR Absint
    Biabduction Nullsafe BO Checkers Costlib Quandary Topllib Concurrency Labs
-   Dotnet Datalog)
+   Dotnet Datalog Textuallib)
  (preprocess
   (pps ppx_compare ppx_fields_conv ppx_yojson_conv)))
 

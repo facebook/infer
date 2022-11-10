@@ -13,13 +13,6 @@
  (preprocess
   (pps ppx_compare ppx_hash ppx_show ppx_sexp_conv ppx_yojson_conv)))
 
-(ocamllex doliLexer)
-
-(menhir
- (modules doliFrameParser doliJavaMatch doliObjCMatch doliBody)
- (merge_into doliCombined)
- (flags --explain))
-
 (documentation
  (package infer)
  (mld_files IR))

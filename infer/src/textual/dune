@@ -18,3 +18,10 @@
  (modules TextualMenhir)
  (flags --explain)
  (infer false))
+
+(ocamllex doliLexer)
+
+(menhir
+ (modules doliFrameParser doliJavaMatch doliObjCMatch doliBody)
+ (merge_into doliCombined)
+ (flags --explain))
