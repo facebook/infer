@@ -154,7 +154,10 @@ let compile compiler args =
         (Unix.Exit_or_signal.to_string_hum status)
 
 
-let capture ~args =
+let capture ~prog ~args =
   if List.exists args ~f:(fun arg -> String.equal arg textual_subcommand) then
-    compile Config.hackc_binary args
+    (* In force_integration mode we should use whatever program is provided on the command line to
+       support cases where hackc is invoked via buck run or similar. *)
+    let compiler = if Option.is_some Config.force_integration then prog else Config.hackc_binary in
+    compile compiler args
   else L.die UserError "hackc command line is missing %s subcommand" textual_subcommand

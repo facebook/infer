@@ -30,7 +30,7 @@ type mode =
   | NdkBuild of {build_cmd: string list}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
-  | Hackc of {args: string list}
+  | Hackc of {prog: string; args: string list}
   | Textual of {files: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
@@ -75,8 +75,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | Erlc {args} ->
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
-  | Hackc {args} ->
-      F.fprintf fmt "Hackc driver mode:@\nargs = %a" Pp.cli_args args
+  | Hackc {prog; args} ->
+      F.fprintf fmt "Hackc driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Textual {files} ->
       F.fprintf fmt "Textual capture mode:@\nfiles = %a" Pp.cli_args files
   | XcodeBuild {prog; args} ->
@@ -179,9 +179,9 @@ let capture ~changed_files mode =
     | Erlc {args} ->
         L.progress "Capturing in erlc mode...@." ;
         Erlang.capture ~command:"erlc" ~args
-    | Hackc {args} ->
+    | Hackc {prog; args} ->
         L.progress "Capturing in hackc mode...@." ;
-        Hack.capture ~args
+        Hack.capture ~prog ~args
     | Textual {files} ->
         L.progress "Capturing in textual mode...@." ;
         let files = List.map files ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x) in
@@ -487,7 +487,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       | BErlc ->
           Erlc {args}
       | BHackc ->
-          Hackc {args}
+          Hackc {prog; args}
       | BXcode when Config.xcpretty ->
           XcodeXcpretty {prog; args}
       | BXcode ->

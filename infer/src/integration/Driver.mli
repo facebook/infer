@@ -29,7 +29,7 @@ type mode =
   | NdkBuild of {build_cmd: string list}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
-  | Hackc of {args: string list}
+  | Hackc of {prog: string; args: string list}
   | Textual of {files: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
