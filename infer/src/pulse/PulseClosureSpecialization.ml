@@ -212,19 +212,17 @@ let actuals_of_func analysis_data func_actuals caller_values_to_closures astate 
                       match actual_of accessed_value seen with
                       | Some passed_closure -> (
                         match res with
-                        | None ->
-                            Some
-                              (ProcAttributes.Fields
-                                 (Fieldname.Map.singleton fieldname passed_closure) )
                         | Some (ProcAttributes.Fields map) ->
                             Some
                               (ProcAttributes.Fields
                                  (Fieldname.Map.add fieldname passed_closure map) )
-                        | Some _ ->
-                            res )
+                        | _ ->
+                            Some
+                              (ProcAttributes.Fields
+                                 (Fieldname.Map.singleton fieldname passed_closure) ) )
                       | None ->
                           res )
-                    | Dereference ->
+                    | Dereference when Option.is_none res ->
                         actual_of accessed_value seen
                     | _ ->
                         res ) )
