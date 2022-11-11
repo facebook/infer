@@ -518,3 +518,88 @@ void call_unknown_constructor_twice_ok(const ClassWithoutConstructDef& src) {
   { auto cpy = (accessor); }
 
 void foo(std::vector<int> my_vec) { LOCAL_MACRO(my_vec); }
+
+class CopiedToField1_Bad_FN {
+  Arr field;
+
+ public:
+  CopiedToField1_Bad_FN(Arr a) : field(a) {}
+};
+
+class CopiedToField1_Ok {
+  Arr field;
+
+ public:
+  CopiedToField1_Ok(Arr a) : field(std::move(a)) {}
+};
+
+class CopiedToField2_Bad_FN {
+  Arr field;
+
+ public:
+  CopiedToField2_Bad_FN(Arr a) { field = a; }
+};
+
+class CopiedToField2_Ok {
+  Arr field;
+
+ public:
+  CopiedToField2_Ok(Arr a) { field = std::move(a); }
+};
+
+struct Arrs {
+  Arr a;
+  Arr b;
+};
+
+class CopiedToField3_Ok {
+  Arrs field1;
+  Arr field2;
+
+ public:
+  // It should not report unnecessary copy issue since the parameter cannot be
+  // moved.
+  CopiedToField3_Ok(Arrs as) {
+    field1 = as;
+    field2 = as.a;
+  }
+};
+
+class PassedToUnknown_Bad {
+  Arr field;
+
+  static void unknown(Arr a);
+
+ public:
+  PassedToUnknown_Bad(Arr a) { unknown(a); }
+};
+
+class PassedToUnknown_Ok {
+  Arr field;
+
+  static void unknown(Arr a);
+
+ public:
+  PassedToUnknown_Ok(Arr a) { unknown(std::move(a)); }
+};
+
+class PassedToUnknownRef_Bad {
+  Arr field;
+
+  static void unknown(const Arr& a);
+
+ public:
+  // Ideally, the parameter can be changed to const-ref, but this pattern is not
+  // common in practice. The test is just for showing checker's behavior.
+  PassedToUnknownRef_Bad(Arr a) { unknown(a); }
+};
+
+class CopiedToMultipleField_Bad_FN {
+  Arr field1;
+  Arr field2;
+
+ public:
+  // Ideally, the last copy can be avoided by std::move, but this pattern is not
+  // common in practice. The test is just for showing checker's behavior.
+  CopiedToMultipleField_Bad_FN(Arr a) : field1(a), field2(a) {}
+};

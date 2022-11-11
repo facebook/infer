@@ -154,18 +154,42 @@ module Loads = struct
 end
 
 module CalleeWithUnknown = struct
-  type t = V of Procname.t | Unknown [@@deriving compare]
+  type t = V of {copy_tgt: Exp.t option; callee: Procname.t} | Unknown [@@deriving compare]
 
-  let pp f = function V callee -> Procname.pp f callee | Unknown -> F.pp_print_string f "unknown"
+  let pp_copy_tgt f copy_tgt = Option.iter copy_tgt ~f:(fun tgt -> F.fprintf f "(%a)" Exp.pp tgt)
+
+  let pp f = function
+    | V {copy_tgt; callee} ->
+        F.fprintf f "%a%a" Procname.pp callee pp_copy_tgt copy_tgt
+    | Unknown ->
+        F.pp_print_string f "unknown"
+
+
+  let is_copy_to_field_or_global = function
+    | V {copy_tgt= Some (Lindex _ | Lfield _); callee} ->
+        Procname.is_copy_assignment callee || Procname.is_copy_ctor callee
+    | V {copy_tgt= Some (Lvar pvar); callee} ->
+        Pvar.is_global pvar && Procname.is_copy_assignment callee
+    | V _ ->
+        false
+    | Unknown ->
+        true
 end
 
 module CalleeWithLoc = struct
   type t = {callee: CalleeWithUnknown.t; loc: Location.t} [@@deriving compare]
 
   let pp f {callee; loc} = F.fprintf f "%a at %a" CalleeWithUnknown.pp callee Location.pp loc
+
+  let is_copy_to_field_or_global {callee} = CalleeWithUnknown.is_copy_to_field_or_global callee
 end
 
-module PassedTo = AbstractDomain.FiniteMultiMap (Var) (CalleeWithLoc)
+module PassedTo = struct
+  include AbstractDomain.FiniteMultiMap (Var) (CalleeWithLoc)
+
+  let is_copied_to_field_or_global var x =
+    List.exists (get_all var x) ~f:CalleeWithLoc.is_copy_to_field_or_global
+end
 
 type elt =
   { copy_map: CopyMap.t
@@ -339,10 +363,13 @@ let get_copied = function
 let get_const_refable_parameters = function
   | Top ->
       []
-  | V {parameter_map; captured; loads} ->
+  | V {parameter_map; captured; loads; passed_to} ->
       ParameterMap.fold
         (fun var (parameter_spec_t : ParameterSpec.t) acc ->
-          if Loads.is_loaded var loads || Captured.mem_var var captured then
+          if
+            (Loads.is_loaded var loads || Captured.mem_var var captured)
+            && not (PassedTo.is_copied_to_field_or_global var passed_to)
+          then
             match parameter_spec_t with
             | Modified ->
                 acc
@@ -430,7 +457,14 @@ let set_passed_to_elt loc call_exp actuals ({loads; passed_to} as astate) =
   let new_callee =
     match (call_exp : Exp.t) with
     | Const (Cfun callee) | Closure {name= callee} ->
-        CalleeWithUnknown.V callee
+        let copy_tgt =
+          match actuals with
+          | (tgt, _) :: _ when Procname.is_copy_ctor callee || Procname.is_copy_assignment callee ->
+              Some tgt
+          | _ ->
+              None
+        in
+        CalleeWithUnknown.V {copy_tgt; callee}
     | _ ->
         CalleeWithUnknown.Unknown
   in
@@ -465,7 +499,7 @@ let is_lifetime_extended var astate =
   ||
   match
     get_passed_to var astate ~f:(function
-      | CalleeWithUnknown.V callee ->
+      | CalleeWithUnknown.V {callee} ->
           not (Procname.is_shared_ptr_observer callee)
       | CalleeWithUnknown.Unknown ->
           true )

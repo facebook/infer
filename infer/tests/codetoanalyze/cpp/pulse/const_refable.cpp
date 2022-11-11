@@ -147,4 +147,19 @@ void captured_shared_ptr_bad_FN(std::shared_ptr<int> a) {
   call_lambda([&a]() {});
 }
 
+Arr global;
+
+class AssignField {
+  Arr field;
+
+ public:
+  // It should NOT report const refable issue, but unncessary copy assignment
+  // issue.
+  void assign_field_bad_FN(Arr a) { field = a; }
+
+  // It should NOT report const refable issue, but unncessary copy assignment
+  // issue.
+  void assign_global_bad(Arr a) { global = a; }
+};
+
 } // namespace const_refable
