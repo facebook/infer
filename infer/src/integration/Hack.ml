@@ -145,7 +145,10 @@ let compile compiler args =
   In_channel.close chan ;
   match Unix.waitpid pid with
   | Ok () ->
-      L.progress "Finished capture: success %d files, error %d files.@." !n_captured !n_error
+      L.progress "Finished capture: success %d files, error %d files.@." !n_captured !n_error ;
+      if (not Config.keep_going) && !n_error > 0 then
+        L.die ExternalError
+          "There were errors during capture. Re-run with --keep-going to ignore the errors."
   | Error _ as status ->
       L.die ExternalError "Error executing: %s@\n%s@\n" escaped_cmd
         (Unix.Exit_or_signal.to_string_hum status)

@@ -1283,8 +1283,8 @@ and ( biabduction_write_dotty
   and print_types = CLOpt.mk_bool ~long:"print-types" ~default:false "Print types in symbolic heaps"
   and keep_going =
     CLOpt.mk_bool ~deprecated_no:["-no-failures-allowed"] ~long:"keep-going"
-      ~in_help:InferCommand.[(Analyze, manual_generic)]
-      "Keep going when the analysis encounters a failure"
+      ~in_help:InferCommand.[(Analyze, manual_generic); (Capture, manual_generic)]
+      "Keep going when the analysis or capture encounter a failure"
   and reports_include_ml_loc =
     CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
       "Include the location in the Infer source code from where reports are generated"

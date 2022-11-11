@@ -861,8 +861,8 @@ OPTIONS
     See also infer-analyze(1).
 
        --keep-going
-           Activates: Keep going when the analysis encounters a failure
-           (Conversely: --no-keep-going)           See also infer-analyze(1).
+           Activates: Keep going when the analysis or capture encounter a
+           failure (Conversely: --no-keep-going)           See also infer-analyze(1) and infer-capture(1).
 
        --kotlin-capture
            Activates: Enable Kotlin capture (experimental, do not use).

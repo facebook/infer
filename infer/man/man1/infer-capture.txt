@@ -84,6 +84,10 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
+       --keep-going
+           Activates: Keep going when the analysis or capture encounter a
+           failure (Conversely: --no-keep-going)
+
        --load-average,-l float
            Do not start new parallel jobs if the load average is greater than
            that specified (Buck and make only)

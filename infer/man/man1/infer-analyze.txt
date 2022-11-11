@@ -197,8 +197,8 @@ OPTIONS
            Run the specified number of analysis jobs simultaneously
 
        --keep-going
-           Activates: Keep going when the analysis encounters a failure
-           (Conversely: --no-keep-going)
+           Activates: Keep going when the analysis or capture encounter a
+           failure (Conversely: --no-keep-going)
 
        --no-linters
            Deactivates: checker linters: Declarative linting framework over
