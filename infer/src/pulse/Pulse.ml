@@ -325,10 +325,10 @@ module PulseTransferFunctions = struct
 
 
   let get_dynamic_type_name astate v =
-    match AbductiveDomain.AddressAttributes.get_dynamic_type v astate with
-    | Some {desc= Tstruct name} ->
-        Some name
-    | Some t ->
+    match AbductiveDomain.AddressAttributes.get_dynamic_type_source_file v astate with
+    | Some ({desc= Tstruct name}, source_file_opt) ->
+        Some (name, source_file_opt)
+    | Some (t, _) ->
         L.d_printfln "dynamic type %a of %a is not a Tstruct" (Typ.pp_full Pp.text) t
           AbstractValue.pp v ;
         None
@@ -337,20 +337,25 @@ module PulseTransferFunctions = struct
         None
 
 
-  let find_override tenv astate actuals proc_name =
+  let find_override tenv astate actuals proc_name proc_name_opt =
     let open IOption.Let_syntax in
     let* {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} =
       get_receiver proc_name actuals
     in
-    let* type_name = get_dynamic_type_name astate receiver in
-    Tenv.resolve_method
-      ~method_exists:(fun proc_name methods -> List.mem ~equal:Procname.equal methods proc_name)
-      tenv type_name proc_name
+    let* dynamic_type_name, source_file_opt = get_dynamic_type_name astate receiver in
+    let* type_name = Procname.get_class_type_name proc_name in
+    if Typ.Name.equal type_name dynamic_type_name then proc_name_opt
+    else
+      let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
+      (* if we have a source file then do the look up in the (local) tenv
+         for that source file instead of in the tenv for the current file *)
+      let tenv = Option.bind source_file_opt ~f:Tenv.load |> Option.value ~default:tenv in
+      Tenv.resolve_method ~method_exists tenv dynamic_type_name proc_name
 
 
   let resolve_virtual_call tenv astate actuals proc_name_opt =
     Option.map proc_name_opt ~f:(fun proc_name ->
-        match find_override tenv astate actuals proc_name with
+        match find_override tenv astate actuals proc_name proc_name_opt with
         | Some proc_name' ->
             L.d_printfln "Dynamic dispatch: %a resolved to %a" Procname.pp proc_name Procname.pp
               proc_name' ;
@@ -549,9 +554,9 @@ module PulseTransferFunctions = struct
                   let astates : ExecutionDomain.t list option =
                     let open IOption.Let_syntax in
                     let* self_var = find_var_opt astate addr in
-                    let+ self_typ =
+                    let+ self_typ, _ =
                       let* attrs = AbductiveDomain.AddressAttributes.find_opt addr astate in
-                      Attributes.get_dynamic_type attrs
+                      Attributes.get_dynamic_type_source_file attrs
                     in
                     let ret_id = Ident.create_fresh Ident.knormal in
                     ret_vars := Var.of_id ret_id :: !ret_vars ;

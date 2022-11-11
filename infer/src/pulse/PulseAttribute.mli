@@ -77,7 +77,7 @@ type t =
   | CopiedReturn of
       {source: AbstractValue.t; is_const_ref: bool; from: CopyOrigin.t; copied_location: Location.t}
       (** records the copied value for the return address *)
-  | DynamicType of Typ.t
+  | DynamicType of Typ.t * SourceFile.t option
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
   | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
@@ -141,7 +141,7 @@ module Attributes : sig
 
   val get_unknown_effect : t -> (CallEvent.t * ValueHistory.t) option
 
-  val get_dynamic_type : t -> Typ.t option
+  val get_dynamic_type_source_file : t -> (Typ.t * SourceFile.t option) option
 
   val is_java_resource_released : t -> bool
 

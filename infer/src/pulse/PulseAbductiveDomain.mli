@@ -151,6 +151,8 @@ module AddressAttributes : sig
 
   val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
+  val add_dynamic_type_source_file : Typ.t -> SourceFile.t -> AbstractValue.t -> t -> t
+
   val add_ref_counted : AbstractValue.t -> t -> t
 
   val is_ref_counted : AbstractValue.t -> t -> bool
@@ -160,6 +162,8 @@ module AddressAttributes : sig
   val remove_taint_attrs : AbstractValue.t -> t -> t
 
   val get_dynamic_type : AbstractValue.t -> t -> Typ.t option
+
+  val get_dynamic_type_source_file : AbstractValue.t -> t -> (Typ.t * SourceFile.t option) option
 
   val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
 

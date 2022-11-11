@@ -234,6 +234,8 @@ val csharp_resource_release : recursive:bool -> AbstractValue.t -> t -> t
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
+val add_dynamic_type_source_file : Typ.t -> SourceFile.t -> AbstractValue.t -> t -> t
+
 val add_ref_counted : AbstractValue.t -> t -> t
 
 val is_ref_counted : AbstractValue.t -> t -> bool

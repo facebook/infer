@@ -70,7 +70,11 @@ val get_must_be_initialized : AbstractValue.t -> t -> (Timestamp.t * Trace.t) op
 
 val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
 
+val add_dynamic_type_source_file : Typ.t -> SourceFile.t -> AbstractValue.t -> t -> t
+
 val get_dynamic_type : t -> AbstractValue.t -> Typ.t option
+
+val get_dynamic_type_source_file : t -> AbstractValue.t -> (Typ.t * SourceFile.t option) option
 
 val add_ref_counted : AbstractValue.t -> t -> t
 

@@ -130,7 +130,7 @@ module Attribute = struct
         ; is_const_ref: bool
         ; from: CopyOrigin.t
         ; copied_location: Location.t }
-    | DynamicType of Typ.t
+    | DynamicType of Typ.t * SourceFile.t option
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
     | ISLAbduced of Trace.t
@@ -258,8 +258,9 @@ module Attribute = struct
         F.fprintf f "CopiedReturn (%a%t by %a at %a)" AbstractValue.pp source
           (fun f -> if is_const_ref then F.pp_print_string f ":const&")
           CopyOrigin.pp from Location.pp copied_location
-    | DynamicType typ ->
-        F.fprintf f "DynamicType %a" (Typ.pp Pp.text) typ
+    | DynamicType (typ, source_file) ->
+        F.fprintf f "DynamicType %a, SourceFile %a" (Typ.pp Pp.text) typ (Pp.option SourceFile.pp)
+          source_file
     | EndOfCollection ->
         F.pp_print_string f "EndOfCollection"
     | Invalid (invalidation, trace) ->
@@ -719,8 +720,9 @@ module Attributes = struct
         | UnknownEffect (call, hist) -> (call, hist) )
 
 
-  let get_dynamic_type =
-    get_by_rank Attribute.dynamic_type_rank ~dest:(function [@warning "-8"] DynamicType typ -> typ)
+  let get_dynamic_type_source_file =
+    get_by_rank Attribute.dynamic_type_rank ~dest:(function [@warning "-8"]
+        | DynamicType (typ, source_file_opt) -> (typ, source_file_opt) )
 
 
   let get_must_be_initialized =

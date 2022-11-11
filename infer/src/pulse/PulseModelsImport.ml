@@ -129,7 +129,11 @@ module Basic = struct
       PulseTaintOperations.taint_allocation analysis_data.tenv path location ~typ_desc:typ.desc
         ~alloc_desc:desc ~allocator:(Some CppNew) (fst value_address) astate
     in
-    let astate = PulseOperations.add_dynamic_type typ (fst value_address) astate in
+    let astate =
+      if Typ.is_objc_class typ then
+        PulseOperations.add_dynamic_type_source_file typ location.file (fst value_address) astate
+      else PulseOperations.add_dynamic_type typ (fst value_address) astate
+    in
     let++ astate = PulseArithmetic.and_positive (fst value_address) astate in
     (astate, value_address)
 
@@ -369,7 +373,9 @@ module Basic = struct
     let astate =
       match size_exp_opt with
       | Some (Exp.Sizeof {typ}) ->
-          PulseOperations.add_dynamic_type typ ret_addr astate
+          if Typ.is_objc_class typ then
+            PulseOperations.add_dynamic_type_source_file typ location.file ret_addr astate
+          else PulseOperations.add_dynamic_type typ ret_addr astate
       | _ ->
           (* The type expr is sometimes a Var expr in Java but this is not expected.
               This seems to be introduced by inline mechanism of Java synthetic methods during preanalysis *)

@@ -470,6 +470,10 @@ let csharp_resource_release ~recursive address astate =
 
 let add_dynamic_type typ address astate = AddressAttributes.add_dynamic_type typ address astate
 
+let add_dynamic_type_source_file typ source_file address astate =
+  AddressAttributes.add_dynamic_type_source_file typ source_file address astate
+
+
 let add_ref_counted address astate = AddressAttributes.add_ref_counted address astate
 
 let is_ref_counted address astate = AddressAttributes.is_ref_counted address astate
@@ -651,7 +655,7 @@ let get_dynamic_type_unreachable_values vars astate =
     List.fold unreachable_addrs ~init:[] ~f:(fun res addr ->
         (let open IOption.Let_syntax in
         let* attrs = AbductiveDomain.AddressAttributes.find_opt addr astate in
-        let* typ = Attributes.get_dynamic_type attrs in
+        let* typ, _ = Attributes.get_dynamic_type_source_file attrs in
         let+ var = find_var_opt astate addr in
         (var, addr, typ) :: res)
         |> Option.value ~default:res )

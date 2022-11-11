@@ -347,6 +347,10 @@ module AddressAttributes = struct
     BaseAddressAttributes.get_dynamic_type (astate.post :> base_domain).attrs addr
 
 
+  let get_dynamic_type_source_file addr astate =
+    BaseAddressAttributes.get_dynamic_type_source_file (astate.post :> base_domain).attrs addr
+
+
   let get_allocation addr astate =
     BaseAddressAttributes.get_allocation addr (astate.post :> base_domain).attrs
 
@@ -373,6 +377,11 @@ module AddressAttributes = struct
 
   let add_dynamic_type typ address astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.add_dynamic_type typ address)
+
+
+  let add_dynamic_type_source_file typ source_file address astate =
+    map_post_attrs astate
+      ~f:(BaseAddressAttributes.add_dynamic_type_source_file typ source_file address)
 
 
   let add_ref_counted address astate =
