@@ -274,4 +274,8 @@ module Module : sig
   val pp : F.formatter -> t -> unit [@@warning "-32"]
 end
 
-exception ToSilTransformationError of (Format.formatter -> unit -> unit)
+type transform_error = {loc: Location.t; msg: string Lazy.t}
+
+val pp_transform_error : SourceFile.t -> F.formatter -> transform_error -> unit
+
+exception TextualTransformError of transform_error list

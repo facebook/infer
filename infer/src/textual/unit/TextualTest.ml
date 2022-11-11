@@ -9,13 +9,14 @@ open! IStd
 module F = Format
 open Textual
 
+let sourcefile = SourceFile.create "dummy.sil"
+
 let parse_module text =
-  let source = SourceFile.create "dummy.sil" in
-  match TextualParser.parse_string source text with
+  match TextualParser.parse_string sourcefile text with
   | Ok m ->
       m
   | Error es ->
-      List.iter es ~f:(fun e -> F.printf "%a" (TextualParser.pp_error source) e) ;
+      List.iter es ~f:(fun e -> F.printf "%a" (TextualParser.pp_error sourcefile) e) ;
       raise (Failure "Couldn't parse a module")
 
 
@@ -182,9 +183,10 @@ let%test_module "to_sil" =
       let no_lang = {|define nothing() : void { #node: ret null }|} in
       let m = parse_module no_lang in
       try TextualSil.module_to_sil m |> ignore
-      with ToSilTransformationError pp_msg ->
-        pp_msg F.std_formatter () ;
-        [%expect {| Missing or unsupported source_language attribute |}]
+      with TextualTransformError errs ->
+        List.iter errs ~f:(Textual.pp_transform_error sourcefile F.std_formatter) ;
+        [%expect
+          {| dummy.sil, <unknown location>: transformation error: Missing or unsupported source_language attribute |}]
   end )
 
 let%test_module "remove_internal_calls transformation" =

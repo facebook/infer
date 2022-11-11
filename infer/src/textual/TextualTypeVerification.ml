@@ -80,26 +80,39 @@ type error =
   | IdentReadBeforeWrite of {id: Ident.t; loc: Location.t}
   | VarTypeNotDeclared of {var: VarName.t; loc: Location.t}
 
+let error_loc = function
+  | TypeMismatch {loc; _} ->
+      loc
+  | WrongNumberBuiltinArgs {loc; _} ->
+      loc
+  | IdentAssignedTwice {loc1; _} ->
+      loc1
+  | IdentReadBeforeWrite {loc; _} ->
+      loc
+  | VarTypeNotDeclared {loc; _} ->
+      loc
+
+
 let pp_error sourcefile fmt error =
-  F.fprintf fmt "Textual type error in file %a" SourceFile.pp sourcefile ;
+  let primary_error_loc = error_loc error in
+  F.fprintf fmt "%a, %a: textual type error: " SourceFile.pp sourcefile Location.pp
+    primary_error_loc ;
   match error with
-  | TypeMismatch {exp; typ; expected; loc} ->
-      F.fprintf fmt ", %a: expression %a has type %a, while %a was expected@\n" Location.pp_line loc
-        Exp.pp exp Typ.pp typ pp_expected_kind expected
-  | WrongNumberBuiltinArgs {proc; expected; at_least; given; loc} ->
-      F.fprintf fmt ", %a: builtin %a is called with %d arguments while it expects %s%d@\n"
-        Location.pp_line loc pp_qualified_procname proc given
+  | TypeMismatch {exp; typ; expected; _} ->
+      F.fprintf fmt "expression %a has type %a, while %a was expected" Exp.pp exp Typ.pp typ
+        pp_expected_kind expected
+  | WrongNumberBuiltinArgs {proc; expected; at_least; given; _} ->
+      F.fprintf fmt "builtin %a is called with %d arguments while it expects %s%d"
+        pp_qualified_procname proc given
         (if at_least then "at least " else "")
         expected
-  | IdentAssignedTwice {id; typ1; typ2; loc1; loc2} ->
-      F.fprintf fmt
-        ", %a: ident %a is given the type %a, but it has already been given the type %a at %a@\n"
-        Location.pp_line loc1 Ident.pp id Typ.pp typ1 Typ.pp typ2 Location.pp_line loc2
-  | IdentReadBeforeWrite {id; loc} ->
-      F.fprintf fmt ", %a: ident %a is read before being written@\n" Location.pp_line loc Ident.pp
-        id
-  | VarTypeNotDeclared {var; loc} ->
-      F.fprintf fmt ", %a: variable %a has not been declared@\n" Location.pp_line loc VarName.pp var
+  | IdentAssignedTwice {id; typ1; typ2; loc2; _} ->
+      F.fprintf fmt "ident %a is given the type %a, but it has already been given the type %a at %a"
+        Ident.pp id Typ.pp typ1 Typ.pp typ2 Location.pp_line loc2
+  | IdentReadBeforeWrite {id; _} ->
+      F.fprintf fmt "ident %a is read before being written" Ident.pp id
+  | VarTypeNotDeclared {var; _} ->
+      F.fprintf fmt "variable %a has not been declared" VarName.pp var
 
 
 let mk_type_mismatch_error expected loc exp typ : error = TypeMismatch {exp; typ; expected; loc}

@@ -10,8 +10,6 @@ module F = Format
 module L = Logging
 module Hashtbl = Caml.Hashtbl
 
-exception ToSilTransformationError of (F.formatter -> unit -> unit)
-
 module Lang = struct
   type t = Java | Hack [@@deriving equal]
 
@@ -47,6 +45,15 @@ module Location = struct
     let compare = compare
   end)
 end
+
+type transform_error = {loc: Location.t; msg: string Lazy.t}
+
+let pp_transform_error sourcefile fmt {loc; msg} =
+  F.fprintf fmt "%a, %a: transformation error: %s" SourceFile.pp sourcefile Location.pp loc
+    (Lazy.force msg)
+
+
+exception TextualTransformError of transform_error list
 
 module type NAME = sig
   type t = {value: string; loc: Location.t} [@@deriving equal, hash]
@@ -681,15 +688,20 @@ module ProcDesc = struct
 end
 
 module SsaVerification = struct
-  type error = SsaError of {id: Ident.t; locations: Location.Set.t}
+  type error = {id: Ident.t; locations: Location.Set.t}
 
-  let pp_error fmt error =
-    match error with
-    | SsaError {id; locations} ->
-        let pp_location fmt loc = F.fprintf fmt "[%a]" Location.pp loc in
-        F.fprintf fmt "ident %a is defined more than once at locations %a" Ident.pp id
-          (F.pp_print_list ~pp_sep:(fun fmt () -> F.pp_print_string fmt ", ") pp_location)
-          (Location.Set.elements locations)
+  let pp_error fmt {id; locations} =
+    let pp_location fmt loc = F.fprintf fmt "[%a]" Location.pp loc in
+    F.fprintf fmt "ident %a is defined more than once at locations %a" Ident.pp id
+      (F.pp_print_list ~pp_sep:(fun fmt () -> F.pp_print_string fmt ", ") pp_location)
+      (Location.Set.elements locations)
+
+
+  let error_to_transform_error error =
+    let primary_loc =
+      Location.Set.choose_opt error.locations |> Option.value ~default:Location.Unknown
+    in
+    {loc= primary_loc; msg= lazy (F.asprintf "%a" pp_error error)}
 
 
   let run (pdesc : ProcDesc.t) =
@@ -714,17 +726,12 @@ module SsaVerification = struct
     let errors =
       Ident.Map.fold
         (fun id locations errors ->
-          if Location.Set.cardinal locations > 1 then SsaError {id; locations} :: errors else errors
-          )
+          if Location.Set.cardinal locations > 1 then {id; locations} :: errors else errors )
         seen []
     in
     if not (List.is_empty errors) then
-      let pp fmt () =
-        F.fprintf fmt "%a"
-          (F.pp_print_list ~pp_sep:(fun fmt () -> F.pp_print_string fmt "\n  ") pp_error)
-          errors
-      in
-      raise (ToSilTransformationError pp)
+      let transform_errors = List.map errors ~f:error_to_transform_error in
+      raise (TextualTransformError transform_errors)
 end
 
 module Module = struct

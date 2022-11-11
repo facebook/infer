@@ -15,18 +15,26 @@ type error =
 (* TODO: check that a name is not declared twice *)
 (* TODO: add basic type verification *)
 
+let error_loc = function
+  | UnknownField {enclosing_class; _} ->
+      enclosing_class.loc
+  | UnknownProcdecl proc ->
+      proc.name.loc
+  | UnknownLabel {label; _} ->
+      label.loc
+
+
 let pp_error sourcefile fmt error =
-  F.fprintf fmt "SIL consistency error in file %a" SourceFile.pp sourcefile ;
+  let loc = error_loc error in
+  F.fprintf fmt "%a, %a: SIL consistency error: " SourceFile.pp sourcefile Location.pp loc ;
   match error with
   | UnknownField {enclosing_class; name} ->
-      F.fprintf fmt ", %a: field %a.%a is not declared\n" Location.pp enclosing_class.loc
-        TypeName.pp enclosing_class FieldName.pp name
+      F.fprintf fmt "field %a.%a is not declared" TypeName.pp enclosing_class FieldName.pp name
   | UnknownProcdecl proc ->
-      F.fprintf fmt ", %a: function %a is not declared\n" Location.pp proc.name.loc
-        pp_qualified_procname proc
+      F.fprintf fmt "function %a is not declared" pp_qualified_procname proc
   | UnknownLabel {label; pname} ->
-      F.fprintf fmt ", %a: label %a is not declared in function %a\n" Location.pp label.loc
-        NodeName.pp label pp_qualified_procname pname
+      F.fprintf fmt "label %a is not declared in function %a" NodeName.pp label
+        pp_qualified_procname pname
 
 
 let verify_decl ~is_field_declared ~is_procname_declared errors (decl : Module.decl) =

@@ -1,1 +1,1 @@
-Textual type error in file Array.sil, line 36: expression n4 has type *int[][], while a subtype of *(*int[])[] was expected
+Array.sil, line 36, column 6: textual type error: expression n4 has type *int[][], while a subtype of *(*int[])[] was expected

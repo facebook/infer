@@ -432,10 +432,10 @@ module ExpBridge = struct
           , args )
         with
         | Some _, None, None, _ ->
-            raise
-              (ToSilTransformationError
-                 (fun fmt () -> F.fprintf fmt "%a contains a call inside a sub-expression" pp exp)
-              )
+            (* TODO(arr): expression locations *)
+            let loc = Location.Unknown in
+            let msg = lazy (F.asprintf "%a contains a call inside a sub-expression" pp exp) in
+            raise (TextualTransformError [{loc; msg}])
         | None, Some unop, None, [exp] ->
             UnOp (unop, aux exp, Some (TypBridge.to_sil lang Int)) (* FIXME: fix the typ *)
         | None, None, Some binop, [exp1; exp2] ->
@@ -553,10 +553,10 @@ module InstrBridge = struct
           | Some procname ->
               procname
           | None ->
-              raise
-                (ToSilTransformationError
-                   (fun fmt () ->
-                     F.fprintf fmt "the expression in %a should start with a regular call" pp i ) )
+              let msg =
+                lazy (F.asprintf "the expression in %a should start with a regular call" pp i)
+              in
+              raise (TextualTransformError [{loc; msg}])
         in
         let pname = ProcDeclBridge.to_sil lang procname in
         let result_type = TypBridge.to_sil lang procname.result_type.typ in
@@ -586,11 +586,9 @@ module InstrBridge = struct
         let cf_virtual = Exp.equal_call_kind kind Virtual in
         let cflag = {CallFlags.default with cf_virtual} in
         Call ((ret, result_type), Const (Cfun pname), args, loc, cflag)
-    | Let _ ->
-        raise
-          (ToSilTransformationError
-             (fun fmt () ->
-               F.fprintf fmt "the expression in %a should start with a regular call" pp i ) )
+    | Let {loc; _} ->
+        let msg = lazy (F.asprintf "the expression in %a should start with a regular call" pp i) in
+        raise (TextualTransformError [{loc; msg}])
 end
 
 let instr_is_return = function Sil.Store {e1= Lvar v} -> SilPvar.is_return v | _ -> false
@@ -628,11 +626,9 @@ module NodeBridge = struct
   open Node
 
   let to_sil lang decls_env procname pdesc node =
-    if not (List.is_empty node.ssa_parameters) then
-      raise
-        (ToSilTransformationError
-           (fun fmt () ->
-             F.fprintf fmt "Node %a should not have SSA parameters" NodeName.pp node.label ) ) ;
+    ( if not (List.is_empty node.ssa_parameters) then
+      let msg = lazy (F.asprintf "node %a should not have SSA parameters" NodeName.pp node.label) in
+      raise (TextualTransformError [{loc= node.label_loc; msg}]) ) ;
     let instrs = List.map ~f:(InstrBridge.to_sil lang decls_env procname) node.instrs in
     let sourcefile = TextualDecls.source_file decls_env in
     let last_loc = LocationBridge.to_sil sourcefile node.last_loc in
@@ -832,8 +828,9 @@ module ModuleBridge = struct
     match lang module_ with
     | None ->
         raise
-          (ToSilTransformationError
-             (fun fmt _ -> F.fprintf fmt "Missing or unsupported source_language attribute") )
+          (TextualTransformError
+             [{loc= Location.Unknown; msg= lazy "Missing or unsupported source_language attribute"}]
+          )
     | Some lang ->
         let decls_env = TextualDecls.make_decls module_ in
         let module_ =

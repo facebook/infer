@@ -128,16 +128,24 @@ let compile compiler args =
   Unix.close stdin ;
   Unix.close stderr ;
   let chan = Unix.in_channel_of_descr stdout in
-  let n_captured = ref 0 in
+  let n_captured, n_error = (ref 0, ref 0) in
   process_output chan ~action:(fun source_path content ->
       L.debug Capture Quiet "Capturing %s@." source_path ;
-      if Config.debug_mode then dump_textual_to_tmp_file source_path content ;
-      TextualParser.capture_one (TextualParser.TextualFile.TranslatedFile {source_path; content}) ;
-      n_captured := !n_captured + 1 ) ;
+      let open TextualParser in
+      let trans = TextualFile.translate (TextualFile.TranslatedFile {source_path; content}) in
+      ( match trans with
+      | Ok sil ->
+          TextualFile.capture sil ;
+          incr n_captured
+      | Error (sourcefile, errs) ->
+          List.iter errs ~f:(log_error sourcefile) ;
+          incr n_error ) ;
+      if Config.debug_mode || Result.is_error trans then
+        dump_textual_to_tmp_file source_path content ) ;
   In_channel.close chan ;
   match Unix.waitpid pid with
   | Ok () ->
-      L.progress "Finished capture of %d files.@." !n_captured
+      L.progress "Finished capture: success %d files, error %d files.@." !n_captured !n_error
   | Error _ as status ->
       L.die ExternalError "Error executing: %s@\n%s@\n" escaped_cmd
         (Unix.Exit_or_signal.to_string_hum status)
