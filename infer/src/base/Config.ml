@@ -169,6 +169,8 @@ let manual_internal = "INTERNAL OPTIONS"
 
 let manual_java = "JAVA OPTIONS"
 
+let manual_pulse = "PULSE CHECKER OPTIONS"
+
 let manual_quandary = "QUANDARY CHECKER OPTIONS"
 
 let manual_racerd = "RACERD CHECKER OPTIONS"
@@ -2145,13 +2147,14 @@ and project_root =
 
 and pulse_cut_to_one_path_procedures_pattern =
   CLOpt.mk_string_opt ~long:"pulse-cut-to-one-path-procedures-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods for which pulse will only explore one path. Can be used on pathologically \
      large procedures to prevent too-big states from being produced."
 
 
 and pulse_inline_global_init_func_pointer =
   CLOpt.mk_bool ~long:"pulse-inline-global-init-func-pointer" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Inline the initializer of global variables that are of type function pointer in Pulse."
 
 
@@ -2173,42 +2176,44 @@ and pulse_manifest_emp =
 
 and pulse_max_cfg_size =
   CLOpt.mk_int ~default:15000 ~long:"pulse-max-cfg-size"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Larger CFGs than the max size are skipped in Pulse."
 
 
 and pulse_max_disjuncts =
   CLOpt.mk_int ~long:"pulse-max-disjuncts" ~default:20
-    "Under-approximate after $(i,int) disjunctions in the domain"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Stop exploring new paths after $(i,int) disjunctions in the domain"
 
 
 and pulse_max_heap =
   CLOpt.mk_int_opt ~long:"pulse-max-heap" ~meta:"int"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Give up analysing a procedure if the number of words in the heap exceeds this limit. Intended \
      use: avoid OutOfMemory crashes."
 
 
 and pulse_model_abort =
   CLOpt.mk_string_list ~long:"pulse-model-abort"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Methods that should be modelled as abort in Pulse"
 
 
 and pulse_model_alloc_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-alloc-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as allocs in Pulse"
 
 
 and pulse_model_cheap_copy_type =
   CLOpt.mk_string_opt ~long:"pulse-model-cheap-copy-type" ~meta:"regex"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be cheap to copy in Pulse"
 
 
 and pulse_model_free_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-free-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as wrappers to $(i,free)(3) in Pulse. The pointer to \
      be freed should be the first argument of the function. This should only be needed if the code \
      of the wrapper is not visible to infer or if Pulse somehow doesn't understand it (e.g. the \
@@ -2217,7 +2222,7 @@ and pulse_model_free_pattern =
 
 and pulse_model_malloc_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-malloc-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as wrappers to $(i,malloc)(3) in Pulse. The size to \
      allocate should be the first argument of the function. See $(b,--pulse-model-free-pattern) \
      for more information."
@@ -2225,7 +2230,7 @@ and pulse_model_malloc_pattern =
 
 and pulse_model_realloc_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-realloc-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as wrappers to $(i,realloc)(3) in Pulse. The pointer \
      to be reallocated should be the first argument of the function and the new size the second \
      argument. See $(b,--pulse-model-free-pattern) for more information."
@@ -2233,51 +2238,51 @@ and pulse_model_realloc_pattern =
 
 and pulse_model_release_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-release-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as release in Pulse"
 
 
 and pulse_model_returns_copy_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-returns-copy-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as creating copies in Pulse"
 
 
 and pulse_model_return_nonnull =
   CLOpt.mk_string_opt ~long:"pulse-model-return-nonnull"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as returning non-null in Pulse"
 
 
 and pulse_model_return_first_arg =
   CLOpt.mk_string_opt ~long:"pulse-model-return-first-arg"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as returning the first argument in Pulse in terms of \
      the source language semantics. Languages supported: Java, C, Objective-C"
 
 
 and pulse_model_return_this =
   CLOpt.mk_string_opt ~long:"pulse-model-return-this"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as returning the `this` or `self` argument of an \
      instance method in Pulse. Languages supported: Java, Objective-C"
 
 
 and pulse_model_skip_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-skip-pattern"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods that should be modelled as \"skip\" in Pulse"
 
 
 and pulse_models_for_erlang =
   CLOpt.mk_json ~long:"pulse-models-for-erlang"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Provide custom models for Erlang code using a DSL."
 
 
 and pulse_model_transfer_ownership =
   CLOpt.mk_string_list ~long:"pulse-model-transfer-ownership"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
      are method or namespace::method"
 
@@ -2290,14 +2295,14 @@ and pulse_prevent_non_disj_top =
 
 and pulse_recency_limit =
   CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
-    "Maximum number of array elements and structure fields to keep track of for a given array \
-     address."
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Maximum number of array elements and structure fields to keep track of for a given address."
 
 
 and pulse_report_ignore_unknown_java_methods_patterns =
   CLOpt.mk_string_list ~default:[".*<init>.*"]
     ~long:"pulse-report-ignore-unknown-java-methods-patterns"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "On Java, issues that are found on program paths that contain calls to unknown methods (those \
      without implementation) are not reported unless all the unknown method names match this \
      pattern. If the empty list is provided with \
@@ -2307,13 +2312,13 @@ and pulse_report_ignore_unknown_java_methods_patterns =
 
 and pulse_report_flows_from_taint_source =
   CLOpt.mk_string_opt ~long:"pulse-report-flows-from-taint-source"
-    ~in_help:InferCommand.[(Report, manual_generic)]
+    ~in_help:InferCommand.[(Report, manual_pulse)]
     ~meta:"procname" "Report data flows which originate at taint source $(b,procname)"
 
 
 and pulse_report_flows_to_taint_sink =
   CLOpt.mk_string_opt ~long:"pulse-report-flows-to-taint-sink"
-    ~in_help:InferCommand.[(Report, manual_generic)]
+    ~in_help:InferCommand.[(Report, manual_pulse)]
     ~meta:"procname" "Report data flows which pass through taint sink $(b,procname)"
 
 
@@ -2335,13 +2340,13 @@ and pulse_sanity_checks =
 
 and pulse_skip_procedures =
   CLOpt.mk_string_opt ~long:"pulse-skip-procedures"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
 
 
 and pulse_taint_policies =
   CLOpt.mk_json ~long:"pulse-taint-policies"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     {|A description of which taint flows should be reported, following this JSON format:
   { "short_description": "<a short description of the issue>",
     "taint_flows": [{ "source_kinds": [<kinds>],
@@ -2358,28 +2363,28 @@ where <kinds> are specified in taint source/sanitizer/sink matchers (see $(b,--p
 
 and pulse_taint_sanitizers =
   CLOpt.mk_json ~long:"pulse-taint-sanitizers"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Quick way to specify simple sanitizers as a JSON objects. See $(b,--pulse-taint-sources) for \
      the fields format documentation."
 
 
 and pulse_taint_propagators =
   CLOpt.mk_json ~long:"pulse-taint-propagators"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Quick way to specify simple propagators as a JSON objects. See $(b,--pulse-taint-sources) for \
      the fields format documentation."
 
 
 and pulse_taint_sinks =
   CLOpt.mk_json ~long:"pulse-taint-sinks"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Quick way to specify simple sinks as a JSON objects. See $(b,--pulse-taint-sources) for the \
      fields format documentation."
 
 
 and pulse_taint_sources =
   CLOpt.mk_json ~long:"pulse-taint-sources"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects, each with one of the following combinations of fields to identify relevant procedures:
   - "procedure": match a substring of the procedure name
   - "procedure_regex": as above, but match using an OCaml regex
@@ -2414,7 +2419,7 @@ and pulse_taint_sources =
 
 and pulse_taint_data_flow_kinds =
   CLOpt.mk_json ~long:"pulse-taint-data-flow-kinds"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Specify which taint kinds should be used for data flow reporting only. If a source has such a \
      kind, only data flows to sinks which originate at the source will be reported. If a sink has \
      such a kind, only sensitive data flows to the sink will be reported."
@@ -2422,7 +2427,7 @@ and pulse_taint_data_flow_kinds =
 
 and pulse_taint_config =
   CLOpt.mk_path_list ~long:"pulse-taint-config"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Path to a taint analysis configuration file or a directory containing such files. This file \
      can define $(b,--pulse-taint-sources), $(b,--pulse-taint-sanitizers), \
      $(b,--pulse-taint-propagators), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and \
@@ -2434,12 +2439,14 @@ and pulse_taint_config =
 
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
-    "Under-approximate after $(i,int) loop iterations"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Stop exploring new paths after $(i,int) loop iterations"
 
 
 and pulse_nullsafe_report_npe =
   CLOpt.mk_bool ~long:"pulse-nullsafe-report-npe" ~default:true
-    "[Pulse] Suppress NPE reports on files marked @Nullsafe."
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Report null dereference issues on files marked @Nullsafe."
 
 
 and pure_by_default =

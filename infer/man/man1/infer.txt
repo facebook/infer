@@ -1084,8 +1084,22 @@ OPTIONS
            be used on pathologically large procedures to prevent too-big
            states from being produced.           See also infer-analyze(1).
 
+       --pulse-inline-global-init-func-pointer
+           Activates: Inline the initializer of global variables that are of
+           type function pointer in Pulse. (Conversely:
+           --no-pulse-inline-global-init-func-pointer)           See also infer-analyze(1).
+
        --pulse-max-cfg-size int
            Larger CFGs than the max size are skipped in Pulse.       
+    See also infer-analyze(1).
+
+       --pulse-max-disjuncts int
+           Stop exploring new paths after int disjunctions in the domain       
+    See also infer-analyze(1).
+
+       --pulse-max-heap int
+           Give up analysing a procedure if the number of words in the heap
+           exceeds this limit. Intended use: avoid OutOfMemory crashes.       
     See also infer-analyze(1).
 
        --pulse-model-abort +string
@@ -1153,9 +1167,18 @@ OPTIONS
        --pulse-models-for-erlang json
            Provide custom models for Erlang code using a DSL.           See also infer-analyze(1).
 
+       --no-pulse-nullsafe-report-npe
+           Deactivates: Report null dereference issues on files marked
+           @Nullsafe. (Conversely: --pulse-nullsafe-report-npe)       
+    See also infer-analyze(1).
+
        --pulse-only
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).
+
+       --pulse-recency-limit int
+           Maximum number of array elements and structure fields to keep
+           track of for a given address.           See also infer-analyze(1).
 
        --pulse-report-flows-from-taint-source procname
            Report data flows which originate at taint source procname       
@@ -1268,6 +1291,9 @@ OPTIONS
              - "match_objc_blocks": boolean, "false" by default
                  "true" if only Objective-C blocks should be matched.
            See also infer-analyze(1).
+
+       --pulse-widen-threshold int
+           Stop exploring new paths after int loop iterations           See also infer-analyze(1).
 
        --purity
            Activates: checker purity: Detects pure (side-effect-free)

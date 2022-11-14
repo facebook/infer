@@ -1084,8 +1084,22 @@ OPTIONS
            be used on pathologically large procedures to prevent too-big
            states from being produced.           See also infer-analyze(1).
 
+       --pulse-inline-global-init-func-pointer
+           Activates: Inline the initializer of global variables that are of
+           type function pointer in Pulse. (Conversely:
+           --no-pulse-inline-global-init-func-pointer)           See also infer-analyze(1).
+
        --pulse-max-cfg-size int
            Larger CFGs than the max size are skipped in Pulse.       
+    See also infer-analyze(1).
+
+       --pulse-max-disjuncts int
+           Stop exploring new paths after int disjunctions in the domain       
+    See also infer-analyze(1).
+
+       --pulse-max-heap int
+           Give up analysing a procedure if the number of words in the heap
+           exceeds this limit. Intended use: avoid OutOfMemory crashes.       
     See also infer-analyze(1).
 
        --pulse-model-abort +string
@@ -1153,9 +1167,18 @@ OPTIONS
        --pulse-models-for-erlang json
            Provide custom models for Erlang code using a DSL.           See also infer-analyze(1).
 
+       --no-pulse-nullsafe-report-npe
+           Deactivates: Report null dereference issues on files marked
+           @Nullsafe. (Conversely: --pulse-nullsafe-report-npe)       
+    See also infer-analyze(1).
+
        --pulse-only
            Activates: Enable pulse and disable all other checkers
            (Conversely: --no-pulse-only)           See also infer-analyze(1).
+
+       --pulse-recency-limit int
+           Maximum number of array elements and structure fields to keep
+           track of for a given address.           See also infer-analyze(1).
 
        --pulse-report-flows-from-taint-source procname
            Report data flows which originate at taint source procname       
@@ -1268,6 +1291,9 @@ OPTIONS
              - "match_objc_blocks": boolean, "false" by default
                  "true" if only Objective-C blocks should be matched.
            See also infer-analyze(1).
+
+       --pulse-widen-threshold int
+           Stop exploring new paths after int loop iterations           See also infer-analyze(1).
 
        --purity
            Activates: checker purity: Detects pure (side-effect-free)
@@ -2355,11 +2381,6 @@ INTERNAL OPTIONS
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
 
-       --pulse-inline-global-init-func-pointer
-           Activates: Inline the initializer of global variables that are of
-           type function pointer in Pulse. (Conversely:
-           --no-pulse-inline-global-init-func-pointer)
-
        --pulse-intraprocedural-only
            Activates: Disable inter-procedural analysis in Pulse. Used for
            experimentations only. (Conversely:
@@ -2373,13 +2394,6 @@ INTERNAL OPTIONS
        --pulse-manifest-emp
            Activates: [Pulse] manifest errors with postive heaps in pre. For
            experiments only. (Conversely: --no-pulse-manifest-emp)
-
-       --pulse-max-disjuncts int
-           Under-approximate after int disjunctions in the domain
-
-       --pulse-max-heap int
-           Give up analysing a procedure if the number of words in the heap
-           exceeds this limit. Intended use: avoid OutOfMemory crashes.
 
        --pulse-max-heap-reset
            Cancel the effect of --pulse-max-heap.
@@ -2423,19 +2437,11 @@ INTERNAL OPTIONS
        --pulse-model-transfer-ownership-reset
            Set --pulse-model-transfer-ownership to the empty list.
 
-       --no-pulse-nullsafe-report-npe
-           Deactivates: [Pulse] Suppress NPE reports on files marked
-           @Nullsafe. (Conversely: --pulse-nullsafe-report-npe)
-
        --pulse-prevent-non-disj-top
            Activates: Forcibly prevent non-disjunctive domain value from
            becoming top. Without this option, non-disjunctive domain value
            becomes top when all disjuncts are non-executable. (Conversely:
            --no-pulse-prevent-non-disj-top)
-
-       --pulse-recency-limit int
-           Maximum number of array elements and structure fields to keep
-           track of for a given array address.
 
        --pulse-report-flows-from-taint-source-reset
            Cancel the effect of --pulse-report-flows-from-taint-source.
@@ -2469,9 +2475,6 @@ INTERNAL OPTIONS
 
        --pulse-taint-config-reset
            Set --pulse-taint-config to the empty list.
-
-       --pulse-widen-threshold int
-           Under-approximate after int loop iterations
 
        --pure-by-default
            Activates: [Purity]Consider unknown functions to be pure by
