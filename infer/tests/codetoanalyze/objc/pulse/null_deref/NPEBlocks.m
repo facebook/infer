@@ -139,3 +139,23 @@ void deep_npe_bad(int a) {
     *ptr = 0;
   });
 }
+
+void block_is_not_nil_ok() {
+  MyBlock b = ^{
+  };
+  MyBlock c = [b copy];
+  if (!b) {
+    int* x = NULL;
+    *x = 42;
+  }
+}
+
+void block_is_not_nil_bad() {
+  MyBlock b = ^{
+  };
+  MyBlock c = [b copy];
+  if (b) {
+    int* x = NULL;
+    *x = 42;
+  }
+}

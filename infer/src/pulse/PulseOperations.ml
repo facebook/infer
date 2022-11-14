@@ -117,14 +117,15 @@ module Closures = struct
           in
           Some (mode, typ, address_captured, new_trace) )
     in
-    let closure_addr_hist =
+    let ((closure_addr, _) as closure_addr_hist) =
       (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
     in
     let fake_capture_edges = mk_capture_edges captured_addresses in
-    let astate =
+    let++ astate =
       AbductiveDomain.set_post_cell path closure_addr_hist
         (fake_capture_edges, Attributes.singleton (Closure pname))
         location astate
+      |> PulseArithmetic.and_positive closure_addr
     in
     (astate, closure_addr_hist)
 end
@@ -194,7 +195,7 @@ let eval path mode location exp0 astate =
           (ArrayAccess (StdTyp.void, fst addr_hist_index))
           astate
     | Closure {name; captured_vars} ->
-        let++ astate, rev_captured =
+        let** astate, rev_captured =
           List.fold captured_vars
             ~init:(Sat (Ok (astate, [])))
             ~f:(fun result (capt_exp, captured_as, typ, mode) ->
@@ -202,7 +203,7 @@ let eval path mode location exp0 astate =
               let++ astate, addr_trace = eval path Read capt_exp astate in
               (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
         in
-        let astate, v_hist = Closures.record path location name (List.rev rev_captured) astate in
+        let++ astate, v_hist = Closures.record path location name (List.rev rev_captured) astate in
         let astate =
           conservatively_initialize_args
             (List.rev_map rev_captured ~f:(fun (_, (addr, _), _, _) -> addr))
@@ -211,7 +212,7 @@ let eval path mode location exp0 astate =
         (astate, v_hist)
     | Const (Cfun proc_name) ->
         (* function pointers are represented as closures with no captured variables *)
-        Sat (Ok (Closures.record path location proc_name [] astate))
+        Closures.record path location proc_name [] astate
     | Cast (_, exp') ->
         eval path mode exp' astate
     | Const (Cint i) ->
