@@ -2300,14 +2300,12 @@ and pulse_recency_limit =
 
 
 and pulse_report_ignore_unknown_java_methods_patterns =
-  CLOpt.mk_string_list ~default:[".*<init>.*"]
-    ~long:"pulse-report-ignore-unknown-java-methods-patterns"
+  CLOpt.mk_string_list ~default:[] ~long:"pulse-report-ignore-unknown-java-methods-patterns"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
-    "On Java, issues that are found on program paths that contain calls to unknown methods (those \
-     without implementation) are not reported unless all the unknown method names match this \
-     pattern. If the empty list is provided with \
-     $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset), all issues will be reported \
-     regardless the presence of unknown code"
+    "On Java, do not report issues that are found on program paths that contain calls to unknown \
+     methods (those without implementation) $(b,unless) a) this option isn't passed at all (the \
+     default, or with $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset)), or b) all \
+     the unknown method names match one of the provided patterns."
 
 
 and pulse_report_flows_from_taint_source =

@@ -1189,12 +1189,11 @@ OPTIONS
     See also infer-report(1).
 
        --pulse-report-ignore-unknown-java-methods-patterns +string
-           On Java, issues that are found on program paths that contain calls
-           to unknown methods (those without implementation) are not reported
-           unless all the unknown method names match this pattern. If the
-           empty list is provided with
-           --pulse-report-ignore-unknown-java-methods-patterns-reset, all
-           issues will be reported regardless the presence of unknown code       
+           On Java, do not report issues that are found on program paths that
+           contain calls to unknown methods (those without implementation)
+           unless a) this option isn't passed at all (the default, or with
+           --pulse-report-ignore-unknown-java-methods-patterns-reset), or b)
+           all the unknown method names match one of the provided patterns.       
     See also infer-analyze(1).
 
        --pulse-skip-procedures regex
