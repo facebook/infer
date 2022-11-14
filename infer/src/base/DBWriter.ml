@@ -261,7 +261,8 @@ module Implementation = struct
            (F.asprintf "%a"
               (Pp.seq ~sep:", " (fun fmt payload_name -> F.fprintf fmt "%s=NULL" payload_name))
               PayloadId.database_fields ) ) ;
-    SqliteUtils.exec db ~log:"vacuum analysis database" ~stmt:"VACUUM"
+    SqliteUtils.exec db ~log:"vacuum analysis database" ~stmt:"VACUUM" ;
+    SqliteUtils.exec db ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
 
 
   let store_issue_log =
