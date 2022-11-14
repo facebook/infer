@@ -2325,7 +2325,7 @@ and pulse_report_latent_issues =
 
 and pulse_report_issues_for_tests =
   CLOpt.mk_bool ~long:"pulse-report-issues-for-tests" ~default:false
-    "Do not supress any of the issues found by Pulse."
+    "Do not suppress any of the issues found by Pulse."
 
 
 and pulse_sanity_checks =

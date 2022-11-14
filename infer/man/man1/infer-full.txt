@@ -592,7 +592,7 @@ OPTIONS
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
              PULSE_CONST_REFABLE (disabled by default),
              PULSE_READONLY_SHARED_PTR_PARAM (disabled by default),
-             PULSE_RESOURCE_LEAK (disabled by default),
+             PULSE_RESOURCE_LEAK (enabled by default),
              PULSE_UNINITIALIZED_VALUE (enabled by default),
              PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),
              PULSE_UNNECESSARY_COPY (disabled by default),
@@ -2448,7 +2448,7 @@ INTERNAL OPTIONS
            empty list.
 
        --pulse-report-issues-for-tests
-           Activates: Do not supress any of the issues found by Pulse.
+           Activates: Do not suppress any of the issues found by Pulse.
            (Conversely: --no-pulse-report-issues-for-tests)
 
        --no-pulse-report-latent-issues

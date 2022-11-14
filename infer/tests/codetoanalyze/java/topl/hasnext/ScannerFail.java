@@ -12,11 +12,13 @@ abstract class ScannerFail {
     while (scan.hasNext()) {
       scan.next();
     }
+    scan.close();
   }
 
   void readBad() {
     Scanner scan = getScanner();
     scan.next();
+    scan.close();
   }
 
   Scanner getScanner() {

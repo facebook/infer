@@ -932,7 +932,7 @@ let pulse_memory_leak_cpp =
 
 
 let pulse_resource_leak =
-  register ~enabled:false ~id:"PULSE_RESOURCE_LEAK" Error Pulse
+  register ~enabled:true ~id:"PULSE_RESOURCE_LEAK" Error Pulse
     ~user_documentation:"See [RESOURCE_LEAK](#resource_leak)"
 
 
