@@ -610,6 +610,21 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
         (call_state, Some (return_caller, return_caller_hist)) )
 
 
+let apply_post_for_remaining_pre path callee_proc_name call_location callee_summary call_state =
+  (* Applies post to the rest of the values recorded in pre state. *)
+  let pre = AbductiveDomain.Summary.get_pre callee_summary in
+  let addresses = BaseDomain.reachable_addresses pre in
+  AbstractValue.Set.fold
+    (fun addr_callee call_state ->
+      match AddressMap.find_opt addr_callee call_state.subst with
+      | Some addr_hist_caller ->
+          record_post_for_address path callee_proc_name call_location callee_summary ~addr_callee
+            ~addr_hist_caller call_state
+      | None ->
+          call_state )
+    addresses call_state
+
+
 let apply_post_for_parameters path callee_proc_name call_location callee_summary ~formals ~actuals
     call_state =
   (* for each [(formal_i, actual_i)] pair, do [post_i = post union subst(graph reachable from
@@ -764,6 +779,7 @@ let apply_post path callee_proc_name call_location callee_summary ~captured_form
       |> apply_post_for_captured_vars path callee_proc_name call_location callee_summary
            ~captured_formals ~captured_actuals
       |> apply_post_for_globals path callee_proc_name call_location callee_summary
+      |> apply_post_for_remaining_pre path callee_proc_name call_location callee_summary
       |> record_post_for_return path callee_proc_name call_location callee_summary
     in
     let+ call_state =

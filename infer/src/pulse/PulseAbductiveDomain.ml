@@ -1024,6 +1024,13 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
     PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
   in
   let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
+  let post_addresses =
+    (* Also include post addresses reachable from pre addresses *)
+    BaseDomain.reachable_addresses_from
+      (AbstractValue.Set.to_seq pre_addresses)
+      (post :> BaseDomain.t)
+      ~already_visited:post_addresses
+  in
   let always_reachable_addresses = get_all_addrs_marked_as_always_reachable astate in
   let always_reachable_trans_closure =
     BaseDomain.reachable_addresses_from always_reachable_addresses
