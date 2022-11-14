@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # NOTE: If you wish to deactivate a Topl test, simply remove it from this list
-SUBDIRS = taint file process reach less fields
+SUBDIRS = taint file process reach less fields atom-literal
 
 test-%:
 	$(MAKE) -C $* test

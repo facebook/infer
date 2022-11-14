@@ -1,0 +1,11 @@
+property AtomLiteralTaint
+  message "a value returned by source/0 is sent as argument to sink/2 with a specific atom"
+  prefix "topl_atom_literal"
+  start -> start: *
+  start -> tracking: "source/0"(Ret) => x := Ret
+  tracking -> error: "sink/2"(Arg0, Arg1, VoidRet) when x == Arg1 && Arg0:Atom.hash == 755456737280 // This number is the hash of 'not_okay'
+
+// Note: to calculate hashes:
+// make toplevel
+// scripts/infer_repl
+// utop # String.hash "not_okay" lsl 16;;
