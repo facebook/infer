@@ -1063,7 +1063,10 @@ let rec is_static = function
 
 
 let is_shared_ptr_observer =
-  let shared_ptr_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::shared_ptr"] in
+  let shared_ptr_matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names
+      ["std::shared_ptr"; "std::__shared_ptr"; "std::__shared_ptr_access"]
+  in
   let observer_methods = ["get"; "operator*"; "operator->"; "operator[]"; "operator_bool"] in
   let rec aux pname =
     match pname with
