@@ -107,6 +107,10 @@ val add_copied_return :
   -> t
   -> t
 
+val get_config_usage : AbstractValue.t -> t -> FbPulseConfigName.t option
+
+val get_const_string : AbstractValue.t -> t -> string option
+
 val pp : F.formatter -> t -> unit
 
 val remove_allocation_attr : AbstractValue.t -> t -> t

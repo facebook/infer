@@ -700,6 +700,15 @@ module PulseTransferFunctions = struct
         astate_n
 
 
+  let check_config_usage {InterproceduralAnalysis.proc_desc; err_log} loc exp astate =
+    let pname = Procdesc.get_proc_name proc_desc in
+    Sequence.iter (Exp.free_vars exp) ~f:(fun var ->
+        Option.iter (PulseOperations.read_id var astate) ~f:(fun (addr, _) ->
+            Option.iter (AddressAttributes.get_config_usage addr astate) ~f:(fun config ->
+                PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log
+                  (ConfigUsage {pname; config; location= loc}) ) ) )
+
+
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
@@ -865,6 +874,7 @@ module PulseTransferFunctions = struct
             let<++> astate, _ = prune_result in
             astate
           in
+          check_config_usage analysis_data loc condition astate ;
           (PulseReport.report_exec_results tenv proc_desc err_log loc results, path, astate_n)
       | Metadata EndBranches ->
           (* We assume that terminated conditions are well-parenthesised, hence an [EndBranches]

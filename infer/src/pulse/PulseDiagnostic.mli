@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
+module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
@@ -61,6 +62,7 @@ type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
+  | ConfigUsage of {pname: Procname.t; config: ConfigName.t; location: Location.t}
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}

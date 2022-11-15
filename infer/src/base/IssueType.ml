@@ -468,6 +468,11 @@ let config_impact_analysis_strict_beta =
     ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
 
 
+let pulse_config_usage =
+  register ~enabled:false ~id:"CONFIG_USAGE" Info Pulse
+    ~user_documentation:[%blob "../../documentation/issues/CONFIG_USAGE.md"]
+
+
 let pulse_const_refable =
   register ~enabled:false ~id:"PULSE_CONST_REFABLE" Error Pulse ~hum:"Const Refable Parameter"
     ~user_documentation:[%blob "../../documentation/issues/PULSE_CONST_REFABLE.md"]

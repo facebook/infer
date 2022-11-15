@@ -8,6 +8,7 @@ open! IStd
 module F = Format
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
+module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
@@ -73,6 +74,8 @@ type t =
   | Allocated of allocator * Trace.t
   | AlwaysReachable
   | Closure of Procname.t
+  | ConfigUsage of ConfigName.t
+  | ConstString of string
   | CopiedInto of CopiedInto.t  (** records the copied var/field for each source address *)
   | CopiedReturn of
       {source: AbstractValue.t; is_const_ref: bool; from: CopyOrigin.t; copied_location: Location.t}
@@ -124,6 +127,10 @@ module Attributes : sig
   val get_address_of_stack_variable : t -> (Var.t * Location.t * ValueHistory.t) option
 
   val get_closure_proc_name : t -> Procname.t option
+
+  val get_config_usage : t -> ConfigName.t option
+
+  val get_const_string : t -> string option
 
   val get_copied_into : t -> CopiedInto.t option
 

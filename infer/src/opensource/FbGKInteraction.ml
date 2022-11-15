@@ -5,18 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module F = Format
-
-module ConfigName = struct
-  type t = unit
-
-  let compare _ _ = 0
-
-  let equal _ _ = true
-
-  let pp f () = F.pp_print_string f "()"
-end
-
 let get_config ~is_param:_ _ = None
 
 let get_config_check ~is_param:_ _ _ _ = None

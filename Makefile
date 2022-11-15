@@ -81,6 +81,7 @@ DIRECT_TESTS += \
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
   c_fb-pulse \
+  cpp_fb-config-usage \
 
 endif
 

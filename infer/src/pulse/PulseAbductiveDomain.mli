@@ -202,6 +202,10 @@ module AddressAttributes : sig
     -> t
     -> t
 
+  val get_config_usage : AbstractValue.t -> t -> FbPulseConfigName.t option
+
+  val get_const_string : AbstractValue.t -> t -> string option
+
   val find_opt : AbstractValue.t -> t -> Attributes.t option
 
   val check_valid_isl :

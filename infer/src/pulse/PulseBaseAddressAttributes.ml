@@ -283,6 +283,10 @@ let add_copied_return address ~source ~is_const_ref from copied_location memory 
   add_one address (Attribute.CopiedReturn {source; is_const_ref; from; copied_location}) memory
 
 
+let get_config_usage address attrs = get_attribute Attributes.get_config_usage address attrs
+
+let get_const_string address attrs = get_attribute Attributes.get_const_string address attrs
+
 let is_end_of_collection address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection
 

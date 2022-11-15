@@ -236,6 +236,7 @@ let eval path mode location exp0 astate =
         in
         let len_int = IntLit.of_int (String.length s) in
         let++ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
+        let astate = AddressAttributes.add_one v (ConstString s) astate in
         (astate, (v, hist))
     | Const ((Cfloat _ | Cclass _) as c) ->
         let v = AbstractValue.mk_fresh () in

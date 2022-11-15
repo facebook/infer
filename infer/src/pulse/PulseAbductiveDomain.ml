@@ -449,6 +449,14 @@ module AddressAttributes = struct
       ~f:(BaseAddressAttributes.add_copied_return addr ~source ~is_const_ref from location)
 
 
+  let get_config_usage addr astate =
+    BaseAddressAttributes.get_config_usage addr (astate.post :> base_domain).attrs
+
+
+  let get_const_string addr astate =
+    BaseAddressAttributes.get_const_string addr (astate.post :> base_domain).attrs
+
+
   let abduce_and_add value attrs astate =
     Attributes.fold attrs ~init:astate ~f:(fun astate attr ->
         let astate =

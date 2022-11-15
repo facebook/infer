@@ -5,16 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module ConfigName : sig
-  type t
-
-  val compare : t -> t -> int
-
-  val equal : t -> t -> bool
-
-  val pp : Format.formatter -> t -> unit
-end
-
 val get_config : is_param:'is_param -> 'exp -> 'config_name option
 
 val get_config_check : is_param:'is_param -> 'tenv -> 'pname -> 'args -> 'a option

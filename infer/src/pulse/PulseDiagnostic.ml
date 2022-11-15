@@ -10,6 +10,7 @@ module F = Format
 module L = Logging
 module Attribute = PulseAttribute
 module CallEvent = PulseCallEvent
+module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
@@ -114,6 +115,7 @@ let pp_flow_kind fmt flow_kind =
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
+  | ConfigUsage of {pname: Procname.t; config: ConfigName.t; location: Location.t}
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
@@ -150,6 +152,9 @@ let pp fmt diagnostic =
   | AccessToInvalidAddress access_to_invalid_address ->
       F.fprintf fmt "AccessToInvalidAddress %a" pp_access_to_invalid_address
         access_to_invalid_address
+  | ConfigUsage {pname; config; location} ->
+      F.fprintf fmt "ConfigUsage {@[pname=%a;@;config=%a;@;location=%a@]}" Procname.pp pname
+        ConfigName.pp config Location.pp location
   | ConstRefableParameter {param; typ; location} ->
       F.fprintf fmt "ConstRefableParameter {@[param=%a;@;typ=%a;@;location=%a@]}" Var.pp param
         (Typ.pp_full Pp.text) typ Location.pp location
@@ -232,6 +237,7 @@ let get_location = function
   | ErlangError (Try_clause {calling_context= (_, location) :: _})
   | ReadUninitializedValue {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
+  | ConfigUsage {location}
   | ConstRefableParameter {location}
   | CSharpResourceLeak {location}
   | JavaResourceLeak {location}
@@ -268,6 +274,7 @@ let aborts_execution = function
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       true
+  | ConfigUsage _
   | ConstRefableParameter _
   | CSharpResourceLeak _
   | JavaResourceLeak _
@@ -401,6 +408,9 @@ let get_message diagnostic =
         F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
           (pp_invalidation_trace invalidation_line invalidation)
           invalidation_trace )
+  | ConfigUsage {pname; config; location} ->
+      F.asprintf "Function %a used config %a at %a." Procname.pp pname ConfigName.pp config
+        Location.pp location
   | ConstRefableParameter {param; typ; location} ->
       F.asprintf
         "Function parameter `%a` with type `%a` is passed by-value but not modified inside the \
@@ -669,6 +679,9 @@ let get_trace = function
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace
       @@ []
+  | ConfigUsage {config; location} ->
+      let nesting = 0 in
+      [Errlog.make_trace_element nesting location (F.asprintf "Config %a" ConfigName.pp config) []]
   | ConstRefableParameter {param; location} ->
       let nesting = 0 in
       [Errlog.make_trace_element nesting location (F.asprintf "Parameter %a" Var.pp param) []]
@@ -778,6 +791,8 @@ let get_issue_type ~latent issue_type =
   match (issue_type, latent) with
   | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
       Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
+  | ConfigUsage _, false ->
+      IssueType.pulse_config_usage
   | ConstRefableParameter _, false ->
       IssueType.pulse_const_refable
   | CSharpResourceLeak _, false | JavaResourceLeak _, false ->
@@ -836,7 +851,8 @@ let get_issue_type ~latent issue_type =
       IssueType.unnecessary_copy_intermediate_pulse
   | UnnecessaryCopy {from= CopyAssignment}, false ->
       IssueType.unnecessary_copy_assignment_pulse
-  | ( ( ConstRefableParameter _
+  | ( ( ConfigUsage _
+      | ConstRefableParameter _
       | CSharpResourceLeak _
       | JavaResourceLeak _
       | MemoryLeak _

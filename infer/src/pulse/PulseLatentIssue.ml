@@ -103,6 +103,7 @@ let is_manifest astate =
    not true as calling context cannot possibly influence such conditions *)
 let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.t) =
   match diagnostic with
+  | ConfigUsage _
   | ConstRefableParameter _
   | CSharpResourceLeak _
   | JavaResourceLeak _

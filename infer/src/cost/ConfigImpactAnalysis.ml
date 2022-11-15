@@ -7,7 +7,7 @@
 
 open! IStd
 module F = Format
-module ConfigName = FbGKInteraction.ConfigName
+module ConfigName = FbPulseConfigName
 
 type mode = Jsonconfigimpact_t.config_impact_mode [@@deriving equal]
 

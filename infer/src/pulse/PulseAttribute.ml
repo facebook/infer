@@ -9,6 +9,7 @@ module F = Format
 module L = Logging
 module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
+module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module Taint = PulseTaint
@@ -124,6 +125,8 @@ module Attribute = struct
     | Allocated of allocator * Trace.t
     | AlwaysReachable
     | Closure of Procname.t
+    | ConfigUsage of ConfigName.t
+    | ConstString of string
     | CopiedInto of CopiedInto.t
     | CopiedReturn of
         { source: AbstractValue.t
@@ -169,6 +172,10 @@ module Attribute = struct
   let always_reachable_rank = Variants.alwaysreachable.rank
 
   let closure_rank = Variants.closure.rank
+
+  let config_usage_rank = Variants.configusage.rank
+
+  let const_string_rank = Variants.conststring.rank
 
   let copied_into_rank = Variants.copiedinto.rank
 
@@ -252,6 +259,10 @@ module Attribute = struct
         F.pp_print_string f "AlwaysReachable"
     | Closure pname ->
         Procname.pp f pname
+    | ConfigUsage config ->
+        F.fprintf f "ConfigUsage (%a)" ConfigName.pp config
+    | ConstString s ->
+        F.fprintf f "ConstString (%s)" s
     | CopiedInto copied_into ->
         CopiedInto.pp f copied_into
     | CopiedReturn {source; is_const_ref; from; copied_location} ->
@@ -324,6 +335,8 @@ module Attribute = struct
     | AddressOfStackVariable _
     | AlwaysReachable
     | Closure _
+    | ConfigUsage _
+    | ConstString _
     | CopiedInto _
     | CopiedReturn _
     | DynamicType _
@@ -352,6 +365,8 @@ module Attribute = struct
     | Allocated _
     | AlwaysReachable
     | Closure _
+    | ConfigUsage _
+    | ConstString _
     | CopiedInto _
     | CopiedReturn _
     | DynamicType _
@@ -388,6 +403,8 @@ module Attribute = struct
     | Allocated _
     | AlwaysReachable
     | Closure _
+    | ConfigUsage _
+    | ConstString _
     | CopiedReturn _
     | DynamicType _
     | EndOfCollection
@@ -476,6 +493,8 @@ module Attribute = struct
       | AddressOfStackVariable _
       | AlwaysReachable
       | Closure _
+      | ConfigUsage _
+      | ConstString _
       | DynamicType _
       | EndOfCollection
       | RefCounted
@@ -537,6 +556,8 @@ module Attribute = struct
       | Allocated _
       | AlwaysReachable
       | Closure _
+      | ConfigUsage _
+      | ConstString _
       | CopiedInto _
       | DynamicType _
       | EndOfCollection
@@ -653,6 +674,15 @@ module Attributes = struct
   let get_closure_proc_name =
     get_by_rank Attribute.closure_rank ~dest:(function [@warning "-8"] Closure proc_name ->
         proc_name )
+
+
+  let get_config_usage =
+    get_by_rank Attribute.config_usage_rank ~dest:(function [@warning "-8"] ConfigUsage config ->
+        config )
+
+
+  let get_const_string =
+    get_by_rank Attribute.const_string_rank ~dest:(function [@warning "-8"] ConstString s -> s)
 
 
   let get_copied_into =
