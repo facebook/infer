@@ -12,19 +12,16 @@ open! IStd
 
 module L = Logging
 
-let cutoff_length = 100
-
-let crc_token = '.'
-
 let append_crc_cutoff ?(key = "") name =
+  let cutoff_length = 50 - 16 (* crc *) - 1 (* separator *) in
   let name_up_to_cutoff =
     if String.length name <= cutoff_length then name else String.sub name ~pos:0 ~len:cutoff_length
   in
   let crc_str =
     let name_for_crc = name ^ key in
-    Utils.string_crc_hex32 name_for_crc
+    String.sub (Utils.string_crc_hex32 name_for_crc) ~pos:0 ~len:16
   in
-  (Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str, crc_str)
+  Printf.sprintf "%s.%s" name_up_to_cutoff crc_str
 
 
 let curr_source_file_encoding = `Enc_crc
@@ -40,7 +37,7 @@ let source_file_encoding source_file =
   | `Enc_crc ->
       let base = Filename.basename source_file_s in
       let dir = Filename.dirname source_file_s in
-      append_crc_cutoff ~key:dir base |> fst
+      append_crc_cutoff ~key:dir base
 
 
 (** {2 Source Dirs} *)
@@ -54,7 +51,7 @@ let source_dir_to_string source_dir = source_dir
 (** get the path to an internal file with the given extention (.tenv, ...) *)
 let source_dir_get_internal_file source_dir extension =
   let source_dir_name =
-    append_crc_cutoff (Caml.Filename.remove_extension (Filename.basename source_dir)) |> fst
+    append_crc_cutoff (Caml.Filename.remove_extension (Filename.basename source_dir))
   in
   let fname = source_dir_name ^ extension in
   Filename.concat source_dir fname

@@ -11,7 +11,7 @@ module F = Format
 
 let pp_cfgnodename pname fmt (n : Procdesc.Node.t) =
   F.fprintf fmt "\"%s_%d\""
-    (Escape.escape_dotty (Procname.to_filename pname))
+    (Escape.escape_dotty (Procname.to_short_unique_name pname))
     (Procdesc.Node.get_id n :> int)
 
 
