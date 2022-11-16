@@ -168,7 +168,7 @@ detect_dead_code: dune
 #	dune file for this directory
 	touch $(ALL_INFER_IN_ONE_FILE_ML) $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
 #	needed to get the generated code for the lexers and parsers in ../_build
-	$(MAKE) -C ..
+	$(MAKE) -C .. check
 	$(MAKE) depend
 #	Need to be sequential to avoid getting a garbled file. Need to re-include .depend as it may
 #	have changed. For both of these reasons, run another `make`.
@@ -180,7 +180,7 @@ detect_dead_code: dune
 	sort -u "$$tmp_file_copied" > $(ALL_ML_FILES_COPIED); \
 	rm "$$tmp_file_copied"
 #	build and get dead code warnings
-	$(DUNE_BUILD) all_infer_in_one_file.bc
+	$(DUNE_BUILD) @check
 	$(REMOVE) dune
 	$(MAKE) -j 1 detect_dead_src_file
 

@@ -360,13 +360,12 @@ check: src_build_common
 watch: src_build_common
 	$(MAKE_SOURCE) watch
 
-# deadcode analysis: only do the deadcode detection on Facebook builds and if GNU sed is available
 .PHONY: real_deadcode
 real_deadcode: src_build_common
-	$(QUIET)$(call silent_on_success,Building all OCaml code,\
-	$(MAKE_SOURCE) build_all)
 	$(QUIET)$(call silent_on_success,Testing there is no dead OCaml code,\
 	$(MAKE) -C $(SRC_DIR)/deadcode)
+
+# deadcode analysis: only do the deadcode detection on Facebook builds and if GNU sed is available
 
 .PHONY: deadcode
 deadcode:
