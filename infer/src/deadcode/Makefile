@@ -166,7 +166,8 @@ dune: dune.in
 detect_dead_code: dune
 #	create a dummy implementation file to keep dune happy, as we are about to generate the
 #	dune file for this directory
-	touch $(ALL_INFER_IN_ONE_FILE_ML) $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
+	echo > $(ALL_INFER_IN_ONE_FILE_ML)
+	echo > $(ALL_INFER_IN_ONE_FILE_ML:.ml=.mli)
 #	needed to get the generated code for the lexers and parsers in ../_build
 	$(MAKE) -C .. check
 	$(MAKE) depend
