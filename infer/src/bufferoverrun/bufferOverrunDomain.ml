@@ -110,6 +110,19 @@ module Val = struct
     ; traces= TraceSet.bottom }
 
 
+  let unknown : t =
+    { itv= Itv.top
+    ; itv_thresholds= ItvThresholds.empty
+    ; itv_updated_by= ItvUpdatedBy.Top
+    ; modeled_range= ModeledRange.bottom
+    ; powloc= PowLoc.unknown
+    ; arrayblk= ArrayBlk.unknown
+    ; func_ptrs= FuncPtr.Set.empty
+    ; traces= TraceSet.bottom }
+
+
+  let default = if Config.bo_bottom_as_default then bot else unknown
+
   let pp fmt x =
     let itv_thresholds_pp fmt itv_thresholds =
       if Config.bo_debug >= 3 && not (ItvThresholds.is_empty itv_thresholds) then
@@ -138,13 +151,9 @@ module Val = struct
    fun typ ~callee_pname ~location ->
     let is_int = Typ.is_int typ in
     let traces = Trace.(Set.singleton_final location (UnknownFrom callee_pname)) in
-    { itv= Itv.top
-    ; itv_thresholds= ItvThresholds.empty
-    ; itv_updated_by= ItvUpdatedBy.Top
-    ; modeled_range= ModeledRange.bottom
-    ; powloc= (if is_int then PowLoc.bot else PowLoc.unknown)
+    { unknown with
+      powloc= (if is_int then PowLoc.bot else PowLoc.unknown)
     ; arrayblk= (if is_int then ArrayBlk.bottom else ArrayBlk.unknown)
-    ; func_ptrs= FuncPtr.Set.bottom
     ; traces }
 
 
@@ -353,7 +362,15 @@ module Val = struct
 
   let lor_sem : t -> t -> t = lift_cmp_itv Itv.lor_sem Boolean.EqualOrder.top
 
-  let lift_prune1 : (Itv.t -> Itv.t) -> t -> t = fun f x -> {x with itv= f x.itv}
+  let lift_prune1 : (Itv.t -> Itv.t) -> t -> t =
+   fun f x ->
+    let itv = f x.itv in
+    if (not (Itv.is_bottom x.itv)) && Itv.is_bottom itv then
+      (* Prune produced bottom interval, return bottom value in order to detect that prune
+         pairs are not reachable (see PrunePairs.is_reachable). *)
+      {bot with traces= x.traces}
+    else {x with itv}
+
 
   let lift_prune_length1 : (Itv.t -> Itv.t) -> t -> t =
    fun f x -> {x with arrayblk= ArrayBlk.transform_length ~f x.arrayblk}
@@ -825,7 +842,9 @@ module MemPure = struct
           | Some v1, Some v2 ->
               Some (MVal.join v1 v2)
           | Some v1, None | None, Some v1 ->
-              let v2 = MVal.on_demand ~default:Val.bot oenv l in
+              (* Since abstract state doesn't contain complete information, use Val.top
+                      if a location is missing in one state being joined to be sound. *)
+              let v2 = MVal.on_demand ~default:Val.default oenv l in
               Some (MVal.join v1 v2)
           | None, None ->
               None )
@@ -841,17 +860,24 @@ module MemPure = struct
           | Some v1, Some v2 ->
               Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | Some v1, None ->
-              let v2 = MVal.on_demand ~default:Val.bot oenv l in
+              (* Since abstract state doesn't contain complete information, use Val.top
+                      if a location is missing in one state being widened to be sound. *)
+              let v2 = MVal.on_demand ~default:Val.default oenv l in
               Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | None, Some v2 ->
-              let v1 = MVal.on_demand ~default:Val.bot oenv l in
+              (* Since abstract state doesn't contain complete information, use Val.top
+                 if a location is missing in one state being widened to be sound. *)
+              let v1 = MVal.on_demand ~default:Val.default oenv l in
               Some (MVal.widen ~prev:v1 ~next:v2 ~num_iters)
           | None, None ->
               None )
         prev next
 
 
-  let is_rep_multi_loc l m = Option.exists (find_opt l m) ~f:MVal.get_rep_multi
+  let is_rep_multi_loc l m =
+    Option.value_map (find_opt l m) ~f:MVal.get_rep_multi
+      ~default:(Loc.represents_multiple_values l)
+
 
   (** Collect the location that was increased by one, i.e., [x -> x+1] *)
   let get_incr_locs m =
@@ -859,6 +885,8 @@ module MemPure = struct
 
 
   let find_opt l m = Option.map (find_opt l m) ~f:MVal.get_val
+
+  let strong_update l v m = add l (Loc.represents_multiple_values l, v) m
 
   let add ?(represents_multiple_values = false) l ({Val.powloc; arrayblk} as v) m =
     let v =
@@ -2123,7 +2151,10 @@ module MemReach = struct
 
 
   let find_heap : ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
-   fun ?typ l m -> find_heap_default ~default:Val.Itv.top ?typ l m
+   fun ?typ l m ->
+    find_heap_default
+      ~default:(if Config.bo_bottom_as_default then Val.Itv.top else Val.unknown)
+      ?typ l m
 
 
   let find : ?typ:Typ.t -> Loc.t -> _ t0 -> Val.t =
@@ -2267,9 +2298,16 @@ module MemReach = struct
    fun k v m -> {m with mem_pure= MemPure.add k v m.mem_pure}
 
 
+  let strong_update_heap : Loc.t -> Val.t -> t -> t =
+   fun x v m ->
+    if Loc.is_unknown x && not Config.bo_bottom_as_default then m
+    else {m with mem_pure= MemPure.strong_update x v m.mem_pure}
+
+
   let add_heap : ?represents_multiple_values:bool -> Loc.t -> Val.t -> t -> t =
    fun ?represents_multiple_values x v m ->
-    {m with mem_pure= MemPure.add ?represents_multiple_values x v m.mem_pure}
+    if Loc.is_unknown x && not Config.bo_bottom_as_default then m
+    else {m with mem_pure= MemPure.add ?represents_multiple_values x v m.mem_pure}
 
 
   let add_heap_set : ?represents_multiple_values:bool -> PowLoc.t -> Val.t -> t -> t =
@@ -2286,7 +2324,9 @@ module MemReach = struct
 
   let strong_update : PowLoc.t -> Val.t -> t -> t =
    fun locs v m ->
-    let strong_update1 l m = if is_stack_loc l m then replace_stack l v m else add_heap l v m in
+    let strong_update1 l m =
+      if is_stack_loc l m then replace_stack l v m else strong_update_heap l v m
+    in
     PowLoc.fold strong_update1 locs m
 
 
@@ -2296,7 +2336,8 @@ module MemReach = struct
       let add, find =
         if is_stack_loc l m then (replace_stack, find_stack)
         else
-          (add_heap ~represents_multiple_values:false, find_heap_default ~default:Val.bot ?typ:None)
+          ( add_heap ~represents_multiple_values:false
+          , find_heap_default ~default:Val.default ?typ:None )
       in
       add l (f l (find l m)) m
     in
@@ -2307,15 +2348,15 @@ module MemReach = struct
    fun ~f -> transformi_mem ~f:(fun _ v -> f v)
 
 
-  let weak_update locs v m =
-    transformi_mem
-      ~f:(fun l v' -> if Loc.represents_multiple_values l then Val.join v' v else v)
-      locs m
+  (* TODO: it would probably make sense to use bot as a default value if locs contains a
+     single location that contain a star field (such location represents multiple values
+     but as opposed to a location representing all elements of an array, it would probably
+     make sense if their first of such location in a subprogram would be strong).*)
+  let weak_update locs v m = transform_mem ~f:(fun v' -> Val.join v' v) locs m
 
-
-  let update_mem : PowLoc.t -> Val.t -> t -> t =
-   fun ploc v s ->
-    if can_strong_update ploc then strong_update ploc v s
+  let update_mem : ?force_strong_update:Bool.t -> PowLoc.t -> Val.t -> t -> t =
+   fun ?(force_strong_update = false) ploc v s ->
+    if force_strong_update || can_strong_update ploc then strong_update ploc v s
     else (
       L.d_printfln_escaped "Weak update for %a <- %a" PowLoc.pp ploc Val.pp v ;
       weak_update ploc v s )
@@ -2488,6 +2529,14 @@ module MemReach = struct
      | End ->
          add_cpp_iter_end_alias new_pvar m )
     |> Option.value ~default:m
+
+
+  let get_proc_desc m =
+    let oenv = GOption.value m.oenv in
+    oenv.proc_desc
+
+
+  let get_proc_name m = Procdesc.get_proc_name (get_proc_desc m)
 end
 
 module Mem = struct
@@ -2498,6 +2547,8 @@ module Mem = struct
   type t = GOption.some t0
 
   let unreachable : t = Unreachable
+
+  let is_reachable = function Reachable _ -> true | _ -> false
 
   let exc_raised : t = ExcRaised
 
@@ -2572,7 +2623,7 @@ module Mem = struct
    fun k -> f_lift_default ~default:false (MemReach.is_rep_multi_loc k)
 
 
-  let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.bot (MemReach.find k)
+  let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.default (MemReach.find k)
 
   let find_stack : Loc.t -> _ t0 -> Val.t =
    fun k -> f_lift_default ~default:Val.bot (MemReach.find_stack k)
@@ -2701,7 +2752,10 @@ module Mem = struct
     f_lift_default ~default:LocSet.empty (MemReach.get_reachable_locs_from formals locs)
 
 
-  let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> map ~f:(MemReach.update_mem ploc v)
+  let update_mem : ?force_strong_update:Bool.t -> PowLoc.t -> Val.t -> t -> t =
+   fun ?(force_strong_update = false) ploc v ->
+    map ~f:(MemReach.update_mem ~force_strong_update ploc v)
+
 
   let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
    fun ~f ploc -> map ~f:(MemReach.transform_mem ~f ploc)
@@ -2786,4 +2840,7 @@ module Mem = struct
 
   let propagate_cpp_iter_begin_or_end_alias ~new_pvar ~existing_pvar m =
     map m ~f:(MemReach.propagate_cpp_iter_begin_or_end_alias ~new_pvar ~existing_pvar)
+
+
+  let get_proc_name m = f_lift_default ~default:None (fun m -> Some (MemReach.get_proc_name m)) m
 end

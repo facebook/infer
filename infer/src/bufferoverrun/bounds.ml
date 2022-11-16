@@ -1101,6 +1101,18 @@ module Bound = struct
           | x ->
               x
       in
+      let overapproximate_bound bound_position is_unsigned =
+        (* Used when a symbol contained in a bound is imported as bot. This happens if something
+           which is not initialized in the caller is weakly updated or constrained in the callee.*)
+        match (is_unsigned, bound_position) with
+        | true, Symb.BoundEnd.LowerBound ->
+            (* For unsigned symbols, we can over-approximate lower bound with zero. *)
+            NonBottom zero
+        | false, Symb.BoundEnd.LowerBound ->
+            NonBottom MInf
+        | _, Symb.BoundEnd.UpperBound ->
+            NonBottom PInf
+      in
       let get_mult_const s coeff =
         let bound_position =
           if NonZeroInt.is_positive coeff then subst_pos else Symb.BoundEnd.neg subst_pos
@@ -1109,13 +1121,8 @@ module Bound = struct
         else if NonZeroInt.is_minus_one coeff then get s bound_position |> lift1 neg
         else
           match eval_sym s bound_position with
-          | Bottom -> (
-            (* For unsigned symbols, we can over/under-approximate with zero depending on [bound_position]. *)
-            match (Symb.Symbol.is_unsigned s, bound_position) with
-            | true, Symb.BoundEnd.LowerBound ->
-                NonBottom zero
-            | _ ->
-                Bottom )
+          | Bottom ->
+              overapproximate_bound bound_position (Symb.Symbol.is_unsigned s)
           | NonBottom x ->
               let x = mult_const subst_pos coeff x in
               if Symb.Symbol.is_unsigned s then NonBottom (approx_max subst_pos x zero)
@@ -1136,7 +1143,11 @@ module Bound = struct
           in
           match get s bound_position with
           | Bottom ->
-              Option.value_map (big_int_of_minmax subst_pos x) ~default:Bottom ~f:(fun i ->
+              (* Pass false as unsigned to overapproximate_bound because the bound doesn't
+                 consist only of the symbol s so it cannot be overapproximated with 0 even
+                 if s is signed and subst_pos is LowerBound. *)
+              Option.value_map (big_int_of_minmax subst_pos x)
+                ~default:(overapproximate_bound subst_pos false) ~f:(fun i ->
                   NonBottom (of_big_int i) )
           | NonBottom x' ->
               let res =

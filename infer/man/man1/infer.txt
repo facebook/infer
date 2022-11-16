@@ -129,6 +129,20 @@ OPTIONS
            in infer-out/captured. (Conversely: --no-biabduction-write-dotty)       
     See also infer-analyze(1).
 
+       --no-bo-assume-void
+           Deactivates: Assume void type as a type of record fields not in
+           type environment. (Conversely: --bo-assume-void)           See also infer-analyze(1).
+
+       --no-bo-bottom-as-default
+           Deactivates: Use bottom as a default value instead of unknown.
+           (Conversely: --bo-bottom-as-default)           See also infer-analyze(1).
+
+       --bo-context-sensitive-allocsites
+           Activates: Assume that different calls to the same function
+           creating an allocsite results in different allocsites imported to
+           the caller. (Conversely: --no-bo-context-sensitive-allocsites)       
+    See also infer-analyze(1).
+
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)           See also infer-analyze(1).
 
@@ -139,6 +153,11 @@ OPTIONS
        --bo-max-cfg-size int
            Larger CFGs than the max size are skipped in buffer overrun
            analysis.           See also infer-analyze(1).
+
+       --bo-sound-unknown-sets-join
+           Activates: Join with an unknown set always result in an unknown
+           set. When disabled, unknown set behaves as bot. (Conversely:
+           --no-bo-sound-unknown-sets-join)           See also infer-analyze(1).
 
        --bootclasspath string
            Specify the Java bootclasspath           See also infer-capture(1).

@@ -21,6 +21,13 @@ let eval_const : Typ.IntegerWidths.t -> Const.t -> Val.t =
       Val.of_big_int (IntLit.to_big_int intlit)
   | Const.Cstr s ->
       Val.of_literal_string integer_type_widths s
+  | Const.Cfun _ ->
+      (* Const.Cfun represents the address of a function call.
+         For now, return just non-null unknown pointer.
+         TODO: set func_ptrs field to be a singleton set representing the function. To do that,
+         FuncPtr would have to be changed to store functions represented by Procname. Currently,
+         FuncPtr only stores functions represented as symbolic paths and closures.*)
+      {Val.unknown with itv= Itv.one}
   | _ ->
       Val.Itv.top
 
@@ -544,10 +551,14 @@ module Prune = struct
     eval_array_locs_length arr_locs mem
 
 
-  let update_mem_in_prune lv v ?(pruning_exp = PruningExp.Unknown) {prune_pairs; mem} =
-    let prune_pairs = PrunePairs.add lv (PrunedVal.make v pruning_exp) prune_pairs in
-    let mem = Mem.update_mem (PowLoc.singleton lv) v mem in
-    {prune_pairs; mem}
+  let update_mem_in_prune lv v ?(pruning_exp = PruningExp.Unknown)
+      ({prune_pairs; mem} as prune_state) =
+    (* Explicitly disable prune of locations which can be only weakly updated.*)
+    if AbsLoc.can_strong_update (PowLoc.singleton lv) then
+      let prune_pairs = PrunePairs.add lv (PrunedVal.make v pruning_exp) prune_pairs in
+      let mem = Mem.update_mem (PowLoc.singleton lv) v mem in
+      {prune_pairs; mem}
+    else prune_state
 
 
   let prune_has_next ~true_branch iterator ({mem} as astate) =
@@ -609,14 +620,25 @@ module Prune = struct
       tgts acc
 
 
+  let prune_stack_var pruned_id prune ({mem} as astate) =
+    let pruned_loc = Loc.of_id pruned_id in
+    let pruned_val = Mem.find pruned_loc mem in
+    let resulting_val = prune pruned_val in
+    let mem = Mem.update_mem (PowLoc.singleton pruned_loc) resulting_val mem in
+    (pruned_val, {astate with mem})
+
+
   let prune_unop : Exp.t -> t -> t =
    fun e ({mem} as astate) ->
     match e with
     | Exp.Var x ->
+        (* (1) prune the stack variable corresponding to x *)
+        let x_val, astate = prune_stack_var x Val.prune_ne_zero astate in
+        (* (2) prune heap variables which are aliases of the stack variable *)
         let accum_prune_var rhs tgt acc =
           match tgt with
           | AliasTarget.Simple {i} when IntLit.iszero i ->
-              (let v = Mem.find rhs mem in
+              (let v = Val.prune_eq x_val (Mem.find rhs mem) in
                if Val.is_bot v then acc
                else
                  let v' = Val.prune_ne_zero v in
@@ -643,10 +665,13 @@ module Prune = struct
         in
         AliasTargets.fold accum_prune_var (Mem.find_alias_id x mem) astate
     | Exp.UnOp (Unop.LNot, Exp.Var x, _) ->
+        (* (1) prune the stack variable corresponding to x *)
+        let x_val, astate = prune_stack_var x Val.prune_eq_zero astate in
+        (* (2) prune heap variables which are aliases of the stack variable *)
         let accum_prune_not_var rhs tgt acc =
           match tgt with
           | AliasTarget.Simple {i} when IntLit.iszero i ->
-              let v = Mem.find rhs mem in
+              let v = Val.prune_eq x_val (Mem.find rhs mem) in
               if Val.is_bot v then acc
               else
                 let v' = Val.prune_eq_zero v in
@@ -705,12 +730,18 @@ module Prune = struct
   let prune_simple_alias =
     let prune_alias_core ~val_prune_eq ~val_prune_le:_ ~make_pruning_exp _location
         integer_type_widths x e ({mem} as astate) =
+      let expr_val = eval integer_type_widths e mem in
+      (* (1) prune the stack variable corresponding to x *)
+      let x_val, astate = prune_stack_var x (fun loc_val -> val_prune_eq loc_val expr_val) astate in
+      (* (2) prune the heap variable which is an simple alias of the stack variable *)
       List.fold (Mem.find_simple_alias x mem) ~init:astate ~f:(fun acc (lv, i) ->
-          let lhs = Mem.find lv mem in
-          let rhs =
-            let v' = eval integer_type_widths e mem in
-            if IntLit.iszero i then v' else Val.minus_a v' (Val.of_int_lit i)
+          let lhs, rhs =
+            if IntLit.iszero i then (x_val, expr_val)
+            else
+              let i_val = Val.of_int_lit i in
+              (Val.minus_a x_val i_val, Val.minus_a expr_val i_val)
           in
+          let lhs = Val.prune_eq lhs (Mem.find lv mem) in
           if Val.is_bot lhs || Val.is_bot rhs then acc
           else
             let v = val_prune_eq lhs rhs in
@@ -858,6 +889,8 @@ module Prune = struct
         astate
         |> prune_helper location integer_type_widths (Exp.UnOp (Unop.LNot, e1, t))
         |> prune_helper location integer_type_widths (Exp.UnOp (Unop.LNot, e2, t))
+    | Exp.UnOp (Unop.LNot, UnOp (Unop.LNot, e, _), _) ->
+        prune_helper location integer_type_widths e astate
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Lt as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Gt as c), e1, e2), _)
     | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Le as c), e1, e2), _)

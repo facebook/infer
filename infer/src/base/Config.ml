@@ -764,6 +764,32 @@ and bo_max_cfg_size =
     "Larger CFGs than the max size are skipped in buffer overrun analysis."
 
 
+and bo_sound_unknown_sets_join =
+  CLOpt.mk_bool ~default:false ~long:"bo-sound-unknown-sets-join"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Join with an unknown set always result in an unknown set. When disabled, unknown set behaves \
+     as bot."
+
+
+and bo_bottom_as_default =
+  CLOpt.mk_bool ~default:true ~long:"bo-bottom-as-default"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Use bottom as a default value instead of unknown."
+
+
+and bo_context_sensitive_allocsites =
+  CLOpt.mk_bool ~default:false ~long:"bo-context-sensitive-allocsites"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Assume that different calls to the same function creating an allocsite results in different \
+     allocsites imported to the caller."
+
+
+and bo_assume_void =
+  CLOpt.mk_bool ~default:true ~long:"bo-assume-void"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Assume void type as a type of record fields not in type environment."
+
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -3326,6 +3352,14 @@ and bo_debug = !bo_debug
 and bo_field_depth_limit = !bo_field_depth_limit
 
 and bo_max_cfg_size = !bo_max_cfg_size
+
+and bo_sound_unknown_sets_join = !bo_sound_unknown_sets_join
+
+and bo_bottom_as_default = !bo_bottom_as_default
+
+and bo_context_sensitive_allocsites = !bo_context_sensitive_allocsites
+
+and bo_assume_void = !bo_assume_void
 
 and buck = !buck
 

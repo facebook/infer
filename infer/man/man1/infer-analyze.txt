@@ -442,6 +442,19 @@ BUCK OPTIONS
            Activates: Merge the captured results directories specified in the
            dependency file. (Conversely: --no-merge)
 BUFFER OVERRUN OPTIONS
+       --no-bo-assume-void
+           Deactivates: Assume void type as a type of record fields not in
+           type environment. (Conversely: --bo-assume-void)
+
+       --no-bo-bottom-as-default
+           Deactivates: Use bottom as a default value instead of unknown.
+           (Conversely: --bo-bottom-as-default)
+
+       --bo-context-sensitive-allocsites
+           Activates: Assume that different calls to the same function
+           creating an allocsite results in different allocsites imported to
+           the caller. (Conversely: --no-bo-context-sensitive-allocsites)
+
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)
 
@@ -452,6 +465,11 @@ BUFFER OVERRUN OPTIONS
        --bo-max-cfg-size int
            Larger CFGs than the max size are skipped in buffer overrun
            analysis.
+
+       --bo-sound-unknown-sets-join
+           Activates: Join with an unknown set always result in an unknown
+           set. When disabled, unknown set behaves as bot. (Conversely:
+           --no-bo-sound-unknown-sets-join)
 CLANG OPTIONS
        --annotation-reachability-cxx json
            Specify annotation reachability analyses to be performed on

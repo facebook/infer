@@ -80,7 +80,39 @@ module TransferFunctions = struct
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
             let locs = PowLoc.subst_loc loc eval_locpath in
             let v = Dom.Val.subst v eval_sym_trace location in
-            PowLoc.fold (fun loc acc -> Dom.Mem.add_heap loc v acc) locs acc )
+            (* Always do strong updates if the following two conditions hold
+               1) Context-sensitive allocsites are assumed: a single allocsite in a caller
+                  doesn't represent objects from different call contexts. For example:
+
+                 Arr1 = createArray (length1); – creates an array of length length1
+                 Arr2 = createArray (length2); – creates an array of length length2
+
+                 If it can happen that the allocsite representing an array created in
+                 createArray is imported as the same allocsite for both calls (Arr1 and
+                 Arr2 are then represented by the same allocsite), weak update has to be
+                 always performed.
+
+                 Currently, BO doesn't ensure this assumption, but frontend can ensure it
+                 by copying an allocsite imported from the callee to the new one after the
+                 call.
+
+                 BO could ensure this assumption by adding context sensitivity to allocsites
+                 (an identification of a caller and a call node) when importing then from a
+                 callee to a caller.
+
+               2) (2.A) Either it holds can_strong_update for imported locations or
+                 (2.B) the set of imported locations consists of a single known location
+                 and for locations representing multiple values it holds either that all the
+                 values they represent were updated or the location has unknown value. This holds
+                 when default value for a location is unknown and such location is always weekly
+                 updated. *)
+            Dom.Mem.update_mem
+              ~force_strong_update:
+                ( if Config.bo_context_sensitive_allocsites then
+                  if not Config.bo_bottom_as_default then PowLoc.is_single_known_loc locs
+                  else can_strong_update locs
+                else false )
+              locs v acc )
       in
       let reachable_locs = Dom.Mem.get_reachable_locs_from callee_formals locs callee_exit_mem in
       LocSet.fold copy (LocSet.diff reachable_locs formal_locs) mem
@@ -328,134 +360,137 @@ module TransferFunctions = struct
    fun mem
        ({interproc= {proc_desc; tenv}; get_summary; oenv= {integer_type_widths}} as analysis_data)
        node _ instr ->
-    match instr with
-    | Load {id} when Ident.is_none id ->
-        mem
-    | Load {id; e= Exp.Lvar pvar; typ; loc= location}
-      when Pvar.is_compile_constant pvar || Pvar.is_ice pvar ->
-        load_global_constant get_summary (id, typ) pvar location mem
-          ~find_from_initializer:(fun callee_mem -> Dom.Mem.find (Loc.of_pvar pvar) callee_mem)
-    | Load {id; e= Exp.Lindex (Exp.Lvar pvar, _); typ; loc= location}
-      when Pvar.is_compile_constant pvar || Pvar.is_ice pvar
-           || (Pvar.is_constant_array pvar && Pvar.is_const pvar) ->
-        load_global_constant get_summary (id, typ) pvar location mem
-          ~find_from_initializer:(fun callee_mem ->
-            let locs = Dom.Mem.find (Loc.of_pvar pvar) callee_mem |> Dom.Val.get_all_locs in
-            Dom.Mem.find_set locs callee_mem )
-    | Load {id; e= exp; typ; loc= location} -> (
-        let model_env =
-          let pname = Procdesc.get_proc_name proc_desc in
-          let node_hash = CFG.Node.hash node in
-          BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
-            get_summary
-        in
-        match modeled_load_of_empty_collection_opt exp model_env (id, typ) mem with
-        | Some mem' ->
-            mem'
-        | None ->
-            let mem =
-              if Language.curr_language_is Java then join_java_static_final tenv get_summary exp mem
-              else mem
-            in
-            let represents_multiple_values = is_array_access_exp exp in
-            let modeled_range = modeled_range_of_exp location exp mem in
-            BoUtils.Exec.load_locs ~represents_multiple_values ~modeled_range id typ
-              (Sem.eval_locs exp mem) mem )
-    | Store {e2= Exn _} when Language.curr_language_is Java ->
-        Dom.Mem.exc_raised
-    | Store {e1= tgt_exp; e2= Const (Const.Cstr _) as src; loc= location}
-      when Language.curr_language_is Java ->
-        let pname = Procdesc.get_proc_name proc_desc in
-        let node_hash = CFG.Node.hash node in
-        let model_env =
-          BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
-            get_summary
-        in
-        let tgt_locs = Sem.eval_locs tgt_exp mem in
-        let tgt_deref =
-          let allocsite =
-            Allocsite.make pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
-              ~represents_multiple_values:false
+    if not (Dom.Mem.is_reachable mem) then mem
+    else
+      match instr with
+      | Load {id} when Ident.is_none id ->
+          mem
+      | Load {id; e= Exp.Lvar pvar; typ; loc= location}
+        when Pvar.is_compile_constant pvar || Pvar.is_ice pvar ->
+          load_global_constant get_summary (id, typ) pvar location mem
+            ~find_from_initializer:(fun callee_mem -> Dom.Mem.find (Loc.of_pvar pvar) callee_mem)
+      | Load {id; e= Exp.Lindex (Exp.Lvar pvar, _); typ; loc= location}
+        when Pvar.is_compile_constant pvar || Pvar.is_ice pvar
+             || (Pvar.is_constant_array pvar && Pvar.is_const pvar) ->
+          load_global_constant get_summary (id, typ) pvar location mem
+            ~find_from_initializer:(fun callee_mem ->
+              let locs = Dom.Mem.find (Loc.of_pvar pvar) callee_mem |> Dom.Val.get_all_locs in
+              Dom.Mem.find_set locs callee_mem )
+      | Load {id; e= exp; typ; loc= location} -> (
+          let model_env =
+            let pname = Procdesc.get_proc_name proc_desc in
+            let node_hash = CFG.Node.hash node in
+            BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+              get_summary
           in
-          PowLoc.singleton (Loc.of_allocsite allocsite)
-        in
-        Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Trace.Set.bottom tgt_deref) mem
-        |> Models.JavaString.constructor_from_char_ptr model_env tgt_deref src
-    | Store {e1= exp1; e2= Const (Const.Cstr s); loc= location} ->
-        let locs = Sem.eval_locs exp1 mem in
-        let model_env =
+          match modeled_load_of_empty_collection_opt exp model_env (id, typ) mem with
+          | Some mem' ->
+              mem'
+          | None ->
+              let mem =
+                if Language.curr_language_is Java then
+                  join_java_static_final tenv get_summary exp mem
+                else mem
+              in
+              let represents_multiple_values = is_array_access_exp exp in
+              let modeled_range = modeled_range_of_exp location exp mem in
+              BoUtils.Exec.load_locs ~represents_multiple_values ~modeled_range id typ
+                (Sem.eval_locs exp mem) mem )
+      | Store {e2= Exn _} when Language.curr_language_is Java ->
+          Dom.Mem.exc_raised
+      | Store {e1= tgt_exp; e2= Const (Const.Cstr _) as src; loc= location}
+        when Language.curr_language_is Java ->
           let pname = Procdesc.get_proc_name proc_desc in
           let node_hash = CFG.Node.hash node in
-          BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
-            get_summary
-        in
-        let do_alloc = not (Sem.is_stack_exp exp1 mem) in
-        BoUtils.Exec.decl_string model_env ~do_alloc locs s mem
-    | Store {e1= exp1; typ; e2= exp2; loc= location} ->
-        let locs = Sem.eval_locs exp1 mem in
-        let v =
-          Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
-        in
-        let mem = Dom.Mem.update_mem locs v mem in
-        let mem = java_store_linked_list_next locs v mem in
-        let mem =
-          if Language.curr_language_is Clang && Typ.is_char typ then
-            BoUtils.Exec.set_c_strlen ~tgt:(Sem.eval integer_type_widths exp1 mem) ~src:v mem
-          else mem
-        in
-        let mem =
-          match PowLoc.is_singleton_or_more locs with
-          | IContainer.Singleton loc_v ->
-              Dom.Mem.store_simple_alias loc_v exp2 mem
-          | _ ->
-              mem
-        in
-        let mem = Dom.Mem.update_latest_prune ~updated_locs:locs exp1 exp2 mem in
-        mem
-    | Prune (exp, location, _, _) ->
-        Sem.Prune.prune location integer_type_widths exp mem
-    | Call ((id, _), (Const (Cfun callee_pname) | Closure {name= callee_pname}), _, _, _)
-      when is_java_enum_values tenv callee_pname ->
-        let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-        assign_java_enum_values get_summary id
-          ~caller_pname:(Procdesc.get_proc_name proc_desc)
-          ~callee_pname mem
-    | Call (ret, Const (Cfun callee_pname), args, location, _) ->
-        call analysis_data node location ret callee_pname args [] mem
-    | Call (ret, Closure {name= callee_pname; captured_vars}, args, location, _) ->
-        call analysis_data node location ret callee_pname args captured_vars mem
-    | Call (ret, fun_exp, args, location, _) -> (
-        let func_ptrs = Sem.eval integer_type_widths fun_exp mem |> Dom.Val.get_func_ptrs in
-        match FuncPtr.Set.is_singleton_or_more func_ptrs with
-        | Singleton (Closure {name= callee_pname; captured_vars}) ->
-            call analysis_data node location ret callee_pname args captured_vars mem
-        | More ->
-            L.d_printfln_escaped "/!\\ Call to multiple functions %a" Exp.pp fun_exp ;
-            unknown_call location ret mem
-        | Empty | Singleton (Path _) ->
-            L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
-            unknown_call location ret mem )
-    | Metadata (VariableLifetimeBegins (pvar, typ, location)) when Pvar.is_global pvar ->
-        let model_env =
-          let pname = Procdesc.get_proc_name proc_desc in
-          let node_hash = CFG.Node.hash node in
-          BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
-            get_summary
-        in
-        let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar pvar, typ) in
-        mem
-    | Metadata (ExitScope (dead_vars, _)) ->
-        Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
-    | Metadata
-        ( Abstract _
-        | CatchEntry _
-        | EndBranches
-        | Nullify _
-        | Skip
-        | TryEntry _
-        | TryExit _
-        | VariableLifetimeBegins _ ) ->
-        mem
+          let model_env =
+            BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+              get_summary
+          in
+          let tgt_locs = Sem.eval_locs tgt_exp mem in
+          let tgt_deref =
+            let allocsite =
+              Allocsite.make pname ~caller_pname:None ~node_hash ~inst_num:1 ~dimension:1 ~path:None
+                ~represents_multiple_values:false
+            in
+            PowLoc.singleton (Loc.of_allocsite allocsite)
+          in
+          Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Trace.Set.bottom tgt_deref) mem
+          |> Models.JavaString.constructor_from_char_ptr model_env tgt_deref src
+      | Store {e1= exp1; e2= Const (Const.Cstr s); loc= location} ->
+          let locs = Sem.eval_locs exp1 mem in
+          let model_env =
+            let pname = Procdesc.get_proc_name proc_desc in
+            let node_hash = CFG.Node.hash node in
+            BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+              get_summary
+          in
+          let do_alloc = not (Sem.is_stack_exp exp1 mem) in
+          BoUtils.Exec.decl_string model_env ~do_alloc locs s mem
+      | Store {e1= exp1; typ; e2= exp2; loc= location} ->
+          let locs = Sem.eval_locs exp1 mem in
+          let v =
+            Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
+          in
+          let mem = Dom.Mem.update_mem locs v mem in
+          let mem = java_store_linked_list_next locs v mem in
+          let mem =
+            if Language.curr_language_is Clang && Typ.is_char typ then
+              BoUtils.Exec.set_c_strlen ~tgt:(Sem.eval integer_type_widths exp1 mem) ~src:v mem
+            else mem
+          in
+          let mem =
+            match PowLoc.is_singleton_or_more locs with
+            | IContainer.Singleton loc_v ->
+                Dom.Mem.store_simple_alias loc_v exp2 mem
+            | _ ->
+                mem
+          in
+          let mem = Dom.Mem.update_latest_prune ~updated_locs:locs exp1 exp2 mem in
+          mem
+      | Prune (exp, location, _, _) ->
+          Sem.Prune.prune location integer_type_widths exp mem
+      | Call ((id, _), (Const (Cfun callee_pname) | Closure {name= callee_pname}), _, _, _)
+        when is_java_enum_values tenv callee_pname ->
+          let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
+          assign_java_enum_values get_summary id
+            ~caller_pname:(Procdesc.get_proc_name proc_desc)
+            ~callee_pname mem
+      | Call (ret, Const (Cfun callee_pname), args, location, _) ->
+          call analysis_data node location ret callee_pname args [] mem
+      | Call (ret, Closure {name= callee_pname; captured_vars}, args, location, _) ->
+          call analysis_data node location ret callee_pname args captured_vars mem
+      | Call (ret, fun_exp, args, location, _) -> (
+          let func_ptrs = Sem.eval integer_type_widths fun_exp mem |> Dom.Val.get_func_ptrs in
+          match FuncPtr.Set.is_singleton_or_more func_ptrs with
+          | Singleton (Closure {name= callee_pname; captured_vars}) ->
+              call analysis_data node location ret callee_pname args captured_vars mem
+          | More ->
+              L.d_printfln_escaped "/!\\ Call to multiple functions %a" Exp.pp fun_exp ;
+              unknown_call location ret mem
+          | Empty | Singleton (Path _) ->
+              L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
+              unknown_call location ret mem )
+      | Metadata (VariableLifetimeBegins (pvar, typ, location)) when Pvar.is_global pvar ->
+          let model_env =
+            let pname = Procdesc.get_proc_name proc_desc in
+            let node_hash = CFG.Node.hash node in
+            BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
+              get_summary
+          in
+          let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar pvar, typ) in
+          mem
+      | Metadata (ExitScope (dead_vars, _)) ->
+          Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
+      | Metadata
+          ( Abstract _
+          | CatchEntry _
+          | EndBranches
+          | Nullify _
+          | Skip
+          | TryEntry _
+          | TryExit _
+          | VariableLifetimeBegins _ ) ->
+          mem
 
 
   let pp_session_name node fmt = F.fprintf fmt "bufferoverrun %a" CFG.Node.pp_id (CFG.Node.id node)

@@ -55,6 +55,8 @@ module Val : sig
 
   val bot : t
 
+  val unknown : t
+
   val of_big_int : ItvThresholds.elt -> t
 
   val of_c_array_alloc :
@@ -470,6 +472,8 @@ module Mem : sig
 
   val unreachable : t
 
+  val is_reachable : t -> bool
+
   type get_summary = Procname.t -> no_oenv_t option
 
   val init : get_summary -> BufferOverrunOndemandEnv.t -> t
@@ -601,10 +605,10 @@ module Mem : sig
   val incr_iterator_offset_alias : Exp.t -> t -> t
   (** Update iterator offset alias when [iterator.next()] is called *)
 
-  val update_mem : AbsLoc.PowLoc.t -> Val.t -> t -> t
+  val update_mem : ?force_strong_update:Bool.t -> AbsLoc.PowLoc.t -> Val.t -> t -> t
   (** Add a map from locations to a value. If the given set of locations is a singleton set and the
-      only element represents one concrete abstract location, it does strong update. Otherwise, weak
-      update. *)
+      only element represents one concrete abstract location or force_strong_update is true, it does
+      strong update. Otherwise, weak update. *)
 
   val strong_update : AbsLoc.PowLoc.t -> Val.t -> t -> t
 
@@ -630,6 +634,8 @@ module Mem : sig
 
   val find_cpp_iterator_alias : Ident.t -> t -> (Pvar.t * Pvar.t * Binop.t) option
   (** Find the cpp iterator alias [ret_id -> {iter_lhs (binop) iter_rhs}] *)
+
+  val get_proc_name : GOption.some t0 -> Procname.t option
 
   val propagate_cpp_iter_begin_or_end_alias : new_pvar:Pvar.t -> existing_pvar:Pvar.t -> t -> t
   (** Propagate the being/end alias information from existing to new *)

@@ -163,21 +163,23 @@ let rec get_extensible_array_element_typ ~lookup (typ : Typ.t) =
       None
 
 
-(** If a struct type with field f, return the type of f. If not, return the default *)
-let fld_typ ~lookup ~default fn (typ : Typ.t) =
+(** If a struct type with field f, return Some (the type of f). If not, return None. *)
+let fld_typ_opt ~lookup fn (typ : Typ.t) =
   (* Note: would be nice migrate it to get_field_info
      (for that one needs to ensure adding Tptr to pattern match does not break thing) *)
   match typ.desc with
   | Tstruct name -> (
     match lookup name with
     | Some {fields} ->
-        List.find ~f:(fun (f, _, _) -> Fieldname.equal f fn) fields
-        |> Option.value_map ~f:snd3 ~default
+        List.find ~f:(fun (f, _, _) -> Fieldname.equal f fn) fields |> Option.map ~f:snd3
     | None ->
-        default )
+        None )
   | _ ->
-      default
+      None
 
+
+(** If a struct type with field f, return the type of f. If not, return the default *)
+let fld_typ ~lookup ~default fn (typ : Typ.t) = Option.value (fld_typ_opt ~lookup fn typ) ~default
 
 type field_info = {typ: Typ.t; annotations: Annot.Item.t; is_static: bool}
 

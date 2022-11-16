@@ -63,6 +63,9 @@ type field_info = {typ: Typ.t; annotations: Annot.Item.t; is_static: bool}
 val get_field_info : lookup:lookup -> Fieldname.t -> Typ.t -> field_info option
 (** Lookup for info associated with the field [fn]. None if [typ] has no field named [fn] *)
 
+val fld_typ_opt : lookup:lookup -> Fieldname.t -> Typ.t -> Typ.t option
+(** If a struct type with field f, return Some (the type of f). If not, return None. *)
+
 val fld_typ : lookup:lookup -> default:Typ.t -> Fieldname.t -> Typ.t -> Typ.t
 (** If a struct type with field f, return the type of f. If not, return the default type if given,
     otherwise raise an exception *)

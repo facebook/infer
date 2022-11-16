@@ -17,6 +17,7 @@ module Allocsite = struct
     | Symbol of Symb.SymbolPath.partial
     | Known of
         { proc_name: string
+        ; caller_pname: Procname.t option
         ; node_hash: int
         ; inst_num: int
         ; dimension: int
@@ -50,8 +51,12 @@ module Allocsite = struct
         Symb.SymbolPath.pp_partial_paren ~paren fmt path
     | Known {path= Some path} when Config.bo_debug < 1 ->
         Symb.SymbolPath.pp_partial_paren ~paren fmt path
-    | Known {proc_name; node_hash; inst_num; dimension; path} ->
-        F.fprintf fmt "%s-%d-%d-%d" proc_name node_hash inst_num dimension ;
+    | Known {proc_name; caller_pname; node_hash; inst_num; dimension; path} ->
+        let pp_opt_pname fmt optpname =
+          Option.iter optpname ~f:(fun pname -> Procname.pp fmt pname)
+        in
+        F.fprintf fmt "%s-%a-%d-%d-%d" proc_name pp_opt_pname caller_pname node_hash inst_num
+          dimension ;
         Option.iter path ~f:(fun path ->
             F.fprintf fmt "(%a)" (Symb.SymbolPath.pp_partial_paren ~paren:false) path )
     | LiteralString s ->
@@ -68,15 +73,17 @@ module Allocsite = struct
 
   let make :
          Procname.t
+      -> caller_pname:Procname.t option
       -> node_hash:int
       -> inst_num:int
       -> dimension:int
       -> path:Symb.SymbolPath.partial option
       -> represents_multiple_values:bool
       -> t =
-   fun proc_name ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values ->
+   fun proc_name ~caller_pname ~node_hash ~inst_num ~dimension ~path ~represents_multiple_values ->
     Known
       { proc_name= Procname.to_string proc_name
+      ; caller_pname
       ; node_hash
       ; inst_num
       ; dimension
@@ -213,8 +220,6 @@ module Loc = struct
 
 
   let pp = pp_paren ~paren:false
-
-  let is_var = function BoField.Prim (Var _) -> true | _ -> false
 
   let is_c_strlen = function
     | BoField.Field {fn} ->
@@ -420,21 +425,33 @@ end
 module LocSet = PrettyPrintable.MakePPSet (Loc)
 
 module PowLoc = struct
-  (* The known set of locations should not be empty and not include the unknown location.  Every
-     constructors in this module should be defined carefully to keep that constraint. *)
-  type t = Bottom | Unknown | Known of LocSet.t [@@deriving compare]
+  (* The known set of locations should not be empty and not include the unknown location.
+     Every constructors in this module should be defined carefully to keep that constraint.
+     Unknown set of locations always includes unknown location.
+
+     The other locations than unknown location in the unknown set mean that there is an
+     evidence that these locations can be in the set.
+     This is useful to not completely throw away the set of known possible locations when
+     performing a weak update of a set of locations.
+     That is:
+        (Known L1) weakly updated with (Unknown L2) -> Unknown (L1 union L2)
+        (Unknown L1) weakly updated with (Unknown L2) -> Unknown (L1 union L2)
+     This makes it possible to deploy the following heuristics when updating a dereference
+     of an unknown pointer: update all tracked unknown targets of the pointer and keep the
+     other possible targets of the pointer unchanged. *)
+  type t = Bottom | Unknown of LocSet.t | Known of LocSet.t [@@deriving compare]
 
   let mk_known ploc =
-    assert ((not (LocSet.is_empty ploc)) && not (LocSet.mem Loc.unknown ploc)) ;
+    assert ((not (LocSet.is_empty ploc)) && not (LocSet.exists (fun l -> Loc.is_unknown l) ploc)) ;
     Known ploc
 
+
+  let mk_unknown ploc = Unknown ploc
 
   let pp f = function
     | Bottom ->
         F.pp_print_string f SpecialChars.up_tack
-    | Unknown ->
-        Loc.pp f Loc.unknown
-    | Known locs ->
+    | Known locs | Unknown locs ->
         LocSet.pp f locs
 
 
@@ -444,12 +461,12 @@ module PowLoc = struct
         true
     | _, Bottom ->
         false
-    | Unknown, _ ->
-        true
-    | _, Unknown ->
-        false
-    | Known lhs, Known rhs ->
+    | Unknown lhs, Unknown rhs | Known lhs, Known rhs ->
         LocSet.subset lhs rhs
+    | Unknown _, _ ->
+        true
+    | _, Unknown _ ->
+        false
 
 
   let join x y =
@@ -458,10 +475,12 @@ module PowLoc = struct
         y
     | _, Bottom ->
         x
-    | Unknown, _ ->
-        y
-    | _, Unknown ->
-        x
+    | Unknown x, Unknown y ->
+        mk_unknown (LocSet.union x y)
+    | (Known x, Unknown y | Unknown x, Known y) when Config.bo_sound_unknown_sets_join ->
+        mk_unknown (LocSet.union x y)
+    | Known x, Unknown _ | Unknown _, Known x ->
+        mk_known x
     | Known x, Known y ->
         mk_known (LocSet.union x y)
 
@@ -470,100 +489,64 @@ module PowLoc = struct
 
   let bot = Bottom
 
-  let is_bot = function Bottom -> true | Unknown | Known _ -> false
+  let is_bot = function Bottom -> true | Unknown _ | Known _ -> false
 
-  let unknown = Unknown
+  let unknown = mk_unknown (LocSet.singleton Loc.unknown)
 
-  let singleton l = if Loc.is_unknown l then Unknown else mk_known (LocSet.singleton l)
+  let singleton l =
+    if Loc.is_unknown l then mk_unknown (LocSet.singleton l) else mk_known (LocSet.singleton l)
+
 
   let fold f ploc init =
-    match ploc with
-    | Bottom ->
-        init
-    | Unknown ->
-        f Loc.unknown init
-    | Known ploc ->
-        LocSet.fold f ploc init
+    match ploc with Bottom -> init | Known ploc | Unknown ploc -> LocSet.fold f ploc init
 
 
   let exists f ploc =
-    match ploc with
-    | Bottom ->
-        false
-    | Unknown ->
-        f Loc.unknown
-    | Known ploc ->
-        LocSet.exists f ploc
+    match ploc with Bottom -> false | Known ploc | Unknown ploc -> LocSet.exists f ploc
 
 
   let normalize ploc =
-    match LocSet.is_singleton_or_more ploc with
-    | Empty ->
-        Bottom
-    | Singleton loc when Loc.is_unknown loc ->
-        Unknown
-    | More when LocSet.mem Loc.unknown ploc ->
-        mk_known (LocSet.remove Loc.unknown ploc)
-    | _ ->
-        mk_known ploc
+    if LocSet.is_empty ploc then Bottom
+    else if LocSet.exists (fun l -> Loc.is_unknown l) ploc then mk_unknown ploc
+    else mk_known ploc
 
 
   let map f ploc =
-    match ploc with
-    | Bottom ->
-        Bottom
-    | Unknown ->
-        singleton (f Loc.unknown)
-    | Known ploc ->
-        normalize (LocSet.map f ploc)
+    match ploc with Bottom -> Bottom | Known ploc | Unknown ploc -> normalize (LocSet.map f ploc)
 
 
   let is_singleton_or_more = function
     | Bottom ->
         IContainer.Empty
-    | Unknown ->
-        IContainer.Singleton Loc.unknown
-    | Known ploc ->
+    | Unknown ploc | Known ploc ->
         LocSet.is_singleton_or_more ploc
 
 
-  let min_elt_opt = function
-    | Bottom ->
-        None
-    | Unknown ->
-        Some Loc.unknown
-    | Known ploc ->
-        LocSet.min_elt_opt ploc
-
+  let min_elt_opt = function Bottom -> None | Unknown ploc | Known ploc -> LocSet.min_elt_opt ploc
 
   let add l ploc =
     match ploc with
-    | Bottom | Unknown ->
+    | Bottom ->
         singleton l
-    | Known _ when Loc.is_unknown l ->
+    | (Known _ | Unknown _) when Loc.is_unknown l ->
         ploc
     | Known ploc ->
         mk_known (LocSet.add l ploc)
+    | Unknown ploc ->
+        mk_known (LocSet.add l (LocSet.filter (fun l -> not (Loc.is_unknown l)) ploc))
 
 
   let of_list locs = List.fold locs ~init:bot ~f:(fun acc loc -> add loc acc)
 
-  let mem l = function
-    | Bottom ->
-        false
-    | Unknown ->
-        Loc.is_unknown l
-    | Known ploc ->
-        LocSet.mem l ploc
-
+  let mem l = function Bottom -> false | Unknown ploc | Known ploc -> LocSet.mem l ploc
 
   let get_parent_field ploc =
     match ploc with
     | Bottom ->
         (* Return the unknown location to avoid unintended unreachable nodes *)
-        Unknown
-    | Unknown ->
-        Unknown
+        mk_unknown (LocSet.singleton Loc.unknown)
+    | Unknown ploc ->
+        mk_unknown (LocSet.fold (fun l -> LocSet.add (Loc.get_parent_field l)) ploc LocSet.empty)
     | Known ploc ->
         mk_known (LocSet.fold (fun l -> LocSet.add (Loc.get_parent_field l)) ploc LocSet.empty)
 
@@ -572,9 +555,10 @@ module PowLoc = struct
     match ploc with
     | Bottom ->
         (* Return the unknown location to avoid unintended unreachable nodes *)
-        Unknown
-    | Unknown ->
-        Unknown
+        mk_unknown (LocSet.singleton Loc.unknown)
+    | Unknown ploc ->
+        mk_unknown
+          (LocSet.fold (fun l -> LocSet.add (Loc.append_field ?typ l fn)) ploc LocSet.empty)
     | Known ploc ->
         mk_known (LocSet.fold (fun l -> LocSet.add (Loc.append_field ?typ l fn)) ploc LocSet.empty)
 
@@ -583,9 +567,10 @@ module PowLoc = struct
     match ploc with
     | Bottom ->
         (* Return the unknown location to avoid unintended unreachable nodes *)
-        Unknown
-    | Unknown ->
-        Unknown
+        mk_unknown (LocSet.singleton Loc.unknown)
+    | Unknown ploc ->
+        mk_unknown
+          (LocSet.fold (fun l -> LocSet.add (Loc.append_star_field l fn)) ploc LocSet.empty)
     | Known ploc ->
         mk_known (LocSet.fold (fun l -> LocSet.add (Loc.append_star_field l fn)) ploc LocSet.empty)
 
@@ -624,14 +609,7 @@ module PowLoc = struct
 
   let cast typ x = map (Loc.cast typ) x
 
-  let to_set = function
-    | Bottom ->
-        LocSet.empty
-    | Unknown ->
-        LocSet.singleton Loc.unknown
-    | Known ploc ->
-        ploc
-
+  let to_set = function Bottom -> LocSet.empty | Unknown ploc | Known ploc -> ploc
 
   let get_linked_list_next ~lhs ~rhs =
     match (is_singleton_or_more lhs, is_singleton_or_more rhs) with
@@ -639,6 +617,13 @@ module PowLoc = struct
         Loc.get_linked_list_next ~lhs ~rhs
     | _, _ ->
         None
+
+
+  let is_single_known_loc = function
+    | Bottom | Unknown _ ->
+        false
+    | Known ploc ->
+        Int.equal (LocSet.cardinal ploc) 1
 end
 
 let always_strong_update = false
@@ -649,6 +634,6 @@ let can_strong_update : PowLoc.t -> bool =
   else
     match PowLoc.is_singleton_or_more ploc with
     | IContainer.Singleton loc ->
-        Loc.is_var loc || Loc.is_c_strlen loc
+        (not (Loc.represents_multiple_values loc)) || Loc.is_c_strlen loc
     | _ ->
         false

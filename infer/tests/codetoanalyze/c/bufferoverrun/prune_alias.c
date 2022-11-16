@@ -309,7 +309,7 @@ void call_not_prune_multiple2_Good() {
   not_prune_multiple2(m);
 }
 
-void call_not_prune_multiple2_Bad() {
+void call_not_prune_multiple2_Bad_FN() {
   int m[2] = {0, 10};
   not_prune_multiple2(m);
 }
