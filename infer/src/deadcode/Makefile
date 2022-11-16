@@ -74,12 +74,21 @@ ml_src_files_without_mli:=$(shell \
 .PHONY: depend
 depend:
 	cd $(INFER_BUILD_DIR) && \
-	ocamldep -native \
+	ocamldep -native -one-line \
 	  $(INCLUDE_FOLDERS) \
 	  $(ml_src_files) $(mli_src_files) > $(DEADCODE_DIR)/.depend
+#	For each module foo, union the dependencies of foo.cmx and foo.cmi together. This is because
+#	flatten_infer will include a .ml file *together* with its corresponding .mli file, so will
+#	need the dependencies of *both* of these files to have been dealt with before we include
+#	*either* of these files.
+#
+#	This proceeds in two steps: first remove any "foo.cmi" dep from "foo.cmx", then rename all
+#	.cmi to .cmx. The first step avoids introducing a circular dependency in the second step.
+	sed -i .depend \
+	  -e 's/^\([^ :]\+\)\.cmx[ ]*: \(.*\)\1\.cmi/\1.cmx: \2/' \
+	  -e 's/\.cmi\b/.cmx/g'
 
-# circular dependency... not sure how to fix properly
-%.cmi: %.cmx
+%.cmx:
 #	deal with the .ml *and* the .mli at the same time: when all the modules are inlined in one
 #	file, you need the module value to be defined before you can refer to it, even in
 #	signatures. Because of this, the order given by ocamldep is not enough to avoid "Unbound
@@ -98,9 +107,9 @@ depend:
 	cat $(INFER_BUILD_DIR)/$*.mli >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  end end " >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	silence "unused module" warnings for executables
-	$(QUIET)if [ $@ = "infer.cmi" ] \
-	        || [ $@ = "inferunit.cmi" ] \
-	        || [ $@ = "InferCreateTraceViewLinks.cmi" ] \
+	$(QUIET)if [ $@ = "infer.cmx" ] \
+	        || [ $@ = "inferunit.cmx" ] \
+	        || [ $@ = "InferCreateTraceViewLinks.cmx" ] \
 	        ; then \
 	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); \
 	fi
@@ -119,10 +128,10 @@ depend:
 	$(QUIET)echo "  end end" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "(* END OF MODULE $*.ml *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 #	silence "unused module" warnings for executables
-	$(QUIET)if [ $@ = "infer.cmi" ] \
-	        || [ $@ = "inferunit.cmi" ] \
-	        || [ $@ = "InferCreateTraceViewLinks.cmi" ] \
-	        || [ $@ = "scripts/checkCopyright.cmi" ] \
+	$(QUIET)if [ $@ = "infer.cmx" ] \
+	        || [ $@ = "inferunit.cmx" ] \
+	        || [ $@ = "InferCreateTraceViewLinks.cmx" ] \
+	        || [ $@ = "scripts/checkCopyright.cmx" ] \
 	        ; then \
 	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML);\
 	fi
@@ -143,9 +152,6 @@ $(ml_src_files_without_mli:.ml=.cmx):
 	$(QUIET)echo "(* END OF MODULE $@ *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo $@ | $(GNU_SED) -e 's/\.cmx$$/.ml/' >> $(ALL_ML_FILES_COPIED)
-
-%.cmx:
-	$(QUIET)echo skipping '$@'
 
 -include .depend
 
