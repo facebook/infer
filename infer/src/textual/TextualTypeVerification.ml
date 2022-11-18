@@ -168,7 +168,8 @@ let iter2 (l1 : 'a list) (l2 : 'b list) ~(f : 'a -> 'b -> unit monad) : unit mon
       ret () state
   | Unequal_lengths ->
       L.die InternalError
-        "Textual type verification failed because iter2 was run on lists of different lengths"
+        "Textual type verification failed because iter2 was run on lists of different lengths at %a"
+        Location.pp state.loc
 
 
 (** state accessors *)
@@ -346,13 +347,11 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
               (* this situation can not happen for user-defined function because of
                  TextualVerification verification *)
               add_error (WrongNumberBuiltinArgs {proc; expected; given; at_least= false; loc})
-            else ret ()
-          in
-          let* () =
-            iter2 args formals_types ~f:(fun exp assigned ->
-                typecheck_exp exp
-                  ~check:(fun given -> compat ~assigned ~given)
-                  ~expected:(SubTypeOf assigned) ~loc )
+            else
+              iter2 args formals_types ~f:(fun exp assigned ->
+                  typecheck_exp exp
+                    ~check:(fun given -> compat ~assigned ~given)
+                    ~expected:(SubTypeOf assigned) ~loc )
           in
           ret result_type
       | _ ->

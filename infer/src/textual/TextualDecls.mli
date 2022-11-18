@@ -33,8 +33,6 @@ val get_struct : t -> Textual.TypeName.t -> Textual.Struct.t option
 
 val is_field_declared : t -> Textual.qualified_fieldname -> bool
 
-val is_procname_declared : t -> Textual.qualified_procname -> bool
-
 val source_file : t -> SourceFile.t
 
 val make_decls : Textual.Module.t -> t

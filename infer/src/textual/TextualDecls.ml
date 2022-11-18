@@ -61,8 +61,6 @@ let get_procname decls qualified_name = QualifiedNameHashtbl.find_opt decls.proc
 
 let get_struct decls tname = TypeName.Hashtbl.find_opt decls.structs tname
 
-let is_procname_declared decls proc = get_procname decls proc |> Option.is_some
-
 let fold_globals decls ~init ~f =
   VarName.Hashtbl.fold (fun key data x -> f x key data) decls.globals init
 

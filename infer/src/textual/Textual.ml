@@ -550,6 +550,8 @@ module Instr = struct
     | Prune of {exp: Exp.t; loc: Location.t}
     | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}
 
+  let loc = function Load {loc} | Store {loc} | Prune {loc} | Let {loc} -> loc
+
   let pp fmt = function
     | Load {id; exp; typ} ->
         F.fprintf fmt "%a:%a = load %a" Ident.pp id Typ.pp typ Exp.pp exp

@@ -16,4 +16,5 @@ error1.sil, line 13, column 4: SIL syntax error
 error2.sil, line 19, column 9: SIL consistency error: function g is not declared
 error2.sil, line 18, column 13: SIL consistency error: field cell.n is not declared
 error2.sil, line 15, column 8: SIL consistency error: label lab2 is not declared in function f
+error_argnum.sil, line 10, column 2: SIL consistency error: function $builtins.bar called with 0 arguments while declared with 1 parameters
 error_label.sil, line 16, column 8: SIL consistency error: label lab2 is not declared in function B.f

@@ -212,6 +212,8 @@ module Instr : sig
      expression in local variables, while SIL forbid that. The to_sil transformation will have to
      inline these definitions. *)
 
+  val loc : t -> Location.t
+
   val pp : F.formatter -> t -> unit
 end
 
