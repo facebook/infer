@@ -33,13 +33,11 @@ let numeral_digit = ['0'-'9' 'a'-'f' 'A'-'F' '_']
 let integer_literal = '-'? numeral_prefix numeral_digit* ['l' 'L']?
 
 let digits = ['0'-'9']+
-let float_type_suffix = ['f' 'F' 'd' 'D']
 let exponent_part = ['e' 'E'] ['-' '+']? digits
-let floating_point_literal =
-  (digits "." digits? exponent_part? float_type_suffix?)
-| ("." digits exponent_part? float_type_suffix?)
-| (digits exponent_part float_type_suffix?)
-| (digits exponent_part? float_type_suffix)
+let positive_floating_point_literal =
+  (digits "." digits? exponent_part?)
+| (digits exponent_part)
+let floating_point_literal = ['-' '+']? positive_floating_point_literal
 
 rule main = parse
   | whitespace+
