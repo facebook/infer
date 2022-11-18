@@ -1,8 +1,10 @@
 {
   "pulse-taint-sources": [
-    { "procedure": "$root.taintSource" }
+    { "procedure": "$root.taintSource" },
+    { "procedure": "Level5Base.getSuperContext" }
   ],
   "pulse-taint-sinks": [
-    { "procedure": "$root.taintSink" }
+    { "procedure": "$root.taintSink" },
+    { "procedure": "DaoQueries.query" }
   ]
 }
