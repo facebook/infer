@@ -7,6 +7,8 @@
 
 {
 
+  open! IStd
+
   (** classic Ocamllex function to update current lexbuf line at each end of
      line *)
   let incr_linenum lexbuf =
@@ -125,12 +127,15 @@ rule main = parse
         { VOID }
 
   | (floating_point_literal as f)
-        { FLOATINGPOINT (float_of_string f) }
+        { float_of_string_opt f
+          |> Option.value_map ~f:(fun lit -> FLOATINGPOINT lit) ~default:(ERROR (Lexing.lexeme lexbuf)) }
+
   | (integer_literal as i)
-        { INTEGER (Z.of_string i) }
+        { try INTEGER (Z.of_string i) with Invalid_argument _ -> ERROR (Lexing.lexeme lexbuf) }
 
   | "n" (integer_literal as i)
-        { LOCAL (int_of_string i) }
+        { int_of_string_opt i
+          |> Option.value_map ~f:(fun lit -> LOCAL lit) ~default:(ERROR (Lexing.lexeme lexbuf)) }
 
   | "#" (id as name)
         { LABEL name }

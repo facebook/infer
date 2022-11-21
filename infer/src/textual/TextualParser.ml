@@ -17,7 +17,8 @@ type error =
 
 let pp_error sourcefile fmt = function
   | SyntaxError {loc; msg} ->
-      F.fprintf fmt "%a, %a: %s" SourceFile.pp sourcefile Textual.Location.pp loc msg
+      F.fprintf fmt "%a, %a: SIL syntax error: %s" SourceFile.pp sourcefile Textual.Location.pp loc
+        msg
   | VerificationError err ->
       TextualVerification.pp_error sourcefile fmt err
   | TypeError err ->
@@ -42,7 +43,8 @@ let parse_buf sourcefile filebuf =
     let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
     let line = pos.Lexing.pos_lnum in
     let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol - buf_length in
-    let msg = "SIL syntax error" in
+    let lexeme = Lexing.lexeme filebuf in
+    let msg = sprintf "unexpected token %s" lexeme in
     Error [SyntaxError {loc= Textual.Location.known ~line ~col; msg}]
 
 
