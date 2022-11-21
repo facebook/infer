@@ -21,3 +21,4 @@ error_label.sil, line 16, column 8: SIL consistency error: label lab2 is not dec
 error_lit_float.sil, line 10, column 7: SIL syntax error: unexpected token 0.0E-0d
 error_lit_int.sil, line 10, column 7: SIL syntax error: unexpected token 9b
 error_lit_local.sil, line 10, column 2: SIL syntax error: unexpected token n00b
+type_token_clash.sil, line 7, column 2: SIL syntax error: unexpected token n00b
