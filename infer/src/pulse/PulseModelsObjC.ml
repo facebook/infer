@@ -312,4 +312,7 @@ let matchers : matcher list =
     $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSArray.arrayWithObject"
   ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIViewController")
     &:: "initWithNibName:bundle:" <>$ capt_arg_payload
-    $+...$--> Basic.id_first_arg ~desc:"UIViewController.initWithNibName:bundle:" ]
+    $+...$--> Basic.id_first_arg ~desc:"UIViewController.initWithNibName:bundle:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
+    &:: "initWithFrame:" <>$ capt_arg_payload
+    $+...$--> Basic.id_first_arg ~desc:"UIView.initWithFrame:" ]
