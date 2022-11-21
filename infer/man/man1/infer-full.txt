@@ -627,6 +627,7 @@ OPTIONS
              REGEX_OP_ON_UI_THREAD (enabled by default),
              RESOURCE_LEAK (enabled by default),
              RETAIN_CYCLE (disabled by default),
+             SCOPE_LEAKAGE (enabled by default),
              SENSITIVE_DATA_FLOW (disabled by default),
              SHELL_INJECTION (enabled by default),
              SHELL_INJECTION_RISK (enabled by default),
@@ -1433,6 +1434,18 @@ OPTIONS
            duplicate work between different analysis processes and thus
            performs better in some circumstances
            See also infer-analyze(1).
+
+       --scope-leakage
+           Activates: checker scope-leakage: The Java/Kotlin checker takes
+           into account a set of "scope" annotations and a must-not-hold
+           relation over the scopes. The checker raises an alarm if there
+           exists a field access path from object A to object B, with
+           respective scopes SA and SB, such that must-not-hold(SA, SB).
+           (Conversely: --no-scope-leakage)           See also infer-analyze(1).
+
+       --scope-leakage-only
+           Activates: Enable scope-leakage and disable all other checkers
+           (Conversely: --no-scope-leakage-only)           See also infer-analyze(1).
 
        --select (N|all)
            Select option number N or all of them. If omitted, prompt for
@@ -2552,6 +2565,39 @@ INTERNAL OPTIONS
            Activates: checker resource-leak-lab: Toy checker for the
            "resource leak" write-your-own-checker exercise. (Conversely:
            --no-resource-leak-lab)
+
+       --scope-leakage-config json
+           Specifies the annotation class, the set of scopes, and the
+           must-not-hold relation.               Here is an example of the intended JSON syntax:
+           {
+             "scope-leakage-config": {
+               "annot-classname" : "string",
+               "scopes": [
+                 {
+                   "classname": "Outer",
+                   "generators": [
+                     {
+                       "classname": "OuterScope",
+                       "methods": ["generate"]
+                     }
+                   ]
+                 },
+                 {
+                   "classname": "Inner",
+                   "generators": [
+                     {
+                       "classname": "InnerScope",
+                       "methods": ["getBox", "get"]
+                     }
+                   ]
+                 }
+               ],
+               "must-not-hold": [
+                 {"holds": "Outer", "held": "Inner"}
+               ]
+             }
+           }
+               
 
        --scuba-logging
            Activates: (direct) logging to scuba (Conversely:

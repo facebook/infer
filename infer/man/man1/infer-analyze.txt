@@ -347,6 +347,18 @@ OPTIONS
            duplicate work between different analysis processes and thus
            performs better in some circumstances
 
+       --scope-leakage
+           Activates: checker scope-leakage: The Java/Kotlin checker takes
+           into account a set of "scope" annotations and a must-not-hold
+           relation over the scopes. The checker raises an alarm if there
+           exists a field access path from object A to object B, with
+           respective scopes SA and SB, such that must-not-hold(SA, SB).
+           (Conversely: --no-scope-leakage)
+
+       --scope-leakage-only
+           Activates: Enable scope-leakage and disable all other checkers
+           (Conversely: --no-scope-leakage-only)
+
        --no-self-in-block
            Deactivates: checker self-in-block: An Objective-C-specific
            analysis to detect when a block captures `self`. (Conversely:

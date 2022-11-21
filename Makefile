@@ -222,6 +222,7 @@ DIRECT_TESTS += \
   java_purity \
   java_quandary \
   java_racerd \
+  java_scopeleakage \
   java_sil \
   java_starvation \
   java_starvation-dedup \

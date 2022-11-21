@@ -993,6 +993,11 @@ let retain_cycle =
     ~user_documentation:[%blob "../../documentation/issues/RETAIN_CYCLE.md"]
 
 
+let scope_leakage =
+  register ~enabled:true ~id:"SCOPE_LEAKAGE" Error ScopeLeakage
+    ~user_documentation:[%blob "../../documentation/issues/SCOPE_LEAKAGE.md"]
+
+
 let skip_function = register_hidden ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
 
 let shell_injection =

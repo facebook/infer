@@ -36,6 +36,7 @@ type t =
   | RacerD
   | ResourceLeakLabExercise
   | DOTNETResourceLeaks
+  | ScopeLeakage
   | SIOF
   | SimpleLineage
   | SimpleShape
@@ -403,6 +404,18 @@ let config_unsafe checker =
       ; short_documentation= "\"resource leak\" checker for .NET."
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= true
+      ; activates= [] }
+  | ScopeLeakage ->
+      { id= "scope-leakage"
+      ; kind= UserFacing {title= "Scope Leakage"; markdown_body= ""}
+      ; support= mk_support_func ~java:Support ()
+      ; short_documentation=
+          "The Java/Kotlin checker takes into account a set of \"scope\" annotations and a \
+           must-not-hold relation over the scopes. The checker raises an alarm if there exists a \
+           field access path from object A to object B, with respective scopes SA and SB, such \
+           that must-not-hold(SA, SB)."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= false
       ; activates= [] }
   | SIOF ->
       { id= "siof"

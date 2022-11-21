@@ -213,7 +213,11 @@ let all_checkers =
            interprocedural2 Payloads.Fields.simple_lineage Payloads.Fields.simple_shape
              SimpleLineage.checker
          in
-         [(checker, Erlang)] ) } ]
+         [(checker, Erlang)] ) }
+  ; { checker= ScopeLeakage
+    ; callbacks=
+        (let checker = intraprocedural ScopeLeakage.checker in
+         [(checker, Java)] ) } ]
 
 
 let get_active_checkers () =

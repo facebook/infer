@@ -2671,6 +2671,41 @@ and scheduler =
      different analysis processes and thus performs better in some circumstances"
 
 
+and scope_leakage_config =
+  CLOpt.mk_json ~long:"scope-leakage-config"
+    {|Specifies the annotation class, the set of scopes, and the must-not-hold relation.
+    Here is an example of the intended JSON syntax:
+{
+  "scope-leakage-config": {
+    "annot-classname" : "string",
+    "scopes": [
+      {
+        "classname": "Outer",
+        "generators": [
+          {
+            "classname": "OuterScope",
+            "methods": ["generate"]
+          }
+        ]
+      },
+      {
+        "classname": "Inner",
+        "generators": [
+          {
+            "classname": "InnerScope",
+            "methods": ["getBox", "get"]
+          }
+        ]
+      }
+    ],
+    "must-not-hold": [
+      {"holds": "Outer", "held": "Inner"}
+    ]
+  }
+}
+    |}
+
+
 and select =
   CLOpt.mk_string_opt ~long:"select" ~meta:"(N|all)"
     ~in_help:InferCommand.[(Debug, manual_generic); (Explore, manual_explore_bugs)]
@@ -4015,6 +4050,8 @@ and results_dir = !results_dir
 and sarif = !sarif
 
 and scheduler = !scheduler
+
+and scope_leakage_config = !scope_leakage_config
 
 and scuba_logging = !scuba_logging
 

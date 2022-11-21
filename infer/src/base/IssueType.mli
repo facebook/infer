@@ -338,6 +338,8 @@ val resource_leak : t
 
 val retain_cycle : t
 
+val scope_leakage : t
+
 val sensitive_data_flow : t
 
 val skip_function : t

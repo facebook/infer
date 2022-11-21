@@ -684,6 +684,8 @@ val sarif : bool
 
 val scheduler : scheduler
 
+val scope_leakage_config : Yojson.Basic.t
+
 val scuba_logging : bool
 
 val scuba_normals : string String.Map.t

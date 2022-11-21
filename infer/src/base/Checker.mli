@@ -35,6 +35,7 @@ type t =
   | RacerD
   | ResourceLeakLabExercise
   | DOTNETResourceLeaks
+  | ScopeLeakage
   | SIOF
   | SimpleLineage
   | SimpleShape
