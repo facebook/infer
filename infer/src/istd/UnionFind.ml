@@ -185,10 +185,11 @@ struct
                  can get rid of non-representative variables *)
               XSet.fold (fun x subst -> XMap.add x (repr :> X.t) subst) clazz subst
           | Some repr' ->
+              (* map all that should not be kept (including old repr) to [repr'], which
+                 should be kept *)
               let subst = XMap.add (repr :> X.t) repr' subst in
               XSet.fold
-                (fun x subst ->
-                  if X.equal x repr' || should_keep x then subst else XMap.add x repr' subst )
+                (fun x subst -> if should_keep x then subst else XMap.add x repr' subst)
                 clazz subst )
 
 
