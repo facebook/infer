@@ -18,7 +18,7 @@ error2.sil, line 18, column 13: SIL consistency error: field cell.n is not decla
 error2.sil, line 15, column 8: SIL consistency error: label lab2 is not declared in function f
 error_argnum.sil, line 10, column 2: SIL consistency error: function $builtins.bar called with 0 arguments while declared with 1 parameters
 error_label.sil, line 16, column 8: SIL consistency error: label lab2 is not declared in function B.f
-error_lit_float.sil, line 10, column 7: SIL syntax error: unexpected token 0.0E-0d
+error_lit_float.sil, line 10, column 13: SIL syntax error: unexpected token d
 error_lit_int.sil, line 10, column 7: SIL syntax error: unexpected token 9b
 error_lit_local.sil, line 10, column 2: SIL syntax error: unexpected token n00b
 type_token_clash.sil, line 7, column 2: SIL syntax error: unexpected token n00b
