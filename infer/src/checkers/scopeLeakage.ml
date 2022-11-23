@@ -27,6 +27,8 @@ module AnalysisConfig : sig
   type t =
     {annotation_classname: string; scopes: scope list; must_not_hold_pairs: must_not_hold_pair list}
 
+  val empty : t
+
   val parse : Yojson.Basic.t -> t
   (** Parses a JSON configuration into a custom data type. *)
 
@@ -42,6 +44,8 @@ end = struct
 
   type t =
     {annotation_classname: string; scopes: scope list; must_not_hold_pairs: must_not_hold_pair list}
+
+  let empty = {annotation_classname= ""; scopes= []; must_not_hold_pairs= []}
 
   let pp_comma_sep fmt () = F.pp_print_string fmt ", "
 
@@ -177,14 +181,17 @@ end = struct
         ; scopes= parse_scope_list scopes_node
         ; must_not_hold_pairs= parse_must_not_hold must_not_hold_node }
     | `List [] ->
-        L.debug Analysis Verbose "scope-leakage-config is empty" ;
-        {annotation_classname= ""; scopes= []; must_not_hold_pairs= []}
+        L.debug Analysis Verbose "scope-leakage-config is empty!@" ;
+        empty
     | _ ->
         L.die UserError "Failed parsing a scope-leakage-config node from %a" Yojson.Basic.pp node
 end
 
 (** Parse the configuration once and for all. *)
-let config = AnalysisConfig.parse Config.scope_leakage_config
+let config =
+  if Config.is_checker_enabled ScopeLeakage then AnalysisConfig.parse Config.scope_leakage_config
+  else AnalysisConfig.empty
+
 
 (** A module for defining scopes and basic operations on scopes as well as extracting scopes from
     type annotations. *)
@@ -508,7 +515,7 @@ let report_bad_field_assignments err_log proc_desc scoping =
 
 
 (** Un-prefix if we need to debug the configuration parsing code. *)
-let _print_config () = L.debug Analysis Quiet "%a\n" AnalysisConfig.pp config
+let _print_config () = L.debug Analysis Quiet "%a@\n" AnalysisConfig.pp config
 
 (** Checks whether the given procedure does not violate the scope nesting restriction. *)
 let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log} =
