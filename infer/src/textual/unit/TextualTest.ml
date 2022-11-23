@@ -390,3 +390,26 @@ let%test_module "out-of-ssa transformation" =
 
         } |}]
   end )
+
+let%test_module "keywords as ident" =
+  ( module struct
+    let input_text =
+      {|
+          define f(declare: int) : int {
+            #type:
+                jmp type
+
+        } |}
+
+
+    let%expect_test _ =
+      let module_ = parse_module input_text |> TextualTransform.out_of_ssa in
+      F.printf "%a" Module.pp module_ ;
+      [%expect
+        {|
+          define f(declare: int) : int {
+            #type:
+                jmp type
+
+          } |}]
+  end )
