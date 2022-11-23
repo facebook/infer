@@ -488,7 +488,7 @@ let report_bad_field_assignments err_log proc_desc scoping =
         when Typ.is_pointer typ ->
           let lvar = Var.of_id lpvar in
           let lvar_scope = VarToScope.find_or_bottom scoping lvar in
-          let rvar_scope = VarToScope.find scoping (Var.of_id rvar) in
+          let rvar_scope = VarToScope.find_or_bottom scoping (Var.of_id rvar) in
           if AbsScope.must_not_hold lvar_scope rvar_scope then
             let ltr = [Errlog.make_trace_element 0 loc "storage of user-scoped field" []] in
             let lvar_type_str = PatternMatch.get_type_name lvar_type in
