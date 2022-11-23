@@ -102,6 +102,7 @@ type extra = {
   ?copy_type : string option;
   ?taint_source : string option;
   ?taint_sink : string option;
+  ?config_name : string option;
 }
 
 type jsonbug = {
