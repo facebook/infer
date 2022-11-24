@@ -7,6 +7,13 @@
           "sink_kinds": ["SimpleSink","SecondSimpleSink"]
         }
       ]
+    },
+    { "short_description": "No sensitive URLs should flow to loggers",
+      "taint_flows": [
+        { "source_kinds": ["SensitiveURLSource"],
+          "sink_kinds": ["Logger"]
+        }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -15,7 +22,8 @@
         "kinds": ["SimpleSource"]
       },
       {"procedure": "objc_blocktaintSourceParameterBlockBad_1", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]], "match_objc_blocks": "true"},
-      {"procedure": "taintSourceParameterBad", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]}
+      {"procedure": "taintSourceParameterBad", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
+      {"procedure": "NSURL.initWithString:", "kinds": ["SensitiveURLSource"]}
   ],
   "pulse-taint-sanitizers": [
     { "class_names": ["InferTaint"],
@@ -28,6 +36,14 @@
       "method_names": ["sink:"],
       "kinds": ["SimpleSink"],
       "taint_target": ["ArgumentPositions", [0]]
-    }
+    },
+    { "procedure": "logEvent",
+      "kinds": ["Logger"]}
+  ],
+  "pulse-taint-propagators": [
+    { "procedure": "URLCreate",
+      "taint_target": "ReturnValue" },
+    { "procedure": "URLCreate1",
+      "taint_target": "ReturnValue" }
   ]
 }
