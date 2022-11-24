@@ -197,8 +197,7 @@ let translate_access_to_caller subst (access_callee : BaseMemory.Access.t) : _ *
 (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
     [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
     addresses are traversed in the process. *)
-let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre ~addr_hist_caller
-    call_state =
+let rec materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state =
   match visit call_state ~pre ~addr_callee:addr_pre ~addr_hist_caller with
   | `AlreadyVisited, call_state ->
       Ok call_state
@@ -221,8 +220,8 @@ let rec materialize_pre_from_address callee_proc_name call_location ~pre ~addr_p
                 Memory.eval_edge addr_hist_caller access_caller call_state.astate
               in
               let call_state = {call_state with astate; subst} in
-              materialize_pre_from_address callee_proc_name call_location ~pre
-                ~addr_pre:addr_pre_dest ~addr_hist_caller:addr_hist_dest_caller call_state ) )
+              materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
+                ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
 
 let deref_non_c_struct addr typ astate =
@@ -235,14 +234,12 @@ let deref_non_c_struct addr typ astate =
 
 (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that has
     been instantiated with the corresponding [actual] into the current state [call_state.astate] *)
-let materialize_pre_from_actual callee_proc_name call_location ~pre ~formal:(formal, typ)
-    ~actual:(actual, _) call_state =
+let materialize_pre_from_actual ~pre ~formal:(formal, typ) ~actual:(actual, _) call_state =
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
   let* addr_formal_pre, _ = BaseStack.find_opt formal pre.BaseDomain.stack in
   let+ formal_pre = deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
-  materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre:formal_pre
-    ~addr_hist_caller:actual call_state)
+  materialize_pre_from_address ~pre ~addr_pre:formal_pre ~addr_hist_caller:actual call_state)
   |> function Some result -> result | None -> Ok call_state
 
 
@@ -250,12 +247,11 @@ let is_cell_read_only ~edges_pre_opt ~cell_post:(_, attrs_post) =
   match edges_pre_opt with None -> false | Some _ -> not (Attributes.is_modified attrs_post)
 
 
-let materialize_pre_for_captured_vars callee_proc_name call_location ~pre ~captured_formals
-    ~captured_actuals call_state =
+let materialize_pre_for_captured_vars ~pre ~captured_formals ~captured_actuals call_state =
   match
     PulseResult.list_fold2 captured_formals captured_actuals ~init:call_state
       ~f:(fun call_state formal actual ->
-        materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state )
+        materialize_pre_from_actual ~pre ~formal ~actual call_state )
   with
   | Unequal_lengths ->
       raise_notrace (Contradiction (CapturedFormalActualLength {captured_formals; captured_actuals}))
@@ -263,14 +259,13 @@ let materialize_pre_for_captured_vars callee_proc_name call_location ~pre ~captu
       result
 
 
-let materialize_pre_for_parameters callee_proc_name call_location ~pre ~formals ~actuals call_state
-    =
+let materialize_pre_for_parameters ~pre ~formals ~actuals call_state =
   (* For each [(formal, actual)] pair, resolve them to addresses in their respective states then
      call [materialize_pre_from] on them.  Give up if calling the function introduces aliasing.
   *)
   match
     PulseResult.list_fold2 formals actuals ~init:call_state ~f:(fun call_state formal actual ->
-        materialize_pre_from_actual callee_proc_name call_location ~pre ~formal ~actual call_state )
+        materialize_pre_from_actual ~pre ~formal ~actual call_state )
   with
   | Unequal_lengths ->
       raise_notrace (Contradiction (FormalActualLength {formals; actuals}))
@@ -278,11 +273,10 @@ let materialize_pre_for_parameters callee_proc_name call_location ~pre ~formals 
       result
 
 
-let materialize_pre_for_globals path callee_proc_name call_location ~pre call_state =
+let materialize_pre_for_globals path call_location ~pre call_state =
   fold_globals_of_stack path call_location pre.BaseDomain.stack call_state
     ~f:(fun _var ~stack_value:(addr_pre, _) ~addr_hist_caller call_state ->
-      materialize_pre_from_address callee_proc_name call_location ~pre ~addr_pre ~addr_hist_caller
-        call_state )
+      materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state )
 
 
 let conjoin_callee_arith pre_or_post callee_path_condition call_state =
@@ -362,11 +356,10 @@ let materialize_pre path callee_proc_name call_location callee_summary ~captured
     let callee_precondition = AbductiveDomain.Summary.get_pre callee_summary in
     let open PulseResult.Let_syntax in
     (* first make as large a mapping as we can between callee values and caller values... *)
-    materialize_pre_for_parameters callee_proc_name call_location ~pre:callee_precondition ~formals
-      ~actuals call_state
-    >>= materialize_pre_for_captured_vars callee_proc_name call_location ~pre:callee_precondition
-          ~captured_formals ~captured_actuals
-    >>= materialize_pre_for_globals path callee_proc_name call_location ~pre:callee_precondition
+    materialize_pre_for_parameters ~pre:callee_precondition ~formals ~actuals call_state
+    >>= materialize_pre_for_captured_vars ~pre:callee_precondition ~captured_formals
+          ~captured_actuals
+    >>= materialize_pre_for_globals path call_location ~pre:callee_precondition
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
     apply_arithmetic_constraints `Pre path callee_proc_name call_location callee_summary
