@@ -16,7 +16,7 @@ module DurationItem = struct
 
   let compare {duration_ms= dr1} {duration_ms= dr2} = Int.compare dr1 dr2
 
-  let pp f {pname; duration_ms} = F.fprintf f "%s -> %dms" pname duration_ms
+  let pp f {pname; duration_ms} = F.fprintf f "%5dms: %s" duration_ms pname
 end
 
 module LongestProcDurationHeap = struct
@@ -39,7 +39,7 @@ module LongestProcDurationHeap = struct
 
   let pp_sorted f heap =
     let heap = to_list heap |> List.sort ~compare:(fun x y -> DurationItem.compare y x) in
-    F.fprintf f "%a" (F.pp_print_list ~pp_sep:(fun f () -> F.fprintf f ", ") DurationItem.pp) heap
+    F.fprintf f "%a" (F.pp_print_list ~pp_sep:(fun f () -> F.fprintf f "@;") DurationItem.pp) heap
 
 
   include Heap
@@ -247,7 +247,7 @@ let pp f stats =
   in
   let pp_longest_proc_duration_heap stats f field =
     let heap : LongestProcDurationHeap.t = Field.get field stats in
-    F.fprintf f "%s= [%a]@;" (Field.name field) LongestProcDurationHeap.pp_sorted heap
+    F.fprintf f "%s= [@\n@[<v>%a@]@\n]@;" (Field.name field) LongestProcDurationHeap.pp_sorted heap
   in
   let pp_pulse_summaries_count stats f field =
     let sumcounters : int PulseSumCountMap.t = Field.get field stats in
@@ -280,13 +280,11 @@ let log_to_scuba stats =
     [LogEntry.mk_count ~label:("backend_stats." ^ Field.name field) ~value:(Field.get field stats)]
   in
   let create_longest_proc_duration_heap field =
-    let heap : LongestProcDurationHeap.t = Field.get field stats in
-    List.map
-      ~f:(fun DurationItem.{duration_ms; pname} ->
-        LogEntry.mk_time
-          ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_%s" pname)
-          ~duration_ms )
-      (LongestProcDurationHeap.to_list heap)
+    Field.get field stats |> LongestProcDurationHeap.to_list
+    |> List.mapi ~f:(fun i DurationItem.{duration_ms} ->
+           LogEntry.mk_time
+             ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_%d" i)
+             ~duration_ms )
   in
   let create_time_entry field =
     Field.get field stats
