@@ -13,7 +13,6 @@
       let line = pos.Lexing.pos_lnum in
       let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol in
       Location.known ~line ~col
-
 %}
 
 %token AMPERSAND
@@ -56,7 +55,6 @@
 %token UNREACHABLE
 %token VOID
 
-%token <string> ERROR
 %token <string> IDENT
 %token <int> LOCAL
 %token <Z.t> INTEGER

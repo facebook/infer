@@ -38,14 +38,18 @@ let parse_buf sourcefile filebuf =
       let errors = TextualTypeVerification.run m |> List.map ~f:(fun x -> TypeError x) in
       if List.is_empty errors then Ok m else Error errors
     else Error errors
-  with TextualMenhir.Error ->
-    let pos = filebuf.Lexing.lex_curr_p in
-    let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
-    let line = pos.Lexing.pos_lnum in
-    let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol - buf_length in
-    let lexeme = Lexing.lexeme filebuf in
-    let msg = sprintf "unexpected token %s" lexeme in
-    Error [SyntaxError {loc= Textual.Location.known ~line ~col; msg}]
+  with
+  | TextualMenhir.Error ->
+      let pos = filebuf.Lexing.lex_curr_p in
+      let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
+      let line = pos.Lexing.pos_lnum in
+      let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol - buf_length in
+      let lexeme = Lexing.lexeme filebuf in
+      let msg = sprintf "unexpected token %s" lexeme in
+      Error [SyntaxError {loc= Textual.Location.known ~line ~col; msg}]
+  | TextualLexer.LexingError (loc, lexeme) ->
+      let msg = sprintf "unexpected token %s" lexeme in
+      Error [SyntaxError {loc; msg}]
 
 
 let parse_string sourcefile text =
