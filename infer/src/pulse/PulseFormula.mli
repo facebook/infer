@@ -85,8 +85,6 @@ val simplify :
 
 val is_known_zero : t -> Var.t -> bool
 
-val is_known_non_zero : t -> Var.t -> bool
-
 val is_known_non_pointer : t -> Var.t -> bool
 
 val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool

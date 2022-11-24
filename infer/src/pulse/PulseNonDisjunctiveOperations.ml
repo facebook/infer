@@ -102,7 +102,6 @@ let continue_bind exec_state ~f =
   | ContinueProgram disjunct ->
       f disjunct
   | ExceptionRaised _
-  | ISLLatentMemoryError _
   | AbortProgram _
   | ExitProgram _
   | LatentAbortProgram _

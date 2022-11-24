@@ -47,30 +47,6 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
       Ok astate
 
 
-let check_and_abduce_addr_access_isl path access_mode location (address, history)
-    ?(null_noop = false) astate =
-  let access_trace = Trace.Immediate {location; history} in
-  AddressAttributes.check_valid_isl path access_trace address ~null_noop astate
-  |> List.map ~f:(fun access_result ->
-         let* astate = AccessResult.of_abductive_access_result access_trace access_result in
-         match access_mode with
-         | Read ->
-             AddressAttributes.check_initialized path access_trace address astate
-             |> Result.map_error ~f:(fun () ->
-                    ReportableError
-                      { diagnostic=
-                          Diagnostic.ReadUninitializedValue
-                            {calling_context= []; trace= access_trace}
-                      ; astate } )
-             |> AccessResult.of_result_f ~f:(fun _ ->
-                    (* do not report further uninitialized reads errors on this value *)
-                    AbductiveDomain.initialize address astate )
-         | Write ->
-             Ok (AbductiveDomain.initialize address astate)
-         | NoAccess ->
-             Ok astate )
-
-
 module Closures = struct
   module Memory = AbductiveDomain.Memory
 
@@ -159,18 +135,8 @@ let eval_deref_access path ?must_be_valid_reason mode location addr_hist access 
   eval_access path ?must_be_valid_reason mode location addr_hist Dereference astate
 
 
-let eval_access_biad_isl path mode location addr_hist access astate =
-  let map_ok addr_hist access results =
-    List.map results ~f:(fun result ->
-        let+ astate = result in
-        Memory.eval_edge addr_hist access astate )
-  in
-  let results = check_and_abduce_addr_access_isl path mode location addr_hist astate in
-  map_ok addr_hist access results
-
-
-let eval_var ({PathContext.timestamp} as path) location pvar astate =
-  Stack.eval path location
+let eval_var {PathContext.timestamp} location pvar astate =
+  Stack.eval
     (ValueHistory.singleton (VariableAccessed (pvar, location, timestamp)))
     (Var.of_pvar pvar) astate
 
@@ -181,8 +147,8 @@ let eval path mode location exp0 astate =
     | Var id ->
         Sat
           (Ok
-             (Stack.eval path location (* error in case of missing history? *) ValueHistory.epoch
-                (Var.of_id id) astate ) )
+             (Stack.eval (* error in case of missing history? *) ValueHistory.epoch (Var.of_id id)
+                astate ) )
     | Lvar pvar ->
         Sat (Ok (eval_var path location pvar astate))
     | Lfield (exp', field, _) ->
@@ -313,44 +279,6 @@ let eval_proc_name path location call_exp astate =
       (astate, AddressAttributes.get_closure_proc_name f astate)
 
 
-let eval_structure_isl path mode loc exp astate =
-  match (exp : Exp.t) with
-  | Lfield (exp', field, _) ->
-      let++ astate, addr_hist = eval path mode loc exp' astate in
-      let astates = eval_access_biad_isl path mode loc addr_hist (FieldAccess field) astate in
-      (false, astates)
-  | Lindex (exp', exp_index) ->
-      let** astate, addr_hist_index = eval path mode loc exp_index astate in
-      let++ astate, addr_hist = eval path mode loc exp' astate in
-      let astates =
-        eval_access_biad_isl path mode loc addr_hist
-          (ArrayAccess (StdTyp.void, fst addr_hist_index))
-          astate
-      in
-      (false, astates)
-  | _ ->
-      let++ astate, (addr, history) = eval path mode loc exp astate in
-      (true, [Ok (astate, (addr, history))])
-
-
-let eval_deref_biad_isl path location access addr_hist astate =
-  check_and_abduce_addr_access_isl path Read location addr_hist astate
-  |> List.map ~f:(fun result ->
-         let+ astate = result in
-         Memory.eval_edge addr_hist access astate )
-
-
-let eval_deref_isl path location exp astate =
-  let<**> is_structured, ls_astate_addr_hist = eval_structure_isl path Read location exp astate in
-  let eval_deref_function (astate, addr_hist) =
-    if is_structured then eval_deref_biad_isl path location Dereference addr_hist astate
-    else eval_deref path location exp astate |> SatUnsat.to_list
-  in
-  List.concat_map ls_astate_addr_hist ~f:(fun result ->
-      let<*> astate_addr = result in
-      eval_deref_function astate_addr )
-
-
 let realloc_pvar tenv ({PathContext.timestamp} as path) pvar typ location astate =
   let addr = AbstractValue.mk_fresh () in
   let astate =
@@ -377,20 +305,8 @@ let write_access path location addr_trace_ref access addr_trace_obj astate =
   >>| Memory.add_edge path addr_trace_ref access addr_trace_obj location
 
 
-let write_access_biad_isl path location addr_trace_ref access addr_trace_obj astate =
-  let astates = check_and_abduce_addr_access_isl path Write location addr_trace_ref astate in
-  List.map astates ~f:(fun result ->
-      let+ astate = result in
-      Memory.add_edge path addr_trace_ref access addr_trace_obj location astate )
-
-
 let write_deref path location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
   write_access path location addr_trace_ref Dereference addr_trace_obj astate
-
-
-let write_deref_biad_isl path location ~ref:(addr_ref, addr_ref_history) access ~obj:addr_trace_obj
-    astate =
-  write_access_biad_isl path location (addr_ref, addr_ref_history) access addr_trace_obj astate
 
 
 let write_field path location ~ref:addr_trace_ref field ~obj:addr_trace_obj astate =
@@ -494,7 +410,7 @@ let record_invalidation ({PathContext.timestamp; conditions} as path) access_pat
     astate =
   match access_path with
   | StackAddress (x, hist0) ->
-      let astate, (addr, hist) = Stack.eval path location hist0 x astate in
+      let astate, (addr, hist) = Stack.eval hist0 x astate in
       let hist' =
         ValueHistory.sequence ~context:conditions (Invalidated (cause, location, timestamp)) hist
       in
@@ -521,13 +437,6 @@ let invalidate path access_path location cause addr_trace astate =
   check_addr_access path NoAccess location addr_trace astate
   >>| AddressAttributes.invalidate addr_trace cause location
   >>| record_invalidation path access_path location cause
-
-
-let invalidate_biad_isl path location cause (address, history) astate =
-  check_and_abduce_addr_access_isl path NoAccess location (address, history) ~null_noop:true astate
-  |> List.map ~f:(fun result ->
-         let+ astate = result in
-         AddressAttributes.invalidate (address, history) cause location astate )
 
 
 let invalidate_access path location cause ref_addr_hist access astate =

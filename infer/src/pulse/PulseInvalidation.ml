@@ -101,16 +101,6 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
       IssueType.vector_invalidation ~latent
 
 
-let isl_equiv v1 v2 =
-  match (v1, v2) with
-  | ConstantDereference i1, ConstantDereference i2 ->
-      IntLit.eq i1 i2
-  | (CFree | CppDelete), (CFree | CppDelete) ->
-      true
-  | _ ->
-      equal v1 v2
-
-
 let describe f cause =
   match cause with
   | CFree ->

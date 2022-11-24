@@ -136,7 +136,6 @@ module Attribute = struct
     | DynamicType of Typ.t * SourceFile.t option
     | EndOfCollection
     | Invalid of Invalidation.t * Trace.t
-    | ISLAbduced of Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | MustNotBeTainted of TaintSinkSet.t
@@ -189,8 +188,6 @@ module Attribute = struct
 
   let invalid_rank = Variants.invalid.rank
 
-  let isl_abduced_rank = Variants.islabduced.rank
-
   let java_resource_released_rank = Variants.javaresourcereleased.rank
 
   let csharp_resource_released_rank = Variants.csharpresourcereleased.rank
@@ -222,25 +219,6 @@ module Attribute = struct
   let unreachable_at_rank = Variants.unreachableat.rank
 
   let written_to_rank = Variants.writtento.rank
-
-  let isl_subset attr1 attr2 =
-    match (attr1, attr2) with
-    | Invalid (v1, _), Invalid (v2, _) ->
-        Invalidation.isl_equiv v1 v2
-    | Invalid _, (WrittenTo _ | DynamicType _) ->
-        true
-    | Uninitialized, Uninitialized ->
-        true
-    | (MustBeValid _ | Allocated _ | ISLAbduced _), Invalid _ ->
-        false
-    | _, UnknownEffect _ ->
-        (* ignore *)
-        true
-    | Invalid _, _ | _, Uninitialized ->
-        false
-    | _ ->
-        true
-
 
   let pp f attribute =
     let pp_string_if_debug string fmt =
@@ -278,8 +256,6 @@ module Attribute = struct
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
           trace
-    | ISLAbduced trace ->
-        F.fprintf f "ISLAbduced %a" (Trace.pp ~pp_immediate:(pp_string_if_debug "ISLAbduced")) trace
     | MustBeInitialized (timestamp, trace) ->
         F.fprintf f "MustBeInitialized(%a, t=%d)"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
@@ -329,8 +305,8 @@ module Attribute = struct
   let is_suitable_for_pre = function
     | MustBeValid _ | MustBeInitialized _ | MustNotBeTainted _ | RefCounted ->
         true
-    | Invalid _ | Allocated _ | ISLAbduced _ ->
-        Config.pulse_isl
+    | Invalid _
+    | Allocated _
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
     | AlwaysReachable
@@ -371,7 +347,6 @@ module Attribute = struct
     | CopiedReturn _
     | DynamicType _
     | EndOfCollection
-    | ISLAbduced _
     | Invalid _
     | JavaResourceReleased
     | CSharpResourceReleased
@@ -411,7 +386,6 @@ module Attribute = struct
     | Invalid _
     | JavaResourceReleased
     | CSharpResourceReleased
-    | ISLAbduced _
     | MustBeInitialized _
     | MustBeValid _
     | MustNotBeTainted _
@@ -442,8 +416,6 @@ module Attribute = struct
         CopiedReturn {source= subst source; is_const_ref; from; copied_location}
     | Invalid (invalidation, trace) ->
         Invalid (invalidation, add_call_to_trace trace)
-    | ISLAbduced trace ->
-        ISLAbduced (add_call_to_trace trace)
     | MustBeValid (_timestamp, trace, reason) ->
         MustBeValid (timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized (_timestamp, trace) ->
@@ -562,7 +534,6 @@ module Attribute = struct
       | DynamicType _
       | EndOfCollection
       | Invalid _
-      | ISLAbduced _
       | MustBeInitialized _
       | MustBeValid _
       | MustNotBeTainted _
@@ -738,13 +709,6 @@ module Attributes = struct
 
   let remove_allocation = remove_by_rank Attribute.allocated_rank
 
-  let get_isl_abduced =
-    get_by_rank Attribute.isl_abduced_rank ~dest:(function [@warning "-8"] ISLAbduced trace ->
-        trace )
-
-
-  let remove_isl_abduced = remove_by_rank Attribute.isl_abduced_rank
-
   let get_unknown_effect =
     get_by_rank Attribute.unknown_effect_rank ~dest:(function [@warning "-8"]
         | UnknownEffect (call, hist) -> (call, hist) )
@@ -763,39 +727,6 @@ module Attributes = struct
   let get_unreachable_at =
     get_by_rank Attribute.unreachable_at_rank ~dest:(function [@warning "-8"]
         | UnreachableAt location -> location )
-
-
-  let isl_subset callee_attrs caller_attrs =
-    Set.for_all callee_attrs ~f:(fun attr1 ->
-        Set.for_all caller_attrs ~f:(fun attr2 -> Attribute.isl_subset attr1 attr2) )
-
-
-  let replace_isl_abduced attrs_callee attrs_caller =
-    Set.fold attrs_callee ~init:Set.empty ~f:(fun acc attr1 ->
-        let attr1 =
-          match attr1 with
-          | ISLAbduced _ -> (
-            match get_allocation attrs_caller with
-            | None ->
-                attr1
-            | Some (p, a) ->
-                Attribute.Allocated (p, a) )
-          | Invalid (v_callee, _) -> (
-            match get_invalid attrs_caller with
-            | None ->
-                attr1
-            | Some (v_caller, trace) -> (
-              match (v_callee, v_caller) with
-              | CFree, (CFree | CppDelete) ->
-                  Attribute.Invalid (v_caller, trace)
-              | ConstantDereference i, OptionalEmpty when IntLit.iszero i ->
-                  Attribute.Invalid (OptionalEmpty, trace)
-              | _ ->
-                  attr1 ) )
-          | _ ->
-              attr1
-        in
-        Set.add acc attr1 )
 
 
   let add_call_and_subst subst timestamp proc_name call_location caller_history attrs =

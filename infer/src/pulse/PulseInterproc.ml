@@ -22,9 +22,6 @@ type call_state =
   { astate: AbductiveDomain.t  (** caller's abstract state computed so far *)
   ; subst: (AbstractValue.t * ValueHistory.t) AddressMap.t
         (** translation from callee addresses to caller addresses and their caller histories *)
-  ; invalid_subst: (AbstractValue.t * ValueHistory.t) AddressMap.t
-        (** this is a subset of subst that contains all invalid matches between callee-pre and
-            caller *)
   ; rev_subst: AbstractValue.t AddressMap.t
         (** the inverse translation from [subst] from caller addresses to callee addresses *)
   ; visited: AddressSet.t
@@ -34,18 +31,15 @@ type call_state =
             visit each subgraph from each formal independently so we reset [visited] between the
             visit of each formal *) }
 
-let pp_call_state fmt {astate; subst; invalid_subst; rev_subst; visited} =
+let pp_call_state fmt {astate; subst; rev_subst; visited} =
   F.fprintf fmt
     "@[<v>{ astate=@[<hv2>%a@];@,\
     \ subst=@[<hv2>%a@];@,\
-    \ invalid_subst=@[<hv2>%a@];@,\
     \ rev_subst=@[<hv2>%a@];@,\
     \ visited=@[<hv2>%a@]@,\
     \ }@]" AbductiveDomain.pp astate
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
     subst
-    (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
-    invalid_subst
     (AddressMap.pp ~pp_value:AbstractValue.pp)
     rev_subst AddressSet.pp visited
 
@@ -65,7 +59,6 @@ type contradiction =
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
       {formals: (Var.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
-  | ISLPreconditionMismatch
   | PathCondition
 
 let pp_contradiction fmt = function
@@ -82,8 +75,6 @@ let pp_contradiction fmt = function
         (List.length actuals)
   | PathCondition ->
       F.pp_print_string fmt "path condition evaluates to false"
-  | ISLPreconditionMismatch ->
-      F.pp_print_string fmt "pre does not imply call state"
 
 
 let log_contradiction = function
@@ -93,7 +84,7 @@ let log_contradiction = function
       Stats.incr_pulse_args_length_contradictions ()
   | CapturedFormalActualLength _ ->
       Stats.incr_pulse_captured_vars_length_contradictions ()
-  | ISLPreconditionMismatch | PathCondition ->
+  | PathCondition ->
       ()
 
 
@@ -106,14 +97,14 @@ let raise_if_unsat contradiction = function
       raise_notrace (Contradiction contradiction)
 
 
-let fold_globals_of_stack ({PathContext.timestamp} as path) call_loc stack call_state ~f =
+let fold_globals_of_stack {PathContext.timestamp} call_loc stack call_state ~f =
   PulseResult.container_fold ~fold:(IContainer.fold_of_pervasives_map_fold BaseStack.fold)
     stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
       match var with
       | Var.ProgramVar pvar when Pvar.is_global pvar ->
           let call_state, addr_hist_caller =
             let astate, var_value =
-              Stack.eval path call_loc
+              Stack.eval
                 (ValueHistory.singleton (VariableAccessed (pvar, call_loc, timestamp)))
                 var call_state.astate
             in
@@ -351,45 +342,17 @@ let apply_arithmetic_constraints pre_or_post {PathContext.timestamp} callee_proc
       (AbductiveDomain.Summary.get_path_condition callee_summary)
       call_state
   in
-  (* check all callee addresses that make sense for the caller, i.e. the domain of [call_state.subst] *)
-  if Config.pulse_isl then
-    AddressMap.fold
-      (fun addr_callee addr_hist_caller call_state ->
-        let callee_attr =
-          BaseAddressAttributes.find_opt addr_callee
-            (AbductiveDomain.Summary.get_pre callee_summary).attrs
-        in
-        let caller_attr =
-          BaseAddressAttributes.find_opt (fst addr_hist_caller)
-            (call_state.astate.AbductiveDomain.post :> BaseDomain.t).attrs
-        in
-        match (callee_attr, caller_attr) with
-        | Some callee_attrs, None ->
-            one_address_sat callee_attrs addr_hist_caller call_state
-        | Some callee_attrs, Some caller_attrs ->
-            if (* check implication *)
-               Attributes.isl_subset callee_attrs caller_attrs then
-              { call_state with
-                invalid_subst= AddressMap.add addr_callee addr_hist_caller call_state.invalid_subst
-              }
-            else if Attributes.is_uninitialized caller_attrs then
-              one_address_sat callee_attrs addr_hist_caller call_state
-            else raise_notrace (Contradiction ISLPreconditionMismatch)
-        | _ ->
-            call_state )
-      call_state.subst call_state
-  else
-    AddressMap.fold
-      (fun addr_callee addr_hist_caller call_state ->
-        match
-          BaseAddressAttributes.find_opt addr_callee
-            (AbductiveDomain.Summary.get_pre callee_summary).attrs
-        with
-        | None ->
-            call_state
-        | Some callee_attrs ->
-            one_address_sat callee_attrs addr_hist_caller call_state )
-      call_state.subst call_state
+  AddressMap.fold
+    (fun addr_callee addr_hist_caller call_state ->
+      match
+        BaseAddressAttributes.find_opt addr_callee
+          (AbductiveDomain.Summary.get_pre callee_summary).attrs
+      with
+      | None ->
+          call_state
+      | Some callee_attrs ->
+          one_address_sat callee_attrs addr_hist_caller call_state )
+    call_state.subst call_state
 
 
 let materialize_pre path callee_proc_name call_location callee_summary ~captured_formals
@@ -461,10 +424,7 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
         PulseOperations.csharp_resource_release ~recursive:true addr_caller call_state.astate
       else call_state.astate
     in
-    let astate =
-      if Config.pulse_isl then AddressAttributes.add_attrs addr_caller attrs_post_caller astate
-      else AddressAttributes.abduce_and_add addr_caller attrs_post_caller astate
-    in
+    let astate = AddressAttributes.abduce_and_add addr_caller attrs_post_caller astate in
     {call_state with astate}
   in
   let subst, translated_post_edges =
@@ -523,18 +483,6 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
             L.d_printfln "cell at %a is read-only, not modifying@\n" AbstractValue.pp addr_callee ;
             call_state )
           else
-            let attrs_post =
-              if Config.pulse_isl then
-                match
-                  AbductiveDomain.find_post_cell_opt (fst addr_hist_caller) call_state.astate
-                with
-                | None ->
-                    attrs_post
-                | Some (_, attrs_caller) ->
-                    (* if post attr is abduced, use the one in caller which is up-to-date *)
-                    Attributes.replace_isl_abduced attrs_post attrs_caller
-              else attrs_post
-            in
             record_post_cell path callee_proc_name call_loc ~edges_pre_opt addr_hist_caller
               ~cell_callee_post:(edges_post, attrs_post) call_state
         in
@@ -889,52 +837,6 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
     call_state.subst (Ok astate)
 
 
-let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location callee_summary
-    pre_astate astate =
-  AbstractValue.Map.fold
-    (fun addr_pre (addr_caller, hist_caller) astate_result ->
-      let mk_access_trace callee_access_trace =
-        Trace.ViaCall
-          { in_call= callee_access_trace
-          ; f= Call callee_proc_name
-          ; location= call_location
-          ; history= hist_caller }
-      in
-      match astate_result with
-      | Recoverable _ | FatalError _ ->
-          astate_result
-      | Ok astate -> (
-        match
-          BaseAddressAttributes.get_invalid addr_caller
-            (pre_astate.AbductiveDomain.post :> BaseDomain.t).attrs
-        with
-        | None ->
-            astate_result
-        | Some (invalidation, invalidation_trace) -> (
-          match
-            BaseAddressAttributes.get_invalid addr_pre
-              (AbductiveDomain.Summary.get_pre callee_summary).attrs
-          with
-          | None ->
-              astate_result
-          | Some (_, callee_access_trace) ->
-              let access_trace = mk_access_trace callee_access_trace in
-              L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
-              FatalError
-                ( AccessResult.ReportableError
-                    { diagnostic=
-                        Diagnostic.AccessToInvalidAddress
-                          { calling_context= []
-                          ; invalid_address= Decompiler.find addr_caller astate
-                          ; invalidation
-                          ; invalidation_trace
-                          ; access_trace
-                          ; must_be_valid_reason= None }
-                    ; astate }
-                , [] ) ) ) )
-    invalid_addr_callers (Ok astate)
-
-
 (* - read all the pre, assert validity of addresses and materializes *everything* (to throw stuff
    in the *current* pre as appropriate so that callers of the current procedure will also know
    about the deeper reads)
@@ -942,17 +844,13 @@ let isl_check_all_invalid invalid_addr_callers callee_proc_name call_location ca
    - for each actual, write the post for that actual
 
    - if aliasing is introduced at any time then give up *)
-let apply_summary path ~is_isl_error_prepost callee_proc_name call_location ~callee_summary
-    ~captured_formals ~captured_actuals ~formals ~actuals astate =
+let apply_summary path callee_proc_name call_location ~callee_summary ~captured_formals
+    ~captured_actuals ~formals ~actuals astate =
   L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
     (Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f var))
     formals AbductiveDomain.Summary.pp callee_summary ;
   let empty_call_state =
-    { astate
-    ; subst= AddressMap.empty
-    ; invalid_subst= AddressMap.empty
-    ; rev_subst= AddressMap.empty
-    ; visited= AddressSet.empty }
+    {astate; subst= AddressMap.empty; rev_subst= AddressMap.empty; visited= AddressSet.empty}
   in
   (* read the precondition *)
   match
@@ -971,21 +869,13 @@ let apply_summary path ~is_isl_error_prepost callee_proc_name call_location ~cal
         let open PulseResult.Let_syntax in
         let* call_state = result in
         L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
-        (* only call [check_all_valid] when ISL is not active: the ISL mode generates explicit error
-           specs (which we recognize here using [is_isl_error_prepost]) instead of relying on
-           [check_all_valid], whereas the "normal" mode encodes some error specs implicitly in the
-           ContinueProgram ok specs *)
         let* astate =
-          if Config.pulse_isl then Ok call_state.astate
-          else
-            check_all_valid path callee_proc_name call_location
-              ~pre:(AbductiveDomain.Summary.get_pre callee_summary)
-              call_state
-            |> AccessResult.of_result
+          check_all_valid path callee_proc_name call_location
+            ~pre:(AbductiveDomain.Summary.get_pre callee_summary)
+            call_state
+          |> AccessResult.of_result
         in
         (* reset [visited] *)
-        let invalid_subst = call_state.invalid_subst in
-        let pre_astate = astate in
         let call_state = {call_state with astate; visited= AddressSet.empty} in
         (* apply the postcondition *)
         let* call_state, return_caller =
@@ -1005,15 +895,10 @@ let apply_summary path ~is_isl_error_prepost callee_proc_name call_location ~cal
               Decompiler.add_call_source (fst ret_v) (Call callee_proc_name) actuals astate )
         in
         let+ astate =
-          if is_isl_error_prepost then
-            isl_check_all_invalid invalid_subst callee_proc_name call_location callee_summary
-              pre_astate astate
-          else
-            (* This has to happen after the post has been applied so that we are aware of any
-               sanitizers applied to tainted values too, otherwise we'll report false positives if
-               the callee both taints and sanitizes a value *)
-            check_all_taint_valid path callee_proc_name call_location callee_summary astate
-              call_state
+          (* This has to happen after the post has been applied so that we are aware of any
+             sanitizers applied to tainted values too, otherwise we'll report false positives if
+             the callee both taints and sanitizes a value *)
+          check_all_taint_valid path callee_proc_name call_location callee_summary astate call_state
         in
         (astate, return_caller, call_state.subst)
       in

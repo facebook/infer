@@ -71,13 +71,7 @@ module Stack : sig
 
   val find_opt : Var.t -> t -> BaseStack.value option
 
-  val eval :
-       PathContext.t
-    -> Location.t
-    -> ValueHistory.t
-    -> Var.t
-    -> t
-    -> t * (AbstractValue.t * ValueHistory.t)
+  val eval : ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
@@ -207,17 +201,6 @@ module AddressAttributes : sig
   val get_const_string : AbstractValue.t -> t -> string option
 
   val find_opt : AbstractValue.t -> t -> Attributes.t option
-
-  val check_valid_isl :
-       PathContext.t
-    -> Trace.t
-    -> AbstractValue.t
-    -> ?null_noop:bool
-    -> t
-    -> ( t
-       , [> `ISLError of t | `InvalidAccess of AbstractValue.t * Invalidation.t * Trace.t * t] )
-       result
-       list
 end
 
 val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
@@ -339,10 +322,6 @@ module Summary : sig
        AbstractValue.t
     -> summary
     -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
-
-  val is_isl_without_allocation : summary -> bool
-
-  val is_pre_without_isl_abduced : summary -> bool
 
   type t = summary [@@deriving compare, equal, yojson_of]
 end

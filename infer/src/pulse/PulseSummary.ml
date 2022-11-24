@@ -102,8 +102,6 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
       Sat (LatentAbortProgram {astate; latent_issue})
   | LatentInvalidAccess {astate; address; must_be_valid; calling_context} ->
       Sat (LatentInvalidAccess {astate; address; must_be_valid; calling_context})
-  | ISLLatentMemoryError astate ->
-      Sat (ISLLatentMemoryError astate)
 
 
 let force_exit_program tenv proc_desc err_log post =

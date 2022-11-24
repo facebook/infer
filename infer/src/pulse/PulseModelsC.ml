@@ -69,8 +69,7 @@ let realloc_common allocator pointer size : model =
          | ExitProgram _
          | AbortProgram _
          | LatentAbortProgram _
-         | LatentInvalidAccess _
-         | ISLLatentMemoryError _ ->
+         | LatentInvalidAccess _ ->
              [Ok exec_state] )
 
 

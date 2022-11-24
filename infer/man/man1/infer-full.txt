@@ -2418,15 +2418,6 @@ INTERNAL OPTIONS
            experimentations only. (Conversely:
            --no-pulse-intraprocedural-only)
 
-       --pulse-isl
-           Activates: [Pulse] Incorrectness Separation Logic (ISL) mode:
-           explicit Ok/Error summaries are recorded. For experiments only.
-           (Conversely: --no-pulse-isl)
-
-       --pulse-manifest-emp
-           Activates: [Pulse] manifest errors with postive heaps in pre. For
-           experiments only. (Conversely: --no-pulse-manifest-emp)
-
        --pulse-max-heap-reset
            Cancel the effect of --pulse-max-heap.
 

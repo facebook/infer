@@ -31,9 +31,6 @@ type t =
   | StdVector of std_vector_function
 [@@deriving compare, equal]
 
-val isl_equiv : t -> t -> bool
-(** check equality up to some ISL equivalences *)
-
 val pp : F.formatter -> t -> unit
 
 val describe : F.formatter -> t -> unit

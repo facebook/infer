@@ -162,10 +162,7 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.summary) :
         (astate, true)
     | ContinueProgram astate | ExceptionRaised astate ->
         (astate, false)
-    | AbortProgram astate
-    | LatentAbortProgram {astate}
-    | LatentInvalidAccess {astate}
-    | ISLLatentMemoryError astate ->
+    | AbortProgram astate | LatentAbortProgram {astate} | LatentInvalidAccess {astate} ->
         (astate, false)
   in
   let pre_heap = (AbductiveDomain.Summary.get_pre astate).BaseDomain.heap in

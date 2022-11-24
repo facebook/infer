@@ -199,10 +199,10 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
     | None ->
         Ok (ExceptionRaised astate)
   in
-  let map_call_result ~is_isl_error_prepost callee_summary ~f =
+  let map_call_result callee_summary ~f =
     let sat_unsat, contradiction =
-      PulseInterproc.apply_summary path ~is_isl_error_prepost callee_pname call_loc ~callee_summary
-        ~captured_formals ~captured_actuals ~formals
+      PulseInterproc.apply_summary path callee_pname call_loc ~callee_summary ~captured_formals
+        ~captured_actuals ~formals
         ~actuals:(trim_actuals_if_var_arg (Some callee_pname) ~actuals ~formals)
         astate
     in
@@ -228,20 +228,19 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   in
   match callee_exec_state with
   | ContinueProgram astate ->
-      map_call_result ~is_isl_error_prepost:false astate ~f:(fun _return_val_opt _subst astate ->
+      map_call_result astate ~f:(fun _return_val_opt _subst astate ->
           Sat (Ok (ContinueProgram astate)) )
   | ExceptionRaised astate ->
       (* If the callee throws, then store the return value of the callee (the exception object)
          in the return variable of the caller (using [copy_to_caller_return_variable])
          ready to be accessed by the exception handler. *)
-      map_call_result ~is_isl_error_prepost:false astate ~f:(fun return_val_opt _subst astate ->
+      map_call_result astate ~f:(fun return_val_opt _subst astate ->
           Sat (copy_to_caller_return_variable astate return_val_opt) )
   | AbortProgram astate
   | ExitProgram astate
   | LatentAbortProgram {astate}
   | LatentInvalidAccess {astate} ->
-      map_call_result ~is_isl_error_prepost:false astate
-        ~f:(fun _return_val_opt subst astate_post_call ->
+      map_call_result astate ~f:(fun _return_val_opt subst astate_post_call ->
           let** astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post tenv
@@ -252,7 +251,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
             >>| AccessResult.with_summary
           in
           match callee_exec_state with
-          | ContinueProgram _ | ExceptionRaised _ | ISLLatentMemoryError _ ->
+          | ContinueProgram _ | ExceptionRaised _ ->
               assert false
           | AbortProgram _ ->
               (* bypass the current errors to avoid compounding issues *)
@@ -279,9 +278,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                        )
                        ~f:(fun _ ->
                          L.die InternalError
-                           "LatentAbortProgram cannot be applied to non-fatal errors" ) )
-              | `ISLDelay astate ->
-                  Sat (FatalError (WithSummary (ISLError {astate}, astate_summary), [])) )
+                           "LatentAbortProgram cannot be applied to non-fatal errors" ) ) )
           | LatentInvalidAccess
               { address= address_callee
               ; must_be_valid= callee_access_trace, must_be_valid_reason
@@ -345,16 +342,6 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                                  ; astate= astate_post_call }
                              , astate_summary )
                          , [] ) ) ) ) )
-  | ISLLatentMemoryError summary ->
-      map_call_result ~is_isl_error_prepost:true summary ~f:(fun _return_val_opt _subst astate ->
-          let open SatUnsat.Import in
-          AbductiveDomain.Summary.of_post tenv
-            (Procdesc.get_proc_name caller_proc_desc)
-            (Procdesc.get_attributes caller_proc_desc)
-            call_loc astate
-          >>| AccessResult.ignore_leaks >>| AccessResult.of_abductive_summary_result
-          >>| AccessResult.with_summary
-          >>| PulseResult.map ~f:(fun astate_summary -> ISLLatentMemoryError astate_summary) )
 
 
 let ( let<**> ) x f =

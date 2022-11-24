@@ -14,8 +14,6 @@ val empty : t
 
 val filter : (AbstractValue.t -> Attributes.t -> bool) -> t -> t
 
-val for_all : (AbstractValue.t -> Attributes.t -> bool) -> t -> bool
-
 val filter_with_discarded_addrs : (AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
 
 val find_opt : AbstractValue.t -> t -> Attributes.t option
@@ -55,16 +53,12 @@ val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
 
 val is_copied_from_const_ref : AbstractValue.t -> t -> bool
 
-val get_invalid : AbstractValue.t -> t -> (Invalidation.t * Trace.t) option
-
 val get_must_be_valid :
   AbstractValue.t -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
 val get_must_not_be_tainted : AbstractValue.t -> t -> Attribute.TaintSinkSet.t
 
 val get_returned_from_unknown : AbstractValue.t -> t -> AbstractValue.t list option
-
-val is_must_be_valid_or_allocated_isl : AbstractValue.t -> t -> bool
 
 val get_must_be_initialized : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option
 
@@ -118,8 +112,6 @@ val remove_allocation_attr : AbstractValue.t -> t -> t
 val remove_taint_attrs : AbstractValue.t -> t -> t
 
 val remove_must_be_valid_attr : AbstractValue.t -> t -> t
-
-val remove_isl_abduced_attr : AbstractValue.t -> t -> t
 
 val remove_unsuitable_for_summary : t -> t
 

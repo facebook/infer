@@ -26,12 +26,10 @@ type contradiction = private
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
       {formals: (Var.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
-  | ISLPreconditionMismatch
   | PathCondition
 
 val apply_summary :
      PathContext.t
-  -> is_isl_error_prepost:bool
   -> Procname.t
   -> Location.t
   -> callee_summary:AbductiveDomain.Summary.t

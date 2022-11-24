@@ -91,14 +91,6 @@ let add_call call_and_loc call_subst astate latent_issue =
   add_call_to_calling_context call_and_loc latent_issue
 
 
-let is_manifest astate =
-  PulseArithmetic.is_manifest astate
-  && ( (not Config.pulse_isl)
-     || AbductiveDomain.Summary.is_isl_without_allocation astate
-        && ( (not Config.pulse_manifest_emp)
-           || AbductiveDomain.Summary.is_pre_without_isl_abduced astate ) )
-
-
 (* require a summary because we don't want to stop reporting because some non-abducible condition is
    not true as calling context cannot possibly influence such conditions *)
 let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.t) =
@@ -117,8 +109,10 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
          decision yet *)
       `ReportNow
   | AccessToInvalidAddress latent ->
-      if is_manifest astate then `ReportNow else `DelayReport (AccessToInvalidAddress latent)
+      if PulseArithmetic.is_manifest astate then `ReportNow
+      else `DelayReport (AccessToInvalidAddress latent)
   | ErlangError latent ->
-      if is_manifest astate then `ReportNow else `DelayReport (ErlangError latent)
+      if PulseArithmetic.is_manifest astate then `ReportNow else `DelayReport (ErlangError latent)
   | ReadUninitializedValue latent ->
-      if is_manifest astate then `ReportNow else `DelayReport (ReadUninitializedValue latent)
+      if PulseArithmetic.is_manifest astate then `ReportNow
+      else `DelayReport (ReadUninitializedValue latent)

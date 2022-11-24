@@ -28,9 +28,6 @@ type 'abductive_domain_t base_t =
       ; calling_context: (CallEvent.t * Location.t) list }
       (** if [address] is ever observed to be invalid then there is an invalid access because it
           [must_be_valid] *)
-  | ISLLatentMemoryError of AbductiveDomain.Summary.t
-      (** represents the state at the program point that might cause an error; used for
-          {!Config.pulse_isl} *)
 
 type t = AbductiveDomain.t base_t
 

@@ -2189,17 +2189,6 @@ and pulse_intraprocedural_only =
     "Disable inter-procedural analysis in Pulse. Used for experimentations only."
 
 
-and pulse_isl =
-  CLOpt.mk_bool ~long:"pulse-isl" ~default:false
-    "[Pulse] Incorrectness Separation Logic (ISL) mode: explicit Ok/Error summaries are recorded. \
-     For experiments only."
-
-
-and pulse_manifest_emp =
-  CLOpt.mk_bool ~long:"pulse-manifest-emp" ~default:false
-    "[Pulse] manifest errors with postive heaps in pre. For experiments only."
-
-
 and pulse_max_cfg_size =
   CLOpt.mk_int ~default:15000 ~long:"pulse-max-cfg-size"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -3842,10 +3831,6 @@ and pulse_cut_to_one_path_procedures_pattern =
 and pulse_inline_global_init_func_pointer = !pulse_inline_global_init_func_pointer
 
 and pulse_intraprocedural_only = !pulse_intraprocedural_only
-
-and pulse_isl = !pulse_isl
-
-and pulse_manifest_emp = !pulse_manifest_emp
 
 and pulse_max_cfg_size = !pulse_max_cfg_size
 

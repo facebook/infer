@@ -18,7 +18,6 @@ type error =
       ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
   | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
-  | ISLError of {astate: AbductiveDomain.t}
   | WithSummary of error * AbductiveDomain.Summary.t
 
 let with_summary result =
@@ -26,7 +25,7 @@ let with_summary result =
 
 
 let rec is_fatal = function
-  | PotentialInvalidAccess _ | ISLError _ ->
+  | PotentialInvalidAccess _ ->
       true
   | ReportableError {diagnostic} ->
       Diagnostic.aborts_execution diagnostic
@@ -35,7 +34,7 @@ let rec is_fatal = function
 
 
 let rec astate_of_error = function
-  | PotentialInvalidAccess {astate} | ReportableError {astate} | ISLError {astate} ->
+  | PotentialInvalidAccess {astate} | ReportableError {astate} ->
       astate
   | WithSummary (error, _) ->
       astate_of_error error
@@ -44,8 +43,7 @@ let rec astate_of_error = function
 type 'a t = ('a, error) PulseResult.t
 
 type abductive_error =
-  [ `ISLError of AbductiveDomain.t
-  | `PotentialInvalidAccess of
+  [ `PotentialInvalidAccess of
     AbductiveDomain.t * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ]
 
 type abductive_summary_error =
@@ -67,8 +65,6 @@ let ignore_leaks = function
 
 
 let of_abductive_error = function
-  | `ISLError astate ->
-      ISLError {astate}
   | `PotentialInvalidAccess (astate, address, must_be_valid) ->
       PotentialInvalidAccess {astate; address= Decompiler.find address astate; must_be_valid}
 
@@ -86,30 +82,6 @@ let of_abductive_summary_error = function
 let of_abductive_summary_result abductive_summary_result =
   (* note: all errors here are fatal *)
   Result.map_error abductive_summary_result ~f:of_abductive_summary_error
-  |> PulseResult.fatal_of_result
-
-
-let of_invalid_access access_trace = function
-  | `InvalidAccess (invalid_address, invalidation, invalidation_trace, astate) ->
-      ReportableError
-        { astate
-        ; diagnostic=
-            AccessToInvalidAddress
-              { calling_context= []
-              ; invalid_address= Decompiler.find invalid_address astate
-              ; invalidation
-              ; invalidation_trace
-              ; access_trace
-              ; must_be_valid_reason= None } }
-
-
-let of_abductive_access_result access_trace abductive_result =
-  Result.map_error abductive_result ~f:(function
-    | `InvalidAccess _ as invalid_access ->
-        of_invalid_access access_trace invalid_access
-    | (`ISLError _ | `PotentialInvalidAccess _) as error ->
-        of_abductive_error error )
-  (* note: all errors here are fatal *)
   |> PulseResult.fatal_of_result
 
 

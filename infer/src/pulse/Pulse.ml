@@ -78,8 +78,7 @@ module PulseTransferFunctions = struct
             ( ExitProgram astate
             | AbortProgram astate
             | LatentAbortProgram {astate}
-            | LatentInvalidAccess {astate}
-            | ISLLatentMemoryError astate ) ->
+            | LatentInvalidAccess {astate} ) ->
             AbductiveDomain.Summary.need_specialization astate
         | None ->
             false )
@@ -110,10 +109,7 @@ module PulseTransferFunctions = struct
                 let astate =
                   AbductiveDomain.Summary.with_need_specialization latent_invalid_access.astate
                 in
-                LatentInvalidAccess {latent_invalid_access with astate}
-            | ISLLatentMemoryError astate ->
-                let astate = AbductiveDomain.Summary.with_need_specialization astate in
-                ISLLatentMemoryError astate ) )
+                LatentInvalidAccess {latent_invalid_access with astate} ) )
     else astates
 
 
@@ -272,11 +268,7 @@ module PulseTransferFunctions = struct
           (StackAddress (Var.of_pvar pvar, ValueHistory.epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
         >>| ExecutionDomain.continue
-    | ISLLatentMemoryError _
-    | AbortProgram _
-    | ExitProgram _
-    | LatentAbortProgram _
-    | LatentInvalidAccess _ ->
+    | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
         Sat (Ok exec_state)
 
 
@@ -294,7 +286,6 @@ module PulseTransferFunctions = struct
       match exec_state with
       | ContinueProgram astate ->
           ContinueProgram (do_astate astate)
-      | ISLLatentMemoryError _
       | AbortProgram _
       | LatentAbortProgram _
       | ExitProgram _
@@ -442,8 +433,7 @@ module PulseTransferFunctions = struct
           | ExitProgram _
           | AbortProgram _
           | LatentAbortProgram _
-          | LatentInvalidAccess _
-          | ISLLatentMemoryError _ ) as exec_state ->
+          | LatentInvalidAccess _ ) as exec_state ->
             Ok exec_state
       in
       List.map exec_states_res ~f:one_state
@@ -543,7 +533,6 @@ module PulseTransferFunctions = struct
         let astates =
           List.concat_map astates ~f:(fun astate ->
               match astate with
-              | ISLLatentMemoryError _
               | AbortProgram _
               | ExceptionRaised _
               | ExitProgram _
@@ -600,7 +589,6 @@ module PulseTransferFunctions = struct
         call_instr ;
       List.concat_map astate_list ~f:(fun (astate : ExecutionDomain.t) ->
           match astate with
-          | ISLLatentMemoryError _
           | AbortProgram _
           | ExceptionRaised _
           | ExitProgram _
@@ -626,11 +614,7 @@ module PulseTransferFunctions = struct
   let remove_vars vars location astates =
     List.map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
         match exec_state with
-        | ISLLatentMemoryError _
-        | AbortProgram _
-        | ExitProgram _
-        | LatentAbortProgram _
-        | LatentInvalidAccess _ ->
+        | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
             exec_state
         | ContinueProgram astate ->
             ContinueProgram (PulseOperations.remove_vars vars location astate)
@@ -714,7 +698,7 @@ module PulseTransferFunctions = struct
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
-    | AbortProgram _ | ISLLatentMemoryError _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+    | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
         ([astate], path, astate_n)
     (* an exception has been raised, we skip the other instructions until we enter in
        exception edge *)
@@ -727,21 +711,11 @@ module PulseTransferFunctions = struct
       | Load {id= lhs_id; e= rhs_exp; loc; typ} ->
           (* [lhs_id := *rhs_exp] *)
           let deref_rhs astate =
-            let results =
-              if Config.pulse_isl then
-                PulseOperations.eval_deref_isl path loc rhs_exp astate
-                |> List.filter_map ~f:(fun result ->
-                       (let=* astate, rhs_addr_hist = result in
-                        and_is_int_if_integer_type typ (fst rhs_addr_hist) astate
-                        >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
-                       |> SatUnsat.sat )
-              else
-                (let** astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
-                 and_is_int_if_integer_type typ (fst rhs_addr_hist) astate
-                 >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
-                |> SatUnsat.to_list
-            in
-            PulseReport.report_results tenv proc_desc err_log loc results
+            (let** astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
+             and_is_int_if_integer_type typ (fst rhs_addr_hist) astate
+             >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
+            |> SatUnsat.to_list
+            |> PulseReport.report_results tenv proc_desc err_log loc
           in
           let set_global_astates =
             let is_global_constant pvar =
@@ -799,27 +773,17 @@ module PulseTransferFunctions = struct
             let<**> astate, (rhs_addr, rhs_history) =
               PulseOperations.eval path NoAccess loc rhs_exp astate
             in
-            let<**> is_structured, ls_astate_lhs_addr_hist =
-              if Config.pulse_isl then
-                PulseOperations.eval_structure_isl path Write loc lhs_exp astate
-              else
-                let++ astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
-                (false, [Ok (astate, lhs_addr_hist)])
+            let<**> ls_astate_lhs_addr_hist =
+              let++ astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
+              [Ok (astate, lhs_addr_hist)]
             in
             let hist = ValueHistory.sequence ~context:path.conditions event rhs_history in
-            let write_function lhs_addr_hist astate =
-              if is_structured then
-                PulseOperations.write_deref_biad_isl path loc ~ref:lhs_addr_hist Dereference
-                  ~obj:(rhs_addr, hist) astate
-              else
-                [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist)
-                    astate ]
-            in
             let astates =
               List.concat_map ls_astate_lhs_addr_hist ~f:(fun result ->
                   let<*> astate, lhs_addr_hist = result in
                   let<**> astate = and_is_int_if_integer_type typ rhs_addr astate in
-                  write_function lhs_addr_hist astate )
+                  [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist)
+                      astate ] )
             in
             let astates =
               if Topl.is_active () then
@@ -961,7 +925,6 @@ let exit_function analysis_data location posts non_disj_astate =
     List.fold_left posts ~init:([], non_disj_astate)
       ~f:(fun (acc_astates, astate_n) (exec_state, path) ->
         match exec_state with
-        | ISLLatentMemoryError _
         | AbortProgram _
         | ExitProgram _
         | ExceptionRaised _

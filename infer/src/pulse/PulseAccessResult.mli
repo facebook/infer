@@ -17,7 +17,6 @@ type error =
       ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
   | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
-  | ISLError of {astate: AbductiveDomain.t}
   | WithSummary of error * AbductiveDomain.Summary.t
       (** An error for which the summary corresponding to the abstract state has already been
           computed, to avoid having to compute the summary for a given abstract state multiple
@@ -34,8 +33,7 @@ val with_summary : ('a, error * AbductiveDomain.Summary.t) PulseResult.t -> 'a t
     Purposefully omits [`MemoryLeak] errors as it's a good idea to double-check if you really want
     to report a leak. *)
 type abductive_error =
-  [ `ISLError of AbductiveDomain.t
-  | `PotentialInvalidAccess of
+  [ `PotentialInvalidAccess of
     AbductiveDomain.t * AbstractValue.t * (Trace.t * Invalidation.must_be_valid_reason option) ]
 
 type abductive_summary_error =
@@ -57,14 +55,6 @@ val of_abductive_result : ('a, [< abductive_error]) result -> 'a t
 
 val of_abductive_summary_result :
   ('a, [< abductive_summary_error]) result -> ('a, error * AbductiveDomain.Summary.t) PulseResult.t
-
-val of_abductive_access_result :
-     Trace.t
-  -> ( 'a
-     , [< `InvalidAccess of AbstractValue.t * Invalidation.t * Trace.t * AbductiveDomain.t
-       | abductive_error ] )
-     result
-  -> 'a t
 
 val ignore_leaks :
      ( AbductiveDomain.Summary.t

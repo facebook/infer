@@ -23,8 +23,6 @@ let compare = Graph.compare AttributesNoRank.compare
 
 let equal = Graph.equal AttributesNoRank.equal
 
-let for_all = Graph.for_all
-
 let yojson_of_t = [%yojson_of: _]
 
 let add_one addr attribute attrs =
@@ -200,8 +198,6 @@ let remove_taint_attrs address memory =
   |> remove_propagate_taint_from address
 
 
-let remove_isl_abduced_attr = remove_attribute Attributes.remove_isl_abduced
-
 let remove_must_be_valid_attr = remove_attribute Attributes.remove_must_be_valid
 
 let remove_unsuitable_for_summary =
@@ -231,8 +227,6 @@ let is_copied_from_const_ref address attrs =
   |> Option.exists ~f:(fun (_, is_const_ref) -> is_const_ref)
 
 
-let get_invalid = get_attribute Attributes.get_invalid
-
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
 let get_must_not_be_tainted address memory =
@@ -241,12 +235,6 @@ let get_must_not_be_tainted address memory =
       Attribute.TaintSinkSet.empty
   | Some attrs ->
       Attributes.get_must_not_be_tainted attrs
-
-
-let is_must_be_valid_or_allocated_isl address attrs =
-  Option.is_some (get_must_be_valid address attrs)
-  || Option.is_some (get_attribute Attributes.get_allocation address attrs)
-  || Option.is_some (get_attribute Attributes.get_isl_abduced address attrs)
 
 
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized

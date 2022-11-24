@@ -319,23 +319,16 @@ module Basic = struct
           let<*> exec_state = exec_state_result in
           match exec_state with
           | ContinueProgram astate ->
-              if Config.pulse_isl then
-                PulseOperations.invalidate_biad_isl path location invalidation deleted_access astate
-                |> List.map ~f:(fun result ->
-                       let+ astate = result in
-                       ContinueProgram astate )
-              else
-                let<+> astate =
-                  PulseOperations.invalidate path UntraceableAccess location invalidation
-                    deleted_access astate
-                in
-                astate
+              let<+> astate =
+                PulseOperations.invalidate path UntraceableAccess location invalidation
+                  deleted_access astate
+              in
+              astate
           | ExceptionRaised _
           | ExitProgram _
           | AbortProgram _
           | LatentAbortProgram _
-          | LatentInvalidAccess _
-          | ISLLatentMemoryError _ ->
+          | LatentInvalidAccess _ ->
               [Ok exec_state] )
     in
     let astate_zero =

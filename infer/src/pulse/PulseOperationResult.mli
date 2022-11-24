@@ -100,7 +100,6 @@ module Import : sig
         ; address: DecompilerExpr.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
         ; calling_context: (CallEvent.t * Location.t) list }
-    | ISLLatentMemoryError of AbductiveDomain.Summary.t
 
   type base_error = AccessResult.error =
     | PotentialInvalidAccess of
@@ -108,6 +107,5 @@ module Import : sig
         ; address: DecompilerExpr.t
         ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option }
     | ReportableError of {astate: AbductiveDomain.t; diagnostic: Diagnostic.t}
-    | ISLError of {astate: AbductiveDomain.t}
     | WithSummary of base_error * AbductiveDomain.Summary.t
 end

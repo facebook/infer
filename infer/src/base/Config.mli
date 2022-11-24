@@ -550,10 +550,6 @@ val pulse_inline_global_init_func_pointer : bool
 
 val pulse_intraprocedural_only : bool
 
-val pulse_isl : bool
-
-val pulse_manifest_emp : bool
-
 val pulse_max_cfg_size : int
 
 val pulse_max_disjuncts : int

@@ -83,7 +83,6 @@ type t =
   | DynamicType of Typ.t * SourceFile.t option
   | EndOfCollection
   | Invalid of Invalidation.t * Trace.t
-  | ISLAbduced of Trace.t  (** The allocation is abduced so as the analysis could run normally *)
   | MustBeInitialized of Timestamp.t * Trace.t
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
   | MustNotBeTainted of TaintSinkSet.t
@@ -172,10 +171,6 @@ module Attributes : sig
 
   val remove_taint_sanitized : t -> t
 
-  val get_isl_abduced : t -> Trace.t option
-
-  val remove_isl_abduced : t -> t
-
   val get_must_be_valid :
     t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
@@ -200,14 +195,6 @@ module Attributes : sig
   val get_must_be_initialized : t -> (Timestamp.t * Trace.t) option
 
   val get_unreachable_at : t -> Location.t option
-
-  val isl_subset : t -> t -> bool
-  (** check whether for each attr in the second list, there exists a corresponding attr in the first
-      according to {!Attributes.isl_equiv}. *)
-
-  val replace_isl_abduced : t -> t -> t
-  (** While applying a spec, replacing ISLAbduced by Allocated and Invalidation.Cfree by
-      Invalidation.delete, if applicable *)
 
   val add_call_and_subst :
        (AbstractValue.t -> AbstractValue.t)

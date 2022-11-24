@@ -2869,8 +2869,6 @@ let is_known_zero formula v =
      |> Option.exists ~f:LinArith.is_zero
 
 
-let is_known_non_zero formula v = Formula.is_neq_zero formula.phi (Term.Var v)
-
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 
 let is_manifest ~is_allocated formula =

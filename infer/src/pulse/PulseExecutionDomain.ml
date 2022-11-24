@@ -28,7 +28,6 @@ type 'abductive_domain_t base_t =
       ; address: DecompilerExpr.t
       ; must_be_valid: (Trace.t * Invalidation.must_be_valid_reason option[@yojson.opaque])
       ; calling_context: ((CallEvent.t * Location.t) list[@yojson.opaque]) }
-  | ISLLatentMemoryError of AbductiveDomain.Summary.t
 [@@deriving equal, compare, yojson_of]
 
 type t = AbductiveDomain.t base_t
@@ -39,9 +38,7 @@ let leq ~lhs ~rhs =
   phys_equal lhs rhs
   ||
   match (lhs, rhs) with
-  | AbortProgram astate1, AbortProgram astate2
-  | ExitProgram astate1, ExitProgram astate2
-  | ISLLatentMemoryError astate1, ISLLatentMemoryError astate2 ->
+  | AbortProgram astate1, AbortProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
       AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
   | ExceptionRaised astate1, ExceptionRaised astate2
   | ContinueProgram astate1, ContinueProgram astate2 ->
@@ -65,8 +62,6 @@ let pp_ pp_abductive_domain_t fmt = function
       F.fprintf fmt "{ExceptionRaised %a}" pp_abductive_domain_t astate
   | ExitProgram astate ->
       F.fprintf fmt "{ExitProgram %a}" AbductiveDomain.Summary.pp astate
-  | ISLLatentMemoryError astate ->
-      F.fprintf fmt "{ISLLatentMemoryError %a}" AbductiveDomain.Summary.pp astate
   | LatentAbortProgram {astate; latent_issue} ->
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
       let message = Diagnostic.get_message diagnostic in
@@ -88,9 +83,7 @@ let equal_fast exec_state1 exec_state2 =
   phys_equal exec_state1 exec_state2
   ||
   match (exec_state1, exec_state2) with
-  | AbortProgram astate1, AbortProgram astate2
-  | ExitProgram astate1, ExitProgram astate2
-  | ISLLatentMemoryError astate1, ISLLatentMemoryError astate2 ->
+  | AbortProgram astate1, AbortProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
       phys_equal astate1 astate2
   | ContinueProgram astate1, ContinueProgram astate2 ->
       phys_equal astate1 astate2
