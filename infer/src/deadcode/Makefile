@@ -84,7 +84,7 @@ depend:
 #
 #	This proceeds in two steps: first remove any "foo.cmi" dep from "foo.cmx", then rename all
 #	.cmi to .cmx. The first step avoids introducing a circular dependency in the second step.
-	sed -i .depend \
+	$(GNU_SED) -i .depend \
 	  -e 's/^\([^ :]\+\)\.cmx[ ]*: \(.*\)\1\.cmi/\1.cmx: \2/' \
 	  -e 's/\.cmi\b/.cmx/g'
 
