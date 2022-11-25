@@ -1,0 +1,7 @@
+{
+  "pulse-taint-propagators": [
+    { "procedure": "NSString.stringWithFormat:",
+      "taint_target": "ReturnValue"
+    }
+  ]
+}
