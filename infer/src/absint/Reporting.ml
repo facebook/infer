@@ -131,15 +131,16 @@ let mk_issue_to_report issue_type error_message =
   {IssueToReport.issue_type; description= Localise.verbatim_desc error_message; ocaml_pos= None}
 
 
-let log_issue_from_summary_simplified ?severity_override attrs err_log ~loc ?(ltr = []) ?extras
+let log_issue_from_summary_simplified ?severity_override proc_desc err_log ~loc ?(ltr = []) ?extras
     checker issue_type error_message =
   let issue_to_report = mk_issue_to_report issue_type error_message in
-  log_issue_from_summary ?severity_override attrs err_log ~node:Errlog.UnknownNode ~session:0 ~loc
-    ~ltr ?extras checker issue_to_report
+  log_issue_from_summary ?severity_override proc_desc err_log ~node:Errlog.UnknownNode ~session:0
+    ~loc ~ltr ?extras checker issue_to_report
 
 
-let log_issue attrs err_log ~loc ?ltr ?extras checker issue_type error_message =
-  log_issue_from_summary_simplified attrs err_log ~loc ?ltr ?extras checker issue_type error_message
+let log_issue proc_desc err_log ~loc ?ltr ?extras checker issue_type error_message =
+  log_issue_from_summary_simplified proc_desc err_log ~loc ?ltr ?extras checker issue_type
+    error_message
 
 
 let log_issue_external procname ~issue_log ?severity_override ~loc ~ltr ?access ?extras checker
