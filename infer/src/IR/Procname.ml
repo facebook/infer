@@ -515,11 +515,14 @@ module Erlang = struct
 
   let pp_filename fmt {module_name; function_name; arity} =
     (* Extend list of illegal characters if needed. *)
-    let target = "/:<>" in
-    let replacement = "_" in
-    let f = Staged.unstage (String.tr_multi ~target ~replacement) in
-    let module_name = f module_name in
-    let function_name = f function_name in
+    let invalid_chars = "/:<>" in
+    let sanitize_char chr =
+      if String.mem invalid_chars chr then Printf.sprintf "%#x" (Char.to_int chr)
+      else Char.to_string chr
+    in
+    let sanitize str = String.concat_map str ~f:sanitize_char in
+    let module_name = sanitize module_name in
+    let function_name = sanitize function_name in
     pp_general '#' Verbose fmt {module_name; function_name; arity}
 
 
