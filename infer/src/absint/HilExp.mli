@@ -48,7 +48,7 @@ and access_expression = private
 [@@deriving compare, equal]
 
 module AccessExpression : sig
-  val of_id : Ident.t -> Typ.t -> access_expression [@@warning "-32"]
+  val of_id : Ident.t -> Typ.t -> access_expression [@@warning "-unused-value-declaration"]
 
   val base : AccessPath.base -> access_expression
 
@@ -60,10 +60,10 @@ module AccessExpression : sig
   (** guarantees that we never build [Dereference (AddressOf t)] expressions: these become [t] *)
 
   val address_of : access_expression -> access_expression option
-    [@@warning "-32"]
+    [@@warning "-unused-value-declaration"]
   (** address_of doesn't always make sense, eg [address_of (Dereference t)] is [None] *)
 
-  val address_of_base : AccessPath.base -> access_expression [@@warning "-32"]
+  val address_of_base : AccessPath.base -> access_expression [@@warning "-unused-value-declaration"]
 
   val to_access_path : access_expression -> AccessPath.t
 

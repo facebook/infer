@@ -366,7 +366,7 @@ let get_message diagnostic =
               F.fprintf fmt
                 "%a is used as a %s when inserting into a collection%a, potentially causing a crash"
                 pp_prefix "nil"
-                ( match[@warning "-8"] must_be_valid_reason with
+                ( match[@warning "-partial-match"] must_be_valid_reason with
                 | Some InsertionIntoCollectionKey ->
                     "key"
                 | Some InsertionIntoCollectionValue ->

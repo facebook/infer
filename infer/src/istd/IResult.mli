@@ -7,7 +7,7 @@
 
 open! IStd
 
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 module Let_syntax : sig
   include module type of Result.Monad_infix

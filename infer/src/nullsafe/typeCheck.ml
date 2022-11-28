@@ -965,7 +965,7 @@ let rec check_condition_for_sil_prune
     set_original_pvar_to_nonnull_in_typestate ~with_cond_redundant_check:true expr typestate
       ~descr:"`!= null` branch"
   in
-  match[@warning "-57"] c with
+  match[@warning "-ambiguous-var-in-pattern-guard"] c with
   | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), expr)
   | Exp.BinOp (Binop.Eq, expr, Exp.Const (Const.Cint i))
     when IntLit.iszero i ->

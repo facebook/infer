@@ -53,7 +53,7 @@ val is_class_object : t -> bool
     that cannot be resolved to an address (eg local-rooted paths or arithmetic expressions). *)
 type subst
 
-val pp_subst : F.formatter -> subst -> unit [@@warning "-32"]
+val pp_subst : F.formatter -> subst -> unit [@@warning "-unused-value-declaration"]
 
 val make_subst : FormalMap.t -> HilExp.t list -> subst
 

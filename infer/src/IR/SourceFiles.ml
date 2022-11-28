@@ -105,7 +105,7 @@ let is_freshly_captured_statement =
     "SELECT freshly_captured FROM source_files WHERE source_file = :k"
 
 
-let deserialize_freshly_captured = function[@warning "-8"]
+let deserialize_freshly_captured = function[@warning "-partial-match"]
   | Sqlite3.Data.INT p ->
       Int64.equal p Int64.one
 

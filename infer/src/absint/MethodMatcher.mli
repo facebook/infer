@@ -32,7 +32,7 @@ val of_json : Yojson.Basic.t -> t
     ["search_superclasses"] and ["method_prefix"]. If absent, the defaults are used. The resulting
     matcher matches if one of the matchers in the list does. *)
 
-val of_list : t list -> t [@@warning "-32"]
+val of_list : t list -> t [@@warning "-unused-value-declaration"]
 (** Or combinator *)
 
 val of_records : record list -> t

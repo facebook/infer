@@ -19,7 +19,7 @@ val protect : ('a -> 'b) -> 'a -> 'b option
 val yojson_of_t : [%yojson_of: t]
 
 (* the functions below shadow definitions in [Z] to give them safer types *)
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 val div : t -> t -> t option
 

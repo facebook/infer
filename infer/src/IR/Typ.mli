@@ -128,7 +128,8 @@ and template_spec_info =
                 template arguments is also needed for uniqueness. *)
       ; args: template_arg list }
 
-val pp_template_spec_info : Pp.env -> F.formatter -> template_spec_info -> unit [@@warning "-32"]
+val pp_template_spec_info : Pp.env -> F.formatter -> template_spec_info -> unit
+  [@@warning "-unused-value-declaration"]
 
 val mk : ?default:t -> ?quals:type_quals -> desc -> t
 (** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such

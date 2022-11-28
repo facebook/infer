@@ -27,7 +27,7 @@ val get_formal_base : int -> t -> AccessPath.base option
 (** return the base var for the given index if it exists, or None if it does not. Note: this is
     linear in the size of the formal map *)
 
-val pp : F.formatter -> t -> unit [@@warning "-32"]
+val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
 val cardinal : t -> int
 

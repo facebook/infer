@@ -7,7 +7,7 @@
 
 include Core
 
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 (* easier to write Unix than Core_unix *)
 module Unix = Core_unix

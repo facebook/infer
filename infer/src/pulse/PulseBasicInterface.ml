@@ -26,7 +26,7 @@ include SatUnsat.Types
 (** {2 Enforce short form usage} *)
 
 include struct
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   module PulseAbstractValue = PulseAbstractValue
   [@@deprecated "use the short form AbstractValue instead"]

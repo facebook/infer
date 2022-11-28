@@ -10,7 +10,7 @@ open! IStd
 (** Represents a type-checking mode of nullsafe. *)
 
 module Trust : sig
-  [@@@warning "-32"]
+  [@@@warning "-unused-value-declaration"]
 
   type trust_list
 
@@ -30,7 +30,7 @@ end
 type t = Default | Local of Trust.t | Strict [@@deriving compare, equal]
 
 val of_annot : Annot.t -> t option
-  [@@warning "-32"]
+  [@@warning "-unused-value-declaration"]
 (** Returns [t] when provided annotation matches the format of [@Nullsafe], otherwise [None]. *)
 
 val of_class : Tenv.t -> JavaClassName.t -> t

@@ -371,7 +371,7 @@ end
 
 module Resource = struct
   let allocate_state (this, _) {location; callee_procname} astate : AbductiveDomain.t =
-    let[@warning "-8"] (Some (Typ.CSharpClass class_name)) =
+    let[@warning "-partial-match"] (Some (Typ.CSharpClass class_name)) =
       Procname.get_class_type_name callee_procname
     in
     let allocator = Attribute.CSharpResource class_name in

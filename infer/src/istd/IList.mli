@@ -7,7 +7,7 @@
 
 open! IStd
 
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 val map_changed : equal:('a -> 'a -> bool) -> f:('a -> 'a) -> 'a list -> 'a list
 (** like map, but returns the original list if unchanged *)

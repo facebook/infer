@@ -32,7 +32,7 @@ module PathContext = PulsePathContext
 (** {2 Enforce short form usage} *)
 
 include struct
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   module PulseAbductiveDomain = PulseAbductiveDomain
   [@@deprecated "use the short form AbductiveDomain instead"]

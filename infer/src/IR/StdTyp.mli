@@ -11,7 +11,7 @@ type t = Typ.t
 
 val boolean : t
 
-val char : t [@@warning "-32"]
+val char : t [@@warning "-unused-value-declaration"]
 
 val double : t
 

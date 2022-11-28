@@ -11,7 +11,7 @@ module F = Format
 (** type of a procedure call; either direct or via function pointer *)
 type call = Direct of Procname.t | Indirect of HilExp.t [@@deriving compare]
 
-val pp_call : F.formatter -> call -> unit [@@warning "-32"]
+val pp_call : F.formatter -> call -> unit [@@warning "-unused-value-declaration"]
 
 type t =
   | Assign of HilExp.AccessExpression.t * HilExp.t * Location.t

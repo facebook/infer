@@ -140,7 +140,7 @@ end
 module Resource = struct
   let allocate_aux ~exn_class_name ((this, _) as this_obj) delegation_opt : model =
    fun ({location; callee_procname; path; analysis_data= {tenv}} as model_data) astate ->
-    let[@warning "-8"] (Some (Typ.JavaClass class_name)) =
+    let[@warning "-partial-match"] (Some (Typ.JavaClass class_name)) =
       Procname.get_class_type_name callee_procname
     in
     let allocator = Attribute.JavaResource class_name in

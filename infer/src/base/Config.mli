@@ -762,7 +762,7 @@ val subtype_multirange : bool
 
 val suffix_match_changed_files : bool
 
-val summaries_caches_max_size : int [@@warning "-32"]
+val summaries_caches_max_size : int [@@warning "-unused-value-declaration"]
 
 val suppress_lint_ignore_types : bool
 

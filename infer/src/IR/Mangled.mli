@@ -35,7 +35,7 @@ val this : t
 
 val is_this : t -> bool
 
-val self : t [@@warning "-32"]
+val self : t [@@warning "-unused-value-declaration"]
 
 val is_self : t -> bool
 

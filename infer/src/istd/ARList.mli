@@ -63,4 +63,4 @@ include sig
   val fold_unordered : ('a t, 'a, 'accum) Container.fold
   (** Always better than [fold_left] when you do not care about the order. *)
 end
-[@@warning "-32"]
+[@@warning "-unused-value-declaration"]

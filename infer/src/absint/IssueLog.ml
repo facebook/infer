@@ -74,7 +74,7 @@ let iter_issue_logs =
         SqliteUtils.result_fold_rows ~init:() ~finalize:false db ~log:"IssueLog.fold_issue_logs"
           stmt ~f:(fun () stmt ->
             let checker : Checker.t =
-              match[@warning "-8"] Sqlite3.column stmt 0 with
+              match[@warning "-partial-match"] Sqlite3.column stmt 0 with
               | Sqlite3.Data.TEXT checker_str ->
                   Checker.from_id checker_str |> Option.value_exn
             in

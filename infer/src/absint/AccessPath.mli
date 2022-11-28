@@ -40,7 +40,8 @@ val append : t -> access list -> t
     `x.f.g.h` *)
 
 (* used in infer/src/labs/ *)
-val replace_prefix : prefix:t -> replace_with:t -> t -> t option [@@warning "-32"]
+val replace_prefix : prefix:t -> replace_with:t -> t -> t option
+  [@@warning "-unused-value-declaration"]
 
 val equal_base : base -> base -> bool
 
@@ -51,7 +52,7 @@ val pp_base : Format.formatter -> base -> unit
 val pp_access : Format.formatter -> access -> unit
 
 (* used in infer/src/labs/ *)
-val pp_access_list : Format.formatter -> access list -> unit [@@warning "-32"]
+val pp_access_list : Format.formatter -> access list -> unit [@@warning "-unused-value-declaration"]
 
 module Abs : sig
   type raw = t

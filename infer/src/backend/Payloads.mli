@@ -9,7 +9,7 @@ open! IStd
 
 include sig
   (* ignore dead modules added by @@deriving fields *)
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   (** Analysis summaries for inter-procedural analyses.
 

@@ -70,7 +70,7 @@ end
 module VariantCostMap = struct
   include PrettyPrintable.PPMonoMapOfPPMap (CostIssues.CostKindMap) (BasicCostWithReason)
 
-  let[@warning "-32"] add _ = Logging.die InternalError "Don't call me"
+  let[@warning "-unused-value-declaration"] add _ = Logging.die InternalError "Don't call me"
 
   let get kind record = find_opt kind record |> Option.value ~default:BasicCostWithReason.zero
 

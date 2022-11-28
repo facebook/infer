@@ -68,7 +68,7 @@ let find v decompiler =
 let add_var_source v var decompiler =
   let+ decompiler in
   if Var.appears_in_source_code var then
-    let[@warning "-8"] (Var.ProgramVar pvar) = var in
+    let[@warning "-partial-match"] (Var.ProgramVar pvar) = var in
     Map.add v (DecompilerExpr.PVar pvar, []) decompiler
   else decompiler
 

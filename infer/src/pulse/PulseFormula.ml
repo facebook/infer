@@ -727,7 +727,7 @@ module Term = struct
         let t' =
           if phys_equal sub_t sub_t' then t
           else
-            match[@warning "-8"] t with
+            match[@warning "-partial-match"] t with
             | Minus _ ->
                 Minus sub_t'
             | BitNot _ ->
@@ -760,7 +760,7 @@ module Term = struct
         let t' =
           if phys_equal t1 t1' && phys_equal t2 t2' then t
           else
-            match[@warning "-8"] t with
+            match[@warning "-partial-match"] t with
             | Add _ ->
                 Add (t1', t2')
             | Mult _ ->
@@ -962,7 +962,7 @@ module Term = struct
       | BitShiftRight (t1, t2)
       | BitXor (t1, t2) ->
           q_map2 t1 t2 (fun c1 c2 ->
-              match[@warning "-8"] t0 with
+              match[@warning "-partial-match"] t0 with
               | BitAnd _ ->
                   map_i64_i64 c1 c2 Int64.bit_and |> or_raise
               | BitOr _ ->
@@ -1077,7 +1077,7 @@ module Term = struct
               raise_notrace Undefined
             else
               let factor = Const Q.(of_int 1 lsl i) in
-              match[@warning "-8"] t with
+              match[@warning "-partial-match"] t with
               | BitShiftLeft _ ->
                   simplify_shallow_or_raise (Mult (t', factor))
               | BitShiftRight _ ->
@@ -2792,7 +2792,7 @@ module DeadVariables = struct
     let new_vs = ref (Var.Set.elements vs) in
     while not (List.is_empty !new_vs) do
       (* pop [new_vs] *)
-      let[@warning "-8"] (v :: rest) = !new_vs in
+      let[@warning "-partial-match"] (v :: rest) = !new_vs in
       new_vs := rest ;
       Caml.Hashtbl.find_opt graph v
       |> Option.iter ~f:(fun vs' ->

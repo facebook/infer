@@ -64,7 +64,7 @@ module Make
 
   (* suppress warnings about using {!List.Assoc.compare} since our own compare function also ignores
      that different representations of a [t] can have the same meaning *)
-  [@@@warning "-3"]
+  [@@@alert "-deprecated"]
 
   (** [new_] and [old] together represent the map. Keys may be present in both [old] and [new_], in
       which case bindings in [new_] take precendence.
@@ -82,7 +82,7 @@ module Make
     ; old: (key, value) List.Assoc.t  (** invariant: [List.length old ≤ Config.limit] *) }
   [@@deriving compare]
 
-  [@@@warning "+3"]
+  [@@@alert "+deprecated"]
 
   let equal = [%compare.equal: t]
 

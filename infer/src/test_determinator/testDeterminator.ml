@@ -81,7 +81,7 @@ module DiffLines = struct
         L.die UserError "Missing modified lines argument"
 
 
-  [@@@warning "-32"]
+  [@@@warning "-unused-value-declaration"]
 
   let pp_changed_lines fmt map =
     F.fprintf fmt "--- Changed Lines Map ---@\n" ;
@@ -89,7 +89,7 @@ module DiffLines = struct
         F.fprintf fmt "%s --> [%a]@\n" key (Pp.seq ~sep:", " F.pp_print_int) data )
 end
 
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 let pp_profiler_sample_set fmt s =
   F.fprintf fmt " (set size = %i) " (Procname.Set.cardinal s) ;
@@ -116,7 +116,7 @@ module TestSample = struct
         L.die UserError "Missing profiler samples argument"
 
 
-  [@@@warning "-32"]
+  [@@@warning "-unused-value-declaration"]
 
   let pp_map fmt labeled_test_samples =
     List.iter labeled_test_samples ~f:(fun (label, profiler_samples) ->

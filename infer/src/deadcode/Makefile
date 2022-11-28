@@ -111,7 +111,7 @@ depend:
 	        || [ $@ = "inferunit.cmx" ] \
 	        || [ $@ = "InferCreateTraceViewLinks.cmx" ] \
 	        ; then \
-	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); \
+	  echo '[@warning "-unused-module"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); \
 	fi
 	$(QUIET)echo "(* END OF SIGNATURE $*.mli *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
@@ -133,7 +133,7 @@ depend:
 	        || [ $@ = "InferCreateTraceViewLinks.cmx" ] \
 	        || [ $@ = "scripts/checkCopyright.cmx" ] \
 	        ; then \
-	  echo '[@warning "-60"] ' >> $(ALL_INFER_IN_ONE_FILE_ML);\
+	  echo '[@warning "-unused-module"] ' >> $(ALL_INFER_IN_ONE_FILE_ML);\
 	fi
 	$(QUIET)echo >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "$*.mli" >> $(ALL_MLI_FILES_COPIED)

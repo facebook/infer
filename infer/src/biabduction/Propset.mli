@@ -12,7 +12,7 @@ open! IStd
 
 (** {2 Sets of Propositions} *)
 
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 (** Sets of propositions. The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is
     called on any prop added to the set. *)

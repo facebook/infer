@@ -37,7 +37,7 @@ val log_complete_event :
   -> name:string
   -> unit
   -> unit
-  [@@warning "-32"]
+  [@@warning "-unused-value-declaration"]
 
 val log_instant_event : logger -> ?timestamp:Mtime.t -> name:string -> scope -> unit
 

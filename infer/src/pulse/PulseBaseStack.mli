@@ -13,7 +13,7 @@ include
 
 (* need to shadow the declaration in [MonoMap] even though it is unused since [MapS.compare] has a
      different type *)
-val compare : t -> t -> int [@@warning "-32"]
+val compare : t -> t -> int [@@warning "-unused-value-declaration"]
 
 val equal : t -> t -> bool
 

@@ -7,7 +7,7 @@
 
 open! IStd
 
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 (** Pulse's base error monad: some errors can be accumulated along paths, others are fatal and
     there's no point continuing the execution. *)

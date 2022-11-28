@@ -337,4 +337,4 @@ module Call : sig
   (** Ends function arguments, accepts NO more function arguments. If the args do not match, raise
       an internal error. *)
 end
-[@@warning "-32"]
+[@@warning "-unused-value-declaration"]

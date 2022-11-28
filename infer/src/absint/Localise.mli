@@ -32,7 +32,7 @@ module BucketLevel : sig
 
   val b3 : string
 
-  val b4 : string [@@warning "-32"]
+  val b4 : string [@@warning "-unused-value-declaration"]
 
   val b5 : string
   (** lowest likelihood *)

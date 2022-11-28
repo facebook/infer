@@ -1399,7 +1399,7 @@ let[@warning "-unused-value-declaration"] wrap name f call =
       let exn = Replay (exn, sexp_of_call (call ())) in
       Printexc.raise_with_backtrace exn bt
 
-let[@warning "-32"] mwrap tmr f call vx =
+let[@warning "-unused-value-declaration"] mwrap tmr f call vx =
   let vx0 = !vx in
   wrap tmr f (fun () -> call vx0) vx
 

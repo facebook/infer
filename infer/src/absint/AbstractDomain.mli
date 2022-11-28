@@ -57,7 +57,7 @@ end
 
 include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
   sig
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   type empty = |
 
@@ -145,7 +145,7 @@ module Flat (V : PrettyPrintable.PrintableEquatableType) : sig
 end
 
 include sig
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   (** Stacked abstract domain: tagged union of [Below], [Val], and [Above] domains where all
       elements of [Below] are strictly smaller than all elements of [Val] which are strictly smaller
@@ -225,7 +225,7 @@ module type FiniteSetS = sig
 end
 
 include sig
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   (** Lift a PPSet to a powerset domain ordered by subset. The elements of the set should be drawn
       from a *finite* collection of possible values, since the widening operator here is just union. *)
@@ -254,7 +254,7 @@ module type MapS = sig
 end
 
 include sig
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
       Every element implicitly maps to bottom unless it is explicitly bound to something else. Uses
@@ -288,18 +288,18 @@ module SafeInvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain
 (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
 
 include sig
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   module FiniteMultiMap
       (Key : PrettyPrintable.PrintableOrderedType)
       (Value : PrettyPrintable.PrintableOrderedType) : sig
     include WithBottom
 
-    val add : Key.t -> Value.t -> t -> t [@@warning "-32"]
+    val add : Key.t -> Value.t -> t -> t [@@warning "-unused-value-declaration"]
 
-    val mem : Key.t -> t -> bool [@@warning "-32"]
+    val mem : Key.t -> t -> bool [@@warning "-unused-value-declaration"]
 
-    val remove : Key.t -> Value.t -> t -> t [@@warning "-32"]
+    val remove : Key.t -> Value.t -> t -> t [@@warning "-unused-value-declaration"]
 
     val remove_all : Key.t -> t -> t
 

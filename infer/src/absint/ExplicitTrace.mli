@@ -54,7 +54,7 @@ end
 
 include (* ocaml ignores the warning suppression at toplevel, hence the [include struct ... end] trick *)
   sig
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   (* The [compare] function produced ignores traces but *not* locations *)
   module MakeTraceElem (Elem : Element) (CallPrinter : CallPrinter) :

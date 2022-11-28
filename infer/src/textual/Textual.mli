@@ -12,9 +12,9 @@ module Hashtbl = Caml.Hashtbl
 module Lang : sig
   type t = Java | Hack [@@deriving equal]
 
-  val of_string : string -> t option [@@warning "-32"]
+  val of_string : string -> t option [@@warning "-unused-value-declaration"]
 
-  val to_string : t -> string [@@warning "-32"]
+  val to_string : t -> string [@@warning "-unused-value-declaration"]
 end
 
 module Location : sig
@@ -67,9 +67,9 @@ val pp_qualified_fieldname : F.formatter -> qualified_fieldname -> unit
 module Attr : sig
   type t = {name: string; values: string list; loc: Location.t}
 
-  val name : t -> string [@@warning "-32"]
+  val name : t -> string [@@warning "-unused-value-declaration"]
 
-  val values : t -> string list [@@warning "-32"]
+  val values : t -> string list [@@warning "-unused-value-declaration"]
 
   val mk_source_language : Lang.t -> t
 
@@ -77,9 +77,9 @@ module Attr : sig
 
   val mk_final : t
 
-  val pp : F.formatter -> t -> unit [@@warning "-32"]
+  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
-  val pp_with_loc : F.formatter -> t -> unit [@@warning "-32"]
+  val pp_with_loc : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end
 
 module Typ : sig
@@ -271,9 +271,9 @@ module Module : sig
 
   type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
 
-  val lang : t -> Lang.t option [@@warning "-32"]
+  val lang : t -> Lang.t option [@@warning "-unused-value-declaration"]
 
-  val pp : F.formatter -> t -> unit [@@warning "-32"]
+  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end
 
 type transform_error = {loc: Location.t; msg: string Lazy.t}

@@ -367,7 +367,7 @@ module SQLite = struct
 
 
   let deserialize serialized_sourcefile =
-    let[@warning "-8"] (Sqlite3.Data.TEXT text) = serialized_sourcefile in
+    let[@warning "-partial-match"] (Sqlite3.Data.TEXT text) = serialized_sourcefile in
     if String.is_empty text then
       L.die InternalError "Could not deserialize sourcefile with empty representation@." ;
     let tag = text.[0] in

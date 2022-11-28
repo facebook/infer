@@ -8,7 +8,7 @@
 open! IStd
 open PulseDomainInterface
 
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 val report : is_suppressed:bool -> latent:bool -> Procdesc.t -> Errlog.t -> Diagnostic.t -> unit
 

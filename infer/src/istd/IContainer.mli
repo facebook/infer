@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-[@@@warning "-32"]
+[@@@warning "-unused-value-declaration"]
 
 (** Extension of {!Base.Container}, i.e. generic definitions of container operations in terms of a
     [fold] function. *)

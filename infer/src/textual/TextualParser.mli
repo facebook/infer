@@ -10,11 +10,12 @@ module F = Format
 
 type error
 
-val pp_error : SourceFile.t -> F.formatter -> error -> unit [@@warning "-32"]
+val pp_error : SourceFile.t -> F.formatter -> error -> unit [@@warning "-unused-value-declaration"]
 
 val log_error : SourceFile.t -> error -> unit
 
-val parse_string : SourceFile.t -> string -> (Textual.Module.t, error list) result [@@warning "-32"]
+val parse_string : SourceFile.t -> string -> (Textual.Module.t, error list) result
+  [@@warning "-unused-value-declaration"]
 
 module TextualFile : sig
   type t =

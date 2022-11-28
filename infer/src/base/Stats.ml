@@ -47,7 +47,7 @@ end
 
 include struct
   (* ignore dead modules added by @@deriving fields *)
-  [@@@warning "-60"]
+  [@@@warning "-unused-module"]
 
   type t =
     { mutable longest_proc_duration_heap: LongestProcDurationHeap.t

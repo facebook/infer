@@ -112,7 +112,10 @@ end
 module MarshalledDataNOTForComparison (D : T) = struct
   type t = D.t
 
-  let deserialize = function[@warning "-8"] Sqlite3.Data.BLOB b -> Marshal.from_string b 0
+  let deserialize = function[@warning "-partial-match"]
+    | Sqlite3.Data.BLOB b ->
+        Marshal.from_string b 0
+
 
   let serialize x = Sqlite3.Data.BLOB (Marshal.to_string x [])
 end
@@ -120,7 +123,7 @@ end
 module MarshalledNullableDataNOTForComparison (D : T) = struct
   type t = D.t option
 
-  let deserialize = function[@warning "-8"]
+  let deserialize = function[@warning "-partial-match"]
     | Sqlite3.Data.BLOB b ->
         Some (Marshal.from_string b 0)
     | Sqlite3.Data.NULL ->

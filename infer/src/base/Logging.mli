@@ -63,7 +63,7 @@ val debug_dev : ('a, Format.formatter, unit) format -> 'a
   [@@deprecated
     "Only use to debug during development. If you want more permanent logging, use [Logging.debug] \
      instead."]
-  [@@warning "-32"]
+  [@@warning "-unused-value-declaration"]
 (** For debugging during development. *)
 
 (** Type of location in ml source: __POS__ *)

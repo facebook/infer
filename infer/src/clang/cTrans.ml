@@ -721,7 +721,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     let context = trans_state.context in
-    let[@warning "-8"] [stmt] = stmt_list in
+    let[@warning "-partial-match"] [stmt] = stmt_list in
     let res_trans = instruction trans_state stmt in
     (* create the label root node into the hashtbl *)
     let sil_loc =
@@ -2083,7 +2083,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         prune_nodes' ;
       res_trans
     in
-    let[@warning "-8"] [cond; exp1; exp2] = stmt_list in
+    let[@warning "-partial-match"] [cond; exp1; exp2] = stmt_list in
     let typ =
       CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type
     in
@@ -2412,7 +2412,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and defaultStmt_trans trans_state stmt_info default_stmt_list =
-    let[@warning "-8"] [body] = default_stmt_list in
+    let[@warning "-partial-match"] [body] = default_stmt_list in
     let body_trans_result = instruction trans_state body in
     (let open SwitchCase in
     add {condition= Default; stmt_info; root_nodes= body_trans_result.control.root_nodes}) ;
@@ -4559,7 +4559,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let temporaries_to_destroy =
       CScope.CXXTemporaries.get_destroyable_temporaries trans_state.context stmt_list
     in
-    let[@warning "-8"] [stmt] = stmt_list in
+    let[@warning "-partial-match"] [stmt] = stmt_list in
     let temporaries_constructor_markers =
       List.fold temporaries_to_destroy ~init:trans_state.context.temporaries_constructor_markers
         ~f:(fun markers {CContext.pvar; typ; marker} ->
@@ -5027,7 +5027,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | ObjCAvailabilityCheckExpr (_, _, expr_info, _) ->
         undefined_expr trans_state expr_info
     | SubstNonTypeTemplateParmExpr (_, stmts, _) | SubstNonTypeTemplateParmPackExpr (_, stmts, _) ->
-        let[@warning "-8"] [expr] = stmts in
+        let[@warning "-partial-match"] [expr] = stmts in
         instruction trans_state expr
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)

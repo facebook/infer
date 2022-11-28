@@ -106,7 +106,7 @@ module SQLite = struct
   (** Each payload is stored in the DB as either [NULL] for the absence of payload, or the payload
       itself. We cannot give a good type to this function because it deserializes several payload
       types. *)
-  let deserialize_payload_opt = function[@warning "-8"]
+  let deserialize_payload_opt = function[@warning "-partial-match"]
     | Sqlite3.Data.NULL ->
         Lazy.from_val None
     | Sqlite3.Data.BLOB blob ->

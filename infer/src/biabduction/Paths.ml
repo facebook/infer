@@ -705,7 +705,7 @@ end = struct
     !res
 
 
-  let[@warning "-32"] pp pe fmt ps =
+  let[@warning "-unused-value-declaration"] pp pe fmt ps =
     let count = ref 0 in
     let pp_path fmt path = F.fprintf fmt "[path: %a@\n%a]" Path.pp_stats path Path.pp path in
     let f prop path =

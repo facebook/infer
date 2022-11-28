@@ -104,7 +104,8 @@ val pair :
   -> 'a * 'b
   -> unit
 
-val in_backticks : (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit [@@warning "-32"]
+val in_backticks : (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit
+  [@@warning "-unused-value-declaration"]
 
 val collection :
      fold:('t, 'item, bool) Container.fold

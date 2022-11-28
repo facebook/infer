@@ -163,7 +163,7 @@ module ObjC_Cpp : sig
 
   val get_class_name : t -> string
 
-  val get_class_type_name : t -> Typ.Name.t [@@warning "-32"]
+  val get_class_type_name : t -> Typ.Name.t [@@warning "-unused-value-declaration"]
 
   val get_class_qualifiers : t -> QualifiedCppName.t
 
