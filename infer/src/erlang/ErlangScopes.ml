@@ -42,8 +42,13 @@ let assert_empty scopes =
   if not (List.is_empty scopes) then L.die InternalError "Expected empty stack of scopes."
 
 
-let create_unique_lambda_name (lambda_cntr : lambda_name_counter) =
-  let name = Printf.sprintf "anon_fun_%d_of_%s" lambda_cntr.counter lambda_cntr.funcname in
+let create_unique_lambda_name (lambda_cntr : lambda_name_counter) lambda_name_opt =
+  let lambda_name =
+    match lambda_name_opt with Some name -> Printf.sprintf "_%s" name | None -> ""
+  in
+  let name =
+    Printf.sprintf "anon_fun%s_%d_of_%s" lambda_name lambda_cntr.counter lambda_cntr.funcname
+  in
   lambda_cntr.counter <- lambda_cntr.counter + 1 ;
   name
 
@@ -131,7 +136,7 @@ let rec annotate_expression (env : (_, _) Env.t) lambda_cntr (scopes : scope lis
             L.die InternalError "Lambda has no clauses, cannot determine arity"
       in
       (* A fresh id is created even for named lambdas. *)
-      let function_name = create_unique_lambda_name lambda_cntr in
+      let function_name = create_unique_lambda_name lambda_cntr lambda.name in
       let procname = Procname.make_erlang ~module_name:env.current_module ~function_name ~arity in
       lambda.procname <- Some procname ;
       let scopes = push_scope scopes procname in
