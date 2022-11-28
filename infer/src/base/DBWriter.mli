@@ -33,7 +33,7 @@ val delete_spec : proc_uid:string -> unit
 
 val mark_all_source_files_stale : unit -> unit
 
-val merge_captures : infer_deps_file:string -> unit
+val merge_captures : root:string -> infer_deps_file:string -> unit
 
 val merge_report_summaries : infer_outs:string list -> unit
 

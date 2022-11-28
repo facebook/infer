@@ -34,7 +34,9 @@ let capture build_cmd =
   else
     let time0 = Mtime_clock.counter () in
     Buck.wrap_buck_call ~label:"build" V1 updated_buck_cmd |> ignore ;
-    let infer_deps_lines = BuckBuildReport.parse_infer_deps ~build_report_file in
+    let infer_deps_lines =
+      BuckBuildReport.parse_infer_deps ~root:Config.project_root ~build_report_file
+    in
     let infer_deps = ResultsDir.get_path CaptureDependencies in
     Utils.with_file_out infer_deps ~f:(fun out_channel ->
         Out_channel.output_lines out_channel infer_deps_lines ) ;

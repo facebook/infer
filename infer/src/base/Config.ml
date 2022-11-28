@@ -919,6 +919,12 @@ and _buck_out =
     "[DOES NOTHING] Specify the root directory of buck-out. Only valid for $(b,--buck-java)."
 
 
+and buck2_root =
+  CLOpt.mk_path_opt ~long:"buck2-root" ~meta:"dir"
+    ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
+    "Specify the parent directory of $(b, buck-out) (used only for $(b, buck2))."
+
+
 and buck_targets_block_list =
   CLOpt.mk_string_list ~long:"buck-targets-block-list" ~deprecated:["-buck-targets-blacklist"]
     ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
@@ -3426,6 +3432,8 @@ and buck_mode : BuckMode.t option =
   | `JavaFlavor, _ ->
       Some JavaFlavor
 
+
+and buck2_root = match !buck2_root with Some root -> root | None -> !project_root
 
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 

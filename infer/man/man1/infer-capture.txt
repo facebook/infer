@@ -202,6 +202,9 @@ BUCK OPTIONS
            Skip capture of buck targets matched by the specified regular
            expression. Only valid for --buck-compilation-database.
 
+       --buck2-root dir
+           Specify the parent directory of buck-out (used only for buck2).
+
        --Xbuck +string
            Pass values as command-line arguments to invocations of `buck
            build`. Only valid for --buck-clang.

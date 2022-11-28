@@ -295,7 +295,8 @@ let analyze_and_report ~changed_files mode =
   in
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
-    MergeCapture.merge_captured_targets () ;
+    let root = match mode with Buck2Clang _ -> Config.buck2_root | _ -> Config.project_root in
+    MergeCapture.merge_captured_targets ~root ;
     ResultsDir.RunState.set_merge_capture false ) ;
   if should_analyze then
     if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode

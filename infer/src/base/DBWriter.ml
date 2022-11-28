@@ -76,7 +76,7 @@ module Implementation = struct
     |> SqliteUtils.exec ~stmt:"UPDATE source_files SET freshly_captured = 0" ~log:"mark_all_stale"
 
 
-  let merge_captures infer_deps_file =
+  let merge_captures ~root ~infer_deps_file =
     let merge_procedures_table ~db_file =
       (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
          sub-table and the main one, and applying the same "more defined" logic as in [replace_attributes] in the
@@ -134,7 +134,7 @@ module Implementation = struct
     let main_db = Database.get_database CaptureDatabase in
     SqliteUtils.with_attached_db main_db ~db_file:":memory:" ~db_name:"memdb" ~f:(fun () ->
         Database.create_tables ~prefix:"memdb." main_db CaptureDatabase ;
-        Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge_db infer_deps_file ;
+        Utils.iter_infer_deps ~root ~f:merge_db infer_deps_file ;
         copy_to_main main_db )
 
 
@@ -336,7 +336,7 @@ module Command = struct
     | DeleteSpec of {proc_uid: string}
     | Handshake
     | MarkAllSourceFilesStale
-    | MergeCaptures of {infer_deps_file: string}
+    | MergeCaptures of {root: string; infer_deps_file: string}
     | MergeReportSummaries of {infer_outs: string list}
     | ShrinkAnalysisDB
     | StoreIssueLog of {checker: string; source_file: Sqlite3.Data.t; issue_log: Sqlite3.Data.t}
@@ -405,8 +405,8 @@ module Command = struct
         ()
     | MarkAllSourceFilesStale ->
         Implementation.mark_all_source_files_stale ()
-    | MergeCaptures {infer_deps_file} ->
-        Implementation.merge_captures infer_deps_file
+    | MergeCaptures {root; infer_deps_file} ->
+        Implementation.merge_captures ~root ~infer_deps_file
     | MergeReportSummaries {infer_outs} ->
         Implementation.merge_report_summaries infer_outs
     | ShrinkAnalysisDB ->
@@ -569,7 +569,7 @@ let delete_spec ~proc_uid = perform (DeleteSpec {proc_uid})
 
 let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
 
-let merge_captures ~infer_deps_file = perform (MergeCaptures {infer_deps_file})
+let merge_captures ~root ~infer_deps_file = perform (MergeCaptures {root; infer_deps_file})
 
 let merge_report_summaries ~infer_outs = perform (MergeReportSummaries {infer_outs})
 

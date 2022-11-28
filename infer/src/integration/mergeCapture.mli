@@ -7,6 +7,6 @@
 
 open! IStd
 
-val merge_captured_targets : unit -> unit
+val merge_captured_targets : root:string -> unit
 
 val merge_changed_functions : unit -> unit

@@ -224,6 +224,10 @@ OPTIONS
            expression. Only valid for --buck-compilation-database.       
     See also infer-capture(1) and infer-run(1).
 
+       --buck2-root dir
+           Specify the parent directory of buck-out (used only for buck2).       
+    See also infer-capture(1) and infer-run(1).
+
        --bufferoverrun
            Activates: checker bufferoverrun: InferBO is a detector for
            out-of-bounds array accesses. (Conversely: --no-bufferoverrun)       

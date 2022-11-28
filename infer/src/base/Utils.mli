@@ -148,9 +148,9 @@ val get_available_memory_MB : unit -> int option
 (** On Linux systems, return [Some x] where [MemAvailable x] is in [/proc/meminfo]. Returns [None]
     in all other cases. *)
 
-val iter_infer_deps : project_root:string -> f:(string -> unit) -> string -> unit
-(** Parse each line of the given infer_deps.txt file (split on tabs, assume 3 elements per line) and
-    run [f] on the third element. [project_root] is an argument to avoid dependency cycles. *)
+val iter_infer_deps : root:string -> f:(string -> unit) -> string -> unit
+(** Parse each line of the given [infer_deps.txt] file (split on tabs, assume 3 elements per line)
+    and run [f] on the third element. [root] is used to interpret relative paths in the file. *)
 
 val inline_argument_files : string list -> string list
 (** Given a list of arguments return the extended list of arguments where the args in a file have

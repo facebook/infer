@@ -7,6 +7,6 @@
 
 open! IStd
 
-val parse_infer_deps : build_report_file:string -> string list
-(** parse a JSON build report by buck and return all capture DBs found in the [infer_deps.txt]
-    format *)
+val parse_infer_deps : root:string -> build_report_file:string -> string list
+(** Parse a JSON build report by buck and return all capture DBs found in the [infer_deps.txt]
+    format. Relative paths are interpreted wrt [root]. *)

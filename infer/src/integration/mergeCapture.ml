@@ -22,7 +22,7 @@ module TenvMerger = struct
       Tenv.read global_tenv_path
       |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
     in
-    Utils.iter_infer_deps ~project_root:Config.project_root ~f:merge infer_deps_file ;
+    Utils.iter_infer_deps ~root:Config.project_root ~f:merge infer_deps_file ;
     let time1 = Mtime_clock.counter () in
     Tenv.store_global global_tenv ;
     L.progress "Merging type environments took %a, of which %a were spent storing the global tenv@."
@@ -56,7 +56,7 @@ let merge_changed_functions () =
   L.progress "Merging changed functions files...@." ;
   let tgt_dir = ResultsDir.get_path ChangedFunctionsTempResults in
   let infer_deps_file = ResultsDir.get_path CaptureDependencies in
-  Utils.iter_infer_deps infer_deps_file ~project_root:Config.project_root ~f:(fun infer_out_src ->
+  Utils.iter_infer_deps infer_deps_file ~root:Config.project_root ~f:(fun infer_out_src ->
       let src_dir =
         ResultsDirEntryName.get_path ~results_dir:infer_out_src ChangedFunctionsTempResults
       in
@@ -73,12 +73,12 @@ let merge_changed_functions () =
   L.progress "Done merging changed functions files@."
 
 
-let merge_captured_targets () =
+let merge_captured_targets ~root =
   let time0 = Mtime_clock.counter () in
   L.progress "Merging captured Buck targets...@\n%!" ;
   let infer_deps_file = ResultsDir.get_path CaptureDependencies in
   let tenv_merger_child = TenvMerger.start infer_deps_file in
-  DBWriter.merge_captures ~infer_deps_file ;
+  DBWriter.merge_captures ~root ~infer_deps_file ;
   TenvMerger.wait tenv_merger_child ;
   let targets_num =
     let counter = ref 0 in
@@ -92,11 +92,12 @@ let merge_captured_targets () =
 
 
 (* shadowed for tracing *)
-let merge_captured_targets () =
+let merge_captured_targets ~root =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"merge buck targets" ())) ;
-  merge_captured_targets () ;
+  merge_captured_targets ~root ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
-let merge_captured_targets () =
-  ScubaLogging.execute_with_time_logging "merge_captured_targets" merge_captured_targets
+let merge_captured_targets ~root =
+  ScubaLogging.execute_with_time_logging "merge_captured_targets" (fun () ->
+      merge_captured_targets ~root )

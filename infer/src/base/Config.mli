@@ -209,6 +209,8 @@ val buck_out : string
 
 val buck_out_gen : string
 
+val buck2_root : string
+
 val buck_targets_block_list : string list
 
 val capture : bool

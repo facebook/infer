@@ -42,7 +42,9 @@ let capture build_cmd =
       Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "buck2_build_report" ".json"
     in
     run_buck2_build prog (buck2_build_cmd @ capture_buck2_args build_report_file) ;
-    let infer_deps_lines = BuckBuildReport.parse_infer_deps ~build_report_file in
+    let infer_deps_lines =
+      BuckBuildReport.parse_infer_deps ~root:Config.buck2_root ~build_report_file
+    in
     let infer_deps = ResultsDir.get_path CaptureDependencies in
     Utils.with_file_out infer_deps ~f:(fun out_channel ->
         Out_channel.output_lines out_channel infer_deps_lines ) )

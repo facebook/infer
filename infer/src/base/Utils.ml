@@ -445,14 +445,13 @@ let get_available_memory_MB () =
   else with_file_in proc_meminfo ~f:scan_for_expected_output
 
 
-let iter_infer_deps ~project_root ~f infer_deps_file =
-  let buck_root = project_root ^/ "buck-out" in
+let iter_infer_deps ~root ~f infer_deps_file =
   let one_line line =
     match String.split ~on:'\t' line with
     | [_; _; target_results_dir] ->
         let infer_out_src =
           if Filename.is_relative target_results_dir then
-            Filename.dirname (buck_root ^/ target_results_dir)
+            Filename.dirname (root ^/ target_results_dir)
           else target_results_dir
         in
         f infer_out_src

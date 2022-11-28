@@ -81,7 +81,7 @@ let capture build_cmd =
     run_buck_build prog (buck_build_cmd @ capture_buck_args build_report_file) ;
     let infer_deps_lines =
       if Config.buck_merge_all_deps then get_all_infer_deps_under_buck_out ()
-      else BuckBuildReport.parse_infer_deps ~build_report_file
+      else BuckBuildReport.parse_infer_deps ~root:Config.project_root ~build_report_file
     in
     let infer_deps = ResultsDir.get_path CaptureDependencies in
     Utils.with_file_out infer_deps ~f:(fun out_channel ->

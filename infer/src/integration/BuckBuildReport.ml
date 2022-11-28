@@ -88,7 +88,7 @@ let read_and_parse_report build_report =
     - if [output_path] is a dummy target used in the combined genrule integration for clang targets,
       read its contents, parse them as an output directory path and apply the above two tests to
       that *)
-let expand_target acc (target, target_path) =
+let expand_target ~root acc (target, target_path) =
   let inline acc path =
     Utils.with_file_in path ~f:(In_channel.fold_lines ~init:acc ~f:(fun acc line -> line :: acc))
   in
@@ -110,9 +110,7 @@ let expand_target acc (target, target_path) =
         L.internal_error "Didn't find capture DB or infer-deps file in path %s.@\n" target_path ;
         acc )
   in
-  let target_path =
-    if Filename.is_absolute target_path then target_path else Config.project_root ^/ target_path
-  in
+  let target_path = if Filename.is_absolute target_path then target_path else root ^/ target_path in
   match Sys.is_directory target_path with
   | `Yes ->
       expand_dir acc (target, target_path)
@@ -133,10 +131,10 @@ let expand_target acc (target, target_path) =
         acc )
 
 
-let parse_infer_deps ~build_report_file =
+let parse_infer_deps ~root ~build_report_file =
   match read_and_parse_report build_report_file with
   | None ->
       L.die InternalError "Couldn't parse buck build report: %s@." build_report_file
   | Some target_path_list ->
-      List.fold target_path_list ~init:[] ~f:expand_target
+      List.fold target_path_list ~init:[] ~f:(expand_target ~root)
       |> List.dedup_and_sort ~compare:String.compare
