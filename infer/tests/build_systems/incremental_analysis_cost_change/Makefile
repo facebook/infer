@@ -38,7 +38,7 @@ $(CURRENT_REPORT): $(INFER_CLANG_DEPS) $(SOURCES)
 	$(QUIET)$(REMOVE_DIR) src
 	$(QUIET)$(MKDIR_P) src
 	$(QUIET)$(COPY) src_after/* src/
-	$(QUIET)$(INFER_BIN) -o $(CURRENT_DIR) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac src/*.java
+	$(QUIET)$(INFER_BIN) -P -o $(CURRENT_DIR) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac src/*.java
 
 $(PREVIOUS_REPORT): $(INFER_CLANG_DEPS) $(SOURCES) $(CURRENT_REPORT)
 	$(QUIET)$(REMOVE_DIR) src
@@ -47,7 +47,7 @@ $(PREVIOUS_REPORT): $(INFER_CLANG_DEPS) $(SOURCES) $(CURRENT_REPORT)
 	$(QUIET)$(REMOVE_DIR) $(PREVIOUS_DIR)
 	$(QUIET)$(COPY) -r $(CURRENT_DIR) $(PREVIOUS_DIR)
 	$(QUIET)$(REMOVE) $@
-	$(QUIET)$(INFER_BIN) -o $(PREVIOUS_DIR) $(INFER_OPTIONS) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac  src/*.java 2>&1 \
+	$(QUIET)$(INFER_BIN) -P -o $(PREVIOUS_DIR) $(INFER_OPTIONS) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac  src/*.java 2>&1 \
 		| grep "Invalidated" > invalidation_stats.exp.test
 	$(QUIET)$(COPY) $(PREVIOUS_DIR)/reverse_analysis_callgraph.dot \
 	        reverse_analysis_callgraph.dot.test
