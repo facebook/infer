@@ -541,8 +541,7 @@ let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : error l
   errors
 
 
-let run (module_ : Module.t) : error list =
-  let decls_env = TextualDecls.make_decls module_ in
+let run (module_ : Module.t) decls_env : error list =
   let globals_type =
     TextualDecls.fold_globals decls_env ~init:VarName.Map.empty ~f:(fun map varname global ->
         VarName.Map.add varname global.typ map )

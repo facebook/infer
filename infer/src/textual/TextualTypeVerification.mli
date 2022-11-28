@@ -153,4 +153,4 @@ type error
 
 val pp_error : SourceFile.t -> Format.formatter -> error -> unit
 
-val run : Module.t -> error list
+val run : Module.t -> TextualDecls.t -> error list

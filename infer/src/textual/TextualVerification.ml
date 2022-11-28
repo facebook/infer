@@ -13,7 +13,6 @@ type error =
   | UnknownProcdecl of qualified_procname
   | UnknownLabel of {label: NodeName.t; pname: qualified_procname}
   | WrongArgNumber of {proc: qualified_procname; args: int; formals: int; loc: Location.t}
-(* TODO: check that a name is not declared twice *)
 
 let error_loc = function
   | UnknownField {enclosing_class; _} ->
@@ -116,7 +115,6 @@ let verify_decl ~env errors (decl : Module.decl) =
       verify_procdesc errors pdesc
 
 
-let run (module_ : Module.t) =
-  let env = TextualDecls.make_decls module_ in
+let run (module_ : Module.t) env =
   let f = verify_decl ~env in
   List.fold ~f ~init:[] module_.decls

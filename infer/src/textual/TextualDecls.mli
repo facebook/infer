@@ -13,7 +13,7 @@ val init : SourceFile.t -> t
 
 val declare_global : t -> Textual.Global.t -> unit
 
-val declare_proc : t -> Textual.ProcDecl.t -> unit
+val declare_proc : t -> is_implemented:bool -> Textual.ProcDecl.t -> unit
 
 val declare_struct : t -> Textual.Struct.t -> unit
 
@@ -35,4 +35,8 @@ val is_field_declared : t -> Textual.qualified_fieldname -> bool
 
 val source_file : t -> SourceFile.t
 
-val make_decls : Textual.Module.t -> t
+type error
+
+val pp_error : SourceFile.t -> Format.formatter -> error -> unit
+
+val make_decls : Textual.Module.t -> error list * t

@@ -14,6 +14,7 @@ type error =
   | VerificationError of TextualVerification.error
   | TypeError of TextualTypeVerification.error
   | TransformError of Textual.transform_error list
+  | DeclaredTwiceError of TextualDecls.error
 
 let pp_error sourcefile fmt = function
   | SyntaxError {loc; msg} ->
@@ -25,6 +26,8 @@ let pp_error sourcefile fmt = function
       TextualTypeVerification.pp_error sourcefile fmt err
   | TransformError errs ->
       List.iter errs ~f:(Textual.pp_transform_error sourcefile fmt)
+  | DeclaredTwiceError err ->
+      TextualDecls.pp_error sourcefile fmt err
 
 
 let log_error sourcefile error = L.external_error "%a@." (pp_error sourcefile) error
@@ -33,11 +36,17 @@ let parse_buf sourcefile filebuf =
   try
     let lexer = TextualLexer.main in
     let m = TextualMenhir.main lexer filebuf sourcefile in
-    let errors = TextualVerification.run m |> List.map ~f:(fun x -> VerificationError x) in
+    let twice_declared_errors, decls_env = TextualDecls.make_decls m in
+    let twice_declared_errors = List.map twice_declared_errors ~f:(fun x -> DeclaredTwiceError x) in
+    (* even if twice_declared_errors is not empty we can continue the other verifications *)
+    let errors =
+      TextualVerification.run m decls_env |> List.map ~f:(fun x -> VerificationError x)
+    in
     if List.is_empty errors then
-      let errors = TextualTypeVerification.run m |> List.map ~f:(fun x -> TypeError x) in
+      let errors = TextualTypeVerification.run m decls_env |> List.map ~f:(fun x -> TypeError x) in
+      let errors = twice_declared_errors @ errors in
       if List.is_empty errors then Ok m else Error errors
-    else Error errors
+    else Error (twice_declared_errors @ errors)
   with
   | TextualMenhir.Error ->
       let pos = filebuf.Lexing.lex_curr_p in

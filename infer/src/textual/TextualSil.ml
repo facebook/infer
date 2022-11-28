@@ -488,7 +488,7 @@ module InstrBridge = struct
           ; loc= Location.Unknown }
     | Call ((id, _), Const (Cfun pname), args, _, call_flags) ->
         let procdecl = ProcDeclBridge.of_sil pname in
-        let () = TextualDecls.declare_proc decls procdecl in
+        let () = TextualDecls.declare_proc decls ~is_implemented:false procdecl in
         let proc = procdecl.qualified_name in
         let args = List.map ~f:(fun (e, _) -> ExpBridge.of_sil decls tenv e) args in
         let loc = Location.Unknown in
@@ -832,7 +832,11 @@ module ModuleBridge = struct
              [{loc= Location.Unknown; msg= lazy "Missing or unsupported source_language attribute"}]
           )
     | Some lang ->
-        let decls_env = TextualDecls.make_decls module_ in
+        let errors, decls_env = TextualDecls.make_decls module_ in
+        if not (List.is_empty errors) then
+          L.die InternalError
+            "to_sil conversion should not be performed if TextualDecls verification has raised any \
+             errors before." ;
         let module_ =
           let open TextualTransform in
           module_ |> remove_internal_calls |> let_propagation |> out_of_ssa

@@ -11,4 +11,4 @@ type error
 
 val pp_error : SourceFile.t -> Format.formatter -> error -> unit
 
-val run : Textual.Module.t -> error list
+val run : Textual.Module.t -> TextualDecls.t -> error list

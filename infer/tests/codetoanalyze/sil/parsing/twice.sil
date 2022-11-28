@@ -1,0 +1,27 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "java"
+
+global I : int
+
+global I : float
+
+type node = { }
+
+type node = { val: int; next: *node; next: *node }
+
+define f(x: int) : int {
+  #entry:
+    n0 : int = load &x
+    ret n0
+}
+
+define f(x: int, x: int) : int {
+  #entry:
+    ret 0
+  #entry:
+    ret 1
+}
