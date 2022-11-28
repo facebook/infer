@@ -577,20 +577,31 @@ let get_message diagnostic =
         | CopyAssignment ->
             "try getting a reference to it or move it if possible"
       in
+      let suggestion_msg_move =
+        "To avoid the copy, try moving it by calling `std::move` instead."
+      in
       match copied_into with
-      | IntoVar _ ->
+      | IntoIntermediate {source_opt= None} ->
+          F.asprintf "An intermediate with type `%a` is %a on %a. %s" (Typ.pp_full Pp.text) typ
+            CopyOrigin.pp from Location.pp_line location suggestion_msg_move
+      | IntoIntermediate {source_opt= Some source_expr} ->
+          F.asprintf
+            "variable `%a` with type `%a` is %a unnecessarily into an intermediate on %a. %s"
+            DecompilerExpr.pp_source_expr source_expr (Typ.pp_full Pp.text) typ CopyOrigin.pp from
+            Location.pp_line location suggestion_msg_move
+      | IntoVar {source_opt= None} ->
           F.asprintf
             "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid \
              the copy, %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
             location suggestion_msg suppression_msg
-      | IntoIntermediate {source_opt= Some source_expr} ->
-          F.asprintf "variable `%a` with type `%a` is %a unnecessarily into an intermediate on %a."
-            DecompilerExpr.pp_source_expr source_expr (Typ.pp_full Pp.text) typ CopyOrigin.pp from
-            Location.pp_line location
-      | IntoIntermediate {source_opt= None} ->
-          F.asprintf "An %a with type `%a` is %a on %a." CopiedInto.pp copied_into
-            (Typ.pp_full Pp.text) typ CopyOrigin.pp from Location.pp_line location
+      | IntoVar {source_opt= Some source_expr} ->
+          F.asprintf
+            "%a variable `%a` with type `%a` is not modified after it is copied from `%a` on %a. \
+             To avoid the copy, %s. %s."
+            CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ
+            DecompilerExpr.pp_source_expr source_expr Location.pp_line location suggestion_msg
+            suppression_msg
       | IntoField {field; source_opt} -> (
           let advice = "Rather than copying into the field, consider moving into it instead." in
           match source_opt with
