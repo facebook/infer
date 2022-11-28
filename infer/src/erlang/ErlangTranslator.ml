@@ -551,14 +551,8 @@ and translate_expression env {Ast.location; simple_expression} =
         Block.make_load env ret_var (Exp.Closure {name; captured_vars= []}) any_typ
     | If clauses ->
         translate_expression_if env clauses
-    | Lambda {name= None; cases; procname; captured} -> (
-      match captured with
-      | Some captured ->
-          translate_expression_lambda env ret_var cases procname captured
-      | None ->
-          L.die InternalError
-            "Captured variables are missing for lambda. The scoping preprocessing step might be \
-             missing." )
+    | Lambda {name; cases; procname; captured} ->
+        translate_expression_lambda env ret_var name cases procname captured
     | ListComprehension {expression; qualifiers} ->
         translate_expression_listcomprehension env ret_var expression qualifiers
     | Literal (Atom atom) ->
@@ -809,7 +803,8 @@ and translate_expression_if env clauses : Block.t =
   {blocks with exit_failure= crash_node}
 
 
-and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt captured : Block.t =
+and translate_expression_lambda (env : (_, _) Env.t) ret_var lambda_name cases procname_opt
+    captured_opt : Block.t =
   let arity =
     match cases with
     | c :: _ ->
@@ -822,7 +817,17 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt 
     | Some name ->
         name
     | None ->
-        L.die InternalError "Procname not found for lambda, probably missing annotation."
+        L.die InternalError
+          "Procname not found for lambda. The scoping preprocessing step might be missing."
+  in
+  let captured =
+    match captured_opt with
+    | Some captured ->
+        captured
+    | None ->
+        L.die InternalError
+          "Captured variables are missing for lambda. The scoping preprocessing step might be \
+           missing."
   in
   let captured_vars = Pvar.Set.elements captured in
   let attributes =
@@ -847,16 +852,36 @@ and translate_expression_lambda (env : (_, _) Env.t) ret_var cases procname_opt 
     ; result= Env.Present (Exp.Lvar (Pvar.get_ret_pvar name)) }
   in
   let () = translate_function_clauses sub_env procdesc attributes name cases None in
-  let load_block, closure =
+  let make_closure_with_capture (env : (_, _) Env.t) =
     let mk_capt_var (var : Pvar.t) =
       let id = mk_fresh_id () in
       let instr = Sil.Load {id; e= Exp.Lvar var; typ= any_typ; loc= env.location} in
       (instr, (Exp.Var id, var, any_typ, CapturedVar.ByValue))
     in
     let instrs, captured_vars = List.unzip (List.map ~f:mk_capt_var captured_vars) in
-    (Block.make_instruction env instrs, Exp.Closure {name; captured_vars})
+    (instrs, Exp.Closure {name; captured_vars})
   in
-  Block.all env [load_block; Block.make_load env ret_var closure any_typ]
+  let () =
+    match lambda_name with
+    | Some vname ->
+        (* Named lambdas can refer to themselves, so in the beginning of the lambda's
+           procedure, we create a closure from the lambda's procname and bind it to
+           the variable with the lambda's name. *)
+        let captures, closure = make_closure_with_capture sub_env in
+        let bind_closure : Sil.instr =
+          let lambda_var = Exp.Lvar (Pvar.mk (Mangled.from_string vname) name) in
+          Store {e1= lambda_var; typ= any_typ; e2= closure; loc= sub_env.location}
+        in
+        let node = Node.make_stmt sub_env (captures @ [bind_closure]) in
+        node |~~> Procdesc.Node.get_succs (Procdesc.get_start_node procdesc) ;
+        Procdesc.get_start_node procdesc |~~> [node]
+    | None ->
+        ()
+  in
+  (* Make a closure that can be the result of the current expression. *)
+  let captures, closure = make_closure_with_capture env in
+  let capture_block = Block.make_instruction env captures in
+  Block.all env [capture_block; Block.make_load env ret_var closure any_typ]
 
 
 and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expression qualifiers :
