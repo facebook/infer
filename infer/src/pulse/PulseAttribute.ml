@@ -107,13 +107,20 @@ module Attribute = struct
   module CopiedInto = struct
     type t =
       | IntoVar of {copied_var: Var.t; source_opt: DecompilerExpr.source_expr option}
+      | IntoIntermediate of {source_opt: DecompilerExpr.source_expr option}
       | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
     [@@deriving compare, equal]
 
     let pp fmt = function
       | IntoVar {copied_var; source_opt= None} ->
           Var.pp fmt copied_var
-      | IntoVar {source_opt= Some source_expr} ->
+      | IntoVar {copied_var; source_opt= Some source_expr} ->
+          if Config.debug_level_analysis >= 3 then
+            F.fprintf fmt "%a (from %a)" Var.pp copied_var DecompilerExpr.pp_source_expr source_expr
+          else Var.pp fmt copied_var
+      | IntoIntermediate {source_opt= None} ->
+          F.fprintf fmt "intermediate"
+      | IntoIntermediate {source_opt= Some source_expr} ->
           DecompilerExpr.pp_source_expr fmt source_expr
       | IntoField {field} ->
           Fieldname.pp fmt field

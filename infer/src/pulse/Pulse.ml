@@ -31,12 +31,11 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
   PulseNonDisjunctiveDomain.get_copied non_disj_astate
   |> List.iter ~f:(fun (copied_into, typ, location, copied_location, from) ->
          let copy_name = Format.asprintf "%a" Attribute.CopiedInto.pp copied_into in
+         let is_suppressed = PulseNonDisjunctiveOperations.has_copy_in copy_name in
          let diagnostic =
            Diagnostic.UnnecessaryCopy {copied_into; typ; location; copied_location; from}
          in
-         PulseReport.report
-           ~is_suppressed:(PulseNonDisjunctiveOperations.has_copy_in copy_name)
-           ~latent:false proc_desc err_log diagnostic )
+         PulseReport.report ~is_suppressed ~latent:false proc_desc err_log diagnostic )
 
 
 let report_unnecessary_parameter_copies proc_desc err_log non_disj_astate =

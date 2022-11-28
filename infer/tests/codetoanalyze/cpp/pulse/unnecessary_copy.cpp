@@ -496,6 +496,11 @@ class ClassWithoutConstructDef {
   int __internal_field;
   std::vector<int> __internal_vec;
 
+  // we should detect copy assignment and suggest a move into the field
+  void field_setter_bad_FN(std::vector<int> vec) {
+    __internal_vec = vec; // copy assignment
+  }
+
  public:
   ClassWithoutConstructDef(const ClassWithoutConstructDef& src);
   int* get_field_ref() { return &__internal_field; }
@@ -603,3 +608,8 @@ class CopiedToMultipleField_Bad_FN {
   // common in practice. The test is just for showing checker's behavior.
   CopiedToMultipleField_Bad_FN(Arr a) : field1(a), field2(a) {}
 };
+
+// TODO change domain so that we store the source's type
+void global_setter_bad(const Arr& arr) {
+  global = arr; // suggest std::move(arr) and remove const from the type
+}

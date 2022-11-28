@@ -29,14 +29,9 @@ type parameter_spec_t =
 include AbstractDomain.WithBottomTop
 
 val add_var :
-     Var.t
-  -> source_addr_opt:AbstractValue.t option
-  -> source_opt:DecompilerExpr.source_expr option
-  -> copy_spec_t
-  -> t
-  -> t
+  Attribute.CopiedInto.t -> source_addr_opt:AbstractValue.t option -> copy_spec_t -> t -> t
 
-val add_field : Fieldname.t -> source_opt:PulseDecompilerExpr.t option -> copy_spec_t -> t -> t
+val add_field : Fieldname.t -> source_opt:DecompilerExpr.t option -> copy_spec_t -> t -> t
 
 val add_parameter : Var.t -> parameter_spec_t -> t -> t
 

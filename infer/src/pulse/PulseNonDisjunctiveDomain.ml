@@ -379,24 +379,18 @@ let get_const_refable_parameters = function
         parameter_map []
 
 
-let add_var_elt copied_var ~source_addr_opt ~source_opt (res : copy_spec_t) astate =
-  { astate with
-    copy_map=
-      CopyMap.add
-        {copied_into= IntoVar {copied_var; source_opt}; source_addr_opt}
-        res astate.copy_map }
+let add_var_elt copied_into ~source_addr_opt (res : copy_spec_t) astate =
+  {astate with copy_map= CopyMap.add {copied_into; source_addr_opt} res astate.copy_map}
 
 
-let add_var copied_var ~source_addr_opt ~source_opt res =
-  map (add_var_elt copied_var ~source_addr_opt ~source_opt res)
-
+let add_var copied_into ~source_addr_opt res = map (add_var_elt copied_into ~source_addr_opt res)
 
 let add_field_elt copied_field ~source_opt (res : copy_spec_t) astate =
   { astate with
     copy_map=
       CopyMap.add
         { copied_into= IntoField {field= copied_field; source_opt}
-        ; source_addr_opt= Option.bind source_opt ~f:PulseDecompilerExpr.abstract_value_of_expr }
+        ; source_addr_opt= Option.bind source_opt ~f:DecompilerExpr.abstract_value_of_expr }
         res astate.copy_map }
 
 

@@ -91,7 +91,7 @@ let get_return_param pdesc =
   else None
 
 
-let is_copy_legit copied_var =
+let is_copy_into_local copied_var =
   Var.appears_in_source_code copied_var && not (Var.is_global copied_var)
 
 
@@ -147,38 +147,45 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
             let copied, disjunct, source_addr_typ_opt =
               get_copied_and_source copy_type path rest_args location from disjunct
             in
-            let is_copy_legit = is_copy_legit copied_var in
-            let source_opt =
-              let* _, source_expr, _ = source_addr_typ_opt in
-              match source_expr with
-              | DecompilerExpr.SourceExpr (((PVar pvar, _) as source_expr), _)
-                when (not (Pvar.is_frontend_tmp pvar || Pvar.is_this pvar)) && not is_copy_legit ->
-                  Some source_expr
-              | _ ->
-                  None
+            let* _, source_expr, _ = source_addr_typ_opt in
+            let copy_into_opt =
+              if is_copy_assigned_from_this ~from source_addr_typ_opt then
+                (* If source is copy assigned from a member field, we cannot suggest move as other procedures might access it. *)
+                None
+              else
+                (* order matters here  *)
+                match source_expr with
+                | DecompilerExpr.SourceExpr (source_expr, _) when is_copy_into_local copied_var ->
+                    (* case 1: we copy into a local variable that occurs in the code with a known source  *)
+                    Some (Attribute.CopiedInto.IntoVar {copied_var; source_opt= Some source_expr})
+                | DecompilerExpr.SourceExpr (((PVar pvar, _) as source_expr), _)
+                  when not (Pvar.is_frontend_tmp pvar || Pvar.is_this pvar) ->
+                    (* case 2: we copy into an intermediate that is not a field member/frontend temp and source is known. This is the case for intermediate copies of the pass by value arguments. *)
+                    Some (Attribute.CopiedInto.IntoIntermediate {source_opt= Some source_expr})
+                | DecompilerExpr.Unknown _ when is_copy_into_local copied_var ->
+                    (* case 3: analogous to case 1 but source is an unknown call that is know no create a copy *)
+                    Some (Attribute.CopiedInto.IntoVar {copied_var; source_opt= None})
+                | DecompilerExpr.Unknown _ ->
+                    (* case 4: analogous to case 2 but source is an unknown call that is know no create a copy *)
+                    Some (Attribute.CopiedInto.IntoIntermediate {source_opt= None})
+                | _ ->
+                    None
             in
-            if is_copy_assigned_from_this ~from source_addr_typ_opt then
-              (* If source is copy assigned from a member field, we cannot suggest move as other procedures might access it. *)
-              None
-            else if Option.is_some source_opt || is_copy_legit then
-              let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
-              let disjunct' =
-                Option.value_map source_addr_typ_opt ~default:disjunct
-                  ~f:(fun (source_addr, _, source_typ) ->
-                    AddressAttributes.add_one source_addr
-                      (CopiedInto (Attribute.CopiedInto.IntoVar {copied_var; source_opt}))
-                      disjunct
-                    |> AddressAttributes.add_one copy_addr
-                         (SourceOriginOfCopy
-                            {source= source_addr; is_const_ref= Typ.is_const_reference source_typ}
-                         ) )
-              in
-              Some
-                ( NonDisjDomain.add_var copied_var ~source_opt
+            Option.map copy_into_opt ~f:(fun copy_into ->
+                let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var disjunct) in
+                let disjunct' =
+                  Option.value_map source_addr_typ_opt ~default:disjunct
+                    ~f:(fun (source_addr, _, source_typ) ->
+                      AddressAttributes.add_one source_addr (CopiedInto copy_into) disjunct
+                      |> AddressAttributes.add_one copy_addr
+                           (SourceOriginOfCopy
+                              {source= source_addr; is_const_ref= Typ.is_const_reference source_typ}
+                           ) )
+                in
+                ( NonDisjDomain.add_var copy_into
                     ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst3)
                     copied astate_non_disj
-                , disjunct' )
-            else None
+                , disjunct' ) )
         | ( (Const (Cfun procname) | Closure {name= procname})
           , ((Exp.Lfield (_, field, _) as exp), copy_type) :: ((_, source_typ) :: _ as rest_args) )
           when Typ.is_rvalue_reference source_typ && not (is_cheap_to_copy tenv copy_type) ->
@@ -243,6 +250,18 @@ let is_lock pname =
   String.equal method_name "lock" || String.equal method_name "rlock"
 
 
+let get_copied_into copied_var source_addr_opt astate =
+  let source_opt =
+    Option.bind source_addr_opt ~f:(fun source_addr ->
+        match PulseDecompiler.find source_addr astate.AbductiveDomain.decompiler with
+        | DecompilerExpr.SourceExpr (source_expr, _) ->
+            Some source_expr
+        | _ ->
+            None )
+  in
+  Attribute.CopiedInto.IntoVar {copied_var; source_opt}
+
+
 let add_copied_return path location call_exp actuals astates astate_non_disj =
   let open IOption.Let_syntax in
   let default = (astate_non_disj, astates) in
@@ -254,20 +273,20 @@ let add_copied_return path location call_exp actuals astates astate_non_disj =
     match (Option.map (Procdesc.load procname) ~f:Procdesc.get_attributes, List.last actuals) with
     | Some attrs, Some ((Exp.Lvar ret_pvar as ret), copy_type) when attrs.has_added_return_param ->
         let copied_var = Var.of_pvar ret_pvar in
-        if is_copy_legit copied_var then
+        if is_copy_into_local copied_var then
           continue_fold_map astates ~init:astate_non_disj ~f:(fun astate_non_disj disjunct ->
               let* disjunct, ret_addr = try_eval path location ret disjunct in
               let+ source, is_const_ref, from, copied_location =
                 AddressAttributes.get_copied_return ret_addr disjunct
               in
+              let into = get_copied_into copied_var (Some source) disjunct in
               let disjunct =
                 AddressAttributes.remove_copied_return ret_addr disjunct
-                |> AddressAttributes.add_one source
-                     (CopiedInto (IntoVar {copied_var; source_opt= None}))
+                |> AddressAttributes.add_one source (CopiedInto into)
                 |> AddressAttributes.add_one ret_addr (SourceOriginOfCopy {source; is_const_ref})
               in
               let astate_non_disj =
-                NonDisjDomain.add_var copied_var ~source_opt:None ~source_addr_opt:(Some source)
+                NonDisjDomain.add_var into ~source_addr_opt:(Some source)
                   (Copied
                      { heap= (disjunct.post :> BaseDomain.t).heap
                      ; typ= Typ.strip_ptr copy_type
@@ -401,9 +420,8 @@ let mark_modified_copies_and_parameters_with vars ~astate astate_n =
     Stack.find_opt var astate
     |> Option.value_map ~default ~f:(fun (address, _history) ->
            let source_addr_opt = AddressAttributes.get_source_origin_of_copy address astate in
-           mark_modified_address_at ~address ~source_addr_opt
-             ~copied_into:(Attribute.CopiedInto.IntoVar {copied_var= var; source_opt= None})
-             Copy astate default )
+           let copied_into = get_copied_into var source_addr_opt astate in
+           mark_modified_address_at ~address ~source_addr_opt ~copied_into Copy astate default )
   in
   let mark_modified_parameter var default =
     Stack.find_opt var astate

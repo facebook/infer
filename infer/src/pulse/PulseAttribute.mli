@@ -62,6 +62,7 @@ end
 module CopiedInto : sig
   type t =
     | IntoVar of {copied_var: Var.t; source_opt: DecompilerExpr.source_expr option}
+    | IntoIntermediate of {source_opt: DecompilerExpr.source_expr option}
     | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
   [@@deriving compare, equal]
 

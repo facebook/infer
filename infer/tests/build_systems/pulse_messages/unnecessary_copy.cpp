@@ -64,3 +64,16 @@ void call_value_or_bad(const MyValueOr& c) {
   const static A f{};
   A g = c.value_or(f);
 }
+
+namespace ns {
+
+template <typename X>
+X creates_copy(X a) {
+  return X{a};
+}
+} // namespace ns
+
+void intermediate_copy_via_model_bad(A arr) {
+  get_size(ns::creates_copy(
+      arr)); // creates an intermediate copy (via model/unknown)
+}

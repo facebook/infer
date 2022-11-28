@@ -2,7 +2,8 @@
   "force-delete-results-dir": true,
   "siof-safe-methods": ["getGlobalNonPODAllowListed", "allow_listed::getGlobalNonPOD",
                         "allow_listed::TemplatedObject::getGlobalNonPOD"],
-  "skip-translation": [
+   "pulse-model-returns-copy-pattern": "ns::creates_copy",
+   "skip-translation": [
     {
       "language": "Java",
       "source_contains": "_SHOULD_BE_SKIPPED_"
