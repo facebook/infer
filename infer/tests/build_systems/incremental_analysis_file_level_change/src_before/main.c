@@ -9,5 +9,7 @@
 int main() {
   c();
   b();
-  return 0;
+  return meaning_of_life();
 }
+
+int meaning_of_life() { return 42; }
