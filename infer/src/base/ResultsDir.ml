@@ -140,11 +140,9 @@ let assert_results_dir advice =
 
 
 let scrub_for_incremental () =
-  DBWriter.reset_capture_tables () ;
   List.iter ~f:Utils.rmtree
     (ResultsDirEntryName.to_delete_before_incremental_capture_and_analysis
-       ~results_dir:Config.results_dir ) ;
-  ()
+       ~results_dir:Config.results_dir )
 
 
 let scrub_for_caching () =

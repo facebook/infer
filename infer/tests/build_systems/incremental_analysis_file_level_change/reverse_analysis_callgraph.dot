@@ -6,7 +6,7 @@ digraph callgraph {
   N0 [ label = "a", flag = false ];
   N0 -> N1 ;
 
-  N4 [ label = "meaning_of_life", flag = true ];
+  N4 [ label = "meaning_of_life", flag = false ];
   N4 -> N3 ;
 
   N2 [ label = "c", flag = false ];

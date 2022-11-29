@@ -260,7 +260,12 @@ let invalidate_changed_procedures changed_files =
       SourceFile.Set.iter
         (fun sf ->
           SourceFiles.proc_names_of_source sf
-          |> List.iter ~f:(CallGraph.flag_reachable dependency_graph) )
+          |> List.iter ~f:(fun pname ->
+                 match Attributes.load pname with
+                 | None ->
+                     CallGraph.flag_reachable dependency_graph pname
+                 | Some attrs ->
+                     if attrs.changed then CallGraph.flag_reachable dependency_graph pname ) )
         changed_files ;
       if Config.debug_level_analysis > 0 then
         CallGraph.to_dotty dependency_graph "reverse_analysis_callgraph.dot" ;

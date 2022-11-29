@@ -49,6 +49,17 @@ module Implementation = struct
     SqliteUtils.exec ~log:"drop issue_logs table" ~stmt:"DELETE FROM issue_logs" db
 
 
+  let delete_attributes =
+    let delete_statement =
+      Database.register_statement CaptureDatabase "DELETE FROM procedures WHERE proc_uid = :k"
+    in
+    fun ~proc_uid ->
+      Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
+          Sqlite3.bind delete_stmt 1 (Sqlite3.Data.TEXT proc_uid)
+          |> SqliteUtils.check_result_code db ~log:"delete attrs bind proc_uid" ;
+          SqliteUtils.result_unit ~finalize:false ~log:"delete attrs" db delete_stmt )
+
+
   let delete_issue_logs =
     let delete_statement =
       Database.register_statement AnalysisDatabase "DELETE FROM issue_logs WHERE source_file = :k"
@@ -245,13 +256,6 @@ module Implementation = struct
       else run_query attribute_replace_statement_cdb
 
 
-  let reset_capture_tables () =
-    let db = Database.get_database CaptureDatabase in
-    SqliteUtils.exec db ~log:"drop procedures table" ~stmt:"DROP TABLE procedures" ;
-    SqliteUtils.exec db ~log:"drop source_files table" ~stmt:"DROP TABLE source_files" ;
-    Database.create_tables db CaptureDatabase
-
-
   (** drop everything except reports *)
   let shrink_analysis_db () =
     let db = Database.get_database AnalysisDatabase in
@@ -332,6 +336,7 @@ module Command = struct
         ; proc_names: Sqlite3.Data.t }
     | Checkpoint
     | DeleteAllSpecs
+    | DeleteAttributes of {proc_uid: string}
     | DeleteIssueLogs of {source_file: Sqlite3.Data.t}
     | DeleteSpec of {proc_uid: string}
     | Handshake
@@ -352,7 +357,6 @@ module Command = struct
         ; cfg: Sqlite3.Data.t
         ; callees: Sqlite3.Data.t
         ; analysis: bool }
-    | ResetCaptureTables
     | Terminate
 
   let to_string = function
@@ -362,6 +366,8 @@ module Command = struct
         "Checkpoint"
     | DeleteAllSpecs ->
         "DeleteAllSpecs"
+    | DeleteAttributes _ ->
+        "DeleteAttributes"
     | DeleteIssueLogs _ ->
         "DeleteIssueLogs"
     | DeleteSpec _ ->
@@ -376,8 +382,6 @@ module Command = struct
         "MergeReportSummaries"
     | ReplaceAttributes _ ->
         "ReplaceAttributes"
-    | ResetCaptureTables ->
-        "ResetCaptureTables"
     | ShrinkAnalysisDB ->
         "ShrinkAnalysisDB"
     | StoreIssueLog _ ->
@@ -397,6 +401,8 @@ module Command = struct
         Implementation.canonicalize ()
     | DeleteAllSpecs ->
         Implementation.delete_all_specs ()
+    | DeleteAttributes {proc_uid} ->
+        Implementation.delete_attributes ~proc_uid
     | DeleteIssueLogs {source_file} ->
         Implementation.delete_issue_logs ~source_file
     | DeleteSpec {proc_uid} ->
@@ -417,8 +423,6 @@ module Command = struct
         Implementation.store_spec ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata
     | ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis} ->
         Implementation.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis
-    | ResetCaptureTables ->
-        Implementation.reset_capture_tables ()
     | Terminate ->
         Implementation.terminate ()
 end
@@ -563,6 +567,8 @@ let canonicalize () = perform Checkpoint
 
 let delete_all_specs () = perform DeleteAllSpecs
 
+let delete_attributes ~proc_uid = perform (DeleteAttributes {proc_uid})
+
 let delete_issue_logs ~source_file = perform (DeleteIssueLogs {source_file})
 
 let delete_spec ~proc_uid = perform (DeleteSpec {proc_uid})
@@ -576,8 +582,6 @@ let merge_report_summaries ~infer_outs = perform (MergeReportSummaries {infer_ou
 let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis =
   perform (ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis})
 
-
-let reset_capture_tables () = perform ResetCaptureTables
 
 let shrink_analysis_db () = perform ShrinkAnalysisDB
 

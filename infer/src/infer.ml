@@ -18,8 +18,8 @@ let run driver_mode =
     L.die UserError "ERROR: Textual generation is only allowed in Java mode currently" ;
   run_prologue driver_mode ;
   let changed_files = SourceFile.read_config_files_to_analyze () in
-  InferAnalyze.invalidate_changed_procedures changed_files ;
   capture driver_mode ~changed_files ;
+  InferAnalyze.invalidate_changed_procedures changed_files ;
   analyze_and_report driver_mode ~changed_files ;
   run_epilogue ()
 

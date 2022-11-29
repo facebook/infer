@@ -27,6 +27,8 @@ val canonicalize : unit -> unit
 
 val delete_all_specs : unit -> unit
 
+val delete_attributes : proc_uid:string -> unit
+
 val delete_issue_logs : source_file:Sqlite3.Data.t -> unit
 
 val delete_spec : proc_uid:string -> unit
@@ -44,8 +46,6 @@ val replace_attributes :
   -> callees:Sqlite3.Data.t
   -> analysis:bool
   -> unit
-
-val reset_capture_tables : unit -> unit
 
 val shrink_analysis_db : unit -> unit
 (** Delete all analysis summaries (by overwriting with [NULL]) and [VACUUM]ing. *)

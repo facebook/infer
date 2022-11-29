@@ -17,6 +17,8 @@ let if_none_eval = value_default_f
 
 let exists2 x y ~f = match (x, y) with Some x, Some y -> f x y | _, _ -> false
 
+let iter2 x y ~f = match (x, y) with Some x, Some y -> f x y | _, _ -> ()
+
 let map_changed opt ~equal ~f =
   match opt with
   | None ->

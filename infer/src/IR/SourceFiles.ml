@@ -27,6 +27,21 @@ let get_existing_data source_file =
           (tenv, proc_names) ) )
 
 
+let proc_names_of_source =
+  let stmt =
+    Database.register_statement CaptureDatabase
+      "SELECT procedure_names FROM source_files WHERE source_file = :k"
+  in
+  fun source ->
+    Database.with_registered_statement stmt ~f:(fun db stmt ->
+        SourceFile.SQLite.serialize source
+        |> Sqlite3.bind stmt 1
+        |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
+        SqliteUtils.result_single_column_option ~finalize:false db
+          ~log:"SourceFiles.proc_names_of_source" stmt
+        |> Option.value_map ~default:[] ~f:Procname.SQLiteList.deserialize )
+
+
 let add source_file cfg tenv integer_type_widths =
   let tenv, proc_names =
     (* The same source file may get captured several times in a single capture event, for instance
@@ -52,6 +67,22 @@ let add source_file cfg tenv integer_type_widths =
     | None ->
         (tenv, new_proc_names)
   in
+  if Config.incremental_analysis then
+    (* Mark any newly-captured procedure as unchanged if it is structurally identical to the
+       previously-captured version, in order to avoid invalidating summaries of unchanged
+       procedures in changed files.
+
+       NB that this only works if the capture DB has some previous version of the procedure
+       and thus won't work with integrations that require merging (e.g. buck).
+    *)
+    List.iter (proc_names_of_source source_file) ~f:(fun pname ->
+        IOption.iter2 (Procdesc.load pname) (Procname.Hash.find_opt cfg pname)
+          ~f:(fun old_pdesc new_pdesc ->
+            Procdesc.mark_if_unchanged ~old_pdesc ~new_pdesc ;
+            (* If there are already stored attributes for this procedure, delete them from the DB
+               to ensure that the one we have in [cfg] is persisted deterministically. *)
+            if (Procdesc.get_attributes new_pdesc).changed then
+              DBWriter.delete_attributes ~proc_uid:(Procname.to_unique_id pname) ) ) ;
   (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
      OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) *)
@@ -73,21 +104,6 @@ let get_all ~filter () =
        ~f:(fun column ->
          let source_file = SourceFile.SQLite.deserialize column in
          Option.some_if (filter source_file) source_file )
-
-
-let load_proc_names_statement =
-  Database.register_statement CaptureDatabase
-    "SELECT procedure_names FROM source_files WHERE source_file = :k"
-
-
-let proc_names_of_source source =
-  Database.with_registered_statement load_proc_names_statement ~f:(fun db load_stmt ->
-      SourceFile.SQLite.serialize source
-      |> Sqlite3.bind load_stmt 1
-      |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
-      SqliteUtils.result_single_column_option ~finalize:false db
-        ~log:"SourceFiles.proc_names_of_source" load_stmt
-      |> Option.value_map ~default:[] ~f:Procname.SQLiteList.deserialize )
 
 
 let is_non_empty_statement =

@@ -1,6 +1,6 @@
 
 digraph callgraph {
-  N1 [ label = "Test.<init>()", flag = true ];
+  N1 [ label = "Test.<init>()", flag = false ];
 
   N5 [ label = "void Test.main(String[])", flag = true ];
 
@@ -10,7 +10,7 @@ digraph callgraph {
 
   N7 [ label = "Unchanged.<init>()", flag = false ];
 
-  N6 [ label = "void Test.newMethod(int)", flag = true ];
+  N6 [ label = "void Test.newMethod(int)", flag = false ];
 
   N4 [ label = "void Test.complexityIncrease(int)", flag = true ];
   N4 -> N5 ;

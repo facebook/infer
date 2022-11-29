@@ -25,6 +25,9 @@ val if_none_eval : f:(unit -> 'a) -> 'a option -> 'a
 val exists2 : 'a option -> 'b option -> f:('a -> 'b -> bool) -> bool
 (** Like [Option.exists] but gets two parameters. *)
 
+val iter2 : 'a option -> 'b option -> f:('a -> 'b -> unit) -> unit
+(** Like [Option.iter] but gets two parameters. *)
+
 val map_changed : 'a option -> equal:('a -> 'a -> bool) -> f:('a -> 'a) -> 'a option
 (** Like [Option.map] but maintain physical equality *)
 
