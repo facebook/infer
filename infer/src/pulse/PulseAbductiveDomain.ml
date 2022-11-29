@@ -1232,6 +1232,7 @@ let check_new_eqs (eqs : Formula.new_eq list) =
 
 
 let incorporate_new_eqs astate new_eqs =
+  let new_eqs = RevList.to_list new_eqs in
   if Config.pulse_sanity_checks then check_new_eqs new_eqs ;
   let stack_allocations = lazy (get_stack_allocated astate) in
   List.fold_until new_eqs ~init:(astate, None)
@@ -1499,9 +1500,13 @@ let incorporate_new_eqs new_eqs astate =
 
 
 let incorporate_new_eqs_on_val new_eqs v =
-  List.find_map new_eqs ~f:(function
-    | PulseFormula.Equal (v1, v2) when AbstractValue.equal v1 v ->
-        Some v2
-    | _ ->
-        None )
-  |> Option.value ~default:v
+  let rec subst remaining_eqs w =
+    match remaining_eqs with
+    | PulseFormula.Equal (v1, v2) :: remaining_eqs when AbstractValue.equal v1 w ->
+        subst remaining_eqs v2
+    | _ :: remaining_eqs ->
+        subst remaining_eqs w
+    | [] ->
+        w
+  in
+  subst (RevList.to_list new_eqs) v

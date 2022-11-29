@@ -453,7 +453,7 @@ let%test_module "conjunctive normal form" =
         {|
           conditions: (empty)
           phi: var_eqs: a10=a8=a6=a4=a2=x ∧ a9=a7=a5=a3=a1 ∧ v6=v7=v8
-               && linear_eqs: a11 = a12 -1 ∧ a10 = a11 +1 ∧ a9 = a10 -1 ∧ a7 = a10 -1 ∧ v6 = 1
+               && linear_eqs: a11 = a12 -1 ∧ a10 = a11 +1 ∧ a9 = a10 -1 ∧ v6 = 1
                && term_eqs: 1=v6∧[a10 -1]=a9∧[a12 -1]=a11∧[a11 +1]=a10∧(0<[a10])=v6∧(0≤[a10])=v6
                && intervals: v6≠0|}]
   end )

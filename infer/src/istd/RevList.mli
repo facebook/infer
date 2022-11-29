@@ -21,8 +21,14 @@ val to_list : 'a t -> 'a list
 val of_list : 'a list -> 'a t
 (** Make reverse-ordered list from normal-ordered one *)
 
+val append : 'a t -> 'a t -> 'a t
+(** [append (of_list l1) (of_list l2)] is the same as [of_list (List.append l1 l2)] *)
+
 val exists : 'a t -> f:('a -> bool) -> bool
 (** Similar to [List.exists] *)
+
+val fold : 'a t -> init:'accum -> f:('accum -> 'a -> 'accum) -> 'accum
+(** Similar to [List.fold] *)
 
 val map : 'a t -> f:('a -> 'b) -> 'b t
 (** Similar to [List.map] *)

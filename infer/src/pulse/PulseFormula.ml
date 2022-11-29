@@ -1622,7 +1622,7 @@ let pp_new_eq fmt = function
       F.fprintf fmt "%a=%a" Var.pp v1 Var.pp v2
 
 
-type new_eqs = new_eq list
+type new_eqs = new_eq RevList.t
 
 module Formula = struct
   (* redefined for yojson output *)
@@ -1792,7 +1792,7 @@ module Formula = struct
     let add_lin_eq_to_new_eqs v l new_eqs =
       match LinArith.get_as_const l with
       | Some q when Q.is_zero q ->
-          EqZero v :: new_eqs
+          RevList.cons (EqZero v) new_eqs
       | _ ->
           new_eqs
 
@@ -1809,7 +1809,7 @@ module Formula = struct
       | Some (v, l) -> (
         match LinArith.get_as_var l with
         | Some v' ->
-            merge_vars ~fuel new_eqs (v :> Var.t) v' phi
+            merge_vars ~fuel new_eqs v v' phi
         | None -> (
             let* phi, new_eqs =
               if (not force_no_tableau) && Var.is_restricted v && LinArith.is_restricted l then
@@ -1817,16 +1817,18 @@ module Formula = struct
                 solve_tableau_restricted_eq ~fuel new_eqs v l phi
               else Sat (phi, new_eqs)
             in
-            match Var.Map.find_opt (v :> Var.t) phi.linear_eqs with
+            match Var.Map.find_opt v phi.linear_eqs with
             | None ->
                 (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
                 let+ phi, new_eqs =
-                  solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) (v :> Var.t) phi
+                  solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) v phi
                 in
+                (* the rep might be changed by [solve_normalized_term_eq_no_lin] *)
+                let v = (get_repr phi v :> Var.t) in
                 let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
                 (* this can break the (as a result non-)invariant that variables in the domain of
                    [linear_eqs] do not appear in the range of [linear_eqs] *)
-                ({phi with linear_eqs= Var.Map.add (v :> Var.t) l phi.linear_eqs}, new_eqs)
+                ({phi with linear_eqs= Var.Map.add v l phi.linear_eqs}, new_eqs)
             | Some l' ->
                 (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
                    do not record these anywhere (except when their consequence can be recorded as [y =
@@ -1837,7 +1839,7 @@ module Formula = struct
                 let l'' = normalize_linear phi l' in
                 let phi =
                   if phys_equal l' l'' then phi
-                  else {phi with linear_eqs= Var.Map.add (v :> Var.t) l'' phi.linear_eqs}
+                  else {phi with linear_eqs= Var.Map.add v l'' phi.linear_eqs}
                 in
                 if fuel > 0 then (
                   L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
@@ -1855,6 +1857,8 @@ module Formula = struct
       | None ->
           (* [t] isn't known already: add it *)
           Sat ({phi with term_eqs= Term.VarMap.add t v phi.term_eqs}, new_eqs)
+      | Some v' when Var.equal v v' ->
+          Sat (phi, new_eqs)
       | Some v' ->
           (* [t = v'] already in the map, need to explore consequences of [v = v']*)
           merge_vars ~fuel new_eqs v v' phi
@@ -2002,7 +2006,7 @@ module Formula = struct
              [normalize_linear_eqs]). *)
           let v_new = (v_new :> Var.t) in
           L.d_printfln "new eq: %a = %a" Var.pp v_old Var.pp v_new ;
-          let new_eqs = Equal (v_old, v_new) :: new_eqs in
+          let new_eqs = RevList.cons (Equal (v_old, v_new)) new_eqs in
           let phi, l_new =
             match Var.Map.find_opt v_new phi.linear_eqs with
             | None ->
@@ -2026,12 +2030,17 @@ module Formula = struct
           in
           (* NOTE: we don't propagate new variable equalities to the tableau eagerly at the moment *)
           match (l_old, l_new) with
-          | None, None | None, Some _ ->
+          | None, None ->
+              Sat (phi, new_eqs)
+          | None, Some l ->
+              let new_eqs = add_lin_eq_to_new_eqs v_new l new_eqs in
               Sat (phi, new_eqs)
           | Some l, None ->
               let new_eqs = add_lin_eq_to_new_eqs v_new l new_eqs in
               Sat ({phi with linear_eqs= Var.Map.add v_new l phi.linear_eqs}, new_eqs)
           | Some l1, Some l2 ->
+              let new_eqs = add_lin_eq_to_new_eqs v_new l1 new_eqs in
+              let new_eqs = add_lin_eq_to_new_eqs v_new l2 new_eqs in
               (* no need to consume fuel here as we can only go through this branch finitely many
                  times because there are finitely many variables in a given formula *)
               (* TODO: we may want to keep the "simpler" representative for [v_new] between [l1] and [l2] *)
@@ -2285,7 +2294,7 @@ let pp = pp_with_pp_var Var.pp
 
 let and_atom atom formula =
   let open SatUnsat.Import in
-  let+ phi, new_eqs = Formula.Normalizer.and_atom atom (formula.phi, []) in
+  let+ phi, new_eqs = Formula.Normalizer.and_atom atom (formula.phi, RevList.empty) in
   ({formula with phi}, new_eqs)
 
 
@@ -2379,10 +2388,12 @@ module Intervals = struct
 end
 
 let and_mk_atom binop op1 op2 formula =
-  let* formula, new_eqs = Intervals.and_binop ~negated:false binop op1 op2 (formula, []) in
+  let* formula, new_eqs =
+    Intervals.and_binop ~negated:false binop op1 op2 (formula, RevList.empty)
+  in
   let atom = (mk_atom_of_binop binop) (Term.of_operand op1) (Term.of_operand op2) in
   let+ formula, new_eqs' = and_atom atom formula in
-  (formula, List.rev_append new_eqs new_eqs')
+  (formula, RevList.append new_eqs new_eqs')
 
 
 let and_equal op1 op2 formula = and_mk_atom Eq op1 op2 formula
@@ -2449,7 +2460,7 @@ let prune_binop ~negated (bop : Binop.t) x y formula =
      important to do [prune_atoms] *first* otherwise it might become trivial. For instance adding [x
      = 4] would prune [4 = 4] and so not add anything to [formula.conditions] instead of adding [x =
      4]. *)
-  prune_atoms atoms (formula, []) >>= Intervals.and_binop ~negated bop x y
+  prune_atoms atoms (formula, RevList.empty) >>= Intervals.and_binop ~negated bop x y
 
 
 module DynamicTypes = struct
@@ -2485,7 +2496,7 @@ module DynamicTypes = struct
         let t = simplify_term t in
         Formula.Normalizer.and_var_term v t acc_phi
       in
-      Term.VarMap.fold f old_term_eqs (Sat (phi, []))
+      Term.VarMap.fold f old_term_eqs (Sat (phi, RevList.empty))
     in
     let+ phi, new_eqs =
       let f atom acc_phi =
@@ -2507,7 +2518,7 @@ module DynamicTypes = struct
 
   let simplify tenv ~get_dynamic_type formula =
     if has_instanceof formula then really_simplify tenv ~get_dynamic_type formula
-    else Sat (formula, [])
+    else Sat (formula, RevList.empty)
 end
 
 let normalize tenv ~get_dynamic_type formula =
@@ -2575,7 +2586,7 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
   let and_ phi_foreign acc phi =
     try
       Sat
-        ( and_var_eqs phi_foreign.Formula.var_eqs (acc, (phi, []))
+        ( and_var_eqs phi_foreign.Formula.var_eqs (acc, (phi, RevList.empty))
         |> and_linear_eqs phi_foreign.Formula.linear_eqs
         |> and_term_eqs phi_foreign.Formula.term_eqs
         |> and_intervals phi_foreign.Formula.intervals
@@ -2605,7 +2616,7 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
         (acc_f, phi_new_eqs) )
   in
   try
-    let acc, (phi, new_eqs) = add_conditions phi_foreign.conditions (init, (phi0, [])) in
+    let acc, (phi, new_eqs) = add_conditions phi_foreign.conditions (init, (phi0, RevList.empty)) in
     Sat (acc, phi, new_eqs)
   with Contradiction -> Unsat
 

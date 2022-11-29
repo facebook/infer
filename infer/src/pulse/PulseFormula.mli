@@ -44,7 +44,7 @@ type new_eq = EqZero of Var.t | Equal of Var.t * Var.t
 
 val pp_new_eq : F.formatter -> new_eq -> unit
 
-type new_eqs = new_eq list
+type new_eqs = new_eq RevList.t
 
 val ttrue : t
 

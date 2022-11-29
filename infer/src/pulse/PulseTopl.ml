@@ -221,7 +221,7 @@ end = struct
   (** Use: [let rep = rep_of_new_eqs new_eqs in rep v]. Evaluating [rep_of_new_eqs new_eqs] is slow
       but evaluating [rep v] is fast. Only [Formula.Equal] is used; e.g., [Formula.EqZero] is
       dropped. *)
-  let rep_of_new_eqs (new_eqs : Formula.new_eq list) : value -> value =
+  let rep_of_new_eqs (new_eqs : Formula.new_eqs) : value -> value =
     let module UF =
       UnionFind.Make
         (struct
@@ -233,7 +233,7 @@ end = struct
         (AbstractValue.Map)
     in
     let uf =
-      List.fold ~init:UF.empty new_eqs ~f:(fun uf -> function
+      RevList.fold ~init:UF.empty new_eqs ~f:(fun uf -> function
         | Formula.Equal (v1, v2) ->
             let uf, _ = UF.union uf v1 v2 in
             uf
@@ -280,7 +280,10 @@ end = struct
             (* TODO: Detect more contradictions here. *)
             Sat heap
       in
-      let* heap = SatUnsat.list_fold ~init:pulse_state.pulse_post.heap ~f:incorporate_eq new_eqs in
+      let* heap =
+        SatUnsat.list_fold ~init:pulse_state.pulse_post.heap ~f:incorporate_eq
+          (RevList.to_list new_eqs)
+      in
       (* Note: This checks that non/reachability is implied -- a stronger check. *)
       let check_reachability path_condition predicate =
         match predicate with

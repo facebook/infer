@@ -14,6 +14,8 @@ let to_list = rev
 
 let of_list = rev
 
+let append l1 l2 = append l2 l1
+
 let rev_partition_map t ~f =
   let rec loop t fst snd =
     match t with
