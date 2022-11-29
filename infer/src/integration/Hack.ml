@@ -132,7 +132,9 @@ let compile compiler args =
   process_output chan ~action:(fun source_path content ->
       L.debug Capture Quiet "Capturing %s@." source_path ;
       let open TextualParser in
-      let trans = TextualFile.translate (TextualFile.TranslatedFile {source_path; content}) in
+      let line_map = LineMap.create content in
+      let textual_file = TextualFile.TranslatedFile {source_path; content; line_map} in
+      let trans = TextualFile.translate textual_file in
       ( match trans with
       | Ok sil ->
           TextualFile.capture sil ;

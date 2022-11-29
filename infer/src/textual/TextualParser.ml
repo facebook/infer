@@ -72,13 +72,19 @@ let parse_chan sourcefile ic =
 
 
 module TextualFile = struct
-  type t = StandaloneFile of string | TranslatedFile of {source_path: string; content: string}
+  type t =
+    | StandaloneFile of string
+    | TranslatedFile of {source_path: string; content: string; line_map: LineMap.t}
 
   let source_path = function
     | StandaloneFile path ->
         path
     | TranslatedFile {source_path; _} ->
         source_path
+
+
+  let line_map textual_file =
+    match textual_file with StandaloneFile _ -> None | TranslatedFile {line_map} -> Some line_map
 
 
   type sil = {sourcefile: SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
