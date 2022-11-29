@@ -873,6 +873,9 @@ module PulseTransferFunctions = struct
           "OOM danger: heap size is %d words, more than the specified threshold of %d words. \
            Aborting the analysis of the procedure %a to avoid running out of memory.@\n"
           heap_size max_heap_size Procname.pp pname ;
+        (* If we'd not compact, then heap remains big, and we'll keep skipping procedures until
+           the runtime decides to compact. *)
+        Gc.compact () ;
         raise_notrace AboutToOOM
     | _ ->
         () ) ;
