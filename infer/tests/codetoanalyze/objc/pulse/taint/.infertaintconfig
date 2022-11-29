@@ -87,6 +87,7 @@
       {"procedure": "testNSDictionary_sink", "kinds": ["SimpleSink"]},
       {"procedure": "testNSSet_sink", "kinds": ["SimpleSink"]},
       {"procedure": "sink_int", "kinds": ["Simple"]},
+      {"procedure": "sink_number", "kinds": ["Simple"]},
       { "procedure": "sink_manipulated",
         "kinds": ["Simple"],
         "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]},

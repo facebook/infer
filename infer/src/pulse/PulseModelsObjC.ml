@@ -10,6 +10,7 @@ module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseOperationResult.Import
 open PulseModelsImport
+module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
 
 module CoreFoundation = struct
   let cf_bridging_release access : model =
@@ -78,6 +79,35 @@ let insertion_into_collection_key_or_value (value, value_hist) ~value_kind ~desc
       Dereference astate
   in
   astate
+
+
+let insert_object_at (collection, collection_hist) (obj_ptr, obj_hist) (index, _index_hist) ~desc :
+    model =
+ fun {path; location} astate ->
+  let obj_hist = Hist.add_call path location desc obj_hist in
+  let collection_hist = Hist.add_call path location desc collection_hist in
+  let<*> astate, obj =
+    PulseOperations.eval_access path ~must_be_valid_reason:Invalidation.InsertionIntoCollectionValue
+      Read location (obj_ptr, obj_hist) Dereference astate
+  in
+  let<*> astate, cell =
+    GenericArrayBackedCollection.element path location (collection, collection_hist) index astate
+  in
+  let<+> astate = PulseOperations.write_deref path location ~ref:cell ~obj astate in
+  astate
+
+
+let object_at (collection, collection_hist) (index, _index_hist) ~desc : model =
+ fun {path; location; ret= ret_id, _} astate ->
+  let collection_hist = Hist.add_call path location desc collection_hist in
+  let<*> astate, cell =
+    GenericArrayBackedCollection.element path location (collection, collection_hist) index astate
+  in
+  let<+> astate, (obj, obj_hist) =
+    PulseOperations.eval_access path Read location cell Dereference astate
+  in
+  let obj_hist = Hist.add_call path location desc obj_hist in
+  PulseOperations.write_id ret_id (obj, obj_hist) astate
 
 
 let read_from_collection (key, _key_hist) ~desc : model =
@@ -265,9 +295,11 @@ let matchers : matcher list =
     &:: "addObject:" <>$ any_arg $+ capt_arg_payload
     $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSMutableArray.addObject:"
   ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
-    &:: "insertObject:atIndex:" <>$ any_arg $+ capt_arg_payload $+ any_arg
-    $--> insertion_into_collection_key_or_value ~value_kind:`Value
-           ~desc:"NSMutableArray.insertObject:atIndex:"
+    &:: "insertObject:atIndex:" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> insert_object_at ~desc:"NSMutableArray.insertObject:atIndex:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
+    &:: "objectAtIndex:" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> object_at ~desc:"NSArray.objectAtIndex:"
   ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
     &:: "replaceObjectAtIndex:withObject:" <>$ any_arg $+ any_arg $+ capt_arg_payload
     $--> insertion_into_collection_key_or_value ~value_kind:`Value
