@@ -126,9 +126,22 @@ let add_edge addr_src access value memory =
   if phys_equal old_edges new_edges then memory else Graph.add addr_src new_edges memory
 
 
-let find_edge_opt addr access memory =
+let find_edge_opt ?get_var_repr addr access memory =
   let open Option.Monad_infix in
-  Graph.find_opt addr memory >>= Edges.find_opt access
+  Graph.find_opt addr memory
+  >>= fun edges ->
+  let res = Edges.find_opt access edges in
+  match res with
+  | Some _ ->
+      res
+  | None -> (
+    match (access, get_var_repr) with
+    | HilExp.Access.ArrayAccess _, Some get_var_repr ->
+        let access = Access.canonicalize ~get_var_repr access in
+        let edges = Edges.canonicalize ~get_var_repr edges in
+        Edges.find_opt access edges
+    | _, _ ->
+        res )
 
 
 let has_edge addr access memory = find_edge_opt addr access memory |> Option.is_some

@@ -34,7 +34,12 @@ val register_address : AbstractValue.t -> t -> t
 
 val add_edge : AbstractValue.t -> Access.t -> AddrTrace.t -> t -> t
 
-val find_edge_opt : AbstractValue.t -> Access.t -> t -> AddrTrace.t option
+val find_edge_opt :
+     ?get_var_repr:(AbstractValue.t -> AbstractValue.t)
+  -> AbstractValue.t
+  -> Access.t
+  -> t
+  -> AddrTrace.t option
 
 val has_edge : AbstractValue.t -> Access.t -> t -> bool
 

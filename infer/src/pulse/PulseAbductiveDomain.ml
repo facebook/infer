@@ -482,7 +482,8 @@ module Memory = struct
 
 
   let find_edge_opt address access astate =
-    BaseMemory.find_edge_opt address access (astate.post :> base_domain).heap
+    let get_var_repr v = Formula.get_var_repr astate.path_condition v in
+    BaseMemory.find_edge_opt ~get_var_repr address access (astate.post :> base_domain).heap
 
 
   let eval_edge (addr_src, hist_src) access astate =

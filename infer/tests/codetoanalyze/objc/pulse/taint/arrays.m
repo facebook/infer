@@ -20,7 +20,7 @@ void test_intra_proc_good(void) {
   sink_int(arr[1]);
 }
 
-void test_intra_change_0_bad_FN(int i) {
+void test_intra_change_0_bad(int i) {
   int arr[2];
   arr[0] = int_source();
   if (i == 0)
