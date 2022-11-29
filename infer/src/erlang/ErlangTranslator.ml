@@ -1060,6 +1060,10 @@ and translate_expression_match (env : (_, _) Env.t) ret_var pattern body : Block
   let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_badmatch in
   pattern_block.exit_failure |~~> [crash_node] ;
   let pattern_block = {pattern_block with exit_failure= crash_node} in
+  (* Note that for an expression X = Y, this causes X to be returned. This is because
+     in lineage, for Z = (X = Y) we wanted flows to be Y -> X and X -> Y instead of
+     Y -> X and Y -> Z. But if X is some data structure (e.g. a tuple) this causes
+     an extra construction step and doesn't seem to align with compiler: T136864730 *)
   let store_return_block = translate_expression_to_id env ret_var pattern in
   Block.all env [body_block; pattern_block; store_return_block]
 
