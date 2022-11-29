@@ -17,7 +17,7 @@
 
 _body:
      BODYKW;
-	 LBRACE; bdStub=bodyStub; RBRACE;
+	 LBRACKET; bdStub=bodyStub; RBRACKET;
      { bdStub }
      ;
 

@@ -689,6 +689,10 @@ module ProcDesc = struct
     F.fprintf fmt "@]\n}@\n@\n"
 end
 
+module Body = struct
+  type t = {nodes: Node.t list; locals: (VarName.t * Typ.annotated) list}
+end
+
 module SsaVerification = struct
   type error = {id: Ident.t; locations: Location.Set.t}
 

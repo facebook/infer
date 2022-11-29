@@ -88,7 +88,7 @@
 %type <NodeName.t * (Ident.t * Typ.t) list> label
 %type <TypeName.t list> extends
 %type <Ident.t * Typ.t> typed_ident
-
+%type <Textual.Body.t> body
 %%
 
 ident:
@@ -179,15 +179,20 @@ in Hack where formals number and types are unknown. */
     }
   | DEFINE attributes=annots qualified_name=qualified_pname LPAREN
            params = separated_list(COMMA, typed_var) RPAREN COLON result_type=annotated_typ
-           LBRACKET locals = locals nodes=block+ RBRACKET
+           body = body
     { let formals_types = List.map ~f:snd params in
       let procdecl : ProcDecl.t =
         {qualified_name; formals_types= Some formals_types; result_type; attributes} in
+      let {locals; nodes} : Body.t = body in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:fst params in
       let exit_loc = location_of_pos $endpos in
       Proc { procdecl; nodes; start= start_node.Node.label; params; locals; exit_loc}
     }
+
+body:
+  | LBRACKET lcls = locals nds=block+ RBRACKET
+      { { locals= lcls; nodes= nds }  }
 
 locals:
   | { [] }

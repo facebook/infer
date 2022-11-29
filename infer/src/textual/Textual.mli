@@ -253,6 +253,10 @@ module ProcDesc : sig
   val is_ready_for_to_sil_conversion : t -> bool
 end
 
+module Body : sig
+  type t = {nodes: Node.t list; locals: (VarName.t * Typ.annotated) list}
+end
+
 module Struct : sig
   type t =
     {name: TypeName.t; supers: TypeName.t list; fields: FieldDecl.t list; attributes: Attr.t list}

@@ -14,6 +14,7 @@ let run path =
     let filename = Filename.basename path in
     ( try
         let lexer = DoliLexer.read in
+        (* TextualLexer.main in future *)
         let _ = DoliCombined.doliProgram lexer filebuf in
         Printf.printf "doli parsing of %s succeeded.\n" filename
       with DoliCombined.Error ->

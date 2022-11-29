@@ -7,7 +7,7 @@
 
 {
 
-exception SyntaxError of string
+    exception SyntaxError of string
 
 (* classic Ocamllex function to update the current lexbuf line at each end of line *)
   let incr_linenum lexbuf =
@@ -18,6 +18,7 @@ exception SyntaxError of string
     }
 
    open DoliCombined
+
 }
 
 let whitespace = [' ' '\t']+
@@ -53,12 +54,12 @@ rule read =
   (* various brackets and parentheses *)
   | "(" { LPAREN }
   | ")"  { RPAREN }
-  | "{" {   LBRACE }
-  | "}" {   RBRACE }
-  | "<" {  LANGLE }
-  | ">" {  RANGLE }
-  | "[" {   LSQUAREBRACKET }
-  | "]" {   RSQUAREBRACKET }
+  | "{" {   LBRACKET }
+  | "}" {   RBRACKET }
+  | "<" {  LABRACKET }
+  | ">" {  RABRACKET }
+  | "[" {   LSBRACKET }
+  | "]" {   RSBRACKET }
   (* modifiers and throws *)
   | "public" {  PUBLIC }
   | "protected"  {  PROTECTED }
@@ -81,7 +82,7 @@ rule read =
   (* separators *)
   | "." { DOT }
   | "," { COMMA }
-   | ";" { SEMI }
+  | ";" { SEMICOLON }
   (* generics *)
   | "extends" { EXTENDS }
   | "super" { SUPER }

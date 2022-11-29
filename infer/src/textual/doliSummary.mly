@@ -20,7 +20,7 @@
 
 _summary:
      SUMMARYKW;
-	 LBRACE; sm=summaryStub; RBRACE;
+	 LBRACKET; sm=summaryStub; RBRACKET;
      { sm }
      ;
 

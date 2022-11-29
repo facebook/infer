@@ -14,12 +14,12 @@ open DoliJavaAst;;
 %%
 
 _javaMatch: MATCH;
-	LBRACE; ess=list(extendedSignature); RBRACE;
+	LBRACKET; ess=list(extendedSignature); RBRACKET;
 	                   { JavaMatching ess }
 
 extendedSignature:
- 	| sigs=separated_nonempty_list(SEMI,signature); UNDER; rt=referenceType
-	 (* the SEMI separator is needed in order to avoid shit-reduce conflicts *)
+ 	| sigs=separated_nonempty_list(SEMICOLON,signature); UNDER; rt=referenceType
+	 (* the SEMICOLON separator is needed in order to avoid shift-reduce conflicts *)
 	  { {signs=sigs; under=rt}  }
 	;
 
@@ -51,7 +51,7 @@ referenceType:
 
 classType:
     | cId=ID { CT (cId, []) }
-	| cId=ID LANGLE tArgs=separated_list(COMMA, typeArgument)  RANGLE { CT (cId,tArgs) }
+	| cId=ID LABRACKET tArgs=separated_list(COMMA, typeArgument)  RABRACKET { CT (cId,tArgs) }
 	;
 
 
@@ -67,7 +67,7 @@ nonVoidType:
 	| LONG { BasicType LongType }
 	| SHORT { BasicType ShortType }
 	| rt=referenceType { RefType rt }
-	| nvt=nonVoidType; LSQUAREBRACKET RSQUAREBRACKET { Array nvt }
+	| nvt=nonVoidType; LSBRACKET RSBRACKET { Array nvt }
 	;
 
 formalParameterType:

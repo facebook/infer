@@ -16,7 +16,7 @@
 %%
 
 _objCMatch:
-    MATCH; LBRACE; ess=extendedSignatureList; RBRACE;
+    MATCH; LBRACKET; ess=extendedSignatureList; RBRACKET;
 	                   { ObjCMatching(ess) }
 ;
 

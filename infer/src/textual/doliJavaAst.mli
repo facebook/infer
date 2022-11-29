@@ -7,7 +7,7 @@
 
 open! IStd
 
-(** We can handle Jave signatures like the one below
+(** We can handle Java signatures like the one below
 
     {[
       public static void main(A[] x1, C<Gg,? super D>.B x2) throws A, B.C
