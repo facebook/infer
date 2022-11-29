@@ -113,12 +113,12 @@ val remove_taint_attrs : AbstractValue.t -> t -> t
 
 val remove_must_be_valid_attr : AbstractValue.t -> t -> t
 
-val remove_unsuitable_for_summary : t -> t
+val make_suitable_for_pre_summary : t -> t
 
 val initialize : AbstractValue.t -> t -> t
 
-val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+val canonicalize_post : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
 (** merge the attributes of all the variables that are equal according to [get_var_repr] and remove
-    non-canonical variables in favor of their rerpresentative *)
+    non-canonical variables in favor of their representative *)
 
-val subst_var : for_summary:bool -> AbstractValue.t * AbstractValue.t -> t -> t
+val subst_var : AbstractValue.t * AbstractValue.t -> t -> t

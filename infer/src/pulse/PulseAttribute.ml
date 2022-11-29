@@ -340,8 +340,10 @@ module Attribute = struct
         false
 
 
+  let is_suitable_for_pre_summary = is_suitable_for_pre
+
   let is_suitable_for_post = function
-    | MustBeInitialized _ | MustBeValid _ | MustNotBeTainted _ | UnreachableAt _ ->
+    | MustBeInitialized _ | MustNotBeTainted _ | UnreachableAt _ ->
         false
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
@@ -357,6 +359,7 @@ module Attribute = struct
     | Invalid _
     | JavaResourceReleased
     | CSharpResourceReleased
+    | MustBeValid _
     | PropagateTaintFrom _
     | RefCounted
     | ReturnedFromUnknown _
@@ -369,6 +372,13 @@ module Attribute = struct
     | UnknownEffect _
     | WrittenTo _ ->
         true
+
+
+  let is_suitable_for_post_summary = function
+    | MustBeValid _ ->
+        false
+    | attr ->
+        is_suitable_for_post attr
 
 
   let make_suitable_for_summary attr =
@@ -754,7 +764,18 @@ module Attributes = struct
         else allocated_opt )
 
 
-  let remove_unsuitable_for_summary = Set.filter_map ~f:Attribute.make_suitable_for_summary
+  let make_suitable_for_summary is_ok attributes =
+    let f attr = if is_ok attr then Attribute.make_suitable_for_summary attr else None in
+    Set.filter_map ~f attributes
+
+
+  let make_suitable_for_pre_summary attributes =
+    make_suitable_for_summary Attribute.is_suitable_for_pre_summary attributes
+
+
+  let make_suitable_for_post_summary attributes =
+    make_suitable_for_summary Attribute.is_suitable_for_post_summary attributes
+
 
   include Set
 end

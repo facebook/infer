@@ -42,7 +42,7 @@ module type BaseDomainSig_ = sig
   (** compute new state containing only reachable addresses in its heap and attributes, as well as
       the list of discarded unreachable addresses *)
 
-  val subst_var : for_summary:bool -> AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
+  val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
 
   val pp : F.formatter -> t -> unit
 end
@@ -252,11 +252,33 @@ module AddressAttributes = struct
     if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
 
+  (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
+  let map_post_attrs ~f astate =
+    let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
+    if phys_equal new_post astate.post then astate else {astate with post= new_post}
+
+
+  let add_one address attributes astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.add_one address attributes)
+
+
+  let abduce_and_add value attrs astate =
+    Attributes.fold attrs ~init:astate ~f:(fun astate attr ->
+        let astate =
+          if Attribute.is_suitable_for_pre attr then abduce_attribute value attr astate else astate
+        in
+        let astate =
+          if Attribute.is_suitable_for_post attr then add_one value attr astate else astate
+        in
+        match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
+
+
   let check_valid path ?must_be_valid_reason access_trace addr astate =
     let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
     (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-    abduce_attribute addr
-      (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
+    abduce_and_add addr
+      (Attributes.singleton
+         (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason)) )
       astate
 
 
@@ -291,12 +313,6 @@ module AddressAttributes = struct
     let open IOption.Let_syntax in
     let* addr_attrs = BaseAddressAttributes.find_opt addr attrs in
     Attribute.Attributes.get_propagate_taint_from addr_attrs
-
-
-  (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
-  let map_post_attrs ~f astate =
-    let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
-    if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
   (** [astate] with [astate.pre.attrs = f astate.pre.attrs] *)
@@ -350,7 +366,11 @@ module AddressAttributes = struct
 
 
   let get_must_be_valid addr astate =
-    BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs
+    match BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs with
+    | Some _ as must_be_valid ->
+        must_be_valid
+    | None ->
+        BaseAddressAttributes.get_must_be_valid addr (astate.post :> base_domain).attrs
 
 
   let get_source_origin_of_copy addr astate =
@@ -433,17 +453,6 @@ module AddressAttributes = struct
 
   let get_const_string addr astate =
     BaseAddressAttributes.get_const_string addr (astate.post :> base_domain).attrs
-
-
-  let abduce_and_add value attrs astate =
-    Attributes.fold attrs ~init:astate ~f:(fun astate attr ->
-        let astate =
-          if Attribute.is_suitable_for_pre attr then abduce_attribute value attr astate else astate
-        in
-        let astate =
-          if Attribute.is_suitable_for_post attr then add_one value attr astate else astate
-        in
-        match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
 
 
   let add_attrs value attrs astate =
@@ -1151,9 +1160,9 @@ let is_heap_allocated {post; pre} v =
 
 let is_stack_allocated stack_allocations v = AbstractValue.Set.mem v (Lazy.force stack_allocations)
 
-let subst_var_in_post ~for_summary subst astate =
+let subst_var_in_post subst astate =
   let open SatUnsat.Import in
-  let+ post = PostDomain.subst_var ~for_summary subst astate.post in
+  let+ post = PostDomain.subst_var subst astate.post in
   if phys_equal astate.post post then astate else {astate with post}
 
 
@@ -1222,7 +1231,7 @@ let check_new_eqs (eqs : Formula.new_eq list) =
         L.die InternalError "%s" (F.flush_str_formatter ()) ) )
 
 
-let incorporate_new_eqs ~for_summary astate new_eqs =
+let incorporate_new_eqs astate new_eqs =
   if Config.pulse_sanity_checks then check_new_eqs new_eqs ;
   let stack_allocations = lazy (get_stack_allocated astate) in
   List.fold_until new_eqs ~init:(astate, None)
@@ -1233,7 +1242,7 @@ let incorporate_new_eqs ~for_summary astate new_eqs =
       | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
           Continue (astate, error)
       | Equal (v1, v2) -> (
-        match subst_var_in_post ~for_summary (v1, v2) astate with
+        match subst_var_in_post (v1, v2) astate with
         | Unsat ->
             Stop Unsat
         | Sat astate' ->
@@ -1285,7 +1294,7 @@ let canonicalize astate =
        contradictions *)
     let* stack' = BaseStack.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).stack in
     let+ heap' = BaseMemory.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).heap in
-    let attrs' = BaseAddressAttributes.remove_unsuitable_for_summary (pre :> BaseDomain.t).attrs in
+    let attrs' = BaseAddressAttributes.make_suitable_for_pre_summary (pre :> BaseDomain.t).attrs in
     PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
   in
   let canonicalize_post (post : PostDomain.t) =
@@ -1293,7 +1302,9 @@ let canonicalize astate =
     let* stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
     (* note: this step also de-registers addresses pointing to empty edges *)
     let+ heap' = BaseMemory.canonicalize ~get_var_repr (post :> BaseDomain.t).heap in
-    let attrs' = BaseAddressAttributes.canonicalize ~get_var_repr (post :> BaseDomain.t).attrs in
+    let attrs' =
+      BaseAddressAttributes.canonicalize_post ~get_var_repr (post :> BaseDomain.t).attrs
+    in
     PostDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' post
   in
   let* pre = canonicalize_pre astate.pre in
@@ -1386,7 +1397,7 @@ module Summary = struct
         astate.path_condition
     in
     let astate = {astate with path_condition} in
-    let* astate, error = incorporate_new_eqs ~for_summary:true astate new_eqs in
+    let* astate, error = incorporate_new_eqs astate new_eqs in
     let astate_before_filter = astate in
     (* do not store the decompiler in the summary and make sure we only use the original one by
        marking it invalid *)
@@ -1395,11 +1406,7 @@ module Summary = struct
       filter_for_summary tenv proc_name astate
     in
     let+ astate, error =
-      match error with
-      | None ->
-          incorporate_new_eqs ~for_summary:true astate new_eqs
-      | Some _ ->
-          Sat (astate, error)
+      match error with None -> incorporate_new_eqs astate new_eqs | Some _ -> Sat (astate, error)
     in
     match error with
     | None -> (
@@ -1482,9 +1489,7 @@ end
 (* re-exported for mli *)
 let incorporate_new_eqs new_eqs astate =
   let open SatUnsat.Import in
-  let+ astate, potential_invalid_access_opt =
-    incorporate_new_eqs ~for_summary:false astate new_eqs
-  in
+  let+ astate, potential_invalid_access_opt = incorporate_new_eqs astate new_eqs in
   match potential_invalid_access_opt with
   | None ->
       Ok astate

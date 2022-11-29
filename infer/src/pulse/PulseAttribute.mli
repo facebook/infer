@@ -208,5 +208,7 @@ module Attributes : sig
 
   val get_allocated_not_freed : t -> (allocator * Trace.t) option
 
-  val remove_unsuitable_for_summary : t -> t
+  val make_suitable_for_pre_summary : t -> t
+
+  val make_suitable_for_post_summary : t -> t
 end

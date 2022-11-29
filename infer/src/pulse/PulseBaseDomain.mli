@@ -42,7 +42,7 @@ val find_cell_opt : AbstractValue.t -> t -> cell option
 
 val pp : F.formatter -> t -> unit
 
-val subst_var : for_summary:bool -> AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
+val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
 
 module GraphVisit : sig
   val fold :
