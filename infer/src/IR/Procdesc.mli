@@ -376,3 +376,6 @@ val is_too_big : Checker.t -> max_cfg_size:int -> t -> bool
 module SQLite : SqliteUtils.Data with type t = t option
 
 val load : Procname.t -> t option
+
+val mark_if_unchanged : old_pdesc:t -> new_pdesc:t -> unit
+(** Record the [changed] attribute in-place on [new_pdesc] if it is unchanged wrt [old_pdsec] *)

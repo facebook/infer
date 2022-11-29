@@ -958,3 +958,62 @@ let load =
     IOption.if_none_evalopt
       ~f:(fun () -> run_query load_statement_cdb)
       (run_query load_statement_adb)
+
+
+let mark_if_unchanged ~old_pdesc ~new_pdesc =
+  (* map from exp names in [old_pdesc] to exp names in [new_pdesc] *)
+  let exp_map = ref Exp.Map.empty in
+  (* map from node IDs in [old_pdesc] to to node IDs in [new_pdesc] *)
+  let node_map = ref NodeMap.empty in
+  (* Formals are compared by type only *)
+  let formals_eq = List.equal (fun (_, typ, _) (_, typ', _) -> Typ.equal typ typ') in
+  (* two nodes are the same if they have the same ID, instructions, and succs/preds up to renaming with [exp_map] and [node_map] *)
+  let node_eq n n' =
+    let equal_id n n' =
+      match NodeMap.find_opt n !node_map with
+      | Some mapped_n ->
+          Node.equal mapped_n n'
+      | None ->
+          (* assume IDs are equal and add to [node_map] *)
+          node_map := NodeMap.add n n' !node_map ;
+          true
+    in
+    let instrs_eq instrs instrs' =
+      Array.equal
+        (fun i i' ->
+          let equal, exp_map' = Sil.equal_structural_instr i i' !exp_map in
+          exp_map := exp_map' ;
+          equal )
+        (Instrs.get_underlying_not_reversed instrs)
+        (Instrs.get_underlying_not_reversed instrs')
+    in
+    equal_id n n'
+    &&
+    let open Node in
+    List.equal equal (get_succs n) (get_succs n')
+    && List.equal equal (get_preds n) (get_preds n')
+    && instrs_eq (get_instrs n) (get_instrs n')
+  in
+  let nodes_eq ns ns' =
+    try List.for_all2_exn ~f:node_eq ns ns' with Invalid_argument _ -> false
+  in
+  let old_attrs = get_attributes old_pdesc in
+  let new_attrs = get_attributes new_pdesc in
+  let is_structurally_equal =
+    Bool.equal old_attrs.is_defined new_attrs.is_defined
+    && Typ.equal old_attrs.ret_type new_attrs.ret_type
+    && formals_eq old_attrs.formals new_attrs.formals
+    && nodes_eq (get_nodes old_pdesc) (get_nodes new_pdesc)
+  in
+  let changed =
+    (* in continue_capture mode keep the old changed bit *)
+    (Config.continue_capture && (get_attributes old_pdesc).changed) || not is_structurally_equal
+  in
+  if not (Bool.equal new_attrs.changed changed) then (
+    new_attrs.changed <- changed ;
+    let pname = new_attrs.proc_name in
+    let proc_uid = Procname.to_unique_id pname in
+    let proc_attributes = ProcAttributes.SQLite.serialize new_attrs in
+    let cfg = SQLite.serialize (Some new_pdesc) in
+    let callees = get_static_callees new_pdesc |> Procname.SQLiteList.serialize in
+    DBWriter.replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis:true )

@@ -67,6 +67,7 @@ type specialized_with_closures_info =
 type t =
   { access: access  (** visibility access *)
   ; captured: CapturedVar.t list  (** name and type of variables captured in blocks *)
+  ; mutable changed: bool  (** true if proc has changed since last analysis *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t * Annot.Item.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
@@ -136,6 +137,7 @@ let to_return_type attributes =
 let default translation_unit proc_name =
   { access= Default
   ; captured= []
+  ; changed= true
   ; exceptions= []
   ; formals= []
   ; const_formals= []
@@ -201,6 +203,7 @@ let pp_captured = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp
 let pp f
     ({ access
      ; captured
+     ; changed
      ; exceptions
      ; formals
      ; const_formals
@@ -242,6 +245,8 @@ let pp f
     F.fprintf f "; access= %a@," (Pp.of_string ~f:string_of_access) access ;
   if not ([%equal: CapturedVar.t list] default.captured captured) then
     F.fprintf f "; captured= [@[%a@]]@," pp_captured captured ;
+  if not (Bool.equal default.changed changed) then
+    F.fprintf f "; changed_since_last_capture= %b@," changed ;
   if not ([%equal: string list] default.exceptions exceptions) then
     F.fprintf f "; exceptions= [@[%a@]]@,"
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_string)

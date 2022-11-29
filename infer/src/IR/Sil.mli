@@ -81,6 +81,12 @@ type instr =
 
 val equal_instr : instr -> instr -> bool
 
+val equal_structural_instr : instr -> instr -> Exp.t Exp.Map.t -> bool * Exp.t Exp.Map.t
+(** Compare instructions from different procedures without considering [loc]s, [ident]s, [pvar]s, or
+    [try_id]s. The [exp_map] parameter gives a mapping of names used in the first [instr] to those
+    used in the second, and the returned [exp_map] includes any additional mappings inferred from
+    this comparison. *)
+
 val skip_instr : instr
 
 val instr_is_auxiliary : instr -> bool

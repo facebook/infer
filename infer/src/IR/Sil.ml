@@ -174,3 +174,95 @@ let pp_instr ~print_types pe0 f instr =
 
 
 let d_instr (i : instr) = L.d_pp_with_pe ~color:Pp.Green (pp_instr ~print_types:true) i
+
+(** Shorthands to carry expression maps through chained structural equalities below*)
+let ( &&* ) (equality, exp_map) f = if equality then f exp_map else (false, exp_map)
+
+let ( &&+ ) acc x = acc &&* Tuple2.create x
+
+(** compare expressions from different procedures without considering loc's, ident's, and pvar's.
+    the [exp_map] param gives a mapping of names used in the procedure of [e] to names used in the
+    procedure of [e'] *)
+let rec exp_equal_structural e e' exp_map =
+  let equal_exps_with_map e e' exp_map =
+    match Exp.Map.find_opt e exp_map with
+    | Some mapped_e ->
+        (Exp.equal mapped_e e', exp_map)
+    | None ->
+        (* assume e and e' equal, enforce by adding to [exp_map] *)
+        (true, Exp.Map.add e e' exp_map)
+  in
+  match ((e : Exp.t), (e' : Exp.t)) with
+  | Var _, Var _ ->
+      equal_exps_with_map e e' exp_map
+  | UnOp (o, e, typ), UnOp (o', e', typ') ->
+      (Unop.equal o o', exp_map) &&* exp_equal_structural e e' &&+ [%equal: Typ.t option] typ typ'
+  | BinOp (o, l, r), BinOp (o', l', r') ->
+      (Binop.equal o o', exp_map) &&* exp_equal_structural l l' &&* exp_equal_structural r r'
+  | Cast (t, e), Cast (t', e') ->
+      exp_equal_structural e e' exp_map &&+ Typ.equal t t'
+  | Lvar _, Lvar _ ->
+      equal_exps_with_map e e' exp_map
+  | Lfield (e, f, t), Lfield (e', f', t') ->
+      exp_equal_structural e e' exp_map &&+ (Fieldname.equal f f' && Typ.equal t t')
+  | Lindex (e, f), Lindex (e', f') ->
+      exp_equal_structural e e' exp_map &&* exp_equal_structural f f'
+  | _ ->
+      (Exp.equal e e', exp_map)
+
+
+let exp_typ_equal_structural (e, t) (e', t') exp_map =
+  exp_equal_structural e e' exp_map &&+ Typ.equal t t'
+
+
+(** Compare instructions from different procedures without considering [loc]s, [ident]s, [pvar]s, or
+    [try_id]s. The [exp_map] parameter gives a mapping of names used in the first [instr] to those
+    used in the second, and the returned [exp_map] includes any additional mappings inferred from
+    this comparison. *)
+let equal_structural_instr instr instr' exp_map =
+  let id_typ_equal_structural (id, typ) (id', typ') exp_map =
+    exp_equal_structural (Var id) (Var id') exp_map &&+ Typ.equal typ typ'
+  in
+  let var_list_equal_structural ids ids' exp_map =
+    if Int.equal (List.length ids) (List.length ids') then
+      List.fold2_exn
+        ~f:(fun acc v v' -> acc &&* exp_equal_structural (Var.to_exp v) (Var.to_exp v'))
+        ~init:(true, exp_map) ids ids'
+    else (false, exp_map)
+  in
+  match (instr, instr') with
+  | Load {id; e; typ; loc= _}, Load {id= id'; e= e'; typ= typ'; loc= _} ->
+      exp_equal_structural (Var id) (Var id') exp_map
+      &&* exp_equal_structural e e' &&+ Typ.equal typ typ'
+  | Store {e1; typ; e2; loc= _}, Store {e1= e1'; typ= typ'; e2= e2'; loc= _} ->
+      (Typ.equal typ typ', exp_map) &&* exp_equal_structural e1 e1' &&* exp_equal_structural e2 e2'
+  | Prune (cond, _, true_branch, ik), Prune (cond', _, true_branch', ik') ->
+      exp_equal_structural cond cond' exp_map
+      &&+ (Bool.equal true_branch true_branch' && equal_if_kind ik ik')
+  | Call (ret_id, e, arg_ts, _, cf), Call (ret_id', e', arg_ts', _, cf') ->
+      let args_equal_structural args args' exp_map =
+        if Int.equal (List.length args) (List.length args') then
+          List.fold2_exn
+            ~f:(fun acc arg arg' -> acc &&* exp_typ_equal_structural arg arg')
+            ~init:(true, exp_map) args args'
+        else (false, exp_map)
+      in
+      id_typ_equal_structural ret_id ret_id' exp_map
+      &&* exp_equal_structural e e'
+      &&* args_equal_structural arg_ts arg_ts'
+      &&+ CallFlags.equal cf cf'
+  | Metadata (Nullify (pvar, _)), Metadata (Nullify (pvar', _)) ->
+      exp_equal_structural (Lvar pvar) (Lvar pvar') exp_map
+  | Metadata (Abstract _), Metadata (Abstract _) ->
+      (true, exp_map)
+  | Metadata (ExitScope (temps, _)), Metadata (ExitScope (temps', _)) ->
+      var_list_equal_structural temps temps' exp_map
+  | Metadata (VariableLifetimeBegins (pv, t, _)), Metadata (VariableLifetimeBegins (pv', t', _)) ->
+      exp_equal_structural (Lvar pv) (Lvar pv') exp_map &&+ Typ.equal t t'
+  | Metadata (CatchEntry _), Metadata (CatchEntry _)
+  | Metadata (TryEntry _), Metadata (TryEntry _)
+  | Metadata (TryExit _), Metadata (TryExit _) ->
+      (* ignore [try_id] of exception-handling metadata nodes, just checking for structural equality *)
+      (true, exp_map)
+  | _ ->
+      (equal_instr instr instr', exp_map)

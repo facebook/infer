@@ -46,6 +46,7 @@ type t =
   { access: access  (** visibility access *)
   ; captured: CapturedVar.t list
         (** name, type, and mode of variables captured in blocks and lambdas *)
+  ; mutable changed: bool  (** true if proc has changed since last analysis *)
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t * Annot.Item.t) list
         (** name, type, and annotation of formal parameters *)
