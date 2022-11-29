@@ -34,10 +34,10 @@ val wrap_buck_call :
     quick identification; [cmd] is a list of strings making up the shell command to execute; the
     return value is the standard output of the command split on newlines. *)
 
-val config_v1 : BuckMode.t -> string list
+val config : BuckMode.t -> version -> string list
 (** return list of string parameters of the form
     ["--config" :: param_a :: "--config" :: param_b :: ...] describing the buck config flags for the
-    given Buck mode. NB this is only for buck1 *)
+    given Buck mode. *)
 
 val parse_command_and_targets :
   BuckMode.t -> version -> string list -> string * string list * string list

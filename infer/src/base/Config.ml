@@ -907,7 +907,7 @@ and buck_mode =
   |> ignore ;
   CLOpt.mk_bool ~long:"buck-java-flavor"
     ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~f:(set_mode `JavaFlavor)
+    ~f:(set_mode `Java)
     "Buck integration for Java which uses the buck flavor #infer-java-capture instead of genrules \
      like buck-java."
   |> ignore ;
@@ -928,9 +928,7 @@ and buck2_root =
 and buck_targets_block_list =
   CLOpt.mk_string_list ~long:"buck-targets-block-list" ~deprecated:["-buck-targets-blacklist"]
     ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
-    ~meta:"regex"
-    "Skip capture of buck targets matched by the specified regular expression. Only valid for \
-     $(b,--buck-compilation-database)."
+    ~meta:"regex" "Skip capture of buck targets matched by the specified regular expression."
 
 
 and capture =
@@ -3429,8 +3427,8 @@ and buck_mode : BuckMode.t option =
       Some (ClangCompilationDB (DepsUpToDepth depth))
   | `Erlang, _ ->
       Some Erlang
-  | `JavaFlavor, _ ->
-      Some JavaFlavor
+  | `Java, _ ->
+      Some Java
 
 
 and buck2_root = match !buck2_root with Some root -> root | None -> !project_root

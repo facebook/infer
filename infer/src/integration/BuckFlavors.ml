@@ -27,7 +27,7 @@ let add_flavors_to_buck_arguments buck_mode ~extra_flavors original_buck_args =
 let capture_buck_args build_report_file =
   ("--build-report" :: build_report_file :: (if Config.keep_going then ["--keep-going"] else []))
   @ (match Config.load_average with Some l -> ["-L"; Float.to_string l] | None -> [])
-  @ Buck.config_v1 Clang @ Config.buck_build_args
+  @ Buck.config Clang V1 @ Config.buck_build_args
 
 
 let run_buck_build prog buck_build_args =

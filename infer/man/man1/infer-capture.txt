@@ -200,7 +200,7 @@ BUCK OPTIONS
 
        --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
-           expression. Only valid for --buck-compilation-database.
+           expression.
 
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).

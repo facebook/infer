@@ -16,6 +16,7 @@ type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
   | Buck2Clang of {build_cmd: string list}
+  | Buck2Java of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckErlang of {prog: string; args: string list}
@@ -46,6 +47,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Buck2Clang {build_cmd} ->
       F.fprintf fmt "Buck2/Clang driver mode: build_cmd = %a" Pp.cli_args build_cmd
+  | Buck2Java {build_cmd} ->
+      F.fprintf fmt "Buck2/Java driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckClangFlavor {build_cmd} ->
       F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckCompilationDB {deps; prog; args} ->
@@ -132,8 +135,11 @@ let capture ~changed_files mode =
         L.progress "Capturing in ant mode...@." ;
         Ant.capture ~prog ~args
     | Buck2Clang {build_cmd} ->
-        L.progress "Capturing in buck2 mode...@." ;
+        L.progress "Capturing in buck2/clang mode...@." ;
         Buck2Clang.capture build_cmd
+    | Buck2Java {build_cmd} ->
+        L.progress "Capturing in buck2/java mode...@." ;
+        Buck2Java.capture build_cmd
     | BuckClangFlavor {build_cmd} ->
         L.progress "Capturing in buck mode...@." ;
         BuckFlavors.capture build_cmd
@@ -288,7 +294,7 @@ let analyze_and_report ~changed_files mode =
     | _ when Config.merge || not (List.is_empty Config.merge_capture) ->
         (* [--merge] overrides other behaviors *)
         true
-    | Analyze | Buck2Clang _ | BuckClangFlavor _ | BuckJavaFlavor _ | Gradle _ ->
+    | Analyze | Buck2Clang _ | Buck2Java _ | BuckClangFlavor _ | BuckJavaFlavor _ | Gradle _ ->
         ResultsDir.RunState.get_merge_capture ()
     | _ ->
         false
@@ -392,7 +398,7 @@ let assert_supported_build_system build_system =
             (`Clang, "buck with flavors")
         | Some (ClangCompilationDB _) ->
             (`Clang, "buck compilation database")
-        | Some JavaFlavor ->
+        | Some Java ->
             (`Java, Config.string_of_build_system build_system)
         | Some Erlang ->
             L.die UserError "Unsupported buck2 integration."
@@ -407,7 +413,9 @@ let assert_supported_build_system build_system =
             (`Clang, Config.string_of_build_system build_system)
         | Some Erlang ->
             (`Erlang, Config.string_of_build_system build_system)
-        | Some (JavaFlavor | ClangCompilationDB _) ->
+        | Some Java ->
+            (`Java, Config.string_of_build_system build_system)
+        | Some (ClangCompilationDB _) ->
             L.die UserError "Unsupported buck2 integration."
       in
       assert_supported_mode analyzer build_string
@@ -453,7 +461,7 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
               "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
                set --no-linters to disable them and this warning.@." ;
             BuckClangFlavor {build_cmd}
-        | Some JavaFlavor ->
+        | Some Java ->
             BuckJavaFlavor {build_cmd}
         | Some Clang ->
             BuckClangFlavor {build_cmd}
@@ -467,6 +475,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             BuckErlang {prog; args}
         | Some Clang ->
             Buck2Clang {build_cmd}
+        | Some Java ->
+            Buck2Java {build_cmd}
         | Some buck_mode ->
             L.die UserError "%a is not supported with buck2.@." BuckMode.pp buck_mode )
       | BClang ->
