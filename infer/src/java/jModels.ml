@@ -18,8 +18,8 @@ let collect_specs_filenames jar_filename =
   (* version of Javalib.get_class that does not spam stderr *)
   let javalib_get_class = Utils.suppress_stderr2 Javalib.get_class in
   let classpath = Javalib.class_path jar_filename in
-  let f classmap filename_with_extension =
-    match Filename.split_extension filename_with_extension with
+  let f classmap _ zip_entry =
+    match Filename.split_extension zip_entry.Zip.filename with
     | filename, Some extension when String.equal extension "class" -> (
         let cn = JBasics.make_cn (String.map ~f:(function '/' -> '.' | c -> c) filename) in
         try JBasics.ClassMap.add cn (javalib_get_class classpath cn) classmap
@@ -27,8 +27,7 @@ let collect_specs_filenames jar_filename =
     | _ ->
         classmap
   in
-  models_classmap :=
-    Utils.zip_fold_filenames ~init:JBasics.ClassMap.empty ~f ~zip_filename:jar_filename ;
+  models_classmap := Utils.zip_fold ~init:JBasics.ClassMap.empty ~f ~zip_filename:jar_filename ;
   Javalib.close_class_path classpath
 
 

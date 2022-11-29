@@ -8,6 +8,7 @@
 
 open! IStd
 open Javalib_pack
+open PolyVariantEqual
 module L = Logging
 
 let split_classpath = String.split ~on:JFile.sep
@@ -141,9 +142,9 @@ let load_from_verbose_output =
 
 
 let collect_classnames init jar_filename =
-  let f acc filename_with_extension =
-    match Filename.split_extension filename_with_extension with
-    | class_filename, Some extension when String.equal extension "class" ->
+  let f acc _ zip_entry =
+    match Filename.split_extension zip_entry.Zip.filename with
+    | class_filename, Some "class" ->
         let classname =
           JBasics.make_cn (String.map ~f:(function '/' -> '.' | c -> c) class_filename)
         in
@@ -151,7 +152,7 @@ let collect_classnames init jar_filename =
     | _ ->
         acc
   in
-  Utils.zip_fold_filenames ~init ~f ~zip_filename:jar_filename
+  Utils.zip_fold ~init ~f ~zip_filename:jar_filename
 
 
 let search_classes path =
@@ -173,6 +174,45 @@ let search_classes path =
     path
 
 
+let search_and_extract_classes path =
+  let extract zip_filename =
+    let destination = Filename.temp_dir ~in_dir:(ResultsDir.get_path Temporary) "jar" ".out" in
+    let f _ in_file entry =
+      let filename = entry.Zip.filename in
+      match Filename.split_extension filename with
+      | _, Some ("class" | "jar") ->
+          let out_filename = Filename.concat destination filename in
+          Unix.mkdir_p (Filename.dirname out_filename) ;
+          Zip.copy_entry_to_file in_file entry out_filename
+      | _ ->
+          ()
+    in
+    Utils.zip_fold ~init:() ~f ~zip_filename ;
+    destination
+  in
+  let rec loop roots classes paths =
+    match paths with
+    | [] ->
+        (roots, classes)
+    | path :: paths when Sys.is_directory path = `Yes ->
+        loop roots classes
+          (Array.fold ~init:paths
+             ~f:(fun accu e -> Filename.concat path e :: accu)
+             (Sys.readdir path) )
+    | path :: paths -> (
+      match Filename.split_extension path with
+      | _, Some "class" ->
+          let cn, root = Javalib.extract_class_name_from_file path in
+          loop (String.Set.add roots root) (JBasics.ClassSet.add cn classes) paths
+      | _, Some ("jar" | "war") ->
+          let destination = extract path in
+          loop roots classes (destination :: paths)
+      | _ ->
+          loop roots classes paths )
+  in
+  loop String.Set.empty JBasics.ClassSet.empty [path]
+
+
 let search_sources () =
   let initial_map =
     List.fold ~f:(fun map path -> add_source_file path map) ~init:String.Map.empty Config.sources
@@ -192,7 +232,10 @@ let search_sources () =
 
 
 let load_from_arguments classes_out_path =
-  let roots, classes = search_classes classes_out_path in
+  let roots, classes =
+    if Config.dependency_mode then search_and_extract_classes classes_out_path
+    else search_classes classes_out_path
+  in
   let split cp_option = Option.value_map ~f:split_classpath ~default:[] cp_option in
   let classpath =
     (* order follows https://docs.oracle.com/javase/7/docs/technotes/tools/windows/classpath.html *)
