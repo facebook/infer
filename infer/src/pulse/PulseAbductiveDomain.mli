@@ -241,6 +241,9 @@ val set_post_cell :
   PathContext.t -> AbstractValue.t * ValueHistory.t -> BaseDomain.cell -> Location.t -> t -> t
 (** directly set the edges and attributes for the given address, bypassing abduction altogether *)
 
+val remove_from_post : AbstractValue.t -> t -> t
+(** remove any association from the given address, bypassing abduction altogether *)
+
 val incorporate_new_eqs :
      Formula.new_eqs
   -> t

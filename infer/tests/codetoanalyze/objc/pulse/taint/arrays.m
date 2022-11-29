@@ -38,7 +38,7 @@ void taint_cell(int* arr, int idx) { arr[idx] = int_source(); }
 
 void sink_cell(int* arr, int idx) { sink_int(arr[idx]); }
 
-void test_inter_proc_bad_FN(void) {
+void test_inter_proc_bad(void) {
   int arr[2];
   taint_cell(arr, 0);
   sink_cell(arr, 0);

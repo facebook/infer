@@ -1031,6 +1031,8 @@ let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
 
 let is_local var astate = not (Var.is_return var || Stack.is_abducible astate var)
 
+let remove_from_post addr astate = Memory.map_post_heap astate ~f:(BaseMemory.remove addr)
+
 let set_post_edges addr edges astate =
   if BaseMemory.Edges.is_empty edges then astate
   else Memory.map_post_heap astate ~f:(BaseMemory.add addr edges)
