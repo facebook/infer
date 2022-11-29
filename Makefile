@@ -46,9 +46,6 @@ BUILD_SYSTEMS_TESTS += \
   incremental_analysis_change_procedure \
   incremental_analysis_add_procedure \
 
-COST_TESTS += \
-  c_performance \
-
 DIRECT_TESTS += \
   c_biabduction \
   c_bufferoverrun \
@@ -110,10 +107,6 @@ BUILD_SYSTEMS_TESTS += \
   objc_retain_cycles \
   objc_retain_cycles_weak \
   pulse_messages_objc \
-
-COST_TESTS += \
-  objc_autoreleasepool \
-  objc_performance \
 
 DIRECT_TESTS += \
   objc_autoreleasepool \
@@ -193,11 +186,6 @@ BUILD_SYSTEMS_TESTS += \
   racerd_dedup \
   merge-capture \
 
-COST_TESTS += \
-  java_hoistingExpensive \
-  java_performance \
-  java_performance-exclusive \
-
 DIRECT_TESTS += \
   java_annotreach \
   java_biabduction \
@@ -244,8 +232,6 @@ endif
 ifeq ($(IS_FACEBOOK_TREE),yes)
 BUILD_SYSTEMS_TESTS += \
   fb_differential_of_config_impact_report_java
-
-COST_TESTS += java_fb-performance
 
 DIRECT_TESTS += \
   java_fb-config-impact \
@@ -585,18 +571,6 @@ $(DIRECT_TESTS:%=direct_%_replace): infer
 
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
-
-.PHONY: cost_tests
-cost_tests: $(COST_TESTS:%=direct_%_test)
-
-.PHONY: cost_tests_clean
-cost_tests_clean: $(COST_TESTS:%=direct_%_clean)
-
-.PHONY: cost_tests_replace
-cost_tests_replace: $(COST_TESTS:%=direct_%_replace)
-
-.PHONY: cost_tests_print
-cost_tests_print: $(COST_TESTS:%=direct_%_print)
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 $(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
