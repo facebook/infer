@@ -66,7 +66,7 @@ let create_json_bug ~qualifier ~line ~file ~source_file ~trace ~(item : Jsoncost
   ; procedure= item.procedure_id
   ; procedure_start_line= line
   ; file
-  ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace Advice
+  ; bug_trace= JsonReports.loc_trace_to_jsonbug_record trace
   ; key= ""
   ; node_key= None
   ; hash= item.hash

@@ -55,37 +55,31 @@ let compute_hash =
     |> Caml.Digest.to_hex
 
 
-let loc_trace_to_jsonbug_record trace_list ekind =
-  match ekind with
-  | IssueType.Info ->
-      []
-  | _ ->
-      let trace_item_to_record trace_item =
-        let loc : Location.t = trace_item.Errlog.lt_loc in
-        let trace =
-          { Jsonbug_j.level= trace_item.Errlog.lt_level
-          ; filename=
-              SourceFile.to_string ~force_relative:Config.report_force_relative_path loc.file
-          ; line_number= loc.line
-          ; column_number= loc.col
-          ; description= trace_item.Errlog.lt_description }
-        in
-        Location.get_macro_file_line_opt trace_item.Errlog.lt_loc
-        |> Option.value_map ~default:[trace] ~f:(fun (macro_source, macro_line) ->
-               let trace = {trace with Jsonbug_j.description= "macro expanded here"} in
-               let macro_trace =
-                 { Jsonbug_j.level= trace_item.Errlog.lt_level
-                 ; filename=
-                     SourceFile.to_string ~force_relative:Config.report_force_relative_path
-                       macro_source
-                 ; line_number= macro_line
-                 ; column_number= -1
-                 ; description= trace_item.Errlog.lt_description }
-               in
-               [trace; macro_trace] )
-      in
-      let record_list = List.concat_map ~f:trace_item_to_record trace_list in
-      record_list
+let loc_trace_to_jsonbug_record trace_list =
+  let trace_item_to_record trace_item =
+    let loc : Location.t = trace_item.Errlog.lt_loc in
+    let trace =
+      { Jsonbug_j.level= trace_item.Errlog.lt_level
+      ; filename= SourceFile.to_string ~force_relative:Config.report_force_relative_path loc.file
+      ; line_number= loc.line
+      ; column_number= loc.col
+      ; description= trace_item.Errlog.lt_description }
+    in
+    Location.get_macro_file_line_opt trace_item.Errlog.lt_loc
+    |> Option.value_map ~default:[trace] ~f:(fun (macro_source, macro_line) ->
+           let trace = {trace with Jsonbug_j.description= "macro expanded here"} in
+           let macro_trace =
+             { Jsonbug_j.level= trace_item.Errlog.lt_level
+             ; filename=
+                 SourceFile.to_string ~force_relative:Config.report_force_relative_path macro_source
+             ; line_number= macro_line
+             ; column_number= -1
+             ; description= trace_item.Errlog.lt_description }
+           in
+           [trace; macro_trace] )
+  in
+  let record_list = List.concat_map ~f:trace_item_to_record trace_list in
+  record_list
 
 
 let should_report proc_name issue_type error_desc =
@@ -242,7 +236,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; procedure= procedure_id_of_procname proc_name
         ; procedure_start_line
         ; file
-        ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace err_key.severity
+        ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace
         ; node_key= Option.map ~f:Procdesc.NodeKey.to_string err_data.node_key
         ; key= compute_key bug_type proc_name file
         ; hash= compute_hash ~severity ~bug_type ~proc_name ~file ~qualifier
@@ -300,8 +294,7 @@ module JsonCostsPrinterElt = struct
           ; hum= hum cost
           ; trace=
               loc_trace_to_jsonbug_record
-                (CostDomain.BasicCost.polynomial_traces ?is_autoreleasepool_trace cost)
-                Advice }
+                (CostDomain.BasicCost.polynomial_traces ?is_autoreleasepool_trace cost) }
         in
         let cost_item =
           let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
