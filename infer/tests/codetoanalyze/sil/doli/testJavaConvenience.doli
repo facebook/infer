@@ -1,11 +1,11 @@
-(*
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- *)
+ */
 
-// demoing the convenience of Doli, to group related signatures
+// demo-ing the convenience of Doli, which supports grouping related signatures
 // into one
 
 //  several signatures in one match part
@@ -55,7 +55,7 @@ in Java match
 body
     { bodyStub }
 
-(*  this should NOT parse -- under is missing
+/* this should NOT parse -- under is missing
 
 in Java match {
     void  fun6tt(A[] a)  throws A
@@ -63,4 +63,4 @@ in Java match {
 body
    { bodyStub }
 
-*)
+*/

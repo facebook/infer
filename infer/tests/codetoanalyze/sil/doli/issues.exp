@@ -1,9 +1,10 @@
 doli parsing of testComments.doli succeeded.
+doli parsing of testEmpty.doli succeeded.
 doli parsing of testJavaArrays.doli succeeded.
 doli parsing of testJavaConvenience.doli succeeded.
 doli parsing of testJavaGenericInstant.doli succeeded.
 doli parsing of testJavaSigsMods.doli succeeded.
 doli parsing of testJavaThrows.doli succeeded.
-doli syntax error in file testJavaThrowsBooleanFail.doli at line 11, column 41.
-doli syntax error in file testJavaThrowsNonEmptyFail.doli at line 11, column 41.
+doli syntax error: unexpected token "boolean" in testJavaThrowsBooleanFail.doli (line 11, column 43)
+doli syntax error: unexpected token "under" in testJavaThrowsNonEmptyFail.doli (line 11, column 41)
 doli parsing of testObjCJava.doli succeeded.

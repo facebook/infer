@@ -12,7 +12,7 @@ open DoliAst
 (* types of imported parsers *)
 %type <DoliAst.matching> _javaMatch
 %type <DoliAst.matching> _objCMatch
-%type <DoliAst.body> _body
+%type <DoliAst.doliBody> _body
 %type <DoliAst.doliProgram>  doliProgram
 (* start *)
 %start doliProgram

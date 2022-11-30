@@ -13,15 +13,15 @@ let run path =
     let filebuf = Lexing.from_channel cin in
     let filename = Filename.basename path in
     ( try
-        let lexer = DoliLexer.read in
-        (* TextualLexer.main in future *)
-        let _ = DoliCombined.doliProgram lexer filebuf in
+        let lexer = CombinedLexer.main in
+        let _ = CombinedMenhir.doliProgram lexer filebuf in
         Printf.printf "doli parsing of %s succeeded.\n" filename
-      with DoliCombined.Error ->
+      with CombinedMenhir.Error ->
         let pos = filebuf.Lexing.lex_curr_p in
         let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
         let line = pos.Lexing.pos_lnum in
         let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol - buf_length in
-        Printf.eprintf "doli syntax error in file %s at line %d, column %d.\n%!" filename line col
-    ) ;
+        let token = Lexing.lexeme filebuf in
+        Printf.eprintf "doli syntax error: unexpected token \"%s\" in %s (line %d, column %d)\n%!"
+          token filename line col ) ;
     In_channel.close cin )

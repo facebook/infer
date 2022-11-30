@@ -1,11 +1,11 @@
-(*
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- *)
+*/
 
 // parsing should fail
 
-// throws part may non include primitive types
-in Java match { void  fun6tt(A a) throws boolean under className  } body { bodyStub }
+// throws part may not include primitive types
+in Java match { void  funIdent(A a) throws boolean under className  } body { bodyStub }

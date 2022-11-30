@@ -14,7 +14,7 @@
 %token IN
 %token MATCH
 %token Java
-%token ObjC
+%token OBJC
 (* various brackets and parentheses *)
 %token LPAREN
 %token RPAREN

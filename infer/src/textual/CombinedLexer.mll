@@ -27,13 +27,17 @@
     let token = Lexing.lexeme lexbuf in
     raise (LexingError (Textual.Location.known ~line ~col, token))
 
-  open TextualMenhir
+  open CombinedMenhir
+
 }
 
 let whitespace = [' ' '\t']
 let whitespaces = whitespace*
 let eol = whitespace*("\r")?"\n" (* end of line *)
 let eol_comment = "//" [^'\n']*
+let start_comment = "/*"   (* note that the the classic OCAML comment delimiters clash with LPAREN STAR Ident *)
+let end_comment = "*/"
+let newline = '\r' | '\n' | "\r\n"
 let id = ['a'-'z' 'A'-'Z' '_' '$'] (['a'-'z' 'A'-'Z' '0'-'9' '_' '$'] | "::")*
 
 let binary_numeral_prefix = "0" ("b"|"B")
@@ -54,6 +58,8 @@ rule main = parse
         { main lexbuf }
   | eol_comment
         { main lexbuf }
+  | start_comment
+        { read_multi_line_comment lexbuf }
   | eol
         { incr_linenum lexbuf;
           main lexbuf }
@@ -134,6 +140,7 @@ rule main = parse
   | "void"
         { VOID }
 
+
   | (floating_point_literal as f)
         { match float_of_string_opt f with
           | Some f -> FLOATINGPOINT f
@@ -149,15 +156,64 @@ rule main = parse
           | Some i -> LOCAL i
           | None -> lex_error lexbuf }
 
+  | eof
+        { EOF }
+(* *********************** *)
+  (* Doli-specific keywords *)
+  | "under"
+      { UNDER }
+  | "in"
+      { IN } (* SD Format.printf "lexer: in@."; *)
+  | "match"
+      { MATCH }
+  | "body"
+      { BODYKW }
+  | "Java"
+      { JAVA }
+  | "ObjectiveC"
+      { OBJC }
+  (*Doli basic types *)
+  | "byte" { BYTE }
+  | "short"  { SHORT }
+  | "char" { CHAR }
+  | "long" { LONG }
+  | "double"  { DOUBLE }
+  | "boolean" { BOOLEAN }
+(* Doli Java modifiers and throws *)
+  | "public" { PUBLIC }
+  | "protected"  { PROTECTED }
+  | "private" { PRIVATE }
+  | "static" { STATIC }
+  | "abstract" { ABSTRACT }
+  | "final" { FINAL }
+  | "native" { NATIVE }
+  | "throws" { THROWS }
+ (* Doli generics *)
+  | "super" { SUPER }
+  | "?" { QUESTION }
+  (* Doli abbreviations -- will disappear eventually *)
+  | "bodyStub"
+      { BODYSTUB }
+  | "objCSignStub"
+      { OBJCSIGNSTUB }
+
   | "#" (id as name)
         { LABEL name }
 
   | (id as name)
         { IDENT name }
-
   | "\"" ([^ '\"']* as s) "\""
         { STRING s }
-  | eof
-        { EOF }
   | _
         { lex_error lexbuf }
+and read_multi_line_comment = parse
+  | end_comment { main lexbuf }
+  | newline { incr_linenum lexbuf; read_multi_line_comment lexbuf }
+  | eof { lex_error lexbuf }  (* FIXME give more informative error message *)
+  | _ { read_multi_line_comment lexbuf }
+
+{
+
+
+
+}

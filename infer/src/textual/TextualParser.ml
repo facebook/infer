@@ -34,8 +34,8 @@ let log_error sourcefile error = L.external_error "%a@." (pp_error sourcefile) e
 
 let parse_buf sourcefile filebuf =
   try
-    let lexer = TextualLexer.main in
-    let m = TextualMenhir.main lexer filebuf sourcefile in
+    let lexer = CombinedLexer.main in
+    let m = CombinedMenhir.main lexer filebuf sourcefile in
     let twice_declared_errors, decls_env = TextualDecls.make_decls m in
     let twice_declared_errors = List.map twice_declared_errors ~f:(fun x -> DeclaredTwiceError x) in
     (* even if twice_declared_errors is not empty we can continue the other verifications *)
@@ -48,7 +48,7 @@ let parse_buf sourcefile filebuf =
       if List.is_empty errors then Ok m else Error errors
     else Error (twice_declared_errors @ errors)
   with
-  | TextualMenhir.Error ->
+  | CombinedMenhir.Error ->
       let pos = filebuf.Lexing.lex_curr_p in
       let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
       let line = pos.Lexing.pos_lnum in
@@ -56,7 +56,7 @@ let parse_buf sourcefile filebuf =
       let lexeme = Lexing.lexeme filebuf in
       let msg = sprintf "unexpected token %s" lexeme in
       Error [SyntaxError {loc= Textual.Location.known ~line ~col; msg}]
-  | TextualLexer.LexingError (loc, lexeme) ->
+  | CombinedLexer.LexingError (loc, lexeme) ->
       let msg = sprintf "unexpected token %s" lexeme in
       Error [SyntaxError {loc; msg}]
 

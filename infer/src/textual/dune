@@ -12,16 +12,9 @@
  (preprocess
   (pps ppx_compare ppx_hash ppx_show ppx_sexp_conv ppx_yojson_conv)))
 
-(ocamllex TextualLexer)
-
-(ocamllex doliLexer)
+(ocamllex CombinedLexer)
 
 (menhir
- (modules TextualMenhir)
- (flags --explain)
+ (modules CombinedMenhir)
+ (flags --explain --unused-tokens)
  (infer false))
-
-(menhir
- (modules doliFrameParser tokens doliJavaMatch doliObjCMatch doliBody)
- (merge_into doliCombined)
- (flags --explain))

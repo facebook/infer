@@ -8,6 +8,9 @@
 
     open! IStd
     open Textual
+    open DoliAst
+    open DoliJavaAst
+    open DoliObjCAst
 
     let location_of_pos pos : Location.t =
       let line = pos.Lexing.pos_lnum in
@@ -62,7 +65,39 @@
 %token <string> LABEL
 %token <string> STRING
 
+(* Doli-specific keywords *)
+%token UNDER
+%token IN
+%token MATCH
+%token JAVA
+%token OBJC
+(* generics *)
+%token QUESTION
+%token SUPER
+(* modifiers and throws *)
+%token PUBLIC
+%token PROTECTED
+%token PRIVATE
+%token STATIC
+%token ABSTRACT
+%token FINAL
+%token NATIVE
+%token THROWS
+(* basic types *)
+%token BYTE
+%token SHORT
+%token CHAR
+%token LONG
+%token DOUBLE
+%token BOOLEAN
+(* placeholders for the bodies- will be removed in future work *)
+%token BODYSTUB
+%token BODYKW
+%token OBJCSIGNSTUB
+
+
 %start <SourceFile.t -> Textual.Module.t> main
+%start <DoliAst.doliProgram> doliProgram
 %type <Attr.t> attribute
 %type <Module.decl> declaration
 %type <qualified_procname> qualified_pname
@@ -105,7 +140,14 @@ ident:
   | THROW { "throw" }
   | TYPE { "type" }
   | UNREACHABLE { "unreachable" }
+  | PUBLIC { "public" }
+  | FINAL { "final" }
+  | PROTECTED { "protected" }
+  | PRIVATE { "private" }
+  | STATIC { "static" }
+  | IN{ "in" }
   | x=IDENT { x }
+
 
 main:
   | attrs=attribute* decls=declaration* EOF
@@ -191,7 +233,7 @@ in Hack where formals number and types are unknown. */
     }
 
 body:
-  | LBRACKET lcls = locals nds=block+ RBRACKET
+ | LBRACKET lcls = locals nds=block+ RBRACKET
       { { locals= lcls; nodes= nds }  }
 
 locals:
@@ -334,3 +376,107 @@ expression:
     { Exp.call_virtual proc recv args }
   | LABRACKET typ=typ RABRACKET
     { Typ typ }
+
+
+(*  -------------------- DOLI  ----------------------------------*)
+
+doliProgram:
+ | dis = doliInstruction* EOF { DoliProgram dis }
+ ;
+
+ doliInstruction:
+  | IN JAVA jm = javaMatch bd= doliBody
+	{ { match_ = jm; body = bd }  }
+	| IN OBJC ocm = objCMatch bd= doliBody
+	{   { match_ = ocm; body = bd }  }
+	;
+
+doliBody:
+  | BODYKW; LBRACKET; BODYSTUB; RBRACKET;
+     { DoliAst.DoliBodyStub }
+     ;
+
+javaMatch: MATCH;
+	LBRACKET; ess=list(extendedSignature); RBRACKET;
+	  { JavaMatching ess}
+  ;
+
+extendedSignature:
+ 	| sigs=separated_nonempty_list(SEMICOLON,signature); UNDER; rt=referenceType
+	 (* the SEMICOLON separator is needed in order to avoid shift-reduce conflicts *)
+	  { {signs=sigs; under=rt}  }
+	;
+
+signature:
+	| mds=modifier*; rt=returnType; funcId=ident;
+	LPAREN fPTs=separated_list(COMMA, formalParameterType) RPAREN
+	option(throws)
+		{ {modifiers = mds; returns = rt; identifier = funcId; formParTypes = fPTs } }
+	;
+
+modifier:
+    | PUBLIC { Public }
+	| PROTECTED { Protected }
+	| PRIVATE { Private }
+	| STATIC { Static }
+	| FINAL { Final }
+	| ABSTRACT { Abstract }
+	| NATIVE { Native }
+	;
+
+returnType:
+  | VOID { VoidType }
+	| nvt=nonVoidType { NonVoid nvt }
+	;
+
+referenceType:
+  | cts=separated_nonempty_list(DOT, classType) { RT cts }
+   ;
+
+classType:
+    | cId=ident { CT (cId, []) }
+	| cId=ident LABRACKET tArgs=separated_list(COMMA, typeArgument)  RABRACKET { CT (cId,tArgs) }
+	;
+
+
+nonVoidType:
+(* QUESTION: Do we want to "flatten" tree in the future?,
+   ie avoid having one constructor appied to an other*)
+	| BYTE { BasicType ByteType }
+	| INT { BasicType IntType }
+	| BOOLEAN { BasicType BoolType }
+	| CHAR { BasicType CharType }
+	| DOUBLE { BasicType DoubleType }
+	| FLOAT { BasicType FloatType }
+	| LONG { BasicType LongType }
+	| SHORT { BasicType ShortType }
+	| rt=referenceType { RefType rt }
+	| nvt=nonVoidType; LSBRACKET RSBRACKET { Array nvt }
+	;
+
+formalParameterType:
+   | nvt=nonVoidType; ident { nvt }
+   ;
+
+
+typeArgument:
+    | rt=referenceType { PLAIN rt }
+    | QUESTION SUPER; rt=referenceType { SUPER rt }
+    | QUESTION EXTENDS rt=referenceType { EXTENDS rt }
+	 ;
+
+
+throws:
+	| THROWS  separated_nonempty_list(COMMA, referenceType){ }
+	;
+
+
+(* ObjC matching *)
+
+objCMatch:
+    MATCH; LBRACKET; ess=extendedSignatureList; RBRACKET;
+	                   { ObjCMatching(ess) }
+;
+
+extendedSignatureList:
+ 	|  OBJCSIGNSTUB;  {  [ { stub = 33 } ] }
