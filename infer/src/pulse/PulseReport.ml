@@ -37,10 +37,14 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         | _ ->
             (None, None)
       in
-      let config_name =
+      let config_usage_extra : Jsonbug_t.config_usage_extra option =
         match diagnostic with
-        | ConfigUsage {config} ->
-            Some (F.asprintf "%a" ConfigName.pp config)
+        | ConfigUsage {pname; config; branch_location= {file; line}} ->
+            Some
+              { config_name= F.asprintf "%a" ConfigName.pp config
+              ; function_name= Procname.to_string pname
+              ; filename= SourceFile.to_string ~force_relative:true file
+              ; line_number= line }
         | _ ->
             None
       in
@@ -51,7 +55,7 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         ; copy_type
         ; taint_source
         ; taint_sink
-        ; config_name }
+        ; config_usage_extra }
     in
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
       ~ltr:(extra_trace @ get_trace diagnostic)

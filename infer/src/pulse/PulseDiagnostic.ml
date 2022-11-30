@@ -115,7 +115,12 @@ let pp_flow_kind fmt flow_kind =
 
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
-  | ConfigUsage of {pname: Procname.t; config: ConfigName.t; location: Location.t}
+  | ConfigUsage of
+      { pname: Procname.t
+      ; config: ConfigName.t
+      ; branch_location: Location.t
+      ; location: Location.t
+      ; trace: Trace.t }
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
@@ -152,9 +157,11 @@ let pp fmt diagnostic =
   | AccessToInvalidAddress access_to_invalid_address ->
       F.fprintf fmt "AccessToInvalidAddress %a" pp_access_to_invalid_address
         access_to_invalid_address
-  | ConfigUsage {pname; config; location} ->
-      F.fprintf fmt "ConfigUsage {@[pname=%a;@;config=%a;@;location=%a@]}" Procname.pp pname
-        ConfigName.pp config Location.pp location
+  | ConfigUsage {pname; config; branch_location; location; trace} ->
+      F.fprintf fmt
+        "ConfigUsage {@[pname=%a;@;config=%a;@;branch_location=%a;@;location=%a;@;trace=%a@]}"
+        Procname.pp pname ConfigName.pp config Location.pp branch_location Location.pp location
+        (Trace.pp ~pp_immediate) trace
   | ConstRefableParameter {param; typ; location} ->
       F.fprintf fmt "ConstRefableParameter {@[param=%a;@;typ=%a;@;location=%a@]}" Var.pp param
         (Typ.pp_full Pp.text) typ Location.pp location
@@ -408,9 +415,9 @@ let get_message diagnostic =
         F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
           (pp_invalidation_trace invalidation_line invalidation)
           invalidation_trace )
-  | ConfigUsage {pname; config; location} ->
+  | ConfigUsage {pname; config; branch_location} ->
       F.asprintf "Function %a used config %a at %a." Procname.pp pname ConfigName.pp config
-        Location.pp location
+        Location.pp branch_location
   | ConstRefableParameter {param; typ; location} ->
       F.asprintf
         "Function parameter `%a` with type `%a` is passed by-value but not modified inside the \
@@ -693,9 +700,12 @@ let get_trace = function
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace
       @@ []
-  | ConfigUsage {config; location} ->
-      let nesting = 0 in
-      [Errlog.make_trace_element nesting location (F.asprintf "Config %a" ConfigName.pp config) []]
+  | ConfigUsage {config; trace} ->
+      Trace.add_to_errlog ~nesting:0
+        ~pp_immediate:(fun fmt ->
+          F.fprintf fmt "config %a is used as branch condition here" ConfigName.pp config )
+        trace
+      @@ []
   | ConstRefableParameter {param; location} ->
       let nesting = 0 in
       [Errlog.make_trace_element nesting location (F.asprintf "Parameter %a" Var.pp param) []]

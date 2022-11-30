@@ -164,6 +164,7 @@ module Attribute = struct
     | Uninitialized
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
+    | UsedAsBranchCond of Procname.t * Location.t * Trace.t
     | WrittenTo of Timestamp.t * Trace.t
   [@@deriving compare, equal, variants]
 
@@ -224,6 +225,8 @@ module Attribute = struct
   let unknown_effect_rank = Variants.unknowneffect.rank
 
   let unreachable_at_rank = Variants.unreachableat.rank
+
+  let used_as_branch_cond_rank = Variants.usedasbranchcond.rank
 
   let written_to_rank = Variants.writtento.rank
 
@@ -302,6 +305,10 @@ module Attribute = struct
         F.fprintf f "UnknownEffect(@[%a,@ %a)@]" CallEvent.pp call ValueHistory.pp hist
     | UnreachableAt location ->
         F.fprintf f "UnreachableAt(%a)" Location.pp location
+    | UsedAsBranchCond (pname, location, trace) ->
+        F.fprintf f "UsedAsBranchCond(%a, %a, %a)" Procname.pp pname Location.pp location
+          (Trace.pp ~pp_immediate:(pp_string_if_debug "used"))
+          trace
     | WrittenTo (timestamp, trace) ->
         F.fprintf f "WrittenTo (%d, %a)"
           (timestamp :> int)
@@ -310,7 +317,7 @@ module Attribute = struct
 
 
   let is_suitable_for_pre = function
-    | MustBeValid _ | MustBeInitialized _ | MustNotBeTainted _ | RefCounted ->
+    | MustBeValid _ | MustBeInitialized _ | MustNotBeTainted _ | RefCounted | UsedAsBranchCond _ ->
         true
     | Invalid _
     | Allocated _
@@ -343,7 +350,7 @@ module Attribute = struct
   let is_suitable_for_pre_summary = is_suitable_for_pre
 
   let is_suitable_for_post = function
-    | MustBeInitialized _ | MustNotBeTainted _ | UnreachableAt _ ->
+    | MustBeInitialized _ | MustNotBeTainted _ | UnreachableAt _ | UsedAsBranchCond _ ->
         false
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
@@ -415,6 +422,7 @@ module Attribute = struct
     | Uninitialized
     | UnknownEffect _
     | UnreachableAt _
+    | UsedAsBranchCond _
     | WrittenTo _ ->
         Some attr
 
@@ -478,6 +486,8 @@ module Attribute = struct
         JavaResourceReleased
     | CSharpResourceReleased ->
         CSharpResourceReleased
+    | UsedAsBranchCond (pname, location, trace) ->
+        UsedAsBranchCond (pname, location, add_call_to_trace trace)
     | ( AddressOfCppTemporary _
       | AddressOfStackVariable _
       | AlwaysReachable
@@ -489,8 +499,8 @@ module Attribute = struct
       | RefCounted
       | StdMoved
       | StdVectorReserve
-      | UnreachableAt _
-      | Uninitialized ) as attr ->
+      | Uninitialized
+      | UnreachableAt _ ) as attr ->
         attr
 
 
@@ -563,6 +573,7 @@ module Attribute = struct
       | Uninitialized
       | UnknownEffect _
       | UnreachableAt _
+      | UsedAsBranchCond _
       | WrittenTo _ ) as attr ->
         Some attr
 end
@@ -673,6 +684,11 @@ module Attributes = struct
   let get_const_string =
     get_by_rank Attribute.const_string_rank ~dest:(function [@warning "-partial-match"]
         | ConstString s -> s )
+
+
+  let get_used_as_branch_cond =
+    get_by_rank Attribute.used_as_branch_cond_rank ~dest:(function [@warning "-partial-match"]
+        | UsedAsBranchCond (pname, location, trace) -> (pname, location, trace) )
 
 
   let get_copied_into =

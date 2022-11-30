@@ -12,3 +12,5 @@ val compare : t -> t -> int
 val equal : t -> t -> bool
 
 val pp : Format.formatter -> t -> unit
+
+val has_config_read : 'pulse_value_history -> bool

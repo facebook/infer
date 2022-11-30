@@ -266,3 +266,14 @@ val get_captured_actuals :
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> t
   -> (t * ((AbstractValue.t * ValueHistory.t) * Typ.t) list) AccessResult.t SatUnsat.t
+
+val check_used_as_branch_cond :
+     AbstractValue.t * ValueHistory.t
+  -> pname_using_config:Procname.t
+  -> branch_location:Location.t
+  -> location:Location.t
+  -> Trace.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t
+(** Check and report config usage issue on the abstract value that is used as branch condition. If
+    it is not certain that tha abstract value is a config, it adds [UsedAsBranchCond] attribute. *)

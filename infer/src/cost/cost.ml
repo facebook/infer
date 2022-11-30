@@ -256,7 +256,7 @@ let compute_errlog_extras cost =
     ; copy_type= None
     ; taint_source= None
     ; taint_sink= None
-    ; config_name= None }
+    ; config_usage_extra= None }
 
 
 (** Calculate the final Worst Case Cost of the cfg. It is the dot product of the symbolic cost of

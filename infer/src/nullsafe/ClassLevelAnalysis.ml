@@ -17,7 +17,7 @@ let log_issue ?proc_name ~issue_log ~loc ~severity ~nullsafe_extra issue_type er
       ; copy_type= None
       ; taint_source= None
       ; taint_sink= None
-      ; config_name= None }
+      ; config_usage_extra= None }
   in
   let proc_name = Option.value proc_name ~default:Procname.Linters_dummy_method in
   let trace = [Errlog.make_trace_element 0 loc error_message []] in

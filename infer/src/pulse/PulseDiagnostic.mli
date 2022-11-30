@@ -62,7 +62,12 @@ type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 (** an error to report to the user *)
 type t =
   | AccessToInvalidAddress of access_to_invalid_address
-  | ConfigUsage of {pname: Procname.t; config: ConfigName.t; location: Location.t}
+  | ConfigUsage of
+      { pname: Procname.t
+      ; config: ConfigName.t
+      ; branch_location: Location.t
+      ; location: Location.t
+      ; trace: Trace.t }
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}

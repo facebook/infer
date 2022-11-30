@@ -934,6 +934,18 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
                       ; astate } ) )
 
 
+let check_config_usage_at_call location ~pre:{BaseDomain.attrs= pre_attrs} subst astate =
+  let open PulseResult.Let_syntax in
+  AddressMap.fold
+    (fun addr_pre addr_hist acc ->
+      Option.value_map (BaseAddressAttributes.get_used_as_branch_cond addr_pre pre_attrs)
+        ~default:acc ~f:(fun (pname_using_config, branch_location, trace) ->
+          let* acc in
+          PulseOperations.check_used_as_branch_cond addr_hist ~pname_using_config ~branch_location
+            ~location trace acc ) )
+    subst (Ok astate)
+
+
 let check_all_taint_valid path callee_proc_name call_location callee_summary astate call_state =
   let open PulseResult.Let_syntax in
   AddressMap.fold
@@ -991,12 +1003,12 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
         let open PulseResult.Let_syntax in
         let* call_state = result in
         L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
+        let pre = AbductiveDomain.Summary.get_pre callee_summary in
         let* astate =
-          check_all_valid path callee_proc_name call_location
-            ~pre:(AbductiveDomain.Summary.get_pre callee_summary)
-            call_state
+          check_all_valid path callee_proc_name call_location ~pre call_state
           |> AccessResult.of_result
         in
+        let* astate = check_config_usage_at_call call_location ~pre call_state.subst astate in
         (* reset [visited] *)
         let call_state = {call_state with astate; visited= AddressSet.empty} in
         (* apply the postcondition *)

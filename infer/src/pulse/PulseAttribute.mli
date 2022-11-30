@@ -107,6 +107,7 @@ type t =
   | UnreachableAt of Location.t
       (** temporary marker to remember where a variable became unreachable; helps with accurately
           reporting leaks *)
+  | UsedAsBranchCond of Procname.t * Location.t * Trace.t
   | WrittenTo of Timestamp.t * Trace.t
 [@@deriving compare]
 
@@ -131,6 +132,8 @@ module Attributes : sig
   val get_config_usage : t -> ConfigName.t option
 
   val get_const_string : t -> string option
+
+  val get_used_as_branch_cond : t -> (Procname.t * Location.t * Trace.t) option
 
   val get_copied_into : t -> CopiedInto.t option
 

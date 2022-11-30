@@ -279,6 +279,10 @@ let get_config_usage address attrs = get_attribute Attributes.get_config_usage a
 
 let get_const_string address attrs = get_attribute Attributes.get_const_string address attrs
 
+let get_used_as_branch_cond address attrs =
+  get_attribute Attributes.get_used_as_branch_cond address attrs
+
+
 let is_end_of_collection address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection
 

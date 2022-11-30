@@ -14,3 +14,5 @@ let compare _ _ = 0
 let equal _ _ = true
 
 let pp f () = F.pp_print_string f "()"
+
+let has_config_read _ = false

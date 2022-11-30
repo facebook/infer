@@ -109,6 +109,9 @@ end
 (** attribute operations like {!BaseAddressAttributes} but that also take care of propagating facts
     to the precondition *)
 module AddressAttributes : sig
+  val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
+  (** add the attribute to the pre, if the address is in pre *)
+
   val abduce_and_add : AbstractValue.t -> Attributes.t -> t -> t
   (** add the attributes to both the current state and, if meaningful, the pre *)
 

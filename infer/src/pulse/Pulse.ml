@@ -683,13 +683,14 @@ module PulseTransferFunctions = struct
         astate_n
 
 
-  let check_config_usage {InterproceduralAnalysis.proc_desc; err_log} loc exp astate =
+  let check_config_usage {InterproceduralAnalysis.proc_desc} loc exp astate =
     let pname = Procdesc.get_proc_name proc_desc in
-    Sequence.iter (Exp.free_vars exp) ~f:(fun var ->
-        Option.iter (PulseOperations.read_id var astate) ~f:(fun (addr, _) ->
-            Option.iter (AddressAttributes.get_config_usage addr astate) ~f:(fun config ->
-                PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log
-                  (ConfigUsage {pname; config; location= loc}) ) ) )
+    let trace = Trace.Immediate {location= loc; history= ValueHistory.epoch} in
+    Sequence.fold (Exp.free_vars exp) ~init:(Ok astate) ~f:(fun acc var ->
+        Option.value_map (PulseOperations.read_id var astate) ~default:acc ~f:(fun addr_hist ->
+            let* acc in
+            PulseOperations.check_used_as_branch_cond addr_hist ~pname_using_config:pname
+              ~branch_location:loc ~location:loc trace acc ) )
 
 
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
@@ -818,7 +819,10 @@ module PulseTransferFunctions = struct
           let astate_n = NonDisjDomain.set_passed_to loc call_exp actuals astate_n in
           (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
-          let prune_result = PulseOperations.prune path loc ~condition astate in
+          let prune_result =
+            let=* astate = check_config_usage analysis_data loc condition astate in
+            PulseOperations.prune path loc ~condition astate
+          in
           let path =
             match PulseOperationResult.sat_ok prune_result with
             | None ->
@@ -837,7 +841,6 @@ module PulseTransferFunctions = struct
             let<++> astate, _ = prune_result in
             astate
           in
-          check_config_usage analysis_data loc condition astate ;
           (PulseReport.report_exec_results tenv proc_desc err_log loc results, path, astate_n)
       | Metadata EndBranches ->
           (* We assume that terminated conditions are well-parenthesised, hence an [EndBranches]

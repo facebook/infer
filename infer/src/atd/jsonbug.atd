@@ -95,6 +95,13 @@ type nullsafe_extra = {
   ?redundant_fixme_info: redundant_fixme_info option; (* Information necessary to codemod redundant NULLSAFE_FIXME comments *)
 }
 
+type config_usage_extra = {
+  config_name: string;
+  function_name: string;
+  filename: string;
+  line_number: int;
+}
+
 type extra = {
   ?cost_polynomial : string option;
   ?cost_degree : int option;
@@ -102,7 +109,7 @@ type extra = {
   ?copy_type : string option;
   ?taint_source : string option;
   ?taint_sink : string option;
-  ?config_name : string option;
+  ?config_usage_extra : config_usage_extra option;
 }
 
 type jsonbug = {

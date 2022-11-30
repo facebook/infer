@@ -105,6 +105,8 @@ val get_config_usage : AbstractValue.t -> t -> FbPulseConfigName.t option
 
 val get_const_string : AbstractValue.t -> t -> string option
 
+val get_used_as_branch_cond : AbstractValue.t -> t -> (Procname.t * Location.t * Trace.t) option
+
 val pp : F.formatter -> t -> unit
 
 val remove_allocation_attr : AbstractValue.t -> t -> t
