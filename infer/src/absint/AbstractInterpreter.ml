@@ -365,13 +365,13 @@ struct
     let current_post_n =
       match old_state_opt with
       | None ->
-          (([], []), 0)
-      | Some {State.post= post_disjuncts, _; _} ->
-          ((post_disjuncts, []), List.length post_disjuncts)
+          (([], T.NonDisjDomain.bottom), 0)
+      | Some {State.post= post_disjuncts, post_non_disjunct; _} ->
+          ((post_disjuncts, post_non_disjunct), List.length post_disjuncts)
     in
     let (disjuncts, non_disj_astates), _ =
       List.foldi (List.rev pre) ~init:current_post_n
-        ~f:(fun i (((post, non_disj_astates) as post_astate), n_disjuncts) pre_disjunct ->
+        ~f:(fun i (((post, non_disj_astate) as post_astate), n_disjuncts) pre_disjunct ->
           let limit = disjunct_limit - n_disjuncts in
           AnalysisState.set_remaining_disjuncts limit ;
           if limit <= 0 then (
@@ -384,14 +384,14 @@ struct
             in
             L.d_printfln "@]@\n" ;
             let disj', n = Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts' in
-            ((disj', non_disj' :: non_disj_astates), n) )
+            ((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n) )
           else (
             L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
             (post_astate, n_disjuncts) ) )
     in
     let non_disjunct =
       if Config.pulse_prevent_non_disj_top || List.exists disjuncts ~f:T.DisjDomain.is_executable
-      then List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates
+      then non_disj_astates
       else T.NonDisjDomain.top
     in
     (disjuncts, non_disjunct)

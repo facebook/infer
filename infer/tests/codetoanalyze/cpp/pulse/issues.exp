@@ -528,6 +528,7 @@ codetoanalyze/cpp/pulse/weak_ptr.cpp, weak_ptr_constructors::fromWeakBaseAssign,
 codetoanalyze/cpp/pulse/weak_ptr.cpp, weak_ptr_constructors::fromWeakBaseAssign, 2, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here]
 codetoanalyze/cpp/pulse/weak_ptr.cpp, weak_ptr_constructors::fromWeakDerivedConstr, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter d]
 codetoanalyze/cpp/pulse/weak_ptr.cpp, weak_ptr_constructors::fromWeakDerivedAssign, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter d]
+codetoanalyze/cpp/pulse/weak_ptr.cpp, weak_ptr_derefs::safeGet, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter p]
 codetoanalyze/cpp/pulse/weak_ptr.cpp, weak_ptr_observers::use_count_empty_bad, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to function `std::weak_ptr<int>::use_count` with no summary,taking "then" branch,is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/weak_ptr.cpp, weak_ptr_observers::FN_use_count_after_reset_bad, 4, NULLPTR_DEREFERENCE_LATENT, no_bucket, ERROR, [in call to function `std::weak_ptr<int>::use_count` with no summary,taking "then" branch,is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/weak_ptr.cpp, weak_ptr_observers::expired_empty_bad, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to function `std::weak_ptr<int>::expired` with no summary,taking "then" branch,is assigned to the null pointer,assigned,invalid access occurs here]
