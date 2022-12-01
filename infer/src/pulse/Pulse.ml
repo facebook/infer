@@ -693,6 +693,43 @@ module PulseTransferFunctions = struct
               ~branch_location:loc ~location:loc trace acc ) )
 
 
+  let set_global_astates path ({InterproceduralAnalysis.proc_desc} as analysis_data) exp typ loc
+      astate =
+    let is_global_constant pvar =
+      Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
+    in
+    let is_global_func_pointer pvar =
+      Pvar.is_global pvar && Typ.is_pointer_to_function typ
+      && Config.pulse_inline_global_init_func_pointer
+    in
+    match (exp : Exp.t) with
+    | Lvar pvar when is_global_constant pvar || is_global_func_pointer pvar -> (
+      (* Inline initializers of global constants or globals function pointers when they are being used.
+         This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
+         where global_constant_value is the value of global_var *)
+      (* TODO: Initial global constants only once *)
+      match Pvar.get_initializer_pname pvar with
+      | Some init_pname when not (Procname.equal (Procdesc.get_proc_name proc_desc) init_pname) ->
+          L.d_printfln_escaped "Found initializer for %a" (Pvar.pp Pp.text) pvar ;
+          let call_flags = CallFlags.default in
+          let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
+          let no_error_states =
+            dispatch_call analysis_data path ret_id_void (Const (Cfun init_pname)) [] loc call_flags
+              astate
+            |> List.filter_map ~f:(function
+                 | Ok (ContinueProgram astate) ->
+                     Some astate
+                 | _ ->
+                     (* ignore errors in global initializers *)
+                     None )
+          in
+          if List.is_empty no_error_states then [astate] else no_error_states
+      | _ ->
+          [astate] )
+    | _ ->
+        [astate]
+
+
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
@@ -717,41 +754,7 @@ module PulseTransferFunctions = struct
             |> SatUnsat.to_list
             |> PulseReport.report_results tenv proc_desc err_log loc
           in
-          let set_global_astates =
-            let is_global_constant pvar =
-              Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
-            in
-            let is_global_func_pointer pvar =
-              Pvar.is_global pvar && Typ.is_pointer_to_function typ
-              && Config.pulse_inline_global_init_func_pointer
-            in
-            match rhs_exp with
-            | Lvar pvar when is_global_constant pvar || is_global_func_pointer pvar -> (
-              (* Inline initializers of global constants or globals function pointers when they are being used.
-                 This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
-                 where global_constant_value is the value of global_var *)
-              (* TODO: Initial global constants only once *)
-              match Pvar.get_initializer_pname pvar with
-              | Some proc_name ->
-                  L.d_printfln_escaped "Found initializer for %a" (Pvar.pp Pp.text) pvar ;
-                  let call_flags = CallFlags.default in
-                  let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
-                  let no_error_states =
-                    dispatch_call analysis_data path ret_id_void (Const (Cfun proc_name)) [] loc
-                      call_flags astate
-                    |> List.filter_map ~f:(function
-                         | Ok (ContinueProgram astate) ->
-                             Some astate
-                         | _ ->
-                             (* ignore errors in global initializers *)
-                             None )
-                  in
-                  if List.is_empty no_error_states then [astate] else no_error_states
-              | None ->
-                  [astate] )
-            | _ ->
-                [astate]
-          in
+          let astates = set_global_astates path analysis_data rhs_exp typ loc astate in
           let astate_n =
             match rhs_exp with
             | Lvar pvar ->
@@ -759,7 +762,7 @@ module PulseTransferFunctions = struct
             | _ ->
                 astate_n
           in
-          (List.concat_map set_global_astates ~f:deref_rhs, path, astate_n)
+          (List.concat_map astates ~f:deref_rhs, path, astate_n)
       | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
           (* [*lhs_exp := rhs_exp] *)
           let event =
@@ -805,7 +808,13 @@ module PulseTransferFunctions = struct
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           let astate_n = check_modified_before_dtor actuals call_exp astate astate_n in
           let astates =
-            dispatch_call analysis_data path ret call_exp actuals loc call_flags astate
+            List.fold actuals ~init:[astate] ~f:(fun astates (exp, typ) ->
+                List.concat_map astates ~f:(fun astate ->
+                    set_global_astates path analysis_data exp typ loc astate ) )
+          in
+          let astates =
+            List.concat_map astates ~f:(fun astate ->
+                dispatch_call analysis_data path ret call_exp actuals loc call_flags astate )
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
           in
           let astate_n, astates =
