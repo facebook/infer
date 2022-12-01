@@ -613,3 +613,18 @@ class CopiedToMultipleField_Bad_FN {
 void global_setter_bad(const Arr& arr) {
   global = arr; // suggest std::move(arr) and remove const from the type
 }
+
+void modify_arg(std::vector<int> arg) { arg.push_back(42); }
+
+void intermediate_copy_modified_unused_bad_FN(std::vector<int> input) {
+  modify_arg(input); // copy from input to an intermediate which is modified
+  // input is never used so it is ok to suggest move
+}
+
+int intermediate_copy_modified_used_ok(std::vector<int> input) {
+  modify_arg(input); // copy from input to an intermediate which is modified
+  return input.size(); // input is used, we can't trivially suggest move without
+                       // also moving its uses to before the copy is made which
+                       // might hurt performance if accesses are conditional.
+                       // Better don't report.
+}

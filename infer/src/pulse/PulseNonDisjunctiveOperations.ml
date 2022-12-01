@@ -161,13 +161,15 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
                 | DecompilerExpr.SourceExpr (((PVar pvar, _) as source_expr), _)
                   when not (Pvar.is_frontend_tmp pvar || Pvar.is_this pvar) ->
                     (* case 2: we copy into an intermediate that is not a field member/frontend temp and source is known. This is the case for intermediate copies of the pass by value arguments. *)
-                    Some (Attribute.CopiedInto.IntoIntermediate {source_opt= Some source_expr})
+                    Some
+                      (Attribute.CopiedInto.IntoIntermediate
+                         {copied_var; source_opt= Some source_expr} )
                 | DecompilerExpr.Unknown _ when is_copy_into_local copied_var ->
                     (* case 3: analogous to case 1 but source is an unknown call that is know no create a copy *)
                     Some (Attribute.CopiedInto.IntoVar {copied_var; source_opt= None})
                 | DecompilerExpr.Unknown _ ->
                     (* case 4: analogous to case 2 but source is an unknown call that is know no create a copy *)
-                    Some (Attribute.CopiedInto.IntoIntermediate {source_opt= None})
+                    Some (Attribute.CopiedInto.IntoIntermediate {copied_var; source_opt= None})
                 | _ ->
                     None
             in
@@ -259,7 +261,8 @@ let get_copied_into copied_var source_addr_opt astate =
         | _ ->
             None )
   in
-  Attribute.CopiedInto.IntoVar {copied_var; source_opt}
+  if is_copy_into_local copied_var then Attribute.CopiedInto.IntoVar {copied_var; source_opt}
+  else Attribute.CopiedInto.IntoIntermediate {copied_var; source_opt}
 
 
 let add_copied_return path location call_exp actuals astates astate_non_disj =
