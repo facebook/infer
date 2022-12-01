@@ -44,6 +44,6 @@ void copy_raw_ptr_to_global_bad(std::shared_ptr<int> x) {
 std::shared_ptr<int> global_shared_ptr;
 
 // x should be moved.
-void copy_shared_ptr_to_global_bad_FN(std::shared_ptr<int> x) {
+void copy_shared_ptr_to_global_bad(std::shared_ptr<int> x) {
   global_shared_ptr = x;
 }

@@ -20,7 +20,12 @@ type copy_spec_t =
       ; heap: BaseMemory.t
       ; from: Attribute.CopyOrigin.t
       ; timestamp: Timestamp.t }
-  | Modified
+  | Modified of
+      { typ: Typ.t
+      ; location: Location.t
+      ; copied_location: (Procname.t * Location.t) option
+      ; from: Attribute.CopyOrigin.t
+      ; copied_timestamp: Timestamp.t }
 
 type parameter_spec_t =
   | Unmodified of {typ: Typ.t; location: Location.t; heap: BaseMemory.t}
@@ -66,10 +71,10 @@ val set_locked : t -> t
 
 val is_locked : t -> bool
 
-val set_load : Location.t -> Ident.t -> Var.t -> t -> t
+val set_load : Location.t -> Timestamp.t -> Ident.t -> Var.t -> t -> t
 
 val get_loaded_locations : Var.t -> t -> Location.t list
 
-val set_passed_to : Location.t -> Exp.t -> (Exp.t * Typ.t) list -> t -> t
+val set_passed_to : Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -> t -> t
 
 val is_lifetime_extended : Var.t -> t -> bool

@@ -50,7 +50,12 @@ type copy_spec_t =
       ; heap: BaseMemory.t
       ; from: Attribute.CopyOrigin.t
       ; timestamp: Timestamp.t }
-  | Modified
+  | Modified of
+      { typ: Typ.t
+      ; location: Location.t
+      ; copied_location: (Procname.t * Location.t) option
+      ; from: Attribute.CopyOrigin.t
+      ; copied_timestamp: Timestamp.t }
 [@@deriving equal]
 
 module CopySpec = MakeDomainFromTotalOrder (struct
@@ -60,9 +65,9 @@ module CopySpec = MakeDomainFromTotalOrder (struct
     match (lhs, rhs) with
     | Copied _, _ ->
         true
-    | Modified, Copied _ ->
+    | Modified _, Copied _ ->
         false
-    | Modified, Modified ->
+    | Modified _, Modified _ ->
         true
 
 
@@ -71,7 +76,7 @@ module CopySpec = MakeDomainFromTotalOrder (struct
         Format.fprintf fmt "@[%a (value of type %a) at %a@ with heap= %a@ (timestamp: %d)@]"
           Attribute.CopyOrigin.pp from (Typ.pp Pp.text) typ Location.pp location BaseMemory.pp heap
           (timestamp :> int)
-    | Modified ->
+    | Modified _ ->
         Format.fprintf fmt "modified"
 end)
 
@@ -137,13 +142,19 @@ module CopyMap = AbstractDomain.Map (CopyVar) (CopySpec)
 module ParameterMap = AbstractDomain.Map (ParameterVar) (ParameterSpec)
 module Locked = AbstractDomain.BooleanOr
 
+module LoadedLoc = struct
+  type t = {loc: Location.t; timestamp: Timestamp.t} [@@deriving compare, equal]
+
+  let pp fmt {loc} = Location.pp fmt loc
+end
+
 module Loads = struct
   module IdentToVars = AbstractDomain.FiniteMultiMap (Ident) (Var)
-  module LoadedVars = AbstractDomain.FiniteMultiMap (Var) (Location)
+  module LoadedVars = AbstractDomain.FiniteMultiMap (Var) (LoadedLoc)
   include AbstractDomain.PairWithBottom (IdentToVars) (LoadedVars)
 
-  let add loc ident var (ident_to_vars, loaded_vars) =
-    (IdentToVars.add ident var ident_to_vars, LoadedVars.add var loc loaded_vars)
+  let add loc timestamp ident var (ident_to_vars, loaded_vars) =
+    (IdentToVars.add ident var ident_to_vars, LoadedVars.add var {loc; timestamp} loaded_vars)
 
 
   let get_all ident (ident_to_vars, _) = IdentToVars.get_all ident ident_to_vars
@@ -154,7 +165,8 @@ module Loads = struct
 end
 
 module CalleeWithUnknown = struct
-  type t = V of {copy_tgt: Exp.t option; callee: Procname.t} | Unknown [@@deriving compare]
+  type t = V of {copy_tgt: Exp.t option; callee: Procname.t; timestamp: Timestamp.t} | Unknown
+  [@@deriving compare]
 
   let pp_copy_tgt f copy_tgt = Option.iter copy_tgt ~f:(fun tgt -> F.fprintf f "(%a)" Exp.pp tgt)
 
@@ -294,10 +306,14 @@ let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_
   let copy_var = CopyVar.{copied_into; source_addr_opt} in
   let copy_map =
     match CopyMap.find_opt copy_var copy_map with
-    | Some (Copied {heap= copy_heap; timestamp= copy_timestamp})
-      when is_modified copy_heap copy_timestamp ->
+    | Some
+        (Copied {typ; from; copied_location; location; heap= copy_heap; timestamp= copied_timestamp})
+      when is_modified copy_heap copied_timestamp ->
         Logging.d_printfln_escaped "Copy/source modified!" ;
-        CopyMap.add copy_var Modified copy_map
+        let modified : copy_spec_t =
+          Modified {typ; location; copied_location; from; copied_timestamp}
+        in
+        CopyMap.add copy_var modified copy_map
     | _ ->
         copy_map
   in
@@ -335,11 +351,11 @@ module CopiedSet = PrettyPrintable.MakePPSet (Attribute.CopiedInto)
 let get_copied = function
   | Top ->
       []
-  | V {copy_map; captured} ->
+  | V {copy_map; captured; loads; passed_to} ->
       let modified =
         CopyMap.fold
           (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
-            match copy_spec with Modified -> CopiedSet.add copied_into acc | Copied _ -> acc )
+            match copy_spec with Modified _ -> CopiedSet.add copied_into acc | Copied _ -> acc )
           copy_map CopiedSet.empty
       in
       let is_captured copy_into =
@@ -352,8 +368,30 @@ let get_copied = function
       CopyMap.fold
         (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
           match copy_spec with
-          | Modified ->
-              acc
+          | Modified {location; copied_location; typ= copied_typ; from; copied_timestamp} -> (
+            (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
+            match copied_into with
+            | IntoIntermediate {source_opt= Some (PVar pvar, _)} ->
+                let source_var = Var.of_pvar pvar in
+                let is_passed_to_non_destructor_after_copy =
+                  PassedTo.get_all source_var passed_to
+                  |> List.exists ~f:(fun {CalleeWithLoc.callee; _} ->
+                         match callee with
+                         | V {callee; timestamp} when (copied_timestamp :> int) < (timestamp :> int)
+                           ->
+                             not (Procname.is_destructor callee)
+                         | _ ->
+                             false )
+                in
+                let is_loaded_after_copy =
+                  Loads.get_loaded_locations source_var loads
+                  |> List.exists ~f:(fun LoadedLoc.{timestamp} ->
+                         (copied_timestamp :> int) < (timestamp :> int) )
+                in
+                if is_loaded_after_copy || is_passed_to_non_destructor_after_copy then acc
+                else (copied_into, copied_typ, location, copied_location, from) :: acc
+            | _ ->
+                acc )
           | Copied {location; copied_location; typ= copied_typ; from} ->
               if CopiedSet.mem copied_into modified || is_captured copied_into then acc
               else (copied_into, copied_typ, location, copied_location, from) :: acc )
@@ -426,15 +464,19 @@ let set_locked = map set_locked_elt
 
 let is_locked = function Top -> true | V {locked} -> locked
 
-let set_load_elt loc ident var astate = {astate with loads= Loads.add loc ident var astate.loads}
+let set_load_elt loc tstamp ident var astate =
+  {astate with loads= Loads.add loc tstamp ident var astate.loads}
 
-let set_load loc ident var = map (set_load_elt loc ident var)
+
+let set_load loc tstamp ident var astate =
+  if Ident.is_none ident then astate else map (set_load_elt loc tstamp ident var) astate
+
 
 let get_loaded_locations var = function
   | Top ->
       []
   | V {loads} ->
-      Loads.get_loaded_locations var loads
+      Loads.get_loaded_locations var loads |> List.map ~f:(fun LoadedLoc.{loc} -> loc)
 
 
 let is_captured var astate =
@@ -447,7 +489,7 @@ let is_captured var astate =
       true
 
 
-let set_passed_to_elt loc call_exp actuals ({loads; passed_to} as astate) =
+let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as astate) =
   let new_callee =
     match (call_exp : Exp.t) with
     | Const (Cfun callee) | Closure {name= callee} ->
@@ -458,13 +500,15 @@ let set_passed_to_elt loc call_exp actuals ({loads; passed_to} as astate) =
           | _ ->
               None
         in
-        CalleeWithUnknown.V {copy_tgt; callee}
+        CalleeWithUnknown.V {copy_tgt; callee; timestamp}
     | _ ->
         CalleeWithUnknown.Unknown
   in
   let vars =
     List.fold actuals ~init:Var.Set.empty ~f:(fun acc (actual, _) ->
         match (actual : Exp.t) with
+        | Lvar pvar when not (Pvar.is_frontend_tmp pvar) ->
+            Var.Set.add (Var.of_pvar pvar) acc
         | Var ident ->
             List.fold (Loads.get_all ident loads) ~init:acc ~f:(fun acc var -> Var.Set.add var acc)
         | _ ->
@@ -476,7 +520,9 @@ let set_passed_to_elt loc call_exp actuals ({loads; passed_to} as astate) =
   {astate with passed_to}
 
 
-let set_passed_to loc call_exp actuals = map (set_passed_to_elt loc call_exp actuals)
+let set_passed_to loc timestamp call_exp actuals =
+  map (set_passed_to_elt loc timestamp call_exp actuals)
+
 
 let get_passed_to var ~f = function
   | Top ->

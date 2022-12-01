@@ -616,7 +616,7 @@ void global_setter_bad(const Arr& arr) {
 
 void modify_arg(std::vector<int> arg) { arg.push_back(42); }
 
-void intermediate_copy_modified_unused_bad_FN(std::vector<int> input) {
+void intermediate_copy_modified_unused_bad(std::vector<int> input) {
   modify_arg(input); // copy from input to an intermediate which is modified
   // input is never used so it is ok to suggest move
 }
@@ -627,4 +627,17 @@ int intermediate_copy_modified_used_ok(std::vector<int> input) {
                        // also moving its uses to before the copy is made which
                        // might hurt performance if accesses are conditional.
                        // Better don't report.
+}
+
+void intermediate_copy_modified_local_unused_bad() {
+  std::vector<int> input = {0};
+  input.push_back(1);
+  modify_arg(input); // copy from input to an intermediate which is modified
+  // input is never used so it is ok to suggest move
+}
+
+int intermediate_copy_modified_local_used_ok() {
+  std::vector<int> input = {0};
+  modify_arg(input); // copy from input to an intermediate which is modified
+  return input[0];
 }

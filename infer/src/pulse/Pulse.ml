@@ -755,7 +755,7 @@ module PulseTransferFunctions = struct
           let astate_n =
             match rhs_exp with
             | Lvar pvar ->
-                NonDisjDomain.set_load loc lhs_id (Var.of_pvar pvar) astate_n
+                NonDisjDomain.set_load loc timestamp lhs_id (Var.of_pvar pvar) astate_n
             | _ ->
                 astate_n
           in
@@ -816,7 +816,7 @@ module PulseTransferFunctions = struct
             PulseNonDisjunctiveOperations.add_copied_return path loc call_exp actuals astates
               astate_n
           in
-          let astate_n = NonDisjDomain.set_passed_to loc call_exp actuals astate_n in
+          let astate_n = NonDisjDomain.set_passed_to loc timestamp call_exp actuals astate_n in
           (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
           let prune_result =
