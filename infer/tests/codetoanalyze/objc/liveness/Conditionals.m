@@ -11,7 +11,7 @@ int conditionalBasicOK() {
   return x;
 }
 
-int FP_conditionalOpaqueOk() {
+int conditionalOpaqueOk() {
   int x = 5;
   x = x ?: 1;
   return x;

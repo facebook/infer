@@ -229,3 +229,8 @@ void taintSourceParameterBlockIndirectSinkProtocol_FN() {
     [iwpp.protocolProperty callsSink:arg];
   });
 }
+
+void condOperatorBad() {
+  NSObject* obj = [InferTaint source] ?: [NSObject new];
+  [InferTaint sink:obj];
+}

@@ -83,7 +83,7 @@ digraph cfg {
 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_5" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_10" ;
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_5" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_3" ;
 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_6" [label="6: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$26, true); [line 119, column 12]\n " shape="invhouse"]
 	
 
@@ -103,12 +103,12 @@ digraph cfg {
 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_10" [label="10:  BinaryConditionalStmt Init \n   n$25=*&stringsBundlePath:NSString* [line 119, column 37]\n  n$26=_fun_NSBundle.bundleWithPath:(n$25:NSString*) [line 119, column 12]\n " shape="box"]
 	
 
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_10" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_3" ;
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_10" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_6" ;
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_10" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_7" ;
 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(stringsBundlePath:NSString*); [line 116, column 3]\n  n$30=_fun_NSBundle.bundleForClass:(sizeof(t=B):unsigned long) [line 117, column 8]\n  n$28=_fun_NSString.stringWithUTF8String:(\"Strings\":char* const ) [line 117, column 60]\n  n$29=_fun_NSString.stringWithUTF8String:(\"bundle\":char* const ) [line 118, column 60]\n  n$31=_fun_NSBundle.pathForResource:ofType:(n$30:NSBundle*,n$28:NSString*,n$29:NSString*) virtual [line 117, column 7]\n  *&stringsBundlePath:NSString*=n$31 [line 116, column 3]\n " shape="box"]
 	
 
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_11" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_6" ;
-	 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_11" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_7" ;
+	 "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_11" -> "class_method_fst_arg_of_class_method_inside_instance_method#A#[class].9ddf691765febed79eada49020a45442_10" ;
 "test_class#A#[class].eca678ace24c19fb3639e73a84526f04_1" [label="1: Start A.test_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 

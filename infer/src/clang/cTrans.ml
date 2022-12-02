@@ -2183,6 +2183,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           conditionalOperator_trans trans_state' stmt_info [ostmt1; ostmt2; stmt2] expr_info
         in
         L.debug Capture Verbose "op_res_trans.control=%a@\n" pp_control op_res_trans.control ;
+        let init_res_trans =
+          PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+            ~return:init_res_trans.return BinaryConditionalStmtInit stmt_info [init_res_trans]
+        in
         PriorityNode.compute_results_to_parent trans_state_pri sil_loc ~return:op_res_trans.return
           BinaryConditionalStmtInit stmt_info [init_res_trans; op_res_trans]
     | _ ->

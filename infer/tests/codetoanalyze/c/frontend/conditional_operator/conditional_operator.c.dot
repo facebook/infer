@@ -109,7 +109,7 @@ digraph cfg {
 "test3.8ad8757baa8564dc136c1e07507f4a98_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
-	 "test3.8ad8757baa8564dc136c1e07507f4a98_5" -> "test3.8ad8757baa8564dc136c1e07507f4a98_10" ;
+	 "test3.8ad8757baa8564dc136c1e07507f4a98_5" -> "test3.8ad8757baa8564dc136c1e07507f4a98_3" ;
 "test3.8ad8757baa8564dc136c1e07507f4a98_6" [label="6: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$1, true); [line 20, column 11]\n " shape="invhouse"]
 	
 
@@ -129,24 +129,23 @@ digraph cfg {
 "test3.8ad8757baa8564dc136c1e07507f4a98_10" [label="10:  BinaryConditionalStmt Init \n   n$1=*&b:int [line 20, column 11]\n " shape="box"]
 	
 
-	 "test3.8ad8757baa8564dc136c1e07507f4a98_10" -> "test3.8ad8757baa8564dc136c1e07507f4a98_3" ;
+	 "test3.8ad8757baa8564dc136c1e07507f4a98_10" -> "test3.8ad8757baa8564dc136c1e07507f4a98_6" ;
+	 "test3.8ad8757baa8564dc136c1e07507f4a98_10" -> "test3.8ad8757baa8564dc136c1e07507f4a98_7" ;
 "test3.8ad8757baa8564dc136c1e07507f4a98_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 20, column 3]\n " shape="box"]
 	
 
-	 "test3.8ad8757baa8564dc136c1e07507f4a98_11" -> "test3.8ad8757baa8564dc136c1e07507f4a98_6" ;
-	 "test3.8ad8757baa8564dc136c1e07507f4a98_11" -> "test3.8ad8757baa8564dc136c1e07507f4a98_7" ;
+	 "test3.8ad8757baa8564dc136c1e07507f4a98_11" -> "test3.8ad8757baa8564dc136c1e07507f4a98_10" ;
 "test4.86985e105f79b95d6bc918fb45ec7727_1" [label="1: Start test4\nFormals:  b:int\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$1:int \n  " color=yellow style=filled]
 	
 
-	 "test4.86985e105f79b95d6bc918fb45ec7727_1" -> "test4.86985e105f79b95d6bc918fb45ec7727_4" ;
-	 "test4.86985e105f79b95d6bc918fb45ec7727_1" -> "test4.86985e105f79b95d6bc918fb45ec7727_5" ;
+	 "test4.86985e105f79b95d6bc918fb45ec7727_1" -> "test4.86985e105f79b95d6bc918fb45ec7727_8" ;
 "test4.86985e105f79b95d6bc918fb45ec7727_2" [label="2: Exit test4 \n  " color=yellow style=filled]
 	
 
 "test4.86985e105f79b95d6bc918fb45ec7727_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
-	 "test4.86985e105f79b95d6bc918fb45ec7727_3" -> "test4.86985e105f79b95d6bc918fb45ec7727_8" ;
+	 "test4.86985e105f79b95d6bc918fb45ec7727_3" -> "test4.86985e105f79b95d6bc918fb45ec7727_9" ;
 "test4.86985e105f79b95d6bc918fb45ec7727_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$0, true); [line 24, column 33]\n " shape="invhouse"]
 	
 
@@ -163,30 +162,34 @@ digraph cfg {
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_7" -> "test4.86985e105f79b95d6bc918fb45ec7727_3" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_8" [label="8:  BinaryConditionalStmt Init \n   n$0=*&b:int [line 24, column 33]\n  n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 24, column 33]\n " shape="box"]
+"test4.86985e105f79b95d6bc918fb45ec7727_8" [label="8:  BinaryConditionalStmt Init \n   n$0=*&b:int [line 24, column 33]\n " shape="box"]
 	
 
-	 "test4.86985e105f79b95d6bc918fb45ec7727_8" -> "test4.86985e105f79b95d6bc918fb45ec7727_9" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_9" [label="9:  Return Stmt \n   n$3=_fun_test2(n$2:int) [line 24, column 27]\n " shape="box"]
+	 "test4.86985e105f79b95d6bc918fb45ec7727_8" -> "test4.86985e105f79b95d6bc918fb45ec7727_4" ;
+	 "test4.86985e105f79b95d6bc918fb45ec7727_8" -> "test4.86985e105f79b95d6bc918fb45ec7727_5" ;
+"test4.86985e105f79b95d6bc918fb45ec7727_9" [label="9:  BinaryConditionalStmt Init \n   n$2=*&0$?%__sil_tmpSIL_temp_conditional___n$1:int [line 24, column 33]\n " shape="box"]
 	
 
 	 "test4.86985e105f79b95d6bc918fb45ec7727_9" -> "test4.86985e105f79b95d6bc918fb45ec7727_10" ;
-"test4.86985e105f79b95d6bc918fb45ec7727_10" [label="10:  Return Stmt \n   *&return:int=n$3 [line 24, column 20]\n " shape="box"]
+"test4.86985e105f79b95d6bc918fb45ec7727_10" [label="10:  Return Stmt \n   n$3=_fun_test2(n$2:int) [line 24, column 27]\n " shape="box"]
 	
 
-	 "test4.86985e105f79b95d6bc918fb45ec7727_10" -> "test4.86985e105f79b95d6bc918fb45ec7727_2" ;
+	 "test4.86985e105f79b95d6bc918fb45ec7727_10" -> "test4.86985e105f79b95d6bc918fb45ec7727_11" ;
+"test4.86985e105f79b95d6bc918fb45ec7727_11" [label="11:  Return Stmt \n   *&return:int=n$3 [line 24, column 20]\n " shape="box"]
+	
+
+	 "test4.86985e105f79b95d6bc918fb45ec7727_11" -> "test4.86985e105f79b95d6bc918fb45ec7727_2" ;
 "test5.e3d704f3542b44a621ebed70dc0efe13_1" [label="1: Start test5\nFormals:  b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test5.e3d704f3542b44a621ebed70dc0efe13_1" -> "test5.e3d704f3542b44a621ebed70dc0efe13_4" ;
-	 "test5.e3d704f3542b44a621ebed70dc0efe13_1" -> "test5.e3d704f3542b44a621ebed70dc0efe13_5" ;
+	 "test5.e3d704f3542b44a621ebed70dc0efe13_1" -> "test5.e3d704f3542b44a621ebed70dc0efe13_8" ;
 "test5.e3d704f3542b44a621ebed70dc0efe13_2" [label="2: Exit test5 \n  " color=yellow style=filled]
 	
 
 "test5.e3d704f3542b44a621ebed70dc0efe13_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
-	 "test5.e3d704f3542b44a621ebed70dc0efe13_3" -> "test5.e3d704f3542b44a621ebed70dc0efe13_8" ;
+	 "test5.e3d704f3542b44a621ebed70dc0efe13_3" -> "test5.e3d704f3542b44a621ebed70dc0efe13_9" ;
 "test5.e3d704f3542b44a621ebed70dc0efe13_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$0, true); [line 26, column 27]\n " shape="invhouse"]
 	
 
@@ -206,7 +209,8 @@ digraph cfg {
 "test5.e3d704f3542b44a621ebed70dc0efe13_8" [label="8:  BinaryConditionalStmt Init \n   n$0=*&b:int [line 26, column 27]\n " shape="box"]
 	
 
-	 "test5.e3d704f3542b44a621ebed70dc0efe13_8" -> "test5.e3d704f3542b44a621ebed70dc0efe13_9" ;
+	 "test5.e3d704f3542b44a621ebed70dc0efe13_8" -> "test5.e3d704f3542b44a621ebed70dc0efe13_4" ;
+	 "test5.e3d704f3542b44a621ebed70dc0efe13_8" -> "test5.e3d704f3542b44a621ebed70dc0efe13_5" ;
 "test5.e3d704f3542b44a621ebed70dc0efe13_9" [label="9:  Return Stmt \n  " shape="box"]
 	
 
@@ -254,15 +258,14 @@ digraph cfg {
 "test7.b04083e53e242626595e2b8ea327e525_1" [label="1: Start test7\nFormals:  b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test7.b04083e53e242626595e2b8ea327e525_1" -> "test7.b04083e53e242626595e2b8ea327e525_4" ;
-	 "test7.b04083e53e242626595e2b8ea327e525_1" -> "test7.b04083e53e242626595e2b8ea327e525_5" ;
+	 "test7.b04083e53e242626595e2b8ea327e525_1" -> "test7.b04083e53e242626595e2b8ea327e525_8" ;
 "test7.b04083e53e242626595e2b8ea327e525_2" [label="2: Exit test7 \n  " color=yellow style=filled]
 	
 
 "test7.b04083e53e242626595e2b8ea327e525_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
-	 "test7.b04083e53e242626595e2b8ea327e525_3" -> "test7.b04083e53e242626595e2b8ea327e525_8" ;
+	 "test7.b04083e53e242626595e2b8ea327e525_3" -> "test7.b04083e53e242626595e2b8ea327e525_9" ;
 "test7.b04083e53e242626595e2b8ea327e525_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$1, true); [line 33, column 27]\n " shape="invhouse"]
 	
 
@@ -282,7 +285,8 @@ digraph cfg {
 "test7.b04083e53e242626595e2b8ea327e525_8" [label="8:  BinaryConditionalStmt Init \n   n$0=_fun_test2(2:int) [line 33, column 37]\n  n$1=_fun_test2((2 + n$0):int) [line 33, column 27]\n " shape="box"]
 	
 
-	 "test7.b04083e53e242626595e2b8ea327e525_8" -> "test7.b04083e53e242626595e2b8ea327e525_9" ;
+	 "test7.b04083e53e242626595e2b8ea327e525_8" -> "test7.b04083e53e242626595e2b8ea327e525_4" ;
+	 "test7.b04083e53e242626595e2b8ea327e525_8" -> "test7.b04083e53e242626595e2b8ea327e525_5" ;
 "test7.b04083e53e242626595e2b8ea327e525_9" [label="9:  Return Stmt \n  " shape="box"]
 	
 
