@@ -243,6 +243,18 @@ val shallow_copy :
   -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 (** returns the address of a new cell with the same edges as the original *)
 
+val deep_copy :
+     ?depth_max:int
+  -> PathContext.t
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> t
+  -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
+(** returns the address of a new cell with the copied edges from the original. The content is deeply
+    copied up until [max_depth] edges deep in memory. The deepest copied value is then shallow
+    copied. If no [max_depth] is specified, then there is no shallow copy and everything is deeply
+    copied until there is no more edge to follow *)
+
 val get_dynamic_type_unreachable_values : Var.t list -> t -> (Var.t * Typ.t) list
 (** Given a list of variables, computes the unreachable values if the variables were removed from
     the stack, then return the dynamic types of those values if they are available *)

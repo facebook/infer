@@ -951,3 +951,109 @@ void testNSArray_ArrayWithContentsOfURLErrorBad(void) {
   testNSArray_sink((__bridge void*)(error));
   testNSArray_sink((__bridge void*)(propagated));
 }
+
+// Stored objects with index manipulation
+
+void NSMutableArray_insertObjectAt(NSMutableArray* mArr, void* value, int idx) {
+  NSObject* obj = (__bridge NSObject*)value;
+  [mArr insertObject:obj atIndex:idx];
+}
+
+NSMutableArray* init_NSMutableArray_with_tainted_and_untainted(void) {
+  NSMutableArray* mArr = [NSMutableArray new];
+  NSMutableArray_insertObjectAt(mArr, create_tainted(), 0);
+  NSMutableArray_insertObjectAt(mArr, create_untainted(), 1);
+  return mArr;
+}
+
+void* NSArray_objectAt(NSArray* arr, int idx) {
+  NSObject* obj = [arr objectAtIndex:idx];
+  return (__bridge void*)obj;
+}
+
+void testNSArray_cell_ObjectAtIndex_bad(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  void* value = NSArray_objectAt(mArr, 0);
+  testNSArray_sink(value);
+}
+
+void testNSArray_cell_ObjectAtIndex_good(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  void* value = NSArray_objectAt(mArr, 1);
+  testNSArray_sink(value);
+}
+
+void* NSArray_objectAtIndexedSubscript(NSArray* arr, int idx) {
+  NSObject* obj = arr[idx];
+  return (__bridge void*)obj;
+}
+
+void testNSArray_cell_ObjectAtIndexedSubscript_bad(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  void* value = NSArray_objectAtIndexedSubscript(mArr, 0);
+  testNSArray_sink(value);
+}
+
+void testNSArray_cell_ObjectAtIndexedSubscript_good(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  void* value = NSArray_objectAtIndexedSubscript(mArr, 1);
+  testNSArray_sink(value);
+}
+
+void NSArray_replaceObjectAtIndexWithObject(NSMutableArray* mArr,
+                                            int idx,
+                                            void* value) {
+  NSObject* obj = (__bridge NSObject*)value;
+  [mArr replaceObjectAtIndex:idx withObject:obj];
+}
+
+void testNSArray_cell_ReplaceObjectAtIndexWithObject_bad(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  NSArray_replaceObjectAtIndexWithObject(mArr, 1, create_tainted());
+  void* value = NSArray_objectAt(mArr, 1);
+  testNSArray_sink(value);
+}
+
+void testNSArray_cell_ReplaceObjectAtIndexWithObject_good(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  NSArray_replaceObjectAtIndexWithObject(mArr, 0, create_untainted());
+  void* value = NSArray_objectAt(mArr, 0);
+  testNSArray_sink(value);
+}
+
+void NSArray_setObjectAtIndexedSubscript(NSMutableArray* mArr,
+                                         void* value,
+                                         int idx) {
+  NSObject* obj = (__bridge NSObject*)value;
+  mArr[idx] = obj;
+}
+
+void testNSArray_cell_SetObjectAtIndexedSubscript_bad(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  NSArray_setObjectAtIndexedSubscript(mArr, create_tainted(), 1);
+  void* value = NSArray_objectAt(mArr, 1);
+  testNSArray_sink(value);
+}
+
+void testNSArray_cell_SetObjectAtIndexedSubscript_good(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  NSArray_setObjectAtIndexedSubscript(mArr, create_untainted(), 0);
+  void* value = NSArray_objectAt(mArr, 0);
+  testNSArray_sink(value);
+}
+
+void testNSArray_cell_ArrayWithArrayBad(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  NSArray* copied = [NSArray arrayWithArray:mArr];
+  NSArray_setObjectAtIndexedSubscript(mArr, create_untainted(), 0);
+  void* value = NSArray_objectAt(copied, 0);
+  testNSArray_sink(value);
+}
+
+void testNSArray_cell_ArrayWithArrayGood(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  NSArray* copied = [NSArray arrayWithArray:mArr];
+  NSArray_setObjectAtIndexedSubscript(mArr, create_tainted(), 1);
+  void* value = NSArray_objectAt(copied, 1);
+  testNSArray_sink(value);
+}

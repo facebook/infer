@@ -38,16 +38,34 @@ type matcher = (Tenv.t * Procname.t, model, arg_payload) ProcnameDispatcher.Call
 module Hist : sig
   val alloc_event : PathContext.t -> Location.t -> ?more:string -> string -> ValueHistory.event
 
-  val call_event : PathContext.t -> Location.t -> ?more:string -> string -> ValueHistory.event
+  val call_event :
+       PathContext.t
+    -> ?in_call:ValueHistory.t
+    -> Location.t
+    -> ?more:string
+    -> string
+    -> ValueHistory.event
 
   val add_event : PathContext.t -> ValueHistory.event -> ValueHistory.t -> ValueHistory.t
 
   val single_event : PathContext.t -> ValueHistory.event -> ValueHistory.t
 
   val add_call :
-    PathContext.t -> Location.t -> string -> ?more:string -> ValueHistory.t -> ValueHistory.t
+       PathContext.t
+    -> ?in_call:ValueHistory.t
+    -> Location.t
+    -> string
+    -> ?more:string
+    -> ValueHistory.t
+    -> ValueHistory.t
 
-  val single_call : PathContext.t -> Location.t -> ?more:string -> string -> ValueHistory.t
+  val single_call :
+       PathContext.t
+    -> ?in_call:ValueHistory.t
+    -> Location.t
+    -> ?more:string
+    -> string
+    -> ValueHistory.t
 
   val single_alloc : PathContext.t -> Location.t -> ?more:string -> string -> ValueHistory.t
 

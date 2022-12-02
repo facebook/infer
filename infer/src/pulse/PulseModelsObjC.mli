@@ -6,8 +6,30 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 open PulseModelsImport
 
 val matchers : matcher list
 
 val transfer_ownership_matchers : matcher list
+
+val object_at :
+     AbstractValue.t * ValueHistory.t
+  -> AbstractValue.t * 'a
+  -> ?implement_nil_messaging:bool
+  -> desc:string
+  -> model
+
+val insert_object_at :
+     AbstractValue.t * ValueHistory.t
+  -> AbstractValue.t * ValueHistory.t
+  -> AbstractValue.t * 'a
+  -> ?disallow_nil_obj:bool
+  -> desc:string
+  -> model
+
+val create_array_backed_with_modelled_array :
+  AbstractValue.t * ValueHistory.t -> desc:string -> model
+
+val init_array_backed_with_array :
+  AbstractValue.t * ValueHistory.t -> AbstractValue.t * ValueHistory.t -> desc:string -> model

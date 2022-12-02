@@ -487,6 +487,33 @@ let shallow_copy ({PathContext.timestamp} as path) location addr_hist astate =
   , copy )
 
 
+let rec deep_copy ?depth_max ({PathContext.timestamp} as path) location addr_hist astate =
+  match depth_max with
+  | Some 0 ->
+      shallow_copy path location addr_hist astate
+  | _ -> (
+      let depth_max = Option.map ~f:(fun n -> n - 1) depth_max in
+      let* astate = check_addr_access path Read location addr_hist astate in
+      let cell_opt = AbductiveDomain.find_post_cell_opt (fst addr_hist) astate in
+      let copy =
+        (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
+      in
+      match cell_opt with
+      | None ->
+          Ok (astate, copy)
+      | Some (edges, attributes) ->
+          let+ astate, edges =
+            BaseMemory.Edges.fold edges
+              ~init:(Ok (astate, BaseMemory.Edges.empty))
+              ~f:(fun astate_edges (access, addr_hist) ->
+                let* astate, edges = astate_edges in
+                let+ astate, addr_hist = deep_copy ?depth_max path location addr_hist astate in
+                let edges = BaseMemory.Edges.add access addr_hist edges in
+                (astate, edges) )
+          in
+          (AbductiveDomain.set_post_cell path copy (edges, attributes) location astate, copy) )
+
+
 let check_address_escape escape_location proc_desc address history astate =
   let is_assigned_to_global address astate =
     let points_to_address pointer address astate =
