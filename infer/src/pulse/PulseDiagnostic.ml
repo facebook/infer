@@ -573,6 +573,7 @@ let get_message diagnostic =
         line Procname.pp callee
   | UnnecessaryCopy {copied_into; typ; location; copied_location= None; from} -> (
       let open PulseAttribute in
+      let suggestion_msg_move = "To avoid the copy, try moving it by calling `std::move` instead" in
       let suppression_msg =
         "If this copy was intentional, consider calling `folly::copy` to make it explicit and \
          hence suppress the warning"
@@ -580,32 +581,28 @@ let get_message diagnostic =
       let suggestion_msg =
         match (from : CopyOrigin.t) with
         | CopyCtor ->
-            "try using a reference `&`"
+            "To avoid the copy, try using a reference `&`"
         | CopyAssignment ->
-            "try getting a reference to it or move it if possible"
-      in
-      let suggestion_msg_move =
-        "To avoid the copy, try moving it by calling `std::move` instead."
+            suggestion_msg_move
       in
       match copied_into with
       | IntoIntermediate {source_opt= None} ->
-          F.asprintf "An intermediate with type `%a` is %a on %a. %s" (Typ.pp_full Pp.text) typ
+          F.asprintf "An intermediate with type `%a` is %a on %a. %s." (Typ.pp_full Pp.text) typ
             CopyOrigin.pp from Location.pp_line location suggestion_msg_move
       | IntoIntermediate {source_opt= Some source_expr} ->
           F.asprintf
-            "variable `%a` with type `%a` is %a unnecessarily into an intermediate on %a. %s"
+            "variable `%a` with type `%a` is %a unnecessarily into an intermediate on %a. %s."
             DecompilerExpr.pp_source_expr source_expr (Typ.pp_full Pp.text) typ CopyOrigin.pp from
             Location.pp_line location suggestion_msg_move
       | IntoVar {source_opt= None} ->
           F.asprintf
-            "%a variable `%a` with type `%a` is not modified after it is copied on %a. To avoid \
-             the copy, %s. %s."
+            "%a variable `%a` with type `%a` is not modified after it is copied on %a. %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
             location suggestion_msg suppression_msg
       | IntoVar {source_opt= Some source_expr} ->
           F.asprintf
             "%a variable `%a` with type `%a` is not modified after it is copied from `%a` on %a. \
-             To avoid the copy, %s. %s."
+             %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ
             DecompilerExpr.pp_source_expr source_expr Location.pp_line location suggestion_msg
             suppression_msg
