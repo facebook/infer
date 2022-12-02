@@ -80,7 +80,7 @@ let of_id = function
   | CaptureDependencies ->
       { rel_path= buck_infer_deps_file_name
       ; kind= File
-      ; before_incremental_analysis= Delete
+      ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }
   | CaptureDB ->
       { rel_path= "capture.db"
