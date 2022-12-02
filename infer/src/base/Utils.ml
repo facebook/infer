@@ -297,6 +297,7 @@ let out_channel_create_with_dir fname =
 let realpath_cache = Hashtbl.create 1023
 
 let realpath ?(warn_on_error = true) path =
+  let should_warn = warn_on_error && not (Filename.check_suffix path ".class") in
   match Hashtbl.find realpath_cache path with
   | exception Caml.Not_found -> (
     match Filename.realpath path with
@@ -305,7 +306,7 @@ let realpath ?(warn_on_error = true) path =
         realpath
     | exception (Unix.Unix_error (code, _, arg) as exn) ->
         IExn.reraise_after exn ~f:(fun () ->
-            if warn_on_error then
+            if should_warn then
               F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
                 (Unix.Error.message code) ;
             (* cache failures as well *)
