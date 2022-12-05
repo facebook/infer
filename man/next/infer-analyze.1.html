@@ -28,6 +28,7 @@
 <a href="#CLANG OPTIONS">CLANG OPTIONS</a><br>
 <a href="#ERLANG OPTIONS">ERLANG OPTIONS</a><br>
 <a href="#JAVA OPTIONS">JAVA OPTIONS</a><br>
+<a href="#PULSE CHECKER OPTIONS">PULSE CHECKER OPTIONS</a><br>
 <a href="#QUANDARY CHECKER OPTIONS">QUANDARY CHECKER OPTIONS</a><br>
 <a href="#RACERD CHECKER OPTIONS">RACERD CHECKER OPTIONS</a><br>
 <a href="#SIMPLE LINEAGE OPTIONS">SIMPLE LINEAGE OPTIONS</a><br>
@@ -362,7 +363,7 @@ analysis jobs simultaneously</p>
 <p style="margin-left:11%;"><b>--keep-going</b></p>
 
 <p style="margin-left:17%;">Activates: Keep going when the
-analysis encounters a failure (Conversely:
+analysis or capture encounter a failure (Conversely:
 <b>--no-keep-going</b>)</p>
 
 <p style="margin-left:11%;"><b>--no-linters</b></p>
@@ -512,277 +513,13 @@ the project</p>
 Memory and lifetime analysis. (Conversely:
 <b>--no-pulse</b>)</p>
 
-
-<p style="margin-left:11%;"><b>--pulse-cut-to-one-path-procedures-pattern</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods for which
-pulse will only explore one path. Can be used on
-pathologically large procedures to prevent too-big states
-from being produced.</p>
-
-<p style="margin-left:11%;"><b>--pulse-max-cfg-size</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">Larger CFGs than the max size
-are skipped in Pulse.</p>
-
-<p style="margin-left:11%;"><b>--pulse-model-abort</b>
-<i>+string</i></p>
-
-<p style="margin-left:17%;">Methods that should be modelled
-as abort in Pulse</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-alloc-pattern</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as allocs in Pulse</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-cheap-copy-type</b>
-<i>regex</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-cheap to copy in Pulse</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-free-pattern</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as wrappers to <i>free</i>(3) in Pulse. The pointer
-to be freed should be the first argument of the function.
-This should only be needed if the code of the wrapper is not
-visible to infer or if Pulse somehow doesn't understand it
-(e.g. the call is dispatched to global function
-pointers).</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-malloc-pattern</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as wrappers to <i>malloc</i>(3) in Pulse. The size
-to allocate should be the first argument of the function.
-See <b>--pulse-model-free-pattern</b> for more
-information.</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-realloc-pattern</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as wrappers to <i>realloc</i>(3) in Pulse. The
-pointer to be reallocated should be the first argument of
-the function and the new size the second argument. See
-<b>--pulse-model-free-pattern</b> for more information.</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-release-pattern</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as release in Pulse</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-return-first-arg</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as returning the first argument in Pulse</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-return-nonnull</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as returning non-null in Pulse</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-returns-copy-pattern</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as creating copies in Pulse</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-skip-pattern</b>
-<i>string</i></p>
-
-<p style="margin-left:17%;">Regex of methods that should be
-modelled as &quot;skip&quot; in Pulse</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-model-transfer-ownership</b>
-<i>+string</i></p>
-
-<p style="margin-left:17%;">Methods that should be modelled
-as transfering memory ownership in Pulse. Accepted formats
-are method or namespace::method</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-models-for-erlang</b>
-<i>json</i></p>
-
-<p style="margin-left:17%;">Provide custom models for
-Erlang code using a DSL.</p>
-
 <p style="margin-left:11%;"><b>--pulse-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable pulse and
 disable all other checkers (Conversely:
 <b>--no-pulse-only</b>)</p>
 
-
-<p style="margin-left:11%;"><b>--pulse-report-ignore-unknown-java-methods-patterns</b>
-<i>+string</i></p>
-
-<p style="margin-left:17%;">On Java, issues that are found
-on program paths that contain calls to unknown methods
-(those without implementation) are not reported unless all
-the unknown method names match this pattern. If the empty
-list is provided with
-<b>--pulse-report-ignore-unknown-java-methods-patterns-reset</b>,
-all issues will be reported regardless the presence of
-unknown code</p>
-
-<p style="margin-left:11%;"><b>--pulse-skip-procedures</b>
-<i>regex</i></p>
-
-<p style="margin-left:17%;">Regex of procedures that should
-not be analyzed by Pulse.</p>
-
-<p style="margin-left:11%;"><b>--pulse-taint-config</b>
-<i>+path</i></p>
-
-<p style="margin-left:17%;">Path to a taint analysis
-configuration file or a directory containing such files.
-This file can define <b>--pulse-taint-sources</b>,
-<b>--pulse-taint-sanitizers</b>,
-<b>--pulse-taint-propagators</b>,
-<b>--pulse-taint-sinks</b>, <b>--pulse-taint-policies</b>,
-and <b>--pulse-taint-data-flow-kinds</b>.</p>
-
-<p style="margin-left:11%;">If a path to a directory is
-given then the configuration files <br>
-must have the &lsquo;.json&lsquo; extension. Any other file
-will be ignored. <br>
-The subdirectories will be explored and must follow the same
-<br>
-convention. <b><br>
---pulse-taint-data-flow-kinds</b> <i>json</i></p>
-
-<p style="margin-left:17%;">Specify which taint kinds
-should be used for data flow reporting only. If a source has
-such a kind, only data flows to sinks which originate at the
-source will be reported. If a sink has such a kind, only
-sensitive data flows to the sink will be reported.</p>
-
-<p style="margin-left:11%;"><b>--pulse-taint-policies</b>
-<i>json</i></p>
-
-<p style="margin-left:17%;">A description of which taint
-flows should be reported, following this JSON format:</p>
-
-<p style="margin-left:11%;">{
-&quot;short_description&quot;: &quot;&lt;a short description
-of the issue&gt;&quot;, <br>
-&quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
-[&lt;kinds&gt;], <br>
-&quot;sink_kinds&quot;: [&lt;kinds&gt;], <br>
-&quot;sanitizer_kinds&quot;: [&lt;kinds&gt;] }] <br>
-} <br>
-where &lt;kinds&gt; are specified in taint
-source/sanitizer/sink <br>
-matchers (see <b>--pulse-taint-sources</b>). The field
-&quot;sanitizer_kinds&quot; <br>
-is optional (assumed to be empty), and a single policy can
-specify <br>
-several taint flows using a list. The following policy is
-always <br>
-enabled: <br>
-{ &quot;short_description&quot;: &quot;...&quot;, <br>
-&quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
-[&quot;Simple&quot;], <br>
-&quot;sink_kinds&quot;: [&quot;Simple&quot;], <br>
-&quot;sanitizer_kinds&quot;: [&quot;Simple&quot;] }] <br>
-} <b><br>
---pulse-taint-propagators</b> <i>json</i></p>
-
-<p style="margin-left:17%;">Quick way to specify simple
-propagators as a JSON objects. See
-<b>--pulse-taint-sources</b> for the fields format
-documentation.</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-taint-sanitizers</b>
-<i>json</i></p>
-
-<p style="margin-left:17%;">Quick way to specify simple
-sanitizers as a JSON objects. See
-<b>--pulse-taint-sources</b> for the fields format
-documentation.</p>
-
-<p style="margin-left:11%;"><b>--pulse-taint-sinks</b>
-<i>json</i></p>
-
-<p style="margin-left:17%;">Quick way to specify simple
-sinks as a JSON objects. See <b>--pulse-taint-sources</b>
-for the fields format documentation.</p>
-
-<p style="margin-left:11%;"><b>--pulse-taint-sources</b>
-<i>json</i></p>
-
-<p style="margin-left:17%;">Together with
-<b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
-<b>--pulse-taint-policies</b>, and
-<b>--pulse-taint-data-flow-kinds</b>, specify taint
-properties. The JSON format of sources also applies to sinks
-and sanitizers. It consists of a list of objects, each with
-one of the following combinations of fields to identify
-relevant procedures:</p>
-
-<p style="margin-left:11%;">- &quot;procedure&quot;: match
-a substring of the procedure name <br>
-- &quot;procedure_regex&quot;: as above, but match using an
-OCaml regex <br>
-- &quot;class_names&quot; and &quot;method_names&quot;: <br>
-match exact uses of methods of particular classes <br>
-- &quot;overrides_of_class_with_annotation&quot;: <br>
-match all procedures defined in classes which inherit <br>
-from a superclass with the specified annotation <br>
-- &quot;allocation&quot;: <i>(for taint sources only)</i>
-<br>
-match allocations of the exact class name supplied <br>
-Each object can also optionally specify: <br>
-- &quot;kinds&quot;: the kinds of taint, used in
-<b>--pulse-taint-policies</b> <br>
-to specify flows between sources/sanitizers/sinks <br>
-(&quot;Simple&quot; by default). <br>
-- &quot;taint_target&quot;: <br>
-where the taint should be applied in the procedure. <br>
-- &quot;ReturnValue&quot;: (default for taint sources and
-<br>
-propagators) <br>
-- &quot;AllArguments&quot;: (default for taint sanitizers
-and sinks) <br>
-- [&quot;ArgumentPositions&quot;, [&lt;int list&gt;]]: <br>
-argument positions given by index (zero-indexed) <br>
-- [&quot;AllArgumentsButPositions&quot;, [&lt;int
-list&gt;]]: <br>
-all arguments except given indices (zero-indexed) <br>
-- [&quot;ArgumentMatchingTypes&quot;, [&lt;type list&gt;]]:
-<br>
-arguments with types containing supplied strings <i><br>
-N.B.</i> for methods, index 0 is <i>this</i>/<i>self</i>.
-<br>
-- &quot;match_objc_blocks&quot;: boolean, &quot;false&quot;
-by default <br>
-&quot;true&quot; if only Objective-C blocks should be
-matched. <b><br>
---purity</b></p>
+<p style="margin-left:11%;"><b>--purity</b></p>
 
 <p style="margin-left:17%;">Activates: checker purity:
 Detects pure (side-effect-free) functions. A different
@@ -871,7 +608,25 @@ avoid <br>
 duplicate work between different analysis processes and thus
 <br>
 performs better in some circumstances <b><br>
---no-self-in-block</b></p>
+--scope-leakage</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+scope-leakage: The Java/Kotlin checker takes into account a
+set of &quot;scope&quot; annotations and a must-not-hold
+relation over the scopes. The checker raises an alarm if
+there exists a field access path from object A to object B,
+with respective scopes SA and SB, such that
+must-not-hold(SA, SB). (Conversely:
+<b>--no-scope-leakage</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--scope-leakage-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable scope-leakage
+and disable all other checkers (Conversely:
+<b>--no-scope-leakage-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--no-self-in-block</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
@@ -884,6 +639,14 @@ when a block captures &lsquo;self&lsquo;. (Conversely:
 <p style="margin-left:17%;">Activates: Enable self-in-block
 and disable all other checkers (Conversely:
 <b>--no-self-in-block-only</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--shrink-analysis-db</b></p>
+
+<p style="margin-left:17%;">Activates: After analysis,
+delete analysis summaries (but not report summaries) and
+vacuum analysis database. (Conversely:
+<b>--no-shrink-analysis-db</b>)</p>
 
 <p style="margin-left:11%;"><b>--simple-lineage</b></p>
 
@@ -942,6 +705,13 @@ progress is being made because of concurrency errors.
 <p style="margin-left:17%;">Activates: Enable starvation
 and disable all other checkers (Conversely:
 <b>--no-starvation-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--timeout</b>
+<i>float</i></p>
+
+<p style="margin-left:17%;">Time after which any checker
+(except biabduction) should give up analysing the current
+function or method, in seconds</p>
 
 
 <p style="margin-left:11%;"><b>--top-longest-proc-duration-size</b>
@@ -1016,7 +786,29 @@ results directories specified in the dependency file.
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--bo-debug</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--no-bo-assume-void</b></p>
+
+<p style="margin-left:17%;">Deactivates: Assume void type
+as a type of record fields not in type environment.
+(Conversely: <b>--bo-assume-void</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--no-bo-bottom-as-default</b></p>
+
+<p style="margin-left:17%;">Deactivates: Use bottom as a
+default value instead of unknown. (Conversely:
+<b>--bo-bottom-as-default</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--bo-context-sensitive-allocsites</b></p>
+
+<p style="margin-left:17%;">Activates: Assume that
+different calls to the same function creating an allocsite
+results in different allocsites imported to the caller.
+(Conversely:
+<b>--no-bo-context-sensitive-allocsites</b>)</p>
+
+<p style="margin-left:11%;"><b>--bo-debug</b>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for buffer-overrun
@@ -1033,6 +825,14 @@ abstract location in buffer-overrun checker</p>
 
 <p style="margin-left:17%;">Larger CFGs than the max size
 are skipped in buffer overrun analysis.</p>
+
+
+<p style="margin-left:11%;"><b>--bo-sound-unknown-sets-join</b></p>
+
+<p style="margin-left:17%;">Activates: Join with an unknown
+set always result in an unknown set. When disabled, unknown
+set behaves as bot. (Conversely:
+<b>--no-bo-sound-unknown-sets-join</b>)</p>
 
 <h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
@@ -1168,6 +968,329 @@ packages.</p>
 
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
+
+<h2>PULSE CHECKER OPTIONS
+<a name="PULSE CHECKER OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--pulse-cut-to-one-path-procedures-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods for which
+pulse will only explore one path. Can be used on
+pathologically large procedures to prevent too-big states
+from being produced.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-inline-global-init-func-pointer</b></p>
+
+<p style="margin-left:17%;">Activates: Inline the
+initializer of global variables that are of type function
+pointer in Pulse. (Conversely:
+<b>--no-pulse-inline-global-init-func-pointer</b>)</p>
+
+<p style="margin-left:11%;"><b>--pulse-max-cfg-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Larger CFGs than the max size
+are skipped in Pulse.</p>
+
+<p style="margin-left:11%;"><b>--pulse-max-disjuncts</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Stop exploring new paths after
+<i>int</i> disjunctions in the domain</p>
+
+<p style="margin-left:11%;"><b>--pulse-max-heap</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Give up analysing a procedure
+if the number of words in the heap exceeds this limit.
+Intended use: avoid OutOfMemory crashes.</p>
+
+<p style="margin-left:11%;"><b>--pulse-model-abort</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Methods that should be modelled
+as abort in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-alloc-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as allocs in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-cheap-copy-type</b>
+<i>regex</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+cheap to copy in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-free-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as wrappers to <i>free</i>(3) in Pulse. The pointer
+to be freed should be the first argument of the function.
+This should only be needed if the code of the wrapper is not
+visible to infer or if Pulse somehow doesn't understand it
+(e.g. the call is dispatched to global function
+pointers).</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-malloc-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as wrappers to <i>malloc</i>(3) in Pulse. The size
+to allocate should be the first argument of the function.
+See <b>--pulse-model-free-pattern</b> for more
+information.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-realloc-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as wrappers to <i>realloc</i>(3) in Pulse. The
+pointer to be reallocated should be the first argument of
+the function and the new size the second argument. See
+<b>--pulse-model-free-pattern</b> for more information.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-release-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as release in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-return-first-arg</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning the first argument in Pulse in terms
+of the source language semantics. Languages supported: Java,
+C, Objective-C</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-return-nonnull</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning non-null in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-return-this</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning the &lsquo;this&lsquo; or
+&lsquo;self&lsquo; argument of an instance method in Pulse.
+Languages supported: Java, Objective-C</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-returns-copy-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as creating copies in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-skip-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as &quot;skip&quot; in Pulse</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-model-transfer-ownership</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Methods that should be modelled
+as transfering memory ownership in Pulse. Accepted formats
+are method or namespace::method</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-models-for-erlang</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Provide custom models for
+Erlang code using a DSL.</p>
+
+
+<p style="margin-left:11%;"><b>--no-pulse-nullsafe-report-npe</b></p>
+
+<p style="margin-left:17%;">Deactivates: Report null
+dereference issues on files marked @Nullsafe. (Conversely:
+<b>--pulse-nullsafe-report-npe</b>)</p>
+
+<p style="margin-left:11%;"><b>--pulse-recency-limit</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Maximum number of array
+elements and structure fields to keep track of for a given
+address.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-report-ignore-unknown-java-methods-patterns</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">On Java, do not report issues
+that are found on program paths that contain calls to
+unknown methods (those without implementation) <b>unless</b>
+a) this option isn't passed at all (the default, or with
+<b>--pulse-report-ignore-unknown-java-methods-patterns-reset</b>),
+or b) all the unknown method names match one of the provided
+patterns.</p>
+
+<p style="margin-left:11%;"><b>--pulse-skip-procedures</b>
+<i>regex</i></p>
+
+<p style="margin-left:17%;">Regex of procedures that should
+not be analyzed by Pulse.</p>
+
+<p style="margin-left:11%;"><b>--pulse-taint-config</b>
+<i>+path</i></p>
+
+<p style="margin-left:17%;">Path to a taint analysis
+configuration file or a directory containing such files.
+This file can define <b>--pulse-taint-sources</b>,
+<b>--pulse-taint-sanitizers</b>,
+<b>--pulse-taint-propagators</b>,
+<b>--pulse-taint-sinks</b>, <b>--pulse-taint-policies</b>,
+and <b>--pulse-taint-data-flow-kinds</b>.</p>
+
+<p style="margin-left:11%;">If a path to a directory is
+given then the configuration files <br>
+must have the &lsquo;.json&lsquo; extension. Any other file
+will be ignored. <br>
+The subdirectories will be explored and must follow the same
+<br>
+convention. <b><br>
+--pulse-taint-data-flow-kinds</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Specify which taint kinds
+should be used for data flow reporting only. If a source has
+such a kind, only data flows to sinks which originate at the
+source will be reported. If a sink has such a kind, only
+sensitive data flows to the sink will be reported.</p>
+
+<p style="margin-left:11%;"><b>--pulse-taint-policies</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">A description of which taint
+flows should be reported, following this JSON format:</p>
+
+<p style="margin-left:11%;">{
+&quot;short_description&quot;: &quot;&lt;a short description
+of the issue&gt;&quot;, <br>
+&quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
+[&lt;kinds&gt;], <br>
+&quot;sink_kinds&quot;: [&lt;kinds&gt;], <br>
+&quot;sanitizer_kinds&quot;: [&lt;kinds&gt;] }] <br>
+} <br>
+where &lt;kinds&gt; are specified in taint
+source/sanitizer/sink <br>
+matchers (see <b>--pulse-taint-sources</b>). The field
+&quot;sanitizer_kinds&quot; <br>
+is optional (assumed to be empty), and a single policy can
+specify <br>
+several taint flows using a list. The following policy is
+always <br>
+enabled: <br>
+{ &quot;short_description&quot;: &quot;...&quot;, <br>
+&quot;taint_flows&quot;: [{ &quot;source_kinds&quot;:
+[&quot;Simple&quot;], <br>
+&quot;sink_kinds&quot;: [&quot;Simple&quot;], <br>
+&quot;sanitizer_kinds&quot;: [&quot;Simple&quot;] }] <br>
+} <b><br>
+--pulse-taint-propagators</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+propagators as a JSON objects. See
+<b>--pulse-taint-sources</b> for the fields format
+documentation.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-taint-sanitizers</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+sanitizers as a JSON objects. See
+<b>--pulse-taint-sources</b> for the fields format
+documentation.</p>
+
+<p style="margin-left:11%;"><b>--pulse-taint-sinks</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Quick way to specify simple
+sinks as a JSON objects. See <b>--pulse-taint-sources</b>
+for the fields format documentation.</p>
+
+<p style="margin-left:11%;"><b>--pulse-taint-sources</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Together with
+<b>--pulse-taint-sanitizers</b>, <b>--pulse-taint-sinks</b>,
+<b>--pulse-taint-policies</b>, and
+<b>--pulse-taint-data-flow-kinds</b>, specify taint
+properties. The JSON format of sources also applies to sinks
+and sanitizers. It consists of a list of objects, each with
+one of the following combinations of fields to identify
+relevant procedures:</p>
+
+<p style="margin-left:11%;">- &quot;procedure&quot;: match
+a substring of the procedure name <br>
+- &quot;procedure_regex&quot;: as above, but match using an
+OCaml regex <br>
+- &quot;class_names&quot; and &quot;method_names&quot;: <br>
+match exact uses of methods of particular classes <br>
+- &quot;overrides_of_class_with_annotation&quot;: <br>
+match all procedures defined in classes which inherit <br>
+from a superclass with the specified annotation <br>
+- &quot;allocation&quot;: <i>(for taint sources only)</i>
+<br>
+match allocations of the exact class name supplied <br>
+Each object can also optionally specify: <br>
+- &quot;kinds&quot;: the kinds of taint, used in
+<b>--pulse-taint-policies</b> <br>
+to specify flows between sources/sanitizers/sinks <br>
+(&quot;Simple&quot; by default). <br>
+- &quot;taint_target&quot;: <br>
+where the taint should be applied in the procedure. <br>
+- &quot;ReturnValue&quot;: (default for taint sources and
+<br>
+propagators) <br>
+- &quot;AllArguments&quot;: (default for taint sanitizers
+and sinks) <br>
+- [&quot;ArgumentPositions&quot;, [&lt;int list&gt;]]: <br>
+argument positions given by index (zero-indexed) <br>
+- [&quot;AllArgumentsButPositions&quot;, [&lt;int
+list&gt;]]: <br>
+all arguments except given indices (zero-indexed) <br>
+- [&quot;ArgumentsMatchingTypes&quot;, [&lt;type list&gt;]]:
+<br>
+arguments with types containing supplied strings <br>
+- [&quot;Fields&quot;, [&lt;(string * taint_target)
+list&gt;]]: <br>
+fields given by name in return value, arguments or <br>
+other fields <i><br>
+N.B.</i> for methods, index 0 is <i>this</i>/<i>self</i>.
+<br>
+- &quot;match_objc_blocks&quot;: boolean, &quot;false&quot;
+by default <br>
+&quot;true&quot; if only Objective-C blocks should be
+matched. <b><br>
+--pulse-widen-threshold</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Stop exploring new paths after
+<i>int</i> loop iterations</p>
 
 <h2>QUANDARY CHECKER OPTIONS
 <a name="QUANDARY CHECKER OPTIONS"></a>

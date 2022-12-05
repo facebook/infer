@@ -293,6 +293,13 @@ database operations, in milliseconds.</p>
 <p style="margin-left:17%;">SQLite page size in bytes, must
 be a power of two between 512 and 65536.</p>
 
+<p style="margin-left:11%;"><b>--timeout</b>
+<i>float</i></p>
+
+<p style="margin-left:17%;">Time after which any checker
+(except biabduction) should give up analysing the current
+function or method, in seconds</p>
+
 <p style="margin-left:11%;"><b>--version</b></p>
 
 <p style="margin-left:17%;">Print version information and
@@ -337,8 +344,13 @@ not Java. <b><br>
 --buck-targets-block-list</b> <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of buck targets
-matched by the specified regular expression. Only valid for
-<b>--buck-compilation-database</b>.</p>
+matched by the specified regular expression.</p>
+
+<p style="margin-left:11%;"><b>--buck2-root</b>
+<i>dir</i></p>
+
+<p style="margin-left:17%;">Specify the parent directory of
+<b>buck-out</b> (used only for <b>buck2</b>).</p>
 
 <h2>JAVA OPTIONS
 <a name="JAVA OPTIONS"></a>

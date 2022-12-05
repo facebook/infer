@@ -238,6 +238,32 @@ for specs and retain cycles reports in infer-out/captured.
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--no-bo-assume-void</b></p>
+
+<p style="margin-left:17%;">Deactivates: Assume void type
+as a type of record fields not in type environment.
+(Conversely: <b>--bo-assume-void</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--no-bo-bottom-as-default</b></p>
+
+<p style="margin-left:17%;">Deactivates: Use bottom as a
+default value instead of unknown. (Conversely:
+<b>--bo-bottom-as-default</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--bo-context-sensitive-allocsites</b></p>
+
+<p style="margin-left:17%;">Activates: Assume that
+different calls to the same function creating an allocsite
+results in different allocsites imported to the caller.
+(Conversely:
+<b>--no-bo-context-sensitive-allocsites</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --bo-debug</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for buffer-overrun
@@ -256,6 +282,15 @@ abstract location in buffer-overrun checker</p>
 
 <p style="margin-left:17%;">Larger CFGs than the max size
 are skipped in buffer overrun analysis.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--bo-sound-unknown-sets-join</b></p>
+
+<p style="margin-left:17%;">Activates: Join with an unknown
+set always result in an unknown set. When disabled, unknown
+set behaves as bot. (Conversely:
+<b>--no-bo-sound-unknown-sets-join</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -367,8 +402,14 @@ capture. Only valid for <b>--buck-clang</b>. (Conversely:
 --buck-targets-block-list</b> <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of buck targets
-matched by the specified regular expression. Only valid for
-<b>--buck-compilation-database</b>.</p>
+matched by the specified regular expression.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
+--buck2-root</b> <i>dir</i></p>
+
+<p style="margin-left:17%;">Specify the parent directory of
+<b>buck-out</b> (used only for <b>buck2</b>).</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
@@ -436,7 +477,7 @@ and <b>infer-run</b>(1). <b><br>
 <p style="margin-left:17%;">Path to CFG json file</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyzejson</b>(1). <b><br>
+<b>infer-capture</b>(1). <b><br>
 --changed-files-index</b> <i>file</i></p>
 
 <p style="margin-left:17%;">Specify the file containing the
@@ -671,11 +712,10 @@ sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
 <b>-G</b>)</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1), <b>infer-analyzejson</b>(1),
-<b><br>
-infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-report</b>(1), <b><br>
-infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-report</b>(1), <b>infer-reportdiff</b>(1), and
+<b>infer-run</b>(1). <b><br>
 --debug-level</b> <i>level</i></p>
 
 <p style="margin-left:17%;">Debug level (sets
@@ -688,44 +728,40 @@ infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
 enabled <br>
 - 1: verbose debugging enabled <br>
 - 2: very verbose debugging enabled <br>
-See also <b>infer-analyze</b>(1),
-<b>infer-analyzejson</b>(1), <b><br>
-infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-report</b>(1), <b><br>
-infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
+See also <b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-report</b>(1), <b>infer-reportdiff</b>(1), and
+<b>infer-run</b>(1). <b><br>
 --debug-level-analysis</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the analysis.
 See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1), <b>infer-analyzejson</b>(1),
-<b><br>
-infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-report</b>(1), <b><br>
-infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-report</b>(1), <b>infer-reportdiff</b>(1), and
+<b>infer-run</b>(1). <b><br>
 --debug-level-capture</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the capture.
 See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1), <b>infer-analyzejson</b>(1),
-<b><br>
-infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-report</b>(1), <b><br>
-infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-report</b>(1), <b>infer-reportdiff</b>(1), and
+<b>infer-run</b>(1). <b><br>
 --debug-level-linters</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the linters.
 See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1), <b>infer-analyzejson</b>(1),
-<b><br>
-infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-report</b>(1), <b><br>
-infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-report</b>(1), <b>infer-reportdiff</b>(1), and
+<b>infer-run</b>(1). <b><br>
 --no-deduplicate</b></p>
 
 <p style="margin-left:17%;">Deactivates: Apply
@@ -829,6 +865,7 @@ CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
 CONFIG_IMPACT_STRICT (disabled by default), <br>
 CONFIG_IMPACT_STRICT_BETA (disabled by default), <br>
+CONFIG_USAGE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
 <br>
@@ -960,7 +997,8 @@ PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
 PULSE_CONST_REFABLE (disabled by default), <br>
-PULSE_RESOURCE_LEAK (disabled by default), <br>
+PULSE_READONLY_SHARED_PTR_PARAM (disabled by default), <br>
+PULSE_RESOURCE_LEAK (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
 PULSE_UNNECESSARY_COPY (disabled by default), <br>
@@ -977,6 +1015,7 @@ QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (disabled by default), <br>
+SCOPE_LEAKAGE (enabled by default), <br>
 SENSITIVE_DATA_FLOW (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
 SHELL_INJECTION_RISK (enabled by default), <br>
@@ -991,7 +1030,7 @@ STRICT_MODE_VIOLATION (enabled by default), <br>
 STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
-TAINT_ERROR (disabled by default), <br>
+TAINT_ERROR (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
@@ -1235,12 +1274,10 @@ header files (Conversely: <b>--no-headers</b>)</p>
 <p style="margin-left:17%;">Show this manual</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1), <b>infer-analyzejson</b>(1),
-<b><br>
-infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-debug</b>(1), <b><br>
-infer-explore</b>(1), <b>infer-help</b>(1),
-<b>infer-report</b>(1), <b><br>
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-debug</b>(1), <b>infer-explore</b>(1),
+<b>infer-help</b>(1), <b>infer-report</b>(1), <b><br>
 infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
 --help-checker</b> <i>+checker-id</i></p>
 
@@ -1259,12 +1296,10 @@ environment variable <b>TERM</b> is &quot;dumb&quot; or
 undefined, and to <b>pager</b> otherwise.</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1), <b>infer-analyzejson</b>(1),
-<b><br>
-infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-debug</b>(1), <b><br>
-infer-explore</b>(1), <b>infer-help</b>(1),
-<b>infer-report</b>(1), <b><br>
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-debug</b>(1), <b>infer-explore</b>(1),
+<b>infer-help</b>(1), <b>infer-report</b>(1), <b><br>
 infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
 --help-full</b></p>
 
@@ -1272,12 +1307,10 @@ infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
 internal options in the INTERNAL OPTIONS section</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1), <b>infer-analyzejson</b>(1),
-<b><br>
-infer-capture</b>(1), <b>infer-compile</b>(1),
-<b>infer-debug</b>(1), <b><br>
-infer-explore</b>(1), <b>infer-help</b>(1),
-<b>infer-report</b>(1), <b><br>
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
+<b>infer-compile</b>(1), <b><br>
+infer-debug</b>(1), <b>infer-explore</b>(1),
+<b>infer-help</b>(1), <b>infer-report</b>(1), <b><br>
 infer-reportdiff</b>(1), and <b>infer-run</b>(1). <b><br>
 --help-issue-type</b> <i>+UNIQUE_ID</i></p>
 
@@ -1411,11 +1444,11 @@ analysis jobs simultaneously</p>
 --keep-going</b></p>
 
 <p style="margin-left:17%;">Activates: Keep going when the
-analysis encounters a failure (Conversely:
+analysis or capture encounter a failure (Conversely:
 <b>--no-keep-going</b>)</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
+<b>infer-analyze</b>(1) and <b>infer-capture</b>(1). <b><br>
 --kotlin-capture</b></p>
 
 <p style="margin-left:17%;">Activates: Enable Kotlin
@@ -1589,7 +1622,7 @@ results directories specified in the dependency file.
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---merge-infer-out</b> <i>+string</i></p>
+--merge-capture</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Specifies an Infer results
 directory. The files and procedures captured in it will be
@@ -1605,6 +1638,15 @@ merged together into the results directory specified with
 directory. The reports stored in JSON files in all specified
 results directories will be merged together and deduplicated
 before being stored in the main results directory.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-report</b>(1). <b><br>
+--merge-report-summaries</b> <i>+string</i></p>
+
+<p style="margin-left:17%;">Specifies an Infer results
+directory. The report summaries in all specified results
+directories will be merged together and deduplicated before
+reporting is done.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-report</b>(1). <b><br>
@@ -1808,10 +1850,34 @@ from being produced.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-inline-global-init-func-pointer</b></p>
+
+<p style="margin-left:17%;">Activates: Inline the
+initializer of global variables that are of type function
+pointer in Pulse. (Conversely:
+<b>--no-pulse-inline-global-init-func-pointer</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-max-cfg-size</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Larger CFGs than the max size
 are skipped in Pulse.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-max-disjuncts</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Stop exploring new paths after
+<i>int</i> disjunctions in the domain</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-max-heap</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Give up analysing a procedure
+if the number of words in the heap exceeds this limit.
+Intended use: avoid OutOfMemory crashes.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1878,7 +1944,9 @@ modelled as release in Pulse</p>
 --pulse-model-return-first-arg</b> <i>string</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
-modelled as returning the first argument in Pulse</p>
+modelled as returning the first argument in Pulse in terms
+of the source language semantics. Languages supported: Java,
+C, Objective-C</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1886,6 +1954,15 @@ modelled as returning the first argument in Pulse</p>
 
 <p style="margin-left:17%;">Regex of methods that should be
 modelled as returning non-null in Pulse</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-model-return-this</b> <i>string</i></p>
+
+<p style="margin-left:17%;">Regex of methods that should be
+modelled as returning the &lsquo;this&lsquo; or
+&lsquo;self&lsquo; argument of an instance method in Pulse.
+Languages supported: Java, Objective-C</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1918,11 +1995,27 @@ Erlang code using a DSL.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--no-pulse-nullsafe-report-npe</b></p>
+
+<p style="margin-left:17%;">Deactivates: Report null
+dereference issues on files marked @Nullsafe. (Conversely:
+<b>--pulse-nullsafe-report-npe</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable pulse and
 disable all other checkers (Conversely:
 <b>--no-pulse-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-recency-limit</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Maximum number of array
+elements and structure fields to keep track of for a given
+address.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1944,14 +2037,13 @@ through taint sink <b>procname</b></p>
 --pulse-report-ignore-unknown-java-methods-patterns</b>
 <i>+string</i></p>
 
-<p style="margin-left:17%;">On Java, issues that are found
-on program paths that contain calls to unknown methods
-(those without implementation) are not reported unless all
-the unknown method names match this pattern. If the empty
-list is provided with
-<b>--pulse-report-ignore-unknown-java-methods-patterns-reset</b>,
-all issues will be reported regardless the presence of
-unknown code</p>
+<p style="margin-left:17%;">On Java, do not report issues
+that are found on program paths that contain calls to
+unknown methods (those without implementation) <b>unless</b>
+a) this option isn't passed at all (the default, or with
+<b>--pulse-report-ignore-unknown-java-methods-patterns-reset</b>),
+or b) all the unknown method names match one of the provided
+patterns.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2085,9 +2177,13 @@ argument positions given by index (zero-indexed) <br>
 - [&quot;AllArgumentsButPositions&quot;, [&lt;int
 list&gt;]]: <br>
 all arguments except given indices (zero-indexed) <br>
-- [&quot;ArgumentMatchingTypes&quot;, [&lt;type list&gt;]]:
+- [&quot;ArgumentsMatchingTypes&quot;, [&lt;type list&gt;]]:
 <br>
-arguments with types containing supplied strings <i><br>
+arguments with types containing supplied strings <br>
+- [&quot;Fields&quot;, [&lt;(string * taint_target)
+list&gt;]]: <br>
+fields given by name in return value, arguments or <br>
+other fields <i><br>
 N.B.</i> for methods, index 0 is <i>this</i>/<i>self</i>.
 <br>
 - &quot;match_objc_blocks&quot;: boolean, &quot;false&quot;
@@ -2095,6 +2191,13 @@ by default <br>
 &quot;true&quot; if only Objective-C blocks should be
 matched. <br>
 See also <b>infer-analyze</b>(1). <b><br>
+--pulse-widen-threshold</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Stop exploring new paths after
+<i>int</i> loop iterations</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --purity</b></p>
 
 <p style="margin-left:17%;">Activates: checker purity:
@@ -2325,6 +2428,27 @@ duplicate work between different analysis processes and thus
 <br>
 performs better in some circumstances <br>
 See also <b>infer-analyze</b>(1). <b><br>
+--scope-leakage</b></p>
+
+<p style="margin-left:17%;">Activates: checker
+scope-leakage: The Java/Kotlin checker takes into account a
+set of &quot;scope&quot; annotations and a must-not-hold
+relation over the scopes. The checker raises an alarm if
+there exists a field access path from object A to object B,
+with respective scopes SA and SB, such that
+must-not-hold(SA, SB). (Conversely:
+<b>--no-scope-leakage</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--scope-leakage-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable scope-leakage
+and disable all other checkers (Conversely:
+<b>--no-scope-leakage-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --select</b> <i>(N|all)</i></p>
 
 <p style="margin-left:17%;">Select option number <i>N</i>
@@ -2346,6 +2470,15 @@ when a block captures &lsquo;self&lsquo;. (Conversely:
 <p style="margin-left:17%;">Activates: Enable self-in-block
 and disable all other checkers (Conversely:
 <b>--no-self-in-block-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--shrink-analysis-db</b></p>
+
+<p style="margin-left:17%;">Activates: After analysis,
+delete analysis summaries (but not report summaries) and
+vacuum analysis database. (Conversely:
+<b>--no-shrink-analysis-db</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2640,7 +2773,7 @@ and disable all other checkers (Conversely:
 <p style="margin-left:17%;">Path to TEnv json file</p>
 
 <p style="margin-left:11%;">See also
-<b>infer-analyzejson</b>(1). <b><br>
+<b>infer-capture</b>(1). <b><br>
 --threadsafe-aliases</b> <i>json</i></p>
 
 <p style="margin-left:17%;">Specify custom annotations that
@@ -2648,6 +2781,14 @@ should be considered aliases of @ThreadSafe</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--timeout</b> <i>float</i></p>
+
+<p style="margin-left:17%;">Time after which any checker
+(except biabduction) should give up analysing the current
+function or method, in seconds</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1) and <b>infer-run</b>(1). <b><br>
 --top-longest-proc-duration-size</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Number of procedures for which
@@ -2901,11 +3042,10 @@ first <b>.inferconfig</b> file found.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>infer-analyze</b>(1),
-<b>infer-analyzejson</b>(1), <b>infer-capture</b>(1),
-<b>infer-compile</b>(1), <b>infer-debug</b>(1),
-<b>infer-explore</b>(1), <b>infer-help</b>(1),
-<b>infer-report</b>(1), <b>infer-reportdiff</b>(1),
-<b>infer-run</b>(1)</p>
+<b>infer-capture</b>(1), <b>infer-compile</b>(1),
+<b>infer-debug</b>(1), <b>infer-explore</b>(1),
+<b>infer-help</b>(1), <b>infer-report</b>(1),
+<b>infer-reportdiff</b>(1), <b>infer-run</b>(1)</p>
 <hr>
 </body>
 </html>
