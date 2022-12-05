@@ -161,9 +161,6 @@ val numcores : int
     - On Darwin and Windows returns half of the number of CPUs since most processors have 2 hardware
       threads per core. *)
 
-val set_best_cpu_for : int -> unit
-(** Pins processes to CPUs aiming to saturate physical cores evenly *)
-
 val zip_fold_filenames : init:'a -> f:('a -> string -> 'a) -> zip_filename:string -> 'a
 (** fold over each filename in the given [zip_filename]. *)
 
