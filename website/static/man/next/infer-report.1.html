@@ -24,6 +24,7 @@
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
 <a href="#HOISTING OPTIONS">HOISTING OPTIONS</a><br>
+<a href="#PULSE CHECKER OPTIONS">PULSE CHECKER OPTIONS</a><br>
 <a href="#ENVIRONMENT">ENVIRONMENT</a><br>
 <a href="#FILES">FILES</a><br>
 <a href="#SEE ALSO">SEE ALSO</a><br>
@@ -258,6 +259,7 @@ CONDITION_ALWAYS_TRUE (disabled by default), <br>
 CONFIG_IMPACT (disabled by default), <br>
 CONFIG_IMPACT_STRICT (disabled by default), <br>
 CONFIG_IMPACT_STRICT_BETA (disabled by default), <br>
+CONFIG_USAGE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
 <br>
@@ -389,7 +391,8 @@ PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
 PULSE_CONST_REFABLE (disabled by default), <br>
-PULSE_RESOURCE_LEAK (disabled by default), <br>
+PULSE_READONLY_SHARED_PTR_PARAM (disabled by default), <br>
+PULSE_RESOURCE_LEAK (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
 PULSE_UNNECESSARY_COPY (disabled by default), <br>
@@ -406,6 +409,7 @@ QUANDARY_TAINT_ERROR (enabled by default), <br>
 REGEX_OP_ON_UI_THREAD (enabled by default), <br>
 RESOURCE_LEAK (enabled by default), <br>
 RETAIN_CYCLE (disabled by default), <br>
+SCOPE_LEAKAGE (enabled by default), <br>
 SENSITIVE_DATA_FLOW (disabled by default), <br>
 SHELL_INJECTION (enabled by default), <br>
 SHELL_INJECTION_RISK (enabled by default), <br>
@@ -420,7 +424,7 @@ STRICT_MODE_VIOLATION (enabled by default), <br>
 STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
-TAINT_ERROR (disabled by default), <br>
+TAINT_ERROR (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
@@ -525,6 +529,15 @@ directory. The reports stored in JSON files in all specified
 results directories will be merged together and deduplicated
 before being stored in the main results directory.</p>
 
+
+<p style="margin-left:11%;"><b>--merge-report-summaries</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Specifies an Infer results
+directory. The report summaries in all specified results
+directories will be merged together and deduplicated before
+reporting is done.</p>
+
 <p style="margin-left:11%;"><b>--print-logs</b></p>
 
 <p style="margin-left:17%;">Activates: Also log messages to
@@ -536,20 +549,6 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 
 <p style="margin-left:17%;">Specify the root directory of
 the project</p>
-
-
-<p style="margin-left:11%;"><b>--pulse-report-flows-from-taint-source</b>
-<i>procname</i></p>
-
-<p style="margin-left:17%;">Report data flows which
-originate at taint source <b>procname</b></p>
-
-
-<p style="margin-left:11%;"><b>--pulse-report-flows-to-taint-sink</b>
-<i>procname</i></p>
-
-<p style="margin-left:17%;">Report data flows which pass
-through taint sink <b>procname</b></p>
 
 <p style="margin-left:11%;"><b>--quiet</b>,<b>-q</b></p>
 
@@ -628,6 +627,25 @@ files in the specified directory</p>
 loop-invariant calls only when the function is expensive,
 i.e. at least linear (Conversely:
 <b>--hoisting-report-only-expensive</b>)</p>
+
+<h2>PULSE CHECKER OPTIONS
+<a name="PULSE CHECKER OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--pulse-report-flows-from-taint-source</b>
+<i>procname</i></p>
+
+<p style="margin-left:17%;">Report data flows which
+originate at taint source <b>procname</b></p>
+
+
+<p style="margin-left:11%;"><b>--pulse-report-flows-to-taint-sink</b>
+<i>procname</i></p>
+
+<p style="margin-left:17%;">Report data flows which pass
+through taint sink <b>procname</b></p>
 
 <h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>

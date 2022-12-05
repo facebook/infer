@@ -153,6 +153,12 @@ Toy checker for the "resource leak" write-your-own-checker exercise.
 
 [Visit here for more information.](/docs/next/checker-dotnet-resource-leak)
 
+## Scope Leakage
+
+The Java/Kotlin checker takes into account a set of "scope" annotations and a must-not-hold relation over the scopes. The checker raises an alarm if there exists a field access path from object A to object B, with respective scopes SA and SB, such that must-not-hold(SA, SB).
+
+[Visit here for more information.](/docs/next/checker-scope-leakage)
+
 ## Static Initialization Order Fiasco
 
 Catches Static Initialization Order Fiascos in C++, that can lead to subtle, compiler-version-dependent errors.

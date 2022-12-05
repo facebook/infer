@@ -542,6 +542,28 @@ Reported as "Config Impact Strict Beta" by [config-impact-analysis](/docs/next/c
 This is similar to [`CONFIG_IMPACT_STRICT` issue](#config_impact_strict) but it is only used for
 beta testing that fine-tunes the checker to analysis targets.
 
+## CONFIG_USAGE
+
+Reported as "Config Usage" by [pulse](/docs/next/checker-pulse).
+
+Infer reports this issue when a *config* value is used as branch condition in a function.  The
+*config* is usually a boolean value that enables experimental new features and it is defined per
+application/codebase, e.g. gatekeepers.
+
+For instance, if we have the following code
+
+```cpp
+void foo() {
+  if(config_check("my_new_feature")){ ... }
+}
+```
+
+then analysis would provide information that "the function `foo` uses the config `my_new_feature` as
+branch condition".
+
+Note: This type of issue is only for providing semantic information, rather than warning or
+reporting actual problem.
+
 ## CONSTANT_ADDRESS_DEREFERENCE
 
 Reported as "Constant Address Dereference" by [pulse](/docs/next/checker-pulse).
@@ -2123,6 +2145,36 @@ void const_refable(std::vector<int> vec) {
 }
 ```
 
+## PULSE_READONLY_SHARED_PTR_PARAM
+
+Reported as "Read-only Shared Parameter" by [pulse](/docs/next/checker-pulse).
+
+This issue is reported when a shared pointer parameter is a) passed by value and b) is used only for reading, rather than lifetime extension. At the callsite, this might cause a potentially expensive unnecessary copy of the shared pointer, especially when many number of threads are sharing it. To avoid this, consider 1) passing the raw pointer instead and 2) use `std::shared_ptr::get` at callsites.
+
+For example,
+
+```cpp
+void callee(std::shared_ptr<T> x) {
+  // read_T(*x);
+}
+
+void caller() {
+  callee(shared_ptr);
+}
+```
+
+can be changed to
+
+```cpp
+void callee(T* p) {
+  // read_T(*p);
+}
+
+void caller() {
+  callee(shared_ptr.get());
+}
+```
+
 ## PULSE_RESOURCE_LEAK
 
 Reported as "Pulse Resource Leak" by [pulse](/docs/next/checker-pulse).
@@ -2590,6 +2642,50 @@ hierarchy:
 }
 @end
 ```
+
+## SCOPE_LEAKAGE
+
+Reported as "Scope Leakage" by [scope-leakage](/docs/next/checker-scope-leakage).
+
+This issue type indicates that a class with scope annotation A stores a field
+with whose (dynamic) type (or one of its super types) is annotated with scope
+B such that a scope nesting restriction is violated. By "stores", we mean
+either directly or transitively.
+
+A configuration is used to list the set of scopes and the must-not-hold relation.
+
+In the following Java example, the set of scopes is Outer and Inner, and the must-not-hold
+relation is simply {(Outer, Inner)}:
+```java
+@ScopeType(value = Outer.class)
+class ClassOfOuterScope {
+  final ClassOfInner c = new ClassOfInner(); // <-- warn here that ClassOfInner would leak.
+}
+
+@ScopeType(value = Inner.class)
+class ClassOfInner {}
+```
+
+Here is a more detailed description of the analysis.
+
+This analysis operates over Java bytecode. It assumes that types (classes, interfaces, enums,
+etc.) may be annotated with so-called scope annotations. The analysis is parameterized by a set
+of scopes and a "must-not-hold" relation over pairs of scopes, which it reads from a
+configuration file.
+
+The analysis aims to detect violations of the following property: if there exist a path of
+fields from object OA to object OB and the type of OA (or one of its super-types) is annotated
+with scope SA and the type of OB (or one of its super-types) is annotated with scope SB then
+must-not-hold(SA, SB) must be false. Intuitively, the given objects have different scopes that
+should not be nested, for example, different intended lifetimes, and a forbidden path from OA to
+OB results in OB "leaking" out of the scope SA.
+
+The implementation reads a configuration to determine a list of (scope) "generators" for each
+type of scope and a scope class for each type of scope. A generator for a scope type SA is given
+by the name of a class and a list of methods where it is understood that any of the methods
+listed for the given class returns an object that is known to have scope SA. (This can be seen
+as a form of lightweight modeling.) A scope class is the name of the class that represents a
+given scope.
 
 ## SENSITIVE_DATA_FLOW
 

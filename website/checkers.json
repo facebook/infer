@@ -11,8 +11,8 @@
     "checker-loop-hoisting", "checker-parameter-not-null-checked",
     "checker-printf-args", "checker-pulse", "checker-purity",
     "checker-quandary", "checker-racerd", "checker-resource-leak-lab",
-    "checker-dotnet-resource-leak", "checker-siof", "checker-simple-lineage",
-    "checker-self-in-block", "checker-starvation", "checker-topl",
-    "checker-uninit"
+    "checker-dotnet-resource-leak", "checker-scope-leakage", "checker-siof",
+    "checker-simple-lineage", "checker-self-in-block", "checker-starvation",
+    "checker-topl", "checker-uninit"
   ]
 }

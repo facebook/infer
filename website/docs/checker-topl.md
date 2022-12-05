@@ -92,7 +92,7 @@ Otherwise, the label on a transition contains:
 
 * a *Pattern*, which indicates what kind of instruction in the program drives this transition;
 * a list of transition variable bindings (above named Arg1, ..., but any identifier starting with uppercase letters works);
-* possibly a boolean Condition, which can refer to transition variables and to registers;
+* possibly a boolean Condition, which can refer to transition variables, registers and fields;
 * possibly and Action, which is a list sequence of assignments of the form *register* := *TransitionVariable* (registers do not need to be declared, and any identifier starting with a lowercase letter works).
 
 There are two types of patterns:
@@ -102,6 +102,13 @@ There are two types of patterns:
     * the prefix declarations are used to add potential prefixes to the regex. The combine regex is essentially “(prefix_regex_a | prefix_regex_b) transition_pattern_regex“
     * for a method with n arguments, there must be n+1 transition variables to get a match. The first n transition variables get bound to the argument values, and the last transition variable gets bound to the return value. *This is true even for the case in which the return type is void*.
 * the special keyword **#ArrayWrite**. In that case, there should be two transition variables like “(Array, Index)” — Array gets bound to the array object, and Index gets bound to the index at which the write happens.
+
+The condition supports the following kinds of expressions:
+* Referring to identifiers: transition variables and registers
+* Field access over objects in the form `Identifier:Type.FieldName`, e.g. `X:MyClass.myField` (this is currently only supported for Erlang)
+* Integer literals
+* The usual comparison operators (`==`, `!=`, `<`, `>`, `>=`, `<=`) and conjunctions (`&&`)
+* Reachability predicates of the form `Ident1 ~~> Ident2` meaning that `Ident2` can be reached via pointers/fields from `Ident1` in the heap
 
 For several examples, see https://github.com/facebook/infer/tree/main/infer/tests/codetoanalyze/java/topl
 

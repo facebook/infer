@@ -72,7 +72,9 @@ infer capture</b> <i>[options]</i> <b>-- mvn</b>/<b>mvnw</b>
 infer capture</b> <i>[options]</i> <b>-- ndk-build</b>
 <i>...</i> <b><br>
 infer capture</b> <i>[--no-xcpretty] [options]</i> <b>--
-xcodebuild</b> <i>...</i></p>
+xcodebuild</b> <i>...</i> <b><br>
+infer capture --cfg-json</b> <i>file.json</i>
+<b>--tenv-json</b> <i>file.json [options]</i></p>
 
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
@@ -80,11 +82,11 @@ xcodebuild</b> <i>...</i></p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Capture the
-build command or compilation database specified on the
-command line: infer intercepts calls to the compiler to read
-source files, translate them into infer's intermediate
-representation, and store the result of the translation in
-the results directory.</p>
+build command, compilation database, or cfg/tenv json files
+specified on the command line: infer intercepts calls to the
+compiler to read source files, translate them into infer's
+intermediate representation, and store the result of the
+translation in the results directory.</p>
 
 <h2>OPTIONS
 <a name="OPTIONS"></a>
@@ -92,7 +94,12 @@ the results directory.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--continue</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--cfg-json</b>
+<i>file</i></p>
+
+<p style="margin-left:17%;">Path to CFG json file</p>
+
+<p style="margin-left:11%;"><b>--continue</b></p>
 
 <p style="margin-left:17%;">Activates: Continue the capture
 for the reactive analysis, increasing the changed
@@ -178,6 +185,12 @@ undefined, and to <b>pager</b> otherwise.</p>
 <p style="margin-left:17%;">Show this manual with all
 internal options in the INTERNAL OPTIONS section</p>
 
+<p style="margin-left:11%;"><b>--keep-going</b></p>
+
+<p style="margin-left:17%;">Activates: Keep going when the
+analysis or capture encounter a failure (Conversely:
+<b>--no-keep-going</b>)</p>
+
 
 <p style="margin-left:11%;"><b>--load-average</b>,<b>-l</b>
 <i>float</i></p>
@@ -186,7 +199,7 @@ internal options in the INTERNAL OPTIONS section</p>
 if the load average is greater than that specified (Buck and
 make only)</p>
 
-<p style="margin-left:11%;"><b>--merge-infer-out</b>
+<p style="margin-left:11%;"><b>--merge-capture</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Specifies an Infer results
@@ -245,6 +258,11 @@ database operations, in milliseconds.</p>
 
 <p style="margin-left:17%;">SQLite page size in bytes, must
 be a power of two between 512 and 65536.</p>
+
+<p style="margin-left:11%;"><b>--tenv-json</b>
+<i>file</i></p>
+
+<p style="margin-left:17%;">Path to TEnv json file</p>
 
 <p style="margin-left:11%;"><b>--workspace</b>
 <i>path</i></p>
@@ -377,8 +395,13 @@ capture. Only valid for <b>--buck-clang</b>. (Conversely:
 <i>+regex</i></p>
 
 <p style="margin-left:17%;">Skip capture of buck targets
-matched by the specified regular expression. Only valid for
-<b>--buck-compilation-database</b>.</p>
+matched by the specified regular expression.</p>
+
+<p style="margin-left:11%;"><b>--buck2-root</b>
+<i>dir</i></p>
+
+<p style="margin-left:17%;">Specify the parent directory of
+<b>buck-out</b> (used only for <b>buck2</b>).</p>
 
 <p style="margin-left:11%;"><b>--Xbuck</b>
 <i>+string</i></p>
