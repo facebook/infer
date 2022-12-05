@@ -676,7 +676,7 @@ module PulseTransferFunctions = struct
     | (Const (Cfun proc_name) | Closure {name= proc_name}), (Exp.Lvar pvar, _) :: _
       when Procname.is_destructor proc_name ->
         let var = Var.of_pvar pvar in
-        PulseNonDisjunctiveOperations.mark_modified_copies_and_parameters_with [var] ~astate
+        PulseNonDisjunctiveOperations.mark_modified_copies_and_parameters_on_abductive [var] astate
           astate_n
         |> NonDisjDomain.checked_via_dtor var
     | _ ->
@@ -818,11 +818,7 @@ module PulseTransferFunctions = struct
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
           in
           let astate_n, astates =
-            PulseNonDisjunctiveOperations.add_copies tenv proc_desc path loc call_exp actuals
-              astates astate_n
-          in
-          let astate_n, astates =
-            PulseNonDisjunctiveOperations.add_copied_return path loc call_exp actuals astates
+            PulseNonDisjunctiveOperations.call tenv proc_desc path loc ~call_exp ~actuals astates
               astate_n
           in
           let astate_n = NonDisjDomain.set_passed_to loc timestamp call_exp actuals astate_n in
@@ -968,7 +964,8 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
     let proc_attrs = Procdesc.get_attributes proc_desc in
     let initial_disjuncts = initial tenv proc_name proc_attrs in
     let initial_non_disj =
-      PulseNonDisjunctiveOperations.add_const_refable_parameters proc_desc tenv initial_disjuncts
+      PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc tenv
+        (List.map initial_disjuncts ~f:fst)
         NonDisjDomain.bottom
     in
     let initial =
