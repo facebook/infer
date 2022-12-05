@@ -1667,7 +1667,8 @@ module Formula = struct
 
 
   let pp_with_pp_var pp_var fmt
-      ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms} [@warning "+9"]) =
+      ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
+        [@warning "+missing-record-field-pattern"] ) =
     let is_first = ref true in
     let pp_if condition header pp fmt x =
       let pp_and fmt = if not !is_first then F.fprintf fmt "@;&& " else is_first := false in

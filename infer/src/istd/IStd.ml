@@ -41,7 +41,7 @@ let invalid_argf _ : [`use_Logging_die_instead] = assert false
 
 let exit = `In_general_prefer_using_Logging_exit_over_Pervasives_exit
 
-[@@@warning "+32"]
+[@@@warning "+unused-value-declaration"]
 
 module ANSITerminal : module type of ANSITerminal = struct
   include ANSITerminal

@@ -30,7 +30,7 @@ module TextualFile : sig
 
   val capture : sil -> unit
 
-  val line_map : t -> LineMap.t option [@@warning "-32"]
+  val line_map : t -> LineMap.t option [@@warning "-unused-value-declaration"]
 end
 
 val capture : TextualFile.t list -> unit

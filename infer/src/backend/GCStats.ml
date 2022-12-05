@@ -51,7 +51,7 @@ let pp f
      ; minor_collections
      ; major_collections
      ; compactions
-     ; top_heap_words } [@warning "+9"] ) =
+     ; top_heap_words } [@warning "+missing-record-field-pattern"] ) =
   F.fprintf f
     "@[<v2>  minor_words: %g@;\
      promoted_words: %g@;\

@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 (* how many lines of context around each report *)
 let source_context = 2

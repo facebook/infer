@@ -42,7 +42,7 @@ let pp_access_to_invalid_address fmt
      ; invalidation
      ; invalidation_trace
      ; access_trace
-     ; must_be_valid_reason } [@warning "+9"] ) =
+     ; must_be_valid_reason } [@warning "+missing-record-field-pattern"] ) =
   let pp_immediate fmt = F.pp_print_string fmt "immediate" in
   F.fprintf fmt
     "{@[calling_context=%a;@;\
@@ -75,15 +75,15 @@ module ErlangError = struct
   let pp fmt erlang_error =
     (* this is for debug purposes so if you add another field please remove this warning but make sure
        to pretty print it too *)
-    let[@warning "+9"] ( Badarg {calling_context; location}
-                       | Badkey {calling_context; location}
-                       | Badmap {calling_context; location}
-                       | Badmatch {calling_context; location}
-                       | Badrecord {calling_context; location}
-                       | Case_clause {calling_context; location}
-                       | Function_clause {calling_context; location}
-                       | If_clause {calling_context; location}
-                       | Try_clause {calling_context; location} ) =
+    let[@warning "+missing-record-field-pattern"] ( Badarg {calling_context; location}
+                                                  | Badkey {calling_context; location}
+                                                  | Badmap {calling_context; location}
+                                                  | Badmatch {calling_context; location}
+                                                  | Badrecord {calling_context; location}
+                                                  | Case_clause {calling_context; location}
+                                                  | Function_clause {calling_context; location}
+                                                  | If_clause {calling_context; location}
+                                                  | Try_clause {calling_context; location} ) =
       erlang_error
     in
     F.fprintf fmt "%s{@[location=%a; calling_context=%a@]}" (Variants.to_name erlang_error)
@@ -95,7 +95,8 @@ type read_uninitialized_value = {calling_context: calling_context; trace: Trace.
 
 let yojson_of_read_uninitialized_value = [%yojson_of: _]
 
-let pp_read_uninitialized_value fmt ({calling_context; trace} [@warning "+9"]) =
+let pp_read_uninitialized_value fmt
+    ({calling_context; trace} [@warning "+missing-record-field-pattern"]) =
   F.fprintf fmt "{@[calling_context=%a;@;trace=%a@]}" pp_calling_context calling_context
     (Trace.pp ~pp_immediate:(fun fmt -> F.pp_print_string fmt "immediate"))
     trace
@@ -153,7 +154,7 @@ type t =
 
 let pp fmt diagnostic =
   let pp_immediate fmt = F.pp_print_string fmt "immediate" in
-  match[@warning "+9"] diagnostic with
+  match[@warning "+missing-record-field-pattern"] diagnostic with
   | AccessToInvalidAddress access_to_invalid_address ->
       F.fprintf fmt "AccessToInvalidAddress %a" pp_access_to_invalid_address
         access_to_invalid_address

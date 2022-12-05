@@ -72,7 +72,7 @@ val is_empty : t -> bool
 
 val filter : (Prop.normal Prop.t -> bool) -> t -> t
 
-[@@@warning "+32"]
+[@@@warning "+unused-value-declaration"]
 
 (** {2 Pretty print} *)
 

@@ -9,7 +9,7 @@ open! IStd
 module L = Logging
 module F = Format
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 (** Prints an error message to a log file, prints a message saying that the error can be found in
     that file, and exits, with default code 1 or a given code. *)

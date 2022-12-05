@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 module L = Logging
 
-[@@@warning "+9"]
+[@@@warning "+missing-record-field-pattern"]
 
 let is_past_limit limit =
   match limit with None -> fun _ -> false | Some limit -> fun n -> n >= limit

@@ -52,7 +52,7 @@ let pp pe name f
      ; exported_objc_methods
      ; annots
      ; java_class_info
-     ; dummy } [@warning "+9"] ) =
+     ; dummy } [@warning "+missing-record-field-pattern"] ) =
   let pp_field pe f (field_name, typ, ann) =
     F.fprintf f "@;<0 2>%a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
   in

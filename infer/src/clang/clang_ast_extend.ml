@@ -94,18 +94,18 @@ module TypePointerOrd = struct
     if phys_equal qt1 qt2 then 0
     else
       (* enable warning here to warn and update comparison funtion when new field is added *)
-      let[@warning "+9"] { Clang_ast_t.qt_type_ptr= t1
-                         ; qt_is_const= c1
-                         ; qt_is_restrict= r1
-                         ; qt_is_trivially_copyable= tc1
-                         ; qt_is_volatile= v1 } =
+      let[@warning "+missing-record-field-pattern"] { Clang_ast_t.qt_type_ptr= t1
+                                                    ; qt_is_const= c1
+                                                    ; qt_is_restrict= r1
+                                                    ; qt_is_trivially_copyable= tc1
+                                                    ; qt_is_volatile= v1 } =
         qt1
       in
-      let[@warning "+9"] { Clang_ast_t.qt_type_ptr= t2
-                         ; qt_is_const= c2
-                         ; qt_is_restrict= r2
-                         ; qt_is_trivially_copyable= tc2
-                         ; qt_is_volatile= v2 } =
+      let[@warning "+missing-record-field-pattern"] { Clang_ast_t.qt_type_ptr= t2
+                                                    ; qt_is_const= c2
+                                                    ; qt_is_restrict= r2
+                                                    ; qt_is_trivially_copyable= tc2
+                                                    ; qt_is_volatile= v2 } =
         qt2
       in
       let qt_cmp = compare t1 t2 in

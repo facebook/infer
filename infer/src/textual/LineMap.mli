@@ -12,6 +12,6 @@ type t
 
 val create : string -> t
 
-val find : t -> int -> int option [@@warning "-32"]
+val find : t -> int -> int option [@@warning "-unused-value-declaration"]
 
-val pp : F.formatter -> t -> unit [@@warning "-32"]
+val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]

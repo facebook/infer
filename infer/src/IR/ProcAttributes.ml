@@ -234,7 +234,7 @@ let pp f
      ; ret_type
      ; ret_annots
      ; is_ret_type_pod
-     ; is_ret_constexpr } [@warning "+9"] ) =
+     ; is_ret_constexpr } [@warning "+missing-record-field-pattern"] ) =
   let default = default translation_unit proc_name in
   let pp_bool_default ~default title b f () =
     if not (Bool.equal default b) then F.fprintf f "; %s= %b@," title b

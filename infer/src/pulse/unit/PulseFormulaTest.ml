@@ -113,7 +113,7 @@ let ( >= ) f1 f2 phi = ( <= ) f2 f1 phi
 
 let ( && ) f1 f2 phi = f1 phi >>= f2
 
-[@@@warning "+32"]
+[@@@warning "+unused-value-declaration"]
 (* end of shorthand notations *)
 
 (* we remember a mapping [Var.t -> string] to print more readable results that mention the

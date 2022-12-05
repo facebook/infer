@@ -91,7 +91,7 @@ let list_checkers () =
               ; short_documentation= _ (* only list in [show_checkers] *)
               ; cli_flags= _ (* only list in [show_checkers] *)
               ; enabled_by_default
-              ; activates } [@warning "+9"] ) =
+              ; activates } [@warning "+missing-record-field-pattern"] ) =
            Checker.config checker
          in
          L.result "%s:%s:%s:%s:%b:%a@;" id (string_of_checker_kind kind)
@@ -158,7 +158,7 @@ let list_issue_types () =
              ; enabled
              ; hum
              ; doc_url
-             ; linters_def_file } [@warning "+9"] )
+             ; linters_def_file } [@warning "+missing-record-field-pattern"] )
           ->
          L.result "%s:%s:%s:%s:%b:%s:%s:%s@;" unique_id hum
            (IssueType.string_of_visibility visibility)
@@ -171,7 +171,7 @@ let list_issue_types () =
 
 let pp_checker f checker =
   let ({Checker.id; kind; support; short_documentation; cli_flags; enabled_by_default; activates}
-      [@warning "+9"] ) =
+      [@warning "+missing-record-field-pattern"] ) =
     Checker.config checker
   in
   F.fprintf f

@@ -104,7 +104,8 @@ type continuation =
   ; return_temp: bool
         (* true if temps should not be removed in the node but returned to ancestors *) }
 
-let pp_continuation fmt ({break; continue; return_temp} [@warning "+9"]) =
+let pp_continuation fmt ({break; continue; return_temp} [@warning "+missing-record-field-pattern"])
+    =
   if List.is_empty break then F.pp_print_string fmt "empty"
   else
     F.fprintf fmt "@[{break=[%a];@;continue=[%a];@;return_temp=%b}@]"
@@ -157,7 +158,7 @@ let pp_trans_state fmt
      ; var_exp_typ
      ; opaque_exp
      ; is_fst_arg_objc_instance_method_call
-     ; passed_as_noescape_block_to } [@warning "+9"] ) =
+     ; passed_as_noescape_block_to } [@warning "+missing-record-field-pattern"] ) =
   F.fprintf fmt
     "{@[succ_nodes=[%a];@;\
      continuation=%a@;\

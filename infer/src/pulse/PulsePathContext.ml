@@ -25,7 +25,7 @@ let is_executable _ = true
 
 let exceptional_to_normal x = x
 
-let pp fmt ({conditions; timestamp} [@warning "+9"]) =
+let pp fmt ({conditions; timestamp} [@warning "+missing-record-field-pattern"]) =
   let pp_condition fmt hist =
     if Config.debug_level_analysis >= 3 then F.fprintf fmt "[%a]" ValueHistory.pp hist
   in
