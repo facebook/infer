@@ -30,8 +30,6 @@ depends: [
   "biniou" {= "1.2.2"}
   "camlp-streams" {= "5.0.1"}
   "camlzip" {= "1.11"}
-  "camomile" {= "1.0.2" & with-test}
-  "charInfo_width" {= "1.1.0" & with-test}
   "cmdliner" {= "1.1.1"}
   "conf-autoconf" {= "0.1"}
   "conf-gmp" {= "4"}
@@ -52,23 +50,23 @@ depends: [
   "extlib" {= "1.7.9"}
   "fieldslib" {= "v0.15.0"}
   "fmt" {= "0.9.0"}
+  "gen" {= "1.0"}
   "int_repr" {= "v0.15.0"}
   "integers" {= "0.7.0"}
   "iter" {= "1.5"}
   "jane-street-headers" {= "v0.15.0"}
   "javalib" {= "3.2.1"}
   "jst-config" {= "v0.15.1"}
-  "lambda-term" {= "3.2.0" & with-test}
-  "lwt" {= "5.5.0" & with-test}
-  "lwt_log" {= "1.1.1" & with-test}
-  "lwt_react" {= "1.1.5" & with-test}
+  "lambda-term" {= "3.3.1" & with-test}
+  "logs" {= "0.7.0" & with-test}
+  "lwt" {= "5.6.1" & with-test}
+  "lwt_react" {= "1.2.0" & with-test}
   "memtrace" {= "0.2.2"}
   "menhir" {= "20211128"}
   "menhirLib" {= "20211128"}
   "menhirSdk" {= "20211128"}
   "mew" {= "0.1.0" & with-test}
   "mew_vi" {= "0.5.0" & with-test}
-  "mmap" {= "1.2.0" & with-test}
   "mtime" {= "1.4.0"}
   "num" {= "1.4"}
   "ocaml" {= "4.14.0"}
@@ -113,7 +111,7 @@ depends: [
   "ppx_optcomp" {= "v0.15.0"}
   "ppx_optional" {= "v0.15.0"}
   "ppx_pipebang" {= "v0.15.0"}
-  "ppx_sexp_conv" {= "v0.15.0"}
+  "ppx_sexp_conv" {= "v0.15.1"}
   "ppx_sexp_message" {= "v0.15.0"}
   "ppx_sexp_value" {= "v0.15.0"}
   "ppx_show" {= "0.2.1"}
@@ -121,14 +119,15 @@ depends: [
   "ppx_string" {= "v0.15.0"}
   "ppx_typerep_conv" {= "v0.15.0"}
   "ppx_variants_conv" {= "v0.15.0"}
-  "ppx_yojson_conv" {= "v0.15.0"}
+  "ppx_yojson_conv" {= "v0.15.1"}
   "ppx_yojson_conv_lib" {= "v0.15.0"}
-  "ppxlib" {= "0.25.1"}
+  "ppxlib" {= "0.28.0"}
   "protocol_version_header" {= "v0.15.0"}
   "re" {= "1.10.4"}
   "react" {= "1.2.2" & with-test}
   "result" {= "1.5"}
   "sawja" {= "1.5.11"}
+  "sedlex" {= "3.0"}
   "seq" {= "base"}
   "sexp_pretty" {= "v0.15.0"}
   "sexplib" {= "v0.15.1"}
@@ -147,13 +146,15 @@ depends: [
   "trie" {= "1.0.0" & with-test}
   "typerep" {= "v0.15.0"}
   "uchar" {= "0.0.2"}
-  "utop" {= "2.9.2" & with-test}
+  "utop" {= "2.10.0" & with-test}
+  "uucp" {= "15.0.0" & with-test}
+  "uuseg" {= "15.0.0" & with-test}
   "uutf" {= "1.0.3"}
   "variantslib" {= "v0.15.0"}
   "xmlm" {= "1.4.0"}
   "yojson" {= "2.0.2"}
   "zarith" {= "1.12"}
-  "zed" {= "3.1.0" & with-test}
+  "zed" {= "3.2.0" & with-test}
 ]
 build: [
   ["./autogen.sh"]

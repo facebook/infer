@@ -32,10 +32,10 @@ let pp_error sourcefile fmt = function
 
 let log_error sourcefile error = L.external_error "%a@." (pp_error sourcefile) error
 
-let parse_buf sourcefile filebuf =
+let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
   try
-    let lexer = CombinedLexer.main in
-    let m = CombinedMenhir.main lexer filebuf sourcefile in
+    let lexer = CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.mainlex filebuf in
+    let m = MenhirLib.Convert.Simplified.traditional2revised CombinedMenhir.main lexer sourcefile in
     let twice_declared_errors, decls_env = TextualDecls.make_decls m in
     let twice_declared_errors = List.map twice_declared_errors ~f:(fun x -> DeclaredTwiceError x) in
     (* even if twice_declared_errors is not empty we can continue the other verifications *)
@@ -49,12 +49,11 @@ let parse_buf sourcefile filebuf =
     else Error (twice_declared_errors @ errors)
   with
   | CombinedMenhir.Error ->
-      let pos = filebuf.Lexing.lex_curr_p in
-      let buf_length = Lexing.lexeme_end filebuf - Lexing.lexeme_start filebuf in
+      let token = CombinedLexer.Lexbuf.lexeme filebuf in
+      let msg = Format.sprintf "unexpected token %s" token in
+      let pos, _ = CombinedLexer.Lexbuf.lexing_positions filebuf in
       let line = pos.Lexing.pos_lnum in
-      let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol - buf_length in
-      let lexeme = Lexing.lexeme filebuf in
-      let msg = sprintf "unexpected token %s" lexeme in
+      let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol in
       Error [SyntaxError {loc= Textual.Location.known ~line ~col; msg}]
   | CombinedLexer.LexingError (loc, lexeme) ->
       let msg = sprintf "unexpected token %s" lexeme in
@@ -62,12 +61,12 @@ let parse_buf sourcefile filebuf =
 
 
 let parse_string sourcefile text =
-  let filebuf = Lexing.from_string text in
+  let filebuf = CombinedLexer.Lexbuf.from_gen (Gen.of_string text) in
   parse_buf sourcefile filebuf
 
 
 let parse_chan sourcefile ic =
-  let filebuf = Lexing.from_channel ic in
+  let filebuf = CombinedLexer.Lexbuf.from_channel ic in
   parse_buf sourcefile filebuf
 
 

@@ -7,12 +7,10 @@
  (name Textuallib)
  (public_name infer.Textuallib)
  (flags
-  (:standard -open Core -open IStdlib -open IStd -open IBase -open IR))
- (libraries core zarith IStdlib IBase IR)
+  (:standard -open IStdlib -open IBase -open IR))
+ (libraries core zarith IStdlib IBase IR menhirLib sedlex sedlex.ppx)
  (preprocess
-  (pps ppx_compare ppx_hash ppx_show ppx_sexp_conv ppx_yojson_conv)))
-
-(ocamllex CombinedLexer)
+  (pps ppx_compare ppx_hash ppx_show ppx_sexp_conv ppx_yojson_conv sedlex.ppx)))
 
 (menhir
  (modules CombinedMenhir)
