@@ -309,23 +309,35 @@ let call tenv proc_desc path loc ~call_exp ~actuals astates astate_n =
   add_copied_return path loc call_exp actuals astates astate_n
 
 
+let is_folly_coro_task =
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["folly::coro::Task"] in
+  fun typ ->
+    match typ.Typ.desc with
+    | Tptr ({desc= Tstruct (CppClass {name})}, _) ->
+        QualifiedCppName.Match.match_qualifiers matcher name
+    | _ ->
+        false
+
+
 let init_const_refable_parameters procdesc tenv astates astate_non_disj =
-  let proc_parameters = Procdesc.get_passed_by_value_formals procdesc in
-  let location = Procdesc.get_loc procdesc in
-  continue_fold astates ~init:astate_non_disj ~f:(fun astate_non_disj disjunct ->
-      List.fold proc_parameters ~init:astate_non_disj ~f:(fun astate_non_disj (pvar, typ) ->
-          let var = Var.of_pvar pvar in
-          if
-            Var.appears_in_source_code var && Typ.is_reference typ
-            && (not (is_cheap_to_copy tenv typ))
-            && not (Var.is_cpp_unnamed_param var)
-          then
-            (* [&] is added by the frontend and type is pass-by-value anyways so strip it *)
-            NonDisjDomain.add_parameter var
-              (Unmodified
-                 {heap= (disjunct.post :> BaseDomain.t).heap; typ= Typ.strip_ptr typ; location} )
-              astate_non_disj
-          else astate_non_disj ) )
+  if Option.exists (Procdesc.get_ret_param_type procdesc) ~f:is_folly_coro_task then astate_non_disj
+  else
+    let proc_parameters = Procdesc.get_passed_by_value_formals procdesc in
+    let location = Procdesc.get_loc procdesc in
+    continue_fold astates ~init:astate_non_disj ~f:(fun astate_non_disj disjunct ->
+        List.fold proc_parameters ~init:astate_non_disj ~f:(fun astate_non_disj (pvar, typ) ->
+            let var = Var.of_pvar pvar in
+            if
+              Var.appears_in_source_code var && Typ.is_reference typ
+              && (not (is_cheap_to_copy tenv typ))
+              && not (Var.is_cpp_unnamed_param var)
+            then
+              (* [&] is added by the frontend and type is pass-by-value anyways so strip it *)
+              NonDisjDomain.add_parameter var
+                (Unmodified
+                   {heap= (disjunct.post :> BaseDomain.t).heap; typ= Typ.strip_ptr typ; location} )
+                astate_non_disj
+            else astate_non_disj ) )
 
 
 let is_matching_edges ~get_repr ~edges_curr ~edges_orig =

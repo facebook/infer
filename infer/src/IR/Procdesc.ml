@@ -556,6 +556,11 @@ let get_ret_type pdesc = pdesc.attributes.ret_type
 
 let get_ret_var pdesc = Pvar.get_ret_pvar (get_proc_name pdesc)
 
+let get_ret_param_type pdesc =
+  List.find_map pdesc.attributes.formals ~f:(fun (mangled, typ, _) ->
+      Option.some_if (Mangled.equal mangled Mangled.return_param) typ )
+
+
 let get_start_node pdesc = pdesc.start_node
 
 (** We search all the procedure's nodes to find the exception sink. *)

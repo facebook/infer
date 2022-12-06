@@ -275,7 +275,10 @@ val get_nodes : t -> Node.t list
 val get_proc_name : t -> Procname.t
 
 val get_ret_type : t -> Typ.t
-(** Return the return type of the procedure and type string *)
+(** Return the return type of the procedure *)
+
+val get_ret_param_type : t -> Typ.t option
+(** Return the return param type of the procedure, which is found from formals *)
 
 val get_ret_var : t -> Pvar.t
 
