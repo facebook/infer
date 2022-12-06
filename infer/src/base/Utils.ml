@@ -297,7 +297,6 @@ let out_channel_create_with_dir fname =
 let realpath_cache = Hashtbl.create 1023
 
 let realpath ?(warn_on_error = true) path =
-  let should_warn = warn_on_error && not (Filename.check_suffix path ".class") in
   match Hashtbl.find realpath_cache path with
   | exception Caml.Not_found -> (
     match Filename.realpath path with
@@ -306,7 +305,7 @@ let realpath ?(warn_on_error = true) path =
         realpath
     | exception (Unix.Unix_error (code, _, arg) as exn) ->
         IExn.reraise_after exn ~f:(fun () ->
-            if should_warn then
+            if warn_on_error then
               F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
                 (Unix.Error.message code) ;
             (* cache failures as well *)
@@ -527,13 +526,6 @@ let zip_fold ~init ~f ~zip_filename =
   let result = List.fold ~f:collect ~init (Zip.entries file_in) in
   Zip.close_in file_in ;
   result
-
-
-let set_best_cpu_for worker_id =
-  let threads_per_core = cpus / numcores in
-  let chosen_core = worker_id * threads_per_core % numcores in
-  let chosen_thread_in_core = worker_id * threads_per_core / numcores in
-  Setcore.setcore ((chosen_core * threads_per_core) + chosen_thread_in_core)
 
 
 let is_term_dumb () =
