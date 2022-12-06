@@ -46,7 +46,7 @@ val apply_summary :
      * contradiction option
 (** result of applying one pre/post pair of a callee's summary:
 
-    - {!SatUnsat.Unsat} if that path in the callee is infeasible
+    - {!PulseSatUnsat.Unsat} if that path in the callee is infeasible
     - otherwise, there can be an error detected
     - otherwise, the result is a new abstract state, an optional return value, and a substitution
       [callee_abstract_value -> caller_abstract_value] mapping callee's abstract values to what they

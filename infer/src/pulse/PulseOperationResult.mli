@@ -19,7 +19,7 @@ val list_fold : 'a list -> init:'ok -> f:('ok -> 'a -> ('ok, 'err) t) -> ('ok, '
 
 (** For [open]ing in other modules. *)
 module Import : sig
-  (** {2 Monadic operations on the combined monad of {!SatUnsat} and {!PulseResult}.}
+  (** {2 Monadic operations on the combined monad of [SatUnsat] and [PulseResult].}
 
       [let] operators produce [_ t] values following the naming convention [letXY] where [X] and [Y]
       depend on the types of the inputs: in [letXY a = b in c], [X] is according to the [SatUnsat.t]

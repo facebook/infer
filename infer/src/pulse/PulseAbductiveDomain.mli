@@ -106,8 +106,8 @@ module Memory : sig
   val find_edge_opt : AbstractValue.t -> Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
 end
 
-(** attribute operations like {!BaseAddressAttributes} but that also take care of propagating facts
-    to the precondition *)
+(** attribute operations like {!PulseBaseAddressAttributes} but that also take care of propagating
+    facts to the precondition *)
 module AddressAttributes : sig
   val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute to the pre, if the address is in pre *)
