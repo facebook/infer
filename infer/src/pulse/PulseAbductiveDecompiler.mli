@@ -12,8 +12,8 @@ module CallEvent = PulseCallEvent
 module DecompilerExpr = PulseDecompilerExpr
 module ValueHistory = PulseValueHistory
 
-(** {1 Wrapper to access the {!PulseDecompiler.t} inside {!AbductiveDomain.t}; all of the interface
-    of {!PulseDecompiler} is duplicated for ease of use} *)
+(** {1 Wrapper to access the [PulseDecompiler.t] inside [AbductiveDomain.t]; all of the interface of
+    [PulseDecompiler] is duplicated for ease of use} *)
 
 val add_call_source :
      AbstractValue.t

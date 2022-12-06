@@ -20,7 +20,7 @@ type t =
       (** Assumed expression, true_branch boolean, source of the assume (conditional, ternary, etc.) *)
   | Call of AccessPath.base * call * HilExp.t list * CallFlags.t * Location.t
       (** Var to hold the return, call expression, formals *)
-  | Metadata of Sil.instr_metadata  (** see {!Sil.instr_metadata} *)
+  | Metadata of Sil.instr_metadata  (** see {!IR.Sil.instr_metadata} *)
 [@@deriving compare]
 
 val pp : F.formatter -> t -> unit

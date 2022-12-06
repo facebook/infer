@@ -6,8 +6,7 @@
  *)
 open! IStd
 
-(** Entries in the results directory (infer-out/). Unless you want to specify a custom results
-    directory you probably want to use {!ResultsDir.Entry} instead of this module. *)
+(** Entries in the results directory (infer-out/). *)
 
 type id =
   | AllocationTraces  (** directory for storing allocation traces *)
@@ -24,12 +23,14 @@ type id =
   | Debug  (** directory containing debug data *)
   | Differential  (** contains the results of [infer reportdiff] *)
   | DuplicateFunctions  (** list of duplicated functions *)
-  | JavaGlobalTypeEnvironment  (** internal {!Tenv.t} object corresponding to the whole project *)
+  | JavaGlobalTypeEnvironment
+      (** internal {!IR.Tenv.t} object corresponding to the whole project *)
   | LintDotty  (** directory of linters' dotty debug output for CTL evaluation *)
   | Logs  (** log file *)
   | PerfEvents  (** file containing events for performance profiling *)
   | ProcnamesLocks
-      (** directory of per-{!Procname.t} file locks, used by the analysis scheduler in certain modes *)
+      (** directory of per-{!IR.Procname.t} file locks, used by the analysis scheduler in certain
+          modes *)
   | ReportConfigImpactJson  (** reports of the config impact analysis *)
   | ReportCostsJson  (** reports of the costs analysis *)
   | ReportHtml  (** directory of the HTML report *)

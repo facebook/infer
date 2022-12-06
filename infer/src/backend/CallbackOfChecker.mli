@@ -7,8 +7,8 @@
 
 open! IStd
 
-(** Conversions from checkers taking "functional" {!Interprocedural.t} et al. payloads to
-    {!Callbacks.proc_callback_t} and friends. *)
+(** Conversions from checkers taking "functional" {!Absint.InterproceduralAnalysis.t} et al.
+    payloads to {!Callbacks.proc_callback_t} and friends. *)
 
 val mk_interprocedural_field_t :
      (Payloads.t, 'payload option Lazy.t) Field.t
@@ -38,8 +38,8 @@ val interprocedural_file :
      (Payloads.t, 'payload option Lazy.t) Field.t
   -> ('payload InterproceduralAnalysis.file_t -> IssueLog.t)
   -> Callbacks.file_callback_t
-(** [interprocedural_file field checker] expects [checker] to compute an {!IssueLog.t} from the
-    file-level analysis, given an inter-procedural analysis of dependencies that computes the
+(** [interprocedural_file field checker] expects [checker] to compute an {!Absint.IssueLog.t} from
+    the file-level analysis, given an inter-procedural analysis of dependencies that computes the
     payload type corresponding to [field] *)
 
 val intraprocedural : (IntraproceduralAnalysis.t -> unit) -> Callbacks.proc_callback_t

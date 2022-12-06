@@ -38,7 +38,7 @@ val compare_unrestricted_first : t -> t -> int
 
 module Constants : sig
   val get_int : IntLit.t -> t
-  (** Get or create an abstract value associated with a constant {!IntLit.t}. The idea is that
+  (** Get or create an abstract value associated with a constant {!IR.IntLit.t}. The idea is that
       clients will record in the abstract state that the returned [t] is equal to the given integer.
       If the same integer is queried later on then this module will return the same abstract
       variable. *)

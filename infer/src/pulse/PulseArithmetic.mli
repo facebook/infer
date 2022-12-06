@@ -10,7 +10,7 @@ open PulseBasicInterface
 module AbductiveDomain = PulseAbductiveDomain
 module AccessResult = PulseAccessResult
 
-(** Wrapper around {!Formula} that operates on {!AbductiveDomain.t}. *)
+(** Wrapper around {!PulseFormula} that operates on {!AbductiveDomain.t}. *)
 
 val and_nonnegative :
   AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t

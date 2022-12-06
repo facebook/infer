@@ -93,9 +93,9 @@ val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
     the error is flagged as *latent* and not reported until it becomes manifest.
 
     A state is *manifest* when its path condition (here meaning the conjunction of conditions
-    encountered in [if] statements, loop conditions, etc., i.e. anything in a {!Sil.Prune} node) is
-    either a) empty or b) comprised only of facts of the form [p>0] or [p≠0] where [p] is known to
-    be allocated. The latter condition captures the idea that addresses being valid pointers in
+    encountered in [if] statements, loop conditions, etc., i.e. anything in a {!IR.Sil.Prune} node)
+    is either a) empty or b) comprised only of facts of the form [p>0] or [p≠0] where [p] is known
+    to be allocated. The latter condition captures the idea that addresses being valid pointers in
     memory should not deter us from reporting any error that we find on that program path as it is
     somewhat the happy/expected case. The unhappy/unexpected case here would be to report errors
     that require a pointer to be invalid or null in the precondition; we do not want to report such

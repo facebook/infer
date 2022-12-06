@@ -10,7 +10,7 @@ module F = Format
 
 [@@@warning "-unused-value-declaration"]
 
-(** Extension of {!Base.Container}, i.e. generic definitions of container operations in terms of a
+(** Extension of [Base.Container], i.e. generic definitions of container operations in terms of a
     [fold] function. *)
 
 type 'a singleton_or_more = Empty | Singleton of 'a | More
