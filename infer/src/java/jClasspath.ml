@@ -176,7 +176,7 @@ let search_classes path =
 
 let search_and_extract_classes path =
   let extract ~init zip_filename =
-    let destination = Filename.temp_dir ~in_dir:(ResultsDir.get_path Temporary) "classes" ".out" in
+    let destination = Filename.temp_dir ~in_dir:(ResultsDir.get_path Temporary) "classes" "" in
     let f dests in_file entry =
       let filename = entry.Zip.filename in
       match Filename.split_extension filename with
@@ -186,9 +186,7 @@ let search_and_extract_classes path =
           Zip.copy_entry_to_file in_file entry out_filename ;
           dests
       | _, Some "jar" ->
-          let out_directory =
-            Filename.temp_dir ~in_dir:(ResultsDir.get_path Temporary) "jar" ".out"
-          in
+          let out_directory = Filename.temp_dir ~in_dir:(ResultsDir.get_path Temporary) "jar" "" in
           let out_filename = Filename.concat out_directory (Filename.basename filename) in
           Zip.copy_entry_to_file in_file entry out_filename ;
           out_filename :: dests

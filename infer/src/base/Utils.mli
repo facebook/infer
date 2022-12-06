@@ -162,7 +162,7 @@ val numcores : int
       threads per core. *)
 
 val zip_fold : init:'a -> f:('a -> Zip.in_file -> Zip.entry -> 'a) -> zip_filename:string -> 'a
-(** fold over each filen in the given [zip_filename]. *)
+(** fold over each file in the given [zip_filename]. *)
 
 val is_term_dumb : unit -> bool
 (** Check if the terminal is "dumb" or otherwise has very limited functionality. For example, Emacs'
