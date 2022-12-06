@@ -130,13 +130,24 @@ module Attribute = struct
           Fieldname.pp fmt field
   end
 
+  module ConfigUsage = struct
+    type t = ConfigName of ConfigName.t | StringParam of {v: AbstractValue.t; config_type: string}
+    [@@deriving compare, equal]
+
+    let pp f = function
+      | ConfigName config ->
+          ConfigName.pp f config
+      | StringParam {v; config_type} ->
+          F.fprintf f "%s.%a" config_type AbstractValue.pp v
+  end
+
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
     | Allocated of allocator * Trace.t
     | AlwaysReachable
     | Closure of Procname.t
-    | ConfigUsage of ConfigName.t
+    | ConfigUsage of ConfigUsage.t
     | ConstString of string
     | CopiedInto of CopiedInto.t
     | CopiedReturn of
@@ -252,7 +263,7 @@ module Attribute = struct
     | Closure pname ->
         Procname.pp f pname
     | ConfigUsage config ->
-        F.fprintf f "ConfigUsage (%a)" ConfigName.pp config
+        F.fprintf f "ConfigUsage (%a)" ConfigUsage.pp config
     | ConstString s ->
         F.fprintf f "ConstString (%s)" s
     | CopiedInto copied_into ->
@@ -441,6 +452,8 @@ module Attribute = struct
     match attr with
     | Allocated (proc_name, trace) ->
         Allocated (proc_name, add_call_to_trace trace)
+    | ConfigUsage (StringParam {v; config_type}) ->
+        ConfigUsage (StringParam {v= subst v; config_type})
     | CopiedReturn {source; is_const_ref; from; copied_location} ->
         CopiedReturn {source= subst source; is_const_ref; from; copied_location}
     | Invalid (invalidation, trace) ->
@@ -496,7 +509,7 @@ module Attribute = struct
       | AddressOfStackVariable _
       | AlwaysReachable
       | Closure _
-      | ConfigUsage _
+      | ConfigUsage (ConfigName _)
       | ConstString _
       | DynamicType _
       | EndOfCollection
@@ -536,7 +549,7 @@ module Attribute = struct
       else AbstractValue.Set.fold (fun v list -> f_out v :: list) values' [] |> Option.some
     in
     match attr with
-    | CopiedReturn {source} ->
+    | ConfigUsage (StringParam {v= source}) | CopiedReturn {source} ->
         Option.some_if (f_keep source) attr
     | PropagateTaintFrom taints_in ->
         filter_aux taints_in ~f_in:(fun {v} -> v) ~f_out:(fun v -> {v})
@@ -559,7 +572,7 @@ module Attribute = struct
       | Allocated _
       | AlwaysReachable
       | Closure _
-      | ConfigUsage _
+      | ConfigUsage (ConfigName _)
       | ConstString _
       | CopiedInto _
       | DynamicType _

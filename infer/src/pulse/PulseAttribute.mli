@@ -69,13 +69,17 @@ module CopiedInto : sig
   val pp : F.formatter -> t -> unit
 end
 
+module ConfigUsage : sig
+  type t = ConfigName of ConfigName.t | StringParam of {v: AbstractValue.t; config_type: string}
+end
+
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
   | Allocated of allocator * Trace.t
   | AlwaysReachable
   | Closure of Procname.t
-  | ConfigUsage of ConfigName.t
+  | ConfigUsage of ConfigUsage.t
   | ConstString of string
   | CopiedInto of CopiedInto.t  (** records the copied var/field for each source address *)
   | CopiedReturn of
@@ -129,7 +133,7 @@ module Attributes : sig
 
   val get_closure_proc_name : t -> Procname.t option
 
-  val get_config_usage : t -> ConfigName.t option
+  val get_config_usage : t -> ConfigUsage.t option
 
   val get_const_string : t -> string option
 

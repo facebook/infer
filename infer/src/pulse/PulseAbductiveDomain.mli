@@ -199,7 +199,7 @@ module AddressAttributes : sig
     -> t
     -> t
 
-  val get_config_usage : AbstractValue.t -> t -> FbPulseConfigName.t option
+  val get_config_usage : AbstractValue.t -> t -> Attribute.ConfigUsage.t option
 
   val get_const_string : AbstractValue.t -> t -> string option
 

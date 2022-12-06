@@ -766,19 +766,23 @@ let get_captured_actuals procname path location ~captured_formals ~call_kind ~ac
 
 let check_used_as_branch_cond (addr, hist) ~pname_using_config ~branch_location ~location trace
     astate =
+  let report_config_usage config =
+    let diagnostic =
+      Diagnostic.ConfigUsage {pname= pname_using_config; config; branch_location; location; trace}
+    in
+    Recoverable (astate, [ReportableError {astate; diagnostic}])
+  in
   match AddressAttributes.get_config_usage addr astate with
   | None ->
       Ok
         (AddressAttributes.abduce_attribute addr
            (UsedAsBranchCond (pname_using_config, branch_location, trace))
            astate )
-  | Some config ->
-      if FbPulseConfigName.has_config_read hist then
-        Recoverable
-          ( astate
-          , [ ReportableError
-                { astate
-                ; diagnostic=
-                    ConfigUsage {pname= pname_using_config; config; branch_location; location; trace}
-                } ] )
-      else Ok astate
+  | Some (ConfigName config) ->
+      if FbPulseConfigName.has_config_read hist then report_config_usage config else Ok astate
+  | Some (StringParam {v; config_type}) -> (
+    match AddressAttributes.get_const_string v astate with
+    | None ->
+        Ok astate
+    | Some s ->
+        report_config_usage (FbPulseConfigName.of_string ~config_type s) )

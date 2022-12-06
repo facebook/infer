@@ -12,3 +12,5 @@ type t = unit [@@deriving compare, equal]
 let pp f () = F.pp_print_string f "()"
 
 let has_config_read _ = false
+
+let of_string ~config_type:_ _ = ()
