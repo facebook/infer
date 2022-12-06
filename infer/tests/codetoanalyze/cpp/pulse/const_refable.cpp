@@ -18,6 +18,11 @@ class Optional {
   Optional(const Optional& src);
   bool has_value();
 };
+
+namespace coro {
+template <class Value>
+class Task {};
+} // namespace coro
 } // namespace folly
 
 namespace const_refable {
@@ -161,5 +166,11 @@ class AssignField {
   // issue.
   void assign_global_bad(Arr a) { global = a; }
 };
+
+// Suppress const refable issues on functions returning folly::coro::Task
+folly::coro::Task<Arr> ret_coro_task_ok(std::string s) {
+  int n = s.length();
+  return folly::coro::Task<Arr>();
+}
 
 } // namespace const_refable
