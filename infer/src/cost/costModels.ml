@@ -20,7 +20,7 @@ let cost_of_exp exp ~degree_kind ~of_function {model_env= {integer_type_widths; 
     BufferOverrunSemantics.eval integer_type_widths exp inferbo_mem
     |> BufferOverrunDomain.Val.get_itv
   in
-  CostUtils.of_itv ~itv ~degree_kind ~of_function location
+  CostUtils.cost_of_itv ~itv ~degree_kind ~of_function location
 
 
 let linear = cost_of_exp ~degree_kind:Polynomials.DegreeKind.Linear
@@ -49,13 +49,13 @@ module Iterator = struct
 end
 
 module BoundsOf (Container : CostUtils.S) = struct
-  let of_length exp {model_env= {location}} ~ret:_ mem ~of_function ~degree_kind =
+  let of_length exp ~of_function {model_env= {location}} ~ret:_ mem ~degree_kind =
     let itv = Container.length exp mem |> BufferOverrunDomain.Val.get_itv in
-    CostUtils.of_itv ~itv ~degree_kind ~of_function location
+    CostUtils.cost_of_itv ~itv ~degree_kind ~of_function location
 
 
-  let of_length_itv itv {model_env= {location}} ~ret:_ ~of_function ~degree_kind =
-    CostUtils.of_itv ~itv ~degree_kind ~of_function location
+  let of_length_itv itv ~of_function {model_env= {location}} ~ret:_ ~degree_kind =
+    CostUtils.cost_of_itv ~itv ~degree_kind ~of_function location
 
 
   let linear_length = of_length ~degree_kind:Polynomials.DegreeKind.Linear
@@ -66,19 +66,19 @@ module BoundsOf (Container : CostUtils.S) = struct
 
   let logarithmic_length = of_length ~degree_kind:Polynomials.DegreeKind.Log
 
-  let n_log_n_length exp cost_model_env ~ret mem ~of_function =
+  let n_log_n_length exp ~of_function cost_model_env ~ret mem =
     let log_n = logarithmic_length exp ~of_function cost_model_env mem ~ret in
     let n = linear_length exp ~of_function cost_model_env mem ~ret in
     BasicCost.mult n log_n
 
 
-  let n_log_n_length_itv itv cost_model_env ~ret ~of_function =
+  let n_log_n_length_itv itv ~of_function cost_model_env ~ret =
     let log_n = logarithmic_length_itv itv ~of_function cost_model_env ~ret in
     let n = linear_length_itv itv ~of_function cost_model_env ~ret in
     BasicCost.mult n log_n
 
 
-  let op_on_two_lengths exp1 exp2 ~f cost_model_env ~ret mem ~of_function =
+  let op_on_two_lengths exp1 exp2 ~f ~of_function cost_model_env ~ret mem =
     let n = linear_length exp1 ~of_function cost_model_env mem ~ret in
     let m = linear_length exp2 ~of_function cost_model_env mem ~ret in
     f n m
@@ -93,7 +93,7 @@ module IntHashMap = struct
       | Some path, Some typ_name ->
           let path = Symb.SymbolPath.append_field path (Fieldname.make typ_name "size") in
           let itv = Itv.of_normal_path ~unsigned:true path in
-          CostUtils.of_itv ~itv ~degree_kind:Linear ~of_function:"IntHashMap.keys" location
+          CostUtils.cost_of_itv ~itv ~degree_kind:Linear ~of_function:"IntHashMap.keys" location
       | _, _ ->
           BasicCost.top )
     | Empty | More ->
@@ -117,8 +117,8 @@ module JavaString = struct
            behave as if there is no model and give unit cost. *)
         Itv.of_int 1
     in
-    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.substring"
-      location
+    CostUtils.cost_of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear
+      ~of_function:"String.substring" location
 
 
   let substring_no_end exp begin_idx {model_env} ~ret:_ inferbo_mem =
@@ -137,8 +137,8 @@ module JavaString = struct
   (** O(|m|) where m is the given string and |.| is the length function *)
   let indexOf_char exp {model_env= {location} as model_env} ~ret:_ inferbo_mem =
     let itv = CostUtils.string_len_range_itv model_env exp ~from:None inferbo_mem in
-    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf"
-      location
+    CostUtils.cost_of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear
+      ~of_function:"String.indexOf" location
 
 
   (** O(|m|-|n|) where m is the given string and n is the index to start searching from *)
@@ -149,8 +149,8 @@ module JavaString = struct
         ~from:(Some (start_exp, integer_type_widths))
         inferbo_mem
     in
-    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf"
-      location
+    CostUtils.cost_of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear
+      ~of_function:"String.indexOf" location
 
 
   (** O(|m|.|n|) where m and n are the given strings *)
@@ -164,11 +164,11 @@ module JavaString = struct
       |> BufferOverrunDomain.Val.get_itv
     in
     let n =
-      CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function:"String.indexOf"
-        location
+      CostUtils.cost_of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear
+        ~of_function:"String.indexOf" location
     in
     let m =
-      CostUtils.of_itv ~itv:index_itv ~degree_kind:Polynomials.DegreeKind.Linear
+      CostUtils.cost_of_itv ~itv:index_itv ~degree_kind:Polynomials.DegreeKind.Linear
         ~of_function:"String.indexOf" location
     in
     BasicCost.mult n m
@@ -206,7 +206,7 @@ module NSString = struct
     let itv =
       BufferOverrunModels.NSString.get_length model_env str mem |> BufferOverrunDomain.Val.get_itv
     in
-    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
+    CostUtils.cost_of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
 
 
   let op_on_two_str cost_op ~of_function str1 str2 cost_model_env ~ret mem =
@@ -250,7 +250,7 @@ module NSCollection = struct
       BufferOverrunModels.NSCollection.eval_collection_length str mem
       |> BufferOverrunDomain.Val.get_itv
     in
-    CostUtils.of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
+    CostUtils.cost_of_itv ~itv ~degree_kind:Polynomials.DegreeKind.Linear ~of_function location
 
 
   let op_on_two_coll cost_op ~of_function coll1 coll2 cost_model_env ~ret mem =
