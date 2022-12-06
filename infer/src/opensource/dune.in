@@ -10,11 +10,15 @@
 (* include the open-source modules only in open-source build modes, otherwise this library is empty *)
 
 Jbuild_plugin.V1.send
-  (Format.sprintf {|
+  (Format.sprintf
+     {|
 (library
  (name OpenSource)
  (public_name infer.OpenSource)
-  %s
+ (flags (:standard -open Core))
+ (libraries core)
+ %s
+ (preprocess (pps ppx_compare))
 )
 |}
      (if facebook then "(modules)" else "(modules :standard)") )

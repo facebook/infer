@@ -7,11 +7,7 @@
 
 module F = Format
 
-type t = unit
-
-let compare _ _ = 0
-
-let equal _ _ = true
+type t = unit [@@deriving compare, equal]
 
 let pp f () = F.pp_print_string f "()"
 

@@ -5,11 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t
-
-val compare : t -> t -> int
-
-val equal : t -> t -> bool
+type t [@@deriving compare, equal]
 
 val pp : Format.formatter -> t -> unit
 
