@@ -5,12 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t
-
-val compare : t -> t -> int
-
-val equal : t -> t -> bool
+type t [@@deriving compare, equal]
 
 val pp : Format.formatter -> t -> unit
 
 val has_config_read : 'pulse_value_history -> bool
+
+val of_string : config_type:string -> string -> t

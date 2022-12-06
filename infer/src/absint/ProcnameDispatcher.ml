@@ -843,6 +843,10 @@ module Call = struct
     {one_arg_matcher= one_arg_matcher_of_prim_typ typ; capture= no_capture}
 
 
+  let capt_arg_payload_of_prim_typ typ =
+    {one_arg_matcher= one_arg_matcher_of_prim_typ typ; capture= capture_arg_val}
+
+
   let capt_exp_of_prim_typ typ =
     {one_arg_matcher= one_arg_matcher_of_prim_typ typ; capture= capture_arg_exp}
 

@@ -234,10 +234,9 @@ module BasicString = struct
 
 
   (* constructor from constant string *)
-  let constructor_from_constant (this, hist) exp : model =
+  let constructor_from_constant ~desc (this, hist) init_hist : model =
    fun {path; location} astate ->
-    let event = Hist.call_event path location "std::basic_string::basic_string()" in
-    let<**> astate, init_hist = PulseOperations.eval path Read location exp astate in
+    let event = Hist.call_event path location desc in
     let<+> astate =
       PulseOperations.write_field path location
         ~ref:(this, Hist.add_event path event hist)
@@ -260,13 +259,10 @@ module BasicString = struct
     astate
 
 
-  let data this_hist : model =
+  let data this_hist ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location "std::basic_string::data()" in
-    let<*> astate, string_addr_hist = to_internal_string path location this_hist astate in
-    let<+> astate, (string, hist) =
-      PulseOperations.eval_access path Read location string_addr_hist Dereference astate
-    in
+    let event = Hist.call_event path location desc in
+    let<+> astate, (string, hist) = to_internal_string path location this_hist astate in
     PulseOperations.write_id ret_id (string, Hist.add_event path event hist) astate
 
 
@@ -573,6 +569,7 @@ module Pair = struct
 end
 
 let matchers : matcher list =
+  let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
   let open ProcnameDispatcher.Call in
   [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
   ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array
@@ -580,11 +577,12 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
   ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
   ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
-    $+ capt_exp_of_prim_typ (Typ.mk (Typ.Tptr (Typ.mk (Typ.Tint Typ.IChar), Pk_pointer)))
-    $--> BasicString.constructor_from_constant
+    $+ capt_arg_payload_of_prim_typ char_ptr_typ
+    $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
   ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
     $--> BasicString.constructor
-  ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload $--> BasicString.data
+  ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
+    $--> BasicString.data ~desc:"std::basic_string::data()"
   ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
   ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
   ; -"std" &:: "basic_string" &:: "substr" &--> Basic.nondet ~desc:"std::basic_string::substr"
@@ -592,6 +590,11 @@ let matchers : matcher list =
   ; -"std" &:: "basic_string" &:: "operator[]"
     &--> Basic.nondet ~desc:"std::basic_string::operator[]"
   ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
+  ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
+    $+ capt_arg_payload_of_prim_typ char_ptr_typ
+    $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
+  ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
+    $--> BasicString.data ~desc:"std::basic_string_view::data()"
   ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
     $--> Function.assign ~desc:"std::function::function"
   ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> Function.operator_call
