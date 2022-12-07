@@ -303,17 +303,18 @@ and parse_exp (json : Safe.t) =
   else if String.equal ekind "SizeofExpression" then
     let t = parse_sil_type_name (member "type" json) in
     let s = to_string (member "kind" json) in
+    let dl = try Some (parse_exp (member "dynamic_length" json))
+             with Type_error _ -> None in
     match s with
     | "exact" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.exact}
     | "instof" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof}
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.subtypes_instof}
     | "cast" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_cast}
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.subtypes_cast}
     | _ ->
         Logging.die InternalError "Subtype in Sizeof instruction is not supported."
   else Logging.die InternalError "Unknown expression kind %s" ekind
-
 
 and parse_struct_field (json : Safe.t) =
   let fi = parse_fieldident json in
