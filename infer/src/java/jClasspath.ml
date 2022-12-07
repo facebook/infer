@@ -175,25 +175,25 @@ let search_classes path =
 
 
 let search_and_extract_classes path =
+  let temp_dir prefix = Filename.temp_dir ~in_dir:(ResultsDir.get_path Temporary) prefix "" in
   let extract ~init zip_filename =
-    let destination = Filename.temp_dir ~in_dir:(ResultsDir.get_path Temporary) "classes" "" in
+    let root = temp_dir "classes" in
     let f dests in_file entry =
       let filename = entry.Zip.filename in
       match Filename.split_extension filename with
       | _, Some "class" ->
-          let out_filename = Filename.concat destination filename in
+          let out_filename = Filename.concat root filename in
           Unix.mkdir_p (Filename.dirname out_filename) ;
           Zip.copy_entry_to_file in_file entry out_filename ;
           dests
       | _, Some "jar" ->
-          let out_directory = Filename.temp_dir ~in_dir:(ResultsDir.get_path Temporary) "jar" "" in
-          let out_filename = Filename.concat out_directory (Filename.basename filename) in
+          let out_filename = Filename.concat (temp_dir "jar") (Filename.basename filename) in
           Zip.copy_entry_to_file in_file entry out_filename ;
           out_filename :: dests
       | _ ->
           dests
     in
-    Utils.zip_fold ~init:(destination :: init) ~f ~zip_filename
+    Utils.zip_fold ~init:(root :: init) ~f ~zip_filename
   in
   let rec loop roots classes paths =
     match paths with
@@ -202,7 +202,7 @@ let search_and_extract_classes path =
     | path :: paths when Sys.is_directory path = `Yes ->
         loop roots classes
           (Array.fold ~init:paths
-             ~f:(fun accu e -> Filename.concat path e :: accu)
+             ~f:(fun accu filename -> Filename.concat path filename :: accu)
              (Sys.readdir path) )
     | path :: paths -> (
       match Filename.split_extension path with
