@@ -364,6 +364,19 @@ module Function = struct
           Basic.shallow_copy_value path location event ret_id dest src astate
 end
 
+module Std = struct
+  let make_move_iterator vector : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let<+> astate, (backing_array, _) =
+      PulseOperations.eval_deref_access path NoAccess location vector
+        (FieldAccess GenericArrayBackedCollection.field) astate
+    in
+    let astate = AddressAttributes.add_one backing_array StdMoved astate in
+    PulseOperations.write_id ret_id
+      (fst vector, Hist.add_call path location "std::make_move_iterator" (snd vector))
+      astate
+end
+
 module Vector = struct
   let reallocate_internal_array path trace vector vector_f location astate =
     let* astate, array_address =
@@ -623,6 +636,7 @@ let matchers : matcher list =
   ; -"std" &:: "__atomic_base"
     &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
     <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t
+  ; -"std" &:: "make_move_iterator" $ capt_arg_payload $+...$--> Std.make_move_iterator
   ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> Pair.make_pair
   ; -"std" &:: "vector" &:: "vector" $ capt_arg_payload

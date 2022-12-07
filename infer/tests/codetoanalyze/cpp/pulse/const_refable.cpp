@@ -173,4 +173,11 @@ folly::coro::Task<Arr> ret_coro_task_ok(std::string s) {
   return folly::coro::Task<Arr>();
 }
 
+void move_iterated_vector_ok(std::vector<std::string> v) {
+  std::vector<std::string> local;
+  local.insert(local.end(),
+               std::make_move_iterator(v.begin()),
+               std::make_move_iterator(v.end()));
+}
+
 } // namespace const_refable
