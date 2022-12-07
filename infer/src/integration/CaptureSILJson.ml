@@ -69,6 +69,10 @@ let parse_cil_procname (json : Safe.t) : Procname.t =
       BuiltinDecl.__cast
   | "__unwrap_exception" ->
       BuiltinDecl.__unwrap_exception
+  | "__throw" ->
+      BuiltinDecl.__java_throw
+  | "__get_array_length" ->
+      BuiltinDecl.__get_array_length
   | _ ->
       let return_type =
         if String.equal Procname.CSharp.constructor_method_name method_name then None
