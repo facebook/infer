@@ -1091,6 +1091,12 @@ let unnecessary_copy_assignment_pulse =
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 
+let unnecessary_copy_assignment_const_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST" Error Pulse
+    ~hum:"Unnecessary Copy Assignment from Const"
+    ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
+
+
 let unnecessary_copy_assignment_movable_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE" Error Pulse
     ~hum:"Unnecessary Copy Assignment Movable"
@@ -1100,6 +1106,12 @@ let unnecessary_copy_assignment_movable_pulse =
 let unnecessary_copy_intermediate_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE" Error Pulse
     ~hum:"Unnecessary Copy Intermediate"
+    ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
+
+
+let unnecessary_copy_intermediate_const_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST" Error Pulse
+    ~hum:"Unnecessary Copy Intermediate from Const"
     ~user_documentation:"See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy)."
 
 

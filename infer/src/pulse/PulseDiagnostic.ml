@@ -582,7 +582,13 @@ let get_message diagnostic =
         Procname.pp callee
   | UnnecessaryCopy {copied_into; source_typ; location; copied_location= None; from} -> (
       let open PulseAttribute in
-      let suggestion_msg_move = "To avoid the copy, try moving it by calling `std::move` instead" in
+      let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
+      let suggestion_msg_move =
+        if is_from_const then
+          "To avoid the copy, try 1) removing the `const &` from the source and 2) moving it by \
+           calling `std::move` instead"
+        else "To avoid the copy, try moving it by calling `std::move` instead"
+      in
       let suppression_msg =
         "If this copy was intentional, consider calling `folly::copy` to make it explicit and \
          hence suppress the warning"
@@ -869,10 +875,16 @@ let get_issue_type ~latent issue_type =
       IssueType.unnecessary_copy_assignment_movable_pulse
   | UnnecessaryCopy {copied_into= IntoField _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_movable_pulse
+  | UnnecessaryCopy {copied_into= IntoIntermediate _; source_typ; from= CopyCtor}, false
+    when Option.exists ~f:Typ.is_const_reference source_typ ->
+      IssueType.unnecessary_copy_intermediate_const_pulse
   | UnnecessaryCopy {copied_into= IntoIntermediate _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_intermediate_pulse
   | UnnecessaryCopy {copied_into= IntoVar _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
+  | UnnecessaryCopy {from= CopyAssignment; source_typ}, false
+    when Option.exists ~f:Typ.is_const_reference source_typ ->
+      IssueType.unnecessary_copy_assignment_const_pulse
   | UnnecessaryCopy {from= CopyAssignment}, false ->
       IssueType.unnecessary_copy_assignment_pulse
   | ( ( ConfigUsage _

@@ -609,7 +609,6 @@ class CopiedToMultipleField_Bad_FN {
   CopiedToMultipleField_Bad_FN(Arr a) : field1(a), field2(a) {}
 };
 
-// TODO change domain so that we store the source's type
 void global_setter_bad(const Arr& arr) {
   global = arr; // suggest std::move(arr) and remove const from the type
 }
