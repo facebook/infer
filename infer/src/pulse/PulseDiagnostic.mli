@@ -92,7 +92,7 @@ type t =
       ; flow_kind: flow_kind }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
-      ; typ: Typ.t
+      ; source_typ: Typ.t option
       ; location: Location.t (* the location to report the issue *)
       ; copied_location: (Procname.t * Location.t) option
             (* [copied_location] has a value when the copied location is different to where to

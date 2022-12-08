@@ -146,7 +146,7 @@ type t =
       ; flow_kind: flow_kind }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
-      ; typ: Typ.t
+      ; source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; from: PulseAttribute.CopyOrigin.t }
@@ -204,13 +204,15 @@ let pp fmt diagnostic =
         sink Location.pp location pp_flow_kind flow_kind
   | UnnecessaryCopy
       { copied_into: PulseAttribute.CopiedInto.t
-      ; typ: Typ.t
+      ; source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; from: PulseAttribute.CopyOrigin.t } ->
       F.fprintf fmt
         "UnnecessaryCopy {@[copied_into=%a;@;typ=%a;@;location:%a;@;copied_location:%a@;from=%a@]}"
-        PulseAttribute.CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp location
+        PulseAttribute.CopiedInto.pp copied_into
+        (Pp.option (Typ.pp_full Pp.text))
+        source_typ Location.pp location
         (fun fmt -> function
           | None ->
               F.pp_print_string fmt "none"
@@ -259,7 +261,9 @@ let get_location = function
 
 
 let get_copy_type = function
-  | UnnecessaryCopy {typ} | ConstRefableParameter {typ} ->
+  | UnnecessaryCopy {source_typ} ->
+      source_typ
+  | ConstRefableParameter {typ} ->
       Some typ
   | _ ->
       None
@@ -322,6 +326,10 @@ let pp_calling_context_prefix fmt calling_context =
         (List.last_exn calling_context |> fst)
         in_between_calls
         (if in_between_calls > 1 then "s" else "")
+
+
+let pp_typ fmt =
+  Option.iter ~f:(fun typ -> F.fprintf fmt " with type `%a`" (Typ.pp_full Pp.text) typ)
 
 
 let get_message diagnostic =
@@ -564,15 +572,15 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a (%a)" DecompilerExpr.pp expr Taint.pp source
         Taint.pp sink pp_flow_kind flow_kind
-  | UnnecessaryCopy {copied_into; typ; copied_location= Some (callee, {file; line})} ->
+  | UnnecessaryCopy {copied_into; source_typ; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       F.asprintf
-        "the return value `%a` with type `%a` is not modified after it is copied in the callee \
-         `%a` at `%a:%d`. Please check if we can avoid the copy, e.g. by changing the return type \
-         of `%a` or by revising the function body of it."
-        CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Procname.pp callee SourceFile.pp file
-        line Procname.pp callee
-  | UnnecessaryCopy {copied_into; typ; location; copied_location= None; from} -> (
+        "the return value `%a` is not modified after it is copied in the callee `%a`%a at `%a:%d`. \
+         Please check if we can avoid the copy, e.g. by changing the return type of `%a` or by \
+         revising the function body of it."
+        CopiedInto.pp copied_into Procname.pp callee pp_typ source_typ SourceFile.pp file line
+        Procname.pp callee
+  | UnnecessaryCopy {copied_into; source_typ; location; copied_location= None; from} -> (
       let open PulseAttribute in
       let suggestion_msg_move = "To avoid the copy, try moving it by calling `std::move` instead" in
       let suppression_msg =
@@ -588,39 +596,33 @@ let get_message diagnostic =
       in
       match copied_into with
       | IntoIntermediate {source_opt= None} ->
-          F.asprintf "An intermediate with type `%a` is %a on %a. %s." (Typ.pp_full Pp.text) typ
-            CopyOrigin.pp from Location.pp_line location suggestion_msg_move
+          F.asprintf "An intermediate%a is %a on %a. %s." pp_typ source_typ CopyOrigin.pp from
+            Location.pp_line location suggestion_msg_move
       | IntoIntermediate {source_opt= Some source_expr} ->
-          F.asprintf
-            "variable `%a` with type `%a` is %a unnecessarily into an intermediate on %a. %s."
-            DecompilerExpr.pp_source_expr source_expr (Typ.pp_full Pp.text) typ CopyOrigin.pp from
+          F.asprintf "variable `%a`%a is %a unnecessarily into an intermediate on %a. %s."
+            DecompilerExpr.pp_source_expr source_expr pp_typ source_typ CopyOrigin.pp from
             Location.pp_line location suggestion_msg_move
       | IntoVar {source_opt= None} ->
           F.asprintf
-            "%a variable `%a` with type `%a` is not modified after it is copied on %a. %s. %s."
-            CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ Location.pp_line
-            location suggestion_msg suppression_msg
+            "%a variable `%a` is not modified after it is copied from a source%a on %a. %s. %s."
+            CopyOrigin.pp from CopiedInto.pp copied_into pp_typ source_typ Location.pp_line location
+            suggestion_msg suppression_msg
       | IntoVar {source_opt= Some source_expr} ->
           F.asprintf
-            "%a variable `%a` with type `%a` is not modified after it is copied from `%a` on %a. \
-             %s. %s."
-            CopyOrigin.pp from CopiedInto.pp copied_into (Typ.pp_full Pp.text) typ
-            DecompilerExpr.pp_source_expr source_expr Location.pp_line location suggestion_msg
-            suppression_msg
+            "%a variable `%a` is not modified after it is copied from `%a`%a on %a. %s. %s."
+            CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
+            pp_typ source_typ Location.pp_line location suggestion_msg suppression_msg
       | IntoField {field; source_opt} -> (
           let advice = "Rather than copying into the field, consider moving into it instead." in
           match source_opt with
           | Some source_expr ->
-              F.asprintf
-                "`%a` is an rvalue-ref that is %a into field `%a` with type `%a` but is not \
-                 modified afterwards. %s"
-                DecompilerExpr.pp source_expr CopyOrigin.pp from Fieldname.pp field
-                (Typ.pp_full Pp.text) typ advice
+              F.asprintf "`%a`%a is %a into field `%a` but is not modified afterwards. %s"
+                DecompilerExpr.pp source_expr pp_typ source_typ CopyOrigin.pp from Fieldname.pp
+                field advice
           | None ->
               F.asprintf
-                "Field `%a` is %a into from an rvalue-ref that is of type `%a` but is not modified \
-                 afterwards. %s"
-                Fieldname.pp field CopyOrigin.pp from (Typ.pp_full Pp.text) typ advice ) )
+                "Field `%a` is %a into from an rvalue-ref%a but is not modified afterwards. %s"
+                Fieldname.pp field CopyOrigin.pp from pp_typ source_typ advice ) )
 
 
 let add_errlog_header ~nesting ~title location errlog =

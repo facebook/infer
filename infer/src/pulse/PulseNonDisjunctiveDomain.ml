@@ -44,14 +44,14 @@ end
 
 type copy_spec_t =
   | Copied of
-      { typ: Typ.t
+      { source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; heap: BaseMemory.t
       ; from: Attribute.CopyOrigin.t
       ; timestamp: Timestamp.t }
   | Modified of
-      { typ: Typ.t
+      { source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; from: Attribute.CopyOrigin.t
@@ -72,9 +72,11 @@ module CopySpec = MakeDomainFromTotalOrder (struct
 
 
   let pp fmt = function
-    | Copied {typ; heap; location; from; timestamp} ->
+    | Copied {source_typ; heap; location; from; timestamp} ->
         Format.fprintf fmt "@[%a (value of type %a) at %a@ with heap= %a@ (timestamp: %d)@]"
-          Attribute.CopyOrigin.pp from (Typ.pp Pp.text) typ Location.pp location BaseMemory.pp heap
+          Attribute.CopyOrigin.pp from
+          (Pp.option (Typ.pp Pp.text))
+          source_typ Location.pp location BaseMemory.pp heap
           (timestamp :> int)
     | Modified _ ->
         Format.fprintf fmt "modified"
@@ -307,11 +309,13 @@ let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_
   let copy_map =
     match CopyMap.find_opt copy_var copy_map with
     | Some
-        (Copied {typ; from; copied_location; location; heap= copy_heap; timestamp= copied_timestamp})
+        (Copied
+          {source_typ; from; copied_location; location; heap= copy_heap; timestamp= copied_timestamp}
+          )
       when is_modified copy_heap copied_timestamp ->
         Logging.d_printfln_escaped "Copy/source modified!" ;
         let modified : copy_spec_t =
-          Modified {typ; location; copied_location; from; copied_timestamp}
+          Modified {source_typ; location; copied_location; from; copied_timestamp}
         in
         CopyMap.add copy_var modified copy_map
     | _ ->
@@ -368,7 +372,9 @@ let get_copied = function
       CopyMap.fold
         (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
           match copy_spec with
-          | Modified {location; copied_location; typ= copied_typ; from; copied_timestamp} -> (
+          | Modified
+              {location; copied_location; source_typ= copied_source_typ; from; copied_timestamp}
+            -> (
             (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
             match copied_into with
             | IntoIntermediate {source_opt= Some (PVar pvar, _)} ->
@@ -389,12 +395,12 @@ let get_copied = function
                          (copied_timestamp :> int) < (timestamp :> int) )
                 in
                 if is_loaded_after_copy || is_passed_to_non_destructor_after_copy then acc
-                else (copied_into, copied_typ, location, copied_location, from) :: acc
+                else (copied_into, copied_source_typ, location, copied_location, from) :: acc
             | _ ->
                 acc )
-          | Copied {location; copied_location; typ= copied_typ; from} ->
+          | Copied {location; copied_location; source_typ= copied_source_typ; from} ->
               if CopiedSet.mem copied_into modified || is_captured copied_into then acc
-              else (copied_into, copied_typ, location, copied_location, from) :: acc )
+              else (copied_into, copied_source_typ, location, copied_location, from) :: acc )
         copy_map []
 
 
@@ -411,8 +417,8 @@ let get_const_refable_parameters = function
             match parameter_spec_t with
             | Modified ->
                 acc
-            | Unmodified {location; typ= copied_typ} ->
-                (var, copied_typ, location) :: acc
+            | Unmodified {location; typ= copied_source_typ} ->
+                (var, copied_source_typ, location) :: acc
           else acc )
         parameter_map []
 
