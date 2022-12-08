@@ -798,14 +798,6 @@ let is_unsigned_int typ = match typ.desc with Tint ikind -> ikind_is_unsigned ik
 
 let is_char typ = match typ.desc with Tint ikind -> ikind_is_char ikind | _ -> false
 
-let has_block_prefix s =
-  match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) s with
-  | _ :: _ :: _ ->
-      true
-  | _ ->
-      false
-
-
 let rec pp_java ~verbose f {desc} =
   let string_of_int = function
     | IInt ->

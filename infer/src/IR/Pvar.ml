@@ -332,7 +332,14 @@ let is_objc_static_local_of_proc_name pname pvar =
   match Str.split_delim (Str.regexp_string pname) var_name with [_; _] -> true | _ -> false
 
 
-let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (get_name pvar))
+let is_block_pvar =
+  let regexp = Str.regexp_string Config.anonymous_block_prefix in
+  fun pvar ->
+    let has_block_prefix s =
+      match Str.split_delim regexp s with _ :: _ :: _ -> true | _ -> false
+    in
+    has_block_prefix (Mangled.to_string (get_name pvar))
+
 
 module Set = PrettyPrintable.MakePPSet (struct
   type nonrec t = t [@@deriving compare]
