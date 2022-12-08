@@ -10,22 +10,21 @@
 
 //  several signatures in one match part
 //  with and without throws clauses
-in Java
-match
-    {
+in Java match {
     void  fun6tt(A[] a)  throws A under A<B,C<D,E>>.G.H
     A[][]  methD66(A.B[] x)  throws D under className
     private static void fun7(A[] a, B[][] bs) under G.Hhh
     void  fun6tt(A[] a, B[] b) throws cl1, C.D, E<B,? super A> under A.B<E,F>.D
-    }
-body
-    { bodyStub }
+} body {
+    #lab2:
+    n3 = __sil_mult(n0, n1)
+    jmp lab3(n3)
+}
 
 
 //  several signatures in one  under
 //  some with, and some without a throws clause
-in Java match
-    {
+in Java match {
     void  fun6tt(A[] a)  throws A;
     A[][]  methD66(A.B[] x)  throws D;
     private static void fun7(A[] a, B[][] bs);
@@ -33,15 +32,16 @@ in Java match
     void mth();
     private A fun6tt(A[] a) throws A, B
               under A.B<C>.D<E,F>
-    }
-body
-    { bodyStub }
+} body {
+  #lab2:
+    n3 = __sil_mult(n0, n1)
+    jmp lab3(n3)
+}
 
 
 // several signatures in one  under, several under-s
 // in the same match-part
-in Java match
-    {
+in Java match {
     void  fun6tt(A[] a)  throws A;
     A[][]  methD66(A.B[] x)  throws D
            under classFF
@@ -51,16 +51,20 @@ in Java match
     void  funSD(A[] a)  throws B.E
            under classFF
     void  fun6tt(A[] a)  throws A under classC
-     }
-body
-    { bodyStub }
+} body {
+  #lab2:
+    n3 = __sil_mult(n0, n1)
+    jmp lab3(n3)
+ }
 
-/* this should NOT parse -- under is missing
+/* this should NOT parse -- the keyword under is missing
 
 in Java match {
     void  fun6tt(A[] a)  throws A
-     }
-body
-   { bodyStub }
+} body {
+   #lab2:
+    n3 = __sil_mult(n0, n1)
+    jmp lab3(n3)
+}
 
 */

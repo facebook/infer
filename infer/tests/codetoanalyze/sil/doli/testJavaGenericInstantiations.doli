@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+// tests sequence of Java generic instantiations
+
+// one generic parameter
+in Java match {
+   public protected A5gff<AB>  fun6t()  under ddd35
+} body {
+    #lab2:
+      jmp lab3(n3)
+}
+
+// two generic parameters
+in Java match {
+   public protected A5gff<AB,AS>  fun6tt()  under ddd35
+} body {
+    #lab2:
+      jmp lab3(n3)
+}
+
+// nested generic parameters
+in Java match {
+   public protected A5gff<AB<AS,Ab5>,AS>  fun6tt()  under ddd35
+} body {
+   #lab2:
+      jmp lab3(n3)
+}
+
+// extends generic argument
+in Java match {
+   public protected A5gff<? extends B>  fun6tt()  under ddd35
+} body {
+   #lab2:
+      jmp lab3(n3)
+}
+
+// super generic argument
+in Java match{
+   public protected A5gff<? super B>  fun6tt()  under ddd35
+} body {
+   #lab2:
+      jmp lab3(n3)
+}
+
+// super and extends generic arguments
+in Java match{
+   public protected A5gff<? extends AB<? super AS,Ab5>, ? super AS>  fun6tt()  under ddd35
+} body {
+   #lab2:
+      jmp lab3(n3)
+}
+
+// sequences of generics
+in Java match {
+   public protected A5gff<AB<AS,Ab5>,AS>  fun6tt()  under ddd35<AD,SD>.e4<A>.ASD<En>
+} body {
+   #lab2:
+      jmp lab3(n3)
+}
+
+// sequences of generics in the result type, and no modifiers
+in Java match{
+   A5gff<AB<AS,Ab5>,AS>  fun6tt()  under ddd35<AD,SD>.e4<A>.ASD<En>
+} body {
+   #lab2:
+      jmp lab3(n3)
+}
+
+// One parameter with complex generic return type
+in Java match{
+   A<B,E,H> fun6tt(A<B,D<? super F>> a)  under className
+} body {
+   #lab2:
+      jmp lab3(n3)
+}
+
+// One parameter with complex generic parameter type, generic result devlared in generic class
+in Java match {
+   A<? extends B,X<CS>>  fun6tt(A<? super B,X<CS>> a)  under E<X,Y>
+} body {
+   #lab2:
+      jmp lab3(n3)
+}
+
+// and now with nested  generic instantiations
+in Java match {
+   A<? extends A.F<bc,ddf>.G<B,X<CS>>,H>  fun6tt(A<? super B,X<CS>> a)  under E<X,Y>
+} body {
+   #lab2:
+      jmp lab3(n3)
+}

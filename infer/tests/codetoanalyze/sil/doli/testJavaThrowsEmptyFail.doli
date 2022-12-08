@@ -7,9 +7,9 @@
 
 // parsing should fail
 
-// throws part may not include primitive types (here boolean)
+// throws keyword must be followed by a non-empty list
 in Java match {
-    void  funIdent(A a) throws boolean under className
+     void  f_name(A a) throws under className
 } body {
     #lab2:
        jmp lab3

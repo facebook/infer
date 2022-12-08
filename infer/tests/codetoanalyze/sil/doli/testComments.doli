@@ -7,22 +7,67 @@
 
 // tests comments and layout
 
-// all in one line
-in Java match { public void main33()  under name32a } body { bodyStub }
+in Java match
+   { public /* comment */ void main33()  under name32a }
+body {
+    #entry:
+    n0: int = load &i
+    jmp then, else
+  #then:
+    prune __sil_lt(n0, 0)
+    ret null
+  #else:
+    prune ! __sil_lt(n0, 0)
+    n2 = n1
+    unreachable
+}
+
+// start in one line
+in Java match { public void main33()  under name32a } body {
+   #entry: n0: int = load &i
+   ret null
+   }
 
 // over several lines
 in ObjectiveC
 match // a one-line comment here
-   { objCSignStub  } body { bodyStub }
+   { objCSignStub  }
+body {
+   #entry:
+    n0: int = load &i
+    jmp then, else
+  #then:
+    prune __sil_lt(n0, 0)
+    ret null
+  #else:
+    prune ! __sil_lt(n0, 0)
+    n2 = n1
+    unreachable
+ }
+
 in ObjectiveC match /* comment over
    several
    lines */
   { objCSignStub  }
 body
-  { bodyStub }
+  {
+   #entry:
+    n0 = __sil_allocate_array(<node[]>, 10)
+    n1 = __sil_allocate(<node>)
+    n2 = __sil_cast(<node>, n1)
+    n3 = __sil_allocate_array(<node[][]>, 5, 3)
+    n4 = __sil_allocate(<node>, 3)
+    ret n2
+   }
 
-in Java match { public /* comment */ void main33()  under name32a } body { bodyStub }
-in ObjectiveC match
-   { objCSignStub  }
-body
-   { bodyStub }
+
+in ObjectiveC match {
+   objCSignStub // comment here
+ }
+body {
+   local z: int
+   #entry:
+    n0: *list = load &l
+    n2: int = load n1.cell.value
+    jmp
+   }

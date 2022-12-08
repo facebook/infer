@@ -3,9 +3,14 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
-*/
+ */
 
-// parsing should fail
+// tests that syntactially incorrect body gets flagged
 
-// throws keyword must be followed by a non-empty list
-in Java match { void  f_name(A a) throws under className } body { bodyStub }
+in Java match {
+   public void main33()  under name32aGeGe
+} body {
+    #lab2:
+    #lab3:
+       jmp lab3
+}

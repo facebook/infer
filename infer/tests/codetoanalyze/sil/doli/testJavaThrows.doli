@@ -3,22 +3,47 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
-*/
+ */
 
 // tests  throws clauses
 
 // one exception thorwn
-in Java match { void  fun6tt(A a) throws A under className  } body { bodyStub }
+in Java match {
+    void  fun6tt(A a) throws A under className
+} body {
+    #lab2:
+       jmp lab3
+}
 
 //  one exception thrown, denoted as path
-in Java match { void  fun6tt(A a) throws A.B<Y,? super C>.D<E> under className } body { bodyStub }
+in Java match {
+    void  fun6tt(A a) throws A.B<Y,? super C>.D<E> under className
+} body {
+    #lab2:
+       jmp lab3
+}
 
 
 //  two exceptions thrown simple denotation
-in Java match { void  fun6tt(A a) throws A, B under className } body { bodyStub }
+in Java match {
+    void  fun6tt(A a) throws A, B under className
+} body {
+    #lab2:
+       jmp lab3
+}
 
 //  several exceptions thrown simple denotation
-in Java match { void  fun6tt(A a) throws A, B, D under className } body { bodyStub }
+in Java match {
+    void  fun6tt(A a) throws A, B, D under className
+} body {
+    #lab2:
+       jmp lab3
+}
 
 // several exceptions thrown, denoted as path
-in Java match { void  fun6tt(A a) throws  A.B<Y,? super C>.D<E>, Object.A, B<? super C<D>>.E.H  under className } body { bodyStub }
+in Java match {
+    void  fun6tt(A a) throws  A.B<Y,? super C>.D<E>, Object.A, B<? super C<D>>.E.H  under className
+} body {
+    #lab2:
+       jmp lab3
+}
