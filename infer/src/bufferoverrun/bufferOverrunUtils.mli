@@ -12,7 +12,8 @@ module PO = BufferOverrunProofObligations
 
 module ModelEnv : sig
   type model_env =
-    { pname: Procname.t
+    { pname: Procname.t (* the name of the builtin *)
+    ; caller_pname: Procname.t option (* caller of the builtin *)
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
@@ -21,12 +22,15 @@ module ModelEnv : sig
 
   val mk_model_env :
        Procname.t
+    -> ?caller_pname:Procname.t
     -> node_hash:int
     -> Location.t
     -> Tenv.t
     -> Typ.IntegerWidths.t
     -> BufferOverrunAnalysisSummary.get_summary
     -> model_env
+  (** Make model environment. caller_pname is relevant only when the model environment is used to
+      process builtins. *)
 end
 
 module Exec : sig
