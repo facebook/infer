@@ -20,14 +20,15 @@ module TypModels = BufferOverrunTypModels
 module ModelEnv = struct
   type model_env =
     { pname: Procname.t
+    ; caller_pname: Procname.t option
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
     ; integer_type_widths: Typ.IntegerWidths.t
     ; get_summary: BoSummary.get_summary }
 
-  let mk_model_env pname ~node_hash location tenv integer_type_widths get_summary =
-    {pname; node_hash; location; tenv; integer_type_widths; get_summary}
+  let mk_model_env pname ?caller_pname ~node_hash location tenv integer_type_widths get_summary =
+    {pname; caller_pname; node_hash; location; tenv; integer_type_widths; get_summary}
 end
 
 module Exec = struct
@@ -69,14 +70,14 @@ module Exec = struct
         (mem, inst_num)
 
 
-  and decl_local_array ({pname; node_hash; location} as model_env) loc typ ~length ?stride ~inst_num
-      ~represents_multiple_values ~dimension mem =
+  and decl_local_array ({pname; caller_pname; node_hash; location} as model_env) loc typ ~length
+      ?stride ~inst_num ~represents_multiple_values ~dimension mem =
     let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
     let path = Loc.get_path loc in
     let allocsite =
       let represents_multiple_values = represents_multiple_values || not (Itv.is_one size) in
-      Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num ~dimension
-        ~path ~represents_multiple_values
+      Allocsite.make pname ~caller_pname ~node_hash ~inst_num ~dimension ~path
+        ~represents_multiple_values
     in
     let mem =
       let arr =
@@ -110,8 +111,8 @@ module Exec = struct
     decl_local_loc model_env loc typ ~inst_num ~represents_multiple_values:false ~dimension:1 mem
 
 
-  let init_c_array_fields {pname; node_hash; tenv; integer_type_widths} path typ locs ?dyn_length
-      mem =
+  let init_c_array_fields {pname; caller_pname; node_hash; tenv; integer_type_widths} path typ locs
+      ?dyn_length mem =
     let rec init_field path locs dimension ?dyn_length (mem, inst_num) (field_name, field_typ, _) =
       let field_path =
         Option.map path ~f:(fun path -> Symb.SymbolPath.append_field path field_name)
@@ -129,8 +130,8 @@ module Exec = struct
             let stride = Option.map stride ~f:IntLit.to_int_exn in
             let allocsite =
               let represents_multiple_values = not (Itv.is_one length) in
-              Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num
-                ~dimension ~path:field_path ~represents_multiple_values
+              Allocsite.make pname ~caller_pname ~node_hash ~inst_num ~dimension ~path:field_path
+                ~represents_multiple_values
             in
             let offset, size = (Itv.zero, length) in
             let v =
@@ -184,7 +185,8 @@ module Exec = struct
         (min min_acc i, max max_acc i) )
 
 
-  let decl_string {pname; node_hash; location; integer_type_widths} ~do_alloc locs s mem =
+  let decl_string {pname; caller_pname; node_hash; location; integer_type_widths} ~do_alloc locs s
+      mem =
     let size =
       let s_length =
         if Language.curr_language_is Java then String.length s else String.length s + 1
@@ -212,8 +214,8 @@ module Exec = struct
             let deref_path =
               Option.map ~f:(fun path -> Symb.SymbolPath.deref ~deref_kind path) path
             in
-            Allocsite.make pname ~caller_pname:(Dom.Mem.get_proc_name mem) ~node_hash ~inst_num:0
-              ~dimension:1 ~path:deref_path ~represents_multiple_values:true
+            Allocsite.make pname ~caller_pname ~node_hash ~inst_num:0 ~dimension:1 ~path:deref_path
+              ~represents_multiple_values:true
           in
           let v =
             if Language.curr_language_is Java then

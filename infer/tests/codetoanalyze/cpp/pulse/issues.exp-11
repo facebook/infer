@@ -465,7 +465,7 @@ codetoanalyze/cpp/pulse/unnecessary_copy.cpp, foo, 0, PULSE_UNNECESSARY_COPY, no
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, PassedToUnknown_Bad::PassedToUnknown_Bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter a]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, PassedToUnknown_Bad::PassedToUnknown_Bad, 0, PULSE_UNNECESSARY_COPY_INTERMEDIATE, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, PassedToUnknownRef_Bad::PassedToUnknownRef_Bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter a]
-codetoanalyze/cpp/pulse/unnecessary_copy.cpp, global_setter_bad, 1, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here]
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, global_setter_bad, 1, PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST, no_bucket, ERROR, [copy assigned here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, intermediate_copy_modified_unused_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter input]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, intermediate_copy_modified_unused_bad, 1, PULSE_UNNECESSARY_COPY_INTERMEDIATE, no_bucket, ERROR, [copied here]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, intermediate_copy_modified_used_ok, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter input]

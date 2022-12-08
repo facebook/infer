@@ -270,9 +270,12 @@ OPTIONS
              PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),
              PULSE_UNNECESSARY_COPY (disabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
+             PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (disabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by
            default),
              PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
+             PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by
+           default),
              PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default),
              PULSE_UNNECESSARY_COPY_RETURN (disabled by default),
              PURE_FUNCTION (enabled by default),

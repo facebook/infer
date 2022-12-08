@@ -3,37 +3,51 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
-*/
+ */
 
 // tests mixture of Java and OjectiveC
 
-in Java match { public void main33()  under name32a } body { bodyStub }
+in Java match {
+   public void main33()  under name32a
+} body {
+    #lab2:
+       jmp lab3
+}
 
-in ObjectiveC
-match
-   { objCSignStub  }
-body
-   { bodyStub }
+in ObjectiveC match {
+   objCSignStub
+} body {
+    #lab2:
+       jmp lab3
+}
 
+// public private is syntactically correct doli
+in Java match{
 // public private is correct doli
-in Java match
-// public private is correct doli
-   { public static private void main33()  under name32a }
-body
-   { bodyStub }
+   public static private void main33()  under name32a
+} body {
+    #lab2:
+       jmp lab3
+}
 
-in ObjectiveC
-match
-  { objCSignStub  }
-body
-  { bodyStub }
+in ObjectiveC match {
+   objCSignStub
+} body {
+    #lab2:
+       jmp lab3
+}
 
 in Java
-match
-   { void mainx(A a, b Bb)  under name32a }
-body
-   { bodyStub }
-in ObjectiveC match
-   { objCSignStub  }
-body
-   { bodyStub }
+match {
+   void mainx(A a, b Bb)  under name32a
+} body {
+    #lab2:
+       jmp lab3
+}
+
+in ObjectiveC match{
+   objCSignStub
+} body {
+    #lab2:
+       jmp lab3
+}

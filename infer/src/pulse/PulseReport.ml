@@ -34,6 +34,8 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
             (Some (proc_name_of_taint source), None)
         | TaintFlow {flow_kind= FlowToSink; sink= sink, _} ->
             (None, Some (proc_name_of_taint sink))
+        | TaintFlow {flow_kind= TaintedFlow; source= source, _; sink= sink, _} ->
+            (Some (proc_name_of_taint source), Some (proc_name_of_taint sink))
         | _ ->
             (None, None)
       in
