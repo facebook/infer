@@ -271,7 +271,8 @@ let check_call get_checks_summary get_summary get_formals pname tenv integer_typ
   | Some {Models.check} ->
       let model_env =
         let node_hash = CFG.Node.hash node in
-        BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths get_summary
+        BoUtils.ModelEnv.mk_model_env callee_pname ~caller_pname:pname ~node_hash location tenv
+          integer_type_widths get_summary
       in
       check model_env mem cond_set
   | None -> (

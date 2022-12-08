@@ -635,8 +635,6 @@ module Mem : sig
   val find_cpp_iterator_alias : Ident.t -> t -> (Pvar.t * Pvar.t * Binop.t) option
   (** Find the cpp iterator alias [ret_id -> {iter_lhs (binop) iter_rhs}] *)
 
-  val get_proc_name : GOption.some t0 -> Procname.t option
-
   val propagate_cpp_iter_begin_or_end_alias : new_pvar:Pvar.t -> existing_pvar:Pvar.t -> t -> t
   (** Propagate the being/end alias information from existing to new *)
 end
