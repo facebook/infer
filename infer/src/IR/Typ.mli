@@ -261,8 +261,6 @@ module Name : sig
   module Map : PrettyPrintable.PPMap with type key = t
 
   module Hash : Caml.Hashtbl.S with type key = t
-
-  module Normalizer : HashNormalizer.S with type t = t
 end
 
 val equal : t -> t -> bool
@@ -361,3 +359,5 @@ val is_java_type : t -> bool
 val unsome : string -> t option -> t
 
 module Normalizer : HashNormalizer.S with type t = t
+
+module NameNormalizer : HashNormalizer.S with type t = name

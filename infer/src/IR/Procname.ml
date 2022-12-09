@@ -273,7 +273,7 @@ module Java = struct
       let parameters =
         IList.map_changed t.parameters ~equal:phys_equal ~f:Typ.Normalizer.normalize
       in
-      let class_name = Typ.Name.Normalizer.normalize t.class_name in
+      let class_name = Typ.NameNormalizer.normalize t.class_name in
       let return_type =
         IOption.map_changed t.return_type ~equal:phys_equal ~f:Typ.Normalizer.normalize
       in
@@ -292,6 +292,14 @@ module Parameter = struct
       struct, with [name] being the name of the struct, [None] means the parameter is of some other
       type. *)
   type clang_parameter = Typ.Name.t option [@@deriving compare, equal, yojson_of, sexp, hash]
+
+  module ClangParameterNormalizer = HashNormalizer.Make (struct
+    type nonrec t = clang_parameter [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let normalize t = IOption.map_changed t ~equal:phys_equal ~f:Typ.NameNormalizer.normalize
+  end)
 
   (** Type for parameters in procnames, for java and clang. *)
   type t =
@@ -445,6 +453,26 @@ module ObjC_Cpp = struct
   let get_parameters osig = osig.parameters
 
   let replace_parameters new_parameters osig = {osig with parameters= new_parameters}
+
+  module Normalizer = HashNormalizer.Make (struct
+    type nonrec t = t [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let normalize t =
+      let class_name = Typ.NameNormalizer.normalize t.class_name in
+      let method_name = HashNormalizer.StringNormalizer.normalize t.method_name in
+      let parameters =
+        IList.map_changed ~equal:phys_equal ~f:Parameter.ClangParameterNormalizer.normalize
+          t.parameters
+      in
+      if
+        phys_equal class_name t.class_name
+        && phys_equal method_name t.method_name
+        && phys_equal parameters t.parameters
+      then t
+      else {class_name; kind= t.kind; method_name; parameters; template_args= t.template_args}
+  end)
 end
 
 module C = struct
@@ -495,6 +523,21 @@ module C = struct
   let is_make_shared c = is_std_function ~prefix:"make_shared" c
 
   let is_std_move c = is_std_function ~prefix:"move" c
+
+  module Normalizer = HashNormalizer.Make (struct
+    type nonrec t = t [@@deriving equal]
+
+    let hash = Hashtbl.hash
+
+    let normalize t =
+      let name = QualifiedCppName.Normalizer.normalize t.name in
+      let parameters =
+        IList.map_changed ~equal:phys_equal ~f:Parameter.ClangParameterNormalizer.normalize
+          t.parameters
+      in
+      if phys_equal name t.name && phys_equal parameters t.parameters then t
+      else {name; mangled= t.mangled; parameters; template_args= t.template_args}
+  end)
 end
 
 module Erlang = struct
@@ -1522,6 +1565,16 @@ module Normalizer = HashNormalizer.Make (struct
     | Java java_pname ->
         let java_pname' = Java.Normalizer.normalize java_pname in
         if phys_equal java_pname java_pname' then t else Java java_pname'
-    | _ ->
+    | C c ->
+        let c' = C.Normalizer.normalize c in
+        if phys_equal c c' then t else C c'
+    | ObjC_Cpp objc_cpp ->
+        let objc_cpp' = ObjC_Cpp.Normalizer.normalize objc_cpp in
+        if phys_equal objc_cpp objc_cpp' then t else ObjC_Cpp objc_cpp'
+    | Linters_dummy_method | WithAliasingParameters _ | WithFunctionParameters _ ->
+        (* these kinds should not appear inside a type environment *)
+        t
+    | Block _ | CSharp _ | Erlang _ | Hack _ ->
+        (* TODO *)
         t
 end)

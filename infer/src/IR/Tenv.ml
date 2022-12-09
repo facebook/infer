@@ -216,7 +216,7 @@ module Normalizer = struct
   let normalize tenv =
     let new_tenv = TypenameHash.create (TypenameHash.length tenv) in
     let normalize_mapping name tstruct =
-      let name = Typ.Name.Normalizer.normalize name in
+      let name = Typ.NameNormalizer.normalize name in
       let tstruct = Struct.Normalizer.normalize tstruct in
       TypenameHash.add new_tenv name tstruct
     in
@@ -237,6 +237,15 @@ let store_global tenv =
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
   global_tenv := Some tenv ;
   store_to_filename tenv global_tenv_path
+
+
+let normalize = function
+  | Global ->
+      Global
+  | FileLocal tenv ->
+      let new_tenv = Normalizer.normalize tenv in
+      HashNormalizer.reset_all_normalizers () ;
+      FileLocal new_tenv
 
 
 let resolve_method ~method_exists tenv class_name proc_name =

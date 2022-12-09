@@ -93,3 +93,5 @@ module Match : sig
 end
 
 module Set : PrettyPrintable.PPSet with type elt = t
+
+module Normalizer : HashNormalizer.S with type t = t

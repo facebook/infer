@@ -118,3 +118,5 @@ module Set = PrettyPrintable.MakePPSet (struct
 
   let pp = pp
 end)
+
+module Normalizer = HashNormalizer.StringListNormalizer
