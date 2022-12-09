@@ -1,1 +1,1 @@
-level1.hack, FN_basicFlowBad, 8, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from taintSource with kind Simple,passed as argument #1 to taintSink with kind Simple]
+level1.hack, FN_basicFlowBad, 3, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from taintSource with kind Simple,passed as argument #1 to taintSink with kind Simple]

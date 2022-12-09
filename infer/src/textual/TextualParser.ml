@@ -103,7 +103,7 @@ module TextualFile = struct
     match parsed with
     | Ok module_ -> (
       try
-        let cfg, tenv = TextualSil.module_to_sil module_ in
+        let cfg, tenv = TextualSil.module_to_sil module_ ~line_map:(line_map textual_file) in
         Ok {sourcefile; cfg; tenv}
       with Textual.TextualTransformError errors -> Error (sourcefile, [TransformError errors]) )
     | Error errs ->
