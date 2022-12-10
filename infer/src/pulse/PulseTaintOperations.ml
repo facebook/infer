@@ -507,7 +507,8 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location proc_nam
 let check_policies ~sink ~source ~source_times ~sanitizers =
   List.fold sink.Taint.kinds ~init:[] ~f:(fun acc sink_kind ->
       let policies = Hashtbl.find_exn sink_policies sink_kind in
-      List.fold policies ~init:acc ~f:(fun acc {source_kinds; sanitizer_kinds; policy_id} ->
+      List.fold policies ~init:acc
+        ~f:(fun acc {source_kinds; sanitizer_kinds; description; policy_id} ->
           match
             List.find source.Taint.kinds ~f:(fun source_kind ->
                 (* We should ignore flows between data-flow-only sources and data-flow-only sinks *)
@@ -530,7 +531,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
                   sanitizers
               in
               if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
-                (suspicious_source, sink_kind, policy_id) :: acc
+                (suspicious_source, sink_kind, description, policy_id) :: acc
               else (
                 L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
                   matching_sanitizers ;
@@ -594,7 +595,8 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
         let* policy_violations_reported = policy_violations_reported_result in
         L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
         let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
-        let report_policy_violation reported_so_far (source_kind, sink_kind, violated_policy_id) =
+        let report_policy_violation reported_so_far
+            (source_kind, sink_kind, sink_policy_description, violated_policy_id) =
           if IntSet.mem violated_policy_id reported_so_far then Ok reported_so_far
           else
             let flow_kind =
@@ -610,7 +612,8 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
                      ; location
                      ; source= ({source with kinds= [source_kind]}, source_hist)
                      ; sink= ({sink with kinds= [sink_kind]}, sink_trace)
-                     ; flow_kind } ) )
+                     ; flow_kind
+                     ; sink_policy_description } ) )
         in
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
           ~f:report_policy_violation )

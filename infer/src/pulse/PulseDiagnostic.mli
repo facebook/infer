@@ -89,7 +89,8 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t
-      ; flow_kind: flow_kind }
+      ; flow_kind: flow_kind
+      ; sink_policy_description: string }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option

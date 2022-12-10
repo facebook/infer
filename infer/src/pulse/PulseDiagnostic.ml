@@ -143,7 +143,8 @@ type t =
       ; source: Taint.t * ValueHistory.t
       ; sink: Taint.t * Trace.t
       ; location: Location.t
-      ; flow_kind: flow_kind }
+      ; flow_kind: flow_kind
+      ; sink_policy_description: string }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option
@@ -195,7 +196,7 @@ let pp fmt diagnostic =
   | StackVariableAddressEscape {variable; history; location} ->
       F.fprintf fmt "StackVariableAddressEscape {@[variable=%a;@;history=%a;@;location:%a@]}" Var.pp
         variable ValueHistory.pp history Location.pp location
-  | TaintFlow {expr; source; sink; location; flow_kind} ->
+  | TaintFlow {expr; source; sink; location; flow_kind; _} ->
       F.fprintf fmt "TaintFlow {@[expr=%a;@;source=%a;@;sink=%a;@;location:%a;@;flow_kind=%a@]}"
         DecompilerExpr.pp_with_abstract_value expr
         (Pp.pair ~fst:Taint.pp ~snd:ValueHistory.pp)
@@ -568,10 +569,10 @@ let get_message diagnostic =
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
       F.asprintf "Address of %a is returned by the function" pp_var variable
-  | TaintFlow {expr; source= source, _; sink= sink, _; flow_kind} ->
+  | TaintFlow {expr; source= source, _; sink= sink, _; flow_kind; sink_policy_description} ->
       (* TODO: say what line the source happened in the current function *)
-      F.asprintf "`%a` is tainted by %a and flows to %a (%a)" DecompilerExpr.pp expr Taint.pp source
-        Taint.pp sink pp_flow_kind flow_kind
+      F.asprintf "`%a` is tainted by %a and flows to %a (%a) and policy (%s)" DecompilerExpr.pp expr
+        Taint.pp source Taint.pp sink pp_flow_kind flow_kind sink_policy_description
   | UnnecessaryCopy {copied_into; source_typ; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       F.asprintf
