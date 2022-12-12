@@ -202,7 +202,7 @@ let analyze source_files_to_analyze =
     let runner =
       (* use a ref to pass data from prologue to epilogue without too much machinery *)
       let gc_stats_pre_fork = ref None in
-      let child_prologue () =
+      let child_prologue _ =
         Stats.reset () ;
         gc_stats_pre_fork := Some (GCStats.get ~since:ProgramStart) ;
         if Config.memtrace_analysis then
@@ -213,7 +213,7 @@ let analyze source_files_to_analyze =
             ~filename
           |> ignore
       in
-      let child_epilogue () =
+      let child_epilogue _ =
         let gc_stats_in_fork =
           match !gc_stats_pre_fork with
           | Some stats ->

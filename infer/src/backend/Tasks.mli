@@ -18,9 +18,9 @@ module Runner : sig
 
   val create :
        jobs:int
-    -> child_prologue:(unit -> unit)
+    -> child_prologue:(ProcessPool.Worker.id -> unit)
     -> f:('work, 'result) doer
-    -> child_epilogue:(unit -> 'final)
+    -> child_epilogue:(ProcessPool.Worker.id -> 'final)
     -> tasks:(unit -> ('work, 'result) ProcessPool.TaskGenerator.t)
     -> ('work, 'final, 'result) t
   (** Create a runner running [jobs] jobs in parallel *)

@@ -252,7 +252,6 @@ let process_output ic =
   let unit_iter = IterSeq.create ?estimated_size:unit_count units in
   let action unit = match Unit.capture_unit unit with Ok () -> None | Error () -> Some () in
   let on_finish = function Some _ -> incr n_error | _ -> incr n_captured in
-  let noop () = () in
   let tasks () =
     ProcessPool.TaskGenerator.
       { remaining_tasks= (fun () -> IterSeq.estimated_remaining unit_iter)
@@ -261,7 +260,8 @@ let process_output ic =
       ; next= (fun () -> IterSeq.next unit_iter) }
   in
   let runner =
-    Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:noop ~f:action ~child_epilogue:noop ~tasks
+    Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:action ~child_epilogue:ignore
+      ~tasks
   in
   Tasks.Runner.run runner |> ignore ;
   (!n_captured, !n_error)

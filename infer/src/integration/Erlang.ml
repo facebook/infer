@@ -64,11 +64,8 @@ let parse_translate_store result_dir =
           L.internal_error "E: %s@." error ) ;
     None
   in
-  Tasks.Runner.create ~jobs:Config.jobs
-    ~child_prologue:(fun () -> ())
-    ~f:process_one_file
-    ~child_epilogue:(fun () -> ())
-    ~tasks:(fun () ->
+  Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:process_one_file
+    ~child_epilogue:ignore ~tasks:(fun () ->
       ProcessPool.TaskGenerator.of_list (Utils.directory_fold (fun l p -> p :: l) [] result_dir) )
   |> Tasks.Runner.run |> ignore
 
