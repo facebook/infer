@@ -30,7 +30,10 @@ let pp_error sourcefile fmt = function
       TextualDecls.pp_error sourcefile fmt err
 
 
-let log_error sourcefile error = L.external_error "%a@." (pp_error sourcefile) error
+let log_error sourcefile error =
+  if Config.keep_going then L.debug Capture Quiet "%a@." (pp_error sourcefile) error
+  else L.external_error "%a@." (pp_error sourcefile) error
+
 
 let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
   try
