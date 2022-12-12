@@ -198,7 +198,7 @@ let%test_module "to_sil" =
     let%expect_test _ =
       let no_lang = {|define nothing() : void { #node: ret null }|} in
       let m = parse_module no_lang in
-      try TextualSil.module_to_sil m |> ignore
+      try TextualSil.module_to_sil m ~line_map:None |> ignore
       with TextualTransformError errs ->
         List.iter errs ~f:(Textual.pp_transform_error sourcefile F.std_formatter) ;
         [%expect
@@ -418,58 +418,61 @@ let%test_module "line map" =
   ( module struct
     let text =
       {|
-        .source_language = "hack"
+          // TEXTUAL UNIT START level1.hack
+          .source_language = "hack"
 
-        // .file "infer/tests/codetoanalyze/hack/pulse/level1.hack"
-        // .line 6
-        define $root.taintSource(this: *void) : *HackInt {
-        #b0:
-        // .line 7
-          n0 = $builtins.hhbc_is_type_int($builtins.hack_int(42))
-          n1 = $builtins.hhbc_not(n0)
-          jmp b1, b2
-        #b1:
-          prune $builtins.hack_is_true(n1)
-          n2 = $builtins.hhbc_verify_failed()
-          unreachable
-        #b2:
-          prune ! $builtins.hack_is_true(n1)
-          ret $builtins.hack_int(42)
-        }
+          // .file "level1.hack"
+          // .line 6
+          define $root.taintSource(this: *void) : *HackInt {
+          #b0:
+          // .line 7
+            n0 = $builtins.hhbc_is_type_int($builtins.hack_int(42))
+            n1 = $builtins.hhbc_not(n0)
+            jmp b1, b2
+          #b1:
+            prune $builtins.hack_is_true(n1)
+            n2 = $builtins.hhbc_verify_failed()
+            unreachable
+          #b2:
+            prune ! $builtins.hack_is_true(n1)
+            ret $builtins.hack_int(42)
+          }
 
-        // .file "infer/tests/codetoanalyze/hack/pulse/level1.hack"
-        // .line 10
-        define $root.taintSink(this: *void, $i: *HackInt) : *void {
-        #b0:
-        // .line 11
-          ret $builtins.hack_null()
-        }
+          // .file "level1.hack"
+          // .line 10
+          define $root.taintSink(this: *void, $i: *HackInt) : *void {
+          #b0:
+          // .line 11
+            ret $builtins.hack_null()
+          }
 
-        // .file "infer/tests/codetoanalyze/hack/pulse/level1.hack"
-        // .line 13
-        define $root.FN_basicFlowBad(this: *void) : *void {
-        local $tainted: *void
-        #b0:
-        // .line 14
-          n0 = $root.taintSource(null)
-          store &$tainted <- n0: *Mixed
-        // .line 15
-          n1: *Mixed = load &$tainted
-          n2 = $root.taintSink(null, n1)
-        // .line 16
-          ret $builtins.hack_null()
-        }
+          // .file "level1.hack"
+          // .line 13
+          define $root.FN_basicFlowBad(this: *void) : *void {
+          local $tainted: *void
+          #b0:
+          // .line 14
+            n0 = $root.taintSource(null)
+            store &$tainted <- n0: *Mixed
+          // .line 15
+            n1: *Mixed = load &$tainted
+            n2 = $root.taintSink(null, n1)
+          // .line 16
+            ret $builtins.hack_null()
+          }
 
-        // .file "infer/tests/codetoanalyze/hack/pulse/level1.hack"
-        // .line 18
-        define $root.basicFlowOk(this: *void, $untainted: *HackInt) : *void {
-        #b0:
-        // .line 19
-          n0: *Mixed = load &$untainted
-          n1 = $root.taintSink(null, n0)
-        // .line 20
-          ret $builtins.hack_null()
-        } |}
+          // .file "level1.hack"
+          // .line 18
+          define $root.basicFlowOk(this: *void, $untainted: *HackInt) : *void {
+          #b0:
+          // .line 19
+            n0: *Mixed = load &$untainted
+            n1 = $root.taintSink(null, n0)
+          // .line 20
+            ret $builtins.hack_null()
+          }
+          // TEXTUAL UNIT END level1.hack
+      |}
 
 
     let%expect_test _ =
@@ -477,57 +480,60 @@ let%test_module "line map" =
       F.printf "%a" LineMap.pp line_map ;
       [%expect
         {|
-        Textual line: 0, Original line: -1
-        Textual line: 1, Original line: -1
-        Textual line: 2, Original line: -1
-        Textual line: 3, Original line: -1
-        Textual line: 4, Original line: -1
-        Textual line: 5, Original line: 6
-        Textual line: 6, Original line: 6
-        Textual line: 7, Original line: -1
-        Textual line: 8, Original line: 7
-        Textual line: 9, Original line: 7
-        Textual line: 10, Original line: 7
-        Textual line: 11, Original line: 7
-        Textual line: 12, Original line: 7
-        Textual line: 13, Original line: 7
-        Textual line: 14, Original line: 7
-        Textual line: 15, Original line: 7
-        Textual line: 16, Original line: 7
-        Textual line: 17, Original line: 7
-        Textual line: 18, Original line: 7
-        Textual line: 19, Original line: 7
-        Textual line: 20, Original line: 7
-        Textual line: 21, Original line: -1
-        Textual line: 22, Original line: 10
-        Textual line: 23, Original line: 10
-        Textual line: 24, Original line: -1
-        Textual line: 25, Original line: 11
-        Textual line: 26, Original line: 11
-        Textual line: 27, Original line: 11
-        Textual line: 28, Original line: 11
-        Textual line: 29, Original line: -1
-        Textual line: 30, Original line: 13
-        Textual line: 31, Original line: 13
-        Textual line: 32, Original line: 13
-        Textual line: 33, Original line: -1
-        Textual line: 34, Original line: 14
-        Textual line: 35, Original line: 14
-        Textual line: 36, Original line: -1
-        Textual line: 37, Original line: 15
-        Textual line: 38, Original line: 15
-        Textual line: 39, Original line: -1
-        Textual line: 40, Original line: 16
-        Textual line: 41, Original line: 16
-        Textual line: 42, Original line: 16
-        Textual line: 43, Original line: 16
-        Textual line: 44, Original line: -1
-        Textual line: 45, Original line: 18
-        Textual line: 46, Original line: 18
-        Textual line: 47, Original line: -1
-        Textual line: 48, Original line: 19
-        Textual line: 49, Original line: 19
-        Textual line: 50, Original line: -1
-        Textual line: 51, Original line: 20
-        Textual line: 52, Original line: 20 |}]
+        Textual line: 0, Original line: 0
+        Textual line: 1, Original line: 0
+        Textual line: 2, Original line: 0
+        Textual line: 3, Original line: 0
+        Textual line: 4, Original line: 0
+        Textual line: 5, Original line: 5
+        Textual line: 6, Original line: 5
+        Textual line: 7, Original line: 5
+        Textual line: 8, Original line: 6
+        Textual line: 9, Original line: 6
+        Textual line: 10, Original line: 6
+        Textual line: 11, Original line: 6
+        Textual line: 12, Original line: 6
+        Textual line: 13, Original line: 6
+        Textual line: 14, Original line: 6
+        Textual line: 15, Original line: 6
+        Textual line: 16, Original line: 6
+        Textual line: 17, Original line: 6
+        Textual line: 18, Original line: 6
+        Textual line: 19, Original line: 6
+        Textual line: 20, Original line: 6
+        Textual line: 21, Original line: 6
+        Textual line: 22, Original line: 9
+        Textual line: 23, Original line: 9
+        Textual line: 24, Original line: 9
+        Textual line: 25, Original line: 10
+        Textual line: 26, Original line: 10
+        Textual line: 27, Original line: 10
+        Textual line: 28, Original line: 10
+        Textual line: 29, Original line: 10
+        Textual line: 30, Original line: 12
+        Textual line: 31, Original line: 12
+        Textual line: 32, Original line: 12
+        Textual line: 33, Original line: 12
+        Textual line: 34, Original line: 13
+        Textual line: 35, Original line: 13
+        Textual line: 36, Original line: 13
+        Textual line: 37, Original line: 14
+        Textual line: 38, Original line: 14
+        Textual line: 39, Original line: 14
+        Textual line: 40, Original line: 15
+        Textual line: 41, Original line: 15
+        Textual line: 42, Original line: 15
+        Textual line: 43, Original line: 15
+        Textual line: 44, Original line: 15
+        Textual line: 45, Original line: 17
+        Textual line: 46, Original line: 17
+        Textual line: 47, Original line: 17
+        Textual line: 48, Original line: 18
+        Textual line: 49, Original line: 18
+        Textual line: 50, Original line: 18
+        Textual line: 51, Original line: 19
+        Textual line: 52, Original line: 19
+        Textual line: 53, Original line: 19
+        Textual line: 54, Original line: 19
+        Textual line: 55, Original line: 19 |}]
   end )

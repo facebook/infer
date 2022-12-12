@@ -398,9 +398,9 @@ module Normalizer = HashNormalizer.Make (struct
   let normalize t =
     let fields = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.fields in
     let statics = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.statics in
-    let supers = IList.map_changed ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize t.supers in
+    let supers = IList.map_changed ~equal:phys_equal ~f:Typ.NameNormalizer.normalize t.supers in
     let objc_protocols =
-      IList.map_changed ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize t.objc_protocols
+      IList.map_changed ~equal:phys_equal ~f:Typ.NameNormalizer.normalize t.objc_protocols
     in
     let methods = IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.methods in
     let exported_objc_methods =

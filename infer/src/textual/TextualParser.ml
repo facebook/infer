@@ -30,7 +30,10 @@ let pp_error sourcefile fmt = function
       TextualDecls.pp_error sourcefile fmt err
 
 
-let log_error sourcefile error = L.external_error "%a@." (pp_error sourcefile) error
+let log_error sourcefile error =
+  if Config.keep_going then L.debug Capture Quiet "%a@." (pp_error sourcefile) error
+  else L.external_error "%a@." (pp_error sourcefile) error
+
 
 let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
   try
@@ -103,7 +106,7 @@ module TextualFile = struct
     match parsed with
     | Ok module_ -> (
       try
-        let cfg, tenv = TextualSil.module_to_sil module_ in
+        let cfg, tenv = TextualSil.module_to_sil module_ ~line_map:(line_map textual_file) in
         Ok {sourcefile; cfg; tenv}
       with Textual.TextualTransformError errors -> Error (sourcefile, [TransformError errors]) )
     | Error errs ->
@@ -118,16 +121,20 @@ module TextualFile = struct
       Config.debug_mode || Config.testing_mode || Config.frontend_tests
       || Option.is_some Config.icfg_dotty_outfile
     then DotCfg.emit_frontend_cfg sourcefile cfg ;
-    Tenv.store_global tenv ;
-    ()
+    tenv
 end
 
-let capture_one textual_file =
-  match TextualFile.translate textual_file with
-  | Error (sourcefile, errs) ->
-      List.iter errs ~f:(log_error sourcefile)
-  | Ok sil ->
-      TextualFile.capture sil
-
-
-let capture textual_files = List.iter textual_files ~f:capture_one
+(* This code is used only by the --capture-textual integration, which includes Java which requires a
+   global tenv. The Hack driver doesn't use this function. *)
+let capture textual_files =
+  let global_tenv = Tenv.create () in
+  let capture_one textual_file =
+    match TextualFile.translate textual_file with
+    | Error (sourcefile, errs) ->
+        List.iter errs ~f:(log_error sourcefile)
+    | Ok sil ->
+        let tenv = TextualFile.capture sil in
+        Tenv.merge ~src:tenv ~dst:global_tenv
+  in
+  List.iter textual_files ~f:capture_one ;
+  Tenv.store_global global_tenv

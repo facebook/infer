@@ -31,10 +31,7 @@ let worker source_file =
 
 
 let report () =
-  Tasks.Runner.create ~jobs:Config.jobs
-    ~child_prologue:(fun () -> ())
-    ~f:worker
-    ~child_epilogue:(fun () -> ())
+  Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:worker ~child_epilogue:ignore
     ~tasks:(fun () ->
       ProcessPool.TaskGenerator.of_list (SourceFiles.get_all ~filter:(fun _ -> true) ()) )
   |> Tasks.Runner.run |> ignore
