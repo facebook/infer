@@ -194,6 +194,39 @@ end = struct
     res
 end
 
+(** Bridge between ephemeral [Seq.t] and the interface required by [ProcessPool.TaskGenerator]. *)
+module IterSeq = struct
+  type 'a t = {estimated_size: int option; mutable seq: 'a Seq.t; mutable n_processed: int}
+
+  let create ?estimated_size seq =
+    (* We need to memoize the sequence because when the sequence is ephemeral poking at it with
+       e.g. [is_empty] consumes the head of the sequence and we need the head to be persistent. Note
+       that the sequence will still be processed in constant memory because we discard the head as
+       soon it's no longer needed and process the tail on demand. *)
+    let seq = Seq.memoize seq in
+    {estimated_size; seq; n_processed= 0}
+
+
+  let next t =
+    match Seq.uncons t.seq with
+    | Some (hd, tl) ->
+        t.n_processed <- t.n_processed + 1 ;
+        t.seq <- tl ;
+        Some hd
+    | None ->
+        None
+
+
+  let is_empty t = Seq.is_empty t.seq
+
+  let estimated_remaining t =
+    match t.estimated_size with
+    | Some estimated_size when estimated_size > t.n_processed ->
+        estimated_size - t.n_processed
+    | _ ->
+        0
+end
+
 (** Process hackc output from [ic] extracting and capturing individual textual units.
 
     The structure of hackc output is as follows:
@@ -213,10 +246,23 @@ let process_output ic =
   let unit_count, units = Unit.extract_units ic in
   Option.iter unit_count ~f:(L.progress "Expecting to capture %d files@.") ;
   let n_captured, n_error = (ref 0, ref 0) in
-  Seq.iter
-    (fun unit ->
-      match Unit.capture_unit unit with Ok () -> incr n_captured | Error () -> incr n_error )
-    units ;
+  (* action's output and on_finish's input are connected and consistent with
+     ProcessPool.TaskGenerator's contract *)
+  let unit_iter = IterSeq.create ?estimated_size:unit_count units in
+  let action unit = match Unit.capture_unit unit with Ok () -> None | Error () -> Some () in
+  let on_finish = function Some _ -> incr n_error | _ -> incr n_captured in
+  let noop () = () in
+  let tasks () =
+    ProcessPool.TaskGenerator.
+      { remaining_tasks= (fun () -> IterSeq.estimated_remaining unit_iter)
+      ; is_empty= (fun () -> IterSeq.is_empty unit_iter)
+      ; finished= (fun ~result _ -> on_finish result)
+      ; next= (fun () -> IterSeq.next unit_iter) }
+  in
+  let runner =
+    Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:noop ~f:action ~child_epilogue:noop ~tasks
+  in
+  Tasks.Runner.run runner |> ignore ;
   (!n_captured, !n_error)
 
 
@@ -241,14 +287,20 @@ let compile compiler args =
   let hackc_pid, hackc_stdout = start_hackc compiler args in
   let n_captured, n_error = process_output hackc_stdout in
   In_channel.close hackc_stdout ;
-  match Unix.waitpid hackc_pid with
-  | Ok () ->
-      L.progress "Finished capture: success %d files, error %d files.@." n_captured n_error ;
-      if (not Config.keep_going) && n_error > 0 then
-        L.die ExternalError
-          "There were errors during capture. Re-run with --keep-going to ignore the errors."
+  ( match Unix.waitpid hackc_pid with
   | Error _ as status ->
       L.die ExternalError "Error executing hackc: %s@\n" (Unix.Exit_or_signal.to_string_hum status)
+  | Ok () ->
+      ()
+  | exception Unix.Unix_error (ECHILD, _, _) ->
+      (* ProcessPool has a code path that awaits any children inside and outside of its pool,
+         including possibly a hackc process. When this happens a waitpid above will raise, but it's
+         fine. *)
+      () ) ;
+  L.progress "Finished capture: success %d files, error %d files.@." n_captured n_error ;
+  if (not Config.keep_going) && n_error > 0 then
+    L.die ExternalError
+      "There were errors during capture. Re-run with --keep-going to ignore the errors."
 
 
 let capture ~prog ~args =
