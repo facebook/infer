@@ -18,11 +18,14 @@ module OutputLine = struct
   type t =
     | UnitStart of string  (** Start of a unit with a given filename *)
     | UnitEnd of string  (** End of a unit with a given filename *)
+    | UnitCount of int  (** Expected number of units in the output *)
     | Regular of string  (** Regular line of output *)
 
   let start_marker = "// TEXTUAL UNIT START"
 
   let end_marker = "// TEXTUAL UNIT END"
+
+  let count_marker = "// TEXTUAL UNIT COUNT"
 
   let detect line =
     match String.chop_prefix line ~prefix:start_marker with
@@ -32,8 +35,16 @@ module OutputLine = struct
       match String.chop_prefix line ~prefix:end_marker with
       | Some filename ->
           UnitEnd (String.strip filename)
-      | None ->
-          Regular line )
+      | None -> (
+        match String.chop_prefix line ~prefix:count_marker with
+        | Some count_str -> (
+          match int_of_string_opt (String.strip count_str) with
+          | Some cnt ->
+              UnitCount cnt
+          | None ->
+              Regular line )
+        | None ->
+            Regular line ) )
 end
 
 (** Utility wrapper around [In_channel.t] that provides one line of look-ahead. *)
@@ -62,14 +73,19 @@ module Peekable_in_channel = struct
         input_line_until_nonempty t
     | None ->
         None
+
+
+  let discard_line t = input_line t |> ignore
+
+  let peek_line {cur_line} = cur_line
 end
 
 (** Utility functions to consume (potentially) multi-file hackc output. *)
 module Unit : sig
   type t
 
-  val extract_units : In_channel.t -> t Seq.t
-  (** Returns a lazy sequence of units extracted from the channel. *)
+  val extract_units : In_channel.t -> int option * t Seq.t
+  (** Returns the expected number of units and a lazy sequence of units extracted from the channel. *)
 
   val capture_unit : t -> (unit, unit) Result.t
 end = struct
@@ -107,6 +123,9 @@ end = struct
         | UnitStart _ ->
             L.user_warning "Unexpected start of another unit: %s@." line ;
             find_start (Some line)
+        | UnitCount _ ->
+            L.user_warning "Unexpected unit count marker inside a unit: %s@\n" line ;
+            acc_unit source_path (Peekable_in_channel.input_line pic)
         | Regular line ->
             (* Accumulate lines in the state *)
             Buffer.add_string buf line ;
@@ -118,7 +137,20 @@ end = struct
 
   let extract_units ic =
     let pic = Peekable_in_channel.mk ic in
-    Seq.of_dispenser (fun () -> extract_unit pic)
+    let line = Peekable_in_channel.peek_line pic in
+    match line with
+    | None ->
+        (Some 0, Seq.empty)
+    | Some line ->
+        let count_opt =
+          match OutputLine.detect line with
+          | UnitCount cnt ->
+              Peekable_in_channel.discard_line pic ;
+              Some cnt
+          | _ ->
+              None
+        in
+        (count_opt, Seq.of_dispenser (fun () -> extract_unit pic))
 
 
   (** Flatten a/b/c as a-b-c. Special dirs .. and . are abbreviated. *)
@@ -166,6 +198,7 @@ end
 
     The structure of hackc output is as follows:
 
+    - COUNT MARKER <count>
     - START MARKER <source path>
     - <content>
     - END MARKER <source path>
@@ -177,7 +210,8 @@ end
 
     When the whole compilation unit has been accumulated, [Unit.capture_unit] is called. *)
 let process_output ic =
-  let units = Unit.extract_units ic in
+  let unit_count, units = Unit.extract_units ic in
+  Option.iter unit_count ~f:(L.progress "Expecting to capture %d files@.") ;
   let n_captured, n_error = (ref 0, ref 0) in
   Seq.iter
     (fun unit ->
