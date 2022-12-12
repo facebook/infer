@@ -121,16 +121,20 @@ module TextualFile = struct
       Config.debug_mode || Config.testing_mode || Config.frontend_tests
       || Option.is_some Config.icfg_dotty_outfile
     then DotCfg.emit_frontend_cfg sourcefile cfg ;
-    Tenv.store_global tenv ;
-    ()
+    tenv
 end
 
-let capture_one textual_file =
-  match TextualFile.translate textual_file with
-  | Error (sourcefile, errs) ->
-      List.iter errs ~f:(log_error sourcefile)
-  | Ok sil ->
-      TextualFile.capture sil
-
-
-let capture textual_files = List.iter textual_files ~f:capture_one
+(* This code is used only by the --capture-textual integration, which includes Java which requires a
+   global tenv. The Hack driver doesn't use this function. *)
+let capture textual_files =
+  let global_tenv = Tenv.create () in
+  let capture_one textual_file =
+    match TextualFile.translate textual_file with
+    | Error (sourcefile, errs) ->
+        List.iter errs ~f:(log_error sourcefile)
+    | Ok sil ->
+        let tenv = TextualFile.capture sil in
+        Tenv.merge ~src:tenv ~dst:global_tenv
+  in
+  List.iter textual_files ~f:capture_one ;
+  Tenv.store_global global_tenv

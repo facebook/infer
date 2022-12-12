@@ -184,7 +184,8 @@ end = struct
     let res =
       match trans with
       | Ok sil ->
-          TextualFile.capture sil ;
+          (* TODO(arr): consider a global tenv for Hack *)
+          TextualFile.capture sil |> ignore ;
           Ok ()
       | Error (sourcefile, errs) ->
           List.iter errs ~f:(log_error sourcefile) ;
