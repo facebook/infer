@@ -103,12 +103,12 @@ end = struct
             Buffer.clear buf ;
             acc_unit filename (Peekable_in_channel.input_line pic)
         | _ ->
-            L.user_warning "Unexpected line outside of a textual unit: %s@." line ;
+            L.user_warning "Unexpected line outside of a textual unit: %s@\n" line ;
             find_start (Peekable_in_channel.input_line_until_nonempty pic) )
     and acc_unit source_path line_opt =
       match line_opt with
       | None ->
-          L.user_warning "Unfinished unit: %s@." source_path ;
+          L.user_warning "Unfinished unit: %s@\n" source_path ;
           None
       | Some line -> (
         match OutputLine.detect line with
@@ -117,11 +117,11 @@ end = struct
             Buffer.clear buf ;
             Some {source_path; content}
         | UnitEnd end_filename ->
-            L.user_warning "Unexpected end of another unit: expected=%s, actual=%s@." source_path
+            L.user_warning "Unexpected end of another unit: expected=%s, actual=%s@\n" source_path
               end_filename ;
             find_start (Peekable_in_channel.input_line_until_nonempty pic)
         | UnitStart _ ->
-            L.user_warning "Unexpected start of another unit: %s@." line ;
+            L.user_warning "Unexpected start of another unit: %s@\n" line ;
             find_start (Some line)
         | UnitCount _ ->
             L.user_warning "Unexpected unit count marker inside a unit: %s@\n" line ;
@@ -175,9 +175,10 @@ end = struct
     Out_channel.write_all out_file ~data:content
 
 
-  (** Translate and capture a textual unit. Returns [true] on success and [false] on failure. *)
+  (** Translate and capture a textual unit. Returns [Ok] on success and [Error] if there were errors
+      during capture. *)
   let capture_unit {source_path; content} =
-    L.debug Capture Quiet "Capturing %s@." source_path ;
+    L.debug Capture Quiet "Capturing %s@\n" source_path ;
     let open TextualParser in
     let line_map = LineMap.create content in
     let trans = TextualFile.translate (TranslatedFile {source_path; content; line_map}) in
@@ -245,6 +246,7 @@ end
     When the whole compilation unit has been accumulated, [Unit.capture_unit] is called. *)
 let process_output ic =
   let unit_count, units = Unit.extract_units ic in
+  (* Use @. to flush the format buffer and avoid double printing in child processes. *)
   Option.iter unit_count ~f:(L.progress "Expecting to capture %d files@.") ;
   let n_captured, n_error = (ref 0, ref 0) in
   (* action's output and on_finish's input are connected and consistent with
@@ -298,7 +300,7 @@ let compile compiler args =
          including possibly a hackc process. When this happens a waitpid above will raise, but it's
          fine. *)
       () ) ;
-  L.progress "Finished capture: success %d files, error %d files.@." n_captured n_error ;
+  L.progress "Finished capture: success %d files, error %d files.@\n" n_captured n_error ;
   if (not Config.keep_going) && n_error > 0 then
     L.die ExternalError
       "There were errors during capture. Re-run with --keep-going to ignore the errors."

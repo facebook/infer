@@ -31,8 +31,8 @@ let pp_error sourcefile fmt = function
 
 
 let log_error sourcefile error =
-  if Config.keep_going then L.debug Capture Quiet "%a@." (pp_error sourcefile) error
-  else L.external_error "%a@." (pp_error sourcefile) error
+  if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
+  else L.external_error "%a@\n" (pp_error sourcefile) error
 
 
 let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
