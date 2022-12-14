@@ -45,13 +45,26 @@ module LongestProcDurationHeap = struct
   include Heap
 end
 
+(** Type for fields that contain non-[Marshal]-serializable data. These need to be serialized by
+    [get ()] so they can safely be sent over the pipe to the orchestrator process, where these stats
+    end up. *)
+type ('t, 'serialized) serialize_before_marshal = T of 't | Serialized of 'serialized
+
+let serialize serializer = function
+  | T x ->
+      Serialized (serializer x)
+  | Serialized _ as serialized ->
+      serialized
+
+
+let deserialize deserializer = function T x -> x | Serialized s -> deserializer s
+
 include struct
   (* ignore dead modules added by @@deriving fields *)
   [@@@warning "-unused-module"]
 
   type t =
-    { mutable longest_proc_duration_heap: LongestProcDurationHeap.t
-    ; mutable summary_file_try_load: int
+    { mutable summary_file_try_load: int
     ; mutable summary_read_from_disk: int
     ; mutable summary_cache_hits: int
     ; mutable summary_cache_misses: int
@@ -64,7 +77,9 @@ include struct
     ; mutable pulse_args_length_contradictions: int
     ; mutable pulse_captured_vars_length_contradictions: int
     ; mutable pulse_summaries_count: int PulseSumCountMap.t
-    ; mutable timeouts: int }
+    ; mutable timeouts: int
+    ; mutable timings: (Timings.t, Timings.serialized) serialize_before_marshal
+    ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t }
   [@@deriving fields]
 end
 
@@ -85,10 +100,9 @@ let global_stats =
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
-  ; timeouts= 0 }
+  ; timeouts= 0
+  ; timings= T Timings.init }
 
-
-let get () = global_stats
 
 let update_with field ~f =
   match Field.setter field with
@@ -150,29 +164,35 @@ let add_proc_duration pname duration_ms =
 
 let incr_timeouts () = incr Fields.timeouts
 
+let add_timing timeable t =
+  update_with Fields.timings ~f:(function timings ->
+      T (Timings.add timeable t (deserialize Timings.deserialize timings)) )
+
+
 let copy from ~into : unit =
-  let { longest_proc_duration_heap
-      ; summary_file_try_load
-      ; summary_read_from_disk
-      ; summary_cache_hits
-      ; summary_cache_misses
-      ; ondemand_procs_analyzed
-      ; proc_locker_lock_time
-      ; proc_locker_unlock_time
-      ; restart_scheduler_useful_time
-      ; restart_scheduler_total_time
-      ; pulse_aliasing_contradictions
-      ; pulse_args_length_contradictions
-      ; pulse_captured_vars_length_contradictions
-      ; pulse_summaries_count
-      ; timeouts } =
+  let ({ longest_proc_duration_heap
+       ; summary_file_try_load
+       ; summary_read_from_disk
+       ; summary_cache_hits
+       ; summary_cache_misses
+       ; ondemand_procs_analyzed
+       ; proc_locker_lock_time
+       ; proc_locker_unlock_time
+       ; restart_scheduler_useful_time
+       ; restart_scheduler_total_time
+       ; pulse_aliasing_contradictions
+       ; pulse_args_length_contradictions
+       ; pulse_captured_vars_length_contradictions
+       ; pulse_summaries_count
+       ; timeouts
+       ; timings } [@warning "+9"] ) =
     from
   in
   Fields.Direct.set_all_mutable_fields into ~longest_proc_duration_heap ~summary_file_try_load
     ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed
     ~proc_locker_lock_time ~proc_locker_unlock_time ~restart_scheduler_useful_time
     ~restart_scheduler_total_time ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
-    ~pulse_captured_vars_length_contradictions ~pulse_summaries_count ~timeouts
+    ~pulse_captured_vars_length_contradictions ~pulse_summaries_count ~timeouts ~timings
 
 
 let merge stats1 stats2 =
@@ -204,7 +224,12 @@ let merge stats1 stats2 =
       PulseSumCountMap.merge
         (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
         stats1.pulse_summaries_count stats2.pulse_summaries_count
-  ; timeouts= stats1.timeouts + stats2.timeouts }
+  ; timeouts= stats1.timeouts + stats2.timeouts
+  ; timings=
+      T
+        (Timings.merge
+           (deserialize Timings.deserialize stats1.timings)
+           (deserialize Timings.deserialize stats2.timings) ) }
 
 
 let initial =
@@ -222,57 +247,64 @@ let initial =
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
-  ; timeouts= 0 }
+  ; timeouts= 0
+  ; timings= T Timings.init }
 
 
 let reset () = copy initial ~into:global_stats
 
-let pp f stats =
-  let pp_hit_percent hit miss f =
+let pp fmt stats =
+  let pp_field pp_value fmt field =
+    F.fprintf fmt "%s= %a@;" (Field.name field) pp_value (Field.get field stats)
+  in
+  let pp_serialized_field deserializer pp_value fmt field =
+    pp_field (fun fmt v -> pp_value fmt (deserialize deserializer v)) fmt field
+  in
+  let pp_hit_percent hit miss fmt =
     let total = hit + miss in
-    if Int.equal total 0 then F.pp_print_string f "N/A%%" else F.fprintf f "%d%%" (hit * 100 / total)
+    if Int.equal total 0 then F.pp_print_string fmt "N/A%%"
+    else F.fprintf fmt "%d%%" (hit * 100 / total)
   in
-  let pp_int_field stats f field =
-    F.fprintf f "%s= %d@;" (Field.name field) (Field.get field stats)
-  in
-  let pp_execution_duration_field stats f field =
+  let pp_int_field fmt field = pp_field F.pp_print_int fmt field in
+  let pp_execution_duration_field fmt field =
     let field_value = Field.get field stats in
     let field_name = Field.name field in
-    F.fprintf f "%a@;" (ExecutionDuration.pp ~prefix:field_name) field_value
+    F.fprintf fmt "%a@;" (ExecutionDuration.pp ~prefix:field_name) field_value
   in
-  let pp_cache_hits stats cache_misses f cache_hits_field =
+  let pp_cache_hits stats cache_misses fmt cache_hits_field =
     let cache_hits = Field.get cache_hits_field stats in
-    F.fprintf f "%s= %d (%t)@;" (Field.name cache_hits_field) cache_hits
+    F.fprintf fmt "%s= %d (%t)@;" (Field.name cache_hits_field) cache_hits
       (pp_hit_percent cache_hits cache_misses)
   in
-  let pp_longest_proc_duration_heap stats f field =
+  let pp_longest_proc_duration_heap fmt field =
     let heap : LongestProcDurationHeap.t = Field.get field stats in
-    F.fprintf f "%s= [@\n@[<v>%a@]@\n]@;" (Field.name field) LongestProcDurationHeap.pp_sorted heap
+    F.fprintf fmt "%s= [@\n@[<v>%a@]@\n]@;" (Field.name field) LongestProcDurationHeap.pp_sorted
+      heap
   in
-  let pp_pulse_summaries_count stats f field =
+  let pp_pulse_summaries_count fmt field =
     let sumcounters : int PulseSumCountMap.t = Field.get field stats in
-    let pp_binding f (n, count) = Format.fprintf f "%d -> %d" n count in
-    F.fprintf f "%s= [%a]@;" (Field.name field)
-      (F.pp_print_list ~pp_sep:(fun f () -> F.fprintf f ", ") pp_binding)
+    let pp_binding fmt (n, count) = Format.fprintf fmt "%d -> %d" n count in
+    F.fprintf fmt "%s= [%a]@;" (Field.name field)
+      (F.pp_print_list ~pp_sep:(fun fmt () -> F.fprintf fmt ", ") pp_binding)
       (PulseSumCountMap.bindings sumcounters)
   in
-  let pp_stats stats f =
-    Fields.iter ~summary_file_try_load:(pp_int_field stats f)
-      ~longest_proc_duration_heap:(pp_longest_proc_duration_heap stats f)
-      ~summary_read_from_disk:(pp_int_field stats f)
-      ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses f)
-      ~summary_cache_misses:(pp_int_field stats f) ~ondemand_procs_analyzed:(pp_int_field stats f)
-      ~proc_locker_lock_time:(pp_execution_duration_field stats f)
-      ~proc_locker_unlock_time:(pp_execution_duration_field stats f)
-      ~restart_scheduler_useful_time:(pp_execution_duration_field stats f)
-      ~restart_scheduler_total_time:(pp_execution_duration_field stats f)
-      ~pulse_aliasing_contradictions:(pp_int_field stats f)
-      ~pulse_args_length_contradictions:(pp_int_field stats f)
-      ~pulse_captured_vars_length_contradictions:(pp_int_field stats f)
-      ~pulse_summaries_count:(pp_pulse_summaries_count stats f)
-      ~timeouts:(pp_int_field stats f)
+  let pp_stats fmt =
+    Fields.iter ~summary_file_try_load:(pp_int_field fmt)
+      ~longest_proc_duration_heap:(pp_longest_proc_duration_heap fmt)
+      ~summary_read_from_disk:(pp_int_field fmt)
+      ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses fmt)
+      ~summary_cache_misses:(pp_int_field fmt) ~ondemand_procs_analyzed:(pp_int_field fmt)
+      ~proc_locker_lock_time:(pp_execution_duration_field fmt)
+      ~proc_locker_unlock_time:(pp_execution_duration_field fmt)
+      ~restart_scheduler_useful_time:(pp_execution_duration_field fmt)
+      ~restart_scheduler_total_time:(pp_execution_duration_field fmt)
+      ~pulse_aliasing_contradictions:(pp_int_field fmt)
+      ~pulse_args_length_contradictions:(pp_int_field fmt)
+      ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
+      ~pulse_summaries_count:(pp_pulse_summaries_count fmt) ~timeouts:(pp_int_field fmt)
+      ~timings:(pp_serialized_field Timings.deserialize Timings.pp fmt)
   in
-  F.fprintf f "@[Backend stats:@\n@[<v2>  %t@]@]@." (pp_stats stats)
+  F.fprintf fmt "@[Backend stats:@\n@[<v2>  %t@]@]@." pp_stats
 
 
 let log_to_scuba stats =
@@ -298,6 +330,9 @@ let log_to_scuba stats =
         )
       (PulseSumCountMap.bindings counters)
   in
+  let create_timings_entry field =
+    Field.get field stats |> deserialize Timings.deserialize |> Timings.to_scuba
+  in
   let entries =
     Fields.to_list ~longest_proc_duration_heap:create_longest_proc_duration_heap
       ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
@@ -308,6 +343,7 @@ let log_to_scuba stats =
       ~pulse_args_length_contradictions:create_counter
       ~pulse_captured_vars_length_contradictions:create_counter
       ~pulse_summaries_count:create_pulse_summaries_count_entry ~timeouts:create_counter
+      ~timings:create_timings_entry
     |> List.concat
   in
   ScubaLogging.log_many entries
@@ -321,3 +357,6 @@ let log_aggregate stats_list =
       let stats = List.fold rest ~init:one ~f:(fun aggregate one -> merge aggregate one) in
       L.debug Analysis Quiet "%a" pp stats ;
       log_to_scuba stats
+
+
+let get () = {global_stats with timings= serialize Timings.serialize global_stats.timings}

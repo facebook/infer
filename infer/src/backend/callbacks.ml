@@ -51,7 +51,7 @@ let iterate_procedure_callbacks exe_env summary =
                 ~arguments:[("proc", `String (Procname.to_string proc_name))]
                 () )) ;
         let summary =
-          Timer.protect
+          Timer.time (Checker checker)
             ~f:(fun () -> callback {summary; exe_env})
             ~on_timeout:(fun span ->
               L.debug Analysis Quiet "TIMEOUT in %s after %fs of CPU time analyzing %a:%a@\n"
