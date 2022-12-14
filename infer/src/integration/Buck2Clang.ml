@@ -26,6 +26,12 @@ let run_buck2_build prog buck2_build_args =
 let capture build_cmd =
   let prog, buck2_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
   let command, rev_not_targets, targets = Buck.parse_command_and_targets Clang V2 buck2_args in
+  let targets =
+    List.rev_map targets ~f:(fun target_and_platform ->
+        String.split ~on:' ' target_and_platform
+        |> List.hd
+        |> Option.value ~default:target_and_platform )
+  in
   if not (List.is_empty targets) then (
     let all_args = List.rev_append rev_not_targets targets in
     let buck2_build_cmd =

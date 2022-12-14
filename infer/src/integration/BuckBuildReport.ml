@@ -65,7 +65,7 @@ let read_and_parse_report build_report =
     in
     match path_opt with
     | None ->
-        L.internal_error "Could not parse target json: %s@." (Yojson.Basic.to_string json) ;
+        L.debug Capture Quiet "Could not parse target json: %s@." (Yojson.Basic.to_string json) ;
         None
     | Some path ->
         Some (target, path)

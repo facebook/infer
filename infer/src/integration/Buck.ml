@@ -305,7 +305,7 @@ module Query = struct
 
 
   let exec ~buck_mode version expr =
-    let query_string_of_version = match version with V1 -> "query" | V2 -> "uquery" in
+    let query_string_of_version = match version with V1 -> "query" | V2 -> "cquery" in
     let query = F.asprintf "%a" pp expr in
     let buck_config = config buck_mode version in
     let buck_output_options =
@@ -318,9 +318,11 @@ module Query = struct
     let bounded_args =
       store_args_in_file ~identifier:"buck_query_args" (buck_config @ buck_output_options @ [query])
     in
+    let extra_buck_args =
+      match version with V1 -> Config.buck_build_args_no_inline | V2 -> Config.buck2_build_args
+    in
     let cmd =
-      binary_of_version version :: query_string_of_version
-      :: (Config.buck_build_args_no_inline @ bounded_args)
+      binary_of_version version :: query_string_of_version :: (extra_buck_args @ bounded_args)
     in
     wrap_buck_call ~label:"query" version cmd |> parse_query_output ~buck_mode version
 end
@@ -346,7 +348,6 @@ let parameters_with_argument =
   ; "--verbose" ]
 
 
-(* Not used with buck2 *)
 let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
   match mode with
   | ClangCompilationDB _ ->
@@ -359,27 +360,22 @@ let get_accepted_buck_kinds_pattern (mode : BuckMode.t) =
       "^(java|android)_library$"
 
 
-(* Not used for buck2 *)
 let resolve_pattern_targets (buck_mode : BuckMode.t) version targets =
   let target_set = List.rev_map targets ~f:Query.target |> Query.set in
   let deps_query =
-    match buck_mode with
-    | Clang | ClangCompilationDB NoDependencies | Erlang ->
-        Fn.id
-    | Java ->
-        Query.deps Config.buck_java_flavor_dependency_depth
-    | ClangCompilationDB DepsAllDepths ->
+    match (buck_mode, version) with
+    | Clang, V2 ->
         Query.deps None
-    | ClangCompilationDB (DepsUpToDepth depth) ->
+    | Clang, V1 | ClangCompilationDB NoDependencies, _ | Erlang, _ ->
+        Fn.id
+    | Java, _ ->
+        Query.deps Config.buck_java_flavor_dependency_depth
+    | ClangCompilationDB DepsAllDepths, _ ->
+        Query.deps None
+    | ClangCompilationDB (DepsUpToDepth depth), _ ->
         Query.deps (Some depth)
   in
-  let accepted_patterns_filter =
-    match (buck_mode, version) with
-    | _, V1 | Java, V2 ->
-        Query.kind ~pattern:(get_accepted_buck_kinds_pattern buck_mode)
-    | _, _ ->
-        Fn.id
-  in
+  let accepted_patterns_filter = Query.kind ~pattern:(get_accepted_buck_kinds_pattern buck_mode) in
   let buck2_java_infer_enabled_filter =
     match (buck_mode, version) with
     | Java, V2 ->
@@ -452,20 +448,11 @@ let parse_command_and_targets (buck_mode : BuckMode.t) (version : version) origi
   let parsed_args = parse_cmd_args empty_parsed_args args in
   let targets =
     match (buck_mode, version, parsed_args) with
-    | Clang, _, {pattern_targets= []; alias_targets= []; normal_targets} ->
+    | Clang, V1, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
-    | Clang, V2, {pattern_targets; alias_targets; normal_targets} ->
-        pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
-    | Java, _, {pattern_targets; alias_targets; normal_targets} ->
+    | _, _, {pattern_targets; alias_targets; normal_targets} ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets buck_mode version
-    | (Clang | ClangCompilationDB _), V1, {pattern_targets; alias_targets; normal_targets} ->
-        pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
-        |> resolve_pattern_targets buck_mode version
-    | _, _, _ ->
-        L.die InternalError "parse_command_and_targets should not be used for %a and buck%s"
-          BuckMode.pp buck_mode
-          (match version with V1 -> "1" | V2 -> "2")
   in
   let targets =
     Option.value_map ~default:targets
