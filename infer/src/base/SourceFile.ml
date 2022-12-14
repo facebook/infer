@@ -261,17 +261,27 @@ let of_header ?(warn_on_error = true) header_file =
       None
 
 
-let create ?(warn_on_error = true) path =
-  if Filename.is_relative path then
-    match (sanitise_buck_out_gen_hashed_path path, workspace_rel_root_opt) with
+let from_rel_path ?(warn_on_error = true) fname =
+  if not (Filename.is_relative fname) then
+    L.(die InternalError) "Path '%s' is absolute, when relative path was expected." fname ;
+  let file =
+    match (sanitise_buck_out_gen_hashed_path fname, workspace_rel_root_opt) with
     | Some sanitised_path, _ ->
         HashedBuckOut sanitised_path
     | None, None ->
-        RelativeProjectRoot path
+        RelativeProjectRoot fname
     | None, Some workspace_rel_root ->
-        let rel_path, new_root = Utils.normalize_path_from ~root:workspace_rel_root path in
+        let rel_path, new_root = Utils.normalize_path_from ~root:workspace_rel_root fname in
         RelativeProjectRootAndWorkspace {workspace_rel_root= new_root; rel_path}
-  else from_abs_path ~warn_on_error path
+  in
+  ( if warn_on_error then
+    try Utils.realpath ~warn_on_error (to_abs_path file) |> ignore with Unix.Unix_error _ -> () ) ;
+  file
+
+
+let create ?(check_abs_path = true) ?(check_rel_path = false) path =
+  if Filename.is_relative path then from_rel_path ~warn_on_error:check_rel_path path
+  else from_abs_path ~warn_on_error:check_abs_path path
 
 
 let sources_from_files changed_files =

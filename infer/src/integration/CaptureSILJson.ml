@@ -218,7 +218,7 @@ let parse_fieldident (json : Safe.t) =
 
 let parse_source_file (json : Safe.t) =
   let p = to_string (member "path" json) in
-  SourceFile.create ~warn_on_error:false p
+  SourceFile.create ~check_abs_path:false p
 
 
 let parse_location (json : Safe.t) =

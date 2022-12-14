@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 open Textual
 
-let sourcefile = SourceFile.create "dummy.sil"
+let sourcefile = SourceFile.create ~check_rel_path:false "dummy.sil"
 
 let parse_module text =
   match TextualParser.parse_string sourcefile text with

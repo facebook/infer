@@ -63,8 +63,8 @@ let update_location (loc : Ast.location) (env : (_, _) Env.t) =
 
 
 let update_path (path : string) (env : (_, _) Env.t) =
-  (* Ignore if we don't find the source for OTP related files. *)
-  let file = SourceFile.create path ~warn_on_error:(not env.is_otp) in
+  (* Ignore if we don't find the source for OTP related files or any absolute paths. *)
+  let file = SourceFile.create path ~check_abs_path:false ~check_rel_path:(not env.is_otp) in
   let location = {env.location with file} in
   {env with location}
 
