@@ -838,24 +838,6 @@ module TransferFunctions = struct
 
   type analysis_data = Summary.t InterproceduralAnalysis.t
 
-  let get_written_var (instr : Sil.instr) : Var.t option =
-    match instr with
-    | Load {id} ->
-        if Ident.is_none id then None else Some (Var.of_id id)
-    | Store {e1= Lvar lhs} ->
-        Some (Var.of_pvar lhs)
-    | Store _ ->
-        L.debug Analysis Verbose
-          "SimpleLineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
-        None
-    | Prune _ ->
-        None
-    | Call _ ->
-        L.die InternalError "exec_instr should special-case this"
-    | Metadata _ ->
-        None
-
-
   (** Make [LineageGraph.local] usable in Maps/Sets. *)
   module Local = struct
     module T = struct
@@ -917,24 +899,10 @@ module TransferFunctions = struct
     ; captured_locals: Local.Set.t (* captured variables *)
     ; lambdas: Procname.Set.t (* names of closures *) }
 
-  let get_read_set (instr : Sil.instr) : read_set =
-    let of_exp e =
-      { free_locals= free_locals_of_exp e
-      ; captured_locals= captured_locals_of_exp e
-      ; lambdas= lambdas_of_exp e }
-    in
-    match instr with
-    | Load {e} ->
-        of_exp e
-    | Store {e2} ->
-        of_exp e2
-    | Prune (e, _location, _true, _kind) ->
-        of_exp e
-    | Call _ ->
-        L.die InternalError "exec_instr should special-case this"
-    | Metadata _ ->
-        let dummy = Exp.bool false in
-        of_exp dummy
+  let read_set_of_exp e =
+    { free_locals= free_locals_of_exp e
+    ; captured_locals= captured_locals_of_exp e
+    ; lambdas= lambdas_of_exp e }
 
 
   let procname_of_exp (e : Exp.t) : Procname.t option =
@@ -1167,21 +1135,12 @@ module TransferFunctions = struct
     (real_state, local_edges)
 
 
-  let exec_noncall astate node instr =
-    let written_var = get_written_var instr in
-    let {free_locals; captured_locals; lambdas} = get_read_set instr in
-    match written_var with
-    | None ->
-        astate
-    | Some written_var ->
-        astate
-        |> update_write LineageGraph.FlowKind.Direct
-             (VariableIndex.var written_var, node)
-             free_locals
-        |> update_write LineageGraph.FlowKind.Capture
-             (VariableIndex.var written_var, node)
-             captured_locals
-        |> add_lambda_edges (VariableIndex.var written_var, node) lambdas
+  let exec_assignment astate node dst_var src_exp =
+    let {free_locals; captured_locals; lambdas} = read_set_of_exp src_exp in
+    astate
+    |> update_write LineageGraph.FlowKind.Direct (VariableIndex.var dst_var, node) free_locals
+    |> update_write LineageGraph.FlowKind.Capture (VariableIndex.var dst_var, node) captured_locals
+    |> add_lambda_edges (VariableIndex.var dst_var, node) lambdas
 
 
   let exec_instr astate {InterproceduralAnalysis.analyze_dependency} node instr_index
@@ -1190,10 +1149,18 @@ module TransferFunctions = struct
       L.die InternalError "SimpleLineage: INV broken: CFGs should be single instruction@\n" ;
     let astate = add_cap_flows node instr (fst astate, [ (* don't repeat edges*) ]) in
     match instr with
+    | Load {id; e; _} ->
+        if Ident.is_none id then astate else exec_assignment astate node (Var.of_id id) e
+    | Store {e1= Lvar lhs; e2; _} ->
+        exec_assignment astate node (Var.of_pvar lhs) e2
+    | Store _ ->
+        L.debug Analysis Verbose
+          "SimpleLineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
+        astate
     | Call ((ret_id, _ret_typ), name, args, _location, _flags) ->
         exec_call astate node analyze_dependency ret_id name args
-    | _ ->
-        exec_noncall astate node instr
+    | Sil.Prune (_, _, _, _) | Sil.Metadata _ ->
+        astate
 
 
   let pp_session_name _node fmt = Format.pp_print_string fmt "SimpleLineage"
