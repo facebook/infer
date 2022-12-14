@@ -1449,7 +1449,7 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
 
 
 (** Translate forms of a module. *)
-let translate_module (env : (_, _) Env.t) module_ =
+let translate_module (env : (_, _) Env.t) module_ base_dir =
   let f env {Ast.location; simple_form} =
     let sub_env = update_location location env in
     match simple_form with
@@ -1463,7 +1463,7 @@ let translate_module (env : (_, _) Env.t) module_ =
         translate_one_spec sub_env function_ spec ;
         env
     | File {path} ->
-        update_path path env
+        update_path (Filename.concat base_dir path) env
     | _ ->
         env
   in
