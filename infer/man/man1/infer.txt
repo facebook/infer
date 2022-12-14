@@ -1482,6 +1482,18 @@ OPTIONS
            in which distinct entities get assigned the same ID. (Conversely:
            --simple-lineage-dedup)           See also infer-analyze(1).
 
+       --simple-lineage-field-depth int
+           [EXPERIMENTAL] Maximal field depth sensitivity for lineage
+           analysis. 0 will make the analysis field insensitive.       
+    See also infer-analyze(1).
+
+       --simple-lineage-field-width int
+           [EXPERIMENTAL] Maximal width of structures for field sensitive
+           lineage analysis. Structure that have a higher number of fields
+           will be smashed into a single element. 0 will make the analysis
+           field insensitive. If not set, field width will be unlimited.       
+    See also infer-analyze(1).
+
        --simple-lineage-include-builtins
            Activates: Include call/return edges to/from procedures that model
            primitive Erlang operations, such as constructing a list.
@@ -1501,10 +1513,6 @@ OPTIONS
 
        --simple-lineage-max-cfg-size int
            If set, larger CFGs are skipped.           See also infer-analyze(1).
-
-       --simple-lineage-model-fields
-           Activates: [EXPERIMENTAL] Enable field-aware lineage analysis.
-           (Conversely: --no-simple-lineage-model-fields)           See also infer-analyze(1).
 
        --simple-lineage-only
            Activates: Enable simple-lineage and disable all other checkers

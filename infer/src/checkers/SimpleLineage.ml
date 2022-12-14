@@ -20,8 +20,9 @@ module PPNode = struct
 end
 
 let () =
-  if Config.simple_lineage_model_fields then
-    Logging.die InternalError "Field support is not implemented yet in lineage"
+  if
+    Int.(Config.simple_lineage_field_depth <> 0) || Option.is_some Config.simple_lineage_field_width
+  then Logging.die InternalError "Field support is not implemented yet in lineage"
 
 
 module VariableIndex : sig
