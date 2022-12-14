@@ -181,44 +181,55 @@ end = struct
       Hashtbl.find_or_add ~default:create_shape field_table fieldname
 
 
-    let rec unify ({shape_fields; _} as env) shape shape' =
-      (* We need to explicitly check that we are not trying to unify already unified classes to ensure
-         termination. Otherwise, given a recursive shape such as [<0> -> { tail : <0> }], unifying
-         [ <0> ] with itself would recursively try to unify its fields, therefore recursively
-         proceeding to unify [ <0> ] with itself and so on.
+    let unify_step shape_fields shape shape' todo =
+      (* Unify the shapes and put in the todo stack all the shapes of their fields that should also be unified. *)
+      if Union_find.same_class shape shape' then
+        (* We need to explicitly check that we are not trying to unify already unified classes to ensure
+           termination. Otherwise, given a recursive shape such as [<0> -> { tail : <0> }], unifying
+           [ <0> ] with itself would recursively try to unify its fields, therefore recursively
+           proceeding to unify [ <0> ] with itself and so on.
 
-         This check guarantees termination because shape unification can now only strictly reduce the
-         number of equivalence classes, which is finite. *)
-      if Union_find.same_class shape shape' then ()
+           This check guarantees termination because shape unification can now only strictly reduce the
+           number of equivalence classes, which is finite. *)
+        ()
       else
         let id = Union_find.get shape in
         let id' = Union_find.get shape' in
-        let () = Union_find.union shape shape' in
-        let new_id = Union_find.get shape in
-        let fields = Hashtbl.find shape_fields id in
-        let fields' = Hashtbl.find shape_fields id' in
-        let new_fields =
-          (* Get the existing fields from the unified ids, unifying them if they both had some *)
-          Option.merge ~f:(unify_fields env) fields fields'
-        in
-        (* Remove the fields from the old ids since they won't be needed anymore after they are
-           unified *)
-        Hashtbl.remove shape_fields id ;
-        Hashtbl.remove shape_fields id' ;
-        (* Add the new fields to the new id *)
-        Option.iter ~f:(fun data -> Hashtbl.set shape_fields ~key:new_id ~data) new_fields
+        Union_find.union shape shape' ;
+        match (Hashtbl.find shape_fields id, Hashtbl.find shape_fields id') with
+        | None, None ->
+            (* No subfield to unify *)
+            ()
+        | Some _, None ->
+            (* Only one shape has fields, just use it as the new representative *)
+            Union_find.set shape id
+        | None, Some _ ->
+            Union_find.set shape id'
+        | Some fields, Some fields' ->
+            (* Both shapes have fields. We arbitrarily use the second id as a representative then
+               merge the second fields into the first ones. During this merge, if we encounter
+               a field present in both shapes, we put the shapes of this field in the todo stack to
+               unify them at a later step (when the field table of the current processed shapes will
+               be completed). *)
+            Union_find.set shape id ;
+            Hashtbl.merge_into ~src:fields' ~dst:fields ~f:(fun ~key:_fieldname shape' shape_opt ->
+                Option.iter ~f:(fun shape -> Stack.push todo (shape, shape')) shape_opt ;
+                Set_to shape' ) ;
+            Hashtbl.remove shape_fields id'
 
 
-    and unify_fields env fields fields' =
-      Hashtbl.merge
-        ~f:(fun ~key:_ values ->
-          match values with
-          | `Left shape | `Right shape ->
-              Some shape
-          | `Both (shape, shape') ->
-              unify env shape shape' ;
-              Some shape )
-        fields fields'
+    (* Repeat the unification steps until the stack is empty. *)
+    let rec unify_stack shape_fields todo =
+      match Stack.pop todo with
+      | None ->
+          ()
+      | Some (shape, shape') ->
+          unify_step shape_fields shape shape' todo ;
+          unify_stack shape_fields todo
+
+
+    let unify {shape_fields; _} shape shape' =
+      unify_stack shape_fields (Stack.singleton (shape, shape'))
   end
 
   module Summary = struct
