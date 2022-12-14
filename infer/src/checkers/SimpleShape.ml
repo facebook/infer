@@ -148,18 +148,18 @@ end = struct
 
     (** An environment associates to each variable its equivalence class, and to each possible
         representant of an equivalence class the set of known fields. *)
-    type t = {var_shape: (Var.t, shape) Hashtbl.t; shape_fields: (Shape_id.t, fields) Hashtbl.t}
+    type t = {var_shapes: (Var.t, shape) Hashtbl.t; shape_fields: (Shape_id.t, fields) Hashtbl.t}
 
     let create () =
-      {var_shape= Hashtbl.create (module Var); shape_fields= Hashtbl.create (module Shape_id)}
+      {var_shapes= Hashtbl.create (module Var); shape_fields= Hashtbl.create (module Shape_id)}
 
 
     let pp_shape fmt x = Shape_id.pp fmt (Union_find.get x)
 
-    let pp fmt {var_shape; shape_fields} =
-      Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPE@ @[%a@]@]@ @[<v4>SHAPE_FIELDS@ @[%a@]@]@]"
+    let pp fmt {var_shapes; shape_fields} =
+      Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_FIELDS@ @[%a@]@]@]"
         (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
-        var_shape
+        var_shapes
         (pp_hashtbl ~bind:pp_arrow Shape_id.pp (pp_hashtbl ~bind:pp_colon Fieldname.pp pp_shape))
         shape_fields
 
@@ -169,7 +169,7 @@ end = struct
       Union_find.create id
 
 
-    let var_shape {var_shape; _} var = Hashtbl.find_or_add ~default:create_shape var_shape var
+    let var_shape {var_shapes; _} var = Hashtbl.find_or_add ~default:create_shape var_shapes var
 
     let field_shape {shape_fields; _} shape fieldname =
       (* Proceed in two steps: retrieve the field set of this shape or create it, then return the shape
@@ -235,20 +235,20 @@ end = struct
 
     (** This is essentially a "frozen" and marshallable version of environments *)
     type t =
-      { var_shape: (Var.t, Shape_id.t) Caml.Hashtbl.t
+      { var_shapes: (Var.t, Shape_id.t) Caml.Hashtbl.t
       ; shape_fields: (Shape_id.t, fields) Caml.Hashtbl.t }
 
-    let pp fmt {var_shape; shape_fields} =
+    let pp fmt {var_shapes; shape_fields} =
       Format.fprintf fmt
         "@[<v>@[<v4>SUMMARY VAR SHAPES@ @[%a@]@]@ @[<v4>SUMMARY SHAPES FIELDS@ @[%a@]@]@]"
         (pp_caml_hashtbl ~bind:pp_arrow Var.pp Shape_id.pp)
-        var_shape
+        var_shapes
         (pp_caml_hashtbl ~bind:pp_arrow Shape_id.pp
            (pp_caml_hashtbl ~bind:pp_colon Fieldname.pp Shape_id.pp) )
         shape_fields
 
 
-    let make {Env.var_shape; shape_fields} =
+    let make {Env.var_shapes; shape_fields} =
       (* Making a summary from an environment essentially amounts to converting Env ids into Summary
          ids and Env (Core) hashtables into Summary (Caml) hasthables. We keep an id translation
          table that maps env ids into summary ids and generate a fresh summary id whenever we
@@ -263,8 +263,8 @@ end = struct
         |> Iter.map2 (fun fieldname shape -> (fieldname, translate_shape shape))
         |> caml_hashtbl_of_iter
       in
-      let var_shape =
-        iter_hashtbl var_shape
+      let var_shapes =
+        iter_hashtbl var_shapes
         |> Iter.map2 (fun var shape -> (var, translate_shape shape))
         |> caml_hashtbl_of_iter
       in
@@ -273,7 +273,7 @@ end = struct
         |> Iter.map2 (fun shape fields -> (translate_shape_id shape, translate_fields fields))
         |> caml_hashtbl_of_iter
       in
-      {var_shape; shape_fields}
+      {var_shapes; shape_fields}
 
 
     (* Introducing a (callee) summary is not as simple as freezing an environment into a summary,
@@ -312,10 +312,11 @@ end = struct
       env_fields
 
 
-    let introduce_var ~var id_translation_tbl {var_shape; shape_fields}
+    let introduce_var ~var id_translation_tbl {var_shapes; shape_fields}
         {Env.shape_fields= env_shape_fields; _} =
-      introduce_shape id_translation_tbl (Caml.Hashtbl.find var_shape var) shape_fields
-        env_shape_fields
+      introduce_shape id_translation_tbl
+        (Caml.Hashtbl.find var_shapes var)
+        shape_fields env_shape_fields
 
 
     let introduce ~formals ~return summary env =
