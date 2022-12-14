@@ -40,10 +40,10 @@ type file_callback_args =
 type file_callback_t = file_callback_args -> IssueLog.t
 
 val register_procedure_callback :
-  checker_name:string -> ?dynamic_dispatch:bool -> Language.t -> proc_callback_t -> unit
+  Checker.t -> ?dynamic_dispatch:bool -> Language.t -> proc_callback_t -> unit
 (** Register a procedure callback (see details above) *)
 
-val register_file_callback : checker:Checker.t -> Language.t -> file_callback_t -> unit
+val register_file_callback : Checker.t -> Language.t -> file_callback_t -> unit
 (** Register a file callback (see details above). [issues_dir] must be unique for this type of
     checker. *)
 

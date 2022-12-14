@@ -227,16 +227,14 @@ let get_active_checkers () =
 
 let register checkers =
   let register_one {checker; callbacks} =
-    let name = Checker.get_id checker in
     let register_callback (callback, language) =
       match callback with
       | Procedure procedure_cb ->
-          Callbacks.register_procedure_callback ~checker_name:name language procedure_cb
+          Callbacks.register_procedure_callback checker language procedure_cb
       | DynamicDispatch procedure_cb ->
-          Callbacks.register_procedure_callback ~checker_name:name ~dynamic_dispatch:true language
-            procedure_cb
+          Callbacks.register_procedure_callback checker ~dynamic_dispatch:true language procedure_cb
       | File callback ->
-          Callbacks.register_file_callback ~checker language callback
+          Callbacks.register_file_callback checker language callback
     in
     List.iter ~f:register_callback callbacks
   in
