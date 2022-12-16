@@ -974,6 +974,15 @@ module TransferFunctions = struct
     (last_writes, local_edges)
 
 
+  let add_lambda_edges node write_var lambdas (real_state, local_edges) =
+    let target = LineageGraph.Local (VariableIndex write_var, node) in
+    let add_one_lambda one_lambda local_edges =
+      LineageGraph.add_flow ~kind:Direct ~node ~source:(Function one_lambda) ~target local_edges
+    in
+    let local_edges = Procname.Set.fold add_one_lambda lambdas local_edges in
+    (real_state, local_edges)
+
+
   let update_write node kind (write_var : VariableIndex.t) (read_set : Local.Set.t)
       (((last_writes, has_unsupported_features), local_edges) : Domain.t) : Domain.t =
     let target = LineageGraph.Local (VariableIndex write_var, node) in
@@ -996,6 +1005,14 @@ module TransferFunctions = struct
     let last_writes = Domain.Real.LastWrites.remove_all write_var last_writes in
     let last_writes = Domain.Real.LastWrites.add write_var node last_writes in
     ((last_writes, has_unsupported_features), local_edges)
+
+
+  let exec_assignment astate node dst_var src_exp =
+    let {free_locals; captured_locals; lambdas} = read_set_of_exp src_exp in
+    astate
+    |> update_write node LineageGraph.FlowKind.Direct (VariableIndex.var dst_var) free_locals
+    |> update_write node LineageGraph.FlowKind.Capture (VariableIndex.var dst_var) captured_locals
+    |> add_lambda_edges node (VariableIndex.var dst_var) lambdas
 
 
   let add_tito node (kind : LineageGraph.FlowKind.t) tito_arguments (argument_list : Exp.t list)
@@ -1115,23 +1132,6 @@ module TransferFunctions = struct
         exec_named_call astate analyze_dependency node ret_id erlang_call_name (fun_exp :: args)
     | Some name ->
         exec_named_call astate analyze_dependency node ret_id name args
-
-
-  let add_lambda_edges node write_var lambdas (real_state, local_edges) =
-    let target = LineageGraph.Local (VariableIndex write_var, node) in
-    let add_one_lambda one_lambda local_edges =
-      LineageGraph.add_flow ~kind:Direct ~node ~source:(Function one_lambda) ~target local_edges
-    in
-    let local_edges = Procname.Set.fold add_one_lambda lambdas local_edges in
-    (real_state, local_edges)
-
-
-  let exec_assignment astate node dst_var src_exp =
-    let {free_locals; captured_locals; lambdas} = read_set_of_exp src_exp in
-    astate
-    |> update_write node LineageGraph.FlowKind.Direct (VariableIndex.var dst_var) free_locals
-    |> update_write node LineageGraph.FlowKind.Capture (VariableIndex.var dst_var) captured_locals
-    |> add_lambda_edges node (VariableIndex.var dst_var) lambdas
 
 
   let exec_instr astate (_shapes, {InterproceduralAnalysis.analyze_dependency}) node instr_index
