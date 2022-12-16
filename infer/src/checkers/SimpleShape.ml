@@ -534,6 +534,12 @@ end
 
 let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let module Analyzer = Analyzer () in
+  (* Shape captured vars *)
+  let shape_captured_var {CapturedVar.pvar} =
+    ignore (Shape.Env.var_shape Analyzer.Env.env (Var.of_pvar pvar) : Shape.Env.shape)
+  in
+  List.iter ~f:shape_captured_var (Procdesc.get_captured proc_desc) ;
+  (* Analyze the procedure's code  *)
   let _invmap : Analyzer.invariant_map = Analyzer.exec_pdesc analysis_data ~initial:() proc_desc in
   let summary = Shape.Summary.make Analyzer.Env.env in
   Report.debug proc_desc Analyzer.Env.env summary ;
