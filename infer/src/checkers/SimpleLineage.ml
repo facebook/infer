@@ -848,31 +848,28 @@ module TransferFunctions = struct
   end
 
   (** Return constants and free variables that occur in [e]. *)
-  let free_locals_of_exp (e : Exp.t) : Local.Set.t =
-    let rec gather locals (e : Exp.t) =
-      match e with
-      | Lvar pvar ->
-          Local.Set.add locals (VariableIndex (VariableIndex.pvar pvar))
-      | Var id ->
-          Local.Set.add locals (VariableIndex (VariableIndex.ident id))
-      | Const (Cint x) ->
-          Local.Set.add locals (ConstantInt (IntLit.to_string x))
-      | Const (Cstr x) ->
-          Local.Set.add locals (ConstantString x)
-      | Const (Cfun _) | Const (Cfloat _) | Const (Cclass _) ->
-          locals
-      | Closure _ ->
-          locals
-      | UnOp (_, e1, _) | Exn e1 | Cast (_, e1) | Lfield (e1, _, _) ->
-          gather locals e1
-      | Sizeof {dynamic_length= Some e1} ->
-          gather locals e1
-      | Sizeof {dynamic_length= None} ->
-          locals
-      | BinOp (_, e1, e2) | Lindex (e1, e2) ->
-          gather (gather locals e1) e2
-    in
-    gather Local.Set.empty e
+  let rec free_locals_of_exp (e : Exp.t) : Local.Set.t =
+    match e with
+    | Lvar pvar ->
+        Local.Set.singleton (VariableIndex (VariableIndex.pvar pvar))
+    | Var id ->
+        Local.Set.singleton (VariableIndex (VariableIndex.ident id))
+    | Const (Cint x) ->
+        Local.Set.singleton (ConstantInt (IntLit.to_string x))
+    | Const (Cstr x) ->
+        Local.Set.singleton (ConstantString x)
+    | Const (Cfun _) | Const (Cfloat _) | Const (Cclass _) ->
+        Local.Set.empty
+    | Closure _ ->
+        Local.Set.empty
+    | UnOp (_, e1, _) | Exn e1 | Cast (_, e1) | Lfield (e1, _, _) ->
+        free_locals_of_exp e1
+    | Sizeof {dynamic_length= Some e1} ->
+        free_locals_of_exp e1
+    | Sizeof {dynamic_length= None} ->
+        Local.Set.empty
+    | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+        Local.Set.union (free_locals_of_exp e1) (free_locals_of_exp e2)
 
 
   (** Return variables that are captured by the closures occurring in [e]. *)
