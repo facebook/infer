@@ -34,14 +34,14 @@ module MethodRangeMap = struct
             let start_location =
               { Location.line= decl.start_line
               ; col= -1
-              ; file= SourceFile.create ~warn_on_error:false decl.source_file
+              ; file= SourceFile.create ~check_abs_path:false decl.source_file
               ; macro_file_opt= None
               ; macro_line= -1 }
             in
             let end_location =
               { Location.line= decl.end_line
               ; col= -1
-              ; file= SourceFile.create ~warn_on_error:false decl.source_file
+              ; file= SourceFile.create ~check_abs_path:false decl.source_file
               ; macro_file_opt= None
               ; macro_line= -1 }
             in

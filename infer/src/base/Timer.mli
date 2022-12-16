@@ -7,7 +7,7 @@
 
 open! IStd
 
-(** Time long-running operations under a timeout *)
+(** Time long-running operations listed in {!Timeable} under a timeout *)
 
 type state
 
@@ -16,7 +16,7 @@ exception Timeout of float
 val check_timeout : unit -> unit
 (** check if the timer has been running for more than {!Config.timeout} seconds *)
 
-val protect : on_timeout:(float -> 'a) -> f:(unit -> 'a) -> 'a
+val time : Timeable.t -> on_timeout:(float -> 'a) -> f:(unit -> 'a) -> 'a
 
 val suspend : unit -> state
 

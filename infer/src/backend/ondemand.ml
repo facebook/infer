@@ -289,7 +289,7 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
                let callee_summary =
                  protect
                    ~f:(fun () ->
-                     Timer.protect
+                     Timer.time Preanalysis
                        ~f:(fun () ->
                          Some
                            (run_proc_analysis exe_env

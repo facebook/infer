@@ -42,6 +42,8 @@ val add_proc_duration : string -> int -> unit
 
 val incr_timeouts : unit -> unit
 
+val add_timing : Timeable.t -> float -> unit
+
 val reset : unit -> unit
 (** reset all stats *)
 

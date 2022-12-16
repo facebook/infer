@@ -216,13 +216,13 @@ let test_interesting_paths_filter =
   [ ("test_interesting_paths_filter_with_none_interesting_paths", None, ["1"; "2"; "4"])
   ; ( "test_interesting_paths_filter_with_some_interesting_paths"
     , Some
-        [ SourceFile.create ~warn_on_error:false "file_not_existing.java"
-        ; SourceFile.create ~warn_on_error:false "file_4.java" ]
+        [ SourceFile.create ~check_rel_path:false "file_not_existing.java"
+        ; SourceFile.create ~check_rel_path:false "file_4.java" ]
     , ["4"] )
   ; ( "test_interesting_paths_filter_with_some_interesting_paths_that_are_not_in_report"
     , Some
-        [ SourceFile.create ~warn_on_error:false "file_not_existing.java"
-        ; SourceFile.create ~warn_on_error:false "file_whatever.java" ]
+        [ SourceFile.create ~check_rel_path:false "file_not_existing.java"
+        ; SourceFile.create ~check_rel_path:false "file_whatever.java" ]
     , [] ) ]
   |> List.map ~f:(fun (name, interesting_paths, expected_output) ->
          name >:: create_test interesting_paths expected_output )

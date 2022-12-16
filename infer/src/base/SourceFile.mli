@@ -38,10 +38,11 @@ val from_abs_path : ?warn_on_error:bool -> string -> t
 (** create source file from absolute path. WARNING: If warn_on_error is false, no warning will be
     shown whenever an error occurs for the given path (e.g. if it does not exist). *)
 
-val create : ?warn_on_error:bool -> string -> t
+val create : ?check_abs_path:bool -> ?check_rel_path:bool -> string -> t
 (** Create a SourceFile from a given path. If relative, it assumes it is w.r.t. project root.
-    WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for the
-    given path (e.g. if it does not exist). *)
+    WARNING: if check_abs_path (check_rel_path) is true then a warning message is shown if the
+    provided path is absolute (relative) and an error occurs when resolving (e.g. if it does not
+    exist). *)
 
 val is_under_project_root : t -> bool
 (** Returns true if the file is under the project root or the workspace directory if it exists *)

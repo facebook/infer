@@ -41,7 +41,7 @@ let reportdiff ~current_report:current_report_fname ~previous_report:previous_re
       let interesting_paths =
         Option.map
           ~f:(fun fname ->
-            List.map ~f:(SourceFile.create ~warn_on_error:false) (In_channel.read_lines fname) )
+            List.map ~f:(SourceFile.create ~check_abs_path:false) (In_channel.read_lines fname) )
           Config.differential_filter_files
       in
       DifferentialFilters.do_filter unfiltered_diff file_renamings

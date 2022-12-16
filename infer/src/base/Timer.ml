@@ -49,12 +49,14 @@ let check_timeout timeout =
 
 let check_timeout () = Option.iter ~f:check_timeout Config.timeout
 
-let protect ~on_timeout ~f =
+let time timeable ~on_timeout ~f =
   let timer = suspend () in
   start () ;
   let result =
     Exn.protect
       ~f:(fun () -> try f () with Timeout span -> on_timeout span)
-      ~finally:(fun () -> resume timer)
+      ~finally:(fun () ->
+        Stats.add_timing timeable (get ()) ;
+        resume timer )
   in
   result

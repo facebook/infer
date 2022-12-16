@@ -2745,10 +2745,19 @@ and simple_lineage_include_builtins =
      constructing a list."
 
 
-and simple_lineage_model_fields =
-  CLOpt.mk_bool ~long:"simple-lineage-model-fields"
+and simple_lineage_field_depth =
+  CLOpt.mk_int ~long:"simple-lineage-field-depth" ~default:0
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
-    "[EXPERIMENTAL] Enable field-aware lineage analysis."
+    "[EXPERIMENTAL] Maximal field depth sensitivity for lineage analysis. 0 will make the analysis \
+     field insensitive."
+
+
+and simple_lineage_field_width =
+  CLOpt.mk_int_opt ~long:"simple-lineage-field-width"
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "[EXPERIMENTAL] Maximal width of structures for field sensitive lineage analysis. Structure \
+     that have a higher number of fields will be smashed into a single element. 0 will make the \
+     analysis field insensitive. If not set, field width will be unlimited."
 
 
 and simple_lineage_max_cfg_size =
@@ -4068,7 +4077,9 @@ and shrink_analysis_db = !shrink_analysis_db
 
 and simple_lineage_include_builtins = !simple_lineage_include_builtins
 
-and simple_lineage_model_fields = !simple_lineage_model_fields
+and simple_lineage_field_depth = !simple_lineage_field_depth
+
+and simple_lineage_field_width = !simple_lineage_field_width
 
 and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
 

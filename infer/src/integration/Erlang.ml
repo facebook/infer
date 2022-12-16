@@ -29,7 +29,7 @@ let should_process filename =
       not (Str.string_match re original_filename 0)
 
 
-let parse_translate_store result_dir =
+let parse_translate_store ?(base_dir = ".") result_dir =
   let otp_modules_file = Filename.concat result_dir "otp_modules.list" in
   let otp_modules =
     match Utils.read_file otp_modules_file with
@@ -48,7 +48,7 @@ let parse_translate_store result_dir =
         match ErlangAstValidator.validate env ast with
         | true ->
             ErlangScopes.annotate_scopes env ast ;
-            ErlangTranslator.translate_module env ast ;
+            ErlangTranslator.translate_module env ast base_dir ;
             true
         | false ->
             L.internal_error "Ignoring module %s due to invalid AST.@\n" env.current_module ;
@@ -70,13 +70,22 @@ let parse_translate_store result_dir =
   |> Tasks.Runner.run |> ignore
 
 
+let cwd_from_project_root =
+  match Utils.filename_to_relative (Unix.getcwd ()) ~root:Config.project_root with
+  | Some prefix ->
+      prefix
+  | None ->
+      "."
+
+
 let capture ~command ~args =
-  Option.iter ~f:parse_translate_store Config.erlang_ast_dir ;
+  let base_dir = cwd_from_project_root in
+  Option.iter ~f:(parse_translate_store ~base_dir) Config.erlang_ast_dir ;
   if not Config.erlang_skip_compile then (
     let in_dir = ResultsDir.get_path Temporary in
     let result_dir = Filename.temp_dir ~in_dir command "infer" in
     run_compile Config.erlang_with_otp_specs command result_dir args ;
-    parse_translate_store result_dir ;
+    parse_translate_store ~base_dir result_dir ;
     if not Config.debug_mode then Utils.rmtree result_dir )
 
 
