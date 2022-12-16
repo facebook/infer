@@ -546,6 +546,6 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   Some summary
 
 
-let checker =
+let checker analysis_data =
   (* We skip the functions that would not be analysed by SimpleLineage anyway *)
-  SimpleLineageUtils.skip_unwanted unskipped_checker
+  SimpleLineageUtils.skip_unwanted (fun data () -> unskipped_checker data) analysis_data ()

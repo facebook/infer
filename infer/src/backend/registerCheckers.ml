@@ -24,6 +24,11 @@ let dynamic_dispatch payload_field checker =
   DynamicDispatch (CallbackOfChecker.interprocedural_with_field payload_field checker)
 
 
+let interprocedural_with_field_dependency ~dep_field payload_field checker =
+  Procedure
+    (CallbackOfChecker.interprocedural_with_field_dependency ~dep_field payload_field checker)
+
+
 (** For checkers that read two separate payloads. Assumes that [checker] produces payloads for
     [payload_field1] *)
 let interprocedural2 payload_field1 payload_field2 checker =
@@ -210,8 +215,8 @@ let all_checkers =
   ; { checker= SimpleLineage
     ; callbacks=
         (let checker =
-           interprocedural2 Payloads.Fields.simple_lineage Payloads.Fields.simple_shape
-             SimpleLineage.checker
+           interprocedural_with_field_dependency ~dep_field:Payloads.Fields.simple_shape
+             Payloads.Fields.simple_lineage SimpleLineage.checker
          in
          [(checker, Erlang)] ) }
   ; { checker= ScopeLeakage

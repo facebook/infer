@@ -837,7 +837,7 @@ module TransferFunctions = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = Summary.t InterproceduralAnalysis.t
+  type analysis_data = SimpleShape.Summary.t * Summary.t InterproceduralAnalysis.t
 
   (** Make [LineageGraph.local] usable in Maps/Sets. *)
   module Local = struct
@@ -1144,7 +1144,7 @@ module TransferFunctions = struct
     |> add_lambda_edges (VariableIndex.var dst_var, node) lambdas
 
 
-  let exec_instr astate {InterproceduralAnalysis.analyze_dependency} node instr_index
+  let exec_instr astate (_shapes, {InterproceduralAnalysis.analyze_dependency}) node instr_index
       (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "SimpleLineage: INV broken: CFGs should be single instruction@\n" ;
@@ -1169,9 +1169,17 @@ end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
-let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_opt =
+  let shapes =
+    match shapes_opt with
+    | Some shapes ->
+        shapes
+    | None ->
+        L.die InternalError "Failed to compute shape information for %a" Procname.pp
+          (Procdesc.get_proc_name proc_desc)
+  in
+  let analysis_data = (shapes, analysis) in
   let cfg = CFG.from_pdesc proc_desc in
-  let analysis_data = InterproceduralAnalysis.bind_payload analysis_data ~f:fst in
   let initial =
     let formals = get_formals proc_desc in
     let captured = get_captured proc_desc in
