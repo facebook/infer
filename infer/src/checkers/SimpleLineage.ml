@@ -839,13 +839,14 @@ module TransferFunctions = struct
 
   type analysis_data = SimpleShape.Summary.t * Summary.t InterproceduralAnalysis.t
 
-  (** Make [LineageGraph.local] usable in Maps/Sets. *)
   module Local = struct
     module T = struct
       type t = LineageGraph.local [@@deriving compare, equal, sexp]
     end
 
     include T
+
+    (** Make [LineageGraph.local] usable in Maps/Sets. *)
     include Comparable.Make (T)
   end
 
@@ -979,33 +980,32 @@ module TransferFunctions = struct
     (last_writes, local_edges)
 
 
-  let update_write kind ((write_var, write_node) : VariableIndex.t * PPNode.t)
-      (read_set : Local.Set.t) (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
-      Domain.t =
-    let target = LineageGraph.Local (VariableIndex write_var, write_node) in
+  let update_write node kind (write_var : VariableIndex.t) (read_set : Local.Set.t)
+      (((last_writes, has_unsupported_features), local_edges) : Domain.t) : Domain.t =
+    let target = LineageGraph.Local (VariableIndex write_var, node) in
     let add_read local_edges (read_local : Local.t) =
       let sources =
         match read_local with
         | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-            [LineageGraph.Local (read_local, write_node)]
+            [LineageGraph.Local (read_local, node)]
         | VariableIndex read_var ->
             let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
             List.map ~f:(fun node -> LineageGraph.Local (read_local, node)) source_nodes
       in
       let add_edge local_edges source =
-        LineageGraph.add_flow ~node:write_node ~kind ~source ~target local_edges
+        LineageGraph.add_flow ~node ~kind ~source ~target local_edges
       in
       let local_edges = List.fold ~init:local_edges ~f:add_edge sources in
       local_edges
     in
     let local_edges = Set.fold read_set ~init:local_edges ~f:add_read in
     let last_writes = Domain.Real.LastWrites.remove_all write_var last_writes in
-    let last_writes = Domain.Real.LastWrites.add write_var write_node last_writes in
+    let last_writes = Domain.Real.LastWrites.add write_var node last_writes in
     ((last_writes, has_unsupported_features), local_edges)
 
 
-  let add_tito (kind : LineageGraph.FlowKind.t) tito_arguments (argument_list : Exp.t list)
-      (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
+  let add_tito node (kind : LineageGraph.FlowKind.t) tito_arguments (argument_list : Exp.t list)
+      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let tito_locals =
       let tito_exps =
         List.filter_mapi
@@ -1014,22 +1014,22 @@ module TransferFunctions = struct
       in
       free_locals_of_exp_list tito_exps
     in
-    update_write kind (VariableIndex.ident ret_id, node) tito_locals astate
+    update_write node kind (VariableIndex.ident ret_id) tito_locals astate
 
 
-  let add_tito_all (kind : LineageGraph.FlowKind.t) (argument_list : Exp.t list) (ret_id : Ident.t)
-      node (astate : Domain.t) : Domain.t =
+  let add_tito_all node (kind : LineageGraph.FlowKind.t) (argument_list : Exp.t list)
+      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let all = IntSet.of_list (List.mapi argument_list ~f:(fun index _ -> index)) in
-    add_tito kind all argument_list ret_id node astate
+    add_tito node kind all argument_list ret_id astate
 
 
   let add_summary_flows (kind : LineageGraph.FlowKind.t) (callee : (Procdesc.t * Summary.t) option)
       (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
     match callee with
     | None ->
-        add_tito_all kind argument_list ret_id node astate
+        add_tito_all node kind argument_list ret_id astate
     | Some (_callee_pdesc, {Summary.tito_arguments}) ->
-        add_tito kind tito_arguments argument_list ret_id node astate
+        add_tito node kind tito_arguments argument_list ret_id astate
 
 
   let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
@@ -1040,7 +1040,7 @@ module TransferFunctions = struct
     ((last_writes, has_unsupported_features), local_edges)
 
 
-  let generic_call_model astate node analyze_dependency ret_id procname args =
+  let generic_call_model astate analyze_dependency node ret_id procname args =
     let rm_builtin =
       (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname
     in
@@ -1053,32 +1053,29 @@ module TransferFunctions = struct
 
 
   module CustomModel = struct
-    let call_unqualified astate node analyze_dependency ret_id procname args =
+    let call_unqualified astate analyze_dependency node ret_id procname args =
       match args with
       | fun_ :: _ ->
-          generic_call_model astate node analyze_dependency ret_id procname args
-          |> update_write DynamicCallFunction
-               (VariableIndex.ident ret_id, node)
+          generic_call_model astate analyze_dependency node ret_id procname args
+          |> update_write node DynamicCallFunction (VariableIndex.ident ret_id)
                (free_locals_of_exp fun_)
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
 
 
-    let call_qualified astate node analyze_dependency ret_id procname args =
+    let call_qualified astate analyze_dependency node ret_id procname args =
       match args with
       | module_ :: fun_ :: _ ->
-          generic_call_model astate node analyze_dependency ret_id procname args
-          |> update_write DynamicCallFunction
-               (VariableIndex.ident ret_id, node)
+          generic_call_model astate analyze_dependency node ret_id procname args
+          |> update_write node DynamicCallFunction (VariableIndex.ident ret_id)
                (free_locals_of_exp fun_)
-          |> update_write DynamicCallModule
-               (VariableIndex.ident ret_id, node)
+          |> update_write node DynamicCallModule (VariableIndex.ident ret_id)
                (free_locals_of_exp module_)
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
 
 
-    let make_atom astate node _analyze_dependency ret_id _procname (args : Exp.t list) =
+    let make_atom astate _analyze_dependency node ret_id _procname (args : Exp.t list) =
       let atom_name =
         match args with
         | Const (Cstr atom_name) :: _ ->
@@ -1087,7 +1084,7 @@ module TransferFunctions = struct
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
       let sources = Local.Set.singleton (ConstantAtom atom_name) in
-      update_write LineageGraph.FlowKind.Direct (VariableIndex.ident ret_id, node) sources astate
+      update_write node LineageGraph.FlowKind.Direct (VariableIndex.ident ret_id) sources astate
 
 
     let custom_call_models =
@@ -1109,28 +1106,27 @@ module TransferFunctions = struct
       else Procname.Map.find_opt name custom_call_models
   end
 
-  let exec_named_call (astate : Domain.t) node analyze_dependency ret_id name args : Domain.t =
+  let exec_named_call (astate : Domain.t) analyze_dependency node ret_id name args : Domain.t =
     let model = CustomModel.get name |> Option.value ~default:generic_call_model in
-    model astate node analyze_dependency ret_id name args
+    model astate analyze_dependency node ret_id name args
 
 
-  let exec_call (astate : Domain.t) node analyze_dependency ret_id fun_exp args : Domain.t =
+  let exec_call (astate : Domain.t) analyze_dependency node ret_id fun_exp args : Domain.t =
     let callee_pname = procname_of_exp fun_exp in
     let args = List.map ~f:fst args in
     match callee_pname with
     | None ->
         let arity = List.length args in
         let erlang_call_name = Procname.erlang_call_unqualified ~arity in
-        exec_named_call astate node analyze_dependency ret_id erlang_call_name (fun_exp :: args)
+        exec_named_call astate analyze_dependency node ret_id erlang_call_name (fun_exp :: args)
     | Some name ->
-        exec_named_call astate node analyze_dependency ret_id name args
+        exec_named_call astate analyze_dependency node ret_id name args
 
 
-  let add_lambda_edges (write_var, write_node) lambdas (real_state, local_edges) =
-    let target = LineageGraph.Local (VariableIndex write_var, write_node) in
+  let add_lambda_edges node write_var lambdas (real_state, local_edges) =
+    let target = LineageGraph.Local (VariableIndex write_var, node) in
     let add_one_lambda one_lambda local_edges =
-      LineageGraph.add_flow ~kind:Direct ~node:write_node ~source:(Function one_lambda) ~target
-        local_edges
+      LineageGraph.add_flow ~kind:Direct ~node ~source:(Function one_lambda) ~target local_edges
     in
     let local_edges = Procname.Set.fold add_one_lambda lambdas local_edges in
     (real_state, local_edges)
@@ -1139,9 +1135,9 @@ module TransferFunctions = struct
   let exec_assignment astate node dst_var src_exp =
     let {free_locals; captured_locals; lambdas} = read_set_of_exp src_exp in
     astate
-    |> update_write LineageGraph.FlowKind.Direct (VariableIndex.var dst_var, node) free_locals
-    |> update_write LineageGraph.FlowKind.Capture (VariableIndex.var dst_var, node) captured_locals
-    |> add_lambda_edges (VariableIndex.var dst_var, node) lambdas
+    |> update_write node LineageGraph.FlowKind.Direct (VariableIndex.var dst_var) free_locals
+    |> update_write node LineageGraph.FlowKind.Capture (VariableIndex.var dst_var) captured_locals
+    |> add_lambda_edges node (VariableIndex.var dst_var) lambdas
 
 
   let exec_instr astate (_shapes, {InterproceduralAnalysis.analyze_dependency}) node instr_index
@@ -1159,7 +1155,7 @@ module TransferFunctions = struct
           "SimpleLineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
         astate
     | Call ((ret_id, _ret_typ), name, args, _location, _flags) ->
-        exec_call astate node analyze_dependency ret_id name args
+        exec_call astate analyze_dependency node ret_id name args
     | Sil.Prune (_, _, _, _) | Sil.Metadata _ ->
         astate
 
