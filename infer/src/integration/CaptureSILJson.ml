@@ -345,6 +345,7 @@ and parse_sil_type_name (json : Safe.t) : Typ.t =
     let tn = parse_typename (member "type_name" json) in
     Typ.mk (Typ.TVar (Typ.Name.name tn))
   else if String.equal type_kind "Tvoid" then StdTyp.void
+  else if String.equal type_kind "Tfun" then Typ.mk Tfun
   else if String.equal type_kind "Tenum" then
     (* Sil.Tenum (parse_list (parse_pair (fun n -> Mangled.from_string (to_string n)) parse_constant) value) *)
     Logging.die InternalError "Enums are not supported yet"
