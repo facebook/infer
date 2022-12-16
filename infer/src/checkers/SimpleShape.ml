@@ -424,6 +424,19 @@ struct
       List.Assoc.find ~equal:Procname.equal models procname
 
 
+    let ignore_shape_ret_and_args ret_var args =
+      ignore (Shape.Env.var_shape env ret_var : Shape.Env.shape) ;
+      ignore (List.map ~f:shape_expr args : Shape.Env.shape list) ;
+      ()
+
+
+    let unknown_model procname ret_var args =
+      L.debug Analysis Verbose "@[<v2> SimpleShape: no model found for expression `%a`@]@,"
+        Procname.pp procname ;
+      ignore_shape_ret_and_args ret_var args ;
+      ()
+
+
     let standard_model proc_desc summary ret_var args =
       (* Standard call of a known function:
          1. We get the shape of the actual args and ret_id
@@ -453,8 +466,7 @@ struct
         | Some (proc_desc, summary) ->
             standard_model proc_desc summary ret_var args
         | None ->
-            L.debug Analysis Verbose "@[<v2> SimpleShape: no model found for procname `%a`@]@,"
-              Procname.pp procname )
+            unknown_model procname ret_var args )
   end
 
   let exec_assignment var rhs_exp =
@@ -478,13 +490,15 @@ struct
   let exec_instr_unit {InterproceduralAnalysis.analyze_dependency} (instr : Sil.instr) =
     match instr with
     | Call ((ret_id, _typ), fun_exp, args, _location, _flags) -> (
-      match procname_of_exp fun_exp with
-      | None ->
-          L.debug Analysis Verbose "@[<v>SimpleShape: call of unsupported expression `%a`.@]@,"
-            Exp.pp fun_exp
-      | Some procname ->
-          let args = (* forget SIL types *) List.map ~f:fst args in
-          CallModel.exec analyze_dependency procname (Var.of_id ret_id) args )
+        let ret_var = Var.of_id ret_id in
+        let args = List.map ~f:fst args (* forget SIL types *) in
+        match procname_of_exp fun_exp with
+        | None ->
+            CallModel.ignore_shape_ret_and_args ret_var args ;
+            L.debug Analysis Verbose "@[<v>SimpleShape: call of unsupported expression `%a`.@]@,"
+              Exp.pp fun_exp
+        | Some procname ->
+            CallModel.exec analyze_dependency procname ret_var args )
     | Prune (e, _, _, _) ->
         ignore (shape_expr e : Shape.Env.shape)
     | Metadata _ ->
