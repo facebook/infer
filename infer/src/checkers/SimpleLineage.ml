@@ -26,6 +26,8 @@ let () =
 
 
 module VariableIndex : sig
+  (** A [VariableIndex] is a variable and a possibly empty list of subscripted fields. *)
+
   type t [@@deriving compare, equal]
 
   val var : Var.t -> t
@@ -40,17 +42,9 @@ module VariableIndex : sig
 
   val var_appears_in_source_code : t -> bool
 end = struct
-  (** A variable and a (possibly empty) list of fields *)
-
   type t = Var.t * Fieldname.t list
-  (* The field list is reversed: x#a#b is represented as (x, [b, a]) *) [@@deriving compare, equal]
-
-  let rec pp_fields fmt = function
-    | [] ->
-        Format.fprintf fmt ""
-    | field :: fields ->
-        Format.fprintf fmt "%a#%a" pp_fields fields Fieldname.pp field
-
+  (* The field list is in syntactic order: x#a#b is represented as (x, [a, b]) *)
+  [@@deriving compare, equal]
 
   let var v = (v, [])
 
@@ -60,7 +54,10 @@ end = struct
 
   let ident id = var (Var.of_id id)
 
-  let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var pp_fields fields
+  let pp fmt (var, fields) =
+    let pp_fields = Fmt.(list ~sep:nop (any "#" ++ Fieldname.pp)) in
+    Format.fprintf fmt "%a%a" Var.pp var pp_fields fields
+
 
   let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
 end
