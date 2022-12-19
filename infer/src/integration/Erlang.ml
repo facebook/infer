@@ -29,7 +29,7 @@ let should_process filename =
       not (Str.string_match re original_filename 0)
 
 
-let parse_translate_store ?(base_dir = ".") result_dir =
+let parse_translate_store ?(base_dir = None) result_dir =
   let otp_modules_file = Filename.concat result_dir "otp_modules.list" in
   let otp_modules =
     match Utils.read_file otp_modules_file with
@@ -70,16 +70,8 @@ let parse_translate_store ?(base_dir = ".") result_dir =
   |> Tasks.Runner.run |> ignore
 
 
-let cwd_from_project_root =
-  match Utils.filename_to_relative (Unix.getcwd ()) ~root:Config.project_root with
-  | Some prefix ->
-      prefix
-  | None ->
-      "."
-
-
 let capture ~command ~args =
-  let base_dir = cwd_from_project_root in
+  let base_dir = Utils.filename_to_relative (Unix.getcwd ()) ~root:Config.project_root in
   Option.iter ~f:(parse_translate_store ~base_dir) Config.erlang_ast_dir ;
   if not Config.erlang_skip_compile then (
     let in_dir = ResultsDir.get_path Temporary in

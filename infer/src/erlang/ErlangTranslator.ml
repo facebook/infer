@@ -1463,7 +1463,8 @@ let translate_module (env : (_, _) Env.t) module_ base_dir =
         translate_one_spec sub_env function_ spec ;
         env
     | File {path} ->
-        update_path (Filename.concat base_dir path) env
+        let path = match base_dir with Some dir -> Filename.concat dir path | None -> path in
+        update_path path env
     | _ ->
         env
   in
