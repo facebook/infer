@@ -22,6 +22,7 @@ type t =
   | Purity
   | Quandary
   | RacerD
+  | ScopeLeakage
   | SIOF
   | SimpleLineage
   | SimpleShape

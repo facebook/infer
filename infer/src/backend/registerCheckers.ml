@@ -221,7 +221,7 @@ let all_checkers =
          [(checker, Erlang)] ) }
   ; { checker= ScopeLeakage
     ; callbacks=
-        (let checker = intraprocedural ScopeLeakage.checker in
+        (let checker = interprocedural Payloads.Fields.scope_leakage ScopeLeakage.checker in
          [(checker, Java)] ) } ]
 
 
