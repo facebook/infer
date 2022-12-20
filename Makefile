@@ -140,12 +140,13 @@ DIRECT_TESTS += \
 endif
 
 
-ifneq ($(XCODE_SELECT),no)
-BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
-endif
-ifneq ($(XCPRETTY),no)
-BUILD_SYSTEMS_TESTS += xcodebuild
-endif
+# Temporarily turn off xcodebuild tests while we sort out problems on CI
+# ifneq ($(XCODE_SELECT),no)
+# BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
+# endif
+# ifneq ($(XCPRETTY),no)
+# BUILD_SYSTEMS_TESTS += xcodebuild
+# endif
 endif # HAS_OBJC
 endif # BUILD_C_ANALYZERS
 
