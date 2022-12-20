@@ -477,63 +477,66 @@ let%test_module "line map" =
 
     let%expect_test _ =
       let line_map = LineMap.create text in
-      F.printf "%a" LineMap.pp line_map ;
+      let lines = String.split_lines text in
+      List.iteri lines ~f:(fun i text ->
+          let line = LineMap.find line_map i in
+          F.printf "%i: %s\n" (Option.value_exn line) text ) ;
       [%expect
         {|
-        Textual line: 0, Original line: 0
-        Textual line: 1, Original line: 0
-        Textual line: 2, Original line: 0
-        Textual line: 3, Original line: 0
-        Textual line: 4, Original line: 0
-        Textual line: 5, Original line: 5
-        Textual line: 6, Original line: 5
-        Textual line: 7, Original line: 5
-        Textual line: 8, Original line: 6
-        Textual line: 9, Original line: 6
-        Textual line: 10, Original line: 6
-        Textual line: 11, Original line: 6
-        Textual line: 12, Original line: 6
-        Textual line: 13, Original line: 6
-        Textual line: 14, Original line: 6
-        Textual line: 15, Original line: 6
-        Textual line: 16, Original line: 6
-        Textual line: 17, Original line: 6
-        Textual line: 18, Original line: 6
-        Textual line: 19, Original line: 6
-        Textual line: 20, Original line: 6
-        Textual line: 21, Original line: 6
-        Textual line: 22, Original line: 9
-        Textual line: 23, Original line: 9
-        Textual line: 24, Original line: 9
-        Textual line: 25, Original line: 10
-        Textual line: 26, Original line: 10
-        Textual line: 27, Original line: 10
-        Textual line: 28, Original line: 10
-        Textual line: 29, Original line: 10
-        Textual line: 30, Original line: 12
-        Textual line: 31, Original line: 12
-        Textual line: 32, Original line: 12
-        Textual line: 33, Original line: 12
-        Textual line: 34, Original line: 13
-        Textual line: 35, Original line: 13
-        Textual line: 36, Original line: 13
-        Textual line: 37, Original line: 14
-        Textual line: 38, Original line: 14
-        Textual line: 39, Original line: 14
-        Textual line: 40, Original line: 15
-        Textual line: 41, Original line: 15
-        Textual line: 42, Original line: 15
-        Textual line: 43, Original line: 15
-        Textual line: 44, Original line: 15
-        Textual line: 45, Original line: 17
-        Textual line: 46, Original line: 17
-        Textual line: 47, Original line: 17
-        Textual line: 48, Original line: 18
-        Textual line: 49, Original line: 18
-        Textual line: 50, Original line: 18
-        Textual line: 51, Original line: 19
-        Textual line: 52, Original line: 19
-        Textual line: 53, Original line: 19
-        Textual line: 54, Original line: 19
-        Textual line: 55, Original line: 19 |}]
+        1:
+        1:           // TEXTUAL UNIT START level1.hack
+        1:           .source_language = "hack"
+        1:
+        1:           // .file "level1.hack"
+        1:           // .line 6
+        6:           define $root.taintSource(this: *void) : *HackInt {
+        6:           #b0:
+        6:           // .line 7
+        7:             n0 = $builtins.hhbc_is_type_int($builtins.hack_int(42))
+        7:             n1 = $builtins.hhbc_not(n0)
+        7:             jmp b1, b2
+        7:           #b1:
+        7:             prune $builtins.hack_is_true(n1)
+        7:             n2 = $builtins.hhbc_verify_failed()
+        7:             unreachable
+        7:           #b2:
+        7:             prune ! $builtins.hack_is_true(n1)
+        7:             ret $builtins.hack_int(42)
+        7:           }
+        7:
+        7:           // .file "level1.hack"
+        7:           // .line 10
+        10:           define $root.taintSink(this: *void, $i: *HackInt) : *void {
+        10:           #b0:
+        10:           // .line 11
+        11:             ret $builtins.hack_null()
+        11:           }
+        11:
+        11:           // .file "level1.hack"
+        11:           // .line 13
+        13:           define $root.FN_basicFlowBad(this: *void) : *void {
+        13:           local $tainted: *void
+        13:           #b0:
+        13:           // .line 14
+        14:             n0 = $root.taintSource(null)
+        14:             store &$tainted <- n0: *Mixed
+        14:           // .line 15
+        15:             n1: *Mixed = load &$tainted
+        15:             n2 = $root.taintSink(null, n1)
+        15:           // .line 16
+        16:             ret $builtins.hack_null()
+        16:           }
+        16:
+        16:           // .file "level1.hack"
+        16:           // .line 18
+        18:           define $root.basicFlowOk(this: *void, $untainted: *HackInt) : *void {
+        18:           #b0:
+        18:           // .line 19
+        19:             n0: *Mixed = load &$untainted
+        19:             n1 = $root.taintSink(null, n0)
+        19:           // .line 20
+        20:             ret $builtins.hack_null()
+        20:           }
+        20:           // TEXTUAL UNIT END level1.hack
+        20: |}]
   end )
