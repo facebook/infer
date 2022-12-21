@@ -65,6 +65,7 @@ let rec validate_pattern env (p : Ast.expression) =
         | Exact ->
             validate_pattern env a.key && validate_pattern env a.value
         | _ ->
+            L.debug Capture Verbose "Invalid map association kind (not :=) in pattern@." ;
             false
       in
       is_none map && List.for_all ~f:validate_assoc updates
@@ -99,11 +100,12 @@ let validate_patterns env = List.for_all ~f:(validate_pattern env)
 
 (** Guards are expressions in general, but with restrictions and constraints. *)
 
-let is_atom (e : Ast.expression) =
+let validate_guard_call_func (e : Ast.expression) =
   match e.simple_expression with
   | Literal lit -> (
     match lit with Atom _ -> true | _ -> false )
   | _ ->
+      L.debug Capture Verbose "Function in guard is not an atom@." ;
       false
 
 
@@ -114,8 +116,14 @@ let validate_guard_call_module (eo : Ast.expression option) =
   | Some e -> (
     match e.simple_expression with
     | Literal lit -> (
-      match lit with Atom "erlang" -> true | _ -> false )
+      match lit with
+      | Atom "erlang" ->
+          true
+      | _ ->
+          L.debug Capture Verbose "Non-erlang module in call in a guard@." ;
+          false )
     | _ ->
+        L.debug Capture Verbose "Non-atom module in call in a guard@." ;
         false )
 
 
@@ -128,7 +136,7 @@ let rec validate_guard_test env (gt : Ast.expression) =
       List.for_all ~f:(validate_elem env) elems
   | Call {module_; function_; args} ->
       validate_guard_call_module module_
-      && is_atom function_
+      && validate_guard_call_func function_
       && List.for_all ~f:(validate_guard_test env) args
   | Cons {head; tail} ->
       validate_guard_test env head && validate_guard_test env tail
@@ -141,6 +149,7 @@ let rec validate_guard_test env (gt : Ast.expression) =
         | Arrow ->
             validate_guard_test env a.key && validate_guard_test env a.value
         | _ ->
+            L.debug Capture Verbose "Invalid map association kind (not =>) in map create@." ;
             false
       in
       (* Map update accepts '=>' and ':=' *)
@@ -220,6 +229,7 @@ let rec validate_expr env (expr : Ast.expression) =
         | Arrow ->
             validate_expr env a.key && validate_expr env a.value
         | _ ->
+            L.debug Capture Verbose "Invalid map association kind (not =>) in map create@." ;
             false
       in
       (* Map update accepts '=>' and ':=' *)
