@@ -63,7 +63,7 @@ let rec validate_pattern env (p : Ast.expression) =
       let validate_assoc (a : Ast.association) =
         match a.kind with
         | Exact ->
-            validate_pattern env a.key && validate_pattern env a.value
+            validate_guard_test env a.key && validate_pattern env a.value
         | _ ->
             L.debug Capture Verbose "Invalid map association kind (not :=) in pattern@." ;
             false
@@ -94,13 +94,12 @@ let rec validate_pattern env (p : Ast.expression) =
       false
 
 
-let validate_patterns env = List.for_all ~f:(validate_pattern env)
+and validate_patterns env = List.for_all ~f:(validate_pattern env)
 
 (** {2 Guards} *)
-
 (** Guards are expressions in general, but with restrictions and constraints. *)
 
-let validate_guard_call_func (e : Ast.expression) =
+and validate_guard_call_func (e : Ast.expression) =
   match e.simple_expression with
   | Literal lit -> (
     match lit with Atom _ -> true | _ -> false )
@@ -109,7 +108,7 @@ let validate_guard_call_func (e : Ast.expression) =
       false
 
 
-let validate_guard_call_module (eo : Ast.expression option) =
+and validate_guard_call_module (eo : Ast.expression option) =
   match eo with
   | None ->
       true
@@ -127,7 +126,7 @@ let validate_guard_call_module (eo : Ast.expression option) =
         false )
 
 
-let rec validate_guard_test env (gt : Ast.expression) =
+and validate_guard_test env (gt : Ast.expression) =
   match gt.simple_expression with
   | BinaryOperator (e1, _, e2) ->
       validate_guard_test env e1 && validate_guard_test env e2
